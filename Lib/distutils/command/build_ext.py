@@ -10,7 +10,8 @@ import sys, os, re
 from warnings import warn
 
 from distutils.core import Command
-from distutils.errors import *
+from distutils.errors import (CCompilerError, DistutilsError, CompileError,
+                              DistutilsSetupError, DistutilsPlatformError)
 from distutils.sysconfig import customize_compiler, get_python_version
 from distutils.dep_util import newer_group
 from distutils.extension import Extension

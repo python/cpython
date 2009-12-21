@@ -6,7 +6,6 @@ modules in setup scripts."""
 __revision__ = "$Id$"
 
 import os
-import sys
 import warnings
 
 # This class is really only used by the "build_ext" command, so it might

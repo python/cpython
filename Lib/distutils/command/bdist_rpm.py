@@ -5,14 +5,15 @@ distributions)."""
 
 __revision__ = "$Id$"
 
-import sys, os, string
-from types import *
+import sys
+import os
+import string
+
 from distutils.core import Command
 from distutils.debug import DEBUG
-from distutils.util import get_platform
 from distutils.file_util import write_file
-from distutils.errors import *
-from distutils.sysconfig import get_python_version
+from distutils.errors import (DistutilsOptionError, DistutilsPlatformError,
+                              DistutilsFileError, DistutilsExecError)
 from distutils import log
 
 class bdist_rpm (Command):
@@ -225,7 +226,7 @@ class bdist_rpm (Command):
                                         self.distribution.get_contact_email()))
         self.ensure_string('packager')
         self.ensure_string_list('doc_files')
-        if type(self.doc_files) is ListType:
+        if isinstance(self.doc_files, list):
             for readme in ('README', 'README.txt'):
                 if os.path.exists(readme) and readme not in self.doc_files:
                     self.doc_files.append(readme)
@@ -444,7 +445,7 @@ class bdist_rpm (Command):
                       'Obsoletes',
                       ):
             val = getattr(self, string.lower(field))
-            if type(val) is ListType:
+            if isinstance(val, list):
                 spec_file.append('%s: %s' % (field, string.join(val)))
             elif val is not None:
                 spec_file.append('%s: %s' % (field, val))
