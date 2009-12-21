@@ -1648,6 +1648,8 @@ Documentation
 C-API
 -----
 
+- Issue #7528: Add PyLong_AsLongAndOverflow (backported from py3k).
+
 - Issue #7228: Add '%lld' and '%llu' support to PyString_FromFormat(V)
   and PyErr_Format, on machines with HAVE_LONG_LONG defined.
 

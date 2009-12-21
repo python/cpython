@@ -358,6 +358,75 @@ test_longlong_api(PyObject* self, PyObject *args)
 #undef F_U_TO_PY
 #undef F_PY_TO_U
 
+/* Test the PyLong_AsLongAndOverflow API. General conversion to PY_LONG
+   is tested by test_long_api_inner. This test will concentrate on proper
+   handling of overflow.
+*/
+
+static PyObject *
+test_long_and_overflow(PyObject *self)
+{
+	PyObject *num;
+	long value;
+	int overflow;
+
+	/* a number larger than LONG_MAX even on 64-bit platforms */
+	num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
+	if (num == NULL)
+		return NULL;
+
+	/* Test that overflow is set properly for a large value. */
+	overflow = 1234;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	if (overflow != 1)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not set to 1");
+
+	overflow = 0;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	if (overflow != 1)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not set to 0");
+
+	/* a number smaller than LONG_MIN even on 64-bit platforms */
+	num = PyLong_FromString("-FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
+	if (num == NULL)
+		return NULL;
+
+	/* Test that overflow is set properly for a large negative value. */
+	overflow = 1234;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	if (overflow != -1)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not set to -1");
+
+	overflow = 0;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	if (overflow != -1)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not set to 0");
+
+	num = PyLong_FromString("FF", NULL, 16);
+	if (num == NULL)
+		return NULL;
+
+	/* Test that overflow is cleared properly for a small value. */
+	overflow = 1234;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	if (overflow != 0)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was not cleared");
+
+	overflow = 0;
+	value = PyLong_AsLongAndOverflow(num, &overflow);
+	if (overflow != 0)
+		return raiseTestError("test_long_and_overflow",
+			"overflow was set incorrectly");
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 /* Test the L code for PyArg_ParseTuple.  This should deliver a PY_LONG_LONG
    for both long and int arguments.  The test may leak a little memory if
    it fails.
@@ -1041,6 +1110,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_dict_iteration",	(PyCFunction)test_dict_iteration,METH_NOARGS},
 	{"test_lazy_hash_inheritance",	(PyCFunction)test_lazy_hash_inheritance,METH_NOARGS},
 	{"test_long_api",	(PyCFunction)test_long_api,	 METH_NOARGS},
+	{"test_long_and_overflow",	(PyCFunction)test_long_and_overflow,	METH_NOARGS},
 	{"test_long_numbits",	(PyCFunction)test_long_numbits,	 METH_NOARGS},
 	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
 	{"test_empty_argparse", (PyCFunction)test_empty_argparse,METH_NOARGS},
