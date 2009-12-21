@@ -102,11 +102,8 @@ def create_makefile64(makefile, m32):
     """
     if not os.path.isfile(m32):
         return
-    # 2.4 compatibility
-    fin = open(m32)
-    if 1: # with open(m32) as fin:
-        fout = open(makefile, 'w')
-        if 1: # with open(makefile, 'w') as fout:
+    with open(m32) as fin:
+        with open(makefile, 'w') as fout:
             for line in fin:
                 line = line.replace("=tmp32", "=tmp64")
                 line = line.replace("=out32", "=out64")
