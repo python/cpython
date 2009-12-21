@@ -8,10 +8,12 @@ really defined in distutils.dist and distutils.cmd.
 
 __revision__ = "$Id$"
 
-import sys, os
+import sys
+import os
 
 from distutils.debug import DEBUG
-from distutils.errors import *
+from distutils.errors import (DistutilsSetupError, DistutilsArgError,
+                              DistutilsError, CCompilerError)
 from distutils.util import grok_environment_error
 
 # Mainly import these so setup scripts can "from distutils.core import" them.
@@ -31,7 +33,7 @@ usage: %(script)s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
    or: %(script)s cmd --help
 """
 
-def gen_usage (script_name):
+def gen_usage(script_name):
     script = os.path.basename(script_name)
     return USAGE % vars()
 
@@ -56,7 +58,7 @@ extension_keywords = ('name', 'sources', 'include_dirs',
                       'extra_objects', 'extra_compile_args', 'extra_link_args',
                       'swig_opts', 'export_symbols', 'depends', 'language')
 
-def setup (**attrs):
+def setup(**attrs):
     """The gateway to the Distutils: do everything your setup script needs
     to do, in a highly flexible and user-driven way.  Briefly: create a
     Distribution instance; find and parse config files; parse the command
@@ -168,10 +170,8 @@ def setup (**attrs):
 
     return dist
 
-# setup ()
 
-
-def run_setup (script_name, script_args=None, stop_after="run"):
+def run_setup(script_name, script_args=None, stop_after="run"):
     """Run a setup script in a somewhat controlled environment, and
     return the Distribution instance that drives things.  This is useful
     if you need to find out the distribution meta-data (passed as
@@ -234,7 +234,4 @@ def run_setup (script_name, script_args=None, stop_after="run"):
 
     # I wonder if the setup script's namespace -- g and l -- would be of
     # any interest to callers?
-    #print "_setup_distribution:", _setup_distribution
     return _setup_distribution
-
-# run_setup ()

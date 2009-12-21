@@ -6,8 +6,8 @@ lines, and joining lines with backslashes."""
 
 __revision__ = "$Id$"
 
-import sys, os, io
-
+import sys
+import io
 
 class TextFile:
     """Provides a file-like object that takes care of all the things you

@@ -53,11 +53,9 @@ import copy
 import re
 from warnings import warn
 
-from distutils.ccompiler import gen_preprocess_options, gen_lib_options
 from distutils.unixccompiler import UnixCCompiler
 from distutils.file_util import write_file
 from distutils.errors import DistutilsExecError, CompileError, UnknownFileError
-from distutils import log
 from distutils.util import get_compiler_versions
 
 def get_msvcr():

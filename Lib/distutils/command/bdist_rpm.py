@@ -5,13 +5,14 @@ distributions)."""
 
 __revision__ = "$Id$"
 
-import sys, os
+import sys
+import os
+
 from distutils.core import Command
 from distutils.debug import DEBUG
-from distutils.util import get_platform
 from distutils.file_util import write_file
-from distutils.errors import *
-from distutils.sysconfig import get_python_version
+from distutils.errors import (DistutilsOptionError, DistutilsPlatformError,
+                              DistutilsFileError, DistutilsExecError)
 from distutils import log
 
 class bdist_rpm(Command):
