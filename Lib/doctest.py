@@ -2616,7 +2616,7 @@ def _test():
     testfiles = [arg for arg in sys.argv[1:] if arg and arg[0] != '-']
     if not testfiles:
         name = os.path.basename(sys.argv[0])
-        if '__loader__' in globals() and name.endswith('.py'):  # python -m
+        if '__loader__' in globals():          # python -m
             name, _ = os.path.splitext(name)
         print("usage: {0} [-v] file ...".format(name))
         return 2
