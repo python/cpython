@@ -133,7 +133,6 @@ class build_py(Command):
 
     def build_package_data(self):
         """Copy data files into build directory"""
-        lastdir = None
         for package, src_dir, build_dir, filenames in self.data_files:
             for filename in filenames:
                 target = os.path.join(build_dir, filename)

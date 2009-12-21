@@ -11,7 +11,8 @@ this header file lives".
 
 __revision__ = "$Id$"
 
-import sys, os, re
+import os
+import re
 
 from distutils.core import Command
 from distutils.errors import DistutilsExecError

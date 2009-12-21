@@ -6,9 +6,9 @@ distribution)."""
 __revision__ = "$Id$"
 
 import os
-from types import *
+
 from distutils.core import Command
-from distutils.errors import *
+from distutils.errors import DistutilsPlatformError, DistutilsOptionError
 from distutils.util import get_platform
 
 
@@ -16,7 +16,7 @@ def show_formats():
     """Print list of available formats (arguments to "--format" option).
     """
     from distutils.fancy_getopt import FancyGetopt
-    formats=[]
+    formats = []
     for format in bdist.format_commands:
         formats.append(("formats=" + format, None,
                         bdist.format_command[format][1]))

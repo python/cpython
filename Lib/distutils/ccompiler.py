@@ -5,9 +5,11 @@ for the Distutils compiler abstraction model."""
 
 __revision__ = "$Id$"
 
-import sys, os, re
-from types import *
-from distutils.errors import *
+import sys
+import os
+import re
+
+from distutils.errors import CompileError, LinkError, UnknownFileError
 from distutils.spawn import spawn
 from distutils.file_util import move_file
 from distutils.dir_util import mkpath
@@ -165,7 +167,7 @@ class CCompiler:
     # set_executables ()
 
     def set_executable(self, key, value):
-        if type(value) is StringType:
+        if isinstance(value, str):
             setattr(self, key, split_quoted(value))
         else:
             setattr(self, key, value)
@@ -187,11 +189,11 @@ class CCompiler:
         nothing if all definitions are OK, raise TypeError otherwise.
         """
         for defn in definitions:
-            if not (type (defn) is TupleType and
+            if not (isinstance(defn, tuple) and
                     (len (defn) == 1 or
                      (len (defn) == 2 and
-                      (type (defn[1]) is StringType or defn[1] is None))) and
-                    type (defn[0]) is StringType):
+                      (isinstance(defn[1], str) or defn[1] is None))) and
+                    isinstance(defn[0], str)):
                 raise TypeError, \
                       ("invalid macro definition '%s': " % defn) + \
                       "must be tuple (string,), (string, string), or " + \
@@ -341,19 +343,19 @@ class CCompiler:
         """
         if outdir is None:
             outdir = self.output_dir
-        elif type(outdir) is not StringType:
+        elif not isinstance(outdir, str):
             raise TypeError, "'output_dir' must be a string or None"
 
         if macros is None:
             macros = self.macros
-        elif type(macros) is ListType:
+        elif isinstance(macros, list):
             macros = macros + (self.macros or [])
         else:
             raise TypeError, "'macros' (if supplied) must be a list of tuples"
 
         if incdirs is None:
             incdirs = self.include_dirs
-        elif type(incdirs) in (ListType, TupleType):
+        elif isinstance(incdirs, (list, tuple)):
             incdirs = list(incdirs) + (self.include_dirs or [])
         else:
             raise TypeError, \
@@ -444,14 +446,14 @@ class CCompiler:
 
         if macros is None:
             macros = self.macros
-        elif type (macros) is ListType:
+        elif isinstance(macros, list):
             macros = macros + (self.macros or [])
         else:
             raise TypeError, "'macros' (if supplied) must be a list of tuples"
 
         if include_dirs is None:
             include_dirs = self.include_dirs
-        elif type (include_dirs) in (ListType, TupleType):
+        elif isinstance(include_dirs, (list, tuple)):
             include_dirs = list (include_dirs) + (self.include_dirs or [])
         else:
             raise TypeError, \
@@ -517,14 +519,14 @@ class CCompiler:
         None, replace with self.output_dir.  Return fixed versions of
         'objects' and 'output_dir'.
         """
-        if type (objects) not in (ListType, TupleType):
+        if not isinstance(objects, (list, tuple)):
             raise TypeError, \
                   "'objects' must be a list or tuple of strings"
         objects = list (objects)
 
         if output_dir is None:
             output_dir = self.output_dir
-        elif type (output_dir) is not StringType:
+        elif not isinstance(output_dir, str):
             raise TypeError, "'output_dir' must be a string or None"
 
         return (objects, output_dir)
@@ -539,7 +541,7 @@ class CCompiler:
         """
         if libraries is None:
             libraries = self.libraries
-        elif type (libraries) in (ListType, TupleType):
+        elif isinstance(libraries, (list, tuple)):
             libraries = list (libraries) + (self.libraries or [])
         else:
             raise TypeError, \
@@ -547,7 +549,7 @@ class CCompiler:
 
         if library_dirs is None:
             library_dirs = self.library_dirs
-        elif type (library_dirs) in (ListType, TupleType):
+        elif isinstance(library_dirs, (list, tuple)):
             library_dirs = list (library_dirs) + (self.library_dirs or [])
         else:
             raise TypeError, \
@@ -555,7 +557,7 @@ class CCompiler:
 
         if runtime_library_dirs is None:
             runtime_library_dirs = self.runtime_library_dirs
-        elif type (runtime_library_dirs) in (ListType, TupleType):
+        elif isinstance(runtime_library_dirs, (list, tuple)):
             runtime_library_dirs = (list (runtime_library_dirs) +
                                     (self.runtime_library_dirs or []))
         else:
@@ -587,7 +589,7 @@ class CCompiler:
         """Detect the language of a given file, or list of files. Uses
         language_map, and language_order to do the job.
         """
-        if type(sources) is not ListType:
+        if not isinstance(sources, list):
             sources = [sources]
         lang = None
         index = len(self.language_order)
@@ -1194,7 +1196,7 @@ def gen_preprocess_options (macros, include_dirs):
     pp_opts = []
     for macro in macros:
 
-        if not (type (macro) is TupleType and
+        if not (isinstance(macro, tuple) and
                 1 <= len (macro) <= 2):
             raise TypeError, \
                   ("bad macro definition '%s': " +

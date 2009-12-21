@@ -28,7 +28,6 @@ class PyDialog(Dialog):
         default, cancel, bitmap=true)"""
         Dialog.__init__(self, *args)
         ruler = self.h - 36
-        bmwidth = 152*ruler/328
         #if kw.get("bitmap", True):
         #    self.bitmap("Bitmap", 0, 0, bmwidth, ruler, "PythonWin")
         self.line("BottomLine", 0, ruler, self.w, 0)
@@ -420,7 +419,6 @@ class bdist_msi (Command):
         # see "Dialog Style Bits"
         modal = 3      # visible | modal
         modeless = 1   # visible
-        track_disk_space = 32
 
         # UI customization properties
         add_data(db, "Property",
