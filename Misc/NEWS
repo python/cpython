@@ -49,6 +49,10 @@ Library
 - Issue #7457: added a read_pkg_file method to
   distutils.dist.DistributionMetadata.
 
+Build
+-----
+
+- Switch to OpenSSL 0.9.8l on Windows.
 
 Tests
 -----
