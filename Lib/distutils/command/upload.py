@@ -12,7 +12,7 @@ import socket
 import platform
 import configparser
 import http.client as httpclient
-import base64
+from base64 import standard_b64encode
 import urllib.parse
 
 # this keeps compatibility for 2.3 and 2.4
@@ -127,7 +127,7 @@ class upload(PyPIRCCommand):
         user_pass = (self.username + ":" + self.password).encode('ascii')
         # The exact encoding of the authentication string is debated.
         # Anyway PyPI only accepts ascii for both username or password.
-        auth = "Basic " + base64.encodebytes(user_pass).strip().decode('ascii')
+        auth = "Basic " + standard_b64encode(user_pass).decode('ascii')
 
         # Build up the MIME payload for the POST data
         boundary = '--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
