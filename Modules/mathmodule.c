@@ -799,18 +799,18 @@ math_2(PyObject *args, double (*func) (double, double), char *funcname)
 
 FUNC1(acos, acos, 0,
       "acos(x)\n\nReturn the arc cosine (measured in radians) of x.")
-FUNC1(acosh, acosh, 0,
+FUNC1(acosh, m_acosh, 0,
       "acosh(x)\n\nReturn the hyperbolic arc cosine (measured in radians) of x.")
 FUNC1(asin, asin, 0,
       "asin(x)\n\nReturn the arc sine (measured in radians) of x.")
-FUNC1(asinh, asinh, 0,
+FUNC1(asinh, m_asinh, 0,
       "asinh(x)\n\nReturn the hyperbolic arc sine (measured in radians) of x.")
 FUNC1(atan, atan, 0,
       "atan(x)\n\nReturn the arc tangent (measured in radians) of x.")
 FUNC2(atan2, m_atan2,
       "atan2(y, x)\n\nReturn the arc tangent (measured in radians) of y/x.\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
-FUNC1(atanh, atanh, 0,
+FUNC1(atanh, m_atanh, 0,
       "atanh(x)\n\nReturn the hyperbolic arc tangent (measured in radians) of x.")
 FUNC1(ceil, ceil, 0,
       "ceil(x)\n\nReturn the ceiling of x as a float.\n"
@@ -840,7 +840,7 @@ FUNC1A(gamma, m_tgamma,
       "gamma(x)\n\nGamma function at x.")
 FUNC1A(lgamma, m_lgamma,
       "lgamma(x)\n\nNatural logarithm of absolute value of Gamma function at x.")
-FUNC1(log1p, log1p, 1,
+FUNC1(log1p, m_log1p, 1,
       "log1p(x)\n\nReturn the natural logarithm of 1+x (base e).\n"
       "The result is computed in a way which is accurate for x near zero.")
 FUNC1(sin, sin, 0,
