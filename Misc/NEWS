@@ -490,6 +490,8 @@ Extension Modules
 Build
 -----
 
+- Switch to OpenSSL 0.9.8l on Windows.
+
 - Issue #5792: Extend the short float repr support to x86 systems using
   icc or suncc.
 
