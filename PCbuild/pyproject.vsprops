@@ -58,7 +58,7 @@
 	/>
 	<UserMacro
 		Name="opensslDir"
-		Value="$(externalsDir)\openssl-0.9.8g"
+		Value="$(externalsDir)\openssl-0.9.8l"
 	/>
 	<UserMacro
 		Name="tcltkDir"
