@@ -855,7 +855,7 @@ importlib: Importing Modules
 Python 3.1 includes the :mod:`importlib` package, a re-implementation
 of the logic underlying Python's :keyword:`import` statement.
 :mod:`importlib` is useful for implementors of Python interpreters and
-to user who wish to write new importers that can participate in the
+to users who wish to write new importers that can participate in the
 import process.  Python 2.7 doesn't contain the complete
 :mod:`importlib` package, but instead has a tiny subset that contains
 a single function, :func:`import_module`.
