@@ -207,32 +207,55 @@ class PosixTester(unittest.TestCase):
         if hasattr(posix, 'stat'):
             self.assertTrue(posix.stat(test_support.TESTFN))
 
-    if hasattr(posix, 'chown'):
-        def test_chown(self):
-            # raise an OSError if the file does not exist
-            os.unlink(test_support.TESTFN)
-            self.assertRaises(OSError, posix.chown, test_support.TESTFN, -1, -1)
+    def _test_all_chown_common(self, chown_func, first_param):
+        """Common code for chown, fchown and lchown tests."""
+        if os.getuid() == 0:
+            try:
+                # Many linux distros have a nfsnobody user as MAX_UID-2
+                # that makes a good test case for signedness issues.
+                #   http://bugs.python.org/issue1747858
+                # This part of the test only runs when run as root.
+                # Only scary people run their tests as root.
+                ent = pwd.getpwnam('nfsnobody')
+                chown_func(first_param, ent.pw_uid, ent.pw_gid)
+            except KeyError:
+                pass
+        else:
+            # non-root cannot chown to root, raises OSError
+            self.assertRaises(OSError, chown_func,
+                              first_param, 0, 0)
 
-            # re-create the file
-            open(test_support.TESTFN, 'w').close()
-            if os.getuid() == 0:
-                try:
-                    # Many linux distros have a nfsnobody user as MAX_UID-2
-                    # that makes a good test case for signedness issues.
-                    #   http://bugs.python.org/issue1747858
-                    # This part of the test only runs when run as root.
-                    # Only scary people run their tests as root.
-                    ent = pwd.getpwnam('nfsnobody')
-                    posix.chown(test_support.TESTFN, ent.pw_uid, ent.pw_gid)
-                except KeyError:
-                    pass
-            else:
-                # non-root cannot chown to root, raises OSError
-                self.assertRaises(OSError, posix.chown,
-                                  test_support.TESTFN, 0, 0)
+        # test a successful chown call
+        chown_func(first_param, os.getuid(), os.getgid())
 
-            # test a successful chown call
-            posix.chown(test_support.TESTFN, os.getuid(), os.getgid())
+    @unittest.skipUnless(hasattr(posix, 'chown'), "test needs os.chown()")
+    def test_chown(self):
+        # raise an OSError if the file does not exist
+        os.unlink(test_support.TESTFN)
+        self.assertRaises(OSError, posix.chown, test_support.TESTFN, -1, -1)
+
+        # re-create the file
+        open(test_support.TESTFN, 'w').close()
+        self._test_all_chown_common(posix.chown, test_support.TESTFN)
+
+    @unittest.skipUnless(hasattr(posix, 'fchown'), "test needs os.fchown()")
+    def test_fchown(self):
+        os.unlink(test_support.TESTFN)
+
+        # re-create the file
+        test_file = open(test_support.TESTFN, 'w')
+        try:
+            fd = test_file.fileno()
+            self._test_all_chown_common(posix.fchown, fd)
+        finally:
+            test_file.close()
+
+    @unittest.skipUnless(hasattr(posix, 'lchown'), "test needs os.lchown()")
+    def test_lchown(self):
+        os.unlink(test_support.TESTFN)
+        # create a symlink
+        os.symlink('/tmp/dummy-symlink-target', test_support.TESTFN)
+        self._test_all_chown_common(posix.lchown, test_support.TESTFN)
 
     def test_chdir(self):
         if hasattr(posix, 'chdir'):
