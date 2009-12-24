@@ -18,10 +18,10 @@ available.  If text-mode browsers are used, the calling process will block until
 the user exits the browser.
 
 If the environment variable :envvar:`BROWSER` exists, it is interpreted to
-override the platform default list of browsers, as a os.pathsep-separated list
-of browsers to try in order.  When the value of a list part contains the string
-``%s``, then it is  interpreted as a literal browser command line to be used
-with the argument URL substituted for ``%s``; if the part does not contain
+override the platform default list of browsers, as a :data:`os.pathsep`-separated
+list of browsers to try in order.  When the value of a list part contains the
+string ``%s``, then it is  interpreted as a literal browser command line to be
+used with the argument URL substituted for ``%s``; if the part does not contain
 ``%s``, it is simply interpreted as the name of the browser to launch. [1]_
 
 For non-Unix platforms, or when a remote browser is available on Unix, the
@@ -162,10 +162,10 @@ Notes:
 
 Here are some simple examples::
 
-   url = 'http://www.python.org'
+   url = 'http://www.python.org/'
 
    # Open URL in a new tab, if a browser window is already open.
-   webbrowser.open_new_tab(url + '/doc')
+   webbrowser.open_new_tab(url + 'doc/')
 
    # Open URL in new window, raising the window if possible.
    webbrowser.open_new(url)
@@ -180,7 +180,7 @@ Browser controllers provide these methods which parallel three of the
 module-level convenience functions:
 
 
-.. method:: controller.open(url[, new[, autoraise=True]])
+.. method:: controller.open(url[, new=0[, autoraise=True]])
 
    Display *url* using the browser handled by this controller. If *new* is 1, a new
    browser window is opened if possible. If *new* is 2, a new browser page ("tab")
