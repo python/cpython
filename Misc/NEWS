@@ -516,6 +516,9 @@ Build
 - Issue 5390: Add uninstall icon independent of whether file
   extensions are installed.
 
+- Issue #7541: when using ``python-config`` with a framework install the compiler might
+  use the wrong library.
+
 Documentation
 ------------
 
