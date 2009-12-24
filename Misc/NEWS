@@ -128,6 +128,10 @@ Build
   binary distribution on OSX 10.6 even when the user does not
   have the 10.4u SDK installed.
 
+- Issue #7541: when using ``python-config`` with a framework install the compiler might
+  use the wrong library.
+
+
 Tests
 -----
 
