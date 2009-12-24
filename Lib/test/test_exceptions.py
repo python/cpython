@@ -430,8 +430,116 @@ class ExceptionTests(unittest.TestCase):
             self.assertTrue("maximum recursion depth exceeded" in str(v), v)
 
 
+
+# Helper class used by TestSameStrAndUnicodeMsg
+class ExcWithOverriddenStr(Exception):
+    """Subclass of Exception that accepts a keyword 'msg' arg that is
+    returned by __str__. 'msg' won't be included in self.args"""
+    def __init__(self, *args, **kwargs):
+        self.msg = kwargs.pop('msg') # msg should always be present
+        super(ExcWithOverriddenStr, self).__init__(*args, **kwargs)
+    def __str__(self):
+        return self.msg
+
+
+class TestSameStrAndUnicodeMsg(unittest.TestCase):
+    """unicode(err) should return the same message of str(err). See #6108"""
+
+    def check_same_msg(self, exc, msg):
+        """Helper function that checks if str(exc) == unicode(exc) == msg"""
+        self.assertEqual(str(exc), msg)
+        self.assertEqual(str(exc), unicode(exc))
+
+    def test_builtin_exceptions(self):
+        """Check same msg for built-in exceptions"""
+        # These exceptions implement a __str__ method that uses the args
+        # to create a better error message. unicode(e) should return the same
+        # message.
+        exceptions = [
+            SyntaxError('invalid syntax', ('<string>', 1, 3, '2+*3')),
+            IOError(2, 'No such file or directory'),
+            KeyError('both should have the same quotes'),
+            UnicodeDecodeError('ascii', '\xc3\xa0', 0, 1,
+                               'ordinal not in range(128)'),
+            UnicodeEncodeError('ascii', u'\u1234', 0, 1,
+                               'ordinal not in range(128)')
+        ]
+        for exception in exceptions:
+            self.assertEqual(str(exception), unicode(exception))
+
+    def test_0_args(self):
+        """Check same msg for Exception with 0 args"""
+        # str() and unicode() on an Exception with no args should return an
+        # empty string
+        self.check_same_msg(Exception(), '')
+
+    def test_0_args_with_overridden___str__(self):
+        """Check same msg for exceptions with 0 args and overridden __str__"""
+        # str() and unicode() on an exception with overridden __str__ that
+        # returns an ascii-only string should return the same string
+        for msg in ('foo', u'foo'):
+            self.check_same_msg(ExcWithOverriddenStr(msg=msg), msg)
+
+        # if __str__ returns a non-ascii unicode string str() should fail
+        # but unicode() should return the unicode string
+        e = ExcWithOverriddenStr(msg=u'f\xf6\xf6') # no args
+        self.assertRaises(UnicodeEncodeError, str, e)
+        self.assertEqual(unicode(e), u'f\xf6\xf6')
+
+    def test_1_arg(self):
+        """Check same msg for Exceptions with 1 arg"""
+        for arg in ('foo', u'foo'):
+            self.check_same_msg(Exception(arg), arg)
+
+        # if __str__ is not overridden and self.args[0] is a non-ascii unicode
+        # string, str() should try to return str(self.args[0]) and fail.
+        # unicode() should return unicode(self.args[0]) and succeed.
+        e = Exception(u'f\xf6\xf6')
+        self.assertRaises(UnicodeEncodeError, str, e)
+        self.assertEqual(unicode(e), u'f\xf6\xf6')
+
+    def test_1_arg_with_overridden___str__(self):
+        """Check same msg for exceptions with overridden __str__ and 1 arg"""
+        # when __str__ is overridden and __unicode__ is not implemented
+        # unicode(e) returns the same as unicode(e.__str__()).
+        for msg in ('foo', u'foo'):
+            self.check_same_msg(ExcWithOverriddenStr('arg', msg=msg), msg)
+
+        # if __str__ returns a non-ascii unicode string, str() should fail
+        # but unicode() should succeed.
+        e = ExcWithOverriddenStr('arg', msg=u'f\xf6\xf6') # 1 arg
+        self.assertRaises(UnicodeEncodeError, str, e)
+        self.assertEqual(unicode(e), u'f\xf6\xf6')
+
+    def test_many_args(self):
+        """Check same msg for Exceptions with many args"""
+        argslist = [
+            (3, 'foo'),
+            (1, u'foo', 'bar'),
+            (4, u'f\xf6\xf6', u'bar', 'baz')
+        ]
+        # both str() and unicode() should return a repr() of the args
+        for args in argslist:
+            self.check_same_msg(Exception(*args), repr(args))
+
+    def test_many_args_with_overridden___str__(self):
+        """Check same msg for exceptions with overridden __str__ and many args"""
+        # if __str__ returns an ascii string / ascii unicode string
+        # both str() and unicode() should succeed
+        for msg in ('foo', u'foo'):
+            e = ExcWithOverriddenStr('arg1', u'arg2', u'f\xf6\xf6', msg=msg)
+            self.check_same_msg(e, msg)
+
+        # if __str__ returns a non-ascii unicode string, str() should fail
+        # but unicode() should succeed
+        e = ExcWithOverriddenStr('arg1', u'f\xf6\xf6', u'arg3', # 3 args
+                                 msg=u'f\xf6\xf6')
+        self.assertRaises(UnicodeEncodeError, str, e)
+        self.assertEqual(unicode(e), u'f\xf6\xf6')
+
+
 def test_main():
-    run_unittest(ExceptionTests)
+    run_unittest(ExceptionTests, TestSameStrAndUnicodeMsg)
 
 if __name__ == '__main__':
     test_main()
