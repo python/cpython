@@ -658,7 +658,7 @@ class HTTPConnection:
         if strict is not None:
             self.strict = strict
 
-    def _set_tunnel(self, host, port=None):
+    def _set_tunnel(self, host, port=None, headers=None):
         """ Sets up the host and the port for the HTTP CONNECT Tunnelling.
 
         The headers argument should be a mapping of extra HTTP headers
