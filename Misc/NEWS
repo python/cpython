@@ -64,6 +64,9 @@ Build
 
 - Switch to OpenSSL 0.9.8l on Windows.
 
+- Issue #7541: when using ``python-config`` with a framework install the compiler might
+  use the wrong library.
+
 Tests
 -----
 
