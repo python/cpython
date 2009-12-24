@@ -51,5 +51,14 @@
 	<string>%VERSION%</string>
 	<key>CFBundleVersion</key>
 	<string>%VERSION%</string>
+<!--
+	<key>LSMinimumSystemVersionByArchitecture</key>
+	<dict>
+	    <key>x86_64</key>
+	    <string>10.6.0</string>
+	    <key>ppc64</key>
+	    <string>10.6.0</string>
+	</dict>
+-->
 </dict>
 </plist>

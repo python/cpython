@@ -1079,21 +1079,12 @@ frameworkinstallmaclib:
 frameworkinstallapps:
 	cd Mac && $(MAKE) installapps DESTDIR="$(DESTDIR)"
 
-frameworkinstallapps4way:
-	cd Mac && $(MAKE) installapps4way DESTDIR="$(DESTDIR)"
-
 # This install the unix python and pythonw tools in /usr/local/bin
 frameworkinstallunixtools:
 	cd Mac && $(MAKE) installunixtools DESTDIR="$(DESTDIR)"
 
-frameworkinstallunixtools4way:
-	cd Mac && $(MAKE) installunixtools4way DESTDIR="$(DESTDIR)"
-
 frameworkaltinstallunixtools:
 	cd Mac && $(MAKE) altinstallunixtools DESTDIR="$(DESTDIR)"
-
-frameworkaltinstallunixtools4way:
-	cd Mac && $(MAKE) altinstallunixtools4way DESTDIR="$(DESTDIR)"
 
 # This installs the Demos and Tools into the applications directory.
 # It is not part of a normal frameworkinstall

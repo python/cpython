@@ -25,7 +25,7 @@ Mac-specific arguments to configure
   Create a universal binary build of of Python. This can be used with both
   regular and framework builds.
 
-  The optional argument specifies with OSX SDK should be used to perform the
+  The optional argument specifies which OSX SDK should be used to perform the
   build. This defaults to ``/Developer/SDKs/MacOSX.10.4u.sdk``, specify 
   ``/`` when building on a 10.5 system, especially when building 64-bit code.
 
@@ -88,10 +88,29 @@ values are available:
 
   * ``intel``:	  ``i386``, ``x86_64``
 
-To build a universal binary that includes a 64-bit architecture you must build
-on a system running OSX 10.5 or later. The ``all`` flavour can only be build on
+To build a universal binary that includes a 64-bit architecture, you must build
+on a system running OSX 10.5 or later. The ``all`` flavour can only be built on
 OSX 10.5.
 
+The makefile for a framework build will install ``python32`` and ``pythonw32`` 
+binaries when the universal architecures includes at least one 32-bit architecture
+(that is, for all flavours but ``64-bit``).
+
+Running a specific archicture
+.............................
+
+You can run code using a specific architecture using the ``arch`` command::
+
+   $ arch -i386 python
+
+Or to explicitly run in 32-bit mode, regardless of the machine hardware::
+
+   $ arch -i386 -ppc python
+
+NOTE: When you're using a framework install of Python this requires at least
+Python 2.7 or 3.2, in earlier versions the python (and pythonw) commands are
+wrapper tools that execute the real interpreter without ensuring that the
+real interpreter runs with the same architecture.
 
 Building and using a framework-based Python on Mac OS X.
 ========================================================
