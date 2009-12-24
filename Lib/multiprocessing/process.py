@@ -138,7 +138,7 @@ class Process(object):
 
     @name.setter
     def name(self, name):
-        assert isinstance(name, str), 'name must be a string'
+        assert isinstance(name, basestring), 'name must be a string'
         self._name = name
 
     @property
