@@ -399,13 +399,11 @@ class ExceptionTests(unittest.TestCase):
                 return -1
         self.assertRaises(RuntimeError, g)
 
-    def testUnicodeStrUsage(self):
-        # Make sure both instances and classes have a str and unicode
-        # representation.
-        self.assertTrue(str(Exception))
+    def test_str(self):
+        # Make sure both instances and classes have a str representation.
         self.assertTrue(str(Exception))
         self.assertTrue(str(Exception('a')))
-        self.assertTrue(str(Exception('a')))
+        self.assertTrue(str(Exception('a', 'b')))
 
     def testExceptionCleanupNames(self):
         # Make sure the local variable bound to the exception instance by
