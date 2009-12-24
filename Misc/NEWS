@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #6108: unicode(exception) and str(exception) should return the same
+  message when only __str__ (and not __unicode__) is overridden in the subclass.
+
 - Issue #6834: replace the implementation for the 'python' and 'pythonw'
   executables on OSX.
 

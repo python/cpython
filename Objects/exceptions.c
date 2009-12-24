@@ -122,6 +122,21 @@ BaseException_unicode(PyBaseExceptionObject *self)
 {
     PyObject *out;
 
+    /* issue6108: if __str__ has been overridden in the subclass, unicode()
+       should return the message returned by __str__ as used to happen
+       before this method was implemented. */
+    if (Py_TYPE(self)->tp_str != (reprfunc)BaseException_str) {
+        PyObject *str;
+        /* Unlike PyObject_Str, tp_str can return unicode (i.e. return the
+           equivalent of unicode(e.__str__()) instead of unicode(str(e))). */
+        str = Py_TYPE(self)->tp_str((PyObject*)self);
+        if (str == NULL)
+            return NULL;
+        out = PyObject_Unicode(str);
+        Py_DECREF(str);
+        return out;
+    }
+
     switch (PyTuple_GET_SIZE(self->args)) {
     case 0:
         out = PyUnicode_FromString("");
