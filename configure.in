@@ -112,6 +112,7 @@ AC_SUBST(UNIVERSALSDK)
 AC_SUBST(ARCH_RUN_32BIT)
 
 UNIVERSAL_ARCHS="32-bit"
+AC_SUBST(LIPO_32BIT_FLAGS)
 AC_MSG_CHECKING(for --with-universal-archs)
 AC_ARG_WITH(universal-archs,
     AC_HELP_STRING(--with-universal-archs=ARCH, select architectures for universal build ("32-bit", "64-bit", "3-way", "intel" or "all")),
@@ -167,14 +168,8 @@ AC_ARG_ENABLE(framework,
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
 		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
 		FRAMEWORKALTINSTALLFIRST="frameworkinstallstructure "
-		if test "$UNIVERSAL_ARCHS" = "all"
-		then
-			FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps4way frameworkinstallunixtools4way"
-			FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps4way frameworkaltinstallunixtools4way"
-		else
-			FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
-			FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
-		fi
+		FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
+		FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
 
 		if test "x${prefix}" = "xNONE" ; then
 			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
@@ -206,11 +201,6 @@ AC_ARG_ENABLE(framework,
 	fi
 	enable_framework=
 
-	if test "$UNIVERSAL_ARCHS" = "all" 
-	then
-		FRAMEWORKINSTALLLAST=update4wayuniversal
-		FRAMEWORKALTINSTALLLAST=update4wayuniversal
-	fi
 ])
 AC_SUBST(PYTHONFRAMEWORK)
 AC_SUBST(PYTHONFRAMEWORKIDENTIFIER)
@@ -890,22 +880,27 @@ yes)
 	        if test "$UNIVERSAL_ARCHS" = "32-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
 		   ARCH_RUN_32BIT=""
+		   LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
 
 	         elif test "$UNIVERSAL_ARCHS" = "64-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
+		   LIPO_32BIT_FLAGS=""
 		   ARCH_RUN_32BIT="true"
 
 	         elif test "$UNIVERSAL_ARCHS" = "all" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
+		   LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
 		   ARCH_RUN_32BIT="arch -i386 -ppc"
 
 	         elif test "$UNIVERSAL_ARCHS" = "intel" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
+		   LIPO_32BIT_FLAGS="-extract i386"
 		   ARCH_RUN_32BIT="arch -i386"
 
 	         elif test "$UNIVERSAL_ARCHS" = "3-way" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
-		   ARCH_RUN_32BIT="arch -i386 -ppc"
+		   LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
+		   ARCH_RUN_32BIT="arch -i386 -ppc7400"
 
 		 else
 	           AC_MSG_ERROR([proper usage is --with-universal-arch=32-bit|64-bit|all|intel|3-way])

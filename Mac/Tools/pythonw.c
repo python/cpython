@@ -3,15 +3,145 @@
  * application bundle inside the Python framework. This is needed to run
  * GUI code: some GUI API's don't work unless the program is inside an
  * application bundle.
+ *
+ * This program uses posix_spawn rather than plain execv because we need
+ * slightly more control over how the "real" interpreter is executed.
  */
 #include <unistd.h>
+#include <spawn.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 #include <err.h>
+#include <dlfcn.h>
+#include <stdlib.h>
+#include <Python.h>
 
-static char Python[] = PYTHONWEXECUTABLE;
 
-int main(int argc, char **argv) {
-	argv[0] = Python;
-	execv(Python, argv);
-	err(1, "execv: %s", Python);
+extern char** environ;
+
+/*
+ * Locate the python framework by looking for the
+ * library that contains Py_Initialize.
+ *
+ * In a regular framework the structure is:
+ *
+ *    Python.framework/Versions/2.7
+ *    		/Python
+ *		/Resources/Python.app/Contents/MacOS/Python
+ *
+ * In a virtualenv style structure the expected
+ * structure is:
+ *
+ *    ROOT
+ *       /bin/pythonw
+ *       /.Python   <- the dylib
+ *       /.Resources/Python.app/Contents/MacOS/Python
+ *
+ * NOTE: virtualenv's are not an officially supported 
+ * feature, support for that structure is provided as
+ * a convenience.
+ */
+static char* get_python_path(void)
+{
+	size_t len;
+	Dl_info info;
+	char* end;
+	char* g_path;
+
+	if (dladdr(Py_Initialize, &info) == 0) {
+		return NULL;
+	}
+
+	len = strlen(info.dli_fname);
+
+	g_path = malloc(len+60);
+	if (g_path == NULL) {
+		return NULL;
+	}
+
+	strcpy(g_path, info.dli_fname);
+	end = g_path + len - 1;
+	while (end != g_path && *end != '/') {
+		end --;
+	}
+	end++;
+	if (end[1] == '.') {
+		end++;
+	}
+	strcpy(end, "Resources/Python.app/Contents/MacOS/Python");
+
+	return g_path;
+}
+
+static void
+setup_spawnattr(posix_spawnattr_t* spawnattr)
+{
+	size_t ocount;
+	size_t count;
+	cpu_type_t cpu_types[1];
+	short flags = 0;
+#ifdef __LP64__
+	int   ch;
+#endif
+
+	if ((errno = posix_spawnattr_init(spawnattr)) != 0) {
+		err(2, "posix_spawnattr_int");
+		/* NOTREACHTED */
+	}
+
+	count = 1;
+
+	/* Run the real python executable using the same architure as this 
+	 * executable, this allows users to controle the architecture using 
+	 * "arch -ppc python"
+	 */
+
+#if defined(__ppc64__)
+	cpu_types[0] = CPU_TYPE_POWERPC64;
+
+#elif defined(__x86_64__)
+	cpu_types[0] = CPU_TYPE_X86_64;
+
+#elif defined(__ppc__)
+	cpu_types[0] = CPU_TYPE_POWERPC;
+#elif defined(__i386__)
+	cpu_types[0] = CPU_TYPE_X86;
+#else
+#	error "Unknown CPU"
+#endif
+
+	if (posix_spawnattr_setbinpref_np(spawnattr, count, 
+				cpu_types, &ocount) == -1) {
+		err(1, "posix_spawnattr_setbinpref");
+		/* NOTREACHTED */
+	}
+	if (count != ocount) {
+		fprintf(stderr, "posix_spawnattr_setbinpref failed to copy\n");
+		exit(1);
+		/* NOTREACHTED */
+	}
+
+
+	/* 
+	 * Set flag that causes posix_spawn to behave like execv
+	 */
+	flags |= POSIX_SPAWN_SETEXEC;
+	if ((errno = posix_spawnattr_setflags(spawnattr, flags)) != 0) {
+		err(1, "posix_spawnattr_setflags");
+		/* NOTREACHTED */
+	}
+}
+
+int 
+main(int argc, char **argv) {
+	posix_spawnattr_t spawnattr = NULL;
+	char* exec_path = get_python_path();
+
+
+	setup_spawnattr(&spawnattr);		
+	posix_spawn(NULL, exec_path, NULL,
+		&spawnattr, argv, environ);
+	err(1, "posix_spawn: %s", argv[0]);
 	/* NOTREACHED */
 }
