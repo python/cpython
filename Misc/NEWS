@@ -12,6 +12,13 @@ What's New in Python 2.7 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #6834: replace the implementation for the 'python' and 'pythonw'
+  executables on OSX.
+
+  These executables now work properly with the arch(1) command:
+  ``arch -ppc python`` will start a universal binary version of python
+  in PPC mode (unlike previous releases).
+
 - Issue #1680159: unicode coercion during an 'in' operation no longer masks
   the underlying error when the coercion fails for the left hand operand.
 

@@ -48,7 +48,7 @@ os.chdir(os.path.expanduser('~/Documents'))
 # the interpreter in the framework, by following the symlink
 # exported in PYTHONEXECUTABLE.
 pyex = os.environ['PYTHONEXECUTABLE']
-sys.executable = os.path.join(os.path.dirname(pyex), os.readlink(pyex))
+sys.executable = os.path.join(sys.prefix, 'bin', 'python%d.%d'%(sys.version_info[:2]))
 
 # Remove any sys.path entries for the Resources dir in the IDLE.app bundle.
 p = pyex.partition('.app')
@@ -68,6 +68,8 @@ for idx, value in enumerate(sys.argv):
         break
 
 # Now it is safe to import idlelib.
+from idlelib import macosxSupport
+macosxSupport._appbundle = True
 from idlelib.PyShell import main
 if __name__ == '__main__':
     main()

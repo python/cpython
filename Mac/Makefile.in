@@ -15,6 +15,7 @@ LDFLAGS=@LDFLAGS@
 FRAMEWORKUNIXTOOLSPREFIX=@FRAMEWORKUNIXTOOLSPREFIX@
 PYTHONFRAMEWORK=@PYTHONFRAMEWORK@
 PYTHONFRAMEWORKIDENTIFIER=@PYTHONFRAMEWORKIDENTIFIER@
+LIPO_32BIT_FLAGS=@LIPO_32BIT_FLAGS@
 
 
 # These are normally glimpsed from the previous set
@@ -42,10 +43,8 @@ APPSUBDIRS=MacOS Resources
 CACHERSRC=$(srcdir)/scripts/cachersrc.py
 compileall=$(srcdir)/../Lib/compileall.py
 
-installapps: install_Python install_BuildApplet install_PythonLauncher \
-	install_IDLE checkapplepython install_pythonw install_versionedtools
-
-installapps4way: install_Python4way install_BuildApplet install_PythonLauncher install_IDLE install_pythonw4way install_versionedtools
+installapps: install_Python install_pythonw install_BuildApplet install_PythonLauncher \
+	install_IDLE checkapplepython install_versionedtools
 
 
 install_pythonw: pythonw
@@ -53,33 +52,13 @@ install_pythonw: pythonw
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/python$(VERSION)"
 	ln -sf python$(VERSION) "$(DESTDIR)$(prefix)/bin/python"
 	ln -sf pythonw$(VERSION) "$(DESTDIR)$(prefix)/bin/pythonw"
-
-
-# Install 3 variants of python/pythonw: 
-# 	- 32-bit (i386 and ppc)
-# 	- 64-bit (x86_64 and ppc64)
-# 	- all    (all four architectures)
-# 	- Make 'python' and 'pythonw' aliases for the 32-bit variant
-install_pythonw4way: pythonw-32 pythonw-64 pythonw
-	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-64 "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-64"
-	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-64 "$(DESTDIR)$(prefix)/bin/python$(VERSION)-64"
-	ln -sf python$(VERSION)-64 "$(DESTDIR)$(prefix)/bin/python-64"
-	ln -sf pythonw$(VERSION)-64 "$(DESTDIR)$(prefix)/bin/pythonw-64"
-
-	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-32 "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-32"
-	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw-32 "$(DESTDIR)$(prefix)/bin/python$(VERSION)-32"
+ifneq ($(LIPO_32BIT_FLAGS),)
+	lipo $(LIPO_32BIT_FLAGS) -output $(DESTDIR)$(prefix)/bin/python$(VERSION)-32 pythonw
+	lipo $(LIPO_32BIT_FLAGS) -output $(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-32 pythonw
 	ln -sf python$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/python-32"
 	ln -sf pythonw$(VERSION)-32 "$(DESTDIR)$(prefix)/bin/pythonw-32"
+endif
 
-	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-all"
-	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/python$(VERSION)-all"
-	ln -sf python$(VERSION)-all "$(DESTDIR)$(prefix)/bin/python-all"
-	ln -sf pythonw$(VERSION)-all "$(DESTDIR)$(prefix)/bin/pythonw-all"
-
-	ln -sf pythonw$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
-	ln -sf python$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/python$(VERSION)"
-	ln -sf pythonw$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/pythonw"
-	ln -sf python$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/python"
 
 #
 # Install unix tools in /usr/local/bin. These are just aliases for the 
@@ -97,10 +76,6 @@ installunixtools:
 	done
 
 
-# TODO: install symlinks for -32, -64 and -all as well
-installunixtools4way: installunixtools
-
-
 #
 # Like installunixtools, but only install links to the versioned binaries.
 #
@@ -113,9 +88,6 @@ altinstallunixtools:
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
-
-# TODO: -32, -64 and -all variants
-altinstallunixtools4way: altinstallunixtools
 
 # By default most tools are installed without a version in their basename, to
 # make it easier to install (and use) several python versions side-by-side move
@@ -141,16 +113,7 @@ install_versionedtools:
 
 
 pythonw: $(srcdir)/Tools/pythonw.c Makefile
-	$(CC) $(LDFLAGS) -o $@ $(srcdir)/Tools/pythonw.c \
-		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"'
-
-pythonw-32: $(srcdir)/Tools/pythonw.c Makefile
-	$(CC) $(LDFLAGS) -o $@ -arch i386 -arch ppc $(srcdir)/Tools/pythonw.c \
-		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-32"'
-
-pythonw-64: $(srcdir)/Tools/pythonw.c Makefile
-	$(CC) $(LDFLAGS) -o $@ -arch x86_64 -arch ppc64 $(srcdir)/Tools/pythonw.c \
-		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-64"'
+	$(CC) $(LDFLAGS) -o $@ $(srcdir)/Tools/pythonw.c -I.. -I$(srcdir)/../Include ../$(PYTHONFRAMEWORK).framework/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
 
 install_PythonLauncher:
 	cd PythonLauncher && make install DESTDIR=$(DESTDIR)
@@ -206,11 +169,6 @@ install_Python:
 		> "$(DESTDIR)$(APPINSTALLDIR)/Contents/Info.plist"
 	rm "$(DESTDIR)$(APPINSTALLDIR)/Contents/Info.plist.in"
 
-install_Python4way: install_Python
-	lipo  -extract i386 -extract ppc7400 -output "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-32" "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
-	lipo  -extract x86_64 -extract ppc64 -output "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-64" "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"
-
-
 
 install_IDLE:
 	cd IDLE && make install
@@ -218,9 +176,13 @@ install_IDLE:
 install_BuildApplet:
 	$(RUNSHARED) @ARCH_RUN_32BIT@ $(BUILDPYTHON) $(srcdir)/scripts/BuildApplet.py \
 		--destroot "$(DESTDIR)" \
-		--python=$(prefix)/Resources/Python.app/Contents/MacOS/$(PYTHONFRAMEWORK)`test -f "$(DESTDIR)$(prefix)/Resources/Python.app/Contents/MacOS/$(PYTHONFRAMEWORK)-32" && echo "-32"`  \
+		--python=$(prefix)/Resources/Python.app/Contents/MacOS/Python \
 		--output "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app" \
 		$(srcdir)/scripts/BuildApplet.py
+ifneq ($(LIPO_32BIT_FLAGS),)
+	rm "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app/Contents/MacOS/Python"
+	lipo $(LIPO_32BIT_FLAGS) -output "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app/Contents/MacOS/Python" $(BUILDPYTHON)
+endif   
 
 MACLIBDEST=$(LIBDEST)/plat-mac
 MACTOOLSDEST=$(prefix)/Mac/Tools

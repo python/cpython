@@ -658,6 +658,7 @@ SOVERSION
 CONFIG_ARGS
 UNIVERSALSDK
 ARCH_RUN_32BIT
+LIPO_32BIT_FLAGS
 PYTHONFRAMEWORK
 PYTHONFRAMEWORKIDENTIFIER
 PYTHONFRAMEWORKDIR
@@ -1915,6 +1916,7 @@ fi
 
 
 UNIVERSAL_ARCHS="32-bit"
+
 { echo "$as_me:$LINENO: checking for --with-universal-archs" >&5
 echo $ECHO_N "checking for --with-universal-archs... $ECHO_C" >&6; }
 
@@ -1994,14 +1996,8 @@ if test "${enable_framework+set}" = set; then
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
 		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
 		FRAMEWORKALTINSTALLFIRST="frameworkinstallstructure bininstall maninstall"
-		if test "$UNIVERSAL_ARCHS" = "all"
-		then
-			FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps4way frameworkinstallunixtools4way"
-			FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps4way frameworkaltinstallunixtools4way"
-		else
-			FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
-			FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
-		fi
+		FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
+		FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
 
 		if test "x${prefix}" = "xNONE" ; then
 			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
@@ -2041,11 +2037,6 @@ else
 	fi
 	enable_framework=
 
-	if test "$UNIVERSAL_ARCHS" = "all"
-	then
-		FRAMEWORKINSTALLLAST=update4wayuniversal
-		FRAMEWORKALTINSTALLLAST=update4wayuniversal
-	fi
 
 fi
 
@@ -3866,7 +3857,7 @@ else
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 
 
@@ -4697,22 +4688,27 @@ echo "${ECHO_T}$ac_cv_no_strict_aliasing_ok" >&6; }
 	        if test "$UNIVERSAL_ARCHS" = "32-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
 		   ARCH_RUN_32BIT=""
+		   LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
 
 	         elif test "$UNIVERSAL_ARCHS" = "64-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
+		   LIPO_32BIT_FLAGS=""
 		   ARCH_RUN_32BIT="true"
 
 	         elif test "$UNIVERSAL_ARCHS" = "all" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
+		   LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
 		   ARCH_RUN_32BIT="arch -i386 -ppc"
 
 	         elif test "$UNIVERSAL_ARCHS" = "intel" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
+		   LIPO_32BIT_FLAGS="-extract i386"
 		   ARCH_RUN_32BIT="arch -i386"
 
 	         elif test "$UNIVERSAL_ARCHS" = "3-way" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
-		   ARCH_RUN_32BIT="arch -i386 -ppc"
+		   LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
+		   ARCH_RUN_32BIT="arch -i386 -ppc7400"
 
 		 else
 	           { { echo "$as_me:$LINENO: error: proper usage is --with-universal-arch=32-bit|64-bit|all|intel|3-way" >&5
@@ -5414,7 +5410,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -5435,7 +5431,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -6533,7 +6529,7 @@ _ACEOF
 
 
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 { echo "$as_me:$LINENO: result: $was_it_defined" >&5
 echo "${ECHO_T}$was_it_defined" >&6; }
@@ -7063,7 +7059,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_type_uid_t=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $ac_cv_type_uid_t" >&5
@@ -15723,7 +15719,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   unistd_defines_pthreads=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
     { echo "$as_me:$LINENO: result: $unistd_defines_pthreads" >&5
 echo "${ECHO_T}$unistd_defines_pthreads" >&6; }
@@ -17337,7 +17333,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "yes" >/dev/null 2>&1; then
   ipv6type=$i
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 			;;
 		kame)
@@ -17360,7 +17356,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 				ipv6libdir=/usr/local/v6/lib
 				ipv6trylibc=yes
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 			;;
 		linux-glibc)
@@ -17381,7 +17377,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   ipv6type=$i;
 				ipv6trylibc=yes
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 			;;
 		linux-inet6)
@@ -17419,7 +17415,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 				ipv6lib=inet6;
 				ipv6libdir=/usr/local/v6/lib
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 			;;
 		v6d)
@@ -17442,7 +17438,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 				ipv6libdir=/usr/local/v6/lib;
 				BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 			;;
 		zeta)
@@ -17464,7 +17460,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 				ipv6lib=inet6;
 				ipv6libdir=/usr/local/v6/lib
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 			;;
 		esac
@@ -26007,7 +26003,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
-rm -f conftest*
+rm -f -r conftest*
 
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -26026,7 +26022,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -26296,7 +26292,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -28235,6 +28231,7 @@ SOVERSION!$SOVERSION$ac_delim
 CONFIG_ARGS!$CONFIG_ARGS$ac_delim
 UNIVERSALSDK!$UNIVERSALSDK$ac_delim
 ARCH_RUN_32BIT!$ARCH_RUN_32BIT$ac_delim
+LIPO_32BIT_FLAGS!$LIPO_32BIT_FLAGS$ac_delim
 PYTHONFRAMEWORK!$PYTHONFRAMEWORK$ac_delim
 PYTHONFRAMEWORKIDENTIFIER!$PYTHONFRAMEWORKIDENTIFIER$ac_delim
 PYTHONFRAMEWORKDIR!$PYTHONFRAMEWORKDIR$ac_delim
@@ -28289,7 +28286,6 @@ LIBTOOL_CRUFT!$LIBTOOL_CRUFT$ac_delim
 SO!$SO$ac_delim
 LDSHARED!$LDSHARED$ac_delim
 BLDSHARED!$BLDSHARED$ac_delim
-CCSHARED!$CCSHARED$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -28331,6 +28327,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+CCSHARED!$CCSHARED$ac_delim
 LINKFORSHARED!$LINKFORSHARED$ac_delim
 CFLAGSFORSHARED!$CFLAGSFORSHARED$ac_delim
 SHLIBS!$SHLIBS$ac_delim
@@ -28357,7 +28354,7 @@ SRCDIRS!$SRCDIRS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 24; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 25; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
