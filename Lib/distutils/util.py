@@ -162,10 +162,20 @@ def get_platform ():
                     raise ValueError(
                        "Don't know machine value for archs=%r"%(archs,))
 
+            elif machine == 'i386':
+                # On OSX the machine type returned by uname is always the
+                # 32-bit variant, even if the executable architecture is
+                # the 64-bit variant
+                if sys.maxsize >= 2**32:
+                    machine = 'x86_64'
 
             elif machine in ('PowerPC', 'Power_Macintosh'):
                 # Pick a sane name for the PPC architecture.
                 machine = 'ppc'
+
+                # See 'i386' case
+                if sys.maxsize >= 2**32:
+                    machine = 'ppc64'
 
     return "%s-%s-%s" % (osname, release, machine)
 
