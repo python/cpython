@@ -5,6 +5,35 @@ MacOSX Notes
 This document provides a quick overview of some Mac OS X specific features in
 the Python distribution.
 
+* ``--enable-framework``
+
+  If this argument is specified the build will create a Python.framework rather
+  than a traditional Unix install. See the section
+  _`Building and using a framework-based Python on Mac OS X` for more 
+  information on frameworks.
+
+* ``--with-framework-name=NAME``
+
+  Specify the name for the python framework, defaults to ``Python``. This option
+  is only valid when ``--enable-framework`` is specified.
+
+* ``--enable-universalsdk[=PATH]``
+
+  Create a universal binary build of of Python. This can be used with both
+  regular and framework builds.
+
+  The optional argument specifies which OSX SDK should be used to perform the
+  build. This defaults to ``/Developer/SDKs/MacOSX.10.4u.sdk``, specify 
+  ``/`` when building on a 10.5 system, especially when building 64-bit code.
+
+  See the section _`Building and using a universal binary of Python on Mac OS X`
+  for more information.
+
+* ``--with-univeral-archs=VALUE``
+
+  Specify the kind of universal binary that should be created. This option is 
+  only valid when ``--enable-universalsdk`` is specified.
+
 
 Building and using a universal binary of Python on Mac OS X
 ===========================================================
@@ -31,6 +60,47 @@ unix build. Either way you will have to build python on Mac OS X 10.4 (or later)
 with Xcode 2.1 (or later). You also have to install the 10.4u SDK when 
 installing Xcode.
 
+2.1 Flavours of universal binaries
+..................................
+
+It is possible to build a number of flavours of the universal binary build,
+the default is a 32-bit only binary (i386 and ppc). The flavour can be
+specified using the option ``--with-universal-archs=VALUE``. The following
+values are available:
+
+  * ``32-bit``:   ``ppc``, ``i386``
+
+  * ``64-bit``:   ``ppc64``, ``x86_64``
+
+  * ``all``:      ``ppc``, ``ppc64``, ``i386``, ``x86_64``
+
+  * ``3-way``:	  ``ppc``, ``i386`` and ``x86_64``
+
+  * ``intel``:	  ``i386``, ``x86_64``
+
+To build a universal binary that includes a 64-bit architecture, you must build
+on a system running OSX 10.5 or later. The ``all`` flavour can only be built on
+OSX 10.5.
+
+The makefile for a framework build will install ``python32`` and ``pythonw32`` 
+binaries when the universal architecures includes at least one 32-bit architecture
+(that is, for all flavours but ``64-bit``).
+
+Running a specific archicture
+.............................
+
+You can run code using a specific architecture using the ``arch`` command::
+
+   $ arch -i386 python
+
+Or to explicitly run in 32-bit mode, regardless of the machine hardware::
+
+   $ arch -i386 -ppc python
+
+NOTE: When you're using a framework install of Python this requires at least
+Python 2.7 or 3.2, in earlier versions the python (and pythonw) commands are
+wrapper tools that execute the real interpreter without ensuring that the
+real interpreter runs with the same architecture.
 
 Building and using a framework-based Python on Mac OS X.
 ========================================================

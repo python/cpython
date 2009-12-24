@@ -12,6 +12,13 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6834: replace the implementation for the 'python' and 'pythonw'
+  executables on OSX.
+
+  These executables now work properly with the arch(1) command:
+  ``arch -ppc python`` will start a universal binary version of python
+  in PPC mode (unlike previous releases).
+
 - Issue #7466: segmentation fault when the garbage collector is called
   in the middle of populating a tuple.  Patch by Florent Xicluna.
 
