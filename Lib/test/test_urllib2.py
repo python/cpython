@@ -292,10 +292,11 @@ class MockHTTPClass:
             self._tunnel_headers = headers
         else:
             self._tunnel_headers.clear()
-    def request(self, method, url, body=None, headers={}):
+    def request(self, method, url, body=None, headers=None):
         self.method = method
         self.selector = url
-        self.req_headers += headers.items()
+        if headers is not None:
+            self.req_headers += headers.items()
         self.req_headers.sort()
         if body:
             self.data = body
@@ -415,7 +416,11 @@ class MockHTTPHandler(urllib2.BaseHandler):
 class MockHTTPSHandler(urllib2.AbstractHTTPHandler):
     # Useful for testing the Proxy-Authorization request by verifying the
     # properties of httpcon
-    httpconn = MockHTTPClass()
+
+    def __init__(self):
+        urllib2.AbstractHTTPHandler.__init__(self)
+        self.httpconn = MockHTTPClass()
+
     def https_open(self, req):
         return self.do_open(self.httpconn, req)
 
