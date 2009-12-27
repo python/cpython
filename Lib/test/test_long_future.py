@@ -118,9 +118,8 @@ class TrueDivisionTests(unittest.TestCase):
         except ZeroDivisionError:
             got = 'zerodivision'
 
-        if expected != got:
-            self.fail("Incorrectly rounded division {}/{}: expected {!r}, "
-                      "got {!r}.".format(a, b, expected, got))
+        self.assertEqual(expected, got, "Incorrectly rounded division {}/{}: "
+                         "expected {}, got {}".format(a, b, expected, got))
 
     @requires_IEEE_754
     def test_correctly_rounded_true_division(self):
