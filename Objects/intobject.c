@@ -645,16 +645,35 @@ int_classic_div(PyIntObject *x, PyIntObject *y)
 }
 
 static PyObject *
-int_true_divide(PyObject *v, PyObject *w)
+int_true_divide(PyIntObject *x, PyIntObject *y)
 {
+	long xi, yi;
 	/* If they aren't both ints, give someone else a chance.  In
 	   particular, this lets int/long get handled by longs, which
 	   underflows to 0 gracefully if the long is too big to convert
 	   to float. */
-	if (PyInt_Check(v) && PyInt_Check(w))
-		return PyFloat_Type.tp_as_number->nb_true_divide(v, w);
-	Py_INCREF(Py_NotImplemented);
-	return Py_NotImplemented;
+	CONVERT_TO_LONG(x, xi);
+	CONVERT_TO_LONG(y, yi);
+	if (yi == 0) {
+		PyErr_SetString(PyExc_ZeroDivisionError,
+				"division by zero");
+		return NULL;
+	}
+	if (xi == 0)
+		return PyFloat_FromDouble(yi < 0 ? -0.0 : 0.0);
+
+#define WIDTH_OF_ULONG (CHAR_BIT*SIZEOF_LONG)
+#if DBL_MANT_DIG < WIDTH_OF_ULONG
+	if ((xi >= 0 ? 0UL + xi : 0UL - xi) >> DBL_MANT_DIG ||
+	    (yi >= 0 ? 0UL + yi : 0UL - yi) >> DBL_MANT_DIG)
+		/* Large x or y.  Use long integer arithmetic. */
+		return PyLong_Type.tp_as_number->nb_true_divide(
+			(PyObject *)x, (PyObject *)y);
+	else
+#endif
+		/* Both ints can be exactly represented as doubles.  Do a
+		   floating-point division. */
+		return PyFloat_FromDouble((double)xi / (double)yi);
 }
 
 static PyObject *
@@ -1355,7 +1374,7 @@ static PyNumberMethods int_as_number = {
 	0,			/*nb_inplace_xor*/
 	0,			/*nb_inplace_or*/
 	(binaryfunc)int_div,	/* nb_floor_divide */
-	int_true_divide,	/* nb_true_divide */
+	(binaryfunc)int_true_divide, /* nb_true_divide */
 	0,			/* nb_inplace_floor_divide */
 	0,			/* nb_inplace_true_divide */
 	(unaryfunc)int_int,	/* nb_index */
