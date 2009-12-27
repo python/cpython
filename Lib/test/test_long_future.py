@@ -5,6 +5,7 @@ from __future__ import division
 
 import sys
 import random
+import math
 import unittest
 from test.test_support import run_unittest
 
@@ -46,7 +47,7 @@ def truediv(a, b):
     if 2*r > b or 2*r == b and q % 2 == 1:
         q += 1
 
-    result = float(q) * 2.**exp
+    result = math.ldexp(float(q), exp)
     return -result if negative else result
 
 class TrueDivisionTests(unittest.TestCase):
