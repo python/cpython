@@ -1190,8 +1190,9 @@ class FileHandler(BaseHandler):
     def get_names(self):
         if FileHandler.names is None:
             try:
-                FileHandler.names = (socket.gethostbyname('localhost'),
-                                    socket.gethostbyname(socket.gethostname()))
+                FileHandler.names = tuple(
+                    socket.gethostbyname_ex('localhost')[2] +
+                    socket.gethostbyname_ex(socket.gethostname())[2])
             except socket.gaierror:
                 FileHandler.names = (socket.gethostbyname('localhost'),)
         return FileHandler.names
@@ -1690,7 +1691,7 @@ class URLopener:
             return addinfourl(open(localname, 'rb'), headers, urlfile)
         host, port = splitport(host)
         if (not port
-           and socket.gethostbyname(host) in (localhost(), thishost())):
+           and socket.gethostbyname(host) in (localhost() + thishost())):
             urlfile = file
             if file[:1] == '/':
                 urlfile = 'file://' + file
@@ -2000,10 +2001,10 @@ def localhost():
 
 _thishost = None
 def thishost():
-    """Return the IP address of the current host."""
+    """Return the IP addresses of the current host."""
     global _thishost
     if _thishost is None:
-        _thishost = socket.gethostbyname(socket.gethostname())
+        _thishost = tuple(socket.gethostbyname_ex(socket.gethostname()[2]))
     return _thishost
 
 _ftperrors = None
