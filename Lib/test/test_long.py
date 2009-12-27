@@ -73,7 +73,7 @@ def truediv(a, b):
     if 2*r > b or 2*r == b and q % 2 == 1:
         q += 1
 
-    result = float(q) * 2.**exp
+    result = math.ldexp(q, exp)
     return -result if negative else result
 
 
