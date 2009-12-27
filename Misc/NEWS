@@ -12,6 +12,11 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #1811: improve accuracy and cross-platform consistency for
+  true division of integers: the result of a/b is now correctly
+  rounded for ints a and b (at least on IEEE 754 platforms), and in
+  particular does not depend on the internal representation of an int.
+
 - Issue #6834: replace the implementation for the 'python' and 'pythonw'
   executables on OSX.
 
