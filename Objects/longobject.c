@@ -3037,50 +3037,271 @@ long_classic_div(PyObject *v, PyObject *w)
 	return (PyObject *)div;
 }
 
+/* PyLong/PyLong -> float, with correctly rounded result. */
+
+#define MANT_DIG_DIGITS (DBL_MANT_DIG / PyLong_SHIFT)
+#define MANT_DIG_BITS (DBL_MANT_DIG % PyLong_SHIFT)
+
 static PyObject *
 long_true_divide(PyObject *v, PyObject *w)
 {
-	PyLongObject *a, *b;
-	double ad, bd;
-	int failed, aexp = -1, bexp = -1;
+	PyLongObject *a, *b, *x;
+	Py_ssize_t a_size, b_size, shift, extra_bits, diff, x_size, x_bits;
+	digit mask, low;
+	int inexact, negate, a_is_small, b_is_small;
+	double dx, result;
 
 	CONVERT_BINOP(v, w, &a, &b);
-	ad = _PyLong_AsScaledDouble((PyObject *)a, &aexp);
-	bd = _PyLong_AsScaledDouble((PyObject *)b, &bexp);
-	failed = (ad == -1.0 || bd == -1.0) && PyErr_Occurred();
-	Py_DECREF(a);
-	Py_DECREF(b);
-	if (failed)
-		return NULL;
-	/* 'aexp' and 'bexp' were initialized to -1 to silence gcc-4.0.x,
-	   but should really be set correctly after sucessful calls to
-	   _PyLong_AsScaledDouble() */
-	assert(aexp >= 0 && bexp >= 0);
 
-	if (bd == 0.0) {
+	/*
+	   Method in a nutshell:
+
+	     0. reduce to case a, b > 0; filter out obvious underflow/overflow
+	     1. choose a suitable integer 'shift'
+	     2. use integer arithmetic to compute x = floor(2**-shift*a/b)
+	     3. adjust x for correct rounding
+	     4. convert x to a double dx with the same value
+	     5. return ldexp(dx, shift).
+
+	   In more detail:
+
+	   0. For any a, a/0 raises ZeroDivisionError; for nonzero b, 0/b
+	   returns either 0.0 or -0.0, depending on the sign of b.  For a and
+	   b both nonzero, ignore signs of a and b, and add the sign back in
+	   at the end.  Now write a_bits and b_bits for the bit lengths of a
+	   and b respectively (that is, a_bits = 1 + floor(log_2(a)); likewise
+	   for b).  Then
+
+	      2**(a_bits - b_bits - 1) < a/b < 2**(a_bits - b_bits + 1).
+
+	   So if a_bits - b_bits > DBL_MAX_EXP then a/b > 2**DBL_MAX_EXP and
+	   so overflows.  Similarly, if a_bits - b_bits < DBL_MIN_EXP -
+	   DBL_MANT_DIG - 1 then a/b underflows to 0.  With these cases out of
+	   the way, we can assume that
+
+	      DBL_MIN_EXP - DBL_MANT_DIG - 1 <= a_bits - b_bits <= DBL_MAX_EXP.
+
+	   1. The integer 'shift' is chosen so that x has the right number of
+	   bits for a double, plus two or three extra bits that will be used
+	   in the rounding decisions.  Writing a_bits and b_bits for the
+	   number of significant bits in a and b respectively, a
+	   straightforward formula for shift is:
+
+	      shift = a_bits - b_bits - DBL_MANT_DIG - 2
+
+	   This is fine in the usual case, but if a/b is smaller than the
+	   smallest normal float then it can lead to double rounding on an
+	   IEEE 754 platform, giving incorrectly rounded results.  So we
+	   adjust the formula slightly.  The actual formula used is:
+
+	       shift = MAX(a_bits - b_bits, DBL_MIN_EXP) - DBL_MANT_DIG - 2
+
+	   2. The quantity x is computed by first shifting a (left -shift bits
+	   if shift <= 0, right shift bits if shift > 0) and then dividing by
+	   b.  For both the shift and the division, we keep track of whether
+	   the result is inexact, in a flag 'inexact'; this information is
+	   needed at the rounding stage.
+
+	   With the choice of shift above, together with our assumption that
+	   a_bits - b_bits >= DBL_MIN_EXP - DBL_MANT_DIG - 1, it follows
+	   that x >= 1.
+
+	   3. Now x * 2**shift <= a/b < (x+1) * 2**shift.  We want to replace
+	   this with an exactly representable float of the form
+
+	      round(x/2**extra_bits) * 2**(extra_bits+shift).
+
+	   For float representability, we need x/2**extra_bits <
+	   2**DBL_MANT_DIG and extra_bits + shift >= DBL_MIN_EXP -
+	   DBL_MANT_DIG.  This translates to the condition:
+
+	      extra_bits >= MAX(x_bits, DBL_MIN_EXP - shift) - DBL_MANT_DIG
+
+	   To round, we just modify the bottom digit of x in-place; this can
+	   end up giving a digit with value > PyLONG_MASK, but that's not a
+	   problem since digits can hold values up to 2*PyLONG_MASK+1.
+
+	   With the original choices for shift above, extra_bits will always
+	   be 2 or 3.  Then rounding under the round-half-to-even rule, we
+	   round up iff the most significant of the extra bits is 1, and
+	   either: (a) the computation of x in step 2 had an inexact result,
+	   or (b) at least one other of the extra bits is 1, or (c) the least
+	   significant bit of x (above those to be rounded) is 1.
+
+	   4. Conversion to a double is straightforward; all floating-point
+	   operations involved in the conversion are exact, so there's no
+	   danger of rounding errors.
+
+	   5. Use ldexp(x, shift) to compute x*2**shift, the final result.
+	   The result will always be exactly representable as a double, except
+	   in the case that it overflows.  To avoid dependence on the exact
+	   behaviour of ldexp on overflow, we check for overflow before
+	   applying ldexp.  The result of ldexp is adjusted for sign before
+	   returning.
+	*/
+
+	/* Reduce to case where a and b are both positive. */
+	a_size = ABS(Py_SIZE(a));
+	b_size = ABS(Py_SIZE(b));
+	negate = (Py_SIZE(a) < 0) ^ (Py_SIZE(b) < 0);
+	if (b_size == 0) {
 		PyErr_SetString(PyExc_ZeroDivisionError,
-			"long division or modulo by zero");
-		return NULL;
+				"division by zero");
+		goto error;
+	}
+	if (a_size == 0)
+		goto underflow_or_zero;
+
+	/* Fast path for a and b small (exactly representable in a double).
+	   Relies on floating-point division being correctly rounded; results
+	   may be subject to double rounding on x86 machines that operate with
+	   the x87 FPU set to 64-bit precision. */
+	a_is_small = a_size <= MANT_DIG_DIGITS ||
+		(a_size == MANT_DIG_DIGITS+1 &&
+		 a->ob_digit[MANT_DIG_DIGITS] >> MANT_DIG_BITS == 0);
+	b_is_small = b_size <= MANT_DIG_DIGITS ||
+		(b_size == MANT_DIG_DIGITS+1 &&
+		 b->ob_digit[MANT_DIG_DIGITS] >> MANT_DIG_BITS == 0);
+	if (a_is_small && b_is_small) {
+		double da, db;
+		da = a->ob_digit[--a_size];
+		while (a_size > 0)
+			da = da * PyLong_BASE + a->ob_digit[--a_size];
+		db = b->ob_digit[--b_size];
+		while (b_size > 0)
+			db = db * PyLong_BASE + b->ob_digit[--b_size];
+		result = da / db;
+		goto success;
 	}
 
-	/* True value is very close to ad/bd * 2**(PyLong_SHIFT*(aexp-bexp)) */
-	ad /= bd;	/* overflow/underflow impossible here */
-	aexp -= bexp;
-	if (aexp > INT_MAX / PyLong_SHIFT)
+	/* Catch obvious cases of underflow and overflow */
+	diff = a_size - b_size;
+	if (diff > PY_SSIZE_T_MAX/PyLong_SHIFT - 1)
+		/* Extreme overflow */
 		goto overflow;
-	else if (aexp < -(INT_MAX / PyLong_SHIFT))
-		return PyFloat_FromDouble(0.0);	/* underflow to 0 */
-	errno = 0;
-	ad = ldexp(ad, aexp * PyLong_SHIFT);
-	if (Py_OVERFLOWED(ad)) /* ignore underflow to 0.0 */
+	else if (diff < 1 - PY_SSIZE_T_MAX/PyLong_SHIFT)
+		/* Extreme underflow */
+		goto underflow_or_zero;
+	/* Next line is now safe from overflowing a Py_ssize_t */
+	diff = diff * PyLong_SHIFT + bits_in_digit(a->ob_digit[a_size - 1]) -
+		bits_in_digit(b->ob_digit[b_size - 1]);
+	/* Now diff = a_bits - b_bits. */
+	if (diff > DBL_MAX_EXP)
 		goto overflow;
-	return PyFloat_FromDouble(ad);
+	else if (diff < DBL_MIN_EXP - DBL_MANT_DIG - 1)
+		goto underflow_or_zero;
 
-overflow:
+	/* Choose value for shift; see comments for step 1 above. */
+	shift = MAX(diff, DBL_MIN_EXP) - DBL_MANT_DIG - 2;
+
+	inexact = 0;
+
+	/* x = abs(a * 2**-shift) */
+	if (shift <= 0) {
+		Py_ssize_t i, shift_digits = -shift / PyLong_SHIFT;
+		digit rem;
+		/* x = a << -shift */
+		if (a_size >= PY_SSIZE_T_MAX - 1 - shift_digits) {
+			/* In practice, it's probably impossible to end up
+			   here.  Both a and b would have to be enormous,
+			   using close to SIZE_T_MAX bytes of memory each. */
+			PyErr_SetString(PyExc_OverflowError,
+				    "intermediate overflow during division");
+			goto error;
+		}
+		x = _PyLong_New(a_size + shift_digits + 1);
+		if (x == NULL)
+			goto error;
+		for (i = 0; i < shift_digits; i++)
+			x->ob_digit[i] = 0;
+		rem = v_lshift(x->ob_digit + shift_digits, a->ob_digit,
+			       a_size, -shift % PyLong_SHIFT);
+		x->ob_digit[a_size + shift_digits] = rem;
+	}
+	else {
+		Py_ssize_t shift_digits = shift / PyLong_SHIFT;
+		digit rem;
+		/* x = a >> shift */
+		assert(a_size >= shift_digits);
+		x = _PyLong_New(a_size - shift_digits);
+		if (x == NULL)
+			goto error;
+		rem = v_rshift(x->ob_digit, a->ob_digit + shift_digits,
+			       a_size - shift_digits, shift % PyLong_SHIFT);
+		/* set inexact if any of the bits shifted out is nonzero */
+		if (rem)
+			inexact = 1;
+		while (!inexact && shift_digits > 0)
+			if (a->ob_digit[--shift_digits])
+				inexact = 1;
+	}
+	long_normalize(x);
+	x_size = Py_SIZE(x);
+
+	/* x //= b. If the remainder is nonzero, set inexact.  We own the only
+	   reference to x, so it's safe to modify it in-place. */
+	if (b_size == 1) {
+		digit rem = inplace_divrem1(x->ob_digit, x->ob_digit, x_size,
+				      b->ob_digit[0]);
+		long_normalize(x);
+		if (rem)
+			inexact = 1;
+	}
+	else {
+		PyLongObject *div, *rem;
+		div = x_divrem(x, b, &rem);
+		Py_DECREF(x);
+		x = div;
+		if (x == NULL)
+			goto error;
+		if (Py_SIZE(rem))
+			inexact = 1;
+		Py_DECREF(rem);
+	}
+	x_size = ABS(Py_SIZE(x));
+	assert(x_size > 0); /* result of division is never zero */
+	x_bits = (x_size-1)*PyLong_SHIFT+bits_in_digit(x->ob_digit[x_size-1]);
+
+	/* The number of extra bits that have to be rounded away. */
+	extra_bits = MAX(x_bits, DBL_MIN_EXP - shift) - DBL_MANT_DIG;
+	assert(extra_bits == 2 || extra_bits == 3);
+
+	/* Round by directly modifying the low digit of x. */
+	mask = (digit)1 << (extra_bits - 1);
+	low = x->ob_digit[0] | inexact;
+	if (low & mask && low & (3*mask-1))
+		low += mask;
+	x->ob_digit[0] = low & ~(mask-1U);
+
+	/* Convert x to a double dx; the conversion is exact. */
+	dx = x->ob_digit[--x_size];
+	while (x_size > 0)
+		dx = dx * PyLong_BASE + x->ob_digit[--x_size];
+	Py_DECREF(x);
+
+	/* Check whether ldexp result will overflow a double. */
+	if (shift + x_bits >= DBL_MAX_EXP &&
+	    (shift + x_bits > DBL_MAX_EXP || dx == ldexp(1.0, x_bits)))
+		goto overflow;
+	result = ldexp(dx, shift);
+
+  success:
+	Py_DECREF(a);
+	Py_DECREF(b);
+	return PyFloat_FromDouble(negate ? -result : result);
+
+  underflow_or_zero:
+	Py_DECREF(a);
+	Py_DECREF(b);
+	return PyFloat_FromDouble(negate ? -0.0 : 0.0);
+
+  overflow:
 	PyErr_SetString(PyExc_OverflowError,
-		"long/long too large for a float");
+			"integer division result too large for a float");
+  error:
+	Py_DECREF(a);
+	Py_DECREF(b);
 	return NULL;
-
 }
 
 static PyObject *
