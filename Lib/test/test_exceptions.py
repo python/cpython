@@ -618,6 +618,46 @@ class ExceptionTests(unittest.TestCase):
         tb2 = raiseMemError()
         self.assertEqual(tb1, tb2)
 
+    def test_exception_with_doc(self):
+        import _testcapi
+        doc2 = "This is a test docstring."
+        doc4 = "This is another test docstring."
+
+        self.assertRaises(SystemError, _testcapi.make_exception_with_doc,
+                          "error1")
+
+        # test basic usage of PyErr_NewException
+        error1 = _testcapi.make_exception_with_doc("_testcapi.error1")
+        self.assertIs(type(error1), type)
+        self.assertTrue(issubclass(error1, Exception))
+        self.assertIsNone(error1.__doc__)
+
+        # test with given docstring
+        error2 = _testcapi.make_exception_with_doc("_testcapi.error2", doc2)
+        self.assertEqual(error2.__doc__, doc2)
+
+        # test with explicit base (without docstring)
+        error3 = _testcapi.make_exception_with_doc("_testcapi.error3",
+                                                   base=error2)
+        self.assertTrue(issubclass(error3, error2))
+
+        # test with explicit base tuple
+        class C(object):
+            pass
+        error4 = _testcapi.make_exception_with_doc("_testcapi.error4", doc4,
+                                                   (error3, C))
+        self.assertTrue(issubclass(error4, error3))
+        self.assertTrue(issubclass(error4, C))
+        self.assertEqual(error4.__doc__, doc4)
+
+        # test with explicit dictionary
+        error5 = _testcapi.make_exception_with_doc("_testcapi.error5", "",
+                                                   error4, {'a': 1})
+        self.assertTrue(issubclass(error5, error4))
+        self.assertEqual(error5.a, 1)
+        self.assertEqual(error5.__doc__, "")
+
+
 def test_main():
     run_unittest(ExceptionTests)
 
