@@ -433,6 +433,15 @@ is a separate error indicator for each thread.
    argument can be used to specify a dictionary of class variables and methods.
 
 
+.. cfunction:: PyObject* PyErr_NewExceptionWithDoc(char *name, char *doc, PyObject *base, PyObject *dict)
+
+   Same as :cfunc:`PyErr_NewException`, except that the new exception class can
+   easily be given a docstring: If *doc* is non-*NULL*, it will be used as the
+   docstring for the exception class.
+
+   .. versionadded:: 2.7
+
+
 .. cfunction:: void PyErr_WriteUnraisable(PyObject *obj)
 
    This utility function prints a warning message to ``sys.stderr`` when an
