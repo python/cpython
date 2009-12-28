@@ -136,7 +136,8 @@ check_output(*popenargs, **kwargs):
 
     The arguments are the same as for the Popen constructor.  Example:
 
-    output = subprocess.check_output(["ls", "-l", "/dev/null"])
+    output = check_output(["ls", "-l", "/dev/null"])
+
 
 Exceptions
 ----------
@@ -462,7 +463,8 @@ _active = []
 
 def _cleanup():
     for inst in _active[:]:
-        if inst._internal_poll(_deadstate=sys.maxint) >= 0:
+        res = inst._internal_poll(_deadstate=sys.maxint)
+        if res is not None and res >= 0:
             try:
                 _active.remove(inst)
             except ValueError:
@@ -517,11 +519,11 @@ def check_output(*popenargs, **kwargs):
     'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
 
     The stdout argument is not allowed as it is used internally.
-    To capture standard error in the result, use stderr=subprocess.STDOUT.
+    To capture standard error in the result, use stderr=STDOUT.
 
     >>> check_output(["/bin/sh", "-c",
     ...               "ls -l non_existent_file ; exit 0"],
-    ...              stderr=subprocess.STDOUT)
+    ...              stderr=STDOUT)
     'ls: non_existent_file: No such file or directory\n'
     """
     if 'stdout' in kwargs:
