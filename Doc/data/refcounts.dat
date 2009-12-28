@@ -281,6 +281,12 @@ PyErr_NewException:char*:name::
 PyErr_NewException:PyObject*:base:0:
 PyErr_NewException:PyObject*:dict:0:
 
+PyErr_NewExceptionWithDoc:PyObject*::+1:
+PyErr_NewExceptionWithDoc:char*:name::
+PyErr_NewExceptionWithDoc:char*:doc::
+PyErr_NewExceptionWithDoc:PyObject*:base:0:
+PyErr_NewExceptionWithDoc:PyObject*:dict:0:
+
 PyErr_NoMemory:PyObject*::null:
 
 PyErr_NormalizeException:void:::

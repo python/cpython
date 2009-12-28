@@ -1716,6 +1716,26 @@ code_newempty(PyObject *self, PyObject *args)
 	return (PyObject *)PyCode_NewEmpty(filename, funcname, firstlineno);
 }
 
+/* Test PyErr_NewExceptionWithDoc (also exercise PyErr_NewException).
+   Run via Lib/test/test_exceptions.py */
+static PyObject *
+make_exception_with_doc(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+	const char *name;
+	const char *doc = NULL;
+	PyObject *base = NULL;
+	PyObject *dict = NULL;
+
+	static char *kwlist[] = {"name", "doc", "base", "dict", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+			"s|sOO:make_exception_with_doc", kwlist,
+					 &name, &doc, &base, &dict))
+		return NULL;
+
+	return PyErr_NewExceptionWithDoc(name, doc, base, dict);
+}
+
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
 	{"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -1774,6 +1794,8 @@ static PyMethodDef TestMethods[] = {
 	{"exception_print", exception_print, 	         METH_VARARGS},
 	{"argparsing",     argparsing, METH_VARARGS},
 	{"code_newempty", code_newempty, 	         METH_VARARGS},
+	{"make_exception_with_doc", (PyCFunction)make_exception_with_doc,
+	 METH_VARARGS | METH_KEYWORDS},
 	{NULL, NULL} /* sentinel */
 };
 

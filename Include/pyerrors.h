@@ -210,8 +210,10 @@ PyAPI_FUNC(void) _PyErr_BadInternalCall(const char *filename, int lineno);
 #define PyErr_BadInternalCall() _PyErr_BadInternalCall(__FILE__, __LINE__)
 
 /* Function to create a new exception */
-PyAPI_FUNC(PyObject *) PyErr_NewException(const char *name, PyObject *base,
-                                         PyObject *dict);
+PyAPI_FUNC(PyObject *) PyErr_NewException(
+	const char *name, PyObject *base, PyObject *dict);
+PyAPI_FUNC(PyObject *) PyErr_NewExceptionWithDoc(
+	const char *name, const char *doc, PyObject *base, PyObject *dict);
 PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 
 /* In sigcheck.c or signalmodule.c */

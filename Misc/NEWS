@@ -136,6 +136,8 @@ Core and Builtins
 C-API
 -----
 
+- Issue #7033: function ``PyErr_NewExceptionWithDoc()`` added.
+
 - Issue #7414: 'C' code wasn't being skipped properly (for keyword arguments)
   in PyArg_ParseTupleAndKeywords.
 
