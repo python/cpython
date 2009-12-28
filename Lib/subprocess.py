@@ -449,11 +449,11 @@ def check_output(*popenargs, **kwargs):
     b'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
 
     The stdout argument is not allowed as it is used internally.
-    To capture standard error in the result, use stderr=subprocess.STDOUT.
+    To capture standard error in the result, use stderr=STDOUT.
 
     >>> check_output(["/bin/sh", "-c",
     ...               "ls -l non_existent_file ; exit 0"],
-    ...              stderr=subprocess.STDOUT)
+    ...              stderr=STDOUT)
     b'ls: non_existent_file: No such file or directory\n'
     """
     if 'stdout' in kwargs:
