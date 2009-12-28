@@ -9,11 +9,12 @@ running time.
 import unittest
 
 # Local imports
-from .. import pytree
-from .. import refactor
+from lib2to3 import refactor
 from . import support
 
+
 class Test_all(support.TestCase):
+
     def setUp(self):
         self.refactor = support.get_refactorer()
 
