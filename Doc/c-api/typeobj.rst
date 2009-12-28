@@ -1210,7 +1210,7 @@ member in the :ctype:`PyTypeObject` structure should be *NULL*.  Otherwise, the
 
       This should fill a :ctype:`Py_buffer` with the necessary data for
       exporting the type.  The signature of :data:`getbufferproc` is ``int
-      (PyObject *obj, PyObject *view, int flags)``.  *obj* is the object to
+      (PyObject *obj, Py_buffer *view, int flags)``.  *obj* is the object to
       export, *view* is the :ctype:`Py_buffer` struct to fill, and *flags* gives
       the conditions the caller wants the memory under.  (See
       :cfunc:`PyObject_GetBuffer` for all flags.)  :cmember:`bf_getbuffer` is
