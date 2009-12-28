@@ -157,9 +157,7 @@ required option
    an option that must be supplied on the command-line; note that the phrase
    "required option" is self-contradictory in English.  :mod:`optparse` doesn't
    prevent you from implementing required options, but doesn't give you much
-   help at it either.  See ``examples/required_1.py`` and
-   ``examples/required_2.py`` in the :mod:`optparse` source distribution for two
-   ways to implement required options with :mod:`optparse`.
+   help at it either.
 
 For example, consider this hypothetical command-line::
 
