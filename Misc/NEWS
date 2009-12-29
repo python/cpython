@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #7413: Passing '\0' as the separator to datetime.datetime.isoformat()
+  used to drop the time part of the result.
+
 - Issue #1811: improve accuracy and cross-platform consistency for
   true division of integers: the result of a/b is now correctly
   rounded for ints a and b (at least on IEEE 754 platforms), and in
