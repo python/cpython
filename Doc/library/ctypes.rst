@@ -2163,8 +2163,10 @@ These are the fundamental ctypes data types:
 
 .. class:: c_char_p
 
-   Represents the C char \* datatype, which must be a pointer to a zero-terminated
-   string. The constructor accepts an integer address, or a string.
+   Represents the C char \* datatype when it points to a zero-terminated
+   string.  For a general character pointer that may also point to binary data,
+   ``POINTER(c_char)`` must be used.  The constructor accepts an integer
+   address, or a string.
 
 
 .. class:: c_double
