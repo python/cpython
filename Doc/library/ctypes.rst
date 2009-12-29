@@ -513,8 +513,8 @@ to be passed by value. This is also known as *passing parameters by reference*.
 
 :mod:`ctypes` exports the :func:`byref` function which is used to pass
 parameters by reference.  The same effect can be achieved with the
-:cfunc:`pointer` function, although :cfunc:`pointer` does a lot more work since
-it constructs a real pointer object, so it is faster to use :func:`byref` if you
+:func:`pointer` function, although :func:`pointer` does a lot more work since it
+constructs a real pointer object, so it is faster to use :func:`byref` if you
 don't need the pointer object in Python itself::
 
    >>> i = c_int()
