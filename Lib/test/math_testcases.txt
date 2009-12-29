@@ -396,8 +396,14 @@ expm10215 expm1 -1.79e308 -> -1.0
 -- extreme positive values
 expm10300 expm1 300 -> 1.9424263952412558e+130
 expm10301 expm1 700 -> 1.0142320547350045e+304
-expm10302 expm1 709.78271289328393 -> 1.7976931346824240e+308
+-- the next test (expm10302) is disabled because it causes failure on
+-- OS X 10.4/Intel: apparently all values over 709.78 produce an
+-- overflow on that platform.  See issue #7575.
+-- expm10302 expm1 709.78271289328393 -> 1.7976931346824240e+308
 expm10303 expm1 709.78271289348402 -> inf overflow
 expm10304 expm1 1000 -> inf overflow
 expm10305 expm1 1e50 -> inf overflow
 expm10306 expm1 1.79e308 -> inf overflow
+
+-- weaker version of expm10302
+expm10307 expm1 709.5 -> 1.3549863193146328e+308
