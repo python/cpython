@@ -1173,6 +1173,7 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat(),    "0002-03-02T04:05:01.000123")
         self.assertEqual(t.isoformat('T'), "0002-03-02T04:05:01.000123")
         self.assertEqual(t.isoformat(' '), "0002-03-02 04:05:01.000123")
+        self.assertEqual(t.isoformat('\x00'), "0002-03-02\x0004:05:01.000123")
         # str is ISO format with the separator forced to a blank.
         self.assertEqual(str(t), "0002-03-02 04:05:01.000123")
 
