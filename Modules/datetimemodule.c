@@ -1362,21 +1362,26 @@ isoformat_date(PyDateTime_Date *dt, char buffer[], int bufflen)
 	x = PyOS_snprintf(buffer, bufflen,
 			  "%04d-%02d-%02d",
 			  GET_YEAR(dt), GET_MONTH(dt), GET_DAY(dt));
+	assert(bufflen >= x);
 	return buffer + x;
 }
 
-static void
+static char *
 isoformat_time(PyDateTime_DateTime *dt, char buffer[], int bufflen)
 {
+	int x;
 	int us = DATE_GET_MICROSECOND(dt);
 
-	PyOS_snprintf(buffer, bufflen,
-		      "%02d:%02d:%02d",	/* 8 characters */
-		      DATE_GET_HOUR(dt),
-		      DATE_GET_MINUTE(dt),
-		      DATE_GET_SECOND(dt));
+	x = PyOS_snprintf(buffer, bufflen,
+			  "%02d:%02d:%02d",
+			  DATE_GET_HOUR(dt),
+			  DATE_GET_MINUTE(dt),
+			  DATE_GET_SECOND(dt));
+	assert(bufflen >= x);
 	if (us)
-		PyOS_snprintf(buffer + 8, bufflen - 8, ".%06d", us);
+		x += PyOS_snprintf(buffer + x, bufflen - x, ".%06d", us);
+	assert(bufflen >= x);
+	return buffer + x;
 }
 
 /* ---------------------------------------------------------------------------
@@ -4211,8 +4216,8 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 	cp = isoformat_date((PyDateTime_Date *)self, buffer, sizeof(buffer));
 	assert(cp != NULL);
 	*cp++ = sep;
-	isoformat_time(self, cp, sizeof(buffer) - (cp - buffer));
-	result = PyString_FromString(buffer);
+	cp = isoformat_time(self, cp, sizeof(buffer) - (cp - buffer));
+	result = PyString_FromStringAndSize(buffer, cp - buffer);
 	if (result == NULL || ! HASTZINFO(self))
 		return result;
 
