@@ -25,12 +25,12 @@ class TestMain(unittest.TestCase):
 
     def test_unencodable_diff(self):
         input_stream = io.StringIO("print 'nothing'\nprint u'über'\n")
-        out = io.StringIO()
+        out = io.BytesIO()
         out_enc = codecs.getwriter("ascii")(out)
         err = io.StringIO()
         ret = self.run_2to3_capture(["-"], input_stream, out_enc, err)
         self.assertEqual(ret, 0)
-        output = out.getvalue()
+        output = out.getvalue().decode("ascii")
         self.assertTrue("-print 'nothing'" in output)
         self.assertTrue("WARNING: couldn't encode <stdin>'s diff for "
                         "your terminal" in err.getvalue())
