@@ -3,20 +3,12 @@
 Built-in Exceptions
 ===================
 
-.. module:: exceptions
-   :synopsis: Standard exception classes.
-
-
-Exceptions should be class objects.   The exceptions are defined in the module
-:mod:`exceptions`.  This module never needs to be imported explicitly: the
-exceptions are provided in the built-in namespace as well as the
-:mod:`exceptions` module.
-
 .. index::
    statement: try
    statement: except
 
-For class exceptions, in a :keyword:`try` statement with an :keyword:`except`
+In Python, all exceptions must be instances of a class that derives from
+:class:`BaseException`.  In a :keyword:`try` statement with an :keyword:`except`
 clause that mentions a particular class, that clause also handles any exception
 classes derived from that class (but not exception classes from which *it* is
 derived).  Two exception classes that are not related via subclassing are never
@@ -44,7 +36,7 @@ programmers are encouraged to at least derive new exceptions from the
 defining exceptions is available in the Python Tutorial under
 :ref:`tut-userexceptions`.
 
-The following exceptions are only used as base classes for other exceptions.
+The following exceptions are used mostly as base classes for other exceptions.
 
 .. XXX document with_traceback()
 
@@ -99,8 +91,8 @@ The following exceptions are only used as base classes for other exceptions.
    In this last case, :attr:`args` contains the verbatim constructor arguments as a
    tuple.
 
-The following exceptions are the exceptions that are actually raised.
 
+The following exceptions are the exceptions that are usually raised.
 
 .. exception:: AssertionError
 
@@ -369,9 +361,9 @@ The following exceptions are the exceptions that are actually raised.
    associated value is a string indicating the type of the operands and the
    operation.
 
+
 The following exceptions are used as warning categories; see the :mod:`warnings`
 module for more information.
-
 
 .. exception:: Warning
 
