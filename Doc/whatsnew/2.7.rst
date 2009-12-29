@@ -73,6 +73,11 @@ A partial list of 3.1 features that were backported to 2.7:
 * The new format specifier described in :ref:`pep-0378`.
 * The :class:`memoryview` object.
 * A small subset of the :mod:`importlib` module `described below <#importlib-section>`__.
+* Float-to-string and string-to-float conversions now round their
+  results more correctly.  And :func:`repr` of a floating-point
+  number *x* returns a result that's guaranteed to round back to the
+  same number when converted back to a string.
+* The :cfunc:`PyLong_AsLongAndOverflow` C API function.
 
 One porting change: the :option:`-3` switch now automatically
 enables the :option:`-Qwarn` switch that causes warnings
@@ -237,6 +242,33 @@ Some smaller changes made to the core Python language are:
   (Proposed in http://codereview.appspot.com/53094; implemented by
   Georg Brandl.)
 
+* Conversions between floating-point numbers and strings are
+  now correctly rounded on most platforms.  These conversions occur
+  in many different places: :func:`str` on
+  floats and complex numbers; the :class:`float` and :class:`complex`
+  constructors;
+  numeric formatting; serialization and
+  deserialization of floats and complex numbers using the
+  :mod:`marshal`, :mod:`pickle`
+  and :mod:`json` modules;
+  parsing of float and imaginary literals in Python code;
+  and :class:`Decimal`-to-float conversion.
+
+  Related to this, the :func:`repr` of a floating-point number *x*
+  now returns a result based on the shortest decimal string that's
+  guaranteed to round back to *x* under correct rounding (with
+  round-half-to-even rounding mode).  Previously it gave a string
+  based on rounding x to 17 decimal digits.
+
+  The rounding library responsible for this improvement works on
+  Windows, and on Unix platforms using the gcc, icc, or suncc
+  compilers.  There may be a small number of platforms where correct
+  operation of this code cannot be guaranteed, so the code is not
+  used on such systems.
+
+  Implemented by Mark Dickinson, using David Gay's :file:`dtoa.c` library;
+  :issue:`7117`.
+
 * The :meth:`str.format` method now supports automatic numbering of the replacement
   fields.  This makes using :meth:`str.format` more closely resemble using
   ``%s`` formatting::
@@ -258,6 +290,10 @@ Some smaller changes made to the core Python language are:
   and imaginary parts of the number, but a specified field width and
   alignment is applied to the whole of the resulting ``1.5+3j``
   output.  (Contributed by Eric Smith; :issue:`1588`.)
+
+  The 'F' format code now always formats its output using uppercase characters,
+  so it will now produce 'INF' and 'NAN'.
+  (Contributed by Eric Smith; :issue:`3382`.)
 
 * The :func:`int` and :func:`long` types gained a ``bit_length``
   method that returns the number of bits necessary to represent
@@ -317,6 +353,10 @@ Some smaller changes made to the core Python language are:
 * A new encoding named "cp720", used primarily for Arabic text, is now
   supported.  (Contributed by Alexander Belchenko and Amaury Forgeot
   d'Arc; :issue:`1616979`.)
+
+* The :class:`file` object will now set the :attr:`filename` attribute
+  on the :exc:`IOError` exception when trying to open a directory
+  on POSIX platforms.  (Noted by Jan Kaliszewski; :issue:`4764`.)
 
 * Extra parentheses in function definitions are illegal in Python 3.x,
   meaning that you get a syntax error from ``def f((x)): pass``.  In
@@ -499,9 +539,17 @@ changes, or look through the Subversion logs for all the details.
   :meth:`reverse` method that reverses the elements of the deque in-place.
   (Added by Raymond Hettinger.)
 
+* The :mod:`copy` module's :func:`deepcopy` function will now
+  correctly copy bound instance methods.  (Implemented by
+  Robert Collins; :issue:`1515`.)
+
 * The :mod:`ctypes` module now always converts ``None`` to a C NULL
   pointer for arguments declared as pointers.  (Changed by Thomas
   Heller; :issue:`4606`.)
+
+* New method: the :mod:`datetime` module's :class:`timedelta` class
+  gained a :meth:`total_seconds` method that returns the number of seconds
+  in the duration.  (Contributed by Brian Quinlan; :issue:`5788`.)
 
 * New method: the :class:`Decimal` class gained a
   :meth:`from_float` class method that performs an exact conversion
@@ -550,7 +598,7 @@ changes, or look through the Subversion logs for all the details.
 
   The :class:`distutils.dist.DistributionMetadata` class'
   :meth:`read_pkg_file` method will read the contents of a package's
-  metadata file.  For an example of its use,
+  :file:`PKG-INFO` metadata file.  For an example of its use,
   XXX link to  file:///MacDev/svn.python.org/python-trunk/Doc/build/html/distutils/examples.html#reading-the-metadata
   (Contributed by Tarek Ziade; :issue:`7457`.)
 
@@ -667,8 +715,10 @@ changes, or look through the Subversion logs for all the details.
   calls: :func:`getresgid` and :func:`getresuid`, which return the
   real, effective, and saved GIDs and UIDs;
   :func:`setresgid` and :func:`setresuid`, which set
-  real, effective, and saved GIDs and UIDs to new values.  (Contributed
-  by Travis H.; :issue:`6508`.)
+  real, effective, and saved GIDs and UIDs to new values;
+  :func:`initgroups`.  (GID/UID functions
+  contributed by Travis H.; :issue:`6508`.  Support for initgroups added
+  by Jean-Paul Calderone; :issue:`7333`.)
 
 * The :mod:`pydoc` module now has help for the various symbols that Python
   uses.  You can now do ``help('<<')`` or ``help('@')``, for example.
@@ -970,6 +1020,11 @@ Changes to Python's build process and to the C API include:
   instruction currently executing, and then look up the line number
   corresponding to that address.  (Added by Jeffrey Yasskin.)
 
+* New function: :cfunc:`PyLong_AsLongAndOverflow` approximates a Python long
+  integer as a C :ctype:`long`.  If the number is too large to fit into
+  a :ctype:`long`, an *overflow* flag is set and returned to the caller.
+  (Contributed by Case Van Horsen; :issue:`7528`.)
+
 * New macros: the Python header files now define the following macros:
   :cmacro:`Py_ISALNUM`,
   :cmacro:`Py_ISALPHA`,
@@ -987,6 +1042,12 @@ Changes to Python's build process and to the C API include:
   :issue:`5793`.)
 
   .. XXX these macros don't seem to be described in the c-api docs.
+
+* New format codes: the :cfunc:`PyFormat_FromString`,
+  :cfunc:`PyFormat_FromStringV`, and :cfunc:`PyErr_Format` now
+  accepts ``%lld`` and ``%llu`` format codes for displaying values of
+  C's :ctype:`long long` types.
+  (Contributed by Mark Dickinson; :issue:`7228`.)
 
 * The complicated interaction between threads and process forking has
   been changed.  Previously, the child process created by
@@ -1046,6 +1107,10 @@ Port-Specific Changes: Windows
 
 * The :func:`os.listdir` function now correctly fails
   for an empty path.  (Fixed by Hirokazu Yamamoto; :issue:`5913`.)
+
+* The :mod:`mimelib` module will now read the MIME database from
+  the Windows registry when initializing.
+  (Patch by Gabriel Genellina; :issue:`4969`.)
 
 .. ======================================================================
 
