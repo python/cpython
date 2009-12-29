@@ -60,8 +60,14 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
         else:
             self.log_message("Refactored %s", filename)
             if self.show_diffs:
-                for line in diff_texts(old, new, filename):
-                    print(line)
+                diff_lines = diff_texts(old, new, filename)
+                try:
+                    for line in diff_lines:
+                        print(line)
+                except UnicodeEncodeError:
+                    warn("couldn't encode %s's diff for your terminal" %
+                         (filename,))
+                    return
 
 def warn(msg):
     print("WARNING: %s" % (msg,), file=sys.stderr)
