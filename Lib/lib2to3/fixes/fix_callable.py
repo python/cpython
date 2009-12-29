@@ -3,12 +3,12 @@
 
 """Fixer for callable().
 
-This converts callable(obj) into hasattr(obj, '__call__')."""
+This converts callable(obj) into isinstance(obj, collections.Callable), adding a
+collections import if needed."""
 
 # Local imports
-from .. import pytree
-from .. import fixer_base
-from ..fixer_util import Call, Name, String
+from lib2to3 import fixer_base
+from lib2to3.fixer_util import Call, Name, String, Attr, touch_import
 
 class FixCallable(fixer_base.BaseFix):
 
@@ -25,7 +25,10 @@ class FixCallable(fixer_base.BaseFix):
     """
 
     def transform(self, node, results):
-        func = results["func"]
+        func = results['func']
 
-        args = [func.clone(), String(', '), String("'__call__'")]
-        return Call(Name("hasattr"), args, prefix=node.prefix)
+        touch_import(None, 'collections', node=node)
+
+        args = [func.clone(), String(', ')]
+        args.extend(Attr(Name('collections'), Name('Callable')))
+        return Call(Name('isinstance'), args, prefix=node.prefix)

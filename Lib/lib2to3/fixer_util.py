@@ -291,8 +291,6 @@ def touch_import(package, name, node):
     if does_tree_import(package, name, root):
         return
 
-    add_newline_before = False
-
     # figure out where to insert the new import.  First try to find
     # the first import and then skip to the last one.
     insert_pos = offset = 0
@@ -312,7 +310,6 @@ def touch_import(package, name, node):
             if node.type == syms.simple_stmt and node.children and \
                node.children[0].type == token.STRING:
                 insert_pos = idx + 1
-                add_newline_before
                 break
 
     if package is None:
@@ -324,8 +321,6 @@ def touch_import(package, name, node):
         import_ = FromImport(package, [Leaf(token.NAME, name, prefix=' ')])
 
     children = [import_, Newline()]
-    if add_newline_before:
-        children.insert(0, Newline())
     root.insert_child(insert_pos, Node(syms.simple_stmt, children))
 
 
