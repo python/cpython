@@ -49,9 +49,9 @@
    This saves the maintainer some effort going through the SVN logs
    when researching a change.
 
-This article explains the new features in Python 2.7.  No release
-schedule has been decided yet for 2.7; the schedule will eventually be
-described in :pep:`373`.
+This article explains the new features in Python 2.7.  The final
+release of 2.7 is currently scheduled for June 2010; the detailed
+schedule is described in :pep:`373`.
 
 .. Compare with previous release in 2 - 3 sentences here.
    add hyperlink when the documentation becomes available online.
@@ -301,6 +301,9 @@ Some smaller changes made to the core Python language are:
 
   (Implemented by Mark Dickinson; :issue:`3166`.)
 
+  Integer division is also more accurate in its rounding behaviours.  (Also
+  implemented by Mark Dickinson; :issue:`1811`.)
+
 * The :class:`bytearray` type's :meth:`translate` method now accepts
   ``None`` as its first argument.  (Fixed by Georg Brandl;
   :issue:`4759`.)
@@ -314,6 +317,11 @@ Some smaller changes made to the core Python language are:
 * A new encoding named "cp720", used primarily for Arabic text, is now
   supported.  (Contributed by Alexander Belchenko and Amaury Forgeot
   d'Arc; :issue:`1616979`.)
+
+* Extra parentheses in function definitions are illegal in Python 3.x,
+  meaning that you get a syntax error from ``def f((x)): pass``.  In
+  Python3-warning mode, Python 2.7 will now warn about this odd usage.
+  (Noted by James Lingard; :issue:`7362`.)
 
 .. ======================================================================
 
@@ -333,16 +341,16 @@ Several performance enhancements have been added:
   :keyword:`with` statements, looking up the :meth:`__enter__` and
   :meth:`__exit__` methods.  (Contributed by Benjamin Peterson.)
 
-* The garbage collector now performs better when many objects are
-  being allocated without deallocating any.  A full garbage collection
-  pass is only performed when the middle generation has been collected
-  10 times and when the number of survivor objects from the middle
-  generation exceeds 10% of the number of objects in the oldest
-  generation.  The second condition was added to reduce the number
-  of full garbage collections as the number of objects on the heap grows,
-  avoiding quadratic performance when allocating very many objects.
-  (Suggested by Martin von Loewis and implemented by Antoine Pitrou;
-  :issue:`4074`.)
+* The garbage collector now performs better for one common usage
+  pattern: when many objects are being allocated without deallocating
+  any of them.  This would previously take quadratic
+  time for garbage collection, but now the number of full garbage collections
+  is reduced as the number of objects on the heap grows.
+  The new logic is to only perform a full garbage collection pass when
+  the middle generation has been collected 10 times and when the
+  number of survivor objects from the middle generation exceeds 10% of
+  the number of objects in the oldest generation.  (Suggested by Martin
+  von Loewis and implemented by Antoine Pitrou; :issue:`4074`.)
 
 * The garbage collector tries to avoid tracking simple containers
   which can't be part of a cycle. In Python 2.7, this is now true for
@@ -409,7 +417,6 @@ Several performance enhancements have been added:
   faster by special-casing base 10 instead of using a generalized
   conversion function that supports arbitrary bases.
   (Patch by Gawain Bolton; :issue:`6713`.)
-
 
 .. ======================================================================
 
@@ -488,7 +495,9 @@ changes, or look through the Subversion logs for all the details.
   (Added by Raymond Hettinger; :issue:`1818`.)
 
   The :class:`deque` data type now exposes its maximum length as the
-  read-only :attr:`maxlen` attribute.  (Added by Raymond Hettinger.)
+  read-only :attr:`maxlen` attribute, and has a
+  :meth:`reverse` method that reverses the elements of the deque in-place.
+  (Added by Raymond Hettinger.)
 
 * The :mod:`ctypes` module now always converts ``None`` to a C NULL
   pointer for arguments declared as pointers.  (Changed by Thomas
@@ -539,13 +548,23 @@ changes, or look through the Subversion logs for all the details.
   process, but instead simply not install the failing extension.
   (Contributed by Georg Brandl; :issue:`5583`.)
 
-  Issue #7457: added a read_pkg_file method to.distutils.dist.DistributionMetadata
-  see file:///MacDev/svn.python.org/python-trunk/Doc/build/html/distutils/examples.html#reading-the-metadata
-  (:issue:`7457`, added by Tarek).
+  The :class:`distutils.dist.DistributionMetadata` class'
+  :meth:`read_pkg_file` method will read the contents of a package's
+  metadata file.  For an example of its use,
+  XXX link to  file:///MacDev/svn.python.org/python-trunk/Doc/build/html/distutils/examples.html#reading-the-metadata
+  (Contributed by Tarek Ziade; :issue:`7457`.)
 
 * The :class:`Fraction` class now accepts two rational numbers
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
+
+* The :mod:`ftplib` module gained the ability to establish secure FTP
+  connections using TLS encapsulation of authentication as well as
+  subsequent control and data transfers.  This is provided by the new
+  :class:`ftplib.FTP_TLS` class.
+  (Contributed by Giampaolo Rodola', :issue:`2054`.)  The :meth:`storbinary`
+  method for binary uploads can now restart uploads thanks to an added
+  *rest* parameter (patch by Pablo Mouzo; :issue:`6845`.)
 
 * New function: the :mod:`gc` module's :func:`is_tracked` returns
   true if a given instance is tracked by the garbage collector, false
@@ -627,8 +646,12 @@ changes, or look through the Subversion logs for all the details.
   with any object literal that decodes to a list of pairs.
   (Contributed by Raymond Hettinger; :issue:`5381`.)
 
-* New functions: the :mod:`math` module now has
-  a :func:`gamma` function.
+* New functions: the :mod:`math` module gained
+  :func:`erf` and :func:`erfc` for the error function and the complementary error function,
+  :func:`expm1` which computes ``e**x - 1`` with more precision than
+  using :func:`exp` and subtracting 1,
+  :func:`gamma` for the Gamma function, and
+  :func:`lgamma` for the natural log of the Gamma function.
   (Contributed by Mark Dickinson and nirinA raseliarison; :issue:`3366`.)
 
 * The :mod:`multiprocessing` module's :class:`Manager*` classes
@@ -639,6 +662,13 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`nntplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1664`.)
+
+* New functions: the :mod:`os` module wraps the following POSIX system
+  calls: :func:`getresgid` and :func:`getresuid`, which return the
+  real, effective, and saved GIDs and UIDs;
+  :func:`setresgid` and :func:`setresuid`, which set
+  real, effective, and saved GIDs and UIDs to new values.  (Contributed
+  by Travis H.; :issue:`6508`.)
 
 * The :mod:`pydoc` module now has help for the various symbols that Python
   uses.  You can now do ``help('<<')`` or ``help('@')``, for example.
@@ -727,12 +757,6 @@ changes, or look through the Subversion logs for all the details.
 
   :mod:`zipfile` now supports archiving empty directories and
   extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
-
-* The :mod:`ftplib` module gains the ability to establish secure FTP
-  connections using TLS encapsulation of authentication as well as
-  subsequent control and data transfers.  This is provided by the new
-  :class:`ftplib.FTP_TLS` class.
-  (Contributed by Giampaolo Rodola', :issue:`2054`.)
 
 .. ======================================================================
 .. whole new modules get described in subsections here
@@ -934,6 +958,12 @@ Changes to Python's build process and to the C API include:
   extensions needed to call :cfunc:`PyCode_New`, which had many
   more arguments.  (Added by Jeffrey Yasskin.)
 
+* New function: :cfunc:`PyErr_NewExceptionWithDoc` creates a new
+  exception class, just as the existing :cfunc:`PyErr_NewException` does,
+  but takes an extra ``char *`` argument containing the docstring for the
+  new exception class.  (Added by the 'lekma' user on the Python bug tracker;
+  :issue:`7033`.)
+
 * New function: :cfunc:`PyFrame_GetLineNumber` takes a frame object
   and returns the line number that the frame is currently executing.
   Previously code would need to get the index of the bytecode
@@ -991,6 +1021,12 @@ Changes to Python's build process and to the C API include:
 
 * The build process now supports Subversion 1.7.  (Contributed by
   Arfrever Frehtes Taifersar Arahesis; :issue:`6094`.)
+
+* Compiling Python with the :option:`--with-valgrind` option will now
+  disable the pymalloc allocator, which is difficult for the Valgrind to
+  analyze correctly.  Valgrind will therefore be better at detecting
+  memory leaks and overruns. (Contributed by James Henstridge; :issue:`2422`.)
+
 
 .. ======================================================================
 
@@ -1069,6 +1105,10 @@ that may require changes to your code:
   type, and cannot be directly attached to the object's instance.  This
   affects new-style classes (derived from :class:`object`) and C extension
   types.  (:issue:`6101`.)
+
+* The :meth:`readline` method of :class:`StringIO` objects now does
+  nothing when a negative length is requested, as other file-like
+  objects do.  (:issue:`7348`).
 
 .. ======================================================================
 
