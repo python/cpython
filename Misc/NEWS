@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #7534: Fix handling of IEEE specials (infinities, nans,
+  negative zero) in ** operator.  The behaviour now conforms to that
+  described in C99 Annex F.
+
 - Issue #7579: the msvcrt module now has docstrings for all its functions.
 
 - Issue #7413: Passing '\0' as the separator to datetime.datetime.isoformat()

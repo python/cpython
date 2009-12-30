@@ -72,7 +72,7 @@ False
 >>> NAN >= 0
 False
 
-All operations involving a NaN return a NaN except for the power of *0* and *1*.
+All operations involving a NaN return a NaN except for nan**0 and 1**nan.
 >>> 1 + NAN
 nan
 >>> 1 * NAN
@@ -81,8 +81,10 @@ nan
 nan
 >>> 1 ** NAN
 1.0
+>>> NAN ** 0
+1.0
 >>> 0 ** NAN
-0.0
+nan
 >>> (1.0 + FI.epsilon) * NAN
 nan
 

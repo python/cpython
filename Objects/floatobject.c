@@ -791,10 +791,15 @@ float_floor_div(PyObject *v, PyObject *w)
 	return r;
 }
 
+/* determine whether x is an odd integer or not;  assumes that
+   x is not an infinity or nan. */
+#define DOUBLE_IS_ODD_INTEGER(x) (fmod(fabs(x), 2.0) == 1.0)
+
 static PyObject *
 float_pow(PyObject *v, PyObject *w, PyObject *z)
 {
 	double iv, iw, ix;
+	int negate_result = 0;
 
 	if ((PyObject *)z != Py_None) {
 		PyErr_SetString(PyExc_TypeError, "pow() 3rd argument not "
@@ -806,20 +811,56 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 	CONVERT_TO_DOUBLE(w, iw);
 
 	/* Sort out special cases here instead of relying on pow() */
-	if (iw == 0) { 		/* v**0 is 1, even 0**0 */
+	if (iw == 0) {		/* v**0 is 1, even 0**0 */
 		return PyFloat_FromDouble(1.0);
 	}
-	if (iv == 0.0) {  /* 0**w is error if w<0, else 1 */
+	if (Py_IS_NAN(iv)) {	/* nan**w = nan, unless w == 0 */
+		return PyFloat_FromDouble(iv);
+	}
+	if (Py_IS_NAN(iw)) {	/* v**nan = nan, unless v == 1; 1**nan = 1 */
+		return PyFloat_FromDouble(iv == 1.0 ? 1.0 : iw);
+	}
+	if (Py_IS_INFINITY(iw)) {
+		/* v**inf is: 0.0 if abs(v) < 1; 1.0 if abs(v) == 1; inf if
+		 *     abs(v) > 1 (including case where v infinite)
+		 *
+		 * v**-inf is: inf if abs(v) < 1; 1.0 if abs(v) == 1; 0.0 if
+		 *     abs(v) > 1 (including case where v infinite)
+		 */
+		iv = fabs(iv);
+		if (iv == 1.0)
+			return PyFloat_FromDouble(1.0);
+		else if ((iw > 0.0) == (iv > 1.0))
+			return PyFloat_FromDouble(fabs(iw)); /* return inf */
+		else
+			return PyFloat_FromDouble(0.0);
+	}
+	if (Py_IS_INFINITY(iv)) {
+		/* (+-inf)**w is: inf for w positive, 0 for w negative; in
+		 *     both cases, we need to add the appropriate sign if w is
+		 *     an odd integer.
+		 */
+		int iw_is_odd = DOUBLE_IS_ODD_INTEGER(iw);
+		if (iw > 0.0)
+			return PyFloat_FromDouble(iw_is_odd ? iv : fabs(iv));
+		else
+			return PyFloat_FromDouble(iw_is_odd ?
+						  copysign(0.0, iv) : 0.0);
+	}
+	if (iv == 0.0) {  /* 0**w is: 0 for w positive, 1 for w zero
+			     (already dealt with above), and an error
+			     if w is negative. */
+		int iw_is_odd = DOUBLE_IS_ODD_INTEGER(iw);
 		if (iw < 0.0) {
 			PyErr_SetString(PyExc_ZeroDivisionError,
-					"0.0 cannot be raised to a negative power");
+					"0.0 cannot be raised to a "
+					"negative power");
 			return NULL;
 		}
-		return PyFloat_FromDouble(0.0);
+		/* use correct sign if iw is odd */
+		return PyFloat_FromDouble(iw_is_odd ? iv : 0.0);
 	}
-	if (iv == 1.0) { /* 1**w is 1, even 1**inf and 1**nan */
-		return PyFloat_FromDouble(1.0);
-	}
+
 	if (iv < 0.0) {
 		/* Whether this is an error is a mess, and bumps into libm
 		 * bugs so we have to figure it out ourselves.
@@ -829,33 +870,41 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 				"cannot be raised to a fractional power");
 			return NULL;
 		}
-		/* iw is an exact integer, albeit perhaps a very large one.
+		/* iw is an exact integer, albeit perhaps a very large
+		 * one.  Replace iv by its absolute value and remember
+		 * to negate the pow result if iw is odd.
+		 */
+		iv = -iv;
+		negate_result = DOUBLE_IS_ODD_INTEGER(iw);
+	}
+
+	if (iv == 1.0) { /* 1**w is 1, even 1**inf and 1**nan */
+		/* (-1) ** large_integer also ends up here.  Here's an
+		 * extract from the comments for the previous
+		 * implementation explaining why this special case is
+		 * necessary:
+		 *
 		 * -1 raised to an exact integer should never be exceptional.
 		 * Alas, some libms (chiefly glibc as of early 2003) return
 		 * NaN and set EDOM on pow(-1, large_int) if the int doesn't
 		 * happen to be representable in a *C* integer.  That's a
-		 * bug; we let that slide in math.pow() (which currently
-		 * reflects all platform accidents), but not for Python's **.
+		 * bug.
 		 */
-		 if (iv == -1.0 && Py_IS_FINITE(iw)) {
-		 	/* Return 1 if iw is even, -1 if iw is odd; there's
-		 	 * no guarantee that any C integral type is big
-		 	 * enough to hold iw, so we have to check this
-		 	 * indirectly.
-		 	 */
-		 	ix = floor(iw * 0.5) * 2.0;
-			return PyFloat_FromDouble(ix == iw ? 1.0 : -1.0);
-		}
-		/* Else iv != -1.0, and overflow or underflow are possible.
-		 * Unless we're to write pow() ourselves, we have to trust
-		 * the platform to do this correctly.
-		 */
+		return PyFloat_FromDouble(negate_result ? -1.0 : 1.0);
 	}
+
+	/* Now iv and iw are finite, iw is nonzero, and iv is
+	 * positive and not equal to 1.0.  We finally allow
+	 * the platform pow to step in and do the rest.
+	 */
 	errno = 0;
 	PyFPE_START_PROTECT("pow", return NULL)
 	ix = pow(iv, iw);
 	PyFPE_END_PROTECT(ix)
 	Py_ADJUST_ERANGE1(ix);
+	if (negate_result)
+		ix = -ix;
+
 	if (errno != 0) {
 		/* We don't expect any errno value other than ERANGE, but
 		 * the range of libm bugs appears unbounded.
@@ -866,6 +915,8 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 	}
 	return PyFloat_FromDouble(ix);
 }
+
+#undef DOUBLE_IS_ODD_INTEGER
 
 static PyObject *
 float_neg(PyFloatObject *v)
