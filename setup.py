@@ -1065,7 +1065,7 @@ class PyBuildExt(build_ext):
                 missing.append('resource')
 
             # Sun yellow pages. Some systems have the functions in libc.
-            if platform not in ['cygwin', 'atheos', 'qnx6']:
+            if platform not in ['cygwin', 'atheos', 'qnx6'] and find_file('rpcsvc/yp_prot.h', inc_dirs, []) is not None:
                 if (self.compiler.find_library_file(lib_dirs, 'nsl')):
                     libs = ['nsl']
                 else:
