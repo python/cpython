@@ -12,6 +12,9 @@ What's New in Python 2.6.5
 Core and Builtins
 -----------------
 
+- Issue #7604: Deleting an unset slotted attribute did not raise an
+  AttributeError.
+
 - Issue #7413: Passing '\0' as the separator to datetime.datetime.isoformat()
   used to drop the time part of the result.
 
