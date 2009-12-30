@@ -504,6 +504,9 @@ Extension Modules
 Build
 -----
 
+- Issue #7589: Only build the nis module when the correct header files are
+  found.
+
 - Switch to OpenSSL 0.9.8l on Windows.
 
 - Issue #5792: Extend the short float repr support to x86 systems using
