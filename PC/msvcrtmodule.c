@@ -47,8 +47,7 @@ PyDoc_STRVAR(heapmin_doc,
 "heapmin() -> None\n\
 \n\
 Force the malloc() heap to clean itself up and return unused blocks\n\
-to the operating system. This only works on Windows NT. On failure,\n\
-this raises IOError.");
+to the operating system. On failure, this raises IOError.");
 
 // Perform locking operations on a C runtime file descriptor.
 static PyObject *
