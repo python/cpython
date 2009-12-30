@@ -403,6 +403,9 @@ Extension Modules
 Build
 -----
 
+- Issue #7589: Only build the nis module when the correct header files are
+  found.
+
 - Issue 4601: 'make install' did not set the appropriate permissions on
 directories.
 
