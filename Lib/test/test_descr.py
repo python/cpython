@@ -1144,8 +1144,12 @@ order (MRO) for bases """
 
         class X(object):
             __slots__ = "a"
-        with self.assertRaises(AttributeError):
+        try:
             del X().a
+        except AttributeError:
+            pass
+        else:
+            self.fail("didn't raise AttributeError")
 
     def test_slots_special(self):
         # Testing __dict__ and __weakref__ in __slots__...
