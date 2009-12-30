@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7604: Deleting an unset slotted attribute did not raise an
+  AttributeError.
+
 - Issue #7466: segmentation fault when the garbage collector is called
   in the middle of populating a tuple.  Patch by Florent Xicluna.
 
