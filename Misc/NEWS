@@ -124,6 +124,9 @@ Library
 Build
 -----
 
+- Issue #7589: Only build the nis module when the correct header files are
+  found.
+
 - Switch to OpenSSL 0.9.8l on Windows.
 
 - Issue #6603: Change READ_TIMESTAMP macro in ceval.c so that it
