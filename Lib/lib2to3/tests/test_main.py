@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import codecs
+import logging
 import StringIO
 import unittest
 
@@ -8,6 +9,10 @@ from lib2to3 import main
 
 
 class TestMain(unittest.TestCase):
+
+    def tearDown(self):
+        # Clean up logging configuration down by main.
+        del logging.root.handlers[:]
 
     def run_2to3_capture(self, args, in_capture, out_capture, err_capture):
         save_stdin = sys.stdin
