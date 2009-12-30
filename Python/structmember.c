@@ -104,17 +104,27 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 {
 	PyObject *oldv;
 
+	addr += l->offset;
+
 	if ((l->flags & READONLY) || l->type == T_STRING)
 	{
 		PyErr_SetString(PyExc_AttributeError, "readonly attribute");
 		return -1;
 	}
-	if (v == NULL && l->type != T_OBJECT_EX && l->type != T_OBJECT) {
-		PyErr_SetString(PyExc_TypeError,
-				"can't delete numeric/char attribute");
-		return -1;
+	if (v == NULL) {
+		if (l->type == T_OBJECT_EX) {
+			/* Check if the attribute is set. */
+			if (*(PyObject **)addr == NULL) {
+				PyErr_SetString(PyExc_AttributeError, l->name);
+				return -1;
+			}
+		}
+		else if (l->type != T_OBJECT) {
+			PyErr_SetString(PyExc_TypeError,
+					"can't delete numeric/char attribute");
+			return -1;
+		}
 	}
-	addr += l->offset;
 	switch (l->type) {
 	case T_BOOL:{
 		if (!PyBool_Check(v)) {
