@@ -171,6 +171,9 @@ C-API
 Library
 -------
 
+- Issue #5511: now zipfile.ZipFile can be used as a context manager.
+  Initial patch by Brian Curtin.
+
 - Issue #7556: Make sure Distutils' msvc9compile reads and writes the
   MSVC XML Manifest file in text mode so string patterns can be used 
   in regular expressions.

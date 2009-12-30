@@ -719,6 +719,12 @@ class ZipFile:
                 self.fp = None
             raise RuntimeError('Mode must be "r", "w" or "a"')
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     def _GetContents(self):
         """Read the directory, making sure we close the file if the format
         is bad."""
