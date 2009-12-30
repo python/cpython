@@ -281,7 +281,10 @@ definition with the same method name.
 
    :cmacro:`T_OBJECT` and :cmacro:`T_OBJECT_EX` differ in that
    :cmacro:`T_OBJECT` returns ``None`` if the member is *NULL* and
-   :cmacro:`T_OBJECT_EX` raises an :exc:`AttributeError`.
+   :cmacro:`T_OBJECT_EX` raises an :exc:`AttributeError`.  Try to use
+   :cmacro:`T_OBJECT_EX` over :cmacro:`T_OBJECT` because :cmacro:`T_OBJECT_EX`
+   handles use of the :stmt:`del` statement on that attribute more correctly
+   than :cmacro:`T_OBJECT`.
 
    :attr:`flags` can be 0 for write and read access or :cmacro:`READONLY` for
    read-only access.  Using :cmacro:`T_STRING` for :attr:`type` implies
