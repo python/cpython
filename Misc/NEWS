@@ -83,6 +83,9 @@ C-API
 Build
 -----
 
+- Issue #7589: Only build the nis module when the correct header files are
+  found.
+
 - Switch to OpenSSL 0.9.8l on Windows.
 
 - Issue #7541: when using ``python-config`` with a framework install the compiler might
