@@ -11,6 +11,11 @@ import random, fractions
 INF = float("inf")
 NAN = float("nan")
 
+# decorator for skipping tests on non-IEEE 754 platforms
+requires_IEEE_754 = unittest.skipUnless(
+    float.__getformat__("double").startswith("IEEE"),
+    "test requires IEEE 754 doubles")
+
 #locate file with float format test values
 test_dir = os.path.dirname(__file__) or os.curdir
 format_testfile = os.path.join(test_dir, 'formatfloat_testcases.txt')
@@ -161,6 +166,212 @@ class GeneralFloatCases(unittest.TestCase):
             self.assertTrue(s == s, "{%r} not equal to itself" % f)
             self.assertTrue(d == d, "{%r : None} not equal to itself" % f)
 
+    def assertEqualAndEqualSign(self, a, b):
+        # fail unless a == b and a and b have the same sign bit;
+        # the only difference from assertEqual is that this test
+        # distingishes -0.0 and 0.0.
+        self.assertEqual((a, copysign(1.0, a)), (b, copysign(1.0, b)))
+
+    @requires_IEEE_754
+    def test_float_pow(self):
+        # test builtin pow and ** operator for IEEE 754 special cases.
+        # Special cases taken from section F.9.4.4 of the C99 specification
+
+        for pow_op in pow, operator.pow:
+            # x**NAN is NAN for any x except 1
+            self.assertTrue(isnan(pow_op(-INF, NAN)))
+            self.assertTrue(isnan(pow_op(-2.0, NAN)))
+            self.assertTrue(isnan(pow_op(-1.0, NAN)))
+            self.assertTrue(isnan(pow_op(-0.5, NAN)))
+            self.assertTrue(isnan(pow_op(-0.0, NAN)))
+            self.assertTrue(isnan(pow_op(0.0, NAN)))
+            self.assertTrue(isnan(pow_op(0.5, NAN)))
+            self.assertTrue(isnan(pow_op(2.0, NAN)))
+            self.assertTrue(isnan(pow_op(INF, NAN)))
+            self.assertTrue(isnan(pow_op(NAN, NAN)))
+
+            # NAN**y is NAN for any y except +-0
+            self.assertTrue(isnan(pow_op(NAN, -INF)))
+            self.assertTrue(isnan(pow_op(NAN, -2.0)))
+            self.assertTrue(isnan(pow_op(NAN, -1.0)))
+            self.assertTrue(isnan(pow_op(NAN, -0.5)))
+            self.assertTrue(isnan(pow_op(NAN, 0.5)))
+            self.assertTrue(isnan(pow_op(NAN, 1.0)))
+            self.assertTrue(isnan(pow_op(NAN, 2.0)))
+            self.assertTrue(isnan(pow_op(NAN, INF)))
+
+            # (+-0)**y raises ZeroDivisionError for y a negative odd integer
+            self.assertRaises(ZeroDivisionError, pow_op, -0.0, -1.0)
+            self.assertRaises(ZeroDivisionError, pow_op, 0.0, -1.0)
+
+            # (+-0)**y raises ZeroDivisionError for y finite and negative
+            # but not an odd integer
+            self.assertRaises(ZeroDivisionError, pow_op, -0.0, -2.0)
+            self.assertRaises(ZeroDivisionError, pow_op, -0.0, -0.5)
+            self.assertRaises(ZeroDivisionError, pow_op, 0.0, -2.0)
+            self.assertRaises(ZeroDivisionError, pow_op, 0.0, -0.5)
+
+            # (+-0)**y is +-0 for y a positive odd integer
+            self.assertEqualAndEqualSign(pow_op(-0.0, 1.0), -0.0)
+            self.assertEqualAndEqualSign(pow_op(0.0, 1.0), 0.0)
+
+            # (+-0)**y is 0 for y finite and positive but not an odd integer
+            self.assertEqualAndEqualSign(pow_op(-0.0, 0.5), 0.0)
+            self.assertEqualAndEqualSign(pow_op(-0.0, 2.0), 0.0)
+            self.assertEqualAndEqualSign(pow_op(0.0, 0.5), 0.0)
+            self.assertEqualAndEqualSign(pow_op(0.0, 2.0), 0.0)
+
+            # (-1)**+-inf is 1
+            self.assertEqualAndEqualSign(pow_op(-1.0, -INF), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, INF), 1.0)
+
+            # 1**y is 1 for any y, even if y is an infinity or nan
+            self.assertEqualAndEqualSign(pow_op(1.0, -INF), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, -2.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, -1.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, -0.5), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, 0.5), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, 1.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, 2.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, INF), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, NAN), 1.0)
+
+            # x**+-0 is 1 for any x, even if x is a zero, infinity, or nan
+            self.assertEqualAndEqualSign(pow_op(-INF, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-2.0, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-0.5, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-0.0, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(0.0, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(0.5, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(2.0, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(INF, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(NAN, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-INF, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-2.0, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-0.5, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-0.0, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(0.0, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(0.5, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(2.0, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(INF, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(NAN, -0.0), 1.0)
+
+            # x**y defers to complex pow for finite negative x and
+            # non-integral y.
+            self.assertEqual(type(pow_op(-2.0, -0.5)), complex)
+            self.assertEqual(type(pow_op(-2.0, 0.5)), complex)
+            self.assertEqual(type(pow_op(-1.0, -0.5)), complex)
+            self.assertEqual(type(pow_op(-1.0, 0.5)), complex)
+            self.assertEqual(type(pow_op(-0.5, -0.5)), complex)
+            self.assertEqual(type(pow_op(-0.5, 0.5)), complex)
+
+            # x**-INF is INF for abs(x) < 1
+            self.assertEqualAndEqualSign(pow_op(-0.5, -INF), INF)
+            self.assertEqualAndEqualSign(pow_op(-0.0, -INF), INF)
+            self.assertEqualAndEqualSign(pow_op(0.0, -INF), INF)
+            self.assertEqualAndEqualSign(pow_op(0.5, -INF), INF)
+
+            # x**-INF is 0 for abs(x) > 1
+            self.assertEqualAndEqualSign(pow_op(-INF, -INF), 0.0)
+            self.assertEqualAndEqualSign(pow_op(-2.0, -INF), 0.0)
+            self.assertEqualAndEqualSign(pow_op(2.0, -INF), 0.0)
+            self.assertEqualAndEqualSign(pow_op(INF, -INF), 0.0)
+
+            # x**INF is 0 for abs(x) < 1
+            self.assertEqualAndEqualSign(pow_op(-0.5, INF), 0.0)
+            self.assertEqualAndEqualSign(pow_op(-0.0, INF), 0.0)
+            self.assertEqualAndEqualSign(pow_op(0.0, INF), 0.0)
+            self.assertEqualAndEqualSign(pow_op(0.5, INF), 0.0)
+
+            # x**INF is INF for abs(x) > 1
+            self.assertEqualAndEqualSign(pow_op(-INF, INF), INF)
+            self.assertEqualAndEqualSign(pow_op(-2.0, INF), INF)
+            self.assertEqualAndEqualSign(pow_op(2.0, INF), INF)
+            self.assertEqualAndEqualSign(pow_op(INF, INF), INF)
+
+            # (-INF)**y is -0.0 for y a negative odd integer
+            self.assertEqualAndEqualSign(pow_op(-INF, -1.0), -0.0)
+
+            # (-INF)**y is 0.0 for y negative but not an odd integer
+            self.assertEqualAndEqualSign(pow_op(-INF, -0.5), 0.0)
+            self.assertEqualAndEqualSign(pow_op(-INF, -2.0), 0.0)
+
+            # (-INF)**y is -INF for y a positive odd integer
+            self.assertEqualAndEqualSign(pow_op(-INF, 1.0), -INF)
+
+            # (-INF)**y is INF for y positive but not an odd integer
+            self.assertEqualAndEqualSign(pow_op(-INF, 0.5), INF)
+            self.assertEqualAndEqualSign(pow_op(-INF, 2.0), INF)
+
+            # INF**y is INF for y positive
+            self.assertEqualAndEqualSign(pow_op(INF, 0.5), INF)
+            self.assertEqualAndEqualSign(pow_op(INF, 1.0), INF)
+            self.assertEqualAndEqualSign(pow_op(INF, 2.0), INF)
+
+            # INF**y is 0.0 for y negative
+            self.assertEqualAndEqualSign(pow_op(INF, -2.0), 0.0)
+            self.assertEqualAndEqualSign(pow_op(INF, -1.0), 0.0)
+            self.assertEqualAndEqualSign(pow_op(INF, -0.5), 0.0)
+
+            # basic checks not covered by the special cases above
+            self.assertEqualAndEqualSign(pow_op(-2.0, -2.0), 0.25)
+            self.assertEqualAndEqualSign(pow_op(-2.0, -1.0), -0.5)
+            self.assertEqualAndEqualSign(pow_op(-2.0, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-2.0, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-2.0, 1.0), -2.0)
+            self.assertEqualAndEqualSign(pow_op(-2.0, 2.0), 4.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, -2.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, -1.0), -1.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, 1.0), -1.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, 2.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(2.0, -2.0), 0.25)
+            self.assertEqualAndEqualSign(pow_op(2.0, -1.0), 0.5)
+            self.assertEqualAndEqualSign(pow_op(2.0, -0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(2.0, 0.0), 1.0)
+            self.assertEqualAndEqualSign(pow_op(2.0, 1.0), 2.0)
+            self.assertEqualAndEqualSign(pow_op(2.0, 2.0), 4.0)
+
+            # 1 ** large and -1 ** large; some libms apparently
+            # have problems with these
+            self.assertEqualAndEqualSign(pow_op(1.0, -1e100), 1.0)
+            self.assertEqualAndEqualSign(pow_op(1.0, 1e100), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, -1e100), 1.0)
+            self.assertEqualAndEqualSign(pow_op(-1.0, 1e100), 1.0)
+
+            # check sign for results that underflow to 0
+            self.assertEqualAndEqualSign(pow_op(-2.0, -2000.0), 0.0)
+            self.assertEqual(type(pow_op(-2.0, -2000.5)), complex)
+            self.assertEqualAndEqualSign(pow_op(-2.0, -2001.0), -0.0)
+            self.assertEqualAndEqualSign(pow_op(2.0, -2000.0), 0.0)
+            self.assertEqualAndEqualSign(pow_op(2.0, -2000.5), 0.0)
+            self.assertEqualAndEqualSign(pow_op(2.0, -2001.0), 0.0)
+            self.assertEqualAndEqualSign(pow_op(-0.5, 2000.0), 0.0)
+            self.assertEqual(type(pow_op(-0.5, 2000.5)), complex)
+            self.assertEqualAndEqualSign(pow_op(-0.5, 2001.0), -0.0)
+            self.assertEqualAndEqualSign(pow_op(0.5, 2000.0), 0.0)
+            self.assertEqualAndEqualSign(pow_op(0.5, 2000.5), 0.0)
+            self.assertEqualAndEqualSign(pow_op(0.5, 2001.0), 0.0)
+
+            # check we don't raise an exception for subnormal results,
+            # and validate signs.  Tests currently disabled, since
+            # they fail on systems where a subnormal result from pow
+            # is flushed to zero (e.g. Debian/ia64.)
+            #self.assertTrue(0.0 < pow_op(0.5, 1048) < 1e-315)
+            #self.assertTrue(0.0 < pow_op(-0.5, 1048) < 1e-315)
+            #self.assertTrue(0.0 < pow_op(0.5, 1047) < 1e-315)
+            #self.assertTrue(0.0 > pow_op(-0.5, 1047) > -1e-315)
+            #self.assertTrue(0.0 < pow_op(2.0, -1048) < 1e-315)
+            #self.assertTrue(0.0 < pow_op(-2.0, -1048) < 1e-315)
+            #self.assertTrue(0.0 < pow_op(2.0, -1047) < 1e-315)
+            #self.assertTrue(0.0 > pow_op(-2.0, -1047) > -1e-315)
 
 
 class FormatFunctionsTestCase(unittest.TestCase):
