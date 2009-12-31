@@ -927,7 +927,7 @@ collect(int generation)
 	 */
 	(void)handle_finalizers(&finalizers, old);
 
-	/* Clear free list only during the collection of the higest
+	/* Clear free list only during the collection of the highest
 	 * generation */
 	if (generation == NUM_GENERATIONS-1) {
 		clear_freelists();
@@ -948,7 +948,7 @@ collect_generations(void)
 	int i;
 	Py_ssize_t n = 0;
 
-	/* Find the oldest generation (higest numbered) where the count
+	/* Find the oldest generation (highest numbered) where the count
 	 * exceeds the threshold.  Objects in the that generation and
 	 * generations younger than it will be collected. */
 	for (i = NUM_GENERATIONS-1; i >= 0; i--) {
