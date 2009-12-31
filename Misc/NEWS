@@ -93,6 +93,10 @@ C-API
 Build
 -----
 
+- Issue #7609: Add a --with-system-expat option that causes the system's expat
+  library to be used for the pyexpat module instead of the one included with
+  Python.
+
 - Issue #7589: Only build the nis module when the correct header files are
   found.
 
