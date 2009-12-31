@@ -650,7 +650,7 @@ string syntax: ``b'xyzzy'``.  To construct byte arrays, use the
    Also, while in previous Python versions, byte strings and Unicode strings
    could be exchanged for each other rather freely (barring encoding issues),
    strings and bytes are now completely separate concepts.  There's no implicit
-   en-/decoding if you pass and object of the wrong type.  A string always
+   en-/decoding if you pass an object of the wrong type.  A string always
    compares unequal to a bytes or bytearray object.
 
 Lists are constructed with square brackets, separating items with commas: ``[a,
