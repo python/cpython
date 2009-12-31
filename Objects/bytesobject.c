@@ -2884,6 +2884,7 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	const char *encoding = NULL;
 	const char *errors = NULL;
 	PyObject *new = NULL;
+	Py_ssize_t size;
 	static char *kwlist[] = {"source", "encoding", "errors", 0};
 
 	if (type != &PyBytes_Type)
@@ -2914,6 +2915,25 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		assert(PyBytes_Check(new));
 		return new;
 	}
+	/* Is it an integer? */
+	size = PyNumber_AsSsize_t(x, PyExc_ValueError);
+	if (size == -1 && PyErr_Occurred()) {
+		PyErr_Clear();		
+	}
+	else {
+		if (size < 0) {
+			PyErr_SetString(PyExc_ValueError, "negative count");
+			return NULL;
+		}
+		new = PyBytes_FromStringAndSize(NULL, size);
+		if (new == NULL) {
+			return NULL;
+		}
+		if (size > 0) {
+			memset(((PyBytesObject*)new)->ob_sval, 0, size);
+		}
+		return new;
+	}
 
 	/* If it's not unicode, there can't be encoding or errors */
 	if (encoding != NULL || errors != NULL) {
@@ -2934,27 +2954,6 @@ PyBytes_FromObject(PyObject *x)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-
-	/* Is it an int? */
-	size = PyNumber_AsSsize_t(x, PyExc_ValueError);
-	if (size == -1 && PyErr_Occurred()) {
-		PyErr_Clear();
-	}
-	else {
-		if (size < 0) {
-			PyErr_SetString(PyExc_ValueError, "negative count");
-			return NULL;
-		}
-		new = PyBytes_FromStringAndSize(NULL, size);
-		if (new == NULL) {
-			return NULL;
-		}
-		if (size > 0) {
-			memset(((PyBytesObject*)new)->ob_sval, 0, size);
-		}
-		return new;
-	}
-
 	/* Use the modern buffer interface */
 	if (PyObject_CheckBuffer(x)) {
 		Py_buffer view;
@@ -2972,6 +2971,11 @@ PyBytes_FromObject(PyObject *x)
 	  fail:
 		Py_XDECREF(new);
 		PyBuffer_Release(&view);
+		return NULL;
+	}
+	if (PyUnicode_Check(x)) {
+		PyErr_SetString(PyExc_TypeError,
+				"cannot convert unicode object to bytes");
 		return NULL;
 	}
 

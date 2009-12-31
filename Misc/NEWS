@@ -140,6 +140,9 @@ Core and Builtins
 
 - Issue #4856: Remove checks for win NT.
 
+- Issue #6687: PyBytes_FromObject() no longer accepts an integer as its
+  argument to construct a null-initialized bytes object.
+
 C-API
 -----
 

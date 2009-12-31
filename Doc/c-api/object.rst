@@ -142,10 +142,11 @@ Object Protocol
 
    .. index:: builtin: bytes
 
-   Compute a bytes representation of object *o*.  *NULL* is returned on failure
-   and a bytes object on success.  This is equivalent to the Python expression
-   ``bytes(o)``.
-
+   Compute a bytes representation of object *o*.  *NULL* is returned on
+   failure and a bytes object on success.  This is equivalent to the Python
+   expression ``bytes(o)``, when *o* is not an integer.  Unlike ``bytes(o)``,
+   a TypeError is raised when *o* is an integer instead of a zero-initialized
+   bytes object.
 
 .. cfunction:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
 
