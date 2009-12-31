@@ -1220,19 +1220,26 @@ class PyBuildExt(build_ext):
         #
         # More information on Expat can be found at www.libexpat.org.
         #
-        expatinc = os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')
-        define_macros = [
-            ('HAVE_EXPAT_CONFIG_H', '1'),
-        ]
+        if '--with-system-expat' in sysconfig.get_config_var("CONFIG_ARGS"):
+            expat_inc = []
+            define_macros = []
+            expat_lib = ['expat']
+            expat_sources = []
+        else:
+            expat_inc = [os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')]
+            define_macros = [
+                ('HAVE_EXPAT_CONFIG_H', '1'),
+            ]
+            expat_lib = []
+            expat_sources = ['expat/xmlparse.c',
+                             'expat/xmlrole.c',
+                             'expat/xmltok.c']
 
         exts.append(Extension('pyexpat',
                               define_macros = define_macros,
-                              include_dirs = [expatinc],
-                              sources = ['pyexpat.c',
-                                         'expat/xmlparse.c',
-                                         'expat/xmlrole.c',
-                                         'expat/xmltok.c',
-                                         ],
+                              include_dirs = expat_inc,
+                              libraries = expat_lib,
+                              sources = ['pyexpat.c'] + expat_sources
                               ))
 
         # Fredrik Lundh's cElementTree module.  Note that this also
@@ -1242,7 +1249,8 @@ class PyBuildExt(build_ext):
             define_macros.append(('USE_PYEXPAT_CAPI', None))
             exts.append(Extension('_elementtree',
                                   define_macros = define_macros,
-                                  include_dirs = [expatinc],
+                                  include_dirs = expat_inc,
+                                  libraries = expat_lib,
                                   sources = ['_elementtree.c'],
                                   ))
         else:
