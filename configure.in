@@ -1448,8 +1448,9 @@ AC_DEFINE_UNQUOTED(SIZEOF_OFF_T, $ac_cv_sizeof_off_t,
 [The number of bytes in an off_t.])
 
 AC_MSG_CHECKING(whether to enable large file support)
-if test "$have_long_long" = yes -a \
-	"$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
+if test "$have_long_long" = yes
+then
+if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
   AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1, 
   [Defined to enable large file support when an off_t is bigger than a long
@@ -1457,6 +1458,9 @@ if test "$have_long_long" = yes -a \
    to add some flags for configuration and compilation to enable this mode.
    (For Solaris and Linux, the necessary defines are already defined.)])
   AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
 else
   AC_MSG_RESULT(no)
 fi
