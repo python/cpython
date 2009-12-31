@@ -4046,7 +4046,7 @@ then
   AC_MSG_RESULT($ac_cv_have_long_long_format)
 fi
 
-if test $ac_cv_have_long_long_format = yes
+if test "$ac_cv_have_long_long_format" = yes
 then
   AC_DEFINE(PY_FORMAT_LONG_LONG, "ll",
   [Define to printf format modifier for long long type])
