@@ -1211,12 +1211,12 @@ class PyBuildExt(build_ext):
 
         # Interface to the Expat XML parser
         #
-        # Expat was written by James Clark and is now maintained by a
-        # group of developers on SourceForge; see www.libexpat.org for
-        # more information.  The pyexpat module was written by Paul
-        # Prescod after a prototype by Jack Jansen.  The Expat source
-        # is included in Modules/expat/.  Usage of a system
-        # shared libexpat.so/expat.dll is not advised.
+        # Expat was written by James Clark and is now maintained by a group of
+        # developers on SourceForge; see www.libexpat.org for more information.
+        # The pyexpat module was written by Paul Prescod after a prototype by
+        # Jack Jansen.  The Expat source is included in Modules/expat/.  Usage
+        # of a system shared libexpat.so is possible with --with-system-expat
+        # cofigure option.
         #
         # More information on Expat can be found at www.libexpat.org.
         #
