@@ -156,7 +156,7 @@ generic_set_call_back(genericobject *g, PyObject *args)
 	}
 	else {
         PyObject *a, *b;
-        if (!PyArg_UnpackTuple(args, "set_call_back", 2, 2, &a, &b)
+        if (!PyArg_UnpackTuple(args, "set_call_back", 2, 2, &a, &b))
             return NULL;
 		Py_XDECREF(g->ob_callback);
 		Py_XDECREF(g->ob_callback_arg);
