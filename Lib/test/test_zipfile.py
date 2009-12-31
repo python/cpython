@@ -562,10 +562,10 @@ class PyZipFileTests(unittest.TestCase):
         os.mkdir(TESTFN2)
         try:
             with open(os.path.join(TESTFN2, "mod1.py"), "w") as fp:
-                fp.write("print 42\n")
+                fp.write("print(42)\n")
 
             with open(os.path.join(TESTFN2, "mod2.py"), "w") as fp:
-                fp.write("print 42 * 42\n")
+                fp.write("print(42 * 42)\n")
 
             with open(os.path.join(TESTFN2, "mod2.txt"), "w") as fp:
                 fp.write("bla bla bla\n")
@@ -869,7 +869,7 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
     def setUp(self):
         datacount = randint(16, 64)*1024 + randint(1, 1024)
         self.data = ''.join(struct.pack('<f', random()*randint(-1000, 1000))
-                                        for i in xrange(datacount))
+                            for i in xrange(datacount))
 
         # Make a source file with some lines
         with open(TESTFN, "wb") as fp:
