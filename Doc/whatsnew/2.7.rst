@@ -360,9 +360,10 @@ Some smaller changes made to the core Python language are:
   on the :exc:`IOError` exception when trying to open a directory
   on POSIX platforms.  (Noted by Jan Kaliszewski; :issue:`4764`.)
 
-* The Python tokenizer now translates line endings itself, so
-  the :func:`compile` built-in function can now accept code using
-  any line-ending convention.
+* The Python tokenizer now translates line endings itself, so the
+  :func:`compile` built-in function can now accept code using any
+  line-ending convention.  Additionally, it no longer requires that the
+  code end in a newline.
 
 * Extra parentheses in function definitions are illegal in Python 3.x,
   meaning that you get a syntax error from ``def f((x)): pass``.  In
