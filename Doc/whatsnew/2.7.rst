@@ -264,7 +264,9 @@ Some smaller changes made to the core Python language are:
   Windows, and on Unix platforms using the gcc, icc, or suncc
   compilers.  There may be a small number of platforms where correct
   operation of this code cannot be guaranteed, so the code is not
-  used on such systems.
+  used on such systems.  You can find out which code is being used
+  by checking :data:`sys.float_repr_style`,  which will be ``short``
+  if the new code is in use and ``legacy`` if it isn't.
 
   Implemented by Mark Dickinson, using David Gay's :file:`dtoa.c` library;
   :issue:`7117`.
@@ -357,6 +359,10 @@ Some smaller changes made to the core Python language are:
 * The :class:`file` object will now set the :attr:`filename` attribute
   on the :exc:`IOError` exception when trying to open a directory
   on POSIX platforms.  (Noted by Jan Kaliszewski; :issue:`4764`.)
+
+* The Python tokenizer now translates line endings itself, so
+  the :func:`compile` built-in function can now accept code using
+  any line-ending convention
 
 * Extra parentheses in function definitions are illegal in Python 3.x,
   meaning that you get a syntax error from ``def f((x)): pass``.  In
@@ -1067,9 +1073,24 @@ Changes to Python's build process and to the C API include:
 
   (Fixed by Thomas Wouters; :issue:`1590864`.)
 
+* The :cfunc:`Py_Finalize` function now calls the internal
+  :func:`threading._shutdown` function; this prevents some exceptions from
+  being raised when an interpreter shuts down.
+  (Patch by Adam Olsen; :issue:`1722344`.)
+
 * Global symbols defined by the :mod:`ctypes` module are now prefixed
   with ``Py``, or with ``_ctypes``.  (Implemented by Thomas
   Heller; :issue:`3102`.)
+
+* New configure option: the :option:`--with-system-expat` switch allows
+  building the :mod:`pyexpat` module to use the system Expat library.
+  (Contributed by Arfrever Frehtes Taifersar Arahesis; :issue:`7609`.)
+
+* New configure option: Compiling Python with the
+  :option:`--with-valgrind` option will now disable the pymalloc
+  allocator, which is difficult for the Valgrind to analyze correctly.
+  Valgrind will therefore be better at detecting memory leaks and
+  overruns. (Contributed by James Henstridge; :issue:`2422`.)
 
 * The :program:`configure` script now checks for floating-point rounding bugs
   on certain 32-bit Intel chips and defines a :cmacro:`X87_DOUBLE_ROUNDING`
@@ -1082,11 +1103,6 @@ Changes to Python's build process and to the C API include:
 
 * The build process now supports Subversion 1.7.  (Contributed by
   Arfrever Frehtes Taifersar Arahesis; :issue:`6094`.)
-
-* Compiling Python with the :option:`--with-valgrind` option will now
-  disable the pymalloc allocator, which is difficult for the Valgrind to
-  analyze correctly.  Valgrind will therefore be better at detecting
-  memory leaks and overruns. (Contributed by James Henstridge; :issue:`2422`.)
 
 
 .. ======================================================================
@@ -1139,12 +1155,14 @@ Other Changes and Fixes
   The :option:`-r` option also reports the seed that was used
   (Added by Collin Winter.)
 
-* The :file:`regrtest.py` script now takes a :option:`-j` switch
-  that takes an integer specifying how many tests run in parallel. This
+* Another :file:`regrtest.py` switch is :option:`-j`, which
+  takes an integer specifying how many tests run in parallel. This
   allows reducing the total runtime on multi-core machines.
   This option is compatible with several other options, including the
   :option:`-R` switch which is known to produce long runtimes.
-  (Added by Antoine Pitrou, :issue:`6152`.)
+  (Added by Antoine Pitrou, :issue:`6152`.)  This can also be used
+  with a new :option:`-F` switch that runs selected tests in a loop
+  until they fail.  (Added by Antoine Pitrou; :issue:`7312`.)
 
 .. ======================================================================
 
