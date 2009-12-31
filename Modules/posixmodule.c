@@ -1988,9 +1988,10 @@ fd to the numeric uid and gid.");
 static PyObject *
 posix_fchown(PyObject *self, PyObject *args)
 {
-	int fd, uid, gid;
+	int fd;
+	long uid, gid;
 	int res;
-	if (!PyArg_ParseTuple(args, "iii:chown", &fd, &uid, &gid))
+	if (!PyArg_ParseTuple(args, "ill:chown", &fd, &uid, &gid))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = fchown(fd, (uid_t) uid, (gid_t) gid);
@@ -2012,9 +2013,9 @@ posix_lchown(PyObject *self, PyObject *args)
 {
 	PyObject *opath;
 	char *path;
-	int uid, gid;
+	long uid, gid;
 	int res;
-	if (!PyArg_ParseTuple(args, "O&ii:lchown",
+	if (!PyArg_ParseTuple(args, "O&ll:lchown",
 	                      PyUnicode_FSConverter, &opath,
 	                      &uid, &gid))
 		return NULL;

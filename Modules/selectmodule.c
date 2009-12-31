@@ -1166,7 +1166,7 @@ static PyTypeObject pyEpoll_Type = {
 #endif
 
 PyDoc_STRVAR(kqueue_event_doc,
-"kevent(ident, filter=KQ_FILTER_READ, flags=KQ_ADD, fflags=0, data=0, udata=0)\n\
+"kevent(ident, filter=KQ_FILTER_READ, flags=KQ_EV_ADD, fflags=0, data=0, udata=0)\n\
 \n\
 This object is the equivalent of the struct kevent for the C API.\n\
 \n\

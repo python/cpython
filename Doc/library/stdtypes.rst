@@ -2458,8 +2458,7 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. attribute:: class.__bases__
 
-   The tuple of base classes of a class object.  If there are no base classes, this
-   will be an empty tuple.
+   The tuple of base classes of a class object.
 
 
 .. attribute:: class.__name__

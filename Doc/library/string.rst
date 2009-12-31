@@ -86,6 +86,7 @@ substitutions and value formatting via the :func:`format` method described in
 you to create and customize your own string formatting behaviors using the same
 implementation as the built-in :meth:`format` method.
 
+
 .. class:: Formatter
 
    The :class:`Formatter` class has the following public methods:
@@ -469,6 +470,8 @@ The available presentation types for floating point and decimal values are:
 
 Template strings
 ----------------
+
+.. versionadded:: 2.4
 
 Templates provide simpler string substitutions as described in :pep:`292`.
 Instead of the normal ``%``\ -based substitutions, Templates support ``$``\
