@@ -1611,6 +1611,8 @@ file-like object (or, more precisely, any object which supports :meth:`write`
 and :meth:`flush` methods).
 
 
+.. currentmodule:: logging
+
 .. class:: StreamHandler(stream=None)
 
    Returns a new instance of the :class:`StreamHandler` class. If *stream* is
