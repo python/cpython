@@ -362,7 +362,7 @@ Some smaller changes made to the core Python language are:
 
 * The Python tokenizer now translates line endings itself, so
   the :func:`compile` built-in function can now accept code using
-  any line-ending convention
+  any line-ending convention.
 
 * Extra parentheses in function definitions are illegal in Python 3.x,
   meaning that you get a syntax error from ``def f((x)): pass``.  In
@@ -439,6 +439,8 @@ Several performance enhancements have been added:
   Various benchmarks show speedups of between 50% and 150% for long
   integer divisions and modulo operations.
   (Contributed by Mark Dickinson; :issue:`5512`.)
+  Bitwise operations are also significantly faster (initial patch by
+  Gregory Smith; :issue:`1087418`).
 
 * The implementation of ``%`` checks for the left-side operand being
   a Python string and special-cases it; this results in a 1-3%
@@ -608,6 +610,10 @@ changes, or look through the Subversion logs for all the details.
   XXX link to  file:///MacDev/svn.python.org/python-trunk/Doc/build/html/distutils/examples.html#reading-the-metadata
   (Contributed by Tarek Ziade; :issue:`7457`.)
 
+  :file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
+  to skip reading the :file:`~/.pydistutils.cfg` file.  (Suggested by
+  by Michael Hoffman, and implemented by Paul Winkler; :issue:`1180`.)
+
 * The :class:`Fraction` class now accepts two rational numbers
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
@@ -751,6 +757,10 @@ changes, or look through the Subversion logs for all the details.
   to store data.
   (Contributed by Tarek Ziade; :issue:`6693`.)
 
+* The :mod:`socket` module's :class:`SSL` objects now support the
+  buffer API, which fixed a test suite failure.  (Fixed by Antoine Pitrou;
+  :issue:`7133`.)
+
 * The :mod:`SocketServer` module's :class:`TCPServer` class now
   has a :attr:`disable_nagle_algorithm` class attribute.
   The default value is False; if overridden to be True,
@@ -863,6 +873,10 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 * :meth:`assertIs` and :meth:`assertIsNot` take two values and check
   whether the two values evaluate to the same object or not.
   (Added by Michael Foord; :issue:`2578`.)
+
+* :meth:`assertIsInstance` and :meth:`assertNotIsInstance` check whether
+  the resulting object is an instance of a particular class, or of
+  one of a tuple of classes.  (Added by Georg Brandl; :issue:`7031`.)
 
 * :meth:`assertGreater`, :meth:`assertGreaterEqual`,
   :meth:`assertLess`, and :meth:`assertLessEqual` compare
@@ -1031,6 +1045,11 @@ Changes to Python's build process and to the C API include:
   a :ctype:`long`, an *overflow* flag is set and returned to the caller.
   (Contributed by Case Van Horsen; :issue:`7528`.)
 
+* New function: stemming from the rewrite of string-to-float conversion,
+  a new :cfunc:`PyOS_string_to_double` function was added.  The old
+  :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof` functions
+  are now deprecated.
+
 * New macros: the Python header files now define the following macros:
   :cmacro:`Py_ISALNUM`,
   :cmacro:`Py_ISALPHA`,
@@ -1192,6 +1211,12 @@ that may require changes to your code:
 * The :meth:`readline` method of :class:`StringIO` objects now does
   nothing when a negative length is requested, as other file-like
   objects do.  (:issue:`7348`).
+
+For C extensions:
+
+* Use the new :cfunc:`PyOS_string_to_double` function instead of the old
+  :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof` functions,
+  which are now deprecated.
 
 .. ======================================================================
 
