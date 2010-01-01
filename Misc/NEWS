@@ -93,6 +93,8 @@ C-API
 Build
 -----
 
+- Issue #6491: Allow --with-dbmliborder to specify that no dbms will be built.
+
 - Issue #6943: Use pkg-config to find the libffi headers when the
   --with-system-ffi flag is used.
 
