@@ -21,7 +21,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-dEiOQsStuUvxX3?] [-c command | -m module-name | script | - ] [args]
+    python [-BdEiOQsStuUvVWxX3?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -316,7 +316,7 @@ Miscellaneous options
    :mod:`warnings` module.
 
    The simplest form of argument is one of the following action strings (or a
-   unique abbreviation):
+   unique abbreviation) by themselves:
 
    ``ignore``
       Ignore all warnings.
@@ -361,6 +361,8 @@ Miscellaneous options
    ``#!cmd``.  This is intended for a DOS specific hack only.
 
    .. note:: The line numbers in error messages will be off by one.
+
+.. XXX document -X?
 
 
 .. cmdoption:: -3
