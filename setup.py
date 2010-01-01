@@ -887,14 +887,15 @@ class PyBuildExt(build_ext):
         else:
             missing.append('_sqlite3')
 
+        dbm_order = ['gdbm']
         # The standard Unix dbm module:
         if platform not in ['cygwin']:
             config_args = [arg.strip("'")
                            for arg in sysconfig.get_config_var("CONFIG_ARGS").split()]
-            dbm_args = [arg.split('=')[-1] for arg in config_args
+            dbm_args = [arg for arg in config_args
                         if arg.startswith('--with-dbmliborder=')]
             if dbm_args:
-                dbm_order = dbm_args[-1].split(":")
+                dbm_order = [arg.split('=')[-1] for arg in dbm_args][-1].split(":")
             else:
                 dbm_order = "ndbm:gdbm:bdb".split(":")
             dbmext = None
@@ -958,7 +959,8 @@ class PyBuildExt(build_ext):
                 missing.append('_dbm')
 
         # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
-        if (self.compiler_obj.find_library_file(lib_dirs, 'gdbm')):
+        if ('gdbm' in dbm_order and
+            self.compiler_obj.find_library_file(lib_dirs, 'gdbm')):
             exts.append( Extension('_gdbm', ['_gdbmmodule.c'],
                                    libraries = ['gdbm'] ) )
         else:
@@ -1558,7 +1560,9 @@ class PyBuildExt(build_ext):
             # in /usr/include/ffi
             inc_dirs.append('/usr/include/ffi')
 
-        ffi_inc = find_file('ffi.h', [], inc_dirs)
+        ffi_inc = [sysconfig.get_config_var("LIBFFI_INCLUDEDIR")]
+        if not ffi_inc:
+            ffi_inc = find_file('ffi.h', [], inc_dirs)
         if ffi_inc is not None:
             ffi_h = ffi_inc[0] + '/ffi.h'
             fp = open(ffi_h)

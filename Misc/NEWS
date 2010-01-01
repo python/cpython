@@ -517,6 +517,11 @@ Extension Modules
 Build
 -----
 
+- Issue #6491: Allow --with-dbmliborder to specify that no dbms will be built.
+
+- Issue #6943: Use pkg-config to find the libffi headers when the
+  --with-system-ffi flag is used.
+
 - Issue #7609: Add a --with-system-expat option that causes the system's expat
   library to be used for the pyexpat module instead of the one included with
   Python.
