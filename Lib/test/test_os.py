@@ -502,11 +502,9 @@ class URandomTests (unittest.TestCase):
             self.assertEqual(len(os.urandom(100)), 100)
             self.assertEqual(len(os.urandom(1000)), 1000)
             # see http://bugs.python.org/issue3708
-            with test_support.check_warnings():
-                # silence deprecation warnings about float arguments
-                self.assertEqual(len(os.urandom(0.9)), 0)
-                self.assertEqual(len(os.urandom(1.1)), 1)
-                self.assertEqual(len(os.urandom(2.0)), 2)
+            self.assertRaises(TypeError, os.urandom, 0.9)
+            self.assertRaises(TypeError, os.urandom, 1.1)
+            self.assertRaises(TypeError, os.urandom, 2.0)
         except NotImplementedError:
             pass
 

@@ -12,6 +12,14 @@ What's New in Python 2.7 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #5080: A number of functions and methods previously produced a
+  DeprecationWarning when passed a float argument where an integer was
+  expected.  These functions and methods now raise TypeError instead.
+  The majority of the effects of this change are in the extension
+  modules, but some core functions and methods are affected: notably
+  the 'chr', 'range' and 'xrange' builtins, and many unicode/str
+  methods.
+
 - Issue #7604: Deleting an unset slotted attribute did not raise an
   AttributeError.
 
@@ -87,6 +95,14 @@ Library
 
 C-API
 -----
+
+- Issue #5080: The argument parsing functions PyArg_ParseTuple,
+  PyArg_ParseTupleAndKeywords, PyArg_VaParse,
+  PyArg_VaParseTupleAndKeywords and PyArg_Parse no longer accept float
+  arguments for integer format codes (other than 'L'): previously an
+  attempt to pass a float resulted in a DeprecationWarning; now it
+  gives a TypeError.  For the 'L' format code (which previously had no
+  warning) there is now a DeprecationWarning.
 
 - Issue #7033: function ``PyErr_NewExceptionWithDoc()`` added.
 

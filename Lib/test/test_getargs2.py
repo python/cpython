@@ -1,16 +1,7 @@
 import unittest
 from test import test_support
 from _testcapi import getargs_keywords
-
 import warnings
-warnings.filterwarnings("ignore",
-                        category=DeprecationWarning,
-                        message=".*integer argument expected, got float",
-                        module=__name__)
-warnings.filterwarnings("ignore",
-                        category=DeprecationWarning,
-                        message=".*integer argument expected, got float",
-                        module="unittest")
 
 """
 > How about the following counterproposal. This also changes some of
@@ -68,7 +59,7 @@ class Unsigned_TestCase(unittest.TestCase):
     def test_b(self):
         from _testcapi import getargs_b
         # b returns 'unsigned char', and does range checking (0 ... UCHAR_MAX)
-        self.assertEqual(3, getargs_b(3.14))
+        self.assertRaises(TypeError, getargs_b, 3.14)
         self.assertEqual(99, getargs_b(Long()))
         self.assertEqual(99, getargs_b(Int()))
 
@@ -84,7 +75,7 @@ class Unsigned_TestCase(unittest.TestCase):
     def test_B(self):
         from _testcapi import getargs_B
         # B returns 'unsigned char', no range checking
-        self.assertEqual(3, getargs_B(3.14))
+        self.assertRaises(TypeError, getargs_B, 3.14)
         self.assertEqual(99, getargs_B(Long()))
         self.assertEqual(99, getargs_B(Int()))
 
@@ -101,7 +92,7 @@ class Unsigned_TestCase(unittest.TestCase):
     def test_H(self):
         from _testcapi import getargs_H
         # H returns 'unsigned short', no range checking
-        self.assertEqual(3, getargs_H(3.14))
+        self.assertRaises(TypeError, getargs_H, 3.14)
         self.assertEqual(99, getargs_H(Long()))
         self.assertEqual(99, getargs_H(Int()))
 
@@ -118,7 +109,7 @@ class Unsigned_TestCase(unittest.TestCase):
     def test_I(self):
         from _testcapi import getargs_I
         # I returns 'unsigned int', no range checking
-        self.assertEqual(3, getargs_I(3.14))
+        self.assertRaises(TypeError, getargs_I, 3.14)
         self.assertEqual(99, getargs_I(Long()))
         self.assertEqual(99, getargs_I(Int()))
 
@@ -154,7 +145,7 @@ class Signed_TestCase(unittest.TestCase):
     def test_h(self):
         from _testcapi import getargs_h
         # h returns 'short', and does range checking (SHRT_MIN ... SHRT_MAX)
-        self.assertEqual(3, getargs_h(3.14))
+        self.assertRaises(TypeError, getargs_h, 3.14)
         self.assertEqual(99, getargs_h(Long()))
         self.assertEqual(99, getargs_h(Int()))
 
@@ -170,7 +161,7 @@ class Signed_TestCase(unittest.TestCase):
     def test_i(self):
         from _testcapi import getargs_i
         # i returns 'int', and does range checking (INT_MIN ... INT_MAX)
-        self.assertEqual(3, getargs_i(3.14))
+        self.assertRaises(TypeError, getargs_i, 3.14)
         self.assertEqual(99, getargs_i(Long()))
         self.assertEqual(99, getargs_i(Int()))
 
@@ -186,7 +177,7 @@ class Signed_TestCase(unittest.TestCase):
     def test_l(self):
         from _testcapi import getargs_l
         # l returns 'long', and does range checking (LONG_MIN ... LONG_MAX)
-        self.assertEqual(3, getargs_l(3.14))
+        self.assertRaises(TypeError, getargs_l, 3.14)
         self.assertEqual(99, getargs_l(Long()))
         self.assertEqual(99, getargs_l(Int()))
 
@@ -203,7 +194,7 @@ class Signed_TestCase(unittest.TestCase):
         from _testcapi import getargs_n
         # n returns 'Py_ssize_t', and does range checking
         # (PY_SSIZE_T_MIN ... PY_SSIZE_T_MAX)
-        self.assertEqual(3, getargs_n(3.14))
+        self.assertRaises(TypeError, getargs_n, 3.14)
         self.assertEqual(99, getargs_n(Long()))
         self.assertEqual(99, getargs_n(Int()))
 
@@ -220,9 +211,24 @@ class Signed_TestCase(unittest.TestCase):
 class LongLong_TestCase(unittest.TestCase):
     def test_L(self):
         from _testcapi import getargs_L
-        # L returns 'long long', and does range checking (LLONG_MIN ... LLONG_MAX)
+        # L returns 'long long', and does range checking (LLONG_MIN
+        # ... LLONG_MAX)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=DeprecationWarning,
+                message=".*integer argument expected, got float",
+                module=__name__)
+            self.assertEqual(3, getargs_L(3.14))
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "error",
+                category=DeprecationWarning,
+                message=".*integer argument expected, got float",
+                module="unittest")
+            self.assertRaises(DeprecationWarning, getargs_L, 3.14)
+
         self.assertRaises(TypeError, getargs_L, "Hello")
-        self.assertEqual(3, getargs_L(3.14))
         self.assertEqual(99, getargs_L(Long()))
         self.assertEqual(99, getargs_L(Int()))
 

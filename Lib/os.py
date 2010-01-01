@@ -752,7 +752,7 @@ if not _exists("urandom"):
             raise NotImplementedError("/dev/urandom (or equivalent) not found")
         try:
             bs = b""
-            while n - len(bs) >= 1:
+            while n > len(bs):
                 bs += read(_urandomfd, n - len(bs))
         finally:
             close(_urandomfd)
