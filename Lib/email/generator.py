@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2009 Python Software Foundation
+# Copyright (C) 2001-2010 Python Software Foundation
 # Contact: email-sig@python.org
 
 """Classes to generate plain text from a message object tree."""

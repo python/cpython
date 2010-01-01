@@ -2,7 +2,7 @@
 # turtle.py: a Tkinter based turtle graphics module for Python
 # Version 1.0.1 - 24. 9. 2009
 #
-# Copyright (C) 2006 - 2009  Gregor Lingl
+# Copyright (C) 2006 - 2010  Gregor Lingl
 # email: glingl@aon.at
 #
 # This software is provided 'as-is', without any express or implied
