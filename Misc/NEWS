@@ -406,6 +406,8 @@ Extension Modules
 Build
 -----
 
+- Issue #6491: Allow --with-dbmliborder to specify that no dbms will be built.
+
 - Issue #7589: Only build the nis module when the correct header files are
   found.
 
