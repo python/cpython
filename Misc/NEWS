@@ -146,6 +146,13 @@ Core and Builtins
 C-API
 -----
 
+- Issue #5080: The argument parsing functions PyArg_ParseTuple,
+  PyArg_ParseTupleAndKeywords, PyArg_VaParse,
+  PyArg_VaParseTupleAndKeywords and PyArg_Parse now raise a
+  DeprecationWarning for float arguments passed with the 'L' format
+  code.  This will become a TypeError in a future version of Python,
+  to match the behaviour of the other integer format codes.
+
 - Issue #7033: function ``PyErr_NewExceptionWithDoc()`` added.
 
 - Issue #7414: 'C' code wasn't being skipped properly (for keyword arguments)

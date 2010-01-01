@@ -1,16 +1,7 @@
 import unittest
 from test import support
 from _testcapi import getargs_keywords
-
 import warnings
-warnings.filterwarnings("ignore",
-                        category=DeprecationWarning,
-                        message=".*integer argument expected, got float",
-                        module=__name__)
-warnings.filterwarnings("ignore",
-                        category=DeprecationWarning,
-                        message=".*integer argument expected, got float",
-                        module="unittest")
 
 """
 > How about the following counterproposal. This also changes some of
@@ -197,9 +188,24 @@ class Signed_TestCase(unittest.TestCase):
 class LongLong_TestCase(unittest.TestCase):
     def test_L(self):
         from _testcapi import getargs_L
-        # L returns 'long long', and does range checking (LLONG_MIN ... LLONG_MAX)
+        # L returns 'long long', and does range checking (LLONG_MIN
+        # ... LLONG_MAX)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=DeprecationWarning,
+                message=".*integer argument expected, got float",
+                module=__name__)
+            self.assertEqual(3, getargs_L(3.14))
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "error",
+                category=DeprecationWarning,
+                message=".*integer argument expected, got float",
+                module="unittest")
+            self.assertRaises(DeprecationWarning, getargs_L, 3.14)
+
         self.assertRaises(TypeError, getargs_L, "Hello")
-        self.assertEqual(3, getargs_L(3.14))
         self.assertEqual(99, getargs_L(Int()))
 
         self.assertRaises(OverflowError, getargs_L, LLONG_MIN-1)
