@@ -205,6 +205,8 @@ GRAMMAR_C=	$(srcdir)/Python/graminit.c
 GRAMMAR_INPUT=	$(srcdir)/Grammar/Grammar
 
 
+LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
+
 ##########################################################################
 # Parser
 PGEN=		Parser/pgen$(EXE)

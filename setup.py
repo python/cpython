@@ -1790,7 +1790,9 @@ class PyBuildExt(build_ext):
             # in /usr/include/ffi
             inc_dirs.append('/usr/include/ffi')
 
-        ffi_inc = find_file('ffi.h', [], inc_dirs)
+        ffi_inc = [sysconfig.get_config_var("LIBFFI_INCLUDEDIR")]
+        if not ffi_inc:
+            ffi_inc = find_file('ffi.h', [], inc_dirs)
         if ffi_inc is not None:
             ffi_h = ffi_inc[0] + '/ffi.h'
             fp = open(ffi_h)
