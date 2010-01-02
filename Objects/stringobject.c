@@ -1576,13 +1576,10 @@ from the result.");
 static PyObject *
 string_split(PyStringObject *self, PyObject *args)
 {
-	Py_ssize_t len = PyString_GET_SIZE(self), n, i, j;
+	Py_ssize_t len = PyString_GET_SIZE(self), n, i, j, pos;
 	Py_ssize_t maxsplit = -1, count=0;
 	const char *s = PyString_AS_STRING(self), *sub;
 	PyObject *list, *str, *subobj = Py_None;
-#ifdef USE_FAST
-	Py_ssize_t pos;
-#endif
 
 	if (!PyArg_ParseTuple(args, "|On:split", &subobj, &maxsplit))
 		return NULL;
@@ -1612,28 +1609,15 @@ string_split(PyStringObject *self, PyObject *args)
 	if (list == NULL)
 		return NULL;
 
-#ifdef USE_FAST
 	i = j = 0;
 	while (maxsplit-- > 0) {
 		pos = fastsearch(s+i, len-i, sub, n, FAST_SEARCH);
 		if (pos < 0)
 			break;
-		j = i+pos;
+		j = i + pos;
 		SPLIT_ADD(s, i, j);
 		i = j + n;
 	}
-#else
-	i = j = 0;
-	while ((j+n <= len) && (maxsplit-- > 0)) {
-		for (; j+n <= len; j++) {
-			if (Py_STRING_MATCH(s, j, sub, n)) {
-				SPLIT_ADD(s, i, j);
-				i = j = j + n;
-				break;
-			}
-		}
-	}
-#endif
 	SPLIT_ADD(s, i, len);
 	FIX_PREALLOC_SIZE(list);
 	return list;
@@ -1801,9 +1785,9 @@ is a separator.");
 static PyObject *
 string_rsplit(PyStringObject *self, PyObject *args)
 {
-	Py_ssize_t len = PyString_GET_SIZE(self), n, i, j;
+	Py_ssize_t len = PyString_GET_SIZE(self), n, j, pos;
 	Py_ssize_t maxsplit = -1, count=0;
-	const char *s, *sub;
+	const char *s = PyString_AS_STRING(self), *sub;
 	PyObject *list, *str, *subobj = Py_None;
 
 	if (!PyArg_ParseTuple(args, "|On:rsplit", &subobj, &maxsplit))
@@ -1835,18 +1819,13 @@ string_rsplit(PyStringObject *self, PyObject *args)
 		return NULL;
 
 	j = len;
-	i = j - n;
 
-	s = PyString_AS_STRING(self);
-	while ( (i >= 0) && (maxsplit-- > 0) ) {
-		for (; i>=0; i--) {
-			if (Py_STRING_MATCH(s, i, sub, n)) {
-				SPLIT_ADD(s, i + n, j);
-				j = i;
-				i -= n;
-				break;
-			}
-		}
+	while (maxsplit-- > 0) {
+		pos = fastsearch(s, j, sub, n, FAST_RSEARCH);
+		if (pos < 0)
+			break;
+		SPLIT_ADD(s, pos + n, j);
+		j = pos;
 	}
 	SPLIT_ADD(s, 0, j);
 	FIX_PREALLOC_SIZE(list);
