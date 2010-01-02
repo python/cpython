@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #7462: Implement the stringlib fast search algorithm for the `rfind`,
+  `rindex`, `rsplit` and `rpartition` methods.  Patch by Florent Xicluna.
+
 - Issue #5080: A number of functions and methods previously produced a
   DeprecationWarning when passed a float argument where an integer was
   expected.  These functions and methods now raise TypeError instead.

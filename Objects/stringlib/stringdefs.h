@@ -21,7 +21,6 @@
 #define STRINGLIB_NEW            PyString_FromStringAndSize
 #define STRINGLIB_RESIZE         _PyString_Resize
 #define STRINGLIB_CHECK          PyString_Check
-#define STRINGLIB_CMP            memcmp
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_GROUPING       _PyString_InsertThousandsGrouping
 #define STRINGLIB_GROUPING_LOCALE _PyString_InsertThousandsGroupingLocale
