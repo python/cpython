@@ -15,7 +15,6 @@
 
 #include "Python.h"
 #include "structmember.h"
-#include "hashlib.h"
 
 #ifdef WITH_THREAD
 #include "pythread.h"
@@ -218,13 +217,10 @@ PyDoc_STRVAR(EVP_update__doc__,
 static PyObject *
 EVP_update(EVPobject *self, PyObject *args)
 {
-    PyObject *obj;
     Py_buffer view;
 
-    if (!PyArg_ParseTuple(args, "O:update", &obj))
+    if (!PyArg_ParseTuple(args, "s*:update", &view))
         return NULL;
-
-    GET_BUFFER_VIEW_OR_ERROUT(obj, &view, NULL);
 
 #ifdef WITH_THREAD
     if (self->lock == NULL && view.len >= HASHLIB_GIL_MINSIZE) {
@@ -238,17 +234,16 @@ EVP_update(EVPobject *self, PyObject *args)
         EVP_hash(self, view.buf, view.len);
         PyThread_release_lock(self->lock);
         Py_END_ALLOW_THREADS
-    } else {
+    }
+    else
+#endif
+    {
         EVP_hash(self, view.buf, view.len);
     }
-#else
-    EVP_hash(self, view.buf, view.len);
-#endif
 
     PyBuffer_Release(&view);
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef EVP_methods[] = {
@@ -314,31 +309,25 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"name", "string", NULL};
     PyObject *name_obj = NULL;
-    PyObject *data_obj = NULL;
-    Py_buffer view;
+    Py_buffer view = { 0 };
     char *nameStr;
     const EVP_MD *digest;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:HASH", kwlist,
-                                     &name_obj, &data_obj)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|s*:HASH", kwlist,
+                                     &name_obj, &view)) {
         return -1;
     }
 
-    if (data_obj)
-        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, -1);
-
     if (!PyArg_Parse(name_obj, "s", &nameStr)) {
         PyErr_SetString(PyExc_TypeError, "name must be a string");
-        if (data_obj)
-            PyBuffer_Release(&view);
+	PyBuffer_Release(&view);
         return -1;
     }
 
     digest = EVP_get_digestbyname(nameStr);
     if (!digest) {
         PyErr_SetString(PyExc_ValueError, "unknown hash function");
-        if (data_obj)
-            PyBuffer_Release(&view);
+	PyBuffer_Release(&view);
         return -1;
     }
     EVP_DigestInit(&self->ctx, digest);
@@ -346,7 +335,7 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     self->name = name_obj;
     Py_INCREF(self->name);
 
-    if (data_obj) {
+    if (view.obj) {
         if (view.len >= HASHLIB_GIL_MINSIZE) {
             Py_BEGIN_ALLOW_THREADS
             EVP_hash(self, view.buf, view.len);
@@ -471,14 +460,13 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
     static char *kwlist[] = {"name", "string", NULL};
     PyObject *name_obj = NULL;
-    PyObject *data_obj = NULL;
     Py_buffer view = { 0 };
     PyObject *ret_obj;
     char *name;
     const EVP_MD *digest;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "O|O:new", kwlist,
-                                     &name_obj, &data_obj)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "O|s*:new", kwlist,
+                                     &name_obj, &view)) {
         return NULL;
     }
 
@@ -487,16 +475,12 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
         return NULL;
     }
 
-    if (data_obj)
-        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
-
     digest = EVP_get_digestbyname(name);
 
     ret_obj = EVPnew(name_obj, digest, NULL, (unsigned char*)view.buf,
-                        Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
+		     view.len);
+    PyBuffer_Release(&view);
 
-    if (data_obj)
-        PyBuffer_Release(&view);
     return ret_obj;
 }
 
@@ -511,26 +495,19 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     static PyObject * \
     EVP_new_ ## NAME (PyObject *self, PyObject *args) \
     { \
-        PyObject *data_obj = NULL; \
         Py_buffer view = { 0 }; \
         PyObject *ret_obj; \
      \
-        if (!PyArg_ParseTuple(args, "|O:" #NAME , &data_obj)) { \
+        if (!PyArg_ParseTuple(args, "|s*:" #NAME , &view)) { \
             return NULL; \
         } \
      \
-        if (data_obj) \
-            GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL); \
-     \
-        ret_obj = EVPnew( \
-                    CONST_ ## NAME ## _name_obj, \
-                    NULL, \
-                    CONST_new_ ## NAME ## _ctx_p, \
-                    (unsigned char*)view.buf, \
-                    Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int)); \
-     \
-        if (data_obj) \
-            PyBuffer_Release(&view); \
+	ret_obj = EVPnew( \
+		    CONST_ ## NAME ## _name_obj, \
+		    NULL, \
+		    CONST_new_ ## NAME ## _ctx_p, \
+		    (unsigned char*)view.buf, view.len); \
+	PyBuffer_Release(&view); \
         return ret_obj; \
     }
 

@@ -12,7 +12,6 @@
 #include "Python.h"
 #include "structmember.h"
 #include "md5.h"
-#include "hashlib.h"
 
 typedef struct {
 	PyObject_HEAD
@@ -51,20 +50,16 @@ md5_dealloc(md5object *md5p)
 static PyObject *
 md5_update(md5object *self, PyObject *args)
 {
-	PyObject *data_obj;
 	Py_buffer view;
 
-	if (!PyArg_ParseTuple(args, "O:update", &data_obj))
+	if (!PyArg_ParseTuple(args, "s*:update", &view))
 		return NULL;
-
-	GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
 
 	md5_append(&self->md5, (unsigned char*)view.buf,
 		   Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
 
 	PyBuffer_Release(&view);
-	Py_INCREF(Py_None);
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(update_doc,
@@ -266,26 +261,21 @@ static PyObject *
 MD5_new(PyObject *self, PyObject *args)
 {
 	md5object *md5p;
-	PyObject *data_obj = NULL;
-	Py_buffer view;
+	Py_buffer view = { 0 };
 
-	if (!PyArg_ParseTuple(args, "|O:new", &data_obj))
+	if (!PyArg_ParseTuple(args, "|s*:new", &view))
 		return NULL;
-
-	if (data_obj)
-		GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
 
 	if ((md5p = newmd5object()) == NULL) {
-		if (data_obj)
-			PyBuffer_Release(&view);
+		PyBuffer_Release(&view);
 		return NULL;
 	}
 
-	if (data_obj) {
+	if (view.len > 0) {
 		md5_append(&md5p->md5, (unsigned char*)view.buf,
 		       Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
-		PyBuffer_Release(&view);
 	}
+	PyBuffer_Release(&view);
 	
 	return (PyObject *)md5p;
 }
