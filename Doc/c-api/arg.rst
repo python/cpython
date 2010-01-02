@@ -46,7 +46,7 @@ of the C variable(s) whose address should be passed.
    :file:`Python.h`.  If the macro is defined, length is a :ctype:`Py_ssize_t`
    rather than an int.
 
-``s*`` (string, Unicode, or any buffer compatible object) [Py_buffer \*]
+``s*`` (string, Unicode, or any buffer compatible object) [Py_buffer]
    Similar to ``s#``, this code fills a Py_buffer structure provided by the
    caller.  The buffer gets locked, so that the caller can subsequently use
    the buffer even inside a ``Py_BEGIN_ALLOW_THREADS`` block; the caller is
@@ -62,7 +62,7 @@ of the C variable(s) whose address should be passed.
 ``z#`` (string or ``None`` or any read buffer compatible object) [const char \*, int]
    This is to ``s#`` as ``z`` is to ``s``.
 
-``z*`` (string or ``None`` or any buffer compatible object) [Py_buffer*]
+``z*`` (string or ``None`` or any buffer compatible object) [Py_buffer]
    This is to ``s*`` as ``z`` is to ``s``.
 
    .. versionadded:: 2.6
@@ -266,7 +266,7 @@ of the C variable(s) whose address should be passed.
    buffer.  Only single-segment buffer objects are accepted; :exc:`TypeError`
    is raised for all others.
 
-``w*`` (read-write byte-oriented buffer) [Py_buffer \*]
+``w*`` (read-write byte-oriented buffer) [Py_buffer]
    This is to ``w`` what ``s*`` is to ``s``.
 
    .. versionadded:: 2.6
