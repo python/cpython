@@ -767,6 +767,8 @@ class UserString(Sequence):
             new = new.data
         return self.__class__(self.data.replace(old, new, maxsplit))
     def rfind(self, sub, start=0, end=_sys.maxsize):
+        if isinstance(sub, UserString):
+            sub = sub.data
         return self.data.rfind(sub, start, end)
     def rindex(self, sub, start=0, end=_sys.maxsize):
         return self.data.rindex(sub, start, end)

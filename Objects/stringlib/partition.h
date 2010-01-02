@@ -58,7 +58,7 @@ stringlib_rpartition(
     )
 {
     PyObject* out;
-    Py_ssize_t pos, j;
+    Py_ssize_t pos;
 
     if (sep_len == 0) {
         PyErr_SetString(PyExc_ValueError, "empty separator");
@@ -69,20 +69,14 @@ stringlib_rpartition(
     if (!out)
 	return NULL;
 
-    /* XXX - create reversefastsearch helper! */
-        pos = -1;
-	for (j = str_len - sep_len; j >= 0; --j)
-            if (STRINGLIB_CMP(str+j, sep, sep_len) == 0) {
-                pos = j;
-                break;
-            }
+    pos = fastsearch(str, str_len, sep, sep_len, FAST_RSEARCH);
 
     if (pos < 0) {
 	Py_INCREF(STRINGLIB_EMPTY);
 	PyTuple_SET_ITEM(out, 0, (PyObject*) STRINGLIB_EMPTY);
 	Py_INCREF(STRINGLIB_EMPTY);
 	PyTuple_SET_ITEM(out, 1, (PyObject*) STRINGLIB_EMPTY);
-	Py_INCREF(str_obj);        
+	Py_INCREF(str_obj);
 	PyTuple_SET_ITEM(out, 2, (PyObject*) str_obj);
 	return out;
     }

@@ -1035,7 +1035,6 @@ bytearray_dealloc(PyByteArrayObject *self)
 /* Methods */
 
 #define STRINGLIB_CHAR char
-#define STRINGLIB_CMP memcmp
 #define STRINGLIB_LEN PyByteArray_GET_SIZE
 #define STRINGLIB_STR PyByteArray_AS_STRING
 #define STRINGLIB_NEW PyByteArray_FromStringAndSize
@@ -2214,14 +2213,11 @@ If maxsplit is given, at most maxsplit splits are done.");
 static PyObject *
 bytearray_split(PyByteArrayObject *self, PyObject *args)
 {
-    Py_ssize_t len = PyByteArray_GET_SIZE(self), n, i, j;
+    Py_ssize_t len = PyByteArray_GET_SIZE(self), n, i, j, pos;
     Py_ssize_t maxsplit = -1, count = 0;
     const char *s = PyByteArray_AS_STRING(self), *sub;
     PyObject *list, *str, *subobj = Py_None;
     Py_buffer vsub;
-#ifdef USE_FAST
-    Py_ssize_t pos;
-#endif
 
     if (!PyArg_ParseTuple(args, "|On:split", &subobj, &maxsplit))
         return NULL;
@@ -2253,7 +2249,6 @@ bytearray_split(PyByteArrayObject *self, PyObject *args)
         return NULL;
     }
 
-#ifdef USE_FAST
     i = j = 0;
     while (maxsplit-- > 0) {
         pos = fastsearch(s+i, len-i, sub, n, FAST_SEARCH);
@@ -2263,18 +2258,6 @@ bytearray_split(PyByteArrayObject *self, PyObject *args)
         SPLIT_ADD(s, i, j);
         i = j + n;
     }
-#else
-    i = j = 0;
-    while ((j+n <= len) && (maxsplit-- > 0)) {
-        for (; j+n <= len; j++) {
-            if (Py_STRING_MATCH(s, j, sub, n)) {
-                SPLIT_ADD(s, i, j);
-                i = j = j + n;
-                break;
-            }
-        }
-    }
-#endif
     SPLIT_ADD(s, i, len);
     FIX_PREALLOC_SIZE(list);
     PyBuffer_Release(&vsub);
@@ -2452,7 +2435,7 @@ If maxsplit is given, at most maxsplit splits are done.");
 static PyObject *
 bytearray_rsplit(PyByteArrayObject *self, PyObject *args)
 {
-    Py_ssize_t len = PyByteArray_GET_SIZE(self), n, i, j;
+    Py_ssize_t len = PyByteArray_GET_SIZE(self), n, j, pos;
     Py_ssize_t maxsplit = -1, count = 0;
     const char *s = PyByteArray_AS_STRING(self), *sub;
     PyObject *list, *str, *subobj = Py_None;
@@ -2489,17 +2472,13 @@ bytearray_rsplit(PyByteArrayObject *self, PyObject *args)
     }
 
     j = len;
-    i = j - n;
 
-    while ( (i >= 0) && (maxsplit-- > 0) ) {
-        for (; i>=0; i--) {
-            if (Py_STRING_MATCH(s, i, sub, n)) {
-                SPLIT_ADD(s, i + n, j);
-                j = i;
-                i -= n;
-                break;
-            }
-        }
+    while (maxsplit-- > 0) {
+       pos = fastsearch(s, j, sub, n, FAST_RSEARCH);
+       if (pos < 0)
+           break;
+       SPLIT_ADD(s, pos + n, j);
+       j = pos;
     }
     SPLIT_ADD(s, 0, j);
     FIX_PREALLOC_SIZE(list);
