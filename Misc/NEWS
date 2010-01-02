@@ -121,7 +121,7 @@ Build
 - Issue #7589: Only build the nis module when the correct header files are
   found.
 
-- Switch to OpenSSL 0.9.8l on Windows.
+- Switch to OpenSSL 0.9.8l and sqlite 3.6.21 on Windows.
 
 - Issue #7541: when using ``python-config`` with a framework install the compiler might
   use the wrong library.
