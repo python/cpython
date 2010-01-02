@@ -22,7 +22,7 @@ Public functions:       Internaldate2tuple
 
 __version__ = "2.58"
 
-import binascii, os, random, re, socket, sys, time
+import binascii, random, re, socket, subprocess, sys, time
 
 __all__ = ["IMAP4", "IMAP4_stream", "Internaldate2tuple",
            "Int2AP", "ParseFlags", "Time2Internaldate"]
@@ -1212,7 +1212,7 @@ class IMAP4_stream(IMAP4):
 
     Instantiate with: IMAP4_stream(command)
 
-            where "command" is a string that can be passed to os.popen2()
+            where "command" is a string that can be passed to Subprocess.Popen()
 
     for more documentation see the docstring of the parent class IMAP4.
     """
@@ -1232,7 +1232,11 @@ class IMAP4_stream(IMAP4):
         self.port = None
         self.sock = None
         self.file = None
-        self.writefile, self.readfile = os.popen2(self.command)
+        self.process = subprocess.Popen(self.command,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            shell=True, close_fds=True)
+        self.writefile = self.process.stdin
+        self.readfile = self.process.stdout
 
 
     def read(self, size):
@@ -1255,6 +1259,7 @@ class IMAP4_stream(IMAP4):
         """Close I/O established in "open"."""
         self.readfile.close()
         self.writefile.close()
+        self.process.wait()
 
 
 
