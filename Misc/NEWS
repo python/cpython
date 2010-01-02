@@ -536,7 +536,7 @@ Build
 - Issue #7589: Only build the nis module when the correct header files are
   found.
 
-- Switch to OpenSSL 0.9.8l on Windows.
+- Switch to OpenSSL 0.9.8l and sqlite 3.6.21 on Windows.
 
 - Issue #5792: Extend the short float repr support to x86 systems using
   icc or suncc.
