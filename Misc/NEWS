@@ -96,6 +96,9 @@ Library
 - Issue #7457: added a read_pkg_file method to
   distutils.dist.DistributionMetadata.
 
+- Issue #3745: Undo the 2.7a1 change to have hashlib to reject unicode and
+  non buffer-api supporting objects as input.  That behavior if for 3.x only.
+
 C-API
 -----
 
@@ -1825,7 +1828,7 @@ Extension Modules
 
 - Issue #3745: Fix hashlib to always reject unicode and non buffer-api
   supporting objects as input no matter how it was compiled (built in
-  implementations or external openssl library).
+  implementations or external openssl library).  NOTE: Undone in 2.7a2.
 
 - Issue #4397: Fix occasional test_socket failure on OS X.
 
