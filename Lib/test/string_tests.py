@@ -208,8 +208,7 @@ class CommonTest(unittest.TestCase):
                 loc = i.find(j)
                 r1 = (loc != -1)
                 r2 = j in i
-                if r1 != r2:
-                    self.assertEqual(r1, r2)
+                self.assertEqual(r1, r2)
                 if loc != -1:
                     self.assertEqual(i[loc:loc+len(j)], j)
 
@@ -253,8 +252,7 @@ class CommonTest(unittest.TestCase):
                 loc = i.rfind(j)
                 r1 = (loc != -1)
                 r2 = j in i
-                if r1 != r2:
-                    self.assertEqual(r1, r2)
+                self.assertEqual(r1, r2)
                 if loc != -1:
                     self.assertEqual(i[loc:loc+len(j)], j)
 
