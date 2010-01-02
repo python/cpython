@@ -36,8 +36,8 @@ words::
 number.  In polar coordinates, a complex number *z* is defined by the
 modulus *r* and the phase angle *phi*. The modulus *r* is the distance
 from *z* to the origin, while the phase *phi* is the counterclockwise
-angle from the positive x-axis to the line segment that joins the
-origin to *z*.
+angle, measured in radians, from the positive x-axis to the line
+segment that joins the origin to *z*.
 
 The following functions can be used to convert from the native
 rectangular coordinates to polar coordinates and back.
