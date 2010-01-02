@@ -97,7 +97,7 @@ Library
   distutils.dist.DistributionMetadata.
 
 - Issue #3745: Undo the 2.7a1 change to have hashlib to reject unicode and
-  non buffer-api supporting objects as input.  That behavior if for 3.x only.
+  non buffer-api supporting objects as input.  That behavior is for 3.x only.
 
 C-API
 -----
