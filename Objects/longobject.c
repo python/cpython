@@ -39,9 +39,6 @@
 		if (PyErr_CheckSignals()) PyTryBlock \
 	}
 
-/* forward declaration */
-static int bits_in_digit(digit d);
-
 /* Normalize (remove leading zeros from) a long int object.
    Doesn't attempt to free the storage--in most cases, due to the nature
    of the algorithms used, this could save at most be one word anyway. */
@@ -748,224 +745,6 @@ Overflow:
 	PyErr_SetString(PyExc_OverflowError, "long too big to convert");
 	return -1;
 
-}
-
-double
-_PyLong_AsScaledDouble(PyObject *vv, int *exponent)
-{
-/* NBITS_WANTED should be > the number of bits in a double's precision,
-   but small enough so that 2**NBITS_WANTED is within the normal double
-   range.  nbitsneeded is set to 1 less than that because the most-significant
-   Python digit contains at least 1 significant bit, but we don't want to
-   bother counting them (catering to the worst case cheaply).
-
-   57 is one more than VAX-D double precision; I (Tim) don't know of a double
-   format with more precision than that; it's 1 larger so that we add in at
-   least one round bit to stand in for the ignored least-significant bits.
-*/
-#define NBITS_WANTED 57
-	PyLongObject *v;
-	double x;
-	const double multiplier = (double)(1L << PyLong_SHIFT);
-	Py_ssize_t i;
-	int sign;
-	int nbitsneeded;
-
-	if (vv == NULL || !PyLong_Check(vv)) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
-	v = (PyLongObject *)vv;
-	i = Py_SIZE(v);
-	sign = 1;
-	if (i < 0) {
-		sign = -1;
-		i = -(i);
-	}
-	else if (i == 0) {
-		*exponent = 0;
-		return 0.0;
-	}
-	--i;
-	x = (double)v->ob_digit[i];
-	nbitsneeded = NBITS_WANTED - 1;
-	/* Invariant:  i Python digits remain unaccounted for. */
-	while (i > 0 && nbitsneeded > 0) {
-		--i;
-		x = x * multiplier + (double)v->ob_digit[i];
-		nbitsneeded -= PyLong_SHIFT;
-	}
-	/* There are i digits we didn't shift in.  Pretending they're all
-	   zeroes, the true value is x * 2**(i*PyLong_SHIFT). */
-	*exponent = i;
-	assert(x > 0.0);
-	return x * sign;
-#undef NBITS_WANTED
-}
-
-/* Get a C double from a long int object.  Rounds to the nearest double,
-   using the round-half-to-even rule in the case of a tie. */
-
-double
-PyLong_AsDouble(PyObject *vv)
-{
-	PyLongObject *v = (PyLongObject *)vv;
-	Py_ssize_t rnd_digit, rnd_bit, m, n;
-	digit lsb, *d;
-	int round_up = 0;
-	double x;
-
-	if (vv == NULL || !PyLong_Check(vv)) {
-		PyErr_BadInternalCall();
-		return -1.0;
-	}
-
-	/* Notes on the method: for simplicity, assume v is positive and >=
-	   2**DBL_MANT_DIG. (For negative v we just ignore the sign until the
-	   end; for small v no rounding is necessary.)  Write n for the number
-	   of bits in v, so that 2**(n-1) <= v < 2**n, and n > DBL_MANT_DIG.
-
-	   Some terminology: the *rounding bit* of v is the 1st bit of v that
-	   will be rounded away (bit n - DBL_MANT_DIG - 1); the *parity bit*
-	   is the bit immediately above.  The round-half-to-even rule says
-	   that we round up if the rounding bit is set, unless v is exactly
-	   halfway between two floats and the parity bit is zero.
-
-	   Write d[0] ... d[m] for the digits of v, least to most significant.
-	   Let rnd_bit be the index of the rounding bit, and rnd_digit the
-	   index of the PyLong digit containing the rounding bit.  Then the
-	   bits of the digit d[rnd_digit] look something like:
-
-	              rounding bit
-	                  |
-	                  v
-	      msb -> sssssrttttttttt <- lsb
-	                 ^
-	                 |
-	              parity bit
-
-	   where 's' represents a 'significant bit' that will be included in
-	   the mantissa of the result, 'r' is the rounding bit, and 't'
-	   represents a 'trailing bit' following the rounding bit.  Note that
-	   if the rounding bit is at the top of d[rnd_digit] then the parity
-	   bit will be the lsb of d[rnd_digit+1].  If we set
-
-	      lsb = 1 << (rnd_bit % PyLong_SHIFT)
-
-	   then d[rnd_digit] & (PyLong_BASE - 2*lsb) selects just the
-	   significant bits of d[rnd_digit], d[rnd_digit] & (lsb-1) gets the
-	   trailing bits, and d[rnd_digit] & lsb gives the rounding bit.
-
-	   We initialize the double x to the integer given by digits
-	   d[rnd_digit:m-1], but with the rounding bit and trailing bits of
-	   d[rnd_digit] masked out.  So the value of x comes from the top
-	   DBL_MANT_DIG bits of v, multiplied by 2*lsb.  Note that in the loop
-	   that produces x, all floating-point operations are exact (assuming
-	   that FLT_RADIX==2).  Now if we're rounding down, the value we want
-	   to return is simply
-
-	      x * 2**(PyLong_SHIFT * rnd_digit).
-
-	   and if we're rounding up, it's
-
-	      (x + 2*lsb) * 2**(PyLong_SHIFT * rnd_digit).
-
-	   Under the round-half-to-even rule, we round up if, and only
-	   if, the rounding bit is set *and* at least one of the
-	   following three conditions is satisfied:
-
-	      (1) the parity bit is set, or
-	      (2) at least one of the trailing bits of d[rnd_digit] is set, or
-	      (3) at least one of the digits d[i], 0 <= i < rnd_digit
-	         is nonzero.
-
-	   Finally, we have to worry about overflow.  If v >= 2**DBL_MAX_EXP,
-	   or equivalently n > DBL_MAX_EXP, then overflow occurs.  If v <
-	   2**DBL_MAX_EXP then we're usually safe, but there's a corner case
-	   to consider: if v is very close to 2**DBL_MAX_EXP then it's
-	   possible that v is rounded up to exactly 2**DBL_MAX_EXP, and then
-	   again overflow occurs.
-	*/
-
-	if (Py_SIZE(v) == 0)
-		return 0.0;
-	m = ABS(Py_SIZE(v)) - 1;
-	d = v->ob_digit;
-	assert(d[m]);  /* v should be normalized */
-
-	/* fast path for case where 0 < abs(v) < 2**DBL_MANT_DIG */
-	if (m < DBL_MANT_DIG / PyLong_SHIFT ||
-	    (m == DBL_MANT_DIG / PyLong_SHIFT &&
-	     d[m] < (digit)1 << DBL_MANT_DIG%PyLong_SHIFT)) {
-		x = d[m];
-		while (--m >= 0)
-			x = x*PyLong_BASE + d[m];
-		return Py_SIZE(v) < 0 ? -x : x;
-	}
-
-	/* if m is huge then overflow immediately; otherwise, compute the
-	   number of bits n in v.  The condition below implies n (= #bits) >=
-	   m * PyLong_SHIFT + 1 > DBL_MAX_EXP, hence v >= 2**DBL_MAX_EXP. */
-	if (m > (DBL_MAX_EXP-1)/PyLong_SHIFT)
-		goto overflow;
-	n = m * PyLong_SHIFT + bits_in_digit(d[m]);
-	if (n > DBL_MAX_EXP)
-		goto overflow;
-
-	/* find location of rounding bit */
-	assert(n > DBL_MANT_DIG); /* dealt with |v| < 2**DBL_MANT_DIG above */
-	rnd_bit = n - DBL_MANT_DIG - 1;
-	rnd_digit = rnd_bit/PyLong_SHIFT;
-	lsb = (digit)1 << (rnd_bit%PyLong_SHIFT);
-
-	/* Get top DBL_MANT_DIG bits of v.  Assumes PyLong_SHIFT <
-	   DBL_MANT_DIG, so we'll need bits from at least 2 digits of v. */
-	x = d[m];
-	assert(m > rnd_digit);
-	while (--m > rnd_digit)
-		x = x*PyLong_BASE + d[m];
-	x = x*PyLong_BASE + (d[m] & (PyLong_BASE-2*lsb));
-
-	/* decide whether to round up, using round-half-to-even */
-	assert(m == rnd_digit);
-	if (d[m] & lsb) { /* if (rounding bit is set) */
-		digit parity_bit;
-		if (lsb == PyLong_BASE/2)
-			parity_bit = d[m+1] & 1;
-		else
-			parity_bit = d[m] & 2*lsb;
-		if (parity_bit)
-			round_up = 1;
-		else if (d[m] & (lsb-1))
-			round_up = 1;
-		else {
-			while (--m >= 0) {
-				if (d[m]) {
-					round_up = 1;
-					break;
-				}
-			}
-		}
-	}
-
-	/* and round up if necessary */
-	if (round_up) {
-		x += 2*lsb;
-		if (n == DBL_MAX_EXP &&
-		    x == ldexp((double)(2*lsb), DBL_MANT_DIG)) {
-			/* overflow corner case */
-			goto overflow;
-		}
-	}
-
-	/* shift, adjust for sign, and return */
-	x = ldexp(x, rnd_digit*PyLong_SHIFT);
-	return Py_SIZE(v) < 0 ? -x : x;
-
-  overflow:
-	PyErr_SetString(PyExc_OverflowError,
-		"long int too large to convert to float");
-	return -1.0;
 }
 
 /* Create a new long (or int) object from a C pointer */
@@ -2297,6 +2076,152 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 
 	*prem = long_normalize(w);
 	return long_normalize(a);
+}
+
+/* For a nonzero PyLong a, express a in the form x * 2**e, with 0.5 <=
+   abs(x) < 1.0 and e >= 0; return x and put e in *e.  Here x is
+   rounded to DBL_MANT_DIG significant bits using round-half-to-even.
+   If a == 0, return 0.0 and set *e = 0.  If the resulting exponent
+   e is larger than PY_SSIZE_T_MAX, raise OverflowError and return
+   -1.0. */
+
+/* attempt to define 2.0**DBL_MANT_DIG as a compile-time constant */
+#if DBL_MANT_DIG == 53
+#define EXP2_DBL_MANT_DIG 9007199254740992.0
+#else
+#define EXP2_DBL_MANT_DIG (ldexp(1.0, DBL_MANT_DIG))
+#endif
+
+double
+_PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
+{
+	Py_ssize_t a_size, a_bits, shift_digits, shift_bits, x_size;
+	/* See below for why x_digits is always large enough. */
+	digit rem, x_digits[2 + (DBL_MANT_DIG + 1) / PyLong_SHIFT];
+	double dx;
+	/* Correction term for round-half-to-even rounding.  For a digit x,
+	   "x + half_even_correction[x & 7]" gives x rounded to the nearest
+	   multiple of 4, rounding ties to a multiple of 8. */
+	static const int half_even_correction[8] = {0, -1, -2, 1, 0, -1, 2, 1};
+
+	a_size = ABS(Py_SIZE(a));
+	if (a_size == 0) {
+		/* Special case for 0: significand 0.0, exponent 0. */
+		*e = 0;
+		return 0.0;
+	}
+	a_bits = bits_in_digit(a->ob_digit[a_size-1]);
+	/* The following is an overflow-free version of the check
+	   "if ((a_size - 1) * PyLong_SHIFT + a_bits > PY_SSIZE_T_MAX) ..." */
+	if (a_size >= (PY_SSIZE_T_MAX - 1) / PyLong_SHIFT + 1 &&
+	    (a_size > (PY_SSIZE_T_MAX - 1) / PyLong_SHIFT + 1 ||
+	     a_bits > (PY_SSIZE_T_MAX - 1) % PyLong_SHIFT + 1))
+		 goto overflow;
+	a_bits = (a_size - 1) * PyLong_SHIFT + a_bits;
+
+	/* Shift the first DBL_MANT_DIG + 2 bits of a into x_digits[0:x_size]
+	   (shifting left if a_bits <= DBL_MANT_DIG + 2).
+
+	   Number of digits needed for result: write // for floor division.
+	   Then if shifting left, we end up using
+
+	     1 + a_size + (DBL_MANT_DIG + 2 - a_bits) // PyLong_SHIFT
+
+	   digits.  If shifting right, we use
+
+	     a_size - (a_bits - DBL_MANT_DIG - 2) // PyLong_SHIFT
+
+	   digits.  Using a_size = 1 + (a_bits - 1) // PyLong_SHIFT along with
+	   the inequalities
+
+	     m // PyLong_SHIFT + n // PyLong_SHIFT <= (m + n) // PyLong_SHIFT
+	     m // PyLong_SHIFT - n // PyLong_SHIFT <=
+	                                      1 + (m - n - 1) // PyLong_SHIFT,
+
+	   valid for any integers m and n, we find that x_size satisfies
+
+	     x_size <= 2 + (DBL_MANT_DIG + 1) // PyLong_SHIFT
+
+	   in both cases.
+	*/
+	if (a_bits <= DBL_MANT_DIG + 2) {
+		shift_digits = (DBL_MANT_DIG + 2 - a_bits) / PyLong_SHIFT;
+		shift_bits = (DBL_MANT_DIG + 2 - a_bits) % PyLong_SHIFT;
+		x_size = 0;
+		while (x_size < shift_digits)
+			x_digits[x_size++] = 0;
+		rem = v_lshift(x_digits + x_size, a->ob_digit, a_size,
+			       shift_bits);
+		x_size += a_size;
+		x_digits[x_size++] = rem;
+	}
+	else {
+		shift_digits = (a_bits - DBL_MANT_DIG - 2) / PyLong_SHIFT;
+		shift_bits = (a_bits - DBL_MANT_DIG - 2) % PyLong_SHIFT;
+		rem = v_rshift(x_digits, a->ob_digit + shift_digits,
+			       a_size - shift_digits, shift_bits);
+		x_size = a_size - shift_digits;
+		/* For correct rounding below, we need the least significant
+		   bit of x to be 'sticky' for this shift: if any of the bits
+		   shifted out was nonzero, we set the least significant bit
+		   of x. */
+		if (rem)
+			x_digits[0] |= 1;
+		else
+			while (shift_digits > 0)
+				if (a->ob_digit[--shift_digits]) {
+					x_digits[0] |= 1;
+					break;
+				}
+	}
+	assert(1 <= x_size && x_size <= sizeof(x_digits)/sizeof(digit));
+
+	/* Round, and convert to double. */
+	x_digits[0] += half_even_correction[x_digits[0] & 7];
+	dx = x_digits[--x_size];
+	while (x_size > 0)
+		dx = dx * PyLong_BASE + x_digits[--x_size];
+
+	/* Rescale;  make correction if result is 1.0. */
+	dx /= 4.0 * EXP2_DBL_MANT_DIG;
+	if (dx == 1.0) {
+		if (a_bits == PY_SSIZE_T_MAX)
+			goto overflow;
+		dx = 0.5;
+		a_bits += 1;
+	}
+
+	*e = a_bits;
+	return Py_SIZE(a) < 0 ? -dx : dx;
+
+  overflow:
+	/* exponent > PY_SSIZE_T_MAX */
+	PyErr_SetString(PyExc_OverflowError,
+			"huge integer: number of bits overflows a Py_ssize_t");
+	*e = 0;
+	return -1.0;
+}
+
+/* Get a C double from a long int object.  Rounds to the nearest double,
+   using the round-half-to-even rule in the case of a tie. */
+
+double
+PyLong_AsDouble(PyObject *v)
+{
+	Py_ssize_t exponent;
+	double x;
+
+	if (v == NULL || !PyLong_Check(v)) {
+		PyErr_BadInternalCall();
+		return -1.0;
+	}
+	x = _PyLong_Frexp((PyLongObject *)v, &exponent);
+	if ((x == -1.0 && PyErr_Occurred()) || exponent > DBL_MAX_EXP) {
+		PyErr_SetString(PyExc_OverflowError,
+				"long int too large to convert to float");
+		return -1.0;
+	}
+	return ldexp(x, exponent);
 }
 
 /* Methods */
