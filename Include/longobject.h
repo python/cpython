@@ -44,13 +44,13 @@ PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 /* For use by intobject.c only */
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 
-/* _PyLong_AsScaledDouble returns a double x and an exponent e such that
-   the true value is approximately equal to x * 2**(SHIFT*e).  e is >= 0.
-   x is 0.0 if and only if the input is 0 (in which case, e and x are both
-   zeroes).  Overflow is impossible.  Note that the exponent returned must
-   be multiplied by SHIFT!  There may not be enough room in an int to store
-   e*SHIFT directly. */
-PyAPI_FUNC(double) _PyLong_AsScaledDouble(PyObject *vv, int *e);
+/* _PyLong_Frexp returns a double x and an exponent e such that the
+   true value is approximately equal to x * 2**e.  e is >= 0.  x is
+   0.0 if and only if the input is 0 (in which case, e and x are both
+   zeroes); otherwise, 0.5 <= abs(x) < 1.0.  On overflow, which is
+   possible if the number of bits doesn't fit into a Py_ssize_t, sets
+   OverflowError and returns -1.0 for x, 0 for e. */
+PyAPI_FUNC(double) _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e);
 
 PyAPI_FUNC(double) PyLong_AsDouble(PyObject *);
 PyAPI_FUNC(PyObject *) PyLong_FromVoidPtr(void *);

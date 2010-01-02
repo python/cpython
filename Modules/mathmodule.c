@@ -54,7 +54,6 @@ raised for division by zero and mod by zero.
 
 #include "Python.h"
 #include "_math.h"
-#include "longintrepr.h" /* just for SHIFT */
 
 #ifdef _OSF_SOURCE
 /* OSF1 5.1 doesn't make this available with XOPEN_SOURCE_EXTENDED defined */
@@ -1342,11 +1341,12 @@ PyDoc_STRVAR(math_modf_doc,
 
 /* A decent logarithm is easy to compute even for huge longs, but libm can't
    do that by itself -- loghelper can.  func is log or log10, and name is
-   "log" or "log10".  Note that overflow isn't possible:  a long can contain
-   no more than INT_MAX * SHIFT bits, so has value certainly less than
-   2**(2**64 * 2**16) == 2**2**80, and log2 of that is 2**80, which is
+   "log" or "log10".  Note that overflow of the result isn't possible: a long
+   can contain no more than INT_MAX * SHIFT bits, so has value certainly less
+   than 2**(2**64 * 2**16) == 2**2**80, and log2 of that is 2**80, which is
    small enough to fit in an IEEE single.  log and log10 are even smaller.
-*/
+   However, intermediate overflow is possible for a long if the number of bits
+   in that long is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
 loghelper(PyObject* arg, double (*func)(double), char *funcname)
@@ -1354,18 +1354,21 @@ loghelper(PyObject* arg, double (*func)(double), char *funcname)
 	/* If it is long, do it ourselves. */
 	if (PyLong_Check(arg)) {
 		double x;
-		int e;
-		x = _PyLong_AsScaledDouble(arg, &e);
+		Py_ssize_t e;
+		x = _PyLong_Frexp((PyLongObject *)arg, &e);
+		if (x == -1.0 && PyErr_Occurred())
+			return NULL;
 		if (x <= 0.0) {
 			PyErr_SetString(PyExc_ValueError,
 					"math domain error");
 			return NULL;
 		}
-		/* Value is ~= x * 2**(e*PyLong_SHIFT), so the log ~=
-		   log(x) + log(2) * e * PyLong_SHIFT.
-		   CAUTION:  e*PyLong_SHIFT may overflow using int arithmetic,
-		   so force use of double. */
-		x = func(x) + (e * (double)PyLong_SHIFT) * func(2.0);
+		/* Special case for log(1), to make sure we get an
+		   exact result there. */
+		if (e == 1 && x == 0.5)
+			return PyFloat_FromDouble(0.0);
+		/* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
+		x = func(x) + func(2.0) * e;
 		return PyFloat_FromDouble(x);
 	}
 
