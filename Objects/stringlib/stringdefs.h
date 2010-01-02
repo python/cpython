@@ -22,7 +22,6 @@
 #define STRINGLIB_RESIZE         _PyBytes_Resize
 #define STRINGLIB_CHECK          PyBytes_Check
 #define STRINGLIB_CHECK_EXACT    PyBytes_CheckExact
-#define STRINGLIB_CMP            memcmp
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_GROUPING       _PyBytes_InsertThousandsGrouping
 #define STRINGLIB_GROUPING_LOCALE _PyBytes_InsertThousandsGroupingLocale

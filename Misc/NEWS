@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7462: Implement the stringlib fast search algorithm for the `rfind`,
+  `rindex`, `rsplit` and `rpartition` methods.  Patch by Florent Xicluna.
+
 - Issue #7604: Deleting an unset slotted attribute did not raise an
   AttributeError.
 
