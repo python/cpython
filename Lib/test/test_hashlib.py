@@ -71,18 +71,23 @@ class HashLibTestCase(unittest.TestCase):
         computed = hashlib.new(name, data).hexdigest()
         self.assertEqual(computed, digest)
 
-    def check_no_unicode(self, algorithm_name):
+    def check_unicode(self, algorithm_name):
         # Unicode objects are not allowed as input.
-        self.assertRaises(TypeError, getattr(hashlib, algorithm_name), u'spam')
-        self.assertRaises(TypeError, hashlib.new, algorithm_name, u'spam')
+        expected = hashlib.new(algorithm_name, str(u'spam')).hexdigest()
+        self.assertEqual(getattr(hashlib, algorithm_name)(u'spam').hexdigest(),
+                        expected)
+        self.assertEqual(hashlib.new(algorithm_name, u'spam').hexdigest(),
+                         expected)
 
-    def test_no_unicode(self):
-        self.check_no_unicode('md5')
-        self.check_no_unicode('sha1')
-        self.check_no_unicode('sha224')
-        self.check_no_unicode('sha256')
-        self.check_no_unicode('sha384')
-        self.check_no_unicode('sha512')
+    def test_unicode(self):
+        # In python 2.x unicode is auto-encoded to the system default encoding
+        # when passed to hashlib functions.
+        self.check_unicode('md5')
+        self.check_unicode('sha1')
+        self.check_unicode('sha224')
+        self.check_unicode('sha256')
+        self.check_unicode('sha384')
+        self.check_unicode('sha512')
 
     def test_case_md5_0(self):
         self.check('md5', '', 'd41d8cd98f00b204e9800998ecf8427e')

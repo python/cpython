@@ -17,7 +17,6 @@
 
 #include "Python.h"
 #include "structmember.h"
-#include "hashlib.h"
 
 
 /* Endianness testing and definitions */
@@ -429,20 +428,16 @@ PyDoc_STRVAR(SHA_update__doc__,
 static PyObject *
 SHA_update(SHAobject *self, PyObject *args)
 {
-    PyObject *data_obj;
     Py_buffer view;
 
-    if (!PyArg_ParseTuple(args, "O:update", &data_obj))
+    if (!PyArg_ParseTuple(args, "s*:update", &view))
         return NULL;
-
-    GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
 
     sha_update(self, (unsigned char*)view.buf,
                Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
 
     PyBuffer_Release(&view);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef SHA_methods[] = {
@@ -540,20 +535,15 @@ SHA_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
     static char *kwlist[] = {"string", NULL};
     SHAobject *new;
-    PyObject *data_obj = NULL;
-    Py_buffer view;
+    Py_buffer view = { 0 };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|O:new", kwlist,
-                                     &data_obj)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s*:new", kwlist,
+                                     &view)) {
         return NULL;
     }
 
-    if (data_obj)
-        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view, NULL);
-
     if ((new = newSHAobject()) == NULL) {
-        if (data_obj)
-            PyBuffer_Release(&view);
+	PyBuffer_Release(&view);
         return NULL;
     }
 
@@ -561,15 +551,14 @@ SHA_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
-        if (data_obj)
-            PyBuffer_Release(&view);
+	PyBuffer_Release(&view);
         return NULL;
     }
-    if (data_obj) {
+    if (view.len > 0) {
         sha_update(new, (unsigned char*)view.buf,
                    Py_SAFE_DOWNCAST(view.len, Py_ssize_t, unsigned int));
-        PyBuffer_Release(&view);
     }
+    PyBuffer_Release(&view);
 
     return (PyObject *)new;
 }
