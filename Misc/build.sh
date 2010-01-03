@@ -55,7 +55,7 @@ REMOTE_SYSTEM="neal@dinsdale.python.org"
 REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/"
 RESULT_FILE="$DIR/build/index.html"
 INSTALL_DIR="/tmp/python-test/local"
-RSYNC_OPTS="-aC -e ssh"
+RSYNC_OPTS="-C -e ssh -rlogD"
 
 # Always run the installed version of Python.
 PYTHON=$INSTALL_DIR/bin/python
@@ -134,7 +134,7 @@ mail_on_failure() {
 
 ## setup
 cd $DIR
-make clobber /dev/null 2>&1
+make clobber > /dev/null 2>&1
 cp -p Modules/Setup.dist Modules/Setup
 # But maybe there was no Makefile - we are only building docs. Clear build:
 rm -rf build/
@@ -273,7 +273,7 @@ if [ $conflict_count != 0 ]; then
     err=1
 else
     make clean > ../build/$F 2>&1
-    make checkout update html >> ../build/$F 2>&1
+    make html >> ../build/$F 2>&1
     err=$?
 fi
 update_status "Making doc" "$F" $start
