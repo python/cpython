@@ -657,19 +657,22 @@ class PyBuildExt(build_ext):
 
         #print 'openssl_ver = 0x%08x' % openssl_ver
         min_openssl_ver = 0x00907000
-        have_usable_openssl = (ssl_incs is not None and
-                               ssl_libs is not None and
+        have_any_openssl = ssl_incs is not None and ssl_libs is not None
+        have_usable_openssl = (have_any_openssl and
                                openssl_ver >= min_openssl_ver)
 
-        if have_usable_openssl:
-            # The _hashlib module wraps optimized implementations
-            # of hash functions from the OpenSSL library.
-            exts.append( Extension('_hashlib', ['_hashopenssl.c'],
-                                   include_dirs = ssl_incs,
-                                   library_dirs = ssl_libs,
-                                   libraries = ['ssl', 'crypto']) )
-            # these aren't strictly missing since they are unneeded.
-            #missing.extend(['_sha', '_md5'])
+        if have_any_openssl:
+            if have_usable_openssl:
+                # The _hashlib module wraps optimized implementations
+                # of hash functions from the OpenSSL library.
+                exts.append( Extension('_hashlib', ['_hashopenssl.c'],
+                                       include_dirs = ssl_incs,
+                                       library_dirs = ssl_libs,
+                                       libraries = ['ssl', 'crypto']) )
+            else:
+                print ("warning: openssl 0x%08x is too old for _hashlib" %
+                       openssl_ver)
+                missing.append('_hashlib')
         if COMPILED_WITH_PYDEBUG or not have_usable_openssl:
             # The _sha module implements the SHA1 hash algorithm.
             exts.append( Extension('_sha', ['shamodule.c']) )
@@ -679,7 +682,6 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_md5',
                             sources = ['md5module.c', 'md5.c'],
                             depends = ['md5.h']) )
-            missing.append('_hashlib')
 
         min_sha2_openssl_ver = 0x00908000
         if COMPILED_WITH_PYDEBUG or openssl_ver < min_sha2_openssl_ver:
