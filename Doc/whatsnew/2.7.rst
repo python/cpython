@@ -453,6 +453,16 @@ Several performance enhancements have been added:
   faster bytecode.  (Patch by Antoine Pitrou, back-ported to 2.7
   by Jeffrey Yasskin; :issue:`4715`.)
 
+* Converting an integer or long integer to a decimal string was made
+  faster by special-casing base 10 instead of using a generalized
+  conversion function that supports arbitrary bases.
+  (Patch by Gawain Bolton; :issue:`6713`.)
+
+* The :meth:`rindex`, :meth:`rpartition`, and :meth:`rsplit` methods
+  of string objects now uses a fast reverse-search algorithm instead of
+  a character-by-character scan.  This is often faster by a factor of 10.
+  (Added by Florent Xicluna; :issue:`7462`.)
+
 * The :mod:`pickle` and :mod:`cPickle` modules now automatically
   intern the strings used for attribute names, reducing memory usage
   of the objects resulting from unpickling.  (Contributed by Jake
@@ -461,11 +471,6 @@ Several performance enhancements have been added:
 * The :mod:`cPickle` module now special-cases dictionaries,
   nearly halving the time required to pickle them.
   (Contributed by Collin Winter; :issue:`5670`.)
-
-* Converting an integer or long integer to a decimal string was made
-  faster by special-casing base 10 instead of using a generalized
-  conversion function that supports arbitrary bases.
-  (Patch by Gawain Bolton; :issue:`6713`.)
 
 .. ======================================================================
 
@@ -637,14 +642,6 @@ changes, or look through the Subversion logs for all the details.
   It's now possible to override the modification time
   recorded in a gzipped file by providing an optional timestamp to
   the constructor.  (Contributed by Jacques Frechet; :issue:`4272`.)
-
-* The :mod:`hashlib` module was inconsistent about accepting
-  input as a Unicode object or an object that doesn't support
-  the buffer protocol.  The behavior was different depending on
-  whether :mod:`hashlib` was using an external OpenSSL library
-  or its built-in implementations.  Python 2.7 makes the
-  behavior consistent, always rejecting such objects by raising a
-  :exc:`TypeError`.  (Fixed by Gregory P. Smith; :issue:`3745`.)
 
 * The default :class:`HTTPResponse` class used by the :mod:`httplib` module now
   supports buffering, resulting in much faster reading of HTTP responses.
@@ -1112,6 +1109,11 @@ Changes to Python's build process and to the C API include:
   Valgrind will therefore be better at detecting memory leaks and
   overruns. (Contributed by James Henstridge; :issue:`2422`.)
 
+* New configure option: you can now supply no arguments to
+  :option:`--with-dbmliborder=` in order to build none of the various
+  DBM modules.  (Added by Arfrever Frehtes Taifersar Arahesis;
+  :issue:`6491`.)
+
 * The :program:`configure` script now checks for floating-point rounding bugs
   on certain 32-bit Intel chips and defines a :cmacro:`X87_DOUBLE_ROUNDING`
   preprocessor definition.  No code currently uses this definition,
@@ -1215,9 +1217,14 @@ that may require changes to your code:
 
 For C extensions:
 
+* C extensions that use integer format codes with the ``PyArg_Parse*``
+  family of functions will now raise a :exc:`TypeError` exception
+  instead of triggering a :exc:`DeprecationWarning` (:issue:`5080`).
+
 * Use the new :cfunc:`PyOS_string_to_double` function instead of the old
   :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof` functions,
   which are now deprecated.
+
 
 .. ======================================================================
 
