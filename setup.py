@@ -15,6 +15,9 @@ from distutils.command.build_ext import build_ext
 from distutils.command.install import install
 from distutils.command.install_lib import install_lib
 
+# Were we compiled --with-pydebug or with #define Py_DEBUG?
+COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
+
 # This global variable is used to hold the list of modules to be disabled.
 disabled_module_list = []
 
@@ -593,9 +596,13 @@ class PyBuildExt(build_ext):
                 break
 
         #print('openssl_ver = 0x%08x' % openssl_ver)
+        min_openssl_ver = 0x00907000
+        have_any_openssl = ssl_incs is not None and ssl_libs is not None
+        have_usable_openssl = (have_any_openssl and
+                               openssl_ver >= min_openssl_ver)
 
-        if ssl_incs is not None and ssl_libs is not None:
-            if openssl_ver >= 0x00907000:
+        if have_any_openssl:
+            if have_usable_openssl:
                 # The _hashlib module wraps optimized implementations
                 # of hash functions from the OpenSSL library.
                 exts.append( Extension('_hashlib', ['_hashopenssl.c'],
@@ -606,15 +613,14 @@ class PyBuildExt(build_ext):
                 print("warning: openssl 0x%08x is too old for _hashlib" %
                       openssl_ver)
                 missing.append('_hashlib')
-        else:
-            missing.append('_hashlib')
 
-        if openssl_ver < 0x00908000:
+        min_sha2_openssl_ver = 0x00908000
+        if COMPILED_WITH_PYDEBUG or openssl_ver < min_sha2_openssl_ver:
             # OpenSSL doesn't do these until 0.9.8 so we'll bring our own hash
             exts.append( Extension('_sha256', ['sha256module.c']) )
             exts.append( Extension('_sha512', ['sha512module.c']) )
 
-        if openssl_ver < 0x00907000:
+        if COMPILED_WITH_PYDEBUG or openssl_ver < min_openssl_ver:
             # no openssl at all, use our own md5 and sha1
             exts.append( Extension('_md5', ['md5module.c']) )
             exts.append( Extension('_sha1', ['sha1module.c']) )
