@@ -4,7 +4,8 @@ import io
 import array
 import socket
 
-from unittest import TestCase
+import unittest
+TestCase = unittest.TestCase
 
 from test import support
 
@@ -263,6 +264,38 @@ class OfflineTest(TestCase):
     def test_responses(self):
         self.assertEquals(client.responses[client.NOT_FOUND], "Not Found")
 
+
+class SourceAddressTest(TestCase):
+    def setUp(self):
+        self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.port = support.bind_port(self.serv)
+        self.source_port = support.find_unused_port()
+        self.serv.listen(5)
+        self.conn = None
+
+    def tearDown(self):
+        if self.conn:
+            self.conn.close()
+            self.conn = None
+        self.serv.close()
+        self.serv = None
+
+    def testHTTPConnectionSourceAddress(self):
+        self.conn = client.HTTPConnection(HOST, self.port,
+                source_address=('', self.source_port))
+        self.conn.connect()
+        self.assertEqual(self.conn.sock.getsockname()[1], self.source_port)
+
+    @unittest.skipIf(not hasattr(client, 'HTTPSConnection'),
+                     'http.client.HTTPSConnection not defined')
+    def testHTTPSConnectionSourceAddress(self):
+        self.conn = client.HTTPSConnection(HOST, self.port,
+                source_address=('', self.source_port))
+        # We don't test anything here other the constructor not barfing as
+        # this code doesn't deal with setting up an active running SSL server
+        # for an ssl_wrapped connect() to actually return from.
+
+
 class TimeoutTest(TestCase):
     PORT = None
 
@@ -390,7 +423,7 @@ class RequestBodyTest(TestCase):
 
 def test_main(verbose=None):
     support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
-                         HTTPSTimeoutTest, RequestBodyTest)
+                         HTTPSTimeoutTest, RequestBodyTest, SourceAddressTest)
 
 if __name__ == '__main__':
     test_main()

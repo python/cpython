@@ -23,7 +23,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 The module provides the following classes:
 
 
-.. class:: HTTPConnection(host, port=None, strict=None[, timeout])
+.. class:: HTTPConnection(host, port=None, strict=None[, timeout[, source_address]])
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
    server.  It should be instantiated passing it a host and optional port
@@ -35,6 +35,8 @@ The module provides the following classes:
    status line.  If the optional *timeout* parameter is given, blocking
    operations (like connection attempts) will timeout after that many seconds
    (if it is not given, the global default timeout setting is used).
+   The optional *source_address* parameter may be a typle of a (host, port)
+   to use as the source address the HTTP connection is made from.
 
    For example, the following calls all create instances that connect to the server
    at the same host and port::
@@ -44,8 +46,11 @@ The module provides the following classes:
       >>> h3 = http.client.HTTPConnection('www.cwi.nl', 80)
       >>> h3 = http.client.HTTPConnection('www.cwi.nl', 80, timeout=10)
 
+   .. versionchanged:: 3.2
+      *source_address* was added.
 
-.. class:: HTTPSConnection(host, port=None, key_file=None, cert_file=None, strict=None[, timeout])
+
+.. class:: HTTPSConnection(host, port=None, key_file=None, cert_file=None, strict=None[, timeout[, source_address]])
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``. *key_file* is the name of a PEM
@@ -55,6 +60,9 @@ The module provides the following classes:
    .. note::
 
       This does not do any certificate verification.
+
+   .. versionchanged:: 3.2
+      *source_address* was added.
 
 
 .. class:: HTTPResponse(sock, debuglevel=0, strict=0, method=None, url=None)
