@@ -62,6 +62,8 @@ Core and Builtins
 Library
 -------
 
+- socket.create_connection now accepts an optional source_address parameter.
+
 - Issue #5511: now zipfile.ZipFile can be used as a context manager.
   Initial patch by Brian Curtin.
 
