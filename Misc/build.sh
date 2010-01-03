@@ -4,8 +4,10 @@
 ## does this:
 ##   svn up ; ./configure ; make ; make test ; make install ; cd Doc ; make
 ##
-## Logs are kept and rsync'ed to the host.  If there are test failure(s),
+## Logs are kept and rsync'ed to the webhost.  If there are test failure(s),
 ## information about the failure(s) is mailed.
+##
+## The user must be a member of the webmaster group locally and on webhost.
 ##
 ## This script is run on the PSF's machine as user neal via crontab.
 ##
@@ -54,7 +56,7 @@ REMOTE_DIR="/data/ftp.python.org/pub/www.python.org/doc/current"
 REMOTE_DIR_DIST="/data/ftp.python.org/pub/python/doc/current"
 RESULT_FILE="$DIR/build/index.html"
 INSTALL_DIR="/tmp/python-test-2.6/local"
-RSYNC_OPTS="-aC -e ssh"
+RSYNC_OPTS="-C -e ssh -rlogD"
 
 # Always run the installed version of Python.
 PYTHON=$INSTALL_DIR/bin/python
@@ -75,7 +77,8 @@ LEAKY_TESTS="test_(asynchat|cmd_line|docxmlrpc|dumbdbm|file|ftplib|httpservers|i
 # test_compiler almost never finishes with the same number of refs
 # since it depends on other modules, skip it.
 # test_logging causes hangs, skip it.
-LEAKY_SKIPS="-x test_compiler test_logging"
+# KBK 21Apr09: test_httpservers causes hangs, skip for now.
+LEAKY_SKIPS="-x test_compiler test_logging test_httpservers"
 
 # Change this flag to "yes" for old releases to only update/build the docs.
 BUILD_DISABLED="yes"
@@ -132,9 +135,14 @@ mail_on_failure() {
 
 ## setup
 cd $DIR
+make clobber > /dev/null 2>&1
+cp -p Modules/Setup.dist Modules/Setup
+# But maybe there was no Makefile - we are only building docs. Clear build:
+rm -rf build/
 mkdir -p build
-rm -f $RESULT_FILE build/*.out
 rm -rf $INSTALL_DIR
+## get the path we are building
+repo_path=$(grep "url=" .svn/entries | sed -e s/\\W*url=// -e s/\"//g)
 
 ## create results file
 TITLE="Automated Python Build Results"
@@ -152,6 +160,8 @@ echo "  </tr><tr>" >> $RESULT_FILE
 echo "    <td>Hostname:</td><td>`uname -n`</td>" >> $RESULT_FILE
 echo "  </tr><tr>" >> $RESULT_FILE
 echo "    <td>Platform:</td><td>`uname -srmpo`</td>" >> $RESULT_FILE
+echo "  </tr><tr>" >> $RESULT_FILE
+echo "    <td>URL:</td><td>$repo_path</td>" >> $RESULT_FILE
 echo "  </tr>" >> $RESULT_FILE
 echo "</table>" >> $RESULT_FILE
 echo "<ul>" >> $RESULT_FILE
@@ -222,7 +232,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             start=`current_time`
             ## ensure that the reflog exists so the grep doesn't fail
             touch $REFLOG
-            $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network,urlfetch $LEAKY_SKIPS >& build/$F
+            $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
             LEAK_PAT="($LEAKY_TESTS|sum=0)"
             NUM_FAILURES=`egrep -vc "$LEAK_PAT" $REFLOG`
             place_summary_first build/$F
@@ -248,25 +258,9 @@ fi
 cd $DIR/Doc
 F="make-doc.out"
 start=`current_time`
-# XXX(nnorwitz): For now, keep the code that checks for a conflicted file until
-# after the first release of 2.6a1 or 3.0a1.  At that point, it will be clear
-# if there will be a similar problem with the new doc system.
-
-# Doc/commontex/boilerplate.tex is expected to always have an outstanding
-# modification for the date.  When a release is cut, a conflict occurs.
-# This allows us to detect this problem and not try to build the docs
-# which will definitely fail with a conflict. 
-#CONFLICTED_FILE=commontex/boilerplate.tex
-#conflict_count=`grep -c "<<<" $CONFLICTED_FILE`
-make clean
-conflict_count=0
-if [ $conflict_count != 0 ]; then
-    echo "Conflict detected in $CONFLICTED_FILE.  Doc build skipped." > ../build/$F
-    err=1
-else
-    make checkout update html >& ../build/$F
-    err=$?
-fi
+make clean > ../build/$F 2>&1
+make checkout html >> ../build/$F 2>&1
+err=$?
 update_status "Making doc" "$F" $start
 if [ $err != 0 ]; then
     NUM_FAILURES=1
@@ -290,6 +284,8 @@ echo "</body>" >> $RESULT_FILE
 echo "</html>" >> $RESULT_FILE
 
 ## copy results
+chgrp -R webmaster build/html
+chmod -R g+w build/html
 rsync $RSYNC_OPTS build/html/* $REMOTE_SYSTEM:$REMOTE_DIR
 rsync $RSYNC_OPTS dist/* $REMOTE_SYSTEM:$REMOTE_DIR_DIST
 cd ../build
