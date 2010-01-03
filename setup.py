@@ -620,7 +620,7 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_sha256', ['sha256module.c']) )
             exts.append( Extension('_sha512', ['sha512module.c']) )
 
-        if COMPILED_WITH_PYDEBUG or openssl_ver < min_openssl_ver:
+        if COMPILED_WITH_PYDEBUG or not have_usable_openssl:
             # no openssl at all, use our own md5 and sha1
             exts.append( Extension('_md5', ['md5module.c']) )
             exts.append( Extension('_sha1', ['sha1module.c']) )
