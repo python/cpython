@@ -1010,18 +1010,13 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         self.cli = socket.create_connection((HOST, self.port), timeout=30)
         self.assertEqual(self.cli.family, 2)
 
-    testSourcePort = _justAccept
-    def _testSourcePort(self):
+    testSourceAddress = _justAccept
+    def _testSourceAddress(self):
         self.cli = socket.create_connection((HOST, self.port), timeout=30,
                 source_address=('', self.source_port))
         self.assertEqual(self.cli.getsockname()[1], self.source_port)
-
-    testSourceAddress = _justAccept
-    def _testSourceAddress(self):
-        self.cli = socket.create_connection(
-                (HOST, self.port), 30, ('127.0.0.1', self.source_port))
-        self.assertEqual(self.cli.getsockname(),
-                         ('127.0.0.1', self.source_port))
+        # The port number being used is sufficient to show that the bind()
+        # call happened.
 
     testTimeoutDefault = _justAccept
     def _testTimeoutDefault(self):
