@@ -205,7 +205,7 @@ The module :mod:`socket` exports the following constants and functions:
    .. versionadded:: 2.3
 
 
-.. function:: create_connection(address[, timeout])
+.. function:: create_connection(address[, timeout[, source_address]])
 
    Convenience function.  Connect to *address* (a 2-tuple ``(host, port)``),
    and return the socket object.  Passing the optional *timeout* parameter will
@@ -214,6 +214,12 @@ The module :mod:`socket` exports the following constants and functions:
    :func:`getdefaulttimeout` is used.
 
    .. versionadded:: 2.6
+
+   If supplied, *source_address* must be a 2-tuple ``(host, port)`` for the
+   socket to bind to as its source address before connecting.  If host or port
+   are '' or 0 respectively the OS default behavior will be used.
+
+   .. versionadded:: 2.7
 
 
 .. function:: getaddrinfo(host, port[, family[, socktype[, proto[, flags]]]])
