@@ -606,6 +606,7 @@ class PyBuildExt(build_ext):
                 # The _hashlib module wraps optimized implementations
                 # of hash functions from the OpenSSL library.
                 exts.append( Extension('_hashlib', ['_hashopenssl.c'],
+                                       depends = ['hashlib.h'],
                                        include_dirs = ssl_incs,
                                        library_dirs = ssl_libs,
                                        libraries = ['ssl', 'crypto']) )
@@ -617,13 +618,17 @@ class PyBuildExt(build_ext):
         min_sha2_openssl_ver = 0x00908000
         if COMPILED_WITH_PYDEBUG or openssl_ver < min_sha2_openssl_ver:
             # OpenSSL doesn't do these until 0.9.8 so we'll bring our own hash
-            exts.append( Extension('_sha256', ['sha256module.c']) )
-            exts.append( Extension('_sha512', ['sha512module.c']) )
+            exts.append( Extension('_sha256', ['sha256module.c'],
+                                   depends=['hashlib.h']) )
+            exts.append( Extension('_sha512', ['sha512module.c'],
+                                   depends=['hashlib.h']) )
 
         if COMPILED_WITH_PYDEBUG or not have_usable_openssl:
             # no openssl at all, use our own md5 and sha1
-            exts.append( Extension('_md5', ['md5module.c']) )
-            exts.append( Extension('_sha1', ['sha1module.c']) )
+            exts.append( Extension('_md5', ['md5module.c'],
+                                   depends=['hashlib.h']) )
+            exts.append( Extension('_sha1', ['sha1module.c'],
+                                   depends=['hashlib.h']) )
 
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
