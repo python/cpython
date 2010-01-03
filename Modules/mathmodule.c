@@ -1251,28 +1251,18 @@ math_ldexp(PyObject *self, PyObject *args)
 	double x, r;
 	PyObject *oexp;
 	long exp;
+	int overflow;
 	if (! PyArg_ParseTuple(args, "dO:ldexp", &x, &oexp))
 		return NULL;
 
 	if (PyLong_Check(oexp)) {
 		/* on overflow, replace exponent with either LONG_MAX
 		   or LONG_MIN, depending on the sign. */
-		exp = PyLong_AsLong(oexp);
-		if (exp == -1 && PyErr_Occurred()) {
-			if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-				if (Py_SIZE(oexp) < 0) {
-					exp = LONG_MIN;
-				}
-				else {
-					exp = LONG_MAX;
-				}
-				PyErr_Clear();
-			}
-			else {
-				/* propagate any unexpected exception */
-				return NULL;
-			}
-		}
+		exp = PyLong_AsLongAndOverflow(oexp, &overflow);
+		if (exp == -1 && PyErr_Occurred())
+			return NULL;
+		if (overflow)
+			exp = overflow < 0 ? LONG_MIN : LONG_MAX;
 	}
 	else {
 		PyErr_SetString(PyExc_TypeError,
