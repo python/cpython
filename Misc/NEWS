@@ -191,7 +191,11 @@ C-API
 Library
 -------
 
-_ Issue #3972: http.client.HTTPConnection now accepts an optional source_address
+- Issue #7471: Improve the performance of GzipFile's buffering mechanism,
+  and make it implement the `io.BufferedIOBase` ABC to allow for further
+  speedups by wrapping it in an `io.BufferedReader`.  Patch by Nir Aides.
+
+- Issue #3972: http.client.HTTPConnection now accepts an optional source_address
   parameter to allow specifying where your connections come from.
 
 - socket.create_connection now accepts an optional source_address parameter.
