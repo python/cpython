@@ -5,6 +5,7 @@
 import unittest
 from test import test_support
 import os
+import io
 import struct
 gzip = test_support.import_module('gzip')
 
@@ -80,6 +81,16 @@ class TestGzip(unittest.TestCase):
         zgfile.close()
         self.assertEquals(contents, 'a'*201)
 
+    def test_buffered_reader(self):
+        # Issue #7471: a GzipFile can be wrapped in a BufferedReader for
+        # performance.
+        self.test_write()
+
+        f = gzip.GzipFile(self.filename, 'rb')
+        with io.BufferedReader(f) as r:
+            lines = [line for line in r]
+
+        self.assertEqual(lines, 50 * data1.splitlines(True))
 
     def test_readline(self):
         self.test_write()
