@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+_ Issue #3972: httplib.HTTPConnection now accepts an optional source_address
+  parameter to allow specifying where your connections come from.
+
 - socket.create_connection now accepts an optional source_address parameter.
 
 - Issue #5511: now zipfile.ZipFile can be used as a context manager.

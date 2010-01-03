@@ -658,8 +658,9 @@ class HTTPConnection:
     strict = 0
 
     def __init__(self, host, port=None, strict=None,
-                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
         self.timeout = timeout
+        self.source_address = source_address
         self.sock = None
         self._buffer = []
         self.__response = None
@@ -728,7 +729,7 @@ class HTTPConnection:
     def connect(self):
         """Connect to the host and port specified in __init__."""
         self.sock = socket.create_connection((self.host,self.port),
-                                             self.timeout)
+                                             self.timeout, self.source_address)
 
         if self._tunnel_host:
             self._tunnel()
@@ -1133,15 +1134,18 @@ else:
         default_port = HTTPS_PORT
 
         def __init__(self, host, port=None, key_file=None, cert_file=None,
-                     strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
-            HTTPConnection.__init__(self, host, port, strict, timeout)
+                     strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                     source_address=None):
+            HTTPConnection.__init__(self, host, port, strict, timeout,
+                                    source_address)
             self.key_file = key_file
             self.cert_file = cert_file
 
         def connect(self):
             "Connect to a host on a given (SSL) port."
 
-            sock = socket.create_connection((self.host, self.port), self.timeout)
+            sock = socket.create_connection((self.host, self.port),
+                                            self.timeout, self.source_address)
             if self._tunnel_host:
                 self.sock = sock
                 self._tunnel()
