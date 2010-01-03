@@ -78,10 +78,10 @@ class HashLibTestCase(unittest.TestCase):
 
         _md5 = self._conditional_import_module('_md5')
         if _md5:
-            self.constructors_to_test['md5'].add(_md5.new)
-        _sha = self._conditional_import_module('_sha')
-        if _sha:
-            self.constructors_to_test['sha1'].add(_sha.new)
+            self.constructors_to_test['md5'].add(_md5.md5)
+        _sha1 = self._conditional_import_module('_sha1')
+        if _sha1:
+            self.constructors_to_test['sha1'].add(_sha1.sha1)
         _sha256 = self._conditional_import_module('_sha256')
         if _sha256:
             self.constructors_to_test['sha224'].add(_sha256.sha224)
