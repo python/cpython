@@ -262,12 +262,25 @@ PyComplex_ImagAsDouble(PyObject *op)
 	}
 }
 
+static PyObject *
+try_complex_special_method(PyObject *op) {
+	PyObject *f;
+	static PyObject *complexstr;
+
+	f = _PyObject_LookupSpecial(op, "__complex__", &complexstr);
+	if (f) {
+		PyObject *res = PyObject_CallFunctionObjArgs(f, NULL);
+		Py_DECREF(f);
+		return res;
+	}
+	return NULL;
+}
+
 Py_complex
 PyComplex_AsCComplex(PyObject *op)
 {
 	Py_complex cv;
 	PyObject *newop = NULL;
-	static PyObject *complex_str = NULL;
 
 	assert(op);
 	/* If op is already of type PyComplex_Type, return its value */
@@ -280,21 +293,7 @@ PyComplex_AsCComplex(PyObject *op)
 	cv.real = -1.;
 	cv.imag = 0.;
 		
-	if (complex_str == NULL) {
-		if (!(complex_str = PyUnicode_FromString("__complex__")))
-			return cv;
-	}
-
-        {
-		PyObject *complexfunc;
-		complexfunc = _PyType_Lookup(op->ob_type, complex_str);
-		/* complexfunc is a borrowed reference */
-		if (complexfunc) {
-			newop = PyObject_CallFunctionObjArgs(complexfunc, op, NULL);
-			if (!newop)
-				return cv;
-		}
-	}
+	newop = try_complex_special_method(op);
 
 	if (newop) {
 		if (!PyComplex_Check(newop)) {
@@ -305,6 +304,9 @@ PyComplex_AsCComplex(PyObject *op)
 		}
 		cv = ((PyComplexObject *)newop)->cval;
 		Py_DECREF(newop);
+		return cv;
+	}
+	else if (PyErr_Occurred()) {
 		return cv;
 	}
 	/* If neither of the above works, interpret op as a float giving the
@@ -880,13 +882,12 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 static PyObject *
 complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *r, *i, *tmp, *f;
+	PyObject *r, *i, *tmp;
 	PyNumberMethods *nbr, *nbi = NULL;
 	Py_complex cr, ci;
 	int own_r = 0;
 	int cr_is_complex = 0;
 	int ci_is_complex = 0;
-	static PyObject *complexstr;
 	static char *kwlist[] = {"real", "imag", 0};
 
 	r = Py_False;
@@ -921,26 +922,15 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
-	/* XXX Hack to support classes with __complex__ method */
-	if (complexstr == NULL) {
-		complexstr = PyUnicode_InternFromString("__complex__");
-		if (complexstr == NULL)
-			return NULL;
-	}
-	f = PyObject_GetAttr(r, complexstr);
-	if (f == NULL)
-		PyErr_Clear();
-	else {
-		PyObject *args = PyTuple_New(0);
-		if (args == NULL)
-			return NULL;
-		r = PyEval_CallObject(f, args);
-		Py_DECREF(args);
-		Py_DECREF(f);
-		if (r == NULL)
-			return NULL;
+	tmp = try_complex_special_method(r);
+	if (tmp) {
+		r = tmp;
 		own_r = 1;
 	}
+	else if (PyErr_Occurred()) {
+		return NULL;
+	}
+
 	nbr = r->ob_type->tp_as_number;
 	if (i != NULL)
 		nbi = i->ob_type->tp_as_number;
