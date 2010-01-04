@@ -750,7 +750,7 @@ changes, or look through the Subversion logs for all the details.
   global site-packages directories, and
   :func:`getusersitepackages` returns the path of the user's
   site-packages directory.
-  :func:`getuserbase` returns the value of the :envvar:``USER_BASE``
+  :func:`getuserbase` returns the value of the :envvar:`USER_BASE`
   environment variable, giving the path to a directory that can be used
   to store data.
   (Contributed by Tarek Ziade; :issue:`6693`.)
