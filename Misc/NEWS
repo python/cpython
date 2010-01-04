@@ -194,6 +194,10 @@ C-API
 Library
 -------
 
+- Issue #1628205: Socket file objects returned by socket.socket.makefile() now
+  properly handles EINTR within the read, readline, write & flush methods.
+  The socket.sendall() method now properly handles interrupted system calls.
+
 - Issue #7471: Improve the performance of GzipFile's buffering mechanism,
   and make it implement the `io.BufferedIOBase` ABC to allow for further
   speedups by wrapping it in an `io.BufferedReader`.  Patch by Nir Aides.

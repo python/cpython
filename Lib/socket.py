@@ -49,9 +49,11 @@ from _socket import *
 import os, sys, io
 
 try:
-    from errno import EBADF
+    import errno
 except ImportError:
-    EBADF = 9
+    errno = None
+EBADF = getattr(errno, 'EBADF', 9)
+EINTR = getattr(errno, 'EINTR', 4)
 
 __all__ = ["getfqdn", "create_connection"]
 __all__.extend(os._get_exports_list(_socket))
@@ -212,7 +214,13 @@ class SocketIO(io.RawIOBase):
     def readinto(self, b):
         self._checkClosed()
         self._checkReadable()
-        return self._sock.recv_into(b)
+        while True:
+            try:
+                return self._sock.recv_into(b)
+            except error as e:
+                if e.args[0] == EINTR:
+                    continue
+                raise
 
     def write(self, b):
         self._checkClosed()
