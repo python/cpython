@@ -598,6 +598,20 @@ For example, if your script is called ``/usr/bin/foo``::
    $ /usr/bin/foo --version
    foo 1.0
 
+The following two methods can be used to print and get the ``version`` string:
+
+.. method:: OptionParser.print_version(file=None)
+
+   Print the version message for the current program (``self.version``) to
+   *file* (default stdout).  As with :meth:`print_usage`, any occurrence
+   of ``"%prog"`` in ``self.version`` is replaced with the name of the current
+   program.  Does nothing if ``self.version`` is empty or undefined.
+
+.. method:: OptionParser.get_version()
+
+   Same as :meth:`print_version` but returns the version string instead of
+   printing it.
+
 
 .. _optparse-how-optparse-handles-errors:
 
@@ -1383,6 +1397,18 @@ OptionParser supports several other public methods:
    Set the usage string according to the rules described above for the ``usage``
    constructor keyword argument.  Passing ``None`` sets the default usage
    string; use :data:`optparse.SUPPRESS_USAGE` to suppress a usage message.
+
+.. method:: OptionParser.print_usage(file=None)
+
+   Print the usage message for the current program (``self.usage``) to *file*
+   (default stdout).  Any occurrence of the string ``"%prog"`` in ``self.usage``
+   is replaced with the name of the current program.  Does nothing if
+   ``self.usage`` is empty or not defined.
+
+.. method:: OptionParser.get_usage()
+
+   Same as :meth:`print_usage` but returns the usage string instead of
+   printing it.
 
 .. method:: OptionParser.set_defaults(dest=value, ...)
 
