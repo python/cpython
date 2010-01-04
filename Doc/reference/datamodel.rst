@@ -767,10 +767,10 @@ Class instances
    Special attributes: :attr:`__dict__` is the attribute dictionary;
    :attr:`__class__` is the instance's class.
 
-Files
+I/O objects (also known as file objects)
    .. index::
-      object: file
       builtin: open
+      module: io
       single: popen() (in module os)
       single: makefile() (socket method)
       single: sys.stdin
@@ -781,14 +781,17 @@ Files
       single: stdout (in module sys)
       single: stderr (in module sys)
 
-   A file object represents an open file.  File objects are created by the
-   :func:`open` built-in function, and also by :func:`os.popen`,
-   :func:`os.fdopen`, and the :meth:`makefile` method of socket objects (and
-   perhaps by other functions or methods provided by extension modules).  The
-   objects ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are initialized to
-   file objects corresponding to the interpreter's standard input, output and
-   error streams.  See :ref:`bltin-file-objects` for complete documentation of
-   file objects.
+   A file object represents an open file.  Various shortcuts are available
+   to create file objects: the :func:`open` built-in function, and also
+   :func:`os.popen`, :func:`os.fdopen`, and the :meth:`makefile` method
+   of socket objects (and perhaps by other functions or methods provided
+   by extension modules).
+
+   The objects ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are
+   initialized to file objects corresponding to the interpreter's standard
+   input, output and error streams; they are all open in text mode and
+   therefore follow the interface defined by the :class:`io.TextIOBase`
+   abstract class.
 
 Internal types
    .. index::
