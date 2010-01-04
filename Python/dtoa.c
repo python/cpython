@@ -927,7 +927,7 @@ b2d(Bigint *a, int *e)
 
    Given a finite nonzero double d, return an odd Bigint b and exponent *e
    such that fabs(d) = b * 2**e.  On return, *bbits gives the number of
-   significant bits of e; that is, 2**(*bbits-1) <= b < 2**(*bbits).
+   significant bits of b; that is, 2**(*bbits-1) <= b < 2**(*bbits).
 
    If d is zero, then b == 0, *e == -1010, *bbits = 0.
  */
