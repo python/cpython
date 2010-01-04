@@ -3,7 +3,7 @@
 import sys
 if sys.py3kwarning:
     import warnings
-    warnings.warnpy3k("in 3.x, dbhash has been removed", DeprecationWarning, 2)
+    warnings.warnpy3k("in 3.x, the dbhash module has been removed", DeprecationWarning, 2)
 try:
     import bsddb
 except ImportError:

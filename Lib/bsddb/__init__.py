@@ -44,7 +44,7 @@ absolute_import = (sys.version_info[0] >= 3)
 
 if sys.py3kwarning:
     import warnings
-    warnings.warnpy3k("in 3.x, bsddb has been removed; "
+    warnings.warnpy3k("in 3.x, the bsddb module has been removed; "
                       "please use the pybsddb project instead",
                       DeprecationWarning, 2)
 

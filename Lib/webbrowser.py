@@ -650,7 +650,7 @@ def main():
     for o, a in opts:
         if o == '-n': new_win = 1
         elif o == '-t': new_win = 2
-    if len(args) <> 1:
+    if len(args) != 1:
         print >>sys.stderr, usage
         sys.exit(1)
 

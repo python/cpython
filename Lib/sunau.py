@@ -364,7 +364,8 @@ class Au_write:
         else:
             return 'not compressed'
 
-    def setparams(self, (nchannels, sampwidth, framerate, nframes, comptype, compname)):
+    def setparams(self, params):
+        nchannels, sampwidth, framerate, nframes, comptype, compname = params
         self.setnchannels(nchannels)
         self.setsampwidth(sampwidth)
         self.setframerate(framerate)

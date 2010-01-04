@@ -18,7 +18,6 @@ import copy
 import email
 import email.message
 import email.generator
-import rfc822
 import StringIO
 try:
     if sys.platform == 'os2emx':
@@ -27,6 +26,13 @@ try:
     import fcntl
 except ImportError:
     fcntl = None
+
+import warnings
+with warnings.catch_warnings():
+    if sys.py3kwarning:
+        warnings.filterwarnings("ignore", ".*rfc822 has been removed",
+                                DeprecationWarning)
+    import rfc822
 
 __all__ = [ 'Mailbox', 'Maildir', 'mbox', 'MH', 'Babyl', 'MMDF',
             'Message', 'MaildirMessage', 'mboxMessage', 'MHMessage',

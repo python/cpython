@@ -746,9 +746,15 @@ class TestCase(object):
             # not hashable.
             expected = list(expected_seq)
             actual = list(actual_seq)
-            expected.sort()
-            actual.sort()
-            missing, unexpected = util.sorted_list_difference(expected, actual)
+            with warnings.catch_warnings():
+                if sys.py3kwarning:
+                    # Silence Py3k warning
+                    warnings.filterwarnings("ignore",
+                                            "dict inequality comparisons "
+                                            "not supported", DeprecationWarning)
+                expected.sort()
+                actual.sort()
+                missing, unexpected = util.sorted_list_difference(expected, actual)
         errors = []
         if missing:
             errors.append('Expected, but missing:\n    %r' % missing)

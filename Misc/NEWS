@@ -65,6 +65,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7092: Fix the DeprecationWarnings emitted by the standard library
+  when using the -3 flag.  Patch by Florent Xicluna.
+
 - Issue #7471: Improve the performance of GzipFile's buffering mechanism,
   and make it implement the `io.BufferedIOBase` ABC to allow for further
   speedups by wrapping it in an `io.BufferedReader`.  Patch by Nir Aides.
