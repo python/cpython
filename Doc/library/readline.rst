@@ -14,7 +14,7 @@ made using  this module affect the behaviour of both the interpreter's
 interactive prompt  and the prompts offered by the :func:`raw_input` and
 :func:`input` built-in functions.
 
-..note::
+.. note::
 
   On MacOS X the :mod:`readline` module can be implemented using
   the ``libedit`` library instead of GNU readline.

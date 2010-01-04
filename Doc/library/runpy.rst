@@ -45,7 +45,7 @@ The :mod:`runpy` module provides two functions:
 
    ``__file__`` is set to the name provided by the module loader. If the
    loader does not make filename information available, this variable is set
-   to `:const:`None`.
+   to :const:`None`.
 
    ``__loader__`` is set to the PEP 302 module loader used to retrieve the
    code for the module (This loader may be a wrapper around the standard
