@@ -575,13 +575,15 @@ correspond to Unix system calls applicable to sockets.
 
    .. index:: single: I/O control; buffering
 
-   Return a :dfn:`file object` associated with the socket.  (File objects are
-   described in :ref:`bltin-file-objects`.)  The file object references a
-   :cfunc:`dup`\ ped version of the socket file descriptor, so the file object
-   and socket object may be closed or garbage-collected independently.  The
-   socket must be in blocking mode (it can not have a timeout).  The optional
+   Return a :dfn:`file object` associated with the socket.  The exact
+   returned type depends on the arguments given to :meth:`makefile`.  These
    arguments are interpreted the same way as by the built-in :func:`open`
    function.
+
+   The returned file object references a :cfunc:`dup`\ ped version of the
+   socket file descriptor, so the file object and socket object may be
+   closed or garbage-collected independently.  The socket must be in
+   blocking mode (it can not have a timeout).
 
 
 .. method:: socket.recv(bufsize[, flags])
