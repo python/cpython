@@ -1114,21 +1114,27 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
-	/* XXX Hack to support classes with __complex__ method */
 	if (complexstr == NULL) {
 		complexstr = PyString_InternFromString("__complex__");
 		if (complexstr == NULL)
 			return NULL;
 	}
-	f = PyObject_GetAttr(r, complexstr);
-	if (f == NULL)
-		PyErr_Clear();
+	if (PyInstance_Check(r)) {
+		f = PyObject_GetAttr(r, complexstr);
+		if (f == NULL) {
+			if (PyErr_ExceptionMatches(PyExc_AttributeError))
+				PyErr_Clear();
+			else
+				return NULL;
+		}
+	}
 	else {
-		PyObject *args = PyTuple_New(0);
-		if (args == NULL)
+		f = _PyObject_LookupSpecial(r, "__complex__", &complexstr);
+		if (f == NULL && PyErr_Occurred())
 			return NULL;
-		r = PyEval_CallObject(f, args);
-		Py_DECREF(args);
+	}
+	if (f != NULL) {
+		r = PyObject_CallFunctionObjArgs(f, NULL);
 		Py_DECREF(f);
 		if (r == NULL)
 			return NULL;

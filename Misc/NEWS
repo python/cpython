@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 2?
 Core and Builtins
 -----------------
 
+- The __complex__ method is now looked up on the class of instances to make it
+  consistent with other special methods.
+
 - Issue #7462: Implement the stringlib fast search algorithm for the `rfind`,
   `rindex`, `rsplit` and `rpartition` methods.  Patch by Florent Xicluna.
 

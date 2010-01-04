@@ -1691,6 +1691,8 @@ order (MRO) for bases """
             return []
         def zero(self):
             return 0
+        def complex_num(self):
+            return 1j
         def stop(self):
             raise StopIteration
         def return_true(self, thing=None):
@@ -1725,6 +1727,7 @@ order (MRO) for bases """
              set(("__bases__",)), {}),
             ("__enter__", run_context, iden, set(), {"__exit__" : swallow}),
             ("__exit__", run_context, swallow, set(), {"__enter__" : iden}),
+            ("__complex__", complex, complex_num, set(), {}),
             ]
 
         class Checker(object):
