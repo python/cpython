@@ -142,7 +142,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
-   by:func:`exec` or :func:`eval`.  *source* can either be a string or an AST
+   by :func:`exec` or :func:`eval`.  *source* can either be a string or an AST
    object.  Refer to the :mod:`ast` module documentation for information on how
    to work with AST objects.
 
