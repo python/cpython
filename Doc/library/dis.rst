@@ -219,8 +219,7 @@ result back on the stack.
 
 .. opcode:: BINARY_TRUE_DIVIDE ()
 
-   Implements ``TOS = TOS1 / TOS`` when ``from __future__ import division`` is in
-   effect.
+   Implements ``TOS = TOS1 / TOS``.
 
 
 .. opcode:: BINARY_MODULO ()
@@ -290,8 +289,7 @@ the original TOS1.
 
 .. opcode:: INPLACE_TRUE_DIVIDE ()
 
-   Implements in-place ``TOS = TOS1 / TOS`` when ``from __future__ import
-   division`` is in effect.
+   Implements in-place ``TOS = TOS1 / TOS``.
 
 
 .. opcode:: INPLACE_MODULO ()
