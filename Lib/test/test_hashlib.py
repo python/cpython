@@ -6,8 +6,10 @@
 #  Licensed to PSF under a Contributor Agreement.
 #
 
+import array
 import hashlib
 import StringIO
+import itertools
 import sys
 try:
     import threading
@@ -93,6 +95,13 @@ class HashLibTestCase(unittest.TestCase):
             self.constructors_to_test['sha512'].add(_sha512.sha512)
 
         super(HashLibTestCase, self).__init__(*args, **kwargs)
+
+    def test_hash_array(self):
+        a = array.array("b", range(10))
+        constructors = self.constructors_to_test.itervalues()
+        for cons in itertools.chain.from_iterable(constructors):
+            c = cons(a)
+            c.hexdigest()
 
     def test_unknown_hash(self):
         try:
