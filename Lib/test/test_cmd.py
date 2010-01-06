@@ -57,15 +57,17 @@ class samplecmdclass(cmd.Cmd):
     >>> mycmd.completenames("12")
     []
     >>> mycmd.completenames("help")
-    ['help', 'help']
+    ['help']
 
     Test for the function complete_help():
     >>> mycmd.complete_help("a")
     ['add']
     >>> mycmd.complete_help("he")
-    ['help', 'help']
+    ['help']
     >>> mycmd.complete_help("12")
     []
+    >>> sorted(mycmd.complete_help(""))
+    ['add', 'exit', 'help', 'shell']
 
     Test for the function do_help():
     >>> mycmd.do_help("testet")
