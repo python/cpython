@@ -318,6 +318,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6511: ZipFile now raises BadZipfile (instead of an IOError) when
+  opening an empty or very small file.
+
 - Issue #1488943: difflib.Differ() doesn't always add hints for tab characters
 
 - Issue #5037: Proxy the __unicode__ special method instead to __unicode__
