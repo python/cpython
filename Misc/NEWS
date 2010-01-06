@@ -61,6 +61,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6511: ZipFile now raises BadZipfile (instead of an IOError) when
+  opening an empty or very small file.
+
 - Issue #7556: Make sure Distutils' msvc9compile reads and writes the
   MSVC XML Manifest file in text mode so string patterns can be used 
   in regular expressions.
