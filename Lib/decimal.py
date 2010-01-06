@@ -4132,6 +4132,13 @@ class Context(object):
         return a.__floordiv__(b, context=self)
 
     def divmod(self, a, b):
+        """Return (a // b, a % b)
+
+        >>> ExtendedContext.divmod(Decimal(8), Decimal(3))
+        (Decimal('2'), Decimal('2'))
+        >>> ExtendedContext.divmod(Decimal(8), Decimal(4))
+        (Decimal('2'), Decimal('0'))
+        """
         return a.__divmod__(b, context=self)
 
     def exp(self, a):
