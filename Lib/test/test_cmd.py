@@ -143,7 +143,7 @@ class samplecmdclass(cmd.Cmd):
         print "complete command"
         return
 
-    def do_shell(self):
+    def do_shell(self, s):
         pass
 
     def do_add(self, s):
@@ -169,8 +169,8 @@ def test_main(verbose=None):
     from test import test_support, test_cmd
     test_support.run_doctest(test_cmd, verbose)
 
-import trace, sys
 def test_coverage(coverdir):
+    import trace
     tracer=trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,],
                         trace=0, count=1)
     tracer.run('reload(cmd);test_main()')
@@ -181,5 +181,7 @@ def test_coverage(coverdir):
 if __name__ == "__main__":
     if "-c" in sys.argv:
         test_coverage('/tmp/cmd.cover')
+    elif "-i" in sys.argv:
+        samplecmdclass().cmdloop()
     else:
         test_main()
