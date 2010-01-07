@@ -266,8 +266,8 @@ Some smaller changes made to the core Python language are:
   operation of this code cannot be guaranteed, so the code is not
   used on such systems.
 
-  Implemented by Mark Dickinson, using David Gay's :file:`dtoa.c` library;
-  :issue:`7117`.
+  Implemented by Eric Smith and Mark Dickinson, using David Gay's
+  :file:`dtoa.c` library; :issue:`7117`.
 
 * The :meth:`str.format` method now supports automatic numbering of the replacement
   fields.  This makes using :meth:`str.format` more closely resemble using
