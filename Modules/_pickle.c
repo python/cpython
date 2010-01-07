@@ -3729,7 +3729,7 @@ load_pop(UnpicklerObject *self)
      */
     if (self->num_marks > 0 && self->marks[self->num_marks - 1] == len) {
         self->num_marks--;
-    } else if (len >= 0) {
+    } else if (len > 0) {
         len--;
         Py_DECREF(self->stack->data[len]);
         self->stack->length = len;
