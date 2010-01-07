@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 
 ## Script to build and test the latest python from svn.  It basically
 ## does this:
