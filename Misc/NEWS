@@ -59,14 +59,14 @@ Core and Builtins
 - Issue #7491: Metaclass's __cmp__ method was ignored.
 
 - Issue #7466: segmentation fault when the garbage collector is called
-  in the middle of populating a tuple.  Patch by Victor Stinner.
+  in the middle of populating a tuple.  Patch by Florent Xicluna.
 
 
 Library
 -------
 
 - Issue #7455: Fix possible crash in cPickle on invalid input.  Patch by
-  Florent Xicluna.
+  Victor Stinner.
 
 - Issue #7092: Fix the DeprecationWarnings emitted by the standard library
   when using the -3 flag.  Patch by Florent Xicluna.
