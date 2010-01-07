@@ -257,14 +257,15 @@ Initialization, Finalization, and Threads
       triple: module; search; path
       single: path (in module sys)
 
-   Return the default module search path; this is computed from the  program name
-   (set by :cfunc:`Py_SetProgramName` above) and some environment variables.  The
-   returned string consists of a series of directory names separated by a platform
-   dependent delimiter character.  The delimiter character is ``':'`` on Unix and
-   Mac OS X, ``';'`` on Windows.  The returned string points into static storage;
-   the caller should not modify its value.  The value is available to Python code
-   as the list ``sys.path``, which may be modified to change the future search path
-   for loaded modules.
+   Return the default module search path; this is computed from the program name
+   (set by :cfunc:`Py_SetProgramName` above) and some environment variables.
+   The returned string consists of a series of directory names separated by a
+   platform dependent delimiter character.  The delimiter character is ``':'``
+   on Unix and Mac OS X, ``';'`` on Windows.  The returned string points into
+   static storage; the caller should not modify its value.  The list
+   :data:`sys.path` is initialized with this value on interpreter startup; it
+   can be (and usually is) modified later to change the search path for loading
+   modules.
 
    .. XXX should give the exact rules
 
