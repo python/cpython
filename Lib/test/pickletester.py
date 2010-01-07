@@ -1029,6 +1029,15 @@ class AbstractPickleModuleTests(unittest.TestCase):
         exec teststr in {'__builtins__': builtins}, d
         d['f']()
 
+    def test_bad_input(self):
+        # Test issue4298
+        s = '\x58\0\0\0\x54'
+        self.assertRaises(EOFError, self.module.loads, s)
+        # Test issue7455
+        s = '0'
+        # XXX Why doesn't pickle raise UnpicklingError?
+        self.assertRaises((IndexError, cPickle.UnpicklingError),
+                          self.module.loads, s)
 
 class AbstractPersistentPicklerTests(unittest.TestCase):
 
