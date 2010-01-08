@@ -91,10 +91,10 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(False*1, 0)
         self.assertIsNot(False*1, False)
 
-        self.assertEqual(True//1, 1)
-        self.assertIsNot(True//1, True)
-        self.assertEqual(False//1, 0)
-        self.assertIsNot(False//1, False)
+        self.assertEqual(True/1, 1)
+        self.assertIsNot(True/1, True)
+        self.assertEqual(False/1, 0)
+        self.assertIsNot(False/1, False)
 
         for b in False, True:
             for i in 0, 1, 2:
@@ -168,8 +168,8 @@ class BoolTest(unittest.TestCase):
         self.assertIs(hasattr([], "wobble"), False)
 
     def test_callable(self):
-        self.assertTrue(hasattr(len, '__call__'), True)
-        self.assertFalse(hasattr(1, '__call__'), False)
+        self.assertIs(callable(len), True)
+        self.assertIs(callable(1), False)
 
     def test_isinstance(self):
         self.assertIs(isinstance(True, bool), True)
@@ -184,12 +184,8 @@ class BoolTest(unittest.TestCase):
         self.assertIs(issubclass(int, bool), False)
 
     def test_haskey(self):
-        self.assertIs(1 in {}, False)
-        self.assertIs(1 in {1:1}, True)
-        # Silence Py3k warning
-        with test_support.check_warnings():
-            self.assertIs({}.has_key(1), False)
-            self.assertIs({1:1}.has_key(1), True)
+        self.assertIs({}.has_key(1), False)
+        self.assertIs({1:1}.has_key(1), True)
 
     def test_string(self):
         self.assertIs("xyz".endswith("z"), True)
@@ -261,10 +257,8 @@ class BoolTest(unittest.TestCase):
         import operator
         self.assertIs(operator.truth(0), False)
         self.assertIs(operator.truth(1), True)
-        # Silence Py3k warning
-        with test_support.check_warnings():
-            self.assertIs(operator.isCallable(0), False)
-            self.assertIs(operator.isCallable(len), True)
+        self.assertIs(operator.isCallable(0), False)
+        self.assertIs(operator.isCallable(len), True)
         self.assertIs(operator.isNumberType(None), False)
         self.assertIs(operator.isNumberType(0), True)
         self.assertIs(operator.not_(1), False)

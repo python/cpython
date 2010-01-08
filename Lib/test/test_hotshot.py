@@ -1,3 +1,5 @@
+import hotshot
+import hotshot.log
 import os
 import pprint
 import unittest
@@ -7,8 +9,6 @@ import gc
 
 from test import test_support
 
-# Silence Py3k warning
-hotshot = test_support.import_module('hotshot', deprecated=True)
 from hotshot.log import ENTER, EXIT, LINE
 
 

@@ -1,4 +1,4 @@
-from test.test_support import run_unittest, check_warnings
+from test.test_support import run_unittest, have_unicode
 import unittest
 import sys
 
@@ -33,9 +33,7 @@ class TestImplementationComparisons(unittest.TestCase):
         self.assertTrue(g_cell != h_cell)
 
 def test_main():
-    # Silence Py3k warnings
-    with check_warnings():
-        run_unittest(TestImplementationComparisons)
+    run_unittest(TestImplementationComparisons)
 
 if __name__ == '__main__':
     test_main()

@@ -471,7 +471,7 @@ class StructTest(unittest.TestCase):
     def test_bool(self):
         for prefix in tuple("<>!=")+('',):
             false = (), [], [], '', 0
-            true = [1], 'test', 5, -1, 0xffffffffL+1, 0xffffffff//2
+            true = [1], 'test', 5, -1, 0xffffffffL+1, 0xffffffff/2
 
             falseFormat = prefix + '?' * len(false)
             packedFalse = struct.pack(falseFormat, *false)
@@ -507,11 +507,7 @@ class StructTest(unittest.TestCase):
 
 
 def test_main():
-    with warnings.catch_warnings():
-        # Silence Py3k warnings
-        warnings.filterwarnings("ignore", "buffer.. not supported",
-                                DeprecationWarning)
-        run_unittest(StructTest)
+    run_unittest(StructTest)
 
 if __name__ == '__main__':
     test_main()

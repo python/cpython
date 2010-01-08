@@ -321,16 +321,10 @@ else:
 
         self.assertEqual(makeReturner2(a=11)()['a'], 11)
 
-        with warnings.catch_warnings():
-            # Silence Py3k warning
-            warnings.filterwarnings("ignore", "tuple parameter unpacking "
-                                    "has been removed", SyntaxWarning)
-            exec """\
-def makeAddPair((a, b)):
-    def addPair((c, d)):
-        return (a + c, b + d)
-    return addPair
-""" in locals()
+        def makeAddPair((a, b)):
+            def addPair((c, d)):
+                return (a + c, b + d)
+            return addPair
 
         self.assertEqual(makeAddPair((1, 2))((100, 200)), (101,202))
 
@@ -477,7 +471,7 @@ self.assertTrue(X.passed)
             return g
 
         d = f(2)(4)
-        self.assertTrue('h' in d)
+        self.assertTrue(d.has_key('h'))
         del d['h']
         self.assertEqual(d, {'x': 2, 'y': 7, 'w': 6})
 

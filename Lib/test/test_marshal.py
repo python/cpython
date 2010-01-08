@@ -129,9 +129,7 @@ class StringTestCase(unittest.TestCase):
 
     def test_buffer(self):
         for s in ["", "Andrè Previn", "abc", " "*10000]:
-            # Silence Py3k warning
-            with test_support.check_warnings():
-                b = buffer(s)
+            b = buffer(s)
             new = marshal.loads(marshal.dumps(b))
             self.assertEqual(s, new)
             marshal.dump(b, file(test_support.TESTFN, "wb"))

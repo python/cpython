@@ -68,9 +68,7 @@ class SysModuleTest(unittest.TestCase):
     # Python/pythonrun.c::PyErr_PrintEx() is tricky.
 
     def test_exc_clear(self):
-        # Silence Py3k warning
-        with test.test_support.check_warnings():
-            self.assertRaises(TypeError, sys.exc_clear, 42)
+        self.assertRaises(TypeError, sys.exc_clear, 42)
 
         # Verify that exc_info is present and matches exc, then clear it, and
         # check that it worked.
@@ -80,9 +78,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertTrue(value is exc)
             self.assertTrue(traceback is not None)
 
-            # Silence Py3k warning
-            with test.test_support.check_warnings():
-                sys.exc_clear()
+            sys.exc_clear()
 
             typ, value, traceback = sys.exc_info()
             self.assertTrue(typ is None)
@@ -488,9 +484,7 @@ class SizeofTest(unittest.TestCase):
         # bool
         check(True, size(h + 'l'))
         # buffer
-        # Silence Py3k warning
-        with test.test_support.check_warnings():
-            check(buffer(''), size(h + '2P2Pil'))
+        check(buffer(''), size(h + '2P2Pil'))
         # builtin_function_or_method
         check(len, size(h + '3P'))
         # bytearray

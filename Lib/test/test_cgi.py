@@ -104,7 +104,7 @@ parse_strict_test_cases = [
 
 def norm(list):
     if type(list) == type([]):
-        list.sort(key=str)
+        list.sort()
     return list
 
 def first_elts(list):

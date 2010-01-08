@@ -1,7 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
-import warnings
+
 from test import test_support
 
 testmeths = [
@@ -407,7 +407,7 @@ class ClassTests(unittest.TestCase):
         self.assertCallStack([("__coerce__", (testme, 1)), ('__cmp__', (testme, 1))])
 
         callLst[:] = []
-        eval('testme <> 1')  # XXX kill this in py3k
+        testme <> 1  # XXX kill this in py3k
         self.assertCallStack([("__coerce__", (testme, 1)), ('__cmp__', (testme, 1))])
 
         callLst[:] = []
@@ -427,7 +427,7 @@ class ClassTests(unittest.TestCase):
         self.assertCallStack([("__coerce__", (testme, 1)), ('__cmp__', (1, testme))])
 
         callLst[:] = []
-        eval('1 <> testme')
+        1 <> testme
         self.assertCallStack([("__coerce__", (testme, 1)), ('__cmp__', (1, testme))])
 
         callLst[:] = []
@@ -616,15 +616,7 @@ class ClassTests(unittest.TestCase):
         hash(a.f)
 
 def test_main():
-    with warnings.catch_warnings():
-        # Silence Py3k warnings
-        warnings.filterwarnings("ignore", ".+slice__ has been removed",
-                                DeprecationWarning)
-        warnings.filterwarnings("ignore", "classic int division",
-                                DeprecationWarning)
-        warnings.filterwarnings("ignore", "<> not supported",
-                                DeprecationWarning)
-        test_support.run_unittest(ClassTests)
+    test_support.run_unittest(ClassTests)
 
 if __name__=='__main__':
     test_main()

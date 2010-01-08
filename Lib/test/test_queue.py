@@ -7,8 +7,7 @@ import time
 import unittest
 from test import test_support
 
-QUEUE_SIZE = LAST = 5
-FULL = LAST+1
+QUEUE_SIZE = 5
 
 # A thread to run a function that unclogs a blocked Queue.
 class _TriggerThread(threading.Thread):
@@ -103,21 +102,21 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
             q.put(i)
             self.assertTrue(not q.empty(), "Queue should not be empty")
         self.assertTrue(not q.full(), "Queue should not be full")
-        q.put(LAST)
+        q.put("last")
         self.assertTrue(q.full(), "Queue should be full")
         try:
-            q.put(FULL, block=0)
+            q.put("full", block=0)
             self.fail("Didn't appear to block with a full queue")
         except Queue.Full:
             pass
         try:
-            q.put(FULL, timeout=0.01)
+            q.put("full", timeout=0.01)
             self.fail("Didn't appear to time-out with a full queue")
         except Queue.Full:
             pass
         # Test a blocking put
-        self.do_blocking_test(q.put, (FULL,), q.get, ())
-        self.do_blocking_test(q.put, (FULL, True, 10), q.get, ())
+        self.do_blocking_test(q.put, ("full",), q.get, ())
+        self.do_blocking_test(q.put, ("full", True, 10), q.get, ())
         # Empty it
         for i in range(QUEUE_SIZE):
             q.get()

@@ -43,10 +43,6 @@ class DummyFloat(object):
         assert False, "__sub__ should not be invoked for comparisons"
     __rsub__ = __sub__
 
-    # Silence Py3k warning
-    def __hash__(self):
-        assert False, "__hash__ should not be invoked for comparisons"
-
 
 class DummyRational(object):
     """Test comparison of Fraction with a naive rational implementation."""
@@ -79,11 +75,6 @@ class DummyRational(object):
     # should never be used for a comparison, since it loses accuracy
     def __float__(self):
         assert False, "__float__ should not be invoked"
-
-    # Silence Py3k warning
-    def __hash__(self):
-        assert False, "__hash__ should not be invoked for comparisons"
-
 
 class GcdTest(unittest.TestCase):
 

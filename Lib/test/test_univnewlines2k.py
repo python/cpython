@@ -80,9 +80,7 @@ class TestGenericUnivNewlines(unittest.TestCase):
 
     def test_execfile(self):
         namespace = {}
-        # Silence Py3k warning
-        with test_support.check_warnings():
-            execfile(test_support.TESTFN, namespace)
+        execfile(test_support.TESTFN, namespace)
         func = namespace['line3']
         self.assertEqual(func.func_code.co_firstlineno, 3)
         self.assertEqual(namespace['line4'], FATX)

@@ -25,7 +25,7 @@ from test import test_support
 mod_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         "pickletester.py"))
 pickletester = types.ModuleType("test.pickletester")
-exec compile(open(mod_path).read(), mod_path, 'exec') in pickletester.__dict__
+execfile(mod_path, pickletester.__dict__, pickletester.__dict__)
 AbstractPickleTests = pickletester.AbstractPickleTests
 if pickletester.__name__ in sys.modules:
     raise RuntimeError("Did not expect to find test.pickletester loaded")

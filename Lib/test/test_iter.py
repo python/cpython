@@ -1,8 +1,7 @@
 # Test iterators.
 
 import unittest
-from test.test_support import run_unittest, TESTFN, unlink, have_unicode, \
-                              check_warnings
+from test.test_support import run_unittest, TESTFN, unlink, have_unicode
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -396,12 +395,7 @@ class TestCase(unittest.TestCase):
                 pass
 
     # Test map()'s use of iterators.
-    def test_deprecated_builtin_map(self):
-        # Silence Py3k warning
-        with check_warnings():
-            self._test_builtin_map()
-
-    def _test_builtin_map(self):
+    def test_builtin_map(self):
         self.assertEqual(map(None, SequenceClass(5)), range(5))
         self.assertEqual(map(lambda x: x+1, SequenceClass(5)), range(1, 6))
 
@@ -512,12 +506,7 @@ class TestCase(unittest.TestCase):
                 self.assertEqual(zip(x, y), expected)
 
     # Test reduces()'s use of iterators.
-    def test_deprecated_builtin_reduce(self):
-        # Silence Py3k warning
-        with check_warnings():
-            self._test_builtin_reduce()
-
-    def _test_builtin_reduce(self):
+    def test_builtin_reduce(self):
         from operator import add
         self.assertEqual(reduce(add, SequenceClass(5)), 10)
         self.assertEqual(reduce(add, SequenceClass(5), 42), 52)

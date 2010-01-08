@@ -4598,19 +4598,9 @@ class PTypesLongInitTest(unittest.TestCase):
 
 
 def test_main():
-    with warnings.catch_warnings():
-        # Silence Py3k warnings
-        warnings.filterwarnings("ignore", "classic .+ division",
-                                DeprecationWarning)
-        warnings.filterwarnings("ignore", "coerce.. not supported",
-                                DeprecationWarning)
-        warnings.filterwarnings("ignore", "Overriding __cmp__ ",
-                                DeprecationWarning)
-        warnings.filterwarnings("ignore", ".+slice__ has been removed",
-                                DeprecationWarning)
-        # Run all local test cases, with PTypesLongInitTest first.
-        test_support.run_unittest(PTypesLongInitTest, OperatorsTest,
-                                  ClassPropertiesAndMethods, DictProxyTests)
+    # Run all local test cases, with PTypesLongInitTest first.
+    test_support.run_unittest(PTypesLongInitTest, OperatorsTest,
+                              ClassPropertiesAndMethods, DictProxyTests)
 
 if __name__ == "__main__":
     test_main()

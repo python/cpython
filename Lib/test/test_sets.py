@@ -510,17 +510,15 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
         self.assertEqual(self.set != self.other, True)
 
     def test_ge_gt_le_lt(self):
-        # Silence Py3k warning
-        with test_support.check_warnings():
-            self.assertRaises(TypeError, lambda: self.set < self.other)
-            self.assertRaises(TypeError, lambda: self.set <= self.other)
-            self.assertRaises(TypeError, lambda: self.set > self.other)
-            self.assertRaises(TypeError, lambda: self.set >= self.other)
+        self.assertRaises(TypeError, lambda: self.set < self.other)
+        self.assertRaises(TypeError, lambda: self.set <= self.other)
+        self.assertRaises(TypeError, lambda: self.set > self.other)
+        self.assertRaises(TypeError, lambda: self.set >= self.other)
 
-            self.assertRaises(TypeError, lambda: self.other < self.set)
-            self.assertRaises(TypeError, lambda: self.other <= self.set)
-            self.assertRaises(TypeError, lambda: self.other > self.set)
-            self.assertRaises(TypeError, lambda: self.other >= self.set)
+        self.assertRaises(TypeError, lambda: self.other < self.set)
+        self.assertRaises(TypeError, lambda: self.other <= self.set)
+        self.assertRaises(TypeError, lambda: self.other > self.set)
+        self.assertRaises(TypeError, lambda: self.other >= self.set)
 
     def test_union_update_operator(self):
         try:
@@ -681,20 +679,20 @@ class TestCopying(unittest.TestCase):
 
     def test_copy(self):
         dup = self.set.copy()
-        dup_list = list(dup)
-        set_list = list(self.set)
+        dup_list = list(dup); dup_list.sort()
+        set_list = list(self.set); set_list.sort()
         self.assertEqual(len(dup_list), len(set_list))
-        for elt in dup_list:
-            self.assertTrue(elt in set_list)
+        for i in range(len(dup_list)):
+            self.assertTrue(dup_list[i] is set_list[i])
 
     def test_deep_copy(self):
         dup = copy.deepcopy(self.set)
         ##print type(dup), repr(dup)
-        dup_list = list(dup)
-        set_list = list(self.set)
+        dup_list = list(dup); dup_list.sort()
+        set_list = list(self.set); set_list.sort()
         self.assertEqual(len(dup_list), len(set_list))
-        for elt in dup_list:
-            self.assertTrue(elt in set_list)
+        for i in range(len(dup_list)):
+            self.assertEqual(dup_list[i], set_list[i])
 
 #------------------------------------------------------------------------------
 

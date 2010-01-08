@@ -7,7 +7,7 @@ import socket
 import urllib
 import sys
 import os
-mimetools = test_support.import_module("mimetools", deprecated=True)
+import mimetools
 
 
 def _open_with_retry(func, host, *args, **kwargs):

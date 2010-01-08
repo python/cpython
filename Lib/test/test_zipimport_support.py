@@ -168,11 +168,8 @@ class ZipSupportTests(ImportHooksBaseTestCase):
                 test_zipped_doctest.test_testfile,
                 test_zipped_doctest.test_unittest_reportflags,
             ]
-            # Silence Py3k warning
-            # Needed for test_DocTestParser and test_debug
-            with test.test_support.check_warnings():
-                for obj in known_good_tests:
-                    _run_object_doctest(obj, test_zipped_doctest)
+            for obj in known_good_tests:
+                _run_object_doctest(obj, test_zipped_doctest)
 
     def test_doctest_main_issue4197(self):
         test_src = textwrap.dedent("""\
