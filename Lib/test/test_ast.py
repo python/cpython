@@ -1,6 +1,7 @@
 import sys, itertools, unittest
 from test import test_support
 import ast
+import warnings
 
 def to_tuple(t):
     if t is None or isinstance(t, (basestring, int, long, complex)):
@@ -302,7 +303,11 @@ class ASTHelpers_Test(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(AST_Tests, ASTHelpers_Test)
+    with warnings.catch_warnings():
+        # Silence Py3k warning
+        warnings.filterwarnings("ignore", "backquote not supported",
+                                SyntaxWarning)
+        test_support.run_unittest(AST_Tests, ASTHelpers_Test)
 
 def main():
     if __name__ != '__main__':

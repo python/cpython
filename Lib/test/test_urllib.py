@@ -6,6 +6,7 @@ import unittest
 from test import test_support
 import os
 import mimetools
+import random
 import tempfile
 import StringIO
 
@@ -101,7 +102,7 @@ class ProxyTests(unittest.TestCase):
         # Records changes to env vars
         self.env = test_support.EnvironmentVarGuard()
         # Delete all proxy related env vars
-        for k, v in os.environ.iteritems():
+        for k in os.environ.keys():
             if 'proxy' in k.lower():
                 self.env.unset(k)
 
@@ -408,6 +409,13 @@ class QuotingTests(unittest.TestCase):
                          'alpha%2Bbeta+gamma')
         self.assertEqual(urllib.quote_plus('alpha+beta gamma', '+'),
                          'alpha+beta+gamma')
+
+    def test_quote_leak(self):
+        # bug 5596 - highlight the refleak in the internal _safemaps cache
+        safe = ''.join(chr(random.randrange(128)) for i in '123456')
+        text = 'abcdefghijklmnopqrstuvwxyz'
+        result = urllib.quote(text, safe=safe)
+        self.assertEqual(result, text)
 
 class UnquotingTests(unittest.TestCase):
     """Tests for unquote() and unquote_plus()

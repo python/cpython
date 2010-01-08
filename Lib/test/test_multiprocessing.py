@@ -19,6 +19,7 @@ import random
 import logging
 from test import test_support
 from StringIO import StringIO
+import warnings
 
 
 _multiprocessing = test_support.import_module('_multiprocessing')
@@ -1991,7 +1992,11 @@ def test_main(run=None):
 
     loadTestsFromTestCase = unittest.defaultTestLoader.loadTestsFromTestCase
     suite = unittest.TestSuite(loadTestsFromTestCase(tc) for tc in testcases)
-    run(suite)
+    with warnings.catch_warnings():
+        # Silence Py3k warnings
+        warnings.filterwarnings("ignore", ".+slice__ has been removed",
+                                DeprecationWarning)
+        run(suite)
 
     ThreadsMixin.pool.terminate()
     ProcessesMixin.pool.terminate()

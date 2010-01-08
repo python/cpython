@@ -7,6 +7,7 @@ import sys
 import py_compile
 import warnings
 import marshal
+from imp import reload
 from test.test_support import (unlink, TESTFN, unload, run_unittest,
     check_warnings, TestFailed, EnvironmentVarGuard)
 
@@ -56,11 +57,10 @@ class ImportTest(unittest.TestCase):
             f.close()
 
             try:
-                try:
-                    mod = __import__(TESTFN)
-                except ImportError, err:
-                    self.fail("import from %s failed: %s" % (ext, err))
-
+                mod = __import__(TESTFN)
+            except ImportError, err:
+                self.fail("import from %s failed: %s" % (ext, err))
+            else:
                 self.assertEquals(mod.a, a,
                     "module loaded (%s) but contents invalid" % mod)
                 self.assertEquals(mod.b, b,
@@ -69,10 +69,9 @@ class ImportTest(unittest.TestCase):
                 os.unlink(source)
 
             try:
-                try:
-                    reload(mod)
-                except ImportError, err:
-                    self.fail("import from .pyc/.pyo failed: %s" % err)
+                reload(mod)
+            except ImportError, err:
+                self.fail("import from .pyc/.pyo failed: %s" % err)
             finally:
                 try:
                     os.unlink(pyc)
@@ -172,7 +171,7 @@ class ImportTest(unittest.TestCase):
     def test_failing_import_sticks(self):
         source = TESTFN + os.extsep + "py"
         f = open(source, "w")
-        print >> f, "a = 1/0"
+        print >> f, "a = 1 // 0"
         f.close()
 
         # New in 2.4, we shouldn't be able to import that no matter how often

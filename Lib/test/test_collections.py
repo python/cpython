@@ -510,8 +510,10 @@ class TestCounter(unittest.TestCase):
                          [('a', 3), ('b', 2), ('c', 1)])
         self.assertEqual(c['b'], 2)
         self.assertEqual(c['z'], 0)
-        self.assertEqual(c.has_key('c'), True)
-        self.assertEqual(c.has_key('z'), False)
+        # Silence Py3k warning
+        with test_support.check_warnings():
+            self.assertEqual(c.has_key('c'), True)
+            self.assertEqual(c.has_key('z'), False)
         self.assertEqual(c.__contains__('c'), True)
         self.assertEqual(c.__contains__('z'), False)
         self.assertEqual(c.get('b', 10), 2)

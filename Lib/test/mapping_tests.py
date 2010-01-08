@@ -1,6 +1,7 @@
 # tests common to dict and UserDict
 import unittest
 import UserDict
+import test_support
 
 
 class BasicTestMappingProtocol(unittest.TestCase):
@@ -54,13 +55,18 @@ class BasicTestMappingProtocol(unittest.TestCase):
         #len
         self.assertEqual(len(p), 0)
         self.assertEqual(len(d), len(self.reference))
-        #has_key
+        #in
         for k in self.reference:
-            self.assertTrue(d.has_key(k))
             self.assertTrue(k in d)
         for k in self.other:
-            self.assertFalse(d.has_key(k))
             self.assertFalse(k in d)
+        #has_key
+        # Silence Py3k warning
+        with test_support.check_warnings():
+            for k in self.reference:
+                self.assertTrue(d.has_key(k))
+            for k in self.other:
+                self.assertFalse(d.has_key(k))
         #cmp
         self.assertEqual(cmp(p,p), 0)
         self.assertEqual(cmp(d,d), 0)

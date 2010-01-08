@@ -2,6 +2,7 @@
 
 from UserList import UserList
 from test import test_support, list_tests
+import warnings
 
 class UserListTest(list_tests.CommonTest):
     type2test = UserList
@@ -53,7 +54,11 @@ class UserListTest(list_tests.CommonTest):
         self.assertEqual(iter(T((1,2))).next(), "0!!!")
 
 def test_main():
-    test_support.run_unittest(UserListTest)
+    with warnings.catch_warnings():
+        # Silence Py3k warnings
+        warnings.filterwarnings("ignore", ".+slice__ has been removed",
+                                DeprecationWarning)
+        test_support.run_unittest(UserListTest)
 
 if __name__ == "__main__":
     test_main()

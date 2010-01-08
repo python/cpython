@@ -7,10 +7,15 @@ be run.
 
 import json.tests
 import test.test_support
+import warnings
 
 
 def test_main():
-    test.test_support.run_unittest(json.tests.test_suite())
+    with warnings.catch_warnings():
+        # Silence Py3k warning
+        warnings.filterwarnings("ignore", "comparing unequal types "
+                                "not supported", DeprecationWarning)
+        test.test_support.run_unittest(json.tests.test_suite())
 
 
 if __name__ == "__main__":

@@ -137,12 +137,10 @@ class TestBuffercStringIO(TestcStringIO):
 
 
 def test_main():
-    test_support.run_unittest(
-        TestStringIO,
-        TestcStringIO,
-        TestBufferStringIO,
-        TestBuffercStringIO
-    )
+    test_support.run_unittest(TestStringIO, TestcStringIO)
+    # Silence Py3k warning
+    with test_support.check_warnings():
+        test_support.run_unittest(TestBufferStringIO, TestBuffercStringIO)
 
 if __name__ == '__main__':
     test_main()

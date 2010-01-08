@@ -2,6 +2,7 @@
 
 from test.test_support import run_unittest
 import unittest
+import warnings
 
 class OpcodeTest(unittest.TestCase):
 
@@ -9,7 +10,7 @@ class OpcodeTest(unittest.TestCase):
         n = 0
         for i in range(10):
             n = n+i
-            try: 1/0
+            try: 1 // 0
             except NameError: pass
             except ZeroDivisionError: pass
             except TypeError: pass
@@ -110,7 +111,14 @@ class OpcodeTest(unittest.TestCase):
 
 
 def test_main():
-    run_unittest(OpcodeTest)
+    with warnings.catch_warnings():
+        # Silence Py3k warning
+        warnings.filterwarnings("ignore", "exceptions must derive from "
+                                "BaseException", DeprecationWarning)
+        warnings.filterwarnings("ignore", "catching classes that don't "
+                                "inherit from BaseException is not allowed",
+                                DeprecationWarning)
+        run_unittest(OpcodeTest)
 
 if __name__ == '__main__':
     test_main()

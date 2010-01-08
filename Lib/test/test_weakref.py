@@ -54,10 +54,10 @@ class ReferencesTestCase(TestBase):
         # Live reference:
         o = C()
         wr = weakref.ref(o)
-        `wr`
+        repr(wr)
         # Dead reference:
         del o
-        `wr`
+        repr(wr)
 
     def test_basic_callback(self):
         self.check_basic_callback(C)
@@ -169,7 +169,9 @@ class ReferencesTestCase(TestBase):
         p.append(12)
         self.assertEqual(len(L), 1)
         self.assertTrue(p, "proxy for non-empty UserList should be true")
-        p[:] = [2, 3]
+        # Silence Py3k warning
+        with test_support.check_warnings():
+            p[:] = [2, 3]
         self.assertEqual(len(L), 2)
         self.assertEqual(len(p), 2)
         self.assertTrue(3 in p,
@@ -183,10 +185,12 @@ class ReferencesTestCase(TestBase):
         ## self.assertEqual(repr(L2), repr(p2))
         L3 = UserList.UserList(range(10))
         p3 = weakref.proxy(L3)
-        self.assertEqual(L3[:], p3[:])
-        self.assertEqual(L3[5:], p3[5:])
-        self.assertEqual(L3[:5], p3[:5])
-        self.assertEqual(L3[2:5], p3[2:5])
+        # Silence Py3k warning
+        with test_support.check_warnings():
+            self.assertEqual(L3[:], p3[:])
+            self.assertEqual(L3[5:], p3[5:])
+            self.assertEqual(L3[:5], p3[:5])
+            self.assertEqual(L3[2:5], p3[2:5])
 
     def test_proxy_unicode(self):
         # See bug 5037
@@ -832,7 +836,7 @@ class MappingTestCase(TestBase):
     def test_weak_keys(self):
         #
         #  This exercises d.copy(), d.items(), d[] = v, d[], del d[],
-        #  len(d), d.has_key().
+        #  len(d), in d.
         #
         dict, objects = self.make_weak_keyed_dict()
         for o in objects:
@@ -854,8 +858,8 @@ class MappingTestCase(TestBase):
                      "deleting the keys did not clear the dictionary")
         o = Object(42)
         dict[o] = "What is the meaning of the universe?"
-        self.assertTrue(dict.has_key(o))
-        self.assertTrue(not dict.has_key(34))
+        self.assertTrue(o in dict)
+        self.assertTrue(34 not in dict)
 
     def test_weak_keyed_iters(self):
         dict, objects = self.make_weak_keyed_dict()
@@ -867,7 +871,7 @@ class MappingTestCase(TestBase):
         objects2 = list(objects)
         for wr in refs:
             ob = wr()
-            self.assertTrue(dict.has_key(ob))
+            self.assertTrue(ob in dict)
             self.assertTrue(ob in dict)
             self.assertEqual(ob.arg, dict[ob])
             objects2.remove(ob)
@@ -878,7 +882,6 @@ class MappingTestCase(TestBase):
         self.assertEqual(len(list(dict.iterkeyrefs())), len(objects))
         for wr in dict.iterkeyrefs():
             ob = wr()
-            self.assertTrue(dict.has_key(ob))
             self.assertTrue(ob in dict)
             self.assertEqual(ob.arg, dict[ob])
             objects2.remove(ob)
@@ -993,13 +996,13 @@ class MappingTestCase(TestBase):
         weakdict = klass()
         o = weakdict.setdefault(key, value1)
         self.assertTrue(o is value1)
-        self.assertTrue(weakdict.has_key(key))
+        self.assertTrue(key in weakdict)
         self.assertTrue(weakdict.get(key) is value1)
         self.assertTrue(weakdict[key] is value1)
 
         o = weakdict.setdefault(key, value2)
         self.assertTrue(o is value1)
-        self.assertTrue(weakdict.has_key(key))
+        self.assertTrue(key in weakdict)
         self.assertTrue(weakdict.get(key) is value1)
         self.assertTrue(weakdict[key] is value1)
 
@@ -1013,20 +1016,20 @@ class MappingTestCase(TestBase):
 
     def check_update(self, klass, dict):
         #
-        #  This exercises d.update(), len(d), d.keys(), d.has_key(),
+        #  This exercises d.update(), len(d), d.keys(), in d,
         #  d.get(), d[].
         #
         weakdict = klass()
         weakdict.update(dict)
         self.assertTrue(len(weakdict) == len(dict))
         for k in weakdict.keys():
-            self.assertTrue(dict.has_key(k),
+            self.assertTrue(k in dict,
                          "mysterious new key appeared in weak dict")
             v = dict.get(k)
             self.assertTrue(v is weakdict[k])
             self.assertTrue(v is weakdict.get(k))
         for k in dict.keys():
-            self.assertTrue(weakdict.has_key(k),
+            self.assertTrue(k in weakdict,
                          "original key disappeared in weak dict")
             v = dict[k]
             self.assertTrue(v is weakdict[k])
