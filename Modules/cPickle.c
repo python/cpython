@@ -5973,12 +5973,6 @@ initcPickle(void)
 	PyObject *format_version;
 	PyObject *compatible_formats;
 
-	/* XXX: Should mention that the pickle module will include the C
-	   XXX: optimized implementation automatically. */
-	if (PyErr_WarnPy3k("the cPickle module has been removed in "
-			   "Python 3.0", 2) < 0)
-		return;
-
 	Py_TYPE(&Picklertype) = &PyType_Type;
 	Py_TYPE(&Unpicklertype) = &PyType_Type;
 	Py_TYPE(&PdataType) = &PyType_Type;
