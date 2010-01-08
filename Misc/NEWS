@@ -48,6 +48,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #7092: Remove py3k warning when importing cPickle.  2to3 handles
+  renaming of `cPickle` to `pickle`.  The warning was annoying since there's
+  no alternative to cPickle if you care about performance.  Patch by Florent
+  Xicluna.
+
 - Issue #7455: Fix possible crash in cPickle on invalid input.  Patch by
   Victor Stinner.
 
