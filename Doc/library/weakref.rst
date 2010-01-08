@@ -156,7 +156,7 @@ than needed.
 
 .. method:: WeakKeyDictionary.keyrefs()
 
-   Return an :term:`iterator` that yields the weak references to the keys.
+   Return an iterable of the weak references to the keys.
 
 
 .. class:: WeakValueDictionary([dict])
@@ -179,7 +179,7 @@ These method have the same issues as the and :meth:`keyrefs` method of
 
 .. method:: WeakValueDictionary.valuerefs()
 
-   Return an :term:`iterator` that yields the weak references to the values.
+   Return an iterable of the weak references to the values.
 
 
 .. class:: WeakSet([elements])

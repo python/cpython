@@ -4,6 +4,8 @@ import unittest
 import collections
 import weakref
 import operator
+import contextlib
+import copy
 
 from test import support
 
@@ -788,6 +790,10 @@ class Object:
         self.arg = arg
     def __repr__(self):
         return "<Object %r>" % self.arg
+    def __eq__(self, other):
+        if isinstance(other, Object):
+            return self.arg == other.arg
+        return NotImplemented
     def __lt__(self, other):
         if isinstance(other, Object):
             return self.arg < other.arg
@@ -934,6 +940,87 @@ class MappingTestCase(TestBase):
             values.remove(v)
         self.assertFalse(values,
                      "itervalues() did not touch all values")
+
+    def check_weak_destroy_while_iterating(self, dict, objects, iter_name):
+        n = len(dict)
+        it = iter(getattr(dict, iter_name)())
+        next(it)             # Trigger internal iteration
+        # Destroy an object
+        del objects[-1]
+        gc.collect()    # just in case
+        # We have removed either the first consumed object, or another one
+        self.assertIn(len(list(it)), [len(objects), len(objects) - 1])
+        del it
+        # The removal has been committed
+        self.assertEqual(len(dict), n - 1)
+
+    def check_weak_destroy_and_mutate_while_iterating(self, dict, testcontext):
+        # Check that we can explicitly mutate the weak dict without
+        # interfering with delayed removal.
+        # `testcontext` should create an iterator, destroy one of the
+        # weakref'ed objects and then return a new key/value pair corresponding
+        # to the destroyed object.
+        with testcontext() as (k, v):
+            self.assertFalse(k in dict)
+        with testcontext() as (k, v):
+            self.assertRaises(KeyError, dict.__delitem__, k)
+        self.assertFalse(k in dict)
+        with testcontext() as (k, v):
+            self.assertRaises(KeyError, dict.pop, k)
+        self.assertFalse(k in dict)
+        with testcontext() as (k, v):
+            dict[k] = v
+        self.assertEqual(dict[k], v)
+        ddict = copy.copy(dict)
+        with testcontext() as (k, v):
+            dict.update(ddict)
+        self.assertEqual(dict, ddict)
+        with testcontext() as (k, v):
+            dict.clear()
+        self.assertEqual(len(dict), 0)
+
+    def test_weak_keys_destroy_while_iterating(self):
+        # Issue #7105: iterators shouldn't crash when a key is implicitly removed
+        dict, objects = self.make_weak_keyed_dict()
+        self.check_weak_destroy_while_iterating(dict, objects, 'keys')
+        self.check_weak_destroy_while_iterating(dict, objects, 'items')
+        self.check_weak_destroy_while_iterating(dict, objects, 'values')
+        self.check_weak_destroy_while_iterating(dict, objects, 'keyrefs')
+        dict, objects = self.make_weak_keyed_dict()
+        @contextlib.contextmanager
+        def testcontext():
+            try:
+                it = iter(dict.items())
+                next(it)
+                # Schedule a key/value for removal and recreate it
+                v = objects.pop().arg
+                gc.collect()      # just in case
+                yield Object(v), v
+            finally:
+                it = None           # should commit all removals
+        self.check_weak_destroy_and_mutate_while_iterating(dict, testcontext)
+
+    def test_weak_values_destroy_while_iterating(self):
+        # Issue #7105: iterators shouldn't crash when a key is implicitly removed
+        dict, objects = self.make_weak_valued_dict()
+        self.check_weak_destroy_while_iterating(dict, objects, 'keys')
+        self.check_weak_destroy_while_iterating(dict, objects, 'items')
+        self.check_weak_destroy_while_iterating(dict, objects, 'values')
+        self.check_weak_destroy_while_iterating(dict, objects, 'itervaluerefs')
+        self.check_weak_destroy_while_iterating(dict, objects, 'valuerefs')
+        dict, objects = self.make_weak_valued_dict()
+        @contextlib.contextmanager
+        def testcontext():
+            try:
+                it = iter(dict.items())
+                next(it)
+                # Schedule a key/value for removal and recreate it
+                k = objects.pop().arg
+                gc.collect()      # just in case
+                yield k, Object(k)
+            finally:
+                it = None           # should commit all removals
+        self.check_weak_destroy_and_mutate_while_iterating(dict, testcontext)
 
     def test_make_weak_keyed_dict_from_dict(self):
         o = Object(3)
