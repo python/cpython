@@ -101,7 +101,7 @@ class ProxyTests(unittest.TestCase):
         # Records changes to env vars
         self.env = test_support.EnvironmentVarGuard()
         # Delete all proxy related env vars
-        for k, v in os.environ.iteritems():
+        for k in os.environ.keys():
             if 'proxy' in k.lower():
                 self.env.unset(k)
 
