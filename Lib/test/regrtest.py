@@ -160,15 +160,6 @@ import traceback
 import warnings
 import unittest
 
-# I see no other way to suppress these warnings;
-# putting them in test_grammar.py has no effect:
-warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
-                        ".*test.test_grammar$")
-if sys.maxint > 0x7fffffff:
-    # Also suppress them in <string>, because for 64-bit platforms,
-    # that's where test_grammar.py hides them.
-    warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
-                            "<string>")
 
 # Ignore ImportWarnings that only occur in the source tree,
 # (because of modules with the same name as source-directories in Modules/)
