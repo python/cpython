@@ -194,6 +194,9 @@ C-API
 Library
 -------
 
+- Issue #7105: Make WeakKeyDictionary and WeakValueDictionary robust against
+  the destruction of weakref'ed objects while iterating.
+
 - Issue #7455: Fix possible crash in cPickle on invalid input.  Patch by
   Victor Stinner.
 
