@@ -2,6 +2,7 @@
 
 import unittest
 from test import test_support
+import warnings
 
 import operator
 
@@ -330,7 +331,13 @@ class ListTest(unittest.TestCase):
             self.assertIs(op(x, y), True)
 
 def test_main():
-    test_support.run_unittest(VectorTest, NumberTest, MiscTest, DictTest, ListTest)
+    test_support.run_unittest(VectorTest, NumberTest, MiscTest, ListTest)
+    with warnings.catch_warnings():
+        # Silence Py3k warning
+        warnings.filterwarnings("ignore", "dict inequality comparisons "
+                                "not supported in 3.x", DeprecationWarning)
+        test_support.run_unittest(DictTest)
+
 
 if __name__ == "__main__":
     test_main()

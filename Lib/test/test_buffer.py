@@ -6,6 +6,7 @@ For now, tests just new or changed functionality.
 
 import unittest
 from test import test_support
+import warnings
 
 class BufferTests(unittest.TestCase):
 
@@ -23,7 +24,11 @@ class BufferTests(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(BufferTests)
+    with warnings.catch_warnings():
+        # Silence Py3k warning
+        warnings.filterwarnings("ignore", "buffer.. not supported",
+                                DeprecationWarning)
+        test_support.run_unittest(BufferTests)
 
 if __name__ == "__main__":
     test_main()

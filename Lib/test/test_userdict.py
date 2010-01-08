@@ -45,7 +45,9 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         # Test __repr__
         self.assertEqual(str(u0), str(d0))
         self.assertEqual(repr(u1), repr(d1))
-        self.assertEqual(`u2`, `d2`)
+        # Silence Py3k warning
+        with test_support.check_warnings():
+            self.assertEqual(eval('`u2`'), eval('`d2`'))
 
         # Test __cmp__ and __len__
         all = [d0, d1, d2, u, u0, u1, u2, uu, uu0, uu1, uu2]
@@ -95,12 +97,14 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
 
         # Test has_key and "in".
         for i in u2.keys():
-            self.assertTrue(u2.has_key(i))
             self.assertTrue(i in u2)
-            self.assertEqual(u1.has_key(i), d1.has_key(i))
             self.assertEqual(i in u1, i in d1)
-            self.assertEqual(u0.has_key(i), d0.has_key(i))
             self.assertEqual(i in u0, i in d0)
+            # Silence Py3k warning
+            with test_support.check_warnings():
+                self.assertTrue(u2.has_key(i))
+                self.assertEqual(u1.has_key(i), d1.has_key(i))
+                self.assertEqual(u0.has_key(i), d0.has_key(i))
 
         # Test update
         t = UserDict.UserDict()

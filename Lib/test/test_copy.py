@@ -661,7 +661,7 @@ class TestCopy(unittest.TestCase):
         v = copy.deepcopy(u)
         self.assertNotEqual(v, u)
         self.assertEqual(len(v), 2)
-        (x, y), (z, t) = sorted(v.items(), key=lambda (k, v): k.i)
+        (x, y), (z, t) = sorted(v.items(), key=lambda k: k[0].i)
         self.assertFalse(x is a)
         self.assertEqual(x.i, a.i)
         self.assertTrue(y is b)

@@ -33,8 +33,12 @@ class DictTest(unittest.TestCase):
         self.assertEqual(d.keys(), [])
         d = {'a': 1, 'b': 2}
         k = d.keys()
-        self.assertTrue(d.has_key('a'))
-        self.assertTrue(d.has_key('b'))
+        self.assertTrue('a' in d)
+        self.assertTrue('b' in d)
+        # Silence Py3k warning
+        with test_support.check_warnings():
+            self.assertTrue(d.has_key('a'))
+            self.assertTrue(d.has_key('b'))
 
         self.assertRaises(TypeError, d.keys, None)
 
@@ -57,13 +61,15 @@ class DictTest(unittest.TestCase):
 
     def test_has_key(self):
         d = {}
-        self.assertTrue(not d.has_key('a'))
+        self.assertTrue('a' not in d)
+        # Silence Py3k warning
+        with test_support.check_warnings():
+            self.assertTrue(not d.has_key('a'))
+            self.assertRaises(TypeError, d.has_key)
         d = {'a': 1, 'b': 2}
         k = d.keys()
         k.sort()
         self.assertEqual(k, ['a', 'b'])
-
-        self.assertRaises(TypeError, d.has_key)
 
     def test_contains(self):
         d = {}
@@ -395,8 +401,6 @@ class DictTest(unittest.TestCase):
         self.assertRaises(Exc, repr, d)
 
     def test_le(self):
-        self.assertTrue(not ({} < {}))
-        self.assertTrue(not ({1: 2} < {1L: 2L}))
 
         class Exc(Exception): pass
 
@@ -408,12 +412,18 @@ class DictTest(unittest.TestCase):
 
         d1 = {BadCmp(): 1}
         d2 = {1: 1}
-        try:
-            d1 < d2
-        except Exc:
-            pass
-        else:
-            self.fail("< didn't raise Exc")
+
+        # Silence Py3k warning
+        with test_support.check_warnings():
+            self.assertTrue(not ({} < {}))
+            self.assertTrue(not ({1: 2} < {1L: 2L}))
+
+            try:
+                d1 < d2
+            except Exc:
+                pass
+            else:
+                self.fail("< didn't raise Exc")
 
     def test_missing(self):
         # Make sure dict doesn't have a __missing__ method
@@ -501,7 +511,9 @@ class DictTest(unittest.TestCase):
                      'd.pop(x2)',
                      'd.update({x2: 2})']:
             try:
-                exec stmt in locals()
+                # Silence Py3k warning
+                with test_support.check_warnings():
+                    exec stmt in locals()
             except CustomException:
                 pass
             else:
@@ -549,7 +561,7 @@ class DictTest(unittest.TestCase):
         # Bug #3537: if an empty but presized dict with a size larger
         # than 7 was in the freelist, it triggered an assertion failure
         try:
-            d = {'a': 1/0,  'b': None, 'c': None, 'd': None, 'e': None,
+            d = {'a': 1 // 0, 'b': None, 'c': None, 'd': None, 'e': None,
                  'f': None, 'g': None, 'h': None}
         except ZeroDivisionError:
             pass

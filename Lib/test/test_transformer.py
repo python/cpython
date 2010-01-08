@@ -1,5 +1,8 @@
 import unittest
 from test import test_support
+
+# Silence Py3k warning
+test_support.import_module('compiler', deprecated=True)
 from compiler import transformer, ast
 from compiler import compile
 

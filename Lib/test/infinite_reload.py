@@ -3,5 +3,6 @@
 #  reload()ing. This module is imported by test_import.py:test_infinite_reload
 #  to make sure this doesn't happen any more.
 
+import imp
 import infinite_reload
-reload(infinite_reload)
+imp.reload(infinite_reload)

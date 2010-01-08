@@ -2,6 +2,7 @@
 
 from test.test_support import run_unittest
 import unittest
+import warnings
 
 
 class AugAssignTest(unittest.TestCase):
@@ -324,7 +325,11 @@ __ilshift__ called
 '''.splitlines())
 
 def test_main():
-    run_unittest(AugAssignTest)
+    with warnings.catch_warnings():
+        # Silence Py3k warning
+        warnings.filterwarnings("ignore", "classic int division",
+                                DeprecationWarning)
+        run_unittest(AugAssignTest)
 
 if __name__ == '__main__':
     test_main()

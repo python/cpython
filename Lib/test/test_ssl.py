@@ -808,7 +808,7 @@ else:
                     if test_support.verbose:
                         sys.stdout.write(pprint.pformat(cert) + '\n')
                         sys.stdout.write("Connection cipher is " + str(cipher) + '.\n')
-                    if not cert.has_key('subject'):
+                    if 'subject' not in cert:
                         raise test_support.TestFailed(
                             "No subject field in certificate: %s." %
                             pprint.pformat(cert))
@@ -970,7 +970,9 @@ else:
                 # now fetch the same data from the HTTPS server
                 url = 'https://127.0.0.1:%d/%s' % (
                     server.port, os.path.split(CERTFILE)[1])
-                f = urllib.urlopen(url)
+                # Silence Py3k warning
+                with test_support.check_warnings():
+                    f = urllib.urlopen(url)
                 dlen = f.info().getheader("content-length")
                 if dlen and (int(dlen) > 0):
                     d2 = f.read(int(dlen))

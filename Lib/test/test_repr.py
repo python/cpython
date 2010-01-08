@@ -8,7 +8,7 @@ import os
 import shutil
 import unittest
 
-from test.test_support import run_unittest
+from test.test_support import run_unittest, check_warnings
 from repr import repr as r # Don't shadow builtin repr
 from repr import Repr
 
@@ -174,7 +174,9 @@ class ReprTests(unittest.TestCase):
     def test_buffer(self):
         # XXX doesn't test buffers with no b_base or read-write buffers (see
         # bufferobject.c).  The test is fairly incomplete too.  Sigh.
-        x = buffer('foo')
+        # Silence the Py3k warning
+        with check_warnings():
+            x = buffer('foo')
         self.assertTrue(repr(x).startswith('<read-only buffer for 0x'))
 
     def test_cell(self):

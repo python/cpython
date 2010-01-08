@@ -71,7 +71,7 @@ class OSSAudioDevTests(unittest.TestCase):
                 self.fail("dsp.%s not read-only" % attr)
 
         # Compute expected running time of sound sample (in seconds).
-        expected_time = float(len(data)) / (ssize/8) / nchannels / rate
+        expected_time = float(len(data)) / (ssize//8) / nchannels / rate
 
         # set parameters based on .au file headers
         dsp.setparameters(AFMT_S16_NE, nchannels, rate)

@@ -712,7 +712,9 @@ class WriteTest(WriteTestBase):
                 return os.path.isfile(name)
 
             tar = tarfile.open(tmpname, self.mode, encoding="iso8859-1")
-            tar.add(tempdir, arcname="empty_dir", exclude=exclude)
+            # Silence Py3k warning
+            with test_support.check_warnings():
+                tar.add(tempdir, arcname="empty_dir", exclude=exclude)
             tar.close()
 
             tar = tarfile.open(tmpname, "r")
