@@ -4,6 +4,8 @@ __revision__ = "$Id$"
 
 import os
 from types import IntType
+import sys
+
 from distutils.core import Command
 from distutils.errors import DistutilsOptionError
 
@@ -122,6 +124,10 @@ class install_lib (Command):
         return outfiles
 
     def byte_compile (self, files):
+        if sys.dont_write_bytecode:
+            self.warn('byte-compiling is disabled, skipping.')
+            return
+
         from distutils.util import byte_compile
 
         # Get the "--root" directory supplied to the "install" command,
