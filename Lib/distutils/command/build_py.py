@@ -8,6 +8,7 @@ __revision__ = "$Id$"
 
 import string, os
 from types import *
+import sys
 from glob import glob
 
 from distutils.core import Command
@@ -418,6 +419,10 @@ class build_py (Command):
 
 
     def byte_compile (self, files):
+        if sys.dont_write_bytecode:
+            self.warn('byte-compiling is disabled, skipping.')
+            return
+
         from distutils.util import byte_compile
         prefix = self.build_lib
         if prefix[-1] != os.sep:
