@@ -15,10 +15,13 @@ testdoc = """\
 
 nsdoc = "<foo xmlns='URI' attr='val'/>"
 
+import warnings
+warnings.filterwarnings("ignore", ".* xmllib .* obsolete.*",
+                        DeprecationWarning, r'xmllib$')
+
 from test import test_support
 import unittest
-# Silence Py3k warning
-xmllib = test_support.import_module('xmllib', deprecated=True)
+import xmllib
 
 class XMLParserTestCase(unittest.TestCase):
 

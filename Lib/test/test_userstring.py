@@ -136,10 +136,7 @@ class MutableStringTest(UserStringTest):
 
 def test_main():
     with warnings.catch_warnings():
-        # Silence Py3k warnings
         warnings.filterwarnings("ignore", ".*MutableString",
-                                DeprecationWarning)
-        warnings.filterwarnings("ignore", ".+slice__ has been removed",
                                 DeprecationWarning)
         test_support.run_unittest(UserStringTest, MutableStringTest)
 

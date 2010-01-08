@@ -7,12 +7,10 @@ import os
 import test.test_support
 import unittest
 import whichdb
+import anydbm
 import glob
 
 _fname = test.test_support.TESTFN
-
-# Silence Py3k warning
-anydbm = test.test_support.import_module('anydbm', deprecated=True)
 
 def _delete_files():
     # we don't know the precise name the underlying database uses
@@ -39,9 +37,8 @@ for name in anydbm._names:
     # we define a new test method for each
     # candidate database module.
     try:
-        # Silence Py3k warning
-        mod = test.test_support.import_module(name, deprecated=True)
-    except unittest.SkipTest:
+        mod = __import__(name)
+    except ImportError:
         continue
 
     def test_whichdb_name(self, name=name, mod=mod):

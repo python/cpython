@@ -223,11 +223,8 @@ def process_infix_results():
             infix_results[key] = res
 
 
-with warnings.catch_warnings():
-    # Silence Py3k warning
-    warnings.filterwarnings("ignore", "classic int division",
-                            DeprecationWarning)
-    process_infix_results()
+
+process_infix_results()
 # now infix_results has two lists of results for every pairing.
 
 prefix_binops = [ 'divmod' ]
@@ -340,14 +337,11 @@ class CoercionTest(unittest.TestCase):
             raise exc
 
 def test_main():
-    with warnings.catch_warnings():
-        # Silence Py3k warnings
-        warnings.filterwarnings("ignore",
-                                "complex divmod.., // and % are deprecated",
-                                DeprecationWarning)
-        warnings.filterwarnings("ignore", "classic .+ division",
-                                DeprecationWarning)
-        run_unittest(CoercionTest)
+    warnings.filterwarnings("ignore",
+                            r'complex divmod\(\), // and % are deprecated',
+                            DeprecationWarning,
+                            r'test.test_coercion$')
+    run_unittest(CoercionTest)
 
 if __name__ == "__main__":
     test_main()

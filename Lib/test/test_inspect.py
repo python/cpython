@@ -4,11 +4,10 @@ import unittest
 import inspect
 import datetime
 
-from test.test_support import TESTFN, run_unittest, check_warnings
+from test.test_support import TESTFN, run_unittest
 
-with check_warnings():
-    from test import inspect_fodder as mod
-    from test import inspect_fodder2 as mod2
+from test import inspect_fodder as mod
+from test import inspect_fodder2 as mod2
 
 # C module for test_findsource_binary
 import unicodedata
@@ -30,7 +29,7 @@ if modfile.endswith(('c', 'o')):
 import __builtin__
 
 try:
-    1 // 0
+    1/0
 except:
     tb = sys.exc_traceback
 
@@ -168,7 +167,7 @@ class TestInterpreterStack(IsTestBase):
         self.assertEqual(git.tr[1][1:], (modfile, 9, 'spam',
                                          ['    eggs(b + d, c + f)\n'], 0))
         self.assertEqual(git.tr[2][1:], (modfile, 18, 'eggs',
-                                         ['    q = y // 0\n'], 0))
+                                         ['    q = y / 0\n'], 0))
 
     def test_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
@@ -419,13 +418,11 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertArgSpecEquals(A.m, ['self'])
 
     def test_getargspec_sublistofone(self):
-        # Silence Py3k warning
-        with check_warnings():
-            exec 'def sublistOfOne((foo,)): return 1'
-            self.assertArgSpecEquals(sublistOfOne, [['foo']])
+        def sublistOfOne((foo,)): return 1
+        self.assertArgSpecEquals(sublistOfOne, [['foo']])
 
-            exec 'def fakeSublistOfOne((foo)): return 1'
-            self.assertArgSpecEquals(fakeSublistOfOne, ['foo'])
+        def fakeSublistOfOne((foo)): return 1
+        self.assertArgSpecEquals(fakeSublistOfOne, ['foo'])
 
     def test_classify_oldstyle(self):
         class A:

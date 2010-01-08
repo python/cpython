@@ -9,10 +9,7 @@ import warnings
 warnings.filterwarnings('ignore', r".*commands.getstatus.. is deprecated",
                         DeprecationWarning)
 
-from test.test_support import run_unittest, reap_children, import_module
-
-# Silence Py3k warning
-import_module('commands', deprecated=True)
+from test.test_support import run_unittest, reap_children
 from commands import *
 
 # The module says:

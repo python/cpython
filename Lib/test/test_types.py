@@ -4,7 +4,6 @@ from test.test_support import run_unittest, have_unicode, run_with_locale
 import unittest
 import sys
 import locale
-import warnings
 
 class TypesTests(unittest.TestCase):
 
@@ -711,13 +710,7 @@ class TypesTests(unittest.TestCase):
             self.assertRaises(ValueError, format, 0, ',' + code)
 
 def test_main():
-    with warnings.catch_warnings():
-        # Silence Py3k warnings
-        warnings.filterwarnings("ignore", "buffer.. not supported",
-                                DeprecationWarning)
-        warnings.filterwarnings("ignore", "classic long division",
-                                DeprecationWarning)
-        run_unittest(TypesTests)
+    run_unittest(TypesTests)
 
 if __name__ == '__main__':
     test_main()

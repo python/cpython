@@ -31,8 +31,7 @@ import pickle, copy
 import unittest
 from decimal import *
 import numbers
-from test.test_support import (run_unittest, run_doctest,
-                               is_resource_enabled, check_warnings)
+from test.test_support import (run_unittest, run_doctest, is_resource_enabled)
 import random
 try:
     import threading
@@ -203,7 +202,7 @@ class DecimalTest(unittest.TestCase):
         if skip_expected:
             raise unittest.SkipTest
             return
-        for line in open(file):
+        for line in open(file).xreadlines():
             line = line.replace('\r\n', '').replace('\n', '')
             #print line
             try:
@@ -362,10 +361,8 @@ class DecimalTest(unittest.TestCase):
         myexceptions = self.getexceptions()
         self.context.clear_flags()
 
-        # Silence Py3k warning
-        with check_warnings():
-            myexceptions.sort()
-            theirexceptions.sort()
+        myexceptions.sort()
+        theirexceptions.sort()
 
         self.assertEqual(result, ans,
                          'Incorrect answer for ' + s + ' -- got ' + result)
@@ -620,14 +617,12 @@ class DecimalImplicitConstructionTest(unittest.TestCase):
             ('//', '__floordiv__', '__rfloordiv__'),
             ('**', '__pow__', '__rpow__')
         ]
-        # Silence Py3k warning
-        with check_warnings():
-            if 1/2 == 0:
-                # testing with classic division, so add __div__
-                oplist.append(('/', '__div__', '__rdiv__'))
-            else:
-                # testing with -Qnew, so add __truediv__
-                oplist.append(('/', '__truediv__', '__rtruediv__'))
+        if 1/2 == 0:
+            # testing with classic division, so add __div__
+            oplist.append(('/', '__div__', '__rdiv__'))
+        else:
+            # testing with -Qnew, so add __truediv__
+            oplist.append(('/', '__truediv__', '__rtruediv__'))
 
         for sym, lop, rop in oplist:
             setattr(E, lop, lambda self, other: 'str' + lop + str(other))
@@ -1199,10 +1194,8 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertEqual(a, b)
 
         # with None
-        # Silence Py3k warning
-        with check_warnings():
-            self.assertFalse(Decimal(1) < None)
-            self.assertTrue(Decimal(1) > None)
+        self.assertFalse(Decimal(1) < None)
+        self.assertTrue(Decimal(1) > None)
 
     def test_copy_and_deepcopy_methods(self):
         d = Decimal('43.24')
@@ -1711,14 +1704,11 @@ class ContextFlags(unittest.TestCase):
                 for flag in extra_flags:
                     if flag not in expected_flags:
                         expected_flags.append(flag)
+                expected_flags.sort()
 
                 # flags we actually got
                 new_flags = [k for k,v in context.flags.items() if v]
-
-                # Silence Py3k warning
-                with check_warnings():
-                    expected_flags.sort()
-                    new_flags.sort()
+                new_flags.sort()
 
                 self.assertEqual(ans, new_ans,
                                  "operation produces different answers depending on flags set: " +

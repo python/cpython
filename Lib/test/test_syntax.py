@@ -552,11 +552,7 @@ class SyntaxTestCase(unittest.TestCase):
 def test_main():
     test_support.run_unittest(SyntaxTestCase)
     from test import test_syntax
-    with warnings.catch_warnings():
-        # Silence Py3k warning
-        warnings.filterwarnings("ignore", "backquote not supported",
-                                SyntaxWarning)
-        test_support.run_doctest(test_syntax, verbosity=True)
+    test_support.run_doctest(test_syntax, verbosity=True)
 
 if __name__ == "__main__":
     test_main()

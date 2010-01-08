@@ -100,7 +100,7 @@ class DummyFTPHandler(asynchat.async_chat):
         sock.listen(5)
         sock.settimeout(2)
         ip, port = sock.getsockname()[:2]
-        ip = ip.replace('.', ','); p1, p2 = divmod(port, 256)
+        ip = ip.replace('.', ','); p1 = port / 256; p2 = port % 256
         self.push('227 entering passive mode (%s,%d,%d)' %(ip, p1, p2))
         conn, addr = sock.accept()
         self.dtp = self.dtp_handler(conn, baseclass=self)

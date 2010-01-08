@@ -4,8 +4,6 @@ import shelve
 import glob
 from test import test_support
 
-test_support.import_module('anydbm', deprecated=True)
-
 class TestCase(unittest.TestCase):
 
     fn = "shelftemp" + os.extsep + "db"

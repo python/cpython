@@ -246,11 +246,11 @@ class TestGzip(unittest.TestCase):
             self.fail("__enter__ on a closed file didn't raise an exception")
         try:
             with gzip.GzipFile(self.filename, "wb") as f:
-                1 // 0
+                1/0
         except ZeroDivisionError:
             pass
         else:
-            self.fail("1 // 0 didn't raise an exception")
+            self.fail("1/0 didn't raise an exception")
 
 def test_main(verbose=None):
     test_support.run_unittest(TestGzip)

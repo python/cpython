@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import mimetools
 import threading
 import urlparse
 import urllib2
@@ -7,7 +8,6 @@ import BaseHTTPServer
 import unittest
 import hashlib
 from test import test_support
-mimetools = test_support.import_module('mimetools', deprecated=True)
 
 # Loopback http server infrastructure
 
@@ -154,13 +154,13 @@ class DigestAuthHandler:
         if len(self._users) == 0:
             return True
 
-        if 'Proxy-Authorization' not in request_handler.headers:
+        if not request_handler.headers.has_key('Proxy-Authorization'):
             return self._return_auth_challenge(request_handler)
         else:
             auth_dict = self._create_auth_dict(
                 request_handler.headers['Proxy-Authorization']
                 )
-            if auth_dict["username"] in self._users:
+            if self._users.has_key(auth_dict["username"]):
                 password = self._users[ auth_dict["username"] ]
             else:
                 return self._return_auth_challenge(request_handler)

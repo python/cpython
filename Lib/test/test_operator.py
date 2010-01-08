@@ -192,12 +192,11 @@ class OperatorTestCase(unittest.TestCase):
         class C:
             pass
         def check(self, o, v):
-            with test_support.check_warnings():
-                self.assertTrue(operator.isCallable(o) == callable(o) == v)
-        check(self, 4, False)
-        check(self, operator.isCallable, True)
-        check(self, C, True)
-        check(self, C(), False)
+            self.assertTrue(operator.isCallable(o) == callable(o) == v)
+        check(self, 4, 0)
+        check(self, operator.isCallable, 1)
+        check(self, C, 1)
+        check(self, C(), 0)
 
     def test_isMappingType(self):
         self.assertRaises(TypeError, operator.isMappingType)
@@ -307,10 +306,8 @@ class OperatorTestCase(unittest.TestCase):
         self.assertRaises(TypeError, operator.contains, None, None)
         self.assertTrue(operator.contains(range(4), 2))
         self.assertFalse(operator.contains(range(4), 5))
-        # Silence Py3k warning
-        with test_support.check_warnings():
-            self.assertTrue(operator.sequenceIncludes(range(4), 2))
-            self.assertFalse(operator.sequenceIncludes(range(4), 5))
+        self.assertTrue(operator.sequenceIncludes(range(4), 2))
+        self.assertFalse(operator.sequenceIncludes(range(4), 5))
 
     def test_setitem(self):
         a = range(3)

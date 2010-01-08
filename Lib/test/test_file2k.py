@@ -34,17 +34,13 @@ class AutoFileTests(unittest.TestCase):
     def testAttributes(self):
         # verify expected attributes exist
         f = self.f
-        # Silence Py3k warning
-        with test_support.check_warnings():
-            softspace = f.softspace
+        softspace = f.softspace
         f.name     # merely shouldn't blow up
         f.mode     # ditto
         f.closed   # ditto
 
-        # Silence Py3k warning
-        with test_support.check_warnings():
-            # verify softspace is writable
-            f.softspace = softspace    # merely shouldn't blow up
+        # verify softspace is writable
+        f.softspace = softspace    # merely shouldn't blow up
 
         # verify the others aren't
         for attr in 'name', 'mode', 'closed':
@@ -102,8 +98,7 @@ class AutoFileTests(unittest.TestCase):
     def testMethods(self):
         methods = ['fileno', 'flush', 'isatty', 'next', 'read', 'readinto',
                    'readline', 'readlines', 'seek', 'tell', 'truncate',
-                   'write', '__iter__']
-        deprecated_methods = ['xreadlines']
+                   'write', 'xreadlines', '__iter__']
         if sys.platform.startswith('atheos'):
             methods.remove('truncate')
 
@@ -115,18 +110,13 @@ class AutoFileTests(unittest.TestCase):
             method = getattr(self.f, methodname)
             # should raise on closed file
             self.assertRaises(ValueError, method)
-        # Silence Py3k warning
-        with test_support.check_warnings():
-            for methodname in deprecated_methods:
-                method = getattr(self.f, methodname)
-                self.assertRaises(ValueError, method)
         self.assertRaises(ValueError, self.f.writelines, [])
 
         # file is closed, __exit__ shouldn't do anything
         self.assertEquals(self.f.__exit__(None, None, None), None)
         # it must also return None if an exception was given
         try:
-            1 // 0
+            1/0
         except:
             self.assertEquals(self.f.__exit__(*sys.exc_info()), None)
 
@@ -192,12 +182,12 @@ class OtherFileTests(unittest.TestCase):
         try:
             f = open(TESTFN, bad_mode)
         except ValueError, msg:
-            if msg.args[0] != 0:
+            if msg[0] != 0:
                 s = str(msg)
                 if s.find(TESTFN) != -1 or s.find(bad_mode) == -1:
                     self.fail("bad error message for invalid mode: %s" % s)
-            # if msg.args[0] == 0, we're probably on Windows where there may
-            # be no obvious way to discover why open() failed.
+            # if msg[0] == 0, we're probably on Windows where there may be
+            # no obvious way to discover why open() failed.
         else:
             f.close()
             self.fail("no error for invalid mode: %s" % bad_mode)

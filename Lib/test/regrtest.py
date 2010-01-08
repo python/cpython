@@ -150,6 +150,7 @@ option '-uall,-bsddb'.
 import cStringIO
 import getopt
 import itertools
+import json
 import os
 import random
 import re
@@ -159,13 +160,15 @@ import traceback
 import warnings
 import unittest
 
-with warnings.catch_warnings():
-    # Silence Py3k warnings
-    warnings.filterwarnings("ignore", "tuple parameter unpacking "
-                            "has been removed", SyntaxWarning)
-    warnings.filterwarnings("ignore", "assignment to True or False "
-                            "is forbidden", SyntaxWarning)
-    import json
+# I see no other way to suppress these warnings;
+# putting them in test_grammar.py has no effect:
+warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
+                        ".*test.test_grammar$")
+if sys.maxint > 0x7fffffff:
+    # Also suppress them in <string>, because for 64-bit platforms,
+    # that's where test_grammar.py hides them.
+    warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
+                            "<string>")
 
 # Ignore ImportWarnings that only occur in the source tree,
 # (because of modules with the same name as source-directories in Modules/)

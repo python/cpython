@@ -205,24 +205,18 @@ class TestTranforms(unittest.TestCase):
 def test_main(verbose=None):
     import sys
     from test import test_support
-    import warnings
     test_classes = (TestTranforms,)
+    test_support.run_unittest(*test_classes)
 
-    with warnings.catch_warnings():
-        # Silence Py3k warning
-        warnings.filterwarnings("ignore", "backquote not supported",
-                                SyntaxWarning)
-        test_support.run_unittest(*test_classes)
-
-        # verify reference counting
-        if verbose and hasattr(sys, "gettotalrefcount"):
-            import gc
-            counts = [None] * 5
-            for i in xrange(len(counts)):
-                test_support.run_unittest(*test_classes)
-                gc.collect()
-                counts[i] = sys.gettotalrefcount()
-            print counts
+    # verify reference counting
+    if verbose and hasattr(sys, "gettotalrefcount"):
+        import gc
+        counts = [None] * 5
+        for i in xrange(len(counts)):
+            test_support.run_unittest(*test_classes)
+            gc.collect()
+            counts[i] = sys.gettotalrefcount()
+        print counts
 
 if __name__ == "__main__":
     test_main(verbose=True)

@@ -55,7 +55,7 @@ class TestPendingCalls(unittest.TestCase):
         context = foo()
         context.l = []
         context.n = 2 #submits per thread
-        context.nThreads = n // context.n
+        context.nThreads = n / context.n
         context.nFinished = 0
         context.lock = threading.Lock()
         context.event = threading.Event()

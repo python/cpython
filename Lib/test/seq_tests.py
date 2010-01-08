@@ -4,7 +4,6 @@ Tests common to tuple, list and UserList.UserList
 
 import unittest
 import sys
-import test_support
 
 # Various iterables
 # This is used for checking the constructor (here and in test_deque.py)
@@ -197,9 +196,7 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(a[ -pow(2,128L): 3 ], self.type2test([0,1,2]))
         self.assertEqual(a[ 3: pow(2,145L) ], self.type2test([3,4]))
 
-        # Silence Py3k warning
-        with test_support.check_warnings():
-            self.assertRaises(TypeError, u.__getslice__)
+        self.assertRaises(TypeError, u.__getslice__)
 
     def test_contains(self):
         u = self.type2test([0, 1, 2])
