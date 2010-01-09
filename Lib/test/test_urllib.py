@@ -119,6 +119,10 @@ class ProxyTests(unittest.TestCase):
     def setUp(self):
         # Records changes to env vars
         self.env = support.EnvironmentVarGuard()
+        # Delete all proxy related env vars
+        for k in os.environ.keys():
+            if 'proxy' in k.lower():
+                self.env.unset(k)
 
     def tearDown(self):
         # Restore all proxy related env vars
