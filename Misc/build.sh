@@ -214,7 +214,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             ## make and run basic tests
             F=make-test.out
             start=`current_time`
-            $PYTHON $REGRTEST_ARGS -u urlfetch >& build/$F
+            $PYTHON $REGRTEST_ARGS -W -u urlfetch >& build/$F
             NUM_FAILURES=`count_failures build/$F`
             place_summary_first build/$F
             update_status "Testing basics ($NUM_FAILURES failures)" "$F" $start
@@ -222,7 +222,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
 
             F=make-test-opt.out
             start=`current_time`
-            $PYTHON -O $REGRTEST_ARGS -u urlfetch >& build/$F
+            $PYTHON -O $REGRTEST_ARGS -W -u urlfetch >& build/$F
             NUM_FAILURES=`count_failures build/$F`
             place_summary_first build/$F
             update_status "Testing opt ($NUM_FAILURES failures)" "$F" $start
@@ -245,7 +245,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             start=`current_time`
             ## skip curses when running from cron since there's no terminal
             ## skip sound since it's not setup on the PSF box (/dev/dsp)
-            $PYTHON $REGRTEST_ARGS -uall -x test_curses test_linuxaudiodev test_ossaudiodev $_ALWAYS_SKIP >& build/$F
+            $PYTHON $REGRTEST_ARGS -W -uall -x test_curses test_linuxaudiodev test_ossaudiodev &_ALWAYS_SKIP >& build/$F
             NUM_FAILURES=`count_failures build/$F`
             place_summary_first build/$F
             update_status "Testing all except curses and sound ($NUM_FAILURES failures)" "$F" $start

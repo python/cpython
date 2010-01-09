@@ -264,7 +264,9 @@ Some smaller changes made to the core Python language are:
   Windows, and on Unix platforms using the gcc, icc, or suncc
   compilers.  There may be a small number of platforms where correct
   operation of this code cannot be guaranteed, so the code is not
-  used on such systems.
+  used on such systems.  You can find out which code is being used
+  by checking :data:`sys.float_repr_style`,  which will be ``short``
+  if the new code is in use and ``legacy`` if it isn't.
 
   Implemented by Eric Smith and Mark Dickinson, using David Gay's
   :file:`dtoa.c` library; :issue:`7117`.
@@ -358,6 +360,11 @@ Some smaller changes made to the core Python language are:
   on the :exc:`IOError` exception when trying to open a directory
   on POSIX platforms.  (Noted by Jan Kaliszewski; :issue:`4764`.)
 
+* The Python tokenizer now translates line endings itself, so the
+  :func:`compile` built-in function can now accept code using any
+  line-ending convention.  Additionally, it no longer requires that the
+  code end in a newline.
+
 * Extra parentheses in function definitions are illegal in Python 3.x,
   meaning that you get a syntax error from ``def f((x)): pass``.  In
   Python3-warning mode, Python 2.7 will now warn about this odd usage.
@@ -433,6 +440,8 @@ Several performance enhancements have been added:
   Various benchmarks show speedups of between 50% and 150% for long
   integer divisions and modulo operations.
   (Contributed by Mark Dickinson; :issue:`5512`.)
+  Bitwise operations are also significantly faster (initial patch by
+  Gregory Smith; :issue:`1087418`).
 
 * The implementation of ``%`` checks for the left-side operand being
   a Python string and special-cases it; this results in a 1-3%
@@ -444,6 +453,16 @@ Several performance enhancements have been added:
   faster bytecode.  (Patch by Antoine Pitrou, back-ported to 2.7
   by Jeffrey Yasskin; :issue:`4715`.)
 
+* Converting an integer or long integer to a decimal string was made
+  faster by special-casing base 10 instead of using a generalized
+  conversion function that supports arbitrary bases.
+  (Patch by Gawain Bolton; :issue:`6713`.)
+
+* The :meth:`rindex`, :meth:`rpartition`, and :meth:`rsplit` methods
+  of string objects now uses a fast reverse-search algorithm instead of
+  a character-by-character scan.  This is often faster by a factor of 10.
+  (Added by Florent Xicluna; :issue:`7462`.)
+
 * The :mod:`pickle` and :mod:`cPickle` modules now automatically
   intern the strings used for attribute names, reducing memory usage
   of the objects resulting from unpickling.  (Contributed by Jake
@@ -452,11 +471,6 @@ Several performance enhancements have been added:
 * The :mod:`cPickle` module now special-cases dictionaries,
   nearly halving the time required to pickle them.
   (Contributed by Collin Winter; :issue:`5670`.)
-
-* Converting an integer or long integer to a decimal string was made
-  faster by special-casing base 10 instead of using a generalized
-  conversion function that supports arbitrary bases.
-  (Patch by Gawain Bolton; :issue:`6713`.)
 
 .. ======================================================================
 
@@ -602,6 +616,10 @@ changes, or look through the Subversion logs for all the details.
   XXX link to  file:///MacDev/svn.python.org/python-trunk/Doc/build/html/distutils/examples.html#reading-the-metadata
   (Contributed by Tarek Ziade; :issue:`7457`.)
 
+  :file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
+  to skip reading the :file:`~/.pydistutils.cfg` file.  (Suggested by
+  by Michael Hoffman, and implemented by Paul Winkler; :issue:`1180`.)
+
 * The :class:`Fraction` class now accepts two rational numbers
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
@@ -624,14 +642,6 @@ changes, or look through the Subversion logs for all the details.
   It's now possible to override the modification time
   recorded in a gzipped file by providing an optional timestamp to
   the constructor.  (Contributed by Jacques Frechet; :issue:`4272`.)
-
-* The :mod:`hashlib` module was inconsistent about accepting
-  input as a Unicode object or an object that doesn't support
-  the buffer protocol.  The behavior was different depending on
-  whether :mod:`hashlib` was using an external OpenSSL library
-  or its built-in implementations.  Python 2.7 makes the
-  behavior consistent, always rejecting such objects by raising a
-  :exc:`TypeError`.  (Fixed by Gregory P. Smith; :issue:`3745`.)
 
 * The default :class:`HTTPResponse` class used by the :mod:`httplib` module now
   supports buffering, resulting in much faster reading of HTTP responses.
@@ -745,6 +755,10 @@ changes, or look through the Subversion logs for all the details.
   to store data.
   (Contributed by Tarek Ziade; :issue:`6693`.)
 
+* The :mod:`socket` module's :class:`SSL` objects now support the
+  buffer API, which fixed a test suite failure.  (Fixed by Antoine Pitrou;
+  :issue:`7133`.)
+
 * The :mod:`SocketServer` module's :class:`TCPServer` class now
   has a :attr:`disable_nagle_algorithm` class attribute.
   The default value is False; if overridden to be True,
@@ -857,6 +871,10 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 * :meth:`assertIs` and :meth:`assertIsNot` take two values and check
   whether the two values evaluate to the same object or not.
   (Added by Michael Foord; :issue:`2578`.)
+
+* :meth:`assertIsInstance` and :meth:`assertNotIsInstance` check whether
+  the resulting object is an instance of a particular class, or of
+  one of a tuple of classes.  (Added by Georg Brandl; :issue:`7031`.)
 
 * :meth:`assertGreater`, :meth:`assertGreaterEqual`,
   :meth:`assertLess`, and :meth:`assertLessEqual` compare
@@ -1025,6 +1043,11 @@ Changes to Python's build process and to the C API include:
   a :ctype:`long`, an *overflow* flag is set and returned to the caller.
   (Contributed by Case Van Horsen; :issue:`7528`.)
 
+* New function: stemming from the rewrite of string-to-float conversion,
+  a new :cfunc:`PyOS_string_to_double` function was added.  The old
+  :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof` functions
+  are now deprecated.
+
 * New macros: the Python header files now define the following macros:
   :cmacro:`Py_ISALNUM`,
   :cmacro:`Py_ISALPHA`,
@@ -1067,9 +1090,29 @@ Changes to Python's build process and to the C API include:
 
   (Fixed by Thomas Wouters; :issue:`1590864`.)
 
+* The :cfunc:`Py_Finalize` function now calls the internal
+  :func:`threading._shutdown` function; this prevents some exceptions from
+  being raised when an interpreter shuts down.
+  (Patch by Adam Olsen; :issue:`1722344`.)
+
 * Global symbols defined by the :mod:`ctypes` module are now prefixed
   with ``Py``, or with ``_ctypes``.  (Implemented by Thomas
   Heller; :issue:`3102`.)
+
+* New configure option: the :option:`--with-system-expat` switch allows
+  building the :mod:`pyexpat` module to use the system Expat library.
+  (Contributed by Arfrever Frehtes Taifersar Arahesis; :issue:`7609`.)
+
+* New configure option: Compiling Python with the
+  :option:`--with-valgrind` option will now disable the pymalloc
+  allocator, which is difficult for the Valgrind to analyze correctly.
+  Valgrind will therefore be better at detecting memory leaks and
+  overruns. (Contributed by James Henstridge; :issue:`2422`.)
+
+* New configure option: you can now supply no arguments to
+  :option:`--with-dbmliborder=` in order to build none of the various
+  DBM modules.  (Added by Arfrever Frehtes Taifersar Arahesis;
+  :issue:`6491`.)
 
 * The :program:`configure` script now checks for floating-point rounding bugs
   on certain 32-bit Intel chips and defines a :cmacro:`X87_DOUBLE_ROUNDING`
@@ -1082,11 +1125,6 @@ Changes to Python's build process and to the C API include:
 
 * The build process now supports Subversion 1.7.  (Contributed by
   Arfrever Frehtes Taifersar Arahesis; :issue:`6094`.)
-
-* Compiling Python with the :option:`--with-valgrind` option will now
-  disable the pymalloc allocator, which is difficult for the Valgrind to
-  analyze correctly.  Valgrind will therefore be better at detecting
-  memory leaks and overruns. (Contributed by James Henstridge; :issue:`2422`.)
 
 
 .. ======================================================================
@@ -1139,12 +1177,14 @@ Other Changes and Fixes
   The :option:`-r` option also reports the seed that was used
   (Added by Collin Winter.)
 
-* The :file:`regrtest.py` script now takes a :option:`-j` switch
-  that takes an integer specifying how many tests run in parallel. This
+* Another :file:`regrtest.py` switch is :option:`-j`, which
+  takes an integer specifying how many tests run in parallel. This
   allows reducing the total runtime on multi-core machines.
   This option is compatible with several other options, including the
   :option:`-R` switch which is known to produce long runtimes.
-  (Added by Antoine Pitrou, :issue:`6152`.)
+  (Added by Antoine Pitrou, :issue:`6152`.)  This can also be used
+  with a new :option:`-F` switch that runs selected tests in a loop
+  until they fail.  (Added by Antoine Pitrou; :issue:`7312`.)
 
 .. ======================================================================
 
@@ -1174,6 +1214,17 @@ that may require changes to your code:
 * The :meth:`readline` method of :class:`StringIO` objects now does
   nothing when a negative length is requested, as other file-like
   objects do.  (:issue:`7348`).
+
+For C extensions:
+
+* C extensions that use integer format codes with the ``PyArg_Parse*``
+  family of functions will now raise a :exc:`TypeError` exception
+  instead of triggering a :exc:`DeprecationWarning` (:issue:`5080`).
+
+* Use the new :cfunc:`PyOS_string_to_double` function instead of the old
+  :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof` functions,
+  which are now deprecated.
+
 
 .. ======================================================================
 
