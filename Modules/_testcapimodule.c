@@ -1093,6 +1093,23 @@ test_string_from_format(PyObject *self, PyObject *args)
 #undef CHECK_1_FORMAT
 }
 
+
+static PyObject *
+test_unicode_compare_with_ascii(PyObject *self) {
+	PyObject *py_s = PyUnicode_FromStringAndSize("str\0", 4);
+	int result;
+	if (py_s == NULL)
+		return NULL;
+	result = PyUnicode_CompareWithASCIIString(py_s, "str");
+	Py_DECREF(py_s);
+	if (!result) {
+		PyErr_SetString(TestError, "Python string ending in NULL "
+				"should not compare equal to c string.");
+		return NULL;
+	}
+	Py_RETURN_NONE;
+};
+
 /* This is here to provide a docstring for test_descr. */
 static PyObject *
 test_with_docstring(PyObject *self)
@@ -1524,6 +1541,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,
 	 PyDoc_STR("This is a pretty normal docstring.")},
 	{"test_string_to_double", (PyCFunction)test_string_to_double, METH_NOARGS},
+	{"test_unicode_compare_with_ascii", (PyCFunction)test_unicode_compare_with_ascii, METH_NOARGS},
 	{"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
 	{"getargs_tuple",	getargs_tuple,			 METH_VARARGS},
 	{"getargs_keywords", (PyCFunction)getargs_keywords, 

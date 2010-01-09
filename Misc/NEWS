@@ -57,7 +57,6 @@ Core and Builtins
 - Issue #6750: A text file opened with io.open() could duplicate its output
   when writing from multiple threads at the same time.
 
-
 Library
 -------
 
@@ -279,6 +278,12 @@ Tests
   in regrtest, with warnings if the called test modifies them.
 
 - Issue #7042: Fix test_signal (test_itimer_virtual) failure on OS X 10.6.
+
+C-API
+-----
+
+- Make PyUnicode_CompareWithASCIIString return not equal if the Python string
+  has '\0' at the end.
 
 Build
 -----
