@@ -2979,16 +2979,61 @@ PyBytes_FromObject(PyObject *x)
 		return NULL;
 	}
 
+	if (PyList_CheckExact(x)) {
+		new = PyBytes_FromStringAndSize(NULL, Py_SIZE(x));
+		if (new == NULL)
+			return NULL;
+		for (i = 0; i < Py_SIZE(x); i++) {
+			Py_ssize_t value = PyNumber_AsSsize_t(
+				PyList_GET_ITEM(x, i), PyExc_ValueError);
+			if (value == -1 && PyErr_Occurred()) {
+				Py_DECREF(new);
+				return NULL;
+			}
+			if (value < 0 || value >= 256) {
+				PyErr_SetString(PyExc_ValueError,
+						"bytes must be in range(0, 256)");
+				Py_DECREF(new);
+				return NULL;
+			}
+			((PyBytesObject *)new)->ob_sval[i] = value;			
+		}
+		return new;
+	}
+	if (PyTuple_CheckExact(x)) {
+		new = PyBytes_FromStringAndSize(NULL, Py_SIZE(x));
+		if (new == NULL)
+			return NULL;
+		for (i = 0; i < Py_SIZE(x); i++) {
+			Py_ssize_t value = PyNumber_AsSsize_t(
+				PyTuple_GET_ITEM(x, i), PyExc_ValueError);
+			if (value == -1 && PyErr_Occurred()) {
+				Py_DECREF(new);
+				return NULL;
+			}
+			if (value < 0 || value >= 256) {
+				PyErr_SetString(PyExc_ValueError,
+						"bytes must be in range(0, 256)");
+				Py_DECREF(new);
+				return NULL;
+			}
+			((PyBytesObject *)new)->ob_sval[i] = value;			
+		}
+		return new;
+	}
+
 	/* For iterator version, create a string object and resize as needed */
-	/* XXX(gb): is 64 a good value? also, optimize if length is known */
-	/* XXX(guido): perhaps use Pysequence_Fast() -- I can't imagine the
-	   input being a truly long iterator. */
-	size = 64;
+	size = _PyObject_LengthHint(x, 64);
+	if (size == -1 && PyErr_Occurred())
+		return NULL;
+	/* Allocate an extra byte to prevent PyBytes_FromStringAndSize() from
+	   returning a shared empty bytes string. This required because we
+	   want to call _PyBytes_Resize() the returned object, which we can
+	   only do on bytes objects with refcount == 1. */
+	size += 1;
 	new = PyBytes_FromStringAndSize(NULL, size);
 	if (new == NULL)
 		return NULL;
-
-	/* XXX Optimize this if the arguments is a list, tuple */
 
 	/* Get the iterator */
 	it = PyObject_GetIter(x);
@@ -3023,7 +3068,7 @@ PyBytes_FromObject(PyObject *x)
 
 		/* Append the byte */
 		if (i >= size) {
-			size *= 2;
+			size = 2 * size + 1;
 			if (_PyBytes_Resize(&new, size) < 0)
 				goto error;
 		}
