@@ -89,6 +89,24 @@ class SeqTestCase(unittest.TestCase):
         self.assertEqual(self.seq[self.o:self.o2], self.seq[1:3])
         self.assertEqual(self.seq[self.n:self.n2], self.seq[2:4])
 
+    def test_slice_bug7532(self):
+        seqlen = len(self.seq)
+        self.o.ind = int(seqlen * 1.5)
+        self.n.ind = seqlen + 2
+        self.assertEqual(self.seq[self.o:], self.seq[0:0])
+        self.assertEqual(self.seq[:self.o], self.seq)
+        self.assertEqual(self.seq[self.n:], self.seq[0:0])
+        self.assertEqual(self.seq[:self.n], self.seq)
+        if isinstance(self.seq, ClassicSeq):
+            return
+        # These tests fail for ClassicSeq (see bug #7532)
+        self.o2.ind = -seqlen - 2
+        self.n2.ind = -int(seqlen * 1.5)
+        self.assertEqual(self.seq[self.o2:], self.seq)
+        self.assertEqual(self.seq[:self.o2], self.seq[0:0])
+        self.assertEqual(self.seq[self.n2:], self.seq)
+        self.assertEqual(self.seq[:self.n2], self.seq[0:0])
+
     def test_repeat(self):
         self.o.ind = 3
         self.n.ind = 2
@@ -156,6 +174,40 @@ class ListTestCase(SeqTestCase):
         self.assertEqual(lst, [5, 6, 7, 8, 9, 11] * 3)
 
 
+class _BaseSeq:
+
+    def __init__(self, iterable):
+        self._list = list(iterable)
+
+    def __repr__(self):
+        return repr(self._list)
+
+    def __eq__(self, other):
+        return self._list == other
+
+    def __len__(self):
+        return len(self._list)
+
+    def __mul__(self, n):
+        return self.__class__(self._list*n)
+    __rmul__ = __mul__
+
+    def __getitem__(self, index):
+        return self._list[index]
+
+
+class _GetSliceMixin:
+
+    def __getslice__(self, i, j):
+        return self._list.__getslice__(i, j)
+
+
+class ClassicSeq(_BaseSeq): pass
+class NewSeq(_BaseSeq, object): pass
+class ClassicSeqDeprecated(_GetSliceMixin, ClassicSeq): pass
+class NewSeqDeprecated(_GetSliceMixin, NewSeq): pass
+
+
 class TupleTestCase(SeqTestCase):
     seq = (0,10,20,30,40,50)
 
@@ -164,6 +216,18 @@ class StringTestCase(SeqTestCase):
 
 class UnicodeTestCase(SeqTestCase):
     seq = u"this is a test"
+
+class ClassicSeqTestCase(SeqTestCase):
+    seq = ClassicSeq((0,10,20,30,40,50))
+
+class NewSeqTestCase(SeqTestCase):
+    seq = NewSeq((0,10,20,30,40,50))
+
+class ClassicSeqDeprecatedTestCase(SeqTestCase):
+    seq = ClassicSeqDeprecated((0,10,20,30,40,50))
+
+class NewSeqDeprecatedTestCase(SeqTestCase):
+    seq = NewSeqDeprecated((0,10,20,30,40,50))
 
 
 class XRangeTestCase(unittest.TestCase):
@@ -187,6 +251,20 @@ class OverflowTestCase(unittest.TestCase):
     def _getitem_helper(self, base):
         class GetItem(base):
             def __len__(self):
+                return maxint # cannot return long here
+            def __getitem__(self, key):
+                return key
+        x = GetItem()
+        self.assertEqual(x[self.pos], self.pos)
+        self.assertEqual(x[self.neg], self.neg)
+        self.assertEqual(x[self.neg:self.pos].indices(maxsize),
+                         (0, maxsize, 1))
+        self.assertEqual(x[self.neg:self.pos:1].indices(maxsize),
+                         (0, maxsize, 1))
+
+    def _getslice_helper_deprecated(self, base):
+        class GetItem(base):
+            def __len__(self):
                 return maxint #cannot return long here
             def __getitem__(self, key):
                 return key
@@ -196,14 +274,22 @@ class OverflowTestCase(unittest.TestCase):
         self.assertEqual(x[self.pos], self.pos)
         self.assertEqual(x[self.neg], self.neg)
         self.assertEqual(x[self.neg:self.pos], (maxint+minsize, maxsize))
-        self.assertEqual(x[self.neg:self.pos:1].indices(maxsize), (0, maxsize, 1))
+        self.assertEqual(x[self.neg:self.pos:1].indices(maxsize),
+                         (0, maxsize, 1))
 
     def test_getitem(self):
         self._getitem_helper(object)
+        # Silence Py3k warning
+        with test_support.check_warnings():
+            self._getslice_helper_deprecated(object)
 
     def test_getitem_classic(self):
         class Empty: pass
-        self._getitem_helper(Empty)
+        # XXX This test fails (see bug #7532)
+        #self._getitem_helper(Empty)
+        # Silence Py3k warning
+        with test_support.check_warnings():
+            self._getslice_helper_deprecated(Empty)
 
     def test_sequence_repeat(self):
         self.assertRaises(OverflowError, lambda: "a" * self.pos)
@@ -217,9 +303,18 @@ def test_main():
         TupleTestCase,
         StringTestCase,
         UnicodeTestCase,
+        ClassicSeqTestCase,
+        NewSeqTestCase,
         XRangeTestCase,
         OverflowTestCase,
     )
+    # Silence Py3k warning
+    with test_support.check_warnings():
+        test_support.run_unittest(
+            ClassicSeqDeprecatedTestCase,
+            NewSeqDeprecatedTestCase,
+        )
+
 
 if __name__ == "__main__":
     test_main()
