@@ -89,7 +89,7 @@
 
 __copyright__ = """
     Copyright (c) 1999-2000, Marc-Andre Lemburg; mailto:mal@lemburg.com
-    Copyright (c) 2000-2008, eGenix.com Software GmbH; mailto:info@egenix.com
+    Copyright (c) 2000-2010, eGenix.com Software GmbH; mailto:info@egenix.com
 
     Permission to use, copy, modify, and distribute this software and its
     documentation for any purpose and without fee or royalty is hereby granted,

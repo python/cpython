@@ -28,7 +28,7 @@ What's New in IDLE 3.1a1?
 What's New in IDLE 2.7? (UNRELEASED, but merged into 3.1 releases above.)
 =======================
 
-*Release date: XX-XXX-2009*
+*Release date: XX-XXX-2010*
 
 - idle.py modified and simplified to better support developing experimental
   versions of IDLE which are not installed in the standard location.
