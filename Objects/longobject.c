@@ -4325,10 +4325,9 @@ long_to_bytes(PyLongObject *v, PyObject *args, PyObject *kwds)
 	int little_endian;
 	int is_signed;
 	PyObject *bytes;
-	static PyObject *little_str = NULL, *big_str = NULL;
 	static char *kwlist[] = {"length", "byteorder", "signed", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "nO|O:to_bytes", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "nU|O:to_bytes", kwlist,
 					 &length, &byteorder_str,
 					 &is_signed_obj))
 		return NULL;
@@ -4338,16 +4337,10 @@ long_to_bytes(PyLongObject *v, PyObject *args, PyObject *kwds)
 			"'signed' is a keyword-only argument");
 		return NULL;
 	}
-	if (little_str == NULL) {
-		little_str = PyUnicode_InternFromString("little");
-		big_str = PyUnicode_InternFromString("big");
-		if (little_str == NULL || big_str == NULL)
-			return NULL;
-	}
 
-	if (PyObject_RichCompareBool(byteorder_str, little_str, Py_EQ))
+	if (!PyUnicode_CompareWithASCIIString(byteorder_str, "little"))
 		little_endian = 1;
-	else if (PyObject_RichCompareBool(byteorder_str, big_str, Py_EQ))
+	else if (!PyUnicode_CompareWithASCIIString(byteorder_str, "big"))
 		little_endian = 0;
 	else {
 		PyErr_SetString(PyExc_ValueError,
@@ -4414,10 +4407,9 @@ long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *obj;
 	PyObject *bytes;
 	PyObject *long_obj;
-	static PyObject *little_str = NULL, *big_str = NULL;
 	static char *kwlist[] = {"bytes", "byteorder", "signed", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|O:from_bytes", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "OU|O:from_bytes", kwlist,
 					 &obj, &byteorder_str,
 					 &is_signed_obj))
 		return NULL;
@@ -4427,16 +4419,10 @@ long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			"'signed' is a keyword-only argument");
 		return NULL;
 	}
-	if (little_str == NULL) {
-		little_str = PyUnicode_InternFromString("little");
-		big_str = PyUnicode_InternFromString("big");
-		if (little_str == NULL || big_str == NULL)
-			return NULL;
-	}
 
-	if (PyObject_RichCompareBool(byteorder_str, little_str, Py_EQ))
+	if (!PyUnicode_CompareWithASCIIString(byteorder_str, "little"))
 		little_endian = 1;
-	else if (PyObject_RichCompareBool(byteorder_str, big_str, Py_EQ))
+	else if (!PyUnicode_CompareWithASCIIString(byteorder_str, "big"))
 		little_endian = 0;
 	else {
 		PyErr_SetString(PyExc_ValueError,
