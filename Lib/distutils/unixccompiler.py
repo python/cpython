@@ -264,6 +264,9 @@ class UnixCCompiler(CCompiler):
     def library_dir_option(self, dir):
         return "-L" + dir
 
+    def _is_gcc(self, compiler_name):
+        return "gcc" in compiler_name or "g++" in compiler_name
+
     def runtime_library_dir_option(self, dir):
         # XXX Hackish, at the very least.  See Python bug #445902:
         # http://sourceforge.net/tracker/index.php
@@ -283,13 +286,13 @@ class UnixCCompiler(CCompiler):
             # MacOSX's linker doesn't understand the -R flag at all
             return "-L" + dir
         elif sys.platform[:5] == "hp-ux":
-            if "gcc" in compiler or "g++" in compiler:
+            if self._is_gcc(compiler):
                 return ["-Wl,+s", "-L" + dir]
             return ["+s", "-L" + dir]
         elif sys.platform[:7] == "irix646" or sys.platform[:6] == "osf1V5":
             return ["-rpath", dir]
         else:
-            if compiler[:3] == "gcc" or compiler[:3] == "g++":
+            if self._is_gcc(compiler):
                 # gcc on non-GNU systems does not need -Wl, but can
                 # use it anyway.  Since distutils has always passed in
                 # -Wl whenever gcc was used in the past it is probably

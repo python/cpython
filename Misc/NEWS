@@ -61,6 +61,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7617: Make sure distutils.unixccompiler.UnixCCompiler recognizes
+  gcc when it has a fully qualified configuration prefix. Initial patch
+  by Arfrever.
+
 - Issue #7105: Make WeakKeyDictionary and WeakValueDictionary robust against
   the destruction of weakref'ed objects while iterating.
 
