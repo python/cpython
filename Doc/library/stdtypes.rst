@@ -457,6 +457,69 @@ Additional Methods on Integer Types
 
     .. versionadded:: 3.1
 
+    .. method:: int.to_bytes(length, byteorder, [\*, signed=False])
+
+    Return an array of bytes representing an integer.
+
+        >>> (1024).to_bytes(2, byteorder='big')
+        b'\x04\x00'
+        >>> (1024).to_bytes(10, byteorder='big')
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00'
+        >>> (-1024).to_bytes(10, byteorder='big', signed=True)
+        b'\xff\xff\xff\xff\xff\xff\xff\xff\xfc\x00'
+        >>> x = 1000
+        >>> x.to_bytes((x.bit_length() // 8) + 1, byteorder='little')
+        b'\xe8\x03'
+
+    The integer is represented using *length* bytes.  An :exc:`OverflowError`
+    is raised if the integer is not representable with the given number of
+    bytes.
+
+    The *byteorder* argument determines the byte order used to represent the
+    integer.  If *byteorder* is ``"big"``, the most significant byte is at the
+    beginning of the byte array.  If *byteorder* is ``"little"``, the most
+    significant byte is at the end of the byte array.  To request the native
+    byte order of the host system, use :data:`sys.byteorder` as the byte order
+    value.
+
+    The *signed* argument determines whether two's complement is used to
+    represent the integer.  If *signed* is ``False`` and a negative integer is
+    given, an :exc:`OverflowError` is raised. The default value for *signed*
+    is ``False``.
+
+    .. versionadded:: 3.2
+
+    .. classmethod:: int.from_bytes(bytes, byteorder, [\*, signed=False]])
+
+    Return the integer represented by the given array of bytes.
+
+        >>> int.from_bytes(b'\x00\x10', byteorder='big')
+        16
+        >>> int.from_bytes(b'\x00\x10', byteorder='little')
+        4096
+        >>> int.from_bytes(b'\xfc\x00', byteorder='big', signed=True)
+        -1024
+        >>> int.from_bytes(b'\xfc\x00', byteorder='big', signed=False)
+        64512
+        >>> int.from_bytes([255, 0, 0], byteorder='big')
+        16711680
+
+    The argument *bytes* must either support the buffer protocol or be an
+    iterable producing bytes. :class:`bytes` and :class:`bytearray` are
+    examples of built-in objects that support the buffer protocol.
+
+    The *byteorder* argument determines the byte order used to represent the
+    integer.  If *byteorder* is ``"big"``, the most significant byte is at the
+    beginning of the byte array.  If *byteorder* is ``"little"``, the most
+    significant byte is at the end of the byte array.  To request the native
+    byte order of the host system, use :data:`sys.byteorder` as the byte order
+    value.
+
+    The *signed* argument indicates whether two's complement is used to
+    represent the integer.
+
+    .. versionadded:: 3.2
+
 
 Additional Methods on Float
 ---------------------------
