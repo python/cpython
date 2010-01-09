@@ -155,6 +155,9 @@ Core and Builtins
 C-API
 -----
 
+- Make PyUnicode_CompareWithASCIIString return not equal if the Python string
+  has '\0' at the end.
+
 - Issue #5080: The argument parsing functions PyArg_ParseTuple,
   PyArg_ParseTupleAndKeywords, PyArg_VaParse,
   PyArg_VaParseTupleAndKeywords and PyArg_Parse now raise a
