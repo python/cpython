@@ -2186,6 +2186,25 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			}
 			break;
 
+		case BUILD_SET:
+			x = PySet_New(NULL);
+			if (x != NULL) {
+				for (; --oparg >= 0;) {
+					w = POP();
+					if (err == 0)
+						err = PySet_Add(x, w);
+					Py_DECREF(w);
+				}
+				if (err != 0) {
+					Py_DECREF(x);
+					break;
+				}
+				PUSH(x);
+				continue;
+			}
+			break;
+
+
 		case BUILD_MAP:
 			x = _PyDict_NewPresized((Py_ssize_t)oparg);
 			PUSH(x);

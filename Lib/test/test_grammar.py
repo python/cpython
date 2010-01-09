@@ -749,7 +749,7 @@ hello world
 
     def testAtoms(self):
         ### atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING
-        ### dictmaker: test ':' test (',' test ':' test)* [',']
+        ### dictorsetmaker: (test ':' test (',' test ':' test)* [',']) | (test (',' test)* [','])
 
         x = (1)
         x = (1 or 2 or 3)
@@ -768,6 +768,11 @@ hello world
         x = {'one': 1, 'two': 2}
         x = {'one': 1, 'two': 2,}
         x = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6}
+
+        x = {'one'}
+        x = {'one', 1,}
+        x = {'one', 'two', 'three'}
+        x = {2, 3, 4,}
 
         x = `x`
         x = `1 or 2 or 3`

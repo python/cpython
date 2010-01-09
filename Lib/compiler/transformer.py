@@ -749,7 +749,7 @@ class Transformer:
     def atom_lbrace(self, nodelist):
         if nodelist[1][0] == token.RBRACE:
             return Dict((), lineno=nodelist[0][2])
-        return self.com_dictmaker(nodelist[1])
+        return self.com_dictorsetmaker(nodelist[1])
 
     def atom_backquote(self, nodelist):
         return Backquote(self.com_node(nodelist[1]))
@@ -1197,13 +1197,21 @@ class Transformer:
             assert node[0] == symbol.gen_iter
             return node[1]
 
-    def com_dictmaker(self, nodelist):
-        # dictmaker: test ':' test (',' test ':' value)* [',']
-        items = []
-        for i in range(1, len(nodelist), 4):
-            items.append((self.com_node(nodelist[i]),
-                          self.com_node(nodelist[i+2])))
-        return Dict(items, lineno=items[0][0].lineno)
+    def com_dictorsetmaker(self, nodelist):
+        # dictorsetmaker: ( (test ':' test (',' test ':' test)* [',']) |
+        #                   (test (',' test)* [',']) )
+        assert nodelist[0] == symbol.dictorsetmaker
+        if len(nodelist) == 2 or nodelist[2][0] == token.COMMA:
+            items = []
+            for i in range(1, len(nodelist), 2):
+                items.append(self.com_node(nodelist[i]))
+            return Set(items, lineno=items[0].lineno)
+        else:
+            items = []
+            for i in range(1, len(nodelist), 4):
+                items.append((self.com_node(nodelist[i]),
+                              self.com_node(nodelist[i+2])))
+            return Dict(items, lineno=items[0][0].lineno)
 
     def com_apply_trailer(self, primaryNode, nodelist):
         t = nodelist[1][0]

@@ -1211,6 +1211,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		VISIT_SEQ(st, expr, e->v.Dict.keys);
 		VISIT_SEQ(st, expr, e->v.Dict.values);
 		break;
+        case Set_kind:
+		VISIT_SEQ(st, expr, e->v.Set.elts);
+		break;
         case ListComp_kind:
 		VISIT(st, expr, e->v.ListComp.elt);
 		VISIT_SEQ(st, comprehension, e->v.ListComp.generators);

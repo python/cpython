@@ -185,11 +185,11 @@ struct _stmt {
 };
 
 enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
-                  IfExp_kind=5, Dict_kind=6, ListComp_kind=7,
-                  GeneratorExp_kind=8, Yield_kind=9, Compare_kind=10,
-                  Call_kind=11, Repr_kind=12, Num_kind=13, Str_kind=14,
-                  Attribute_kind=15, Subscript_kind=16, Name_kind=17,
-                  List_kind=18, Tuple_kind=19};
+                  IfExp_kind=5, Dict_kind=6, Set_kind=7, ListComp_kind=8,
+                  GeneratorExp_kind=9, Yield_kind=10, Compare_kind=11,
+                  Call_kind=12, Repr_kind=13, Num_kind=14, Str_kind=15,
+                  Attribute_kind=16, Subscript_kind=17, Name_kind=18,
+                  List_kind=19, Tuple_kind=20};
 struct _expr {
         enum _expr_kind kind;
         union {
@@ -224,6 +224,10 @@ struct _expr {
                         asdl_seq *keys;
                         asdl_seq *values;
                 } Dict;
+                
+                struct {
+                        asdl_seq *elts;
+                } Set;
                 
                 struct {
                         expr_ty elt;
@@ -449,6 +453,8 @@ expr_ty _Py_IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int
 #define Dict(a0, a1, a2, a3, a4) _Py_Dict(a0, a1, a2, a3, a4)
 expr_ty _Py_Dict(asdl_seq * keys, asdl_seq * values, int lineno, int
                  col_offset, PyArena *arena);
+#define Set(a0, a1, a2, a3) _Py_Set(a0, a1, a2, a3)
+expr_ty _Py_Set(asdl_seq * elts, int lineno, int col_offset, PyArena *arena);
 #define ListComp(a0, a1, a2, a3, a4) _Py_ListComp(a0, a1, a2, a3, a4)
 expr_ty _Py_ListComp(expr_ty elt, asdl_seq * generators, int lineno, int
                      col_offset, PyArena *arena);

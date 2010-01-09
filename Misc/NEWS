@@ -12,6 +12,8 @@ What's New in Python 2.7 alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #2335: Backport set literals syntax from Python 3.x.
+
 Library
 -------
 

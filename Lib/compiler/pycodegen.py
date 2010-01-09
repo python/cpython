@@ -1215,6 +1215,12 @@ class CodeGenerator:
             self.visit(elt)
         self.emit('BUILD_LIST', len(node.nodes))
 
+    def visitSet(self, node):
+        self.set_lineno(node)
+        for elt in node.nodes:
+            self.visit(elt)
+        self.emit('BUILD_SET', len(node.nodes))
+
     def visitSliceobj(self, node):
         for child in node.nodes:
             self.visit(child)

@@ -935,7 +935,7 @@ VALIDATER(term);                VALIDATER(factor);
 VALIDATER(atom);                VALIDATER(lambdef);
 VALIDATER(trailer);             VALIDATER(subscript);
 VALIDATER(subscriptlist);       VALIDATER(sliceop);
-VALIDATER(exprlist);            VALIDATER(dictmaker);
+VALIDATER(exprlist);            VALIDATER(dictorsetmaker);
 VALIDATER(arglist);             VALIDATER(argument);
 VALIDATER(listmaker);           VALIDATER(yield_stmt);
 VALIDATER(testlist1);           VALIDATER(gen_for);
@@ -2478,7 +2478,7 @@ validate_atom(node *tree)
                    && validate_ntype(CHILD(tree, nch - 1), RBRACE));
 
             if (res && (nch == 3))
-                res = validate_dictmaker(CHILD(tree, 1));
+                res = validate_dictorsetmaker(CHILD(tree, 1));
             break;
           case BACKQUOTE:
             res = ((nch == 3)
@@ -2966,32 +2966,59 @@ validate_exprlist(node *tree)
 
 
 static int
-validate_dictmaker(node *tree)
+validate_dictorsetmaker(node *tree)
 {
     int nch = NCH(tree);
-    int res = (validate_ntype(tree, dictmaker)
-               && (nch >= 3)
-               && validate_test(CHILD(tree, 0))
-               && validate_colon(CHILD(tree, 1))
-               && validate_test(CHILD(tree, 2)));
+    int ok = validate_ntype(tree, dictorsetmaker);
+    int i = 0;
 
-    if (res && ((nch % 4) == 0))
-        res = validate_comma(CHILD(tree, --nch));
-    else if (res)
-        res = ((nch % 4) == 3);
+    assert(nch > 0);
 
-    if (res && (nch > 3)) {
-        int pos = 3;
-        /*  ( ',' test ':' test )*  */
-        while (res && (pos < nch)) {
-            res = (validate_comma(CHILD(tree, pos))
-                   && validate_test(CHILD(tree, pos + 1))
-                   && validate_colon(CHILD(tree, pos + 2))
-                   && validate_test(CHILD(tree, pos + 3)));
-            pos += 4;
+    if (ok && (nch == 1 || TYPE(CHILD(tree, 1)) == COMMA)) {
+        /* We got a set:
+         *     test (',' test)* [','] 
+         */
+        ok = validate_test(CHILD(tree, i++));
+        while (ok && nch - i >= 2) {
+            ok = (validate_comma(CHILD(tree, i))
+                   && validate_test(CHILD(tree, i+1)));
+            i += 2;
         }
     }
-    return (res);
+    else if (ok) {
+        /* We got a dict:
+         *     test ':' test (',' test ':' test)* [',']
+         */
+        if (nch >= 3) {
+            ok = (validate_test(CHILD(tree, i))
+                  && validate_colon(CHILD(tree, i+1))
+                  && validate_test(CHILD(tree, i+2)));
+            i += 3;
+        }
+        else {
+            ok = 0;
+            err_string("illegal number of nodes for dictorsetmaker");
+        }
+
+        while (ok && nch - i >= 4) {
+            ok = (validate_comma(CHILD(tree, i))
+                  && validate_test(CHILD(tree, i+1))
+                  && validate_colon(CHILD(tree, i+2))
+                  && validate_test(CHILD(tree, i+3)));
+            i += 4;
+        }
+    }
+    /* Check for a trailing comma. */
+    if (ok) {
+        if (i == nch-1)
+            ok = validate_comma(CHILD(tree, i));
+        else if (i != nch) {
+            ok = 0;
+            err_string("illegal trailing nodes for dictorsetmaker");
+        }
+    }
+
+    return ok;
 }
 
 

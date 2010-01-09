@@ -1107,6 +1107,22 @@ class RightShift(Node):
     def __repr__(self):
         return "RightShift((%s, %s))" % (repr(self.left), repr(self.right))
 
+class Set(Node):
+    def __init__(self, nodes, lineno=None):
+        self.nodes = nodes
+        self.lineno = lineno
+
+    def getChildren(self):
+        return tuple(flatten(self.nodes))
+
+    def getChildNodes(self):
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.nodes))
+        return tuple(nodelist)
+
+    def __repr__(self):
+        return "Set(%s)" % (repr(self.nodes),)
+
 class Slice(Node):
     def __init__(self, expr, flags, lower, upper, lineno=None):
         self.expr = expr

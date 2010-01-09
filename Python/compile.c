@@ -808,6 +808,7 @@ opcode_stack_effect(int opcode, int oparg)
 			return 1;
 		case BUILD_TUPLE:
 		case BUILD_LIST:
+		case BUILD_SET:
 			return 1-oparg;
 		case BUILD_MAP:
 			return 1;
@@ -2893,6 +2894,11 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 				(expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
 			ADDOP(c, STORE_MAP);
 		}
+		break;
+	case Set_kind:
+		n = asdl_seq_LEN(e->v.Set.elts);
+		VISIT_SEQ(c, expr, e->v.Set.elts);
+		ADDOP_I(c, BUILD_SET, n);
 		break;
 	case ListComp_kind:
 		return compiler_listcomp(c, e);
