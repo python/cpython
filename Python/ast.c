@@ -1383,36 +1383,59 @@ ast_for_atom(struct compiling *c, const node *n)
         else
             return ast_for_listcomp(c, ch);
     case LBRACE: {
-        /* dictmaker: test ':' test (',' test ':' test)* [','] */
+        /* dictorsetmaker: test ':' test (',' test ':' test)* [','] |
+         *                 test (',' test)* [','])
+         */
         int i, size;
         asdl_seq *keys, *values;
-        
+
         ch = CHILD(n, 1);
-        size = (NCH(ch) + 1) / 4; /* +1 in case no trailing comma */
-        keys = asdl_seq_new(size, c->c_arena);
-        if (!keys)
-            return NULL;
-        
-        values = asdl_seq_new(size, c->c_arena);
-        if (!values)
-            return NULL;
-        
-        for (i = 0; i < NCH(ch); i += 4) {
-            expr_ty expression;
+        if (TYPE(ch) == RBRACE) {
+            /* it's an empty dict */
+            return Dict(NULL, NULL, LINENO(n), n->n_col_offset, c->c_arena);
+        } else if (NCH(ch) == 1 || TYPE(CHILD(ch, 1)) == COMMA) {
+            /* it's a simple set */
+            asdl_seq *elts;
+            size = (NCH(ch) + 1) / 2; /* +1 in case no trailing comma */
+            elts = asdl_seq_new(size, c->c_arena);
+            if (!elts)
+                return NULL;
+            for (i = 0; i < NCH(ch); i += 2) {
+                expr_ty expression;
+                expression = ast_for_expr(c, CHILD(ch, i));
+                if (!expression)
+                    return NULL;
+                asdl_seq_SET(elts, i / 2, expression);
+            }
+            return Set(elts, LINENO(n), n->n_col_offset, c->c_arena);
+        } else {
+            /* it's a dict */
+            size = (NCH(ch) + 1) / 4; /* +1 in case no trailing comma */
+            keys = asdl_seq_new(size, c->c_arena);
+            if (!keys)
+                return NULL;
             
-            expression = ast_for_expr(c, CHILD(ch, i));
-            if (!expression)
+            values = asdl_seq_new(size, c->c_arena);
+            if (!values)
                 return NULL;
+            
+            for (i = 0; i < NCH(ch); i += 4) {
+                expr_ty expression;
+                
+                expression = ast_for_expr(c, CHILD(ch, i));
+                if (!expression)
+                    return NULL;
 
-            asdl_seq_SET(keys, i / 4, expression);
+                asdl_seq_SET(keys, i / 4, expression);
 
-            expression = ast_for_expr(c, CHILD(ch, i + 2));
-            if (!expression)
-                return NULL;
+                expression = ast_for_expr(c, CHILD(ch, i + 2));
+                if (!expression)
+                    return NULL;
 
-            asdl_seq_SET(values, i / 4, expression);
+                asdl_seq_SET(values, i / 4, expression);
+            }
+            return Dict(keys, values, LINENO(n), n->n_col_offset, c->c_arena);
         }
-        return Dict(keys, values, LINENO(n), n->n_col_offset, c->c_arena);
     }
     case BACKQUOTE: { /* repr */
         expr_ty expression;

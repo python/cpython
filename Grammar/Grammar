@@ -102,7 +102,7 @@ factor: ('+'|'-'|'~') factor | power
 power: atom trailer* ['**' factor]
 atom: ('(' [yield_expr|testlist_gexp] ')' |
        '[' [listmaker] ']' |
-       '{' [dictmaker] '}' |
+       '{' [dictorsetmaker] '}' |
        '`' testlist1 '`' |
        NAME | NUMBER | STRING+)
 listmaker: test ( list_for | (',' test)* [','] )
@@ -115,6 +115,8 @@ sliceop: ':' [test]
 exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
 dictmaker: test ':' test (',' test ':' test)* [',']
+dictorsetmaker: ( (test ':' test (',' test ':' test)* [',']) |
+                  (test (',' test)* [',']) )
 
 classdef: 'class' NAME ['(' [testlist] ')'] ':' suite
 

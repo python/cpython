@@ -65,7 +65,7 @@ atoms is:
 .. productionlist::
    atom: `identifier` | `literal` | `enclosure`
    enclosure: `parenth_form` | `list_display`
-            : | `generator_expression` | `dict_display`
+            : | `generator_expression` | `dict_display` | `set_display`
             : | `string_conversion` | `yield_atom`
 
 
@@ -279,6 +279,30 @@ Restrictions on the types of the key values are listed earlier in section
 all mutable objects.)  Clashes between duplicate keys are not detected; the last
 datum (textually rightmost in the display) stored for a given key value
 prevails.
+
+
+.. _set:
+
+Set displays
+------------
+
+.. index:: pair: set; display
+           object: set
+
+A set display is denoted by curly braces and distinguishable from dictionary
+displays by the lack of colons separating keys and values:
+
+.. productionlist::
+   set_display: "{" (`expression_list` | `comprehension`) "}"
+
+A set display yields a new mutable set object, the contents being specified by
+either a sequence of expressions or a comprehension.  When a comma-separated
+list of expressions is supplied, its elements are evaluated from left to right
+and added to the set object.  When a comprehension is supplied, the set is
+constructed from the elements resulting from the comprehension.
+
+An empty set cannot be constructed with ``{}``; this literal constructs an empty
+dictionary.
 
 
 .. _string-conversions:
