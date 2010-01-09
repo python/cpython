@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-#  Copyright (C) 2005-2009   Gregory P. Smith (greg@krypto.org)
+#  Copyright (C) 2005-2010   Gregory P. Smith (greg@krypto.org)
 #  Licensed to PSF under a Contributor Agreement.
 #
 
