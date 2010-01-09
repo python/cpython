@@ -149,6 +149,9 @@ Core and Builtins
 - Issue #6687: PyBytes_FromObject() no longer accepts an integer as its
   argument to construct a null-initialized bytes object.
 
+- Issue #1023290: Add from_bytes() and to_bytes() methods to integers.
+  These methods allow the conversion of integers to bytes, and vice-versa.
+
 C-API
 -----
 

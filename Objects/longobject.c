@@ -4296,6 +4296,201 @@ long_is_finite(PyObject *v)
 }
 #endif
 
+
+PyDoc_STRVAR(long_to_bytes_doc,
+"int.to_bytes(length, byteorder, *, signed=False) -> bytes\n\
+\n\
+Return an array of bytes representing an integer.\n\
+\n\
+The integer is represented using length bytes.	An OverflowError is\n\
+raised if the integer is not representable with the given number of\n\
+bytes.\n\
+\n\
+The byteorder argument determines the byte order used to represent the\n\
+integer.  If byteorder is 'big', the most significant byte is at the\n\
+beginning of the byte array.  If byteorder is 'little', the most\n\
+significant byte is at the end of the byte array.  To request the native\n\
+byte order of the host system, use `sys.byteorder' as the byte order value.\n\
+\n\
+The signed keyword-only argument determines whether two's complement is\n\
+used to represent the integer.	If signed is False and a negative integer\n\
+is given, an OverflowError is raised.");
+
+static PyObject *
+long_to_bytes(PyLongObject *v, PyObject *args, PyObject *kwds)
+{
+	PyObject *byteorder_str;
+	PyObject *is_signed_obj = NULL;
+	Py_ssize_t length;
+	int little_endian;
+	int is_signed;
+	PyObject *bytes;
+	static PyObject *little_str = NULL, *big_str = NULL;
+	static char *kwlist[] = {"length", "byteorder", "signed", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "nO|O:to_bytes", kwlist,
+					 &length, &byteorder_str,
+					 &is_signed_obj))
+		return NULL;
+
+	if (args != NULL && Py_SIZE(args) > 2) {
+		PyErr_SetString(PyExc_TypeError,
+			"'signed' is a keyword-only argument");
+		return NULL;
+	}
+	if (little_str == NULL) {
+		little_str = PyUnicode_InternFromString("little");
+		big_str = PyUnicode_InternFromString("big");
+		if (little_str == NULL || big_str == NULL)
+			return NULL;
+	}
+
+	if (PyObject_RichCompareBool(byteorder_str, little_str, Py_EQ))
+		little_endian = 1;
+	else if (PyObject_RichCompareBool(byteorder_str, big_str, Py_EQ))
+		little_endian = 0;
+	else {
+		PyErr_SetString(PyExc_ValueError,
+			"byteorder must be either 'little' or 'big'");
+		return NULL;
+	}
+
+	if (is_signed_obj != NULL) {
+		int cmp = PyObject_IsTrue(is_signed_obj);
+		if (cmp < 0)
+			return NULL;
+		is_signed = cmp ? 1 : 0;
+	}
+	else {
+		/* If the signed argument was omitted, use False as the
+		   default. */
+		is_signed = 0;
+	}
+
+	if (length < 0) {
+		PyErr_SetString(PyExc_ValueError, 
+				"length argument must be non-negative");
+		return NULL;
+	}
+
+	bytes = PyBytes_FromStringAndSize(NULL, length);
+	if (bytes == NULL)
+		return NULL;
+
+	if (_PyLong_AsByteArray(v, (unsigned char *)PyBytes_AS_STRING(bytes),
+				length, little_endian, is_signed) < 0) {
+		Py_DECREF(bytes);
+		return NULL;
+	}
+
+	return bytes;
+}
+
+PyDoc_STRVAR(long_from_bytes_doc,
+"int.from_bytes(bytes, byteorder, *, signed=False) -> int\n\
+\n\
+Return the integer represented by the given array of bytes.\n\
+\n\
+The bytes argument must either support the buffer protocol or be an\n\
+iterable object producing bytes.  Bytes and bytearray are examples of\n\
+built-in objects that support the buffer protocol.\n\
+\n\
+The byteorder argument determines the byte order used to represent the\n\
+integer.  If byteorder is 'big', the most significant byte is at the\n\
+beginning of the byte array.  If byteorder is 'little', the most\n\
+significant byte is at the end of the byte array.  To request the native\n\
+byte order of the host system, use `sys.byteorder' as the byte order value.\n\
+\n\
+The signed keyword-only argument indicates whether two's complement is\n\
+used to represent the integer.");
+
+static PyObject *
+long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *byteorder_str;
+	PyObject *is_signed_obj = NULL;
+	int little_endian;
+	int is_signed;
+	PyObject *obj;
+	PyObject *bytes;
+	PyObject *long_obj;
+	static PyObject *little_str = NULL, *big_str = NULL;
+	static char *kwlist[] = {"bytes", "byteorder", "signed", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|O:from_bytes", kwlist,
+					 &obj, &byteorder_str,
+					 &is_signed_obj))
+		return NULL;
+
+	if (args != NULL && Py_SIZE(args) > 2) {
+		PyErr_SetString(PyExc_TypeError,
+			"'signed' is a keyword-only argument");
+		return NULL;
+	}
+	if (little_str == NULL) {
+		little_str = PyUnicode_InternFromString("little");
+		big_str = PyUnicode_InternFromString("big");
+		if (little_str == NULL || big_str == NULL)
+			return NULL;
+	}
+
+	if (PyObject_RichCompareBool(byteorder_str, little_str, Py_EQ))
+		little_endian = 1;
+	else if (PyObject_RichCompareBool(byteorder_str, big_str, Py_EQ))
+		little_endian = 0;
+	else {
+		PyErr_SetString(PyExc_ValueError,
+			"byteorder must be either 'little' or 'big'");
+		return NULL;
+	}
+
+	if (is_signed_obj != NULL) {
+		int cmp = PyObject_IsTrue(is_signed_obj);
+		if (cmp < 0)
+			return NULL;
+		is_signed = cmp ? 1 : 0;
+	}
+	else {
+		/* If the signed argument was omitted, use False as the
+		   default. */
+		is_signed = 0;
+	}
+
+	bytes = PyObject_Bytes(obj);
+	if (bytes == NULL)
+		return NULL;
+
+	long_obj = _PyLong_FromByteArray(
+		(unsigned char *)PyBytes_AS_STRING(bytes), Py_SIZE(bytes),
+		little_endian, is_signed);
+	Py_DECREF(bytes);
+
+	/* If from_bytes() was used on subclass, allocate new subclass
+	 * instance, initialize it with decoded long value and return it.
+	 */
+	if (type != &PyLong_Type && PyType_IsSubtype(type, &PyLong_Type)) {
+		PyLongObject *newobj;
+		int i;
+		Py_ssize_t n = ABS(Py_SIZE(long_obj));
+
+		newobj = (PyLongObject *)type->tp_alloc(type, n);
+		if (newobj == NULL) {
+			Py_DECREF(long_obj);
+			return NULL;
+		}
+		assert(PyLong_Check(newobj));
+		Py_SIZE(newobj) = Py_SIZE(long_obj);
+		for (i = 0; i < n; i++) {
+			newobj->ob_digit[i] = 
+				((PyLongObject *)long_obj)->ob_digit[i];
+		}
+		Py_DECREF(long_obj);
+		return (PyObject *)newobj;
+	}
+
+	return long_obj;
+}
+
 static PyMethodDef long_methods[] = {
 	{"conjugate",	(PyCFunction)long_long,	METH_NOARGS,
 	 "Returns self, the complex conjugate of any int."},
@@ -4305,6 +4500,10 @@ static PyMethodDef long_methods[] = {
 	{"is_finite",	(PyCFunction)long_is_finite,	METH_NOARGS,
 	 "Returns always True."},
 #endif
+	{"to_bytes",	(PyCFunction)long_to_bytes,
+	 METH_VARARGS|METH_KEYWORDS, long_to_bytes_doc},
+	{"from_bytes",	(PyCFunction)long_from_bytes,
+	 METH_VARARGS|METH_KEYWORDS|METH_CLASS, long_from_bytes_doc},
 	{"__trunc__",	(PyCFunction)long_long,	METH_NOARGS,
          "Truncating an Integral returns itself."},
 	{"__floor__",	(PyCFunction)long_long,	METH_NOARGS,
