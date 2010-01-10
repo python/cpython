@@ -200,12 +200,6 @@ typedef union { double d; ULong L[2]; } U;
 #define STRTOD_DIGLIM 40
 #endif
 
-#ifdef DIGLIM_DEBUG
-extern int strtod_diglim;
-#else
-#define strtod_diglim STRTOD_DIGLIM
-#endif
-
 /* The following definition of Storeinc is appropriate for MIPS processors.
  * An alternative that might be better on some machines is
  * #define Storeinc(a,b,c) (*a++ = b << 16 | c & 0xffff)
@@ -269,8 +263,7 @@ extern int strtod_diglim;
 typedef struct BCinfo BCinfo;
 struct
 BCinfo {
-    int dp0, dp1, dplen, dsign, e0, inexact;
-    int nd, nd0, rounding, scale, uflchk;
+    int dp0, dp1, dplen, dsign, e0, nd, nd0, scale;
 };
 
 #define FFFFFFFF 0xffffffffUL
@@ -1318,7 +1311,7 @@ _Py_dg_strtod(const char *s00, char **se)
     BCinfo bc;
     Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
 
-    sign = nz0 = nz = bc.dplen = bc.uflchk = 0;
+    sign = nz0 = nz = bc.dplen = 0;
     dval(&rv) = 0.;
     for(s = s00;;s++) switch(*s) {
         case '-':
@@ -1555,11 +1548,11 @@ _Py_dg_strtod(const char *s00, char **se)
     /* Put digits into bd: true value = bd * 10^e */
 
     bc.nd = nd;
-    bc.nd0 = nd0;       /* Only needed if nd > strtod_diglim, but done here */
+    bc.nd0 = nd0;       /* Only needed if nd > STRTOD_DIGLIM, but done here */
                         /* to silence an erroneous warning about bc.nd0 */
                         /* possibly not being initialized. */
-    if (nd > strtod_diglim) {
-        /* ASSERT(strtod_diglim >= 18); 18 == one more than the */
+    if (nd > STRTOD_DIGLIM) {
+        /* ASSERT(STRTOD_DIGLIM >= 18); 18 == one more than the */
         /* minimum number of decimal digits to distinguish double values */
         /* in IEEE arithmetic. */
         i = j = 18;
@@ -1767,10 +1760,8 @@ _Py_dg_strtod(const char *s00, char **se)
                             /* accept rv */
                             break;
                         /* rv = smallest denormal */
-                        if (bc.nd >nd) {
-                            bc.uflchk = 1;
+                        if (bc.nd >nd)
                             break;
-                        }
                         goto undfl;
                     }
                 }
@@ -1786,10 +1777,8 @@ _Py_dg_strtod(const char *s00, char **se)
             else {
                 dval(&rv) -= ulp(&rv);
                 if (!dval(&rv)) {
-                    if (bc.nd >nd) {
-                        bc.uflchk = 1;
+                    if (bc.nd >nd)
                         break;
-                    }
                     goto undfl;
                 }
             }
@@ -1801,10 +1790,8 @@ _Py_dg_strtod(const char *s00, char **se)
                 aadj = aadj1 = 1.;
             else if (word1(&rv) || word0(&rv) & Bndry_mask) {
                 if (word1(&rv) == Tiny1 && !word0(&rv)) {
-                    if (bc.nd >nd) {
-                        bc.uflchk = 1;
+                    if (bc.nd >nd)
                         break;
-                    }
                     goto undfl;
                 }
                 aadj = 1.;
