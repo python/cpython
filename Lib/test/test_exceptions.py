@@ -309,6 +309,7 @@ class ExceptionTests(unittest.TestCase):
         # BaseException.__init__ triggers a deprecation warning.
         exc = BaseException("foo")
         with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('default')
             self.assertEquals(exc.message, "foo")
         self.assertEquals(len(w), 1)
         self.assertEquals(w[0].category, DeprecationWarning)
