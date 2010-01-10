@@ -69,7 +69,8 @@ Here are the classes:
    also be added.
 
    Optional *boundary* is the multipart boundary string.  When ``None`` (the
-   default), the boundary is calculated when needed.
+   default), the boundary is calculated when needed (for example, when the
+   message is serialized).
 
    *_subparts* is a sequence of initial subparts for the payload.  It must be
    possible to convert this sequence to a list.  You can always attach new subparts
