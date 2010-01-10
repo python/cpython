@@ -85,10 +85,10 @@ get_default_action(void)
 
     default_action = get_warnings_attr("defaultaction");
     if (default_action == NULL) {
-	if (PyErr_Occurred()) {
-	    return NULL;
-	}
-	return _default_action;
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        return _default_action;
     }
 
     Py_DECREF(_default_action);
@@ -202,12 +202,12 @@ normalize_module(PyObject *filename)
 
     mod_str = PyString_AsString(filename);
     if (mod_str == NULL)
-	    return NULL;
+        return NULL;
     len = PyString_Size(filename);
     if (len < 0)
         return NULL;
     if (len >= 3 &&
-	strncmp(mod_str + (len - 3), ".py", 3) == 0) {
+            strncmp(mod_str + (len - 3), ".py", 3) == 0) {
         module = PyString_FromStringAndSize(mod_str, len-3);
     }
     else {
@@ -251,7 +251,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
 
     name = PyObject_GetAttrString(category, "__name__");
     if (name == NULL)  /* XXX Can an object lack a '__name__' attribute? */
-	    return;
+        return;
 
     f_stderr = PySys_GetObject("stderr");
     if (f_stderr == NULL) {
@@ -341,7 +341,7 @@ warn_explicit(PyObject *category, PyObject *message,
         rc = already_warned(registry, key, 0);
         if (rc == -1)
             goto cleanup;
-	else if (rc == 1)
+        else if (rc == 1)
             goto return_none;
         /* Else this warning hasn't been generated before. */
     }
@@ -492,9 +492,9 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup filename. */
     *filename = PyDict_GetItemString(globals, "__file__");
     if (*filename != NULL) {
-	    Py_ssize_t len = PyString_Size(*filename);
+            Py_ssize_t len = PyString_Size(*filename);
         const char *file_str = PyString_AsString(*filename);
-	    if (file_str == NULL || (len < 0 && PyErr_Occurred()))
+            if (file_str == NULL || (len < 0 && PyErr_Occurred()))
             goto handle_error;
 
         /* if filename.lower().endswith((".pyc", ".pyo")): */
@@ -506,10 +506,10 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
                 tolower(file_str[len-1]) == 'o'))
         {
             *filename = PyString_FromStringAndSize(file_str, len-1);
-	        if (*filename == NULL)
-		        goto handle_error;
-	    }
-	    else
+            if (*filename == NULL)
+                goto handle_error;
+        }
+        else
             Py_INCREF(*filename);
     }
     else {
@@ -536,8 +536,8 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
             else {
                 /* embedded interpreters don't have sys.argv, see bug #839151 */
                 *filename = PyString_FromString("__main__");
-	            if (*filename == NULL)
-	                goto handle_error;
+                if (*filename == NULL)
+                    goto handle_error;
             }
         }
         if (*filename == NULL) {
@@ -839,26 +839,29 @@ create_filter(PyObject *category, const char *action)
 static PyObject *
 init_filters(void)
 {
-    PyObject *filters = PyList_New(3);
+    PyObject *filters = PyList_New(4);
     const char *bytes_action;
     if (filters == NULL)
         return NULL;
 
     PyList_SET_ITEM(filters, 0,
+                    create_filter(PyExc_DeprecationWarning, "ignore"));
+    PyList_SET_ITEM(filters, 1,
                     create_filter(PyExc_PendingDeprecationWarning, "ignore"));
-    PyList_SET_ITEM(filters, 1, create_filter(PyExc_ImportWarning, "ignore"));
+    PyList_SET_ITEM(filters, 2, create_filter(PyExc_ImportWarning, "ignore"));
     if (Py_BytesWarningFlag > 1)
         bytes_action = "error";
     else if (Py_BytesWarningFlag)
         bytes_action = "default";
     else
         bytes_action = "ignore";
-    PyList_SET_ITEM(filters, 2, create_filter(PyExc_BytesWarning,
+    PyList_SET_ITEM(filters, 3, create_filter(PyExc_BytesWarning,
                     bytes_action));
 
     if (PyList_GET_ITEM(filters, 0) == NULL ||
         PyList_GET_ITEM(filters, 1) == NULL ||
-        PyList_GET_ITEM(filters, 2) == NULL) {
+        PyList_GET_ITEM(filters, 2) == NULL ||
+        PyList_GET_ITEM(filters, 3) == NULL) {
         Py_DECREF(filters);
         return NULL;
     }

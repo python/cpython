@@ -4,6 +4,7 @@
 
 import unittest
 from test_support import check_warnings, run_unittest, cpython_only
+import warnings
 
 
 class FormatDeprecationTests(unittest.TestCase):
@@ -17,6 +18,7 @@ class FormatDeprecationTests(unittest.TestCase):
         buf = create_string_buffer(' ' * 100)
 
         with check_warnings() as w:
+            warnings.simplefilter('default')
             PyOS_ascii_formatd(byref(buf), sizeof(buf), '%+.10f',
                                c_double(10.0))
             self.assertEqual(buf.value, '+10.0000000000')

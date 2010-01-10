@@ -383,8 +383,8 @@ except ImportError:
 # Module initialization
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
-    simplefilter("ignore", category=PendingDeprecationWarning, append=1)
-    simplefilter("ignore", category=ImportWarning, append=1)
+    for cls in (DeprecationWarning, PendingDeprecationWarning, ImportWarning):
+        simplefilter("ignore", category=cls, append=True)
     bytes_warning = sys.flags.bytes_warning
     if bytes_warning > 1:
         bytes_action = "error"
