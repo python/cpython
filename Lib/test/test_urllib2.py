@@ -21,14 +21,17 @@ class TrivialTests(unittest.TestCase):
 
         # XXX Name hacking to get this to work on Windows.
         fname = os.path.abspath(urllib.request.__file__).replace('\\', '/')
-        if fname[1:2] == ":":
-            fname = fname[2:]
+
         # And more hacking to get it to work on MacOS. This assumes
         # urllib.pathname2url works, unfortunately...
         if os.name == 'mac':
             fname = '/' + fname.replace(':', '/')
 
-        file_url = "file://%s" % fname
+        if os.name == 'nt':
+            file_url = "file:///%s" % fname
+        else:
+            file_url = "file://%s" % fname
+
         f = urllib.request.urlopen(file_url)
 
         buf = f.read()
