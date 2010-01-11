@@ -19,6 +19,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5372: Drop the reuse of .o files in Distutils' ccompiler (since
+  Extension extra options may change the output without changing the .c
+  file). Initial patch by Collin Winter.
+
 
 What's New in Python 2.7 alpha 2?
 =================================
