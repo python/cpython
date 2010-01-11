@@ -540,6 +540,13 @@ Glossary
       object has a type.  An object's type is accessible as its
       :attr:`__class__` attribute or can be retrieved with ``type(obj)``.
 
+   view
+      The objects returned from :meth:`dict.viewkeys`, :meth:`dict.viewvalues`,
+      and :meth:`dict.viewitems` are called dictionary views.  They are lazy
+      sequences that will see changes in the underlying dictionary.  To force
+      the dictionary view to become a full list use ``list(dictview)``.  See
+      :ref:`dict-views`.
+
    virtual machine
       A computer defined entirely in software.  Python's virtual machine
       executes the :term:`bytecode` emitted by the bytecode compiler.

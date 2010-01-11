@@ -2106,6 +2106,121 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Return a copy of the dictionary's list of values.  See the note for
       :meth:`dict.items`.
 
+   .. method:: viewitems()
+
+      Return a new view of the dictionary's items (``(key, value)`` pairs).  See
+      below for documentation of view objects.
+
+      .. versionadded:: 2.7
+
+   .. method:: viewkeys()
+
+      Return a new view of the dictionary's keys.  See below for documentation of
+      view objects.
+
+      .. versionadded:: 2.7
+
+   .. method:: viewvalues()
+
+      Return a new view of the dictionary's values.  See below for documentation of
+      view objects.
+
+      .. versionadded:: 2.7
+
+
+.. _dict-views:
+
+Dictionary view objects
+-----------------------
+
+The objects returned by :meth:`dict.viewkeys`, :meth:`dict.viewvalues` and
+:meth:`dict.viewitems` are *view objects*.  They provide a dynamic view on the
+dictionary's entries, which means that when the dictionary changes, the view
+reflects these changes.
+
+Dictionary views can be iterated over to yield their respective data, and
+support membership tests:
+
+.. describe:: len(dictview)
+
+   Return the number of entries in the dictionary.
+
+.. describe:: iter(dictview)
+
+   Return an iterator over the keys, values or items (represented as tuples of
+   ``(key, value)``) in the dictionary.
+
+   Keys and values are iterated over in an arbitrary order which is non-random,
+   varies across Python implementations, and depends on the dictionary's history
+   of insertions and deletions. If keys, values and items views are iterated
+   over with no intervening modifications to the dictionary, the order of items
+   will directly correspond.  This allows the creation of ``(value, key)`` pairs
+   using :func:`zip`: ``pairs = zip(d.values(), d.keys())``.  Another way to
+   create the same list is ``pairs = [(v, k) for (k, v) in d.items()]``.
+
+   Iterating views while adding or deleting entries in the dictionary may raise
+   a :exc:`RuntimeError` or fail to iterate over all entries.
+
+.. describe:: x in dictview
+
+   Return ``True`` if *x* is in the underlying dictionary's keys, values or
+   items (in the latter case, *x* should be a ``(key, value)`` tuple).
+
+
+Keys views are set-like since their entries are unique and hashable.  If all
+values are hashable, so that (key, value) pairs are unique and hashable, then
+the items view is also set-like.  (Values views are not treated as set-like
+since the entries are generally not unique.)  Then these set operations are
+available ("other" refers either to another view or a set):
+
+.. describe:: dictview & other
+
+   Return the intersection of the dictview and the other object as a new set.
+
+.. describe:: dictview | other
+
+   Return the union of the dictview and the other object as a new set.
+
+.. describe:: dictview - other
+
+   Return the difference between the dictview and the other object (all elements
+   in *dictview* that aren't in *other*) as a new set.
+
+.. describe:: dictview ^ other
+
+   Return the symmetric difference (all elements either in *dictview* or
+   *other*, but not in both) of the dictview and the other object as a new set.
+
+
+An example of dictionary view usage::
+
+   >>> dishes = {'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500}
+   >>> keys = dishes.viewkeys()
+   >>> values = dishes.viewvalues()
+
+   >>> # iteration
+   >>> n = 0
+   >>> for val in values:
+   ...     n += val
+   >>> print(n)
+   504
+
+   >>> # keys and values are iterated over in the same order
+   >>> list(keys)
+   ['eggs', 'bacon', 'sausage', 'spam']
+   >>> list(values)
+   [2, 1, 1, 500]
+
+   >>> # view objects are dynamic and reflect dict changes
+   >>> del dishes['eggs']
+   >>> del dishes['sausage']
+   >>> list(keys)
+   ['spam', 'bacon']
+
+   >>> # set operations
+   >>> keys & {'eggs', 'bacon', 'salad'}
+   {'bacon'}
+
 
 .. _bltin-file-objects:
 

@@ -18,6 +18,8 @@ Core and Builtins
 
 - Issue #2333: Backport set and dict comprehensions syntax from Python 3.x.
 
+- Issue #1967: Backport dictionary views from Python 3.x.
+
 Library
 -------
 
