@@ -9,11 +9,12 @@ import sys
 import os
 import re
 
-from distutils.errors import CompileError, LinkError, UnknownFileError
+from distutils.errors import (CompileError, LinkError, UnknownFileError,
+                              DistutilsPlatformError, DistutilsModuleError)
 from distutils.spawn import spawn
 from distutils.file_util import move_file
 from distutils.dir_util import mkpath
-from distutils.dep_util import newer_pairwise, newer_group
+from distutils.dep_util import newer_group
 from distutils.util import split_quoted, execute
 from distutils import log
 
@@ -597,26 +598,15 @@ class CCompiler:
         """
         pass
 
-
     # values for target_desc parameter in link()
     SHARED_OBJECT = "shared_object"
     SHARED_LIBRARY = "shared_library"
     EXECUTABLE = "executable"
 
-    def link(self,
-             target_desc,
-             objects,
-             output_filename,
-             output_dir=None,
-             libraries=None,
-             library_dirs=None,
-             runtime_library_dirs=None,
-             export_symbols=None,
-             debug=0,
-             extra_preargs=None,
-             extra_postargs=None,
-             build_temp=None,
-             target_lang=None):
+    def link(self, target_desc, objects, output_filename, output_dir=None,
+             libraries=None, library_dirs=None, runtime_library_dirs=None,
+             export_symbols=None, debug=0, extra_preargs=None,
+             extra_postargs=None, build_temp=None, target_lang=None):
         """Link a bunch of stuff together to create an executable or
         shared library file.
 
@@ -665,19 +655,11 @@ class CCompiler:
 
     # Old 'link_*()' methods, rewritten to use the new 'link()' method.
 
-    def link_shared_lib(self,
-                        objects,
-                        output_libname,
-                        output_dir=None,
-                        libraries=None,
-                        library_dirs=None,
-                        runtime_library_dirs=None,
-                        export_symbols=None,
-                        debug=0,
-                        extra_preargs=None,
-                        extra_postargs=None,
-                        build_temp=None,
-                        target_lang=None):
+    def link_shared_lib(self, objects, output_libname, output_dir=None,
+                        libraries=None, library_dirs=None,
+                        runtime_library_dirs=None, export_symbols=None,
+                        debug=0, extra_preargs=None, extra_postargs=None,
+                        build_temp=None, target_lang=None):
         self.link(CCompiler.SHARED_LIBRARY, objects,
                   self.library_filename(output_libname, lib_type='shared'),
                   output_dir,
@@ -686,19 +668,11 @@ class CCompiler:
                   extra_preargs, extra_postargs, build_temp, target_lang)
 
 
-    def link_shared_object(self,
-                           objects,
-                           output_filename,
-                           output_dir=None,
-                           libraries=None,
-                           library_dirs=None,
-                           runtime_library_dirs=None,
-                           export_symbols=None,
-                           debug=0,
-                           extra_preargs=None,
-                           extra_postargs=None,
-                           build_temp=None,
-                           target_lang=None):
+    def link_shared_object(self, objects, output_filename, output_dir=None,
+                           libraries=None, library_dirs=None,
+                           runtime_library_dirs=None, export_symbols=None,
+                           debug=0, extra_preargs=None, extra_postargs=None,
+                           build_temp=None, target_lang=None):
         self.link(CCompiler.SHARED_OBJECT, objects,
                   output_filename, output_dir,
                   libraries, library_dirs, runtime_library_dirs,
@@ -706,17 +680,10 @@ class CCompiler:
                   extra_preargs, extra_postargs, build_temp, target_lang)
 
 
-    def link_executable(self,
-                        objects,
-                        output_progname,
-                        output_dir=None,
-                        libraries=None,
-                        library_dirs=None,
-                        runtime_library_dirs=None,
-                        debug=0,
-                        extra_preargs=None,
-                        extra_postargs=None,
-                        target_lang=None):
+    def link_executable(self, objects, output_progname, output_dir=None,
+                        libraries=None, library_dirs=None,
+                        runtime_library_dirs=None, debug=0, extra_preargs=None,
+                        extra_postargs=None, target_lang=None):
         self.link(CCompiler.EXECUTABLE, objects,
                   self.executable_filename(output_progname), output_dir,
                   libraries, library_dirs, runtime_library_dirs, None,
@@ -898,7 +865,7 @@ main (int argc, char **argv) {
     def move_file(self, src, dst):
         return move_file(src, dst, dry_run=self.dry_run)
 
-    def mkpath (self, name, mode=0o777):
+    def mkpath(self, name, mode=0o777):
         mkpath(name, mode, dry_run=self.dry_run)
 
 
