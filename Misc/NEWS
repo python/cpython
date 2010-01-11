@@ -200,6 +200,10 @@ C-API
 Library
 -------
 
+- Issue #5372: Drop the reuse of .o files in Distutils' ccompiler (since
+  Extension extra options may change the output without changing the .c
+  file). Initial patch by Collin Winter.
+
 - Issue #7617: Make sure distutils.unixccompiler.UnixCCompiler recognizes
   gcc when it has a fully qualified configuration prefix. Initial patch
   by Arfrever.
