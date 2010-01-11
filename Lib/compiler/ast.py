@@ -890,6 +890,51 @@ class ListCompIf(Node):
     def __repr__(self):
         return "ListCompIf(%s)" % (repr(self.test),)
 
+class SetComp(Node):
+    def __init__(self, expr, quals, lineno=None):
+        self.expr = expr
+        self.quals = quals
+        self.lineno = lineno
+
+    def getChildren(self):
+        children = []
+        children.append(self.expr)
+        children.extend(flatten(self.quals))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodelist = []
+        nodelist.append(self.expr)
+        nodelist.extend(flatten_nodes(self.quals))
+        return tuple(nodelist)
+
+    def __repr__(self):
+        return "SetComp(%s, %s)" % (repr(self.expr), repr(self.quals))
+
+class DictComp(Node):
+    def __init__(self, key, value, quals, lineno=None):
+        self.key = key
+        self.value = value
+        self.quals = quals
+        self.lineno = lineno
+
+    def getChildren(self):
+        children = []
+        children.append(self.key)
+        children.append(self.value)
+        children.extend(flatten(self.quals))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodelist = []
+        nodelist.append(self.key)
+        nodelist.append(self.value)
+        nodelist.extend(flatten_nodes(self.quals))
+        return tuple(nodelist)
+
+    def __repr__(self):
+        return "DictComp(%s, %s, %s)" % (repr(self.key), repr(self.value), repr(self.quals))
+
 class Mod(Node):
     def __init__(self, leftright, lineno=None):
         self.left = leftright[0]

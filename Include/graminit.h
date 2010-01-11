@@ -64,7 +64,7 @@
 #define power 317
 #define atom 318
 #define listmaker 319
-#define testlist_gexp 320
+#define testlist_comp 320
 #define lambdef 321
 #define trailer 322
 #define subscriptlist 323
@@ -80,9 +80,9 @@
 #define list_iter 333
 #define list_for 334
 #define list_if 335
-#define gen_iter 336
-#define gen_for 337
-#define gen_if 338
+#define comp_iter 336
+#define comp_for 337
+#define comp_if 338
 #define testlist1 339
 #define encoding_decl 340
 #define yield_expr 341

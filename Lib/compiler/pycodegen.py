@@ -589,6 +589,55 @@ class CodeGenerator:
             self.emit('JUMP_ABSOLUTE', start)
             self.startBlock(anchor)
 
+    def visitSetComp(self, node):
+        self.set_lineno(node)
+        # setup list
+        self.emit('BUILD_SET', 0)
+
+        stack = []
+        for i, for_ in zip(range(len(node.quals)), node.quals):
+            start, anchor = self.visit(for_)
+            cont = None
+            for if_ in for_.ifs:
+                if cont is None:
+                    cont = self.newBlock()
+                self.visit(if_, cont)
+            stack.insert(0, (start, cont, anchor))
+
+        self.visit(node.expr)
+        self.emit('SET_ADD', len(node.quals) + 1)
+
+        for start, cont, anchor in stack:
+            if cont:
+                self.nextBlock(cont)
+            self.emit('JUMP_ABSOLUTE', start)
+            self.startBlock(anchor)
+
+    def visitDictComp(self, node):
+        self.set_lineno(node)
+        # setup list
+        self.emit('BUILD_MAP', 0)
+
+        stack = []
+        for i, for_ in zip(range(len(node.quals)), node.quals):
+            start, anchor = self.visit(for_)
+            cont = None
+            for if_ in for_.ifs:
+                if cont is None:
+                    cont = self.newBlock()
+                self.visit(if_, cont)
+            stack.insert(0, (start, cont, anchor))
+
+        self.visit(node.value)
+        self.visit(node.key)
+        self.emit('MAP_ADD', len(node.quals) + 1)
+
+        for start, cont, anchor in stack:
+            if cont:
+                self.nextBlock(cont)
+            self.emit('JUMP_ABSOLUTE', start)
+            self.startBlock(anchor)
+
     def visitListCompFor(self, node):
         start = self.newBlock()
         anchor = self.newBlock()

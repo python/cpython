@@ -197,6 +197,17 @@ static char *ListComp_fields[]={
         "elt",
         "generators",
 };
+static PyTypeObject *SetComp_type;
+static char *SetComp_fields[]={
+        "elt",
+        "generators",
+};
+static PyTypeObject *DictComp_type;
+static char *DictComp_fields[]={
+        "key",
+        "value",
+        "generators",
+};
 static PyTypeObject *GeneratorExp_type;
 static char *GeneratorExp_fields[]={
         "elt",
@@ -726,6 +737,10 @@ static int init_types(void)
         if (!Set_type) return 0;
         ListComp_type = make_type("ListComp", expr_type, ListComp_fields, 2);
         if (!ListComp_type) return 0;
+        SetComp_type = make_type("SetComp", expr_type, SetComp_fields, 2);
+        if (!SetComp_type) return 0;
+        DictComp_type = make_type("DictComp", expr_type, DictComp_fields, 3);
+        if (!DictComp_type) return 0;
         GeneratorExp_type = make_type("GeneratorExp", expr_type,
                                       GeneratorExp_fields, 2);
         if (!GeneratorExp_type) return 0;
@@ -1625,6 +1640,54 @@ ListComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
         p->kind = ListComp_kind;
         p->v.ListComp.elt = elt;
         p->v.ListComp.generators = generators;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
+        return p;
+}
+
+expr_ty
+SetComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset, PyArena
+        *arena)
+{
+        expr_ty p;
+        if (!elt) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field elt is required for SetComp");
+                return NULL;
+        }
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p)
+                return NULL;
+        p->kind = SetComp_kind;
+        p->v.SetComp.elt = elt;
+        p->v.SetComp.generators = generators;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
+        return p;
+}
+
+expr_ty
+DictComp(expr_ty key, expr_ty value, asdl_seq * generators, int lineno, int
+         col_offset, PyArena *arena)
+{
+        expr_ty p;
+        if (!key) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field key is required for DictComp");
+                return NULL;
+        }
+        if (!value) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field value is required for DictComp");
+                return NULL;
+        }
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p)
+                return NULL;
+        p->kind = DictComp_kind;
+        p->v.DictComp.key = key;
+        p->v.DictComp.value = value;
+        p->v.DictComp.generators = generators;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -2604,6 +2667,41 @@ ast2obj_expr(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 value = ast2obj_list(o->v.ListComp.generators,
+                                     ast2obj_comprehension);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "generators", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
+        case SetComp_kind:
+                result = PyType_GenericNew(SetComp_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.SetComp.elt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "elt", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.SetComp.generators,
+                                     ast2obj_comprehension);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "generators", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
+        case DictComp_kind:
+                result = PyType_GenericNew(DictComp_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.DictComp.key);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "key", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.DictComp.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.DictComp.generators,
                                      ast2obj_comprehension);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "generators", value) == -1)
@@ -4974,6 +5072,118 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
+        isinstance = PyObject_IsInstance(obj, (PyObject*)SetComp_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
+                expr_ty elt;
+                asdl_seq* generators;
+
+                if (PyObject_HasAttrString(obj, "elt")) {
+                        int res;
+                        tmp = PyObject_GetAttrString(obj, "elt");
+                        if (tmp == NULL) goto failed;
+                        res = obj2ast_expr(tmp, &elt, arena);
+                        if (res != 0) goto failed;
+                        Py_XDECREF(tmp);
+                        tmp = NULL;
+                } else {
+                        PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from SetComp");
+                        return 1;
+                }
+                if (PyObject_HasAttrString(obj, "generators")) {
+                        int res;
+                        Py_ssize_t len;
+                        Py_ssize_t i;
+                        tmp = PyObject_GetAttrString(obj, "generators");
+                        if (tmp == NULL) goto failed;
+                        if (!PyList_Check(tmp)) {
+                                PyErr_Format(PyExc_TypeError, "SetComp field \"generators\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                                goto failed;
+                        }
+                        len = PyList_GET_SIZE(tmp);
+                        generators = asdl_seq_new(len, arena);
+                        if (generators == NULL) goto failed;
+                        for (i = 0; i < len; i++) {
+                                comprehension_ty value;
+                                res = obj2ast_comprehension(PyList_GET_ITEM(tmp, i), &value, arena);
+                                if (res != 0) goto failed;
+                                asdl_seq_SET(generators, i, value);
+                        }
+                        Py_XDECREF(tmp);
+                        tmp = NULL;
+                } else {
+                        PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from SetComp");
+                        return 1;
+                }
+                *out = SetComp(elt, generators, lineno, col_offset, arena);
+                if (*out == NULL) goto failed;
+                return 0;
+        }
+        isinstance = PyObject_IsInstance(obj, (PyObject*)DictComp_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
+                expr_ty key;
+                expr_ty value;
+                asdl_seq* generators;
+
+                if (PyObject_HasAttrString(obj, "key")) {
+                        int res;
+                        tmp = PyObject_GetAttrString(obj, "key");
+                        if (tmp == NULL) goto failed;
+                        res = obj2ast_expr(tmp, &key, arena);
+                        if (res != 0) goto failed;
+                        Py_XDECREF(tmp);
+                        tmp = NULL;
+                } else {
+                        PyErr_SetString(PyExc_TypeError, "required field \"key\" missing from DictComp");
+                        return 1;
+                }
+                if (PyObject_HasAttrString(obj, "value")) {
+                        int res;
+                        tmp = PyObject_GetAttrString(obj, "value");
+                        if (tmp == NULL) goto failed;
+                        res = obj2ast_expr(tmp, &value, arena);
+                        if (res != 0) goto failed;
+                        Py_XDECREF(tmp);
+                        tmp = NULL;
+                } else {
+                        PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from DictComp");
+                        return 1;
+                }
+                if (PyObject_HasAttrString(obj, "generators")) {
+                        int res;
+                        Py_ssize_t len;
+                        Py_ssize_t i;
+                        tmp = PyObject_GetAttrString(obj, "generators");
+                        if (tmp == NULL) goto failed;
+                        if (!PyList_Check(tmp)) {
+                                PyErr_Format(PyExc_TypeError, "DictComp field \"generators\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                                goto failed;
+                        }
+                        len = PyList_GET_SIZE(tmp);
+                        generators = asdl_seq_new(len, arena);
+                        if (generators == NULL) goto failed;
+                        for (i = 0; i < len; i++) {
+                                comprehension_ty value;
+                                res = obj2ast_comprehension(PyList_GET_ITEM(tmp, i), &value, arena);
+                                if (res != 0) goto failed;
+                                asdl_seq_SET(generators, i, value);
+                        }
+                        Py_XDECREF(tmp);
+                        tmp = NULL;
+                } else {
+                        PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from DictComp");
+                        return 1;
+                }
+                *out = DictComp(key, value, generators, lineno, col_offset,
+                                arena);
+                if (*out == NULL) goto failed;
+                return 0;
+        }
         isinstance = PyObject_IsInstance(obj, (PyObject*)GeneratorExp_type);
         if (isinstance == -1) {
                 return 1;
@@ -6418,6 +6628,10 @@ init_ast(void)
         if (PyDict_SetItemString(d, "Dict", (PyObject*)Dict_type) < 0) return;
         if (PyDict_SetItemString(d, "Set", (PyObject*)Set_type) < 0) return;
         if (PyDict_SetItemString(d, "ListComp", (PyObject*)ListComp_type) < 0)
+            return;
+        if (PyDict_SetItemString(d, "SetComp", (PyObject*)SetComp_type) < 0)
+            return;
+        if (PyDict_SetItemString(d, "DictComp", (PyObject*)DictComp_type) < 0)
             return;
         if (PyDict_SetItemString(d, "GeneratorExp",
             (PyObject*)GeneratorExp_type) < 0) return;
