@@ -186,5 +186,7 @@ jrel_op('SETUP_WITH', 143)
 
 def_op('EXTENDED_ARG', 145)
 EXTENDED_ARG = 145
+def_op('SET_ADD', 146)
+def_op('MAP_ADD', 147)
 
 del def_op, name_op, jrel_op, jabs_op

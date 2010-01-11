@@ -166,6 +166,8 @@ static int symtable_exit_block(struct symtable *st, void *ast);
 static int symtable_visit_stmt(struct symtable *st, stmt_ty s);
 static int symtable_visit_expr(struct symtable *st, expr_ty s);
 static int symtable_visit_genexp(struct symtable *st, expr_ty s);
+static int symtable_visit_setcomp(struct symtable *st, expr_ty e);
+static int symtable_visit_dictcomp(struct symtable *st, expr_ty e);
 static int symtable_visit_arguments(struct symtable *st, arguments_ty);
 static int symtable_visit_excepthandler(struct symtable *st, excepthandler_ty);
 static int symtable_visit_alias(struct symtable *st, alias_ty);
@@ -177,7 +179,8 @@ static int symtable_visit_params_nested(struct symtable *st, asdl_seq *args);
 static int symtable_implicit_arg(struct symtable *st, int pos);
 
 
-static identifier top = NULL, lambda = NULL, genexpr = NULL;
+static identifier top = NULL, lambda = NULL, genexpr = NULL, setcomp = NULL,
+	dictcomp = NULL;
 
 #define GET_IDENTIFIER(VAR) \
 	((VAR) ? (VAR) : ((VAR) = PyString_InternFromString(# VAR)))
@@ -1222,6 +1225,14 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		if (!symtable_visit_genexp(st, e))
 			return 0;
 		break;
+	case SetComp_kind:
+		if (!symtable_visit_setcomp(st, e))
+			return 0;
+		break;
+	case DictComp_kind:
+		if (!symtable_visit_dictcomp(st, e))
+			return 0;
+		break;
         case Yield_kind:
 		if (e->v.Yield.value)
 			VISIT(st, expr, e->v.Yield.value);
@@ -1462,28 +1473,81 @@ symtable_visit_slice(struct symtable *st, slice_ty s)
 	return 1;
 }
 
-static int 
-symtable_visit_genexp(struct symtable *st, expr_ty e)
+static int
+symtable_new_tmpname(struct symtable *st)
 {
+	char tmpname[256];
+	identifier tmp;
+
+	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]",
+		      ++st->st_cur->ste_tmpname);
+	tmp = PyString_InternFromString(tmpname);
+	if (!tmp)
+		return 0;
+	if (!symtable_add_def(st, tmp, DEF_LOCAL))
+		return 0;
+	Py_DECREF(tmp);
+	return 1;
+}
+
+static int 
+symtable_handle_comprehension(struct symtable *st, expr_ty e,
+                              identifier scope_name, asdl_seq *generators,
+                              expr_ty elt, expr_ty value)
+{
+	int is_generator = (e->kind == GeneratorExp_kind);
+	int needs_tmp = !is_generator;
 	comprehension_ty outermost = ((comprehension_ty)
-			 (asdl_seq_GET(e->v.GeneratorExp.generators, 0)));
+                                        asdl_seq_GET(generators, 0));
 	/* Outermost iterator is evaluated in current scope */
 	VISIT(st, expr, outermost->iter);
-	/* Create generator scope for the rest */
-	if (!GET_IDENTIFIER(genexpr) ||
-	    !symtable_enter_block(st, genexpr, FunctionBlock, (void *)e, e->lineno)) {
+	/* Create comprehension scope for the rest */
+	if (!scope_name ||
+	    !symtable_enter_block(st, scope_name, FunctionBlock, (void *)e, 0)) {
 		return 0;
 	}
-	st->st_cur->ste_generator = 1;
+	st->st_cur->ste_generator = is_generator;
 	/* Outermost iter is received as an argument */
 	if (!symtable_implicit_arg(st, 0)) {
+		symtable_exit_block(st, (void *)e);
+		return 0;
+	}
+	/* Allocate temporary name if needed */
+	if (needs_tmp && !symtable_new_tmpname(st)) {
 		symtable_exit_block(st, (void *)e);
 		return 0;
 	}
 	VISIT_IN_BLOCK(st, expr, outermost->target, (void*)e);
 	VISIT_SEQ_IN_BLOCK(st, expr, outermost->ifs, (void*)e);
 	VISIT_SEQ_TAIL_IN_BLOCK(st, comprehension,
-				e->v.GeneratorExp.generators, 1, (void*)e);
-	VISIT_IN_BLOCK(st, expr, e->v.GeneratorExp.elt, (void*)e);
+				generators, 1, (void*)e);
+	if (value)
+		VISIT_IN_BLOCK(st, expr, value, (void*)e);
+	VISIT_IN_BLOCK(st, expr, elt, (void*)e);
 	return symtable_exit_block(st, (void *)e);
+}
+
+static int 
+symtable_visit_genexp(struct symtable *st, expr_ty e)
+{
+	return symtable_handle_comprehension(st, e, GET_IDENTIFIER(genexpr),
+                                             e->v.GeneratorExp.generators,
+                                             e->v.GeneratorExp.elt, NULL);
+}
+
+static int
+symtable_visit_setcomp(struct symtable *st, expr_ty e)
+{
+	return symtable_handle_comprehension(st, e, GET_IDENTIFIER(setcomp),
+					     e->v.SetComp.generators,
+					     e->v.SetComp.elt, NULL);
+}
+
+static int
+symtable_visit_dictcomp(struct symtable *st, expr_ty e)
+{
+	return symtable_handle_comprehension(st, e, GET_IDENTIFIER(dictcomp),
+					     e->v.DictComp.generators,
+					     e->v.DictComp.key,
+					     e->v.DictComp.value);
 }

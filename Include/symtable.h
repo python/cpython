@@ -42,6 +42,7 @@ typedef struct _symtable_entry {
 	                                    an argument */
 	int ste_lineno;          /* first line of block */
 	int ste_opt_lineno;      /* lineno of last exec or import * */
+	int ste_tmpname;         /* counter for listcomp temp vars */
 	struct symtable *ste_table;
 } PySTEntryObject;
 

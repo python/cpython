@@ -76,9 +76,10 @@ typedef unsigned short mode_t;
 			    introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE)
        Python 2.7a0  62191 (introduce SETUP_WITH)
        Python 2.7a0  62201 (introduce BUILD_SET)
+       Python 2.7a0  62211 (introduce MAP_ADD and SET_ADD)
 .
 */
-#define MAGIC (62201 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62211 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the

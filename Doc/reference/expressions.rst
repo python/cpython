@@ -205,44 +205,66 @@ block, nesting from left to right, and evaluating the expression to produce a
 list element each time the innermost block is reached [#]_.
 
 
+.. _comprehensions:
+
+Displays for sets and dictionaries
+----------------------------------
+
+For constructing a set or a dictionary Python provides special syntax
+called "displays", each of them in two flavors:
+
+* either the container contents are listed explicitly, or
+
+* they are computed via a set of looping and filtering instructions, called a
+  :dfn:`comprehension`.
+
+Common syntax elements for comprehensions are:
+
+.. productionlist::
+   comprehension: `expression` `comp_for`
+   comp_for: "for" `target_list` "in" `or_test` [`comp_iter`]
+   comp_iter: `comp_for` | `comp_if`
+   comp_if: "if" `expression_nocond` [`comp_iter`]
+
+The comprehension consists of a single expression followed by at least one
+:keyword:`for` clause and zero or more :keyword:`for` or :keyword:`if` clauses.
+In this case, the elements of the new container are those that would be produced
+by considering each of the :keyword:`for` or :keyword:`if` clauses a block,
+nesting from left to right, and evaluating the expression to produce an element
+each time the innermost block is reached.
+
+Note that the comprehension is executed in a separate scope, so names assigned
+to in the target list don't "leak" in the enclosing scope.
+
+
 .. _genexpr:
 
 Generator expressions
 ---------------------
 
 .. index:: pair: generator; expression
+           object: generator
 
 A generator expression is a compact generator notation in parentheses:
 
 .. productionlist::
-   generator_expression: "(" `expression` `genexpr_for` ")"
-   genexpr_for: "for" `target_list` "in" `or_test` [`genexpr_iter`]
-   genexpr_iter: `genexpr_for` | `genexpr_if`
-   genexpr_if: "if" `old_expression` [`genexpr_iter`]
+   generator_expression: "(" `expression` `comp_for` ")"
 
-.. index:: object: generator
+A generator expression yields a new generator object.  Its syntax is the same as
+for comprehensions, except that it is enclosed in parentheses instead of
+brackets or curly braces.
 
-A generator expression yields a new generator object.  It consists of a single
-expression followed by at least one :keyword:`for` clause and zero or more
-:keyword:`for` or :keyword:`if` clauses.  The iterating values of the new
-generator are those that would be produced by considering each of the
-:keyword:`for` or :keyword:`if` clauses a block, nesting from left to right, and
-evaluating the expression to yield a value that is reached the innermost block
-for each iteration.
-
-Variables used in the generator expression are evaluated lazily in a separate
-scope when the :meth:`next` method is called for the generator object (in the
-same fashion as for normal generators).  However, the :keyword:`in` expression
-of the leftmost :keyword:`for` clause is immediately evaluated in the current
-scope so that an error produced by it can be seen before any other possible
+Variables used in the generator expression are evaluated lazily when the
+:meth:`__next__` method is called for generator object (in the same fashion as
+normal generators).  However, the leftmost :keyword:`for` clause is immediately
+evaluated, so that an error produced by it can be seen before any other possible
 error in the code that handles the generator expression.  Subsequent
-:keyword:`for` and :keyword:`if` clauses cannot be evaluated immediately since
-they may depend on the previous :keyword:`for` loop.  For example:
-``(x*y for x in range(10) for y in bar(x))``.
+:keyword:`for` clauses cannot be evaluated immediately since they may depend on
+the previous :keyword:`for` loop. For example: ``(x*y for x in range(10) for y
+in bar(x))``.
 
-The parentheses can be omitted on calls with only one argument. See section
+The parentheses can be omitted on calls with only one argument.  See section
 :ref:`calls` for the detail.
-
 
 .. _dict:
 
@@ -250,29 +272,33 @@ Dictionary displays
 -------------------
 
 .. index:: pair: dictionary; display
-
-.. index::
-   single: key
-   single: datum
-   single: key/datum pair
+           key, datum, key/datum pair
+           object: dictionary
 
 A dictionary display is a possibly empty series of key/datum pairs enclosed in
 curly braces:
 
 .. productionlist::
-   dict_display: "{" [`key_datum_list`] "}"
+   dict_display: "{" [`key_datum_list` | `dict_comprehension`] "}"
    key_datum_list: `key_datum` ("," `key_datum`)* [","]
    key_datum: `expression` ":" `expression`
-
-.. index:: object: dictionary
+   dict_comprehension: `expression` ":" `expression` `comp_for`
 
 A dictionary display yields a new dictionary object.
 
-The key/datum pairs are evaluated from left to right to define the entries of
-the dictionary: each key object is used as a key into the dictionary to store
-the corresponding datum.
+If a comma-separated sequence of key/datum pairs is given, they are evaluated
+from left to right to define the entries of the dictionary: each key object is
+used as a key into the dictionary to store the corresponding datum.  This means
+that you can specify the same key multiple times in the key/datum list, and the
+final dictionary's value for that key will be the last one given.
+
+A dict comprehension, in contrast to list and set comprehensions, needs two
+expressions separated with a colon followed by the usual "for" and "if" clauses.
+When the comprehension is run, the resulting key and value elements are inserted
+in the new dictionary in the order they are produced.
 
 .. index:: pair: immutable; object
+           hashable
 
 Restrictions on the types of the key values are listed earlier in section
 :ref:`types`.  (To summarize, the key type should be :term:`hashable`, which excludes

@@ -140,6 +140,36 @@ class CompilerTest(unittest.TestCase):
                              'eval')
         self.assertEquals(eval(c), [(0, 3), (1, 3), (2, 3)])
 
+    def testSetLiteral(self):
+        c = compiler.compile('{1, 2, 3}', '<string>', 'eval')
+        self.assertEquals(eval(c), {1,2,3})
+        c = compiler.compile('{1, 2, 3,}', '<string>', 'eval')
+        self.assertEquals(eval(c), {1,2,3})
+
+    def testDictLiteral(self):
+        c = compiler.compile('{1:2, 2:3, 3:4}', '<string>', 'eval')
+        self.assertEquals(eval(c), {1:2, 2:3, 3:4})
+        c = compiler.compile('{1:2, 2:3, 3:4,}', '<string>', 'eval')
+        self.assertEquals(eval(c), {1:2, 2:3, 3:4})
+
+    def testSetComp(self):
+        c = compiler.compile('{x for x in range(1, 4)}', '<string>', 'eval')
+        self.assertEquals(eval(c), {1, 2, 3})
+        c = compiler.compile('{x * y for x in range(3) if x != 0'
+                             '       for y in range(4) if y != 0}',
+                             '<string>',
+                             'eval')
+        self.assertEquals(eval(c), {1, 2, 3, 4, 6})
+
+    def testDictComp(self):
+        c = compiler.compile('{x:x+1 for x in range(1, 4)}', '<string>', 'eval')
+        self.assertEquals(eval(c), {1:2, 2:3, 3:4})
+        c = compiler.compile('{(x, y) : y for x in range(2) if x != 0'
+                             '            for y in range(3) if y != 0}',
+                             '<string>',
+                             'eval')
+        self.assertEquals(eval(c), {(1, 2): 2, (1, 1): 1})
+
     def testWith(self):
         # SF bug 1638243
         c = compiler.compile('from __future__ import with_statement\n'
@@ -248,6 +278,8 @@ l[0]
 l[3:4]
 d = {'a': 2}
 d = {}
+d = {x: y for x, y in zip(range(5), range(5,10))}
+s = {x for x in range(10)}
 s = {1}
 t = ()
 t = (1, 2)

@@ -808,6 +808,13 @@ hello world
             pass
         self.assertEqual(G.decorated, True)
 
+    def testDictcomps(self):
+        # dictorsetmaker: ( (test ':' test (comp_for |
+        #                                   (',' test ':' test)* [','])) |
+        #                   (test (comp_for | (',' test)* [','])) )
+        nums = [1, 2, 3]
+        self.assertEqual({i:i+1 for i in nums}, {1: 2, 2: 3, 3: 4})
+
     def testListcomps(self):
         # list comprehension tests
         nums = [1, 2, 3, 4, 5]

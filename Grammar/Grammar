@@ -100,13 +100,13 @@ arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%'|'//') factor)*
 factor: ('+'|'-'|'~') factor | power
 power: atom trailer* ['**' factor]
-atom: ('(' [yield_expr|testlist_gexp] ')' |
+atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [listmaker] ']' |
        '{' [dictorsetmaker] '}' |
        '`' testlist1 '`' |
        NAME | NUMBER | STRING+)
 listmaker: test ( list_for | (',' test)* [','] )
-testlist_gexp: test ( gen_for | (',' test)* [','] )
+testlist_comp: test ( comp_for | (',' test)* [','] )
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
@@ -115,8 +115,8 @@ sliceop: ':' [test]
 exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
 dictmaker: test ':' test (',' test ':' test)* [',']
-dictorsetmaker: ( (test ':' test (',' test ':' test)* [',']) |
-                  (test (',' test)* [',']) )
+dictorsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) |
+                  (test (comp_for | (',' test)* [','])) )
 
 classdef: 'class' NAME ['(' [testlist] ')'] ':' suite
 
@@ -125,15 +125,15 @@ arglist: (argument ',')* (argument [',']
                          |'**' test)
 # The reason that keywords are test nodes instead of NAME is that using NAME
 # results in an ambiguity. ast.c makes sure it's a NAME.
-argument: test [gen_for] | test '=' test
+argument: test [comp_for] | test '=' test
 
 list_iter: list_for | list_if
 list_for: 'for' exprlist 'in' testlist_safe [list_iter]
 list_if: 'if' old_test [list_iter]
 
-gen_iter: gen_for | gen_if
-gen_for: 'for' exprlist 'in' or_test [gen_iter]
-gen_if: 'if' old_test [gen_iter]
+comp_iter: comp_for | comp_if
+comp_for: 'for' exprlist 'in' or_test [comp_iter]
+comp_if: 'if' old_test [comp_iter]
 
 testlist1: test (',' test)*
 
