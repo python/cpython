@@ -1142,7 +1142,7 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
     dsign = bc->dsign;
     nd = bc->nd;
     nd0 = bc->nd0;
-    p5 = nd + bc->e0 - 1;
+    p5 = nd + bc->e0;
     speccase = 0;
     if (rv->d == 0.) {  /* special case: value near underflow-to-zero */
         /* threshold was rounded to zero */
@@ -1227,17 +1227,21 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
         }
     }
 
-    /* Now b/d = exactly half-way between the two floating-point values */
-    /* on either side of the input string.  Compute first digit of b/d. */
-
-    if (!(dig = quorem(b,d))) {
-        b = multadd(b, 10, 0);  /* very unlikely */
-        if (b == NULL) {
-            Bfree(d);
-            return -1;
-        }
-        dig = quorem(b,d);
+    /* Now 10*b/d = exactly half-way between the two floating-point values
+       on either side of the input string.  If b >= d, round down. */
+    if (cmp(b, d) >= 0) {
+        dd = -1;
+        goto ret;
     }
+	
+    /* Compute first digit of 10*b/d. */
+    b = multadd(b, 10, 0);
+    if (b == NULL) {
+        Bfree(d);
+        return -1;
+    }
+    dig = quorem(b, d);
+    assert(dig < 10);
 
     /* Compare b/d with s0 */
 

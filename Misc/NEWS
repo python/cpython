@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #7632: Fix a crash in dtoa.c that occurred in debug builds
+  when parsing certain long numeric strings corresponding to subnormal
+  values.
+
 - Issue #7319: Silence DeprecationWarning by default.
 
 - Issue #2335: Backport set literals syntax from Python 3.x.
