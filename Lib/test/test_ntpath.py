@@ -123,6 +123,11 @@ class TestNtpath(unittest.TestCase):
         tester("ntpath.normpath('C:////a/b')", r'C:\a\b')
         tester("ntpath.normpath('//machine/share//a/b')", r'\\machine\share\a\b')
 
+        # Issue 5827: Make sure normpath preserves unicode
+        for path in (u'', u'.', u'/', u'\\', u'///foo/.//bar//'):
+            self.assertTrue(isinstance(ntpath.normpath(path), unicode),
+                            'normpath() returned str instead of unicode')
+
     def test_expandvars(self):
         oldenv = os.environ.copy()
         try:
