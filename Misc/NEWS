@@ -14,7 +14,8 @@ Core and Builtins
 
 - Issue #7632: Fix a crash in dtoa.c that occurred in debug builds
   when parsing certain long numeric strings corresponding to subnormal
-  values.
+  values.  Also fix a number of bugs in dtoa.c that could lead to
+  incorrectly rounded results when converting strings to floats.
 
 - Issue #7319: Silence DeprecationWarning by default.
 
