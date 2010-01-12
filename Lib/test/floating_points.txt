@@ -1019,3 +1019,10 @@
 +43723334984997307E-26
 +10182419849537963E-24
 -93501703572661982E-26
+
+# A value that caused a crash in debug builds for Python >= 2.7, 3.1
+# See http://bugs.python.org/issue7632
+2183167012312112312312.23538020374420446192e-370
+
+# Another value designed to test a corner case of Python's strtod code.
+0.99999999999999999999999999999999999999999e+23
