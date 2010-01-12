@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5827: Make sure that normpath preserves unicode.  Initial patch
+  by Matt Giuca.
+
 - Issue #5372: Drop the reuse of .o files in Distutils' ccompiler (since
   Extension extra options may change the output without changing the .c
   file). Initial patch by Collin Winter.
