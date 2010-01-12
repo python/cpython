@@ -12,6 +12,11 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7632: Fix a crash in dtoa.c that occurred in debug builds
+  when parsing certain long numeric strings corresponding to subnormal
+  values.  Also fix a number of bugs in dtoa.c that could lead to
+  incorrectly rounded results when converting strings to floats.
+
 - Issue #7604: Deleting an unset slotted attribute did not raise an
   AttributeError.
 
