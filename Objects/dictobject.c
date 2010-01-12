@@ -2886,7 +2886,8 @@ dictview_repr(dictviewobject *dv)
 		return NULL;
 
 	seq_str = PyObject_Repr(seq);
-	result = PyString_FromFormat("%s(%s)", Py_TYPE(dv)->tp_name, seq_str);
+	result = PyString_FromFormat("%s(%s)", Py_TYPE(dv)->tp_name,
+				     PyString_AS_STRING(seq_str));
 	Py_DECREF(seq_str);
 	Py_DECREF(seq);
 	return result;
