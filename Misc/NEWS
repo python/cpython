@@ -152,6 +152,10 @@ Core and Builtins
 - Issue #1023290: Add from_bytes() and to_bytes() methods to integers.
   These methods allow the conversion of integers to bytes, and vice-versa.
 
+- Issue #7382: Fix bug in bytes.__getnewargs__ that prevented bytes
+  instances from being copied with copy.copy(), and bytes subclasses
+  from being pickled properly.
+
 C-API
 -----
 

@@ -38,6 +38,13 @@ class BaseBytesTest(unittest.TestCase):
         self.assertEqual(type(b), self.type2test)
         self.assertEqual(b.__class__, self.type2test)
 
+    def test_copy(self):
+        a = self.type2test(b"abcd")
+        for copy_method in (copy.copy, copy.deepcopy):
+            b = copy_method(a)
+            self.assertEqual(a, b)
+            self.assertEqual(type(a), type(b))
+
     def test_empty_sequence(self):
         b = self.type2test()
         self.assertEqual(len(b), 0)
@@ -996,17 +1003,14 @@ class BytesAsStringTest(FixedStringTest):
     type2test = bytes
 
 
-class ByteArraySubclass(bytearray):
-    pass
-
-class ByteArraySubclassTest(unittest.TestCase):
+class SubclassTest(unittest.TestCase):
 
     def test_basic(self):
-        self.assertTrue(issubclass(ByteArraySubclass, bytearray))
-        self.assertTrue(isinstance(ByteArraySubclass(), bytearray))
+        self.assertTrue(issubclass(self.subclass2test, self.type2test))
+        self.assertTrue(isinstance(self.subclass2test(), self.type2test))
 
         a, b = b"abcd", b"efgh"
-        _a, _b = ByteArraySubclass(a), ByteArraySubclass(b)
+        _a, _b = self.subclass2test(a), self.subclass2test(b)
 
         # test comparison operators with subclass instances
         self.assertTrue(_a == _a)
@@ -1029,19 +1033,19 @@ class ByteArraySubclassTest(unittest.TestCase):
         # Make sure join returns a NEW object for single item sequences
         # involving a subclass.
         # Make sure that it is of the appropriate type.
-        s1 = ByteArraySubclass(b"abcd")
-        s2 = bytearray().join([s1])
+        s1 = self.subclass2test(b"abcd")
+        s2 = self.type2test().join([s1])
         self.assertTrue(s1 is not s2)
-        self.assertTrue(type(s2) is bytearray, type(s2))
+        self.assertTrue(type(s2) is self.type2test, type(s2))
 
         # Test reverse, calling join on subclass
         s3 = s1.join([b"abcd"])
-        self.assertTrue(type(s3) is bytearray)
+        self.assertTrue(type(s3) is self.type2test)
 
     def test_pickle(self):
-        a = ByteArraySubclass(b"abcd")
+        a = self.subclass2test(b"abcd")
         a.x = 10
-        a.y = ByteArraySubclass(b"efgh")
+        a.y = self.subclass2test(b"efgh")
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             b = pickle.loads(pickle.dumps(a, proto))
             self.assertNotEqual(id(a), id(b))
@@ -1052,9 +1056,9 @@ class ByteArraySubclassTest(unittest.TestCase):
             self.assertEqual(type(a.y), type(b.y))
 
     def test_copy(self):
-        a = ByteArraySubclass(b"abcd")
+        a = self.subclass2test(b"abcd")
         a.x = 10
-        a.y = ByteArraySubclass(b"efgh")
+        a.y = self.subclass2test(b"efgh")
         for copy_method in (copy.copy, copy.deepcopy):
             b = copy_method(a)
             self.assertNotEqual(id(a), id(b))
@@ -1064,21 +1068,38 @@ class ByteArraySubclassTest(unittest.TestCase):
             self.assertEqual(type(a), type(b))
             self.assertEqual(type(a.y), type(b.y))
 
+
+class ByteArraySubclass(bytearray):
+    pass
+
+class BytesSubclass(bytes):
+    pass
+
+class ByteArraySubclassTest(SubclassTest):
+    type2test = bytearray
+    subclass2test = ByteArraySubclass
+
     def test_init_override(self):
         class subclass(bytearray):
-            def __init__(self, newarg=1, *args, **kwargs):
-                bytearray.__init__(self, *args, **kwargs)
+            def __init__(me, newarg=1, *args, **kwargs):
+                bytearray.__init__(me, *args, **kwargs)
+        x = subclass(4, b"abcd")
         x = subclass(4, source=b"abcd")
         self.assertEqual(x, b"abcd")
         x = subclass(newarg=4, source=b"abcd")
         self.assertEqual(x, b"abcd")
 
 
+class BytesSubclassTest(SubclassTest):
+    type2test = bytes
+    subclass2test = BytesSubclass
+
+
 def test_main():
     test.support.run_unittest(
         BytesTest, AssortedBytesTest, BytesAsStringTest,
-        ByteArrayTest, ByteArrayAsStringTest, ByteArraySubclassTest,
-        BytearrayPEP3137Test)
+        ByteArrayTest, ByteArrayAsStringTest, BytesSubclassTest,
+        ByteArraySubclassTest, BytearrayPEP3137Test)
 
 if __name__ == "__main__":
     test_main()
