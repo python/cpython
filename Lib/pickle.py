@@ -1269,50 +1269,14 @@ def encode_long(x):
     b'\x7f'
     >>>
     """
-
     if x == 0:
         return b''
-    if x > 0:
-        ashex = hex(x)
-        assert ashex.startswith("0x")
-        njunkchars = 2 + ashex.endswith('L')
-        nibbles = len(ashex) - njunkchars
-        if nibbles & 1:
-            # need an even # of nibbles for unhexlify
-            ashex = "0x0" + ashex[2:]
-        elif int(ashex[2], 16) >= 8:
-            # "looks negative", so need a byte of sign bits
-            ashex = "0x00" + ashex[2:]
-    else:
-        # Build the 256's-complement:  (1L << nbytes) + x.  The trick is
-        # to find the number of bytes in linear time (although that should
-        # really be a constant-time task).
-        ashex = hex(-x)
-        assert ashex.startswith("0x")
-        njunkchars = 2 + ashex.endswith('L')
-        nibbles = len(ashex) - njunkchars
-        if nibbles & 1:
-            # Extend to a full byte.
-            nibbles += 1
-        nbits = nibbles * 4
-        x += 1 << nbits
-        assert x > 0
-        ashex = hex(x)
-        njunkchars = 2 + ashex.endswith('L')
-        newnibbles = len(ashex) - njunkchars
-        if newnibbles < nibbles:
-            ashex = "0x" + "0" * (nibbles - newnibbles) + ashex[2:]
-        if int(ashex[2], 16) < 8:
-            # "looks positive", so need a byte of sign bits
-            ashex = "0xff" + ashex[2:]
-
-    if ashex.endswith('L'):
-        ashex = ashex[2:-1]
-    else:
-        ashex = ashex[2:]
-    assert len(ashex) & 1 == 0, (x, ashex)
-    binary = _binascii.unhexlify(ashex)
-    return bytes(binary[::-1])
+    nbytes = (x.bit_length() >> 3) + 1
+    result = x.to_bytes(nbytes, byteorder='little', signed=True)
+    if x < 0 and nbytes > 1:
+        if result[-1] == 0xff and (result[-2] & 0x80) != 0:
+            result = result[:-1]
+    return result
 
 def decode_long(data):
     r"""Decode a long from a two's complement little-endian binary string.
@@ -1332,15 +1296,7 @@ def decode_long(data):
     >>> decode_long(b"\x7f")
     127
     """
-
-    nbytes = len(data)
-    if nbytes == 0:
-        return 0
-    ashex = _binascii.hexlify(data[::-1])
-    n = int(ashex, 16) # quadratic time before Python 2.3; linear now
-    if data[-1] >= 0x80:
-        n -= 1 << (nbytes * 8)
-    return n
+    return int.from_bytes(data, byteorder='little', signed=True)
 
 # Use the faster _pickle if possible
 try:
