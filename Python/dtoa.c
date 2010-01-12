@@ -1130,6 +1130,26 @@ quorem(Bigint *b, Bigint *S)
     return q;
 }
 
+/* version of ulp(x) that takes bc.scale into account.
+
+   Assuming that x is finite and nonzero, and x / 2^bc.scale is exactly
+   representable as a double, sulp(x) is equivalent to 2^bc.scale * ulp(x /
+   2^bc.scale). */
+
+static double
+sulp(U *x, BCinfo *bc)
+{
+    U u;
+
+    if (bc->scale && 2*P + 1 - ((word0(x) & Exp_mask) >> Exp_shift) > 0) {
+        /* rv/2^bc->scale is subnormal */
+        word0(&u) = (P+2)*Exp_msk1;
+        word1(&u) = 0;
+        return u.d;
+    }
+    else
+        return ulp(x);
+}
 
 /* return 0 on success, -1 on failure */
 
@@ -1289,12 +1309,12 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
     else if (dd < 0) {
         if (!dsign)     /* does not happen for round-near */
           retlow1:
-            dval(rv) -= ulp(rv);
+            dval(rv) -= sulp(rv, bc);
     }
     else if (dd > 0) {
         if (dsign) {
           rethi1:
-            dval(rv) += ulp(rv);
+            dval(rv) += sulp(rv, bc);
         }
     }
     else {
