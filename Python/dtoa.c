@@ -200,10 +200,11 @@ typedef union { double d; ULong L[2]; } U;
 #define STRTOD_DIGLIM 40
 #endif
 
-#ifdef DIGLIM_DEBUG
-extern int strtod_diglim;
-#else
-#define strtod_diglim STRTOD_DIGLIM
+/* maximum permitted exponent value for strtod; exponents larger than
+   MAX_ABS_EXP in absolute value get truncated to +-MAX_ABS_EXP.  MAX_ABS_EXP
+   should fit into an int. */
+#ifndef MAX_ABS_EXP
+#define MAX_ABS_EXP 19999U
 #endif
 
 /* The following definition of Storeinc is appropriate for MIPS processors.
@@ -269,8 +270,7 @@ extern int strtod_diglim;
 typedef struct BCinfo BCinfo;
 struct
 BCinfo {
-    int dp0, dp1, dplen, dsign, e0, inexact;
-    int nd, nd0, rounding, scale, uflchk;
+    int dp0, dp1, dplen, dsign, e0, nd, nd0, scale;
 };
 
 #define FFFFFFFF 0xffffffffUL
@@ -1130,6 +1130,26 @@ quorem(Bigint *b, Bigint *S)
     return q;
 }
 
+/* version of ulp(x) that takes bc.scale into account.
+
+   Assuming that x is finite and nonzero, and x / 2^bc.scale is exactly
+   representable as a double, sulp(x) is equivalent to 2^bc.scale * ulp(x /
+   2^bc.scale). */
+
+static double
+sulp(U *x, BCinfo *bc)
+{
+    U u;
+
+    if (bc->scale && 2*P + 1 - ((word0(x) & Exp_mask) >> Exp_shift) > 0) {
+        /* rv/2^bc->scale is subnormal */
+        word0(&u) = (P+2)*Exp_msk1;
+        word1(&u) = 0;
+        return u.d;
+    }
+    else
+        return ulp(x);
+}
 
 /* return 0 on success, -1 on failure */
 
@@ -1142,7 +1162,7 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
     dsign = bc->dsign;
     nd = bc->nd;
     nd0 = bc->nd0;
-    p5 = nd + bc->e0 - 1;
+    p5 = nd + bc->e0;
     speccase = 0;
     if (rv->d == 0.) {  /* special case: value near underflow-to-zero */
         /* threshold was rounded to zero */
@@ -1227,17 +1247,21 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
         }
     }
 
-    /* Now b/d = exactly half-way between the two floating-point values */
-    /* on either side of the input string.  Compute first digit of b/d. */
-
-    if (!(dig = quorem(b,d))) {
-        b = multadd(b, 10, 0);  /* very unlikely */
-        if (b == NULL) {
-            Bfree(d);
-            return -1;
-        }
-        dig = quorem(b,d);
+    /* Now 10*b/d = exactly half-way between the two floating-point values
+       on either side of the input string.  If b >= d, round down. */
+    if (cmp(b, d) >= 0) {
+        dd = -1;
+        goto ret;
     }
+	
+    /* Compute first digit of 10*b/d. */
+    b = multadd(b, 10, 0);
+    if (b == NULL) {
+        Bfree(d);
+        return -1;
+    }
+    dig = quorem(b, d);
+    assert(dig < 10);
 
     /* Compare b/d with s0 */
 
@@ -1285,12 +1309,12 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
     else if (dd < 0) {
         if (!dsign)     /* does not happen for round-near */
           retlow1:
-            dval(rv) -= ulp(rv);
+            dval(rv) -= sulp(rv, bc);
     }
     else if (dd > 0) {
         if (dsign) {
           rethi1:
-            dval(rv) += ulp(rv);
+            dval(rv) += sulp(rv, bc);
         }
     }
     else {
@@ -1312,13 +1336,12 @@ _Py_dg_strtod(const char *s00, char **se)
     int esign, i, j, k, nd, nd0, nf, nz, nz0, sign;
     const char *s, *s0, *s1;
     double aadj, aadj1;
-    Long L;
     U aadj2, adj, rv, rv0;
-    ULong y, z;
+    ULong y, z, L;
     BCinfo bc;
     Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
 
-    sign = nz0 = nz = bc.dplen = bc.uflchk = 0;
+    sign = nz0 = nz = bc.dplen = 0;
     dval(&rv) = 0.;
     for(s = s00;;s++) switch(*s) {
         case '-':
@@ -1413,11 +1436,11 @@ _Py_dg_strtod(const char *s00, char **se)
                 s1 = s;
                 while((c = *++s) >= '0' && c <= '9')
                     L = 10*L + c - '0';
-                if (s - s1 > 8 || L > 19999)
+                if (s - s1 > 8 || L > MAX_ABS_EXP)
                     /* Avoid confusion from exponents
                      * so large that e might overflow.
                      */
-                    e = 19999; /* safe for 16 bit ints */
+                    e = (int)MAX_ABS_EXP; /* safe for 16 bit ints */
                 else
                     e = (int)L;
                 if (esign)
@@ -1555,11 +1578,11 @@ _Py_dg_strtod(const char *s00, char **se)
     /* Put digits into bd: true value = bd * 10^e */
 
     bc.nd = nd;
-    bc.nd0 = nd0;       /* Only needed if nd > strtod_diglim, but done here */
+    bc.nd0 = nd0;       /* Only needed if nd > STRTOD_DIGLIM, but done here */
                         /* to silence an erroneous warning about bc.nd0 */
                         /* possibly not being initialized. */
-    if (nd > strtod_diglim) {
-        /* ASSERT(strtod_diglim >= 18); 18 == one more than the */
+    if (nd > STRTOD_DIGLIM) {
+        /* ASSERT(STRTOD_DIGLIM >= 18); 18 == one more than the */
         /* minimum number of decimal digits to distinguish double values */
         /* in IEEE arithmetic. */
         i = j = 18;
@@ -1767,10 +1790,8 @@ _Py_dg_strtod(const char *s00, char **se)
                             /* accept rv */
                             break;
                         /* rv = smallest denormal */
-                        if (bc.nd >nd) {
-                            bc.uflchk = 1;
+                        if (bc.nd >nd)
                             break;
-                        }
                         goto undfl;
                     }
                 }
@@ -1786,10 +1807,8 @@ _Py_dg_strtod(const char *s00, char **se)
             else {
                 dval(&rv) -= ulp(&rv);
                 if (!dval(&rv)) {
-                    if (bc.nd >nd) {
-                        bc.uflchk = 1;
+                    if (bc.nd >nd)
                         break;
-                    }
                     goto undfl;
                 }
             }
@@ -1801,10 +1820,8 @@ _Py_dg_strtod(const char *s00, char **se)
                 aadj = aadj1 = 1.;
             else if (word1(&rv) || word0(&rv) & Bndry_mask) {
                 if (word1(&rv) == Tiny1 && !word0(&rv)) {
-                    if (bc.nd >nd) {
-                        bc.uflchk = 1;
+                    if (bc.nd >nd)
                         break;
-                    }
                     goto undfl;
                 }
                 aadj = 1.;
