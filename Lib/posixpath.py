@@ -307,8 +307,10 @@ def expandvars(path):
 
 def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
+    # Preserve unicode (if path is unicode)
+    slash, dot = (u'/', u'.') if isinstance(path, unicode) else ('/', '.')
     if path == '':
-        return '.'
+        return dot
     initial_slashes = path.startswith('/')
     # POSIX allows one or two initial slashes, but treats three or more
     # as single slash.
@@ -326,10 +328,10 @@ def normpath(path):
         elif new_comps:
             new_comps.pop()
     comps = new_comps
-    path = '/'.join(comps)
+    path = slash.join(comps)
     if initial_slashes:
-        path = '/'*initial_slashes + path
-    return path or '.'
+        path = slash*initial_slashes + path
+    return path or dot
 
 
 def abspath(path):

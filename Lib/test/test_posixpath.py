@@ -381,6 +381,11 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(posixpath.normpath("///foo/.//bar//.//..//.//baz"), "/foo/baz")
         self.assertEqual(posixpath.normpath("///..//./foo/.//bar"), "/foo/bar")
 
+        # Issue 5827: Make sure normpath preserves unicode
+        for path in (u'', u'.', u'/', u'\\', u'///foo/.//bar//'):
+            self.assertTrue(isinstance(posixpath.normpath(path), unicode),
+                            'normpath() returned str instead of unicode')
+
         self.assertRaises(TypeError, posixpath.normpath)
 
     def test_abspath(self):
