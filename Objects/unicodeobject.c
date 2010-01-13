@@ -206,12 +206,22 @@ PyUnicode_GetMax(void)
 
 /* the linebreak mask is set up by Unicode_Init below */
 
+#if LONG_BIT >= 128
+#define BLOOM_WIDTH 128
+#elif LONG_BIT >= 64
+#define BLOOM_WIDTH 64
+#elif LONG_BIT >= 32
+#define BLOOM_WIDTH 32
+#else
+#error "LONG_BIT is smaller than 32"
+#endif
+
 #define BLOOM_MASK unsigned long
 
 static BLOOM_MASK bloom_linebreak;
 
-#define BLOOM_ADD(mask, ch) ((mask |= (1 << ((ch) & (LONG_BIT - 1)))))
-#define BLOOM(mask, ch)     ((mask &  (1 << ((ch) & (LONG_BIT - 1)))))
+#define BLOOM_ADD(mask, ch) ((mask |= (1UL << ((ch) & (BLOOM_WIDTH - 1)))))
+#define BLOOM(mask, ch)     ((mask &  (1UL << ((ch) & (BLOOM_WIDTH - 1)))))
 
 #define BLOOM_LINEBREAK(ch)                                             \
     ((ch) < 128U ? ascii_linebreak[(ch)] :                              \
@@ -221,7 +231,7 @@ Py_LOCAL_INLINE(BLOOM_MASK) make_bloom_mask(Py_UNICODE* ptr, Py_ssize_t len)
 {
     /* calculate simple bloom-style bitmask for a given unicode string */
 
-    long mask;
+    BLOOM_MASK mask;
     Py_ssize_t i;
 
     mask = 0;
