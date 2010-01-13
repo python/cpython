@@ -1496,6 +1496,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Objects\stringlib\split.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Objects\structseq.c"
 				>
 			</File>
