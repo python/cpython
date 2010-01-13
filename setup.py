@@ -1732,7 +1732,8 @@ class PyBuildExt(build_ext):
                     return False
 
             fficonfig = {}
-            exec open(ffi_configfile) in fficonfig
+            with open(ffi_configfile) as f:
+                exec f in fficonfig
 
             # Add .S (preprocessed assembly) to C compiler source extensions.
             self.compiler_obj.src_extensions.append('.S')
