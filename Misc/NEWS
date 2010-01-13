@@ -213,6 +213,9 @@ C-API
 Library
 -------
 
+- Issue #2846: Add support for gzip.GzipFile reading zero-padded files.
+  Patch by Brian Curtin.
+
 - Issue #7681: Use floor division in appropiate places in the wave module.
 
 - Issue #5372: Drop the reuse of .o files in Distutils' ccompiler (since
