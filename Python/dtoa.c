@@ -1141,7 +1141,7 @@ sulp(U *x, BCinfo *bc)
 {
     U u;
 
-    if (bc->scale && 2*P + 1 - ((word0(x) & Exp_mask) >> Exp_shift) > 0) {
+    if (bc->scale && 2*P + 1 > (int)((word0(x) & Exp_mask) >> Exp_shift)) {
         /* rv/2^bc->scale is subnormal */
         word0(&u) = (P+2)*Exp_msk1;
         word1(&u) = 0;
