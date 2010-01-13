@@ -72,6 +72,9 @@ The module defines the following items:
    .. versionchanged:: 2.7
       Support for the :keyword:`with` statement was added.
 
+   .. versionchanged:: 2.7
+      Support for zero-padded files was added.
+
 
 .. function:: open(filename[, mode[, compresslevel]])
 

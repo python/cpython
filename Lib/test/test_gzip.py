@@ -252,6 +252,18 @@ class TestGzip(unittest.TestCase):
         else:
             self.fail("1/0 didn't raise an exception")
 
+    def test_zero_padded_file(self):
+        with gzip.GzipFile(self.filename, "wb") as f:
+            f.write(data1 * 50)
+
+        # Pad the file with zeroes
+        with open(self.filename, "ab") as f:
+            f.write("\x00" * 50)
+
+        with gzip.GzipFile(self.filename, "rb") as f:
+            d = f.read()
+            self.assertEqual(d, data1 * 50, "Incorrect data in file")
+
 def test_main(verbose=None):
     test_support.run_unittest(TestGzip)
 
