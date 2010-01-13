@@ -11,6 +11,8 @@
 #define STRINGLIB_TYPE_NAME      "unicode"
 #define STRINGLIB_PARSE_CODE     "U"
 #define STRINGLIB_EMPTY          unicode_empty
+#define STRINGLIB_ISSPACE        Py_UNICODE_ISSPACE
+#define STRINGLIB_ISLINEBREAK    BLOOM_LINEBREAK
 #define STRINGLIB_ISDECIMAL      Py_UNICODE_ISDECIMAL
 #define STRINGLIB_TODECIMAL      Py_UNICODE_TODECIMAL
 #define STRINGLIB_TOUPPER        Py_UNICODE_TOUPPER
@@ -21,6 +23,7 @@
 #define STRINGLIB_NEW            PyUnicode_FromUnicode
 #define STRINGLIB_RESIZE         PyUnicode_Resize
 #define STRINGLIB_CHECK          PyUnicode_Check
+#define STRINGLIB_CHECK_EXACT    PyUnicode_CheckExact
 #define STRINGLIB_GROUPING       _PyUnicode_InsertThousandsGrouping
 
 #if PY_VERSION_HEX < 0x03000000
