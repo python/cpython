@@ -813,7 +813,7 @@ class PyBuildExt(build_ext):
                                 print "being ignored (4.6.x must be >= 4.6.21)"
                                 continue
 
-                        if ( (not db_ver_inc_map.has_key(db_ver)) and
+                        if ( (db_ver not in db_ver_inc_map) and
                             allow_db_ver(db_ver) ):
                             # save the include directory with the db.h version
                             # (first occurrence only)
@@ -1732,17 +1732,18 @@ class PyBuildExt(build_ext):
                     return False
 
             fficonfig = {}
-            execfile(ffi_configfile, globals(), fficonfig)
-            ffi_srcdir = os.path.join(fficonfig['ffi_srcdir'], 'src')
+            exec open(ffi_configfile) in fficonfig
 
             # Add .S (preprocessed assembly) to C compiler source extensions.
             self.compiler_obj.src_extensions.append('.S')
 
             include_dirs = [os.path.join(ffi_builddir, 'include'),
-                            ffi_builddir, ffi_srcdir]
+                            ffi_builddir,
+                            os.path.join(ffi_srcdir, 'src')]
             extra_compile_args = fficonfig['ffi_cflags'].split()
 
-            ext.sources.extend(fficonfig['ffi_sources'])
+            ext.sources.extend(os.path.join(ffi_srcdir, f) for f in
+                               fficonfig['ffi_sources'])
             ext.include_dirs.extend(include_dirs)
             ext.extra_compile_args.extend(extra_compile_args)
         return True
