@@ -18,10 +18,13 @@
 #define FAST_SEARCH 1
 #define FAST_RSEARCH 2
 
+#define BLOOM_ADD(mask, ch) ((mask |= (1 << ((ch) & (LONG_BIT - 1)))))
+#define BLOOM(mask, ch)     ((mask &  (1 << ((ch) & (LONG_BIT - 1)))))
+
 Py_LOCAL_INLINE(Py_ssize_t)
 fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
            const STRINGLIB_CHAR* p, Py_ssize_t m,
-           int mode)
+           Py_ssize_t maxcount, int mode)
 {
     long mask;
     Py_ssize_t skip, count = 0;
@@ -29,7 +32,7 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
 
     w = n - m;
 
-    if (w < 0)
+    if (w < 0 || (mode == FAST_COUNT && maxcount == 0))
         return -1;
 
     /* look for special cases */
@@ -39,8 +42,11 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
         /* use special case for 1-character strings */
         if (mode == FAST_COUNT) {
             for (i = 0; i < n; i++)
-                if (s[i] == p[0])
+                if (s[i] == p[0]) {
                     count++;
+                    if (count == maxcount)
+                        return maxcount;
+                }
             return count;
         } else if (mode == FAST_SEARCH) {
             for (i = 0; i < n; i++)
@@ -56,19 +62,20 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
 
     mlast = m - 1;
     skip = mlast - 1;
+    mask = 0;
 
     if (mode != FAST_RSEARCH) {
 
         /* create compressed boyer-moore delta 1 table */
 
         /* process pattern[:-1] */
-        for (mask = i = 0; i < mlast; i++) {
-            mask |= (1 << (p[i] & 0x1F));
+        for (i = 0; i < mlast; i++) {
+            BLOOM_ADD(mask, p[i]);
             if (p[i] == p[mlast])
                 skip = mlast - i - 1;
         }
         /* process pattern[-1] outside the loop */
-        mask |= (1 << (p[mlast] & 0x1F));
+        BLOOM_ADD(mask, p[mlast]);
 
         for (i = 0; i <= w; i++) {
             /* note: using mlast in the skip path slows things down on x86 */
@@ -82,17 +89,19 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
                     if (mode != FAST_COUNT)
                         return i;
                     count++;
+                    if (count == maxcount)
+                        return maxcount;
                     i = i + mlast;
                     continue;
                 }
                 /* miss: check if next character is part of pattern */
-                if (!(mask & (1 << (s[i+m] & 0x1F))))
+                if (!BLOOM(mask, s[i+m]))
                     i = i + m;
                 else
                     i = i + skip;
             } else {
                 /* skip: check if next character is part of pattern */
-                if (!(mask & (1 << (s[i+m] & 0x1F))))
+                if (!BLOOM(mask, s[i+m]))
                     i = i + m;
             }
         }
@@ -101,10 +110,10 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
         /* create compressed boyer-moore delta 1 table */
 
         /* process pattern[0] outside the loop */
-        mask = (1 << (p[0] & 0x1F));
+        BLOOM_ADD(mask, p[0]);
         /* process pattern[:0:-1] */
         for (i = mlast; i > 0; i--) {
-            mask |= (1 << (p[i] & 0x1F));
+            BLOOM_ADD(mask, p[i]);
             if (p[i] == p[0])
                 skip = i - 1;
         }
@@ -119,13 +128,13 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
                     /* got a match! */
                     return i;
                 /* miss: check if previous character is part of pattern */
-                if (!(mask & (1 << (s[i-1] & 0x1F))))
+                if (!BLOOM(mask, s[i-1]))
                     i = i - m;
                 else
                     i = i - skip;
             } else {
                 /* skip: check if previous character is part of pattern */
-                if (!(mask & (1 << (s[i-1] & 0x1F))))
+                if (!BLOOM(mask, s[i-1]))
                     i = i - m;
             }
         }
@@ -137,10 +146,3 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
 }
 
 #endif
-
-/*
-Local variables:
-c-basic-offset: 4
-indent-tabs-mode: nil
-End:
-*/
