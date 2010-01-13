@@ -54,7 +54,7 @@ Details on providing custom importers can be found in :pep:`302`.
     :pep:`366`
         Main module explicit relative imports
 
-    :pep:`3128`
+    :pep:`3120`
         Using UTF-8 as the Default Source Encoding
 
 
