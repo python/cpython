@@ -972,7 +972,13 @@ class BytearrayPEP3137Test(unittest.TestCase,
             self.assertEqual(val, newval)
             self.assertTrue(val is not newval,
                             methname+' returned self on a mutable object')
-
+        for expr in ('val.split()[0]', 'val.rsplit()[0]',
+                     'val.partition(b".")[0]', 'val.rpartition(b".")[2]',
+                     'val.splitlines()[0]', 'val.replace(b"", b"")'):
+            newval = eval(expr)
+            self.assertEqual(val, newval)
+            self.assertTrue(val is not newval,
+                            expr+' returned val on a mutable object')
 
 class FixedStringTest(test.string_tests.BaseTest):
 
