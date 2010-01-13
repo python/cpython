@@ -1151,7 +1151,66 @@ sulp(U *x, BCinfo *bc)
         return ulp(x);
 }
 
-/* return 0 on success, -1 on failure */
+/* The bigcomp function handles some hard cases for strtod, for inputs
+   with more than STRTOD_DIGLIM digits.  It's called once an initial
+   estimate for the double corresponding to the input string has
+   already been obtained by the code in _Py_dg_strtod.
+
+   The bigcomp function is only called after _Py_dg_strtod has found a
+   double value rv such that either rv or rv + 1ulp represents the
+   correctly rounded value corresponding to the original string.  It
+   determines which of these two values is the correct one by
+   computing the decimal digits of rv + 0.5ulp and comparing them with
+   the digits of s0.
+
+   In the following, write dv for the absolute value of the number represented
+   by the input string.
+
+   Inputs:
+
+     s0 points to the first significant digit of the input string.
+
+     rv is a (possibly scaled) estimate for the closest double value to the
+        value represented by the original input to _Py_dg_strtod.  If
+        bc->scale is nonzero, then rv/2^(bc->scale) is the approximation to
+        the input value.
+
+     bc is a struct containing information gathered during the parsing and
+        estimation steps of _Py_dg_strtod.  Description of fields follows:
+
+        bc->dp0 gives the position of the decimal point in the input string
+           (if any), relative to the start of s0.  If there's no decimal
+           point, it points to one past the last significant digit.
+
+        bc->dp1 gives the position immediately following the decimal point in
+           the input string, relative to the start of s0.  If there's no
+           decimal point, it points to one past the last significant digit.
+
+        bc->dplen gives the length of the decimal separator.  In the current
+           implementation, which only allows '.' as a decimal separator, it's
+           1 if a separator is present in the significant digits of s0, and 0
+           otherwise.
+
+        bc->dsign is 1 if rv < decimal value, 0 if rv >= decimal value.  In
+           normal use, it should almost always be 1 when bigcomp is entered.
+
+        bc->e0 gives the exponent of the input value, such that dv = (integer
+           given by the bd->nd digits of s0) * 10**e0
+
+        bc->nd gives the total number of significant digits of s0.
+
+        bc->nd0 gives the number of significant digits of s0 before the
+           decimal separator.  If there's no decimal separator, bc->nd0 ==
+           bc->nd.
+
+        bc->scale is the value used to scale rv to avoid doing arithmetic with
+           subnormal values.  It's either 0 or 2*P (=106).
+
+   Outputs:
+
+     On successful exit, rv/2^(bc->scale) is the closest double to dv.
+
+     Returns 0 on success, -1 on failure (e.g., due to a failed malloc call). */
 
 static int
 bigcomp(U *rv, const char *s0, BCinfo *bc)
