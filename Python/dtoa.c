@@ -1130,11 +1130,11 @@ quorem(Bigint *b, Bigint *S)
     return q;
 }
 
-/* version of ulp(x) that takes bc.scale into account.
+/* sulp(x) is a version of ulp(x) that takes bc.scale into account.
 
-   Assuming that x is finite and nonzero, and x / 2^bc.scale is exactly
-   representable as a double, sulp(x) is equivalent to 2^bc.scale * ulp(x /
-   2^bc.scale). */
+   Assuming that x is finite and nonnegative (positive zero is fine
+   here) and x / 2^bc.scale is exactly representable as a double,
+   sulp(x) is equivalent to 2^bc.scale * ulp(x / 2^bc.scale). */
 
 static double
 sulp(U *x, BCinfo *bc)
@@ -1147,8 +1147,10 @@ sulp(U *x, BCinfo *bc)
         word1(&u) = 0;
         return u.d;
     }
-    else
+    else {
+        assert(word0(x) || word1(x)); /* x != 0.0 */
         return ulp(x);
+    }
 }
 
 /* The bigcomp function handles some hard cases for strtod, for inputs
