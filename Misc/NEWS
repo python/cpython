@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2846: Add support for gzip.GzipFile reading zero-padded files.
+  Patch by Brian Curtin.
+
 - Issue #5827: Make sure that normpath preserves unicode.  Initial patch
   by Matt Giuca.
 
