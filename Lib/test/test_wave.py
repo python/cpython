@@ -1,6 +1,7 @@
 from test.support import TESTFN, run_unittest
 import os
 import wave
+import struct
 import unittest
 
 nchannels = 2
@@ -37,6 +38,16 @@ class TestWave(unittest.TestCase):
         self.assertEqual(framerate, self.f.getframerate())
         self.assertEqual(nframes, self.f.getnframes())
         self.assertEqual(self.f.readframes(nframes), output)
+
+    def test_issue7681(self):
+        self.f = wave.open(TESTFN, 'wb')
+        self.f.setnchannels(nchannels)
+        self.f.setsampwidth(sampwidth)
+        self.f.setframerate(framerate)
+        # Don't call setnframes, make _write_header divide to figure it out
+        output = b'\0' * nframes * nchannels * sampwidth
+        self.f.writeframes(output)
+
 
 def test_main():
     run_unittest(TestWave)
