@@ -39,6 +39,12 @@ Library
   Extension extra options may change the output without changing the .c
   file). Initial patch by Collin Winter.
 
+Build
+-----
+
+- Issue #7661: Allow ctypes to be built from a non-ASCII directory path.
+  Patch by Florent Xicluna.
+
 
 What's New in Python 2.7 alpha 2?
 =================================
