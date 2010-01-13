@@ -829,16 +829,16 @@ support the following methods and attributes:
 
    A moderately complicated example:
 
-      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Malcom Reynolds")
+      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Malcolm Reynolds")
       >>> m.group('first_name')
-      'Malcom'
+      'Malcolm'
       >>> m.group('last_name')
       'Reynolds'
 
    Named groups can also be referred to by their index:
 
       >>> m.group(1)
-      'Malcom'
+      'Malcolm'
       >>> m.group(2)
       'Reynolds'
 
@@ -881,9 +881,9 @@ support the following methods and attributes:
    the subgroup name.  The *default* argument is used for groups that did not
    participate in the match; it defaults to ``None``.  For example:
 
-      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Malcom Reynolds")
+      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Malcolm Reynolds")
       >>> m.groupdict()
-      {'first_name': 'Malcom', 'last_name': 'Reynolds'}
+      {'first_name': 'Malcolm', 'last_name': 'Reynolds'}
 
 
 .. method:: MatchObject.start([group])
