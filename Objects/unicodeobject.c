@@ -6386,10 +6386,10 @@ PyObject *replace(PyUnicodeObject *self,
         goto nothing;
 
     if (str1->length == str2->length) {
+        Py_ssize_t i;
         /* same length */
         if (str1->length == 0)
             goto nothing;
-        Py_ssize_t i;
         if (str1->length == 1) {
             /* replace characters */
             Py_UNICODE u1, u2;
