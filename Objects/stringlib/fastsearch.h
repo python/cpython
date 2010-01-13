@@ -18,15 +18,27 @@
 #define FAST_SEARCH 1
 #define FAST_RSEARCH 2
 
-#define BLOOM_ADD(mask, ch) ((mask |= (1 << ((ch) & (LONG_BIT - 1)))))
-#define BLOOM(mask, ch)     ((mask &  (1 << ((ch) & (LONG_BIT - 1)))))
+#if LONG_BIT >= 128
+#define STRINGLIB_BLOOM_WIDTH 128
+#elif LONG_BIT >= 64
+#define STRINGLIB_BLOOM_WIDTH 64
+#elif LONG_BIT >= 32
+#define STRINGLIB_BLOOM_WIDTH 32
+#else
+#error "LONG_BIT is smaller than 32"
+#endif
+
+#define STRINGLIB_BLOOM_ADD(mask, ch) \
+    ((mask |= (1UL << ((ch) & (STRINGLIB_BLOOM_WIDTH -1)))))
+#define STRINGLIB_BLOOM(mask, ch)     \
+    ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_WIDTH -1)))))
 
 Py_LOCAL_INLINE(Py_ssize_t)
 fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
            const STRINGLIB_CHAR* p, Py_ssize_t m,
            Py_ssize_t maxcount, int mode)
 {
-    long mask;
+    unsigned long mask;
     Py_ssize_t skip, count = 0;
     Py_ssize_t i, j, mlast, w;
 
@@ -70,12 +82,12 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
 
         /* process pattern[:-1] */
         for (i = 0; i < mlast; i++) {
-            BLOOM_ADD(mask, p[i]);
+            STRINGLIB_BLOOM_ADD(mask, p[i]);
             if (p[i] == p[mlast])
                 skip = mlast - i - 1;
         }
         /* process pattern[-1] outside the loop */
-        BLOOM_ADD(mask, p[mlast]);
+        STRINGLIB_BLOOM_ADD(mask, p[mlast]);
 
         for (i = 0; i <= w; i++) {
             /* note: using mlast in the skip path slows things down on x86 */
@@ -95,13 +107,13 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
                     continue;
                 }
                 /* miss: check if next character is part of pattern */
-                if (!BLOOM(mask, s[i+m]))
+                if (!STRINGLIB_BLOOM(mask, s[i+m]))
                     i = i + m;
                 else
                     i = i + skip;
             } else {
                 /* skip: check if next character is part of pattern */
-                if (!BLOOM(mask, s[i+m]))
+                if (!STRINGLIB_BLOOM(mask, s[i+m]))
                     i = i + m;
             }
         }
@@ -110,10 +122,10 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
         /* create compressed boyer-moore delta 1 table */
 
         /* process pattern[0] outside the loop */
-        BLOOM_ADD(mask, p[0]);
+        STRINGLIB_BLOOM_ADD(mask, p[0]);
         /* process pattern[:0:-1] */
         for (i = mlast; i > 0; i--) {
-            BLOOM_ADD(mask, p[i]);
+            STRINGLIB_BLOOM_ADD(mask, p[i]);
             if (p[i] == p[0])
                 skip = i - 1;
         }
@@ -128,13 +140,13 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
                     /* got a match! */
                     return i;
                 /* miss: check if previous character is part of pattern */
-                if (!BLOOM(mask, s[i-1]))
+                if (!STRINGLIB_BLOOM(mask, s[i-1]))
                     i = i - m;
                 else
                     i = i - skip;
             } else {
                 /* skip: check if previous character is part of pattern */
-                if (!BLOOM(mask, s[i-1]))
+                if (!STRINGLIB_BLOOM(mask, s[i-1]))
                     i = i - m;
             }
         }
