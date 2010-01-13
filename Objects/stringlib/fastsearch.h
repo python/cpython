@@ -18,8 +18,8 @@
 #define FAST_SEARCH 1
 #define FAST_RSEARCH 2
 
-#define BLOOM_ADD(mask, ch) ((mask |= (1 << ((ch) & (LONG_BIT - 1)))))
-#define BLOOM(mask, ch)     ((mask &  (1 << ((ch) & (LONG_BIT - 1)))))
+#define BLOOM_ADD(mask, ch) ((mask |= (1 << ((ch) & 0x1F))))
+#define BLOOM(mask, ch)     ((mask &  (1 << ((ch) & 0x1F))))
 
 Py_LOCAL_INLINE(Py_ssize_t)
 fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
