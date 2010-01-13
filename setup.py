@@ -1498,22 +1498,19 @@ class PyBuildExt(build_ext):
                     return False
 
             fficonfig = {}
-            fp = open(ffi_configfile)
-            try:
-                script = fp.read()
-            finally:
-                fp.close()
-            exec(script, globals(), fficonfig)
-            ffi_srcdir = os.path.join(fficonfig['ffi_srcdir'], 'src')
+            with open(ffi_configfile) as f:
+                exec(f.read(), globals(), fficonfig)
 
             # Add .S (preprocessed assembly) to C compiler source extensions.
             self.compiler_obj.src_extensions.append('.S')
 
             include_dirs = [os.path.join(ffi_builddir, 'include'),
-                            ffi_builddir, ffi_srcdir]
+                            ffi_builddir,
+                            os.path.join(ffi_srcdir, 'src')]
             extra_compile_args = fficonfig['ffi_cflags'].split()
 
-            ext.sources.extend(fficonfig['ffi_sources'])
+            ext.sources.extend(os.path.join(ffi_srcdir, f) for f in
+                               fficonfig['ffi_sources'])
             ext.include_dirs.extend(include_dirs)
             ext.extra_compile_args.extend(extra_compile_args)
         return True

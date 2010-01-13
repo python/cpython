@@ -28,8 +28,6 @@ ffi_platforms = {
     'PA_HPUX': ['src/pa/hpux32.S', 'src/pa/ffi.c'],
 }
 
-ffi_srcdir = '@srcdir@'
 ffi_sources += ffi_platforms['@TARGET@']
-ffi_sources = [os.path.join('@srcdir@', f) for f in ffi_sources]
 
 ffi_cflags = '@CFLAGS@'
