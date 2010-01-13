@@ -1163,7 +1163,7 @@ sulp(U *x, BCinfo *bc)
    correctly rounded value corresponding to the original string.  It
    determines which of these two values is the correct one by
    computing the decimal digits of rv + 0.5ulp and comparing them with
-   the digits of s0.
+   the corresponding digits of s0.
 
    In the following, write dv for the absolute value of the number represented
    by the input string.
@@ -1218,49 +1218,41 @@ static int
 bigcomp(U *rv, const char *s0, BCinfo *bc)
 {
     Bigint *b, *d;
-    int b2, bbits, d2, dd, dig, dsign, i, j, nd, nd0, p2, p5, speccase;
+    int b2, bbits, d2, dd, dig, i, j, nd, nd0, p2, p5;
 
-    dsign = bc->dsign;
     nd = bc->nd;
     nd0 = bc->nd0;
     p5 = nd + bc->e0;
-    speccase = 0;
     if (rv->d == 0.) {  /* special case: value near underflow-to-zero */
         /* threshold was rounded to zero */
-        b = i2b(1);
+        b = i2b(0);
         if (b == NULL)
             return -1;
-        p2 = Emin - P + 1;
-        bbits = 1;
-        word0(rv) = (P+2) << Exp_shift;
-        i = 0;
-        {
-            speccase = 1;
-            --p2;
-            dsign = 0;
-            goto have_i;
-        }
+        p2 = Emin - P + 1; /* = -1074 for IEEE 754 binary64 */
+        bbits = 0;
     }
-    else
-    {
+    else {
         b = d2b(rv, &p2, &bbits);
         if (b == NULL)
             return -1;
+        p2 -= bc->scale;
     }
-    p2 -= bc->scale;
-    /* floor(log2(rv)) == bbits - 1 + p2 */
-    /* Check for denormal case. */
+    /* now rv/2^(bc->scale) = b * 2**p2, and b has bbits significant bits */
+
+    /* Replace (b, p2) by (b << i, p2 - i), with i the largest integer such
+       that b << i has at most P significant bits and p2 - i >= Emin - P +
+       1. */
     i = P - bbits;
-    if (i > (j = P - Emin - 1 + p2)) {
+    j = p2 - (Emin - P + 1);
+    if (i > j)
         i = j;
-    }
-    {
-        b = lshift(b, ++i);
-        if (b == NULL)
-            return -1;
-        b->x[0] |= 1;
-    }
-  have_i:
+    /* increment i so that we shift b by an extra bit;  then or-ing a 1 into
+       the lsb of b gives us rv/2^(bc->scale) + 0.5ulp. */
+    b = lshift(b, ++i);
+    if (b == NULL)
+        return -1;
+    b->x[0] |= 1;
+
     p2 -= p5 + i;
     d = i2b(1);
     if (d == NULL) {
@@ -1363,28 +1355,12 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
   ret:
     Bfree(b);
     Bfree(d);
-    if (speccase) {
-        if (dd <= 0)
-            rv->d = 0.;
-    }
-    else if (dd < 0) {
-        if (!dsign)     /* does not happen for round-near */
-          retlow1:
-            dval(rv) -= sulp(rv, bc);
-    }
-    else if (dd > 0) {
-        if (dsign) {
-          rethi1:
-            dval(rv) += sulp(rv, bc);
-        }
-    }
-    else {
+    if (dd > 0)
+        dval(rv) += sulp(rv, bc);
+    else if (dd == 0) {
         /* Exact half-way case:  apply round-even rule. */
-        if (word1(rv) & 1) {
-            if (dsign)
-                goto rethi1;
-            goto retlow1;
-        }
+        if (word1(rv) & 1)
+            dval(rv) += sulp(rv, bc);
     }
 
     return 0;
