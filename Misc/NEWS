@@ -12,6 +12,10 @@ What's New in Python 2.7 alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #7622: Improve the split(), rsplit(), splitlines() and replace()
+  methods of bytes, bytearray and unicode objects by using a common
+  implementation based on stringlib's fast search.  Patch by Florent Xicluna.
+
 - Issue #7632: Fix a crash in dtoa.c that occurred in debug builds
   when parsing certain long numeric strings corresponding to subnormal
   values.  Also fix a number of bugs in dtoa.c that could lead to

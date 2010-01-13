@@ -563,6 +563,7 @@ STRINGLIB_HEADERS= \
 		$(srcdir)/Objects/stringlib/find.h \
 		$(srcdir)/Objects/stringlib/formatter.h \
 		$(srcdir)/Objects/stringlib/partition.h \
+		$(srcdir)/Objects/stringlib/split.h \
 		$(srcdir)/Objects/stringlib/stringdefs.h \
 		$(srcdir)/Objects/stringlib/string_format.h \
 		$(srcdir)/Objects/stringlib/transmogrify.h \

@@ -841,6 +841,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 #include "stringlib/count.h"
 #include "stringlib/find.h"
 #include "stringlib/partition.h"
+#include "stringlib/split.h"
 
 #define _Py_InsertThousandsGrouping _PyString_InsertThousandsGrouping
 #include "stringlib/localeutil.h"
@@ -1425,145 +1426,6 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 
 #define STRIPNAME(i) (stripformat[i]+3)
 
-
-/* Don't call if length < 2 */
-#define Py_STRING_MATCH(target, offset, pattern, length)	\
-  (target[offset] == pattern[0] &&				\
-   target[offset+length-1] == pattern[length-1] &&		\
-   !memcmp(target+offset+1, pattern+1, length-2) )
-
-
-/* Overallocate the initial list to reduce the number of reallocs for small
-   split sizes.  Eg, "A A A A A A A A A A".split() (10 elements) has three
-   resizes, to sizes 4, 8, then 16.  Most observed string splits are for human
-   text (roughly 11 words per line) and field delimited data (usually 1-10
-   fields).  For large strings the split algorithms are bandwidth limited
-   so increasing the preallocation likely will not improve things.*/
-
-#define MAX_PREALLOC 12
-
-/* 5 splits gives 6 elements */
-#define PREALLOC_SIZE(maxsplit) \
-	(maxsplit >= MAX_PREALLOC ? MAX_PREALLOC : maxsplit+1)
-
-#define SPLIT_APPEND(data, left, right)				\
-	str = PyString_FromStringAndSize((data) + (left),	\
-					 (right) - (left));	\
-	if (str == NULL)					\
-		goto onError;					\
-	if (PyList_Append(list, str)) {				\
-		Py_DECREF(str);					\
-		goto onError;					\
-	}							\
-	else							\
-		Py_DECREF(str);
-
-#define SPLIT_ADD(data, left, right) {				\
-	str = PyString_FromStringAndSize((data) + (left),	\
-					 (right) - (left));	\
-	if (str == NULL)					\
-		goto onError;					\
-	if (count < MAX_PREALLOC) {				\
-		PyList_SET_ITEM(list, count, str);		\
-	} else {						\
-		if (PyList_Append(list, str)) {			\
-			Py_DECREF(str);				\
-			goto onError;				\
-		}						\
-		else						\
-			Py_DECREF(str);				\
-	}							\
-	count++; }
-
-/* Always force the list to the expected size. */
-#define FIX_PREALLOC_SIZE(list) Py_SIZE(list) = count
-
-#define SKIP_SPACE(s, i, len)    { while (i<len &&  isspace(Py_CHARMASK(s[i]))) i++; }
-#define SKIP_NONSPACE(s, i, len) { while (i<len && !isspace(Py_CHARMASK(s[i]))) i++; }
-#define RSKIP_SPACE(s, i)        { while (i>=0  &&  isspace(Py_CHARMASK(s[i]))) i--; }
-#define RSKIP_NONSPACE(s, i)     { while (i>=0  && !isspace(Py_CHARMASK(s[i]))) i--; }
-
-Py_LOCAL_INLINE(PyObject *)
-split_whitespace(PyStringObject *self, Py_ssize_t len, Py_ssize_t maxsplit)
-{
-	const char *s = PyString_AS_STRING(self);
-	Py_ssize_t i, j, count=0;
-	PyObject *str;
-	PyObject *list = PyList_New(PREALLOC_SIZE(maxsplit));
-
-	if (list == NULL)
-		return NULL;
-
-	i = j = 0;
-
-	while (maxsplit-- > 0) {
-		SKIP_SPACE(s, i, len);
-		if (i==len) break;
-		j = i; i++;
-		SKIP_NONSPACE(s, i, len);
-		if (j == 0 && i == len && PyString_CheckExact(self)) {
-			/* No whitespace in self, so just use it as list[0] */
-			Py_INCREF(self);
-			PyList_SET_ITEM(list, 0, (PyObject *)self);
-			count++;
-			break;
-		}
-		SPLIT_ADD(s, j, i);
-	}
-
-	if (i < len) {
-		/* Only occurs when maxsplit was reached */
-		/* Skip any remaining whitespace and copy to end of string */
-		SKIP_SPACE(s, i, len);
-		if (i != len)
-			SPLIT_ADD(s, i, len);
-	}
-	FIX_PREALLOC_SIZE(list);
-	return list;
-  onError:
-	Py_DECREF(list);
-	return NULL;
-}
-
-Py_LOCAL_INLINE(PyObject *)
-split_char(PyStringObject *self, Py_ssize_t len, char ch, Py_ssize_t maxcount)
-{
-	const char *s = PyString_AS_STRING(self);
-	register Py_ssize_t i, j, count=0;
-	PyObject *str;
-	PyObject *list = PyList_New(PREALLOC_SIZE(maxcount));
-
-	if (list == NULL)
-		return NULL;
-
-	i = j = 0;
-	while ((j < len) && (maxcount-- > 0)) {
-		for(; j<len; j++) {
-			/* I found that using memchr makes no difference */
-			if (s[j] == ch) {
-				SPLIT_ADD(s, i, j);
-				i = j = j + 1;
-				break;
-			}
-		}
-	}
-	if (i == 0 && count == 0 && PyString_CheckExact(self)) {
-		/* ch not in self, so just use self as list[0] */
-		Py_INCREF(self);
-		PyList_SET_ITEM(list, 0, (PyObject *)self);
-		count++;
-	}
-	else if (i <= len) {
-		SPLIT_ADD(s, i, len);
-	}
-	FIX_PREALLOC_SIZE(list);
-	return list;
-
-  onError:
-	Py_DECREF(list);
-	return NULL;
-}
-
 PyDoc_STRVAR(split__doc__,
 "S.split([sep [,maxsplit]]) -> list of strings\n\
 \n\
@@ -1576,17 +1438,17 @@ from the result.");
 static PyObject *
 string_split(PyStringObject *self, PyObject *args)
 {
-	Py_ssize_t len = PyString_GET_SIZE(self), n, i, j, pos;
-	Py_ssize_t maxsplit = -1, count=0;
+	Py_ssize_t len = PyString_GET_SIZE(self), n;
+	Py_ssize_t maxsplit = -1;
 	const char *s = PyString_AS_STRING(self), *sub;
-	PyObject *list, *str, *subobj = Py_None;
+	PyObject *subobj = Py_None;
 
 	if (!PyArg_ParseTuple(args, "|On:split", &subobj, &maxsplit))
 		return NULL;
 	if (maxsplit < 0)
 		maxsplit = PY_SSIZE_T_MAX;
 	if (subobj == Py_None)
-		return split_whitespace(self, len, maxsplit);
+		return stringlib_split_whitespace((PyObject*) self, s, len, maxsplit);
 	if (PyString_Check(subobj)) {
 		sub = PyString_AS_STRING(subobj);
 		n = PyString_GET_SIZE(subobj);
@@ -1598,33 +1460,7 @@ string_split(PyStringObject *self, PyObject *args)
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return NULL;
 
-	if (n == 0) {
-		PyErr_SetString(PyExc_ValueError, "empty separator");
-		return NULL;
-	}
-	else if (n == 1)
-		return split_char(self, len, sub[0], maxsplit);
-
-	list = PyList_New(PREALLOC_SIZE(maxsplit));
-	if (list == NULL)
-		return NULL;
-
-	i = j = 0;
-	while (maxsplit-- > 0) {
-		pos = fastsearch(s+i, len-i, sub, n, FAST_SEARCH);
-		if (pos < 0)
-			break;
-		j = i + pos;
-		SPLIT_ADD(s, i, j);
-		i = j + n;
-	}
-	SPLIT_ADD(s, i, len);
-	FIX_PREALLOC_SIZE(list);
-	return list;
-
- onError:
-	Py_DECREF(list);
-	return NULL;
+	return stringlib_split((PyObject*) self, s, len, sub, n, maxsplit);
 }
 
 PyDoc_STRVAR(partition__doc__,
@@ -1689,90 +1525,6 @@ string_rpartition(PyStringObject *self, PyObject *sep_obj)
 		);
 }
 
-Py_LOCAL_INLINE(PyObject *)
-rsplit_whitespace(PyStringObject *self, Py_ssize_t len, Py_ssize_t maxsplit)
-{
-	const char *s = PyString_AS_STRING(self);
-	Py_ssize_t i, j, count=0;
-	PyObject *str;
-	PyObject *list = PyList_New(PREALLOC_SIZE(maxsplit));
-
-	if (list == NULL)
-		return NULL;
-
-	i = j = len-1;
-
-	while (maxsplit-- > 0) {
-		RSKIP_SPACE(s, i);
-		if (i<0) break;
-		j = i; i--;
-		RSKIP_NONSPACE(s, i);
-		if (j == len-1 && i < 0 && PyString_CheckExact(self)) {
-			/* No whitespace in self, so just use it as list[0] */
-			Py_INCREF(self);
-			PyList_SET_ITEM(list, 0, (PyObject *)self);
-			count++;
-			break;
-		}
-		SPLIT_ADD(s, i + 1, j + 1);
-	}
-	if (i >= 0) {
-		/* Only occurs when maxsplit was reached */
-		/* Skip any remaining whitespace and copy to beginning of string */
-		RSKIP_SPACE(s, i);
-		if (i >= 0)
-			SPLIT_ADD(s, 0, i + 1);
-
-	}
-	FIX_PREALLOC_SIZE(list);
-	if (PyList_Reverse(list) < 0)
-		goto onError;
-	return list;
-  onError:
-	Py_DECREF(list);
-	return NULL;
-}
-
-Py_LOCAL_INLINE(PyObject *)
-rsplit_char(PyStringObject *self, Py_ssize_t len, char ch, Py_ssize_t maxcount)
-{
-	const char *s = PyString_AS_STRING(self);
-	register Py_ssize_t i, j, count=0;
-	PyObject *str;
-	PyObject *list = PyList_New(PREALLOC_SIZE(maxcount));
-
-	if (list == NULL)
-		return NULL;
-
-	i = j = len - 1;
-	while ((i >= 0) && (maxcount-- > 0)) {
-		for (; i >= 0; i--) {
-			if (s[i] == ch) {
-				SPLIT_ADD(s, i + 1, j + 1);
-				j = i = i - 1;
-				break;
-			}
-		}
-	}
-	if (i < 0 && count == 0 && PyString_CheckExact(self)) {
-		/* ch not in self, so just use self as list[0] */
-		Py_INCREF(self);
-		PyList_SET_ITEM(list, 0, (PyObject *)self);
-		count++;
-	}
-	else if (j >= -1) {
-		SPLIT_ADD(s, 0, j + 1);
-	}
-	FIX_PREALLOC_SIZE(list);
-	if (PyList_Reverse(list) < 0)
-		goto onError;
-	return list;
-
- onError:
-	Py_DECREF(list);
-	return NULL;
-}
-
 PyDoc_STRVAR(rsplit__doc__,
 "S.rsplit([sep [,maxsplit]]) -> list of strings\n\
 \n\
@@ -1785,17 +1537,17 @@ is a separator.");
 static PyObject *
 string_rsplit(PyStringObject *self, PyObject *args)
 {
-	Py_ssize_t len = PyString_GET_SIZE(self), n, j, pos;
-	Py_ssize_t maxsplit = -1, count=0;
+	Py_ssize_t len = PyString_GET_SIZE(self), n;
+	Py_ssize_t maxsplit = -1;
 	const char *s = PyString_AS_STRING(self), *sub;
-	PyObject *list, *str, *subobj = Py_None;
+	PyObject *subobj = Py_None;
 
 	if (!PyArg_ParseTuple(args, "|On:rsplit", &subobj, &maxsplit))
 		return NULL;
 	if (maxsplit < 0)
 		maxsplit = PY_SSIZE_T_MAX;
 	if (subobj == Py_None)
-		return rsplit_whitespace(self, len, maxsplit);
+		return stringlib_rsplit_whitespace((PyObject*) self, s, len, maxsplit);
 	if (PyString_Check(subobj)) {
 		sub = PyString_AS_STRING(subobj);
 		n = PyString_GET_SIZE(subobj);
@@ -1807,35 +1559,7 @@ string_rsplit(PyStringObject *self, PyObject *args)
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return NULL;
 
-	if (n == 0) {
-		PyErr_SetString(PyExc_ValueError, "empty separator");
-		return NULL;
-	}
-	else if (n == 1)
-		return rsplit_char(self, len, sub[0], maxsplit);
-
-	list = PyList_New(PREALLOC_SIZE(maxsplit));
-	if (list == NULL)
-		return NULL;
-
-	j = len;
-
-	while (maxsplit-- > 0) {
-		pos = fastsearch(s, j, sub, n, FAST_RSEARCH);
-		if (pos < 0)
-			break;
-		SPLIT_ADD(s, pos + n, j);
-		j = pos;
-	}
-	SPLIT_ADD(s, 0, j);
-	FIX_PREALLOC_SIZE(list);
-	if (PyList_Reverse(list) < 0)
-		goto onError;
-	return list;
-
-onError:
-	Py_DECREF(list);
-	return NULL;
+	return stringlib_rsplit((PyObject*) self, s, len, sub, n, maxsplit);
 }
 
 
@@ -1950,20 +1674,20 @@ _PyString_Join(PyObject *sep, PyObject *x)
 	return string_join((PyStringObject *)sep, x);
 }
 
-Py_LOCAL_INLINE(void)
-string_adjust_indices(Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t len)
-{
-	if (*end > len)
-		*end = len;
-	else if (*end < 0)
-		*end += len;
-	if (*end < 0)
-		*end = 0;
-	if (*start < 0)
-		*start += len;
-	if (*start < 0)
-		*start = 0;
-}
+/* helper macro to fixup start/end slice values */
+#define ADJUST_INDICES(start, end, len)         \
+	if (end > len)                          \
+	    end = len;                          \
+	else if (end < 0) {                     \
+	    end += len;                         \
+	    if (end < 0)                        \
+	        end = 0;                        \
+	}                                       \
+	if (start < 0) {                        \
+	    start += len;                       \
+	    if (start < 0)                      \
+	        start = 0;                      \
+	}
 
 Py_LOCAL_INLINE(Py_ssize_t)
 string_find_internal(PyStringObject *self, PyObject *args, int dir)
@@ -2417,10 +2141,10 @@ string_count(PyStringObject *self, PyObject *args)
 	else if (PyObject_AsCharBuffer(sub_obj, &sub, &sub_len))
 		return NULL;
 
-	string_adjust_indices(&start, &end, PyString_GET_SIZE(self));
+	ADJUST_INDICES(start, end, PyString_GET_SIZE(self));
 
 	return PyInt_FromSsize_t(
-		stringlib_count(str + start, end - start, sub, sub_len)
+		stringlib_count(str + start, end - start, sub, sub_len, PY_SSIZE_T_MAX)
 		);
 }
 
@@ -2583,9 +2307,6 @@ string_translate(PyStringObject *self, PyObject *args)
 }
 
 
-#define FORWARD 1
-#define REVERSE -1
-
 /* find and count characters and substrings */
 
 #define findchar(target, target_len, c)				\
@@ -2617,93 +2338,6 @@ countchar(const char *target, int target_len, char c, Py_ssize_t maxcount)
 		if (count >= maxcount)
 			break;
 		start += 1;
-	}
-	return count;
-}
-
-Py_LOCAL(Py_ssize_t)
-findstring(const char *target, Py_ssize_t target_len,
-	   const char *pattern, Py_ssize_t pattern_len,
-	   Py_ssize_t start,
-	   Py_ssize_t end,
-	   int direction)
-{
-	if (start < 0) {
-		start += target_len;
-		if (start < 0)
-			start = 0;
-	}
-	if (end > target_len) {
-		end = target_len;
-	} else if (end < 0) {
-		end += target_len;
-		if (end < 0)
-			end = 0;
-	}
-
-	/* zero-length substrings always match at the first attempt */
-	if (pattern_len == 0)
-		return (direction > 0) ? start : end;
-
-	end -= pattern_len;
-
-	if (direction < 0) {
-		for (; end >= start; end--)
-			if (Py_STRING_MATCH(target, end, pattern, pattern_len))
-				return end;
-	} else {
-		for (; start <= end; start++)
-			if (Py_STRING_MATCH(target, start, pattern, pattern_len))
-				return start;
-	}
-	return -1;
-}
-
-Py_LOCAL_INLINE(Py_ssize_t)
-countstring(const char *target, Py_ssize_t target_len,
-	    const char *pattern, Py_ssize_t pattern_len,
-	    Py_ssize_t start,
-	    Py_ssize_t end,
-	    int direction, Py_ssize_t maxcount)
-{
-	Py_ssize_t count=0;
-
-	if (start < 0) {
-		start += target_len;
-		if (start < 0)
-			start = 0;
-	}
-	if (end > target_len) {
-		end = target_len;
-	} else if (end < 0) {
-		end += target_len;
-		if (end < 0)
-			end = 0;
-	}
-
-	/* zero-length substrings match everywhere */
-	if (pattern_len == 0 || maxcount == 0) {
-		if (target_len+1 < maxcount)
-			return target_len+1;
-		return maxcount;
-	}
-
-	end -= pattern_len;
-	if (direction < 0) {
-		for (; (end >= start); end--)
-			if (Py_STRING_MATCH(target, end, pattern, pattern_len)) {
-				count++;
-				if (--maxcount <= 0) break;
-				end -= pattern_len-1;
-			}
-	} else {
-		for (; (start <= end); start++)
-			if (Py_STRING_MATCH(target, start, pattern, pattern_len)) {
-				count++;
-				if (--maxcount <= 0)
-					break;
-				start += pattern_len-1;
-			}
 	}
 	return count;
 }
@@ -2828,10 +2462,9 @@ replace_delete_substring(PyStringObject *self,
 	self_len = PyString_GET_SIZE(self);
 	self_s = PyString_AS_STRING(self);
 
-	count = countstring(self_s, self_len,
-			    from_s, from_len,
-			    0, self_len, 1,
-			    maxcount);
+	count = stringlib_count(self_s, self_len,
+	                        from_s, from_len,
+	                        maxcount);
 
 	if (count == 0) {
 		/* no matches */
@@ -2850,9 +2483,9 @@ replace_delete_substring(PyStringObject *self,
 	start = self_s;
 	end = self_s + self_len;
 	while (count-- > 0) {
-		offset = findstring(start, end-start,
-				    from_s, from_len,
-				    0, end-start, FORWARD);
+		offset = stringlib_find(start, end-start,
+		                        from_s, from_len,
+		                        0);
 		if (offset == -1)
 			break;
 		next = start + offset;
@@ -2928,9 +2561,9 @@ replace_substring_in_place(PyStringObject *self,
 	self_s = PyString_AS_STRING(self);
 	self_len = PyString_GET_SIZE(self);
 
-	offset = findstring(self_s, self_len,
-			    from_s, from_len,
-			    0, self_len, FORWARD);
+	offset = stringlib_find(self_s, self_len,
+	                        from_s, from_len,
+	                        0);
 	if (offset == -1) {
 		/* No matches; return the original string */
 		return return_self(self);
@@ -2950,9 +2583,9 @@ replace_substring_in_place(PyStringObject *self,
 	end = result_s + self_len;
 
 	while ( --maxcount > 0) {
-		offset = findstring(start, end-start,
-				    from_s, from_len,
-				    0, end-start, FORWARD);
+		offset = stringlib_find(start, end-start,
+		                        from_s, from_len,
+		                        0);
 		if (offset==-1)
 			break;
 		Py_MEMCPY(start+offset, to_s, from_len);
@@ -3044,9 +2677,10 @@ replace_substring(PyStringObject *self,
 	self_s = PyString_AS_STRING(self);
 	self_len = PyString_GET_SIZE(self);
 
-	count = countstring(self_s, self_len,
-			    from_s, from_len,
-			    0, self_len, FORWARD, maxcount);
+	count = stringlib_count(self_s, self_len,
+	                        from_s, from_len,
+	                        maxcount);
+
 	if (count == 0) {
 		/* no matches, return unchanged */
 		return return_self(self);
@@ -3073,9 +2707,9 @@ replace_substring(PyStringObject *self,
 	start = self_s;
 	end = self_s + self_len;
 	while (count-- > 0) {
-		offset = findstring(start, end-start,
-				    from_s, from_len,
-				    0, end-start, FORWARD);
+		offset = stringlib_find(start, end-start,
+		                        from_s, from_len,
+		                        0);
 		if (offset == -1)
 			break;
 		next = start+offset;
@@ -3245,7 +2879,7 @@ _string_tailmatch(PyStringObject *self, PyObject *substr, Py_ssize_t start,
 		return -1;
 	str = PyString_AS_STRING(self);
 
-	string_adjust_indices(&start, &end, len);
+	ADJUST_INDICES(start, end, len);
 
 	if (direction < 0) {
 		/* startswith */
@@ -3913,62 +3547,15 @@ is given and true.");
 static PyObject*
 string_splitlines(PyStringObject *self, PyObject *args)
 {
-    register Py_ssize_t i;
-    register Py_ssize_t j;
-    Py_ssize_t len;
     int keepends = 0;
-    PyObject *list;
-    PyObject *str;
-    char *data;
 
     if (!PyArg_ParseTuple(args, "|i:splitlines", &keepends))
         return NULL;
 
-    data = PyString_AS_STRING(self);
-    len = PyString_GET_SIZE(self);
-
-    /* This does not use the preallocated list because splitlines is
-       usually run with hundreds of newlines.  The overhead of
-       switching between PyList_SET_ITEM and append causes about a
-       2-3% slowdown for that common case.  A smarter implementation
-       could move the if check out, so the SET_ITEMs are done first
-       and the appends only done when the prealloc buffer is full.
-       That's too much work for little gain.*/
-
-    list = PyList_New(0);
-    if (!list)
-        goto onError;
-
-    for (i = j = 0; i < len; ) {
-	Py_ssize_t eol;
-
-	/* Find a line and append it */
-	while (i < len && data[i] != '\n' && data[i] != '\r')
-	    i++;
-
-	/* Skip the line break reading CRLF as one line break */
-	eol = i;
-	if (i < len) {
-	    if (data[i] == '\r' && i + 1 < len &&
-		data[i+1] == '\n')
-		i += 2;
-	    else
-		i++;
-	    if (keepends)
-		eol = i;
-	}
-	SPLIT_APPEND(data, j, eol);
-	j = i;
-    }
-    if (j < len) {
-	SPLIT_APPEND(data, j, len);
-    }
-
-    return list;
-
- onError:
-    Py_XDECREF(list);
-    return NULL;
+    return stringlib_splitlines(
+        (PyObject*) self, PyString_AS_STRING(self), PyString_GET_SIZE(self),
+        keepends
+        );
 }
 
 PyDoc_STRVAR(sizeof__doc__,
@@ -3981,11 +3568,6 @@ string_sizeof(PyStringObject *v)
 	res = PyStringObject_SIZE + PyString_GET_SIZE(v) * Py_TYPE(v)->tp_itemsize;
 	return PyInt_FromSsize_t(res);
 }
-
-#undef SPLIT_APPEND
-#undef SPLIT_ADD
-#undef MAX_PREALLOC
-#undef PREALLOC_SIZE
 
 static PyObject *
 string_getnewargs(PyStringObject *v)
