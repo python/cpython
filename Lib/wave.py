@@ -240,7 +240,7 @@ class Wave_read:
             data = array.array(_array_fmts[self._sampwidth])
             nitems = nframes * self._nchannels
             if nitems * self._sampwidth > chunk.chunksize - chunk.size_read:
-                nitems = (chunk.chunksize - chunk.size_read) / self._sampwidth
+                nitems = (chunk.chunksize - chunk.size_read) // self._sampwidth
             data.fromfile(chunk.file.file, nitems)
             # "tell" data chunk how much was read
             chunk.size_read = chunk.size_read + nitems * self._sampwidth
@@ -461,7 +461,7 @@ class Wave_write:
     def _write_header(self, initlength):
         self._file.write(b'RIFF')
         if not self._nframes:
-            self._nframes = initlength / (self._nchannels * self._sampwidth)
+            self._nframes = initlength // (self._nchannels * self._sampwidth)
         self._datalength = self._nframes * self._nchannels * self._sampwidth
         self._form_length_pos = self._file.tell()
         self._file.write(struct.pack('<l4s4slhhllhh4s',
