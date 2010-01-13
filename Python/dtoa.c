@@ -270,7 +270,7 @@ typedef union { double d; ULong L[2]; } U;
 typedef struct BCinfo BCinfo;
 struct
 BCinfo {
-    int dp0, dp1, dplen, dsign, e0, nd, nd0, scale;
+    int dsign, e0, nd, nd0, scale;
 };
 
 #define FFFFFFFF 0xffffffffUL
@@ -437,7 +437,7 @@ multadd(Bigint *b, int m, int a)       /* multiply by m and add a */
    NULL on failure. */
 
 static Bigint *
-s2b(const char *s, int nd0, int nd, ULong y9, int dplen)
+s2b(const char *s, int nd0, int nd, ULong y9)
 {
     Bigint *b;
     int i, k;
@@ -451,18 +451,16 @@ s2b(const char *s, int nd0, int nd, ULong y9, int dplen)
     b->x[0] = y9;
     b->wds = 1;
 
-    i = 9;
-    if (9 < nd0) {
-        s += 9;
-        do {
-            b = multadd(b, 10, *s++ - '0');
-            if (b == NULL)
-                return NULL;
-        } while(++i < nd0);
-        s += dplen;
+    if (nd <= 9)
+      return b;
+
+    s += 9;
+    for (i = 9; i < nd0; i++) {
+        b = multadd(b, 10, *s++ - '0');
+        if (b == NULL)
+            return NULL;
     }
-    else
-        s += dplen + 9;
+    s++;
     for(; i < nd; i++) {
         b = multadd(b, 10, *s++ - '0');
         if (b == NULL)
@@ -1180,26 +1178,14 @@ sulp(U *x, BCinfo *bc)
      bc is a struct containing information gathered during the parsing and
         estimation steps of _Py_dg_strtod.  Description of fields follows:
 
-        bc->dp0 gives the position of the decimal point in the input string
-           (if any), relative to the start of s0.  If there's no decimal
-           point, it points to one past the last significant digit.
-
-        bc->dp1 gives the position immediately following the decimal point in
-           the input string, relative to the start of s0.  If there's no
-           decimal point, it points to one past the last significant digit.
-
-        bc->dplen gives the length of the decimal separator.  In the current
-           implementation, which only allows '.' as a decimal separator, it's
-           1 if a separator is present in the significant digits of s0, and 0
-           otherwise.
-
         bc->dsign is 1 if rv < decimal value, 0 if rv >= decimal value.  In
            normal use, it should almost always be 1 when bigcomp is entered.
 
         bc->e0 gives the exponent of the input value, such that dv = (integer
            given by the bd->nd digits of s0) * 10**e0
 
-        bc->nd gives the total number of significant digits of s0.
+        bc->nd gives the total number of significant digits of s0.  It will
+           be at least 1.
 
         bc->nd0 gives the number of significant digits of s0 before the
            decimal separator.  If there's no decimal separator, bc->nd0 ==
@@ -1218,13 +1204,14 @@ static int
 bigcomp(U *rv, const char *s0, BCinfo *bc)
 {
     Bigint *b, *d;
-    int b2, bbits, d2, dd, dig, i, j, nd, nd0, p2, p5;
+    int b2, bbits, d2, dd, i, nd, nd0, p2, p5;
 
+    dd = 0; /* silence compiler warning about possibly unused variable */
     nd = bc->nd;
     nd0 = bc->nd0;
     p5 = nd + bc->e0;
-    if (rv->d == 0.) {  /* special case: value near underflow-to-zero */
-        /* threshold was rounded to zero */
+    if (rv->d == 0.) {
+        /* special case because d2b doesn't handle 0.0 */
         b = i2b(0);
         if (b == NULL)
             return -1;
@@ -1243,9 +1230,8 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
        that b << i has at most P significant bits and p2 - i >= Emin - P +
        1. */
     i = P - bbits;
-    j = p2 - (Emin - P + 1);
-    if (i > j)
-        i = j;
+    if (i > p2 - (Emin - P + 1))
+        i = p2 - (Emin - P + 1);
     /* increment i so that we shift b by an extra bit;  then or-ing a 1 into
        the lsb of b gives us rv/2^(bc->scale) + 0.5ulp. */
     b = lshift(b, ++i);
@@ -1300,55 +1286,43 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
         }
     }
 
-    /* Now 10*b/d = exactly half-way between the two floating-point values
-       on either side of the input string.  If b >= d, round down. */
+    /* if b >= d, round down */
     if (cmp(b, d) >= 0) {
         dd = -1;
         goto ret;
     }
 	
-    /* Compute first digit of 10*b/d. */
-    b = multadd(b, 10, 0);
-    if (b == NULL) {
-        Bfree(d);
-        return -1;
-    }
-    dig = quorem(b, d);
-    assert(dig < 10);
-
     /* Compare b/d with s0 */
-
-    assert(nd > 0);
-    dd = 9999;  /* silence gcc compiler warning */
-    for(i = 0; i < nd0; ) {
-        if ((dd = s0[i++] - '0' - dig))
+    for(i = 0; i < nd0; i++) {
+        b = multadd(b, 10, 0);
+        if (b == NULL) {
+            Bfree(d);
+            return -1;
+        }
+        dd = *s0++ - '0' - quorem(b, d);
+        if (dd)
             goto ret;
         if (!b->x[0] && b->wds == 1) {
             if (i < nd)
                 dd = 1;
             goto ret;
         }
-        b = multadd(b, 10, 0);
-        if (b == NULL) {
-            Bfree(d);
-            return -1;
-        }
-        dig = quorem(b,d);
     }
-    for(j = bc->dp1; i++ < nd;) {
-        if ((dd = s0[j++] - '0' - dig))
+    s0++;
+    for(; i < nd; i++) {
+        b = multadd(b, 10, 0);
+        if (b == NULL) {
+            Bfree(d);
+            return -1;
+        }
+        dd = *s0++ - '0' - quorem(b, d);
+        if (dd)
             goto ret;
         if (!b->x[0] && b->wds == 1) {
             if (i < nd)
                 dd = 1;
             goto ret;
         }
-        b = multadd(b, 10, 0);
-        if (b == NULL) {
-            Bfree(d);
-            return -1;
-        }
-        dig = quorem(b,d);
     }
     if (b->x[0] || b->wds > 1)
         dd = -1;
@@ -1369,7 +1343,7 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
 double
 _Py_dg_strtod(const char *s00, char **se)
 {
-    int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, e, e1, error;
+    int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, dp0, dp1, dplen, e, e1, error;
     int esign, i, j, k, nd, nd0, nf, nz, nz0, sign;
     const char *s, *s0, *s1;
     double aadj, aadj1;
@@ -1378,7 +1352,7 @@ _Py_dg_strtod(const char *s00, char **se)
     BCinfo bc;
     Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
 
-    sign = nz0 = nz = bc.dplen = 0;
+    sign = nz0 = nz = dplen = 0;
     dval(&rv) = 0.;
     for(s = s00;;s++) switch(*s) {
         case '-':
@@ -1417,11 +1391,11 @@ _Py_dg_strtod(const char *s00, char **se)
         else if (nd < 16)
             z = 10*z + c - '0';
     nd0 = nd;
-    bc.dp0 = bc.dp1 = s - s0;
+    dp0 = dp1 = s - s0;
     if (c == '.') {
         c = *++s;
-        bc.dp1 = s - s0;
-        bc.dplen = bc.dp1 - bc.dp0;
+        dp1 = s - s0;
+        dplen = 1;
         if (!nd) {
             for(; c == '0'; c = *++s)
                 nz++;
@@ -1624,10 +1598,10 @@ _Py_dg_strtod(const char *s00, char **se)
         /* in IEEE arithmetic. */
         i = j = 18;
         if (i > nd0)
-            j += bc.dplen;
+            j += dplen;
         for(;;) {
-            if (--j <= bc.dp1 && j >= bc.dp0)
-                j = bc.dp0 - 1;
+            if (--j <= dp1 && j >= dp0)
+                j = dp0 - 1;
             if (s0[j] != '0')
                 break;
             --i;
@@ -1640,11 +1614,11 @@ _Py_dg_strtod(const char *s00, char **se)
             y = 0;
             for(i = 0; i < nd0; ++i)
                 y = 10*y + s0[i] - '0';
-            for(j = bc.dp1; i < nd; ++i)
+            for(j = dp1; i < nd; ++i)
                 y = 10*y + s0[j++] - '0';
         }
     }
-    bd0 = s2b(s0, nd0, nd, y, bc.dplen);
+    bd0 = s2b(s0, nd0, nd, y);
     if (bd0 == NULL)
         goto failed_malloc;
 
