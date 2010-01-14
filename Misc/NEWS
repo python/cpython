@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3299: Fix possible crash in the _sre module when given bad
+  argument values in debug mode.  Patch by Victor Stinner.
+
 - Issue #5827: Make sure that normpath preserves unicode.  Initial patch
   by Matt Giuca.
 
