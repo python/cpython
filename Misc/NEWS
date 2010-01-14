@@ -213,6 +213,9 @@ C-API
 Library
 -------
 
+- Issue #3299: Fix possible crash in the _sre module when given bad
+  argument values in debug mode.  Patch by Victor Stinner.
+
 - Issue #2846: Add support for gzip.GzipFile reading zero-padded files.
   Patch by Brian Curtin.
 
