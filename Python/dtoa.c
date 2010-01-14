@@ -1303,7 +1303,7 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
         if (dd)
             goto ret;
         if (!b->x[0] && b->wds == 1) {
-            if (i < nd)
+            if (i < nd - 1)
                 dd = 1;
             goto ret;
         }
@@ -1319,7 +1319,7 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
         if (dd)
             goto ret;
         if (!b->x[0] && b->wds == 1) {
-            if (i < nd)
+            if (i < nd - 1)
                 dd = 1;
             goto ret;
         }
