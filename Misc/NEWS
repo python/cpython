@@ -32,6 +32,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7703: Add support for the new buffer API to functions of the
+  binascii module.  Backported from py3k by Florent Xicluna, with some
+  additional tests.
+
 - Issue #2846: Add support for gzip.GzipFile reading zero-padded files.
   Patch by Brian Curtin.
 
