@@ -3,14 +3,19 @@
 from test import support
 import unittest
 import binascii
+import array
 
 class BinASCIITest(unittest.TestCase):
 
+    type2test = bytes
     # Create binary test data
-    data = b"The quick brown fox jumps over the lazy dog.\r\n"
+    rawdata = b"The quick brown fox jumps over the lazy dog.\r\n"
     # Be slow so we don't depend on other modules
-    data += bytes(range(256))
-    data += b"\r\nHello world.\n"
+    rawdata += bytes(range(256))
+    rawdata += b"\r\nHello world.\n"
+
+    def setUp(self):
+        self.data = self.type2test(self.rawdata)
 
     def test_exceptions(self):
         # Check module exceptions
@@ -44,7 +49,7 @@ class BinASCIITest(unittest.TestCase):
         for line in lines:
             b = binascii.a2b_base64(line)
             res += b
-        self.assertEqual(res, self.data)
+        self.assertEqual(res, self.rawdata)
 
     def test_base64invalid(self):
         # Test base64 with random invalid characters sprinkled throughout
@@ -76,7 +81,7 @@ class BinASCIITest(unittest.TestCase):
         for line in map(addnoise, lines):
             b = binascii.a2b_base64(line)
             res += b
-        self.assertEqual(res, self.data)
+        self.assertEqual(res, self.rawdata)
 
         # Test base64 with just invalid characters, which should return
         # empty strings. TBD: shouldn't it raise an exception instead ?
@@ -93,7 +98,7 @@ class BinASCIITest(unittest.TestCase):
         for line in lines:
             b = binascii.a2b_uu(line)
             res += b
-        self.assertEqual(res, self.data)
+        self.assertEqual(res, self.rawdata)
 
         self.assertEqual(binascii.a2b_uu(b"\x7f"), b"\x00"*31)
         self.assertEqual(binascii.a2b_uu(b"\x80"), b"\x00"*32)
@@ -176,8 +181,20 @@ class BinASCIITest(unittest.TestCase):
                   binascii.crc_hqx, binascii.crc32):
             self.assertRaises(TypeError, f, "test")
 
+
+class ArrayBinASCIITest(BinASCIITest):
+    def type2test(self, s):
+        return array.array('B', list(s))
+
+
+class MemoryviewBinASCIITest(BinASCIITest):
+    type2test = memoryview
+
+
 def test_main():
-    support.run_unittest(BinASCIITest)
+    support.run_unittest(BinASCIITest,
+                         ArrayBinASCIITest,
+                         MemoryviewBinASCIITest)
 
 if __name__ == "__main__":
     test_main()
