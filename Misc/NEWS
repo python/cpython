@@ -65,6 +65,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3299: Fix possible crash in the _sre module when given bad
+  argument values in debug mode.  Patch by Victor Stinner.
+
 - Issue #7681: Use floor division in appropiate places in the wave module.
 
 - Issue #5372: Drop the reuse of .o files in Distutils' ccompiler (since
