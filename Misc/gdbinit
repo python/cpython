@@ -115,12 +115,18 @@ end
 # interpreter, but the test can be extended by an interested party).  If
 # Py_Main <= $pc <= Py_GetArgcArv is true, $pc is in Py_Main(), so the while
 # tests succeeds as long as it's not true.  In a similar fashion the if
-# statement tests to see if we are in PyEval_EvalFrame().
+# statement tests to see if we are in PyEval_EvalFrameEx().
+
+# Note: The name of the main interpreter function and the function which
+# follow it has changed over time.  This version of pystack works with this
+# version of Python.  If you try using it with older or newer versions of
+# the interpreter you may will have to change the functions you compare with
+# $pc.
 
 # print the entire Python call stack
 define pystack
     while $pc < Py_Main || $pc > Py_GetArgcArgv
-        if $pc > PyEval_EvalFrame && $pc < PyEval_EvalCodeEx
+        if $pc > PyEval_EvalFrameEx && $pc < PyEval_EvalCodeEx
 	    pyframe
         end
         up-silently 1
@@ -131,7 +137,7 @@ end
 # print the entire Python call stack - verbose mode
 define pystackv
     while $pc < Py_Main || $pc > Py_GetArgcArgv
-        if $pc > PyEval_EvalFrame && $pc < PyEval_EvalCodeEx
+        if $pc > PyEval_EvalFrameEx && $pc < PyEval_EvalCodeEx
 	    pyframev
         end
         up-silently 1
