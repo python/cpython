@@ -1,3 +1,8 @@
+What's New in IDLE 1.2.5c1?
+=========================
+
+*Release date: 14-Jan-2010*
+
 What's New in IDLE 1.2.4?
 =========================
 
