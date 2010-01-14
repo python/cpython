@@ -270,7 +270,7 @@ typedef union { double d; ULong L[2]; } U;
 typedef struct BCinfo BCinfo;
 struct
 BCinfo {
-    int dp0, dp1, dplen, dsign, e0, nd, nd0, scale;
+    int dsign, e0, nd, nd0, scale;
 };
 
 #define FFFFFFFF 0xffffffffUL
@@ -437,7 +437,7 @@ multadd(Bigint *b, int m, int a)       /* multiply by m and add a */
    NULL on failure. */
 
 static Bigint *
-s2b(const char *s, int nd0, int nd, ULong y9, int dplen)
+s2b(const char *s, int nd0, int nd, ULong y9)
 {
     Bigint *b;
     int i, k;
@@ -451,18 +451,16 @@ s2b(const char *s, int nd0, int nd, ULong y9, int dplen)
     b->x[0] = y9;
     b->wds = 1;
 
-    i = 9;
-    if (9 < nd0) {
-        s += 9;
-        do {
-            b = multadd(b, 10, *s++ - '0');
-            if (b == NULL)
-                return NULL;
-        } while(++i < nd0);
-        s += dplen;
+    if (nd <= 9)
+      return b;
+
+    s += 9;
+    for (i = 9; i < nd0; i++) {
+        b = multadd(b, 10, *s++ - '0');
+        if (b == NULL)
+            return NULL;
     }
-    else
-        s += dplen + 9;
+    s++;
     for(; i < nd; i++) {
         b = multadd(b, 10, *s++ - '0');
         if (b == NULL)
@@ -1130,76 +1128,120 @@ quorem(Bigint *b, Bigint *S)
     return q;
 }
 
-/* version of ulp(x) that takes bc.scale into account.
+/* sulp(x) is a version of ulp(x) that takes bc.scale into account.
 
-   Assuming that x is finite and nonzero, and x / 2^bc.scale is exactly
-   representable as a double, sulp(x) is equivalent to 2^bc.scale * ulp(x /
-   2^bc.scale). */
+   Assuming that x is finite and nonnegative (positive zero is fine
+   here) and x / 2^bc.scale is exactly representable as a double,
+   sulp(x) is equivalent to 2^bc.scale * ulp(x / 2^bc.scale). */
 
 static double
 sulp(U *x, BCinfo *bc)
 {
     U u;
 
-    if (bc->scale && 2*P + 1 - ((word0(x) & Exp_mask) >> Exp_shift) > 0) {
+    if (bc->scale && 2*P + 1 > (int)((word0(x) & Exp_mask) >> Exp_shift)) {
         /* rv/2^bc->scale is subnormal */
         word0(&u) = (P+2)*Exp_msk1;
         word1(&u) = 0;
         return u.d;
     }
-    else
+    else {
+        assert(word0(x) || word1(x)); /* x != 0.0 */
         return ulp(x);
+    }
 }
 
-/* return 0 on success, -1 on failure */
+/* The bigcomp function handles some hard cases for strtod, for inputs
+   with more than STRTOD_DIGLIM digits.  It's called once an initial
+   estimate for the double corresponding to the input string has
+   already been obtained by the code in _Py_dg_strtod.
+
+   The bigcomp function is only called after _Py_dg_strtod has found a
+   double value rv such that either rv or rv + 1ulp represents the
+   correctly rounded value corresponding to the original string.  It
+   determines which of these two values is the correct one by
+   computing the decimal digits of rv + 0.5ulp and comparing them with
+   the corresponding digits of s0.
+
+   In the following, write dv for the absolute value of the number represented
+   by the input string.
+
+   Inputs:
+
+     s0 points to the first significant digit of the input string.
+
+     rv is a (possibly scaled) estimate for the closest double value to the
+        value represented by the original input to _Py_dg_strtod.  If
+        bc->scale is nonzero, then rv/2^(bc->scale) is the approximation to
+        the input value.
+
+     bc is a struct containing information gathered during the parsing and
+        estimation steps of _Py_dg_strtod.  Description of fields follows:
+
+        bc->dsign is 1 if rv < decimal value, 0 if rv >= decimal value.  In
+           normal use, it should almost always be 1 when bigcomp is entered.
+
+        bc->e0 gives the exponent of the input value, such that dv = (integer
+           given by the bd->nd digits of s0) * 10**e0
+
+        bc->nd gives the total number of significant digits of s0.  It will
+           be at least 1.
+
+        bc->nd0 gives the number of significant digits of s0 before the
+           decimal separator.  If there's no decimal separator, bc->nd0 ==
+           bc->nd.
+
+        bc->scale is the value used to scale rv to avoid doing arithmetic with
+           subnormal values.  It's either 0 or 2*P (=106).
+
+   Outputs:
+
+     On successful exit, rv/2^(bc->scale) is the closest double to dv.
+
+     Returns 0 on success, -1 on failure (e.g., due to a failed malloc call). */
 
 static int
 bigcomp(U *rv, const char *s0, BCinfo *bc)
 {
     Bigint *b, *d;
-    int b2, bbits, d2, dd, dig, dsign, i, j, nd, nd0, p2, p5, speccase;
+    int b2, bbits, d2, dd, i, nd, nd0, odd, p2, p5;
 
-    dsign = bc->dsign;
+    dd = 0; /* silence compiler warning about possibly unused variable */
     nd = bc->nd;
     nd0 = bc->nd0;
     p5 = nd + bc->e0;
-    speccase = 0;
-    if (rv->d == 0.) {  /* special case: value near underflow-to-zero */
-        /* threshold was rounded to zero */
-        b = i2b(1);
+    if (rv->d == 0.) {
+        /* special case because d2b doesn't handle 0.0 */
+        b = i2b(0);
         if (b == NULL)
             return -1;
-        p2 = Emin - P + 1;
-        bbits = 1;
-        word0(rv) = (P+2) << Exp_shift;
-        i = 0;
-        {
-            speccase = 1;
-            --p2;
-            dsign = 0;
-            goto have_i;
-        }
+        p2 = Emin - P + 1; /* = -1074 for IEEE 754 binary64 */
+        bbits = 0;
     }
-    else
-    {
+    else {
         b = d2b(rv, &p2, &bbits);
         if (b == NULL)
             return -1;
+        p2 -= bc->scale;
     }
-    p2 -= bc->scale;
-    /* floor(log2(rv)) == bbits - 1 + p2 */
-    /* Check for denormal case. */
+    /* now rv/2^(bc->scale) = b * 2**p2, and b has bbits significant bits */
+
+    /* Replace (b, p2) by (b << i, p2 - i), with i the largest integer such
+       that b << i has at most P significant bits and p2 - i >= Emin - P +
+       1. */
     i = P - bbits;
-    if (i > (j = P - Emin - 1 + p2)) {
-        i = j;
-    }
-    {
-        b = lshift(b, ++i);
-        if (b == NULL)
-            return -1;
-        b->x[0] |= 1;
-    }
-  have_i:
+    if (i > p2 - (Emin - P + 1))
+        i = p2 - (Emin - P + 1);
+    /* increment i so that we shift b by an extra bit;  then or-ing a 1 into
+       the lsb of b gives us rv/2^(bc->scale) + 0.5ulp. */
+    b = lshift(b, ++i);
+    if (b == NULL)
+        return -1;
+    /* record whether the lsb of rv/2^(bc->scale) is odd:  in the exact halfway
+       case, this is used for round to even. */
+    odd = b->x[0] & 2;
+    b->x[0] |= 1;
+
     p2 -= p5 + i;
     d = i2b(1);
     if (d == NULL) {
@@ -1247,92 +1289,58 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
         }
     }
 
-    /* Now 10*b/d = exactly half-way between the two floating-point values
-       on either side of the input string.  If b >= d, round down. */
+    /* if b >= d, round down */
     if (cmp(b, d) >= 0) {
         dd = -1;
         goto ret;
     }
-	
-    /* Compute first digit of 10*b/d. */
-    b = multadd(b, 10, 0);
-    if (b == NULL) {
-        Bfree(d);
-        return -1;
-    }
-    dig = quorem(b, d);
-    assert(dig < 10);
 
     /* Compare b/d with s0 */
-
-    assert(nd > 0);
-    dd = 9999;  /* silence gcc compiler warning */
-    for(i = 0; i < nd0; ) {
-        if ((dd = s0[i++] - '0' - dig))
-            goto ret;
-        if (!b->x[0] && b->wds == 1) {
-            if (i < nd)
-                dd = 1;
-            goto ret;
-        }
+    for(i = 0; i < nd0; i++) {
         b = multadd(b, 10, 0);
         if (b == NULL) {
             Bfree(d);
             return -1;
         }
-        dig = quorem(b,d);
+        dd = *s0++ - '0' - quorem(b, d);
+        if (dd)
+            goto ret;
+        if (!b->x[0] && b->wds == 1) {
+            if (i < nd - 1)
+                dd = 1;
+            goto ret;
+        }
     }
-    for(j = bc->dp1; i++ < nd;) {
-        if ((dd = s0[j++] - '0' - dig))
-            goto ret;
-        if (!b->x[0] && b->wds == 1) {
-            if (i < nd)
-                dd = 1;
-            goto ret;
-        }
+    s0++;
+    for(; i < nd; i++) {
         b = multadd(b, 10, 0);
         if (b == NULL) {
             Bfree(d);
             return -1;
         }
-        dig = quorem(b,d);
+        dd = *s0++ - '0' - quorem(b, d);
+        if (dd)
+            goto ret;
+        if (!b->x[0] && b->wds == 1) {
+            if (i < nd - 1)
+                dd = 1;
+            goto ret;
+        }
     }
     if (b->x[0] || b->wds > 1)
         dd = -1;
   ret:
     Bfree(b);
     Bfree(d);
-    if (speccase) {
-        if (dd <= 0)
-            rv->d = 0.;
-    }
-    else if (dd < 0) {
-        if (!dsign)     /* does not happen for round-near */
-          retlow1:
-            dval(rv) -= sulp(rv, bc);
-    }
-    else if (dd > 0) {
-        if (dsign) {
-          rethi1:
-            dval(rv) += sulp(rv, bc);
-        }
-    }
-    else {
-        /* Exact half-way case:  apply round-even rule. */
-        if (word1(rv) & 1) {
-            if (dsign)
-                goto rethi1;
-            goto retlow1;
-        }
-    }
-
+    if (dd > 0 || (dd == 0 && odd))
+        dval(rv) += sulp(rv, bc);
     return 0;
 }
 
 double
 _Py_dg_strtod(const char *s00, char **se)
 {
-    int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, e, e1, error;
+    int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, dp0, dp1, dplen, e, e1, error;
     int esign, i, j, k, nd, nd0, nf, nz, nz0, sign;
     const char *s, *s0, *s1;
     double aadj, aadj1;
@@ -1341,7 +1349,7 @@ _Py_dg_strtod(const char *s00, char **se)
     BCinfo bc;
     Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
 
-    sign = nz0 = nz = bc.dplen = 0;
+    sign = nz0 = nz = dplen = 0;
     dval(&rv) = 0.;
     for(s = s00;;s++) switch(*s) {
         case '-':
@@ -1380,11 +1388,11 @@ _Py_dg_strtod(const char *s00, char **se)
         else if (nd < 16)
             z = 10*z + c - '0';
     nd0 = nd;
-    bc.dp0 = bc.dp1 = s - s0;
+    dp0 = dp1 = s - s0;
     if (c == '.') {
         c = *++s;
-        bc.dp1 = s - s0;
-        bc.dplen = bc.dp1 - bc.dp0;
+        dp1 = s - s0;
+        dplen = 1;
         if (!nd) {
             for(; c == '0'; c = *++s)
                 nz++;
@@ -1587,10 +1595,10 @@ _Py_dg_strtod(const char *s00, char **se)
         /* in IEEE arithmetic. */
         i = j = 18;
         if (i > nd0)
-            j += bc.dplen;
+            j += dplen;
         for(;;) {
-            if (--j <= bc.dp1 && j >= bc.dp0)
-                j = bc.dp0 - 1;
+            if (--j <= dp1 && j >= dp0)
+                j = dp0 - 1;
             if (s0[j] != '0')
                 break;
             --i;
@@ -1603,11 +1611,11 @@ _Py_dg_strtod(const char *s00, char **se)
             y = 0;
             for(i = 0; i < nd0; ++i)
                 y = 10*y + s0[i] - '0';
-            for(j = bc.dp1; i < nd; ++i)
+            for(j = dp1; i < nd; ++i)
                 y = 10*y + s0[j++] - '0';
         }
     }
-    bd0 = s2b(s0, nd0, nd, y, bc.dplen);
+    bd0 = s2b(s0, nd0, nd, y);
     if (bd0 == NULL)
         goto failed_malloc;
 
@@ -1730,6 +1738,30 @@ _Py_dg_strtod(const char *s00, char **se)
         if (bc.nd > nd && i <= 0) {
             if (bc.dsign)
                 break;  /* Must use bigcomp(). */
+
+            /* Here rv overestimates the truncated decimal value by at most
+               0.5 ulp(rv).  Hence rv either overestimates the true decimal
+               value by <= 0.5 ulp(rv), or underestimates it by some small
+               amount (< 0.1 ulp(rv)); either way, rv is within 0.5 ulps of
+               the true decimal value, so it's possible to exit.
+
+               Exception: if scaled rv is a normal exact power of 2, but not
+               DBL_MIN, then rv - 0.5 ulp(rv) takes us all the way down to the
+               next double, so the correctly rounded result is either rv - 0.5
+               ulp(rv) or rv; in this case, use bigcomp to distinguish. */
+
+            if (!word1(&rv) && !(word0(&rv) & Bndry_mask)) {
+                /* rv can't be 0, since it's an overestimate for some
+                   nonzero value.  So rv is a normal power of 2. */
+                j = (int)(word0(&rv) & Exp_mask) >> Exp_shift;
+                /* rv / 2^bc.scale = 2^(j - 1023 - bc.scale); use bigcomp if
+                   rv / 2^bc.scale >= 2^-1021. */
+                if (j - bc.scale >= 2) {
+                    dval(&rv) -= 0.5 * sulp(&rv, &bc);
+                    break;
+                }
+            }
+
             {
                 bc.nd = nd;
                 i = -1; /* Discarded digits make delta smaller. */
