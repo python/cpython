@@ -1204,7 +1204,7 @@ static int
 bigcomp(U *rv, const char *s0, BCinfo *bc)
 {
     Bigint *b, *d;
-    int b2, bbits, d2, dd, i, nd, nd0, p2, p5;
+    int b2, bbits, d2, dd, i, nd, nd0, odd, p2, p5;
 
     dd = 0; /* silence compiler warning about possibly unused variable */
     nd = bc->nd;
@@ -1237,6 +1237,9 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
     b = lshift(b, ++i);
     if (b == NULL)
         return -1;
+    /* record whether the lsb of rv/2^(bc->scale) is odd:  in the exact halfway
+       case, this is used for round to even. */
+    odd = b->x[0] & 2;
     b->x[0] |= 1;
 
     p2 -= p5 + i;
@@ -1291,7 +1294,7 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
         dd = -1;
         goto ret;
     }
-	
+
     /* Compare b/d with s0 */
     for(i = 0; i < nd0; i++) {
         b = multadd(b, 10, 0);
@@ -1329,14 +1332,8 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
   ret:
     Bfree(b);
     Bfree(d);
-    if (dd > 0)
+    if (dd > 0 || (dd == 0 && odd))
         dval(rv) += sulp(rv, bc);
-    else if (dd == 0) {
-        /* Exact half-way case:  apply round-even rule. */
-        if (word1(rv) & 1)
-            dval(rv) += sulp(rv, bc);
-    }
-
     return 0;
 }
 
