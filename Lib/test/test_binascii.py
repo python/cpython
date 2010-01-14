@@ -3,14 +3,19 @@
 from test import test_support
 import unittest
 import binascii
+import array
 
 class BinASCIITest(unittest.TestCase):
 
+    type2test = str
     # Create binary test data
-    data = "The quick brown fox jumps over the lazy dog.\r\n"
+    rawdata = "The quick brown fox jumps over the lazy dog.\r\n"
     # Be slow so we don't depend on other modules
-    data += "".join(map(chr, xrange(256)))
-    data += "\r\nHello world.\n"
+    rawdata += "".join(map(chr, xrange(256)))
+    rawdata += "\r\nHello world.\n"
+
+    def setUp(self):
+        self.data = self.type2test(self.rawdata)
 
     def test_exceptions(self):
         # Check module exceptions
@@ -26,10 +31,10 @@ class BinASCIITest(unittest.TestCase):
                 prefixes.extend(["crc_", "rlecode_", "rledecode_"])
             for prefix in prefixes:
                 name = prefix + suffix
-                self.assertTrue(callable(getattr(binascii, name)))
+                self.assertTrue(hasattr(getattr(binascii, name), '__call__'))
                 self.assertRaises(TypeError, getattr(binascii, name))
         for name in ("hexlify", "unhexlify"):
-            self.assertTrue(callable(getattr(binascii, name)))
+            self.assertTrue(hasattr(getattr(binascii, name), '__call__'))
             self.assertRaises(TypeError, getattr(binascii, name))
 
     def test_base64valid(self):
@@ -44,7 +49,7 @@ class BinASCIITest(unittest.TestCase):
         for line in lines:
             b = binascii.a2b_base64(line)
             res = res + b
-        self.assertEqual(res, self.data)
+        self.assertEqual(res, self.rawdata)
 
     def test_base64invalid(self):
         # Test base64 with random invalid characters sprinkled throughout
@@ -77,7 +82,7 @@ class BinASCIITest(unittest.TestCase):
         for line in map(addnoise, lines):
             b = binascii.a2b_base64(line)
             res += b
-        self.assertEqual(res, self.data)
+        self.assertEqual(res, self.rawdata)
 
         # Test base64 with just invalid characters, which should return
         # empty strings. TBD: shouldn't it raise an exception instead ?
@@ -94,7 +99,7 @@ class BinASCIITest(unittest.TestCase):
         for line in lines:
             b = binascii.a2b_uu(line)
             res += b
-        self.assertEqual(res, self.data)
+        self.assertEqual(res, self.rawdata)
 
         self.assertEqual(binascii.a2b_uu("\x7f"), "\x00"*31)
         self.assertEqual(binascii.a2b_uu("\x80"), "\x00"*32)
@@ -167,8 +172,20 @@ class BinASCIITest(unittest.TestCase):
             f('')
         binascii.crc_hqx('', 0)
 
+
+class ArrayBinASCIITest(BinASCIITest):
+    def type2test(self, s):
+        return array.array('c', s)
+
+
+class MemoryviewBinASCIITest(BinASCIITest):
+    type2test = memoryview
+
+
 def test_main():
-    test_support.run_unittest(BinASCIITest)
+    test_support.run_unittest(BinASCIITest,
+                              ArrayBinASCIITest,
+                              MemoryviewBinASCIITest)
 
 if __name__ == "__main__":
     test_main()
