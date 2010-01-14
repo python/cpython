@@ -703,6 +703,12 @@ class ReTests(unittest.TestCase):
         self.assertEqual(pattern.sub('#', 'a\nb\nc'), 'a#\nb#\nc#')
         self.assertEqual(pattern.sub('#', '\n'), '#\n#')
 
+    def test_dealloc(self):
+        # issue 3299: check for segfault in debug build
+        import _sre
+        long_overflow = sys.maxsize + 2
+        self.assertRaises(TypeError, re.finditer, "a", {})
+        self.assertRaises(OverflowError, _sre.compile, "abc", 0, [long_overflow])
 
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
