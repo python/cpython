@@ -1738,6 +1738,30 @@ _Py_dg_strtod(const char *s00, char **se)
         if (bc.nd > nd && i <= 0) {
             if (bc.dsign)
                 break;  /* Must use bigcomp(). */
+
+            /* Here rv overestimates the truncated decimal value by at most
+               0.5 ulp(rv).  Hence rv either overestimates the true decimal
+               value by <= 0.5 ulp(rv), or underestimates it by some small
+               amount (< 0.1 ulp(rv)); either way, rv is within 0.5 ulps of
+               the true decimal value, so it's possible to exit.
+
+               Exception: if scaled rv is a normal exact power of 2, but not
+               DBL_MIN, then rv - 0.5 ulp(rv) takes us all the way down to the
+               next double, so the correctly rounded result is either rv - 0.5
+               ulp(rv) or rv; in this case, use bigcomp to distinguish. */
+
+            if (!word1(&rv) && !(word0(&rv) & Bndry_mask)) {
+                /* rv can't be 0, since it's an overestimate for some
+                   nonzero value.  So rv is a normal power of 2. */
+                j = (int)(word0(&rv) & Exp_mask) >> Exp_shift;
+                /* rv / 2^bc.scale = 2^(j - 1023 - bc.scale); use bigcomp if
+                   rv / 2^bc.scale >= 2^-1021. */
+                if (j - bc.scale >= 2) {
+                    dval(&rv) -= 0.5 * sulp(&rv, &bc);
+                    break;
+                }
+            }
+
             {
                 bc.nd = nd;
                 i = -1; /* Discarded digits make delta smaller. */
