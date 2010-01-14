@@ -839,31 +839,37 @@ create_filter(PyObject *category, const char *action)
 static PyObject *
 init_filters(void)
 {
-    PyObject *filters = PyList_New(4);
+    // Don't silence DeprecationWarning if -3 was used.
+    PyObject *filters = PyList_New(Py_Py3kWarningFlag ? 3 : 4);
+    unsigned int pos = 0;  // Post-incremented in each use.
+    unsigned int x;
     const char *bytes_action;
+
     if (filters == NULL)
         return NULL;
 
-    PyList_SET_ITEM(filters, 0,
-                    create_filter(PyExc_DeprecationWarning, "ignore"));
-    PyList_SET_ITEM(filters, 1,
+    if (!Py_Py3kWarningFlag) {
+        PyList_SET_ITEM(filters, pos++,
+                        create_filter(PyExc_DeprecationWarning, "ignore"));
+    }
+    PyList_SET_ITEM(filters, pos++,
                     create_filter(PyExc_PendingDeprecationWarning, "ignore"));
-    PyList_SET_ITEM(filters, 2, create_filter(PyExc_ImportWarning, "ignore"));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_ImportWarning, "ignore"));
     if (Py_BytesWarningFlag > 1)
         bytes_action = "error";
     else if (Py_BytesWarningFlag)
         bytes_action = "default";
     else
         bytes_action = "ignore";
-    PyList_SET_ITEM(filters, 3, create_filter(PyExc_BytesWarning,
+    PyList_SET_ITEM(filters, pos++, create_filter(PyExc_BytesWarning,
                     bytes_action));
 
-    if (PyList_GET_ITEM(filters, 0) == NULL ||
-        PyList_GET_ITEM(filters, 1) == NULL ||
-        PyList_GET_ITEM(filters, 2) == NULL ||
-        PyList_GET_ITEM(filters, 3) == NULL) {
-        Py_DECREF(filters);
-        return NULL;
+    for (x = 0; x < pos; x += 1) {
+        if (PyList_GET_ITEM(filters, x) == NULL) {
+            Py_DECREF(filters);
+            return NULL;
+        }
     }
 
     return filters;
