@@ -2684,6 +2684,10 @@ _compile(PyObject* self_, PyObject* args)
     self = PyObject_NEW_VAR(PatternObject, &Pattern_Type, n);
     if (!self)
         return NULL;
+    self->weakreflist = NULL;
+    self->pattern = NULL;
+    self->groupindex = NULL;
+    self->indexgroup = NULL;
 
     self->codesize = n;
 
@@ -2700,7 +2704,7 @@ _compile(PyObject* self_, PyObject* args)
     }
 
     if (PyErr_Occurred()) {
-        PyObject_DEL(self);
+        Py_DECREF(self);
         return NULL;
     }
 
@@ -3718,7 +3722,7 @@ static void
 scanner_dealloc(ScannerObject* self)
 {
     state_fini(&self->state);
-    Py_DECREF(self->pattern);
+    Py_XDECREF(self->pattern);
     PyObject_DEL(self);
 }
 
@@ -3840,10 +3844,11 @@ pattern_scanner(PatternObject* pattern, PyObject* args)
     self = PyObject_NEW(ScannerObject, &Scanner_Type);
     if (!self)
         return NULL;
+    self->pattern = NULL;
 
     string = state_init(&self->state, pattern, string, start, end);
     if (!string) {
-        PyObject_DEL(self);
+        Py_DECREF(self);
         return NULL;
     }
 
