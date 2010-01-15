@@ -423,7 +423,7 @@ Library
 
 - Issue #6258: Support AMD64 in bdist_msi.
 
-- Issue #5262: Fixed bug in next rollover time computation in
+- Issue #6252: Fixed bug in next rollover time computation in
   TimedRotatingFileHandler.
 
 - Issue #6121: pydoc now ignores leading and trailing spaces in the
