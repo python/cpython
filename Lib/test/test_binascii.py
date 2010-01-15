@@ -103,6 +103,9 @@ class BinASCIITest(unittest.TestCase):
 
         self.assertRaises(binascii.Error, binascii.b2a_uu, 46*b"!")
 
+        # Issue #7701 (crash on a pydebug build)
+        self.assertEqual(binascii.b2a_uu(b'x'), b'!>   \n')
+
     def test_crc32(self):
         crc = binascii.crc32(b"Test the CRC-32 of")
         crc = binascii.crc32(b" this string.", crc)
