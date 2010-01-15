@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7701: Fix crash in binascii.b2a_uu() in debug mode when given a
+  1-byte argument.  Patch by Victor Stinner.
+
 - Issue #3299: Fix possible crash in the _sre module when given bad
   argument values in debug mode.  Patch by Victor Stinner.
 
