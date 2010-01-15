@@ -282,7 +282,7 @@ binascii_b2a_uu(PyObject *self, PyObject *args)
 	}
 
 	/* We're lazy and allocate to much (fixed up later) */
-	if ( (rv=PyString_FromStringAndSize(NULL, bin_len*2+2)) == NULL )
+	if ( (rv=PyString_FromStringAndSize(NULL, 2 + (bin_len+2)/3*4)) == NULL )
 		return NULL;
 	ascii_data = (unsigned char *)PyString_AsString(rv);
 
