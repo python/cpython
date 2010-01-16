@@ -167,6 +167,9 @@ Library
 Build
 -----
 
+- Issue #7661: Allow ctypes to be built from a non-ASCII directory path.
+  Patch by Florent Xicluna.
+
 - Issue #7589: Only build the nis module when the correct header files are
   found.
 
