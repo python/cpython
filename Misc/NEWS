@@ -213,6 +213,9 @@ C-API
 Library
 -------
 
+- Issue #7703: Add support for the new buffer API to `binascii.a2bhqx`.
+  Patch by Florent Xicluna, along with some additional tests.
+
 - Issue #7701: Fix crash in binascii.b2a_uu() in debug mode when given a
   1-byte argument.  Patch by Victor Stinner.
 
