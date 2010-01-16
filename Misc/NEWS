@@ -67,6 +67,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #1670765: Prevent email.generator.Generator from re-wrapping
+  headers in multipart/signed MIME parts, which fixes one of the sources of
+  invalid modifications to such parts by Generator.
+
 - Issue #7701: Fix crash in binascii.b2a_uu() in debug mode when given a
   1-byte argument.  Patch by Victor Stinner.
 
