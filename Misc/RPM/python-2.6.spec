@@ -25,6 +25,11 @@
 %define config_ipv6 yes
 %define config_ipv6 no
 
+#  Build shared libraries or .a library?
+#WARNING: Commenting out doesn't work.  Last line is what's used.
+%define config_sharedlib no
+%define config_sharedlib yes
+
 #  Location of the HTML directory.
 %define config_htmldir /var/www/html/python
 
@@ -35,7 +40,7 @@
 %define name python
 #--start constants--
 %define version 2.6.4
-%define libver 2.6
+%define libvers 2.6
 #--end constants--
 %define release 1pydotorg
 %define __prefix /usr
@@ -46,6 +51,8 @@
 %define binsuffix %(if [ "%{config_binsuffix}" = none ]; then echo ; else echo "%{config_binsuffix}"; fi)
 %define include_tkinter %(if [ \\( "%{config_tkinter}" = auto -a -f /usr/bin/wish \\) -o "%{config_tkinter}" = yes ]; then echo 1; else echo 0; fi)
 %define libdirname %(( uname -m | egrep -q '_64$' && [ -d /usr/lib64 ] && echo lib64 ) || echo lib)
+%define sharedlib %(if [ "%{config_sharedlib}" = yes ]; then echo --enable-shared; else echo ; fi)
+%define include_sharedlib %(if [ "%{config_sharedlib}" = yes ]; then echo 1; else echo 0; fi)
 
 #  detect if documentation is available
 %define include_docs %(if [ -f "%{_sourcedir}/html-%{version}.tar.bz2" ]; then echo 1; else echo 0; fi)
@@ -54,7 +61,7 @@ Summary: An interpreted, interactive, object-oriented programming language.
 Name: %{name}%{binsuffix}
 Version: %{version}
 Release: %{release}
-Copyright: Modified CNRI Open Source License
+License: Modified CNRI Open Source License
 Group: Development/Languages
 Source: Python-%{version}.tar.bz2
 %if %{include_docs}
@@ -223,7 +230,14 @@ formats.
 #  BUILD
 ########
 %build
-./configure --enable-unicode=ucs4 %{ipv6} %{pymalloc} --prefix=%{__prefix}
+echo "Setting for ipv6: %{ipv6}"
+echo "Setting for pymalloc: %{pymalloc}"
+echo "Setting for binsuffix: %{binsuffix}"
+echo "Setting for include_tkinter: %{include_tkinter}"
+echo "Setting for libdirname: %{libdirname}"
+echo "Setting for sharedlib: %{sharedlib}"
+echo "Setting for include_sharedlib: %{include_sharedlib}"
+./configure --enable-unicode=ucs4 %{sharedlib} %{ipv6} %{pymalloc} --prefix=%{__prefix}
 make
 
 ##########
@@ -254,11 +268,10 @@ fi
 #  add the binsuffix
 if [ ! -z "%{binsuffix}" ]
 then
-   ( cd $RPM_BUILD_ROOT%{__prefix}/bin; rm -f python[0-9a-zA-Z]*;
-         mv -f python python"%{binsuffix}" )
-   ( cd $RPM_BUILD_ROOT%{__prefix}/man/man1; mv python.1 python%{binsuffix}.1 )
-   ( cd $RPM_BUILD_ROOT%{__prefix}/bin; mv -f pydoc pydoc"%{binsuffix}" )
-   ( cd $RPM_BUILD_ROOT%{__prefix}/bin; mv -f idle idle"%{binsuffix}" )
+   rm -f $RPM_BUILD_ROOT%{__prefix}/bin/python[0-9a-zA-Z]*
+   ( cd $RPM_BUILD_ROOT%{__prefix}/bin; 
+      for file in *; do mv "$file" "$file"%{binsuffix}; done )
+   ( cd $RPM_BUILD_ROOT%{_mandir}/man1; mv python.1 python%{binsuffix}.1 )
 fi
 
 ########
@@ -273,17 +286,23 @@ cp -a Tools $RPM_BUILD_ROOT%{__prefix}/%{libdirname}/python%{libvers}
 
 #  MAKE FILE LISTS
 rm -f mainpkg.files
-find "$RPM_BUILD_ROOT""%{__prefix}"/%{libdirname}/python%{libvers}/lib-dynload -type f |
+find "$RPM_BUILD_ROOT""%{__prefix}"/%{libdirname}/python%{libvers} -type f |
 	sed "s|^${RPM_BUILD_ROOT}|/|" |
-	grep -v -e '_tkinter.so$' >mainpkg.files
-find "$RPM_BUILD_ROOT""%{__prefix}"/bin -type f |
+	grep -v -e '/python%{libvers}/config$' -e '_tkinter.so$' >mainpkg.files
+find "$RPM_BUILD_ROOT""%{__prefix}"/bin -type f -o -type l |
 	sed "s|^${RPM_BUILD_ROOT}|/|" |
+	grep -v -e '/bin/2to3%{binsuffix}$' |
+	grep -v -e '/bin/pydoc%{binsuffix}$' |
+	grep -v -e '/bin/smtpd.py%{binsuffix}$' |
 	grep -v -e '/bin/idle%{binsuffix}$' >>mainpkg.files
 
 rm -f tools.files
 find "$RPM_BUILD_ROOT""%{__prefix}"/%{libdirname}/python%{libvers}/idlelib \
       "$RPM_BUILD_ROOT""%{__prefix}"/%{libdirname}/python%{libvers}/Tools -type f |
       sed "s|^${RPM_BUILD_ROOT}|/|" >tools.files
+echo "%{__prefix}"/bin/2to3%{binsuffix} >>tools.files
+echo "%{__prefix}"/bin/pydoc%{binsuffix} >>tools.files
+echo "%{__prefix}"/bin/smtpd.py%{binsuffix} >>tools.files
 echo "%{__prefix}"/bin/idle%{binsuffix} >>tools.files
 
 ######
@@ -341,29 +360,13 @@ rm -f mainpkg.files tools.files
 %defattr(-,root,root)
 %doc Misc/README Misc/cheatsheet Misc/Porting
 %doc LICENSE Misc/ACKS Misc/HISTORY Misc/NEWS
-%{__prefix}/man/man1/python%{binsuffix}.1*
+%{_mandir}/man1/python%{binsuffix}.1*
 
 %attr(755,root,root) %dir %{__prefix}/include/python%{libvers}
 %attr(755,root,root) %dir %{__prefix}/%{libdirname}/python%{libvers}/
-%{__prefix}/%{libdirname}/python%{libvers}/*.txt
-%{__prefix}/%{libdirname}/python%{libvers}/*.py*
-%{__prefix}/%{libdirname}/python%{libvers}/pdb.doc
-%{__prefix}/%{libdirname}/python%{libvers}/profile.doc
-%{__prefix}/%{libdirname}/python%{libvers}/curses
-%{__prefix}/%{libdirname}/python%{libvers}/distutils
-%{__prefix}/%{libdirname}/python%{libvers}/encodings
-%{__prefix}/%{libdirname}/python%{libvers}/plat-linux2
-%{__prefix}/%{libdirname}/python%{libvers}/site-packages
-%{__prefix}/%{libdirname}/python%{libvers}/test
-%{__prefix}/%{libdirname}/python%{libvers}/xml
-%{__prefix}/%{libdirname}/python%{libvers}/email
-%{__prefix}/%{libdirname}/python%{libvers}/email/mime
-%{__prefix}/%{libdirname}/python%{libvers}/sqlite3
-%{__prefix}/%{libdirname}/python%{libvers}/compiler
-%{__prefix}/%{libdirname}/python%{libvers}/bsddb
-%{__prefix}/%{libdirname}/python%{libvers}/hotshot
-%{__prefix}/%{libdirname}/python%{libvers}/logging
-%{__prefix}/%{libdirname}/python%{libvers}/lib-old
+%if %{include_sharedlib}
+%{__prefix}/%{libdirname}/libpython*
+%endif
 
 %files devel
 %defattr(-,root,root)
