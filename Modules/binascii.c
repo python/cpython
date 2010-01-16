@@ -537,6 +537,7 @@ PyDoc_STRVAR(doc_a2b_hqx, "ascii -> bin, done. Decode .hqx coding");
 static PyObject *
 binascii_a2b_hqx(PyObject *self, PyObject *args)
 {
+	Py_buffer pascii;
 	unsigned char *ascii_data, *bin_data;
 	int leftbits = 0;
 	unsigned char this_ch;
@@ -545,19 +546,26 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
 	Py_ssize_t len;
 	int done = 0;
 
-	if ( !PyArg_ParseTuple(args, "t#:a2b_hqx", &ascii_data, &len) )
+	if ( !PyArg_ParseTuple(args, "s*:a2b_hqx", &pascii) )
 		return NULL;
+	ascii_data = pascii.buf;
+	len = pascii.len;
 
 	assert(len >= 0);
 
-	if (len > PY_SSIZE_T_MAX - 2)
+	if (len > PY_SSIZE_T_MAX - 2) {
+		PyBuffer_Release(&pascii);
 		return PyErr_NoMemory();
+	}
 
 	/* Allocate a string that is too big (fixed later) 
 	   Add two to the initial length to prevent interning which
 	   would preclude subsequent resizing.  */
 	if ( (rv=PyBytes_FromStringAndSize(NULL, len+2)) == NULL )
+	if ( (rv=PyBytes_FromStringAndSize(NULL, len+2)) == NULL ) {
+		PyBuffer_Release(&pascii);
 		return NULL;
+	}
 	bin_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
 	for( ; len > 0 ; len--, ascii_data++ ) {
@@ -567,6 +575,7 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
 			continue;
 		if ( this_ch == FAIL ) {
 			PyErr_SetString(Error, "Illegal char");
+			PyBuffer_Release(&pascii);
 			Py_DECREF(rv);
 			return NULL;
 		}
@@ -589,6 +598,7 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
 	if ( leftbits && !done ) {
 		PyErr_SetString(Incomplete,
 				"String has incomplete number of bytes");
+		PyBuffer_Release(&pascii);
 		Py_DECREF(rv);
 		return NULL;
 	}
@@ -600,10 +610,12 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
 	}
 	if (rv) {
 		PyObject *rrv = Py_BuildValue("Oi", rv, done);
+		PyBuffer_Release(&pascii);
 		Py_DECREF(rv);
 		return rrv;
 	}
 
+	PyBuffer_Release(&pascii);
 	return NULL;
 }
 
