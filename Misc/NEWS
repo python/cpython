@@ -16,10 +16,12 @@ Core and Builtins
   methods of bytes, bytearray and unicode objects by using a common
   implementation based on stringlib's fast search.  Patch by Florent Xicluna.
 
-- Issue #7632: Fix a crash in dtoa.c that occurred in debug builds
-  when parsing certain long numeric strings corresponding to subnormal
-  values.  Also fix a number of bugs in dtoa.c that could lead to
-  incorrectly rounded results when converting strings to floats.
+- Issue #7632: Fix various str -> float conversion bugs present in 2.7
+  alpha 2, including: (1) a serious 'wrong output' bug that could
+  occur for long (> 40 digit) input strings, (2) a crash in dtoa.c
+  that occurred in debug builds when parsing certain long numeric
+  strings corresponding to subnormal values, and (3) a number of flaws
+  that could lead to incorrectly rounded results.
 
 - Issue #7319, #7770: Silence DeprecationWarning by default when -3 is not
   used.

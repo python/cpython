@@ -258,6 +258,8 @@ class StrtodTests(unittest.TestCase):
             # issue 7632 bug 5: the following 2 strings convert differently
             '1000000000000000000000000000000000000000e-16',
             #'10000000000000000000000000000000000000000e-17',
+            # issue 7632 bug 8:  the following produced 10.0
+            '10.900000000000000012345678912345678912345',
             ]
         for s in test_strings:
             self.check_strtod(s)
