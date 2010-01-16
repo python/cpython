@@ -3278,7 +3278,7 @@ Content-Type: application/x-foo;
 
 # Tests to ensure that signed parts of an email are completely preserved, as
 # required by RFC1847 section 2.1.  Note that these are incomplete, because the
-# email package does not currently always preserve the body.  See issue 96843.
+# email package does not currently always preserve the body.  See issue 1670765.
 class TestSigned(TestEmailBase):
 
     def _msg_and_obj(self, filename):
