@@ -1345,7 +1345,8 @@ _Py_dg_strtod(const char *s00, char **se)
     const char *s, *s0, *s1;
     double aadj, aadj1;
     U aadj2, adj, rv, rv0;
-    ULong y, z, L;
+    ULong y, z, abse;
+    Long L;
     BCinfo bc;
     Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
 
@@ -1425,17 +1426,17 @@ _Py_dg_strtod(const char *s00, char **se)
             while(c == '0')
                 c = *++s;
             if (c > '0' && c <= '9') {
-                L = c - '0';
+                abse = c - '0';
                 s1 = s;
                 while((c = *++s) >= '0' && c <= '9')
-                    L = 10*L + c - '0';
-                if (s - s1 > 8 || L > MAX_ABS_EXP)
+                    abse = 10*abse + c - '0';
+                if (s - s1 > 8 || abse > MAX_ABS_EXP)
                     /* Avoid confusion from exponents
                      * so large that e might overflow.
                      */
                     e = (int)MAX_ABS_EXP; /* safe for 16 bit ints */
                 else
-                    e = (int)L;
+                    e = (int)abse;
                 if (esign)
                     e = -e;
             }
