@@ -1340,16 +1340,17 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
 double
 _Py_dg_strtod(const char *s00, char **se)
 {
-    int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, dp0, dp1, dplen, e, e1, error;
+    int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, e, e1, error;
     int esign, i, j, k, nd, nd0, nf, nz, nz0, sign;
     const char *s, *s0, *s1;
     double aadj, aadj1;
     U aadj2, adj, rv, rv0;
-    ULong y, z, L;
+    ULong y, z, abse;
+    Long L;
     BCinfo bc;
     Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
 
-    sign = nz0 = nz = dplen = 0;
+    sign = nz0 = nz = 0;
     dval(&rv) = 0.;
     for(s = s00;;s++) switch(*s) {
         case '-':
@@ -1381,18 +1382,11 @@ _Py_dg_strtod(const char *s00, char **se)
             goto ret;
     }
     s0 = s;
-    y = z = 0;
     for(nd = nf = 0; (c = *s) >= '0' && c <= '9'; nd++, s++)
-        if (nd < 9)
-            y = 10*y + c - '0';
-        else if (nd < 16)
-            z = 10*z + c - '0';
+        ;
     nd0 = nd;
-    dp0 = dp1 = s - s0;
     if (c == '.') {
         c = *++s;
-        dp1 = s - s0;
-        dplen = 1;
         if (!nd) {
             for(; c == '0'; c = *++s)
                 nz++;
@@ -1409,15 +1403,7 @@ _Py_dg_strtod(const char *s00, char **se)
             nz++;
             if (c -= '0') {
                 nf += nz;
-                for(i = 1; i < nz; i++)
-                    if (nd++ < 9)
-                        y *= 10;
-                    else if (nd <= DBL_DIG + 1)
-                        z *= 10;
-                if (nd++ < 9)
-                    y = 10*y + c;
-                else if (nd <= DBL_DIG + 1)
-                    z = 10*z + c;
+                nd += nz;
                 nz = 0;
             }
         }
@@ -1440,17 +1426,17 @@ _Py_dg_strtod(const char *s00, char **se)
             while(c == '0')
                 c = *++s;
             if (c > '0' && c <= '9') {
-                L = c - '0';
+                abse = c - '0';
                 s1 = s;
                 while((c = *++s) >= '0' && c <= '9')
-                    L = 10*L + c - '0';
-                if (s - s1 > 8 || L > MAX_ABS_EXP)
+                    abse = 10*abse + c - '0';
+                if (s - s1 > 8 || abse > MAX_ABS_EXP)
                     /* Avoid confusion from exponents
                      * so large that e might overflow.
                      */
                     e = (int)MAX_ABS_EXP; /* safe for 16 bit ints */
                 else
-                    e = (int)L;
+                    e = (int)abse;
                 if (esign)
                     e = -e;
             }
@@ -1468,15 +1454,78 @@ _Py_dg_strtod(const char *s00, char **se)
         }
         goto ret;
     }
-    bc.e0 = e1 = e -= nf;
+    e -= nf;
+    if (!nd0)
+        nd0 = nd;
+
+    /* strip trailing zeros */
+    for (i = nd; i > 0; ) {
+        /* scan back until we hit a nonzero digit.  significant digit 'i'
+           is s0[i] if i < nd0, s0[i+1] if i >= nd0. */
+        --i;
+        if (s0[i < nd0 ? i : i+1] != '0') {
+            ++i;
+            break;
+        }
+    }
+    e += nd - i;
+    nd = i;
+    if (nd0 > nd)
+        nd0 = nd;
 
     /* Now we have nd0 digits, starting at s0, followed by a
      * decimal point, followed by nd-nd0 digits.  The number we're
      * after is the integer represented by those digits times
      * 10**e */
 
-    if (!nd0)
-        nd0 = nd;
+    bc.e0 = e1 = e;
+
+    /* Summary of parsing results.  The parsing stage gives values
+     * s0, nd0, nd, e, sign, where:
+     *
+     *  - s0 points to the first significant digit of the input string s00;
+     *
+     *  - nd is the total number of significant digits (here, and
+     *    below, 'significant digits' means the set of digits of the
+     *    significand of the input that remain after ignoring leading
+     *    and trailing zeros.
+     *
+     *  - nd0 indicates the position of the decimal point (if
+     *    present): so the nd significant digits are in s0[0:nd0] and
+     *    s0[nd0+1:nd+1] using the usual Python half-open slice
+     *    notation.  (If nd0 < nd, then s0[nd0] necessarily contains
+     *    a '.' character;  if nd0 == nd, then it could be anything.)
+     *
+     *  - e is the adjusted exponent: the absolute value of the number
+     *    represented by the original input string is n * 10**e, where
+     *    n is the integer represented by the concatenation of
+     *    s0[0:nd0] and s0[nd0+1:nd+1]
+     *
+     *  - sign gives the sign of the input:  1 for negative, 0 for positive
+     *
+     *  - the first and last significant digits are nonzero
+     */
+
+    /* put first DBL_DIG+1 digits into integer y and z.
+     *
+     *  - y contains the value represented by the first min(9, nd)
+     *    significant digits
+     *
+     *  - if nd > 9, z contains the value represented by significant digits
+     *    with indices in [9, min(16, nd)).  So y * 10**(min(16, nd) - 9) + z
+     *    gives the value represented by the first min(16, nd) sig. digits.
+     */
+
+    y = z = 0;
+    for (i = 0; i < nd; i++) {
+        if (i < 9)
+            y = 10*y + s0[i < nd0 ? i : i+1] - '0';
+        else if (i < DBL_DIG+1)
+            z = 10*z + s0[i < nd0 ? i : i+1] - '0';
+        else
+            break;
+    }
+
     k = nd < DBL_DIG + 1 ? nd : DBL_DIG + 1;
     dval(&rv) = y;
     if (k > 9) {
@@ -1593,15 +1642,18 @@ _Py_dg_strtod(const char *s00, char **se)
         /* ASSERT(STRTOD_DIGLIM >= 18); 18 == one more than the */
         /* minimum number of decimal digits to distinguish double values */
         /* in IEEE arithmetic. */
-        i = j = 18;
-        if (i > nd0)
-            j += dplen;
-        for(;;) {
-            if (--j <= dp1 && j >= dp0)
-                j = dp0 - 1;
-            if (s0[j] != '0')
-                break;
+
+        /* Truncate input to 18 significant digits, then discard any trailing
+           zeros on the result by updating nd, nd0, e and y suitably. (There's
+           no need to update z; it's not reused beyond this point.) */
+        for (i = 18; i > 0; ) {
+            /* scan back until we hit a nonzero digit.  significant digit 'i'
+            is s0[i] if i < nd0, s0[i+1] if i >= nd0. */
             --i;
+            if (s0[i < nd0 ? i : i+1] != '0') {
+                ++i;
+                break;
+            }
         }
         e += nd - i;
         nd = i;
@@ -1611,8 +1663,8 @@ _Py_dg_strtod(const char *s00, char **se)
             y = 0;
             for(i = 0; i < nd0; ++i)
                 y = 10*y + s0[i] - '0';
-            for(j = dp1; i < nd; ++i)
-                y = 10*y + s0[j++] - '0';
+            for(; i < nd; ++i)
+                y = 10*y + s0[i+1] - '0';
         }
     }
     bd0 = s2b(s0, nd0, nd, y);
