@@ -3267,6 +3267,42 @@ Content-Type: application/x-foo;
 
 
 
+# Tests to ensure that signed parts of an email are completely preserved, as
+# required by RFC1847 section 2.1.  Note that these are incomplete, because the
+# email package does not currently always preserve the body.  See issue 1670765.
+class TestSigned(TestEmailBase):
+
+    def _msg_and_obj(self, filename):
+        fp = openfile(findfile(filename))
+        try:
+            original = fp.read()
+            msg = email.message_from_string(original)
+        finally:
+            fp.close()
+        return original, msg
+
+    def _signed_parts_eq(self, original, result):
+        # Extract the first mime part of each message
+        import re
+        repart = re.compile(r'^--([^\n]+)\n(.*?)\n--\1$', re.S | re.M)
+        inpart = repart.search(original).group(2)
+        outpart = repart.search(result).group(2)
+        self.assertEqual(outpart, inpart)
+
+    def test_long_headers_as_string(self):
+        original, msg = self._msg_and_obj('msg_45.txt')
+        result = msg.as_string()
+        self._signed_parts_eq(original, result)
+
+    def test_long_headers_flatten(self):
+        original, msg = self._msg_and_obj('msg_45.txt')
+        fp = StringIO()
+        Generator(fp).flatten(msg)
+        result = fp.getvalue()
+        self._signed_parts_eq(original, result)
+
+
+
 def _testclasses():
     mod = sys.modules[__name__]
     return [getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
