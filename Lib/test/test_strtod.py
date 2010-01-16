@@ -123,10 +123,6 @@ class StrtodTests(unittest.TestCase):
                     digits = m * 5**-e
                     exponent = e
                 s = '{}e{}'.format(digits, exponent)
-
-                # for the moment, ignore errors from trailing zeros
-                if digits % 10 == 0:
-                    continue
                 self.check_strtod(s)
 
                 # get expected answer via struct, to triple check
@@ -175,7 +171,8 @@ class StrtodTests(unittest.TestCase):
                 self.check_strtod(s)
 
     def test_parsing(self):
-        digits = tuple(map(str, xrange(10)))
+        # make '0' more likely to be chosen than other digits
+        digits = '000000123456789'
         signs = ('+', '-', '')
 
         # put together random short valid strings
@@ -257,7 +254,7 @@ class StrtodTests(unittest.TestCase):
             '247032822920623295e-341',
             # issue 7632 bug 5: the following 2 strings convert differently
             '1000000000000000000000000000000000000000e-16',
-            #'10000000000000000000000000000000000000000e-17',
+            '10000000000000000000000000000000000000000e-17',
             # issue 7632 bug 8:  the following produced 10.0
             '10.900000000000000012345678912345678912345',
             ]
