@@ -561,7 +561,6 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
 	/* Allocate a string that is too big (fixed later) 
 	   Add two to the initial length to prevent interning which
 	   would preclude subsequent resizing.  */
-	if ( (rv=PyBytes_FromStringAndSize(NULL, len+2)) == NULL )
 	if ( (rv=PyBytes_FromStringAndSize(NULL, len+2)) == NULL ) {
 		PyBuffer_Release(&pascii);
 		return NULL;
