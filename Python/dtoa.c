@@ -1381,12 +1381,8 @@ _Py_dg_strtod(const char *s00, char **se)
             goto ret;
     }
     s0 = s;
-    y = z = 0;
     for(nd = nf = 0; (c = *s) >= '0' && c <= '9'; nd++, s++)
-        if (nd < 9)
-            y = 10*y + c - '0';
-        else if (nd < 16)
-            z = 10*z + c - '0';
+        ;
     nd0 = nd;
     if (c == '.') {
         c = *++s;
@@ -1406,15 +1402,7 @@ _Py_dg_strtod(const char *s00, char **se)
             nz++;
             if (c -= '0') {
                 nf += nz;
-                for(i = 1; i < nz; i++)
-                    if (nd++ < 9)
-                        y *= 10;
-                    else if (nd <= DBL_DIG + 1)
-                        z *= 10;
-                if (nd++ < 9)
-                    y = 10*y + c;
-                else if (nd <= DBL_DIG + 1)
-                    z = 10*z + c;
+                nd += nz;
                 nz = 0;
             }
         }
@@ -1465,32 +1453,59 @@ _Py_dg_strtod(const char *s00, char **se)
         }
         goto ret;
     }
-    bc.e0 = e1 = e -= nf;
+    e -= nf;
+    if (!nd0)
+        nd0 = nd;
+
+    /* strip trailing zeros */
+    for (i = nd; i > 0; ) {
+        /* scan back until we hit a nonzero digit.  significant digit 'i'
+           is s0[i] if i < nd0, s0[i+1] if i >= nd0. */
+        --i;
+        if (s0[i < nd0 ? i : i+1] != '0') {
+            ++i;
+            break;
+        }
+    }
+    e += nd - i;
+    nd = i;
+    if (nd0 > nd)
+        nd0 = nd;
 
     /* Now we have nd0 digits, starting at s0, followed by a
      * decimal point, followed by nd-nd0 digits.  The number we're
      * after is the integer represented by those digits times
      * 10**e */
 
-    if (!nd0)
-        nd0 = nd;
+    bc.e0 = e1 = e;
 
     /* Summary of parsing results.  The parsing stage gives values
-     * s0, nd0, nd, e, y and z such that:
+     * s0, nd0, nd, e, sign, where:
      *
-     *  - nd >= nd0 >= 1
+     *  - s0 points to the first significant digit of the input string s00;
      *
-     *  - the nd significant digits are in s0[0:nd0] and s0[nd0+1:nd+1]
-     *    (using the usual Python half-open slice notation)
+     *  - nd is the total number of significant digits (here, and
+     *    below, 'significant digits' means the set of digits of the
+     *    significand of the input that remain after ignoring leading
+     *    and trailing zeros.
      *
-     *  - the absolute value of the number represented by the original input
-     *    string is n * 10**e, where n is the integer represented by the
-     *    concatenation of s0[0:nd0] and s0[nd0+1:nd+1]
+     *  - nd0 indicates the position of the decimal point (if
+     *    present): so the nd significant digits are in s0[0:nd0] and
+     *    s0[nd0+1:nd+1] using the usual Python half-open slice
+     *    notation.  (If nd0 < nd, then s0[nd0] necessarily contains
+     *    a '.' character;  if nd0 == nd, then it could be anything.)
      *
-     *  - the first significant digit is nonzero
+     *  - e is the adjusted exponent: the absolute value of the number
+     *    represented by the original input string is n * 10**e, where
+     *    n is the integer represented by the concatenation of
+     *    s0[0:nd0] and s0[nd0+1:nd+1]
      *
-     *  - the last significant digit may or may not be nonzero; (some code
-     *    currently assumes that it's nonzero; this is a bug)
+     *  - sign gives the sign of the input:  1 for negative, 0 for positive
+     *
+     *  - the first and last significant digits are nonzero
+     */
+
+    /* put first DBL_DIG+1 digits into integer y and z.
      *
      *  - y contains the value represented by the first min(9, nd)
      *    significant digits
@@ -1499,6 +1514,16 @@ _Py_dg_strtod(const char *s00, char **se)
      *    with indices in [9, min(16, nd)).  So y * 10**(min(16, nd) - 9) + z
      *    gives the value represented by the first min(16, nd) sig. digits.
      */
+
+    y = z = 0;
+    for (i = 0; i < nd; i++) {
+        if (i < 9)
+            y = 10*y + s0[i < nd0 ? i : i+1] - '0';
+        else if (i < DBL_DIG+1)
+            z = 10*z + s0[i < nd0 ? i : i+1] - '0';
+        else
+            break;
+    }
 
     k = nd < DBL_DIG + 1 ? nd : DBL_DIG + 1;
     dval(&rv) = y;
