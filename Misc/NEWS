@@ -253,6 +253,9 @@ Library
   distutils.unixcompiler. Initial patch by Sridhar Ratnakumar and
   Michael Haubenwallner.
 
+- Issue #7066: archive_util.make_archive now restores the cwd if an error is
+  raised. Initial patch by Ezio Melotti.
+
 Extension Modules
 -----------------
 
@@ -308,6 +311,9 @@ C-API
 - Make PyUnicode_CompareWithASCIIString return not equal if the Python string
   has '\0' at the end.
 
+- Issue #7414: 'C' code wasn't being skipped properly (for keyword arguments)
+  in PyArg_ParseTupleAndKeywords.
+
 Build
 -----
 
@@ -322,8 +328,13 @@ Build
 - Issue #6801 : symmetric_difference_update also accepts |.
   Thanks to Carl Chenet. 
 
-- Issue #7541: when using ``python-config`` with a framework install the compiler might
-  use the wrong library.
+- Issue #7541: when using ``python-config`` with a framework install the
+  compiler might use the wrong library.
+
+- Issue #6491: Allow --with-dbmliborder to specify that no dbms will be built.
+
+- Issue #7589: Only build the nis module when the correct header files are
+  found.
 
 Documentation
 -------------
@@ -364,9 +375,6 @@ Core and Builtins
 
 C-API
 -----
-
-- Issue #7414: 'C' code wasn't being skipped properly (for keyword arguments)
-  in PyArg_ParseTupleAndKeywords.
 
 - Issue #6624: yArg_ParseTuple with "s" format when parsing argument with
   NUL: Bogus TypeError detail string.
@@ -446,11 +454,6 @@ Extension Modules
 
 Build
 -----
-
-- Issue #6491: Allow --with-dbmliborder to specify that no dbms will be built.
-
-- Issue #7589: Only build the nis module when the correct header files are
-  found.
 
 - Issue 4601: 'make install' did not set the appropriate permissions on
 directories.
@@ -1283,9 +1286,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #7066: archive_util.make_archive now restores the cwd if an error is
-  raised. Initial patch by Ezio Melotti.
 
 - Issue #6545: Removed assert statements in distutils.Extension, so the 
   behavior is similar when used with -O.
