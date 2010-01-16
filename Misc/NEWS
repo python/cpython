@@ -774,8 +774,8 @@ Library
 - Issue #7354: distutils.tests.test_msvc9compiler - dragfullwindows can
   be 2.
 
-- Issue #5037: Proxy the __unicode__ special method instead to __unicode__
-  instead of __str__.
+- Issue #5037: Proxy the __unicode__ special method to __unicode__ instead of
+  __str__.
 
 - Issue #7341: Close the internal file object in the TarFile constructor in
   case of an error.
