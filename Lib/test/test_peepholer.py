@@ -1,4 +1,5 @@
 import dis
+import re
 import sys
 from io import StringIO
 import unittest
@@ -114,6 +115,54 @@ class TestTranforms(unittest.TestCase):
                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
             ],)
+
+    def test_folding_of_lists_of_constants(self):
+        for line, elem in (
+            # in/not in constants with BUILD_LIST should be folded to a tuple:
+            ('a in [1,2,3]', '(1, 2, 3)'),
+            ('a not in ["a","b","c"]', "(('a', 'b', 'c'))"),
+            ('a in [None, 1, None]', '((None, 1, None))'),
+            ('a not in [(1, 2), 3, 4]', '(((1, 2), 3, 4))'),
+            ):
+            asm = dis_single(line)
+            self.assertIn(elem, asm)
+            self.assertNotIn('BUILD_LIST', asm)
+
+    def test_folding_of_sets_of_constants(self):
+        for line, elem in (
+            # in/not in constants with BUILD_SET should be folded to a frozenset:
+            ('a in {1,2,3}', frozenset({1, 2, 3})),
+            ('a not in {"a","b","c"}', frozenset({'a', 'c', 'b'})),
+            ('a in {None, 1, None}', frozenset({1, None})),
+            ('a not in {(1, 2), 3, 4}', frozenset({(1, 2), 3, 4})),
+            ('a in {1, 2, 3, 3, 2, 1}', frozenset({1, 2, 3})),
+            ):
+            asm = dis_single(line)
+            self.assertNotIn('BUILD_SET', asm)
+
+            # Verify that the frozenset 'elem' is in the disassembly
+            # The ordering of the elements in repr( frozenset ) isn't
+            # guaranteed, so we jump through some hoops to ensure that we have
+            # the frozenset we expect:
+            self.assertIn('frozenset', asm)
+            # Extract the frozenset literal from the disassembly:
+            m = re.match(r'.*(frozenset\({.*}\)).*', asm, re.DOTALL)
+            self.assertTrue(m)
+            self.assertEqual(eval(m.group(1)), elem)
+
+        # Ensure that the resulting code actually works:
+        def f(a):
+            return a in {1, 2, 3}
+
+        def g(a):
+            return a not in {1, 2, 3}
+
+        self.assertTrue(f(3))
+        self.assertTrue(not f(4))
+
+        self.assertTrue(not g(3))
+        self.assertTrue(g(4))
+
 
     def test_folding_of_binops_on_constants(self):
         for line, elem in (

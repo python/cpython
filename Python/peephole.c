@@ -31,7 +31,8 @@
    new constant (c1, c2, ... cn) can be appended.
    Called with codestr pointing to the first LOAD_CONST.
    Bails out with no change if one or more of the LOAD_CONSTs is missing. 
-   Also works for BUILD_LIST when followed by an "in" or "not in" test.
+   Also works for BUILD_LIST and BUILT_SET when followed by an "in" or "not in"
+   test; for BUILD_SET it assembles a frozenset rather than a tuple.
 */
 static int
 tuple_of_constants(unsigned char *codestr, Py_ssize_t n, PyObject *consts)
@@ -41,7 +42,7 @@ tuple_of_constants(unsigned char *codestr, Py_ssize_t n, PyObject *consts)
 
 	/* Pre-conditions */
 	assert(PyList_CheckExact(consts));
-	assert(codestr[n*3] == BUILD_TUPLE || codestr[n*3] == BUILD_LIST);
+	assert(codestr[n*3] == BUILD_TUPLE || codestr[n*3] == BUILD_LIST || codestr[n*3] == BUILD_SET);
 	assert(GETARG(codestr, (n*3)) == n);
 	for (i=0 ; i<n ; i++)
 		assert(codestr[i*3] == LOAD_CONST);
@@ -57,6 +58,16 @@ tuple_of_constants(unsigned char *codestr, Py_ssize_t n, PyObject *consts)
 		constant = PyList_GET_ITEM(consts, arg);
 		Py_INCREF(constant);
 		PyTuple_SET_ITEM(newconst, i, constant);
+	}
+
+	/* If it's a BUILD_SET, use the PyTuple we just built to create a
+	  PyFrozenSet, and use that as the constant instead: */
+	if (codestr[n*3] == BUILD_SET) {
+		PyObject *tuple = newconst;
+		newconst = PyFrozenSet_New(tuple);
+		Py_DECREF(tuple);
+		if (newconst == NULL)
+			return 0;
 	}
 
 	/* Append folded constant onto consts */
@@ -436,20 +447,21 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 				cumlc = 0;
 				break;
 
-				/* Try to fold tuples of constants (includes a case for lists
+				/* Try to fold tuples of constants (includes a case for lists and sets
 				   which are only used for "in" and "not in" tests).
 				   Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
 				   Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
 				   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
 			case BUILD_TUPLE:
 			case BUILD_LIST:
+			case BUILD_SET:
 				j = GETARG(codestr, i);
 				h = i - 3 * j;
 				if (h >= 0  &&
 				    j <= lastlc	 &&
 				    ((opcode == BUILD_TUPLE && 
 				      ISBASICBLOCK(blocks, h, 3*(j+1))) ||
-				     (opcode == BUILD_LIST && 
+				     ((opcode == BUILD_LIST || opcode == BUILD_SET) && 
 				      codestr[i+3]==COMPARE_OP && 
 				      ISBASICBLOCK(blocks, h, 3*(j+2)) &&
 				      (GETARG(codestr,i+3)==6 ||
