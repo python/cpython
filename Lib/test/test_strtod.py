@@ -91,6 +91,8 @@ class StrtodTests(unittest.TestCase):
             fs = float(s)
         except OverflowError:
             got = '-inf' if s[0] == '-' else 'inf'
+        except MemoryError:
+            got = 'memory error'
         else:
             got = fs.hex()
         expected = strtod(s)
