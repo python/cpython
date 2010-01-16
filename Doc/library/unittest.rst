@@ -780,7 +780,7 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertRegexpMatches(text, regexp, msg=None):
+   .. method:: assertRegexpMatches(text, regexp, msg=None)
 
       Verifies that a *regexp* search matches *text*.  Fails with an error
       message including the pattern and the *text*.  *regexp* may be
