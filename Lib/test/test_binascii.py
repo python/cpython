@@ -5,6 +5,14 @@ import unittest
 import binascii
 import array
 
+# Note: "*_hex" functions are aliases for "(un)hexlify"
+b2a_functions = ['b2a_base64', 'b2a_hex', 'b2a_hqx', 'b2a_qp', 'b2a_uu',
+                 'hexlify', 'rlecode_hqx']
+a2b_functions = ['a2b_base64', 'a2b_hex', 'a2b_hqx', 'a2b_qp', 'a2b_uu',
+                 'unhexlify', 'rledecode_hqx']
+all_functions = a2b_functions + b2a_functions + ['crc32', 'crc_hqx']
+
+
 class BinASCIITest(unittest.TestCase):
 
     type2test = str
@@ -24,30 +32,45 @@ class BinASCIITest(unittest.TestCase):
 
     def test_functions(self):
         # Check presence of all functions
-        funcs = []
-        for suffix in "base64", "hqx", "uu", "hex":
-            prefixes = ["a2b_", "b2a_"]
-            if suffix == "hqx":
-                prefixes.extend(["crc_", "rlecode_", "rledecode_"])
-            for prefix in prefixes:
-                name = prefix + suffix
-                self.assertTrue(hasattr(getattr(binascii, name), '__call__'))
-                self.assertRaises(TypeError, getattr(binascii, name))
-        for name in ("hexlify", "unhexlify"):
+        for name in all_functions:
             self.assertTrue(hasattr(getattr(binascii, name), '__call__'))
             self.assertRaises(TypeError, getattr(binascii, name))
+
+    def test_returned_value(self):
+        # Limit to the minimum of all limits (b2a_uu)
+        MAX_ALL = 45
+        raw = self.rawdata[:MAX_ALL]
+        for fa, fb in zip(a2b_functions, b2a_functions):
+            a2b = getattr(binascii, fa)
+            b2a = getattr(binascii, fb)
+            try:
+                a = b2a(self.type2test(raw))
+                res = a2b(self.type2test(a))
+            except Exception, err:
+                self.fail("{}/{} conversion raises {!r}".format(fb, fa, err))
+            if fb == 'b2a_hqx':
+                # b2a_hqx returns a tuple
+                res, _ = res
+            self.assertEqual(res, raw, "{}/{} conversion: "
+                             "{!r} != {!r}".format(fb, fa, res, raw))
+            self.assertIsInstance(res, str)
+            self.assertIsInstance(a, str)
+            self.assertLess(max(ord(c) for c in a), 128)
+        self.assertIsInstance(binascii.crc_hqx(raw, 0), int)
+        self.assertIsInstance(binascii.crc32(raw), int)
 
     def test_base64valid(self):
         # Test base64 with valid data
         MAX_BASE64 = 57
         lines = []
-        for i in range(0, len(self.data), MAX_BASE64):
-            b = self.data[i:i+MAX_BASE64]
+        for i in range(0, len(self.rawdata), MAX_BASE64):
+            b = self.type2test(self.rawdata[i:i+MAX_BASE64])
             a = binascii.b2a_base64(b)
             lines.append(a)
         res = ""
         for line in lines:
-            b = binascii.a2b_base64(line)
+            a = self.type2test(line)
+            b = binascii.a2b_base64(a)
             res = res + b
         self.assertEqual(res, self.rawdata)
 
@@ -57,7 +80,7 @@ class BinASCIITest(unittest.TestCase):
         MAX_BASE64 = 57
         lines = []
         for i in range(0, len(self.data), MAX_BASE64):
-            b = self.data[i:i+MAX_BASE64]
+            b = self.type2test(self.rawdata[i:i+MAX_BASE64])
             a = binascii.b2a_base64(b)
             lines.append(a)
 
@@ -80,24 +103,26 @@ class BinASCIITest(unittest.TestCase):
             return res + noise + line
         res = ""
         for line in map(addnoise, lines):
-            b = binascii.a2b_base64(line)
+            a = self.type2test(line)
+            b = binascii.a2b_base64(a)
             res += b
         self.assertEqual(res, self.rawdata)
 
         # Test base64 with just invalid characters, which should return
         # empty strings. TBD: shouldn't it raise an exception instead ?
-        self.assertEqual(binascii.a2b_base64(fillers), '')
+        self.assertEqual(binascii.a2b_base64(self.type2test(fillers)), '')
 
     def test_uu(self):
         MAX_UU = 45
         lines = []
         for i in range(0, len(self.data), MAX_UU):
-            b = self.data[i:i+MAX_UU]
+            b = self.type2test(self.rawdata[i:i+MAX_UU])
             a = binascii.b2a_uu(b)
             lines.append(a)
         res = ""
         for line in lines:
-            b = binascii.a2b_uu(line)
+            a = self.type2test(line)
+            b = binascii.a2b_uu(a)
             res += b
         self.assertEqual(res, self.rawdata)
 
@@ -113,19 +138,27 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.b2a_uu('x'), '!>   \n')
 
     def test_crc32(self):
-        crc = binascii.crc32("Test the CRC-32 of")
-        crc = binascii.crc32(" this string.", crc)
+        crc = binascii.crc32(self.type2test("Test the CRC-32 of"))
+        crc = binascii.crc32(self.type2test(" this string."), crc)
         self.assertEqual(crc, 1571220330)
 
         self.assertRaises(TypeError, binascii.crc32)
 
-    # The hqx test is in test_binhex.py
+    def test_hqx(self):
+        # Perform binhex4 style RLE-compression
+        # Then calculate the hexbin4 binary-to-ASCII translation
+        rle = binascii.rlecode_hqx(self.data)
+        a = binascii.b2a_hqx(self.type2test(rle))
+        b, _ = binascii.a2b_hqx(self.type2test(a))
+        res = binascii.rledecode_hqx(b)
+
+        self.assertEqual(res, self.rawdata)
 
     def test_hex(self):
         # test hexlification
         s = '{s\005\000\000\000worldi\002\000\000\000s\005\000\000\000helloi\001\000\000\0000'
-        t = binascii.b2a_hex(s)
-        u = binascii.a2b_hex(t)
+        t = binascii.b2a_hex(self.type2test(s))
+        u = binascii.a2b_hex(self.type2test(t))
         self.assertEqual(s, u)
         self.assertRaises(TypeError, binascii.a2b_hex, t[:-1])
         self.assertRaises(TypeError, binascii.a2b_hex, t[:-1] + 'q')
@@ -167,18 +200,26 @@ class BinASCIITest(unittest.TestCase):
 
     def test_empty_string(self):
         # A test for SF bug #1022953.  Make sure SystemError is not raised.
-        for n in ['b2a_qp', 'a2b_hex', 'b2a_base64', 'a2b_uu', 'a2b_qp',
-                  'b2a_hex', 'unhexlify', 'hexlify', 'crc32', 'b2a_hqx',
-                  'a2b_hqx', 'a2b_base64', 'rlecode_hqx', 'b2a_uu',
-                  'rledecode_hqx']:
-            f = getattr(binascii, n)
-            f('')
-        binascii.crc_hqx('', 0)
+        empty = self.type2test('')
+        for func in all_functions:
+            if func == 'crc_hqx':
+                # crc_hqx needs 2 arguments
+                binascii.crc_hqx(empty, 0)
+                continue
+            f = getattr(binascii, func)
+            try:
+                f(empty)
+            except Exception, err:
+                self.fail("{}({!r}) raises {!r}".format(func, empty, err))
 
 
 class ArrayBinASCIITest(BinASCIITest):
     def type2test(self, s):
         return array.array('c', s)
+
+
+class BytearrayBinASCIITest(BinASCIITest):
+    type2test = bytearray
 
 
 class MemoryviewBinASCIITest(BinASCIITest):
@@ -188,6 +229,7 @@ class MemoryviewBinASCIITest(BinASCIITest):
 def test_main():
     test_support.run_unittest(BinASCIITest,
                               ArrayBinASCIITest,
+                              BytearrayBinASCIITest,
                               MemoryviewBinASCIITest)
 
 if __name__ == "__main__":
