@@ -30,8 +30,13 @@ Core and Builtins
 
 - Issue #1967: Backport dictionary views from Python 3.x.
 
+
 Library
 -------
+
+- Issue #1670765: Prevent email.generator.Generator from re-wrapping
+  headers in multipart/signed MIME parts, which fixes one of the sources of
+  invalid modifications to such parts by Generator.
 
 - Issue #7701: Fix crash in binascii.b2a_uu() in debug mode when given a
   1-byte argument.  Patch by Victor Stinner.
@@ -52,6 +57,7 @@ Library
 - Issue #5372: Drop the reuse of .o files in Distutils' ccompiler (since
   Extension extra options may change the output without changing the .c
   file). Initial patch by Collin Winter.
+
 
 Build
 -----
