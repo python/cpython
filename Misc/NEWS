@@ -215,6 +215,10 @@ C-API
 Library
 -------
 
+- Issue #1670765: Prevent email.generator.Generator from re-wrapping
+  headers in multipart/signed MIME parts, which fixes one of the sources of
+  invalid modifications to such parts by Generator.
+
 - Issue #7703: Add support for the new buffer API to `binascii.a2bhqx`.
   Patch by Florent Xicluna, along with some additional tests.
 
