@@ -161,8 +161,8 @@ Library
 
 - Issue #1488943: difflib.Differ() doesn't always add hints for tab characters
 
-- Issue #5037: Proxy the __unicode__ special method instead to __unicode__
-  instead of __str__.
+- Issue #5037: Proxy the __unicode__ special method to __unicode__ instead of
+  __str__.
 
 Build
 -----
