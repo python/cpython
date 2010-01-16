@@ -12,6 +12,14 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6690: Optimize the bytecode for expressions such as `x in {1, 2, 3}`,
+  where the right hand operand is a set of constants, by turning the set into
+  a frozenset and pre-building it as a constant.  The comparison operation
+  is made against the constant instead of building a new set each time it is
+  executed (a similar optimization already existed which turned a list of
+  constants into a pre-built tuple).  Patch and additional tests by Dave
+  Malcolm.
+
 - Issue #7622: Improve the split(), rsplit(), splitlines() and replace()
   methods of bytes, bytearray and unicode objects by using a common
   implementation based on stringlib's fast search.  Patch by Florent Xicluna.
