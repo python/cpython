@@ -1939,8 +1939,14 @@ _Py_dg_strtod(const char *s00, char **se)
             dval(&rv) += adj.d;
             if ((word0(&rv) & Exp_mask) >=
                 Exp_msk1*(DBL_MAX_EXP+Bias-P)) {
-                if (word0(&rv0) == Big0 && word1(&rv0) == Big1)
+                if (word0(&rv0) == Big0 && word1(&rv0) == Big1) {
+                    Bfree(bb);
+                    Bfree(bd);
+                    Bfree(bs);
+                    Bfree(bd0);
+                    Bfree(delta);
                     goto ovfl;
+                }
                 word0(&rv) = Big0;
                 word1(&rv) = Big1;
                 goto cont;
