@@ -12,6 +12,11 @@ What's New in Python 2.7 alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #7561: Operations on empty bytearrays (such as `int(bytearray())`)
+  could crash in many places because of the PyByteArray_AS_STRING() macro
+  returning NULL.  The macro now returns a statically allocated empty
+  string instead.
+
 - Issue #7622: Improve the split(), rsplit(), splitlines() and replace()
   methods of bytes, bytearray and unicode objects by using a common
   implementation based on stringlib's fast search.  Patch by Florent Xicluna.
