@@ -613,6 +613,10 @@ Extension Modules
 Build
 -----
 
+- Issue #7632: When Py_USING_MEMORY_DEBUGGER is defined, disable the
+  private memory allocation scheme in dtoa.c and use PyMem_Malloc and
+  PyMem_Free instead.  Also disable caching of powers of 5.
+
 - Issue #6491: Allow --with-dbmliborder to specify that no dbms will be built.
 
 - Issue #6943: Use pkg-config to find the libffi headers when the
