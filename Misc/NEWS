@@ -25,8 +25,9 @@ Core and Builtins
   alpha 2, including: (1) a serious 'wrong output' bug that could
   occur for long (> 40 digit) input strings, (2) a crash in dtoa.c
   that occurred in debug builds when parsing certain long numeric
-  strings corresponding to subnormal values, and (3) a number of flaws
-  that could lead to incorrectly rounded results.
+  strings corresponding to subnormal values, (3) a memory leak for
+  some values large enough to cause overflow, and (4) a number of
+  flaws that could lead to incorrectly rounded results.
 
 - Issue #7319, #7770: Silence DeprecationWarning by default when -3 is not
   used.
