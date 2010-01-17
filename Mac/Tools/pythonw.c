@@ -6,16 +6,26 @@
  *
  * This program uses posix_spawn rather than plain execv because we need
  * slightly more control over how the "real" interpreter is executed.
+ *
+ * On OSX 10.4 (and earlier) this falls back to using exec because the
+ * posix_spawnv functions aren't available there.
  */
+#pragma weak_import posix_spawnattr_init
+#pragma weak_import posix_spawnattr_setbinpref_np
+#pragma weak_import posix_spawnattr_setflags
+#pragma weak_import posix_spawn
+
+#include <Python.h>
 #include <unistd.h>
+#ifdef HAVE_SPAWN_H
 #include <spawn.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <err.h>
 #include <dlfcn.h>
 #include <stdlib.h>
-#include <Python.h>
 
 
 extern char** environ;
@@ -74,6 +84,7 @@ static char* get_python_path(void)
 	return g_path;
 }
 
+#ifdef HAVE_SPAWN_H
 static void
 setup_spawnattr(posix_spawnattr_t* spawnattr)
 {
@@ -132,16 +143,28 @@ setup_spawnattr(posix_spawnattr_t* spawnattr)
 		/* NOTREACHTED */
 	}
 }
+#endif
 
 int 
 main(int argc, char **argv) {
-	posix_spawnattr_t spawnattr = NULL;
 	char* exec_path = get_python_path();
 
+#ifdef HAVE_SPAWN_H
 
-	setup_spawnattr(&spawnattr);		
-	posix_spawn(NULL, exec_path, NULL,
-		&spawnattr, argv, environ);
-	err(1, "posix_spawn: %s", argv[0]);
+	/* We're weak-linking to posix-spawnv to ensure that
+	 * an executable build on 10.5 can work on 10.4.
+	 */
+	if (posix_spawn != NULL) {
+		posix_spawnattr_t spawnattr = NULL;
+
+
+		setup_spawnattr(&spawnattr);		
+		posix_spawn(NULL, exec_path, NULL,
+			&spawnattr, argv, environ);
+		err(1, "posix_spawn: %s", argv[0]);
+	}
+#endif
+	execve(exec_path, argv, environ);
+	err(1, "execve: %s", argv[0]);
 	/* NOTREACHED */
 }
