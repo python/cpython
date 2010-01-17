@@ -326,6 +326,10 @@ C-API
 Build
 -----
 
+- Issue #7632: When Py_USING_MEMORY_DEBUGGER is defined, disable the
+  private memory allocation scheme in dtoa.c and use PyMem_Malloc and
+  PyMem_Free instead.  Also disable caching of powers of 5.
+
 - Switch to OpenSSL 0.9.8l on Windows.
 
 - Issue #6603: Change READ_TIMESTAMP macro in ceval.c so that it

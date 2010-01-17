@@ -308,6 +308,8 @@ Bigint {
 
 typedef struct Bigint Bigint;
 
+#ifndef Py_USING_MEMORY_DEBUGGER
+
 /* Memory management: memory is allocated from, and returned to, Kmax+1 pools
    of memory, where pool k (0 <= k <= Kmax) is for Bigints b with b->maxwds ==
    1 << k.  These pools are maintained as linked lists, with freelist[k]
@@ -374,6 +376,48 @@ Bfree(Bigint *v)
         }
     }
 }
+
+#else
+
+/* Alternative versions of Balloc and Bfree that use PyMem_Malloc and
+   PyMem_Free directly in place of the custom memory allocation scheme above.
+   These are provided for the benefit of memory debugging tools like
+   Valgrind. */
+
+/* Allocate space for a Bigint with up to 1<<k digits */
+
+static Bigint *
+Balloc(int k)
+{
+    int x;
+    Bigint *rv;
+    unsigned int len;
+
+    x = 1 << k;
+    len = (sizeof(Bigint) + (x-1)*sizeof(ULong) + sizeof(double) - 1)
+        /sizeof(double);
+
+    rv = (Bigint*)MALLOC(len*sizeof(double));
+    if (rv == NULL)
+        return NULL;
+
+    rv->k = k;
+    rv->maxwds = x;
+    rv->sign = rv->wds = 0;
+    return rv;
+}
+
+/* Free a Bigint allocated with Balloc */
+
+static void
+Bfree(Bigint *v)
+{
+    if (v) {
+        FREE((void*)v);
+    }
+}
+
+#endif /* Py_USING_MEMORY_DEBUGGER */
 
 #define Bcopy(x,y) memcpy((char *)&x->sign, (char *)&y->sign,   \
                           y->wds*sizeof(Long) + 2*sizeof(int))
@@ -652,6 +696,8 @@ mult(Bigint *a, Bigint *b)
     return c;
 }
 
+#ifndef Py_USING_MEMORY_DEBUGGER
+
 /* p5s is a linked list of powers of 5 of the form 5**(2**i), i >= 2 */
 
 static Bigint *p5s;
@@ -710,6 +756,58 @@ pow5mult(Bigint *b, int k)
     }
     return b;
 }
+
+#else
+
+/* Version of pow5mult that doesn't cache powers of 5. Provided for
+   the benefit of memory debugging tools like Valgrind. */
+
+static Bigint *
+pow5mult(Bigint *b, int k)
+{
+    Bigint *b1, *p5, *p51;
+    int i;
+    static int p05[3] = { 5, 25, 125 };
+
+    if ((i = k & 3)) {
+        b = multadd(b, p05[i-1], 0);
+        if (b == NULL)
+            return NULL;
+    }
+
+    if (!(k >>= 2))
+        return b;
+    p5 = i2b(625);
+    if (p5 == NULL) {
+        Bfree(b);
+        return NULL;
+    }
+
+    for(;;) {
+        if (k & 1) {
+            b1 = mult(b, p5);
+            Bfree(b);
+            b = b1;
+            if (b == NULL) {
+                Bfree(p5);
+                return NULL;
+            }
+        }
+        if (!(k >>= 1))
+            break;
+        p51 = mult(p5, p5);
+        Bfree(p5);
+        p5 = p51;
+        if (p5 == NULL) {
+            Bfree(b);
+            return NULL;
+        }
+    }
+    Bfree(p5);
+    return b;
+}
+
+#endif /* Py_USING_MEMORY_DEBUGGER */
 
 /* shift a Bigint b left by k bits.  Return a pointer to the shifted result,
    or NULL on failure.  If the returned pointer is distinct from b then the
