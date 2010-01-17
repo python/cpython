@@ -580,7 +580,7 @@ static void
 release_bytes(PyObject* o)
 {
 	if (PyByteArray_Check(o))
-		o->ob_type->tp_as_buffer->bf_releasebuffer(NULL, 0);
+		o->ob_type->tp_as_buffer->bf_releasebuffer(o, 0);
 	Py_DECREF(o);
 }
 
