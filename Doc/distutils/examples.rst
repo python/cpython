@@ -285,8 +285,11 @@ by using the `docutils` parser::
     warning: check: Title underline too short. (line 2)
     warning: check: Could not finish the parsing.
 
+
+.. _reading-metadata:
+
 Reading the metadata
-=====================
+====================
 
 The :func:`distutils.core.setup` function provides a command-line interface
 that allows you to query the metadata fields of a project through the
