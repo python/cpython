@@ -12,6 +12,11 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7561: Operations on empty bytearrays (such as `int(bytearray())`)
+  could crash in many places because of the PyByteArray_AS_STRING() macro
+  returning NULL.  The macro now returns a statically allocated empty
+  string instead.
+
 - Issue #6690: Optimize the bytecode for expressions such as `x in {1, 2, 3}`,
   where the right hand operand is a set of constants, by turning the set into
   a frozenset and pre-building it as a constant.  The comparison operation
