@@ -76,7 +76,7 @@ def strtod(s, mant_dig=53, min_exp = -1021, max_exp = 1024):
         hexdigs,
         e + 4*hexdigs)
 
-TEST_SIZE = 10
+TEST_SIZE = 16
 
 @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
                      "applies only when using short float repr style")
