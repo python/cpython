@@ -6,6 +6,7 @@
 #include "bytes_methods.h"
 
 static PyByteArrayObject *nullbytes = NULL;
+char _PyByteArray_empty_string[] = "";
 
 void
 PyByteArray_Fini(void)
@@ -65,10 +66,7 @@ bytearray_getbuffer(PyByteArrayObject *obj, Py_buffer *view, int flags)
         obj->ob_exports++;
         return 0;
     }
-    if (obj->ob_bytes == NULL)
-        ptr = "";
-    else
-        ptr = obj->ob_bytes;
+    ptr = (void *) PyByteArray_AS_STRING(obj);
     ret = PyBuffer_FillInfo(view, (PyObject*)obj, ptr, Py_SIZE(obj), 0, flags);
     if (ret >= 0) {
         obj->ob_exports++;
@@ -152,7 +150,7 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
             Py_DECREF(new);
             return PyErr_NoMemory();
         }
-        if (bytes != NULL)
+        if (bytes != NULL && size > 0)
             memcpy(new->ob_bytes, bytes, size);
         new->ob_bytes[size] = '\0';  /* Trailing null byte */
     }

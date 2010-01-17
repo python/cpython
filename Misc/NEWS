@@ -12,6 +12,11 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7561: Operations on empty bytearrays (such as `int(bytearray())`)
+  could crash in many places because of the PyByteArray_AS_STRING() macro
+  returning NULL.  The macro now returns a statically allocated empty
+  string instead.
+
 - Issue #7632: Fix various str -> float conversion bugs present in 2.7
   alpha 2, including: (1) a serious 'wrong output' bug that could
   occur for long (> 40 digit) input strings, (2) a crash in dtoa.c
