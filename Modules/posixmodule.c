@@ -3667,6 +3667,10 @@ posix_fork(PyObject *self, PyObject *noargs)
 #else
 #ifdef HAVE_LIBUTIL_H
 #include <libutil.h>
+#else
+#ifdef HAVE_UTIL_H
+#include <util.h>
+#endif /* HAVE_UTIL_H */
 #endif /* HAVE_LIBUTIL_H */
 #endif /* HAVE_PTY_H */
 #ifdef HAVE_STROPTS_H

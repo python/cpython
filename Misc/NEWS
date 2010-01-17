@@ -66,9 +66,13 @@ Library
   Extension extra options may change the output without changing the .c
   file). Initial patch by Collin Winter.
 
-
 Build
 -----
+
+- Issue #7658: Ensure that the new pythonw executable works on OSX 10.4
+
+- Issue #7714: Use ``gcc -dumpversion`` to detect the version of GCC on
+  MacOSX.
 
 - Issue #7661: Allow ctypes to be built from a non-ASCII directory path.
   Patch by Florent Xicluna.
