@@ -96,7 +96,12 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
                                        '-fwrapv -O3 -Wall -Wstrict-prototypes')
 
-        self.assertEquals(get_platform(), 'macosx-10.3-i386')
+        cursize = sys.maxsize
+        sys.maxsize = (2 ** 31)-1
+        try:
+            self.assertEquals(get_platform(), 'macosx-10.3-i386')
+        finally:
+            sys.maxsize = cursize
 
         # macbook with fat binaries (fat, universal or fat64)
         os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
