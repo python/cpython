@@ -612,8 +612,8 @@ changes, or look through the Subversion logs for all the details.
 
   The :class:`distutils.dist.DistributionMetadata` class'
   :meth:`read_pkg_file` method will read the contents of a package's
-  :file:`PKG-INFO` metadata file.  For an example of its use,
-  XXX link to  file:///MacDev/svn.python.org/python-trunk/Doc/build/html/distutils/examples.html#reading-the-metadata
+  :file:`PKG-INFO` metadata file.  For an example of its use, see
+  :ref:`reading-metadata`.
   (Contributed by Tarek Ziade; :issue:`7457`.)
 
   :file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
