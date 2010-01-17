@@ -5,23 +5,16 @@
 #include "structmember.h"
 #include "bytes_methods.h"
 
-static PyByteArrayObject *nullbytes = NULL;
+char _PyByteArray_empty_string[] = "";
 
 void
 PyByteArray_Fini(void)
 {
-    Py_CLEAR(nullbytes);
 }
 
 int
 PyByteArray_Init(void)
 {
-    nullbytes = PyObject_New(PyByteArrayObject, &PyByteArray_Type);
-    if (nullbytes == NULL)
-        return 0;
-    nullbytes->ob_bytes = NULL;
-    Py_SIZE(nullbytes) = nullbytes->ob_alloc = 0;
-    nullbytes->ob_exports = 0;
     return 1;
 }
 
@@ -65,10 +58,7 @@ bytearray_getbuffer(PyByteArrayObject *obj, Py_buffer *view, int flags)
         obj->ob_exports++;
         return 0;
     }
-    if (obj->ob_bytes == NULL)
-        ptr = "";
-    else
-        ptr = obj->ob_bytes;
+    ptr = (void *) PyByteArray_AS_STRING(obj);
     ret = PyBuffer_FillInfo(view, (PyObject*)obj, ptr, Py_SIZE(obj), 0, flags);
     if (ret >= 0) {
         obj->ob_exports++;
@@ -152,7 +142,7 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
             Py_DECREF(new);
             return PyErr_NoMemory();
         }
-        if (bytes != NULL)
+        if (bytes != NULL && size > 0)
             memcpy(new->ob_bytes, bytes, size);
         new->ob_bytes[size] = '\0';  /* Trailing null byte */
     }
@@ -1038,7 +1028,6 @@ bytearray_dealloc(PyByteArrayObject *self)
 #define STRINGLIB_LEN PyByteArray_GET_SIZE
 #define STRINGLIB_STR PyByteArray_AS_STRING
 #define STRINGLIB_NEW PyByteArray_FromStringAndSize
-#define STRINGLIB_EMPTY nullbytes
 #define STRINGLIB_ISSPACE Py_ISSPACE
 #define STRINGLIB_ISLINEBREAK(x) ((x == '\n') || (x == '\r'))
 #define STRINGLIB_CHECK_EXACT PyByteArray_CheckExact
