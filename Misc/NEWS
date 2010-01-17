@@ -69,6 +69,10 @@ Library
 Build
 -----
 
+- Issue #7632: When Py_USING_MEMORY_DEBUGGER is defined, disable the
+  private memory allocation scheme in dtoa.c and use PyMem_Malloc and
+  PyMem_Free instead.  Also disable caching of powers of 5.
+
 - Issue #7658: Ensure that the new pythonw executable works on OSX 10.4
 
 - Issue #7714: Use ``gcc -dumpversion`` to detect the version of GCC on
