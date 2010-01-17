@@ -564,6 +564,14 @@ class ExecTests(unittest.TestCase):
     def test_execvpe_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execvpe, 'notepad', [], None)
 
+class ArgTests(unittest.TestCase):
+    def test_bytearray(self):
+        # Issue #7561: posix module didn't release bytearray exports properly.
+        b = bytearray(os.sep.encode('ascii'))
+        self.assertRaises(OSError, os.mkdir, b)
+        # Check object is still resizable.
+        b[:] = b''
+
 class Win32ErrorTests(unittest.TestCase):
     def test_rename(self):
         self.assertRaises(WindowsError, os.rename, support.TESTFN, support.TESTFN+".bak")
@@ -750,6 +758,7 @@ else:
 
 def test_main():
     support.run_unittest(
+        ArgTests,
         FileTests,
         StatAttributeTests,
         EnvironTests,
