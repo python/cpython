@@ -49,7 +49,7 @@ PyAPI_FUNC(int) PyByteArray_Resize(PyObject *, Py_ssize_t);
      Py_SIZE(self) ? ((PyByteArrayObject *)(self))->ob_bytes : _PyByteArray_empty_string)
 #define PyByteArray_GET_SIZE(self)  (assert(PyByteArray_Check(self)),Py_SIZE(self))
 
-extern char _PyByteArray_empty_string[];
+PyAPI_DATA(char) _PyByteArray_empty_string[];
 
 #ifdef __cplusplus
 }
