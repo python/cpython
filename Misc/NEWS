@@ -223,6 +223,9 @@ C-API
 Library
 -------
 
+- Issue #7561: Fix crashes when using bytearray objects with the posix
+  module.
+
 - Issue #1670765: Prevent email.generator.Generator from re-wrapping
   headers in multipart/signed MIME parts, which fixes one of the sources of
   invalid modifications to such parts by Generator.
