@@ -78,7 +78,7 @@ from socket import socket, _fileobject, error as socket_error
 from socket import getnameinfo as _getnameinfo
 import base64        # for DER-to-PEM translation
 
-class SSLSocket (socket):
+class SSLSocket(socket):
 
     """This class implements a subtype of socket.socket that wraps
     the underlying OS socket in an SSL context when necessary, and
@@ -156,14 +156,14 @@ class SSLSocket (socket):
 
         return self._sslobj.peer_certificate(binary_form)
 
-    def cipher (self):
+    def cipher(self):
 
         if not self._sslobj:
             return None
         else:
             return self._sslobj.cipher()
 
-    def send (self, data, flags=0):
+    def send(self, data, flags=0):
         if self._sslobj:
             if flags != 0:
                 raise ValueError(
@@ -184,14 +184,14 @@ class SSLSocket (socket):
         else:
             return socket.send(self, data, flags)
 
-    def sendto (self, data, addr, flags=0):
+    def sendto(self, data, addr, flags=0):
         if self._sslobj:
             raise ValueError("sendto not allowed on instances of %s" %
                              self.__class__)
         else:
             return socket.sendto(self, data, addr, flags)
 
-    def sendall (self, data, flags=0):
+    def sendall(self, data, flags=0):
         if self._sslobj:
             if flags != 0:
                 raise ValueError(
@@ -206,7 +206,7 @@ class SSLSocket (socket):
         else:
             return socket.sendall(self, data, flags)
 
-    def recv (self, buflen=1024, flags=0):
+    def recv(self, buflen=1024, flags=0):
         if self._sslobj:
             if flags != 0:
                 raise ValueError(
@@ -223,7 +223,7 @@ class SSLSocket (socket):
         else:
             return socket.recv(self, buflen, flags)
 
-    def recv_into (self, buffer, nbytes=None, flags=0):
+    def recv_into(self, buffer, nbytes=None, flags=0):
         if buffer and (nbytes is None):
             nbytes = len(buffer)
         elif nbytes is None:
@@ -247,27 +247,27 @@ class SSLSocket (socket):
         else:
             return socket.recv_into(self, buffer, nbytes, flags)
 
-    def recvfrom (self, addr, buflen=1024, flags=0):
+    def recvfrom(self, addr, buflen=1024, flags=0):
         if self._sslobj:
             raise ValueError("recvfrom not allowed on instances of %s" %
                              self.__class__)
         else:
             return socket.recvfrom(self, addr, buflen, flags)
 
-    def recvfrom_into (self, buffer, nbytes=None, flags=0):
+    def recvfrom_into(self, buffer, nbytes=None, flags=0):
         if self._sslobj:
             raise ValueError("recvfrom_into not allowed on instances of %s" %
                              self.__class__)
         else:
             return socket.recvfrom_into(self, buffer, nbytes, flags)
 
-    def pending (self):
+    def pending(self):
         if self._sslobj:
             return self._sslobj.pending()
         else:
             return 0
 
-    def unwrap (self):
+    def unwrap(self):
         if self._sslobj:
             s = self._sslobj.shutdown()
             self._sslobj = None
@@ -275,18 +275,18 @@ class SSLSocket (socket):
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 
-    def shutdown (self, how):
+    def shutdown(self, how):
         self._sslobj = None
         socket.shutdown(self, how)
 
-    def close (self):
+    def close(self):
         if self._makefile_refs < 1:
             self._sslobj = None
             socket.close(self)
         else:
             self._makefile_refs -= 1
 
-    def do_handshake (self):
+    def do_handshake(self):
 
         """Perform a TLS/SSL handshake."""
 
@@ -394,7 +394,7 @@ def PEM_cert_to_DER_cert(pem_cert_string):
     d = pem_cert_string.strip()[len(PEM_HEADER):-len(PEM_FOOTER)]
     return base64.decodestring(d)
 
-def get_server_certificate (addr, ssl_version=PROTOCOL_SSLv3, ca_certs=None):
+def get_server_certificate(addr, ssl_version=PROTOCOL_SSLv3, ca_certs=None):
 
     """Retrieve the certificate from the server at the specified address,
     and return it as a PEM-encoded string.
@@ -413,7 +413,7 @@ def get_server_certificate (addr, ssl_version=PROTOCOL_SSLv3, ca_certs=None):
     s.close()
     return DER_cert_to_PEM_cert(dercert)
 
-def get_protocol_name (protocol_code):
+def get_protocol_name(protocol_code):
     if protocol_code == PROTOCOL_TLSv1:
         return "TLSv1"
     elif protocol_code == PROTOCOL_SSLv23:
@@ -428,7 +428,7 @@ def get_protocol_name (protocol_code):
 
 # a replacement for the old socket.ssl function
 
-def sslwrap_simple (sock, keyfile=None, certfile=None):
+def sslwrap_simple(sock, keyfile=None, certfile=None):
 
     """A replacement for the old socket.ssl function.  Designed
     for compability with Python 2.5 and earlier.  Will disappear in
