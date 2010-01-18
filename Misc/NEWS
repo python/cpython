@@ -724,6 +724,13 @@ Tests
 - Removed importlib's custom test discovery code and switched to
     unittest.TestLoader.discover().
 
+Tools/Demos
+-----------
+
+- iobench (a file I/O benchmark) and ccbench (a concurrency benchmark) were
+  added to the `Tools/` directory.  They were previously living in the
+  sandbox.
+
 
 What's New in Python 3.1?
 =========================
