@@ -81,6 +81,13 @@ Build
 - Issue #7661: Allow ctypes to be built from a non-ASCII directory path.
   Patch by Florent Xicluna.
 
+Tools/Demos
+-----------
+
+- iobench (a file I/O benchmark) and ccbench (a concurrency benchmark) were
+  added to the `Tools/` directory.  They were previously living in the
+  sandbox.
+
 
 What's New in Python 2.7 alpha 2?
 =================================
