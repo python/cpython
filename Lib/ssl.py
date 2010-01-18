@@ -304,7 +304,7 @@ class SSLSocket(socket):
         self._sslobj = None
         socket.shutdown(self, how)
 
-    def unwrap (self):
+    def unwrap(self):
         if self._sslobj:
             s = self._sslobj.shutdown()
             self._sslobj = None
