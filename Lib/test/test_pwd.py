@@ -43,8 +43,8 @@ class PwdTest(unittest.TestCase):
         for e in entries:
             if not e[0] or e[0] == '+':
                 continue # skip NIS entries etc.
-            self.assertTrue(pwd.getpwnam(e.pw_name) in entriesbyname[e.pw_name])
-            self.assertTrue(pwd.getpwuid(e.pw_uid) in entriesbyuid[e.pw_uid])
+            self.assertIn(pwd.getpwnam(e.pw_name), entriesbyname[e.pw_name])
+            self.assertIn(pwd.getpwuid(e.pw_uid), entriesbyuid[e.pw_uid])
 
     def test_errors(self):
         self.assertRaises(TypeError, pwd.getpwuid)

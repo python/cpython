@@ -131,7 +131,7 @@ class WhichDBTestCase(unittest.TestCase):
             f = module.open(_fname, 'w')
             f[b"1"] = b"1"
             # and test that we can find it
-            self.assertTrue(b"1" in f)
+            self.assertIn(b"1", f)
             # and read it
             self.assertTrue(f[b"1"] == b"1")
             f.close()
@@ -154,9 +154,9 @@ class WhichDBTestCase(unittest.TestCase):
             self.d[k] = v
         self.assertEqual(sorted(self.d.keys()), sorted(k for (k, v) in a))
         for k, v in a:
-            self.assertTrue(k in self.d)
+            self.assertIn(k, self.d)
             self.assertEqual(self.d[k], v)
-        self.assertTrue(b'xxx' not in self.d)
+        self.assertNotIn(b'xxx', self.d)
         self.assertRaises(KeyError, lambda: self.d[b'xxx'])
         self.d.close()
 

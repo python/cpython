@@ -483,7 +483,7 @@ class _WarningsTests(BaseTest):
             with support.captured_output('stderr') as stream:
                 self.module.warn(text)
                 result = stream.getvalue()
-        self.assertTrue(text in result)
+        self.assertIn(text, result)
 
     def test_showwarning_not_callable(self):
         with original_warnings.catch_warnings(module=self.module):

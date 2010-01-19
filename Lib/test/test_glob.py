@@ -96,7 +96,7 @@ class GlobTests(unittest.TestCase):
         res = glob.glob(self.tempdir + '*' + os.sep)
         self.assertEqual(len(res), 1)
         # either of these results are reasonable
-        self.assertTrue(res[0] in [self.tempdir, self.tempdir + os.sep])
+        self.assertIn(res[0], [self.tempdir, self.tempdir + os.sep])
 
     def test_glob_broken_symlinks(self):
         if hasattr(os, 'symlink'):

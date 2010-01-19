@@ -125,7 +125,7 @@ class ReprTests(unittest.TestCase):
         s = r(ClassWithFailingRepr)
         self.assertTrue(s.startswith("<class "))
         self.assertTrue(s.endswith(">"))
-        self.assertTrue(s.find("...") in [12, 13])
+        self.assertIn(s.find("..."), [12, 13])
 
     def test_lambda(self):
         self.assertTrue(repr(lambda x: x).startswith(

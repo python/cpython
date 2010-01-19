@@ -481,14 +481,14 @@ class PosixPathTest(unittest.TestCase):
         self.assertRaises(TypeError, posixpath.normpath)
 
     def test_abspath(self):
-        self.assertTrue("foo" in posixpath.abspath("foo"))
-        self.assertTrue(b"foo" in posixpath.abspath(b"foo"))
+        self.assertIn("foo", posixpath.abspath("foo"))
+        self.assertIn(b"foo", posixpath.abspath(b"foo"))
 
         self.assertRaises(TypeError, posixpath.abspath)
 
     def test_realpath(self):
-        self.assertTrue("foo" in realpath("foo"))
-        self.assertTrue(b"foo" in realpath(b"foo"))
+        self.assertIn("foo", realpath("foo"))
+        self.assertIn(b"foo", realpath(b"foo"))
         self.assertRaises(TypeError, posixpath.realpath)
 
     if hasattr(os, "symlink"):

@@ -153,7 +153,7 @@ class ThreadTests(BaseTestCase):
         tid = _thread.start_new_thread(f, (mutex,))
         # Wait for the thread to finish.
         mutex.acquire()
-        self.assertTrue(tid in threading._active)
+        self.assertIn(tid, threading._active)
         self.assertTrue(isinstance(threading._active[tid],
                                 threading._DummyThread))
         del threading._active[tid]

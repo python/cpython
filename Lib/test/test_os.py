@@ -228,7 +228,7 @@ class StatAttributeTests(unittest.TestCase):
                     def trunc(x): return x
                 self.assertEquals(trunc(getattr(result, attr)),
                                   result[getattr(stat, name)])
-                self.assertTrue(attr in members)
+                self.assertIn(attr, members)
 
         try:
             result[200]

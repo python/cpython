@@ -519,12 +519,12 @@ class BaseStrTest:
         edge = _('-') * (size // 2)
         s = _('').join([edge, SUBSTR, edge])
         del edge
-        self.assertTrue(SUBSTR in s)
+        self.assertIn(SUBSTR, s)
         self.assertFalse(SUBSTR * 2 in s)
-        self.assertTrue(_('-') in s)
+        self.assertIn(_('-'), s)
         self.assertFalse(_('a') in s)
         s += _('a')
-        self.assertTrue(_('a') in s)
+        self.assertIn(_('a'), s)
 
     @bigmemtest(minsize=_2G + 10, memuse=2)
     def test_compare(self, size):
@@ -768,7 +768,7 @@ class TupleTest(unittest.TestCase):
     def test_contains(self, size):
         t = (1, 2, 3, 4, 5) * size
         self.assertEquals(len(t), size * 5)
-        self.assertTrue(5 in t)
+        self.assertIn(5, t)
         self.assertFalse((1, 2, 3, 4, 5) in t)
         self.assertFalse(0 in t)
 
@@ -917,7 +917,7 @@ class ListTest(unittest.TestCase):
     def test_contains(self, size):
         l = [1, 2, 3, 4, 5] * size
         self.assertEquals(len(l), size * 5)
-        self.assertTrue(5 in l)
+        self.assertIn(5, l)
         self.assertFalse([1, 2, 3, 4, 5] in l)
         self.assertFalse(0 in l)
 

@@ -542,23 +542,23 @@ class TestCase(unittest.TestCase):
     def test_in_and_not_in(self):
         for sc5 in IteratingSequenceClass(5), SequenceClass(5):
             for i in range(5):
-                self.assertTrue(i in sc5)
+                self.assertIn(i, sc5)
             for i in "abc", -1, 5, 42.42, (3, 4), [], {1: 1}, 3-12j, sc5:
-                self.assertTrue(i not in sc5)
+                self.assertNotIn(i, sc5)
 
         self.assertRaises(TypeError, lambda: 3 in 12)
         self.assertRaises(TypeError, lambda: 3 not in map)
 
         d = {"one": 1, "two": 2, "three": 3, 1j: 2j}
         for k in d:
-            self.assertTrue(k in d)
-            self.assertTrue(k not in d.values())
+            self.assertIn(k, d)
+            self.assertNotIn(k, d.values())
         for v in d.values():
-            self.assertTrue(v in d.values())
-            self.assertTrue(v not in d)
+            self.assertIn(v, d.values())
+            self.assertNotIn(v, d)
         for k, v in d.items():
-            self.assertTrue((k, v) in d.items())
-            self.assertTrue((v, k) not in d.items())
+            self.assertIn((k, v), d.items())
+            self.assertNotIn((v, k), d.items())
 
         f = open(TESTFN, "w")
         try:
@@ -569,9 +569,9 @@ class TestCase(unittest.TestCase):
         try:
             for chunk in "abc":
                 f.seek(0, 0)
-                self.assertTrue(chunk not in f)
+                self.assertNotIn(chunk, f)
                 f.seek(0, 0)
-                self.assertTrue((chunk + "\n") in f)
+                self.assertIn((chunk + "\n"), f)
         finally:
             f.close()
             try:

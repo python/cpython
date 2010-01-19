@@ -211,7 +211,7 @@ class SystemRandom_TestBasicOps(TestBasicOps):
 
             n += n - 1      # check 1 below the next power of two
             k = int(1.00001 + _log(n, 2))
-            self.assertTrue(k in [numbits, numbits+1])
+            self.assertIn(k, [numbits, numbits+1])
             self.assertTrue(2**k > n > 2**(k-2))
 
             n -= n >> 15     # check a little farther below the next power of two
@@ -367,7 +367,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
 
             n += n - 1      # check 1 below the next power of two
             k = int(1.00001 + _log(n, 2))
-            self.assertTrue(k in [numbits, numbits+1])
+            self.assertIn(k, [numbits, numbits+1])
             self.assertTrue(2**k > n > 2**(k-2))
 
             n -= n >> 15     # check a little farther below the next power of two

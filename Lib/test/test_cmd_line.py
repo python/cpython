@@ -49,7 +49,7 @@ class CmdLineTest(unittest.TestCase):
     def verify_valid_flag(self, cmd_line):
         data = self.start_python(cmd_line)
         self.assertTrue(data == b'' or data.endswith(b'\n'))
-        self.assertTrue(b'Traceback' not in data)
+        self.assertNotIn(b'Traceback', data)
 
     def test_optimize(self):
         self.verify_valid_flag('-O')
@@ -65,7 +65,7 @@ class CmdLineTest(unittest.TestCase):
         self.verify_valid_flag('-S')
 
     def test_usage(self):
-        self.assertTrue(b'usage' in self.start_python('-h'))
+        self.assertIn(b'usage', self.start_python('-h'))
 
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
@@ -77,10 +77,10 @@ class CmdLineTest(unittest.TestCase):
         # codec), a recursion loop can occur.
         data, rc = self.start_python_and_exit_code('-v')
         self.assertEqual(rc, 0)
-        self.assertTrue(b'stack overflow' not in data)
+        self.assertNotIn(b'stack overflow', data)
         data, rc = self.start_python_and_exit_code('-vv')
         self.assertEqual(rc, 0)
-        self.assertTrue(b'stack overflow' not in data)
+        self.assertNotIn(b'stack overflow', data)
 
     def test_run_module(self):
         # Test expected operation of the '-m' switch
@@ -166,8 +166,8 @@ class CmdLineTest(unittest.TestCase):
             p = _spawn_python_with_env('-S', '-c',
                                        'import sys; print(sys.path)')
             stdout, _ = p.communicate()
-            self.assertTrue(path1.encode('ascii') in stdout)
-            self.assertTrue(path2.encode('ascii') in stdout)
+            self.assertIn(path1.encode('ascii'), stdout)
+            self.assertIn(path2.encode('ascii'), stdout)
 
 
 def test_main():

@@ -213,11 +213,16 @@ class GeneralFloatCases(unittest.TestCase):
     def test_float_containment(self):
         floats = (INF, -INF, 0.0, 1.0, NAN)
         for f in floats:
+            self.assertIn(f, [f])
             self.assertTrue(f in [f], "'%r' not in []" % f)
+            self.assertIn(f, (f,))
             self.assertTrue(f in (f,), "'%r' not in ()" % f)
+            self.assertIn(f, {f})
             self.assertTrue(f in {f}, "'%r' not in set()" % f)
+            self.assertIn(f, {f: None})
             self.assertTrue(f in {f: None}, "'%r' not in {}" % f)
             self.assertEqual([f].count(f), 1, "[].count('%r') != 1" % f)
+            self.assertIn(f, floats)
             self.assertTrue(f in floats, "'%r' not in container" % f)
 
         for f in floats:

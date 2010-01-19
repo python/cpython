@@ -65,7 +65,7 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(c in self.s, c in self.d)
         self.assertRaises(TypeError, self.s.__contains__, [[]])
         s = self.thetype([frozenset(self.letters)])
-        self.assertTrue(self.thetype(self.letters) in s)
+        self.assertIn(self.thetype(self.letters), s)
 
     def test_union(self):
         u = self.s.union(self.otherword)
@@ -269,7 +269,7 @@ class TestJointOps(unittest.TestCase):
         s=H()
         f=set()
         f.add(s)
-        self.assertTrue(s in f)
+        self.assertIn(s, f)
         f.remove(s)
         f.add(s)
         f.discard(s)
@@ -379,7 +379,7 @@ class TestSet(TestJointOps):
 
     def test_add(self):
         self.s.add('Q')
-        self.assertTrue('Q' in self.s)
+        self.assertIn('Q', self.s)
         dup = self.s.copy()
         self.s.add('Q')
         self.assertEqual(self.s, dup)
@@ -387,13 +387,13 @@ class TestSet(TestJointOps):
 
     def test_remove(self):
         self.s.remove('a')
-        self.assertTrue('a' not in self.s)
+        self.assertNotIn('a', self.s)
         self.assertRaises(KeyError, self.s.remove, 'Q')
         self.assertRaises(TypeError, self.s.remove, [])
         s = self.thetype([frozenset(self.word)])
-        self.assertTrue(self.thetype(self.word) in s)
+        self.assertIn(self.thetype(self.word), s)
         s.remove(self.thetype(self.word))
-        self.assertTrue(self.thetype(self.word) not in s)
+        self.assertNotIn(self.thetype(self.word), s)
         self.assertRaises(KeyError, self.s.remove, self.thetype(self.word))
 
     def test_remove_keyerror_unpacking(self):
@@ -420,26 +420,26 @@ class TestSet(TestJointOps):
 
     def test_discard(self):
         self.s.discard('a')
-        self.assertTrue('a' not in self.s)
+        self.assertNotIn('a', self.s)
         self.s.discard('Q')
         self.assertRaises(TypeError, self.s.discard, [])
         s = self.thetype([frozenset(self.word)])
-        self.assertTrue(self.thetype(self.word) in s)
+        self.assertIn(self.thetype(self.word), s)
         s.discard(self.thetype(self.word))
-        self.assertTrue(self.thetype(self.word) not in s)
+        self.assertNotIn(self.thetype(self.word), s)
         s.discard(self.thetype(self.word))
 
     def test_pop(self):
         for i in range(len(self.s)):
             elem = self.s.pop()
-            self.assertTrue(elem not in self.s)
+            self.assertNotIn(elem, self.s)
         self.assertRaises(KeyError, self.s.pop)
 
     def test_update(self):
         retval = self.s.update(self.otherword)
         self.assertEqual(retval, None)
         for c in (self.word + self.otherword):
-            self.assertTrue(c in self.s)
+            self.assertIn(c, self.s)
         self.assertRaises(PassThru, self.s.update, check_pass_thru())
         self.assertRaises(TypeError, self.s.update, [[]])
         for p, q in (('cdc', 'abcd'), ('efgfe', 'abcefg'), ('ccb', 'abc'), ('ef', 'abcef')):
@@ -457,16 +457,16 @@ class TestSet(TestJointOps):
     def test_ior(self):
         self.s |= set(self.otherword)
         for c in (self.word + self.otherword):
-            self.assertTrue(c in self.s)
+            self.assertIn(c, self.s)
 
     def test_intersection_update(self):
         retval = self.s.intersection_update(self.otherword)
         self.assertEqual(retval, None)
         for c in (self.word + self.otherword):
             if c in self.otherword and c in self.word:
-                self.assertTrue(c in self.s)
+                self.assertIn(c, self.s)
             else:
-                self.assertTrue(c not in self.s)
+                self.assertNotIn(c, self.s)
         self.assertRaises(PassThru, self.s.intersection_update, check_pass_thru())
         self.assertRaises(TypeError, self.s.intersection_update, [[]])
         for p, q in (('cdc', 'c'), ('efgfe', ''), ('ccb', 'bc'), ('ef', '')):
@@ -484,18 +484,18 @@ class TestSet(TestJointOps):
         self.s &= set(self.otherword)
         for c in (self.word + self.otherword):
             if c in self.otherword and c in self.word:
-                self.assertTrue(c in self.s)
+                self.assertIn(c, self.s)
             else:
-                self.assertTrue(c not in self.s)
+                self.assertNotIn(c, self.s)
 
     def test_difference_update(self):
         retval = self.s.difference_update(self.otherword)
         self.assertEqual(retval, None)
         for c in (self.word + self.otherword):
             if c in self.word and c not in self.otherword:
-                self.assertTrue(c in self.s)
+                self.assertIn(c, self.s)
             else:
-                self.assertTrue(c not in self.s)
+                self.assertNotIn(c, self.s)
         self.assertRaises(PassThru, self.s.difference_update, check_pass_thru())
         self.assertRaises(TypeError, self.s.difference_update, [[]])
         self.assertRaises(TypeError, self.s.symmetric_difference_update, [[]])
@@ -521,18 +521,18 @@ class TestSet(TestJointOps):
         self.s -= set(self.otherword)
         for c in (self.word + self.otherword):
             if c in self.word and c not in self.otherword:
-                self.assertTrue(c in self.s)
+                self.assertIn(c, self.s)
             else:
-                self.assertTrue(c not in self.s)
+                self.assertNotIn(c, self.s)
 
     def test_symmetric_difference_update(self):
         retval = self.s.symmetric_difference_update(self.otherword)
         self.assertEqual(retval, None)
         for c in (self.word + self.otherword):
             if (c in self.word) ^ (c in self.otherword):
-                self.assertTrue(c in self.s)
+                self.assertIn(c, self.s)
             else:
-                self.assertTrue(c not in self.s)
+                self.assertNotIn(c, self.s)
         self.assertRaises(PassThru, self.s.symmetric_difference_update, check_pass_thru())
         self.assertRaises(TypeError, self.s.symmetric_difference_update, [[]])
         for p, q in (('cdc', 'abd'), ('efgfe', 'abcefg'), ('ccb', 'a'), ('ef', 'abcef')):
@@ -545,9 +545,9 @@ class TestSet(TestJointOps):
         self.s ^= set(self.otherword)
         for c in (self.word + self.otherword):
             if (c in self.word) ^ (c in self.otherword):
-                self.assertTrue(c in self.s)
+                self.assertIn(c, self.s)
             else:
-                self.assertTrue(c not in self.s)
+                self.assertNotIn(c, self.s)
 
     def test_inplace_on_self(self):
         t = self.s.copy()
@@ -814,7 +814,7 @@ class TestBasicOps(unittest.TestCase):
 
     def test_iteration(self):
         for v in self.set:
-            self.assertTrue(v in self.values)
+            self.assertIn(v, self.values)
         setiter = iter(self.set)
         # note: __length_hint__ is an internal undocumented API,
         # don't rely on it in your own programs
@@ -849,10 +849,10 @@ class TestBasicOpsSingleton(TestBasicOps):
         self.repr   = "{3}"
 
     def test_in(self):
-        self.assertTrue(3 in self.set)
+        self.assertIn(3, self.set)
 
     def test_not_in(self):
-        self.assertTrue(2 not in self.set)
+        self.assertNotIn(2, self.set)
 
 #------------------------------------------------------------------------------
 
@@ -866,10 +866,10 @@ class TestBasicOpsTuple(TestBasicOps):
         self.repr   = "{(0, 'zero')}"
 
     def test_in(self):
-        self.assertTrue((0, "zero") in self.set)
+        self.assertIn((0, "zero"), self.set)
 
     def test_not_in(self):
-        self.assertTrue(9 not in self.set)
+        self.assertNotIn(9, self.set)
 
 #------------------------------------------------------------------------------
 
@@ -1186,7 +1186,7 @@ class TestMutate(unittest.TestCase):
             popped[self.set.pop()] = None
         self.assertEqual(len(popped), len(self.values))
         for v in self.values:
-            self.assertTrue(v in popped)
+            self.assertIn(v, popped)
 
     def test_update_empty_tuple(self):
         self.set.update(())
@@ -1760,7 +1760,7 @@ class TestGraphs(unittest.TestCase):
             edge = vertex                       # Cuboctahedron vertices are edges in Cube
             self.assertEqual(len(edge), 2)      # Two cube vertices define an edge
             for cubevert in edge:
-                self.assertTrue(cubevert in g)
+                self.assertIn(cubevert, g)
 
 
 #==============================================================================

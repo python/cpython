@@ -193,7 +193,7 @@ class ReferencesTestCase(TestBase):
             def __bytes__(self):
                 return b"bytes"
         instance = C()
-        self.assertTrue("__bytes__" in dir(weakref.proxy(instance)))
+        self.assertIn("__bytes__", dir(weakref.proxy(instance)))
         self.assertEqual(bytes(weakref.proxy(instance)), b"bytes")
 
     def test_proxy_index(self):
@@ -715,8 +715,8 @@ class SubclassableWeakrefTestCase(TestBase):
         refs = weakref.getweakrefs(o)
         self.assertEqual(len(refs), 3)
         self.assertTrue(r2 is refs[0])
-        self.assertTrue(r1 in refs[1:])
-        self.assertTrue(r3 in refs[1:])
+        self.assertIn(r1, refs[1:])
+        self.assertIn(r3, refs[1:])
 
     def test_subclass_refs_dont_conflate_callbacks(self):
         class MyRef(weakref.ref):
@@ -726,8 +726,8 @@ class SubclassableWeakrefTestCase(TestBase):
         r2 = MyRef(o, str)
         self.assertTrue(r1 is not r2)
         refs = weakref.getweakrefs(o)
-        self.assertTrue(r1 in refs)
-        self.assertTrue(r2 in refs)
+        self.assertIn(r1, refs)
+        self.assertIn(r2, refs)
 
     def test_subclass_refs_with_slots(self):
         class MyRef(weakref.ref):
@@ -860,8 +860,8 @@ class MappingTestCase(TestBase):
                      "deleting the keys did not clear the dictionary")
         o = Object(42)
         dict[o] = "What is the meaning of the universe?"
-        self.assertTrue(o in dict)
-        self.assertTrue(34 not in dict)
+        self.assertIn(o, dict)
+        self.assertNotIn(34, dict)
 
     def test_weak_keyed_iters(self):
         dict, objects = self.make_weak_keyed_dict()
@@ -873,8 +873,8 @@ class MappingTestCase(TestBase):
         objects2 = list(objects)
         for wr in refs:
             ob = wr()
-            self.assertTrue(ob in dict)
-            self.assertTrue(ob in dict)
+            self.assertIn(ob, dict)
+            self.assertIn(ob, dict)
             self.assertEqual(ob.arg, dict[ob])
             objects2.remove(ob)
         self.assertEqual(len(objects2), 0)
@@ -884,8 +884,8 @@ class MappingTestCase(TestBase):
         self.assertEqual(len(list(dict.keyrefs())), len(objects))
         for wr in dict.keyrefs():
             ob = wr()
-            self.assertTrue(ob in dict)
-            self.assertTrue(ob in dict)
+            self.assertIn(ob, dict)
+            self.assertIn(ob, dict)
             self.assertEqual(ob.arg, dict[ob])
             objects2.remove(ob)
         self.assertEqual(len(objects2), 0)
@@ -1091,13 +1091,13 @@ class MappingTestCase(TestBase):
         weakdict = klass()
         o = weakdict.setdefault(key, value1)
         self.assertTrue(o is value1)
-        self.assertTrue(key in weakdict)
+        self.assertIn(key, weakdict)
         self.assertTrue(weakdict.get(key) is value1)
         self.assertTrue(weakdict[key] is value1)
 
         o = weakdict.setdefault(key, value2)
         self.assertTrue(o is value1)
-        self.assertTrue(key in weakdict)
+        self.assertIn(key, weakdict)
         self.assertTrue(weakdict.get(key) is value1)
         self.assertTrue(weakdict[key] is value1)
 

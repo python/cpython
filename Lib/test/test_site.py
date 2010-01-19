@@ -270,7 +270,7 @@ class ImportSideEffectTests(unittest.TestCase):
         site.removeduppaths()
         seen_paths = set()
         for path in sys.path:
-            self.assertTrue(path not in seen_paths)
+            self.assertNotIn(path, seen_paths)
             seen_paths.add(path)
 
     def test_add_build_dir(self):

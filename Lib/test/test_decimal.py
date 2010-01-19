@@ -1673,8 +1673,8 @@ class ContextAPItests(unittest.TestCase):
             self.assertEqual(v1, v2)
 
     def test_equality_with_other_types(self):
-        self.assertTrue(Decimal(10) in ['a', 1.0, Decimal(10), (1,2), {}])
-        self.assertTrue(Decimal(10) not in ['a', 1.0, (1,2), {}])
+        self.assertIn(Decimal(10), ['a', 1.0, Decimal(10), (1,2), {}])
+        self.assertNotIn(Decimal(10), ['a', 1.0, (1,2), {}])
 
     def test_copy(self):
         # All copies should be deep

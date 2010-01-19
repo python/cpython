@@ -50,8 +50,8 @@ class StructSeqTest(unittest.TestCase):
     def test_contains(self):
         t1 = time.gmtime()
         for item in t1:
-            self.assertTrue(item in t1)
-        self.assertTrue(-42 not in t1)
+            self.assertIn(item, t1)
+        self.assertNotIn(-42, t1)
 
     def test_hash(self):
         t1 = time.gmtime()

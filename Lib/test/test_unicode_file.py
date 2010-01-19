@@ -47,7 +47,7 @@ class TestUnicodeFiles(unittest.TestCase):
         base = unicodedata.normalize("NFD", base)
         file_list = [unicodedata.normalize("NFD", f) for f in file_list]
 
-        self.assertTrue(base in file_list)
+        self.assertIn(base, file_list)
 
     # Do as many "equivalancy' tests as we can - ie, check that although we
     # have different types for the filename, they refer to the same file.

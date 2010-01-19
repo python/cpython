@@ -199,9 +199,9 @@ class TestBasic(unittest.TestCase):
             self.assertEqual(len(d), n-i)
             j = random.randrange(-len(d), len(d))
             val = d[j]
-            self.assertTrue(val in d)
+            self.assertIn(val, d)
             del d[j]
-            self.assertTrue(val not in d)
+            self.assertNotIn(val, d)
         self.assertEqual(len(d), 0)
 
     def test_reverse(self):
@@ -328,7 +328,7 @@ class TestBasic(unittest.TestCase):
         e = eval(repr(d))
         self.assertEqual(list(d), list(e))
         d.append(d)
-        self.assertTrue('...' in repr(d))
+        self.assertIn('...', repr(d))
 
     def test_print(self):
         d = deque(range(200))

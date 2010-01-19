@@ -294,7 +294,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             z.close()
             zi = zipimport.zipimporter(TEMP_ZIP)
             self.assertEquals(data, zi.get_data(name))
-            self.assertTrue('zipimporter object' in repr(zi))
+            self.assertIn('zipimporter object', repr(zi))
         finally:
             z.close()
             os.remove(TEMP_ZIP)
