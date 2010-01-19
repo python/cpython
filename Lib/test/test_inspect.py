@@ -117,8 +117,8 @@ class TestPredicates(IsTestBase):
         x = C()
         x.a = 42
         members = dict(inspect.getmembers(x))
-        self.assertTrue('a' in members)
-        self.assertTrue('b' not in members)
+        self.assertIn('a', members)
+        self.assertNotIn('b', members)
 
     def test_isabstract(self):
         from abc import ABCMeta, abstractmethod
@@ -471,25 +471,25 @@ class TestClassesAndFunctions(unittest.TestCase):
             datablob = '1'
 
         attrs = attrs_wo_objs(A)
-        self.assertTrue(('s', 'static method', A) in attrs, 'missing static method')
-        self.assertTrue(('c', 'class method', A) in attrs, 'missing class method')
-        self.assertTrue(('p', 'property', A) in attrs, 'missing property')
+        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
+        self.assertIn(('c', 'class method', A), attrs, 'missing class method')
+        self.assertIn(('p', 'property', A), attrs, 'missing property')
         self.assertTrue(('m', 'method', A) in attrs,
             'missing plain method: %r' % attrs)
-        self.assertTrue(('m1', 'method', A) in attrs, 'missing plain method')
-        self.assertTrue(('datablob', 'data', A) in attrs, 'missing data')
+        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
+        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
 
         class B(A):
 
             def m(self): pass
 
         attrs = attrs_wo_objs(B)
-        self.assertTrue(('s', 'static method', A) in attrs, 'missing static method')
-        self.assertTrue(('c', 'class method', A) in attrs, 'missing class method')
-        self.assertTrue(('p', 'property', A) in attrs, 'missing property')
-        self.assertTrue(('m', 'method', B) in attrs, 'missing plain method')
-        self.assertTrue(('m1', 'method', A) in attrs, 'missing plain method')
-        self.assertTrue(('datablob', 'data', A) in attrs, 'missing data')
+        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
+        self.assertIn(('c', 'class method', A), attrs, 'missing class method')
+        self.assertIn(('p', 'property', A), attrs, 'missing property')
+        self.assertIn(('m', 'method', B), attrs, 'missing plain method')
+        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
+        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
 
 
         class C(A):
@@ -498,24 +498,24 @@ class TestClassesAndFunctions(unittest.TestCase):
             def c(self): pass
 
         attrs = attrs_wo_objs(C)
-        self.assertTrue(('s', 'static method', A) in attrs, 'missing static method')
-        self.assertTrue(('c', 'method', C) in attrs, 'missing plain method')
-        self.assertTrue(('p', 'property', A) in attrs, 'missing property')
-        self.assertTrue(('m', 'method', C) in attrs, 'missing plain method')
-        self.assertTrue(('m1', 'method', A) in attrs, 'missing plain method')
-        self.assertTrue(('datablob', 'data', A) in attrs, 'missing data')
+        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
+        self.assertIn(('c', 'method', C), attrs, 'missing plain method')
+        self.assertIn(('p', 'property', A), attrs, 'missing property')
+        self.assertIn(('m', 'method', C), attrs, 'missing plain method')
+        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
+        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
 
         class D(B, C):
 
             def m1(self): pass
 
         attrs = attrs_wo_objs(D)
-        self.assertTrue(('s', 'static method', A) in attrs, 'missing static method')
-        self.assertTrue(('c', 'method', C) in attrs, 'missing plain method')
-        self.assertTrue(('p', 'property', A) in attrs, 'missing property')
-        self.assertTrue(('m', 'method', B) in attrs, 'missing plain method')
-        self.assertTrue(('m1', 'method', D) in attrs, 'missing plain method')
-        self.assertTrue(('datablob', 'data', A) in attrs, 'missing data')
+        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
+        self.assertIn(('c', 'method', C), attrs, 'missing plain method')
+        self.assertIn(('p', 'property', A), attrs, 'missing property')
+        self.assertIn(('m', 'method', B), attrs, 'missing plain method')
+        self.assertIn(('m1', 'method', D), attrs, 'missing plain method')
+        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
 
 def test_main():
     run_unittest(TestDecorators, TestRetrievingSourceCode, TestOneliners,

@@ -143,7 +143,7 @@ class CgiTests(unittest.TestCase):
                 # test individual fields
                 for key in expect.keys():
                     expect_val = expect[key]
-                    self.assertTrue(key in fs)
+                    self.assertIn(key, fs)
                     if len(expect_val) > 1:
                         self.assertEqual(fs.getvalue(key), expect_val)
                     else:

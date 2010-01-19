@@ -258,7 +258,7 @@ if hasattr(poplib, 'POP3_SSL'):
             self.client = poplib.POP3_SSL(self.server.host, self.server.port)
 
         def test__all__(self):
-            self.assertTrue('POP3_SSL' in poplib.__all__)
+            self.assertIn('POP3_SSL', poplib.__all__)
 
 
 class TestTimeouts(TestCase):

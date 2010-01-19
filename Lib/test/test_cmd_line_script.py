@@ -80,9 +80,9 @@ class CmdLineTest(unittest.TestCase):
             print(printed_file)
             print(printed_package)
             print(printed_argv0)
-        self.assertTrue(printed_file.encode('utf-8') in data)
-        self.assertTrue(printed_package.encode('utf-8') in data)
-        self.assertTrue(printed_argv0.encode('utf-8') in data)
+        self.assertIn(printed_file.encode('utf-8'), data)
+        self.assertIn(printed_package.encode('utf-8'), data)
+        self.assertIn(printed_argv0.encode('utf-8'), data)
 
     def _check_import_error(self, script_name, expected_msg,
                             *cmd_line_switches):
@@ -92,7 +92,7 @@ class CmdLineTest(unittest.TestCase):
             print('Output from test script %r:' % script_name)
             print(data)
             print('Expected output: %r' % expected_msg)
-        self.assertTrue(expected_msg.encode('utf-8') in data)
+        self.assertIn(expected_msg.encode('utf-8'), data)
 
     def test_basic_script(self):
         with temp_dir() as script_dir:

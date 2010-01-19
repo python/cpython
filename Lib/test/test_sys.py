@@ -318,8 +318,8 @@ class SysModuleTest(unittest.TestCase):
         d = sys._current_frames()
 
         main_id = _thread.get_ident()
-        self.assertTrue(main_id in d)
-        self.assertTrue(thread_id in d)
+        self.assertIn(main_id, d)
+        self.assertIn(thread_id, d)
 
         # Verify that the captured main-thread frame is _this_ frame.
         frame = d.pop(main_id)
@@ -341,7 +341,7 @@ class SysModuleTest(unittest.TestCase):
         # And the next record must be for g456().
         filename, lineno, funcname, sourceline = stack[i+1]
         self.assertEqual(funcname, "g456")
-        self.assertTrue(sourceline in ["leave_g.wait()", "entered_g.set()"])
+        self.assertIn(sourceline, ["leave_g.wait()", "entered_g.set()"])
 
         # Reap the spawned thread.
         leave_g.set()
@@ -353,13 +353,13 @@ class SysModuleTest(unittest.TestCase):
         # "thread id" 0.
         d = sys._current_frames()
         self.assertEqual(len(d), 1)
-        self.assertTrue(0 in d)
+        self.assertIn(0, d)
         self.assertTrue(d[0] is sys._getframe())
 
     def test_attributes(self):
         self.assertTrue(isinstance(sys.api_version, int))
         self.assertTrue(isinstance(sys.argv, list))
-        self.assertTrue(sys.byteorder in ("little", "big"))
+        self.assertIn(sys.byteorder, ("little", "big"))
         self.assertTrue(isinstance(sys.builtin_module_names, tuple))
         self.assertTrue(isinstance(sys.copyright, str))
         self.assertTrue(isinstance(sys.exec_prefix, str))
@@ -383,7 +383,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(isinstance(vi[0], int))
         self.assertTrue(isinstance(vi[1], int))
         self.assertTrue(isinstance(vi[2], int))
-        self.assertTrue(vi[3] in ("alpha", "beta", "candidate", "final"))
+        self.assertIn(vi[3], ("alpha", "beta", "candidate", "final"))
         self.assertTrue(isinstance(vi[4], int))
         self.assertTrue(isinstance(vi.major, int))
         self.assertTrue(isinstance(vi.minor, int))
@@ -398,7 +398,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(vi[4], vi.serial)
         self.assertTrue(vi > (1,0,0))
         self.assertIsInstance(sys.float_repr_style, str)
-        self.assertTrue(sys.float_repr_style in ('short', 'legacy'))
+        self.assertIn(sys.float_repr_style, ('short', 'legacy'))
 
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when

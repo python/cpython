@@ -284,7 +284,7 @@ class OptionTests(TestCase):
         txt = telnet.read_all()
         cmd = nego.seen
         self.assertTrue(len(cmd) > 0) # we expect at least one command
-        self.assertTrue(cmd[:1] in self.cmds)
+        self.assertIn(cmd[:1], self.cmds)
         self.assertEqual(cmd[1:2], tl.NOOPT)
         self.assertEqual(data_len, len(txt + cmd))
         nego.sb_getter = None # break the nego => telnet cycle
@@ -331,7 +331,7 @@ class OptionTests(TestCase):
             telnet = test_telnet([a])
             telnet.set_debuglevel(1)
             txt = telnet.read_all()
-            self.assertTrue(b in telnet._messages)
+            self.assertIn(b, telnet._messages)
         return
 
     def test_debuglevel_write(self):
@@ -339,7 +339,7 @@ class OptionTests(TestCase):
         telnet.set_debuglevel(1)
         telnet.write(b'xxx')
         expected = "send b'xxx'\n"
-        self.assertTrue(expected in telnet._messages)
+        self.assertIn(expected, telnet._messages)
 
 def test_main(verbose=None):
     support.run_unittest(GeneralTests, ReadTests, WriteTests, OptionTests)

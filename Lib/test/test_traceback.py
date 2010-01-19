@@ -41,12 +41,12 @@ class SyntaxTracebackCases(unittest.TestCase):
                                         SyntaxError)
         self.assertEqual(len(err), 4)
         self.assertTrue(err[1].strip() == "return x!")
-        self.assertTrue("^" in err[2]) # third line has caret
+        self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[1].find("!"), err[2].find("^")) # in the right place
 
         err = self.get_exception_format(self.syntax_error_with_caret_2,
                                         SyntaxError)
-        self.assertTrue("^" in err[2]) # third line has caret
+        self.assertIn("^", err[2]) # third line has caret
         self.assertTrue(err[2].count('\n') == 1) # and no additional newline
         self.assertTrue(err[1].find("+") == err[2].find("^")) # in the right place
 
@@ -64,7 +64,7 @@ class SyntaxTracebackCases(unittest.TestCase):
                                         IndentationError)
         self.assertEqual(len(err), 4)
         self.assertEqual(err[1].strip(), "print(2)")
-        self.assertTrue("^" in err[2])
+        self.assertIn("^", err[2])
         self.assertEqual(err[1].find(")"), err[2].find("^"))
 
     def test_base_exception(self):
@@ -210,7 +210,7 @@ class BaseExceptionReportingTests:
     def check_zero_div(self, msg):
         lines = msg.splitlines()
         self.assertTrue(lines[-3].startswith('  File'))
-        self.assertTrue('1/0 # In zero_div' in lines[-2], lines[-2])
+        self.assertIn('1/0 # In zero_div', lines[-2])
         self.assertTrue(lines[-1].startswith('ZeroDivisionError'), lines[-1])
 
     def test_simple(self):
@@ -222,7 +222,7 @@ class BaseExceptionReportingTests:
         self.assertEquals(len(lines), 4)
         self.assertTrue(lines[0].startswith('Traceback'))
         self.assertTrue(lines[1].startswith('  File'))
-        self.assertTrue('1/0 # Marker' in lines[2])
+        self.assertIn('1/0 # Marker', lines[2])
         self.assertTrue(lines[3].startswith('ZeroDivisionError'))
 
     def test_cause(self):
@@ -237,7 +237,7 @@ class BaseExceptionReportingTests:
         self.assertEquals(len(blocks), 3)
         self.assertEquals(blocks[1], cause_message)
         self.check_zero_div(blocks[0])
-        self.assertTrue('inner_raise() # Marker' in blocks[2])
+        self.assertIn('inner_raise() # Marker', blocks[2])
 
     def test_context(self):
         def inner_raise():
@@ -251,7 +251,7 @@ class BaseExceptionReportingTests:
         self.assertEquals(len(blocks), 3)
         self.assertEquals(blocks[1], context_message)
         self.check_zero_div(blocks[0])
-        self.assertTrue('inner_raise() # Marker' in blocks[2])
+        self.assertIn('inner_raise() # Marker', blocks[2])
 
     def test_cause_and_context(self):
         # When both a cause and a context are set, only the cause should be
@@ -289,11 +289,11 @@ class BaseExceptionReportingTests:
         self.assertEquals(len(blocks), 3)
         self.assertEquals(blocks[1], cause_message)
         # The first block is the KeyError raised from the ZeroDivisionError
-        self.assertTrue('raise KeyError from e' in blocks[0])
-        self.assertTrue('1/0' not in blocks[0])
+        self.assertIn('raise KeyError from e', blocks[0])
+        self.assertNotIn('1/0', blocks[0])
         # The second block (apart from the boundary) is the ZeroDivisionError
         # re-raised from the KeyError
-        self.assertTrue('inner_raise() # Marker' in blocks[2])
+        self.assertIn('inner_raise() # Marker', blocks[2])
         self.check_zero_div(blocks[2])
 
 

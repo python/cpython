@@ -77,7 +77,7 @@ class ProcessTestCase(unittest.TestCase):
         # check_output() function with zero return code
         output = subprocess.check_output(
                 [sys.executable, "-c", "print('BDFL')"])
-        self.assertTrue(b'BDFL' in output)
+        self.assertIn(b'BDFL', output)
 
     def test_check_output_nonzero(self):
         # check_call() function with non-zero return code
@@ -94,7 +94,7 @@ class ProcessTestCase(unittest.TestCase):
         output = subprocess.check_output(
                 [sys.executable, "-c", "import sys; sys.stderr.write('BDFL')"],
                 stderr=subprocess.STDOUT)
-        self.assertTrue(b'BDFL' in output)
+        self.assertIn(b'BDFL', output)
 
     def test_check_output_stdout_arg(self):
         # check_output() function stderr redirected to stdout
@@ -103,7 +103,7 @@ class ProcessTestCase(unittest.TestCase):
                     [sys.executable, "-c", "print('will not be run')"],
                     stdout=sys.stdout)
         except ValueError as e:
-            self.assertTrue('stdout' in e.args[0])
+            self.assertIn('stdout', e.args[0])
         else:
             self.fail("Expected ValueError when stdout arg supplied.")
 

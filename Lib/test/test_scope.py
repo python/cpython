@@ -447,7 +447,7 @@ self.assertTrue(X.passed)
             return g
 
         d = f(2)(4)
-        self.assertTrue('h' in d)
+        self.assertIn('h', d)
         del d['h']
         self.assertEqual(d, {'x': 2, 'y': 7, 'w': 6})
 
@@ -481,8 +481,8 @@ self.assertTrue(X.passed)
             return C
 
         varnames = f(1).z
-        self.assertTrue("x" not in varnames)
-        self.assertTrue("y" in varnames)
+        self.assertNotIn("x", varnames)
+        self.assertIn("y", varnames)
 
     def testLocalsClass_WithTrace(self):
         # Issue23728: after the trace function returns, the locals()
@@ -660,7 +660,7 @@ result2 = h()
 
         c = f(0)
         self.assertEqual(c.get(), 1)
-        self.assertTrue("x" not in c.__class__.__dict__)
+        self.assertNotIn("x", c.__class__.__dict__)
 
 
     def testNonLocalGenerator(self):

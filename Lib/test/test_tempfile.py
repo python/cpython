@@ -160,14 +160,14 @@ class test__candidate_tempdir_list(TC):
             for envname in 'TMPDIR', 'TEMP', 'TMP':
                 dirname = os.getenv(envname)
                 if not dirname: raise ValueError
-                self.assertTrue(dirname in cand)
+                self.assertIn(dirname, cand)
 
             try:
                 dirname = os.getcwd()
             except (AttributeError, os.error):
                 dirname = os.curdir
 
-            self.assertTrue(dirname in cand)
+            self.assertIn(dirname, cand)
 
             # Not practical to try to verify the presence of OS-specific
             # paths in this list.

@@ -165,14 +165,14 @@ class RunModuleTest(unittest.TestCase):
         try:
             if verbose: print("Running from source:", mod_name)
             d1 = run_module(mod_name) # Read from source
-            self.assertTrue("x" in d1)
+            self.assertIn("x", d1)
             self.assertEqual(d1["x"], 1)
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
             if verbose: print("Running from compiled:", mod_name)
             d2 = run_module(mod_name) # Read from bytecode
-            self.assertTrue("x" in d2)
+            self.assertIn("x", d2)
             self.assertEqual(d2["x"], 1)
             del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
@@ -187,14 +187,14 @@ class RunModuleTest(unittest.TestCase):
         try:
             if verbose: print("Running from source:", pkg_name)
             d1 = run_module(pkg_name) # Read from source
-            self.assertTrue("x" in d1)
+            self.assertIn("x", d1)
             self.assertTrue(d1["x"] == 1)
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
             if verbose: print("Running from compiled:", pkg_name)
             d2 = run_module(pkg_name) # Read from bytecode
-            self.assertTrue("x" in d2)
+            self.assertIn("x", d2)
             self.assertTrue(d2["x"] == 1)
             del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
@@ -239,19 +239,19 @@ from ..uncle.cousin import nephew
             pkg_name = mod_name.rpartition('.')[0]
             if verbose: print("Running from source:", mod_name)
             d1 = run_module(mod_name, run_name=run_name) # Read from source
-            self.assertTrue("__package__" in d1)
+            self.assertIn("__package__", d1)
             self.assertTrue(d1["__package__"] == pkg_name)
-            self.assertTrue("sibling" in d1)
-            self.assertTrue("nephew" in d1)
+            self.assertIn("sibling", d1)
+            self.assertIn("nephew", d1)
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
             if verbose: print("Running from compiled:", mod_name)
             d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
-            self.assertTrue("__package__" in d2)
+            self.assertIn("__package__", d2)
             self.assertTrue(d2["__package__"] == pkg_name)
-            self.assertTrue("sibling" in d2)
-            self.assertTrue("nephew" in d2)
+            self.assertIn("sibling", d2)
+            self.assertIn("nephew", d2)
             del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)

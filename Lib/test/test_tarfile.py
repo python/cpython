@@ -485,7 +485,7 @@ class MemberReadTest(ReadTest):
 
     def test_find_ustar_longname(self):
         name = "ustar/" + "12345/" * 39 + "1234567/longname"
-        self.assertTrue(name in self.tar.getnames())
+        self.assertIn(name, self.tar.getnames())
 
     def test_find_regtype_oldv7(self):
         tarinfo = self.tar.getmember("misc/regtype-old-v7")

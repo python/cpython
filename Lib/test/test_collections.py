@@ -44,9 +44,9 @@ class TestNamedTuple(unittest.TestCase):
         namedtuple('_', 'a b c')        # Test leading underscores in a typename
 
         nt = namedtuple('nt', 'the quick brown fox')                       # check unicode input
-        self.assertTrue("u'" not in repr(nt._fields))
+        self.assertNotIn("u'", repr(nt._fields))
         nt = namedtuple('nt', ('the', 'quick'))                           # check unicode input
-        self.assertTrue("u'" not in repr(nt._fields))
+        self.assertNotIn("u'", repr(nt._fields))
 
         self.assertRaises(TypeError, Point._make, [11])                     # catch too few args
         self.assertRaises(TypeError, Point._make, [11, 22, 33])             # catch too many args
@@ -75,8 +75,8 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(TypeError, eval, 'Point(XXX=1, y=2)', locals())   # wrong keyword argument
         self.assertRaises(TypeError, eval, 'Point(x=1)', locals())          # missing keyword argument
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
-        self.assertTrue('__dict__' not in dir(p))                              # verify instance has no dict
-        self.assertTrue('__weakref__' not in dir(p))
+        self.assertNotIn('__dict__', dir(p))                              # verify instance has no dict
+        self.assertNotIn('__weakref__', dir(p))
         self.assertEqual(p, Point._make([11, 22]))                          # test _make classmethod
         self.assertEqual(p._fields, ('x', 'y'))                             # test _fields attribute
         self.assertEqual(p._replace(x=1), (1, 22))                          # test _replace method
@@ -598,6 +598,7 @@ class TestCounter(unittest.TestCase):
         c = Counter(a=10, b=-2, c=0)
         for elem in c:
             self.assertTrue(elem in c)
+            self.assertIn(elem, c)
 
     def test_multiset_operations(self):
         # Verify that adding a zero counter will strip zeros and negatives
@@ -697,7 +698,7 @@ class TestOrderedDict(unittest.TestCase):
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         od = OrderedDict(pairs)
         del od['a']
-        self.assertTrue('a' not in od)
+        self.assertNotIn('a', od)
         with self.assertRaises(KeyError):
             del od['a']
         self.assertEqual(list(od.items()), pairs[:2] + pairs[3:])

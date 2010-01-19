@@ -28,7 +28,7 @@ class TestRaise(unittest.TestCase):
         try:
             raise
         except RuntimeError as e:
-            self.assertTrue("No active exception" in str(e))
+            self.assertIn("No active exception", str(e))
         else:
             self.fail("No exception raised")
 
@@ -127,7 +127,7 @@ class TestCause(unittest.TestCase):
         try:
             raise IndexError from 5
         except TypeError as e:
-            self.assertTrue("exception cause" in str(e))
+            self.assertIn("exception cause", str(e))
         else:
             self.fail("No exception raised")
 

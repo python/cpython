@@ -337,7 +337,7 @@ class ExceptionTests(unittest.TestCase):
         try:
             Exception().__traceback__ = 5
         except TypeError as e:
-            self.assertTrue("__traceback__ must be a traceback" in str(e))
+            self.assertIn("__traceback__ must be a traceback", str(e))
         else:
             self.fail("No exception raised")
 
@@ -597,7 +597,7 @@ class ExceptionTests(unittest.TestCase):
                 return sys.exc_info()
         e, v, tb = g()
         self.assertTrue(isinstance(v, RuntimeError), type(v))
-        self.assertTrue("maximum recursion depth exceeded" in str(v), str(v))
+        self.assertIn("maximum recursion depth exceeded", str(v))
 
 
     def test_MemoryError(self):

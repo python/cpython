@@ -59,18 +59,18 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(list(range(a+4, a, -2)), [a+4, a+2])
 
         seq = list(range(a, b, c))
-        self.assertTrue(a in seq)
-        self.assertTrue(b not in seq)
+        self.assertIn(a, seq)
+        self.assertNotIn(b, seq)
         self.assertEqual(len(seq), 2)
 
         seq = list(range(b, a, -c))
-        self.assertTrue(b in seq)
-        self.assertTrue(a not in seq)
+        self.assertIn(b, seq)
+        self.assertNotIn(a, seq)
         self.assertEqual(len(seq), 2)
 
         seq = list(range(-a, -b, -c))
-        self.assertTrue(-a in seq)
-        self.assertTrue(-b not in seq)
+        self.assertIn(-a, seq)
+        self.assertNotIn(-b, seq)
         self.assertEqual(len(seq), 2)
 
         self.assertRaises(TypeError, range)
@@ -114,13 +114,13 @@ class RangeTest(unittest.TestCase):
     def test_types(self):
         # Non-integer objects *equal* to any of the range's items are supposed
         # to be contained in the range.
-        self.assertTrue(1.0 in range(3))
-        self.assertTrue(True in range(3))
-        self.assertTrue(1+0j in range(3))
+        self.assertIn(1.0, range(3))
+        self.assertIn(True, range(3))
+        self.assertIn(1+0j, range(3))
 
         class C1:
             def __eq__(self, other): return True
-        self.assertTrue(C1() in range(3))
+        self.assertIn(C1(), range(3))
 
         # Objects are never coerced into other types for comparison.
         class C2:
@@ -128,32 +128,32 @@ class RangeTest(unittest.TestCase):
             def __index__(self): return 1
         self.assertFalse(C2() in range(3))
         # ..except if explicitly told so.
-        self.assertTrue(int(C2()) in range(3))
+        self.assertIn(int(C2()), range(3))
 
         # Check that the range.__contains__ optimization is only
         # used for ints, not for instances of subclasses of int.
         class C3(int):
             def __eq__(self, other): return True
-        self.assertTrue(C3(11) in range(10))
-        self.assertTrue(C3(11) in list(range(10)))
+        self.assertIn(C3(11), range(10))
+        self.assertIn(C3(11), list(range(10)))
 
     def test_strided_limits(self):
         r = range(0, 101, 2)
-        self.assertTrue(0 in r)
+        self.assertIn(0, r)
         self.assertFalse(1 in r)
-        self.assertTrue(2 in r)
+        self.assertIn(2, r)
         self.assertFalse(99 in r)
-        self.assertTrue(100 in r)
+        self.assertIn(100, r)
         self.assertFalse(101 in r)
 
         r = range(0, -20, -1)
-        self.assertTrue(0 in r)
-        self.assertTrue(-1 in r)
-        self.assertTrue(-19 in r)
+        self.assertIn(0, r)
+        self.assertIn(-1, r)
+        self.assertIn(-19, r)
         self.assertFalse(-20 in r)
 
         r = range(0, -20, -2)
-        self.assertTrue(-18 in r)
+        self.assertIn(-18, r)
         self.assertFalse(-19 in r)
         self.assertFalse(-20 in r)
 

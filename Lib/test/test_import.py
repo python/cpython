@@ -209,7 +209,7 @@ class ImportTest(unittest.TestCase):
         sys.path.insert(0, os.curdir)
         try:
             mod = __import__(TESTFN)
-            self.assertTrue(TESTFN in sys.modules, "expected module in sys.modules")
+            self.assertIn(TESTFN, sys.modules)
             self.assertEquals(mod.a, 1, "module has wrong attribute values")
             self.assertEquals(mod.b, 2, "module has wrong attribute values")
 
@@ -253,7 +253,7 @@ class ImportTest(unittest.TestCase):
             del sys.modules[TESTFN]
             mod = __import__(TESTFN)
             ext = mod.__file__[-4:]
-            self.assertTrue(ext in ('.pyc', '.pyo'), ext)
+            self.assertIn(ext, ('.pyc', '.pyo'))
         finally:
             sys.path.pop(0)
             remove_files(TESTFN)

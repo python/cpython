@@ -73,7 +73,7 @@ class ExceptionClassTests(unittest.TestCase):
                     self.verify_instance_interface(exc())
                 except TypeError:
                     pass
-                self.assertTrue(exc_name in exc_set)
+                self.assertIn(exc_name, exc_set)
                 exc_set.discard(exc_name)
                 last_exc = exc
                 last_depth = depth

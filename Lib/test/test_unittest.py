@@ -636,7 +636,7 @@ class Test_TestLoader(TestCase):
             self.assertEqual(list(suite), [])
 
             # audioop should now be loaded, thanks to loadTestsFromName()
-            self.assertTrue(module_name in sys.modules)
+            self.assertIn(module_name, sys.modules)
         finally:
             if module_name in sys.modules:
                 del sys.modules[module_name]
@@ -1024,7 +1024,7 @@ class Test_TestLoader(TestCase):
             self.assertEqual(list(suite), [unittest.TestSuite()])
 
             # audioop should now be loaded, thanks to loadTestsFromName()
-            self.assertTrue(module_name in sys.modules)
+            self.assertIn(module_name, sys.modules)
         finally:
             if module_name in sys.modules:
                 del sys.modules[module_name]
