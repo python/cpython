@@ -140,6 +140,10 @@ class HashLibTestCase(unittest.TestCase):
         # 2 is for hashlib.name(...) and hashlib.new(name, ...)
         self.assertGreaterEqual(len(constructors), 2)
         for hash_object_constructor in constructors:
+            if COMPILED_WITH_PYDEBUG:
+                # XXX(gps): This is temporary to debug a buildbot failure.
+                #  http://www.python.org/dev/buildbot/all/builders/x86%20gentoo%20trunk/builds/5700/
+                print "test_hashlib check calling", hash_object_constructor
             computed = hash_object_constructor(data).hexdigest()
             self.assertEqual(
                     computed, digest,
