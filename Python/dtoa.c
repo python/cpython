@@ -1672,6 +1672,16 @@ _Py_dg_strtod(const char *s00, char **se)
         }
     }
     else if (e1 < 0) {
+        /* The input decimal value lies in [10**e1, 10**(e1+16)).
+
+           If e1 <= -512, underflow immediately.
+           If e1 <= -256, set bc.scale to 2*P.
+
+           So for input value < 1e-256, bc.scale is always set;
+           for input value >= 1e-240, bc.scale is never set.
+           For input values in [1e-256, 1e-240), bc.scale may or may
+           not be set. */
+
         e1 = -e1;
         if ((i = e1 & 15))
             dval(&rv) /= tens[i];
@@ -1742,7 +1752,34 @@ _Py_dg_strtod(const char *s00, char **se)
     if (bd0 == NULL)
         goto failed_malloc;
 
+    /* Notation for the comments below.  Write:
+
+         - dv for the absolute value of the number represented by the original
+           decimal input string.
+
+         - if we've truncated dv, write tdv for the truncated value.
+           Otherwise, set tdv == dv.
+
+         - srv for the quantity rv/2^bc.scale; so srv is the current binary
+           approximation to tdv (and dv).  It should be exactly representable
+           in an IEEE 754 double.
+    */
+
     for(;;) {
+
+        /* This is the main correction loop for _Py_dg_strtod.
+
+           We've got a decimal value tdv, and a floating-point approximation
+           srv=rv/2^bc.scale to tdv.  The aim is to determine whether srv is
+           close enough (i.e., within 0.5 ulps) to tdv, and to compute a new
+           approximation if not.
+
+           To determine whether srv is close enough to tdv, compute integers
+           bd, bb and bs proportional to tdv, srv and 0.5 ulp(srv)
+           respectively, and then use integer arithmetic to determine whether
+           |tdv - srv| is less than, equal to, or greater than 0.5 ulp(srv).
+        */
+
         bd = Balloc(bd0->k);
         if (bd == NULL) {
             Bfree(bd0);
@@ -1755,6 +1792,7 @@ _Py_dg_strtod(const char *s00, char **se)
             Bfree(bd0);
             goto failed_malloc;
         }
+        /* tdv = bd * 10^e;  srv = bb * 2^(bbe - scale) */
         bs = i2b(1);
         if (bs == NULL) {
             Bfree(bb);
@@ -1775,6 +1813,17 @@ _Py_dg_strtod(const char *s00, char **se)
             bb2 += bbe;
         else
             bd2 -= bbe;
+
+        /* At this stage e = bd2 - bb2 + bbe = bd5 - bb5, so:
+
+              tdv = bd * 2^(bbe + bd2 - bb2) * 5^(bd5 - bb5)
+              srv = bb * 2^(bbe - scale).
+
+           Compute j such that
+
+              0.5 ulp(srv) = 2^(bbe - scale - j)
+        */
+
         bs2 = bb2;
         j = bbe - bc.scale;
         i = j + bbbits - 1;     /* logb(rv) */
@@ -1782,9 +1831,26 @@ _Py_dg_strtod(const char *s00, char **se)
             j += P - Emin;
         else
             j = P + 1 - bbbits;
+
+       /* Now we have:
+
+              M * tdv = bd * 2^(bd2 + scale + j) * 5^bd5
+              M * srv = bb * 2^(bb2 + j) * 5^bb5
+              M * 0.5 ulp(srv) = 2^bs2 * 5^bb5
+
+           where M is the constant (currently) represented by 2^(j + scale +
+           bb2 - bbe) * 5^bb5.
+        */
+
         bb2 += j;
         bd2 += j;
         bd2 += bc.scale;
+
+        /* After the adjustments above, tdv, srv and 0.5 ulp(srv) are
+           proportional to: bd * 2^bd2 * 5^bd5, bb * 2^bb2 * 5^bb5, and
+           bs * 2^bs2 * 5^bb5, respectively. */
+
+        /* Remove excess powers of 2. i = min(bb2, bd2, bs2). */
         i = bb2 < bd2 ? bb2 : bd2;
         if (i > bs2)
             i = bs2;
@@ -1793,6 +1859,8 @@ _Py_dg_strtod(const char *s00, char **se)
             bd2 -= i;
             bs2 -= i;
         }
+
+        /* Scale bb, bd, bs by the appropriate powers of 2 and 5. */
         if (bb5 > 0) {
             bs = pow5mult(bs, bb5);
             if (bs == NULL) {
@@ -1847,6 +1915,11 @@ _Py_dg_strtod(const char *s00, char **se)
                 goto failed_malloc;
             }
         }
+
+        /* Now bd, bb and bs are scaled versions of tdv, srv and 0.5 ulp(srv),
+           respectively.  Compute the difference |tdv - srv|, and compare
+           with 0.5 ulp(srv). */
+
         delta = diff(bb, bd);
         if (delta == NULL) {
             Bfree(bb);
