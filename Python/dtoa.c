@@ -1485,7 +1485,8 @@ _Py_dg_strtod(const char *s00, char **se)
        gives the total number of digits ignoring leading zeros.  A valid input
        must have at least one digit. */
     if (!nd && !lz) {
-        *se = (char *)s00;
+        if (se)
+            *se = (char *)s00;
         goto parse_error;
     }
 
