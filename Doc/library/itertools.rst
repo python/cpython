@@ -24,9 +24,8 @@ algebra" making it possible to construct specialized tools succinctly and
 efficiently in pure Python.
 
 For instance, SML provides a tabulation tool: ``tabulate(f)`` which produces a
-sequence ``f(0), f(1), ...``.  This toolbox provides :func:`imap` and
-:func:`count` which can be combined to form ``imap(f, count())`` to produce an
-equivalent result.
+sequence ``f(0), f(1), ...``.  The same effect can be achieved in Python
+by combining :func:`imap` and :func:`count` to form ``imap(f, count())``.
 
 These tools and their built-in counterparts also work well with the high-speed
 functions in the :mod:`operator` module.  For example, the multiplication
