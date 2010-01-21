@@ -100,6 +100,49 @@ class StrtodTests(unittest.TestCase):
                          "Incorrectly rounded str->float conversion for {}: "
                          "expected {}, got {}".format(s, expected, got))
 
+    def test_short_halfway_cases(self):
+        # exact halfway cases with a small number of significant digits
+        for k in 0, 5, 10, 15, 20:
+            # upper = smallest integer >= 2**54/5**k
+            upper = -(-2**54//5**k)
+            # lower = smallest odd number >= 2**53/5**k
+            lower = -(-2**53//5**k)
+            if lower % 2 == 0:
+                lower += 1
+            for i in range(10 * TEST_SIZE):
+                # Select a random odd n in [2**53/5**k,
+                # 2**54/5**k). Then n * 10**k gives a halfway case
+                # with small number of significant digits.
+                n, e = random.randrange(lower, upper, 2), k
+
+                # Remove any additional powers of 5.
+                while n % 5 == 0:
+                    n, e = n // 5, e + 1
+                assert n % 10 in (1, 3, 7, 9)
+
+                # Try numbers of the form n * 2**p2 * 10**e, p2 >= 0,
+                # until n * 2**p2 has more than 20 significant digits.
+                digits, exponent = n, e
+                while digits < 10**20:
+                    s = '{}e{}'.format(digits, exponent)
+                    self.check_strtod(s)
+                    # Same again, but with extra trailing zeros.
+                    s = '{}e{}'.format(digits * 10**40, exponent - 40)
+                    self.check_strtod(s)
+                    digits *= 2
+
+                # Try numbers of the form n * 5**p2 * 10**(e - p5), p5
+                # >= 0, with n * 5**p5 < 10**20.
+                digits, exponent = n, e
+                while digits < 10**20:
+                    s = '{}e{}'.format(digits, exponent)
+                    self.check_strtod(s)
+                    # Same again, but with extra trailing zeros.
+                    s = '{}e{}'.format(digits * 10**40, exponent - 40)
+                    self.check_strtod(s)
+                    digits *= 5
+                    exponent -= 1
+
     def test_halfway_cases(self):
         # test halfway cases for the round-half-to-even rule
         for i in range(1000):
@@ -164,10 +207,10 @@ class StrtodTests(unittest.TestCase):
                 self.check_strtod(s)
 
     def test_bigcomp(self):
-        DIG10 = 10**50
-        for i in range(1000):
-            for j in range(TEST_SIZE):
-                digits = random.randrange(DIG10)
+        for ndigs in 5, 10, 14, 15, 16, 17, 18, 19, 20, 40, 41, 50:
+            dig10 = 10**ndigs
+            for i in range(100 * TEST_SIZE):
+                digits = random.randrange(dig10)
                 exponent = random.randrange(-400, 400)
                 s = '{}e{}'.format(digits, exponent)
                 self.check_strtod(s)
@@ -254,11 +297,59 @@ class StrtodTests(unittest.TestCase):
             # demonstration that original fix for issue 7632 bug 1 was
             # buggy; the exit condition was too strong
             '247032822920623295e-341',
+            # demonstrate similar problem to issue 7632 bug1: crash
+            # with 'oversized quotient in quorem' message.
+            '99037485700245683102805043437346965248029601286431e-373',
+            '99617639833743863161109961162881027406769510558457e-373',
+            '98852915025769345295749278351563179840130565591462e-372',
+            '99059944827693569659153042769690930905148015876788e-373',
+            '98914979205069368270421829889078356254059760327101e-372',
             # issue 7632 bug 5: the following 2 strings convert differently
             '1000000000000000000000000000000000000000e-16',
             '10000000000000000000000000000000000000000e-17',
+            # issue 7632 bug 7
+            '991633793189150720000000000000000000000000000000000000000e-33',
+            # And another, similar, failing halfway case
+            '4106250198039490000000000000000000000000000000000000000e-38',
             # issue 7632 bug 8:  the following produced 10.0
             '10.900000000000000012345678912345678912345',
+            # exercise exit conditions in bigcomp comparison loop
+            '2602129298404963083833853479113577253105939995688e2',
+            '260212929840496308383385347911357725310593999568896e0',
+            '26021292984049630838338534791135772531059399956889601e-2',
+            '260212929840496308383385347911357725310593999568895e0',
+            '260212929840496308383385347911357725310593999568897e0',
+            '260212929840496308383385347911357725310593999568996e0',
+            '260212929840496308383385347911357725310593999568866e0',
+            # 2**53
+            '9007199254740992.00',
+            # 2**1024 - 2**970:  exact overflow boundary.  All values
+            # smaller than this should round to something finite;  any value
+            # greater than or equal to this one overflows.
+            '179769313486231580793728971405303415079934132710037' #...
+            '826936173778980444968292764750946649017977587207096' #...
+            '330286416692887910946555547851940402630657488671505' #...
+            '820681908902000708383676273854845817711531764475730' #...
+            '270069855571366959622842914819860834936475292719074' #...
+            '168444365510704342711559699508093042880177904174497792',
+            # 2**1024 - 2**970 - tiny
+            '179769313486231580793728971405303415079934132710037' #...
+            '826936173778980444968292764750946649017977587207096' #...
+            '330286416692887910946555547851940402630657488671505' #...
+            '820681908902000708383676273854845817711531764475730' #...
+            '270069855571366959622842914819860834936475292719074' #...
+            '168444365510704342711559699508093042880177904174497791.999',
+            # 2**1024 - 2**970 + tiny
+            '179769313486231580793728971405303415079934132710037' #...
+            '826936173778980444968292764750946649017977587207096' #...
+            '330286416692887910946555547851940402630657488671505' #...
+            '820681908902000708383676273854845817711531764475730' #...
+            '270069855571366959622842914819860834936475292719074' #...
+            '168444365510704342711559699508093042880177904174497792.001',
+            # 1 - 2**-54, +-tiny
+            '999999999999999944488848768742172978818416595458984375e-54',
+            '9999999999999999444888487687421729788184165954589843749999999e-54',
+            '9999999999999999444888487687421729788184165954589843750000001e-54',
             ]
         for s in test_strings:
             self.check_strtod(s)
