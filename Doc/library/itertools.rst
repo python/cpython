@@ -22,7 +22,7 @@ algebra" making it possible to construct specialized tools succinctly and
 efficiently in pure Python.
 
 For instance, SML provides a tabulation tool: ``tabulate(f)`` which produces a
-sequence ``f(0), f(1), ...``.  But, this effect can be achieved in Python
+sequence ``f(0), f(1), ...``.  The same effect can be achieved in Python
 by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 
 These tools and their built-in counterparts also work well with the high-speed
