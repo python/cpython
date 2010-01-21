@@ -100,6 +100,49 @@ class StrtodTests(unittest.TestCase):
                          "Incorrectly rounded str->float conversion for {}: "
                          "expected {}, got {}".format(s, expected, got))
 
+    def test_short_halfway_cases(self):
+        # exact halfway cases with a small number of significant digits
+        for k in 0, 5, 10, 15, 20:
+            # upper = smallest integer >= 2**54/5**k
+            upper = -(-2**54/5**k)
+            # lower = smallest odd number >= 2**53/5**k
+            lower = -(-2**53/5**k)
+            if lower % 2 == 0:
+                lower += 1
+            for i in xrange(10 * TEST_SIZE):
+                # Select a random odd n in [2**53/5**k,
+                # 2**54/5**k). Then n * 10**k gives a halfway case
+                # with small number of significant digits.
+                n, e = random.randrange(lower, upper, 2), k
+
+                # Remove any additional powers of 5.
+                while n % 5 == 0:
+                    n, e = n // 5, e + 1
+                assert n % 10 in (1, 3, 7, 9)
+
+                # Try numbers of the form n * 2**p2 * 10**e, p2 >= 0,
+                # until n * 2**p2 has more than 20 significant digits.
+                digits, exponent = n, e
+                while digits < 10**20:
+                    s = '{}e{}'.format(digits, exponent)
+                    self.check_strtod(s)
+                    # Same again, but with extra trailing zeros.
+                    s = '{}e{}'.format(digits * 10**40, exponent - 40)
+                    self.check_strtod(s)
+                    digits *= 2
+
+                # Try numbers of the form n * 5**p2 * 10**(e - p5), p5
+                # >= 0, with n * 5**p5 < 10**20.
+                digits, exponent = n, e
+                while digits < 10**20:
+                    s = '{}e{}'.format(digits, exponent)
+                    self.check_strtod(s)
+                    # Same again, but with extra trailing zeros.
+                    s = '{}e{}'.format(digits * 10**40, exponent - 40)
+                    self.check_strtod(s)
+                    digits *= 5
+                    exponent -= 1
+
     def test_halfway_cases(self):
         # test halfway cases for the round-half-to-even rule
         for i in xrange(1000):
@@ -254,9 +297,20 @@ class StrtodTests(unittest.TestCase):
             # demonstration that original fix for issue 7632 bug 1 was
             # buggy; the exit condition was too strong
             '247032822920623295e-341',
+            # demonstrate similar problem to issue 7632 bug1: crash
+            # with 'oversized quotient in quorem' message.
+            '99037485700245683102805043437346965248029601286431e-373',
+            '99617639833743863161109961162881027406769510558457e-373',
+            '98852915025769345295749278351563179840130565591462e-372',
+            '99059944827693569659153042769690930905148015876788e-373',
+            '98914979205069368270421829889078356254059760327101e-372',
             # issue 7632 bug 5: the following 2 strings convert differently
             '1000000000000000000000000000000000000000e-16',
             '10000000000000000000000000000000000000000e-17',
+            # issue 7632 bug 7
+            '991633793189150720000000000000000000000000000000000000000e-33',
+            # And another, similar, failing halfway case
+            '4106250198039490000000000000000000000000000000000000000e-38',
             # issue 7632 bug 8:  the following produced 10.0
             '10.900000000000000012345678912345678912345',
             # exercise exit conditions in bigcomp comparison loop
