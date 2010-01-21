@@ -270,7 +270,7 @@ typedef union { double d; ULong L[2]; } U;
 typedef struct BCinfo BCinfo;
 struct
 BCinfo {
-    int dsign, e0, nd, nd0, scale;
+    int e0, nd, nd0, scale;
 };
 
 #define FFFFFFFF 0xffffffffUL
@@ -967,8 +967,8 @@ diff(Bigint *a, Bigint *b)
     return c;
 }
 
-/* Given a positive normal double x, return the difference between x and the next
-   double up.  Doesn't give correct results for subnormals. */
+/* Given a positive normal double x, return the difference between x and the
+   next double up.  Doesn't give correct results for subnormals. */
 
 static double
 ulp(U *x)
@@ -1276,9 +1276,6 @@ sulp(U *x, BCinfo *bc)
      bc is a struct containing information gathered during the parsing and
         estimation steps of _Py_dg_strtod.  Description of fields follows:
 
-        bc->dsign is 1 if rv < decimal value, 0 if rv >= decimal value.  In
-           normal use, it should almost always be 1 when bigcomp is entered.
-
         bc->e0 gives the exponent of the input value, such that dv = (integer
            given by the bd->nd digits of s0) * 10**e0
 
@@ -1387,47 +1384,37 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
         }
     }
 
-    /* if b >= d, round down */
-    if (cmp(b, d) >= 0) {
+    /* Compare s0 with b/d: set dd to -1, 0, or 1 according as s0 < b/d, s0 ==
+     * b/d, or s0 > b/d.  Here the digits of s0 are thought of as representing
+     * a number in the range [0.1, 1). */
+    if (cmp(b, d) >= 0)
+        /* b/d >= 1 */
         dd = -1;
-        goto ret;
-    }
+    else {
+        i = 0;
+        for(;;) {
+            b = multadd(b, 10, 0);
+            if (b == NULL) {
+                Bfree(d);
+                return -1;
+            }
+            dd = s0[i < nd0 ? i : i+1] - '0' - quorem(b, d);
+            i++;
 
-    /* Compare b/d with s0 */
-    for(i = 0; i < nd0; i++) {
-        b = multadd(b, 10, 0);
-        if (b == NULL) {
-            Bfree(d);
-            return -1;
-        }
-        dd = *s0++ - '0' - quorem(b, d);
-        if (dd)
-            goto ret;
-        if (!b->x[0] && b->wds == 1) {
-            if (i < nd - 1)
-                dd = 1;
-            goto ret;
+            if (dd)
+                break;
+            if (!b->x[0] && b->wds == 1) {
+                /* b/d == 0 */
+                dd = i < nd;
+                break;
+            }
+            if (!(i < nd)) {
+                /* b/d != 0, but digits of s0 exhausted */
+                dd = -1;
+                break;
+            }
         }
     }
-    s0++;
-    for(; i < nd; i++) {
-        b = multadd(b, 10, 0);
-        if (b == NULL) {
-            Bfree(d);
-            return -1;
-        }
-        dd = *s0++ - '0' - quorem(b, d);
-        if (dd)
-            goto ret;
-        if (!b->x[0] && b->wds == 1) {
-            if (i < nd - 1)
-                dd = 1;
-            goto ret;
-        }
-    }
-    if (b->x[0] || b->wds > 1)
-        dd = -1;
-  ret:
     Bfree(b);
     Bfree(d);
     if (dd > 0 || (dd == 0 && odd))
@@ -1438,128 +1425,130 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
 double
 _Py_dg_strtod(const char *s00, char **se)
 {
-    int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, e, e1, error;
-    int esign, i, j, k, nd, nd0, nf, nz, nz0, sign;
+    int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, dsign, e, e1, error;
+    int esign, i, j, k, lz, nd, nd0, sign;
     const char *s, *s0, *s1;
     double aadj, aadj1;
     U aadj2, adj, rv, rv0;
-    ULong y, z, abse;
+    ULong y, z, abs_exp;
     Long L;
     BCinfo bc;
     Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
 
-    sign = nz0 = nz = 0;
     dval(&rv) = 0.;
-    for(s = s00;;s++) switch(*s) {
-        case '-':
-            sign = 1;
-            /* no break */
-        case '+':
-            if (*++s)
-                goto break2;
-            /* no break */
-        case 0:
-            goto ret0;
-        /* modify original dtoa.c so that it doesn't accept leading whitespace
-        case '\t':
-        case '\n':
-        case '\v':
-        case '\f':
-        case '\r':
-        case ' ':
-            continue;
-        */
-        default:
-            goto break2;
-        }
-  break2:
-    if (*s == '0') {
-        nz0 = 1;
-        while(*++s == '0') ;
-        if (!*s)
-            goto ret;
+
+    /* Start parsing. */
+    c = *(s = s00);
+
+    /* Parse optional sign, if present. */
+    sign = 0;
+    switch (c) {
+    case '-':
+        sign = 1;
+        /* no break */
+    case '+':
+        c = *++s;
     }
-    s0 = s;
-    for(nd = nf = 0; (c = *s) >= '0' && c <= '9'; nd++, s++)
-        ;
-    nd0 = nd;
+
+    /* Skip leading zeros: lz is true iff there were leading zeros. */
+    s1 = s;
+    while (c == '0')
+        c = *++s;
+    lz = s != s1;
+
+    /* Point s0 at the first nonzero digit (if any).  nd0 will be the position
+       of the point relative to s0.  nd will be the total number of digits
+       ignoring leading zeros. */
+    s0 = s1 = s;
+    while ('0' <= c && c <= '9')
+        c = *++s;
+    nd0 = nd = s - s1;
+
+    /* Parse decimal point and following digits. */
     if (c == '.') {
         c = *++s;
         if (!nd) {
-            for(; c == '0'; c = *++s)
-                nz++;
-            if (c > '0' && c <= '9') {
-                s0 = s;
-                nf += nz;
-                nz = 0;
-                goto have_dig;
-            }
-            goto dig_done;
+            s1 = s;
+            while (c == '0')
+                c = *++s;
+            lz = lz || s != s1;
+            nd0 -= s - s1;
+            s0 = s;
         }
-        for(; c >= '0' && c <= '9'; c = *++s) {
-          have_dig:
-            nz++;
-            if (c -= '0') {
-                nf += nz;
-                nd += nz;
-                nz = 0;
-            }
-        }
+        s1 = s;
+        while ('0' <= c && c <= '9')
+            c = *++s;
+        nd += s - s1;
     }
-  dig_done:
+
+    /* Now lz is true if and only if there were leading zero digits, and nd
+       gives the total number of digits ignoring leading zeros.  A valid input
+       must have at least one digit. */
+    if (!nd && !lz) {
+        if (se)
+            *se = (char *)s00;
+        goto parse_error;
+    }
+
+    /* Parse exponent. */
     e = 0;
     if (c == 'e' || c == 'E') {
-        if (!nd && !nz && !nz0) {
-            goto ret0;
-        }
         s00 = s;
+        c = *++s;
+
+        /* Exponent sign. */
         esign = 0;
-        switch(c = *++s) {
+        switch (c) {
         case '-':
             esign = 1;
+            /* no break */
         case '+':
             c = *++s;
         }
-        if (c >= '0' && c <= '9') {
-            while(c == '0')
-                c = *++s;
-            if (c > '0' && c <= '9') {
-                abse = c - '0';
-                s1 = s;
-                while((c = *++s) >= '0' && c <= '9')
-                    abse = 10*abse + c - '0';
-                if (s - s1 > 8 || abse > MAX_ABS_EXP)
-                    /* Avoid confusion from exponents
-                     * so large that e might overflow.
-                     */
-                    e = (int)MAX_ABS_EXP; /* safe for 16 bit ints */
-                else
-                    e = (int)abse;
-                if (esign)
-                    e = -e;
-            }
-            else
-                e = 0;
+
+        /* Skip zeros.  lz is true iff there are leading zeros. */
+        s1 = s;
+        while (c == '0')
+            c = *++s;
+        lz = s != s1;
+
+        /* Get absolute value of the exponent. */
+        s1 = s;
+        abs_exp = 0;
+        while ('0' <= c && c <= '9') {
+            abs_exp = 10*abs_exp + (c - '0');
+            c = *++s;
         }
+
+        /* abs_exp will be correct modulo 2**32.  But 10**9 < 2**32, so if
+           there are at most 9 significant exponent digits then overflow is
+           impossible. */
+        if (s - s1 > 9 || abs_exp > MAX_ABS_EXP)
+            e = (int)MAX_ABS_EXP;
         else
+            e = (int)abs_exp;
+        if (esign)
+            e = -e;
+
+        /* A valid exponent must have at least one digit. */
+        if (s == s1 && !lz)
             s = s00;
     }
-    if (!nd) {
-        if (!nz && !nz0) {
-          ret0:
-            s = s00;
-            sign = 0;
-        }
-        goto ret;
-    }
-    e -= nf;
-    if (!nd0)
+
+    /* Adjust exponent to take into account position of the point. */
+    e -= nd - nd0;
+    if (nd0 <= 0)
         nd0 = nd;
 
-    /* strip trailing zeros */
+    /* Finished parsing.  Set se to indicate how far we parsed */
+    if (se)
+        *se = (char *)s;
+
+    /* If all digits were zero, exit with return value +-0.0.  Otherwise,
+       strip trailing zeros: scan back until we hit a nonzero digit. */
+    if (!nd)
+        goto ret;
     for (i = nd; i > 0; ) {
-        /* scan back until we hit a nonzero digit.  significant digit 'i'
-           is s0[i] if i < nd0, s0[i+1] if i >= nd0. */
         --i;
         if (s0[i < nd0 ? i : i+1] != '0') {
             ++i;
@@ -1571,28 +1560,21 @@ _Py_dg_strtod(const char *s00, char **se)
     if (nd0 > nd)
         nd0 = nd;
 
-    /* Now we have nd0 digits, starting at s0, followed by a
-     * decimal point, followed by nd-nd0 digits.  The number we're
-     * after is the integer represented by those digits times
-     * 10**e */
-
-    bc.e0 = e1 = e;
-
-    /* Summary of parsing results.  The parsing stage gives values
-     * s0, nd0, nd, e, sign, where:
+    /* Summary of parsing results.  After parsing, and dealing with zero
+     * inputs, we have values s0, nd0, nd, e, sign, where:
      *
-     *  - s0 points to the first significant digit of the input string s00;
+     *  - s0 points to the first significant digit of the input string
      *
      *  - nd is the total number of significant digits (here, and
      *    below, 'significant digits' means the set of digits of the
      *    significand of the input that remain after ignoring leading
-     *    and trailing zeros.
+     *    and trailing zeros).
      *
-     *  - nd0 indicates the position of the decimal point (if
-     *    present): so the nd significant digits are in s0[0:nd0] and
-     *    s0[nd0+1:nd+1] using the usual Python half-open slice
-     *    notation.  (If nd0 < nd, then s0[nd0] necessarily contains
-     *    a '.' character;  if nd0 == nd, then it could be anything.)
+     *  - nd0 indicates the position of the decimal point, if present; it
+     *    satisfies 1 <= nd0 <= nd.  The nd significant digits are in
+     *    s0[0:nd0] and s0[nd0+1:nd+1] using the usual Python half-open slice
+     *    notation.  (If nd0 < nd, then s0[nd0] contains a '.'  character; if
+     *    nd0 == nd, then s0[nd0] could be any non-digit character.)
      *
      *  - e is the adjusted exponent: the absolute value of the number
      *    represented by the original input string is n * 10**e, where
@@ -1614,6 +1596,7 @@ _Py_dg_strtod(const char *s00, char **se)
      *    gives the value represented by the first min(16, nd) sig. digits.
      */
 
+    bc.e0 = e1 = e;
     y = z = 0;
     for (i = 0; i < nd; i++) {
         if (i < 9)
@@ -1666,14 +1649,8 @@ _Py_dg_strtod(const char *s00, char **se)
         if ((i = e1 & 15))
             dval(&rv) *= tens[i];
         if (e1 &= ~15) {
-            if (e1 > DBL_MAX_10_EXP) {
-              ovfl:
-                errno = ERANGE;
-                /* Can't trust HUGE_VAL */
-                word0(&rv) = Exp_mask;
-                word1(&rv) = 0;
-                goto ret;
-            }
+            if (e1 > DBL_MAX_10_EXP)
+                goto ovfl;
             e1 >>= 4;
             for(j = 0; e1 > 1; j++, e1 >>= 1)
                 if (e1 & 1)
@@ -1695,6 +1672,16 @@ _Py_dg_strtod(const char *s00, char **se)
         }
     }
     else if (e1 < 0) {
+        /* The input decimal value lies in [10**e1, 10**(e1+16)).
+
+           If e1 <= -512, underflow immediately.
+           If e1 <= -256, set bc.scale to 2*P.
+
+           So for input value < 1e-256, bc.scale is always set;
+           for input value >= 1e-240, bc.scale is never set.
+           For input values in [1e-256, 1e-240), bc.scale may or may
+           not be set. */
+
         e1 = -e1;
         if ((i = e1 & 15))
             dval(&rv) /= tens[i];
@@ -1719,12 +1706,8 @@ _Py_dg_strtod(const char *s00, char **se)
                 else
                     word1(&rv) &= 0xffffffff << j;
             }
-            if (!dval(&rv)) {
-              undfl:
-                dval(&rv) = 0.;
-                errno = ERANGE;
-                goto ret;
-            }
+            if (!dval(&rv))
+                goto undfl;
         }
     }
 
@@ -1769,7 +1752,34 @@ _Py_dg_strtod(const char *s00, char **se)
     if (bd0 == NULL)
         goto failed_malloc;
 
+    /* Notation for the comments below.  Write:
+
+         - dv for the absolute value of the number represented by the original
+           decimal input string.
+
+         - if we've truncated dv, write tdv for the truncated value.
+           Otherwise, set tdv == dv.
+
+         - srv for the quantity rv/2^bc.scale; so srv is the current binary
+           approximation to tdv (and dv).  It should be exactly representable
+           in an IEEE 754 double.
+    */
+
     for(;;) {
+
+        /* This is the main correction loop for _Py_dg_strtod.
+
+           We've got a decimal value tdv, and a floating-point approximation
+           srv=rv/2^bc.scale to tdv.  The aim is to determine whether srv is
+           close enough (i.e., within 0.5 ulps) to tdv, and to compute a new
+           approximation if not.
+
+           To determine whether srv is close enough to tdv, compute integers
+           bd, bb and bs proportional to tdv, srv and 0.5 ulp(srv)
+           respectively, and then use integer arithmetic to determine whether
+           |tdv - srv| is less than, equal to, or greater than 0.5 ulp(srv).
+        */
+
         bd = Balloc(bd0->k);
         if (bd == NULL) {
             Bfree(bd0);
@@ -1782,6 +1792,7 @@ _Py_dg_strtod(const char *s00, char **se)
             Bfree(bd0);
             goto failed_malloc;
         }
+        /* tdv = bd * 10^e;  srv = bb * 2^(bbe - scale) */
         bs = i2b(1);
         if (bs == NULL) {
             Bfree(bb);
@@ -1802,6 +1813,17 @@ _Py_dg_strtod(const char *s00, char **se)
             bb2 += bbe;
         else
             bd2 -= bbe;
+
+        /* At this stage e = bd2 - bb2 + bbe = bd5 - bb5, so:
+
+              tdv = bd * 2^(bbe + bd2 - bb2) * 5^(bd5 - bb5)
+              srv = bb * 2^(bbe - scale).
+
+           Compute j such that
+
+              0.5 ulp(srv) = 2^(bbe - scale - j)
+        */
+
         bs2 = bb2;
         j = bbe - bc.scale;
         i = j + bbbits - 1;     /* logb(rv) */
@@ -1809,9 +1831,26 @@ _Py_dg_strtod(const char *s00, char **se)
             j += P - Emin;
         else
             j = P + 1 - bbbits;
+
+       /* Now we have:
+
+              M * tdv = bd * 2^(bd2 + scale + j) * 5^bd5
+              M * srv = bb * 2^(bb2 + j) * 5^bb5
+              M * 0.5 ulp(srv) = 2^bs2 * 5^bb5
+
+           where M is the constant (currently) represented by 2^(j + scale +
+           bb2 - bbe) * 5^bb5.
+        */
+
         bb2 += j;
         bd2 += j;
         bd2 += bc.scale;
+
+        /* After the adjustments above, tdv, srv and 0.5 ulp(srv) are
+           proportional to: bd * 2^bd2 * 5^bd5, bb * 2^bb2 * 5^bb5, and
+           bs * 2^bs2 * 5^bb5, respectively. */
+
+        /* Remove excess powers of 2. i = min(bb2, bd2, bs2). */
         i = bb2 < bd2 ? bb2 : bd2;
         if (i > bs2)
             i = bs2;
@@ -1820,6 +1859,8 @@ _Py_dg_strtod(const char *s00, char **se)
             bd2 -= i;
             bs2 -= i;
         }
+
+        /* Scale bb, bd, bs by the appropriate powers of 2 and 5. */
         if (bb5 > 0) {
             bs = pow5mult(bs, bb5);
             if (bs == NULL) {
@@ -1874,6 +1915,11 @@ _Py_dg_strtod(const char *s00, char **se)
                 goto failed_malloc;
             }
         }
+
+        /* Now bd, bb and bs are scaled versions of tdv, srv and 0.5 ulp(srv),
+           respectively.  Compute the difference |tdv - srv|, and compare
+           with 0.5 ulp(srv). */
+
         delta = diff(bb, bd);
         if (delta == NULL) {
             Bfree(bb);
@@ -1882,11 +1928,11 @@ _Py_dg_strtod(const char *s00, char **se)
             Bfree(bd0);
             goto failed_malloc;
         }
-        bc.dsign = delta->sign;
+        dsign = delta->sign;
         delta->sign = 0;
         i = cmp(delta, bs);
         if (bc.nd > nd && i <= 0) {
-            if (bc.dsign)
+            if (dsign)
                 break;  /* Must use bigcomp(). */
 
             /* Here rv overestimates the truncated decimal value by at most
@@ -1908,7 +1954,7 @@ _Py_dg_strtod(const char *s00, char **se)
                    rv / 2^bc.scale >= 2^-1021. */
                 if (j - bc.scale >= 2) {
                     dval(&rv) -= 0.5 * sulp(&rv, &bc);
-                    break;
+                    break; /* Use bigcomp. */
                 }
             }
 
@@ -1922,7 +1968,7 @@ _Py_dg_strtod(const char *s00, char **se)
             /* Error is less than half an ulp -- check for
              * special case of mantissa a power of two.
              */
-            if (bc.dsign || word1(&rv) || word0(&rv) & Bndry_mask
+            if (dsign || word1(&rv) || word0(&rv) & Bndry_mask
                 || (word0(&rv) & Exp_mask) <= (2*P+1)*Exp_msk1
                 ) {
                 break;
@@ -1945,7 +1991,7 @@ _Py_dg_strtod(const char *s00, char **se)
         }
         if (i == 0) {
             /* exactly half-way between */
-            if (bc.dsign) {
+            if (dsign) {
                 if ((word0(&rv) & Bndry_mask1) == Bndry_mask1
                     &&  word1(&rv) == (
                         (bc.scale &&
@@ -1957,7 +2003,7 @@ _Py_dg_strtod(const char *s00, char **se)
                         + Exp_msk1
                         ;
                     word1(&rv) = 0;
-                    bc.dsign = 0;
+                    dsign = 0;
                     break;
                 }
             }
@@ -1972,7 +2018,7 @@ _Py_dg_strtod(const char *s00, char **se)
                             /* accept rv */
                             break;
                         /* rv = smallest denormal */
-                        if (bc.nd >nd)
+                        if (bc.nd > nd)
                             break;
                         goto undfl;
                     }
@@ -1984,7 +2030,7 @@ _Py_dg_strtod(const char *s00, char **se)
             }
             if (!(word1(&rv) & LSB))
                 break;
-            if (bc.dsign)
+            if (dsign)
                 dval(&rv) += ulp(&rv);
             else {
                 dval(&rv) -= ulp(&rv);
@@ -1994,11 +2040,11 @@ _Py_dg_strtod(const char *s00, char **se)
                     goto undfl;
                 }
             }
-            bc.dsign = 1 - bc.dsign;
+            dsign = 1 - dsign;
             break;
         }
         if ((aadj = ratio(delta, bs)) <= 2.) {
-            if (bc.dsign)
+            if (dsign)
                 aadj = aadj1 = 1.;
             else if (word1(&rv) || word0(&rv) & Bndry_mask) {
                 if (word1(&rv) == Tiny1 && !word0(&rv)) {
@@ -2022,7 +2068,7 @@ _Py_dg_strtod(const char *s00, char **se)
         }
         else {
             aadj *= 0.5;
-            aadj1 = bc.dsign ? aadj : -aadj;
+            aadj1 = dsign ? aadj : -aadj;
             if (Flt_Rounds == 0)
                 aadj1 += 0.5;
         }
@@ -2058,7 +2104,7 @@ _Py_dg_strtod(const char *s00, char **se)
                     if ((z = (ULong)aadj) <= 0)
                         z = 1;
                     aadj = z;
-                    aadj1 = bc.dsign ? aadj : -aadj;
+                    aadj1 = dsign ? aadj : -aadj;
                 }
                 dval(&aadj2) = aadj1;
                 word0(&aadj2) += (2*P+1)*Exp_msk1 - y;
@@ -2075,7 +2121,7 @@ _Py_dg_strtod(const char *s00, char **se)
                     L = (Long)aadj;
                     aadj -= L;
                     /* The tolerances below are conservative. */
-                    if (bc.dsign || word1(&rv) || word0(&rv) & Bndry_mask) {
+                    if (dsign || word1(&rv) || word0(&rv) & Bndry_mask) {
                         if (aadj < .4999999 || aadj > .5000001)
                             break;
                     }
@@ -2104,20 +2150,28 @@ _Py_dg_strtod(const char *s00, char **se)
         word0(&rv0) = Exp_1 - 2*P*Exp_msk1;
         word1(&rv0) = 0;
         dval(&rv) *= dval(&rv0);
-        /* try to avoid the bug of testing an 8087 register value */
-        if (!(word0(&rv) & Exp_mask))
-            errno = ERANGE;
     }
+
   ret:
-    if (se)
-        *se = (char *)s;
     return sign ? -dval(&rv) : dval(&rv);
 
+  parse_error:
+    return 0.0;
+
   failed_malloc:
-    if (se)
-        *se = (char *)s00;
     errno = ENOMEM;
     return -1.0;
+
+  undfl:
+    return sign ? -0.0 : 0.0;
+
+  ovfl:
+    errno = ERANGE;
+    /* Can't trust HUGE_VAL */
+    word0(&rv) = Exp_mask;
+    word1(&rv) = 0;
+    return sign ? -dval(&rv) : dval(&rv);
+
 }
 
 static char *
