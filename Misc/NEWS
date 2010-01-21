@@ -12,7 +12,8 @@ What's New in Python 2.5.5c2?
 Extension Modules
 -----------------
 
-- Fix DoS via XML document with malformed UTF-8 sequences (CVE_2009_3560).
+- expat: Fix DoS via XML document with malformed UTF-8 sequences (CVE_2009_3560).
+- expat: Fix DoS via malformed XML (CVE-2009-3720).
 
 
 What's New in Python 2.5.5c1?
