@@ -104,9 +104,9 @@ class StrtodTests(unittest.TestCase):
         # exact halfway cases with a small number of significant digits
         for k in 0, 5, 10, 15, 20:
             # upper = smallest integer >= 2**54/5**k
-            upper = -(-2**54/5**k)
+            upper = -(-2**54//5**k)
             # lower = smallest odd number >= 2**53/5**k
-            lower = -(-2**53/5**k)
+            lower = -(-2**53//5**k)
             if lower % 2 == 0:
                 lower += 1
             for i in xrange(10 * TEST_SIZE):
