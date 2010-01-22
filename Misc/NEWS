@@ -272,6 +272,9 @@ Extension Modules
 
 - Issue #6848: Fix curses module build failure on OS X 10.6.
 
+- Expat: Fix DoS via XML document with malformed UTF-8 sequences
+  (CVE_2009_3560).
+
 Tests
 -----
 
