@@ -104,7 +104,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
 	_Py_SET_53BIT_PRECISION_END;
 
 	if (*endptr == nptr)
-		/* string might represent and inf or nan */
+		/* string might represent an inf or nan */
 		result = _Py_parse_inf_or_nan(nptr, endptr);
 
 	return result;
