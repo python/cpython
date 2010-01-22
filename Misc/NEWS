@@ -66,6 +66,12 @@ Library
   Extension extra options may change the output without changing the .c
   file). Initial patch by Collin Winter.
 
+Extension Modules
+-----------------
+
+- Expat: Fix DoS via XML document with malformed UTF-8 sequences
+  (CVE_2009_3560).
+
 Build
 -----
 
