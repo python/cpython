@@ -235,6 +235,7 @@ typedef union { double d; ULong L[2]; } U;
 #define Bias 1023
 #define Emax 1023
 #define Emin (-1022)
+#define Etiny (-1074)  /* smallest denormal is 2**Etiny */
 #define Exp_1  0x3ff00000
 #define Exp_11 0x3ff00000
 #define Ebits 11
@@ -244,7 +245,6 @@ typedef union { double d; ULong L[2]; } U;
 #define Bletch 0x10
 #define Bndry_mask  0xfffff
 #define Bndry_mask1 0xfffff
-#define LSB 1
 #define Sign_bit 0x80000000
 #define Log2P 1
 #define Tiny0 0
@@ -1019,6 +1019,76 @@ b2d(Bigint *a, int *e)
     return dval(&d);
 }
 
+/* Convert a scaled double to a Bigint plus an exponent.  Similar to d2b,
+   except that it accepts the scale parameter used in _Py_dg_strtod (which
+   should be either 0 or 2*P), and the normalization for the return value is
+   different (see below).  On input, d should be finite and nonnegative, and d
+   / 2**scale should be exactly representable as an IEEE 754 double.
+
+   Returns a Bigint b and an integer e such that
+
+     dval(d) / 2**scale = b * 2**e.
+
+   Unlike d2b, b is not necessarily odd: b and e are normalized so
+   that either 2**(P-1) <= b < 2**P and e >= Etiny, or b < 2**P
+   and e == Etiny.  This applies equally to an input of 0.0: in that
+   case the return values are b = 0 and e = Etiny.
+
+   The above normalization ensures that for all possible inputs d,
+   2**e gives ulp(d/2**scale).
+
+   Returns NULL on failure.
+*/
+
+static Bigint *
+sd2b(U *d, int scale, int *e)
+{
+    Bigint *b;
+
+    b = Balloc(1);
+    if (b == NULL)
+        return NULL;
+    
+    /* First construct b and e assuming that scale == 0. */
+    b->wds = 2;
+    b->x[0] = word1(d);
+    b->x[1] = word0(d) & Frac_mask;
+    *e = Etiny - 1 + (int)((word0(d) & Exp_mask) >> Exp_shift);
+    if (*e < Etiny)
+        *e = Etiny;
+    else
+        b->x[1] |= Exp_msk1;
+
+    /* Now adjust for scale, provided that b != 0. */
+    if (scale && (b->x[0] || b->x[1])) {
+        *e -= scale;
+        if (*e < Etiny) {
+            scale = Etiny - *e;
+            *e = Etiny;
+            /* We can't shift more than P-1 bits without shifting out a 1. */
+            assert(0 < scale && scale <= P - 1);
+            if (scale >= 32) {
+                /* The bits shifted out should all be zero. */
+                assert(b->x[0] == 0);
+                b->x[0] = b->x[1];
+                b->x[1] = 0;
+                scale -= 32;
+            }
+            if (scale) {
+                /* The bits shifted out should all be zero. */
+                assert(b->x[0] << (32 - scale) == 0);
+                b->x[0] = (b->x[0] >> scale) | (b->x[1] << (32 - scale));
+                b->x[1] >>= scale;
+            }
+        }
+    }
+    /* Ensure b is normalized. */
+    if (!b->x[1])
+        b->wds = 1;
+
+    return b;
+}
+
 /* Convert a double to a Bigint plus an exponent.  Return NULL on failure.
 
    Given a finite nonzero double d, return an odd Bigint b and exponent *e
@@ -1027,7 +1097,6 @@ b2d(Bigint *a, int *e)
 
    If d is zero, then b == 0, *e == -1010, *bbits = 0.
  */
-
 
 static Bigint *
 d2b(U *d, int *e, int *bits)
@@ -1299,45 +1368,29 @@ static int
 bigcomp(U *rv, const char *s0, BCinfo *bc)
 {
     Bigint *b, *d;
-    int b2, bbits, d2, dd, i, nd, nd0, odd, p2, p5;
+    int b2, d2, dd, i, nd, nd0, odd, p2, p5;
 
     dd = 0; /* silence compiler warning about possibly unused variable */
     nd = bc->nd;
     nd0 = bc->nd0;
     p5 = nd + bc->e0;
-    if (rv->d == 0.) {
-        /* special case because d2b doesn't handle 0.0 */
-        b = i2b(0);
-        if (b == NULL)
-            return -1;
-        p2 = Emin - P + 1; /* = -1074 for IEEE 754 binary64 */
-        bbits = 0;
-    }
-    else {
-        b = d2b(rv, &p2, &bbits);
-        if (b == NULL)
-            return -1;
-        p2 -= bc->scale;
-    }
-    /* now rv/2^(bc->scale) = b * 2**p2, and b has bbits significant bits */
-
-    /* Replace (b, p2) by (b << i, p2 - i), with i the largest integer such
-       that b << i has at most P significant bits and p2 - i >= Emin - P +
-       1. */
-    i = P - bbits;
-    if (i > p2 - (Emin - P + 1))
-        i = p2 - (Emin - P + 1);
-    /* increment i so that we shift b by an extra bit;  then or-ing a 1 into
-       the lsb of b gives us rv/2^(bc->scale) + 0.5ulp. */
-    b = lshift(b, ++i);
+    b = sd2b(rv, bc->scale, &p2);
     if (b == NULL)
         return -1;
+
     /* record whether the lsb of rv/2^(bc->scale) is odd:  in the exact halfway
        case, this is used for round to even. */
-    odd = b->x[0] & 2;
-    b->x[0] |= 1;
+    odd = b->x[0] & 1;
 
-    p2 -= p5 + i;
+    /* left shift b by 1 bit and or a 1 into the least significant bit;
+       this gives us b * 2**p2 = rv/2^(bc->scale) + 0.5 ulp. */
+    b = lshift(b, 1);
+    if (b == NULL)
+        return -1;
+    b->x[0] |= 1;
+    p2--;
+
+    p2 -= p5;
     d = i2b(1);
     if (d == NULL) {
         Bfree(b);
@@ -1425,8 +1478,8 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
 double
 _Py_dg_strtod(const char *s00, char **se)
 {
-    int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, dsign, e, e1, error;
-    int esign, i, j, k, lz, nd, nd0, sign;
+    int bb2, bb5, bbe, bd2, bd5, bs2, c, dsign, e, e1, error;
+    int esign, i, j, k, lz, nd, nd0, odd, sign;
     const char *s, *s0, *s1;
     double aadj, aadj1;
     U aadj2, adj, rv, rv0;
@@ -1786,13 +1839,17 @@ _Py_dg_strtod(const char *s00, char **se)
             goto failed_malloc;
         }
         Bcopy(bd, bd0);
-        bb = d2b(&rv, &bbe, &bbbits);   /* rv = bb * 2^bbe */
+        bb = sd2b(&rv, bc.scale, &bbe);   /* srv = bb * 2^bbe */
         if (bb == NULL) {
             Bfree(bd);
             Bfree(bd0);
             goto failed_malloc;
         }
-        /* tdv = bd * 10^e;  srv = bb * 2^(bbe - scale) */
+        /* Record whether lsb of bb is odd, in case we need this
+           for the round-to-even step later. */
+        odd = bb->x[0] & 1;
+
+        /* tdv = bd * 10**e;  srv = bb * 2**bbe */
         bs = i2b(1);
         if (bs == NULL) {
             Bfree(bb);
@@ -1813,44 +1870,28 @@ _Py_dg_strtod(const char *s00, char **se)
             bb2 += bbe;
         else
             bd2 -= bbe;
-
-        /* At this stage e = bd2 - bb2 + bbe = bd5 - bb5, so:
-
-              tdv = bd * 2^(bbe + bd2 - bb2) * 5^(bd5 - bb5)
-              srv = bb * 2^(bbe - scale).
-
-           Compute j such that
-
-              0.5 ulp(srv) = 2^(bbe - scale - j)
-        */
-
         bs2 = bb2;
-        j = bbe - bc.scale;
-        i = j + bbbits - 1;     /* logb(rv) */
-        if (i < Emin)   /* denormal */
-            j += P - Emin;
-        else
-            j = P + 1 - bbbits;
+        bb2++;
+        bd2++;
 
-       /* Now we have:
+        /* At this stage bd5 - bb5 == e == bd2 - bb2 + bbe, bb2 - bs2 == 1,
+	   and bs == 1, so:
 
-              M * tdv = bd * 2^(bd2 + scale + j) * 5^bd5
-              M * srv = bb * 2^(bb2 + j) * 5^bb5
-              M * 0.5 ulp(srv) = 2^bs2 * 5^bb5
+              tdv == bd * 10**e = bd * 2**(bbe - bb2 + bd2) * 5**(bd5 - bb5)
+              srv == bb * 2**bbe = bb * 2**(bbe - bb2 + bb2)
+	      0.5 ulp(srv) == 2**(bbe-1) = bs * 2**(bbe - bb2 + bs2)
 
-           where M is the constant (currently) represented by 2^(j + scale +
-           bb2 - bbe) * 5^bb5.
+	   It follows that:
+
+              M * tdv = bd * 2**bd2 * 5**bd5
+              M * srv = bb * 2**bb2 * 5**bb5
+              M * 0.5 ulp(srv) = bs * 2**bs2 * 5**bb5
+
+	   for some constant M.  (Actually, M == 2**(bb2 - bbe) * 5**bb5, but
+	   this fact is not needed below.)
         */
 
-        bb2 += j;
-        bd2 += j;
-        bd2 += bc.scale;
-
-        /* After the adjustments above, tdv, srv and 0.5 ulp(srv) are
-           proportional to: bd * 2^bd2 * 5^bd5, bb * 2^bb2 * 5^bb5, and
-           bs * 2^bs2 * 5^bb5, respectively. */
-
-        /* Remove excess powers of 2. i = min(bb2, bd2, bs2). */
+        /* Remove factor of 2**i, where i = min(bb2, bd2, bs2). */
         i = bb2 < bd2 ? bb2 : bd2;
         if (i > bs2)
             i = bs2;
@@ -2028,7 +2069,7 @@ _Py_dg_strtod(const char *s00, char **se)
                 word1(&rv) = 0xffffffff;
                 break;
             }
-            if (!(word1(&rv) & LSB))
+            if (!odd)
                 break;
             if (dsign)
                 dval(&rv) += ulp(&rv);
