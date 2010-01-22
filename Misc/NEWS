@@ -1908,7 +1908,7 @@ Extension Modules
 - Issue #6848: Fix curses module build failure on OS X 10.6.
 
 - Fix a segfault in expat when given a specially crafted input lead to the
-  tokenizer not stopping.
+  tokenizer not stopping. CVE-2009-3720.
 
 - Issue #6561: '\d' in a regex now matches only characters with
   Unicode category 'Nd' (Number, Decimal Digit).  Previously it also
