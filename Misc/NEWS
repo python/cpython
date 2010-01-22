@@ -610,6 +610,9 @@ Extension Modules
 
 - Issue #2389: Array objects are now pickled in a portable manner.
 
+- Expat: Fix DoS via XML document with malformed UTF-8 sequences
+  (CVE_2009_3560).
+
 Build
 -----
 
