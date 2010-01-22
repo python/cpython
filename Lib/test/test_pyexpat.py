@@ -518,7 +518,7 @@ class MalformedInputText(unittest.TestCase):
             parser.Parse(xml, True)
             self.fail()
         except expat.ExpatError as e:
-            self.assertEquals(str(e), 'no element found: line 2, column 1')
+            self.assertEquals(str(e), 'unclosed token: line 2, column 0')
 
     def test2(self):
         xml = "<?xml version\xc2\x85='1.0'?>\r\n"
