@@ -177,9 +177,6 @@ Extension Modules
 
 Build
 -----
->>>>>>> .merge-right.r77680
-Build
------
 
 - Issue #7661: Allow ctypes to be built from a non-ASCII directory path.
   Patch by Florent Xicluna.
