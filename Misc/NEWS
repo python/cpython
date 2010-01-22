@@ -169,6 +169,15 @@ Library
 - Issue #5037: Proxy the __unicode__ special method to __unicode__ instead of
   __str__.
 
+Extension Modules
+-----------------
+
+- Expat: Fix DoS via XML document with malformed UTF-8 sequences
+  (CVE_2009_3560).
+
+Build
+-----
+>>>>>>> .merge-right.r77680
 Build
 -----
 
