@@ -36,8 +36,8 @@ class LocaleTime_Tests(unittest.TestCase):
         """
         strftime_output = time.strftime(directive, self.time_tuple).lower()
         comparison = testing[self.time_tuple[tuple_position]]
-        self.assertTrue(strftime_output in testing, "%s: not found in tuple" %
-                                                    error_msg)
+        self.assertIn(strftime_output, testing,
+                      "%s: not found in tuple" % error_msg)
         self.assertTrue(comparison == strftime_output,
                         "%s: position within tuple incorrect; %s != %s" %
                         (error_msg, comparison, strftime_output))
@@ -61,8 +61,8 @@ class LocaleTime_Tests(unittest.TestCase):
     def test_am_pm(self):
         # Make sure AM/PM representation done properly
         strftime_output = time.strftime("%p", self.time_tuple).lower()
-        self.assertTrue(strftime_output in self.LT_ins.am_pm,
-                        "AM/PM representation not in tuple")
+        self.assertIn(strftime_output, self.LT_ins.am_pm,
+                      "AM/PM representation not in tuple")
         if self.time_tuple[3] < 12: position = 0
         else: position = 1
         self.assertTrue(strftime_output == self.LT_ins.am_pm[position],
@@ -72,7 +72,7 @@ class LocaleTime_Tests(unittest.TestCase):
         # Make sure timezone is correct
         timezone = time.strftime("%Z", self.time_tuple).lower()
         if timezone:
-            self.assertTrue(timezone in self.LT_ins.timezone[0] or \
+            self.assertTrue(timezone in self.LT_ins.timezone[0] or
                             timezone in self.LT_ins.timezone[1],
                             "timezone %s not found in %s" %
                             (timezone, self.LT_ins.timezone))
@@ -133,9 +133,9 @@ class TimeRETests(unittest.TestCase):
         # Make sure any characters in the format string that might be taken as
         # regex syntax is escaped.
         pattern_string = self.time_re.pattern("\d+")
-        self.assertTrue(r"\\d\+" in pattern_string,
-                        "%s does not have re characters escaped properly" %
-                        pattern_string)
+        self.assertIn(r"\\d\+", pattern_string,
+                      "%s does not have re characters escaped properly" %
+                      pattern_string)
 
     def test_compile(self):
         # Check that compiled regex is correct

@@ -113,7 +113,7 @@ class test__RandomNameSequence(TC):
         for i in xrange(TEST_FILES):
             s = r.next()
             self.nameCheck(s, '', '', '')
-            self.assertFalse(s in dict)
+            self.assertNotIn(s, dict)
             dict[s] = 1
 
     def test_supports_iter(self):
@@ -160,14 +160,14 @@ class test__candidate_tempdir_list(TC):
             for envname in 'TMPDIR', 'TEMP', 'TMP':
                 dirname = os.getenv(envname)
                 if not dirname: raise ValueError
-                self.assertTrue(dirname in cand)
+                self.assertIn(dirname, cand)
 
             try:
                 dirname = os.getcwd()
             except (AttributeError, os.error):
                 dirname = os.curdir
 
-            self.assertTrue(dirname in cand)
+            self.assertIn(dirname, cand)
 
             # Not practical to try to verify the presence of OS-specific
             # paths in this list.

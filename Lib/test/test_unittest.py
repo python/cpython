@@ -636,7 +636,7 @@ class Test_TestLoader(TestCase):
             self.assertEqual(list(suite), [])
 
             # audioop should now be loaded, thanks to loadTestsFromName()
-            self.assertTrue(module_name in sys.modules)
+            self.assertIn(module_name, sys.modules)
         finally:
             if module_name in sys.modules:
                 del sys.modules[module_name]
@@ -1024,7 +1024,7 @@ class Test_TestLoader(TestCase):
             self.assertEqual(list(suite), [unittest.TestSuite()])
 
             # audioop should now be loaded, thanks to loadTestsFromName()
-            self.assertTrue(module_name in sys.modules)
+            self.assertIn(module_name, sys.modules)
         finally:
             if module_name in sys.modules:
                 del sys.modules[module_name]
@@ -3056,7 +3056,7 @@ class Test_Assertions(TestCase):
         try:
             self.assertRaises(KeyError, lambda: None)
         except self.failureException as e:
-            self.assert_("KeyError not raised" in e, str(e))
+            self.assertIn("KeyError not raised", e)
         else:
             self.fail("assertRaises() didn't fail")
         try:
@@ -3073,7 +3073,7 @@ class Test_Assertions(TestCase):
             with self.assertRaises(KeyError):
                 pass
         except self.failureException as e:
-            self.assert_("KeyError not raised" in e, str(e))
+            self.assertIn("KeyError not raised", e)
         else:
             self.fail("assertRaises() didn't fail")
         try:

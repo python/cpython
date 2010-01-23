@@ -96,7 +96,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         # Test has_key and "in".
         for i in u2.keys():
             self.assertTrue(u2.has_key(i))
-            self.assertTrue(i in u2)
+            self.assertIn(i, u2)
             self.assertEqual(u1.has_key(i), d1.has_key(i))
             self.assertEqual(i in u1, i in d1)
             self.assertEqual(u0.has_key(i), d0.has_key(i))
@@ -161,8 +161,8 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         d = D({1: 2, 3: 4})
         self.assertEqual(d[1], 2)
         self.assertEqual(d[3], 4)
-        self.assertTrue(2 not in d)
-        self.assertTrue(2 not in d.keys())
+        self.assertNotIn(2, d)
+        self.assertNotIn(2, d.keys())
         self.assertEqual(d[2], 42)
         class E(UserDict.UserDict):
             def __missing__(self, key):
@@ -273,8 +273,8 @@ class UserDictMixinTest(mapping_tests.TestMappingProtocol):
         self.assertTrue(not s.has_key(20))
 
         # __contains__
-        self.assertTrue(10 in s)
-        self.assertTrue(20 not in s)
+        self.assertIn(10, s)
+        self.assertNotIn(20, s)
 
         # __iter__
         self.assertEqual([k for k in s], [10, 30])
@@ -309,7 +309,7 @@ class UserDictMixinTest(mapping_tests.TestMappingProtocol):
 
         # pop
         self.assertEqual(s.pop(10), 'ten')
-        self.assertTrue(10 not in s)
+        self.assertNotIn(10, s)
         s[10] = 'ten'
         self.assertEqual(s.pop("x", 1), 1)
         s["x"] = 42
@@ -317,7 +317,7 @@ class UserDictMixinTest(mapping_tests.TestMappingProtocol):
 
         # popitem
         k, v = s.popitem()
-        self.assertTrue(k not in s)
+        self.assertNotIn(k, s)
         s[k] = v
 
         # clear

@@ -505,8 +505,8 @@ self.assertTrue(X.passed)
             return C
 
         varnames = f(1).z
-        self.assertTrue("x" not in varnames)
-        self.assertTrue("y" in varnames)
+        self.assertNotIn("x", varnames)
+        self.assertIn("y", varnames)
 
     def testLocalsClass_WithTrace(self):
         # Issue23728: after the trace function returns, the locals()

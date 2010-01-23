@@ -935,7 +935,7 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
         # given that all three lines in sample3 are equal,
         # I think that any character could have been 'guessed' as the
         # delimiter, depending on dictionary order
-        self.assertTrue(dialect.delimiter in self.sample3)
+        self.assertIn(dialect.delimiter, self.sample3)
         dialect = sniffer.sniff(self.sample3, delimiters="?,")
         self.assertEqual(dialect.delimiter, "?")
         dialect = sniffer.sniff(self.sample3, delimiters="/,")

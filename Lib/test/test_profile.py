@@ -57,7 +57,7 @@ class ProfileTest(unittest.TestCase):
             stats = pstats.Stats(prof, stream=s)
             stats.print_stats()
             res = s.getvalue()
-            self.assertTrue(self.expected_list_sort_output in res,
+            self.assertIn(self.expected_list_sort_output, res,
                 "Profiling {0!r} didn't report list.sort:\n{1}".format(stmt, res))
 
 

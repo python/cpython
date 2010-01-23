@@ -218,7 +218,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         self.assertEqual(popen.returncode, 1)
         error = "SyntaxError: (unicode error) \N escapes not supported " \
             "(can't load unicodedata module)"
-        self.assertTrue(error in popen.stderr.read())
+        self.assertIn(error, popen.stderr.read())
 
     def test_decimal_numeric_consistent(self):
         # Test that decimal and numeric are consistent,

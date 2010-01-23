@@ -941,7 +941,7 @@ class TransportSubclassTestCase(unittest.TestCase):
                 conn.putheader("X-Test", "test_custom_user_agent")
 
         req = self.issue_request(TestTransport)
-        self.assertTrue("X-Test: test_custom_user_agent\r\n" in req)
+        self.assertIn("X-Test: test_custom_user_agent\r\n", req)
 
     def test_send_host(self):
         class TestTransport(FakeTransport):
@@ -951,7 +951,7 @@ class TransportSubclassTestCase(unittest.TestCase):
                 conn.putheader("X-Test", "test_send_host")
 
         req = self.issue_request(TestTransport)
-        self.assertTrue("X-Test: test_send_host\r\n" in req)
+        self.assertIn("X-Test: test_send_host\r\n", req)
 
     def test_send_request(self):
         class TestTransport(FakeTransport):
@@ -961,7 +961,7 @@ class TransportSubclassTestCase(unittest.TestCase):
                 conn.putheader("X-Test", "test_send_request")
 
         req = self.issue_request(TestTransport)
-        self.assertTrue("X-Test: test_send_request\r\n" in req)
+        self.assertIn("X-Test: test_send_request\r\n", req)
 
     def test_send_content(self):
         class TestTransport(FakeTransport):
@@ -971,7 +971,7 @@ class TransportSubclassTestCase(unittest.TestCase):
                 xmlrpclib.Transport.send_content(self, conn, body)
 
         req = self.issue_request(TestTransport)
-        self.assertTrue("X-Test: test_send_content\r\n" in req)
+        self.assertIn("X-Test: test_send_content\r\n", req)
 
 @test_support.reap_threads
 def test_main():

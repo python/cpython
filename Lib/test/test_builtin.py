@@ -236,11 +236,11 @@ class BuiltinTest(unittest.TestCase):
 
         # dir() - local scope
         local_var = 1
-        self.assertTrue('local_var' in dir())
+        self.assertIn('local_var', dir())
 
         # dir(module)
         import sys
-        self.assertTrue('exit' in dir(sys))
+        self.assertIn('exit', dir(sys))
 
         # dir(module_with_invalid__dict__)
         import types
@@ -250,8 +250,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, dir, f)
 
         # dir(type)
-        self.assertTrue("strip" in dir(str))
-        self.assertTrue("__mro__" not in dir(str))
+        self.assertIn("strip", dir(str))
+        self.assertNotIn("__mro__", dir(str))
 
         # dir(obj)
         class Foo(object):
@@ -260,13 +260,13 @@ class BuiltinTest(unittest.TestCase):
                 self.y = 8
                 self.z = 9
         f = Foo()
-        self.assertTrue("y" in dir(f))
+        self.assertIn("y", dir(f))
 
         # dir(obj_no__dict__)
         class Foo(object):
             __slots__ = []
         f = Foo()
-        self.assertTrue("__repr__" in dir(f))
+        self.assertIn("__repr__", dir(f))
 
         # dir(obj_no__class__with__dict__)
         # (an ugly trick to cause getattr(f, "__class__") to fail)
@@ -275,8 +275,8 @@ class BuiltinTest(unittest.TestCase):
             def __init__(self):
                 self.bar = "wow"
         f = Foo()
-        self.assertTrue("__repr__" not in dir(f))
-        self.assertTrue("bar" in dir(f))
+        self.assertNotIn("__repr__", dir(f))
+        self.assertIn("bar", dir(f))
 
         # dir(obj_using __dir__)
         class Foo(object):
@@ -1046,18 +1046,18 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(range(a+4, a, -2), [a+4, a+2])
 
         seq = range(a, b, c)
-        self.assertTrue(a in seq)
-        self.assertTrue(b not in seq)
+        self.assertIn(a, seq)
+        self.assertNotIn(b, seq)
         self.assertEqual(len(seq), 2)
 
         seq = range(b, a, -c)
-        self.assertTrue(b in seq)
-        self.assertTrue(a not in seq)
+        self.assertIn(b, seq)
+        self.assertNotIn(a, seq)
         self.assertEqual(len(seq), 2)
 
         seq = range(-a, -b, -c)
-        self.assertTrue(-a in seq)
-        self.assertTrue(-b not in seq)
+        self.assertIn(-a, seq)
+        self.assertNotIn(-b, seq)
         self.assertEqual(len(seq), 2)
 
         self.assertRaises(TypeError, range)

@@ -36,14 +36,14 @@ class FunctionPropertiesTest(FuncAttrsTest):
 
     def test_dir_includes_correct_attrs(self):
         self.b.known_attr = 7
-        self.assertTrue('known_attr' in dir(self.b),
+        self.assertIn('known_attr', dir(self.b),
                         "set attributes not in dir listing of method")
         # Test on underlying function object of method
         self.f.a.im_func.known_attr = 7
-        self.assertTrue('known_attr' in dir(self.f.a),
+        self.assertIn('known_attr', dir(self.f.a),
                         "set attribute on unbound method implementation in "
                         "class not in dir")
-        self.assertTrue('known_attr' in dir(self.fi.a),
+        self.assertIn('known_attr', dir(self.fi.a),
                         "set attribute on unbound method implementations, "
                         "should show up in next dir")
 

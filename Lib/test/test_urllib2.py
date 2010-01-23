@@ -779,8 +779,8 @@ class HandlerTests(unittest.TestCase):
             r = MockResponse(200, "OK", {}, "")
             newreq = h.do_request_(req)
             if data is None:  # GET
-                self.assertTrue("Content-length" not in req.unredirected_hdrs)
-                self.assertTrue("Content-type" not in req.unredirected_hdrs)
+                self.assertNotIn("Content-length", req.unredirected_hdrs)
+                self.assertNotIn("Content-type", req.unredirected_hdrs)
             else:  # POST
                 self.assertEqual(req.unredirected_hdrs["Content-length"], "0")
                 self.assertEqual(req.unredirected_hdrs["Content-type"],
@@ -897,13 +897,13 @@ class HandlerTests(unittest.TestCase):
                 # now it's a GET, there should not be headers regarding content
                 # (possibly dragged from before being a POST)
                 headers = [x.lower() for x in o.req.headers]
-                self.assertTrue("content-length" not in headers)
-                self.assertTrue("content-type" not in headers)
+                self.assertNotIn("content-length", headers)
+                self.assertNotIn("content-type", headers)
 
                 self.assertEqual(o.req.headers["Nonsense"],
                                  "viking=withhold")
-                self.assertTrue("Spam" not in o.req.headers)
-                self.assertTrue("Spam" not in o.req.unredirected_hdrs)
+                self.assertNotIn("Spam", o.req.headers)
+                self.assertNotIn("Spam", o.req.unredirected_hdrs)
 
         # loop detection
         req = Request(from_url)
@@ -1017,10 +1017,10 @@ class HandlerTests(unittest.TestCase):
         # Verify Proxy-Authorization gets tunneled to request.
         # httpsconn req_headers do not have the Proxy-Authorization header but
         # the req will have.
-        self.assertFalse(("Proxy-Authorization","FooBar") in
+        self.assertNotIn(("Proxy-Authorization","FooBar"),
                          https_handler.httpconn.req_headers)
-        self.assertTrue(("User-Agent","Grail") in
-                        https_handler.httpconn.req_headers)
+        self.assertIn(("User-Agent","Grail"),
+                      https_handler.httpconn.req_headers)
         self.assertIsNotNone(req._tunnel_host)
         self.assertEqual(req.get_host(), "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"),"FooBar")

@@ -428,7 +428,7 @@ class ExceptionTests(unittest.TestCase):
                     return sys.exc_info()
             e, v, tb = g()
             self.assertTrue(e is RuntimeError, e)
-            self.assertTrue("maximum recursion depth exceeded" in str(v), v)
+            self.assertIn("maximum recursion depth exceeded", str(v))
 
 
 

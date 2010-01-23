@@ -505,7 +505,7 @@ class CookieTests(TestCase):
         self.assertEquals(len(c), 2)
         c.clear_session_cookies()
         self.assertEquals(len(c), 1)
-        self.assertTrue('spam="bar"' in h)
+        self.assertIn('spam="bar"', h)
 
         # XXX RFC 2965 expiry rules (some apply to V0 too)
 
@@ -517,39 +517,39 @@ class CookieTests(TestCase):
 
         c = CookieJar(pol)
         interact_2965(c, "http://www.acme.com/", 'spam="bar"; Version="1"')
-        self.assertTrue("/" in c._cookies["www.acme.com"])
+        self.assertIn("/", c._cookies["www.acme.com"])
 
         c = CookieJar(pol)
         interact_2965(c, "http://www.acme.com/blah", 'eggs="bar"; Version="1"')
-        self.assertTrue("/" in c._cookies["www.acme.com"])
+        self.assertIn("/", c._cookies["www.acme.com"])
 
         c = CookieJar(pol)
         interact_2965(c, "http://www.acme.com/blah/rhubarb",
                       'eggs="bar"; Version="1"')
-        self.assertTrue("/blah/" in c._cookies["www.acme.com"])
+        self.assertIn("/blah/", c._cookies["www.acme.com"])
 
         c = CookieJar(pol)
         interact_2965(c, "http://www.acme.com/blah/rhubarb/",
                       'eggs="bar"; Version="1"')
-        self.assertTrue("/blah/rhubarb/" in c._cookies["www.acme.com"])
+        self.assertIn("/blah/rhubarb/", c._cookies["www.acme.com"])
 
         # Netscape
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/", 'spam="bar"')
-        self.assertTrue("/" in c._cookies["www.acme.com"])
+        self.assertIn("/", c._cookies["www.acme.com"])
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/blah", 'eggs="bar"')
-        self.assertTrue("/" in c._cookies["www.acme.com"])
+        self.assertIn("/", c._cookies["www.acme.com"])
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/blah/rhubarb", 'eggs="bar"')
-        self.assertTrue("/blah" in c._cookies["www.acme.com"])
+        self.assertIn("/blah", c._cookies["www.acme.com"])
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/blah/rhubarb/", 'eggs="bar"')
-        self.assertTrue("/blah/rhubarb" in c._cookies["www.acme.com"])
+        self.assertIn("/blah/rhubarb", c._cookies["www.acme.com"])
 
     def test_escape_path(self):
         from cookielib import escape_path
@@ -937,21 +937,21 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, "spam=eggs; Version=1")
         h = interact_2965(c, url)
-        self.assertTrue("Domain" not in h,
-                     "absent domain returned with domain present")
+        self.assertNotIn("Domain", h,
+                         "absent domain returned with domain present")
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
         interact_2965(c, url, 'spam=eggs; Version=1; Domain=.bar.com')
         h = interact_2965(c, url)
-        self.assertTrue('$Domain=".bar.com"' in h, "domain not returned")
+        self.assertIn('$Domain=".bar.com"', h, "domain not returned")
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
         # note missing initial dot in Domain
         interact_2965(c, url, 'spam=eggs; Version=1; Domain=bar.com')
         h = interact_2965(c, url)
-        self.assertTrue('$Domain="bar.com"' in h, "domain not returned")
+        self.assertIn('$Domain="bar.com"', h, "domain not returned")
 
     def test_path_mirror(self):
         from cookielib import CookieJar, DefaultCookiePolicy
@@ -962,14 +962,13 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, "spam=eggs; Version=1")
         h = interact_2965(c, url)
-        self.assertTrue("Path" not in h,
-                     "absent path returned with path present")
+        self.assertNotIn("Path", h, "absent path returned with path present")
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
         interact_2965(c, url, 'spam=eggs; Version=1; Path=/')
         h = interact_2965(c, url)
-        self.assertTrue('$Path="/"' in h, "path not returned")
+        self.assertIn('$Path="/"', h, "path not returned")
 
     def test_port_mirror(self):
         from cookielib import CookieJar, DefaultCookiePolicy
@@ -980,8 +979,7 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, "spam=eggs; Version=1")
         h = interact_2965(c, url)
-        self.assertTrue("Port" not in h,
-                     "absent port returned with port present")
+        self.assertNotIn("Port", h, "absent port returned with port present")
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
@@ -994,16 +992,16 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, 'spam=eggs; Version=1; Port="80"')
         h = interact_2965(c, url)
-        self.assertTrue('$Port="80"' in h,
-                     "port with single value not returned with single value")
+        self.assertIn('$Port="80"', h,
+                      "port with single value not returned with single value")
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
         interact_2965(c, url, 'spam=eggs; Version=1; Port="80,8080"')
         h = interact_2965(c, url)
-        self.assertTrue('$Port="80,8080"' in h,
-                     "port with multiple values not returned with multiple "
-                     "values")
+        self.assertIn('$Port="80,8080"', h,
+                      "port with multiple values not returned with multiple "
+                      "values")
 
     def test_no_return_comment(self):
         from cookielib import CookieJar, DefaultCookiePolicy
@@ -1179,8 +1177,8 @@ class LWPCookieTests(TestCase):
         c.add_cookie_header(req)
 
         h = req.get_header("Cookie")
-        self.assertTrue("PART_NUMBER=ROCKET_LAUNCHER_0001" in h and
-                     "CUSTOMER=WILE_E_COYOTE" in h)
+        self.assertIn("PART_NUMBER=ROCKET_LAUNCHER_0001", h)
+        self.assertIn("CUSTOMER=WILE_E_COYOTE", h)
 
         headers.append('Set-Cookie: SHIPPING=FEDEX; path=/foo')
         res = FakeResponse(headers, "http://www.acme.com")
@@ -1190,17 +1188,17 @@ class LWPCookieTests(TestCase):
         c.add_cookie_header(req)
 
         h = req.get_header("Cookie")
-        self.assertTrue("PART_NUMBER=ROCKET_LAUNCHER_0001" in h and
-                     "CUSTOMER=WILE_E_COYOTE" in h and
-                     "SHIPPING=FEDEX" not in h)
+        self.assertIn("PART_NUMBER=ROCKET_LAUNCHER_0001", h)
+        self.assertIn("CUSTOMER=WILE_E_COYOTE", h)
+        self.assertNotIn("SHIPPING=FEDEX", h)
 
         req = Request("http://www.acme.com/foo/")
         c.add_cookie_header(req)
 
         h = req.get_header("Cookie")
-        self.assertTrue(("PART_NUMBER=ROCKET_LAUNCHER_0001" in h and
-                      "CUSTOMER=WILE_E_COYOTE" in h and
-                      h.startswith("SHIPPING=FEDEX;")))
+        self.assertIn("PART_NUMBER=ROCKET_LAUNCHER_0001", h)
+        self.assertIn("CUSTOMER=WILE_E_COYOTE", h)
+        self.assertTrue(h.startswith("SHIPPING=FEDEX;"))
 
     def test_netscape_example_2(self):
         from cookielib import CookieJar
@@ -1424,8 +1422,8 @@ class LWPCookieTests(TestCase):
         # the server.
 
         cookie = interact_2965(c, "http://www.acme.com/acme/parts/")
-        self.assertTrue("Rocket_Launcher_0001" in cookie and
-                     "Riding_Rocket_0023" not in cookie)
+        self.assertIn("Rocket_Launcher_0001", cookie)
+        self.assertNotIn("Riding_Rocket_0023", cookie)
 
     def test_rejection(self):
         # Test rejection of Set-Cookie2 responses based on domain, path, port.
@@ -1579,11 +1577,11 @@ class LWPCookieTests(TestCase):
 
         new_c = save_and_restore(c, True)
         self.assertEquals(len(new_c), 6)  # none discarded
-        self.assertTrue("name='foo1', value='bar'" in repr(new_c))
+        self.assertIn("name='foo1', value='bar'", repr(new_c))
 
         new_c = save_and_restore(c, False)
         self.assertEquals(len(new_c), 4)  # 2 of them discarded on save
-        self.assertTrue("name='foo1', value='bar'" in repr(new_c))
+        self.assertIn("name='foo1', value='bar'", repr(new_c))
 
     def test_netscape_misc(self):
         # Some additional Netscape cookies tests.
@@ -1621,11 +1619,12 @@ class LWPCookieTests(TestCase):
                       "foo1=bar; PORT; Discard; Version=1;")
         cookie = interact_2965(c, "http://example/",
                                'foo2=bar; domain=".local"; Version=1')
-        self.assertTrue("foo1=bar" in cookie)
+        self.assertIn("foo1=bar", cookie)
 
         interact_2965(c, "http://example/", 'foo3=bar; Version=1')
         cookie = interact_2965(c, "http://example/")
-        self.assertTrue("foo2=bar" in cookie and len(c) == 3)
+        self.assertIn("foo2=bar", cookie)
+        self.assertEqual(len(c), 3)
 
     def test_intranet_domains_ns(self):
         from cookielib import CookieJar, DefaultCookiePolicy
@@ -1635,10 +1634,10 @@ class LWPCookieTests(TestCase):
         cookie = interact_netscape(c, "http://example/",
                                    'foo2=bar; domain=.local')
         self.assertEquals(len(c), 2)
-        self.assertTrue("foo1=bar" in cookie)
+        self.assertIn("foo1=bar", cookie)
 
         cookie = interact_netscape(c, "http://example/")
-        self.assertTrue("foo2=bar" in cookie)
+        self.assertIn("foo2=bar", cookie)
         self.assertEquals(len(c), 2)
 
     def test_empty_path(self):

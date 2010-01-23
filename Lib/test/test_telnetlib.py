@@ -321,7 +321,7 @@ class OptionTests(TestCase):
         txt = telnet.read_all()
         cmd = nego.seen
         self.assertTrue(len(cmd) > 0) # we expect at least one command
-        self.assertTrue(cmd[0] in self.cmds)
+        self.assertIn(cmd[0], self.cmds)
         self.assertEqual(cmd[1], tl.NOOPT)
         self.assertEqual(len(''.join(data[:-1])), len(txt + cmd))
         nego.sb_getter = None # break the nego => telnet cycle
