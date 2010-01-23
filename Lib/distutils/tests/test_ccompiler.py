@@ -3,8 +3,10 @@ import os
 import unittest
 from test.test_support import captured_stdout
 
-from distutils.ccompiler import gen_lib_options, CCompiler
+from distutils.ccompiler import (gen_lib_options, CCompiler,
+                                 get_default_compiler, customize_compiler)
 from distutils import debug
+from distutils.tests import support
 
 class FakeCompiler(object):
     def library_dir_option(self, dir):
@@ -19,7 +21,7 @@ class FakeCompiler(object):
     def library_option(self, lib):
         return "-l" + lib
 
-class CCompilerTestCase(unittest.TestCase):
+class CCompilerTestCase(support.EnvironGuard, unittest.TestCase):
 
     def test_gen_lib_options(self):
         compiler = FakeCompiler()
@@ -51,6 +53,26 @@ class CCompilerTestCase(unittest.TestCase):
             self.assertEquals(stdout.read(), 'xxx\n')
         finally:
             debug.DEBUG = False
+
+    def test_customize_compiler(self):
+
+        # not testing if default compiler is not unix
+        if get_default_compiler() != 'unix':
+            return
+
+        os.environ['AR'] = 'my_ar'
+        os.environ['ARFLAGS'] = '-arflags'
+
+        # make sure AR gets caught
+        class compiler:
+            compiler_type = 'unix'
+
+            def set_executables(self, **kw):
+                self.exes = kw
+
+        comp = compiler()
+        customize_compiler(comp)
+        self.assertEquals(comp.exes['archiver'], 'my_ar -arflags')
 
 def test_suite():
     return unittest.makeSuite(CCompilerTestCase)

@@ -3,6 +3,7 @@ import unittest
 import sys
 import os
 import warnings
+import sysconfig
 
 from test.test_support import check_warnings
 from test.test_support import captured_stdout
@@ -22,13 +23,11 @@ class CygwinCCompilerTestCase(support.TempdirManager,
         super(CygwinCCompilerTestCase, self).setUp()
         self.version = sys.version
         self.python_h = os.path.join(self.mkdtemp(), 'python.h')
-        from distutils import sysconfig
         self.old_get_config_h_filename = sysconfig.get_config_h_filename
         sysconfig.get_config_h_filename = self._get_config_h_filename
 
     def tearDown(self):
         sys.version = self.version
-        from distutils import sysconfig
         sysconfig.get_config_h_filename = self.old_get_config_h_filename
         super(CygwinCCompilerTestCase, self).tearDown()
 

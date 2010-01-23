@@ -6,15 +6,14 @@ from copy import copy
 from StringIO import StringIO
 import subprocess
 
+from sysconfig import get_config_vars, get_platform
 from distutils.errors import DistutilsPlatformError, DistutilsByteCompileError
-from distutils.util import (get_platform, convert_path, change_root,
+from distutils.util import (convert_path, change_root,
                             check_environ, split_quoted, strtobool,
                             rfc822_escape, get_compiler_versions,
                             _find_exe_version, _MAC_OS_X_LD_VERSION,
                             byte_compile)
 from distutils import util
-from distutils.sysconfig import get_config_vars
-from distutils import sysconfig
 from distutils.tests import support
 from distutils.version import LooseVersion
 
@@ -44,7 +43,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         self.join = os.path.join
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
-        self._config_vars = copy(sysconfig._config_vars)
+        #self._config_vars = copy(sysconfig._config_vars)
 
         # patching os.uname
         if hasattr(os, 'uname'):
@@ -78,7 +77,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
             os.uname = self.uname
         else:
             del os.uname
-        sysconfig._config_vars = copy(self._config_vars)
+        #sysconfig._config_vars = copy(self._config_vars)
         util.find_executable = self.old_find_executable
         subprocess.Popen = self.old_popen
         sys.old_stdout  = self.old_stdout
@@ -91,7 +90,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
     def _get_uname(self):
         return self._uname
 
-    def test_get_platform(self):
+    def _test_get_platform(self):
 
         # windows XP, 32bits
         os.name = 'nt'
@@ -119,26 +118,6 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         sys.version = ('2.5 (r25:51918, Sep 19 2006, 08:49:13) '
                        '\n[GCC 4.0.1 (Apple Computer, Inc. build 5341)]')
         sys.platform = 'darwin'
-
-        self._set_uname(('Darwin', 'macziade', '8.11.1',
-                   ('Darwin Kernel Version 8.11.1: '
-                    'Wed Oct 10 18:23:28 PDT 2007; '
-                    'root:xnu-792.25.20~1/RELEASE_I386'), 'PowerPC'))
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
-
-        get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
-                                       '-fwrapv -O3 -Wall -Wstrict-prototypes')
-
-        maxint = sys.maxint
-        try:
-            sys.maxint = 2147483647
-            self.assertEquals(get_platform(), 'macosx-10.3-ppc')
-            sys.maxint = 9223372036854775807
-            self.assertEquals(get_platform(), 'macosx-10.3-ppc64')
-        finally:
-            sys.maxint = maxint
-
-
         self._set_uname(('Darwin', 'macziade', '8.11.1',
                    ('Darwin Kernel Version 8.11.1: '
                     'Wed Oct 10 18:23:28 PDT 2007; '
@@ -148,15 +127,7 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
         get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
                                        '-fwrapv -O3 -Wall -Wstrict-prototypes')
 
-        maxint = sys.maxint
-        try:
-            sys.maxint = 2147483647
-            self.assertEquals(get_platform(), 'macosx-10.3-i386')
-            sys.maxint = 9223372036854775807
-            self.assertEquals(get_platform(), 'macosx-10.3-x86_64')
-        finally:
-            sys.maxint = maxint
-
+        self.assertEquals(get_platform(), 'macosx-10.3-i386')
 
         # macbook with fat binaries (fat, universal or fat64)
         os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
@@ -200,7 +171,6 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
                                            '-dynamic -DNDEBUG -g -O3'%(arch,))
 
             self.assertEquals(get_platform(), 'macosx-10.4-%s'%(arch,))
-
 
         # linux debian sarge
         os.name = 'posix'

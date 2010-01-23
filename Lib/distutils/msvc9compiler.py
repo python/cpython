@@ -23,9 +23,9 @@ from distutils.errors import (DistutilsExecError, DistutilsPlatformError,
                               CompileError, LibError, LinkError)
 from distutils.ccompiler import CCompiler, gen_lib_options
 from distutils import log
-from distutils.util import get_platform
-
 import _winreg
+
+_sysconfig = __import__('sysconfig')
 
 RegOpenKeyEx = _winreg.OpenKeyEx
 RegEnumKey = _winreg.EnumKey
@@ -327,7 +327,7 @@ class MSVCCompiler(CCompiler) :
         # multi-init means we would need to check platform same each time...
         assert not self.initialized, "don't init multiple times"
         if plat_name is None:
-            plat_name = get_platform()
+            plat_name = _sysconfig.get_platform()
         # sanity check for platforms to prevent obscure errors later.
         ok_plats = 'win32', 'win-amd64', 'win-ia64'
         if plat_name not in ok_plats:
@@ -348,12 +348,12 @@ class MSVCCompiler(CCompiler) :
             # On AMD64, 'vcvars32.bat amd64' is a native build env; to cross
             # compile use 'x86' (ie, it runs the x86 compiler directly)
             # No idea how itanium handles this, if at all.
-            if plat_name == get_platform() or plat_name == 'win32':
+            if plat_name == _sysconfig.get_platform() or plat_name == 'win32':
                 # native build or cross-compile to win32
                 plat_spec = PLAT_TO_VCVARS[plat_name]
             else:
                 # cross compile from win32 -> some 64bit
-                plat_spec = PLAT_TO_VCVARS[get_platform()] + '_' + \
+                plat_spec = PLAT_TO_VCVARS[_sysconfig.get_platform()] + '_' + \
                             PLAT_TO_VCVARS[plat_name]
 
             vc_env = query_vcvarsall(VERSION, plat_spec)

@@ -114,7 +114,7 @@ def removeduppaths():
 def addbuilddir():
     """Append ./build/lib.<platform> in case we're running in the build dir
     (especially for Guido :-)"""
-    from distutils.util import get_platform
+    from sysconfig import get_platform
     s = "build/lib.%s-%.3s" % (get_platform(), sys.version)
     if hasattr(sys, 'gettotalrefcount'):
         s += '-pydebug'
@@ -225,19 +225,8 @@ def getuserbase():
     global USER_BASE
     if USER_BASE is not None:
         return USER_BASE
-
-    env_base = os.environ.get("PYTHONUSERBASE", None)
-
-    def joinuser(*args):
-        return os.path.expanduser(os.path.join(*args))
-
-    # what about 'os2emx', 'riscos' ?
-    if os.name == "nt":
-        base = os.environ.get("APPDATA") or "~"
-        USER_BASE = env_base if env_base else joinuser(base, "Python")
-    else:
-        USER_BASE = env_base if env_base else joinuser("~", ".local")
-
+    from sysconfig import get_config_var
+    USER_BASE = get_config_var('userbase')
     return USER_BASE
 
 def getusersitepackages():
@@ -252,13 +241,9 @@ def getusersitepackages():
     if USER_SITE is not None:
         return USER_SITE
 
-    if os.name == "nt":
-        USER_SITE = os.path.join(user_base, "Python" + sys.version[0] +
-                                 sys.version[2], "site-packages")
-    else:
-        USER_SITE = os.path.join(user_base, "lib", "python" + sys.version[:3],
-                                 "site-packages")
-
+    from sysconfig import get_path
+    import os
+    USER_SITE = get_path('purelib', '%s_user' % os.name)
     return USER_SITE
 
 def addusersitepackages(known_paths):

@@ -6,9 +6,9 @@ __version__ = "$Revision$"
 import sys, os, imp, re, optparse
 from glob import glob
 from platform import machine as platform_machine
+import sysconfig
 
 from distutils import log
-from distutils import sysconfig
 from distutils import text_file
 from distutils.errors import *
 from distutils.core import Extension, setup
@@ -140,7 +140,7 @@ class PyBuildExt(build_ext):
 
         # Python header files
         headers = [sysconfig.get_config_h_filename()]
-        headers += glob(os.path.join(sysconfig.get_python_inc(), "*.h"))
+        headers += glob(os.path.join(sysconfig.get_path('platinclude'), "*.h"))
         for ext in self.extensions[:]:
             ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]

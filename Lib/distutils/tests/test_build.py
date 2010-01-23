@@ -5,7 +5,7 @@ import sys
 
 from distutils.command.build import build
 from distutils.tests import support
-from distutils.util import get_platform
+from sysconfig import get_platform
 
 class BuildTestCase(support.TempdirManager,
                     support.LoggingSilencer,
