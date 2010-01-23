@@ -124,7 +124,7 @@ script.  For example::
 
    cProfile.py [-o output_file] [-s sort_order]
 
-:option:`-s` only applies to standard output (:option:`-o` is not supplied).
+``-s`` only applies to standard output (``-o`` is not supplied).
 Look in the :class:`Stats` documentation for valid sort values.
 
 When you wish to review the profile, you should use the methods in the
