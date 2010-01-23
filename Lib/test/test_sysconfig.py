@@ -138,6 +138,25 @@ class TestSysConfig(unittest.TestCase):
         self._set_uname(('Darwin', 'macziade', '8.11.1',
                    ('Darwin Kernel Version 8.11.1: '
                     'Wed Oct 10 18:23:28 PDT 2007; '
+                    'root:xnu-792.25.20~1/RELEASE_I386'), 'PowerPC'))
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
+
+        get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
+                                       '-fwrapv -O3 -Wall -Wstrict-prototypes')
+
+        maxint = sys.maxint
+        try:
+            sys.maxint = 2147483647
+            self.assertEquals(get_platform(), 'macosx-10.3-ppc')
+            sys.maxint = 9223372036854775807
+            self.assertEquals(get_platform(), 'macosx-10.3-ppc64')
+        finally:
+            sys.maxint = maxint
+
+
+        self._set_uname(('Darwin', 'macziade', '8.11.1',
+                   ('Darwin Kernel Version 8.11.1: '
+                    'Wed Oct 10 18:23:28 PDT 2007; '
                     'root:xnu-792.25.20~1/RELEASE_I386'), 'i386'))
         get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
         os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
@@ -145,7 +164,14 @@ class TestSysConfig(unittest.TestCase):
         get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
                                        '-fwrapv -O3 -Wall -Wstrict-prototypes')
 
-        self.assertEquals(get_platform(), 'macosx-10.3-i386')
+        maxint = sys.maxint
+        try:
+            sys.maxint = 2147483647
+            self.assertEquals(get_platform(), 'macosx-10.3-i386')
+            sys.maxint = 9223372036854775807
+            self.assertEquals(get_platform(), 'macosx-10.3-x86_64')
+        finally:
+            sys.maxint = maxint
 
         # macbook with fat binaries (fat, universal or fat64)
         os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
