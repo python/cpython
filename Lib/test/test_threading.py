@@ -153,7 +153,7 @@ class ThreadTests(BaseTestCase):
         tid = thread.start_new_thread(f, (mutex,))
         # Wait for the thread to finish.
         mutex.acquire()
-        self.assertTrue(tid in threading._active)
+        self.assertIn(tid, threading._active)
         self.assertTrue(isinstance(threading._active[tid],
                                 threading._DummyThread))
         del threading._active[tid]
@@ -356,7 +356,7 @@ class ThreadTests(BaseTestCase):
                 t.start()
                 t.join()
                 l = enum()
-                self.assertFalse(t in l,
+                self.assertNotIn(t, l,
                     "#1703448 triggered after %d trials: %s" % (i, l))
         finally:
             sys.setcheckinterval(old_interval)

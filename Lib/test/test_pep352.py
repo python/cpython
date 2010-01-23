@@ -41,7 +41,7 @@ class ExceptionClassTests(unittest.TestCase):
                 last_exc = getattr(__builtin__, superclass_name)
             except AttributeError:
                 self.fail("base class %s not a built-in" % superclass_name)
-            self.assertTrue(superclass_name in exc_set)
+            self.assertIn(superclass_name, exc_set)
             exc_set.discard(superclass_name)
             superclasses = []  # Loop will insert base exception
             last_depth = 0
@@ -75,7 +75,7 @@ class ExceptionClassTests(unittest.TestCase):
                     self.verify_instance_interface(exc())
                 except TypeError:
                     pass
-                self.assertTrue(exc_name in exc_set)
+                self.assertIn(exc_name, exc_set)
                 exc_set.discard(exc_name)
                 last_exc = exc
                 last_depth = depth

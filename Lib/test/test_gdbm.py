@@ -27,7 +27,7 @@ class TestGdbm(unittest.TestCase):
         self.assertTrue(self.g.has_key('a'))
         key = self.g.firstkey()
         while key:
-            self.assertTrue(key in key_set)
+            self.assertIn(key, key_set)
             key_set.remove(key)
             key = self.g.nextkey(key)
         self.assertRaises(KeyError, lambda: self.g['xxx'])

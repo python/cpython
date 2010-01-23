@@ -256,7 +256,7 @@ class MhlibTests(unittest.TestCase):
         eq = self.assertEquals
 
         mh.makefolder("dummy1")
-        self.assertTrue("dummy1" in mh.listfolders())
+        self.assertIn("dummy1", mh.listfolders())
         path = os.path.join(_mhpath, "dummy1")
         self.assertTrue(os.path.exists(path))
 
@@ -310,7 +310,7 @@ class MhlibTests(unittest.TestCase):
 
         mh.deletefolder('dummy1')
         mh.deletefolder('dummy2')
-        self.assertTrue('dummy1' not in mh.listfolders())
+        self.assertNotIn('dummy1', mh.listfolders())
         self.assertTrue(not os.path.exists(path))
 
     def test_read(self):

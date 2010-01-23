@@ -172,8 +172,7 @@ class ReferencesTestCase(TestBase):
         p[:] = [2, 3]
         self.assertEqual(len(L), 2)
         self.assertEqual(len(p), 2)
-        self.assertTrue(3 in p,
-                        "proxy didn't support __contains__() properly")
+        self.assertIn(3, p, "proxy didn't support __contains__() properly")
         p[1] = 5
         self.assertEqual(L[1], 5)
         self.assertEqual(p[1], 5)
@@ -196,7 +195,7 @@ class ReferencesTestCase(TestBase):
             def __unicode__(self):
                 return u"unicode"
         instance = C()
-        self.assertTrue("__unicode__" in dir(weakref.proxy(instance)))
+        self.assertIn("__unicode__", dir(weakref.proxy(instance)))
         self.assertEqual(unicode(weakref.proxy(instance)), u"unicode")
 
     def test_proxy_index(self):
@@ -718,8 +717,8 @@ class SubclassableWeakrefTestCase(TestBase):
         refs = weakref.getweakrefs(o)
         self.assertEqual(len(refs), 3)
         self.assertTrue(r2 is refs[0])
-        self.assertTrue(r1 in refs[1:])
-        self.assertTrue(r3 in refs[1:])
+        self.assertIn(r1, refs[1:])
+        self.assertIn(r3, refs[1:])
 
     def test_subclass_refs_dont_conflate_callbacks(self):
         class MyRef(weakref.ref):
@@ -729,8 +728,8 @@ class SubclassableWeakrefTestCase(TestBase):
         r2 = MyRef(o, str)
         self.assertTrue(r1 is not r2)
         refs = weakref.getweakrefs(o)
-        self.assertTrue(r1 in refs)
-        self.assertTrue(r2 in refs)
+        self.assertIn(r1, refs)
+        self.assertIn(r2, refs)
 
     def test_subclass_refs_with_slots(self):
         class MyRef(weakref.ref):
@@ -868,7 +867,7 @@ class MappingTestCase(TestBase):
         for wr in refs:
             ob = wr()
             self.assertTrue(dict.has_key(ob))
-            self.assertTrue(ob in dict)
+            self.assertIn(ob, dict)
             self.assertEqual(ob.arg, dict[ob])
             objects2.remove(ob)
         self.assertEqual(len(objects2), 0)
@@ -879,7 +878,7 @@ class MappingTestCase(TestBase):
         for wr in dict.iterkeyrefs():
             ob = wr()
             self.assertTrue(dict.has_key(ob))
-            self.assertTrue(ob in dict)
+            self.assertIn(ob, dict)
             self.assertEqual(ob.arg, dict[ob])
             objects2.remove(ob)
         self.assertEqual(len(objects2), 0)

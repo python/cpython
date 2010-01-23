@@ -76,7 +76,7 @@ class TestBasicOps(unittest.TestCase):
 
     def test_iteration(self):
         for v in self.set:
-            self.assertTrue(v in self.values)
+            self.assertIn(v, self.values)
 
     def test_pickling(self):
         p = pickle.dumps(self.set)
@@ -406,7 +406,7 @@ class TestMutate(unittest.TestCase):
             popped[self.set.pop()] = None
         self.assertEqual(len(popped), len(self.values))
         for v in self.values:
-            self.assertTrue(v in popped)
+            self.assertIn(v, popped)
 
     def test_update_empty_tuple(self):
         self.set.union_update(())

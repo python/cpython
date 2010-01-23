@@ -43,8 +43,8 @@ class TestBSDDB(unittest.TestCase):
     def test_change(self):
         self.f['r'] = 'discovered'
         self.assertEqual(self.f['r'], 'discovered')
-        self.assertTrue('r' in self.f.keys())
-        self.assertTrue('discovered' in self.f.values())
+        self.assertIn('r', self.f.keys())
+        self.assertIn('discovered', self.f.values())
 
     def test_close_and_reopen(self):
         if self.fname is None:
@@ -195,8 +195,8 @@ class TestBSDDB(unittest.TestCase):
 
     def test_contains(self):
         for k in self.d:
-            self.assertTrue(k in self.f)
-        self.assertTrue('not here' not in self.f)
+            self.assertIn(k, self.f)
+        self.assertNotIn('not here', self.f)
 
     def test_has_key(self):
         for k in self.d:
@@ -253,9 +253,9 @@ class TestBSDDB(unittest.TestCase):
             if debug: print "K"
 
         # test the legacy cursor interface mixed with writes
-        self.assertTrue(self.f.first()[0] in self.d)
+        self.assertIn(self.f.first()[0], self.d)
         k = self.f.next()[0]
-        self.assertTrue(k in self.d)
+        self.assertIn(k, self.d)
         self.f[k] = "be gone with ye deadlocks"
         self.assertTrue(self.f[k], "be gone with ye deadlocks")
 
@@ -279,17 +279,17 @@ class TestBSDDB(unittest.TestCase):
 
     def test_popitem(self):
         k, v = self.f.popitem()
-        self.assertTrue(k in self.d)
-        self.assertTrue(v in self.d.values())
-        self.assertTrue(k not in self.f)
+        self.assertIn(k, self.d)
+        self.assertIn(v, self.d.values())
+        self.assertNotIn(k, self.f)
         self.assertEqual(len(self.d)-1, len(self.f))
 
     def test_pop(self):
         k = 'w'
         v = self.f.pop(k)
         self.assertEqual(v, self.d[k])
-        self.assertTrue(k not in self.f)
-        self.assertTrue(v not in self.f.values())
+        self.assertNotIn(k, self.f)
+        self.assertNotIn(v, self.f.values())
         self.assertEqual(len(self.d)-1, len(self.f))
 
     def test_get(self):

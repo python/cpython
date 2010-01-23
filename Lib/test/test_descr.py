@@ -527,7 +527,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 return 42
         self.assertEqual(C.name, 'C')
         self.assertEqual(C.bases, ())
-        self.assertTrue('spam' in C.dict)
+        self.assertIn('spam', C.dict)
         c = C()
         self.assertEqual(c.spam(), 42)
 
@@ -1802,10 +1802,10 @@ order (MRO) for bases """
         # depending on whether this test is run standalone or from a framework.
         self.assertTrue(str(c1).find('C object at ') >= 0)
         self.assertEqual(str(c1), repr(c1))
-        self.assertTrue(-1 not in c1)
+        self.assertNotIn(-1, c1)
         for i in range(10):
-            self.assertTrue(i in c1)
-        self.assertFalse(10 in c1)
+            self.assertIn(i, c1)
+        self.assertNotIn(10, c1)
         # Test the default behavior for dynamic classes
         class D(object):
             def __getitem__(self, i):
@@ -1826,10 +1826,10 @@ order (MRO) for bases """
         # depending on whether this test is run standalone or from a framework.
         self.assertTrue(str(d1).find('D object at ') >= 0)
         self.assertEqual(str(d1), repr(d1))
-        self.assertTrue(-1 not in d1)
+        self.assertNotIn(-1, d1)
         for i in range(10):
-            self.assertTrue(i in d1)
-        self.assertFalse(10 in d1)
+            self.assertIn(i, d1)
+        self.assertNotIn(10, d1)
         # Test overridden behavior for static classes
         class Proxy(object):
             def __init__(self, x):
@@ -1866,10 +1866,10 @@ order (MRO) for bases """
         self.assertEqual(str(p0), "Proxy:0")
         self.assertEqual(repr(p0), "Proxy(0)")
         p10 = Proxy(range(10))
-        self.assertFalse(-1 in p10)
+        self.assertNotIn(-1, p10)
         for i in range(10):
-            self.assertTrue(i in p10)
-        self.assertFalse(10 in p10)
+            self.assertIn(i, p10)
+        self.assertNotIn(10, p10)
         # Test overridden behavior for dynamic classes
         class DProxy(object):
             def __init__(self, x):
@@ -1906,10 +1906,10 @@ order (MRO) for bases """
         self.assertEqual(str(p0), "DProxy:0")
         self.assertEqual(repr(p0), "DProxy(0)")
         p10 = DProxy(range(10))
-        self.assertFalse(-1 in p10)
+        self.assertNotIn(-1, p10)
         for i in range(10):
-            self.assertTrue(i in p10)
-        self.assertFalse(10 in p10)
+            self.assertIn(i, p10)
+        self.assertNotIn(10, p10)
 
         # Safety test for __cmp__
         def unsafecmp(a, b):
@@ -2028,10 +2028,10 @@ order (MRO) for bases """
         self.assertTrue(isinstance(raw, property))
 
         attrs = dir(raw)
-        self.assertTrue("__doc__" in attrs)
-        self.assertTrue("fget" in attrs)
-        self.assertTrue("fset" in attrs)
-        self.assertTrue("fdel" in attrs)
+        self.assertIn("__doc__", attrs)
+        self.assertIn("fget", attrs)
+        self.assertIn("fset", attrs)
+        self.assertIn("fdel", attrs)
 
         self.assertEqual(raw.__doc__, "I'm the x property.")
         self.assertTrue(raw.fget is C.__dict__['getx'])
@@ -2249,7 +2249,7 @@ order (MRO) for bases """
 
         cstuff = ['Cdata', 'Cmethod', '__doc__', '__module__']
         self.assertEqual(dir(C), cstuff)
-        self.assertTrue('im_self' in dir(C.Cmethod))
+        self.assertIn('im_self', dir(C.Cmethod))
 
         c = C()  # c.__doc__ is an odd thing to see here; ditto c.__module__.
         self.assertEqual(dir(c), cstuff)
@@ -2257,7 +2257,7 @@ order (MRO) for bases """
         c.cdata = 2
         c.cmethod = lambda self: 0
         self.assertEqual(dir(c), cstuff + ['cdata', 'cmethod'])
-        self.assertTrue('im_self' in dir(c.Cmethod))
+        self.assertIn('im_self', dir(c.Cmethod))
 
         class A(C):
             Adata = 1
@@ -2265,10 +2265,10 @@ order (MRO) for bases """
 
         astuff = ['Adata', 'Amethod'] + cstuff
         self.assertEqual(dir(A), astuff)
-        self.assertTrue('im_self' in dir(A.Amethod))
+        self.assertIn('im_self', dir(A.Amethod))
         a = A()
         self.assertEqual(dir(a), astuff)
-        self.assertTrue('im_self' in dir(a.Amethod))
+        self.assertIn('im_self', dir(a.Amethod))
         a.adata = 42
         a.amethod = lambda self: 3
         self.assertEqual(dir(a), astuff + ['adata', 'amethod'])
@@ -2287,12 +2287,12 @@ order (MRO) for bases """
 
         c = C()
         self.assertEqual(interesting(dir(c)), cstuff)
-        self.assertTrue('im_self' in dir(C.Cmethod))
+        self.assertIn('im_self', dir(C.Cmethod))
 
         c.cdata = 2
         c.cmethod = lambda self: 0
         self.assertEqual(interesting(dir(c)), cstuff + ['cdata', 'cmethod'])
-        self.assertTrue('im_self' in dir(c.Cmethod))
+        self.assertIn('im_self', dir(c.Cmethod))
 
         class A(C):
             Adata = 1
@@ -2300,13 +2300,13 @@ order (MRO) for bases """
 
         astuff = ['Adata', 'Amethod'] + cstuff
         self.assertEqual(interesting(dir(A)), astuff)
-        self.assertTrue('im_self' in dir(A.Amethod))
+        self.assertIn('im_self', dir(A.Amethod))
         a = A()
         self.assertEqual(interesting(dir(a)), astuff)
         a.adata = 42
         a.amethod = lambda self: 3
         self.assertEqual(interesting(dir(a)), astuff + ['adata', 'amethod'])
-        self.assertTrue('im_self' in dir(a.Amethod))
+        self.assertIn('im_self', dir(a.Amethod))
 
         # Try a module subclass.
         import sys
@@ -2864,7 +2864,7 @@ order (MRO) for bases """
         self.assertEqual(d[cistr('one')], 1)
         self.assertEqual(d[cistr('tWo')], 2)
         self.assertEqual(d[cistr('THrEE')], 3)
-        self.assertTrue(cistr('ONe') in d)
+        self.assertIn(cistr('ONe'), d)
         self.assertEqual(d.get(cistr('thrEE')), 3)
 
     def test_classic_comparisons(self):

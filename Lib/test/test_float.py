@@ -434,10 +434,10 @@ class FormatFunctionsTestCase(unittest.TestCase):
         float.__setformat__('float', self.save_formats['float'])
 
     def test_getformat(self):
-        self.assertTrue(float.__getformat__('double') in
-                     ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
-        self.assertTrue(float.__getformat__('float') in
-                     ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
+        self.assertIn(float.__getformat__('double'),
+                      ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
+        self.assertIn(float.__getformat__('float'),
+                      ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
         self.assertRaises(ValueError, float.__getformat__, 'chicken')
         self.assertRaises(TypeError, float.__getformat__, 1)
 

@@ -68,9 +68,9 @@ class TestsWithSourceFile(unittest.TestCase):
             lines = directory.splitlines()
             self.assertEqual(len(lines), 4) # Number of files + header
 
-            self.assertTrue('File Name' in lines[0])
-            self.assertTrue('Modified' in lines[0])
-            self.assertTrue('Size' in lines[0])
+            self.assertIn('File Name', lines[0])
+            self.assertIn('Modified', lines[0])
+            self.assertIn('Size', lines[0])
 
             fn, date, time_, size = lines[1].split()
             self.assertEqual(fn, 'another.name')
@@ -81,17 +81,17 @@ class TestsWithSourceFile(unittest.TestCase):
             # Check the namelist
             names = zipfp.namelist()
             self.assertEqual(len(names), 3)
-            self.assertTrue(TESTFN in names)
-            self.assertTrue("another.name" in names)
-            self.assertTrue("strfile" in names)
+            self.assertIn(TESTFN, names)
+            self.assertIn("another.name", names)
+            self.assertIn("strfile", names)
 
             # Check infolist
             infos = zipfp.infolist()
             names = [i.filename for i in infos]
             self.assertEqual(len(names), 3)
-            self.assertTrue(TESTFN in names)
-            self.assertTrue("another.name" in names)
-            self.assertTrue("strfile" in names)
+            self.assertIn(TESTFN, names)
+            self.assertIn("another.name", names)
+            self.assertIn("strfile", names)
             for i in infos:
                 self.assertEqual(i.file_size, len(self.data))
 
@@ -458,9 +458,9 @@ class TestZip64InSmallFiles(unittest.TestCase):
             lines = directory.splitlines()
             self.assertEqual(len(lines), 4) # Number of files + header
 
-            self.assertTrue('File Name' in lines[0])
-            self.assertTrue('Modified' in lines[0])
-            self.assertTrue('Size' in lines[0])
+            self.assertIn('File Name', lines[0])
+            self.assertIn('Modified', lines[0])
+            self.assertIn('Size', lines[0])
 
             fn, date, time_, size = lines[1].split()
             self.assertEqual(fn, 'another.name')
@@ -471,17 +471,17 @@ class TestZip64InSmallFiles(unittest.TestCase):
             # Check the namelist
             names = zipfp.namelist()
             self.assertEqual(len(names), 3)
-            self.assertTrue(TESTFN in names)
-            self.assertTrue("another.name" in names)
-            self.assertTrue("strfile" in names)
+            self.assertIn(TESTFN, names)
+            self.assertIn("another.name", names)
+            self.assertIn("strfile", names)
 
             # Check infolist
             infos = zipfp.infolist()
             names = [i.filename for i in infos]
             self.assertEqual(len(names), 3)
-            self.assertTrue(TESTFN in names)
-            self.assertTrue("another.name" in names)
-            self.assertTrue("strfile" in names)
+            self.assertIn(TESTFN, names)
+            self.assertIn("another.name", names)
+            self.assertIn("strfile", names)
             for i in infos:
                 self.assertEqual(i.file_size, len(self.data))
 
@@ -527,7 +527,7 @@ class PyZipFileTests(unittest.TestCase):
             zipfp.writepy(fn)
 
             bn = os.path.basename(fn)
-            self.assertTrue(bn not in zipfp.namelist())
+            self.assertNotIn(bn, zipfp.namelist())
             self.assertTrue(bn + 'o' in zipfp.namelist() or
                             bn + 'c' in zipfp.namelist())
 
@@ -539,7 +539,7 @@ class PyZipFileTests(unittest.TestCase):
             zipfp.writepy(fn, "testpackage")
 
             bn = "%s/%s" % ("testpackage", os.path.basename(fn))
-            self.assertTrue(bn not in zipfp.namelist())
+            self.assertNotIn(bn, zipfp.namelist())
             self.assertTrue(bn + 'o' in zipfp.namelist() or
                             bn + 'c' in zipfp.namelist())
 
@@ -576,7 +576,7 @@ class PyZipFileTests(unittest.TestCase):
             names = zipfp.namelist()
             self.assertTrue('mod1.pyc' in names or 'mod1.pyo' in names)
             self.assertTrue('mod2.pyc' in names or 'mod2.pyo' in names)
-            self.assertTrue('mod2.txt' not in names)
+            self.assertNotIn('mod2.txt', names)
 
         finally:
             shutil.rmtree(TESTFN2)

@@ -162,7 +162,7 @@ class _TestProcess(BaseTestCase):
             self.assertEquals(p.authkey, current.authkey)
         self.assertEquals(p.is_alive(), False)
         self.assertEquals(p.daemon, True)
-        self.assertTrue(p not in self.active_children())
+        self.assertNotIn(p, self.active_children())
         self.assertTrue(type(self.active_children()) is list)
         self.assertEqual(p.exitcode, None)
 
@@ -170,7 +170,7 @@ class _TestProcess(BaseTestCase):
 
         self.assertEquals(p.exitcode, None)
         self.assertEquals(p.is_alive(), True)
-        self.assertTrue(p in self.active_children())
+        self.assertIn(p, self.active_children())
 
         self.assertEquals(q.get(), args[1:])
         self.assertEquals(q.get(), kwargs)
@@ -183,7 +183,7 @@ class _TestProcess(BaseTestCase):
 
         self.assertEquals(p.exitcode, 0)
         self.assertEquals(p.is_alive(), False)
-        self.assertTrue(p not in self.active_children())
+        self.assertNotIn(p, self.active_children())
 
     def _test_terminate(self):
         time.sleep(1000)
@@ -197,7 +197,7 @@ class _TestProcess(BaseTestCase):
         p.start()
 
         self.assertEqual(p.is_alive(), True)
-        self.assertTrue(p in self.active_children())
+        self.assertIn(p, self.active_children())
         self.assertEqual(p.exitcode, None)
 
         p.terminate()
@@ -207,7 +207,7 @@ class _TestProcess(BaseTestCase):
         self.assertTimingAlmostEqual(join.elapsed, 0.0)
 
         self.assertEqual(p.is_alive(), False)
-        self.assertTrue(p not in self.active_children())
+        self.assertNotIn(p, self.active_children())
 
         p.join()
 
@@ -226,13 +226,13 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(type(self.active_children()), list)
 
         p = self.Process(target=time.sleep, args=(DELTA,))
-        self.assertTrue(p not in self.active_children())
+        self.assertNotIn(p, self.active_children())
 
         p.start()
-        self.assertTrue(p in self.active_children())
+        self.assertIn(p, self.active_children())
 
         p.join()
-        self.assertTrue(p not in self.active_children())
+        self.assertNotIn(p, self.active_children())
 
     def _test_recursion(self, wconn, id):
         from multiprocessing import forking

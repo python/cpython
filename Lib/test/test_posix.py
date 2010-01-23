@@ -264,7 +264,7 @@ class PosixTester(unittest.TestCase):
 
     def test_lsdir(self):
         if hasattr(posix, 'lsdir'):
-            self.assertTrue(test_support.TESTFN in posix.lsdir(os.curdir))
+            self.assertIn(test_support.TESTFN, posix.lsdir(os.curdir))
 
     def test_access(self):
         if hasattr(posix, 'access'):

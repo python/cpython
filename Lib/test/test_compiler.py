@@ -87,7 +87,7 @@ class CompilerTest(unittest.TestCase):
 
     def testDocstrings(self):
         c = compiler.compile('"doc"', '<string>', 'exec')
-        self.assertTrue('__doc__' in c.co_names)
+        self.assertIn('__doc__', c.co_names)
         c = compiler.compile('def f():\n "doc"', '<string>', 'exec')
         g = {}
         exec c in g

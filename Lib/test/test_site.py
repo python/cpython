@@ -68,14 +68,14 @@ class HelperFunctionsTests(unittest.TestCase):
         dir_set = site._init_pathinfo()
         for entry in [site.makepath(path)[1] for path in sys.path
                         if path and os.path.isdir(path)]:
-            self.assertTrue(entry in dir_set,
-                            "%s from sys.path not found in set returned "
-                            "by _init_pathinfo(): %s" % (entry, dir_set))
+            self.assertIn(entry, dir_set,
+                          "%s from sys.path not found in set returned "
+                          "by _init_pathinfo(): %s" % (entry, dir_set))
 
     def pth_file_tests(self, pth_file):
         """Contain common code for testing results of reading a .pth file"""
-        self.assertTrue(pth_file.imported in sys.modules,
-                "%s not in sys.modules" % pth_file.imported)
+        self.assertIn(pth_file.imported, sys.modules,
+                      "%s not in sys.modules" % pth_file.imported)
         self.assertIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
         self.assertFalse(os.path.exists(pth_file.bad_dir_path))
 
@@ -279,7 +279,7 @@ class ImportSideEffectTests(unittest.TestCase):
         site.removeduppaths()
         seen_paths = set()
         for path in sys.path:
-            self.assertTrue(path not in seen_paths)
+            self.assertNotIn(path, seen_paths)
             seen_paths.add(path)
 
     def test_add_build_dir(self):

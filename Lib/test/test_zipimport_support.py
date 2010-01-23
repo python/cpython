@@ -189,7 +189,7 @@ class ZipSupportTests(ImportHooksBaseTestCase):
                 print "Expected line", expected
                 print "Got stdout:"
                 print data
-            self.assertTrue(expected in data)
+            self.assertIn(expected, data)
             zip_name, run_name = make_zip_script(d, "test_zip",
                                                 script_name, '__main__.py')
             exit_code, data = run_python(zip_name)
@@ -198,7 +198,7 @@ class ZipSupportTests(ImportHooksBaseTestCase):
                 print "Expected line", expected
                 print "Got stdout:"
                 print data
-            self.assertTrue(expected in data)
+            self.assertIn(expected, data)
 
     def test_pdb_issue4201(self):
         test_src = textwrap.dedent("""\
@@ -213,13 +213,13 @@ class ZipSupportTests(ImportHooksBaseTestCase):
             p = spawn_python(script_name)
             p.stdin.write('l\n')
             data = kill_python(p)
-            self.assertTrue(script_name in data)
+            self.assertIn(script_name, data)
             zip_name, run_name = make_zip_script(d, "test_zip",
                                                 script_name, '__main__.py')
             p = spawn_python(zip_name)
             p.stdin.write('l\n')
             data = kill_python(p)
-            self.assertTrue(run_name in data)
+            self.assertIn(run_name, data)
 
 
 def test_main():

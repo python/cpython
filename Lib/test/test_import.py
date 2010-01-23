@@ -202,7 +202,7 @@ class ImportTest(unittest.TestCase):
         sys.path.insert(0, os.curdir)
         try:
             mod = __import__(TESTFN)
-            self.assertTrue(TESTFN in sys.modules, "expected module in sys.modules")
+            self.assertIn(TESTFN, sys.modules)
             self.assertEquals(mod.a, 1, "module has wrong attribute values")
             self.assertEquals(mod.b, 2, "module has wrong attribute values")
 
@@ -436,14 +436,14 @@ class RelativeImport(unittest.TestCase):
         ns = dict(__package__='foo', __name__='test.notarealmodule')
         with check_warnings() as w:
             check_absolute()
-            self.assertTrue('foo' in str(w.message))
+            self.assertIn('foo', str(w.message))
             self.assertEqual(w.category, RuntimeWarning)
         self.assertRaises(SystemError, check_relative)
         # Check relative fails with __package__ and __name__ wrong
         ns = dict(__package__='foo', __name__='notarealpkg.notarealmodule')
         with check_warnings() as w:
             check_absolute()
-            self.assertTrue('foo' in str(w.message))
+            self.assertIn('foo', str(w.message))
             self.assertEqual(w.category, RuntimeWarning)
         self.assertRaises(SystemError, check_relative)
         # Check both fail with package set to a non-string

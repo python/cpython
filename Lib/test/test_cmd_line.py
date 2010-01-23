@@ -23,7 +23,7 @@ class CmdLineTest(unittest.TestCase):
     def verify_valid_flag(self, cmd_line):
         data = self.start_python(cmd_line)
         self.assertTrue(data == '' or data.endswith('\n'))
-        self.assertTrue('Traceback' not in data)
+        self.assertNotIn('Traceback', data)
 
     def test_optimize(self):
         self.verify_valid_flag('-O')
@@ -39,7 +39,7 @@ class CmdLineTest(unittest.TestCase):
         self.verify_valid_flag('-S')
 
     def test_usage(self):
-        self.assertTrue('usage' in self.start_python('-h'))
+        self.assertIn('usage', self.start_python('-h'))
 
     def test_version(self):
         version = 'Python %d.%d' % sys.version_info[:2]
@@ -72,7 +72,7 @@ class CmdLineTest(unittest.TestCase):
         p.stdin.write('exit()\n')
         data = kill_python(p)
         self.assertTrue(data.startswith('1 loop'))
-        self.assertTrue('__main__.Timer' in data)
+        self.assertIn('__main__.Timer', data)
 
     def test_run_code(self):
         # Test expected operation of the '-c' switch

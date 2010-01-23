@@ -103,8 +103,8 @@ class DisTests(unittest.TestCase):
 
     def test_opmap(self):
         self.assertEqual(dis.opmap["STOP_CODE"], 0)
-        self.assertEqual(dis.opmap["LOAD_CONST"] in dis.hasconst, True)
-        self.assertEqual(dis.opmap["STORE_NAME"] in dis.hasname, True)
+        self.assertIn(dis.opmap["LOAD_CONST"], dis.hasconst)
+        self.assertIn(dis.opmap["STORE_NAME"], dis.hasname)
 
     def test_opname(self):
         self.assertEqual(dis.opname[dis.opmap["LOAD_FAST"]], "LOAD_FAST")

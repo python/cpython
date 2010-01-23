@@ -112,8 +112,8 @@ class WinregTests(unittest.TestCase):
                     data = EnumValue(sub_key, index)
                 except EnvironmentError:
                     break
-                self.assertEquals(data in test_data, True,
-                                  "Didn't read back the correct test data")
+                self.assertIn(data, test_data,
+                              "Didn't read back the correct test data")
                 index = index + 1
             self.assertEquals(index, len(test_data),
                               "Didn't read the correct number of items")
