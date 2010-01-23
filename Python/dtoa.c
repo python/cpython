@@ -2084,9 +2084,9 @@ _Py_dg_strtod(const char *s00, char **se)
             if (!odd)
                 break;
             if (dsign)
-                dval(&rv) += ulp(&rv);
+                dval(&rv) += sulp(&rv, &bc);
             else {
-                dval(&rv) -= ulp(&rv);
+                dval(&rv) -= sulp(&rv, &bc);
                 if (!dval(&rv)) {
                     if (bc.nd >nd)
                         break;
