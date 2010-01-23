@@ -7,115 +7,25 @@ __revision__ = "$Id$"
 import sys
 import os
 
+from sysconfig import (get_config_vars, get_platform, get_paths, get_path,
+                       get_config_var)
+
 from distutils import log
 from distutils.core import Command
 from distutils.debug import DEBUG
-from distutils.sysconfig import get_config_vars
 from distutils.errors import DistutilsPlatformError
 from distutils.file_util import write_file
-from distutils.util import convert_path, subst_vars, change_root
-from distutils.util import get_platform
+from distutils.util import convert_path, change_root
 from distutils.errors import DistutilsOptionError
 
-# this keeps compatibility from 2.3 to 2.5
-if sys.version < "2.6":
-    USER_BASE = None
-    USER_SITE = None
-    HAS_USER_SITE = False
-else:
-    from site import USER_BASE
-    from site import USER_SITE
-    HAS_USER_SITE = True
-
-if sys.version < "2.2":
-    WINDOWS_SCHEME = {
-        'purelib': '$base',
-        'platlib': '$base',
-        'headers': '$base/Include/$dist_name',
-        'scripts': '$base/Scripts',
-        'data'   : '$base',
-    }
-else:
-    WINDOWS_SCHEME = {
-        'purelib': '$base/Lib/site-packages',
-        'platlib': '$base/Lib/site-packages',
-        'headers': '$base/Include/$dist_name',
-        'scripts': '$base/Scripts',
-        'data'   : '$base',
-    }
-
-INSTALL_SCHEMES = {
-    'unix_prefix': {
-        'purelib': '$base/lib/python$py_version_short/site-packages',
-        'platlib': '$platbase/lib/python$py_version_short/site-packages',
-        'headers': '$base/include/python$py_version_short/$dist_name',
-        'scripts': '$base/bin',
-        'data'   : '$base',
-        },
-    'unix_home': {
-        'purelib': '$base/lib/python',
-        'platlib': '$base/lib/python',
-        'headers': '$base/include/python/$dist_name',
-        'scripts': '$base/bin',
-        'data'   : '$base',
-        },
-    'nt': WINDOWS_SCHEME,
-    'mac': {
-        'purelib': '$base/Lib/site-packages',
-        'platlib': '$base/Lib/site-packages',
-        'headers': '$base/Include/$dist_name',
-        'scripts': '$base/Scripts',
-        'data'   : '$base',
-        },
-
-    'os2': {
-        'purelib': '$base/Lib/site-packages',
-        'platlib': '$base/Lib/site-packages',
-        'headers': '$base/Include/$dist_name',
-        'scripts': '$base/Scripts',
-        'data'   : '$base',
-        },
-    }
-
-# user site schemes
-if HAS_USER_SITE:
-    INSTALL_SCHEMES['nt_user'] = {
-        'purelib': '$usersite',
-        'platlib': '$usersite',
-        'headers': '$userbase/Python$py_version_nodot/Include/$dist_name',
-        'scripts': '$userbase/Scripts',
-        'data'   : '$userbase',
-        }
-
-    INSTALL_SCHEMES['unix_user'] = {
-        'purelib': '$usersite',
-        'platlib': '$usersite',
-        'headers': '$userbase/include/python$py_version_short/$dist_name',
-        'scripts': '$userbase/bin',
-        'data'   : '$userbase',
-        }
-
-    INSTALL_SCHEMES['mac_user'] = {
-        'purelib': '$usersite',
-        'platlib': '$usersite',
-        'headers': '$userbase/$py_version_short/include/$dist_name',
-        'scripts': '$userbase/bin',
-        'data'   : '$userbase',
-        }
-
-    INSTALL_SCHEMES['os2_home'] = {
-        'purelib': '$usersite',
-        'platlib': '$usersite',
-        'headers': '$userbase/include/python$py_version_short/$dist_name',
-        'scripts': '$userbase/bin',
-        'data'   : '$userbase',
-        }
-
-# The keys to an installation scheme; if any new types of files are to be
-# installed, be sure to add an entry to every installation scheme above,
-# and to SCHEME_KEYS here.
-SCHEME_KEYS = ('purelib', 'platlib', 'headers', 'scripts', 'data')
-
+def _subst_vars(s, local_vars):
+    try:
+        return s.format(**local_vars)
+    except KeyError:
+        try:
+            return s.format(**os.environ)
+        except KeyError, var:
+            raise AttributeError('{%s}' % var)
 
 class install(Command):
 
@@ -182,11 +92,10 @@ class install(Command):
 
     boolean_options = ['compile', 'force', 'skip-build']
 
-    if HAS_USER_SITE:
-        user_options.append(('user', None,
-                             "install in user site-package '%s'" % USER_SITE))
-        boolean_options.append('user')
-
+    user_options.append(('user', None,
+                        "install in user site-package '%s'" % \
+                            get_path('purelib', '%s_user' % os.name)))
+    boolean_options.append('user')
     negative_opt = {'no-compile' : 'compile'}
 
 
@@ -216,8 +125,8 @@ class install(Command):
         self.install_lib = None         # set to either purelib or platlib
         self.install_scripts = None
         self.install_data = None
-        self.install_userbase = USER_BASE
-        self.install_usersite = USER_SITE
+        self.install_userbase = get_config_var('userbase')
+        self.install_usersite = get_path('purelib', '%s_user' % os.name)
 
         self.compile = None
         self.optimize = None
@@ -327,7 +236,9 @@ class install(Command):
         # about needing recursive variable expansion (shudder).
 
         py_version = sys.version.split()[0]
-        (prefix, exec_prefix) = get_config_vars('prefix', 'exec_prefix')
+        prefix, exec_prefix, srcdir = get_config_vars('prefix', 'exec_prefix',
+                                                      'srcdir')
+
         self.config_vars = {'dist_name': self.distribution.get_name(),
                             'dist_version': self.distribution.get_version(),
                             'dist_fullname': self.distribution.get_fullname(),
@@ -338,12 +249,11 @@ class install(Command):
                             'prefix': prefix,
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
+                            'srcdir': srcdir,
                            }
 
-        if HAS_USER_SITE:
-            self.config_vars['userbase'] = self.install_userbase
-            self.config_vars['usersite'] = self.install_usersite
-
+        self.config_vars['userbase'] = self.install_userbase
+        self.config_vars['usersite'] = self.install_usersite
         self.expand_basedirs()
 
         self.dump_dirs("post-expand_basedirs()")
@@ -447,10 +357,10 @@ class install(Command):
                 raise DistutilsPlatformError(
                     "User base directory is not specified")
             self.install_base = self.install_platbase = self.install_userbase
-            self.select_scheme("unix_user")
+            self.select_scheme("posix_user")
         elif self.home is not None:
             self.install_base = self.install_platbase = self.home
-            self.select_scheme("unix_home")
+            self.select_scheme("posix_home")
         else:
             if self.prefix is None:
                 if self.exec_prefix is not None:
@@ -466,7 +376,7 @@ class install(Command):
 
             self.install_base = self.prefix
             self.install_platbase = self.exec_prefix
-            self.select_scheme("unix_prefix")
+            self.select_scheme("posix_prefix")
 
     def finalize_other(self):
         """Finalizes options for non-posix platforms"""
@@ -478,7 +388,7 @@ class install(Command):
             self.select_scheme(os.name + "_user")
         elif self.home is not None:
             self.install_base = self.install_platbase = self.home
-            self.select_scheme("unix_home")
+            self.select_scheme("posix_home")
         else:
             if self.prefix is None:
                 self.prefix = os.path.normpath(sys.prefix)
@@ -493,11 +403,15 @@ class install(Command):
     def select_scheme(self, name):
         """Sets the install directories by applying the install schemes."""
         # it's the caller's problem if they supply a bad name!
-        scheme = INSTALL_SCHEMES[name]
-        for key in SCHEME_KEYS:
+        scheme = get_paths(name, expand=False)
+        for key, value in scheme.items():
+            if key == 'platinclude':
+                key = 'headers'
+                value = os.path.join(value, self.distribution.get_name())
             attrname = 'install_' + key
-            if getattr(self, attrname) is None:
-                setattr(self, attrname, scheme[key])
+            if hasattr(self, attrname):
+                if getattr(self, attrname) is None:
+                    setattr(self, attrname, value)
 
     def _expand_attrs(self, attrs):
         for attr in attrs:
@@ -505,7 +419,10 @@ class install(Command):
             if val is not None:
                 if os.name == 'posix' or os.name == 'nt':
                     val = os.path.expanduser(val)
-                val = subst_vars(val, self.config_vars)
+                try:
+                    val = _subst_vars(val, self.config_vars)
+                except:
+                    import pdb; pdb.set_trace()
                 setattr(self, attr, val)
 
     def expand_basedirs(self):

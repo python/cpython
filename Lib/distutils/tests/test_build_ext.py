@@ -9,7 +9,7 @@ from test.test_support import captured_stdout
 
 from distutils.core import Extension, Distribution
 from distutils.command.build_ext import build_ext
-from distutils import sysconfig
+import sysconfig
 from distutils.tests import support
 from distutils.extension import Extension
 from distutils.errors import (UnknownFileError, DistutilsSetupError,
@@ -105,17 +105,17 @@ class BuildExtTestCase(support.TempdirManager,
         old = sys.platform
 
         sys.platform = 'sunos' # fooling finalize_options
-        from distutils.sysconfig import  _config_vars
-        old_var = _config_vars.get('Py_ENABLE_SHARED')
-        _config_vars['Py_ENABLE_SHARED'] = 1
+        from sysconfig import _CONFIG_VARS
+        old_var = _CONFIG_VARS.get('Py_ENABLE_SHARED')
+        _CONFIG_VARS['Py_ENABLE_SHARED'] = 1
         try:
             cmd.ensure_finalized()
         finally:
             sys.platform = old
             if old_var is None:
-                del _config_vars['Py_ENABLE_SHARED']
+                del _CONFIG_VARS['Py_ENABLE_SHARED']
             else:
-                _config_vars['Py_ENABLE_SHARED'] = old_var
+                _CONFIG_VARS['Py_ENABLE_SHARED'] = old_var
 
         # make sure we get some library dirs under solaris
         self.assertTrue(len(cmd.library_dirs) > 0)
@@ -177,11 +177,10 @@ class BuildExtTestCase(support.TempdirManager,
         cmd = build_ext(dist)
         cmd.finalize_options()
 
-        from distutils import sysconfig
-        py_include = sysconfig.get_python_inc()
+        py_include = sysconfig.get_path('include')
         self.assertTrue(py_include in cmd.include_dirs)
 
-        plat_py_include = sysconfig.get_python_inc(plat_specific=1)
+        plat_py_include = sysconfig.get_path('platinclude')
         self.assertTrue(plat_py_include in cmd.include_dirs)
 
         # make sure cmd.libraries is turned into a list
