@@ -770,8 +770,8 @@ class AbstractPickleTests(unittest.TestCase):
 
             # Dump using protocol 1 for comparison.
             s1 = self.dumps(x, 1)
-            self.assertTrue(__name__.encode("utf-8") in s1)
-            self.assertTrue(b"MyList" in s1)
+            self.assertIn(__name__.encode("utf-8"), s1)
+            self.assertIn(b"MyList", s1)
             self.assertEqual(opcode_in_pickle(opcode, s1), False)
 
             y = self.loads(s1)
@@ -780,8 +780,8 @@ class AbstractPickleTests(unittest.TestCase):
 
             # Dump using protocol 2 for test.
             s2 = self.dumps(x, 2)
-            self.assertTrue(__name__.encode("utf-8") not in s2)
-            self.assertTrue(b"MyList" not in s2)
+            self.assertNotIn(__name__.encode("utf-8"), s2)
+            self.assertNotIn(b"MyList", s2)
             self.assertEqual(opcode_in_pickle(opcode, s2), True, repr(s2))
 
             y = self.loads(s2)

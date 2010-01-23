@@ -131,7 +131,7 @@ class SyntaxTracebackCases(unittest.TestCase):
             err_line = "raise RuntimeError('{0}')".format(message_ascii)
             err_msg = "RuntimeError: {0}".format(message_ascii)
 
-            self.assertTrue(("line %s" % lineno) in stdout[1],
+            self.assertIn(("line %s" % lineno), stdout[1],
                 "Invalid line number: {0!r} instead of {1}".format(
                     stdout[1], lineno))
             self.assertTrue(stdout[2].endswith(err_line),
@@ -271,7 +271,7 @@ class BaseExceptionReportingTests:
         self.assertEquals(len(blocks), 3)
         self.assertEquals(blocks[1], cause_message)
         self.check_zero_div(blocks[0])
-        self.assert_('inner_raise() # Marker' in blocks[2])
+        self.assertIn('inner_raise() # Marker', blocks[2])
 
     def test_cause_recursive(self):
         def inner_raise():

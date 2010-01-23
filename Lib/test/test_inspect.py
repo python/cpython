@@ -474,8 +474,8 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIn(('s', 'static method', A), attrs, 'missing static method')
         self.assertIn(('c', 'class method', A), attrs, 'missing class method')
         self.assertIn(('p', 'property', A), attrs, 'missing property')
-        self.assertTrue(('m', 'method', A) in attrs,
-            'missing plain method: %r' % attrs)
+        self.assertIn(('m', 'method', A), attrs,
+                      'missing plain method: %r' % attrs)
         self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
         self.assertIn(('datablob', 'data', A), attrs, 'missing data')
 

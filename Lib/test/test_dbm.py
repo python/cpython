@@ -93,7 +93,7 @@ class AnyDBMTestCase(unittest.TestCase):
         self.init_db()
         f = dbm.open(_fname, 'r')
         key = "a".encode("ascii")
-        assert(key in f)
+        self.assertIn(key, f)
         assert(f[key] == b"Python:")
         f.close()
 

@@ -35,7 +35,7 @@ class TestWeakSet(unittest.TestCase):
         for method in dir(set):
             if method == 'test_c_api' or method.startswith('_'):
                 continue
-            self.assertTrue(method in weaksetmethods,
+            self.assertIn(method, weaksetmethods,
                          "WeakSet missing method " + method)
 
     def test_new_or_init(self):
@@ -342,10 +342,10 @@ class TestWeakSet(unittest.TestCase):
                 it = None           # should commit all removals
 
         with testcontext() as u:
-            self.assertFalse(u in s)
+            self.assertNotIn(u, s)
         with testcontext() as u:
             self.assertRaises(KeyError, s.remove, u)
-        self.assertFalse(u in s)
+        self.assertNotIn(u, s)
         with testcontext() as u:
             s.add(u)
         self.assertIn(u, s)

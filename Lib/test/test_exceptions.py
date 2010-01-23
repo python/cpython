@@ -413,7 +413,7 @@ class ExceptionTests(unittest.TestCase):
         except Exception as e:
             self.assertTrue(e)
             del e
-        self.assertFalse('e' in locals())
+        self.assertNotIn('e', locals())
 
     def testExceptionCleanupState(self):
         # Make sure exception state is cleaned up as soon as the except

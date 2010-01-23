@@ -242,7 +242,7 @@ class Test_ISO2022(unittest.TestCase):
         self.assertEqual(iso2022jp2.decode('iso2022-jp-2'), uni)
 
     def test_iso2022_jp_g0(self):
-        self.assertFalse(b'\x0e' in '\N{SOFT HYPHEN}'.encode('iso-2022-jp-2'))
+        self.assertNotIn(b'\x0e', '\N{SOFT HYPHEN}'.encode('iso-2022-jp-2'))
         for encoding in ('iso-2022-jp-2004', 'iso-2022-jp-3'):
             e = '\u3406'.encode(encoding)
             self.assertFalse(any(x > 0x80 for x in e))

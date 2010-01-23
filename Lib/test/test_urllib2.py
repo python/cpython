@@ -1027,10 +1027,10 @@ class HandlerTests(unittest.TestCase):
         # Verify Proxy-Authorization gets tunneled to request.
         # httpsconn req_headers do not have the Proxy-Authorization header but
         # the req will have.
-        self.assertFalse(("Proxy-Authorization","FooBar") in
+        self.assertNotIn(("Proxy-Authorization","FooBar"),
                          https_handler.httpconn.req_headers)
-        self.assertTrue(("User-Agent","Grail") in
-                        https_handler.httpconn.req_headers)
+        self.assertIn(("User-Agent","Grail"),
+                      https_handler.httpconn.req_headers)
         self.assertIsNotNone(req._tunnel_host)
         self.assertEqual(req.get_host(), "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"),"FooBar")
