@@ -706,7 +706,11 @@ class ReTests(unittest.TestCase):
     def test_dealloc(self):
         # issue 3299: check for segfault in debug build
         import _sre
-        long_overflow = sys.maxsize + 2
+        # the overflow limit is different on wide and narrow builds and it
+        # depends on the definition of SRE_CODE (see sre.h).
+        # 2**128 should be big enough to overflow on both. For smaller values
+        # a RuntimeError is raised instead of OverflowError.
+        long_overflow = 2**128
         self.assertRaises(TypeError, re.finditer, "a", {})
         self.assertRaises(OverflowError, _sre.compile, "abc", 0, [long_overflow])
 
