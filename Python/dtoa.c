@@ -622,6 +622,15 @@ mult(Bigint *a, Bigint *b)
     ULong z2;
 #endif
 
+    if ((!a->x[0] && a->wds == 1) || (!b->x[0] && b->wds == 1)) {
+        c = Balloc(0);
+        if (c == NULL)
+            return NULL;
+        c->wds = 1;
+        c->x[0] = 0;
+        return c;
+    }
+
     if (a->wds < b->wds) {
         c = a;
         a = b;
@@ -819,6 +828,9 @@ lshift(Bigint *b, int k)
     int i, k1, n, n1;
     Bigint *b1;
     ULong *x, *x1, *xe, z;
+
+    if (!k || (!b->x[0] && b->wds == 1))
+        return b;
 
     n = k >> 5;
     k1 = b->k;
