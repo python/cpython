@@ -56,9 +56,9 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertEqual(len(d), len(self.reference))
         #__contains__
         for k in self.reference:
-            self.assertTrue(k in d)
+            self.assertIn(k, d)
         for k in self.other:
-            self.assertFalse(k in d)
+            self.assertNotIn(k, d)
         #cmp
         self.assertEqual(p, p)
         self.assertEqual(d, d)
@@ -85,7 +85,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
         knownkey, knownvalue = next(iter(self.other.items()))
         self.assertEqual(d.get(key, knownvalue), value)
         self.assertEqual(d.get(knownkey, knownvalue), knownvalue)
-        self.assertFalse(knownkey in d)
+        self.assertNotIn(knownkey, d)
 
     def test_write(self):
         # Test for write operations on mapping
@@ -115,16 +115,16 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertEqual(d[knownkey], knownvalue)
         #pop
         self.assertEqual(d.pop(knownkey), knownvalue)
-        self.assertFalse(knownkey in d)
+        self.assertNotIn(knownkey, d)
         self.assertRaises(KeyError, d.pop, knownkey)
         default = 909
         d[knownkey] = knownvalue
         self.assertEqual(d.pop(knownkey, default), knownvalue)
-        self.assertFalse(knownkey in d)
+        self.assertNotIn(knownkey, d)
         self.assertEqual(d.pop(knownkey, default), default)
         #popitem
         key, value = d.popitem()
-        self.assertFalse(key in d)
+        self.assertNotIn(key, d)
         self.assertEqual(value, self.reference[key])
         p=self._empty_mapping()
         self.assertRaises(KeyError, p.popitem)
@@ -142,8 +142,8 @@ class BasicTestMappingProtocol(unittest.TestCase):
         d = self._empty_mapping()
         self.assertEqual(list(d.keys()), [])
         d = self.reference
-        self.assertTrue(list(self.inmapping.keys())[0] in d.keys())
-        self.assertTrue(list(self.other.keys())[0] not in d.keys())
+        self.assertIn(list(self.inmapping.keys())[0], d.keys())
+        self.assertNotIn(list(self.other.keys())[0], d.keys())
         self.assertRaises(TypeError, d.keys, None)
 
     def test_values(self):
@@ -320,9 +320,9 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         self.assertEqual(list(d.keys()), [])
         d = self._full_mapping({'a': 1, 'b': 2})
         k = d.keys()
-        self.assertTrue('a' in k)
-        self.assertTrue('b' in k)
-        self.assertTrue('c' not in k)
+        self.assertIn('a', k)
+        self.assertIn('b', k)
+        self.assertNotIn('c', k)
 
     def test_values(self):
         BasicTestMappingProtocol.test_values(self)
@@ -337,12 +337,13 @@ class TestMappingProtocol(BasicTestMappingProtocol):
 
     def test_contains(self):
         d = self._empty_mapping()
+        self.assertNotIn('a', d)
         self.assertTrue(not ('a' in d))
         self.assertTrue('a' not in d)
         d = self._full_mapping({'a': 1, 'b': 2})
-        self.assertTrue('a' in d)
-        self.assertTrue('b' in d)
-        self.assertTrue('c' not in d)
+        self.assertIn('a', d)
+        self.assertIn('b', d)
+        self.assertNotIn('c', d)
 
         self.assertRaises(TypeError, d.__contains__)
 

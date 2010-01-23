@@ -3035,7 +3035,7 @@ class Test_Assertions(TestCase):
         try:
             self.assertRaises(KeyError, lambda: None)
         except self.failureException as e:
-            self.assert_("KeyError not raised" in str(e), str(e))
+            self.assertIn("KeyError not raised", str(e))
         else:
             self.fail("assertRaises() didn't fail")
         try:
@@ -3052,7 +3052,7 @@ class Test_Assertions(TestCase):
             with self.assertRaises(KeyError):
                 pass
         except self.failureException as e:
-            self.assert_("KeyError not raised" in str(e), str(e))
+            self.assertIn("KeyError not raised", str(e))
         else:
             self.fail("assertRaises() didn't fail")
         try:

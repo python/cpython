@@ -76,8 +76,8 @@ class TestCaseBase(unittest.TestCase):
         eq(cf.get('Spaces', 'key with spaces'), 'value')
         eq(cf.get('Spaces', 'another with spaces'), 'splat!')
 
-        self.assertFalse('__name__' in cf.options("Foo Bar"),
-                    '__name__ "option" should not be exposed by the API!')
+        self.assertNotIn('__name__', cf.options("Foo Bar"),
+                         '__name__ "option" should not be exposed by the API!')
 
         # Make sure the right things happen for remove_option();
         # added to include check for SourceForge bug #123324:

@@ -72,7 +72,7 @@ class ProfileTest(unittest.TestCase):
             stats = pstats.Stats(prof, stream=s)
             stats.print_stats()
             res = s.getvalue()
-            self.assertTrue(self.expected_max_output in res,
+            self.assertIn(self.expected_max_output, res,
                 "Profiling {0!r} didn't report max:\n{1}".format(stmt, res))
 
 

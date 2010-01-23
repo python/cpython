@@ -51,9 +51,9 @@ class TestImport(unittest.TestCase):
         self.rewrite_file('for')
         try: __import__(self.module_name)
         except SyntaxError: pass
-        else: raise RuntimeError('Failed to induce SyntaxError')
-        self.assertTrue(self.module_name not in sys.modules and
-                     not hasattr(sys.modules[self.package_name], 'foo'))
+        else: raise RuntimeError('Failed to induce SyntaxError') # self.fail()?
+        self.assertNotIn(self.module_name, sys.modules)
+        self.assertFalse(hasattr(sys.modules[self.package_name], 'foo'))
 
         # ...make up a variable name that isn't bound in __builtins__
         var = 'a'

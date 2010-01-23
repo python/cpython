@@ -34,9 +34,7 @@ class DictTest(unittest.TestCase):
         self.assertEqual(set(d.keys()), set())
         d = {'a': 1, 'b': 2}
         k = d.keys()
-        self.assertTrue('a' in d)
         self.assertIn('a', d)
-        self.assertTrue('b' in d)
         self.assertIn('b', d)
         self.assertRaises(TypeError, d.keys, None)
         self.assertEqual(repr(dict(a=1).keys()), "dict_keys(['a'])")
@@ -60,15 +58,12 @@ class DictTest(unittest.TestCase):
 
     def test_contains(self):
         d = {}
+        self.assertNotIn('a', d)
         self.assertTrue(not ('a' in d))
         self.assertTrue('a' not in d)
-        self.assertNotIn('a', d)
         d = {'a': 1, 'b': 2}
-        self.assertTrue('a' in d)
         self.assertIn('a', d)
-        self.assertTrue('b' in d)
         self.assertIn('b', d)
-        self.assertTrue('c' not in d)
         self.assertNotIn('c', d)
 
         self.assertRaises(TypeError, d.__contains__)
@@ -524,9 +519,7 @@ class DictTest(unittest.TestCase):
         d = D({1: 2, 3: 4})
         self.assertEqual(d[1], 2)
         self.assertEqual(d[3], 4)
-        self.assertTrue(2 not in d)
         self.assertNotIn(2, d)
-        self.assertTrue(2 not in d.keys())
         self.assertNotIn(2, d.keys())
         self.assertEqual(d[2], 42)
         class E(dict):

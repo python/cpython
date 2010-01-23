@@ -520,9 +520,9 @@ class BaseStrTest:
         s = _('').join([edge, SUBSTR, edge])
         del edge
         self.assertIn(SUBSTR, s)
-        self.assertFalse(SUBSTR * 2 in s)
+        self.assertNotIn(SUBSTR * 2, s)
         self.assertIn(_('-'), s)
-        self.assertFalse(_('a') in s)
+        self.assertNotIn(_('a'), s)
         s += _('a')
         self.assertIn(_('a'), s)
 
@@ -769,8 +769,8 @@ class TupleTest(unittest.TestCase):
         t = (1, 2, 3, 4, 5) * size
         self.assertEquals(len(t), size * 5)
         self.assertIn(5, t)
-        self.assertFalse((1, 2, 3, 4, 5) in t)
-        self.assertFalse(0 in t)
+        self.assertNotIn((1, 2, 3, 4, 5), t)
+        self.assertNotIn(0, t)
 
     @bigmemtest(minsize=_2G + 10, memuse=8)
     def test_hash(self, size):
@@ -918,8 +918,8 @@ class ListTest(unittest.TestCase):
         l = [1, 2, 3, 4, 5] * size
         self.assertEquals(len(l), size * 5)
         self.assertIn(5, l)
-        self.assertFalse([1, 2, 3, 4, 5] in l)
-        self.assertFalse(0 in l)
+        self.assertNotIn([1, 2, 3, 4, 5], l)
+        self.assertNotIn(0, l)
 
     @bigmemtest(minsize=_2G + 10, memuse=8)
     def test_hash(self, size):

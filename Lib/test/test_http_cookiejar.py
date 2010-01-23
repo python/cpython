@@ -901,8 +901,7 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, "spam=eggs; Version=1")
         h = interact_2965(c, url)
-        self.assertTrue("Path" not in h,
-                     "absent path returned with path present")
+        self.assertNotIn("Path", h, "absent path returned with path present")
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
@@ -917,8 +916,7 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, "spam=eggs; Version=1")
         h = interact_2965(c, url)
-        self.assertTrue("Port" not in h,
-                     "absent port returned with port present")
+        self.assertNotIn("Port", h, "absent port returned with port present")
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
@@ -931,16 +929,16 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, 'spam=eggs; Version=1; Port="80"')
         h = interact_2965(c, url)
-        self.assertTrue('$Port="80"' in h,
-                     "port with single value not returned with single value")
+        self.assertIn('$Port="80"', h,
+                      "port with single value not returned with single value")
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
         interact_2965(c, url, 'spam=eggs; Version=1; Port="80,8080"')
         h = interact_2965(c, url)
-        self.assertTrue('$Port="80,8080"' in h,
-                     "port with multiple values not returned with multiple "
-                     "values")
+        self.assertIn('$Port="80,8080"', h,
+                      "port with multiple values not returned with multiple "
+                      "values")
 
     def test_no_return_comment(self):
         c = CookieJar(DefaultCookiePolicy(rfc2965=True))
@@ -1105,8 +1103,8 @@ class LWPCookieTests(TestCase):
         c.add_cookie_header(req)
 
         h = req.get_header("Cookie")
-        self.assertTrue("PART_NUMBER=ROCKET_LAUNCHER_0001" in h and
-                     "CUSTOMER=WILE_E_COYOTE" in h)
+        self.assertIn("PART_NUMBER=ROCKET_LAUNCHER_0001", h)
+        self.assertIn("CUSTOMER=WILE_E_COYOTE", h)
 
         headers.append('Set-Cookie: SHIPPING=FEDEX; path=/foo')
         res = FakeResponse(headers, "http://www.acme.com")
@@ -1116,17 +1114,17 @@ class LWPCookieTests(TestCase):
         c.add_cookie_header(req)
 
         h = req.get_header("Cookie")
-        self.assertTrue("PART_NUMBER=ROCKET_LAUNCHER_0001" in h and
-                     "CUSTOMER=WILE_E_COYOTE" in h and
-                     "SHIPPING=FEDEX" not in h)
+        self.assertIn("PART_NUMBER=ROCKET_LAUNCHER_0001", h)
+        self.assertIn("CUSTOMER=WILE_E_COYOTE", h)
+        self.assertNotIn("SHIPPING=FEDEX", h)
 
         req = urllib.request.Request("http://www.acme.com/foo/")
         c.add_cookie_header(req)
 
         h = req.get_header("Cookie")
-        self.assertTrue(("PART_NUMBER=ROCKET_LAUNCHER_0001" in h and
-                      "CUSTOMER=WILE_E_COYOTE" in h and
-                      h.startswith("SHIPPING=FEDEX;")))
+        self.assertIn("PART_NUMBER=ROCKET_LAUNCHER_0001", h)
+        self.assertIn("CUSTOMER=WILE_E_COYOTE", h)
+        self.assertTrue(h.startswith("SHIPPING=FEDEX;"))
 
     def test_netscape_example_2(self):
         # Second Example transaction sequence:
@@ -1344,8 +1342,8 @@ class LWPCookieTests(TestCase):
         # the server.
 
         cookie = interact_2965(c, "http://www.acme.com/acme/parts/")
-        self.assertTrue("Rocket_Launcher_0001" in cookie and
-                     "Riding_Rocket_0023" not in cookie)
+        self.assertIn("Rocket_Launcher_0001", cookie)
+        self.assertNotIn("Riding_Rocket_0023", cookie)
 
     def test_rejection(self):
         # Test rejection of Set-Cookie2 responses based on domain, path, port.

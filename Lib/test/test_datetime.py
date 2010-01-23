@@ -140,10 +140,7 @@ class HarmlessMixedComparison:
         self.assertTrue(() != me)
 
         self.assertIn(me, [1, 20, [], me])
-        self.assertFalse(me not in [1, 20, [], me])
-
         self.assertIn([], [me, 1, 20, []])
-        self.assertFalse([] not in [me, 1, 20, []])
 
     def test_harmful_mixed_comparison(self):
         me = self.theclass(1, 1, 1)

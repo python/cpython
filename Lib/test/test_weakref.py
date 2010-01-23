@@ -169,8 +169,7 @@ class ReferencesTestCase(TestBase):
         p[:] = [2, 3]
         self.assertEqual(len(L), 2)
         self.assertEqual(len(p), 2)
-        self.assertTrue(3 in p,
-                        "proxy didn't support __contains__() properly")
+        self.assertIn(3, p, "proxy didn't support __contains__() properly")
         p[1] = 5
         self.assertEqual(L[1], 5)
         self.assertEqual(p[1], 5)
@@ -961,13 +960,13 @@ class MappingTestCase(TestBase):
         # weakref'ed objects and then return a new key/value pair corresponding
         # to the destroyed object.
         with testcontext() as (k, v):
-            self.assertFalse(k in dict)
+            self.assertNotIn(k, dict)
         with testcontext() as (k, v):
             self.assertRaises(KeyError, dict.__delitem__, k)
-        self.assertFalse(k in dict)
+        self.assertNotIn(k, dict)
         with testcontext() as (k, v):
             self.assertRaises(KeyError, dict.pop, k)
-        self.assertFalse(k in dict)
+        self.assertNotIn(k, dict)
         with testcontext() as (k, v):
             dict[k] = v
         self.assertEqual(dict[k], v)
@@ -1118,14 +1117,12 @@ class MappingTestCase(TestBase):
         weakdict.update(dict)
         self.assertEqual(len(weakdict), len(dict))
         for k in weakdict.keys():
-            self.assertTrue(k in dict,
-                         "mysterious new key appeared in weak dict")
+            self.assertIn(k, dict, "mysterious new key appeared in weak dict")
             v = dict.get(k)
             self.assertTrue(v is weakdict[k])
             self.assertTrue(v is weakdict.get(k))
         for k in dict.keys():
-            self.assertTrue(k in weakdict,
-                         "original key disappeared in weak dict")
+            self.assertIn(k, weakdict, "original key disappeared in weak dict")
             v = dict[k]
             self.assertTrue(v is weakdict[k])
             self.assertTrue(v is weakdict.get(k))

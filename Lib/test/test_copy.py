@@ -627,7 +627,7 @@ class TestCopy(unittest.TestCase):
         x, y = C(), C()
         # The underlying containers are decoupled
         v[x] = y
-        self.assertFalse(x in u)
+        self.assertNotIn(x, u)
 
     def test_copy_weakkeydict(self):
         self._check_copy_weakdict(weakref.WeakKeyDictionary)

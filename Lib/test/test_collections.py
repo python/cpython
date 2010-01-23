@@ -540,10 +540,10 @@ class TestCounter(unittest.TestCase):
         self.assertEqual(c, dict(a=4, b=0, d=-2, e=-5, f=4))
         self.assertEqual(''.join(sorted(c.elements())), 'aaaaffff')
         self.assertEqual(c.pop('f'), 4)
-        self.assertEqual('f' in c, False)
+        self.assertNotIn('f', c)
         for i in range(3):
             elem, cnt = c.popitem()
-            self.assertEqual(elem in c, False)
+            self.assertNotIn(elem, c)
         c.clear()
         self.assertEqual(c, {})
         self.assertEqual(repr(c), 'Counter()')

@@ -126,7 +126,7 @@ class RangeTest(unittest.TestCase):
         class C2:
             def __int__(self): return 1
             def __index__(self): return 1
-        self.assertFalse(C2() in range(3))
+        self.assertNotIn(C2(), range(3))
         # ..except if explicitly told so.
         self.assertIn(int(C2()), range(3))
 
@@ -140,32 +140,32 @@ class RangeTest(unittest.TestCase):
     def test_strided_limits(self):
         r = range(0, 101, 2)
         self.assertIn(0, r)
-        self.assertFalse(1 in r)
+        self.assertNotIn(1, r)
         self.assertIn(2, r)
-        self.assertFalse(99 in r)
+        self.assertNotIn(99, r)
         self.assertIn(100, r)
-        self.assertFalse(101 in r)
+        self.assertNotIn(101, r)
 
         r = range(0, -20, -1)
         self.assertIn(0, r)
         self.assertIn(-1, r)
         self.assertIn(-19, r)
-        self.assertFalse(-20 in r)
+        self.assertNotIn(-20, r)
 
         r = range(0, -20, -2)
         self.assertIn(-18, r)
-        self.assertFalse(-19 in r)
-        self.assertFalse(-20 in r)
+        self.assertNotIn(-19, r)
+        self.assertNotIn(-20, r)
 
     def test_empty(self):
         r = range(0)
-        self.assertFalse(0 in r)
-        self.assertFalse(1 in r)
+        self.assertNotIn(0, r)
+        self.assertNotIn(1, r)
 
         r = range(0, -10)
-        self.assertFalse(0 in r)
-        self.assertFalse(-1 in r)
-        self.assertFalse(1 in r)
+        self.assertNotIn(0, r)
+        self.assertNotIn(-1, r)
+        self.assertNotIn(1, r)
 
     def test_range_iterators(self):
         # exercise 'fast' iterators, that use a rangeiterobject internally.

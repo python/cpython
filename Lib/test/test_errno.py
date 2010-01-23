@@ -28,8 +28,8 @@ class ErrorcodeTests(unittest.TestCase):
     def test_attributes_in_errorcode(self):
         for attribute in errno.__dict__.keys():
             if attribute.isupper():
-                self.assertTrue(getattr(errno, attribute) in errno.errorcode,
-                             'no %s attr in errno.errorcode' % attribute)
+                self.assertIn(getattr(errno, attribute), errno.errorcode,
+                              'no %s attr in errno.errorcode' % attribute)
 
 
 def test_main():

@@ -388,8 +388,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(isinstance(vi.major, int))
         self.assertTrue(isinstance(vi.minor, int))
         self.assertTrue(isinstance(vi.micro, int))
-        self.assertTrue(vi.releaselevel in
-                     ("alpha", "beta", "candidate", "final"))
+        self.assertIn(vi.releaselevel, ("alpha", "beta", "candidate", "final"))
         self.assertTrue(isinstance(vi.serial, int))
         self.assertEqual(vi[0], vi.major)
         self.assertEqual(vi[1], vi.minor)

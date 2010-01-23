@@ -113,7 +113,7 @@ class test__RandomNameSequence(TC):
         for i in range(TEST_FILES):
             s = next(r)
             self.nameCheck(s, '', '', '')
-            self.assertFalse(s in dict)
+            self.assertNotIn(s, dict)
             dict[s] = 1
 
     def supports_iter(self):

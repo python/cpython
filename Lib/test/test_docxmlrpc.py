@@ -18,8 +18,8 @@ def server(evt, numrequests):
         serv.set_server_title("DocXMLRPCServer Test Documentation")
         serv.set_server_name("DocXMLRPCServer Test Docs")
         serv.set_server_documentation(
-"""This is an XML-RPC server's documentation, but the server can be used by
-POSTing to /RPC2. Try self.add, too.""")
+            "This is an XML-RPC server's documentation, but the server "
+            "can be used by POSTing to /RPC2. Try self.add, too.")
 
         # Create and register classes and functions
         class TestClass(object):
@@ -106,9 +106,9 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         self.client.request("GET", "/")
         response = self.client.getresponse()
 
-        self.assertTrue(
-b"""<dl><dt><a name="-&lt;lambda&gt;"><strong>&lt;lambda&gt;</strong></a>(x, y)</dt></dl>"""
-            in response.read())
+        self.assertIn((b'<dl><dt><a name="-&lt;lambda&gt;"><strong>'
+                       b'&lt;lambda&gt;</strong></a>(x, y)</dt></dl>'),
+                      response.read())
 
     def test_autolinking(self):
         """Test that the server correctly automatically wraps references to PEPS
@@ -120,9 +120,17 @@ b"""<dl><dt><a name="-&lt;lambda&gt;"><strong>&lt;lambda&gt;</strong></a>(x, y)<
         self.client.request("GET", "/")
         response = self.client.getresponse().read()
 
-        self.assertTrue( # This is ugly ... how can it be made better?
-b"""<dl><dt><a name="-add"><strong>add</strong></a>(x, y)</dt><dd><tt>Add&nbsp;two&nbsp;instances&nbsp;together.&nbsp;This&nbsp;follows&nbsp;<a href="http://www.python.org/dev/peps/pep-0008/">PEP008</a>,&nbsp;but&nbsp;has&nbsp;nothing<br>\nto&nbsp;do&nbsp;with&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1952.txt">RFC1952</a>.&nbsp;Case&nbsp;should&nbsp;matter:&nbsp;pEp008&nbsp;and&nbsp;rFC1952.&nbsp;&nbsp;Things<br>\nthat&nbsp;start&nbsp;with&nbsp;http&nbsp;and&nbsp;ftp&nbsp;should&nbsp;be&nbsp;auto-linked,&nbsp;too:<br>\n<a href="http://google.com">http://google.com</a>.</tt></dd></dl>"""
-          in response, response)
+        self.assertIn(
+            (b'<dl><dt><a name="-add"><strong>add</strong></a>(x, y)</dt><dd>'
+             b'<tt>Add&nbsp;two&nbsp;instances&nbsp;together.&nbsp;This&nbsp;'
+             b'follows&nbsp;<a href="http://www.python.org/dev/peps/pep-0008/">'
+             b'PEP008</a>,&nbsp;but&nbsp;has&nbsp;nothing<br>\nto&nbsp;do&nbsp;'
+             b'with&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1952.txt">'
+             b'RFC1952</a>.&nbsp;Case&nbsp;should&nbsp;matter:&nbsp;pEp008&nbsp;'
+             b'and&nbsp;rFC1952.&nbsp;&nbsp;Things<br>\nthat&nbsp;start&nbsp;'
+             b'with&nbsp;http&nbsp;and&nbsp;ftp&nbsp;should&nbsp;be&nbsp;'
+             b'auto-linked,&nbsp;too:<br>\n<a href="http://google.com">'
+             b'http://google.com</a>.</tt></dd></dl>'), response)
 
     def test_system_methods(self):
         """Test the precense of three consecutive system.* methods.
@@ -133,8 +141,26 @@ b"""<dl><dt><a name="-add"><strong>add</strong></a>(x, y)</dt><dd><tt>Add&nbsp;t
         self.client.request("GET", "/")
         response = self.client.getresponse().read()
 
-        self.assertTrue(
-b"""<dl><dt><a name="-system.methodHelp"><strong>system.methodHelp</strong></a>(method_name)</dt><dd><tt><a href="#-system.methodHelp">system.methodHelp</a>(\'add\')&nbsp;=&gt;&nbsp;"Adds&nbsp;two&nbsp;integers&nbsp;together"<br>\n&nbsp;<br>\nReturns&nbsp;a&nbsp;string&nbsp;containing&nbsp;documentation&nbsp;for&nbsp;the&nbsp;specified&nbsp;method.</tt></dd></dl>\n<dl><dt><a name="-system.methodSignature"><strong>system.methodSignature</strong></a>(method_name)</dt><dd><tt><a href="#-system.methodSignature">system.methodSignature</a>(\'add\')&nbsp;=&gt;&nbsp;[double,&nbsp;int,&nbsp;int]<br>\n&nbsp;<br>\nReturns&nbsp;a&nbsp;list&nbsp;describing&nbsp;the&nbsp;signature&nbsp;of&nbsp;the&nbsp;method.&nbsp;In&nbsp;the<br>\nabove&nbsp;example,&nbsp;the&nbsp;add&nbsp;method&nbsp;takes&nbsp;two&nbsp;integers&nbsp;as&nbsp;arguments<br>\nand&nbsp;returns&nbsp;a&nbsp;double&nbsp;result.<br>\n&nbsp;<br>\nThis&nbsp;server&nbsp;does&nbsp;NOT&nbsp;support&nbsp;system.methodSignature.</tt></dd></dl>\n<dl><dt><a name="-test_method"><strong>test_method</strong></a>(arg)</dt><dd><tt>Test&nbsp;method\'s&nbsp;docs.&nbsp;This&nbsp;method&nbsp;truly&nbsp;does&nbsp;very&nbsp;little.</tt></dd></dl>""" in response)
+        self.assertIn(
+            (b'<dl><dt><a name="-system.methodHelp"><strong>system.methodHelp'
+             b'</strong></a>(method_name)</dt><dd><tt><a href="#-system.method'
+             b'Help">system.methodHelp</a>(\'add\')&nbsp;=&gt;&nbsp;"Adds&nbsp;'
+             b'two&nbsp;integers&nbsp;together"<br>\n&nbsp;<br>\nReturns&nbsp;a'
+             b'&nbsp;string&nbsp;containing&nbsp;documentation&nbsp;for&nbsp;'
+             b'the&nbsp;specified&nbsp;method.</tt></dd></dl>\n<dl><dt><a name'
+             b'="-system.methodSignature"><strong>system.methodSignature</strong>'
+             b'</a>(method_name)</dt><dd><tt><a href="#-system.methodSignature">'
+             b'system.methodSignature</a>(\'add\')&nbsp;=&gt;&nbsp;[double,&nbsp;'
+             b'int,&nbsp;int]<br>\n&nbsp;<br>\nReturns&nbsp;a&nbsp;list&nbsp;'
+             b'describing&nbsp;the&nbsp;signature&nbsp;of&nbsp;the&nbsp;method.'
+             b'&nbsp;In&nbsp;the<br>\nabove&nbsp;example,&nbsp;the&nbsp;add&nbsp;'
+             b'method&nbsp;takes&nbsp;two&nbsp;integers&nbsp;as&nbsp;arguments'
+             b'<br>\nand&nbsp;returns&nbsp;a&nbsp;double&nbsp;result.<br>\n&nbsp;'
+             b'<br>\nThis&nbsp;server&nbsp;does&nbsp;NOT&nbsp;support&nbsp;system'
+             b'.methodSignature.</tt></dd></dl>\n<dl><dt><a name="-test_method">'
+             b'<strong>test_method</strong></a>(arg)</dt><dd><tt>Test&nbsp;'
+             b'method\'s&nbsp;docs.&nbsp;This&nbsp;method&nbsp;truly&nbsp;does'
+             b'&nbsp;very&nbsp;little.</tt></dd></dl>'), response)
 
     def test_autolink_dotted_methods(self):
         """Test that selfdot values are made strong automatically in the
@@ -142,8 +168,8 @@ b"""<dl><dt><a name="-system.methodHelp"><strong>system.methodHelp</strong></a>(
         self.client.request("GET", "/")
         response = self.client.getresponse()
 
-        self.assertTrue(b"""Try&nbsp;self.<strong>add</strong>,&nbsp;too.""" in
-            response.read())
+        self.assertIn(b"""Try&nbsp;self.<strong>add</strong>,&nbsp;too.""",
+                      response.read())
 
 def test_main():
     support.run_unittest(DocXMLRPCHTTPGETServer)

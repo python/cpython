@@ -214,16 +214,11 @@ class GeneralFloatCases(unittest.TestCase):
         floats = (INF, -INF, 0.0, 1.0, NAN)
         for f in floats:
             self.assertIn(f, [f])
-            self.assertTrue(f in [f], "'%r' not in []" % f)
             self.assertIn(f, (f,))
-            self.assertTrue(f in (f,), "'%r' not in ()" % f)
             self.assertIn(f, {f})
-            self.assertTrue(f in {f}, "'%r' not in set()" % f)
             self.assertIn(f, {f: None})
-            self.assertTrue(f in {f: None}, "'%r' not in {}" % f)
             self.assertEqual([f].count(f), 1, "[].count('%r') != 1" % f)
             self.assertIn(f, floats)
-            self.assertTrue(f in floats, "'%r' not in container" % f)
 
         for f in floats:
             # nonidentical containers, same type, same contents
@@ -459,10 +454,10 @@ class FormatFunctionsTestCase(unittest.TestCase):
         float.__setformat__('float', self.save_formats['float'])
 
     def test_getformat(self):
-        self.assertTrue(float.__getformat__('double') in
-                     ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
-        self.assertTrue(float.__getformat__('float') in
-                     ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
+        self.assertIn(float.__getformat__('double'),
+                      ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
+        self.assertIn(float.__getformat__('float'),
+                      ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
         self.assertRaises(ValueError, float.__getformat__, 'chicken')
         self.assertRaises(TypeError, float.__getformat__, 1)
 
