@@ -1,4 +1,5 @@
 """Tests for distutils.command.upload."""
+# -*- encoding: utf8 -*-
 import sys
 import os
 import unittest
@@ -95,7 +96,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         self.write_file(self.rc, PYPIRC_LONG_PASSWORD)
 
         # lets run it
-        pkg_dir, dist = self.create_dist(dist_files=dist_files)
+        pkg_dir, dist = self.create_dist(dist_files=dist_files, author=u'dédé')
         cmd = upload(dist)
         cmd.ensure_finalized()
         cmd.run()
@@ -104,7 +105,8 @@ class uploadTestCase(PyPIRCCommandTestCase):
         res = _CONNECTIONS[-1]
 
         headers = res.headers
-        self.assertEquals(headers['Content-length'], '2086')
+        self.assert_('dédé' in res.body)
+        self.assertEquals(headers['Content-length'], '2085')
         self.assertTrue(headers['Content-type'].startswith('multipart/form-data'))
 
         method, request = res.requests[-1]
