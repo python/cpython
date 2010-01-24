@@ -7,12 +7,14 @@ Python News
 What's New in Python 2.5.5c2?
 =============================
 
-*Release date: xx-xxx-2010*
+*Release date: 24-Jan-2010*
 
 Extension Modules
 -----------------
 
-- expat: Fix DoS via XML document with malformed UTF-8 sequences (CVE_2009_3560).
+- expat: Fix DoS via XML document with malformed UTF-8 sequences
+  (CVE_2009_3560).
+
 - expat: Fix DoS via malformed XML (CVE-2009-3720).
 
 
