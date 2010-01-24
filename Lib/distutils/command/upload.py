@@ -145,7 +145,7 @@ class upload(PyPIRCCommand):
                     value = value[1]
                 else:
                     fn = ""
-                value = str(value)
+
                 body.write(sep_boundary)
                 body.write('\nContent-Disposition: form-data; name="%s"'%key)
                 body.write(fn)
