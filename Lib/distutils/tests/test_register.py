@@ -1,4 +1,5 @@
 """Tests for distutils.command.register."""
+# -*- encoding: utf8 -*-
 import sys
 import os
 import unittest
@@ -136,9 +137,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         self.assertTrue(self.conn.reqs, 2)
         req1 = dict(self.conn.reqs[0].headers)
         req2 = dict(self.conn.reqs[1].headers)
-
-        self.assertEquals(req1['Content-length'], '1374')
-        self.assertEquals(req2['Content-length'], '1374')
+        self.assertEquals(req2['Content-length'], req1['Content-length'])
         self.assertTrue('xxx' in self.conn.reqs[1].data)
 
     def test_password_not_in_file(self):
@@ -210,7 +209,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
 
         # metadata are OK but long_description is broken
         metadata = {'url': 'xxx', 'author': 'xxx',
-                    'author_email': 'xxx',
+                    'author_email': u'éxéxé',
                     'name': 'xxx', 'version': 'xxx',
                     'long_description': 'title\n==\n\ntext'}
 

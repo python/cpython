@@ -1139,15 +1139,18 @@ class DistributionMetadata:
         self._write_list(file, 'Obsoletes', self.get_obsoletes())
 
     def _write_field(self, file, name, value):
-        if isinstance(value, unicode):
-            value = value.encode(PKG_INFO_ENCODING)
-        else:
-            value = str(value)
-        file.write('%s: %s\n' % (name, value))
+        file.write('%s: %s\n' % (name, self._encode_field(value)))
 
     def _write_list (self, file, name, values):
         for value in values:
             self._write_field(file, name, value)
+
+    def _encode_field(self, value):
+        if value is None:
+            return None
+        if isinstance(value, unicode):
+            return value.encode(PKG_INFO_ENCODING)
+        return str(value)
 
     # -- Metadata query methods ----------------------------------------
 
@@ -1161,19 +1164,20 @@ class DistributionMetadata:
         return "%s-%s" % (self.get_name(), self.get_version())
 
     def get_author(self):
-        return self.author or "UNKNOWN"
+        return self._encode_field(self.author) or "UNKNOWN"
 
     def get_author_email(self):
         return self.author_email or "UNKNOWN"
 
     def get_maintainer(self):
-        return self.maintainer or "UNKNOWN"
+        return self._encode_field(self.maintainer) or "UNKNOWN"
 
     def get_maintainer_email(self):
         return self.maintainer_email or "UNKNOWN"
 
     def get_contact(self):
-        return self.maintainer or self.author or "UNKNOWN"
+        return (self._encode_field(self.maintainer) or
+                self._encode_field(self.author) or "UNKNOWN")
 
     def get_contact_email(self):
         return self.maintainer_email or self.author_email or "UNKNOWN"
@@ -1186,10 +1190,10 @@ class DistributionMetadata:
     get_licence = get_license
 
     def get_description(self):
-        return self.description or "UNKNOWN"
+        return self._encode_field(self.description) or "UNKNOWN"
 
     def get_long_description(self):
-        return self.long_description or "UNKNOWN"
+        return self._encode_field(self.long_description) or "UNKNOWN"
 
     def get_keywords(self):
         return self.keywords or []
