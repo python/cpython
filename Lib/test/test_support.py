@@ -17,7 +17,7 @@ __all__ = ["Error", "TestFailed", "TestSkipped", "ResourceDenied", "import_modul
            "get_original_stdout", "unload", "unlink", "rmtree", "forget",
            "is_resource_enabled", "requires", "find_unused_port", "bind_port",
            "fcmp", "have_unicode", "is_jython", "TESTFN", "HOST", "FUZZ",
-           "findfile", "verify", "vereq", "sortdict", "check_syntax_error",
+           "findfile", "sortdict", "check_syntax_error",
            "open_urlresource", "check_warnings", "CleanImport",
            "EnvironmentVarGuard", "captured_output",
            "captured_stdout", "TransientResource", "transient_internet",
@@ -324,30 +324,6 @@ def findfile(file, here=__file__):
         fn = os.path.join(dn, file)
         if os.path.exists(fn): return fn
     return file
-
-def verify(condition, reason='test failed'):
-    """Verify that condition is true. If not, raise TestFailed.
-
-       The optional argument reason can be given to provide
-       a better error text.
-    """
-
-    if not condition:
-        raise TestFailed(reason)
-
-def vereq(a, b):
-    """Raise TestFailed if a == b is false.
-
-    This is better than verify(a == b) because, in case of failure, the
-    error message incorporates repr(a) and repr(b) so you can see the
-    inputs.
-
-    Note that "not (a == b)" isn't necessarily the same as "a != b"; the
-    former is tested.
-    """
-
-    if not (a == b):
-        raise TestFailed("%r == %r" % (a, b))
 
 def sortdict(dict):
     "Like repr(dict), but in sorted order."
