@@ -176,7 +176,7 @@ class OtherNetworkTests(unittest.TestCase):
                 if expected_err:
                     msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
                            (expected_err, url, req, type(err), err))
-                    self.assertTrue(isinstance(err, expected_err), msg)
+                    self.assertIsInstance(err, expected_err, msg)
             else:
                 with test_support.transient_internet():
                     buf = f.read()

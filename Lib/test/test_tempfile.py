@@ -142,8 +142,7 @@ class test__candidate_tempdir_list(TC):
 
         self.assertFalse(len(cand) == 0)
         for c in cand:
-            self.assertTrue(isinstance(c, basestring),
-                         "%s is not a string" % c)
+            self.assertIsInstance(c, basestring)
 
     def test_wanted_dirs(self):
         # _candidate_tempdir_list contains the expected directories
@@ -184,7 +183,7 @@ class test__get_candidate_names(TC):
     def test_retval(self):
         # _get_candidate_names returns a _RandomNameSequence object
         obj = tempfile._get_candidate_names()
-        self.assertTrue(isinstance(obj, tempfile._RandomNameSequence))
+        self.assertIsInstance(obj, tempfile._RandomNameSequence)
 
     def test_same_thing(self):
         # _get_candidate_names always returns the same object
@@ -322,7 +321,7 @@ class test_gettempprefix(TC):
         # gettempprefix returns a nonempty prefix string
         p = tempfile.gettempprefix()
 
-        self.assertTrue(isinstance(p, basestring))
+        self.assertIsInstance(p, basestring)
         self.assertTrue(len(p) > 0)
 
     def test_usable_template(self):

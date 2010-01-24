@@ -105,7 +105,7 @@ class TestSysConfig(unittest.TestCase):
 
     def test_get_config_vars(self):
         cvars = get_config_vars()
-        self.assertTrue(isinstance(cvars, dict))
+        self.assertIsInstance(cvars, dict)
         self.assertTrue(cvars)
 
     def test_get_platform(self):

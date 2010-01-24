@@ -457,9 +457,9 @@ class TestUrlopen(BaseTestCase):
         try:
             open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
             info_obj = open_url.info()
-            self.assertTrue(isinstance(info_obj, mimetools.Message),
-                         "object returned by 'info' is not an instance of "
-                         "mimetools.Message")
+            self.assertIsInstance(info_obj, mimetools.Message,
+                                  "object returned by 'info' is not an "
+                                  "instance of mimetools.Message")
             self.assertEqual(info_obj.getsubtype(), "plain")
         finally:
             self.server.stop()

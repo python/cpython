@@ -451,7 +451,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         ud = mydict.fromkeys('ab')
         self.assertEqual(ud, {'a':None, 'b':None})
         # FIXME: the following won't work with UserDict, because it's an old style class
-        # self.assertTrue(isinstance(ud, UserDict.UserDict))
+        # self.assertIsInstance(ud, UserDict.UserDict)
         self.assertRaises(TypeError, dict.fromkeys)
 
         class Exc(Exception): pass
@@ -481,7 +481,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
         d = self._empty_mapping()
         self.assertEqual(d.copy(), d)
-        self.assertTrue(isinstance(d.copy(), d.__class__))
+        self.assertIsInstance(d.copy(), d.__class__)
         self.assertRaises(TypeError, d.copy, None)
 
     def test_get(self):
@@ -586,7 +586,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
                 return UserDict.UserDict()
         ud = mydict.fromkeys('ab')
         self.assertEqual(ud, {'a':None, 'b':None})
-        self.assertTrue(isinstance(ud, UserDict.UserDict))
+        self.assertIsInstance(ud, UserDict.UserDict)
 
     def test_pop(self):
         TestMappingProtocol.test_pop(self)

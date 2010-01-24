@@ -99,7 +99,7 @@ class AugAssignTest(unittest.TestCase):
         y = x
         x += 10
 
-        self.assertTrue(isinstance(x, aug_test))
+        self.assertIsInstance(x, aug_test)
         self.assertTrue(y is not x)
         self.assertEquals(x.val, 11)
 
@@ -114,7 +114,7 @@ class AugAssignTest(unittest.TestCase):
         y = x
         x += 10
 
-        self.assertTrue(isinstance(x, aug_test3))
+        self.assertIsInstance(x, aug_test3)
         self.assertTrue(y is not x)
         self.assertEquals(x.val, 13)
 

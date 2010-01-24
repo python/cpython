@@ -63,10 +63,10 @@ class BaseTest(unittest.TestCase):
         a = array.array(self.typecode, self.example)
         self.assertRaises(TypeError, a.buffer_info, 42)
         bi = a.buffer_info()
-        self.assertTrue(isinstance(bi, tuple))
+        self.assertIsInstance(bi, tuple)
         self.assertEqual(len(bi), 2)
-        self.assertTrue(isinstance(bi[0], (int, long)))
-        self.assertTrue(isinstance(bi[1], int))
+        self.assertIsInstance(bi[0], (int, long))
+        self.assertIsInstance(bi[1], int)
         self.assertEqual(bi[1], len(a))
 
     def test_byteswap(self):

@@ -521,7 +521,7 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
 
         # from int
         d = nc.create_decimal(456)
-        self.assertTrue(isinstance(d, Decimal))
+        self.assertIsInstance(d, Decimal)
         self.assertEqual(nc.create_decimal(45678),
                          nc.create_decimal('457E+2'))
 
@@ -1529,7 +1529,7 @@ class DecimalPythonAPItests(unittest.TestCase):
     def test_abc(self):
         self.assertTrue(issubclass(Decimal, numbers.Number))
         self.assertTrue(not issubclass(Decimal, numbers.Real))
-        self.assertTrue(isinstance(Decimal(0), numbers.Number))
+        self.assertIsInstance(Decimal(0), numbers.Number)
         self.assertTrue(not isinstance(Decimal(0), numbers.Real))
 
     def test_pickle(self):

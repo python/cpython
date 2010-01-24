@@ -335,15 +335,15 @@ class PosixPathTest(unittest.TestCase):
         except ImportError:
             pass
         else:
-            self.assertTrue(isinstance(posixpath.expanduser("~/"), basestring))
+            self.assertIsInstance(posixpath.expanduser("~/"), basestring)
             # if home directory == root directory, this test makes no sense
             if posixpath.expanduser("~") != '/':
                 self.assertEqual(
                     posixpath.expanduser("~") + "/",
                     posixpath.expanduser("~/")
                 )
-            self.assertTrue(isinstance(posixpath.expanduser("~root/"), basestring))
-            self.assertTrue(isinstance(posixpath.expanduser("~foo/"), basestring))
+            self.assertIsInstance(posixpath.expanduser("~root/"), basestring)
+            self.assertIsInstance(posixpath.expanduser("~foo/"), basestring)
 
             with test_support.EnvironmentVarGuard() as env:
                 env['HOME'] = '/'
@@ -383,8 +383,8 @@ class PosixPathTest(unittest.TestCase):
 
         # Issue 5827: Make sure normpath preserves unicode
         for path in (u'', u'.', u'/', u'\\', u'///foo/.//bar//'):
-            self.assertTrue(isinstance(posixpath.normpath(path), unicode),
-                            'normpath() returned str instead of unicode')
+            self.assertIsInstance(posixpath.normpath(path), unicode,
+                                  'normpath() returned str instead of unicode')
 
         self.assertRaises(TypeError, posixpath.normpath)
 

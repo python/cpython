@@ -1043,7 +1043,7 @@ class CookieTests(TestCase):
         for i in range(4):
             i = 0
             for c in cs:
-                self.assertTrue(isinstance(c, Cookie))
+                self.assertIsInstance(c, Cookie)
                 self.assertEquals(c.version, versions[i])
                 self.assertEquals(c.name, names[i])
                 self.assertEquals(c.domain, domains[i])

@@ -132,7 +132,7 @@ class _TestProcess(BaseTestCase):
 
         self.assertTrue(current.is_alive())
         self.assertTrue(not current.daemon)
-        self.assertTrue(isinstance(authkey, bytes))
+        self.assertIsInstance(authkey, bytes)
         self.assertTrue(len(authkey) > 0)
         self.assertEqual(current.ident, os.getpid())
         self.assertEqual(current.exitcode, None)

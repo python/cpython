@@ -79,8 +79,8 @@ class TypeChecksTest(unittest.TestCase):
             def __subclasscheck__(self, cls):
                 return True
         class Sub(X): pass
-        self.assertFalse(isinstance(3, X))
-        self.assertTrue(isinstance(X(), X))
+        self.assertNotIsInstance(3, X)
+        self.assertIsInstance(X(), X)
         self.assertFalse(issubclass(int, X))
         self.assertTrue(issubclass(Sub, X))
 
