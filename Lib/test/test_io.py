@@ -2361,27 +2361,27 @@ class MiscIOTest(unittest.TestCase):
 
     def test_abcs(self):
         # Test the visible base classes are ABCs.
-        self.assertTrue(isinstance(self.IOBase, abc.ABCMeta))
-        self.assertTrue(isinstance(self.RawIOBase, abc.ABCMeta))
-        self.assertTrue(isinstance(self.BufferedIOBase, abc.ABCMeta))
-        self.assertTrue(isinstance(self.TextIOBase, abc.ABCMeta))
+        self.assertIsInstance(self.IOBase, abc.ABCMeta)
+        self.assertIsInstance(self.RawIOBase, abc.ABCMeta)
+        self.assertIsInstance(self.BufferedIOBase, abc.ABCMeta)
+        self.assertIsInstance(self.TextIOBase, abc.ABCMeta)
 
     def _check_abc_inheritance(self, abcmodule):
         with self.open(support.TESTFN, "wb", buffering=0) as f:
-            self.assertTrue(isinstance(f, abcmodule.IOBase))
-            self.assertTrue(isinstance(f, abcmodule.RawIOBase))
-            self.assertFalse(isinstance(f, abcmodule.BufferedIOBase))
-            self.assertFalse(isinstance(f, abcmodule.TextIOBase))
+            self.assertIsInstance(f, abcmodule.IOBase)
+            self.assertIsInstance(f, abcmodule.RawIOBase)
+            self.assertNotIsInstance(f, abcmodule.BufferedIOBase)
+            self.assertNotIsInstance(f, abcmodule.TextIOBase)
         with self.open(support.TESTFN, "wb") as f:
-            self.assertTrue(isinstance(f, abcmodule.IOBase))
-            self.assertFalse(isinstance(f, abcmodule.RawIOBase))
-            self.assertTrue(isinstance(f, abcmodule.BufferedIOBase))
-            self.assertFalse(isinstance(f, abcmodule.TextIOBase))
+            self.assertIsInstance(f, abcmodule.IOBase)
+            self.assertNotIsInstance(f, abcmodule.RawIOBase)
+            self.assertIsInstance(f, abcmodule.BufferedIOBase)
+            self.assertNotIsInstance(f, abcmodule.TextIOBase)
         with self.open(support.TESTFN, "w") as f:
-            self.assertTrue(isinstance(f, abcmodule.IOBase))
-            self.assertFalse(isinstance(f, abcmodule.RawIOBase))
-            self.assertFalse(isinstance(f, abcmodule.BufferedIOBase))
-            self.assertTrue(isinstance(f, abcmodule.TextIOBase))
+            self.assertIsInstance(f, abcmodule.IOBase)
+            self.assertNotIsInstance(f, abcmodule.RawIOBase)
+            self.assertNotIsInstance(f, abcmodule.BufferedIOBase)
+            self.assertIsInstance(f, abcmodule.TextIOBase)
 
     def test_abc_inheritance(self):
         # Test implementations inherit from their respective ABCs

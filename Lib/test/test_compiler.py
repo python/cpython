@@ -110,7 +110,7 @@ class CompilerTest(unittest.TestCase):
 
     def _check_lineno(self, node):
         if not node.__class__ in NOLINENO:
-            self.assertTrue(isinstance(node.lineno, int),
+            self.assertIsInstance(node.lineno, int,
                 "lineno=%s on %s" % (node.lineno, node.__class__))
             self.assertTrue(node.lineno > 0,
                 "lineno=%s on %s" % (node.lineno, node.__class__))

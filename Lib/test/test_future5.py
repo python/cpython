@@ -9,7 +9,7 @@ from . import test_support
 class TestMultipleFeatures(unittest.TestCase):
 
     def test_unicode_literals(self):
-        self.assertTrue(isinstance("", unicode))
+        self.assertIsInstance("", unicode)
 
     def test_print_function(self):
         with test_support.captured_output("stderr") as s:

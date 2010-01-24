@@ -593,7 +593,7 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, "w") as zf:
             zf.writestr(u"foo.txt", "Test for unicode filename")
             zf.writestr(u"\xf6.txt", "Test for unicode filename")
-            self.assertTrue(isinstance(zf.infolist()[0].filename, unicode))
+            self.assertIsInstance(zf.infolist()[0].filename, unicode)
 
         with zipfile.ZipFile(TESTFN, "r") as zf:
             self.assertEqual(zf.filelist[0].filename, "foo.txt")

@@ -970,7 +970,7 @@ class ByteArraySubclassTest(unittest.TestCase):
 
     def test_basic(self):
         self.assertTrue(issubclass(ByteArraySubclass, bytearray))
-        self.assertTrue(isinstance(ByteArraySubclass(), bytearray))
+        self.assertIsInstance(ByteArraySubclass(), bytearray)
 
         a, b = b"abcd", b"efgh"
         _a, _b = ByteArraySubclass(a), ByteArraySubclass(b)

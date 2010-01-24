@@ -552,7 +552,7 @@ class LongTest(unittest.TestCase):
             y = int(x)
         except OverflowError:
             self.fail("int(long(sys.maxint) + 1) mustn't overflow")
-        self.assertTrue(isinstance(y, long),
+        self.assertIsInstance(y, long,
             "int(long(sys.maxint) + 1) should have returned long")
 
         x = hugeneg_aslong - 1
@@ -560,7 +560,7 @@ class LongTest(unittest.TestCase):
             y = int(x)
         except OverflowError:
             self.fail("int(long(-sys.maxint-1) - 1) mustn't overflow")
-        self.assertTrue(isinstance(y, long),
+        self.assertIsInstance(y, long,
                "int(long(-sys.maxint-1) - 1) should have returned long")
 
         class long2(long):

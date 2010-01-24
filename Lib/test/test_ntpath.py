@@ -125,8 +125,8 @@ class TestNtpath(unittest.TestCase):
 
         # Issue 5827: Make sure normpath preserves unicode
         for path in (u'', u'.', u'/', u'\\', u'///foo/.//bar//'):
-            self.assertTrue(isinstance(ntpath.normpath(path), unicode),
-                            'normpath() returned str instead of unicode')
+            self.assertIsInstance(ntpath.normpath(path), unicode,
+                                  'normpath() returned str instead of unicode')
 
     def test_expandvars(self):
         with test_support.EnvironmentVarGuard() as env:

@@ -33,7 +33,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         code = suite.compile()
         scope = {}
         exec code in scope
-        self.assertTrue(isinstance(scope["x"], unicode))
+        self.assertIsInstance(scope["x"], unicode)
 
     def check_suite(self, s):
         self.roundtrip(parser.suite, s)

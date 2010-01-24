@@ -1141,14 +1141,14 @@ class Str2StrTest(unittest.TestCase):
         reader = codecs.getreader("base64_codec")(StringIO.StringIO(sin))
         sout = reader.read()
         self.assertEqual(sout, "\x80")
-        self.assertTrue(isinstance(sout, str))
+        self.assertIsInstance(sout, str)
 
     def test_readline(self):
         sin = "\x80".encode("base64_codec")
         reader = codecs.getreader("base64_codec")(StringIO.StringIO(sin))
         sout = reader.readline()
         self.assertEqual(sout, "\x80")
-        self.assertTrue(isinstance(sout, str))
+        self.assertIsInstance(sout, str)
 
 all_unicode_encodings = [
     "ascii",

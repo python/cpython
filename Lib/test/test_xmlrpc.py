@@ -81,11 +81,11 @@ class XMLRPCTestCase(unittest.TestCase):
         d = xmlrpclib.DateTime()
         ((new_d,), dummy) = xmlrpclib.loads(xmlrpclib.dumps((d,),
                                             methodresponse=True))
-        self.assertTrue(isinstance(new_d.value, str))
+        self.assertIsInstance(new_d.value, str)
 
         # Check that the output of dumps() is still an 8-bit string
         s = xmlrpclib.dumps((new_d,), methodresponse=True)
-        self.assertTrue(isinstance(s, str))
+        self.assertIsInstance(s, str)
 
     def test_newstyle_class(self):
         class T(object):
@@ -175,10 +175,10 @@ class XMLRPCTestCase(unittest.TestCase):
         items = d.items()
         if have_unicode:
             self.assertEquals(s, u"abc \x95")
-            self.assertTrue(isinstance(s, unicode))
+            self.assertIsInstance(s, unicode)
             self.assertEquals(items, [(u"def \x96", u"ghi \x97")])
-            self.assertTrue(isinstance(items[0][0], unicode))
-            self.assertTrue(isinstance(items[0][1], unicode))
+            self.assertIsInstance(items[0][0], unicode)
+            self.assertIsInstance(items[0][1], unicode)
         else:
             self.assertEquals(s, "abc \xc2\x95")
             self.assertEquals(items, [("def \xc2\x96", "ghi \xc2\x97")])

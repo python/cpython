@@ -101,7 +101,7 @@ class TestNamedTuple(unittest.TestCase):
         Point = namedtuple('Point', 'x y')
         p = Point(11, 22)
 
-        self.assertTrue(isinstance(p, tuple))
+        self.assertIsInstance(p, tuple)
         self.assertEqual(p, (11, 22))                                       # matches a real tuple
         self.assertEqual(tuple(p), (11, 22))                                # coercable to a real tuple
         self.assertEqual(list(p), [11, 22])                                 # coercable to a list
@@ -233,7 +233,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
         # Check some non-hashables
         non_samples = [list(), set(), dict()]
         for x in non_samples:
-            self.assertFalse(isinstance(x, Hashable), repr(x))
+            self.assertNotIsInstance(x, Hashable)
             self.assertFalse(issubclass(type(x), Hashable), repr(type(x)))
         # Check some hashables
         samples = [None,
@@ -243,7 +243,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
                    int, list, object, type,
                    ]
         for x in samples:
-            self.assertTrue(isinstance(x, Hashable), repr(x))
+            self.assertIsInstance(x, Hashable)
             self.assertTrue(issubclass(type(x), Hashable), repr(type(x)))
         self.assertRaises(TypeError, Hashable)
         # Check direct subclassing
@@ -259,7 +259,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
         # Check some non-iterables
         non_samples = [None, 42, 3.14, 1j]
         for x in non_samples:
-            self.assertFalse(isinstance(x, Iterable), repr(x))
+            self.assertNotIsInstance(x, Iterable)
             self.assertFalse(issubclass(type(x), Iterable), repr(type(x)))
         # Check some iterables
         samples = [str(),
@@ -269,7 +269,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
                    (x for x in []),
                    ]
         for x in samples:
-            self.assertTrue(isinstance(x, Iterable), repr(x))
+            self.assertIsInstance(x, Iterable)
             self.assertTrue(issubclass(type(x), Iterable), repr(type(x)))
         # Check direct subclassing
         class I(Iterable):
@@ -283,7 +283,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
         non_samples = [None, 42, 3.14, 1j, "".encode('ascii'), "", (), [],
             {}, set()]
         for x in non_samples:
-            self.assertFalse(isinstance(x, Iterator), repr(x))
+            self.assertNotIsInstance(x, Iterator)
             self.assertFalse(issubclass(type(x), Iterator), repr(type(x)))
         samples = [iter(str()),
                    iter(tuple()), iter(list()), iter(dict()),
@@ -294,7 +294,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
                    (x for x in []),
                    ]
         for x in samples:
-            self.assertTrue(isinstance(x, Iterator), repr(x))
+            self.assertIsInstance(x, Iterator)
             self.assertTrue(issubclass(type(x), Iterator), repr(type(x)))
         self.validate_abstract_methods(Iterator, 'next')
 
@@ -304,14 +304,14 @@ class TestOneTrickPonyABCs(ABCTestCase):
                        (x for x in []),
                        ]
         for x in non_samples:
-            self.assertFalse(isinstance(x, Sized), repr(x))
+            self.assertNotIsInstance(x, Sized)
             self.assertFalse(issubclass(type(x), Sized), repr(type(x)))
         samples = [str(),
                    tuple(), list(), set(), frozenset(), dict(),
                    dict().keys(), dict().items(), dict().values(),
                    ]
         for x in samples:
-            self.assertTrue(isinstance(x, Sized), repr(x))
+            self.assertIsInstance(x, Sized)
             self.assertTrue(issubclass(type(x), Sized), repr(type(x)))
         self.validate_abstract_methods(Sized, '__len__')
 
@@ -321,14 +321,14 @@ class TestOneTrickPonyABCs(ABCTestCase):
                        (x for x in []),
                        ]
         for x in non_samples:
-            self.assertFalse(isinstance(x, Container), repr(x))
+            self.assertNotIsInstance(x, Container)
             self.assertFalse(issubclass(type(x), Container), repr(type(x)))
         samples = [str(),
                    tuple(), list(), set(), frozenset(), dict(),
                    dict().keys(), dict().items(),
                    ]
         for x in samples:
-            self.assertTrue(isinstance(x, Container), repr(x))
+            self.assertIsInstance(x, Container)
             self.assertTrue(issubclass(type(x), Container), repr(type(x)))
         self.validate_abstract_methods(Container, '__contains__')
 
@@ -339,7 +339,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
                        (x for x in []),
                        ]
         for x in non_samples:
-            self.assertFalse(isinstance(x, Callable), repr(x))
+            self.assertNotIsInstance(x, Callable)
             self.assertFalse(issubclass(type(x), Callable), repr(type(x)))
         samples = [lambda: None,
                    type, int, object,
@@ -347,7 +347,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
                    list.append, [].append,
                    ]
         for x in samples:
-            self.assertTrue(isinstance(x, Callable), repr(x))
+            self.assertIsInstance(x, Callable)
             self.assertTrue(issubclass(type(x), Callable), repr(type(x)))
         self.validate_abstract_methods(Callable, '__call__')
 
@@ -395,7 +395,7 @@ class TestCollectionABCs(ABCTestCase):
 
     def test_Set(self):
         for sample in [set, frozenset]:
-            self.assertTrue(isinstance(sample(), Set))
+            self.assertIsInstance(sample(), Set)
             self.assertTrue(issubclass(sample, Set))
         self.validate_abstract_methods(Set, '__contains__', '__iter__', '__len__')
 
@@ -415,9 +415,9 @@ class TestCollectionABCs(ABCTestCase):
         self.assertTrue(hash(a) == hash(b))
 
     def test_MutableSet(self):
-        self.assertTrue(isinstance(set(), MutableSet))
+        self.assertIsInstance(set(), MutableSet)
         self.assertTrue(issubclass(set, MutableSet))
-        self.assertFalse(isinstance(frozenset(), MutableSet))
+        self.assertNotIsInstance(frozenset(), MutableSet)
         self.assertFalse(issubclass(frozenset, MutableSet))
         self.validate_abstract_methods(MutableSet, '__contains__', '__iter__', '__len__',
             'add', 'discard')
@@ -457,24 +457,24 @@ class TestCollectionABCs(ABCTestCase):
 
     def test_Mapping(self):
         for sample in [dict]:
-            self.assertTrue(isinstance(sample(), Mapping))
+            self.assertIsInstance(sample(), Mapping)
             self.assertTrue(issubclass(sample, Mapping))
         self.validate_abstract_methods(Mapping, '__contains__', '__iter__', '__len__',
             '__getitem__')
 
     def test_MutableMapping(self):
         for sample in [dict]:
-            self.assertTrue(isinstance(sample(), MutableMapping))
+            self.assertIsInstance(sample(), MutableMapping)
             self.assertTrue(issubclass(sample, MutableMapping))
         self.validate_abstract_methods(MutableMapping, '__contains__', '__iter__', '__len__',
             '__getitem__', '__setitem__', '__delitem__')
 
     def test_Sequence(self):
         for sample in [tuple, list, str]:
-            self.assertTrue(isinstance(sample(), Sequence))
+            self.assertIsInstance(sample(), Sequence)
             self.assertTrue(issubclass(sample, Sequence))
         self.assertTrue(issubclass(basestring, Sequence))
-        self.assertTrue(isinstance(range(10), Sequence))
+        self.assertIsInstance(range(10), Sequence)
         self.assertTrue(issubclass(xrange, Sequence))
         self.assertTrue(issubclass(str, Sequence))
         self.validate_abstract_methods(Sequence, '__contains__', '__iter__', '__len__',
@@ -482,10 +482,10 @@ class TestCollectionABCs(ABCTestCase):
 
     def test_MutableSequence(self):
         for sample in [tuple, str]:
-            self.assertFalse(isinstance(sample(), MutableSequence))
+            self.assertNotIsInstance(sample(), MutableSequence)
             self.assertFalse(issubclass(sample, MutableSequence))
         for sample in [list]:
-            self.assertTrue(isinstance(sample(), MutableSequence))
+            self.assertIsInstance(sample(), MutableSequence)
             self.assertTrue(issubclass(sample, MutableSequence))
         self.assertFalse(issubclass(basestring, MutableSequence))
         self.validate_abstract_methods(MutableSequence, '__contains__', '__iter__',
@@ -497,8 +497,8 @@ class TestCounter(unittest.TestCase):
         c = Counter('abcaba')
         self.assertEqual(c, Counter({'a':3 , 'b': 2, 'c': 1}))
         self.assertEqual(c, Counter(a=3, b=2, c=1))
-        self.assertTrue(isinstance(c, dict))
-        self.assertTrue(isinstance(c, Mapping))
+        self.assertIsInstance(c, dict)
+        self.assertIsInstance(c, Mapping)
         self.assertTrue(issubclass(Counter, dict))
         self.assertTrue(issubclass(Counter, Mapping))
         self.assertEqual(len(c), 3)

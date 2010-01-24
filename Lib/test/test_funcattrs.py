@@ -68,7 +68,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
         a = 12
         def f(): print a
         c = f.func_closure
-        self.assertTrue(isinstance(c, tuple))
+        self.assertIsInstance(c, tuple)
         self.assertEqual(len(c), 1)
         # don't have a type object handy
         self.assertEqual(c[0].__class__.__name__, "cell")

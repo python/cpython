@@ -92,16 +92,16 @@ class MiscTests(unittest.TestCase):
 
     def test_ident(self):
         #Test sanity of _thread.get_ident()
-        self.assertTrue(isinstance(_thread.get_ident(), int),
-                        "_thread.get_ident() returned a non-integer")
+        self.assertIsInstance(_thread.get_ident(), int,
+                              "_thread.get_ident() returned a non-integer")
         self.assertTrue(_thread.get_ident() != 0,
                         "_thread.get_ident() returned 0")
 
     def test_LockType(self):
         #Make sure _thread.LockType is the same type as _thread.allocate_locke()
-        self.assertTrue(isinstance(_thread.allocate_lock(), _thread.LockType),
-                        "_thread.LockType is not an instance of what is "
-                         "returned by _thread.allocate_lock()")
+        self.assertIsInstance(_thread.allocate_lock(), _thread.LockType,
+                              "_thread.LockType is not an instance of what "
+                              "is returned by _thread.allocate_lock()")
 
     def test_interrupt_main(self):
         #Calling start_new_thread with a function that executes interrupt_main

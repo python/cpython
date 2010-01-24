@@ -71,10 +71,10 @@ class urlopenNetworkTests(unittest.TestCase):
         # Test both readline and readlines.
         open_url = self.urlopen("http://www.python.org/")
         try:
-            self.assertTrue(isinstance(open_url.readline(), basestring),
-                         "readline did not return a string")
-            self.assertTrue(isinstance(open_url.readlines(), list),
-                         "readlines did not return a list")
+            self.assertIsInstance(open_url.readline(), basestring,
+                                  "readline did not return a string")
+            self.assertIsInstance(open_url.readlines(), list,
+                                  "readlines did not return a list")
         finally:
             open_url.close()
 
@@ -85,9 +85,9 @@ class urlopenNetworkTests(unittest.TestCase):
             info_obj = open_url.info()
         finally:
             open_url.close()
-            self.assertTrue(isinstance(info_obj, mimetools.Message),
-                         "object returned by 'info' is not an instance of "
-                         "mimetools.Message")
+            self.assertIsInstance(info_obj, mimetools.Message,
+                                  "object returned by 'info' is not an "
+                                  "instance of mimetools.Message")
             self.assertEqual(info_obj.getsubtype(), "html")
 
     def test_geturl(self):
@@ -175,8 +175,8 @@ class urlretrieveNetworkTests(unittest.TestCase):
         # Make sure header returned as 2nd value from urlretrieve is good.
         file_location, header = self.urlretrieve("http://www.python.org/")
         os.unlink(file_location)
-        self.assertTrue(isinstance(header, mimetools.Message),
-                     "header is not an instance of mimetools.Message")
+        self.assertIsInstance(header, mimetools.Message,
+                              "header is not an instance of mimetools.Message")
 
 
 

@@ -76,15 +76,15 @@ class IntTestCases(unittest.TestCase):
         s = repr(-1-sys.maxint)
         x = int(s)
         self.assertEqual(x+1, -sys.maxint)
-        self.assertTrue(isinstance(x, int))
+        self.assertIsInstance(x, int)
         # should return long
         self.assertEqual(int(s[1:]), sys.maxint+1)
 
         # should return long
         x = int(1e100)
-        self.assertTrue(isinstance(x, long))
+        self.assertIsInstance(x, long)
         x = int(-1e100)
-        self.assertTrue(isinstance(x, long))
+        self.assertIsInstance(x, long)
 
 
         # SF bug 434186:  0x80000000/2 != 0x80000000>>1.
@@ -102,11 +102,11 @@ class IntTestCases(unittest.TestCase):
         self.assertRaises(ValueError, int, '123\x00 245', 20)
 
         x = int('1' * 600)
-        self.assertTrue(isinstance(x, long))
+        self.assertIsInstance(x, long)
 
         if have_unicode:
             x = int(unichr(0x661) * 600)
-            self.assertTrue(isinstance(x, long))
+            self.assertIsInstance(x, long)
 
         self.assertRaises(TypeError, int, 1, 12)
 

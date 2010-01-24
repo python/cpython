@@ -71,17 +71,17 @@ class DictSetTest(unittest.TestCase):
 
     def test_dict_repr(self):
         d = {1: 10, "a": "ABC"}
-        self.assertTrue(isinstance(repr(d), str))
+        self.assertIsInstance(repr(d), str)
         r = repr(d.viewitems())
-        self.assertTrue(isinstance(r, str))
+        self.assertIsInstance(r, str)
         self.assertTrue(r == "dict_items([('a', 'ABC'), (1, 10)])" or
                         r == "dict_items([(1, 10), ('a', 'ABC')])")
         r = repr(d.viewkeys())
-        self.assertTrue(isinstance(r, str))
+        self.assertIsInstance(r, str)
         self.assertTrue(r == "dict_keys(['a', 1])" or
                         r == "dict_keys([1, 'a'])")
         r = repr(d.viewvalues())
-        self.assertTrue(isinstance(r, str))
+        self.assertIsInstance(r, str)
         self.assertTrue(r == "dict_values(['ABC', 10])" or
                         r == "dict_values([10, 'ABC'])")
 

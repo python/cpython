@@ -81,7 +81,7 @@ class TestTZInfo(unittest.TestCase):
                 self.__name = name
         self.assertTrue(issubclass(NotEnough, tzinfo))
         ne = NotEnough(3, "NotByALongShot")
-        self.assertTrue(isinstance(ne, tzinfo))
+        self.assertIsInstance(ne, tzinfo)
 
         dt = datetime.now()
         self.assertRaises(NotImplementedError, ne.tzname, dt)
@@ -90,7 +90,7 @@ class TestTZInfo(unittest.TestCase):
 
     def test_normal(self):
         fo = FixedOffset(3, "Three")
-        self.assertTrue(isinstance(fo, tzinfo))
+        self.assertIsInstance(fo, tzinfo)
         for dt in datetime.now(), None:
             self.assertEqual(fo.utcoffset(dt), timedelta(minutes=3))
             self.assertEqual(fo.tzname(dt), "Three")
@@ -111,14 +111,14 @@ class TestTZInfo(unittest.TestCase):
         # Make sure we can pickle/unpickle an instance of a subclass.
         offset = timedelta(minutes=-300)
         orig = PicklableFixedOffset(offset, 'cookie')
-        self.assertTrue(isinstance(orig, tzinfo))
+        self.assertIsInstance(orig, tzinfo)
         self.assertTrue(type(orig) is PicklableFixedOffset)
         self.assertEqual(orig.utcoffset(None), offset)
         self.assertEqual(orig.tzname(None), 'cookie')
         for pickler, unpickler, proto in pickle_choices:
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
-            self.assertTrue(isinstance(derived, tzinfo))
+            self.assertIsInstance(derived, tzinfo)
             self.assertTrue(type(derived) is PicklableFixedOffset)
             self.assertEqual(derived.utcoffset(None), offset)
             self.assertEqual(derived.tzname(None), 'cookie')
@@ -391,9 +391,9 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
             self.assertEqual(td, td2)
 
     def test_resolution_info(self):
-        self.assertTrue(isinstance(timedelta.min, timedelta))
-        self.assertTrue(isinstance(timedelta.max, timedelta))
-        self.assertTrue(isinstance(timedelta.resolution, timedelta))
+        self.assertIsInstance(timedelta.min, timedelta)
+        self.assertIsInstance(timedelta.max, timedelta)
+        self.assertIsInstance(timedelta.resolution, timedelta)
         self.assertTrue(timedelta.max > timedelta.min)
         self.assertEqual(timedelta.min, timedelta(-999999999))
         self.assertEqual(timedelta.max, timedelta(999999999, 24*3600-1, 1e6-1))
@@ -905,9 +905,9 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.assertEqual(b.__format__(fmt), 'B')
 
     def test_resolution_info(self):
-        self.assertTrue(isinstance(self.theclass.min, self.theclass))
-        self.assertTrue(isinstance(self.theclass.max, self.theclass))
-        self.assertTrue(isinstance(self.theclass.resolution, timedelta))
+        self.assertIsInstance(self.theclass.min, self.theclass)
+        self.assertIsInstance(self.theclass.max, self.theclass)
+        self.assertIsInstance(self.theclass.resolution, timedelta)
         self.assertTrue(self.theclass.max > self.theclass.min)
 
     def test_extreme_timedelta(self):
@@ -1891,9 +1891,9 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                          "%s(23, 15)" % name)
 
     def test_resolution_info(self):
-        self.assertTrue(isinstance(self.theclass.min, self.theclass))
-        self.assertTrue(isinstance(self.theclass.max, self.theclass))
-        self.assertTrue(isinstance(self.theclass.resolution, timedelta))
+        self.assertIsInstance(self.theclass.min, self.theclass)
+        self.assertIsInstance(self.theclass.max, self.theclass)
+        self.assertIsInstance(self.theclass.resolution, timedelta)
         self.assertTrue(self.theclass.max > self.theclass.min)
 
     def test_pickling(self):
@@ -2260,7 +2260,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
-            self.assertTrue(isinstance(derived.tzinfo, PicklableFixedOffset))
+            self.assertIsInstance(derived.tzinfo, PicklableFixedOffset)
             self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
             self.assertEqual(derived.tzname(), 'cookie')
 
@@ -2487,8 +2487,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
-            self.assertTrue(isinstance(derived.tzinfo,
-                            PicklableFixedOffset))
+            self.assertIsInstance(derived.tzinfo, PicklableFixedOffset)
             self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
             self.assertEqual(derived.tzname(), 'cookie')
 
