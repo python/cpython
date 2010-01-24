@@ -641,7 +641,13 @@ which incur interpreter overhead.
 
    def consume(iterator, n):
        "Advance the iterator n-steps ahead. If n is none, consume entirely."
-       collections.deque(islice(iterator, n), maxlen=0)
+       # The technique uses objects that consume iterators at C speed.
+       if n is None:
+           # feed the entire iterator into a zero-length deque
+           collections.deque(iterator, maxlen=0)
+       else:
+           # advance to the emtpy slice starting at position n
+           next(islice(iterator, n, n), None)
 
    def nth(iterable, n, default=None):
        "Returns the nth item or a default value"
@@ -751,3 +757,10 @@ which incur interpreter overhead.
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
        # unique_justseen('ABBCcAD', str.lower) --> A B C A D
        return imap(next, imap(itemgetter(1), groupby(iterable, key)))
+
+Note, many of the above recipes can be optimized by replacing global lookups
+with local variables defined as default values.  For example, the
+*dotproduct* recipe can be written as:
+
+   def dotproduct(vec1, vec2, sum=sum, imap=imap, mul=operator.mul):
+       return sum(imap(mul, vec1, vec2))
