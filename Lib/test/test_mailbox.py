@@ -21,16 +21,16 @@ class TestBase(unittest.TestCase):
 
     def _check_sample(self, msg):
         # Inspect a mailbox.Message representation of the sample message
-        self.assertTrue(isinstance(msg, email.message.Message))
-        self.assertTrue(isinstance(msg, mailbox.Message))
+        self.assertIsInstance(msg, email.message.Message)
+        self.assertIsInstance(msg, mailbox.Message)
         for key, value in _sample_headers.items():
             self.assertIn(value, msg.get_all(key))
         self.assertTrue(msg.is_multipart())
         self.assertEqual(len(msg.get_payload()), len(_sample_payloads))
         for i, payload in enumerate(_sample_payloads):
             part = msg.get_payload(i)
-            self.assertTrue(isinstance(part, email.message.Message))
-            self.assertFalse(isinstance(part, mailbox.Message))
+            self.assertIsInstance(part, email.message.Message)
+            self.assertNotIsInstance(part, mailbox.Message)
             self.assertEqual(part.get_payload(), payload)
 
     def _delete_recursively(self, target):
@@ -149,7 +149,7 @@ class TestMailbox(TestBase):
         key0 = self._box.add(self._template % 0)
         key1 = self._box.add(_sample_message)
         msg0 = self._box.get_message(key0)
-        self.assertTrue(isinstance(msg0, mailbox.Message))
+        self.assertIsInstance(msg0, mailbox.Message)
         self.assertEqual(msg0['from'], 'foo')
         self.assertEqual(msg0.get_payload(), '0')
         self._check_sample(self._box.get_message(key1))
@@ -476,7 +476,7 @@ class TestMaildir(TestMailbox):
         msg.set_flags('RF')
         key = self._box.add(msg)
         msg_returned = self._box.get_message(key)
-        self.assertTrue(isinstance(msg_returned, mailbox.MaildirMessage))
+        self.assertIsInstance(msg_returned, mailbox.MaildirMessage)
         self.assertEqual(msg_returned.get_subdir(), 'cur')
         self.assertEqual(msg_returned.get_flags(), 'FR')
 
@@ -516,7 +516,7 @@ class TestMaildir(TestMailbox):
         box = mailbox.Maildir(self._path, factory=FakeMessage)
         box.colon = self._box.colon
         msg2 = box.get_message(key)
-        self.assertTrue(isinstance(msg2, FakeMessage))
+        self.assertIsInstance(msg2, FakeMessage)
 
     def test_initialize_new(self):
         # Initialize a non-existent mailbox
@@ -1082,9 +1082,9 @@ class TestMessage(TestBase):
         # Initialize without arguments
         msg = self._factory()
         self._post_initialize_hook(msg)
-        self.assertTrue(isinstance(msg, email.message.Message))
-        self.assertTrue(isinstance(msg, mailbox.Message))
-        self.assertTrue(isinstance(msg, self._factory))
+        self.assertIsInstance(msg, email.message.Message)
+        self.assertIsInstance(msg, mailbox.Message)
+        self.assertIsInstance(msg, self._factory)
         self.assertEqual(msg.keys(), [])
         self.assertFalse(msg.is_multipart())
         self.assertEqual(msg.get_payload(), None)

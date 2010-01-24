@@ -34,7 +34,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         code = suite.compile()
         scope = {}
         exec(code, {}, scope)
-        self.assertTrue(isinstance(scope["x"], str))
+        self.assertIsInstance(scope["x"], str)
 
     def check_suite(self, s):
         self.roundtrip(parser.suite, s)

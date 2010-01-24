@@ -221,15 +221,15 @@ class BoolTest(unittest.TestCase):
 
     def test_boolean(self):
         self.assertEqual(True & 1, 1)
-        self.assertTrue(not isinstance(True & 1, bool))
+        self.assertNotIsInstance(True & 1, bool)
         self.assertIs(True & True, True)
 
         self.assertEqual(True | 1, 1)
-        self.assertTrue(not isinstance(True | 1, bool))
+        self.assertNotIsInstance(True | 1, bool)
         self.assertIs(True | True, True)
 
         self.assertEqual(True ^ 1, 0)
-        self.assertTrue(not isinstance(True ^ 1, bool))
+        self.assertNotIsInstance(True ^ 1, bool)
         self.assertIs(True ^ True, False)
 
     def test_fileclosed(self):

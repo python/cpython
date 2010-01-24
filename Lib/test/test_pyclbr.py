@@ -84,12 +84,12 @@ class PyclbrTest(TestCase):
             self.assertHasattr(module, name, ignore)
             py_item = getattr(module, name)
             if isinstance(value, pyclbr.Function):
-                self.assertTrue(isinstance(py_item, (FunctionType, BuiltinFunctionType)))
+                self.assertIsInstance(py_item, (FunctionType, BuiltinFunctionType))
                 if py_item.__module__ != moduleName:
                     continue   # skip functions that came from somewhere else
                 self.assertEquals(py_item.__module__, value.module)
             else:
-                self.assertTrue(isinstance(py_item, type))
+                self.assertIsInstance(py_item, type)
                 if py_item.__module__ != moduleName:
                     continue   # skip classes that came from somewhere else
 

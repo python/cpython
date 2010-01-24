@@ -132,7 +132,7 @@ class PosixTester(unittest.TestCase):
             fp = open(support.TESTFN)
             try:
                 fd = posix.dup(fp.fileno())
-                self.assertTrue(isinstance(fd, int))
+                self.assertIsInstance(fd, int)
                 os.close(fd)
             finally:
                 fp.close()
@@ -260,7 +260,7 @@ class PosixTester(unittest.TestCase):
     def test_umask(self):
         if hasattr(posix, 'umask'):
             old_mask = posix.umask(0)
-            self.assertTrue(isinstance(old_mask, int))
+            self.assertIsInstance(old_mask, int)
             posix.umask(old_mask)
 
     def test_strerror(self):

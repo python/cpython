@@ -75,11 +75,11 @@ class XMLRPCTestCase(unittest.TestCase):
         d = xmlrpclib.DateTime()
         ((new_d,), dummy) = xmlrpclib.loads(xmlrpclib.dumps((d,),
                                             methodresponse=True))
-        self.assertTrue(isinstance(new_d.value, str))
+        self.assertIsInstance(new_d.value, str)
 
         # Check that the output of dumps() is still an 8-bit string
         s = xmlrpclib.dumps((new_d,), methodresponse=True)
-        self.assertTrue(isinstance(s, str))
+        self.assertIsInstance(s, str)
 
     def test_newstyle_class(self):
         class T(object):
@@ -144,6 +144,7 @@ class XMLRPCTestCase(unittest.TestCase):
         self.assertEquals(transp.get_host_info("user@host.tld"),
                           ('host.tld',
                            [('Authorization', 'Basic dXNlcg==')], {}))
+
 
 
 class HelperTestCase(unittest.TestCase):

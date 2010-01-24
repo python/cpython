@@ -589,12 +589,12 @@ class OpenerDirectorTests(unittest.TestCase):
                 # *_request
                 self.assertEqual((handler, name), calls[i])
                 self.assertEqual(len(args), 1)
-                self.assertTrue(isinstance(args[0], Request))
+                self.assertIsInstance(args[0], Request)
             else:
                 # *_response
                 self.assertEqual((handler, name), calls[i])
                 self.assertEqual(len(args), 2)
-                self.assertTrue(isinstance(args[0], Request))
+                self.assertIsInstance(args[0], Request)
                 # response from opener.open is None, because there's no
                 # handler that defines http_open to handle it
                 self.assertTrue(args[1] is None or

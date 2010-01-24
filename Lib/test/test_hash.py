@@ -91,11 +91,11 @@ class HashInheritanceTestCase(unittest.TestCase):
         objects = (self.default_expected +
                    self.fixed_expected)
         for obj in objects:
-            self.assertTrue(isinstance(obj, Hashable), repr(obj))
+            self.assertIsInstance(obj, Hashable)
 
     def test_not_hashable(self):
         for obj in self.error_expected:
-            self.assertFalse(isinstance(obj, Hashable), repr(obj))
+            self.assertNotIsInstance(obj, Hashable)
 
 
 # Issue #4701: Check that some builtin types are correctly hashable

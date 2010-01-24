@@ -13,19 +13,19 @@ class PwdTest(unittest.TestCase):
         for e in entries:
             self.assertEqual(len(e), 7)
             self.assertEqual(e[0], e.pw_name)
-            self.assertTrue(isinstance(e.pw_name, str))
+            self.assertIsInstance(e.pw_name, str)
             self.assertEqual(e[1], e.pw_passwd)
-            self.assertTrue(isinstance(e.pw_passwd, str))
+            self.assertIsInstance(e.pw_passwd, str)
             self.assertEqual(e[2], e.pw_uid)
-            self.assertTrue(isinstance(e.pw_uid, int))
+            self.assertIsInstance(e.pw_uid, int)
             self.assertEqual(e[3], e.pw_gid)
-            self.assertTrue(isinstance(e.pw_gid, int))
+            self.assertIsInstance(e.pw_gid, int)
             self.assertEqual(e[4], e.pw_gecos)
-            self.assertTrue(isinstance(e.pw_gecos, str))
+            self.assertIsInstance(e.pw_gecos, str)
             self.assertEqual(e[5], e.pw_dir)
-            self.assertTrue(isinstance(e.pw_dir, str))
+            self.assertIsInstance(e.pw_dir, str)
             self.assertEqual(e[6], e.pw_shell)
-            self.assertTrue(isinstance(e.pw_shell, str))
+            self.assertIsInstance(e.pw_shell, str)
 
             # The following won't work, because of duplicate entries
             # for one uid

@@ -29,7 +29,7 @@ class MixInCheckStateHandling:
             d = codecs.getincrementaldecoder(encoding)()
             part1 = d.decode(s[:i])
             state = d.getstate()
-            self.assertTrue(isinstance(state[1], int))
+            self.assertIsInstance(state[1], int)
             # Check that the condition stated in the documentation for
             # IncrementalDecoder.getstate() holds
             if not state[1]:
