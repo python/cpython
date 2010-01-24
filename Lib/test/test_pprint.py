@@ -39,20 +39,19 @@ class QueryTestCase(unittest.TestCase):
 
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
-        verify = self.assertTrue
         pp = pprint.PrettyPrinter()
         for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, "yaddayadda",
                      self.a, self.b):
             # module-level convenience functions
-            verify(not pprint.isrecursive(safe),
-                   "expected not isrecursive for %r" % (safe,))
-            verify(pprint.isreadable(safe),
-                   "expected isreadable for %r" % (safe,))
+            self.assertFalse(pprint.isrecursive(safe),
+                             "expected not isrecursive for %r" % (safe,))
+            self.assertTrue(pprint.isreadable(safe),
+                            "expected isreadable for %r" % (safe,))
             # PrettyPrinter methods
-            verify(not pp.isrecursive(safe),
-                   "expected not isrecursive for %r" % (safe,))
-            verify(pp.isreadable(safe),
-                   "expected isreadable for %r" % (safe,))
+            self.assertFalse(pp.isrecursive(safe),
+                             "expected not isrecursive for %r" % (safe,))
+            self.assertTrue(pp.isreadable(safe),
+                            "expected isreadable for %r" % (safe,))
 
     def test_knotted(self):
         # Verify .isrecursive() and .isreadable() w/ recursion
@@ -62,14 +61,13 @@ class QueryTestCase(unittest.TestCase):
         self.d = {}
         self.d[0] = self.d[1] = self.d[2] = self.d
 
-        verify = self.assertTrue
         pp = pprint.PrettyPrinter()
 
         for icky in self.a, self.b, self.d, (self.d, self.d):
-            verify(pprint.isrecursive(icky), "expected isrecursive")
-            verify(not pprint.isreadable(icky),  "expected not isreadable")
-            verify(pp.isrecursive(icky), "expected isrecursive")
-            verify(not pp.isreadable(icky),  "expected not isreadable")
+            self.assertTrue(pprint.isrecursive(icky), "expected isrecursive")
+            self.assertFalse(pprint.isreadable(icky), "expected not isreadable")
+            self.assertTrue(pp.isrecursive(icky), "expected isrecursive")
+            self.assertFalse(pp.isreadable(icky), "expected not isreadable")
 
         # Break the cycles.
         self.d.clear()
@@ -78,31 +76,30 @@ class QueryTestCase(unittest.TestCase):
 
         for safe in self.a, self.b, self.d, (self.d, self.d):
             # module-level convenience functions
-            verify(not pprint.isrecursive(safe),
-                   "expected not isrecursive for %r" % (safe,))
-            verify(pprint.isreadable(safe),
-                   "expected isreadable for %r" % (safe,))
+            self.assertFalse(pprint.isrecursive(safe),
+                             "expected not isrecursive for %r" % (safe,))
+            self.assertTrue(pprint.isreadable(safe),
+                            "expected isreadable for %r" % (safe,))
             # PrettyPrinter methods
-            verify(not pp.isrecursive(safe),
-                   "expected not isrecursive for %r" % (safe,))
-            verify(pp.isreadable(safe),
-                   "expected isreadable for %r" % (safe,))
+            self.assertFalse(pp.isrecursive(safe),
+                             "expected not isrecursive for %r" % (safe,))
+            self.assertTrue(pp.isreadable(safe),
+                            "expected isreadable for %r" % (safe,))
 
     def test_unreadable(self):
         # Not recursive but not readable anyway
-        verify = self.assertTrue
         pp = pprint.PrettyPrinter()
         for unreadable in type(3), pprint, pprint.isrecursive:
             # module-level convenience functions
-            verify(not pprint.isrecursive(unreadable),
-                   "expected not isrecursive for %r" % (unreadable,))
-            verify(not pprint.isreadable(unreadable),
-                   "expected not isreadable for %r" % (unreadable,))
+            self.assertFalse(pprint.isrecursive(unreadable),
+                             "expected not isrecursive for %r" % (unreadable,))
+            self.assertFalse(pprint.isreadable(unreadable),
+                             "expected not isreadable for %r" % (unreadable,))
             # PrettyPrinter methods
-            verify(not pp.isrecursive(unreadable),
-                   "expected not isrecursive for %r" % (unreadable,))
-            verify(not pp.isreadable(unreadable),
-                   "expected not isreadable for %r" % (unreadable,))
+            self.assertFalse(pp.isrecursive(unreadable),
+                             "expected not isrecursive for %r" % (unreadable,))
+            self.assertFalse(pp.isreadable(unreadable),
+                             "expected not isreadable for %r" % (unreadable,))
 
     def test_same_as_repr(self):
         # Simple objects, small containers and classes that overwrite __repr__
@@ -113,12 +110,11 @@ class QueryTestCase(unittest.TestCase):
         # it sorted a dict display if and only if the display required
         # multiple lines.  For that reason, dicts with more than one element
         # aren't tested here.
-        verify = self.assertTrue
         for simple in (0, 0, 0+0j, 0.0, "", b"",
                        (), tuple2(), tuple3(),
                        [], list2(), list3(),
                        {}, dict2(), dict3(),
-                       verify, pprint,
+                       self.assertTrue, pprint,
                        -6, -6, -6-6j, -1.5, "x", b"x", (3,), [3], {3: 6},
                        (1,2), [3,4], {5: 6},
                        tuple2((1,2)), tuple3((1,2)), tuple3(range(100)),
@@ -130,8 +126,9 @@ class QueryTestCase(unittest.TestCase):
             for function in "pformat", "saferepr":
                 f = getattr(pprint, function)
                 got = f(simple)
-                verify(native == got, "expected %s got %s from pprint.%s" %
-                                      (native, got, function))
+                self.assertEqual(native, got,
+                                 "expected %s got %s from pprint.%s" %
+                                 (native, got, function))
 
     def test_basic_line_wrap(self):
         # verify basic line-wrapping operation

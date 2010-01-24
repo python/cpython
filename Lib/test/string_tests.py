@@ -962,15 +962,15 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(TypeError, 'hello', 'endswith', (42,))
 
     def test___contains__(self):
-        self.checkequal(True, '', '__contains__', '')         # vereq('' in '', True)
-        self.checkequal(True, 'abc', '__contains__', '')      # vereq('' in 'abc', True)
-        self.checkequal(False, 'abc', '__contains__', '\0')   # vereq('\0' in 'abc', False)
-        self.checkequal(True, '\0abc', '__contains__', '\0')  # vereq('\0' in '\0abc', True)
-        self.checkequal(True, 'abc\0', '__contains__', '\0')  # vereq('\0' in 'abc\0', True)
-        self.checkequal(True, '\0abc', '__contains__', 'a')   # vereq('a' in '\0abc', True)
-        self.checkequal(True, 'asdf', '__contains__', 'asdf') # vereq('asdf' in 'asdf', True)
-        self.checkequal(False, 'asd', '__contains__', 'asdf') # vereq('asdf' in 'asd', False)
-        self.checkequal(False, '', '__contains__', 'asdf')    # vereq('asdf' in '', False)
+        self.checkequal(True, '', '__contains__', '')
+        self.checkequal(True, 'abc', '__contains__', '')
+        self.checkequal(False, 'abc', '__contains__', '\0')
+        self.checkequal(True, '\0abc', '__contains__', '\0')
+        self.checkequal(True, 'abc\0', '__contains__', '\0')
+        self.checkequal(True, '\0abc', '__contains__', 'a')
+        self.checkequal(True, 'asdf', '__contains__', 'asdf')
+        self.checkequal(False, 'asd', '__contains__', 'asdf')
+        self.checkequal(False, '', '__contains__', 'asdf')
 
     def test_subscript(self):
         self.checkequal('a', 'abc', '__getitem__', 0)
