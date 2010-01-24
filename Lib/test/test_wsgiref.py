@@ -211,12 +211,12 @@ class UtilityTests(TestCase):
         # Check defaulting when empty
         env = {}
         util.setup_testing_defaults(env)
-        if isinstance(value,StringIO):
-            self.assertTrue(isinstance(env[key],StringIO))
+        if isinstance(value, StringIO):
+            self.assertIsInstance(env[key], StringIO)
         elif isinstance(value,BytesIO):
-            self.assertTrue(isinstance(env[key],BytesIO))
+            self.assertIsInstance(env[key],BytesIO)
         else:
-            self.assertEqual(env[key],value)
+            self.assertEqual(env[key], value)
 
         # Check existing value
         env = {key:alt}

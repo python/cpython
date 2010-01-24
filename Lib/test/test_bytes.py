@@ -1017,7 +1017,7 @@ class SubclassTest(unittest.TestCase):
 
     def test_basic(self):
         self.assertTrue(issubclass(self.subclass2test, self.type2test))
-        self.assertTrue(isinstance(self.subclass2test(), self.type2test))
+        self.assertIsInstance(self.subclass2test(), self.type2test)
 
         a, b = b"abcd", b"efgh"
         _a, _b = self.subclass2test(a), self.subclass2test(b)

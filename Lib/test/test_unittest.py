@@ -186,7 +186,7 @@ class Test_TestLoader(TestCase):
         self.assertFalse('runTest'.startswith(loader.testMethodPrefix))
 
         suite = loader.loadTestsFromTestCase(Foo)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [Foo('runTest')])
 
     ################################################################
@@ -205,7 +205,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromModule(m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         expected = [loader.suiteClass([MyTestCase('test')])]
         self.assertEqual(list(suite), expected)
@@ -218,7 +218,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromModule(m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [])
 
     # "This method searches `module` for classes derived from TestCase"
@@ -232,7 +232,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromModule(m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         self.assertEqual(list(suite), [loader.suiteClass()])
 
@@ -468,7 +468,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromName('testcase_1', m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [MyTestCase('test')])
 
     # "The specifier name is a ``dotted name'' that may resolve either to
@@ -484,7 +484,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromName('testsuite', m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         self.assertEqual(list(suite), [MyTestCase('test')])
 
@@ -499,7 +499,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromName('testcase_1.test', m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         self.assertEqual(list(suite), [MyTestCase('test')])
 
@@ -538,7 +538,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromName('return_TestSuite', m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [testcase_1, testcase_2])
 
     # "The specifier name is a ``dotted name'' that may resolve ... to
@@ -552,7 +552,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromName('return_TestCase', m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [testcase_1])
 
     # "The specifier name is a ``dotted name'' that may resolve ... to
@@ -572,7 +572,7 @@ class Test_TestLoader(TestCase):
         loader = unittest.TestLoader()
         loader.suiteClass = SubTestSuite
         suite = loader.loadTestsFromName('return_TestCase', m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [testcase_1])
 
     # "The specifier name is a ``dotted name'' that may resolve ... to
@@ -592,7 +592,7 @@ class Test_TestLoader(TestCase):
         loader = unittest.TestLoader()
         loader.suiteClass=SubTestSuite
         suite = loader.loadTestsFromName('testcase_1.test', m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         self.assertEqual(list(suite), [MyTestCase('test')])
 
@@ -632,7 +632,7 @@ class Test_TestLoader(TestCase):
         try:
             suite = loader.loadTestsFromName(module_name)
 
-            self.assertTrue(isinstance(suite, loader.suiteClass))
+            self.assertIsInstance(suite, loader.suiteClass)
             self.assertEqual(list(suite), [])
 
             # audioop should now be loaded, thanks to loadTestsFromName()
@@ -655,7 +655,7 @@ class Test_TestLoader(TestCase):
         loader = unittest.TestLoader()
 
         suite = loader.loadTestsFromNames([])
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [])
 
     # "Similar to loadTestsFromName(), but takes a sequence of names rather
@@ -670,7 +670,7 @@ class Test_TestLoader(TestCase):
         loader = unittest.TestLoader()
 
         suite = loader.loadTestsFromNames([], unittest)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [])
 
     # "The specifier name is a ``dotted name'' that may resolve either to
@@ -871,7 +871,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromNames(['testcase_1'], m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         expected = loader.suiteClass([MyTestCase('test')])
         self.assertEqual(list(suite), [expected])
@@ -887,7 +887,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromNames(['testsuite'], m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         self.assertEqual(list(suite), [m.testsuite])
 
@@ -902,7 +902,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromNames(['testcase_1.test'], m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         ref_suite = unittest.TestSuite([MyTestCase('test')])
         self.assertEqual(list(suite), [ref_suite])
@@ -939,7 +939,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromNames(['return_TestSuite'], m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         expected = unittest.TestSuite([testcase_1, testcase_2])
         self.assertEqual(list(suite), [expected])
@@ -955,7 +955,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromNames(['return_TestCase'], m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         ref_suite = unittest.TestSuite([testcase_1])
         self.assertEqual(list(suite), [ref_suite])
@@ -979,7 +979,7 @@ class Test_TestLoader(TestCase):
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromNames(['Foo.foo'], m)
-        self.assertTrue(isinstance(suite, loader.suiteClass))
+        self.assertIsInstance(suite, loader.suiteClass)
 
         ref_suite = unittest.TestSuite([testcase_1])
         self.assertEqual(list(suite), [ref_suite])
@@ -1020,7 +1020,7 @@ class Test_TestLoader(TestCase):
         try:
             suite = loader.loadTestsFromNames([module_name])
 
-            self.assertTrue(isinstance(suite, loader.suiteClass))
+            self.assertIsInstance(suite, loader.suiteClass)
             self.assertEqual(list(suite), [unittest.TestSuite()])
 
             # audioop should now be loaded, thanks to loadTestsFromName()
@@ -1808,7 +1808,7 @@ class Test_FunctionTestCase(TestCase):
     def test_id(self):
         test = unittest.FunctionTestCase(lambda: None)
 
-        self.assertTrue(isinstance(test.id(), str))
+        self.assertIsInstance(test.id(), str)
 
     # "Returns a one-line description of the test, or None if no description
     # has been provided. The default implementation of this method returns
@@ -1996,7 +1996,7 @@ class Test_TestResult(TestCase):
 
         test_case, formatted_exc = result.failures[0]
         self.assertTrue(test_case is test)
-        self.assertTrue(isinstance(formatted_exc, str))
+        self.assertIsInstance(formatted_exc, str)
 
     # "addError(test, err)"
     # ...
@@ -2046,7 +2046,7 @@ class Test_TestResult(TestCase):
 
         test_case, formatted_exc = result.errors[0]
         self.assertTrue(test_case is test)
-        self.assertTrue(isinstance(formatted_exc, str))
+        self.assertIsInstance(formatted_exc, str)
 
 ### Support code for Test_TestCase
 ################################################################
@@ -2437,7 +2437,8 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
             def runTest(self):
                 pass
 
-        self.assertTrue(isinstance(Foo().id(), str))
+        self.assertIsInstance(Foo().id(), str)
+
 
     # "If result is omitted or None, a temporary result object is created
     # and used, but is not made available to the caller. As TestCase owns the
@@ -2859,7 +2860,7 @@ test case
         with ctx:
             Stub(v)
         e = ctx.exc_value
-        self.assertTrue(isinstance(e, ExceptionMock))
+        self.assertIsInstance(e, ExceptionMock)
         self.assertEqual(e.args[0], v)
 
     def testSynonymAssertMethodNames(self):

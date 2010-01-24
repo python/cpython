@@ -39,8 +39,8 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         self.assertEqual(collections.UserDict.fromkeys('one two'.split(), 1), d5)
         self.assertEqual(collections.UserDict().fromkeys('one two'.split(), 1), d5)
         self.assertTrue(u1.fromkeys('one two'.split()) is not u1)
-        self.assertTrue(isinstance(u1.fromkeys('one two'.split()), collections.UserDict))
-        self.assertTrue(isinstance(u2.fromkeys('one two'.split()), collections.UserDict))
+        self.assertIsInstance(u1.fromkeys('one two'.split()), collections.UserDict)
+        self.assertIsInstance(u2.fromkeys('one two'.split()), collections.UserDict)
 
         # Test __repr__
         self.assertEqual(str(u0), str(d0))

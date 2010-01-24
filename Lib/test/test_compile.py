@@ -192,8 +192,8 @@ if 1:
             self.fail("How many bits *does* this machine have???")
         # Verify treatment of contant folding on -(sys.maxsize+1)
         # i.e. -2147483648 on 32 bit platforms.  Should return int, not long.
-        self.assertTrue(isinstance(eval("%s" % (-sys.maxsize - 1)), int))
-        self.assertTrue(isinstance(eval("%s" % (-sys.maxsize - 2)), int))
+        self.assertIsInstance(eval("%s" % (-sys.maxsize - 1)), int)
+        self.assertIsInstance(eval("%s" % (-sys.maxsize - 2)), int)
 
     if sys.maxsize == 9223372036854775807:
         def test_32_63_bit_values(self):
@@ -208,7 +208,7 @@ if 1:
 
             for variable in self.test_32_63_bit_values.__code__.co_consts:
                 if variable is not None:
-                    self.assertTrue(isinstance(variable, int))
+                    self.assertIsInstance(variable, int)
 
     def test_sequence_unpacking_error(self):
         # Verify sequence packing/unpacking with "or".  SF bug #757818

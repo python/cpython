@@ -28,7 +28,7 @@ class AbstractMemoryTests:
         oldrefcount = sys.getrefcount(b)
         m = self._view(b)
         self.assertEquals(m[0], item(b"a"))
-        self.assertTrue(isinstance(m[0], bytes), type(m[0]))
+        self.assertIsInstance(m[0], bytes)
         self.assertEquals(m[5], item(b"f"))
         self.assertEquals(m[-1], item(b"f"))
         self.assertEquals(m[-6], item(b"a"))
@@ -119,7 +119,7 @@ class AbstractMemoryTests:
             expected = b"".join(
                 self.getitem_type(bytes([c])) for c in b"abcdef")
             self.assertEquals(b, expected)
-            self.assertTrue(isinstance(b, bytes), type(b))
+            self.assertIsInstance(b, bytes)
 
     def test_tolist(self):
         for tp in self._types:

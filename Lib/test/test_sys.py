@@ -143,7 +143,7 @@ class SysModuleTest(unittest.TestCase):
     def test_getdefaultencoding(self):
         self.assertRaises(TypeError, sys.getdefaultencoding, 42)
         # can't check more than the type, as the user might have changed it
-        self.assertTrue(isinstance(sys.getdefaultencoding(), str))
+        self.assertIsInstance(sys.getdefaultencoding(), str)
 
     # testing sys.settrace() is done in test_trace.py
     # testing sys.setprofile() is done in test_profile.py
@@ -227,13 +227,13 @@ class SysModuleTest(unittest.TestCase):
     def test_getwindowsversion(self):
         if hasattr(sys, "getwindowsversion"):
             v = sys.getwindowsversion()
-            self.assertTrue(isinstance(v, tuple))
+            self.assertIsInstance(v, tuple)
             self.assertEqual(len(v), 5)
-            self.assertTrue(isinstance(v[0], int))
-            self.assertTrue(isinstance(v[1], int))
-            self.assertTrue(isinstance(v[2], int))
-            self.assertTrue(isinstance(v[3], int))
-            self.assertTrue(isinstance(v[4], str))
+            self.assertIsInstance(v[0], int)
+            self.assertIsInstance(v[1], int)
+            self.assertIsInstance(v[2], int)
+            self.assertIsInstance(v[3], int)
+            self.assertIsInstance(v[4], str)
 
     def test_call_tracing(self):
         self.assertRaises(TypeError, sys.call_tracing, type, 2)
@@ -261,7 +261,7 @@ class SysModuleTest(unittest.TestCase):
         del n
         self.assertEqual(sys.getrefcount(None), c)
         if hasattr(sys, "gettotalrefcount"):
-            self.assertTrue(isinstance(sys.gettotalrefcount(), int))
+            self.assertIsInstance(sys.gettotalrefcount(), int)
 
     def test_getframe(self):
         self.assertRaises(TypeError, sys._getframe, 42, 42)
@@ -357,13 +357,13 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(d[0] is sys._getframe())
 
     def test_attributes(self):
-        self.assertTrue(isinstance(sys.api_version, int))
-        self.assertTrue(isinstance(sys.argv, list))
+        self.assertIsInstance(sys.api_version, int)
+        self.assertIsInstance(sys.argv, list)
         self.assertIn(sys.byteorder, ("little", "big"))
-        self.assertTrue(isinstance(sys.builtin_module_names, tuple))
-        self.assertTrue(isinstance(sys.copyright, str))
-        self.assertTrue(isinstance(sys.exec_prefix, str))
-        self.assertTrue(isinstance(sys.executable, str))
+        self.assertIsInstance(sys.builtin_module_names, tuple)
+        self.assertIsInstance(sys.copyright, str)
+        self.assertIsInstance(sys.exec_prefix, str)
+        self.assertIsInstance(sys.executable, str)
         self.assertEqual(len(sys.float_info), 11)
         self.assertEqual(sys.float_info.radix, 2)
         self.assertEqual(len(sys.int_info), 2)
@@ -371,25 +371,25 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(sys.int_info.sizeof_digit >= 1)
         self.assertEqual(type(sys.int_info.bits_per_digit), int)
         self.assertEqual(type(sys.int_info.sizeof_digit), int)
-        self.assertTrue(isinstance(sys.hexversion, int))
-        self.assertTrue(isinstance(sys.maxsize, int))
-        self.assertTrue(isinstance(sys.maxunicode, int))
-        self.assertTrue(isinstance(sys.platform, str))
-        self.assertTrue(isinstance(sys.prefix, str))
-        self.assertTrue(isinstance(sys.version, str))
+        self.assertIsInstance(sys.hexversion, int)
+        self.assertIsInstance(sys.maxsize, int)
+        self.assertIsInstance(sys.maxunicode, int)
+        self.assertIsInstance(sys.platform, str)
+        self.assertIsInstance(sys.prefix, str)
+        self.assertIsInstance(sys.version, str)
         vi = sys.version_info
-        self.assertTrue(isinstance(vi[:], tuple))
+        self.assertIsInstance(vi[:], tuple)
         self.assertEqual(len(vi), 5)
-        self.assertTrue(isinstance(vi[0], int))
-        self.assertTrue(isinstance(vi[1], int))
-        self.assertTrue(isinstance(vi[2], int))
+        self.assertIsInstance(vi[0], int)
+        self.assertIsInstance(vi[1], int)
+        self.assertIsInstance(vi[2], int)
         self.assertIn(vi[3], ("alpha", "beta", "candidate", "final"))
-        self.assertTrue(isinstance(vi[4], int))
-        self.assertTrue(isinstance(vi.major, int))
-        self.assertTrue(isinstance(vi.minor, int))
-        self.assertTrue(isinstance(vi.micro, int))
+        self.assertIsInstance(vi[4], int)
+        self.assertIsInstance(vi.major, int)
+        self.assertIsInstance(vi.minor, int)
+        self.assertIsInstance(vi.micro, int)
         self.assertIn(vi.releaselevel, ("alpha", "beta", "candidate", "final"))
-        self.assertTrue(isinstance(vi.serial, int))
+        self.assertIsInstance(vi.serial, int)
         self.assertEqual(vi[0], vi.major)
         self.assertEqual(vi[1], vi.minor)
         self.assertEqual(vi[2], vi.micro)

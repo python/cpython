@@ -459,9 +459,9 @@ class TestUrlopen(BaseTestCase):
             open_url = urllib.request.urlopen(
                 "http://localhost:%s" % handler.port)
             info_obj = open_url.info()
-            self.assertTrue(isinstance(info_obj, email.message.Message),
-                         "object returned by 'info' is not an instance of "
-                         "email.message.Message")
+            self.assertIsInstance(info_obj, email.message.Message,
+                                  "object returned by 'info' is not an "
+                                  "instance of email.message.Message")
             self.assertEqual(info_obj.get_content_subtype(), "plain")
         finally:
             self.server.stop()

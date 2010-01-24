@@ -592,36 +592,36 @@ class TestTLS_FTPClass(TestCase):
         self.server.stop()
 
     def test_control_connection(self):
-        self.assertFalse(isinstance(self.client.sock, ssl.SSLSocket))
+        self.assertNotIsInstance(self.client.sock, ssl.SSLSocket)
         self.client.auth()
-        self.assertTrue(isinstance(self.client.sock, ssl.SSLSocket))
+        self.assertIsInstance(self.client.sock, ssl.SSLSocket)
 
     def test_data_connection(self):
         # clear text
         sock = self.client.transfercmd('list')
-        self.assertFalse(isinstance(sock, ssl.SSLSocket))
+        self.assertNotIsInstance(sock, ssl.SSLSocket)
         sock.close()
         self.client.voidresp()
 
         # secured, after PROT P
         self.client.prot_p()
         sock = self.client.transfercmd('list')
-        self.assertTrue(isinstance(sock, ssl.SSLSocket))
+        self.assertIsInstance(sock, ssl.SSLSocket)
         sock.close()
         self.client.voidresp()
 
         # PROT C is issued, the connection must be in cleartext again
         self.client.prot_c()
         sock = self.client.transfercmd('list')
-        self.assertFalse(isinstance(sock, ssl.SSLSocket))
+        self.assertNotIsInstance(sock, ssl.SSLSocket)
         sock.close()
         self.client.voidresp()
 
     def test_login(self):
         # login() is supposed to implicitly secure the control connection
-        self.assertFalse(isinstance(self.client.sock, ssl.SSLSocket))
+        self.assertNotIsInstance(self.client.sock, ssl.SSLSocket)
         self.client.login()
-        self.assertTrue(isinstance(self.client.sock, ssl.SSLSocket))
+        self.assertIsInstance(self.client.sock, ssl.SSLSocket)
         # make sure that AUTH TLS doesn't get issued again
         self.client.login()
 

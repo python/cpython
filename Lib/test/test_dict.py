@@ -216,7 +216,7 @@ class DictTest(unittest.TestCase):
                 return collections.UserDict()
         ud = mydict.fromkeys('ab')
         self.assertEqual(ud, {'a':None, 'b':None})
-        self.assertTrue(isinstance(ud, collections.UserDict))
+        self.assertIsInstance(ud, collections.UserDict)
         self.assertRaises(TypeError, dict.fromkeys)
 
         class Exc(Exception): pass

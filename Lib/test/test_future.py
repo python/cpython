@@ -109,7 +109,7 @@ class FutureTest(unittest.TestCase):
     def test_unicode_literals_exec(self):
         scope = {}
         exec("from __future__ import unicode_literals; x = ''", {}, scope)
-        self.assertTrue(isinstance(scope["x"], str))
+        self.assertIsInstance(scope["x"], str)
 
 
 def test_main():

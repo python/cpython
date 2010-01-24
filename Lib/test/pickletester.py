@@ -832,7 +832,7 @@ class AbstractPickleTests(unittest.TestCase):
         x = dict.fromkeys(range(n))
         for proto in protocols:
             s = self.dumps(x, proto)
-            assert isinstance(s, bytes_types)
+            self.assertIsInstance(s, bytes_types)
             y = self.loads(s)
             self.assertEqual(x, y)
             num_setitems = count_opcode(pickle.SETITEMS, s)

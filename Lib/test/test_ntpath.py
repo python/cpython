@@ -174,6 +174,7 @@ class TestNtpath(unittest.TestCase):
         tester("ntpath.normpath('C:////a/b')", r'C:\a\b')
         tester("ntpath.normpath('//machine/share//a/b')", r'\\machine\share\a\b')
 
+
     def test_expandvars(self):
         with support.EnvironmentVarGuard() as env:
             env.clear()

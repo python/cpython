@@ -149,12 +149,12 @@ class TypesTests(unittest.TestCase):
                                    (prod, type(prod)))
 
         x = sys.maxsize
-        self.assertTrue(isinstance(x + 1, int),
-            "(sys.maxsize + 1) should have returned int")
-        self.assertTrue(isinstance(-x - 1, int),
-            "(-sys.maxsize - 1) should have returned int")
-        self.assertTrue(isinstance(-x - 2, int),
-            "(-sys.maxsize - 2) should have returned int")
+        self.assertIsInstance(x + 1, int,
+                              "(sys.maxsize + 1) should have returned int")
+        self.assertIsInstance(-x - 1, int,
+                              "(-sys.maxsize - 1) should have returned int")
+        self.assertIsInstance(-x - 2, int,
+                              "(-sys.maxsize - 2) should have returned int")
 
         try: 5 << -5
         except ValueError: pass

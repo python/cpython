@@ -76,20 +76,20 @@ class TestABC(unittest.TestCase):
         b = B()
         self.assertEqual(issubclass(B, A), False)
         self.assertEqual(issubclass(B, (A,)), False)
-        self.assertEqual(isinstance(b, A), False)
-        self.assertEqual(isinstance(b, (A,)), False)
+        self.assertNotIsInstance(b, A)
+        self.assertNotIsInstance(b, (A,))
         A.register(B)
         self.assertEqual(issubclass(B, A), True)
         self.assertEqual(issubclass(B, (A,)), True)
-        self.assertEqual(isinstance(b, A), True)
-        self.assertEqual(isinstance(b, (A,)), True)
+        self.assertIsInstance(b, A)
+        self.assertIsInstance(b, (A,))
         class C(B):
             pass
         c = C()
         self.assertEqual(issubclass(C, A), True)
         self.assertEqual(issubclass(C, (A,)), True)
-        self.assertEqual(isinstance(c, A), True)
-        self.assertEqual(isinstance(c, (A,)), True)
+        self.assertIsInstance(c, A)
+        self.assertIsInstance(c, (A,))
 
     def test_isinstance_invalidation(self):
         class A(metaclass=abc.ABCMeta):
@@ -107,16 +107,16 @@ class TestABC(unittest.TestCase):
         class A(metaclass=abc.ABCMeta):
             pass
         A.register(int)
-        self.assertEqual(isinstance(42, A), True)
-        self.assertEqual(isinstance(42, (A,)), True)
+        self.assertIsInstance(42, A)
+        self.assertIsInstance(42, (A,))
         self.assertEqual(issubclass(int, A), True)
         self.assertEqual(issubclass(int, (A,)), True)
         class B(A):
             pass
         B.register(str)
         class C(str): pass
-        self.assertEqual(isinstance("", A), True)
-        self.assertEqual(isinstance("", (A,)), True)
+        self.assertIsInstance("", A)
+        self.assertIsInstance("", (A,))
         self.assertEqual(issubclass(str, A), True)
         self.assertEqual(issubclass(str, (A,)), True)
         self.assertEqual(issubclass(C, A), True)
@@ -175,8 +175,8 @@ class TestABC(unittest.TestCase):
             pass
         self.assertTrue(issubclass(MyInt, A))
         self.assertTrue(issubclass(MyInt, (A,)))
-        self.assertTrue(isinstance(42, A))
-        self.assertTrue(isinstance(42, (A,)))
+        self.assertIsInstance(42, A)
+        self.assertIsInstance(42, (A,))
 
     def test_all_new_methods_are_called(self):
         class A(metaclass=abc.ABCMeta):

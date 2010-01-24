@@ -402,8 +402,8 @@ class PosixPathTest(unittest.TestCase):
         except ImportError:
             pass
         else:
-            self.assertTrue(isinstance(posixpath.expanduser("~/"), str))
-            self.assertTrue(isinstance(posixpath.expanduser(b"~/"), bytes))
+            self.assertIsInstance(posixpath.expanduser("~/"), str)
+            self.assertIsInstance(posixpath.expanduser(b"~/"), bytes)
             # if home directory == root directory, this test makes no sense
             if posixpath.expanduser("~") != '/':
                 self.assertEqual(
@@ -414,10 +414,10 @@ class PosixPathTest(unittest.TestCase):
                     posixpath.expanduser(b"~") + b"/",
                     posixpath.expanduser(b"~/")
                 )
-            self.assertTrue(isinstance(posixpath.expanduser("~root/"), str))
-            self.assertTrue(isinstance(posixpath.expanduser("~foo/"), str))
-            self.assertTrue(isinstance(posixpath.expanduser(b"~root/"), bytes))
-            self.assertTrue(isinstance(posixpath.expanduser(b"~foo/"), bytes))
+            self.assertIsInstance(posixpath.expanduser("~root/"), str)
+            self.assertIsInstance(posixpath.expanduser("~foo/"), str)
+            self.assertIsInstance(posixpath.expanduser(b"~root/"), bytes)
+            self.assertIsInstance(posixpath.expanduser(b"~foo/"), bytes)
 
             with support.EnvironmentVarGuard() as env:
                 env['HOME'] = '/'

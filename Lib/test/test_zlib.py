@@ -174,7 +174,7 @@ class CompressObjectTestCase(unittest.TestCase):
 
         decombuf = zlib.decompress(combuf)
         # Test type of return value
-        self.assertTrue(isinstance(decombuf, bytes))
+        self.assertIsInstance(decombuf, bytes)
 
         self.assertEqual(data, decombuf)
 
@@ -373,7 +373,7 @@ class CompressObjectTestCase(unittest.TestCase):
             data = HAMLET_SCENE
             comp = zlib.compress(data)
             # Test type of return value
-            self.assertTrue(isinstance(comp, bytes))
+            self.assertIsInstance(comp, bytes)
 
             d0 = zlib.decompressobj()
             bufs0 = []
