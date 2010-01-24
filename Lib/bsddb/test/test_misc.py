@@ -10,7 +10,7 @@ from test_all import db, dbshelve, hashopen, test_support, get_new_environment_p
 
 class MiscTestCase(unittest.TestCase):
     def setUp(self):
-        self.filename = self.__class__.__name__ + '.db'
+        self.filename = get_new_database_path()
         self.homeDir = get_new_environment_path()
 
     def tearDown(self):
