@@ -247,6 +247,12 @@ _supported_dists = (
 
 def _parse_release_file(firstline):
 
+    # Default to empty 'version' and 'id' strings.  Both defaults are used
+    # when 'firstline' is empty.  'id' defaults to empty when an id can not
+    # be deduced.
+    version = ''
+    id = ''
+
     # Parse the first line
     m = _lsb_release_version.match(firstline)
     if m is not None:
@@ -264,8 +270,6 @@ def _parse_release_file(firstline):
         version = l[0]
         if len(l) > 1:
             id = l[1]
-        else:
-            id = ''
     return '', version, id
 
 def _test_parse_release_file():

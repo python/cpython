@@ -131,6 +131,24 @@ class PlatformTest(unittest.TestCase):
             executable = executable + '.exe'
         res = platform.libc_ver(sys.executable)
 
+    def test_parse_release_file(self):
+
+        for input, output in (
+            # Examples of release file contents:
+            ('SuSE Linux 9.3 (x86-64)', ('SuSE Linux ', '9.3', 'x86-64')),
+            ('SUSE LINUX 10.1 (X86-64)', ('SUSE LINUX ', '10.1', 'X86-64')),
+            ('SUSE LINUX 10.1 (i586)', ('SUSE LINUX ', '10.1', 'i586')),
+            ('Fedora Core release 5 (Bordeaux)', ('Fedora Core', '5', 'Bordeaux')),
+            ('Red Hat Linux release 8.0 (Psyche)', ('Red Hat Linux', '8.0', 'Psyche')),
+            ('Red Hat Linux release 9 (Shrike)', ('Red Hat Linux', '9', 'Shrike')),
+            ('Red Hat Enterprise Linux release 4 (Nahant)', ('Red Hat Enterprise Linux', '4', 'Nahant')),
+            ('CentOS release 4', ('CentOS', '4', None)),
+            ('Rocks release 4.2.1 (Cydonia)', ('Rocks', '4.2.1', 'Cydonia')),
+            ('', ('', '', '')), # If there's nothing there.
+            ):
+            self.assertEqual(platform._parse_release_file(input), output)
+
+
 def test_main():
     test_support.run_unittest(
         PlatformTest
