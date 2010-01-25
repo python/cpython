@@ -84,7 +84,7 @@ _PREFIX = os.path.normpath(sys.prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
-_PROJECT_BASE = os.path.dirname(abspath(sys.executable))
+_PROJECT_BASE = abspath(os.path.dirname(sys.executable))
 
 if os.name == "nt" and "pcbuild" in _PROJECT_BASE[-8:].lower():
     _PROJECT_BASE = abspath(os.path.join(_PROJECT_BASE, pardir))
