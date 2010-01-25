@@ -42,6 +42,8 @@ Core and Builtins
 Library
 -------
 
+- Removed the functions 'verify' and 'vereq' from Lib/test/test_support.py.
+
 - Issue #7773: Fix an UnboundLocalError in platform.linux_distribution() when
   the release file is empty.
 
