@@ -1495,7 +1495,7 @@ string_partition(PyStringObject *self, PyObject *sep_obj)
 }
 
 PyDoc_STRVAR(rpartition__doc__,
-"S.rpartition(sep) -> (tail, sep, head)\n\
+"S.rpartition(sep) -> (head, sep, tail)\n\
 \n\
 Search for the separator sep in S, starting at the end of S, and return\n\
 the part before it, the separator itself, and the part after it.  If the\n\
