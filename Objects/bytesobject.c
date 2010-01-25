@@ -1250,7 +1250,7 @@ bytes_partition(PyBytesObject *self, PyObject *sep_obj)
 }
 
 PyDoc_STRVAR(rpartition__doc__,
-"B.rpartition(sep) -> (tail, sep, head)\n\
+"B.rpartition(sep) -> (head, sep, tail)\n\
 \n\
 Search for the separator sep in B, starting at the end of B,\n\
 and return the part before it, the separator itself, and the\n\
