@@ -198,6 +198,7 @@ class PlatformTest(unittest.TestCase):
             ('Red Hat Enterprise Linux release 4 (Nahant)', ('Red Hat Enterprise Linux', '4', 'Nahant')),
             ('CentOS release 4', ('CentOS', '4', None)),
             ('Rocks release 4.2.1 (Cydonia)', ('Rocks', '4.2.1', 'Cydonia')),
+            ('', ('', '', '')), # If there's nothing there.
             ):
             self.assertEqual(platform._parse_release_file(input), output)
 
