@@ -6,15 +6,15 @@
 """
 Implements the bdist_msi command.
 """
-
 import sys, os
+from sysconfig import get_python_version, get_platform
+
 from distutils.core import Command
 from distutils.dir_util import remove_tree
-from distutils.sysconfig import get_python_version
 from distutils.version import StrictVersion
 from distutils.errors import DistutilsOptionError
-from distutils.util import get_platform
 from distutils import log
+
 import msilib
 from msilib import schema, sequence, text
 from msilib import Directory, Feature, Dialog, add_data
