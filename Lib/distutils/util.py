@@ -17,6 +17,10 @@ from distutils.errors import DistutilsByteCompileError
 
 _sysconfig = __import__('sysconfig')
 
+# kept for backward compatibility
+# since this API was relocated
+get_platform = _sysconfig.get_platform
+
 def convert_path(pathname):
     """Return 'pathname' as a name that will work on the native filesystem.
 

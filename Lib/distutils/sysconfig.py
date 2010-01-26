@@ -21,6 +21,15 @@ from warnings import warn
 # to avoid this module to shadow it
 _sysconfig = __import__('sysconfig')
 
+# names defined here to keep backward compatibility
+# for APIs that were relocated
+get_python_version = _sysconfig.get_python_version
+get_config_h_filename = _sysconfig.get_config_h_filename
+parse_config_h = _sysconfig.parse_config_h
+get_config_vars = _sysconfig.get_config_vars
+get_config_var = _sysconfig.get_config_var
+from distutils.ccompiler import customize_compiler
+
 _DEPRECATION_MSG = ("distutils.sysconfig.%s is deprecated. "
                     "Use the APIs provided by the sysconfig module instead")
 
