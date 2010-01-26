@@ -16,10 +16,27 @@ from distutils.version import LooseVersion
 from distutils.errors import DistutilsByteCompileError
 
 _sysconfig = __import__('sysconfig')
+_PLATFORM = None
 
-# kept for backward compatibility
-# since this API was relocated
-get_platform = _sysconfig.get_platform
+def get_platform():
+    """Return a string that identifies the current platform.
+
+    By default, will return the value returned by sysconfig.get_platform(),
+    but it can be changed by calling set_platform().
+    """
+    global _PLATFORM
+    if _PLATFORM is None:
+        _PLATFORM = _sysconfig.get_platform()
+    return _PLATFORM
+
+def set_platform(identifier):
+    """Sets the platform string identifier returned by get_platform().
+
+    Note that this change doesn't impact the value returned by
+    sysconfig.get_platform() and is local to Distutils
+    """
+    global _PLATFORM
+    _PLATFORM = identifier
 
 def convert_path(pathname):
     """Return 'pathname' as a name that will work on the native filesystem.

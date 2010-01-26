@@ -7,13 +7,14 @@
 Implements the bdist_msi command.
 """
 import sys, os
-from sysconfig import get_python_version, get_platform
+from sysconfig import get_python_version
 
 from distutils.core import Command
 from distutils.dir_util import remove_tree
 from distutils.version import StrictVersion
 from distutils.errors import DistutilsOptionError
 from distutils import log
+from distutils.util import get_platform
 
 import msilib
 from msilib import schema, sequence, text
