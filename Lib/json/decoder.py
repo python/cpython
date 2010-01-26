@@ -146,8 +146,9 @@ scanstring = c_scanstring or py_scanstring
 WHITESPACE = re.compile(r'[ \t\n\r]*', FLAGS)
 WHITESPACE_STR = ' \t\n\r'
 
-def JSONObject((s, end), encoding, strict, scan_once, object_hook,
+def JSONObject(s_and_end, encoding, strict, scan_once, object_hook,
                object_pairs_hook, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
+    s, end = s_and_end
     pairs = []
     pairs_append = pairs.append
     # Use a slice to prevent IndexError from being raised, the following
@@ -227,7 +228,8 @@ def JSONObject((s, end), encoding, strict, scan_once, object_hook,
         pairs = object_hook(pairs)
     return pairs, end
 
-def JSONArray((s, end), scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
+def JSONArray(s_and_end, scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
+    s, end = s_and_end
     values = []
     nextchar = s[end:end + 1]
     if nextchar in _ws:
