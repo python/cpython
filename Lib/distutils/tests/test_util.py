@@ -90,99 +90,12 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
     def _get_uname(self):
         return self._uname
 
-    def _test_get_platform(self):
-
-        # windows XP, 32bits
-        os.name = 'nt'
-        sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
-                       '[MSC v.1310 32 bit (Intel)]')
-        sys.platform = 'win32'
-        self.assertEquals(get_platform(), 'win32')
-
-        # windows XP, amd64
-        os.name = 'nt'
-        sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
-                       '[MSC v.1310 32 bit (Amd64)]')
-        sys.platform = 'win32'
-        self.assertEquals(get_platform(), 'win-amd64')
-
-        # windows XP, itanium
-        os.name = 'nt'
-        sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
-                       '[MSC v.1310 32 bit (Itanium)]')
-        sys.platform = 'win32'
-        self.assertEquals(get_platform(), 'win-ia64')
-
-        # macbook
-        os.name = 'posix'
-        sys.version = ('2.5 (r25:51918, Sep 19 2006, 08:49:13) '
-                       '\n[GCC 4.0.1 (Apple Computer, Inc. build 5341)]')
-        sys.platform = 'darwin'
-        self._set_uname(('Darwin', 'macziade', '8.11.1',
-                   ('Darwin Kernel Version 8.11.1: '
-                    'Wed Oct 10 18:23:28 PDT 2007; '
-                    'root:xnu-792.25.20~1/RELEASE_I386'), 'i386'))
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
-
-        get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
-                                       '-fwrapv -O3 -Wall -Wstrict-prototypes')
-
-        self.assertEquals(get_platform(), 'macosx-10.3-i386')
-
-        # macbook with fat binaries (fat, universal or fat64)
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
-        get_config_vars()['CFLAGS'] = ('-arch ppc -arch i386 -isysroot '
-                                       '/Developer/SDKs/MacOSX10.4u.sdk  '
-                                       '-fno-strict-aliasing -fno-common '
-                                       '-dynamic -DNDEBUG -g -O3')
-
-        self.assertEquals(get_platform(), 'macosx-10.4-fat')
-
-        get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch i386 -isysroot '
-                                       '/Developer/SDKs/MacOSX10.4u.sdk  '
-                                       '-fno-strict-aliasing -fno-common '
-                                       '-dynamic -DNDEBUG -g -O3')
-
-        self.assertEquals(get_platform(), 'macosx-10.4-intel')
-
-        get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch ppc -arch i386 -isysroot '
-                                       '/Developer/SDKs/MacOSX10.4u.sdk  '
-                                       '-fno-strict-aliasing -fno-common '
-                                       '-dynamic -DNDEBUG -g -O3')
-        self.assertEquals(get_platform(), 'macosx-10.4-fat3')
-
-        get_config_vars()['CFLAGS'] = ('-arch ppc64 -arch x86_64 -arch ppc -arch i386 -isysroot '
-                                       '/Developer/SDKs/MacOSX10.4u.sdk  '
-                                       '-fno-strict-aliasing -fno-common '
-                                       '-dynamic -DNDEBUG -g -O3')
-        self.assertEquals(get_platform(), 'macosx-10.4-universal')
-
-        get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch ppc64 -isysroot '
-                                       '/Developer/SDKs/MacOSX10.4u.sdk  '
-                                       '-fno-strict-aliasing -fno-common '
-                                       '-dynamic -DNDEBUG -g -O3')
-
-        self.assertEquals(get_platform(), 'macosx-10.4-fat64')
-
-        for arch in ('ppc', 'i386', 'x86_64', 'ppc64'):
-            get_config_vars()['CFLAGS'] = ('-arch %s -isysroot '
-                                           '/Developer/SDKs/MacOSX10.4u.sdk  '
-                                           '-fno-strict-aliasing -fno-common '
-                                           '-dynamic -DNDEBUG -g -O3'%(arch,))
-
-            self.assertEquals(get_platform(), 'macosx-10.4-%s'%(arch,))
-
-        # linux debian sarge
-        os.name = 'posix'
-        sys.version = ('2.3.5 (#1, Jul  4 2007, 17:28:59) '
-                       '\n[GCC 4.1.2 20061115 (prerelease) (Debian 4.1.1-21)]')
-        sys.platform = 'linux2'
-        self._set_uname(('Linux', 'aglae', '2.6.21.1dedibox-r7',
-                    '#1 Mon Apr 30 17:25:38 CEST 2007', 'i686'))
-
-        self.assertEquals(get_platform(), 'linux-i686')
-
-        # XXX more platforms to tests here
+    def test_get_platform(self):
+        platform = util.get_platform()
+        self.assertEquals(platform, get_platform())
+        util.set_platform('MyOwnPlatform')
+        self.assertEquals('MyOwnPlatform', util.get_platform())
+        util.set_platform(platform)
 
     def test_convert_path(self):
         # linux/mac

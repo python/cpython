@@ -7,15 +7,14 @@ __revision__ = "$Id$"
 import sys
 import os
 
-from sysconfig import (get_config_vars, get_platform, get_paths, get_path,
-                       get_config_var)
+from sysconfig import get_config_vars, get_paths, get_path, get_config_var
 
 from distutils import log
 from distutils.core import Command
 from distutils.debug import DEBUG
 from distutils.errors import DistutilsPlatformError
 from distutils.file_util import write_file
-from distutils.util import convert_path, change_root
+from distutils.util import convert_path, change_root, get_platform
 from distutils.errors import DistutilsOptionError
 
 def _subst_vars(s, local_vars):

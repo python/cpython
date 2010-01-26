@@ -6,8 +6,8 @@ distribution)."""
 __revision__ = "$Id$"
 
 import os
-from sysconfig import get_platform
 
+from distutils.util import get_platform
 from distutils.core import Command
 from distutils.errors import DistutilsPlatformError, DistutilsOptionError
 
