@@ -234,6 +234,11 @@ C-API
 Library
 -------
 
+- Issue #6963: Added "maxtasksperchild" argument to multiprocessing.Pool,
+  allowing for a maximum number of tasks within the pool to be completed by
+  the worker before that worker is terminated, and a new one created to
+  replace it.
+
 - Issue #7792: Registering non-classes to ABCs raised an obscure error.
 
 - Issue #7785: Don't accept bytes in FileIO.write().
