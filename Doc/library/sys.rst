@@ -470,7 +470,7 @@ always available.
 
 .. function:: getwindowsversion()
 
-   Return a named tuple containing describing the Windows version
+   Return a named tuple describing the Windows version
    currently running.  The named elements are *major*, *minor*,
    *build*, *platform*, *service_pack*, *service_pack_minor*,
    *service_pack_major*, *suite_mask*, and *product_type*.
