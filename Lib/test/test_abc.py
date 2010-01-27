@@ -149,6 +149,11 @@ class TestABC(unittest.TestCase):
         self.assertRaises(RuntimeError, C.register, A)  # cycles not allowed
         C.register(B)  # ok
 
+    def test_register_non_class(self):
+        class A(object):
+            __metaclass__ = abc.ABCMeta
+        self.assertRaises(TypeError, A.register, 4)
+
     def test_registration_transitiveness(self):
         class A:
             __metaclass__ = abc.ABCMeta

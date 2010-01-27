@@ -1,6 +1,6 @@
 """A more or less complete user-defined wrapper around dictionary objects."""
 
-class UserDict:
+class UserDict(object):
     def __init__(self, dict=None, **kwargs):
         self.data = {}
         if dict is not None:
