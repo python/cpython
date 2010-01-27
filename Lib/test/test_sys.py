@@ -206,7 +206,6 @@ class SysModuleTest(unittest.TestCase):
     def test_getwindowsversion(self):
         if hasattr(sys, "getwindowsversion"):
             v = sys.getwindowsversion()
-            self.assertTrue(isinstance(v[:], tuple))
             self.assertEqual(len(v), 5)
             self.assertIsInstance(v[0], int)
             self.assertIsInstance(v[1], int)
