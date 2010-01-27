@@ -76,7 +76,7 @@ The :mod:`bdb` module also defines two classes:
    frame is considered to originate in a certain module is determined
    by the ``__name__`` in the frame globals.
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.1
       The *skip* argument.
 
    The following methods of :class:`Bdb` normally don't need to be overridden.
