@@ -646,8 +646,10 @@ fileio_tell(PyFileIOObject *self, PyObject *args)
 static PyObject *
 fileio_truncate(PyFileIOObject *self, PyObject *args)
 {
-	PyObject *posobj = NULL;
+	PyObject *posobj = NULL; /* the new size wanted by the user */
+#ifndef MS_WINDOWS
 	Py_off_t pos;
+#endif
 	int ret;
 	int fd;
 
@@ -662,56 +664,86 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 
 	if (posobj == Py_None || posobj == NULL) {
 		/* Get the current position. */
-                posobj = portable_lseek(fd, NULL, 1);
-                if (posobj == NULL)
+		posobj = portable_lseek(fd, NULL, 1);
+		if (posobj == NULL)
 			return NULL;
-        }
-        else {
-		/* Move to the position to be truncated. */
-                posobj = portable_lseek(fd, posobj, 0);
-        }
-
-#if defined(HAVE_LARGEFILE_SUPPORT)
-	pos = PyLong_AsLongLong(posobj);
-#else
-	pos = PyLong_AsLong(posobj);
-#endif
-	if (PyErr_Occurred())
-		return NULL;
+	}
+	else {
+		Py_INCREF(posobj);
+	}
 
 #ifdef MS_WINDOWS
 	/* MS _chsize doesn't work if newsize doesn't fit in 32 bits,
 	   so don't even try using it. */
 	{
+		PyObject *oldposobj, *tempposobj;
 		HANDLE hFile;
+	
+		/* we save the file pointer position */
+		oldposobj = portable_lseek(fd, NULL, 1); 
+		if (oldposobj == NULL) {
+			Py_DECREF(posobj);
+			return NULL;
+		}
+
+		/* we then move to the truncation position */
+		tempposobj = portable_lseek(fd, posobj, 0);
+		if (tempposobj == NULL) {
+			Py_DECREF(oldposobj);
+			Py_DECREF(posobj);
+			return NULL;
+		}
+		Py_DECREF(tempposobj);
 
 		/* Truncate.  Note that this may grow the file! */
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
 		hFile = (HANDLE)_get_osfhandle(fd);
-		ret = hFile == (HANDLE)-1;
+		ret = hFile == (HANDLE)-1; /* testing for INVALID_HANDLE value */
 		if (ret == 0) {
 			ret = SetEndOfFile(hFile) == 0;
 			if (ret)
 				errno = EACCES;
 		}
 		Py_END_ALLOW_THREADS
+
+		/* we restore the file pointer position in any case */
+		tempposobj = portable_lseek(fd, oldposobj, 0);
+		Py_DECREF(oldposobj);
+		if (tempposobj == NULL) {
+			Py_DECREF(posobj);
+			return NULL;
+		}
+		Py_DECREF(tempposobj);
 	}
 #else
+
+#if defined(HAVE_LARGEFILE_SUPPORT)
+	pos = PyLong_AsLongLong(posobj);
+#else
+	pos = PyLong_AsLong(posobj);
+#endif
+	if (PyErr_Occurred()){
+		Py_DECREF(posobj);
+		return NULL;
+	}
+
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
 	ret = ftruncate(fd, pos);
 	Py_END_ALLOW_THREADS
+
 #endif /* !MS_WINDOWS */
 
 	if (ret != 0) {
+		Py_DECREF(posobj);
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
 
 	return posobj;
 }
-#endif
+#endif /* HAVE_FTRUNCATE */
 
 static char *
 mode_string(PyFileIOObject *self)

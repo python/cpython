@@ -53,6 +53,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #6939: Fix file I/O objects in the `io` module to keep the original
+  file position when calling `truncate()`.  It would previously change the
+  file position to the given argument, which goes against the tradition of
+  ftruncate() and other truncation APIs.  Patch by Pascal Chambon.
+
 - Issue #7792: Registering non-classes to ABCs raised an obscure error.
 
 - Issue #7773: Fix an UnboundLocalError in platform.linux_distribution() when
