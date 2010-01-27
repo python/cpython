@@ -197,6 +197,17 @@ class OtherFileTests(unittest.TestCase):
             f.close()
             self.fail("no error for invalid mode: %s" % bad_mode)
 
+    def testTruncate(self):
+        f = _fileio._FileIO(TESTFN, 'w')
+        f.write(bytes(bytearray(range(10))))
+        self.assertEqual(f.tell(), 10)
+        f.truncate(5)
+        self.assertEqual(f.tell(), 10)
+        self.assertEqual(f.seek(0, os.SEEK_END), 5)
+        f.truncate(15)
+        self.assertEqual(f.tell(), 5)
+        self.assertEqual(f.seek(0, os.SEEK_END), 15)
+
     def testTruncateOnWindows(self):
         def bug801631():
             # SF bug <http://www.python.org/sf/801631>

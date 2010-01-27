@@ -445,7 +445,6 @@ bytesio_truncate(BytesIOObject *self, PyObject *args)
         if (resize_buffer(self, size) < 0)
             return NULL;
     }
-    self->pos = size;
 
     return PyInt_FromSsize_t(size);
 }
