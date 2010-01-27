@@ -5,6 +5,7 @@ import struct
 import subprocess
 import textwrap
 import warnings
+import operator
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
@@ -227,13 +228,28 @@ class SysModuleTest(unittest.TestCase):
     def test_getwindowsversion(self):
         if hasattr(sys, "getwindowsversion"):
             v = sys.getwindowsversion()
-            self.assertIsInstance(v, tuple)
+            self.assertTrue(isinstance(v[:], tuple))
             self.assertEqual(len(v), 5)
             self.assertIsInstance(v[0], int)
             self.assertIsInstance(v[1], int)
             self.assertIsInstance(v[2], int)
             self.assertIsInstance(v[3], int)
             self.assertIsInstance(v[4], str)
+            self.assertRaises(IndexError, operator.getitem, v, 5)
+            self.assertIsInstance(v.major, int)
+            self.assertIsInstance(v.minor, int)
+            self.assertIsInstance(v.build, int)
+            self.assertIsInstance(v.platform, int)
+            self.assertIsInstance(v.service_pack, str)
+            self.assertEqual(v[0], v.major)
+            self.assertEqual(v[1], v.minor)
+            self.assertEqual(v[2], v.build)
+            self.assertEqual(v[3], v.platform)
+            self.assertEqual(v[4], v.service_pack)
+
+            # This is how platform.py calls it. Make sure tuple
+            #  still has 5 elements
+            maj, min, buildno, plat, csd = sys.getwindowsversion()
 
     def test_call_tracing(self):
         self.assertRaises(TypeError, sys.call_tracing, type, 2)

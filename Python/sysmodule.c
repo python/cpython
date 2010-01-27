@@ -597,26 +597,65 @@ recursion from causing an overflow of the C stack and crashing Python."
 PyDoc_STRVAR(getwindowsversion_doc,
 "getwindowsversion()\n\
 \n\
-Return information about the running version of Windows.\n\
-The result is a tuple of (major, minor, build, platform, text)\n\
-All elements are numbers, except text which is a string.\n\
-Platform may be 0 for win32s, 1 for Windows 9x/ME, 2 for Windows NT/2000/XP\n\
-"
+Return information about the running version of Windows as a named tuple.\n\
+The members are named: major, minor, build, platform, service_pack,\n\
+service_pack_major, service_pack_minor, suite_mask, and product_type. For\n\
+backward compatibiliy, only the first 5 items are available by indexing.\n\
+All elements are numbers, except service_pack which is a string. Platform\n\
+may be 0 for win32s, 1 for Windows 9x/ME, 2 for Windows NT/2000/XP/Vista/7,\n\
+3 for Windows CE. Product_type may be 1 for a workstation, 2 for a domain\n\
+controller, 3 for a server."
 );
+
+static PyTypeObject WindowsVersionType = {0, 0, 0, 0, 0, 0};
+
+static PyStructSequence_Field windows_version_fields[] = {
+	{"major", "Major version number"},
+	{"minor", "Minor version number"},
+	{"build", "Build number"},
+	{"platform", "Operating system platform"},
+	{"service_pack", "Latest Service Pack installed on the system"},
+	{"service_pack_major", "Service Pack major version number"},
+	{"service_pack_minor", "Service Pack minor version number"},
+	{"suite_mask", "Bit mask identifying available product suites"},
+	{"product_type", "System product type"},
+	{0}
+};
+
+static PyStructSequence_Desc windows_version_desc = {
+	"sys.getwindowsversion",  /* name */
+	getwindowsversion_doc,    /* doc */
+	windows_version_fields,   /* fields */
+	5                         /* For backward compatibility,
+                                     only the first 5 items are accessible
+                                     via indexing, the rest are name only */
+};
 
 static PyObject *
 sys_getwindowsversion(PyObject *self)
 {
-	OSVERSIONINFO ver;
+	PyObject *version;
+	int pos = 0;
+	OSVERSIONINFOEX ver;
 	ver.dwOSVersionInfoSize = sizeof(ver);
-	if (!GetVersionEx(&ver))
+	if (!GetVersionEx((OSVERSIONINFO*) &ver))
 		return PyErr_SetFromWindowsErr(0);
-	return Py_BuildValue("HHHHs",
-	                     ver.dwMajorVersion,
-	                     ver.dwMinorVersion,
-	                     ver.dwBuildNumber,
-	                     ver.dwPlatformId,
-	                     ver.szCSDVersion);
+
+	version = PyStructSequence_New(&WindowsVersionType);
+	if (version == NULL)
+		return NULL;
+
+	PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwMajorVersion));
+	PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwMinorVersion));
+	PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwBuildNumber));
+	PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwPlatformId));
+	PyStructSequence_SET_ITEM(version, pos++, PyUnicode_FromString(ver.szCSDVersion));
+	PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wServicePackMajor));
+	PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wServicePackMinor));
+	PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wSuiteMask));
+	PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wProductType));
+
+	return version;
 }
 
 #endif /* MS_WINDOWS */
@@ -1487,6 +1526,16 @@ _PySys_Init(void)
 	/* prevent user from creating new instances */
 	FlagsType.tp_init = NULL;
 	FlagsType.tp_new = NULL;
+
+
+#if defined(MS_WINDOWS)
+	/* getwindowsversion */
+	if (WindowsVersionType.tp_name == 0)
+		PyStructSequence_InitType(&WindowsVersionType, &windows_version_desc);
+	/* prevent user from creating new instances */
+	WindowsVersionType.tp_init = NULL;
+	WindowsVersionType.tp_new = NULL;
+#endif
 
 	/* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
 #ifndef PY_NO_SHORT_FLOAT_REPR
