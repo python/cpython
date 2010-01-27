@@ -234,7 +234,7 @@ C-API
 Library
 -------
 
-- Don't accept bytes in FileIO.write().
+- Issue #7785: Don't accept bytes in FileIO.write().
 
 - Removed the functions 'verify' and 'vereq' from Lib/test/support.py.
 
