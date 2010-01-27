@@ -12,6 +12,11 @@ What's New in Python 2.7 alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #7766: Change sys.getwindowsversion() return value to a named
+  tuple and add the additional members returned in an OSVERSIONINFOEX
+  structure. The new members are service_pack_major, service_pack_minor,
+  suite_mask, and product_type.
+
 - Issue #7561: Operations on empty bytearrays (such as `int(bytearray())`)
   could crash in many places because of the PyByteArray_AS_STRING() macro
   returning NULL.  The macro now returns a statically allocated empty
