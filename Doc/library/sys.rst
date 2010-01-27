@@ -439,7 +439,7 @@ always available.
 
    Availability: Windows.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.2
       Changed to a named tuple and added *service_pack_minor*,
       *service_pack_major*, *suite_mask*, and *product_type*.
 
