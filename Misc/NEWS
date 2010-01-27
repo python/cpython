@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7792: Registering non-classes to ABCs raised an obscure error.
+
 - Removed the functions 'verify' and 'vereq' from Lib/test/test_support.py.
 
 - Issue #7773: Fix an UnboundLocalError in platform.linux_distribution() when
