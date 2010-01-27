@@ -648,7 +648,7 @@ fileio_write(fileio *self, PyObject *args)
 	if (!self->writable)
 		return err_mode("writing");
 
-	if (!PyArg_ParseTuple(args, "s*", &pbuf))
+	if (!PyArg_ParseTuple(args, "y*", &pbuf))
 		return NULL;
 
 	if (_PyVerify_fd(self->fd)) {
