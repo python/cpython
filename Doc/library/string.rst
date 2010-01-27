@@ -471,8 +471,6 @@ The available presentation types for floating point and decimal values are:
 Template strings
 ----------------
 
-.. versionadded:: 2.4
-
 Templates provide simpler string substitutions as described in :pep:`292`.
 Instead of the normal ``%``\ -based substitutions, Templates support ``$``\
 -based substitutions, using the following rules:
