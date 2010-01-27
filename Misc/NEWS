@@ -225,7 +225,6 @@ C-API
 - Issue #1419652: Change the first argument to PyImport_AppendInittab() to
   ``const char *`` as the string is stored beyond the call.
 
-
 - Issue #2422: When compiled with the ``--with-valgrind`` option, the
   pymalloc allocator will be automatically disabled when running under
   Valgrind.  This gives improved memory leak detection when running
@@ -233,6 +232,13 @@ C-API
 
 Library
 -------
+
+- Issue #7610: Reworked implementation of the internal
+  :class:`zipfile.ZipExtFile` class used to represent files stored inside
+  an archive.  The new implementation is significantly faster and can
+  be wrapped in a :class:`io.BufferedReader` object for more speedups.
+  It also solves an issue where interleaved calls to `read()` and
+  `readline()` give wrong results.  Patch by Nir Aides.
 
 - Issue #6963: Added "maxtasksperchild" argument to multiprocessing.Pool,
   allowing for a maximum number of tasks within the pool to be completed by
