@@ -234,6 +234,8 @@ C-API
 Library
 -------
 
+- Issue #7792: Registering non-classes to ABCs raised an obscure error.
+
 - Issue #7785: Don't accept bytes in FileIO.write().
 
 - Removed the functions 'verify' and 'vereq' from Lib/test/support.py.
