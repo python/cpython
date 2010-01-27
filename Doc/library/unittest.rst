@@ -241,8 +241,8 @@ The ``discover`` sub-command has the following options:
 The -s, -p, & -t options can be passsed in as positional arguments. The
 following two command lines are equivalent::
 
-   python -m unittest -s project_directory -p '*_test.py'
-   python -m unittest project_directory '*_test.py'
+   python -m unittest discover -s project_directory -p '*_test.py'
+   python -m unittest discover project_directory '*_test.py'
 
 Test modules and packages can customize test loading and discovery by through
 the `load_tests protocol`_.
@@ -1445,7 +1445,7 @@ Loading and running tests
 
    .. method:: stopTestRun(test)
 
-      Called once before any tests are executed.
+      Called once after all tests are executed.
 
       .. versionadded:: 2.7
 
