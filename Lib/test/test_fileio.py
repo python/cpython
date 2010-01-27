@@ -78,6 +78,9 @@ class AutoFileTests(unittest.TestCase):
         self.assertEqual(self.f.readline(None), b"hi\n")
         self.assertEqual(self.f.readlines(None), [b"bye\n", b"abc"])
 
+    def test_reject(self):
+        self.assertRaises(TypeError, self.f.write, "Hello!")
+
     def testRepr(self):
         self.assertEquals(repr(self.f), "<_io.FileIO name=%r mode=%r>"
                                         % (self.f.name, self.f.mode))
@@ -168,7 +171,7 @@ class AutoFileTests(unittest.TestCase):
 
     @ClosedFDRaises
     def testErrnoOnClosedWrite(self, f):
-        f.write('a')
+        f.write(b'a')
 
     @ClosedFDRaises
     def testErrnoOnClosedSeek(self, f):

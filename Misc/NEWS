@@ -234,6 +234,8 @@ C-API
 Library
 -------
 
+- Don't accept bytes in FileIO.write().
+
 - Removed the functions 'verify' and 'vereq' from Lib/test/support.py.
 
 - Issue #7773: Fix an UnboundLocalError in platform.linux_distribution() when
