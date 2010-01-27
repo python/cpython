@@ -109,8 +109,6 @@ The mathematical and bitwise operations are the most numerous:
 
    Return *a* converted to an integer.  Equivalent to ``a.__index__()``.
 
-   .. versionadded:: 2.5
-
 
 .. function:: inv(obj)
               invert(obj)
