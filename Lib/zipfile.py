@@ -471,7 +471,12 @@ class ZipExtFile(io.BufferedIOBase):
         self._fileobj = fileobj
         self._decrypter = decrypter
 
-        self._decompressor = zlib.decompressobj(-15)
+        self._compress_type = zipinfo.compress_type
+        self._compress_size = zipinfo.compress_size
+        self._compress_left = zipinfo.compress_size
+
+        if self._compress_type == ZIP_DEFLATED:
+            self._decompressor = zlib.decompressobj(-15)
         self._unconsumed = ''
 
         self._readbuffer = ''
@@ -479,10 +484,6 @@ class ZipExtFile(io.BufferedIOBase):
 
         self._universal = 'U' in mode
         self.newlines = None
-
-        self._compress_type = zipinfo.compress_type
-        self._compress_size = zipinfo.compress_size
-        self._compress_left = zipinfo.compress_size
 
         # Adjust read size for encrypted files since the first 12 bytes
         # are for the encryption/password information.
@@ -599,7 +600,8 @@ class ZipExtFile(io.BufferedIOBase):
                 self._unconsumed += data
 
         # Handle unconsumed data.
-        if len(self._unconsumed) > 0 and n > len_readbuffer:
+        if (len(self._unconsumed) > 0 and n > len_readbuffer and
+            self._compress_type == ZIP_DEFLATED):
             data = self._decompressor.decompress(
                 self._unconsumed,
                 max(n - len_readbuffer, self.MIN_READ_SIZE)
