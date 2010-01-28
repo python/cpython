@@ -58,8 +58,6 @@ Library
   file position to the given argument, which goes against the tradition of
   ftruncate() and other truncation APIs.  Patch by Pascal Chambon.
 
-- Issue #7792: Registering non-classes to ABCs raised an obscure error.
-
 - Issue #7773: Fix an UnboundLocalError in platform.linux_distribution() when
   the release file is empty.
 

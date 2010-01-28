@@ -96,7 +96,7 @@ class ABCMeta(type):
 
     def register(cls, subclass):
         """Register a virtual subclass of an ABC."""
-        if not isinstance(subclass, type):
+        if not isinstance(cls, type):
             raise TypeError("Can only register classes")
         if issubclass(subclass, cls):
             return  # Already a subclass
