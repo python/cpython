@@ -13,6 +13,7 @@ class UserDict(object):
             return cmp(self.data, dict.data)
         else:
             return cmp(self.data, dict)
+    __hash__ = None # Avoid Py3k warning
     def __len__(self): return len(self.data)
     def __getitem__(self, key):
         if key in self.data:
