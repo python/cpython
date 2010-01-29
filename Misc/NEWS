@@ -12,6 +12,9 @@ What's New in Python 2.6.5
 Core and Builtins
 -----------------
 
+- Issue #7788: Fix an interpreter crash produced by deleting a list
+  slice with very large step value.
+
 - Issue #7561: Operations on empty bytearrays (such as `int(bytearray())`)
   could crash in many places because of the PyByteArray_AS_STRING() macro
   returning NULL.  The macro now returns a statically allocated empty

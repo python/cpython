@@ -699,7 +699,8 @@ bytes_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *values)
     else {
         if (needed == 0) {
             /* Delete slice */
-            Py_ssize_t cur, i;
+            size_t cur;
+            Py_ssize_t i;
 
             if (!_canresize(self))
                 return -1;
