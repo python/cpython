@@ -518,7 +518,7 @@ class TestCase(object):
     def assertSequenceEqual(self, seq1, seq2, msg=None, seq_type=None):
         """An equality assertion for ordered sequences (like lists and tuples).
 
-        For the purposes of this function, a valid orderd sequence type is one
+        For the purposes of this function, a valid ordered sequence type is one
         which can be indexed, has a length, and has an equality operator.
 
         Args:
