@@ -565,7 +565,7 @@ class ByteArrayTest(BaseBytesTest):
         self.assertEqual(b, bytearray([0, 1, 2, 42, 42, 42, 3, 4, 5, 6, 7, 8, 9]))
 
     def test_extended_set_del_slice(self):
-        indices = (0, None, 1, 3, 19, 300, -1, -2, -31, -300)
+        indices = (0, None, 1, 3, 19, 300, 1<<333, -1, -2, -31, -300)
         for start in indices:
             for stop in indices:
                 # Skip invalid step 0

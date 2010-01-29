@@ -2624,7 +2624,8 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 		if (value == NULL) {
 			/* delete slice */
 			PyObject **garbage;
-			Py_ssize_t cur, i;
+			size_t cur;
+			Py_ssize_t i;
 
 			if (slicelength <= 0)
 				return 0;
