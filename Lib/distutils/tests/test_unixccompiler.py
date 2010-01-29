@@ -1,8 +1,8 @@
 """Tests for distutils.unixccompiler."""
 import sys
 import unittest
+import sysconfig
 
-from distutils import sysconfig
 from distutils.unixccompiler import UnixCCompiler
 
 class UnixCCompilerTestCase(unittest.TestCase):

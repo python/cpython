@@ -134,14 +134,17 @@ class Extension:
 
 def read_setup_file(filename):
     """Reads a Setup file and returns Extension instances."""
-    from distutils.sysconfig import (parse_makefile, expand_makefile_vars,
+    warnings.warn('distutils.extensions.read_setup_file is deprecated. '
+                  'It will be removed in the next Python release.')
+    _sysconfig = __import__('sysconfig')
+    from distutils.sysconfig import (expand_makefile_vars,
                                      _variable_rx)
 
     from distutils.text_file import TextFile
     from distutils.util import split_quoted
 
     # First pass over the file to gather "VAR = VALUE" assignments.
-    vars = parse_makefile(filename)
+    vars = _sysconfig._parse_makefile(filename)
 
     # Second pass to gobble up the real content: lines of the form
     #   <module> ... [<sourcefile> ...] [<cpparg> ...] [<library> ...]
@@ -161,7 +164,10 @@ def read_setup_file(filename):
             file.warn("'%s' lines not handled yet" % line)
             continue
 
-        line = expand_makefile_vars(line, vars)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            line = expand_makefile_vars(line, vars)
+
         words = split_quoted(line)
 
         # NB. this parses a slightly different syntax than the old

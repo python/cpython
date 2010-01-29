@@ -8,11 +8,11 @@ __revision__ = "$Id$"
 import sys
 import os
 
+from sysconfig import get_python_version, get_platform
+
 from distutils.core import Command
-from distutils.util import get_platform
 from distutils.dir_util import remove_tree
 from distutils.errors import DistutilsOptionError, DistutilsPlatformError
-from distutils.sysconfig import get_python_version
 from distutils import log
 
 class bdist_wininst(Command):

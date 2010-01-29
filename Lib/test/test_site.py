@@ -11,6 +11,9 @@ import os
 import sys
 import encodings
 import subprocess
+import sysconfig
+from copy import copy
+
 # Need to make sure to not import 'site' if someone specified ``-S`` at the
 # command-line.  Detect this by just making sure 'site' has not been imported
 # already.
@@ -38,6 +41,7 @@ class HelperFunctionsTests(unittest.TestCase):
         self.old_base = site.USER_BASE
         self.old_site = site.USER_SITE
         self.old_prefixes = site.PREFIXES
+        self.old_vars = copy(sysconfig._CONFIG_VARS)
 
     def tearDown(self):
         """Restore sys.path"""
@@ -45,6 +49,7 @@ class HelperFunctionsTests(unittest.TestCase):
         site.USER_BASE = self.old_base
         site.USER_SITE = self.old_site
         site.PREFIXES = self.old_prefixes
+        sysconfig._CONFIG_VARS = self.old_vars
 
     def test_makepath(self):
         # Test makepath() have an absolute path for its first return value
@@ -137,6 +142,9 @@ class HelperFunctionsTests(unittest.TestCase):
 
         # let's set PYTHONUSERBASE and see if it uses it
         site.USER_BASE = None
+        import sysconfig
+        sysconfig._CONFIG_VARS = None
+
         with EnvironmentVarGuard() as environ:
             environ['PYTHONUSERBASE'] = 'xoxo'
             self.assertTrue(site.getuserbase().startswith('xoxo'),

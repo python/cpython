@@ -35,7 +35,7 @@ usage: %(script)s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
 
 def gen_usage(script_name):
     script = os.path.basename(script_name)
-    return USAGE % vars()
+    return USAGE % {'script': script}
 
 
 # Some mild magic to control the behaviour of 'setup()' from 'run_setup()'.
