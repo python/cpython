@@ -9,14 +9,12 @@ __revision__ = "$Id$"
 import sys, os, re
 from warnings import warn
 
-from sysconfig import get_platform
-
+from distutils.util import get_platform
 from distutils.core import Command
 from distutils.errors import *
 from distutils.ccompiler import customize_compiler
 from distutils.dep_util import newer_group
 from distutils.extension import Extension
-
 from distutils import log
 
 # this keeps compatibility from 2.3 to 2.5
