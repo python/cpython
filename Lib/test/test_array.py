@@ -1011,6 +1011,9 @@ class NumberTest(BaseTest):
         a = array.array(self.typecode, range(10))
         del a[::1000]
         self.assertEqual(a, array.array(self.typecode, [1,2,3,4,5,6,7,8,9]))
+        # test issue7788
+        a = array.array(self.typecode, range(10))
+        del a[9::1<<333]
 
     def test_assignment(self):
         a = array.array(self.typecode, range(10))
