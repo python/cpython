@@ -337,7 +337,7 @@ def check_config_h():
     # XXX since this function also checks sys.version, it's not strictly a
     # "pyconfig.h" check -- should probably be renamed...
 
-    from distutils import sysconfig
+    _sysconfig = __import__('sysconfig')
 
     # if sys.version contains GCC then python was compiled with GCC, and the
     # pyconfig.h file should be OK
@@ -345,7 +345,7 @@ def check_config_h():
         return CONFIG_H_OK, "sys.version mentions 'GCC'"
 
     # let's see if __GNUC__ is mentioned in python.h
-    fn = sysconfig.get_config_h_filename()
+    fn = _sysconfig.get_config_h_filename()
     try:
         with open(fn) as config_h:
             if "__GNUC__" in config_h.read():

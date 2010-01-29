@@ -5,12 +5,14 @@ import os.path
 import sys
 import unittest
 import site
+import sysconfig
+from sysconfig import (get_scheme_names, _CONFIG_VARS, _INSTALL_SCHEMES,
+                       get_config_var, get_path)
 
 from test.support import captured_stdout
 
 from distutils.command.install import install
 from distutils.command import install as install_module
-from distutils.command.install import INSTALL_SCHEMES
 from distutils.core import Distribution
 from distutils.errors import DistutilsOptionError
 
@@ -36,9 +38,23 @@ class InstallTestCase(support.TempdirManager,
             build_lib=os.path.join(builddir, "lib"),
             )
 
-        cmd = install(dist)
-        cmd.home = destination
-        cmd.ensure_finalized()
+
+
+        posix_prefix = _INSTALL_SCHEMES['posix_prefix']
+        old_posix_prefix = posix_prefix['platinclude']
+        posix_prefix['platinclude'] = \
+                '{platbase}/include/python{py_version_short}'
+
+        posix_home = _INSTALL_SCHEMES['posix_home']
+        old_posix_home = posix_home['platinclude']
+        posix_home['platinclude'] = '{base}/include/python'
+        try:
+            cmd = install(dist)
+            cmd.home = destination
+            cmd.ensure_finalized()
+        finally:
+            posix_home['platinclude'] = old_posix_home
+            posix_prefix['platinclude'] = old_posix_prefix
 
         self.assertEqual(cmd.install_base, destination)
         self.assertEqual(cmd.install_platbase, destination)
@@ -63,18 +79,19 @@ class InstallTestCase(support.TempdirManager,
             return
 
         # preparing the environement for the test
-        self.old_user_base = site.USER_BASE
-        self.old_user_site = site.USER_SITE
+        self.old_user_base = get_config_var('userbase')
+        self.old_user_site = get_path('purelib', '%s_user' % os.name)
         self.tmpdir = self.mkdtemp()
         self.user_base = os.path.join(self.tmpdir, 'B')
         self.user_site = os.path.join(self.tmpdir, 'S')
-        site.USER_BASE = self.user_base
-        site.USER_SITE = self.user_site
-        install_module.USER_BASE = self.user_base
-        install_module.USER_SITE = self.user_site
+        _CONFIG_VARS['userbase'] = self.user_base
+        scheme = _INSTALL_SCHEMES['%s_user' % os.name]
+        scheme['purelib'] = self.user_site
 
         def _expanduser(path):
-            return self.tmpdir
+            if path[0] == '~':
+                path = os.path.normpath(self.tmpdir) + path[1:]
+            return path
         self.old_expand = os.path.expanduser
         os.path.expanduser = _expanduser
 
@@ -82,19 +99,17 @@ class InstallTestCase(support.TempdirManager,
             # this is the actual test
             self._test_user_site()
         finally:
-            site.USER_BASE = self.old_user_base
-            site.USER_SITE = self.old_user_site
-            install_module.USER_BASE = self.old_user_base
-            install_module.USER_SITE = self.old_user_site
+            _CONFIG_VARS['userbase'] = self.old_user_base
+            scheme['purelib'] = self.old_user_site
             os.path.expanduser = self.old_expand
 
     def _test_user_site(self):
-        for key in ('nt_user', 'unix_user', 'os2_home'):
-            self.assertTrue(key in INSTALL_SCHEMES)
+        schemes = get_scheme_names()
+        for key in ('nt_user', 'posix_user', 'os2_home'):
+            self.assertTrue(key in schemes)
 
         dist = Distribution({'name': 'xx'})
         cmd = install(dist)
-
         # making sure the user option is there
         options = [name for name, short, lable in
                    cmd.user_options]
@@ -185,7 +200,7 @@ class InstallTestCase(support.TempdirManager,
         with open(cmd.record) as f:
             self.assertEquals(len(f.readlines()), 1)
 
-    def test_debug_mode(self):
+    def _test_debug_mode(self):
         # this covers the code called when DEBUG is set
         old_logs_len = len(self.logs)
         install_module.DEBUG = True

@@ -9,13 +9,14 @@ __revision__ = "$Id$"
 import sys, os, re
 from warnings import warn
 
+from sysconfig import get_platform
+
 from distutils.core import Command
-from distutils.errors import (CCompilerError, DistutilsError, CompileError,
-                              DistutilsSetupError, DistutilsPlatformError)
-from distutils.sysconfig import customize_compiler, get_python_version
+from distutils.errors import *
+from distutils.ccompiler import customize_compiler
 from distutils.dep_util import newer_group
 from distutils.extension import Extension
-from distutils.util import get_platform
+
 from distutils import log
 
 # this keeps compatibility from 2.3 to 2.5
@@ -172,8 +173,7 @@ class build_ext(Command):
         self.user = None
 
     def finalize_options(self):
-        from distutils import sysconfig
-
+        _sysconfig = __import__('sysconfig')
         self.set_undefined_options('build',
                                    ('build_lib', 'build_lib'),
                                    ('build_temp', 'build_temp'),
@@ -190,8 +190,8 @@ class build_ext(Command):
 
         # Make sure Python's include directories (for Python.h, pyconfig.h,
         # etc.) are in the include search path.
-        py_include = sysconfig.get_python_inc()
-        plat_py_include = sysconfig.get_python_inc(plat_specific=1)
+        py_include = _sysconfig.get_path('include')
+        plat_py_include = _sysconfig.get_path('platinclude')
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
         if isinstance(self.include_dirs, str):
@@ -269,7 +269,7 @@ class build_ext(Command):
             if sys.executable.startswith(os.path.join(sys.exec_prefix, "bin")):
                 # building third party extensions
                 self.library_dirs.append(os.path.join(sys.prefix, "lib",
-                                                      "python" + get_python_version(),
+                                  "python" + _sysconfig.get_python_version(),
                                                       "config"))
             else:
                 # building python standard extensions
@@ -277,13 +277,13 @@ class build_ext(Command):
 
         # for extensions under Linux or Solaris with a shared Python library,
         # Python's library directory must be appended to library_dirs
-        sysconfig.get_config_var('Py_ENABLE_SHARED')
+        _sysconfig.get_config_var('Py_ENABLE_SHARED')
         if ((sys.platform.startswith('linux') or sys.platform.startswith('gnu')
              or sys.platform.startswith('sunos'))
-            and sysconfig.get_config_var('Py_ENABLE_SHARED')):
+            and _sysconfig.get_config_var('Py_ENABLE_SHARED')):
             if sys.executable.startswith(os.path.join(sys.exec_prefix, "bin")):
                 # building third party extensions
-                self.library_dirs.append(sysconfig.get_config_var('LIBDIR'))
+                self.library_dirs.append(_sysconfig.get_config_var('LIBDIR'))
             else:
                 # building python standard extensions
                 self.library_dirs.append('.')
@@ -712,13 +712,13 @@ class build_ext(Command):
         of the file from which it will be loaded (eg. "foo/bar.so", or
         "foo\bar.pyd").
         """
-        from distutils.sysconfig import get_config_var
+        _sysconfig = __import__('sysconfig')
         ext_path = ext_name.split('.')
         # OS/2 has an 8 character module (extension) limit :-(
         if os.name == "os2":
             ext_path[len(ext_path) - 1] = ext_path[len(ext_path) - 1][:8]
         # extensions in debug_mode are named 'module_d.pyd' under windows
-        so_ext = get_config_var('SO')
+        so_ext = _sysconfig.get_config_var('SO')
         if os.name == 'nt' and self.debug:
             return os.path.join(*ext_path) + '_d' + so_ext
         return os.path.join(*ext_path) + so_ext
@@ -781,8 +781,8 @@ class build_ext(Command):
             # Don't use the default code below
             return ext.libraries
         else:
-            from distutils import sysconfig
-            if sysconfig.get_config_var('Py_ENABLE_SHARED'):
+            _sysconfig = __import__('sysconfig')
+            if _sysconfig.get_config_var('Py_ENABLE_SHARED'):
                 template = "python%d.%d"
                 pythonlib = (template %
                              (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
