@@ -2199,8 +2199,9 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 	}
 	else if (needed == 0) {
 		/* Delete slice */
-		Py_ssize_t cur, i;
-		
+		size_t cur;
+		Py_ssize_t i;
+
 		if (step < 0) {
 			stop = start + 1;
 			start = stop + step * (slicelength - 1) - 1;

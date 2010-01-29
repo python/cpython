@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7788: Fix an interpreter crash produced by deleting a list
+  slice with very large step value.
+
 - Issue #7766: Change sys.getwindowsversion() return value to a named
   tuple and add the additional members returned in an OSVERSIONINFOEX
   structure. The new members are service_pack_major, service_pack_minor,
