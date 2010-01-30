@@ -130,6 +130,19 @@ All integers are implemented as "long" integer objects of arbitrary size.
    be ``0``.
 
 
+.. cfunction:: PY_LONG_LONG PyLong_AsLongLongAndOverflow(PyObject *pylong, int* overflow)
+
+   Return a C :ctype:`long long` representation of the contents of
+   *pylong*.  If *pylong* is greater than :const:`PY_LLONG_MAX` or less
+   than :const:`PY_LLONG_MIN`, set `*overflow` to ``1`` or ``-1``,
+   respectively, and return ``-1``; otherwise, set `*overflow` to
+   ``0``.  If any other exception occurs (for example a TypeError or
+   MemoryError), then ``-1`` will be returned and ``*overflow`` will
+   be ``0``.
+
+   .. versionadded:: 3.2
+
+
 .. cfunction:: Py_ssize_t PyLong_AsSsize_t(PyObject *pylong)
 
    .. index::
