@@ -20,6 +20,9 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Victor Stinner was given SVN access on January 30 2010 by MvL,
+  at recommendation by Mark Dickinson and Amaury Forgeot d'Arc.
+
 - Stefan Krah was given SVN access on January 5 2010 by GFB, at
   suggestion of Mark Dickinson, for work on the decimal module.
 
