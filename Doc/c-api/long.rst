@@ -87,7 +87,7 @@ Long Integer Objects
 
    Return a new :ctype:`PyLongObject` based on the string value in *str*, which is
    interpreted according to the radix in *base*.  If *pend* is non-*NULL*,
-   ``*pend`` will point to the first character in *str* which follows the
+   *\*pend* will point to the first character in *str* which follows the
    representation of the number.  If *base* is ``0``, the radix will be determined
    based on the leading characters of *str*: if *str* starts with ``'0x'`` or
    ``'0X'``, radix 16 will be used; if *str* starts with ``'0'``, radix 8 will be
@@ -137,10 +137,10 @@ Long Integer Objects
 
    Return a C :ctype:`long` representation of the contents of
    *pylong*.  If *pylong* is greater than :const:`LONG_MAX` or less
-   than :const:`LONG_MIN`, set `*overflow` to ``1`` or ``-1``,
-   respectively, and return ``-1``; otherwise, set `*overflow` to
+   than :const:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``,
+   respectively, and return ``-1``; otherwise, set *\*overflow* to
    ``0``.  If any other exception occurs (for example a TypeError or
-   MemoryError), then ``-1`` will be returned and `*overflow` will
+   MemoryError), then ``-1`` will be returned and *\*overflow* will
    be ``0``.
 
    .. versionadded:: 2.7
@@ -150,10 +150,10 @@ Long Integer Objects
 
    Return a C :ctype:`long long` representation of the contents of
    *pylong*.  If *pylong* is greater than :const:`PY_LLONG_MAX` or less
-   than :const:`PY_LLONG_MIN`, set `*overflow` to ``1`` or ``-1``,
-   respectively, and return ``-1``; otherwise, set `*overflow` to
+   than :const:`PY_LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``,
+   respectively, and return ``-1``; otherwise, set *\*overflow* to
    ``0``.  If any other exception occurs (for example a TypeError or
-   MemoryError), then ``-1`` will be returned and `*overflow` will
+   MemoryError), then ``-1`` will be returned and *\*overflow* will
    be ``0``.
 
    .. versionadded:: 2.7
