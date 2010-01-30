@@ -1,5 +1,5 @@
 from test import test_support
-import mimetools
+mimetools = test_support.import_module('mimetools', deprecated=True)
 multifile = test_support.import_module('multifile', deprecated=True)
 import cStringIO
 
