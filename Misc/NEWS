@@ -775,6 +775,10 @@ Library
 
 - Issue #5387: Fixed mmap.move crash by integer overflow.
 
+- Issue #3807: _multiprocessing build fails when configure is passed 
+  --without-threads argument. When this occurs, _multiprocessing will
+  be disabled, and not compiled.
+
 - Issue #5261: Patch multiprocessing's semaphore.c to support context
   manager use: "with multiprocessing.Lock()" works now.
 
