@@ -414,12 +414,12 @@ does not exist).  It has the following members:
    error.
 
 In the following example we're going to intentionally cause a :exc:`ProtocolError`
-by providing an invalid URI::
+by providing an URI that doesn't point to an XMLRPC server::
 
    import xmlrpclib
 
-   # create a ServerProxy with an invalid URI
-   proxy = xmlrpclib.ServerProxy("http://invalidaddress/")
+   # create a ServerProxy with an URI that doesn't respond to XMLRPC requests
+   proxy = xmlrpclib.ServerProxy("http://www.google.com/")
 
    try:
        proxy.some_method()
