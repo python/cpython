@@ -136,10 +136,10 @@ Server code::
    server.register_function(adder_function, 'add')
 
    # Register an instance; all the methods of the instance are
-   # published as XML-RPC methods (in this case, just 'div').
+   # published as XML-RPC methods (in this case, just 'mul').
    class MyFuncs:
-       def div(self, x, y):
-           return x // y
+       def mul(self, x, y):
+           return x * y
 
    server.register_instance(MyFuncs())
 
@@ -209,7 +209,8 @@ requests sent to Python CGI scripts.
 Example::
 
    class MyFuncs:
-       def div(self, x, y) : return x // y
+       def mul(self, x, y):
+           return x * y
 
 
    handler = CGIXMLRPCRequestHandler()
