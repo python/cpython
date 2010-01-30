@@ -206,6 +206,6 @@ def diff(fn, result):
     finally:
         f.close()
     try:
-        return os.system("diff -u %s @" % fn)
+        return os.system("diff -u %r @" % fn)
     finally:
         os.remove("@")
