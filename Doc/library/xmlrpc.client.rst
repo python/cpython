@@ -283,9 +283,8 @@ XMLRPC::
    import xmlrpc.client
 
    def python_logo():
-        handle = open("python_logo.jpg")
-        return xmlrpc.client.Binary(handle.read())
-        handle.close()
+       with open("python_logo.jpg", "rb") as handle:
+           return xmlrpc.client.Binary(handle.read())
 
    server = SimpleXMLRPCServer(("localhost", 8000))
    print("Listening on port 8000...")
@@ -298,9 +297,8 @@ The client gets the image and saves it to a file::
    import xmlrpc.client
 
    proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
-   handle = open("fetched_python_logo.jpg", "w")
-   handle.write(proxy.python_logo().data)
-   handle.close()
+   with open("fetched_python_logo.jpg", "wb") as handle:
+       handle.write(proxy.python_logo().data)
 
 .. _fault-objects:
 
