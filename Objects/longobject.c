@@ -4393,25 +4393,6 @@ long_is_finite(PyObject *v)
 #endif
 
 
-PyDoc_STRVAR(long_to_bytes_doc,
-"int.to_bytes(length, byteorder, *, signed=False) -> bytes\n\
-\n\
-Return an array of bytes representing an integer.\n\
-\n\
-The integer is represented using length bytes.	An OverflowError is\n\
-raised if the integer is not representable with the given number of\n\
-bytes.\n\
-\n\
-The byteorder argument determines the byte order used to represent the\n\
-integer.  If byteorder is 'big', the most significant byte is at the\n\
-beginning of the byte array.  If byteorder is 'little', the most\n\
-significant byte is at the end of the byte array.  To request the native\n\
-byte order of the host system, use `sys.byteorder' as the byte order value.\n\
-\n\
-The signed keyword-only argument determines whether two's complement is\n\
-used to represent the integer.	If signed is False and a negative integer\n\
-is given, an OverflowError is raised.");
-
 static PyObject *
 long_to_bytes(PyLongObject *v, PyObject *args, PyObject *kwds)
 {
@@ -4475,14 +4456,14 @@ long_to_bytes(PyLongObject *v, PyObject *args, PyObject *kwds)
 	return bytes;
 }
 
-PyDoc_STRVAR(long_from_bytes_doc,
-"int.from_bytes(bytes, byteorder, *, signed=False) -> int\n\
+PyDoc_STRVAR(long_to_bytes_doc,
+"int.to_bytes(length, byteorder, *, signed=False) -> bytes\n\
 \n\
-Return the integer represented by the given array of bytes.\n\
+Return an array of bytes representing an integer.\n\
 \n\
-The bytes argument must either support the buffer protocol or be an\n\
-iterable object producing bytes.  Bytes and bytearray are examples of\n\
-built-in objects that support the buffer protocol.\n\
+The integer is represented using length bytes.	An OverflowError is\n\
+raised if the integer is not representable with the given number of\n\
+bytes.\n\
 \n\
 The byteorder argument determines the byte order used to represent the\n\
 integer.  If byteorder is 'big', the most significant byte is at the\n\
@@ -4490,8 +4471,9 @@ beginning of the byte array.  If byteorder is 'little', the most\n\
 significant byte is at the end of the byte array.  To request the native\n\
 byte order of the host system, use `sys.byteorder' as the byte order value.\n\
 \n\
-The signed keyword-only argument indicates whether two's complement is\n\
-used to represent the integer.");
+The signed keyword-only argument determines whether two's complement is\n\
+used to represent the integer.	If signed is False and a negative integer\n\
+is given, an OverflowError is raised.");
 
 static PyObject *
 long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -4572,6 +4554,24 @@ long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	return long_obj;
 }
+
+PyDoc_STRVAR(long_from_bytes_doc,
+"int.from_bytes(bytes, byteorder, *, signed=False) -> int\n\
+\n\
+Return the integer represented by the given array of bytes.\n\
+\n\
+The bytes argument must either support the buffer protocol or be an\n\
+iterable object producing bytes.  Bytes and bytearray are examples of\n\
+built-in objects that support the buffer protocol.\n\
+\n\
+The byteorder argument determines the byte order used to represent the\n\
+integer.  If byteorder is 'big', the most significant byte is at the\n\
+beginning of the byte array.  If byteorder is 'little', the most\n\
+significant byte is at the end of the byte array.  To request the native\n\
+byte order of the host system, use `sys.byteorder' as the byte order value.\n\
+\n\
+The signed keyword-only argument indicates whether two's complement is\n\
+used to represent the integer.");
 
 static PyMethodDef long_methods[] = {
 	{"conjugate",	(PyCFunction)long_long,	METH_NOARGS,
