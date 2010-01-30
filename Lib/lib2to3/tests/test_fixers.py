@@ -1187,6 +1187,14 @@ class Test_dict(FixerTestCase):
         a = "[i for i in    d.  keys(  )  ]"
         self.check(b, a)
 
+        b = "if   d. viewkeys  ( )  : pass"
+        a = "if   d. keys  ( )  : pass"
+        self.check(b, a)
+
+        b = "[i for i in    d.  viewkeys(  )  ]"
+        a = "[i for i in    d.  keys(  )  ]"
+        self.check(b, a)
+
     def test_trailing_comment(self):
         b = "d.keys() # foo"
         a = "list(d.keys()) # foo"
@@ -1204,6 +1212,16 @@ class Test_dict(FixerTestCase):
                ]"""
         a = """[i for i in d.keys() # foo
                ]"""
+        self.check(b, a)
+
+        b = """[i for i in d.iterkeys() # foo
+               ]"""
+        a = """[i for i in d.keys() # foo
+               ]"""
+        self.check(b, a)
+
+        b = "d.viewitems()  # foo"
+        a = "d.items()  # foo"
         self.check(b, a)
 
     def test_unchanged(self):
@@ -1337,6 +1355,46 @@ class Test_dict(FixerTestCase):
     def test_24(self):
         b = "for x in h.keys()[0]: print x"
         a = "for x in list(h.keys())[0]: print x"
+        self.check(b, a)
+
+    def test_25(self):
+        b = "d.viewkeys()"
+        a = "d.keys()"
+        self.check(b, a)
+
+    def test_26(self):
+        b = "d.viewitems()"
+        a = "d.items()"
+        self.check(b, a)
+
+    def test_27(self):
+        b = "d.viewvalues()"
+        a = "d.values()"
+        self.check(b, a)
+
+    def test_14(self):
+        b = "[i for i in d.viewkeys()]"
+        a = "[i for i in d.keys()]"
+        self.check(b, a)
+
+    def test_15(self):
+        b = "(i for i in d.viewkeys())"
+        a = "(i for i in d.keys())"
+        self.check(b, a)
+
+    def test_17(self):
+        b = "iter(d.viewkeys())"
+        a = "iter(d.keys())"
+        self.check(b, a)
+
+    def test_18(self):
+        b = "list(d.viewkeys())"
+        a = "list(d.keys())"
+        self.check(b, a)
+
+    def test_19(self):
+        b = "sorted(d.viewkeys())"
+        a = "sorted(d.keys())"
         self.check(b, a)
 
 class Test_xrange(FixerTestCase):
