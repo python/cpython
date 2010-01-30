@@ -1144,8 +1144,6 @@ raise_exception(PyObject *self, PyObject *args)
 	return NULL;
 }
 
-#ifdef WITH_THREAD
-
 static PyObject *
 test_datetime_capi(PyObject *self, PyObject *args) {
 	if (PyDateTimeAPI) {
@@ -1159,6 +1157,9 @@ test_datetime_capi(PyObject *self, PyObject *args) {
 	else
 		return NULL;
 }
+
+
+#ifdef WITH_THREAD
 
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
