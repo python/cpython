@@ -254,6 +254,9 @@ Library
 C-API
 -----
 
+- Issue #7767: New function PyLong_AsLongLongAndOverflow added,
+  analogous to PyLong_AsLongAndOverflow.
+
 - Issue #5080: The argument parsing functions PyArg_ParseTuple,
   PyArg_ParseTupleAndKeywords, PyArg_VaParse,
   PyArg_VaParseTupleAndKeywords and PyArg_Parse no longer accept float
