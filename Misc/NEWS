@@ -123,6 +123,12 @@ Tools/Demos
   added to the `Tools/` directory.  They were previously living in the
   sandbox.
 
+Documentation
+-------------
+ 
+- Update python manual page (options -B, -O0, -s, environment variables
+  PYTHONDONTWRITEBYTECODE, PYTHONNOUSERSITE).
+
 
 What's New in Python 2.7 alpha 2?
 =================================
