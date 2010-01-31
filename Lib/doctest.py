@@ -247,7 +247,8 @@ class _SpoofOut(StringIO):
         return result
 
     def truncate(self, size=None):
-        StringIO.truncate(self, size)
+        self.seek(size)
+        StringIO.truncate(self)
 
 # Worst-case linear-time ellipsis matching.
 def _ellipsis_match(want, got):

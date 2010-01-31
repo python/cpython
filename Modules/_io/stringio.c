@@ -350,7 +350,7 @@ PyDoc_STRVAR(stringio_truncate_doc,
     "Truncate size to pos.\n"
     "\n"
     "The pos argument defaults to the current file position, as\n"
-    "returned by tell().  Imply an absolute seek to pos.\n"
+    "returned by tell().  The current file position is unchanged.\n"
     "Returns the new absolute position.\n");
 
 static PyObject *
@@ -390,7 +390,6 @@ stringio_truncate(stringio *self, PyObject *args)
             return NULL;
         self->string_size = size;
     }
-    self->pos = size;
 
     return PyLong_FromSsize_t(size);
 }
