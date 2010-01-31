@@ -391,6 +391,10 @@ class SysModuleTest(unittest.TestCase):
         out = p.stdout.read().strip()
         self.assertEqual(out, '?')
 
+    def test_call_tracing(self):
+        self.assertEqual(sys.call_tracing(str, (2,)), "2")
+        self.assertRaises(TypeError, sys.call_tracing, str, 2)
+
 
 class SizeofTest(unittest.TestCase):
 
