@@ -33,8 +33,8 @@ Here's a sample session using the :mod:`ftplib` module::
    '226 Transfer complete.'
    >>> ftp.quit()
 
-The module defines the following items:
 
+The module defines the following items:
 
 .. class:: FTP([host[, user[, passwd[, acct[, timeout]]]]])
 
@@ -49,26 +49,26 @@ The module defines the following items:
    .. versionchanged:: 2.6
       *timeout* was added.
 
+
 .. class:: FTP_TLS([host[, user[, passwd[, acct[, keyfile[, certfile[, timeout]]]]]]])
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
    Connect as usual to port 21 implicitly securing the FTP control connection
-   before authenticating. Securing the data connection requires user to
-   explicitly ask for it by calling :exc:`prot_p()` method.
-   *keyfile* and *certfile* are optional - they can contain a PEM formatted
-   private key and certificate chain file for the SSL connection.
+   before authenticating. Securing the data connection requires the user to
+   explicitly ask for it by calling the :meth:`prot_p` method.
+   *keyfile* and *certfile* are optional -- they can contain a PEM formatted
+   private key and certificate chain file name for the SSL connection.
 
-   .. versionadded:: 2.7 Contributed by Giampaolo Rodola'
+   .. versionadded:: 2.7
 
-
-   Here's a sample session using :class:`FTP_TLS` class:
+   Here's a sample session using the :class:`FTP_TLS` class:
 
    >>> from ftplib import FTP_TLS
    >>> ftps = FTP_TLS('ftp.python.org')
-   >>> ftps.login()              # login anonimously previously securing control channel
-   >>> ftps.prot_p()             # switch to secure data connection
-   >>> ftps.retrlines('LIST')    # list directory content securely
+   >>> ftps.login()           # login anonymously before securing control channel
+   >>> ftps.prot_p()          # switch to secure data connection
+   >>> ftps.retrlines('LIST') # list directory content securely
    total 9
    drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 .
    drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 ..
@@ -84,43 +84,42 @@ The module defines the following items:
    >>>
 
 
+.. exception:: error_reply
 
-   .. attribute:: all_errors
-
-      The set of all exceptions (as a tuple) that methods of :class:`FTP`
-      instances may raise as a result of problems with the FTP connection (as
-      opposed to programming errors made by the caller).  This set includes the
-      four exceptions listed below as well as :exc:`socket.error` and
-      :exc:`IOError`.
+   Exception raised when an unexpected reply is received from the server.
 
 
-   .. exception:: error_reply
+.. exception:: error_temp
 
-      Exception raised when an unexpected reply is received from the server.
-
-
-   .. exception:: error_temp
-
-      Exception raised when an error code in the range 400--499 is received.
+   Exception raised when an error code in the range 400--499 is received.
 
 
-   .. exception:: error_perm
+.. exception:: error_perm
 
-      Exception raised when an error code in the range 500--599 is received.
+   Exception raised when an error code in the range 500--599 is received.
 
 
-   .. exception:: error_proto
+.. exception:: error_proto
 
-      Exception raised when a reply is received from the server that does not
-      begin with a digit in the range 1--5.
+   Exception raised when a reply is received from the server that does not
+   begin with a digit in the range 1--5.
+
+
+.. data:: all_errors
+
+   The set of all exceptions (as a tuple) that methods of :class:`FTP`
+   instances may raise as a result of problems with the FTP connection (as
+   opposed to programming errors made by the caller).  This set includes the
+   four exceptions listed below as well as :exc:`socket.error` and
+   :exc:`IOError`.
 
 
 .. seealso::
 
    Module :mod:`netrc`
-      Parser for the :file:`.netrc` file format.  The file :file:`.netrc` is typically
-      used by FTP clients to load user authentication information before prompting the
-      user.
+      Parser for the :file:`.netrc` file format.  The file :file:`.netrc` is
+      typically used by FTP clients to load user authentication information
+      before prompting the user.
 
    .. index:: single: ftpmirror.py
 
