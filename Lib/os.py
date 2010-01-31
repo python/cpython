@@ -336,7 +336,7 @@ def execlpe(file, *args):
     execvpe(file, args[:-1], env)
 
 def execvp(file, args):
-    """execp(file, args)
+    """execvp(file, args)
 
     Execute the executable file (which is searched for along $PATH)
     with argument list args, replacing the current process.
