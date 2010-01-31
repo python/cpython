@@ -693,6 +693,9 @@ Documentation
 
 - Issue #6556: Fixed the Distutils configuration files location explanation
   for Windows.
+ 
+- Update python manual page (options -B, -O0, -s, environment variables
+  PYTHONDONTWRITEBYTECODE, PYTHONNOUSERSITE).
 
 Tests
 -----
