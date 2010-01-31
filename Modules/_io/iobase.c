@@ -102,8 +102,8 @@ iobase_tell(PyObject *self, PyObject *args)
 PyDoc_STRVAR(iobase_truncate_doc,
     "Truncate file to size bytes.\n"
     "\n"
-    "Size defaults to the current IO position as reported by tell().  Return\n"
-    "the new size.");
+    "File pointer is left unchanged.  Size defaults to the current IO\n"
+    "position as reported by tell().  Returns the new size.");
 
 static PyObject *
 iobase_truncate(PyObject *self, PyObject *args)

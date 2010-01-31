@@ -856,7 +856,7 @@ class BytesIO(BufferedIOBase):
         elif pos < 0:
             raise ValueError("negative truncate position %r" % (pos,))
         del self._buffer[pos:]
-        return self.seek(pos)
+        return pos
 
     def readable(self):
         return True
@@ -1215,8 +1215,7 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         if pos is None:
             pos = self.tell()
         # Use seek to flush the read buffer.
-        self.seek(pos)
-        return BufferedWriter.truncate(self)
+        return BufferedWriter.truncate(self, pos)
 
     def read(self, n=None):
         if n is None:
@@ -1717,8 +1716,7 @@ class TextIOWrapper(TextIOBase):
         self.flush()
         if pos is None:
             pos = self.tell()
-        self.seek(pos)
-        return self.buffer.truncate()
+        return self.buffer.truncate(pos)
 
     def detach(self):
         if self.buffer is None:
