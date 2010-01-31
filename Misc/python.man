@@ -8,6 +8,9 @@ python \- an interpreted, interactive, object-oriented programming language
 .SH SYNOPSIS
 .B python
 [
+.B \-B
+]
+[
 .B \-d
 ]
 [
@@ -23,13 +26,19 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-m 
 .I module-name
 ]
-[
-.B \-O
-]
 .br
        [
+.B \-O
+]
+[
+.B \-O0
+]
+[
 .B -Q
 .I argument
+]
+[
+.B \-s
 ]
 [
 .B \-S
@@ -56,6 +65,9 @@ python \- an interpreted, interactive, object-oriented programming language
 ]
 [
 .B \-3
+]
+[
+.B \-?
 ]
 .br
        [
@@ -95,6 +107,11 @@ viewed by running the
 program.  
 .SH COMMAND LINE OPTIONS
 .TP
+.B \-B
+Don't write
+.I .py[co]
+files on import. See also PYTHONDONTWRITEBYTECODE.
+.TP
 .BI "\-c " command
 Specify the command to execute (see next section).
 This terminates the option list (following options are passed as
@@ -108,7 +125,7 @@ compilation options).
 Ignore environment variables like PYTHONPATH and PYTHONHOME that modify
 the behavior of the interpreter.
 .TP
-.B \-h
+.B \-h ", " \-? ", "\-\-help
 Prints the usage for the interpreter executable and exits.
 .TP
 .B \-i
@@ -131,6 +148,9 @@ compiled (bytecode) files from
 .I .pyc
 to \fI.pyo\fP.  Given twice, causes docstrings to be discarded.
 .TP
+.B \-O0
+Discard docstrings in addition to the \fB-O\fP optimizations.
+.TP
 .BI "\-Q " argument
 Division control; see PEP 238.  The argument must be one of "old" (the
 default, int/int and long/long return an int or long), "new" (new
@@ -139,6 +159,9 @@ division semantics, i.e. int/int and long/long returns a float),
 long/long), or "warnall" (old division semantics with a warning for
 all use of the division operator).  For a use of "warnall", see the
 Tools/scripts/fixdiv.py script.
+.TP
+.B \-s
+Don't add user site directory to sys.path.
 .TP
 .B \-S
 Disable the import of the module
@@ -167,7 +190,7 @@ twice, print a message for each file that is checked for when
 searching for a module.  Also provides information on module cleanup
 at exit.
 .TP
-.B \-V
+.B \-V ", " \-\-version
 Prints the Python version number of the executable and exits.
 .TP
 .BI "\-W " argument
@@ -370,9 +393,17 @@ specifying \fB\-O\fP multiple times.
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-d\fP option. If set to an integer, it is equivalent to
 specifying \fB\-d\fP multiple times.
+.IP PYTHONDONTWRITEBYTECODE
+If this is set to a non-empty string it is equivalent to specifying
+the \fB\-B\fP option (don't try to write
+.I .py[co]
+files).
 .IP PYTHONINSPECT
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-i\fP option.
+.IP PYTHONNOUSERSITE
+If this is set to a non-empty string it is equivalent to specifying
+the \fB\-s\fP option (Don't add the user site directory to sys.path).
 .IP PYTHONUNBUFFERED
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-u\fP option.
