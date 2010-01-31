@@ -1,4 +1,4 @@
-from test.test_support import run_unittest
+from test.test_support import run_unittest, check_warnings
 import cgi
 import os
 import sys
@@ -102,11 +102,6 @@ parse_strict_test_cases = [
       })
     ]
 
-def norm(list):
-    if type(list) == type([]):
-        list.sort()
-    return list
-
 def first_elts(list):
     return map(lambda x:x[0], list)
 
@@ -141,18 +136,18 @@ class CgiTests(unittest.TestCase):
             if type(expect) == type({}):
                 # test dict interface
                 self.assertEqual(len(expect), len(fcd))
-                self.assertEqual(norm(expect.keys()), norm(fcd.keys()))
-                self.assertEqual(norm(expect.values()), norm(fcd.values()))
-                self.assertEqual(norm(expect.items()), norm(fcd.items()))
+                self.assertSameElements(expect.keys(), fcd.keys())
+                self.assertSameElements(expect.values(), fcd.values())
+                self.assertSameElements(expect.items(), fcd.items())
                 self.assertEqual(fcd.get("nonexistent field", "default"), "default")
                 self.assertEqual(len(sd), len(fs))
-                self.assertEqual(norm(sd.keys()), norm(fs.keys()))
+                self.assertSameElements(sd.keys(), fs.keys())
                 self.assertEqual(fs.getvalue("nonexistent field", "default"), "default")
                 # test individual fields
                 for key in expect.keys():
                     expect_val = expect[key]
                     self.assertTrue(fcd.has_key(key))
-                    self.assertEqual(norm(fcd[key]), norm(expect[key]))
+                    self.assertSameElements(fcd[key], expect[key])
                     self.assertEqual(fcd.get(key, "default"), fcd[key])
                     self.assertTrue(fs.has_key(key))
                     if len(expect_val) > 1:
@@ -168,12 +163,12 @@ class CgiTests(unittest.TestCase):
                         self.assertTrue(single_value)
                         self.assertEqual(val, expect_val[0])
                         self.assertEqual(fs.getvalue(key), expect_val[0])
-                    self.assertEqual(norm(sd.getlist(key)), norm(expect_val))
+                    self.assertSameElements(sd.getlist(key), expect_val)
                     if single_value:
-                        self.assertEqual(norm(sd.values()),
-                               first_elts(norm(expect.values())))
-                        self.assertEqual(norm(sd.items()),
-                               first_second_elts(norm(expect.items())))
+                        self.assertSameElements(sd.values(),
+                                                first_elts(expect.values()))
+                        self.assertSameElements(sd.items(),
+                                                first_second_elts(expect.items()))
 
     def test_weird_formcontentdict(self):
         # Test the weird FormContentDict classes
@@ -184,7 +179,7 @@ class CgiTests(unittest.TestCase):
             self.assertEqual(d[k], v)
         for k, v in d.items():
             self.assertEqual(expect[k], v)
-        self.assertEqual(norm(expect.values()), norm(d.values()))
+        self.assertSameElements(expect.values(), d.values())
 
     def test_log(self):
         cgi.log("Testing")
@@ -345,14 +340,16 @@ this is the content of the fake file
         self.assertEqual(result, v)
 
     def test_deprecated_parse_qs(self):
-        # this func is moved to urlparse, this is just a sanity check
-        self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
-                         cgi.parse_qs('a=A1&b=B2&B=B3'))
+        with check_warnings():
+            # this func is moved to urlparse, this is just a sanity check
+            self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
+                             cgi.parse_qs('a=A1&b=B2&B=B3'))
 
     def test_deprecated_parse_qsl(self):
-        # this func is moved to urlparse, this is just a sanity check
-        self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
-                         cgi.parse_qsl('a=A1&b=B2&B=B3'))
+        with check_warnings():
+            # this func is moved to urlparse, this is just a sanity check
+            self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
+                             cgi.parse_qsl('a=A1&b=B2&B=B3'))
 
     def test_parse_header(self):
         self.assertEqual(

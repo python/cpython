@@ -172,7 +172,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
         else:
             qs = ""
         environ['QUERY_STRING'] = qs    # XXX Shouldn't, really
-    return parse_qs(qs, keep_blank_values, strict_parsing)
+    return urlparse.parse_qs(qs, keep_blank_values, strict_parsing)
 
 
 # parse query string function called from urlparse,
