@@ -122,14 +122,14 @@ class LargeFileTest(unittest.TestCase):
             newsize -= 1
             f.seek(42)
             f.truncate(newsize)
-            self.assertEqual(f.tell(), newsize)  # else wasn't truncated
+            self.assertEqual(f.tell(), 42)
             f.seek(0, 2)
             self.assertEqual(f.tell(), newsize)
             # XXX truncate(larger than true size) is ill-defined
             # across platform; cut it waaaaay back
             f.seek(0)
             f.truncate(1)
-            self.assertEqual(f.tell(), 1)       # else pointer moved
+            self.assertEqual(f.tell(), 0)       # else pointer moved
             f.seek(0)
             self.assertEqual(len(f.read()), 1)  # else wasn't truncated
 
