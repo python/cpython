@@ -414,7 +414,7 @@ PyDoc_STRVAR(truncate_doc,
 "truncate([size]) -> int.  Truncate the file to at most size bytes.\n"
 "\n"
 "Size defaults to the current file position, as returned by tell().\n"
-"Returns the new size.  Imply an absolute seek to the position size.");
+"The current file position is unchanged.  Returns the new size.\n");
 
 static PyObject *
 bytesio_truncate(bytesio *self, PyObject *args)
@@ -453,7 +453,6 @@ bytesio_truncate(bytesio *self, PyObject *args)
         if (resize_buffer(self, size) < 0)
             return NULL;
     }
-    self->pos = size;
 
     return PyLong_FromSsize_t(size);
 }

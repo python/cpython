@@ -2313,15 +2313,7 @@ textiowrapper_truncate(textio *self, PyObject *args)
         return NULL;
     Py_DECREF(res);
 
-    if (pos != Py_None) {
-        res = PyObject_CallMethodObjArgs((PyObject *) self,
-                                          _PyIO_str_seek, pos, NULL);
-        if (res == NULL)
-            return NULL;
-        Py_DECREF(res);
-    }
-
-    return PyObject_CallMethodObjArgs(self->buffer, _PyIO_str_truncate, NULL);
+    return PyObject_CallMethodObjArgs(self->buffer, _PyIO_str_truncate, pos, NULL);
 }
 
 static PyObject *

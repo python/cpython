@@ -76,7 +76,7 @@ class MemoryTestMixin:
         self.assertEqual(f.seek(0), 0)
         self.assertEqual(f.write(t("h")), 1)
         self.assertEqual(f.truncate(12), 12)
-        self.assertEqual(f.tell(), 12)
+        self.assertEqual(f.tell(), 1)
 
     def test_write(self):
         buf = self.buftype("hello world\n")
@@ -127,7 +127,8 @@ class MemoryTestMixin:
         # truncate() accepts long objects
         self.assertEqual(memio.truncate(4L), 4)
         self.assertEqual(memio.getvalue(), buf[:4])
-        self.assertEqual(memio.tell(), 4)
+        self.assertEqual(memio.tell(), 6)
+        memio.seek(0, 2)
         memio.write(buf)
         self.assertEqual(memio.getvalue(), buf[:4] + buf)
         pos = memio.tell()
