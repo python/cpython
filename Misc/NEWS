@@ -213,6 +213,11 @@ Build
 - Issue #7541: when using ``python-config`` with a framework install the compiler might
   use the wrong library.
 
+Documentation
+-------------
+ 
+- Update python manual page (options -B, -O0, -s, environment variables
+  PYTHONDONTWRITEBYTECODE, PYTHONNOUSERSITE).
 
 Tests
 -----
