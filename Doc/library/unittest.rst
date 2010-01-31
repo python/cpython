@@ -113,7 +113,7 @@ For a list of all the command line options::
 
    python -m unittest -h
 
-..  versionchanged:: 2.7
+.. versionchanged:: 3.2
    In earlier versions it was only possible to run individual test methods and
    not modules or classes.
 
@@ -126,7 +126,7 @@ tests in a project or just a subset.
 Test Discovery
 --------------
 
-.. versionadded:: 2.7
+.. versionadded:: 3.2
 
 unittest supports simple test discovery. For a project's tests to be
 compatible with test discovery they must all be importable from the top level
@@ -1084,7 +1084,7 @@ Test cases
       If :meth:`setUp` fails, meaning that :meth:`tearDown` is not called,
       then any cleanup functions added will still be called.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: doCleanups()
@@ -1100,7 +1100,7 @@ Test cases
       :meth:`doCleanups` pops methods off the stack of cleanup
       functions one at a time, so it can be called at any time.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)
@@ -1179,7 +1179,7 @@ Grouping tests
       (for example when counting tests or comparing for equality)
       so the tests returned must be the same for repeated iterations.
 
-      .. versionchanged:: 2.7
+      .. versionchanged:: 3.2
          In earlier versions the :class:`TestSuite` accessed tests directly rather
          than through iteration, so overriding :meth:`__iter__` wasn't sufficient
          for providing tests.
@@ -1227,7 +1227,7 @@ Loading and running tests
       load the tests. This allows modules to customize test loading.
       This is the `load_tests protocol`_.
 
-      .. versionchanged:: 2.7
+      .. versionchanged:: 3.2
          Support for ``load_tests`` added.
 
 
@@ -1297,7 +1297,8 @@ Loading and running tests
       ``load_tests`` does not need to pass this argument in to
       ``loader.discover()``.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
+
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
@@ -1431,14 +1432,14 @@ Loading and running tests
 
       Called once before any tests are executed.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: stopTestRun(test)
 
       Called once after all tests are executed.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: addError(test, err)
@@ -1546,7 +1547,7 @@ Loading and running tests
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
    This stores the result of the tests run as the ``result`` attribute.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.2
       The ``exit`` and ``verbosity`` parameters were added.
 
 
@@ -1554,7 +1555,7 @@ load_tests Protocol
 ###################
 
 
-.. versionadded:: 2.7
+.. versionadded:: 3.2
 
 
 Modules or packages can customize how tests are loaded from them during normal
