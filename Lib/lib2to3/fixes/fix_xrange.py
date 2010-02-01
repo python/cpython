@@ -40,7 +40,6 @@ class FixXrange(fixer_base.BaseFix):
             for n in results["rest"]:
                 list_call.append_child(n)
             return list_call
-        return node
 
     P1 = "power< func=NAME trailer< '(' node=any ')' > any* >"
     p1 = patcomp.compile_pattern(P1)

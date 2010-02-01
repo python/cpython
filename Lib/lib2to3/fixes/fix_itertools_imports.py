@@ -42,4 +42,4 @@ class FixItertoolsImports(fixer_base.BaseFix):
             p = node.get_prefix()
             node = BlankLine()
             node.prefix = p
-        return node
+            return node
