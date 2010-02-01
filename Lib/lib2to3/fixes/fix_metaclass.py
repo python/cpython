@@ -150,7 +150,7 @@ class FixMetaclass(fixer_base.BaseFix):
 
     def transform(self, node, results):
         if not has_metaclass(node):
-            return node
+            return
 
         fixup_parse_tree(node)
 
