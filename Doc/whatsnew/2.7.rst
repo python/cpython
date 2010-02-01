@@ -6,7 +6,7 @@
 :Release: |release|
 :Date: |today|
 
-.. Fix accents on Kristjan Valur Jonsson, Fuerstenau, Tarek Ziade.
+.. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
 .. $Id$
    Rules for maintenance:
@@ -585,11 +585,16 @@ changes, or look through the Subversion logs for all the details.
   left-alignment.  This has been changed to right-alignment, which seems
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
-* Distutils is being more actively developed, thanks to Tarek Ziade
-  who has taken over maintenance of the package.  A new
-  :file:`setup.py` subcommand, ``check``, will
-  check that the arguments being passed to the :func:`setup` function
-  are complete and correct (:issue:`5732`).
+* Distutils is being more actively developed, thanks to Tarek Ziadé
+  who has taken over maintenance of the package, so there are a number
+  of fixes and improvments.
+
+  A new :file:`setup.py` subcommand, ``check``, will check that the
+  arguments being passed to the :func:`setup` function are complete
+  and correct (:issue:`5732`).
+
+  Byte-compilation by the ``install_lib``  subcommand is now only done
+  if the ``sys.dont_write_bytecode`` setting allows it (:issue:`7071`).
 
   :func:`distutils.sdist.add_defaults` now uses
   *package_dir* and *data_files* to create the MANIFEST file.
@@ -601,7 +606,7 @@ changes, or look through the Subversion logs for all the details.
   It is no longer mandatory to store clear-text passwords in the
   :file:`.pypirc` file when registering and uploading packages to PyPI. As long
   as the username is present in that file, the :mod:`distutils` package will
-  prompt for the password if not present.  (Added by Tarek Ziade,
+  prompt for the password if not present.  (Added by Tarek Ziadé,
   based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
 
   A Distutils setup can now specify that a C extension is optional by
@@ -614,7 +619,7 @@ changes, or look through the Subversion logs for all the details.
   :meth:`read_pkg_file` method will read the contents of a package's
   :file:`PKG-INFO` metadata file.  For an example of its use, see
   :ref:`reading-metadata`.
-  (Contributed by Tarek Ziade; :issue:`7457`.)
+  (Contributed by Tarek Ziadé; :issue:`7457`.)
 
   :file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
   to skip reading the :file:`~/.pydistutils.cfg` file.  (Suggested by
@@ -753,7 +758,7 @@ changes, or look through the Subversion logs for all the details.
   :func:`getuserbase` returns the value of the :envvar:`USER_BASE`
   environment variable, giving the path to a directory that can be used
   to store data.
-  (Contributed by Tarek Ziade; :issue:`6693`.)
+  (Contributed by Tarek Ziadé; :issue:`6693`.)
 
 * The :mod:`socket` module's :class:`SSL` objects now support the
   buffer API, which fixed a test suite failure.  (Fixed by Antoine Pitrou;
@@ -798,7 +803,15 @@ changes, or look through the Subversion logs for all the details.
   named ``major``, ``minor``, ``micro``, ``releaselevel``, and ``serial``.
   (Contributed by Ross Light; :issue:`4285`.)
 
-* The :mod:`tarfile` module now supports filtering the :class:`TarInfo`
+* The :mod:`tarfile` module's default error handling has changed, to
+  no longer suppress fatal errors.  The default error level was previously 0,
+  which meant that errors would only result in a message being written to the
+  debug log, but because the debug log is not activated by default,
+  these errors go unnoticed.  The default error level is now 1,
+  which raises an exception if there's an error.
+  (Changed by Lars Gustäbel; :issue:`7357`.)
+
+  :mod:`tarfile` now supports filtering the :class:`TarInfo`
   objects being added to a tar file.  When you call :meth:`TarFile.add`,
   instance, you may supply an optional *filter* argument
   that's a callable.  The *filter* callable will be passed the
@@ -806,7 +819,7 @@ changes, or look through the Subversion logs for all the details.
   If the callable returns ``None``, the file will be excluded from the
   resulting archive.  This is more powerful than the existing
   *exclude* argument, which has therefore been deprecated.
-  (Added by Lars Gustaebel; :issue:`6856`.)
+  (Added by Lars Gustäbel; :issue:`6856`.)
 
 * The :mod:`threading` module's :meth:`Event.wait` method now returns
   the internal flag on exit.  This means the method will usually
@@ -815,12 +828,16 @@ changes, or look through the Subversion logs for all the details.
   a timeout was provided and the operation timed out.
   (Contributed by Tim Lesher; :issue:`1674032`.)
 
-* The :func:`is_zipfile` function in the :mod:`zipfile` module now
-  accepts a file object, in addition to the path names accepted in earlier
-  versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
+* The :mod:`zipfile` module's :class:`ZipFile` now supports the context
+  management protocol, so you can write ``with zipfile.ZipFile(...) as f: ...``.
+  (Contributed by Brian Curtin; :issue:`5511`.)
 
   :mod:`zipfile` now supports archiving empty directories and
   extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
+
+  The :func:`is_zipfile` function in the :mod:`zipfile` module now
+  accepts a file object, in addition to the path names accepted in earlier
+  versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
 
 .. ======================================================================
 .. whole new modules get described in subsections here
