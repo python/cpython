@@ -56,7 +56,6 @@ class FixImport(fixer_base.BaseFix):
             if self.probably_a_local_import(imp.value):
                 imp.value = u"." + imp.value
                 imp.changed()
-                return node
         else:
             have_local = False
             have_absolute = False
