@@ -12,6 +12,7 @@ overview:
 .. toctree::
 
    sys.rst
+   sysconfig.rst
    builtins.rst
    __main__.rst
    warnings.rst
