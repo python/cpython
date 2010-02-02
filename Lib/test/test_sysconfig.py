@@ -15,7 +15,8 @@ from test.support import run_unittest, TESTFN
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
-                       _get_default_scheme, _expand_vars)
+                       _get_default_scheme, _expand_vars,
+                       get_scheme_names)
 
 class TestSysConfig(unittest.TestCase):
 
@@ -231,6 +232,11 @@ class TestSysConfig(unittest.TestCase):
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
         self.assertTrue(os.path.isfile(config_h), config_h)
+
+    def test_get_scheme_names(self):
+        wanted = ('nt', 'nt_user', 'os2', 'os2_home', 'posix_home',
+                  'posix_prefix', 'posix_user')
+        self.assertEquals(get_scheme_names(), wanted)
 
 
 def test_main():
