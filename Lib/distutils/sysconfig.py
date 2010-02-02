@@ -9,7 +9,7 @@ Written by:   Fred L. Drake, Jr.
 Email:        <fdrake@acm.org>
 
 **This module has been moved out of Distutils and will be removed from
-Python in the next version (3.2)**
+Python in the next version (3.3)**
 """
 
 __revision__ = "$Id$"
