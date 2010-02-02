@@ -51,13 +51,13 @@ class JoinTestCase(unittest.TestCase):
         # create and populate primary index
         priDB = db.DB(self.env)
         priDB.open(self.filename, "primary", db.DB_BTREE, db.DB_CREATE)
-        map(lambda t, priDB=priDB: apply(priDB.put, t), ProductIndex)
+        map(lambda t, priDB=priDB: priDB.put(*t), ProductIndex)
 
         # create and populate secondary index
         secDB = db.DB(self.env)
         secDB.set_flags(db.DB_DUP | db.DB_DUPSORT)
         secDB.open(self.filename, "secondary", db.DB_BTREE, db.DB_CREATE)
-        map(lambda t, secDB=secDB: apply(secDB.put, t), ColorIndex)
+        map(lambda t, secDB=secDB: secDB.put(*t), ColorIndex)
 
         sCursor = None
         jCursor = None
