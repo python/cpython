@@ -76,6 +76,7 @@ PyObject *
 PyMemoryView_FromObject(PyObject *base)
 {
     PyMemoryViewObject *mview;
+    Py_buffer view;
 
     if (!PyObject_CheckBuffer(base)) {
         PyErr_SetString(PyExc_TypeError,
@@ -84,20 +85,17 @@ PyMemoryView_FromObject(PyObject *base)
         return NULL;
     }
 
-    mview = (PyMemoryViewObject *)
-        PyObject_GC_New(PyMemoryViewObject, &PyMemoryView_Type);
-    if (mview == NULL)
+    if (PyObject_GetBuffer(base, &view, PyBUF_FULL_RO) < 0)
         return NULL;
 
-    mview->base = NULL;
-    if (PyObject_GetBuffer(base, &(mview->view), PyBUF_FULL_RO) < 0) {
-        Py_DECREF(mview);
+    mview = (PyMemoryViewObject *)PyMemoryView_FromBuffer(&view);
+    if (mview == NULL) {
+        PyBuffer_Release(&view);
         return NULL;
     }
 
     mview->base = base;
     Py_INCREF(base);
-    _PyObject_GC_TRACK(mview);
     return (PyObject *)mview;
 }
 
