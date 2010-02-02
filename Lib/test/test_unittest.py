@@ -3056,7 +3056,7 @@ class Test_Assertions(TestCase):
         try:
             self.assertRaises(KeyError, lambda: None)
         except self.failureException as e:
-            self.assertIn("KeyError not raised", e)
+            self.assertIn("KeyError not raised", e.args)
         else:
             self.fail("assertRaises() didn't fail")
         try:
@@ -3073,7 +3073,7 @@ class Test_Assertions(TestCase):
             with self.assertRaises(KeyError):
                 pass
         except self.failureException as e:
-            self.assertIn("KeyError not raised", e)
+            self.assertIn("KeyError not raised", e.args)
         else:
             self.fail("assertRaises() didn't fail")
         try:
@@ -3590,6 +3590,9 @@ class TestDiscovery(TestCase):
 
             def __eq__(self, other):
                 return self.path == other.path
+
+            # Silence py3k warning
+            __hash__ = None
 
         loader._get_module_from_name = lambda name: Module(name)
         def loadTestsFromModule(module, use_load_tests):
