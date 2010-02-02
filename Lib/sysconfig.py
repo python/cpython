@@ -343,7 +343,9 @@ def get_config_h_filename():
 
 def get_scheme_names():
     """Returns a tuple containing the schemes names."""
-    return _INSTALL_SCHEMES.keys()
+    schemes = _INSTALL_SCHEMES.keys()
+    schemes.sort()
+    return tuple(schemes)
 
 def get_path_names():
     """Returns a tuple containing the paths names."""
