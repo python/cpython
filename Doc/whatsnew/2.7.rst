@@ -825,6 +825,14 @@ changes, or look through the Subversion logs for all the details.
 .. ======================================================================
 .. whole new modules get described in subsections here
 
+* XXX A new :mod:`sysconfig` module has been extracted from :mod:`distutils`
+  and put in the standard library.
+
+  The :mod:`sysconfig` module provides access to Python's configuration
+  information like the list of installation paths and the configuration
+  variables relevant for the current platform.
+
+
 Unit Testing Enhancements
 ---------------------------------
 
