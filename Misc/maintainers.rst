@@ -176,7 +176,7 @@ sched
 select
 shelve
 shlex
-shutil
+shutil              tarek
 signal
 site
 smtpd
@@ -196,6 +196,7 @@ sunau
 symbol
 symtable            benjamin.peterson
 sys
+sysconfig           tarek
 syslog
 tabnanny            tim_one
 tarfile             lars.gustaebel
