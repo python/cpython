@@ -239,49 +239,12 @@ def _parse_makefile(filename, vars=None):
     vars.update(done)
     return vars
 
-def parse_config_h(fp, vars=None):
-    """Parse a config.h-style file.
-
-    A dictionary containing name/value pairs is returned.  If an
-    optional dictionary is passed in as the second argument, it is
-    used instead of a new dictionary.
-    """
-    import re
-    if vars is None:
-        vars = {}
-    define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
-    undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
-
-    while True:
-        line = fp.readline()
-        if not line:
-            break
-        m = define_rx.match(line)
-        if m:
-            n, v = m.group(1, 2)
-            try: v = int(v)
-            except ValueError: pass
-            vars[n] = v
-        else:
-            m = undef_rx.match(line)
-            if m:
-                vars[m.group(1)] = 0
-    return vars
 
 def _get_makefile_filename():
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
     return os.path.join(get_path('stdlib'), "config", "Makefile")
 
-def get_config_h_filename():
-    if _PYTHON_BUILD:
-        if os.name == "nt":
-            inc_dir = os.path.join(_PROJECT_BASE, "PC")
-        else:
-            inc_dir = _PROJECT_BASE
-    else:
-        inc_dir = get_path('platinclude')
-    return os.path.join(inc_dir, 'pyconfig.h')
 
 def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""
@@ -339,10 +302,55 @@ def _init_non_posix(vars):
 # public APIs
 #
 
+
+def parse_config_h(fp, vars=None):
+    """Parse a config.h-style file.
+
+    A dictionary containing name/value pairs is returned.  If an
+    optional dictionary is passed in as the second argument, it is
+    used instead of a new dictionary.
+    """
+    import re
+    if vars is None:
+        vars = {}
+    define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
+    undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
+
+    while True:
+        line = fp.readline()
+        if not line:
+            break
+        m = define_rx.match(line)
+        if m:
+            n, v = m.group(1, 2)
+            try: v = int(v)
+            except ValueError: pass
+            vars[n] = v
+        else:
+            m = undef_rx.match(line)
+            if m:
+                vars[m.group(1)] = 0
+    return vars
+
+def get_config_h_filename():
+    """Returns the path of pyconfig.h."""
+    if _PYTHON_BUILD:
+        if os.name == "nt":
+            inc_dir = os.path.join(_PROJECT_BASE, "PC")
+        else:
+            inc_dir = _PROJECT_BASE
+    else:
+        inc_dir = get_path('platinclude')
+    return os.path.join(inc_dir, 'pyconfig.h')
+
 def get_scheme_names():
-    return _INSTALL_SCHEMES.keys()
+    """Returns a tuple containing the schemes names."""
+    schemes = list(_INSTALL_SCHEMES.keys())
+    schemes.sort()
+    return tuple(schemes)
 
 def get_path_names():
+    """Returns a tuple containing the paths names."""
     return _SCHEME_KEYS
 
 def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
