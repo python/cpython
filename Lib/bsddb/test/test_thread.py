@@ -424,7 +424,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                 readers.pop().start()
             except (db.DBLockDeadlockError, db.DBLockNotGrantedError), val:
                 if verbose:
-                    print "%s: Aborting transaction (%s)" % (name, val[1])
+                    print "%s: Aborting transaction (%s)" % (name, val.args[1])
                 txn.abort()
 
         if verbose:
@@ -455,7 +455,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                 finished = True
             except (db.DBLockDeadlockError, db.DBLockNotGrantedError), val:
                 if verbose:
-                    print "%s: Aborting transaction (%s)" % (name, val[1])
+                    print "%s: Aborting transaction (%s)" % (name, val.args[1])
                 c.close()
                 txn.abort()
 
