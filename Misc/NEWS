@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #7385: Fix a crash in `MemoryView_FromObject` when
+  `PyObject_GetBuffer` fails.  Patch by Florent Xicluna.
+
 - Issue #7819: Check sys.call_tracing() arguments types.
 
 - Issue #7788: Fix an interpreter crash produced by deleting a list
