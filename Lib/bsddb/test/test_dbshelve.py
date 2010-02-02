@@ -5,6 +5,7 @@ TestCases for checking dbShelve objects.
 import os, string
 import random
 import unittest
+import warnings
 
 
 from test_all import db, dbshelve, test_support, verbose, \
@@ -117,15 +118,11 @@ class DBShelveTestCase(unittest.TestCase):
 
         dbvalues = d.values()
         self.assertEqual(len(dbvalues), len(d.keys()))
-        import sys
-        if sys.version_info[0] < 3 :
-            values.sort()
-            dbvalues.sort()
-            self.assertEqual(values, dbvalues)
-        else :  # XXX: Convert all to strings. Please, improve
-            values.sort(key=lambda x : str(x))
-            dbvalues.sort(key=lambda x : str(x))
-            self.assertEqual(repr(values), repr(dbvalues))
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                                    'comparing unequal types not supported',
+                                    DeprecationWarning)
+            self.assertEqual(sorted(values), sorted(dbvalues))
 
         items = d.items()
         self.assertEqual(len(items), len(values))
