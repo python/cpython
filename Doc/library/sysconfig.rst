@@ -1,0 +1,218 @@
+:mod:`sysconfig` --- Provide access to Python's configuration information
+=========================================================================
+
+.. module:: sysconfig
+   :synopsis: Python's configuration information
+.. moduleauthor:: Tarek Ziade <tarek@ziade.org>
+.. sectionauthor:: Tarek Ziade <tarek@ziade.org>
+.. versionadded:: 2.7
+.. index::
+   single: configuration information
+
+The :mod:`sysconfig` module provides access to Python's configuration
+information like the list of installation paths and the configuration
+variables relevant for the current platform.
+
+Configuration variables
+-----------------------
+
+A Python distribution contains a :file:`Makefile` file and a :file:`python.h`
+that are used to build the Python binary itself, but also any C extension
+created in a third party project and compiled using :mod:`distutils`.
+
+:mod:`sysconfig` put all variables found in these files in a dictionnary
+that can be accessed using :func:`get_config_vars` or :func:`get_config_var`.
+
+Notice that on Windows, it's a much smaller set.
+
+.. function:: get_config_vars(\*args)
+
+   With no arguments, return a dictionary of all configuration
+   variables relevant for the current platform.
+
+   With arguments, return a list of values that result from looking up
+   each argument in the configuration variable dictionary.
+
+   For each argument, if the value is not found, returns None.
+
+.. function:: get_config_var(name)
+
+   Return the value of a single variable *name*. Equivalent to
+   get_config_vars().get(name).
+
+   If *name* is not found, return None.
+
+Example of usage::
+
+    >>> import sysconfig
+    >>> sysconfig.get_config_var('Py_ENABLE_SHARED')
+    0
+    >>> sysconfig.get_config_var('LIBDIR')
+    '/usr/local/lib'
+    >>> sysconfig.get_config_vars('AR', 'CXX')
+    ['ar', 'g++']
+
+
+Installation paths
+------------------
+
+Python uses an installation scheme that differs depending on the platform
+and on the installation options. These schemes are stored in :mod:`sysconfig`
+under unique identifiers based on the value returned by :const:`os.name`.
+
+Every new component that is installed using :mod:`distutils` or a
+Distutils-based system will follow the same scheme to copy its file in the
+right places.
+
+Python currently supports seven schemes:
+
+- *posix_prefix*: scheme for posix platforms like Linux or Mac OS X. This is the
+  default scheme used when Python or a component is installed.
+- *posix_home*: scheme for posix platform used when a *home* option is used
+  upon installation. This scheme is used when a component is installed through
+  Distutils with a specific home prefix.
+- *posix_user*: scheme for posix platform used when a component is installed
+  through Distutils and the *user* option is used. This scheme defines paths
+  located under the user home directory.
+- *nt*: scheme for nt platforms like Windows.
+- *nt_user*: scheme for nt platforms, when the *user* option is used.
+- *os2*: scheme for OS2 platforms.
+- *os2_home*: scheme for OS2 patforms, when the *user* option is used.
+
+Each scheme is itself composed of a series of paths and each path has a unique
+identifier. Python currently uses eight paths:
+
+- *stdlib*: directory containing the standard Python library files that are
+  not platform-specific.
+- *platstdlib*: directory containing the standard Python library files that
+  are platform-specific files.
+- *platlib*: directory for the site-specific, platform-specific files.
+- *purelib*: directory for the site-specific, non platform-specific files.
+- *include*: directory containing the non-platform-specific header files.
+- *platinclude*: directory containing the platform-specific header files.
+- *scripts*: directory containing the script files.
+- *data*: directory containing the data files.
+
+:mod:`sysconfig` provides some functions to read these paths.
+
+.. function:: get_scheme_names()
+
+   Return a tuple containing all schemes currently supported in
+   :mod:`sysconfig`.
+
+.. function:: get_path_names()
+
+   Return a tuple containing all path names currently supported in
+   :mod:`sysconfig`.
+
+
+.. function:: get_path(name, [scheme, [vars, [expand]]])
+
+   Return an installation path corresponding to the path *name*, from the
+   install scheme named *scheme*.
+
+   *name* has to be a value from the list returned by :func:`get_path_names`.
+
+   :mod:`sysconfig` stores installation paths corresponding to the each
+   path name, for each platform, with variables to be expanded. For instance
+   the `stdlib` path for the `nt` scheme is: `{base}/Lib`.
+
+   :func:`get_path` will use the variables returned by :func:`get_config_vars`
+   to expand the path. All variables have default values for each platform
+   so one may call this function and get the default value.
+
+   If *scheme* is provided, it must be a value from the list returned by
+   :func:`get_path_names`. Otherwise, the default scheme for the current
+   platform is used.
+
+   If *vars* is provided, it must be a dictionnary of variables that will
+   update the dictionnary return by :func:`get_config_vars`.
+
+   If *expand* is set to False, the path will not be expanded using
+   the variables.
+
+   If *name* is not found, return None.
+
+
+.. function:: get_paths([scheme, [vars, [expand]]])
+
+   Return a dictionnary containing all installation paths corresponding to an
+   installation scheme. See :func:`get_path` for more information.
+
+   If *scheme* is not provided, will use the default scheme for the current
+   platform.
+
+   If *vars* is provided, it must be a dictionnary of variables that will
+   update the dictionnary used to expand the paths.
+
+   If *expand* is set to False, the paths will not be expanded.
+
+   If *scheme* is not an existing scheme, :func:`get_paths` will raise a
+   :exc:`KeyError`.
+
+
+Other functions
+---------------
+
+.. function:: get_python_version()
+
+   Return the MAJOR.MINOR Python version number as a string. Similar to
+   ``sys.version[:3]``.
+
+.. function:: get_platform()
+
+   Return a string that identifies the current platform.
+
+   This is used mainly to distinguish platform-specific build directories and
+   platform-specific built distributions.  Typically includes the OS name
+   and version and the architecture (as supplied by 'os.uname()'),
+   although the exact information included depends on the OS; eg. for IRIX
+   the architecture isn't particularly important (IRIX only runs on SGI
+   hardware), but for Linux the kernel version isn't particularly
+   important.
+
+   Examples of returned values:
+
+   - linux-i586
+   - linux-alpha (?)
+   - solaris-2.6-sun4u
+   - irix-5.3
+   - irix64-6.2
+
+   Windows will return one of:
+
+   - win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+   - win-ia64 (64bit Windows on Itanium)
+   - win32 (all others - specifically, sys.platform is returned)
+
+   Mac OS X can return :
+
+   - macosx-10.6-ppc
+   - macosx-10.4-ppc64
+   - macosx-10.3-i386
+   - macosx-10.4-fat
+
+   For other non-POSIX platforms, currently just returns 'sys.platform'.
+
+
+.. function:: is_python_build():
+
+   Returns True if the current Python installation was built from source.
+
+
+.. function:: parse_config_h(fp[, vars]):
+
+   Parse a config.h-style file.
+
+   *fp* is a file-like object pointing to the config.h-like file.
+
+   A dictionary containing name/value pairs is returned.  If an optional
+   dictionary is passed in as the second argument, it is used instead of a
+   new dictionary, and updated with the values read in the file.
+
+
+.. function:: get_config_h_filename():
+
+   Returns the path of pyconfig.h
+
+
