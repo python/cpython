@@ -25,3 +25,4 @@ overview:
    inspect.rst
    site.rst
    fpectl.rst
+   distutils.rst
