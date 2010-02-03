@@ -159,6 +159,7 @@ import time
 import traceback
 import warnings
 import unittest
+import imp
 
 
 # Ignore ImportWarnings that only occur in the source tree,
@@ -955,7 +956,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
             indirect_test()
     else:
         def run_the_test():
-            reload(the_module)
+            imp.reload(the_module)
 
     deltas = []
     nwarmup, ntracked, fname = huntrleaks
