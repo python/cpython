@@ -1631,7 +1631,7 @@ PyUnicode_Join:PyObject*::+1:
 PyUnicode_Join:PyObject*:separator:0:
 PyUnicode_Join:PyObject*:seq:0:
 
-PyUnicode_Tailmatch:PyObject*::+1:
+PyUnicode_Tailmatch:int:::
 PyUnicode_Tailmatch:PyObject*:str:0:
 PyUnicode_Tailmatch:PyObject*:substr:0:
 PyUnicode_Tailmatch:int:start::

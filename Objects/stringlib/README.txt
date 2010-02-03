@@ -13,7 +13,8 @@ STRINGLIB_CHAR
 
 STRINGLIB_EMPTY
 
-    a PyObject representing the empty string
+    a PyObject representing the empty string, only to be used if
+    STRINGLIB_MUTABLE is 0
 
 int STRINGLIB_CMP(STRINGLIB_CHAR*, STRINGLIB_CHAR*, Py_ssize_t)
 
@@ -35,9 +36,9 @@ STRINGLIB_CHAR* STRINGLIB_STR(PyObject*)
 
 int STRINGLIB_CHECK_EXACT(PyObject *)
 
-    returns true if the object is an instance of our type, not a subclass.
+    returns true if the object is an instance of our type, not a subclass
 
 STRINGLIB_MUTABLE
 
-    Must be 0 or 1 to tell the cpp macros in stringlib code if the object
-    being operated on is mutable or not.
+    must be 0 or 1 to tell the cpp macros in stringlib code if the object
+    being operated on is mutable or not
