@@ -803,9 +803,9 @@ Test cases
 
    .. method:: assertSameElements(expected, actual, msg=None)
 
-      Test that sequence *expected* contains the same elements as *actual*.
-      When they don't an error message listing the differences between the
-      sequences will be generated.
+      Test that sequence *expected* contains the same elements as *actual*,
+      regardless of their order. When they don't, an error message listing
+      the differences between the sequences will be generated.
 
       If specified *msg* will be used as the error message on failure.
 
