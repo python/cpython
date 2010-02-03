@@ -493,7 +493,7 @@ class CleanImport(object):
     Use like this:
 
         with CleanImport("foo"):
-            importlib.import_modulefoo") # new reference
+            importlib.import_module("foo") # new reference
     """
 
     def __init__(self, *module_names):
