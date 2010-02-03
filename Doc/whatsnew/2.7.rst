@@ -6,7 +6,7 @@
 :Release: |release|
 :Date: |today|
 
-.. Fix accents on Kristjan Valur Jonsson, Fuerstenau, Tarek Ziade.
+.. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
 .. $Id$
    Rules for maintenance:
@@ -52,6 +52,11 @@
 This article explains the new features in Python 2.7.  The final
 release of 2.7 is currently scheduled for June 2010; the detailed
 schedule is described in :pep:`373`.
+
+Python 2.7 is planned to be the last major release in the 2.x series.
+Though more major releases have not been absolutely ruled out, it's
+likely that the 2.7 release will have an extended period of
+maintenance compared to earlier 2.x versions.
 
 .. Compare with previous release in 2 - 3 sentences here.
    add hyperlink when the documentation becomes available online.
@@ -458,10 +463,12 @@ Several performance enhancements have been added:
   conversion function that supports arbitrary bases.
   (Patch by Gawain Bolton; :issue:`6713`.)
 
-* The :meth:`rindex`, :meth:`rpartition`, and :meth:`rsplit` methods
-  of string objects now uses a fast reverse-search algorithm instead of
-  a character-by-character scan.  This is often faster by a factor of 10.
-  (Added by Florent Xicluna; :issue:`7462`.)
+* The :meth:`split`, :meth:`replace`, :meth:`rindex`,
+  :meth:`rpartition`, and :meth:`rsplit` methods of string-like types
+  (strings, Unicode strings, and :class:`bytearray` objects) now use a
+  fast reverse-search algorithm instead of a character-by-character
+  scan.  This is sometimes faster by a factor of 10.  (Added by
+  Florent Xicluna; :issue:`7462` and :issue:`7622`.)
 
 * The :mod:`pickle` and :mod:`cPickle` modules now automatically
   intern the strings used for attribute names, reducing memory usage
@@ -585,11 +592,16 @@ changes, or look through the Subversion logs for all the details.
   left-alignment.  This has been changed to right-alignment, which seems
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
-* Distutils is being more actively developed, thanks to Tarek Ziade
-  who has taken over maintenance of the package.  A new
-  :file:`setup.py` subcommand, ``check``, will
-  check that the arguments being passed to the :func:`setup` function
-  are complete and correct (:issue:`5732`).
+* Distutils is being more actively developed, thanks to Tarek Ziadé
+  who has taken over maintenance of the package, so there are a number
+  of fixes and improvments.
+
+  A new :file:`setup.py` subcommand, ``check``, will check that the
+  arguments being passed to the :func:`setup` function are complete
+  and correct (:issue:`5732`).
+
+  Byte-compilation by the ``install_lib``  subcommand is now only done
+  if the ``sys.dont_write_bytecode`` setting allows it (:issue:`7071`).
 
   :func:`distutils.sdist.add_defaults` now uses
   *package_dir* and *data_files* to create the MANIFEST file.
@@ -601,7 +613,7 @@ changes, or look through the Subversion logs for all the details.
   It is no longer mandatory to store clear-text passwords in the
   :file:`.pypirc` file when registering and uploading packages to PyPI. As long
   as the username is present in that file, the :mod:`distutils` package will
-  prompt for the password if not present.  (Added by Tarek Ziade,
+  prompt for the password if not present.  (Added by Tarek Ziadé,
   based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
 
   A Distutils setup can now specify that a C extension is optional by
@@ -614,7 +626,7 @@ changes, or look through the Subversion logs for all the details.
   :meth:`read_pkg_file` method will read the contents of a package's
   :file:`PKG-INFO` metadata file.  For an example of its use, see
   :ref:`reading-metadata`.
-  (Contributed by Tarek Ziade; :issue:`7457`.)
+  (Contributed by Tarek Ziadé; :issue:`7457`.)
 
   :file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
   to skip reading the :file:`~/.pydistutils.cfg` file.  (Suggested by
@@ -643,6 +655,10 @@ changes, or look through the Subversion logs for all the details.
   recorded in a gzipped file by providing an optional timestamp to
   the constructor.  (Contributed by Jacques Frechet; :issue:`4272`.)
 
+  Files in gzip format can be padded with trailing zero bytes; the
+  :mod:`gzip` module will now consume these trailing bytes.  (Fixed by
+  Tadek Pietraszek and Brian Curtin; :issue:`2846`.)
+
 * The default :class:`HTTPResponse` class used by the :mod:`httplib` module now
   supports buffering, resulting in much faster reading of HTTP responses.
   (Contributed by Kristjan Valur Jonsson; :issue:`4879`.)
@@ -662,7 +678,9 @@ changes, or look through the Subversion logs for all the details.
 
   The :class:`io.FileIO` class now raises an :exc:`OSError` when passed
   an invalid file descriptor.  (Implemented by Benjamin Peterson;
-  :issue:`4991`.)
+  :issue:`4991`.)  The :meth:`truncate` method now preserves the
+  file position; previously it would change the file position to the
+  end of the new file.  (Fixed by Pascal Chambon; :issue:`6939`.)
 
 * New function: ``itertools.compress(data, selectors)`` takes two
   iterators.  Elements of *data* are returned if the corresponding
@@ -718,6 +736,14 @@ changes, or look through the Subversion logs for all the details.
   passed to the callable.
   (Contributed by lekma; :issue:`5585`.)
 
+  The :class:`Pool` class, which controls a pool of worker processes,
+  now has an optional *maxtasksperchild* parameter.  Worker processes
+  will perform the specified number of tasks and then exit, causing the
+  :class:`Pool` to start a new worker.  This is useful if tasks may leak
+  memory or other resources, or if some tasks will cause the worker to
+  become very large.
+  (Contributed by Charles Cazabon; :issue:`6963`.)
+
 * The :mod:`nntplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1664`.)
 
@@ -729,6 +755,10 @@ changes, or look through the Subversion logs for all the details.
   :func:`initgroups`.  (GID/UID functions
   contributed by Travis H.; :issue:`6508`.  Support for initgroups added
   by Jean-Paul Calderone; :issue:`7333`.)
+
+  The :func:`normpath` function now preserves Unicode; if its input path
+  is a Unicode string, the return value is also a Unicode string.
+  (Fixed by Matt Giuca; :issue:`5827`.)
 
 * The :mod:`pydoc` module now has help for the various symbols that Python
   uses.  You can now do ``help('<<')`` or ``help('@')``, for example.
@@ -753,7 +783,7 @@ changes, or look through the Subversion logs for all the details.
   :func:`getuserbase` returns the value of the :envvar:`USER_BASE`
   environment variable, giving the path to a directory that can be used
   to store data.
-  (Contributed by Tarek Ziade; :issue:`6693`.)
+  (Contributed by Tarek Ziadé; :issue:`6693`.)
 
 * The :mod:`socket` module's :class:`SSL` objects now support the
   buffer API, which fixed a test suite failure.  (Fixed by Antoine Pitrou;
@@ -795,10 +825,25 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Jeremy Hylton.)
 
 * The ``sys.version_info`` value is now a named tuple, with attributes
-  named ``major``, ``minor``, ``micro``, ``releaselevel``, and ``serial``.
-  (Contributed by Ross Light; :issue:`4285`.)
+  named :attr:`major`, :attr:`minor`, :attr:`micro`,
+  :attr:`releaselevel`, and :attr:`serial`.  (Contributed by Ross
+  Light; :issue:`4285`.)
 
-* The :mod:`tarfile` module now supports filtering the :class:`TarInfo`
+  :func:`sys.getwindowsversion` also returns a named tuple,
+  with attributes named :attr:`service_pack_major`,
+  :attr:`service_pack_minor`,
+  :attr:`suite_mask`, and :attr:`product_type`.  (Contributed by
+  Brian Curtin; :issue:`7766`.)
+
+* The :mod:`tarfile` module's default error handling has changed, to
+  no longer suppress fatal errors.  The default error level was previously 0,
+  which meant that errors would only result in a message being written to the
+  debug log, but because the debug log is not activated by default,
+  these errors go unnoticed.  The default error level is now 1,
+  which raises an exception if there's an error.
+  (Changed by Lars Gustäbel; :issue:`7357`.)
+
+  :mod:`tarfile` now supports filtering the :class:`TarInfo`
   objects being added to a tar file.  When you call :meth:`TarFile.add`,
   instance, you may supply an optional *filter* argument
   that's a callable.  The *filter* callable will be passed the
@@ -806,7 +851,7 @@ changes, or look through the Subversion logs for all the details.
   If the callable returns ``None``, the file will be excluded from the
   resulting archive.  This is more powerful than the existing
   *exclude* argument, which has therefore been deprecated.
-  (Added by Lars Gustaebel; :issue:`6856`.)
+  (Added by Lars Gustäbel; :issue:`6856`.)
 
 * The :mod:`threading` module's :meth:`Event.wait` method now returns
   the internal flag on exit.  This means the method will usually
@@ -815,12 +860,22 @@ changes, or look through the Subversion logs for all the details.
   a timeout was provided and the operation timed out.
   (Contributed by Tim Lesher; :issue:`1674032`.)
 
-* The :func:`is_zipfile` function in the :mod:`zipfile` module now
-  accepts a file object, in addition to the path names accepted in earlier
-  versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
+* The :class:`UserDict` class is now a new-style class.  (Changed by
+  Benjamin Peterson.)
+
+* The :mod:`zipfile` module's :class:`ZipFile` now supports the context
+  management protocol, so you can write ``with zipfile.ZipFile(...) as f: ...``.
+  (Contributed by Brian Curtin; :issue:`5511`.)
 
   :mod:`zipfile` now supports archiving empty directories and
   extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
+  Reading files out of an archive is now faster, and interleaving
+  :meth:`read` and :meth:`readline` now works correctly.
+  (Contributed by Nir Aides; :issue:`7610`.)
+
+  The :func:`is_zipfile` function in the module now
+  accepts a file object, in addition to the path names accepted in earlier
+  versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
 
 .. ======================================================================
 .. whole new modules get described in subsections here
@@ -1046,10 +1101,12 @@ Changes to Python's build process and to the C API include:
   instruction currently executing, and then look up the line number
   corresponding to that address.  (Added by Jeffrey Yasskin.)
 
-* New function: :cfunc:`PyLong_AsLongAndOverflow` approximates a Python long
-  integer as a C :ctype:`long`.  If the number is too large to fit into
-  a :ctype:`long`, an *overflow* flag is set and returned to the caller.
-  (Contributed by Case Van Horsen; :issue:`7528`.)
+* New functions: :cfunc:`PyLong_AsLongAndOverflow` and
+  :cfunc:`PyLong_AsLongLongAndOverflow`  approximates a Python long
+  integer as a C :ctype:`long` or :ctype:`long long`.
+  If the number is too large to fit into
+  the output type, an *overflow* flag is set and returned to the caller.
+  (Contributed by Case Van Horsen; :issue:`7528` and :issue:`7767`.)
 
 * New function: stemming from the rewrite of string-to-float conversion,
   a new :cfunc:`PyOS_string_to_double` function was added.  The old
