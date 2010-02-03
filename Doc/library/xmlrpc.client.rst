@@ -383,8 +383,8 @@ by providing an invalid URI::
 
    import xmlrpc.client
 
-   # create a ServerProxy with an invalid URI
-   proxy = xmlrpc.client.ServerProxy("http://invalidaddress/")
+   # create a ServerProxy with an URI that doesn't respond to XMLRPC requests
+   proxy = xmlrpc.client.ServerProxy("http://google.com/")
 
    try:
        proxy.some_method()

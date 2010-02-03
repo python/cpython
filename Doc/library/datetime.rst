@@ -36,7 +36,6 @@ than rational, and there is no standard suitable for every application.
 
 The :mod:`datetime` module exports the following constants:
 
-
 .. data:: MINYEAR
 
    The smallest year number allowed in a :class:`date` or :class:`datetime` object.
@@ -60,7 +59,6 @@ The :mod:`datetime` module exports the following constants:
 
 Available Types
 ---------------
-
 
 .. class:: date
    :noindex:
@@ -131,7 +129,6 @@ Subclass relationships::
 A :class:`timedelta` object represents a duration, the difference between two
 dates or times.
 
-
 .. class:: timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0)
 
    All arguments are optional and default to ``0``.  Arguments may be integers
@@ -168,8 +165,8 @@ dates or times.
       >>> (d.days, d.seconds, d.microseconds)
       (-1, 86399, 999999)
 
-Class attributes are:
 
+Class attributes are:
 
 .. attribute:: timedelta.min
 
@@ -326,16 +323,16 @@ systems.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised.
 
+
 Other constructors, all class methods:
 
-
-.. method:: date.today()
+.. classmethod:: date.today()
 
    Return the current local date.  This is equivalent to
    ``date.fromtimestamp(time.time())``.
 
 
-.. method:: date.fromtimestamp(timestamp)
+.. classmethod:: date.fromtimestamp(timestamp)
 
    Return the local date corresponding to the POSIX timestamp, such as is returned
    by :func:`time.time`.  This may raise :exc:`ValueError`, if the timestamp is out
@@ -345,15 +342,15 @@ Other constructors, all class methods:
    timestamp, leap seconds are ignored by :meth:`fromtimestamp`.
 
 
-.. method:: date.fromordinal(ordinal)
+.. classmethod:: date.fromordinal(ordinal)
 
    Return the date corresponding to the proleptic Gregorian ordinal, where January
    1 of year 1 has ordinal 1.  :exc:`ValueError` is raised unless ``1 <= ordinal <=
    date.max.toordinal()``. For any date *d*, ``date.fromordinal(d.toordinal()) ==
    d``.
 
-Class attributes:
 
+Class attributes:
 
 .. attribute:: date.min
 
@@ -370,8 +367,8 @@ Class attributes:
    The smallest possible difference between non-equal date objects,
    ``timedelta(days=1)``.
 
-Instance attributes (read-only):
 
+Instance attributes (read-only):
 
 .. attribute:: date.year
 
@@ -386,6 +383,7 @@ Instance attributes (read-only):
 .. attribute:: date.day
 
    Between 1 and the number of days in the given month of the given year.
+
 
 Supported operations:
 
@@ -438,7 +436,6 @@ Dates can be used as dictionary keys. In Boolean contexts, all :class:`date`
 objects are considered to be true.
 
 Instance methods:
-
 
 .. method:: date.replace(year, month, day)
 
@@ -519,7 +516,8 @@ Instance methods:
 
    Return a string representing the date, controlled by an explicit format string.
    Format codes referring to hours, minutes or seconds will see 0 values. See
-   section :ref:`strftime-behavior`.
+   section :ref:`strftime-strptime-behavior`.
+
 
 Example of counting days to an event::
 
@@ -586,7 +584,6 @@ both directions; like a time object, :class:`datetime` assumes there are exactly
 
 Constructor:
 
-
 .. class:: datetime(year, month, day, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
 
    The year, month and day arguments are required.  *tzinfo* may be ``None``, or an
@@ -605,15 +602,14 @@ Constructor:
 
 Other constructors, all class methods:
 
-
-.. method:: datetime.today()
+.. classmethod:: datetime.today()
 
    Return the current local datetime, with :attr:`tzinfo` ``None``. This is
    equivalent to ``datetime.fromtimestamp(time.time())``. See also :meth:`now`,
    :meth:`fromtimestamp`.
 
 
-.. method:: datetime.now(tz=None)
+.. classmethod:: datetime.now(tz=None)
 
    Return the current local date and time.  If optional argument *tz* is ``None``
    or not specified, this is like :meth:`today`, but, if possible, supplies more
@@ -627,14 +623,14 @@ Other constructors, all class methods:
    See also :meth:`today`, :meth:`utcnow`.
 
 
-.. method:: datetime.utcnow()
+.. classmethod:: datetime.utcnow()
 
    Return the current UTC date and time, with :attr:`tzinfo` ``None``. This is like
    :meth:`now`, but returns the current UTC date and time, as a naive
    :class:`datetime` object. See also :meth:`now`.
 
 
-.. method:: datetime.fromtimestamp(timestamp, tz=None)
+.. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
 
    Return the local date and time corresponding to the POSIX timestamp, such as is
    returned by :func:`time.time`. If optional argument *tz* is ``None`` or not
@@ -655,7 +651,7 @@ Other constructors, all class methods:
    identical :class:`datetime` objects. See also :meth:`utcfromtimestamp`.
 
 
-.. method:: datetime.utcfromtimestamp(timestamp)
+.. classmethod:: datetime.utcfromtimestamp(timestamp)
 
    Return the UTC :class:`datetime` corresponding to the POSIX timestamp, with
    :attr:`tzinfo` ``None``. This may raise :exc:`ValueError`, if the timestamp is
@@ -664,7 +660,7 @@ Other constructors, all class methods:
    :meth:`fromtimestamp`.
 
 
-.. method:: datetime.fromordinal(ordinal)
+.. classmethod:: datetime.fromordinal(ordinal)
 
    Return the :class:`datetime` corresponding to the proleptic Gregorian ordinal,
    where January 1 of year 1 has ordinal 1. :exc:`ValueError` is raised unless ``1
@@ -672,7 +668,7 @@ Other constructors, all class methods:
    microsecond of the result are all 0, and :attr:`tzinfo` is ``None``.
 
 
-.. method:: datetime.combine(date, time)
+.. classmethod:: datetime.combine(date, time)
 
    Return a new :class:`datetime` object whose date members are equal to the given
    :class:`date` object's, and whose time and :attr:`tzinfo` members are equal to
@@ -681,17 +677,17 @@ Other constructors, all class methods:
    object, its time and :attr:`tzinfo` members are ignored.
 
 
-.. method:: datetime.strptime(date_string, format)
+.. classmethod:: datetime.strptime(date_string, format)
 
    Return a :class:`datetime` corresponding to *date_string*, parsed according to
    *format*.  This is equivalent to ``datetime(*(time.strptime(date_string,
    format)[0:6]))``. :exc:`ValueError` is raised if the date_string and format
    can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
-   time tuple.
+   time tuple. See section :ref:`strftime-strptime-behavior`.
+
 
 
 Class attributes:
-
 
 .. attribute:: datetime.min
 
@@ -710,8 +706,8 @@ Class attributes:
    The smallest possible difference between non-equal :class:`datetime` objects,
    ``timedelta(microseconds=1)``.
 
-Instance attributes (read-only):
 
+Instance attributes (read-only):
 
 .. attribute:: datetime.year
 
@@ -752,6 +748,7 @@ Instance attributes (read-only):
 
    The object passed as the *tzinfo* argument to the :class:`datetime` constructor,
    or ``None`` if none was passed.
+
 
 Supported operations:
 
@@ -825,7 +822,6 @@ Supported operations:
 all :class:`datetime` objects are considered to be true.
 
 Instance methods:
-
 
 .. method:: datetime.date()
 
@@ -1004,7 +1000,8 @@ Instance methods:
 .. method:: datetime.strftime(format)
 
    Return a string representing the date and time, controlled by an explicit format
-   string.  See section :ref:`strftime-behavior`.
+   string.  See section :ref:`strftime-strptime-behavior`.
+
 
 Examples of working with datetime objects:
 
@@ -1117,7 +1114,6 @@ Using datetime with tzinfo:
 A time object represents a (local) time of day, independent of any particular
 day, and subject to adjustment via a :class:`tzinfo` object.
 
-
 .. class:: time(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
 
    All arguments are optional.  *tzinfo* may be ``None``, or an instance of a
@@ -1151,8 +1147,8 @@ Class attributes:
    ``timedelta(microseconds=1)``, although note that arithmetic on :class:`time`
    objects is not supported.
 
-Instance attributes (read-only):
 
+Instance attributes (read-only):
 
 .. attribute:: time.hour
 
@@ -1179,6 +1175,7 @@ Instance attributes (read-only):
    The object passed as the tzinfo argument to the :class:`time` constructor, or
    ``None`` if none was passed.
 
+
 Supported operations:
 
 * comparison of :class:`time` to :class:`time`, where *a* is considered less
@@ -1201,8 +1198,8 @@ Supported operations:
   only if, after converting it to minutes and subtracting :meth:`utcoffset` (or
   ``0`` if that's ``None``), the result is non-zero.
 
-Instance methods:
 
+Instance methods:
 
 .. method:: time.replace([hour[, minute[, second[, microsecond[, tzinfo]]]]])
 
@@ -1228,7 +1225,7 @@ Instance methods:
 .. method:: time.strftime(format)
 
    Return a string representing the time, controlled by an explicit format string.
-   See section :ref:`strftime-behavior`.
+   See section :ref:`strftime-strptime-behavior`.
 
 
 .. method:: time.utcoffset()
@@ -1252,6 +1249,7 @@ Instance methods:
    If :attr:`tzinfo` is ``None``, returns ``None``, else returns
    ``self.tzinfo.tzname(None)``, or raises an exception if the latter doesn't
    return ``None`` or a string object.
+
 
 Example:
 
@@ -1389,6 +1387,7 @@ methods.  Exactly which methods are needed depends on the uses made of aware
 
    The default implementation of :meth:`tzname` raises :exc:`NotImplementedError`.
 
+
 These methods are called by a :class:`datetime` or :class:`time` object, in
 response to their methods of the same names.  A :class:`datetime` object passes
 itself as the argument, and a :class:`time` object passes ``None`` as the
@@ -1492,10 +1491,10 @@ other fixed-offset :class:`tzinfo` subclass (such as a class representing only
 EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 
-.. _strftime-behavior:
+.. _strftime-strptime-behavior:
 
-:meth:`strftime` Behavior
--------------------------
+:meth:`strftime` and :meth:`strptime` Behavior
+----------------------------------------------
 
 :class:`date`, :class:`datetime`, and :class:`time` objects all support a
 ``strftime(format)`` method, to create a string representing the time under the
@@ -1503,9 +1502,14 @@ control of an explicit format string.  Broadly speaking, ``d.strftime(fmt)``
 acts like the :mod:`time` module's ``time.strftime(fmt, d.timetuple())``
 although not all objects support a :meth:`timetuple` method.
 
+Conversely, the :meth:`datetime.strptime` class method creates a
+:class:`datetime` object from a string representing a date and time and a
+corresponding format string. ``datetime.strptime(date_string, format)`` is
+equivalent to ``datetime(*(time.strptime(date_string, format)[0:6]))``.
+
 For :class:`time` objects, the format codes for year, month, and day should not
 be used, as time objects have no such values.  If they're used anyway, ``1900``
-is substituted for the year, and ``0`` for the month and day.
+is substituted for the year, and ``1`` for the month and day.
 
 For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
@@ -1627,14 +1631,14 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 Notes:
 
 (1)
-   When used with the :func:`strptime` function, the ``%f`` directive
+   When used with the :meth:`strptime` method, the ``%f`` directive
    accepts from one to six digits and zero pads on the right.  ``%f`` is
    an extension to the set of format characters in the C standard (but
    implemented separately in datetime objects, and therefore always
    available).
 
 (2)
-   When used with the :func:`strptime` function, the ``%p`` directive only affects
+   When used with the :meth:`strptime` method, the ``%p`` directive only affects
    the output hour field if the ``%I`` directive is used to parse the hour.
 
 (3)
@@ -1642,11 +1646,11 @@ Notes:
    accounts for leap seconds and the (very rare) double leap seconds.
    The :mod:`time` module may produce and does accept leap seconds since
    it is based on the Posix standard, but the :mod:`datetime` module
-   does not accept leap seconds in :func:`strptime` input nor will it
+   does not accept leap seconds in :meth:`strptime` input nor will it
    produce them in :func:`strftime` output.
 
 (4)
-   When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
+   When used with the :meth:`strptime` method, ``%U`` and ``%W`` are only used in
    calculations when the day of the week and the year are specified.
 
 (5)

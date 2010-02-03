@@ -4147,6 +4147,26 @@ order (MRO) for bases """
         c[1:2] = 3
         self.assertEqual(c.value, 3)
 
+    def test_set_and_no_get(self):
+        # See
+        # http://mail.python.org/pipermail/python-dev/2010-January/095637.html
+        class Descr(object):
+
+            def __init__(self, name):
+                self.name = name
+
+            def __set__(self, obj, value):
+                obj.__dict__[self.name] = value
+        descr = Descr("a")
+
+        class X(object):
+            a = descr
+
+        x = X()
+        self.assertIs(x.a, descr)
+        x.a = 42
+        self.assertEqual(x.a, 42)
+
     def test_getattr_hooks(self):
         # issue 4230
 
