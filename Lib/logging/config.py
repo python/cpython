@@ -65,7 +65,6 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True):
     """
     import ConfigParser
 
-    print >> open('/tmp/tmp.txt', 'w'), fname.getvalue()
     cp = ConfigParser.ConfigParser(defaults)
     if hasattr(cp, 'readfp') and hasattr(fname, 'readline'):
         cp.readfp(fname)
