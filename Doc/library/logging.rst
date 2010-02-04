@@ -422,6 +422,13 @@ You can see that the config file approach has a few advantages over the Python
 code approach, mainly separation of configuration and code and the ability of
 noncoders to easily modify the logging properties.
 
+Note that the class names referenced in config files need to be either relative
+to the logging module, or absolute values which can be resolved using normal
+import mechanisms. Thus, you could use either `handlers.WatchedFileHandler`
+(relative to the logging module) or `mypackage.mymodule.MyHandler` (for a
+class defined in package `mypackage` and module `mymodule`, where `mypackage`
+is available on the Python import path).
+
 .. _library-config:
 
 Configuring Logging for a Library
