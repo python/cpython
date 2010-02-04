@@ -102,7 +102,7 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    Optional *usegmt* is a flag that when ``True``, outputs a  date string with the
    timezone as an ascii string ``GMT``, rather than a numeric ``-0000``. This is
    needed for some protocols (such as HTTP). This only applies when *localtime* is
-   ``False``.
+   ``False``.  The default is ``False``.
 
 
 .. function:: make_msgid(idstring=None)
