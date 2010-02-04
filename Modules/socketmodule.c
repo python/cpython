@@ -1053,6 +1053,10 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 		}
 #endif
 
+		default:
+			PyErr_SetString(PyExc_ValueError,
+					"Unknown Bluetooth protocol");
+			return NULL;
 		}
 #endif
 
@@ -1104,7 +1108,7 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 					0,
 					a->scope);
 		} else {
-			PyErr_SetString(PyExc_TypeError,
+			PyErr_SetString(PyExc_ValueError,
 					"Invalid address type");
 			return NULL;
 		}
