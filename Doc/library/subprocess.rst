@@ -42,13 +42,38 @@ This module defines one class called :class:`Popen`:
 
    On Unix, with *shell=False* (default): In this case, the Popen class uses
    :meth:`os.execvp` to execute the child program. *args* should normally be a
-   sequence.  A string will be treated as a sequence with the string as the only
-   item (the program to execute).
+   sequence.  If a string is specified for *args*, it will be used as the name
+   or path of the program to execute; this will only work if the program is
+   being given no arguments.
 
-   On Unix, with *shell=True*: If args is a string, it specifies the command string
-   to execute through the shell.  If *args* is a sequence, the first item specifies
-   the command string, and any additional items will be treated as additional shell
-   arguments.
+   .. note::
+
+      :meth:`shlex.split` can be useful when determining the correct
+      tokenization for *args*, especially in complex cases::
+
+         >>> import shlex, subprocess
+         >>> command_line = raw_input()
+         /bin/vikings -input eggs.txt -output "spam spam.txt" -cmd "echo '$MONEY'"
+         >>> args = shlex.split(command_line)
+         >>> print(args)
+         ['/bin/vikings', '-input', 'eggs.txt', '-output', 'spam spam.txt', '-cmd', "echo '$MONEY'"]
+         >>> p = subprocess.Popen(args) # Success!
+
+      Note in particular that options (such as *-input*) and arguments (such
+      as *eggs.txt*) that are separated by whitespace in the shell go in separate
+      list elements, while arguments that need quoting or backslash escaping when
+      used in the shell (such as filenames containing spaces or the *echo* command
+      shown above) are single list elements.
+
+   On Unix, with *shell=True*: If args is a string, it specifies the command
+   string to execute through the shell.  This means that the string must be
+   formatted exactly as it would be when typed at the shell prompt.  This
+   includes, for example, quoting or backslash escaping filenames with spaces in
+   them.  If *args* is a sequence, the first item specifies the command string, and
+   any additional items will be treated as additional arguments to the shell
+   itself.  That is to say, *Popen* does the equivalent of::
+
+      Popen(['/bin/sh', '-c', args[0], args[1], ...])
 
    On Windows: the :class:`Popen` class uses CreateProcess() to execute the child
    program, which operates on strings.  If *args* is a sequence, it will be
