@@ -121,12 +121,12 @@ Here is a short script to test three functions from the :mod:`random` module::
 
        def test_choice(self):
            element = random.choice(self.seq)
-           self.assert_(element in self.seq)
+           self.assertIn(element, self.seq)
 
        def test_sample(self):
            self.assertRaises(ValueError, random.sample, self.seq, 20)
            for element in random.sample(self.seq, 5):
-               self.assert_(element in self.seq)
+               self.assertIn(element, self.seq)
 
    if __name__ == '__main__':
        unittest.main()
@@ -307,14 +307,14 @@ us when we run the test::
 
    class DefaultWidgetSizeTestCase(SimpleWidgetTestCase):
        def runTest(self):
-           self.assertTrue(self.widget.size() == (50,50),
-                           'incorrect default size')
+           self.assertEqual(self.widget.size(), (50,50),
+                            'incorrect default size')
 
    class WidgetResizeTestCase(SimpleWidgetTestCase):
        def runTest(self):
            self.widget.resize(100,150)
-           self.assertTrue(self.widget.size() == (100,150),
-                           'wrong size after resize')
+           self.assertEqual(self.widget.size(), (100,150),
+                            'wrong size after resize')
 
 If the :meth:`~TestCase.setUp` method raises an exception while the test is
 running, the framework will consider the test to have suffered an error, and the
@@ -355,13 +355,13 @@ mechanism::
            self.widget = None
 
        def testDefaultSize(self):
-           self.assertTrue(self.widget.size() == (50,50),
-                           'incorrect default size')
+           self.assertEqual(self.widget.size(), (50,50),
+                            'incorrect default size')
 
        def testResize(self):
            self.widget.resize(100,150)
-           self.assertTrue(self.widget.size() == (100,150),
-                           'wrong size after resize')
+           self.assertEqual(self.widget.size(), (100,150),
+                            'wrong size after resize')
 
 Here we have not provided a :meth:`~TestCase.runTest` method, but have instead
 provided two different test methods.  Class instances will now each run one of
