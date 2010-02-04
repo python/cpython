@@ -1355,6 +1355,36 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    #As config1 but using cfg:// references
+    config11 = {
+        'true_formatters': {
+            'form1' : {
+                'format' : '%(levelname)s ++ %(message)s',
+            },
+        },
+        'handler_configs': {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'form1',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'formatters' : 'cfg://true_formatters',
+        'handlers' : {
+            'hand1' : 'cfg://handler_configs[hand1]',
+        },
+        'loggers' : {
+            'compiler.parser' : {
+                'level' : 'DEBUG',
+                'handlers' : ['hand1'],
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+        },
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
 
@@ -1538,6 +1568,9 @@ class ConfigDictTest(BaseTest):
                 ('WARNING', '1'),
                 ('ERROR', '4'),
             ], stream=output)
+
+    def test_config11_ok(self):
+        self.test_config1_ok(self.config11)
 
     def setup_via_listener(self, text):
         PORT = 9030
