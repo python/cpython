@@ -302,7 +302,7 @@ static PyBufferProcs memoryviewtester_as_buffer = {
 };
 
 static PyTypeObject _MemoryViewTester_Type = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"memoryviewtester",	/* Name of this type */
 	sizeof(PyObject),	/* Basic object size */
 	0,			/* Item size for varobject */
@@ -1831,6 +1831,7 @@ PyInit__testcapi(void)
 		return NULL;
 
 	Py_TYPE(&_HashInheritanceTester_Type)=&PyType_Type;
+	Py_TYPE(&_MemoryViewTester_Type)=&PyType_Type;
 
 	Py_TYPE(&test_structmembersType)=&PyType_Type;
 	Py_INCREF(&test_structmembersType);
