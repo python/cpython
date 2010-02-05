@@ -892,14 +892,20 @@ Test cases
       If only the *exception* argument is given, returns a context manager so
       that the code under test can be written inline rather than as a function::
 
-         with self.failUnlessRaises(some_error_class):
+         with self.assertRaises(SomeException):
              do_something()
 
       The context manager will store the caught exception object in its
       :attr:`exc_value` attribute.  This can be useful if the intention
-      is to perform additional checks on the exception raised.
+      is to perform additional checks on the exception raised::
 
-      .. versionchanged:: 3.1
+        with self.assertRaises(SomeException) as cm:
+            do_something()
+
+        the_exception = cm.exc_value
+        self.assertEquals(the_exception.error_code, 3)
+
+        .. versionchanged:: 3.1
          Added the ability to use :meth:`assertRaises` as a context manager.
 
       .. deprecated:: 3.1
