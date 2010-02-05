@@ -581,7 +581,7 @@ class SizeofTest(unittest.TestCase):
         # enumerate
         check(enumerate([]), size(h + 'l3P'))
         # file
-        check(self.file, size(h + '4P2i4P3i3Pi'))
+        check(self.file, size(h + '4P2i4P3i3P3i'))
         # float
         check(float(0), size(h + 'd'))
         # sys.floatinfo

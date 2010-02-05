@@ -167,6 +167,13 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
 	f->f_encoding = Py_None;
 	Py_INCREF(Py_None);
 	f->f_errors = Py_None;
+	f->readable = f->writable = 0;
+	if (strchr(mode, 'r') != NULL || f->f_univ_newline)
+		f->readable = 1;
+	if (strchr(mode, 'w') != NULL || strchr(mode, 'a') != NULL)
+		f->writable = 1;
+	if (strchr(mode, '+') != NULL)
+		f->readable = f->writable = 1;
 
 	if (f->f_mode == NULL)
 		return NULL;
@@ -568,6 +575,13 @@ err_closed(void)
 	return NULL;
 }
 
+static PyObject *
+err_mode(char *action)
+{
+        PyErr_Format(PyExc_IOError, "File not open for %s", action);
+        return NULL;
+}
+
 /* Refuse regular file I/O if there's data in the iteration-buffer.
  * Mixing them would cause data to arrive out of order, as the read*
  * methods don't use the iteration buffer. */
@@ -782,6 +796,8 @@ file_truncate(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	if (!f->writable)
+		return err_mode("writing");
 	if (!PyArg_UnpackTuple(args, "truncate", 0, 1, &newsizeobj))
 		return NULL;
 
@@ -1030,6 +1046,8 @@ file_read(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	if (!f->readable)
+		return err_mode("reading");
 	/* refuse to mix with f.next() */
 	if (f->f_buf != NULL &&
 	    (f->f_bufend - f->f_bufptr) > 0 &&
@@ -1099,6 +1117,8 @@ file_readinto(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	if (!f->readable)
+		return err_mode("reading");
 	/* refuse to mix with f.next() */
 	if (f->f_buf != NULL &&
 	    (f->f_bufend - f->f_bufptr) > 0 &&
@@ -1470,6 +1490,8 @@ PyFile_GetLine(PyObject *f, int n)
 		PyFileObject *fo = (PyFileObject *)f;
 		if (fo->f_fp == NULL)
 			return err_closed();
+		if (!fo->readable)
+			return err_mode("reading");
 		/* refuse to mix with f.next() */
 		if (fo->f_buf != NULL &&
 		    (fo->f_bufend - fo->f_bufptr) > 0 &&
@@ -1558,6 +1580,8 @@ file_readline(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	if (!f->readable)
+		return err_mode("reading");
 	/* refuse to mix with f.next() */
 	if (f->f_buf != NULL &&
 	    (f->f_bufend - f->f_bufptr) > 0 &&
@@ -1591,6 +1615,8 @@ file_readlines(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	if (!f->readable)
+		return err_mode("reading");
 	/* refuse to mix with f.next() */
 	if (f->f_buf != NULL &&
 	    (f->f_bufend - f->f_bufptr) > 0 &&
@@ -1709,6 +1735,8 @@ file_write(PyFileObject *f, PyObject *args)
 	Py_ssize_t n, n2;
 	if (f->f_fp == NULL)
 		return err_closed();
+	if (!f->writable)
+		return err_mode("writing");
 	if (f->f_binary) {
 		if (!PyArg_ParseTuple(args, "s*", &pbuf))
 			return NULL;
@@ -1746,6 +1774,8 @@ file_writelines(PyFileObject *f, PyObject *seq)
 	assert(seq != NULL);
 	if (f->f_fp == NULL)
 		return err_closed();
+	if (!f->writable)
+		return err_mode("writing");
 
 	result = NULL;
 	list = NULL;
@@ -2186,6 +2216,8 @@ file_iternext(PyFileObject *f)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	if (!f->readable)
+		return err_mode("reading");
 
 	l = readahead_get_line_skip(f, 0, READAHEAD_BUFSIZE);
 	if (l == NULL || PyString_GET_SIZE(l) == 0) {
