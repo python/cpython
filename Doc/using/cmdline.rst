@@ -238,8 +238,6 @@ Miscellaneous options
    See also :envvar:`PYTHONUNBUFFERED`.
 
 
-.. XXX should the -U option be documented?
-
 .. cmdoption:: -v
 
    Print a message each time a module is initialized, showing the place
@@ -314,6 +312,20 @@ Miscellaneous options
    ``#!cmd``.  This is intended for a DOS specific hack only.
 
    .. note:: The line numbers in error messages will be off by one.
+
+Options you shouldn't use
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. cmdoption:: -J
+
+   Reserved for use by Jython_.
+
+.. _Jython: http://jython.org
+
+.. cmdoption:: -X
+
+    Reserved for alternative implementations of Python to use for their own
+    purposes.
 
 .. _using-on-envvars:
 
