@@ -231,10 +231,6 @@ class TestCase(object):
         """Returns both the test method name and first line of its docstring.
 
         If no docstring is given, only returns the method name.
-
-        This method overrides unittest.TestCase.shortDescription(), which
-        only returns the first line of the docstring, obscuring the name
-        of the test upon failure.
         """
         desc = str(self)
         doc_first_line = None
@@ -397,8 +393,17 @@ class TestCase(object):
            If called with callableObj omitted or None, will return a
            context object used like this::
 
-                with self.assertRaises(some_error_class):
+                with self.assertRaises(SomeException):
                     do_something()
+
+           The context manager keeps a reference to the exception as
+           the exc_value attribute. This allows you to inspect the
+           exception after the assertion::
+
+               with self.assertRaises(SomeException) as cm:
+                   do_something()
+               the_exception = cm.exc_value
+               self.assertEquals(the_exception.error_code, 3)
         """
         context = _AssertRaisesContext(excClass, self, callableObj)
         if callableObj is None:
@@ -746,6 +751,11 @@ class TestCase(object):
 
         Raises with an error message listing which elements of expected_seq
         are missing from actual_seq and vice versa if any.
+
+        Duplicate elements are ignored when comparing *expected_seq* and
+        *actual_seq*. It is the equivalent of ``assertEqual(set(expected),
+        set(actual))`` but it works with sequences of unhashable objects as
+        well.
         """
         try:
             expected = set(expected_seq)
