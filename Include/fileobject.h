@@ -28,6 +28,8 @@ typedef struct {
 	PyObject *weakreflist; /* List of weak references */
 	int unlocked_count;	/* Num. currently running sections of code
 				   using f_fp with the GIL released. */
+	int readable;
+	int writable;
 } PyFileObject;
 
 PyAPI_DATA(PyTypeObject) PyFile_Type;
