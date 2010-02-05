@@ -213,11 +213,17 @@ class ContextmanagerAssertionMixin(object):
     def raiseTestException(self):
         raise self.TEST_EXCEPTION
 
-    def assertAfterWithManagerInvariantsWithError(self, mock_manager):
+    def assertAfterWithManagerInvariantsWithError(self, mock_manager,
+                                                  exc_type=None):
         self.assertTrue(mock_manager.enter_called)
         self.assertTrue(mock_manager.exit_called)
-        self.assertEqual(mock_manager.exit_args[0], RuntimeError)
-        self.assertEqual(mock_manager.exit_args[1], self.TEST_EXCEPTION)
+        if exc_type is None:
+            self.assertEqual(mock_manager.exit_args[1], self.TEST_EXCEPTION)
+            exc_type = type(self.TEST_EXCEPTION)
+        self.assertEqual(mock_manager.exit_args[0], exc_type)
+        # Test the __exit__ arguments. Issue #7853
+        self.assertIsInstance(mock_manager.exit_args[1], exc_type)
+        self.assertIsNot(mock_manager.exit_args[2], None)
 
     def assertAfterWithGeneratorInvariantsWithError(self, mock_generator):
         self.assertTrue(mock_generator.yielded)
@@ -354,6 +360,17 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertRaises(RuntimeError, shouldThrow)
         self.assertAfterWithManagerInvariantsWithError(cm)
         self.assertAfterWithGeneratorInvariantsWithError(self.resource)
+
+    @unittest.expectedFailure
+    def testExceptionNormalized(self):
+        cm = mock_contextmanager_generator()
+        def shouldThrow():
+            with cm as self.resource:
+                # Note this relies on the fact that 1 // 0 produces an exception
+                # that is not normalized immediately.
+                1 // 0
+        self.assertRaises(ZeroDivisionError, shouldThrow)
+        self.assertAfterWithManagerInvariantsWithError(cm, ZeroDivisionError)
 
     def testNestedSingleStatements(self):
         mock_a = mock_contextmanager_generator()
