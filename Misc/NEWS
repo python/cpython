@@ -34,7 +34,8 @@ Core and Builtins
   used to drop the time part of the result.
 
 - Issue #6108: unicode(exception) and str(exception) should return the same
-  message when only __str__ (and not __unicode__) is overridden in the subclass.
+  message when only __str__ (and not __unicode__) is overridden in the
+  subclass.
 
 - Issue #7491: Metaclass's __cmp__ method was ignored.
 
@@ -134,8 +135,8 @@ Library
 - Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is 
   generated in Distutils. Patch by Stephen Emslie.
 
-- Issue #4120: Drop reference to CRT from manifest when building extensions with
-  msvc9compiler.
+- Issue #4120: Drop reference to CRT from manifest when building extensions
+  with msvc9compiler.
 
 - Issue #7410: deepcopy of itertools.count() erroneously reset the count.
 
@@ -222,12 +223,15 @@ Build
   binary distribution on OSX 10.6 even when the user does not
   have the 10.4u SDK installed.
 
-- Issue #7541: when using ``python-config`` with a framework install the compiler might
-  use the wrong library.
+- Issue #7541: when using ``python-config`` with a framework install the
+  compiler might use the wrong library.
 
 Documentation
 -------------
  
+- Updating `Using Python` documentation to include description of CPython's
+  -J, -U and -X options.
+
 - Update python manual page (options -B, -O0, -s, environment variables
   PYTHONDONTWRITEBYTECODE, PYTHONNOUSERSITE).
 
