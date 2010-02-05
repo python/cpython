@@ -1594,7 +1594,7 @@ class ConfigDictTest(BaseTest):
             logging.config.stopListening()
             t.join()
 
-    def test_listen_config_10_ok(self):
+    def notest_listen_config_10_ok(self):
         with captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
             logger = logging.getLogger("compiler.parser")
@@ -1613,7 +1613,7 @@ class ConfigDictTest(BaseTest):
                 ('ERROR', '4'),
             ], stream=output)
 
-    def test_listen_config_1_ok(self):
+    def notest_listen_config_1_ok(self):
         with captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
             logger = logging.getLogger("compiler.parser")
