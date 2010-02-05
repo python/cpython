@@ -52,7 +52,7 @@ This module defines one class called :class:`Popen`:
       tokenization for *args*, especially in complex cases::
 
          >>> import shlex, subprocess
-         >>> command_line = raw_input()
+         >>> command_line = input()
          /bin/vikings -input eggs.txt -output "spam spam.txt" -cmd "echo '$MONEY'"
          >>> args = shlex.split(command_line)
          >>> print(args)
