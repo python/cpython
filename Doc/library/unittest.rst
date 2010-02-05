@@ -895,12 +895,18 @@ Test cases
       If *callable* is omitted or None, returns a context manager so that the
       code under test can be written inline rather than as a function::
 
-         with self.failUnlessRaises(some_error_class):
+         with self.assertRaises(SomeException):
              do_something()
 
       The context manager will store the caught exception object in its
       :attr:`exc_value` attribute.  This can be useful if the intention
-      is to perform additional checks on the exception raised.
+      is to perform additional checks on the exception raised::
+
+        with self.assertRaises(SomeException) as cm:
+            do_something()
+
+        the_exception = cm.exc_value
+        self.assertEquals(the_exception.error_code, 3)
 
       .. versionchanged:: 2.7
          Added the ability to use :meth:`assertRaises` as a context manager.
