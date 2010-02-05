@@ -701,6 +701,9 @@ Build
 Documentation
 ------------
 
+- Updating `Using Python` documentation to include description of CPython's
+  -J and -X options.
+
 - Document that importing a module that has None in sys.modules triggers an
   ImportError.
 
