@@ -905,7 +905,7 @@ Test cases
             do_something()
 
         the_exception = cm.exc_value
-        self.assertEquals(the_exception.error_code, 3)
+        self.assertEqual(the_exception.error_code, 3)
 
       .. versionchanged:: 2.7
          Added the ability to use :meth:`assertRaises` as a context manager.
