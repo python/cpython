@@ -12,6 +12,11 @@ What's New in Python 2.6.5
 Core and Builtins
 -----------------
 
+- Issue #5677: Explicitly forbid write operations on read-only file objects,
+  and read operations on write-only file objects.  On Windows, the system C
+  library would return a bogus result; on Solaris, it was possible to crash
+  the interpreter.  Patch by Stefan Krah.
+
 - Issue #7819: Check sys.call_tracing() arguments types.
 
 - Issue #7788: Fix an interpreter crash produced by deleting a list
