@@ -285,8 +285,6 @@ Miscellaneous options
    See also :envvar:`PYTHONUNBUFFERED`.
 
 
-.. XXX should the -U option be documented?
-
 .. cmdoption:: -v
 
    Print a message each time a module is initialized, showing the place
@@ -362,9 +360,6 @@ Miscellaneous options
 
    .. note:: The line numbers in error messages will be off by one.
 
-.. XXX document -X?
-
-
 .. cmdoption:: -3
 
    Warn about Python 3.x incompatibilities which cannot be fixed trivially by
@@ -382,7 +377,30 @@ Miscellaneous options
 
    .. versionadded:: 2.6
 
+Options you shouldn't use
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. cmdoption:: -J
+
+   Reserved for use by Jython_.
+
+.. _Jython: http://jython.org
+
+.. cmdoption:: -U
+
+   Turns all string literals into unicodes globally.  Do not be tempted to use
+   this option as it will probably break your world.  It also produces
+   ``.pyc`` files with a different magic number than normal.  Instead, you can
+   enable unicode literals on a per-module basis by using::
+
+        from __future__ import unicode_literals
+
+   at the top of the file.  See :mod:`__future__` for details.
+
+.. cmdoption:: -X
+
+    Reserved for alternative implementations of Python to use for their own
+    purposes.
 
 .. _using-on-envvars:
 

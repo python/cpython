@@ -17,8 +17,8 @@ Core and Builtins
   library would return a bogus result; on Solaris, it was possible to crash
   the interpreter.  Patch by Stefan Krah.
 
-- Issue #7853: Normalize exceptions before they are passed to a context managers
-  __exit__ method.
+- Issue #7853: Normalize exceptions before they are passed to a context
+  managers __exit__ method.
 
 - Issue #7385: Fix a crash in `MemoryView_FromObject` when
   `PyObject_GetBuffer` fails.  Patch by Florent Xicluna.
@@ -153,6 +153,9 @@ Tools/Demos
 Documentation
 -------------
  
+- Updating `Using Python` documentation to include description of CPython's
+  -J, -U and -X options.
+
 - Update python manual page (options -B, -O0, -s, environment variables
   PYTHONDONTWRITEBYTECODE, PYTHONNOUSERSITE).
 
