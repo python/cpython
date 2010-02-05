@@ -40,7 +40,8 @@ import string
 import struct
 import sys
 import tempfile
-from test.test_support import captured_stdout, run_with_locale, run_unittest
+from test.test_support import captured_stdout, run_with_locale, run_unittest,\
+     find_unused_port
 import textwrap
 import threading
 import time
@@ -1573,24 +1574,25 @@ class ConfigDictTest(BaseTest):
         self.test_config1_ok(self.config11)
 
     def setup_via_listener(self, text):
-        PORT = 9030
-        t = logging.config.listen(PORT)
+        port = find_unused_port()
+        t = logging.config.listen(port)
         t.start()
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', port))
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(('localhost', PORT))
-
-        slen = struct.pack('>L', len(text))
-        s = slen + text
-        sentsofar = 0
-        left = len(s)
-        while left > 0:
-            sent = sock.send(s[sentsofar:])
-            sentsofar += sent
-            left -= sent
-        sock.close()
-        logging.config.stopListening()
-        t.join()
+            slen = struct.pack('>L', len(text))
+            s = slen + text
+            sentsofar = 0
+            left = len(s)
+            while left > 0:
+                sent = sock.send(s[sentsofar:])
+                sentsofar += sent
+                left -= sent
+            sock.close()
+        finally:
+            logging.config.stopListening()
+            t.join()
 
     def test_listen_config_10_ok(self):
         with captured_stdout() as output:
