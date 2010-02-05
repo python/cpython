@@ -1700,6 +1700,17 @@ And finalization:
 >>> del g
 exiting
 
+>>> class context(object):
+...    def __enter__(self): pass
+...    def __exit__(self, *args): print 'exiting'
+>>> def f():
+...     with context():
+...          yield
+>>> g = f()
+>>> g.next()
+>>> del g
+exiting
+
 
 GeneratorExit is not caught by except Exception:
 

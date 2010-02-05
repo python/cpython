@@ -2555,9 +2555,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			Py_DECREF(u);
 			if (!x)
 				break;
-			/* Setup the finally block before pushing the result
-			   of __enter__ on the stack. */
-			PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
+			/* Setup a finally block (SETUP_WITH as a block is
+			   equivalent to SETUP_FINALLY except it normalizes
+			   the exception) before pushing the result of
+			   __enter__ on the stack. */
+			PyFrame_BlockSetup(f, SETUP_WITH, INSTR_OFFSET() + oparg,
 					   STACK_LEVEL());
 
 			PUSH(x);
@@ -2898,7 +2900,8 @@ fast_block_end:
 			}
 			if (b->b_type == SETUP_FINALLY ||
 			    (b->b_type == SETUP_EXCEPT &&
-			     why == WHY_EXCEPTION)) {
+			     why == WHY_EXCEPTION) ||
+			    b->b_type == SETUP_WITH) {
 				if (why == WHY_EXCEPTION) {
 					PyObject *exc, *val, *tb;
 					PyErr_Fetch(&exc, &val, &tb);
@@ -2911,7 +2914,8 @@ fast_block_end:
 					   so a program can emulate the
 					   Python main loop.  Don't do
 					   this for 'finally'. */
-					if (b->b_type == SETUP_EXCEPT) {
+					if (b->b_type == SETUP_EXCEPT ||
+					    b->b_type == SETUP_WITH) {
 						PyErr_NormalizeException(
 							&exc, &val, &tb);
 						set_exc_info(tstate,
