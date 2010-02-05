@@ -403,7 +403,7 @@ class TestCase(object):
                with self.assertRaises(SomeException) as cm:
                    do_something()
                the_exception = cm.exc_value
-               self.assertEquals(the_exception.error_code, 3)
+               self.assertEqual(the_exception.error_code, 3)
         """
         context = _AssertRaisesContext(excClass, self, callableObj)
         if callableObj is None:
