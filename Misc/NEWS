@@ -378,6 +378,9 @@ Build
 Documentation
 -------------
 
+- Updating `Using Python` documentation to include description of CPython's
+  -J and -X options.
+
 - Issue #6556: Fixed the Distutils configuration files location explanation
   for Windows.
 
