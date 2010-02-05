@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #7853: Normalize exceptions before they are passed to a context managers
+  __exit__ method.
+
 - Issue #7385: Fix a crash in `MemoryView_FromObject` when
   `PyObject_GetBuffer` fails.  Patch by Florent Xicluna.
 

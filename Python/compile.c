@@ -2927,6 +2927,9 @@ compiler_with(struct compiler *c, stmt_ty s)
 
     /* SETUP_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
+    /* Note that the block is actually called SETUP_WITH in ceval.c, but
+       functions the same as SETUP_FINALLY except that exceptions are
+       normalized. */
     if (!compiler_push_fblock(c, FINALLY_TRY, block)) {
 	return 0;
     }

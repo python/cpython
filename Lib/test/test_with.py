@@ -361,7 +361,6 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertAfterWithManagerInvariantsWithError(cm)
         self.assertAfterWithGeneratorInvariantsWithError(self.resource)
 
-    @unittest.expectedFailure
     def testExceptionNormalized(self):
         cm = mock_contextmanager_generator()
         def shouldThrow():
