@@ -9,9 +9,6 @@
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
 
 
-.. versionchanged:: 3.1
-   Added test :ref:`skipping and expected failures <unittest-skipping>`.
-
 The Python unit testing framework, sometimes referred to as "PyUnit," is a
 Python language version of JUnit, by Kent Beck and Erich Gamma. JUnit is, in
 turn, a Java version of Kent's Smalltalk testing framework.  Each is the de
@@ -492,6 +489,8 @@ automatically build :class:`unittest.TestSuite` instances from the existing
 
 Skipping tests and expected failures
 ------------------------------------
+
+.. versionadded:: 3.1
 
 Unittest supports skipping individual test methods and even whole classes of
 tests.  In addition, it supports marking a test as a "expected failure," a test
