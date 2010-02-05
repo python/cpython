@@ -86,6 +86,8 @@ class AutoFileTests(unittest.TestCase):
         self.assert_(repr(self.f).startswith("<open file '" + TESTFN))
 
     def testErrors(self):
+        self.f.close()
+        self.f = open(TESTFN, 'rb')
         f = self.f
         self.assertEquals(f.name, TESTFN)
         self.assert_(not f.isatty())
@@ -122,6 +124,40 @@ class AutoFileTests(unittest.TestCase):
 
     def testReadWhenWriting(self):
         self.assertRaises(IOError, self.f.read)
+
+    def testIssue5677(self):
+        # Remark: Do not perform more than one test per open file,
+        # since that does NOT catch the readline error on Windows.
+        data = 'xxx'
+        for mode in ['w', 'wb', 'a', 'ab']:
+            for attr in ['read', 'readline', 'readlines']:
+                self.f = open(TESTFN, mode)
+                self.f.write(data)
+                self.assertRaises(IOError, getattr(self.f, attr))
+                self.f.close()
+
+            self.f = open(TESTFN, mode)
+            self.f.write(data)
+            self.assertRaises(IOError, lambda: [line for line in self.f])
+            self.f.close()
+
+            self.f = open(TESTFN, mode)
+            self.f.write(data)
+            self.assertRaises(IOError, self.f.readinto, bytearray(len(data)))
+            self.f.close()
+
+        for mode in ['r', 'rb', 'U', 'Ub', 'Ur', 'rU', 'rbU', 'rUb']:
+            self.f = open(TESTFN, mode)
+            self.assertRaises(IOError, self.f.write, data)
+            self.f.close()
+
+            self.f = open(TESTFN, mode)
+            self.assertRaises(IOError, self.f.writelines, [data, data])
+            self.f.close()
+
+            self.f = open(TESTFN, mode)
+            self.assertRaises(IOError, self.f.truncate)
+            self.f.close()
 
 class OtherFileTests(unittest.TestCase):
 
