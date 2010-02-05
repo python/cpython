@@ -1579,6 +1579,7 @@ class ConfigDictTest(BaseTest):
         t.start()
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(2.0)
             sock.connect(('localhost', port))
 
             slen = struct.pack('>L', len(text))
@@ -1592,9 +1593,10 @@ class ConfigDictTest(BaseTest):
             sock.close()
         finally:
             logging.config.stopListening()
-            t.join()
+            t.join(2.0)
 
-    def notest_listen_config_10_ok(self):
+    @unittest.skip("See issue #7857")
+    def test_listen_config_10_ok(self):
         with captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
             logger = logging.getLogger("compiler.parser")
@@ -1613,7 +1615,8 @@ class ConfigDictTest(BaseTest):
                 ('ERROR', '4'),
             ], stream=output)
 
-    def notest_listen_config_1_ok(self):
+    @unittest.skip("See issue #7857")
+    def test_listen_config_1_ok(self):
         with captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
             logger = logging.getLogger("compiler.parser")
