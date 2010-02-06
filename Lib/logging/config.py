@@ -843,17 +843,25 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
                 abort = self.abort
                 logging._releaseLock()
 
-    def serve(rcvr, hdlr, port):
-        server = rcvr(port=port, handler=hdlr)
-        global _listener
-        logging._acquireLock()
-        _listener = server
-        logging._releaseLock()
-        server.serve_until_stopped()
+    class Server(threading.Thread):
 
-    return threading.Thread(target=serve,
-                            args=(ConfigSocketReceiver,
-                                  ConfigStreamHandler, port))
+        def __init__(self, rcvr, hdlr, port):
+            super(Server, self).__init__()
+            self.rcvr = rcvr
+            self.hdlr = hdlr
+            self.port = port
+            self.ready = threading.Event()
+
+        def run(self):
+            server = self.rcvr(port=self.port, handler=self.hdlr)
+            self.ready.set()
+            global _listener
+            logging._acquireLock()
+            _listener = server
+            logging._releaseLock()
+            server.serve_until_stopped()
+
+    return Server(ConfigSocketReceiver, ConfigStreamHandler, port)
 
 def stopListening():
     """

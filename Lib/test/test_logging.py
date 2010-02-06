@@ -1574,7 +1574,7 @@ class ConfigDictTest(BaseTest):
         port = find_unused_port()
         t = logging.config.listen(port)
         t.start()
-        time.sleep(0.5) # give server thread some time to get ready
+        t.ready.wait()
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(2.0)
