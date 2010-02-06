@@ -2,6 +2,7 @@
 """Test dlmodule.c
    Roger E. Masse  revised strategy by Barry Warsaw
 """
+import unittest
 from test.test_support import verbose, import_module
 dl = import_module('dl', deprecated=True)
 
