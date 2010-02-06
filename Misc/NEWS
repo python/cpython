@@ -716,6 +716,9 @@ Documentation
 Tests
 -----
 
+- issue #7728: test_timeout was changed to use test_support.bind_port
+  instead of a hard coded port.
+
 - Issue #7376: instead of running a self-test (which was failing) when called
   with no arguments, doctest.py now gives a usage message.
 
