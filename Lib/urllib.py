@@ -234,7 +234,7 @@ class URLopener:
                 hdrs = fp.info()
                 fp.close()
                 return url2pathname(splithost(url1)[1]), hdrs
-            except IOError, msg:
+            except IOError:
                 pass
         fp = self.open(url, data)
         try:
@@ -1277,7 +1277,7 @@ def urlencode(query,doseq=0):
             else:
                 try:
                     # is this a sufficient test for sequence-ness?
-                    x = len(v)
+                    len(v)
                 except TypeError:
                     # not a sequence
                     v = quote_plus(str(v))
