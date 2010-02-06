@@ -1577,6 +1577,7 @@ class ConfigDictTest(BaseTest):
         port = find_unused_port()
         t = logging.config.listen(port)
         t.start()
+        time.sleep(0.5) # give server thread some time to get ready
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(2.0)
@@ -1615,7 +1616,7 @@ class ConfigDictTest(BaseTest):
                 ('ERROR', '4'),
             ], stream=output)
 
-    @unittest.skip("See issue #7857")
+    #@unittest.skip("See issue #7857")
     def test_listen_config_1_ok(self):
         with captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
