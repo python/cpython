@@ -1591,10 +1591,10 @@ class _TestSharedCTypes(BaseTestCase):
             return
 
         x = Value('i', 7, lock=lock)
-        y = Value(ctypes.c_double, 1.0/3.0, lock=lock)
+        y = Value(c_double, 1.0/3.0, lock=lock)
         foo = Value(_Foo, 3, 2, lock=lock)
-        arr = Array('d', range(10), lock=lock)
-        string = Array('c', 20, lock=lock)
+        arr = self.Array('d', range(10), lock=lock)
+        string = self.Array('c', 20, lock=lock)
         string.value = 'hello'
 
         p = self.Process(target=self._double, args=(x, y, foo, arr, string))
