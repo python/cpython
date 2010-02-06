@@ -101,7 +101,7 @@ class TimeoutTestCase(unittest.TestCase):
     def setUp(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addr_remote = ('www.python.org.', 80)
-        self.addr_local  = ('127.0.0.1', 25339)
+        self.localhost = '127.0.0.1'
 
     def tearDown(self):
         self.sock.close()
@@ -146,7 +146,8 @@ class TimeoutTestCase(unittest.TestCase):
         # Test accept() timeout
         _timeout = 2
         self.sock.settimeout(_timeout)
-        self.sock.bind(self.addr_local)
+        # Prevent "Address already in use" socket exceptions
+        test_support.bind_port(self.sock, self.localhost)
         self.sock.listen(5)
 
         _t1 = time.time()
@@ -163,7 +164,8 @@ class TimeoutTestCase(unittest.TestCase):
         _timeout = 2
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.settimeout(_timeout)
-        self.sock.bind(self.addr_local)
+        # Prevent "Address already in use" socket exceptions
+        test_support.bind_port(self.sock, self.localhost)
 
         _t1 = time.time()
         self.failUnlessRaises(socket.error, self.sock.recvfrom, 8192)

@@ -238,6 +238,9 @@ Documentation
 Tests
 -----
 
+- issue #7728: test_timeout was changed to use test_support.bind_port
+  instead of a hard coded port.
+
 - Issue #7498: test_multiprocessing now uses test_support.find_unused_port
   instead of a hardcoded port number in test_rapid_restart.
 
