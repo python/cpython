@@ -272,12 +272,14 @@ class Test_TestLoader(TestCase):
 
         load_tests_args = []
         def load_tests(loader, tests, pattern):
+            self.assertIsInstance(tests, unittest.TestSuite)
             load_tests_args.extend((loader, tests, pattern))
             return tests
         m.load_tests = load_tests
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromModule(m)
+        self.assertIsInstance(suite, unittest.TestSuite)
         self.assertEquals(load_tests_args, [loader, suite, None])
 
         load_tests_args = []

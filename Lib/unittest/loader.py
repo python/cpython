@@ -61,9 +61,10 @@ class TestLoader(object):
                 tests.append(self.loadTestsFromTestCase(obj))
 
         load_tests = getattr(module, 'load_tests', None)
+        tests = self.suiteClass(tests)
         if use_load_tests and load_tests is not None:
             return load_tests(self, tests, None)
-        return self.suiteClass(tests)
+        return tests
 
     def loadTestsFromName(self, name, module=None):
         """Return a suite of all tests cases given a string specifier.
