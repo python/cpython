@@ -244,7 +244,7 @@ class RExec(ihooks._Verbose):
         m.open = m.file = self.r_open
 
     def make_main(self):
-        m = self.add_module('__main__')
+        self.add_module('__main__')
 
     def make_osname(self):
         osname = os.name

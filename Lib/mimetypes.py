@@ -546,7 +546,6 @@ _default_mime_types()
 
 
 if __name__ == '__main__':
-    import sys
     import getopt
 
     USAGE = """\

@@ -98,7 +98,7 @@ class DictMixin:
             yield k
     def has_key(self, key):
         try:
-            value = self[key]
+            self[key]
         except KeyError:
             return False
         return True
