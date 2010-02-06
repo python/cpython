@@ -8,6 +8,7 @@ import unittest
 import sys
 import test
 import os
+import shutil
 from copy import copy, deepcopy
 
 from test.test_support import run_unittest, TESTFN
