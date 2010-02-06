@@ -145,6 +145,7 @@ static void reset_exc_info(PyThreadState *);
 static void format_exc_check_arg(PyObject *, char *, PyObject *);
 static PyObject * string_concatenate(PyObject *, PyObject *,
 				    PyFrameObject *, unsigned char *);
+static PyObject * kwd_as_string(PyObject *);
 
 #define NAME_ERROR_MSG \
 	"name '%.200s' is not defined"
@@ -2831,7 +2832,8 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			PyObject *keyword = kws[2*i];
 			PyObject *value = kws[2*i + 1];
 			int j;
-			if (keyword == NULL || !PyString_Check(keyword)) {
+			if (keyword == NULL || !(PyString_Check(keyword) ||
+						 PyUnicode_Check(keyword))) {
 				PyErr_Format(PyExc_TypeError,
 				    "%.200s() keywords must be strings",
 				    PyString_AsString(co->co_name));
@@ -2860,11 +2862,15 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				goto fail;
 			if (j >= co->co_argcount) {
 				if (kwdict == NULL) {
-					PyErr_Format(PyExc_TypeError,
-					    "%.200s() got an unexpected "
-					    "keyword argument '%.400s'",
-					    PyString_AsString(co->co_name),
-					    PyString_AsString(keyword));
+					PyObject *kwd_str = kwd_as_string(keyword);
+					if (kwd_str) {
+						PyErr_Format(PyExc_TypeError,
+							     "%.200s() got an unexpected "
+							     "keyword argument '%.400s'",
+							     PyString_AsString(co->co_name),
+							     PyString_AsString(kwd_str));
+						Py_DECREF(kwd_str);
+					}
 					goto fail;
 				}
 				PyDict_SetItem(kwdict, keyword, value);
@@ -2872,12 +2878,16 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			}
 kw_found:
 			if (GETLOCAL(j) != NULL) {
-				PyErr_Format(PyExc_TypeError,
-						"%.200s() got multiple "
-						"values for keyword "
-						"argument '%.400s'",
-						PyString_AsString(co->co_name),
-						PyString_AsString(keyword));
+				PyObject *kwd_str = kwd_as_string(keyword);
+				if (kwd_str) {
+					PyErr_Format(PyExc_TypeError,
+						     "%.200s() got multiple "
+						     "values for keyword "
+						     "argument '%.400s'",
+						     PyString_AsString(co->co_name),
+						     PyString_AsString(kwd_str));
+					Py_DECREF(kwd_str);
+				}
 				goto fail;
 			}
 			Py_INCREF(value);
@@ -3001,6 +3011,17 @@ fail: /* Jump here from prelude on failure */
 	Py_DECREF(f);
 	--tstate->recursion_depth;
 	return retval;
+}
+
+
+static PyObject *
+kwd_as_string(PyObject *kwd) {
+	if (PyString_Check(kwd)) {
+		Py_INCREF(kwd);
+		return kwd;
+	}
+	else
+		return _PyUnicode_AsDefaultEncodedString(kwd, "replace");
 }
 
 
