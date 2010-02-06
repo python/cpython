@@ -150,6 +150,14 @@ Tools/Demos
   added to the `Tools/` directory.  They were previously living in the
   sandbox.
 
+
+Tests
+-----
+
+- issue #7728: test_timeout was changed to use test_support.bind_port
+  instead of a hard coded port.
+
+
 Documentation
 -------------
  
