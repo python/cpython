@@ -5,7 +5,7 @@ import os
 import warnings
 import sysconfig
 
-from test.test_support import check_warnings
+from test.test_support import check_warnings, run_unittest
 from test.test_support import captured_stdout
 
 from distutils import cygwinccompiler
@@ -108,4 +108,4 @@ def test_suite():
     return unittest.makeSuite(CygwinCCompilerTestCase)
 
 if __name__ == '__main__':
-    test_support.run_unittest(test_suite())
+    run_unittest(test_suite())
