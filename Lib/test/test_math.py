@@ -292,31 +292,37 @@ class MathTests(unittest.TestCase):
 
     @requires_IEEE_754
     def testCopysign(self):
+        self.assertEqual(math.copysign(1, 42), 1.0)
+        self.assertEqual(math.copysign(0., 42), 0.0)
+        self.assertEqual(math.copysign(1., -42), -1.0)
+        self.assertEqual(math.copysign(3, 0.), 3.0)
+        self.assertEqual(math.copysign(4., -0.), -4.0)
+
         self.assertRaises(TypeError, math.copysign)
         # copysign should let us distinguish signs of zeros
-        self.assertEquals(copysign(1., 0.), 1.)
-        self.assertEquals(copysign(1., -0.), -1.)
-        self.assertEquals(copysign(INF, 0.), INF)
-        self.assertEquals(copysign(INF, -0.), NINF)
-        self.assertEquals(copysign(NINF, 0.), INF)
-        self.assertEquals(copysign(NINF, -0.), NINF)
+        self.assertEquals(math.copysign(1., 0.), 1.)
+        self.assertEquals(math.copysign(1., -0.), -1.)
+        self.assertEquals(math.copysign(INF, 0.), INF)
+        self.assertEquals(math.copysign(INF, -0.), NINF)
+        self.assertEquals(math.copysign(NINF, 0.), INF)
+        self.assertEquals(math.copysign(NINF, -0.), NINF)
         # and of infinities
-        self.assertEquals(copysign(1., INF), 1.)
-        self.assertEquals(copysign(1., NINF), -1.)
-        self.assertEquals(copysign(INF, INF), INF)
-        self.assertEquals(copysign(INF, NINF), NINF)
-        self.assertEquals(copysign(NINF, INF), INF)
-        self.assertEquals(copysign(NINF, NINF), NINF)
-        self.assertTrue(math.isnan(copysign(NAN, 1.)))
-        self.assertTrue(math.isnan(copysign(NAN, INF)))
-        self.assertTrue(math.isnan(copysign(NAN, NINF)))
-        self.assertTrue(math.isnan(copysign(NAN, NAN)))
+        self.assertEquals(math.copysign(1., INF), 1.)
+        self.assertEquals(math.copysign(1., NINF), -1.)
+        self.assertEquals(math.copysign(INF, INF), INF)
+        self.assertEquals(math.copysign(INF, NINF), NINF)
+        self.assertEquals(math.copysign(NINF, INF), INF)
+        self.assertEquals(math.copysign(NINF, NINF), NINF)
+        self.assertTrue(math.isnan(math.copysign(NAN, 1.)))
+        self.assertTrue(math.isnan(math.copysign(NAN, INF)))
+        self.assertTrue(math.isnan(math.copysign(NAN, NINF)))
+        self.assertTrue(math.isnan(math.copysign(NAN, NAN)))
         # copysign(INF, NAN) may be INF or it may be NINF, since
         # we don't know whether the sign bit of NAN is set on any
         # given platform.
-        self.assertTrue(math.isinf(copysign(INF, NAN)))
+        self.assertTrue(math.isinf(math.copysign(INF, NAN)))
         # similarly, copysign(2., NAN) could be 2. or -2.
-        self.assertEquals(abs(copysign(2., NAN)), 2.)
+        self.assertEquals(abs(math.copysign(2., NAN)), 2.)
 
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
@@ -877,13 +883,6 @@ class MathTests(unittest.TestCase):
         t.__trunc__ = lambda *args: args
         self.assertEquals((), math.trunc(t))
         self.assertRaises(TypeError, math.trunc, t, 0)
-
-    def testCopysign(self):
-        self.assertEqual(math.copysign(1, 42), 1.0)
-        self.assertEqual(math.copysign(0., 42), 0.0)
-        self.assertEqual(math.copysign(1., -42), -1.0)
-        self.assertEqual(math.copysign(3, 0.), 3.0)
-        self.assertEqual(math.copysign(4., -0.), -4.0)
 
     def testIsnan(self):
         self.assertTrue(math.isnan(float("nan")))
