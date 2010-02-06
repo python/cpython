@@ -298,14 +298,6 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
             ("starttag", "a", [("href", "http://[1080::8:800:200C:417A]/")]),
             ])
 
-    def test_illegal_declarations(self):
-        s = 'abc<!spacer type="block" height="25">def'
-        self.check_events(s, [
-            ("data", "abc"),
-            ("unknown decl", 'spacer type="block" height="25"'),
-            ("data", "def"),
-            ])
-
     def test_weird_starttags(self):
         self.check_events("<a<a>", [
             ("starttag", "a", []),
