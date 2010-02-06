@@ -230,7 +230,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             mod_path = packdir2 + TESTMOD
             mod_name = module_path_to_dotted_name(mod_path)
-            pkg = __import__(mod_name)
+            __import__(mod_name)
             mod = sys.modules[mod_name]
             self.assertEquals(zi.get_source(TESTPACK), None)
             self.assertEquals(zi.get_source(mod_path), None)
@@ -274,7 +274,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             mod_path = TESTPACK2 + os.sep + TESTMOD
             mod_name = module_path_to_dotted_name(mod_path)
-            pkg = __import__(mod_name)
+            __import__(mod_name)
             mod = sys.modules[mod_name]
             self.assertEquals(zi.get_source(TESTPACK2), None)
             self.assertEquals(zi.get_source(mod_path), None)

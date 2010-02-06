@@ -127,7 +127,7 @@ class test__RandomNameSequence(TC):
                 if i == 20:
                     break
         except:
-            failOnException("iteration")
+            self.failOnException("iteration")
 
 test_classes.append(test__RandomNameSequence)
 
