@@ -536,7 +536,7 @@ class LongTest(unittest.TestCase):
         except OverflowError:
             self.fail("int(long(sys.maxint)) overflowed!")
         if not isinstance(x, int):
-            raise TestFailed("int(long(sys.maxint)) should have returned int")
+            self.fail("int(long(sys.maxint)) should have returned int")
         x = int(hugeneg_aslong)
         try:
             self.assertEqual(x, hugeneg,
@@ -544,8 +544,7 @@ class LongTest(unittest.TestCase):
         except OverflowError:
             self.fail("int(long(-sys.maxint-1)) overflowed!")
         if not isinstance(x, int):
-            raise TestFailed("int(long(-sys.maxint-1)) should have "
-                             "returned int")
+            self.fail("int(long(-sys.maxint-1)) should have returned int")
         # but long -> int should overflow for hugepos+1 and hugeneg-1
         x = hugepos_aslong + 1
         try:
@@ -803,7 +802,7 @@ class LongTest(unittest.TestCase):
                     self.d = d
                     assert float(n) / float(d) == value
                 else:
-                    raise TypeError("can't deal with %r" % val)
+                    raise TypeError("can't deal with %r" % value)
 
             def __cmp__(self, other):
                 if not isinstance(other, Rat):
