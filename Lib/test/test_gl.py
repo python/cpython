@@ -3,6 +3,7 @@
     taken mostly from the documentation.
     Roger E. Masse
 """
+import unittest
 from test.test_support import verbose, import_module
 import time
 gl = import_module('gl')
