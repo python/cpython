@@ -953,7 +953,7 @@ definition, function definition, or :keyword:`import` statement.
 **Programmer's note:** the :keyword:`global` is a directive to the parser.  It
 applies only to code parsed at the same time as the :keyword:`global` statement.
 In particular, a :keyword:`global` statement contained in a string or code
-object supplied to the builtin :func:`exec` function does not affect the code
+object supplied to the built-in :func:`exec` function does not affect the code
 block *containing* the function call, and code contained in such a string is
 unaffected by :keyword:`global` statements in the code containing the function
 call.  The same applies to the :func:`eval` and :func:`compile` functions.

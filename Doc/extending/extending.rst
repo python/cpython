@@ -354,7 +354,7 @@ optionally followed by an import of the module::
    int
    main(int argc, char *argv[])
    {
-       /* Add a builtin module, before Py_Initialize */
+       /* Add a built-in module, before Py_Initialize */
        PyImport_AppendInittab("spam", PyInit_spam);
 
        /* Pass argv[0] to the Python interpreter */

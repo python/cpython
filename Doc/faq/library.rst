@@ -25,10 +25,10 @@ your topic of interest will usually find something helpful.
 Where is the math.py (socket.py, regex.py, etc.) source file?
 -------------------------------------------------------------
 
-If you can't find a source file for a module it may be a builtin or dynamically
-loaded module implemented in C, C++ or other compiled language.  In this case
-you may not have the source file or it may be something like mathmodule.c,
-somewhere in a C source directory (not on the Python Path).
+If you can't find a source file for a module it may be a built-in or
+dynamically loaded module implemented in C, C++ or other compiled language.
+In this case you may not have the source file or it may be something like
+mathmodule.c, somewhere in a C source directory (not on the Python Path).
 
 There are (at least) three kinds of modules in Python:
 
@@ -361,7 +361,7 @@ therefore atomic from the point of view of a Python program.
 
 In theory, this means an exact accounting requires an exact understanding of the
 PVM bytecode implementation.  In practice, it means that operations on shared
-variables of builtin data types (ints, lists, dicts, etc) that "look atomic"
+variables of built-in data types (ints, lists, dicts, etc) that "look atomic"
 really are.
 
 For example, the following operations are all atomic (L, L1, L2 are lists, D,
@@ -504,9 +504,9 @@ I can't seem to use os.read() on a pipe created with os.popen(); why?
 
 :func:`os.read` is a low-level function which takes a file descriptor, a small
 integer representing the opened file.  :func:`os.popen` creates a high-level
-file object, the same type returned by the builtin :func:`open` function.  Thus,
-to read n bytes from a pipe p created with :func:`os.popen`, you need to use
-``p.read(n)``.
+file object, the same type returned by the built-in :func:`open` function.
+Thus, to read n bytes from a pipe p created with :func:`os.popen`, you need to
+use ``p.read(n)``.
 
 
 .. XXX update to use subprocess. See the :ref:`subprocess-replacements` section.
@@ -607,10 +607,11 @@ Python file objects are a high-level layer of abstraction on top of C streams,
 which in turn are a medium-level layer of abstraction on top of (among other
 things) low-level C file descriptors.
 
-For most file objects you create in Python via the builtin ``open`` constructor,
-``f.close()`` marks the Python file object as being closed from Python's point
-of view, and also arranges to close the underlying C stream.  This also happens
-automatically in f's destructor, when f becomes garbage.
+For most file objects you create in Python via the built-in ``open``
+constructor, ``f.close()`` marks the Python file object as being closed from
+Python's point of view, and also arranges to close the underlying C stream.
+This also happens automatically in ``f``'s destructor, when ``f`` becomes
+garbage.
 
 But stdin, stdout and stderr are treated specially by Python, because of the
 special status also given to them by C.  Running ``sys.stdout.close()`` marks

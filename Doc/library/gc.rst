@@ -43,7 +43,7 @@ The :mod:`gc` module provides the following functions:
    :exc:`ValueError` is raised if the generation number  is invalid. The number of
    unreachable objects found is returned.
 
-   The free lists maintained for a number of builtin types are cleared
+   The free lists maintained for a number of built-in types are cleared
    whenever a full collection or collection of the highest generation (2)
    is run.  Not all items in some free lists may be freed due to the
    particular implementation, in particular :class:`float`.

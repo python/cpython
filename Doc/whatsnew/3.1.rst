@@ -85,7 +85,7 @@ Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_
 PEP 378: Format Specifier for Thousands Separator
 =================================================
 
-The builtin :func:`format` function and the :meth:`str.format` method use
+The built-in :func:`format` function and the :meth:`str.format` method use
 a mini-language that now includes a simple, non-locale aware way to format
 a number with a thousands separator.  That provides a way to humanize a
 program's output, improving its professional appearance and readability::

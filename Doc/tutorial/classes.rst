@@ -717,7 +717,7 @@ object that defines the method :meth:`__next__` which accesses elements in the
 container one at a time.  When there are no more elements, :meth:`__next__`
 raises a :exc:`StopIteration` exception which tells the :keyword:`for` loop to
 terminate.  You can call the :meth:`__next__` method using the :func:`next`
-builtin; this example shows how it all works::
+built-in function; this example shows how it all works::
 
    >>> s = 'abc'
    >>> it = iter(s)
