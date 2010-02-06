@@ -3115,9 +3115,6 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				else if (cmp < 0)
 					goto fail;
 			}
-			/* Check errors from Compare */
-			if (PyErr_Occurred())
-				goto fail;
 			if (j >= co->co_argcount) {
 				if (kwdict == NULL) {
 					PyObject *kwd_str = kwd_as_string(keyword);
