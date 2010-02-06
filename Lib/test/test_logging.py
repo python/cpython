@@ -26,7 +26,6 @@ import logging.handlers
 import logging.config
 
 import codecs
-import copy
 import cPickle
 import cStringIO
 import gc
@@ -36,7 +35,6 @@ import re
 import select
 import socket
 from SocketServer import ThreadingTCPServer, StreamRequestHandler
-import string
 import struct
 import sys
 import tempfile
@@ -45,7 +43,6 @@ from test.test_support import captured_stdout, run_with_locale, run_unittest,\
 import textwrap
 import threading
 import time
-import types
 import unittest
 import warnings
 import weakref
