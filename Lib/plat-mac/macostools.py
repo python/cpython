@@ -10,6 +10,7 @@ warnpy3k("In 3.x, the macostools module is removed.", stacklevel=2)
 from Carbon import Res
 from Carbon import File, Files
 import os
+import errno
 import MacOS
 try:
     openrf = MacOS.openrf
