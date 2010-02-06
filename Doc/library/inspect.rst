@@ -87,7 +87,7 @@ attributes:
 | frame     | f_back          | next outer frame object   |
 |           |                 | (this frame's caller)     |
 +-----------+-----------------+---------------------------+
-|           | f_builtins      | built-in namespace seen   |
+|           | f_builtins      | builtins namespace seen   |
 |           |                 | by this frame             |
 +-----------+-----------------+---------------------------+
 |           | f_code          | code object being         |

@@ -270,7 +270,7 @@ changed.
   single "euro" character.  (Of course, this change only affects raw
   string literals; the euro character is ``'\u20ac'`` in Python 3.0.)
 
-* The builtin :class:`basestring` abstract type was removed.  Use
+* The built-in :class:`basestring` abstract type was removed.  Use
   :class:`str` instead.  The :class:`str` and :class:`bytes` types
   don't have functionality enough in common to warrant a shared base
   class.  The ``2to3`` tool (see below) replaces every occurrence of
@@ -383,10 +383,10 @@ New Syntax
   literals (``0720``) are gone.
 
 * New binary literals, e.g. ``0b1010`` (already in 2.6), and
-  there is a new corresponding builtin function, :func:`bin`.
+  there is a new corresponding built-in function, :func:`bin`.
 
 * Bytes literals are introduced with a leading ``b`` or ``B``, and
-  there is a new corresponding builtin function, :func:`bytes`.
+  there is a new corresponding built-in function, :func:`bytes`.
 
 Changed Syntax
 --------------
@@ -506,7 +506,7 @@ consulted for longer descriptions.
 * :ref:`pep-3116`.  The :mod:`io` module is now the standard way of
   doing file I/O, and the initial values of :data:`sys.stdin`,
   :data:`sys.stdout` and :data:`sys.stderr` are now instances of
-  :class:`io.TextIOBase`.  The builtin :func:`open` function is now an
+  :class:`io.TextIOBase`.  The built-in :func:`open` function is now an
   alias for :func:`io.open` and has additional keyword arguments
   *encoding*, *errors*, *newline* and *closefd*.  Also note that an
   invalid *mode* argument now raises :exc:`ValueError`, not
@@ -521,7 +521,7 @@ consulted for longer descriptions.
 
 * :ref:`pep-3119`.  The :mod:`abc` module and the ABCs defined in the
   :mod:`collections` module plays a somewhat more prominent role in
-  the language now, and builtin collection types like :class:`dict`
+  the language now, and built-in collection types like :class:`dict`
   and :class:`list` conform to the :class:`collections.MutableMapping`
   and :class:`collections.MutableSequence` ABCs, respectively.
 
@@ -615,7 +615,7 @@ review:
 Some other changes to standard library modules, not covered by
 :pep:`3108`:
 
-* Killed :mod:`sets`.  Use the builtin :func:`set` function.
+* Killed :mod:`sets`.  Use the built-in :func:`set` class.
 
 * Cleanup of the :mod:`sys` module: removed :func:`sys.exitfunc`,
   :func:`sys.exc_clear`, :data:`sys.exc_type`, :data:`sys.exc_value`,
@@ -795,8 +795,8 @@ Builtins
   It raises :exc:`EOFError` if the input is terminated prematurely.
   To get the old behavior of :func:`input`, use ``eval(input())``.
 
-* A new builtin :func:`next` was added to call the :meth:`__next__`
-  method on an object.
+* A new built-in function :func:`next` was added to call the
+  :meth:`__next__` method on an object.
 
 * Moved :func:`intern` to :func:`sys.intern`.
 

@@ -241,8 +241,8 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: StopIteration
 
-   Raised by builtin :func:`next` and an :term:`iterator`\'s :meth:`__next__`
-   method to signal that there are no further values.
+   Raised by built-in function :func:`next` and an :term:`iterator`\'s
+   :meth:`__next__` method to signal that there are no further values.
 
 
 .. exception:: SyntaxError
