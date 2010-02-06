@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Doctest for method/function calls.
 
 We're going the use these types for extra testing
@@ -252,11 +253,30 @@ TypeError if te dictionary is not empty
 
 """
 
+import unittest
 from test import test_support
+
+
+class UnicodeKeywordArgsTest(unittest.TestCase):
+
+    def test_unicode_keywords(self):
+        def f(a):
+            return a
+        self.assertEqual(f(**{u'a': 4}), 4)
+        self.assertRaises(TypeError, f, **{u'stören': 4})
+        self.assertRaises(TypeError, f, **{u'someLongString':2})
+        try:
+            f(a=4, **{u'a': 4})
+        except TypeError:
+            pass
+        else:
+            self.fail("duplicate arguments didn't raise")
+
 
 def test_main():
     from test import test_extcall # self import
     test_support.run_doctest(test_extcall, True)
+    test_support.run_unittest(UnicodeKeywordArgsTest)
 
 if __name__ == '__main__':
     test_main()
