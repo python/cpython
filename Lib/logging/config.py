@@ -65,7 +65,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True):
     import configparser
 
     cp = configparser.ConfigParser(defaults)
-    if hasattr(cp, 'readfp') and hasattr(fname, 'readline'):
+    if hasattr(fname, 'readline'):
         cp.readfp(fname)
     else:
         cp.read(fname)

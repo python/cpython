@@ -1559,17 +1559,8 @@ def shutdown(handlerList=_handlerList):
             #else, swallow
 
 #Let's try and shutdown automatically on application exit...
-try:
-    import atexit
-    atexit.register(shutdown)
-except ImportError: # for Python versions < 2.0
-    def exithook(status, old_exit=sys.exit):
-        try:
-            shutdown()
-        finally:
-            old_exit(status)
-
-    sys.exit = exithook
+import atexit
+atexit.register(shutdown)
 
 # Null handler
 
