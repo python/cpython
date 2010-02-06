@@ -15,7 +15,7 @@ class _MediaDescriptionCodec:
             data = data[:self.size]
         values = struct.unpack(self.fmt, data)
         if len(values) != len(self.names):
-            raise Error, ('Format length does not match number of names', descr)
+            raise Error, ('Format length does not match number of names')
         rv = {}
         for i in range(len(values)):
             name = self.names[i]
@@ -26,7 +26,7 @@ class _MediaDescriptionCodec:
             rv[name] = value
         return rv
 
-    def encode(dict):
+    def encode(self, dict):
         list = [self.fmt]
         for name in self.names:
             if type(name) == type(()):
