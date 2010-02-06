@@ -17,8 +17,9 @@ class SortedDict(UserDict.UserDict):
         return result
 
     def values(self):
+        # XXX never used?
         result = self.items()
-        return [i[1] for i in values]
+        return [i[1] for i in result]
 
     def iteritems(self): return iter(self.items())
     def iterkeys(self): return iter(self.keys())
