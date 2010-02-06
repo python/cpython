@@ -6,6 +6,8 @@ import os
 import tempfile
 import shutil
 
+from test.test_support import run_unittest
+
 from distutils.core import Distribution
 from distutils.command.bdist_rpm import bdist_rpm
 from distutils.tests import support
@@ -122,4 +124,4 @@ def test_suite():
     return unittest.makeSuite(BuildRpmTestCase)
 
 if __name__ == '__main__':
-    test_support.run_unittest(test_suite())
+    run_unittest(test_suite())

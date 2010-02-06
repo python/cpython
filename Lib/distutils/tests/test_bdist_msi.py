@@ -2,6 +2,8 @@
 import unittest
 import sys
 
+from test.test_support import run_unittest
+
 from distutils.tests import support
 
 @unittest.skipUnless(sys.platform=="win32", "These tests are only for win32")
@@ -20,4 +22,4 @@ def test_suite():
     return unittest.makeSuite(BDistMSITestCase)
 
 if __name__ == '__main__':
-    test_support.run_unittest(test_suite())
+    run_unittest(test_suite())
