@@ -4516,6 +4516,15 @@ order (MRO) for bases """
         x.a = 42
         self.assertEqual(x.a, 42)
 
+        # Also check type_getattro for correctness.
+        class Meta(type):
+            pass
+        class X(object):
+            __metaclass__ = Meta
+        X.a = 42
+        Meta.a = Descr("a")
+        self.assertEqual(X.a, 42)
+
     def test_getattr_hooks(self):
         # issue 4230
 
