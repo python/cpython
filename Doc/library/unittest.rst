@@ -681,7 +681,7 @@ Test cases
       will be *msg* if given, otherwise it will be :const:`None`.
 
       .. deprecated:: 2.7
-         :meth:`failUnless`.
+         :meth:`failUnless`; use one of the ``assert`` variants.
 
 
    .. method:: assertEqual(first, second[, msg])
@@ -703,7 +703,7 @@ Test cases
          Added the automatic calling of type specific equality function.
 
       .. deprecated:: 2.7
-         :meth:`failUnlessEqual`.
+         :meth:`failUnlessEqual`; use :meth:`assertEqual`.
 
 
    .. method:: assertNotEqual(first, second[, msg])
@@ -717,7 +717,7 @@ Test cases
       *first* and *second*.
 
       .. deprecated:: 2.7
-         :meth:`failIfEqual`.
+         :meth:`failIfEqual`; use :meth:`assertNotEqual`.
 
 
    .. method:: assertAlmostEqual(first, second[, places[, msg]])
@@ -736,7 +736,7 @@ Test cases
          Objects that compare equal are automatically almost equal.
 
       .. deprecated:: 2.7
-         :meth:`failUnlessAlmostEqual`.
+         :meth:`failUnlessAlmostEqual`; use :meth:`assertAlmostEqual`.
 
 
    .. method:: assertNotAlmostEqual(first, second[, places[, msg]])
@@ -755,7 +755,7 @@ Test cases
          Objects that compare equal automatically fail.
 
       .. deprecated:: 2.7
-         :meth:`failIfAlmostEqual`.
+         :meth:`failIfAlmostEqual`; use :meth:`assertNotAlmostEqual`.
 
 
    .. method:: assertGreater(first, second, msg=None)
@@ -911,7 +911,7 @@ Test cases
          Added the ability to use :meth:`assertRaises` as a context manager.
 
       .. deprecated:: 2.7
-         :meth:`failUnlessRaises`.
+         :meth:`failUnlessRaises`; use :meth:`assertRaises`.
 
 
    .. method:: assertRaisesRegexp(exception, regexp[, callable, ...])
@@ -988,7 +988,7 @@ Test cases
       for the error message.
 
       .. deprecated:: 2.7
-         :meth:`failIf`.
+         :meth:`failIf`; use :meth:`assertFalse`.
 
 
    .. method:: fail([msg])
