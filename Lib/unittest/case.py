@@ -91,7 +91,7 @@ class _AssertRaisesContext(object):
         self.expected_regexp = expected_regexp
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, exc_type, exc_value, tb):
         if exc_type is None:
