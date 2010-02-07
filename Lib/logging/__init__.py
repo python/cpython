@@ -769,7 +769,10 @@ class Handler(Filterer):
         if raiseExceptions:
             ei = sys.exc_info()
             try:
-                traceback.print_exception(ei[0], ei[1], ei[2], None, sys.stderr)
+                traceback.print_exception(ei[0], ei[1], ei[2],
+                                          None, sys.stderr)
+                sys.stderr.write('Logged from file %s, line %s\n' % (
+                                 record.filename, record.lineno))
             except IOError:
                 pass    # see issue 5971
             finally:
@@ -1572,17 +1575,8 @@ def shutdown(handlerList=_handlerList):
             #else, swallow
 
 #Let's try and shutdown automatically on application exit...
-try:
-    import atexit
-    atexit.register(shutdown)
-except ImportError: # for Python versions < 2.0
-    def exithook(status, old_exit=sys.exit):
-        try:
-            shutdown()
-        finally:
-            old_exit(status)
-
-    sys.exit = exithook
+import atexit
+atexit.register(shutdown)
 
 # Null handler
 

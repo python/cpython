@@ -58,15 +58,11 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True):
     the ability to select from various pre-canned configurations (if the
     developer provides a mechanism to present the choices and load the chosen
     configuration).
-    In versions of ConfigParser which have the readfp method [typically
-    shipped in 2.x versions of Python], you can pass in a file-like object
-    rather than a filename, in which case the file-like object will be read
-    using readfp.
     """
     import ConfigParser
 
     cp = ConfigParser.ConfigParser(defaults)
-    if hasattr(cp, 'readfp') and hasattr(fname, 'readline'):
+    if hasattr(fname, 'readline'):
         cp.readfp(fname)
     else:
         cp.read(fname)
