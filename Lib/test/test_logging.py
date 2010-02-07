@@ -1593,7 +1593,6 @@ class ConfigDictTest(BaseTest):
             logging.config.stopListening()
             t.join(2.0)
 
-    #@unittest.skip("See issue #7857")
     def test_listen_config_10_ok(self):
         with captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
@@ -1613,7 +1612,6 @@ class ConfigDictTest(BaseTest):
                 ('ERROR', '4'),
             ], stream=output)
 
-    #@unittest.skip("See issue #7857")
     def test_listen_config_1_ok(self):
         with captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
@@ -1629,15 +1627,34 @@ class ConfigDictTest(BaseTest):
             self.assert_log_lines([])
 
 
+class ManagerTest(BaseTest):
+    def test_manager_loggerclass(self):
+        logged = []
+
+        class MyLogger(logging.Logger):
+            def _log(self, level, msg, args, exc_info=None, extra=None):
+                logged.append(msg)
+
+        man = logging.Manager(None)
+        self.assertRaises(TypeError, man.setLoggerClass, int)
+        man.setLoggerClass(MyLogger)
+        logger = man.getLogger('test')
+        print >> open('/tmp/tmp.txt', 'w'), type(logger)
+        logger.warning('should appear in logged')
+        logging.warning('should not appear in logged')
+
+        self.assertEqual(logged, ['should appear in logged'])
+
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
 @run_with_locale('LC_ALL', '')
 def test_main():
     run_unittest(BuiltinLevelsTest, BasicFilterTest,
-                    CustomLevelsAndFiltersTest, MemoryHandlerTest,
-                    ConfigFileTest, SocketHandlerTest, MemoryTest,
-                    EncodingTest, WarningsTest, ConfigDictTest)
+                 CustomLevelsAndFiltersTest, MemoryHandlerTest,
+                 ConfigFileTest, SocketHandlerTest, MemoryTest,
+                 EncodingTest, WarningsTest, ConfigDictTest, ManagerTest)
 
 if __name__ == "__main__":
     test_main()

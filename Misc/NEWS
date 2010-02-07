@@ -75,6 +75,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7868: logging: added loggerClass attribute to Manager.
+
 - Issue #7851: logging: clarification on logging configuration files.
 
 - Issue #4772: Raise a ValueError when an unknown Bluetooth protocol is
