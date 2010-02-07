@@ -2,7 +2,7 @@ import unittest
 from test import test_support
 
 import posixpath, os
-from posixpath import realpath, abspath, join, dirname, basename, relpath
+from posixpath import realpath, abspath, dirname, basename
 
 # An absolute path to a temporary filename for testing. We can't rely on TESTFN
 # being an absolute path, so we need this.
@@ -88,11 +88,6 @@ class PosixPathTest(unittest.TestCase):
         self.assertIs(posixpath.isabs("foo/bar"), False)
 
         self.assertRaises(TypeError, posixpath.isabs)
-
-    def test_splitdrive(self):
-        self.assertEqual(posixpath.splitdrive("/foo/bar"), ("", "/foo/bar"))
-
-        self.assertRaises(TypeError, posixpath.splitdrive)
 
     def test_basename(self):
         self.assertEqual(posixpath.basename("/foo/bar"), "bar")
