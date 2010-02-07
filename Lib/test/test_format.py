@@ -11,10 +11,11 @@ maxsize = test_support.MAX_Py_ssize_t
 # test on unicode strings as well
 
 overflowok = 1
-overflowrequired = 0
 
 
 def testformat(formatstr, args, output=None, limit=None):
+    global overflowok
+
     if verbose:
         if output:
             print "%s %% %s =? %s ..." %\
@@ -29,12 +30,7 @@ def testformat(formatstr, args, output=None, limit=None):
         if verbose:
             print 'overflow (this is fine)'
     else:
-        if overflowrequired:
-            if verbose:
-                print 'no'
-            print "overflow expected on %s %% %s" % \
-                  (repr(formatstr), repr(args))
-        elif output and limit is None and result != output:
+        if output and limit is None and result != output:
             if verbose:
                 print 'no'
             print "%s %% %s == %s != %s" % \
@@ -63,6 +59,8 @@ def testboth(formatstr, *args):
 
 class FormatTest(unittest.TestCase):
     def test_format(self):
+        global overflowok
+
         testboth("%.1d", (1,), "1")
         testboth("%.*d", (sys.maxint,1))  # expect overflow
         testboth("%.100d", (1,), '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001')
@@ -81,12 +79,12 @@ class FormatTest(unittest.TestCase):
         testboth('%12.*f', (123456, 1.0))
 
         # check for internal overflow validation on length of precision
-        overflowrequired = 1
+        # these tests should no longer cause overflow in Python
+        # 2.7/3.1 and later.
         testboth("%#.*g", (110, -1.e+100/3.))
         testboth("%#.*G", (110, -1.e+100/3.))
         testboth("%#.*f", (110, -1.e+100/3.))
         testboth("%#.*F", (110, -1.e+100/3.))
-        overflowrequired = 0
 
         # Formatting of long integers. Overflow is not ok
         overflowok = 0
