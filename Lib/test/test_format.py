@@ -11,7 +11,6 @@ maxsize = support.MAX_Py_ssize_t
 # test on unicode strings as well
 
 overflowok = 1
-overflowrequired = 0
 
 def testformat(formatstr, args, output=None, limit=None):
     if verbose:
@@ -28,15 +27,9 @@ def testformat(formatstr, args, output=None, limit=None):
         if verbose:
             print('overflow (this is fine)')
     else:
-        if overflowrequired:
+        if output and limit is None and result != output:
             if verbose:
                 print('no')
-            print("overflow expected on %r %% %r" % (formatstr, args))
-        elif output and limit is None and result != output:
-            if verbose:
-                print('no')
-            #print("%r %% %r == %r != %r" %\
-            #    (formatstr, args, result, output))
             raise AssertionError("%r %% %r == %r != %r" %
                                 (formatstr, args, result, output))
         # when 'limit' is specified, it determines how many characters
@@ -57,6 +50,8 @@ def testformat(formatstr, args, output=None, limit=None):
 
 class FormatTest(unittest.TestCase):
     def test_format(self):
+        global overflowok
+
         testformat("%.1d", (1,), "1")
         testformat("%.*d", (sys.maxsize,1))  # expect overflow
         testformat("%.100d", (1,), '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001')
@@ -72,13 +67,14 @@ class FormatTest(unittest.TestCase):
         testformat("%#.*g", (110, -1.e+100/3.))
         # test some ridiculously large precision, expect overflow
         testformat('%12.*f', (123456, 1.0))
+
         # check for internal overflow validation on length of precision
-        overflowrequired = 1
+        # these tests should no longer cause overflow in Python
+        # 2.7/3.1 and later.
         testformat("%#.*g", (110, -1.e+100/3.))
         testformat("%#.*G", (110, -1.e+100/3.))
         testformat("%#.*f", (110, -1.e+100/3.))
         testformat("%#.*F", (110, -1.e+100/3.))
-        overflowrequired = 0
         # Formatting of integers. Overflow is not ok
         overflowok = 0
         testformat("%x", 10, "a")
