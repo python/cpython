@@ -549,10 +549,10 @@ hammer and saw"
     def test_null(self):
         self.writerAssertEqual([], '')
 
-    def test_single(self):
+    def test_single_writer(self):
         self.writerAssertEqual([['abc']], 'abc\r\n')
 
-    def test_simple(self):
+    def test_simple_writer(self):
         self.writerAssertEqual([[1, 2, 'abc', 3, 4]], '1,2,abc,3,4\r\n')
 
     def test_quotes(self):
