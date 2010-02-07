@@ -195,9 +195,9 @@ class MiscTest(unittest.TestCase):
             def __lt__(self, other): return 0
             def __gt__(self, other): return 0
             def __eq__(self, other): return 0
-            def __le__(self, other): raise TestFailed, "This shouldn't happen"
-            def __ge__(self, other): raise TestFailed, "This shouldn't happen"
-            def __ne__(self, other): raise TestFailed, "This shouldn't happen"
+            def __le__(self, other): raise test_support.TestFailed, "This shouldn't happen"
+            def __ge__(self, other): raise test_support.TestFailed, "This shouldn't happen"
+            def __ne__(self, other): raise test_support.TestFailed, "This shouldn't happen"
             def __cmp__(self, other): raise RuntimeError, "expected"
         a = Misb()
         b = Misb()
