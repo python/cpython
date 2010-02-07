@@ -267,7 +267,7 @@ ZipFile Objects
       byte, the name of the file in the archive will be truncated at the null byte.
 
 
-.. method:: ZipFile.writestr(zinfo_or_arcname, bytes)
+.. method:: ZipFile.writestr(zinfo_or_arcname, bytes[, compress_type])
 
    Write the string *bytes* to the archive; *zinfo_or_arcname* is either the file
    name it will be given in the archive, or a :class:`ZipInfo` instance.  If it's
@@ -277,12 +277,19 @@ ZipFile Objects
    created with mode ``'r'``  will raise a :exc:`RuntimeError`.  Calling
    :meth:`writestr` on a closed ZipFile will raise a :exc:`RuntimeError`.
 
+   If given, *compress_type* overrides the value given for the *compression*
+   parameter to the constructor for the new entry, or in the *zinfo_or_arcname*
+   (if that is a :class:`ZipInfo` instance).
+
    .. note::
 
       When passing a :class:`ZipInfo` instance as the *zinfo_or_acrname* parameter,
       the compression method used will be that specified in the *compress_type*
       member of the given :class:`ZipInfo` instance.  By default, the
       :class:`ZipInfo` constructor sets this member to :const:`ZIP_STORED`.
+
+   .. versionchanged:: 2.7
+      The *compression_type* argument.
 
 The following data attributes are also available:
 
