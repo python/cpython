@@ -632,6 +632,9 @@
 /* Define if you have the 'socketpair' function. */
 #undef HAVE_SOCKETPAIR
 
+/* Define to 1 if you have the <spawn.h> header file. */
+#undef HAVE_SPAWN_H
+
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T
 
@@ -849,6 +852,9 @@
    wchar_t must be an unsigned type with at least 16 bits. (see
    Include/unicodeobject.h). */
 #undef HAVE_USABLE_WCHAR_T
+
+/* Define to 1 if you have the <util.h> header file. */
+#undef HAVE_UTIL_H
 
 /* Define to 1 if you have the `utimes' function. */
 #undef HAVE_UTIMES
