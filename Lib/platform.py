@@ -733,7 +733,7 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
     except ImportError:
         return release,versioninfo,machine
     # Get the infos
-    sysv,sysu,sysa = _mac_ver_lookup(('sysv','sysu','sysa'))
+    sysv,sysa = _mac_ver_lookup(('sysv','sysa'))
     # Decode the infos
     if sysv:
         major = (sysv & 0xFF00) >> 8
@@ -750,24 +750,6 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
             release = '%i.%i.%i' %(major, minor, patch)
         else:
             release = '%s.%i.%i' % (_bcd2str(major),minor,patch)
-
-    if sysu:
-        # NOTE: this block is left as documentation of the
-        # intention of this function, the 'sysu' gestalt is no
-        # longer available and there are no alternatives.
-        major =  int((sysu & 0xFF000000L) >> 24)
-        minor =  (sysu & 0x00F00000) >> 20
-        bugfix = (sysu & 0x000F0000) >> 16
-        stage =  (sysu & 0x0000FF00) >> 8
-        nonrel = (sysu & 0x000000FF)
-        version = '%s.%i.%i' % (_bcd2str(major),minor,bugfix)
-        nonrel = _bcd2str(nonrel)
-        stage = {0x20:'development',
-                 0x40:'alpha',
-                 0x60:'beta',
-                 0x80:'final'}.get(stage,'')
-        versioninfo = (version,stage,nonrel)
-
 
     if sysa:
         machine = {0x1: '68k',
