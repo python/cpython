@@ -17,6 +17,8 @@ files, so it should not be used on UFS partitions.
 
    This module has been removed in Python 3.0.
 
+
+
 The :mod:`macostools` module defines the following functions:
 
 
@@ -28,16 +30,29 @@ The :mod:`macostools` module defines the following functions:
    modification and backup times (default is to copy them). Custom icons, comments
    and icon position are not copied.
 
+   .. note::
+
+      This function does not work in 64-bit code because it uses APIs that
+      are not available in 64-bit mode.
 
 .. function:: copytree(src, dst)
 
    Recursively copy a file tree from *src* to *dst*, creating folders as needed.
    *src* and *dst* should be specified as pathnames.
 
+   .. note::
+
+      This function does not work in 64-bit code because it uses APIs that
+      are not available in 64-bit mode.
 
 .. function:: mkalias(src, dst)
 
    Create a finder alias *dst* pointing to *src*.
+
+   .. note::
+
+      This function does not work in 64-bit code because it uses APIs that
+      are not available in 64-bit mode.
 
 
 .. function:: touched(dst)
