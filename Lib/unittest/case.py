@@ -104,7 +104,7 @@ class _AssertRaisesContext(object):
         if not issubclass(exc_type, self.expected):
             # let unexpected exceptions pass through
             return False
-        self.exc_value = exc_value #store for later retrieval
+        self.exception = exc_value # store for later retrieval
         if self.expected_regexp is None:
             return True
 
@@ -389,7 +389,7 @@ class TestCase(object):
 
                with self.assertRaises(SomeException) as cm:
                    do_something()
-               the_exception = cm.exc_value
+               the_exception = cm.exception
                self.assertEqual(the_exception.error_code, 3)
         """
         context = _AssertRaisesContext(excClass, self)
