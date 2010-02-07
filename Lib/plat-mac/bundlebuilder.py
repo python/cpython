@@ -426,7 +426,7 @@ class AppBuilder(BundleBuilder):
             pass
         elif self.mainprogram is not None:
             self.name = os.path.splitext(os.path.basename(self.mainprogram))[0]
-        elif executable is not None:
+        elif self.executable is not None:
             self.name = os.path.splitext(os.path.basename(self.executable))[0]
         if self.name[-4:] != ".app":
             self.name += ".app"
