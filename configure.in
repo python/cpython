@@ -69,12 +69,17 @@ define_xopen_source=yes
 AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
 
+AC_MSG_CHECKING([for --enable-universalsdk])
 AC_ARG_ENABLE(universalsdk,
 	AC_HELP_STRING(--enable-universalsdk@<:@=SDKDIR@:>@, Build against Mac OS X 10.4u SDK (ppc/i386)),
 [
 	case $enableval in
 	yes)
 		enableval=/Developer/SDKs/MacOSX10.4u.sdk
+		if test ! -d "${enableval}"
+		then
+			enableval=/
+		fi
 		;;
 	esac
 	case $enableval in
@@ -84,12 +89,23 @@ AC_ARG_ENABLE(universalsdk,
 		;;
 	*)
 		UNIVERSALSDK=$enableval
+		if test ! -d "${UNIVERSALSDK}"
+		then
+			AC_MSG_ERROR([--enable-universalsdk specifies non-existing SDK: ${UNIVERSALSDK}])
+		fi
 		;;
 	esac
+	
 ],[
    	UNIVERSALSDK=
 	enable_universalsdk=
 ])
+if test -n "${UNIVERSALSDK}"
+then
+	AC_MSG_RESULT(${UNIVERSALSDK})
+else
+	AC_MSG_RESULT(no)
+fi
 AC_SUBST(UNIVERSALSDK)
 
 AC_SUBST(ARCH_RUN_32BIT)
