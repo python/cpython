@@ -8,6 +8,10 @@ import re
 import sys
 from test import test_support
 
+if getattr(sys, 'float_repr_style', '') != 'short':
+    raise unittest.SkipTest('correctly-rounded string->float conversions '
+                            'not available on this system')
+
 # Correctly rounded str -> float in pure Python, for comparison.
 
 strtod_parser = re.compile(r"""    # A numeric string consists of:
@@ -78,8 +82,6 @@ def strtod(s, mant_dig=53, min_exp = -1021, max_exp = 1024):
 
 TEST_SIZE = 16
 
-@unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
-                     "applies only when using short float repr style")
 class StrtodTests(unittest.TestCase):
     def check_strtod(self, s):
         """Compare the result of Python's builtin correctly rounded
