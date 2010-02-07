@@ -44,6 +44,11 @@ class FnmatchTestCase(unittest.TestCase):
         check('\nfoo', 'foo*', False)
         check('\n', '*')
 
+    def test_fnmatchcase(self):
+        check = self.check_match
+        check('AbC', 'abc', 0)
+        check('abc', 'AbC', 0)
+
 
 def test_main():
     test_support.run_unittest(FnmatchTestCase)
