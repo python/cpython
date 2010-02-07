@@ -470,25 +470,6 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
 
 class TextIOTestMixin:
 
-    def test_relative_seek(self):
-        memio = self.ioclass()
-
-        self.assertRaises(IOError, memio.seek, -1, 1)
-        self.assertRaises(IOError, memio.seek, 3, 1)
-        self.assertRaises(IOError, memio.seek, -3, 1)
-        self.assertRaises(IOError, memio.seek, -1, 2)
-        self.assertRaises(IOError, memio.seek, 1, 1)
-        self.assertRaises(IOError, memio.seek, 1, 2)
-
-    def test_textio_properties(self):
-        memio = self.ioclass()
-
-        # These are just dummy values but we nevertheless check them for fear
-        # of unexpected breakage.
-        self.assertTrue(memio.encoding is None)
-        self.assertEqual(memio.errors, "strict")
-        self.assertEqual(memio.line_buffering, False)
-
     def test_newlines_property(self):
         memio = self.ioclass(newline=None)
         # The C StringIO decodes newlines in write() calls, but the Python
