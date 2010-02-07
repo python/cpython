@@ -3059,8 +3059,13 @@ class Test_Assertions(TestCase):
             pass
         else:
             self.fail("assertRaises() didn't let exception pass through")
-        with self.assertRaises(KeyError):
-            raise KeyError
+        with self.assertRaises(KeyError) as cm:
+            try:
+                raise KeyError
+            except Exception, e:
+                raise
+        self.assertIs(cm.exception, e)
+
         with self.assertRaises(KeyError):
             raise KeyError("key")
         try:
