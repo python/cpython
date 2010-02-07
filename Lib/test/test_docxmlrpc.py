@@ -3,6 +3,7 @@ import httplib
 from test import test_support
 import threading
 import time
+import socket
 import unittest
 import xmlrpclib
 
