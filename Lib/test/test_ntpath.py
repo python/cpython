@@ -1,6 +1,6 @@
 import ntpath
 import os
-from test.test_support import verbose, TestFailed
+from test.test_support import TestFailed
 import test.test_support as test_support
 import unittest
 

@@ -3,7 +3,6 @@
 import copy
 import copy_reg
 import weakref
-import operator
 
 import unittest
 from test import test_support

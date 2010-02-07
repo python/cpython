@@ -4,7 +4,7 @@
 """
 
 import unittest
-from test.test_support import run_unittest, TESTFN, import_module
+from test.test_support import run_unittest, import_module
 dircache = import_module('dircache', deprecated=True)
 import os, time, sys, tempfile
 

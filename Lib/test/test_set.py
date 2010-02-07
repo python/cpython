@@ -5,7 +5,6 @@ import weakref
 import operator
 import copy
 import pickle
-import os
 from random import randrange, shuffle
 import sys
 import collections
@@ -1694,7 +1693,6 @@ class TestGraphs(unittest.TestCase):
 #==============================================================================
 
 def test_main(verbose=None):
-    from test import test_sets
     test_classes = (
         TestSet,
         TestSetSubclass,

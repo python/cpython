@@ -6,13 +6,10 @@ from test import test_support
 import asyncore
 import socket
 import select
-import errno
-import subprocess
 import time
 import os
 import pprint
 import urllib, urlparse
-import shutil
 import traceback
 
 from BaseHTTPServer import HTTPServer

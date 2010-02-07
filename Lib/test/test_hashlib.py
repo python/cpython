@@ -8,7 +8,6 @@
 
 import array
 import hashlib
-import StringIO
 import itertools
 import sys
 try:

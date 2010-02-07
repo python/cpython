@@ -4,7 +4,7 @@ import unittest
 import inspect
 import datetime
 
-from test.test_support import TESTFN, run_unittest
+from test.test_support import run_unittest
 
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2

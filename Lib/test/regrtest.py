@@ -149,7 +149,6 @@ option '-uall,-bsddb'.
 
 import cStringIO
 import getopt
-import itertools
 import json
 import os
 import random
@@ -448,8 +447,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     if use_mp:
         from threading import Thread
-        from Queue import Queue, Empty
-        from subprocess import Popen, PIPE, STDOUT
+        from Queue import Queue
+        from subprocess import Popen, PIPE
         from collections import deque
         debug_output_pat = re.compile(r"\[\d+ refs\]$")
         pending = deque()

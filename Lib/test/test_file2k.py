@@ -8,7 +8,7 @@ from array import array
 from weakref import proxy
 
 from test import test_support
-from test.test_support import TESTFN, findfile, run_unittest
+from test.test_support import TESTFN, run_unittest
 from UserList import UserList
 
 class AutoFileTests(unittest.TestCase):

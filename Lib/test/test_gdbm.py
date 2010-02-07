@@ -1,7 +1,6 @@
 import unittest
 import os
-from test.test_support import (verbose, TESTFN, run_unittest, unlink,
-    import_module)
+from test.test_support import TESTFN, run_unittest, unlink, import_module
 gdbm = import_module('gdbm')
 
 

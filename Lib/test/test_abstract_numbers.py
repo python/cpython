@@ -1,10 +1,8 @@
 """Unit tests for numbers.py."""
 
 import math
-import operator
 import unittest
 from numbers import Complex, Real, Rational, Integral
-from numbers import Number
 from test import test_support
 
 class TestNumbers(unittest.TestCase):

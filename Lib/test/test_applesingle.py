@@ -7,9 +7,7 @@ import struct
 
 MacOS = test_support.import_module('MacOS')
 # The following should exist if MacOS does.
-import macostools
 import applesingle
-import Carbon.File
 
 AS_MAGIC=0x00051600
 AS_VERSION=0x00020000

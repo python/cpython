@@ -11,7 +11,6 @@ from test import test_support as support
 
 import io
 import _pyio as pyio
-import sys
 import pickle
 
 class MemorySeekTestMixin:

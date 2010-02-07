@@ -2,7 +2,6 @@ import test.test_support, unittest
 
 # we're testing the behavior of these future builtins:
 from future_builtins import hex, oct, map, zip, filter
-from test import test_support
 
 class BuiltinTest(unittest.TestCase):
     def test_hex(self):

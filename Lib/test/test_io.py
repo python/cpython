@@ -31,9 +31,8 @@ import random
 import unittest
 import warnings
 import weakref
-import gc
 import abc
-from itertools import chain, cycle, count
+from itertools import cycle, count
 from collections import deque
 from test import test_support as support
 

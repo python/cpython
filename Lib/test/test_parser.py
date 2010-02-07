@@ -1,5 +1,4 @@
 import parser
-import os
 import unittest
 import sys
 from test import test_support

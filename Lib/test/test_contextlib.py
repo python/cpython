@@ -1,9 +1,7 @@
 """Unit tests for contextlib.py, and other context managers."""
 
 
-import sys
 import os
-import decimal
 import tempfile
 import unittest
 import threading
@@ -147,7 +145,6 @@ class NestedTestCase(unittest.TestCase):
             self.fail("Didn't raise ZeroDivisionError")
 
     def test_nested_right_exception(self):
-        state = []
         @contextmanager
         def a():
             yield 1

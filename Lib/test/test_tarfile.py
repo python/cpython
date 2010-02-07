@@ -3,7 +3,6 @@
 import sys
 import os
 import shutil
-import tempfile
 import StringIO
 from hashlib import md5
 import errno

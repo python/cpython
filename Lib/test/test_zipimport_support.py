@@ -2,7 +2,6 @@
 # for working with modules located inside zipfiles
 # The tests are centralised in this fashion to make it easy to drop them
 # if a platform doesn't support zipimport
-import unittest
 import test.test_support
 import os
 import os.path
@@ -15,8 +14,7 @@ import inspect
 import linecache
 import pdb
 from test.script_helper import (spawn_python, kill_python, run_python,
-                                temp_dir, make_script, compile_script,
-                                make_pkg, make_zip_script, make_zip_pkg)
+                                temp_dir, make_script, make_zip_script)
 
 verbose = test.test_support.verbose
 

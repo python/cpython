@@ -583,8 +583,6 @@ class LongTest(unittest.TestCase):
 # ----------------------------------- tests of auto int->long conversion
 
     def test_auto_overflow(self):
-        import math, sys
-
         special = [0, 1, 2, 3, sys.maxint-1, sys.maxint, sys.maxint+1]
         sqrt = int(math.sqrt(sys.maxint))
         special.extend([sqrt-1, sqrt, sqrt+1])
@@ -704,8 +702,6 @@ class LongTest(unittest.TestCase):
             self.assertEqual(long(float(x)), y)
 
     def test_float_overflow(self):
-        import math
-
         for x in -2.0, -1.0, 0.0, 1.0, 2.0:
             self.assertEqual(float(long(x)), x)
 
@@ -735,8 +731,6 @@ class LongTest(unittest.TestCase):
                 "float(shuge) should not equal int(shuge)")
 
     def test_logs(self):
-        import math
-
         LOG10E = math.log10(math.e)
 
         for exp in range(10) + [100, 1000, 10000]:
@@ -756,7 +750,6 @@ class LongTest(unittest.TestCase):
 
     def test_mixed_compares(self):
         eq = self.assertEqual
-        import math
 
         # We're mostly concerned with that mixing floats and longs does the
         # right stuff, even when longs are too large to fit in a float.

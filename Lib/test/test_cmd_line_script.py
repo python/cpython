@@ -3,9 +3,8 @@
 import unittest
 import os
 import os.path
-import sys
 import test.test_support
-from test.script_helper import (spawn_python, kill_python, run_python,
+from test.script_helper import (run_python,
                                 temp_dir, make_script, compile_script,
                                 make_pkg, make_zip_script, make_zip_pkg)
 

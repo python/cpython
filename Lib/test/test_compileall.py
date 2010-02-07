@@ -4,9 +4,7 @@ import os
 import py_compile
 import shutil
 import struct
-import sys
 import tempfile
-import time
 from test import test_support
 import unittest
 

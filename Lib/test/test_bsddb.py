@@ -3,7 +3,6 @@
    Adapted to unittest format and expanded scope by Raymond Hettinger
 """
 import os, sys
-import copy
 import unittest
 from test import test_support
 

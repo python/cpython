@@ -10,8 +10,7 @@ from array import array
 from weakref import proxy
 from functools import wraps
 
-from test.test_support import (TESTFN, findfile, check_warnings, run_unittest,
-                               make_bad_fd)
+from test.test_support import TESTFN, check_warnings, run_unittest, make_bad_fd
 from test.test_support import py3k_bytes as bytes
 
 from _io import FileIO as _FileIO
