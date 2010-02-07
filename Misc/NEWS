@@ -75,6 +75,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7869: logging: improved diagnostic for format-time errors.
+
 - Issue #7868: logging: added loggerClass attribute to Manager.
 
 - Issue #7851: logging: clarification on logging configuration files.
