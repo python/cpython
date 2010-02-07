@@ -1063,13 +1063,14 @@ class ZipFile:
         self.filelist.append(zinfo)
         self.NameToInfo[zinfo.filename] = zinfo
 
-    def writestr(self, zinfo_or_arcname, bytes):
+    def writestr(self, zinfo_or_arcname, bytes, compress_type=None):
         """Write a file into the archive.  The contents is the string
         'bytes'.  'zinfo_or_arcname' is either a ZipInfo instance or
         the name of the file in the archive."""
         if not isinstance(zinfo_or_arcname, ZipInfo):
             zinfo = ZipInfo(filename=zinfo_or_arcname,
                             date_time=time.localtime(time.time())[:6])
+
             zinfo.compress_type = self.compression
             zinfo.external_attr = 0600 << 16
         else:
@@ -1078,6 +1079,9 @@ class ZipFile:
         if not self.fp:
             raise RuntimeError(
                   "Attempt to write to ZIP archive that was already closed")
+
+        if compress_type is not None:
+            zinfo.compress_type = compress_type
 
         zinfo.file_size = len(bytes)            # Uncompressed size
         zinfo.header_offset = self.fp.tell()    # Start of header bytes
