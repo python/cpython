@@ -1515,7 +1515,7 @@ case $ac_sys_system/$ac_sys_release in
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
   Darwin/*)
-    gcc_version=`gcc -v 2>&1 |  grep version | cut -d\  -f3`
+    gcc_version=`gcc -dumpversion`
     if test ${gcc_version} '<' 4.0
         then
             LIBTOOL_CRUFT="-lcc_dynamic"
