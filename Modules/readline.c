@@ -38,9 +38,30 @@
 #if defined(_RL_FUNCTION_TYPEDEF)
 extern char **completion_matches(char *, rl_compentry_func_t *);
 #else
+#if !defined(__APPLE__)
 extern char **completion_matches(char *, CPFunction *);
 #endif
 #endif
+#endif
+
+#ifdef __APPLE__
+/*
+ * It is possible to link the readline module to the readline
+ * emulation library of editline/libedit. 
+ * 
+ * On OSX this emulation library is not 100% API compatible
+ * with the "real" readline and cannot be detected at compile-time,
+ * hence we use a runtime check to detect if we're using libedit
+ *
+ * Currently there is one know API incompatibility: 
+ * - 'get_history' has a 1-based index with GNU readline, and a 0-based
+ *   index with libedit's emulation.
+ * - Note that replace_history and remove_history use a 0-based index
+ *   with both implementation.
+ */
+static int using_libedit_emulation = 0;
+static const char libedit_version_tag[] = "EditLine wrapper";
+#endif /* __APPLE__ */
 
 static void
 on_completion_display_matches_hook(char **matches,
@@ -478,6 +499,29 @@ get_history_item(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "i:index", &idx))
 		return NULL;
+#ifdef  __APPLE__
+	if (using_libedit_emulation) {
+		/* Libedit emulation uses 0-based indexes,
+		 * the real one uses 1-based indexes,
+		 * adjust the index to ensure that Python
+		 * code doesn't have to worry about the
+		 * difference.
+		 */
+		HISTORY_STATE *hist_st;
+		hist_st = history_get_history_state();
+
+		idx --;
+
+		/*
+		 * Apple's readline emulation crashes when
+		 * the index is out of range, therefore 
+		 * test for that and fail gracefully.
+		 */
+		if (idx < 0 || idx >= hist_st->length) {
+			Py_RETURN_NONE;
+		}
+	}
+#endif /* __APPLE__ */
 	if ((hist_ent = history_get(idx)))
 		return PyString_FromString(hist_ent->line);
 	else {
@@ -981,6 +1025,15 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 		char *line;
 		HISTORY_STATE *state = history_get_history_state();
 		if (state->length > 0)
+#ifdef __APPLE__
+			if (using_libedit_emulation) {
+				/* 
+				 * Libedit's emulation uses 0-based indexes,
+				 * the real readline uses 1-based indexes.
+				 */
+				line = history_get(state->length - 1)->line;
+			} else 
+#endif /* __APPLE__ */
 			line = history_get(state->length)->line;
 		else
 			line = "";
@@ -1014,15 +1067,34 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 PyDoc_STRVAR(doc_module,
 "Importing this module enables command line editing using GNU readline.");
 
+#ifdef __APPLE__
+PyDoc_STRVAR(doc_module_le,
+"Importing this module enables command line editing using libedit readline.");
+#endif /* __APPLE__ */
+
 PyMODINIT_FUNC
 initreadline(void)
 {
 	PyObject *m;
 
+#ifdef __APPLE__
+	if (strncmp(rl_library_version, libedit_version_tag, strlen(libedit_version_tag)) == 0) {
+		using_libedit_emulation = 1;
+	}
+
+	if (using_libedit_emulation) 
+		m = Py_InitModule4("readline", readline_methods, doc_module_le,
+			   (PyObject *)NULL, PYTHON_API_VERSION);
+	else
+
+#endif /* __APPLE__ */
+
 	m = Py_InitModule4("readline", readline_methods, doc_module,
 			   (PyObject *)NULL, PYTHON_API_VERSION);
 	if (m == NULL)
 		return;
+
+
 
 	PyOS_ReadlineFunctionPointer = call_readline;
 	setup_readline();

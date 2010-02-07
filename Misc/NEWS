@@ -203,6 +203,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6877: Make it possible to link the readline extension to libedit
+  on OSX.
+
 - Expat: Fix DoS via XML document with malformed UTF-8 sequences
   (CVE_2009_3560).
 
