@@ -657,9 +657,10 @@ order to remind you of that fact, it does not return the sorted list.  This way,
 you won't be fooled into accidentally overwriting a list when you need a sorted
 copy but also need to keep the unsorted version around.
 
-In Python 2.4 a new builtin -- :func:`sorted` -- has been added.  This function
-creates a new list from a provided iterable, sorts it and returns it.  For
-example, here's how to iterate over the keys of a dictionary in sorted order::
+In Python 2.4 a new built-in function -- :func:`sorted` -- has been added.
+This function creates a new list from a provided iterable, sorts it and returns
+it.  For example, here's how to iterate over the keys of a dictionary in sorted
+order::
 
    for key in sorted(dict.iterkeys()):
        ... # do whatever with dict[key]...

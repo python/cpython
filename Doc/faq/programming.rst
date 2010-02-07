@@ -178,9 +178,10 @@ it is much shorter and far faster to use ::
 
    L2 = list(L1[:3]) # "list" is redundant if L1 is a list.
 
-Note that the functionally-oriented builtins such as :func:`map`, :func:`zip`,
-and friends can be a convenient accelerator for loops that perform a single
-task.  For example to pair the elements of two lists together::
+Note that the functionally-oriented built-in functions such as :func:`map`,
+:func:`zip`, and friends can be a convenient accelerator for loops that
+perform a single task.  For example to pair the elements of two lists
+together::
 
    >>> zip([1,2,3], [4,5,6])
    [(1, 4), (2, 5), (3, 6)]
@@ -202,7 +203,7 @@ regular expressions only when you're not dealing with constant string patterns.
 Consider using the string formatting operations ``string % tuple`` and ``string
 % dictionary``.
 
-Be sure to use the :meth:`list.sort` builtin method to do sorting, and see the
+Be sure to use the :meth:`list.sort` built-in method to do sorting, and see the
 `sorting mini-HOWTO <http://wiki.python.org/moin/HowTo/Sorting>`_ for examples
 of moderately advanced usage.  :meth:`list.sort` beats other techniques for
 sorting in all but the most extreme circumstances.
@@ -363,7 +364,7 @@ Though a bit surprising at first, a moment's consideration explains this.  On
 one hand, requiring :keyword:`global` for assigned variables provides a bar
 against unintended side-effects.  On the other hand, if ``global`` was required
 for all global references, you'd be using ``global`` all the time.  You'd have
-to declare as global every reference to a builtin function or to a component of
+to declare as global every reference to a built-in function or to a component of
 an imported module.  This clutter would defeat the usefulness of the ``global``
 declaration for identifying side-effects.
 
@@ -1068,7 +1069,7 @@ trailing newline from a string.
 How do I iterate over a sequence in reverse order?
 --------------------------------------------------
 
-Use the :func:`reversed` builtin function, which is new in Python 2.4::
+Use the :func:`reversed` built-in function, which is new in Python 2.4::
 
    for x in reversed(sequence):
        ... # do something with x...
