@@ -33,8 +33,8 @@ def testformat(formatstr, args, output=None, limit=None):
         if output and limit is None and result != output:
             if verbose:
                 print 'no'
-            print "%s %% %s == %s != %s" % \
-                  (repr(formatstr), repr(args), repr(result), repr(output))
+            raise AssertionError("%r %% %r == %r != %r" %
+                                (formatstr, args, result, output))
         # when 'limit' is specified, it determines how many characters
         # must match exactly; lengths must always match.
         # ex: limit=5, '12345678' matches '12345___'
