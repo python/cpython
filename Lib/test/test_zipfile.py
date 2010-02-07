@@ -408,6 +408,20 @@ class TestsWithSourceFile(unittest.TestCase):
         # remove the test file subdirectories
         shutil.rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
 
+    def test_writestr_compression(self):
+        zipfp = zipfile.ZipFile(TESTFN2, "w")
+        zipfp.writestr("a.txt", "hello world", compress_type=zipfile.ZIP_STORED)
+        if zlib:
+            zipfp.writestr("b.txt", "hello world", compress_type=zipfile.ZIP_DEFLATED)
+
+        info = zipfp.getinfo('a.txt')
+        self.assertEqual(info.compress_type, zipfile.ZIP_STORED)
+
+        if zlib:
+            info = zipfp.getinfo('b.txt')
+            self.assertEqual(info.compress_type, zipfile.ZIP_DEFLATED)
+
+
     def zip_test_writestr_permissions(self, f, compression):
         # Make sure that writestr creates files with mode 0600,
         # when it is passed a name rather than a ZipInfo instance.

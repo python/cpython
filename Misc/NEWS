@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6003: add an argument to ``zipfile.Zipfile.writestr`` to
+  specify the compression type.
+
 
 What's New in Python 2.7 alpha 3?
 =================================
