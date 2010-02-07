@@ -1065,7 +1065,7 @@ class ZipFile:
         self.filelist.append(zinfo)
         self.NameToInfo[zinfo.filename] = zinfo
 
-    def writestr(self, zinfo_or_arcname, data):
+    def writestr(self, zinfo_or_arcname, data, compress_type=None):
         """Write a file into the archive.  The contents is 'data', which
         may be either a 'str' or a 'bytes' instance; if it is a 'str',
         it is encoded as UTF-8 first.
@@ -1087,6 +1087,9 @@ class ZipFile:
 
         zinfo.file_size = len(data)            # Uncompressed size
         zinfo.header_offset = self.fp.tell()    # Start of header data
+        if compress_type is not None:
+            zinfo.compress_type = compress_type
+
         self._writecheck(zinfo)
         self._didModify = True
         zinfo.CRC = crc32(data) & 0xffffffff       # CRC-32 checksum

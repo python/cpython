@@ -242,6 +242,9 @@ C-API
 Library
 -------
 
+- Issue #6003: add an argument to ``zipfile.Zipfile.writestr`` to
+  specify the compression type.
+
 - Issue #4772: Raise a ValueError when an unknown Bluetooth protocol is
   specified, rather than fall through to AF_PACKET (in the `socket` module).
   Also, raise ValueError rather than TypeError when an unknown TIPC address
