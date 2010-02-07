@@ -5,7 +5,6 @@ import threading
 import time
 import socket
 import unittest
-import xmlrpclib
 
 PORT = None
 

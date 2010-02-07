@@ -367,8 +367,6 @@ class TestErrorHandling(unittest.TestCase):
 
 
 def test_main(verbose=None):
-    from types import BuiltinFunctionType
-
     test_classes = [TestHeapPython, TestHeapC, TestErrorHandling]
     test_support.run_unittest(*test_classes)
 

@@ -8,7 +8,6 @@ from __future__ import print_function
 import unittest
 from test import test_support
 
-import sys
 from StringIO import StringIO
 
 NotDefined = object()

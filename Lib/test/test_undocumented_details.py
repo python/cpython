@@ -1,6 +1,5 @@
-from test.test_support import run_unittest, have_unicode
+from test.test_support import run_unittest
 import unittest
-import sys
 
 class TestImplementationComparisons(unittest.TestCase):
 

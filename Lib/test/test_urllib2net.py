@@ -6,9 +6,7 @@ from test.test_urllib2 import sanepathname2url
 
 import socket
 import urllib2
-import sys
 import os
-import mimetools
 
 
 def _retry_thrice(func, exc, *args, **kwargs):
@@ -73,7 +71,7 @@ class AuthTests(unittest.TestCase):
 class CloseSocketTest(unittest.TestCase):
 
     def test_close(self):
-        import socket, httplib, gc
+        import httplib
 
         # calling .close() on urllib2's response objects should close the
         # underlying socket
@@ -154,7 +152,6 @@ class OtherNetworkTests(unittest.TestCase):
 ##             self._test_urls(urls, self._extra_handlers()+[bauth, dauth])
 
     def _test_urls(self, urls, handlers, retry=True):
-        import socket
         import time
         import logging
         debug = logging.getLogger("test_urllib2").debug

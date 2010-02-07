@@ -6,7 +6,7 @@ warnings.filterwarnings("ignore", "struct integer overflow masking is deprecated
                         DeprecationWarning)
 
 from functools import wraps
-from test.test_support import TestFailed, verbose, run_unittest
+from test.test_support import run_unittest
 
 import sys
 ISBIGENDIAN = sys.byteorder == "big"

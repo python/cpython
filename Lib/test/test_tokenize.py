@@ -529,7 +529,7 @@ Evil tabs
 
 
 from test import test_support
-from tokenize import (tokenize, untokenize, generate_tokens, NUMBER, NAME, OP,
+from tokenize import (untokenize, generate_tokens, NUMBER, NAME, OP,
                      STRING, ENDMARKER, tok_name)
 from StringIO import StringIO
 import os

@@ -6,7 +6,6 @@ executing have not been removed.
 """
 import unittest
 import sys
-import test
 import os
 import shutil
 from copy import copy, deepcopy
@@ -80,7 +79,7 @@ class TestSysConfig(unittest.TestCase):
         return self._uname
 
     def _cleanup_testfn(self):
-        path = test.test_support.TESTFN
+        path = TESTFN
         if os.path.isfile(path):
             os.remove(path)
         elif os.path.isdir(path):

@@ -6,7 +6,6 @@ import weakref
 import copy
 import cPickle as pickle
 import random
-import os
 
 BIG = 100000
 

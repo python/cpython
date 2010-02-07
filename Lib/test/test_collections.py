@@ -6,7 +6,6 @@ from collections import namedtuple, Counter, OrderedDict
 from test import mapping_tests
 import pickle, cPickle, copy
 from random import randrange, shuffle
-import operator
 import keyword
 import re
 from collections import Hashable, Iterable, Iterator
@@ -848,7 +847,7 @@ class SubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
         d = self._empty_mapping()
         self.assertRaises(KeyError, d.popitem)
 
-import doctest, collections
+import collections
 
 def test_main(verbose=None):
     NamedTupleDocs = doctest.DocTestSuite(module=collections)

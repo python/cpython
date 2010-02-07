@@ -5,7 +5,6 @@ from test.test_support import verbose, run_doctest, run_unittest, EnvironmentVar
 import unittest
 
 import getopt
-import os
 
 sentinel = object()
 

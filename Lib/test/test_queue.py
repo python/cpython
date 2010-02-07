@@ -1,7 +1,6 @@
 # Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
 import Queue
-import sys
 import threading
 import time
 import unittest

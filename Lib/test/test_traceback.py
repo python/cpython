@@ -67,7 +67,7 @@ class TracebackCases(unittest.TestCase):
         self.assertTrue(err[1].find("2") == err[2].find("^"))
 
     def test_bug737473(self):
-        import sys, os, tempfile, time
+        import os, tempfile, time
 
         savedpath = sys.path[:]
         testdir = tempfile.mkdtemp()

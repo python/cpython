@@ -5,7 +5,6 @@
 #
 
 from test import test_support
-from test import test_multibytecodec_support
 from test.test_support import TESTFN
 import unittest, StringIO, codecs, sys, os
 import _multibytecodec

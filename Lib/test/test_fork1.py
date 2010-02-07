@@ -1,7 +1,6 @@
 """This test checks for correct fork() behavior.
 """
 
-import errno
 import imp
 import os
 import signal

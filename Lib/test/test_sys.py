@@ -1,6 +1,6 @@
 # -*- coding: iso-8859-1 -*-
 import unittest, test.test_support
-import sys, cStringIO, os
+import sys, os, cStringIO
 import struct
 import operator
 
@@ -415,7 +415,7 @@ class SysModuleTest(unittest.TestCase):
         sys._clear_type_cache()
 
     def test_ioencoding(self):
-        import subprocess,os
+        import subprocess
         env = dict(os.environ)
 
         # Test character: cent sign, encoded as 0x4A (ASCII J) in CP424,

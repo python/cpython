@@ -1,5 +1,4 @@
 import os
-import sys
 from test import test_support
 
 # Skip this test if _tkinter does not exist.

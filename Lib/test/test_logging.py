@@ -42,7 +42,6 @@ from test.test_support import captured_stdout, run_with_locale, run_unittest,\
      find_unused_port
 import textwrap
 import threading
-import time
 import unittest
 import warnings
 import weakref

@@ -2,10 +2,7 @@
 # specified test modules (RFE #5142).
 
 import imp
-import os
 import sys
-import doctest
-import tempfile
 
 from test import test_support
 # This little helper class is essential for testing pdb under doctest.

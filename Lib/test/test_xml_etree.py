@@ -2,7 +2,6 @@
 # all included components work as they should.  For a more extensive
 # test suite, see the selftest script in the ElementTree distribution.
 
-import doctest
 import sys
 
 from test import test_support
