@@ -57,37 +57,39 @@ class TestMacostools(unittest.TestCase):
                                     DeprecationWarning)
             macostools.touched(test_support.TESTFN)
 
-    def test_copy(self):
-        try:
-            os.unlink(TESTFN2)
-        except:
-            pass
-        macostools.copy(test_support.TESTFN, TESTFN2)
-        self.assertEqual(self.compareData(), '')
+    if sys.maxint < 2**32:
+        def test_copy(self):
+            try:
+                os.unlink(TESTFN2)
+            except:
+                pass
+            macostools.copy(test_support.TESTFN, TESTFN2)
+            self.assertEqual(self.compareData(), '')
 
-    def test_mkalias(self):
-        try:
-            os.unlink(TESTFN2)
-        except:
-            pass
-        macostools.mkalias(test_support.TESTFN, TESTFN2)
-        fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
-        self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
+    if sys.maxint < 2**32:
+        def test_mkalias(self):
+            try:
+                os.unlink(TESTFN2)
+            except:
+                pass
+            macostools.mkalias(test_support.TESTFN, TESTFN2)
+            fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
+            self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
 
-    def test_mkalias_relative(self):
-        try:
-            os.unlink(TESTFN2)
-        except:
-            pass
-        # If the directory doesn't exist, then chances are this is a new
-        # install of Python so don't create it since the user might end up
-        # running ``sudo make install`` and creating the directory here won't
-        # leave it with the proper permissions.
-        if not os.path.exists(sys.prefix):
-            return
-        macostools.mkalias(test_support.TESTFN, TESTFN2, sys.prefix)
-        fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
-        self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
+        def test_mkalias_relative(self):
+            try:
+                os.unlink(TESTFN2)
+            except:
+                pass
+            # If the directory doesn't exist, then chances are this is a new
+            # install of Python so don't create it since the user might end up
+            # running ``sudo make install`` and creating the directory here won't
+            # leave it with the proper permissions.
+            if not os.path.exists(sys.prefix):
+                return
+            macostools.mkalias(test_support.TESTFN, TESTFN2, sys.prefix)
+            fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
+            self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
 
 
 def test_main():
