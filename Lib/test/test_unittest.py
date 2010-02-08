@@ -626,7 +626,6 @@ class Test_TestLoader(TestCase):
         # a good chance that it won't be imported when this test is run
         module_name = 'audioop'
 
-        import sys
         if module_name in sys.modules:
             del sys.modules[module_name]
 
@@ -1014,7 +1013,6 @@ class Test_TestLoader(TestCase):
         # a good chance that it won't be imported when this test is run
         module_name = 'audioop'
 
-        import sys
         if module_name in sys.modules:
             del sys.modules[module_name]
 
@@ -1972,8 +1970,6 @@ class Test_TestResult(TestCase):
     # methods. Contains formatted tracebacks instead
     # of sys.exc_info() results."
     def test_addFailure(self):
-        import sys
-
         class Foo(unittest.TestCase):
             def test_1(self):
                 pass
@@ -2022,8 +2018,6 @@ class Test_TestResult(TestCase):
     # methods. Contains formatted tracebacks instead
     # of sys.exc_info() results."
     def test_addError(self):
-        import sys
-
         class Foo(unittest.TestCase):
             def test_1(self):
                 pass
@@ -2861,7 +2855,7 @@ test case
         ctx = self.assertRaises(ExceptionMock)
         with ctx:
             Stub(v)
-        e = ctx.exc_value
+        e = ctx.exception
         self.assertIsInstance(e, ExceptionMock)
         self.assertEqual(e.args[0], v)
 
@@ -3047,8 +3041,14 @@ class Test_Assertions(TestCase):
             pass
         else:
             self.fail("assertRaises() didn't let exception pass through")
-        with self.assertRaises(KeyError):
-            raise KeyError
+        with self.assertRaises(KeyError) as cm:
+            try:
+                raise KeyError
+            except Exception as e:
+                exc = e
+                raise
+        self.assertIs(cm.exception, exc)
+
         with self.assertRaises(KeyError):
             raise KeyError("key")
         try:
