@@ -696,8 +696,9 @@ Test cases
 
       In addition, if *first* and *second* are the exact same type and one of
       list, tuple, dict, set, frozenset or unicode or any type that a subclass
-      registers :meth:`addTypeEqualityFunc` the type specific equality function
-      will be called in order to generate a more useful default error message.
+      registers with :meth:`addTypeEqualityFunc` the type specific equality
+      function will be called in order to generate a more useful default error
+      message.
 
       .. versionchanged:: 2.7
          Added the automatic calling of type specific equality function.
