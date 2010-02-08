@@ -816,7 +816,7 @@ Test cases
       If only the *exception* argument is given, returns a context manager so
       that the code under test can be written inline rather than as a function::
 
-         with self.failUnlessRaises(some_error_class):
+         with self.assertRaises(SomeException):
              do_something()
 
       .. versionchanged:: 3.1
