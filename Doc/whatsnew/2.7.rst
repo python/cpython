@@ -412,7 +412,10 @@ Some smaller changes made to the core Python language are:
 
 * The :class:`file` object will now set the :attr:`filename` attribute
   on the :exc:`IOError` exception when trying to open a directory
-  on POSIX platforms.  (Noted by Jan Kaliszewski; :issue:`4764`.)
+  on POSIX platforms (noted by Jan Kaliszewski; :issue:`4764`), and
+  now explicitly checks for and forbids writing to read-only file objects
+  instead of trusting the C library to catch and report the error
+  (fixed by Stefan Krah; :issue:`5677`).
 
 * The Python tokenizer now translates line endings itself, so the
   :func:`compile` built-in function can now accept code using any
@@ -896,15 +899,18 @@ changes, or look through the Subversion logs for all the details.
   accepts a file object, in addition to the path names accepted in earlier
   versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
 
+New module: sysconfig
+---------------------------------
+
+XXX A new :mod:`sysconfig` module has been extracted from
+:mod:`distutils` and put in the standard library.
+
+The :mod:`sysconfig` module provides access to Python's configuration
+information like the list of installation paths and the configuration
+variables relevant for the current platform.
+
 .. ======================================================================
 .. whole new modules get described in subsections here
-
-* XXX A new :mod:`sysconfig` module has been extracted from :mod:`distutils`
-  and put in the standard library.
-
-  The :mod:`sysconfig` module provides access to Python's configuration
-  information like the list of installation paths and the configuration
-  variables relevant for the current platform.
 
 
 Distutils Enhancements
@@ -954,6 +960,7 @@ When creating a tar-format archive, the ``sdist`` subcommand now
 allows specifying the user id and group that will own the files in the
 archives using the :option:`--owner` and :option:`--group` switches
 (:issue:`6516`).
+
 
 Unit Testing Enhancements
 ---------------------------------
@@ -1295,6 +1302,12 @@ Port-Specific Changes: Mac OS X
 
 Other Changes and Fixes
 =======================
+
+* Two benchmark scripts, :file:`iobench` and :file:`ccbench`, were
+  added to the :file:`Tools` directory.  :file:`iobench` measures the
+  speed of the built-in :class:`file` objects while performing various
+  operations, and :file:`ccbench` is a concurrency that performs
+  several tasks using a varying number of threads.
 
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
   with an existing :file:`.py` counterpart, the :attr:`co_filename`
