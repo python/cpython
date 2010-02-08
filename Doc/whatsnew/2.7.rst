@@ -853,7 +853,7 @@ changes, or look through the Subversion logs for all the details.
 
   :func:`sys.getwindowsversion` also returns a named tuple,
   with attributes named :attr:`major`, :attr:`minor`, :attr:`build`,
-  :attr:`platform`:, :attr:`service_pack`, :attr:`service_pack_major`,
+  :attr:`platform`, :attr:`service_pack`, :attr:`service_pack_major`,
   :attr:`service_pack_minor`, :attr:`suite_mask`, and
   :attr:`product_type`.  (Contributed by Brian Curtin; :issue:`7766`.)
 
