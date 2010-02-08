@@ -384,7 +384,7 @@ class TestCase(object):
                     do_something()
 
            The context manager keeps a reference to the exception as
-           the exc_value attribute. This allows you to inspect the
+           the 'exception' attribute. This allows you to inspect the
            exception after the assertion::
 
                with self.assertRaises(SomeException) as cm:
