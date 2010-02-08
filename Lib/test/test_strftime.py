@@ -118,7 +118,7 @@ class StrftimeTest(unittest.TestCase):
             try:
                 result = time.strftime(e[0], now)
             except ValueError, error:
-                print "Standard '%s' format gaver error:" % (e[0], error)
+                print "Standard '%s' format gave error: %s" % (e[0], error)
                 continue
             if re.match(escapestr(e[1], self.ampm), result):
                 continue
