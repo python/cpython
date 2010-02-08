@@ -99,7 +99,7 @@ class _AssertRaisesContext(object):
         self.expected_regex = expected_regexp
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, exc_type, exc_value, tb):
         if exc_type is None:
@@ -116,8 +116,8 @@ class _AssertRaisesContext(object):
         if not issubclass(exc_type, self.expected):
             # let unexpected exceptions pass through
             return False
-        #store exception, without traceback, for later retrieval
-        self.exc_value = exc_value.with_traceback(None)
+        # store exception, without traceback, for later retrieval
+        self.exception = exc_value.with_traceback(None)
         if self.expected_regex is None:
             return True
 
@@ -397,12 +397,12 @@ class TestCase(object):
                     do_something()
 
            The context manager keeps a reference to the exception as
-           the exc_value attribute. This allows you to inspect the
+           the 'exception' attribute. This allows you to inspect the
            exception after the assertion::
 
                with self.assertRaises(SomeException) as cm:
                    do_something()
-               the_exception = cm.exc_value
+               the_exception = cm.exception
                self.assertEqual(the_exception.error_code, 3)
         """
         context = _AssertRaisesContext(excClass, self, callableObj)

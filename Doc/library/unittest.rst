@@ -895,23 +895,23 @@ Test cases
              do_something()
 
       The context manager will store the caught exception object in its
-      :attr:`exc_value` attribute.  This can be useful if the intention
+      :attr:`exception` attribute.  This can be useful if the intention
       is to perform additional checks on the exception raised::
 
         with self.assertRaises(SomeException) as cm:
             do_something()
 
-        the_exception = cm.exc_value
+        the_exception = cm.exception
         self.assertEqual(the_exception.error_code, 3)
 
-        .. versionchanged:: 3.1
+      .. versionchanged:: 3.1
          Added the ability to use :meth:`assertRaises` as a context manager.
+
+      .. versionchanged:: 3.2
+         Added the :attr:`exception` attribute.
 
       .. deprecated:: 3.1
          :meth:`failUnlessRaises`.
-
-      .. versionchanged:: 3.2
-         Added the :attr:`exc_value` attribute.
 
 
    .. method:: assertRaisesRegexp(exception, regexp[, callable, ...])
