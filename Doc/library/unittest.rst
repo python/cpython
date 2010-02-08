@@ -690,12 +690,17 @@ Test cases
       *second*.
 
       In addition, if *first* and *second* are the exact same type and one of
-      list, tuple, dict, set, or frozenset or any type that a subclass
-      registers :meth:`addTypeEqualityFunc` the type specific equality function
-      will be called in order to generate a more useful default error message.
+      list, tuple, dict, set, frozenset or str or any type that a subclass
+      registers with :meth:`addTypeEqualityFunc` the type specific equality
+      function will be called in order to generate a more useful default
+      error message.
 
       .. versionchanged:: 3.1
          Added the automatic calling of type specific equality function.
+
+     .. versionchanged:: 3.2
+        :meth:`assertMultiLineEqual` added as the default type equality
+        function for comparing strings.
 
       .. deprecated:: 3.1
          :meth:`failUnlessEqual`.
@@ -772,7 +777,8 @@ Test cases
 
       Test that the multiline string *first* is equal to the string *second*.
       When not equal a diff of the two strings highlighting the differences
-      will be included in the error message.
+      will be included in the error message. This method is used by default
+      when comparing strings with :meth:`assertEqual`.
 
       If specified *msg* will be used as the error message on failure.
 
@@ -818,7 +824,8 @@ Test cases
    .. method:: assertSetEqual(set1, set2, msg=None)
 
       Tests that two sets are equal.  If not, an error message is constructed
-      that lists the differences between the sets.
+      that lists the differences between the sets.  This method is used by
+      default when comparing sets or frozensets with :meth:`assertEqual`.
 
       Fails if either of *set1* or *set2* does not have a :meth:`set.difference`
       method.
@@ -831,7 +838,9 @@ Test cases
    .. method:: assertDictEqual(expected, actual, msg=None)
 
       Test that two dictionaries are equal.  If not, an error message is
-      constructed that shows the differences in the dictionaries.
+      constructed that shows the differences in the dictionaries. This
+      method will be used by default to compare dictionaries in
+      calls to :meth:`assertEqual`.
 
       If specified *msg* will be used as the error message on failure.
 
@@ -855,6 +864,8 @@ Test cases
       Tests that two lists or tuples are equal.  If not an error message is
       constructed that shows only the differences between the two.  An error
       is also raised if either of the parameters are of the wrong type.
+      These methods are used by default when comparing lists or tuples with
+      :meth:`assertEqual`.
 
       If specified *msg* will be used as the error message on failure.
 

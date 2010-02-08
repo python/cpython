@@ -2795,8 +2795,9 @@ test case
         try:
             self.assertMultiLineEqual(sample_text, revised_sample_text)
         except self.failureException as e:
-            # no fair testing ourself with ourself, use assertEqual..
-            self.assertEqual(sample_text_error, str(e))
+            # no fair testing ourself with ourself, and assertEqual is used for strings
+            # so can't use assertEqual either. Just use assertTrue.
+            self.assertTrue(sample_text_error == str(e))
 
     def testAssertIsNone(self):
         self.assertIsNone(None)
