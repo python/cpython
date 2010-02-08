@@ -222,10 +222,59 @@ module, but it's easier to use.
    :pep:`378` - Format Specifier for Thousands Separator
      PEP written by Raymond Hettinger; implemented by Eric Smith.
 
+PEP 391: Dictionary-Based Configuration For Logging
+====================================================
+
+XXX write this section.
+
+.. seealso::
+
+   :pep:`391` - Dictionary-Based Configuration For Logging
+     PEP written and implemented by Vinay Sajip.
+
+PEP 3106: Dictionary Views
+====================================================
+
+XXX write this section.
+
+.. seealso::
+
+   :pep:`3106` - Revamping dict.keys(), .values() and .items()
+     PEP written by Guido van Rossum.
+     Backported to 2.7 by Alexandre Vassalotti; :issue:`1967`.
+
+
 Other Language Changes
 ======================
 
 Some smaller changes made to the core Python language are:
+
+* The syntax for set literals has been backported from Python 3.x.
+  Curly brackets are used to surround the contents of the resulting
+  mutable set; set literals are
+  distinguished from dictionaries by not containing colons and values.
+  ``{}`` continues to represent an empty dictionary; use
+  ``set()`` for an empty set.
+
+    >>> {1,2,3,4,5}
+    set([1, 2, 3, 4, 5])
+    >>> set()
+    set([])
+    >>> {}
+    {}
+
+  Backported by Alexandre Vassalotti; :issue:`2335`.
+
+* Dictionary and set comprehensions are another feature backported from
+  3.x, generalizing list/generator comprehensions to use
+  the literal syntax for sets and dictionaries.
+
+    >>> {x:x*x for x in range(6)}
+    {0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25}
+    >>> {'a'*x for x in range(6)}
+    set(['', 'a', 'aa', 'aaa', 'aaaa', 'aaaaa'])
+
+  Backported by Alexandre Vassalotti; :issue:`2333`.
 
 * The :keyword:`with` statement can now use multiple context managers
   in one statement.  Context managers are processed from left to right
@@ -374,6 +423,10 @@ Some smaller changes made to the core Python language are:
   meaning that you get a syntax error from ``def f((x)): pass``.  In
   Python3-warning mode, Python 2.7 will now warn about this odd usage.
   (Noted by James Lingard; :issue:`7362`.)
+
+* When a module object is garbage-collected, the module's dictionary is
+  now only cleared if no one else is holding a reference to the
+  dictionary (:issue:`7140`).
 
 .. ======================================================================
 
@@ -592,46 +645,6 @@ changes, or look through the Subversion logs for all the details.
   left-alignment.  This has been changed to right-alignment, which seems
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
-* Distutils is being more actively developed, thanks to Tarek Ziadé
-  who has taken over maintenance of the package, so there are a number
-  of fixes and improvments.
-
-  A new :file:`setup.py` subcommand, ``check``, will check that the
-  arguments being passed to the :func:`setup` function are complete
-  and correct (:issue:`5732`).
-
-  Byte-compilation by the ``install_lib``  subcommand is now only done
-  if the ``sys.dont_write_bytecode`` setting allows it (:issue:`7071`).
-
-  :func:`distutils.sdist.add_defaults` now uses
-  *package_dir* and *data_files* to create the MANIFEST file.
-  :mod:`distutils.sysconfig` now reads the :envvar:`AR` and
-  :envvar:`ARFLAGS` environment variables.
-
-  .. ARFLAGS done in #5941
-
-  It is no longer mandatory to store clear-text passwords in the
-  :file:`.pypirc` file when registering and uploading packages to PyPI. As long
-  as the username is present in that file, the :mod:`distutils` package will
-  prompt for the password if not present.  (Added by Tarek Ziadé,
-  based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
-
-  A Distutils setup can now specify that a C extension is optional by
-  setting the *optional* option setting to true.  If this optional is
-  supplied, failure to build the extension will not abort the build
-  process, but instead simply not install the failing extension.
-  (Contributed by Georg Brandl; :issue:`5583`.)
-
-  The :class:`distutils.dist.DistributionMetadata` class'
-  :meth:`read_pkg_file` method will read the contents of a package's
-  :file:`PKG-INFO` metadata file.  For an example of its use, see
-  :ref:`reading-metadata`.
-  (Contributed by Tarek Ziadé; :issue:`7457`.)
-
-  :file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
-  to skip reading the :file:`~/.pydistutils.cfg` file.  (Suggested by
-  by Michael Hoffman, and implemented by Paul Winkler; :issue:`1180`.)
-
 * The :class:`Fraction` class now accepts two rational numbers
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
@@ -649,9 +662,12 @@ changes, or look through the Subversion logs for all the details.
   otherwise. (Contributed by Antoine Pitrou; :issue:`4688`.)
 
 * The :mod:`gzip` module's :class:`GzipFile` now supports the context
-  management protocol, so you can write ``with gzip.GzipFile(...) as f: ...``.
-  (Contributed by Hagen Fuerstenau; :issue:`3860`.)
-  It's now possible to override the modification time
+  management protocol, so you can write ``with gzip.GzipFile(...) as f: ...``
+  (contributed by Hagen Fuerstenau; :issue:`3860`), and it now implements
+  the :class:`io.BufferedIOBase` ABC, so you can wrap it with
+  :class:`io.BufferedReader` for faster processing
+  (contributed by Nir Aides; :issue:`7471`).
+  It's also now possible to override the modification time
   recorded in a gzipped file by providing an optional timestamp to
   the constructor.  (Contributed by Jacques Frechet; :issue:`4272`.)
 
@@ -786,8 +802,11 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Tarek Ziadé; :issue:`6693`.)
 
 * The :mod:`socket` module's :class:`SSL` objects now support the
-  buffer API, which fixed a test suite failure.  (Fixed by Antoine Pitrou;
-  :issue:`7133`.)
+  buffer API, which fixed a test suite failure.  (Fixed by Antoine
+  Pitrou; :issue:`7133`.)  The :func:`create_connection` function
+  gained a *source_address* parameter, a ``(host, port)`` 2-tuple
+  giving the source address that will be used for the connection.
+  (Contributed by Eldon Ziegler; :issue:`3972`.)
 
 * The :mod:`SocketServer` module's :class:`TCPServer` class now
   has a :attr:`disable_nagle_algorithm` class attribute.
@@ -830,7 +849,7 @@ changes, or look through the Subversion logs for all the details.
   Light; :issue:`4285`.)
 
   :func:`sys.getwindowsversion` also returns a named tuple,
-   with attributes named :attr:`major`, :attr:`minor`, :attr:`build`,
+  with attributes named :attr:`major`, :attr:`minor`, :attr:`build`,
   :attr:`platform`:, :attr:`service_pack`, :attr:`service_pack_major`,
   :attr:`service_pack_minor`, :attr:`suite_mask`, and
   :attr:`product_type`.  (Contributed by Brian Curtin; :issue:`7766`.)
@@ -887,6 +906,54 @@ changes, or look through the Subversion logs for all the details.
   information like the list of installation paths and the configuration
   variables relevant for the current platform.
 
+
+Distutils Enhancements
+---------------------------------
+
+Distutils is being more actively developed, thanks to Tarek Ziadé
+who has taken over maintenance of the package, so there are a number
+of fixes and improvements.
+
+A new :file:`setup.py` subcommand, ``check``, will check that the
+arguments being passed to the :func:`setup` function are complete
+and correct (:issue:`5732`).
+
+Byte-compilation by the ``install_lib``  subcommand is now only done
+if the ``sys.dont_write_bytecode`` setting allows it (:issue:`7071`).
+
+:func:`distutils.sdist.add_defaults` now uses
+*package_dir* and *data_files* to create the MANIFEST file.
+:mod:`distutils.sysconfig` now reads the :envvar:`AR` and
+:envvar:`ARFLAGS` environment variables.
+
+.. ARFLAGS done in #5941
+
+It is no longer mandatory to store clear-text passwords in the
+:file:`.pypirc` file when registering and uploading packages to PyPI. As long
+as the username is present in that file, the :mod:`distutils` package will
+prompt for the password if not present.  (Added by Tarek Ziadé,
+based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
+
+A Distutils setup can now specify that a C extension is optional by
+setting the *optional* option setting to true.  If this optional is
+supplied, failure to build the extension will not abort the build
+process, but instead simply not install the failing extension.
+(Contributed by Georg Brandl; :issue:`5583`.)
+
+The :class:`distutils.dist.DistributionMetadata` class'
+:meth:`read_pkg_file` method will read the contents of a package's
+:file:`PKG-INFO` metadata file.  For an example of its use, see
+:ref:`reading-metadata`.
+(Contributed by Tarek Ziadé; :issue:`7457`.)
+
+:file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
+to skip reading the :file:`~/.pydistutils.cfg` file.  (Suggested by
+by Michael Hoffman, and implemented by Paul Winkler; :issue:`1180`.)
+
+When creating a tar-format archive, the ``sdist`` subcommand now
+allows specifying the user id and group that will own the files in the
+archives using the :option:`--owner` and :option:`--group` switches
+(:issue:`6516`).
 
 Unit Testing Enhancements
 ---------------------------------
