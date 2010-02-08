@@ -1305,9 +1305,10 @@ Other Changes and Fixes
 
 * Two benchmark scripts, :file:`iobench` and :file:`ccbench`, were
   added to the :file:`Tools` directory.  :file:`iobench` measures the
-  speed of the built-in :class:`file` objects while performing various
-  operations, and :file:`ccbench` is a concurrency that performs
-  several tasks using a varying number of threads.
+  speed of built-in file I/O objects (as returned by :func:`open`)
+  while performing various operations, and :file:`ccbench` is a concurrency
+  benchmark that tries to measure computing throughput and thread switching
+  latency when performing several tasks using a varying number of threads.
 
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
   with an existing :file:`.py` counterpart, the :attr:`co_filename`
