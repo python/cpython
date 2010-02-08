@@ -1638,7 +1638,6 @@ class ManagerTest(BaseTest):
         self.assertRaises(TypeError, man.setLoggerClass, int)
         man.setLoggerClass(MyLogger)
         logger = man.getLogger('test')
-        print >> open('/tmp/tmp.txt', 'w'), type(logger)
         logger.warning('should appear in logged')
         logging.warning('should not appear in logged')
 
