@@ -1594,7 +1594,6 @@ class ConfigDictTest(BaseTest):
             logging.config.stopListening()
             t.join(2.0)
 
-    #@unittest.skip("See issue #7857")
     def test_listen_config_10_ok(self):
         with captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
@@ -1614,7 +1613,6 @@ class ConfigDictTest(BaseTest):
                 ('ERROR', '4'),
             ], stream=output)
 
-    @unittest.skip("See issue #7857")
     def test_listen_config_1_ok(self):
         with captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))

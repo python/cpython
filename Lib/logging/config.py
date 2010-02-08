@@ -803,6 +803,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
                             raise
                         except:
                             traceback.print_exc()
+                    if self.server.ready:
+                        self.server.ready.set()
             except socket.error, e:
                 if not isinstance(e.args, tuple):
                     raise
@@ -819,12 +821,13 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
         allow_reuse_address = 1
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
-                     handler=None):
+                     handler=None, ready=None):
             ThreadingTCPServer.__init__(self, (host, port), handler)
             logging._acquireLock()
             self.abort = 0
             logging._releaseLock()
             self.timeout = 1
+            self.ready = ready
 
         def serve_until_stopped(self):
             import select
@@ -849,7 +852,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
             self.ready = threading.Event()
 
         def run(self):
-            server = self.rcvr(port=self.port, handler=self.hdlr)
+            server = self.rcvr(port=self.port, handler=self.hdlr,
+                               ready=self.ready)
             self.ready.set()
             global _listener
             logging._acquireLock()
