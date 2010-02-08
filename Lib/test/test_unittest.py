@@ -2810,8 +2810,9 @@ test case
                 self.assertMultiLineEqual(type_changer(sample_text),
                                           type_changer(revised_sample_text))
             except self.failureException, e:
-                # no fair testing ourself with ourself, use assertEqual..
-                self.assertEqual(sample_text_error, str(e).encode('utf8'))
+                # assertMultiLineEqual is hooked up as the default for
+                # unicode strings - so we can't use it for this check
+                self.assertTrue(sample_text_error == str(e).encode('utf8'))
 
     def testAssertIsNone(self):
         self.assertIsNone(None)
