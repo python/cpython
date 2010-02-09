@@ -662,9 +662,9 @@ class ElementTree:
         # write XML to file
         tag = node.tag
         if tag is Comment:
-            file.write(_encode("<!-- %s -->" % _escape_cdata(node.text), encoding))
+            file.write(b"<!-- " + _encode_cdata(node.text, encoding) + b" -->")
         elif tag is ProcessingInstruction:
-            file.write(_encode("<?%s?>" % _escape_cdata(node.text), encoding))
+            file.write(b"<?" + _encode_cdata(node.text, encoding) + b"?>")
         else:
             items = list(node.items())
             xmlns_items = [] # new namespaces in this scope
@@ -696,7 +696,7 @@ class ElementTree:
             if node.text or len(node):
                 file.write(_encode(">", encoding))
                 if node.text:
-                    file.write(_encode(_escape_cdata(node.text), encoding))
+                    file.write(_encode_cdata(node.text, encoding))
                 for n in node:
                     self._write(file, n, encoding, namespaces)
                 file.write(_encode("</" + tag + ">", encoding))
@@ -705,7 +705,7 @@ class ElementTree:
             for k, v in xmlns_items:
                 del namespaces[v]
         if node.tail:
-            file.write(_encode(_escape_cdata(node.tail), encoding))
+            file.write(_encode_cdata(node.tail, encoding))
 
 # --------------------------------------------------------------------
 # helpers
@@ -788,13 +788,16 @@ def _encode_entity(text, pattern=_escape):
 # the following functions assume an ascii-compatible encoding
 # (or "utf-16")
 
-def _escape_cdata(text):
+def _encode_cdata(text, encoding):
     # escape character data
     try:
         text = text.replace("&", "&amp;")
         text = text.replace("<", "&lt;")
         text = text.replace(">", "&gt;")
-        return text
+        if encoding:
+            return text.encode(encoding, "xmlcharrefreplace")
+        else:
+            return text
     except (TypeError, AttributeError):
         _raise_serialization_error(text)
 

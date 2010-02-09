@@ -242,6 +242,10 @@ C-API
 Library
 -------
 
+- Issue #6233: ElementTree failed converting unicode characters to XML
+  entities when they could't be represented in the requested output
+  encoding.  Patch by Jerry Chen.
+
 - Issue #6003: add an argument to ``zipfile.Zipfile.writestr`` to
   specify the compression type.
 
