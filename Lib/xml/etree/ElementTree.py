@@ -662,9 +662,9 @@ class ElementTree:
         # write XML to file
         tag = node.tag
         if tag is Comment:
-            file.write(b"<!-- " + _encode_cdata(node.text, encoding) + b" -->")
+            file.write(_encode("<!-- %s -->" % node.text, encoding))
         elif tag is ProcessingInstruction:
-            file.write(b"<?" + _encode_cdata(node.text, encoding) + b"?>")
+            file.write(_encode("<?%s?>" % node.text, encoding))
         else:
             items = list(node.items())
             xmlns_items = [] # new namespaces in this scope

@@ -242,6 +242,11 @@ C-API
 Library
 -------
 
+- Issue #2746: Don't escape ampersands and angle brackets ("&", "<", ">")
+  in XML processing instructions and comments.  These raw characters are
+  allowed by the XML specification, and are necessary when outputting e.g.
+  PHP code in a processing instruction.  Patch by Neil Muller.
+
 - Issue #6233: ElementTree failed converting unicode characters to XML
   entities when they could't be represented in the requested output
   encoding.  Patch by Jerry Chen.
