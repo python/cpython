@@ -78,6 +78,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #2746: Don't escape ampersands and angle brackets ("&", "<", ">")
+  in XML processing instructions and comments.  These raw characters are
+  allowed by the XML specification, and are necessary when outputting e.g.
+  PHP code in a processing instruction.  Patch by Neil Muller.
+
 - Issue #7869: logging: improved diagnostic for format-time errors.
 
 - Issue #7868: logging: added loggerClass attribute to Manager.

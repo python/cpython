@@ -213,6 +213,23 @@ def check_encoding(ET, encoding):
     """
     ET.XML("<?xml version='1.0' encoding='%s'?><xml />" % encoding)
 
+def processinginstruction():
+    """
+    Test ProcessingInstruction directly
+
+    >>> from xml.etree import ElementTree as ET
+
+    >>> ET.tostring(ET.ProcessingInstruction('test', 'instruction'))
+    '<?test instruction?>'
+    >>> ET.tostring(ET.PI('test', 'instruction'))
+    '<?test instruction?>'
+
+    Issue #2746
+
+    >>> ET.tostring(ET.PI('test', '<testing&>'))
+    '<?test <testing&>?>'
+
+    """
 
 #
 # xinclude tests (samples from appendix C of the xinclude specification)
