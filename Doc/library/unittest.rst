@@ -698,9 +698,9 @@ Test cases
       .. versionchanged:: 3.1
          Added the automatic calling of type specific equality function.
 
-     .. versionchanged:: 3.2
-        :meth:`assertMultiLineEqual` added as the default type equality
-        function for comparing strings.
+      .. versionchanged:: 3.2
+         :meth:`assertMultiLineEqual` added as the default type equality
+         function for comparing strings.
 
       .. deprecated:: 3.1
          :meth:`failUnlessEqual`.
