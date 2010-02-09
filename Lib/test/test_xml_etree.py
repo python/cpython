@@ -210,6 +210,26 @@ def check_encoding(ET, encoding):
     """
     ET.XML("<?xml version='1.0' encoding='%s'?><xml />" % encoding)
 
+def processinginstruction():
+    r"""
+    Test ProcessingInstruction directly
+
+    >>> from xml.etree import ElementTree as ET
+
+    >>> ET.tostring(ET.ProcessingInstruction('test', 'instruction'))
+    '<?test instruction?>'
+    >>> ET.tostring(ET.PI('test', 'instruction'))
+    '<?test instruction?>'
+
+    Issue #2746
+
+    >>> ET.tostring(ET.PI('test', '<testing&>'))
+    '<?test <testing&>?>'
+    >>> ET.tostring(ET.PI('test', '<testing&>\xe3'), 'latin1')
+    b"<?xml version='1.0' encoding='latin1'?>\n<?test <testing&>\xe3?>"
+
+    """
+
 def check_issue6233():
     """
     >>> from xml.etree import ElementTree as ET
