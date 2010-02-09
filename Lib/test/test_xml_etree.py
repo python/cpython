@@ -210,6 +210,17 @@ def check_encoding(ET, encoding):
     """
     ET.XML("<?xml version='1.0' encoding='%s'?><xml />" % encoding)
 
+def check_issue6233():
+    """
+    >>> from xml.etree import ElementTree as ET
+
+    >>> e = ET.XML("<?xml version='1.0' encoding='utf-8'?><body>t\xe3g</body>")
+    >>> ET.tostring(e, 'ascii')
+    b"<?xml version='1.0' encoding='ascii'?>\\n<body>t&#227;g</body>"
+    >>> e = ET.XML("<?xml version='1.0' encoding='iso-8859-1'?><body>t\xe3g</body>".encode('iso-8859-1')) # create byte string with the right encoding
+    >>> ET.tostring(e, 'ascii')
+    b"<?xml version='1.0' encoding='ascii'?>\\n<body>t&#227;g</body>"
+    """
 
 #
 # xinclude tests (samples from appendix C of the xinclude specification)
