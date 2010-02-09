@@ -79,6 +79,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6233: ElementTree failed converting unicode characters to XML
+  entities when they could't be represented in the requested output
+  encoding.  Patch by Jerry Chen.
+
 - Issue #4772: Raise a ValueError when an unknown Bluetooth protocol is
   specified, rather than fall through to AF_PACKET (in the `socket` module).
   Also, raise ValueError rather than TypeError when an unknown TIPC address
