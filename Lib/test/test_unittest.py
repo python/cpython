@@ -2033,7 +2033,7 @@ class Test_TestResult(TestCase):
         self.assertIsInstance(formatted_exc, str)
 
     def testGetDescriptionWithoutDocstring(self):
-        result = unittest.TextTestResult(None, True, None)
+        result = unittest.TextTestResult(None, True, 1)
         self.assertEqual(
                 result.getDescription(self),
                 'testGetDescriptionWithoutDocstring (' + __name__ +
@@ -2041,7 +2041,7 @@ class Test_TestResult(TestCase):
 
     def testGetDescriptionWithOneLineDocstring(self):
         """Tests getDescription() for a method with a docstring."""
-        result = unittest.TextTestResult(None, True, None)
+        result = unittest.TextTestResult(None, True, 1)
         self.assertEqual(
                 result.getDescription(self),
                ('testGetDescriptionWithOneLineDocstring '
@@ -2052,7 +2052,7 @@ class Test_TestResult(TestCase):
         """Tests getDescription() for a method with a longer docstring.
         The second line of the docstring.
         """
-        result = unittest.TextTestResult(None, True, None)
+        result = unittest.TextTestResult(None, True, 1)
         self.assertEqual(
                 result.getDescription(self),
                ('testGetDescriptionWithMultiLineDocstring '
