@@ -145,7 +145,11 @@ class Shelf(UserDict.DictMixin):
             self.dict.close()
         except AttributeError:
             pass
-        self.dict = _ClosedDict()
+        # _ClosedDict can be None when close is called from __del__ during shutdown
+        if _ClosedDict is None:
+            self.dict = None
+        else:
+            self.dict = _ClosedDict()
 
     def __del__(self):
         if not hasattr(self, 'writeback'):
