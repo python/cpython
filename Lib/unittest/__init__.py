@@ -60,4 +60,7 @@ from .suite import TestSuite
 from .loader import (TestLoader, defaultTestLoader, makeSuite, getTestCaseNames,
                      findTestCases)
 from .main import TestProgram, main
-from .runner import TextTestRunner
+from .runner import TextTestRunner, TextTestResult
+
+# deprecated
+_TextTestResult = TextTestResult

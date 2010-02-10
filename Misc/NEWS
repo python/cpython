@@ -17,6 +17,11 @@ Library
 
 - Issue #6003: add an argument to ``zipfile.Zipfile.writestr`` to
   specify the compression type.
+- Issue #7893: ``unittest.TextTestResult`` is made public and a ``resultclass``
+  argument added to the TextTestRunner constructor allowing a different result
+  class to be used without having to subclass.
+- Issue 7588: ``unittest.TextTestResult.getDescription`` now includes the test
+  name in failure reports even if the test has a docstring.
 
 
 What's New in Python 2.7 alpha 3?

@@ -134,7 +134,7 @@ individual tests are defined with methods whose names start with the letters
 represent tests.
 
 The crux of each test is a call to :meth:`~TestCase.assertEqual` to check for an
-expected result; :meth:`~TestCase.assert_` to verify a condition; or
+expected result; :meth:`~TestCase.assertTrue` to verify a condition; or
 :meth:`~TestCase.assertRaises` to verify that an expected exception gets raised.
 These methods are used instead of the :keyword:`assert` statement so the test
 runner can accumulate all test results and produce a report.
@@ -682,6 +682,7 @@ Test cases
 
       .. deprecated:: 2.7
          :meth:`failUnless`; use one of the ``assert`` variants.
+         :meth:`assert_`; use :meth:`assertTrue`.
 
 
    .. method:: assertEqual(first, second[, msg])
@@ -1063,13 +1064,7 @@ Test cases
       Returns a description of the test, or :const:`None` if no description
       has been provided.  The default implementation of this method
       returns the first line of the test method's docstring, if available,
-      along with the method name.
-
-      .. versionchanged:: 2.7
-         In earlier versions this only returned the first line of the test
-         method's docstring, if available or the :const:`None`.  That led to
-         undesirable behavior of not printing the test name when someone was
-         thoughtful enough to write a docstring.
+      or :const:`None`.
 
 
    .. method:: addTypeEqualityFunc(typeobj, function)
@@ -1521,6 +1516,14 @@ Loading and running tests
       The default implementation appends the test to the instance's
       :attr:`unexpectedSuccesses` attribute.
 
+.. class:: TextTestResult(stream, descriptions, verbosity)
+
+    A concrete implementation of :class:`TestResult` used by the
+    :class:`TextTestRunner`.
+
+    .. versionadded:: 2.7
+        This class was previously named ``_TextTestResult``. The old name still
+        exists as an alias but is deprecated.
 
 .. data:: defaultTestLoader
 
@@ -1529,7 +1532,7 @@ Loading and running tests
    instead of repeatedly creating new instances.
 
 
-.. class:: TextTestRunner([stream[, descriptions[, verbosity]]])
+.. class:: TextTestRunner([stream[, descriptions[, verbosity], [resultclass]]])
 
    A basic test runner implementation which prints results on standard error.  It
    has a few configurable parameters, but is essentially very simple.  Graphical
@@ -1540,6 +1543,13 @@ Loading and running tests
       This method returns the instance of ``TestResult`` used by :meth:`run`.
       It is not intended to be called directly, but can be overridden in
       subclasses to provide a custom ``TestResult``.
+
+      ``_makeResult()`` instantiates the class or callable passed in the
+      ``TextTestRunner`` constructor as the ``resultclass`` argument. It
+      defaults to :class::`TextTestResult` if no ``resultclass`` is provided.
+      The result class is instantiated with the following arguments::
+
+            stream, descriptions, verbosity
 
 
 .. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader[, exit, [verbosity]]]]]]])

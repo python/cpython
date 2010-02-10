@@ -27,7 +27,7 @@ class TestResult(object):
 
     def startTest(self, test):
         "Called when the given test is about to be run"
-        self.testsRun = self.testsRun + 1
+        self.testsRun += 1
 
     def startTestRun(self):
         """Called once before any tests are executed.
@@ -36,8 +36,7 @@ class TestResult(object):
         """
 
     def stopTest(self, test):
-        "Called when the given test has been run"
-        pass
+        """Called when the given test has been run"""
 
     def stopTestRun(self):
         """Called once after all tests are executed.
