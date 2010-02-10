@@ -2044,6 +2044,35 @@ class Test_TestResult(TestCase):
         self.assertTrue(test_case is test)
         self.assertIsInstance(formatted_exc, str)
 
+    def testGetDescriptionWithoutDocstring(self):
+        result = unittest.TextTestResult(None, True, None)
+        self.assertEqual(
+                result.getDescription(self),
+                'testGetDescriptionWithoutDocstring (' + __name__ +
+                '.Test_TestResult)')
+
+    def testGetDescriptionWithOneLineDocstring(self):
+        """Tests getDescription() for a method with a docstring."""
+        result = unittest.TextTestResult(None, True, None)
+        self.assertEqual(
+                result.getDescription(self),
+               ('testGetDescriptionWithOneLineDocstring '
+                '(' + __name__ + '.Test_TestResult)\n'
+                'Tests getDescription() for a method with a docstring.'))
+
+    def testGetDescriptionWithMultiLineDocstring(self):
+        """Tests getDescription() for a method with a longer docstring.
+        The second line of the docstring.
+        """
+        result = unittest.TextTestResult(None, True, None)
+        self.assertEqual(
+                result.getDescription(self),
+               ('testGetDescriptionWithMultiLineDocstring '
+                '(' + __name__ + '.Test_TestResult)\n'
+                'Tests getDescription() for a method with a longer '
+                'docstring.'))
+
+
 ### Support code for Test_TestCase
 ################################################################
 
@@ -2458,18 +2487,13 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         self.assertEqual(events, expected)
 
     def testShortDescriptionWithoutDocstring(self):
-        self.assertEqual(
-                self.shortDescription(),
-                'testShortDescriptionWithoutDocstring (' + __name__ +
-                '.Test_TestCase)')
+        self.assertIsNone(self.shortDescription())
 
     def testShortDescriptionWithOneLineDocstring(self):
         """Tests shortDescription() for a method with a docstring."""
         self.assertEqual(
                 self.shortDescription(),
-                ('testShortDescriptionWithOneLineDocstring '
-                 '(' + __name__ + '.Test_TestCase)\n'
-                 'Tests shortDescription() for a method with a docstring.'))
+                'Tests shortDescription() for a method with a docstring.')
 
     def testShortDescriptionWithMultiLineDocstring(self):
         """Tests shortDescription() for a method with a longer docstring.
@@ -2480,10 +2504,8 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         """
         self.assertEqual(
                 self.shortDescription(),
-                ('testShortDescriptionWithMultiLineDocstring '
-                 '(' + __name__ + '.Test_TestCase)\n'
                  'Tests shortDescription() for a method with a longer '
-                 'docstring.'))
+                 'docstring.')
 
     def testAddTypeEqualityFunc(self):
         class SadSnake(object):
@@ -3471,6 +3493,19 @@ class Test_TextTestRunner(TestCase):
             obj = pickle.loads(s)
             # StringIO objects never compare equal, a cheap test instead.
             self.assertEqual(obj.stream.getvalue(), stream.getvalue())
+
+    def test_resultclass(self):
+        def MockResultClass(*args):
+            return args
+        STREAM = object()
+        DESCRIPTIONS = object()
+        VERBOSITY = object()
+        runner = unittest.TextTestRunner(STREAM, DESCRIPTIONS, VERBOSITY,
+                                         resultclass=MockResultClass)
+        self.assertEqual(runner.resultclass, MockResultClass)
+
+        expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
+        self.assertEqual(runner._makeResult(), expectedresult)
 
 
 class TestDiscovery(TestCase):

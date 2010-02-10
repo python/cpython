@@ -229,18 +229,15 @@ class TestCase(object):
         return result.TestResult()
 
     def shortDescription(self):
-        """Returns both the test method name and first line of its docstring.
+        """Returns a one-line description of the test, or None if no
+        description has been provided.
 
-        If no docstring is given, only returns the method name.
+        The default implementation of this method returns the first line of
+        the specified test method's docstring.
         """
-        desc = str(self)
-        doc_first_line = None
+        doc = self._testMethodDoc
+        return doc and doc.split("\n")[0].strip() or None
 
-        if self._testMethodDoc:
-            doc_first_line = self._testMethodDoc.split("\n")[0].strip()
-        if doc_first_line:
-            desc = '\n'.join((desc, doc_first_line))
-        return desc
 
     def id(self):
         return "%s.%s" % (util.strclass(self.__class__), self._testMethodName)
@@ -501,7 +498,6 @@ class TestCase(object):
     assertNotEquals = assertNotEqual
     assertAlmostEquals = assertAlmostEqual
     assertNotAlmostEquals = assertNotAlmostEqual
-    assert_ = assertTrue
 
     # These fail* assertion method names are pending deprecation and will
     # be a DeprecationWarning in 3.2; http://bugs.python.org/issue2578
@@ -518,6 +514,7 @@ class TestCase(object):
     failUnlessAlmostEqual = _deprecate(assertAlmostEqual)
     failIfAlmostEqual = _deprecate(assertNotAlmostEqual)
     failUnless = _deprecate(assertTrue)
+    assert_ = _deprecate(assertTrue)
     failUnlessRaises = _deprecate(assertRaises)
     failIf = _deprecate(assertFalse)
 
