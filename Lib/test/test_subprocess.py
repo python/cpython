@@ -7,6 +7,7 @@ import os
 import tempfile
 import time
 import re
+import sysconfig
 
 mswindows = (sys.platform == "win32")
 
@@ -140,9 +141,21 @@ class ProcessTestCase(unittest.TestCase):
         p.wait()
         self.assertEqual(p.stderr, None)
 
-    def test_executable(self):
-        p = subprocess.Popen(["somethingyoudonthave",
-                              "-c", "import sys; sys.exit(47)"],
+    def test_executable_with_cwd(self):
+        python_dir = os.path.dirname(os.path.realpath(sys.executable))
+        p = subprocess.Popen(["somethingyoudonthave", "-c",
+                              "import sys; sys.exit(47)"],
+                             executable=sys.executable, cwd=python_dir)
+        p.wait()
+        self.assertEqual(p.returncode, 47)
+
+    @unittest.skipIf(sysconfig.is_python_build(),
+                     "need an installed Python. See #7774")
+    def test_executable_without_cwd(self):
+        # For a normal installation, it should work without 'cwd'
+        # argument.  For test runs in the build directory, see #7774.
+        p = subprocess.Popen(["somethingyoudonthave", "-c",
+                              "import sys; sys.exit(47)"],
                              executable=sys.executable)
         p.wait()
         self.assertEqual(p.returncode, 47)

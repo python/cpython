@@ -22,7 +22,7 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "get_original_stdout", "unload", "unlink", "rmtree", "forget",
            "is_resource_enabled", "requires", "find_unused_port", "bind_port",
            "fcmp", "have_unicode", "is_jython", "TESTFN", "HOST", "FUZZ",
-           "findfile", "sortdict", "check_syntax_error",
+           "SAVEDCWD", "temp_cwd", "findfile", "sortdict", "check_syntax_error",
            "open_urlresource", "check_warnings", "CleanImport",
            "EnvironmentVarGuard", "captured_output",
            "captured_stdout", "TransientResource", "transient_internet",
@@ -379,27 +379,42 @@ else:
                 'Unicode filename tests may not be effective' \
                 % TESTFN_UNICODE_UNENCODEABLE
 
+
 # Disambiguate TESTFN for parallel testing, while letting it remain a valid
 # module name.
-TESTFN = "{0}_{1}_tmp".format(TESTFN, os.getpid())
+TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 
-# Make sure we can write to TESTFN, try in /tmp if we can't
-fp = None
-try:
-    fp = open(TESTFN, 'w+')
-except IOError:
-    TMP_TESTFN = os.path.join('/tmp', TESTFN)
+# Save the initial cwd
+SAVEDCWD = os.getcwd()
+
+@contextlib.contextmanager
+def temp_cwd(name='tempcwd', quiet=False):
+    """
+    Context manager that creates a temporary directory and set it as CWD.
+
+    The new CWD is created in the current directory and it's named *name*.
+    If *quiet* is False (default) and it's not possible to create or change
+    the CWD, an error is raised.  If it's True, only a warning is raised
+    and the original CWD is used.
+    """
+    saved_dir = os.getcwd()
+    is_temporary = False
     try:
-        fp = open(TMP_TESTFN, 'w+')
-        TESTFN = TMP_TESTFN
-        del TMP_TESTFN
-    except IOError:
-        print ('WARNING: tests will fail, unable to write to: %s or %s' %
-                (TESTFN, TMP_TESTFN))
-if fp is not None:
-    fp.close()
-    unlink(TESTFN)
-del fp
+        os.mkdir(name)
+        os.chdir(name)
+        is_temporary = True
+    except OSError:
+        if not quiet:
+            raise
+        warnings.warn('tests may fail, unable to change the CWD to ' + name,
+                      RuntimeWarning, stacklevel=3)
+    try:
+        yield os.getcwd()
+    finally:
+        os.chdir(saved_dir)
+        if is_temporary:
+            rmtree(name)
+
 
 def findfile(file, here=__file__):
     """Try to find a file on sys.path and the working directory.  If it is not

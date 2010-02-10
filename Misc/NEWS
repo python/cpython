@@ -17,11 +17,22 @@ Library
 
 - Issue #6003: add an argument to ``zipfile.Zipfile.writestr`` to
   specify the compression type.
+
 - Issue #7893: ``unittest.TextTestResult`` is made public and a ``resultclass``
   argument added to the TextTestRunner constructor allowing a different result
   class to be used without having to subclass.
+
 - Issue 7588: ``unittest.TextTestResult.getDescription`` now includes the test
   name in failure reports even if the test has a docstring.
+
+
+Tests
+-----
+
+- Issue #7712: test_support gained a new `temp_cwd` context manager which is
+  now also used by regrtest to run all the tests in a temporary directory.
+  The original CWD is saved in `test_support.SAVEDCWD`.
+  Thanks to Florent Xicluna who helped with the patch.
 
 
 What's New in Python 2.7 alpha 3?
