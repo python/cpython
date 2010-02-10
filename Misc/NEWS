@@ -94,6 +94,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7835: shelve should no longer produce mysterious warnings during
+  interpreter shutdown.
+
 - Issue #2746: Don't escape ampersands and angle brackets ("&", "<", ">")
   in XML processing instructions and comments.  These raw characters are
   allowed by the XML specification, and are necessary when outputting e.g.
