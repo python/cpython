@@ -447,6 +447,13 @@ Library
   unpickled. This fixes crashes under Windows when trying to run
   test_multiprocessing in verbose mode.
 
+- Issue #7893: ``unittest.TextTestResult`` is made public and a ``resultclass``
+  argument added to the TextTestRunner constructor allowing a different result
+  class to be used without having to subclass.
+  
+- Issue 7588: ``unittest.TextTestResult.getDescription`` now includes the test
+  name in failure reports even if the test has a docstring.
+
 - Issue #3001: Add a C implementation of recursive locks which is used by
   default when instantiating a `threading.RLock` object. This makes 
   recursive locks as fast as regular non-recursive locks (previously,
