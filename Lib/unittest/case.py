@@ -485,6 +485,7 @@ class TestCase(object):
     assertNotEquals = assertNotEqual
     assertAlmostEquals = assertAlmostEqual
     assertNotAlmostEquals = assertNotAlmostEqual
+    assert_ = assertTrue
 
     # These fail* assertion method names are pending deprecation and will
     # be a DeprecationWarning in 3.2; http://bugs.python.org/issue2578
@@ -501,7 +502,6 @@ class TestCase(object):
     failUnlessAlmostEqual = _deprecate(assertAlmostEqual)
     failIfAlmostEqual = _deprecate(assertNotAlmostEqual)
     failUnless = _deprecate(assertTrue)
-    assert_ = _deprecate(assertTrue)
     failUnlessRaises = _deprecate(assertRaises)
     failIf = _deprecate(assertFalse)
 
