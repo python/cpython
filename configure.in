@@ -958,7 +958,7 @@ yes)
 				    cur_target='10.5'
 			    fi
 		    else
-			    if test `arch` = "i386"; then
+			    if test `/usr/bin/arch` = "i386"; then
 				    # On Intel macs default to a deployment
 				    # target of 10.4, that's the first OSX
 				    # release with Intel support.
@@ -1526,7 +1526,7 @@ case $ac_sys_system/$ac_sys_release in
     if test "${enable_universalsdk}"; then
 	    :
     else
-        LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `arch`"
+        LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `/usr/bin/arch`"
     fi
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
@@ -1553,7 +1553,7 @@ case $ac_sys_system/$ac_sys_release in
        ac_osx_32bit=yes)
     
     if test "${ac_osx_32bit}" = "yes"; then
-    	case `arch` in
+    	case `/usr/bin/arch` in
     	i386) 
     		MACOSX_DEFAULT_ARCH="i386" 
     		;;
@@ -1565,7 +1565,7 @@ case $ac_sys_system/$ac_sys_release in
     		;;
     	esac
     else
-    	case `arch` in
+    	case `/usr/bin/arch` in
     	i386) 
     		MACOSX_DEFAULT_ARCH="x86_64" 
     		;;
