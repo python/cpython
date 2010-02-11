@@ -38,7 +38,10 @@
 #if defined(_RL_FUNCTION_TYPEDEF)
 extern char **completion_matches(char *, rl_compentry_func_t *);
 #else
+
+#if !defined(__APPLE__)
 extern char **completion_matches(char *, CPFunction *);
+#endif
 #endif
 #endif
 
