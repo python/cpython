@@ -88,6 +88,17 @@ class TestCase(unittest.TestCase):
         self.assertEqual(len(d1), 1)
         self.assertEqual(len(d2), 1)
 
+    def test_writeback_also_writes_immediately(self):
+        # Issue 5754
+        d = {}
+        s = shelve.Shelf(d, writeback=True)
+        s['key'] = [1]
+        p1 = d['key']  # Will give a KeyError if backing store not updated
+        s['key'].append(2)
+        s.close()
+        p2 = d['key']
+        self.assertNotEqual(p1, p2)  # Write creates new object in store
+
 
 from test import mapping_tests
 
