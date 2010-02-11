@@ -2601,7 +2601,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				SET_VALUE(7, tb);
 				SET_VALUE(6, exc);
 				SET_VALUE(5, tp);
-				/* UNWIND_EXCEPT_BLOCK will pop this off. */
+				/* UNWIND_EXCEPT_HANDLER will pop this off. */
 				SET_FOURTH(NULL);
 				/* We just shifted the stack down, so we have
 				   to tell the except handler block that the
