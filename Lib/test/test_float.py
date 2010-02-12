@@ -104,6 +104,9 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(ValueError, float, "+-3.14")
         self.assertRaises(ValueError, float, "-+3.14")
         self.assertRaises(ValueError, float, "--3.14")
+        # check that we don't accept alternate exponent markers
+        self.assertRaises(ValueError, float, "-1.7d29")
+        self.assertRaises(ValueError, float, "3D-14")
         if test_support.have_unicode:
             self.assertEqual(float(unicode("  3.14  ")), 3.14)
             self.assertEqual(float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
