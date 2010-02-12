@@ -107,6 +107,9 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(ValueError, float, "+.inf")
         self.assertRaises(ValueError, float, ".")
         self.assertRaises(ValueError, float, "-.")
+        # check that we don't accept alternate exponent markers
+        self.assertRaises(ValueError, float, "-1.7d29")
+        self.assertRaises(ValueError, float, "3D-14")
         self.assertEqual(float(b"  \u0663.\u0661\u0664  ".decode('raw-unicode-escape')), 3.14)
         # extra long strings should not be a problem
         float(b'.' + b'1'*1000)
