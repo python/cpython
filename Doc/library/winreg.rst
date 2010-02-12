@@ -367,7 +367,7 @@ This module offers the following functions:
    key.  The key identified by the key parameter must have been opened with
    :const:`KEY_SET_VALUE` access.
 
-   To open the key, use the :func:`CreateKeyEx` or  :func:`OpenKey` methods.
+   To open the key, use the :func:`CreateKey` or  :func:`OpenKey` methods.
 
    Value lengths are limited by available memory. Long values (more than 2048
    bytes) should be stored as files with the filenames stored in the configuration
