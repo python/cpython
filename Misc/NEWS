@@ -738,6 +738,10 @@ Documentation
 Tests
 -----
 
+- Issue #7924: Fix an intermittent 'XXX undetected error' failure in
+  test_capi (only seen so far on platforms where the curses module
+  wasn't built), due to an uncleared exception.
+
 - issue #7728: test_timeout was changed to use test_support.bind_port
   instead of a hard coded port.
 

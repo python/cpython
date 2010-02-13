@@ -1763,6 +1763,8 @@ test_capsule(PyObject *self, PyObject *args)
 			Py_DECREF(object);
 			Py_DECREF(module);
 		}
+		else
+			PyErr_Clear();
 	}
 
   exit:
