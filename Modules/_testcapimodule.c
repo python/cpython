@@ -1393,27 +1393,14 @@ test_capsule(PyObject *self, PyObject *args)
 			Py_DECREF(object);
 			Py_DECREF(module);
 		}
+		else
+			PyErr_Clear();
 	}
 
   exit:
 	if (error) {
 		return raiseTestError("test_capsule", error);
 	}
-	/* 13/12/2009: something is causing test_capi to fail occasionally on
-	   the Solaris buildbot, with the output:
-
-		internal test_L_code
-		internal test_Z_code
-		internal test_bug_7414
-		internal test_capsule
-		XXX undetected error
-		internaltest test_capi crashed -- <class 'ImportError'>: No module named datetime
-
-	   It seems possible that test_capsule is raising an exception but
-	   failing to return NULL.  Do a PyErr_Occurred check to find out.
-	*/
-	if (PyErr_Occurred())
-		return NULL;
 	Py_RETURN_NONE;
 #undef FAIL
 }
