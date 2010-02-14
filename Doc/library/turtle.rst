@@ -1223,6 +1223,8 @@ Appearance
       >>> turtle.settiltangle(-45)
       >>> turtle.fd(50)
 
+   .. deprecated:: 3.1
+
 
 .. function:: tiltangle(angle=None)
 
@@ -1235,8 +1237,6 @@ Appearance
    If angle is not given: return the current tilt-angle, i. e. the angle
    between the orientation of the turtleshape and the heading of the
    turtle (its direction of movement).
-
-   Deprecated since Python 3.1
 
    .. doctest::
 
