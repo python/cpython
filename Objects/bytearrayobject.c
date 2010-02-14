@@ -713,7 +713,7 @@ bytes_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *values)
                  i < slicelen; cur += step, i++) {
                 Py_ssize_t lim = step - 1;
 
-                if (cur + step >= PyByteArray_GET_SIZE(self))
+                if (cur + step >= (size_t)PyByteArray_GET_SIZE(self))
                     lim = PyByteArray_GET_SIZE(self) - cur - 1;
 
                 memmove(self->ob_bytes + cur - i,
@@ -721,7 +721,7 @@ bytes_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *values)
             }
             /* Move the tail of the bytes, in one chunk */
             cur = start + slicelen*step;
-            if (cur < PyByteArray_GET_SIZE(self)) {
+            if (cur < (size_t)PyByteArray_GET_SIZE(self)) {
                 memmove(self->ob_bytes + cur - slicelen,
                         self->ob_bytes + cur,
                         PyByteArray_GET_SIZE(self) - cur);
@@ -921,13 +921,14 @@ bytes_repr(PyByteArrayObject *self)
     const char *quote_postfix = ")";
     Py_ssize_t length = Py_SIZE(self);
     /* 14 == strlen(quote_prefix) + 2 + strlen(quote_postfix) */
-    size_t newsize = 14 + 4 * length;
+    size_t newsize;
     PyObject *v;
-    if (newsize > PY_SSIZE_T_MAX || newsize / 4 - 3 != length) {
+    if (length > (PY_SSIZE_T_MAX - 14) / 4) {
         PyErr_SetString(PyExc_OverflowError,
             "bytearray object is too large to make repr");
         return NULL;
     }
+    newsize = 14 + 4 * length;
     v = PyUnicode_FromUnicode(NULL, newsize);
     if (v == NULL) {
         return NULL;
