@@ -470,7 +470,8 @@ statement both starts a database transaction and acquires a thread lock::
        ...
 
 Finally, the :func:`closing` function returns its argument so that it can be
-bound to a variable, and calls ``object.close`` at the end of the block. ::
+bound to a variable, and calls the argument's ``.close()`` method at the end
+of the block. ::
 
    import urllib, sys
    from contextlib import closing
