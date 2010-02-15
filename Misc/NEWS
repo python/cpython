@@ -34,6 +34,11 @@ Tests
   The original CWD is saved in `test_support.SAVEDCWD`.
   Thanks to Florent Xicluna who helped with the patch.
 
+Build
+-----
+
+- Issue #3920: Define _BSD_SOURCE on OpenBSD 4.4.
+
 
 What's New in Python 2.7 alpha 3?
 =================================
