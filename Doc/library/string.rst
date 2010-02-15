@@ -264,7 +264,7 @@ Some examples::
 
 The *format_spec* field contains a specification of how the value should be
 presented, including such details as field width, alignment, padding, decimal
-precision and so on.  Each value type can define it's own "formatting
+precision and so on.  Each value type can define its own "formatting
 mini-language" or interpretation of the *format_spec*.
 
 Most built-in types support a common formatting mini-language, which is
