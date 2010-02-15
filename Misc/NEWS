@@ -682,7 +682,7 @@ Extension Modules
 Build
 -----
 
-- Issue #3920: Define _BSD_SOURCE on OpenBSD 4.4.
+- Issue #3920, #7903: Define _BSD_SOURCE on OpenBSD 4.4 through 4.9.
 
 - Issue #7632: When Py_USING_MEMORY_DEBUGGER is defined, disable the
   private memory allocation scheme in dtoa.c and use PyMem_Malloc and
