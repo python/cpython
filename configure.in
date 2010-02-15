@@ -283,6 +283,12 @@ case $ac_sys_system/$ac_sys_release in
     # As this has a different meaning on Linux, only define it on OpenBSD
     AC_DEFINE(_BSD_SOURCE, 1, [Define on OpenBSD to activate all library features])
     ;;
+  OpenBSD/4.@<:@4@:>@)
+    # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
+    # also defined. This can be overridden by defining _BSD_SOURCE
+    # As this has a different meaning on Linux, only define it on OpenBSD
+    AC_DEFINE(_BSD_SOURCE, 1, [Define on OpenBSD to activate all library features])
+    ;;
   # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
   # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
   # Marc Recht

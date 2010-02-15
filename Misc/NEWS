@@ -366,6 +366,8 @@ C-API
 Build
 -----
 
+- Issue #3920: Define _BSD_SOURCE on OpenBSD 4.4.
+
 - Issue #7632: When Py_USING_MEMORY_DEBUGGER is defined, disable the
   private memory allocation scheme in dtoa.c and use PyMem_Malloc and
   PyMem_Free instead.  Also disable caching of powers of 5.
