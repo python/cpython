@@ -215,6 +215,8 @@ Extension Modules
 Build
 -----
 
+- Issue #3920: Define _BSD_SOURCE on OpenBSD 4.4.
+
 - Issue #7661: Allow ctypes to be built from a non-ASCII directory path.
   Patch by Florent Xicluna.
 
