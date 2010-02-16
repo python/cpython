@@ -291,6 +291,19 @@ class PyDocDocTest(unittest.TestCase):
             "white space was not stripped from module name "
             "or other error output mismatch")
 
+    def test_stripid(self):
+        # test with strings, other implementations might have different repr()
+        stripid = pydoc.stripid
+        # strip the id
+        self.assertEqual(stripid('<function stripid at 0x88dcee4>'),
+                         '<function stripid>')
+        self.assertEqual(stripid('<function stripid at 0x01F65390>'),
+                         '<function stripid>')
+        # nothing to strip, return the same text
+        self.assertEqual(stripid('42'), '42')
+        self.assertEqual(stripid("<type 'exceptions.Exception'>"),
+                         "<type 'exceptions.Exception'>")
+
 
 class TestDescriptions(unittest.TestCase):
 
