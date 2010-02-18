@@ -163,7 +163,7 @@ class TestCase(object):
         try:
             testMethod = getattr(self, methodName)
         except AttributeError:
-            raise ValueError("no such test method in %s: %s" % \
+            raise ValueError("no such test method in %s: %s" %
                   (self.__class__, methodName))
         self._testMethodDoc = testMethod.__doc__
         self._cleanups = []
@@ -697,7 +697,7 @@ class TestCase(object):
         """Just like self.assertTrue(a is b), but with a nicer default message."""
         if expr1 is not expr2:
             standardMsg = '%s is not %s' % (safe_repr(expr1),
-                                            safe_repr(expr2))
+                                             safe_repr(expr2))
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertIsNot(self, expr1, expr2, msg=None):
@@ -725,7 +725,8 @@ class TestCase(object):
                 missing.append(key)
             elif value != actual[key]:
                 mismatched.append('%s, expected: %s, actual: %s' %
-                                  (key, value, actual[key]))
+                                  (safe_repr(key), safe_repr(value),
+                                   safe_repr(actual[key])))
 
         if not (missing or mismatched):
             return
