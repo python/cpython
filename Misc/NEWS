@@ -15,6 +15,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #7633: In the decimal module, Context class methods (with the
+  exception of canonical and is_canonical) now accept instances of int
+  and long wherever a Decimal instance is accepted, and implicitly
+  convert that argument to Decimal.  Previously only some arguments
+  were converted.
+
 - Issue #6003: add an argument to ``zipfile.Zipfile.writestr`` to
   specify the compression type.
 
