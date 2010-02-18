@@ -351,7 +351,7 @@ Decimal objects
    operations and special methods apply.  Likewise, decimal objects can be
    copied, pickled, printed, used as dictionary keys, used as set elements,
    compared, sorted, and coerced to another type (such as :class:`float` or
-   :class:`long`).
+   :class:`int`).
 
    In addition to the standard numeric properties, decimal floating point
    objects also have a number of specialized methods:
@@ -899,7 +899,7 @@ In addition to the three supplied contexts, new contexts can be created with the
    a corresponding :class:`Context` method.  For example, for a :class:`Context`
    instance ``C`` and :class:`Decimal` instance ``x``, ``C.exp(x)`` is
    equivalent to ``x.exp(context=C)``.  Each :class:`Context` method accepts a
-   Python integer (an instance of :class:`int` or :class:`long`) anywhere that a
+   Python integer (an instance of :class:`int`) anywhere that a
    Decimal instance is accepted.
 
 
