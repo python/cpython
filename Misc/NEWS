@@ -298,6 +298,9 @@ Library
 Extension Modules
 -----------------
 
+- Stop providing crtassem.h symbols when compiling with Visual Studio 2010, as
+  msvcr100.dll is not a platform assembly anymore.
+
 - Issue #7078: Set struct.__doc__ from _struct.__doc__.
 
 - Issue #6848: Fix curses module build failure on OS X 10.6.
