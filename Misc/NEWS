@@ -740,6 +740,11 @@ Documentation
 Tests
 -----
 
+- Issue #7712: test.support gained a new `temp_cwd` context manager which is
+  now also used by regrtest to run all the tests in a temporary directory.
+  The original CWD is saved in `support.SAVEDCWD`.
+  Thanks to Florent Xicluna who helped with the patch.
+
 - Issue #7924: Fix an intermittent 'XXX undetected error' failure in
   test_capi (only seen so far on platforms where the curses module
   wasn't built), due to an uncleared exception.

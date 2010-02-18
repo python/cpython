@@ -158,6 +158,24 @@ import traceback
 import warnings
 import unittest
 from inspect import isabstract
+import tempfile
+
+# Some times __path__ and __file__ are not absolute (e.g. while running from
+# Lib/) and, if we change the CWD to run the tests in a temporary dir, some
+# imports might fail.  This affects only the modules imported before os.chdir().
+# These modules are searched first in sys.path[0] (so '' -- the CWD) and if
+# they are found in the CWD their __file__ and __path__ will be relative (this
+# happens before the chdir).  All the modules imported after the chdir, are
+# not found in the CWD, and since the other paths in sys.path[1:] are absolute
+# (site.py absolutize them), the __file__ and __path__ will be absolute too.
+# Therefore it is necessary to absolutize manually the __file__ and __path__ of
+# the packages to prevent later imports to fail when the CWD is different.
+for module in sys.modules.values():
+    if hasattr(module, '__path__'):
+        module.__path__ = [os.path.abspath(path) for path in module.__path__]
+    if hasattr(module, '__file__'):
+        module.__file__ = os.path.abspath(module.__file__)
+
 
 # Ignore ImportWarnings that only occur in the source tree,
 # (because of modules with the same name as source-directories in Modules/)
@@ -375,6 +393,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     resource_denieds = []
     environment_changed = []
 
+    if verbose:
+        print('The CWD is now', os.getcwd())
+
     if findleaks:
         try:
             import gc
@@ -389,8 +410,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             found_garbage = []
 
     if single:
-        from tempfile import gettempdir
-        filename = os.path.join(gettempdir(), 'pynexttest')
+        filename = 'pynexttest'
         try:
             fp = open(filename, 'r')
             next_test = fp.read().strip()
@@ -401,7 +421,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     if fromfile:
         tests = []
-        fp = open(fromfile)
+        fp = open(os.path.join(support.SAVEDCWD, fromfile))
         for line in fp:
             guts = line.split() # assuming no test has whitespace in its name
             if guts and not guts[0].startswith('#'):
@@ -966,6 +986,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
 
     deltas = []
     nwarmup, ntracked, fname = huntrleaks
+    fname = os.path.join(support.SAVEDCWD, fname)
     repcount = nwarmup + ntracked
     print("beginning", repcount, "repetitions", file=sys.stderr)
     print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr)
@@ -1412,4 +1433,23 @@ if __name__ == '__main__':
         i -= 1
         if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
             del sys.path[i]
-    main()
+
+    # findtestdir() gets the dirname out of sys.argv[0], so we have to make it
+    # absolute before changing the CWD.
+    if sys.argv[0]:
+        sys.argv[0] = os.path.abspath(sys.argv[0])
+
+
+    # Define a writable temp dir that will be used as cwd while running
+    # the tests. The name of the dir includes the pid to allow parallel
+    # testing (see the -j option).
+    TESTCWD = 'test_python_{}'.format(os.getpid())
+
+    TESTCWD = os.path.abspath(os.path.join(tempfile.gettempdir(), TESTCWD))
+
+    # Run the tests in a context manager that temporary changes the CWD to a
+    # temporary and writable directory. If it's not possible to create or
+    # change the CWD, the original CWD will be used. The original CWD is
+    # available from support.SAVEDCWD.
+    with support.temp_cwd(TESTCWD, quiet=True):
+        main()
