@@ -2573,13 +2573,10 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         with self.assertRaises(self.failureException):
             self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
 
-    @unittest.expectedFailure
-    def test_crazy(self):
         one = ''.join(chr(i) for i in range(255))
-        two = u'\uFFFD'
-        first = {'foo': one}
-        second = {'foo': two}
-        self.assertDictContainsSubset(first, second)
+        # this used to cause a UnicodeDecodeError constructing the failure msg
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({'foo': one}, {'foo': u'\uFFFD'})
 
     def testAssertEqual(self):
         equal_pairs = [
