@@ -17,6 +17,7 @@ from copy import deepcopy
 from cStringIO import StringIO
 import pickle
 
+
 ### Support code
 ################################################################
 
@@ -2557,21 +2558,28 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         self.assertDictContainsSubset({'a': 1}, {'a': 1, 'b': 2})
         self.assertDictContainsSubset({'a': 1, 'b': 2}, {'a': 1, 'b': 2})
 
-        self.assertRaises(unittest.TestCase.failureException,
-                          self.assertDictContainsSubset, {'a': 2}, {'a': 1},
-                          '.*Mismatched values:.*')
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({1: "one"}, {})
 
-        self.assertRaises(unittest.TestCase.failureException,
-                          self.assertDictContainsSubset, {'c': 1}, {'a': 1},
-                          '.*Missing:.*')
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({'a': 2}, {'a': 1})
 
-        self.assertRaises(unittest.TestCase.failureException,
-                          self.assertDictContainsSubset, {'a': 1, 'c': 1},
-                          {'a': 1}, '.*Missing:.*')
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({'c': 1}, {'a': 1})
 
-        self.assertRaises(unittest.TestCase.failureException,
-                          self.assertDictContainsSubset, {'a': 1, 'c': 1},
-                          {'a': 1}, '.*Missing:.*Mismatched values:.*')
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
+
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
+
+    @unittest.expectedFailure
+    def test_crazy(self):
+        one = ''.join(chr(i) for i in range(255))
+        two = u'\uFFFD'
+        first = {'foo': one}
+        second = {'foo': two}
+        self.assertDictContainsSubset(first, second)
 
     def testAssertEqual(self):
         equal_pairs = [

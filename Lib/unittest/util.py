@@ -1,5 +1,11 @@
 """Various utility functions."""
 
+def safe_repr(obj):
+    try:
+        return repr(obj)
+    except Exception:
+        return object.__repr__(obj)
+
 def strclass(cls):
     return "%s.%s" % (cls.__module__, cls.__name__)
 
