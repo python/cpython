@@ -25,6 +25,11 @@ Library
 - Issue 7588: ``unittest.TextTestResult.getDescription`` now includes the test
   name in failure reports even if the test has a docstring.
 
+Extension Modules
+-----------------
+
+- Stop providing crtassem.h symbols when compiling with Visual Studio 2010, as
+  msvcr100.dll is not a platform assembly anymore.
 
 Tests
 -----
