@@ -206,6 +206,9 @@ Library
 Extension Modules
 -----------------
 
+- Stop providing crtassem.h symbols when compiling with Visual Studio 2010, as
+  msvcr100.dll is not a platform assembly anymore.
+
 - Issue #6877: Make it possible to link the readline extension to libedit
   on OSX.
 
