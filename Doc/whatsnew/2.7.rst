@@ -554,6 +554,10 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Maru Newby after a suggestion by
   Senthil Kumaran; :issue:`5142`.)
 
+* The :mod:`binascii` module now supports the buffer API, so it can be
+  used with :class:`memoryview` instances and other similar buffer objects.
+  (Backported from 3.x by Florent Xicluna; :issue:`7703`.)
+
 * The :mod:`bz2` module's :class:`BZ2File` now supports the context
   management protocol, so you can write ``with bz2.BZ2File(...) as f: ...``.
   (Contributed by Hagen Fuerstenau; :issue:`3860`.)
@@ -681,6 +685,11 @@ changes, or look through the Subversion logs for all the details.
 * The default :class:`HTTPResponse` class used by the :mod:`httplib` module now
   supports buffering, resulting in much faster reading of HTTP responses.
   (Contributed by Kristjan Valur Jonsson; :issue:`4879`.)
+
+  The :class:`HTTPConnection` and :class:`HTTPSConnection` classes
+  now support a *source_address* parameter, a ``(host, port)`` 2-tuple
+  giving the source address that will be used for the connection.
+  (Contributed by Eldon Ziegler; :issue:`3972`.)
 
 * The :mod:`imaplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1655`.)
@@ -882,8 +891,21 @@ changes, or look through the Subversion logs for all the details.
   a timeout was provided and the operation timed out.
   (Contributed by Tim Lesher; :issue:`1674032`.)
 
+* The Unicode database provided by the :mod:`unicodedata` module
+  remains at version 5.1.0, but Python now uses it internally to
+  determine which characters are numeric, whitespace, or represent
+  line breaks.  The database also now includes information from the
+  :file:`Unihan.txt` data file.  (Patch by Anders Chrigström
+  and Amaury Forgeot d'Arc; :issue:`1571184`.)
+
 * The :class:`UserDict` class is now a new-style class.  (Changed by
   Benjamin Peterson.)
+
+* The ElementTree library, :mod:`xml.etree`, no longer escapes
+  ampersands and angle brackets when outputting an XML processing
+  instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
+  or comment (which looks like `<!-- comment -->`).
+  (Patch by Neil Muller; :issue:`2746`.)
 
 * The :mod:`zipfile` module's :class:`ZipFile` now supports the context
   management protocol, so you can write ``with zipfile.ZipFile(...) as f: ...``.
@@ -898,6 +920,12 @@ changes, or look through the Subversion logs for all the details.
   The :func:`is_zipfile` function in the module now
   accepts a file object, in addition to the path names accepted in earlier
   versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
+
+  The :meth:`writestr` method now has an optional *compress_type* parameter
+  that lets you override the default compression method specified in the
+  :class:`ZipFile` constructor.  (Contributed by Ronald Oussoren;
+  :issue:`6003`.)
+
 
 New module: sysconfig
 ---------------------------------
@@ -1019,7 +1047,8 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 
 * :meth:`assertMultiLineEqual` compares two strings, and if they're
   not equal, displays a helpful comparison that highlights the
-  differences in the two strings.
+  differences in the two strings.  This comparison is now used by
+  default when Unicode strings are compared with :meth:`assertEqual`.)
 
 * :meth:`assertRegexpMatches` checks whether its first argument is a
   string matching a regular expression provided as its second argument.
@@ -1038,18 +1067,22 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
   only reports the differences between the sets in case of error.
 
 * Similarly, :meth:`assertListEqual` and :meth:`assertTupleEqual`
-  compare the specified types and explain the differences.
+  compare the specified types and explain any differences without necessarily
+  printing their full values; these methods are now used by default
+  when comparing lists and tuples using :meth:`assertEqual`.
   More generally, :meth:`assertSequenceEqual` compares two sequences
   and can optionally check whether both sequences are of a
   particular type.
 
 * :meth:`assertDictEqual` compares two dictionaries and reports the
-  differences.  :meth:`assertDictContainsSubset` checks whether
+  differences; it's now used by default when you compare two dictionaries
+  using :meth:`assertEqual`.  :meth:`assertDictContainsSubset` checks whether
   all of the key/value pairs in *first* are found in *second*.
 
-* :meth:`assertAlmostEqual` and :meth:`assertNotAlmostEqual` short-circuit
-  (automatically pass or fail without checking decimal places) if the objects
-  are equal.
+* :meth:`assertAlmostEqual` and :meth:`assertNotAlmostEqual` test
+  whether *first* and *second* are approximately equal by computing
+  their difference, rounding the result to an optionally-specified number
+  of *places* (the default is 7), and comparing to zero.
 
 * :meth:`loadTestsFromName` properly honors the ``suiteClass`` attribute of
   the :class:`TestLoader`. (Fixed by Mark Roddy; :issue:`6866`.)
@@ -1360,6 +1393,14 @@ that may require changes to your code:
 * The :meth:`readline` method of :class:`StringIO` objects now does
   nothing when a negative length is requested, as other file-like
   objects do.  (:issue:`7348`).
+
+In the standard library:
+
+* The ElementTree library, :mod:`xml.etree`, no longer escapes
+  ampersands and angle brackets when outputting an XML processing
+  instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
+  or comment (which looks like `<!-- comment -->`).
+  (Patch by Neil Muller; :issue:`2746`.)
 
 For C extensions:
 
