@@ -49,6 +49,14 @@
 		Value="..\.."
 	/>
 	<UserMacro
+		Name="bsddb47Dir"
+		Value="$(externalsDir)\db-4.7.25.0\build_windows"
+	/>
+	<UserMacro
+		Name="bsddb47DepLibs"
+		Value="ws2_32.lib"
+	/>
+	<UserMacro
 		Name="bsddbDir"
 		Value="$(bsddb47Dir)"
 	/>
@@ -63,14 +71,6 @@
 	<UserMacro
 		Name="bsddb44DepLibs"
 		Value=""
-	/>
-	<UserMacro
-		Name="bsddb47Dir"
-		Value="$(externalsDir)\db-4.7.25.0\build_windows"
-	/>
-	<UserMacro
-		Name="bsddb47DepLibs"
-		Value="ws2_32.lib"
 	/>
 	<UserMacro
 		Name="sqlite3Dir"
