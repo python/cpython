@@ -1078,6 +1078,12 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
             self.assertTrue(not (x > y))
             self.assertTrue(not (x >= y))
 
+    def test_copy_sign(self):
+        d = Decimal(1).copy_sign(Decimal(-2))
+
+        self.assertEqual(Decimal(1).copy_sign(-2), d)
+        self.assertRaises(TypeError, Decimal(1).copy_sign, '-2')
+
 # The following are two functions used to test threading in the next class
 
 def thfunc1(cls):
@@ -1683,6 +1689,438 @@ class ContextAPItests(unittest.TestCase):
         self.assertNotEqual(id(c), id(d))
         self.assertNotEqual(id(c.flags), id(d.flags))
         self.assertNotEqual(id(c.traps), id(d.traps))
+
+    def test_abs(self):
+        c = Context()
+        d = c.abs(Decimal(-1))
+        self.assertEqual(c.abs(-1), d)
+        self.assertRaises(TypeError, c.abs, '-1')
+
+    def test_add(self):
+        c = Context()
+        d = c.add(Decimal(1), Decimal(1))
+        self.assertEqual(c.add(1, 1), d)
+        self.assertEqual(c.add(Decimal(1), 1), d)
+        self.assertEqual(c.add(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.add, '1', 1)
+        self.assertRaises(TypeError, c.add, 1, '1')
+
+    def test_compare(self):
+        c = Context()
+        d = c.compare(Decimal(1), Decimal(1))
+        self.assertEqual(c.compare(1, 1), d)
+        self.assertEqual(c.compare(Decimal(1), 1), d)
+        self.assertEqual(c.compare(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.compare, '1', 1)
+        self.assertRaises(TypeError, c.compare, 1, '1')
+
+    def test_compare_signal(self):
+        c = Context()
+        d = c.compare_signal(Decimal(1), Decimal(1))
+        self.assertEqual(c.compare_signal(1, 1), d)
+        self.assertEqual(c.compare_signal(Decimal(1), 1), d)
+        self.assertEqual(c.compare_signal(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.compare_signal, '1', 1)
+        self.assertRaises(TypeError, c.compare_signal, 1, '1')
+
+    def test_compare_total(self):
+        c = Context()
+        d = c.compare_total(Decimal(1), Decimal(1))
+        self.assertEqual(c.compare_total(1, 1), d)
+        self.assertEqual(c.compare_total(Decimal(1), 1), d)
+        self.assertEqual(c.compare_total(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.compare_total, '1', 1)
+        self.assertRaises(TypeError, c.compare_total, 1, '1')
+
+    def test_compare_total_mag(self):
+        c = Context()
+        d = c.compare_total_mag(Decimal(1), Decimal(1))
+        self.assertEqual(c.compare_total_mag(1, 1), d)
+        self.assertEqual(c.compare_total_mag(Decimal(1), 1), d)
+        self.assertEqual(c.compare_total_mag(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.compare_total_mag, '1', 1)
+        self.assertRaises(TypeError, c.compare_total_mag, 1, '1')
+
+    def test_copy_abs(self):
+        c = Context()
+        d = c.copy_abs(Decimal(-1))
+        self.assertEqual(c.copy_abs(-1), d)
+        self.assertRaises(TypeError, c.copy_abs, '-1')
+
+    def test_copy_decimal(self):
+        c = Context()
+        d = c.copy_decimal(Decimal(-1))
+        self.assertEqual(c.copy_decimal(-1), d)
+        self.assertRaises(TypeError, c.copy_decimal, '-1')
+
+    def test_copy_negate(self):
+        c = Context()
+        d = c.copy_negate(Decimal(-1))
+        self.assertEqual(c.copy_negate(-1), d)
+        self.assertRaises(TypeError, c.copy_negate, '-1')
+
+    def test_copy_sign(self):
+        c = Context()
+        d = c.copy_sign(Decimal(1), Decimal(-2))
+        self.assertEqual(c.copy_sign(1, -2), d)
+        self.assertEqual(c.copy_sign(Decimal(1), -2), d)
+        self.assertEqual(c.copy_sign(1, Decimal(-2)), d)
+        self.assertRaises(TypeError, c.copy_sign, '1', -2)
+        self.assertRaises(TypeError, c.copy_sign, 1, '-2')
+
+    def test_divide(self):
+        c = Context()
+        d = c.divide(Decimal(1), Decimal(2))
+        self.assertEqual(c.divide(1, 2), d)
+        self.assertEqual(c.divide(Decimal(1), 2), d)
+        self.assertEqual(c.divide(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.divide, '1', 2)
+        self.assertRaises(TypeError, c.divide, 1, '2')
+
+    def test_divide_int(self):
+        c = Context()
+        d = c.divide_int(Decimal(1), Decimal(2))
+        self.assertEqual(c.divide_int(1, 2), d)
+        self.assertEqual(c.divide_int(Decimal(1), 2), d)
+        self.assertEqual(c.divide_int(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.divide_int, '1', 2)
+        self.assertRaises(TypeError, c.divide_int, 1, '2')
+
+    def test_divmod(self):
+        c = Context()
+        d = c.divmod(Decimal(1), Decimal(2))
+        self.assertEqual(c.divmod(1, 2), d)
+        self.assertEqual(c.divmod(Decimal(1), 2), d)
+        self.assertEqual(c.divmod(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.divmod, '1', 2)
+        self.assertRaises(TypeError, c.divmod, 1, '2')
+
+    def test_exp(self):
+        c = Context()
+        d = c.exp(Decimal(10))
+        self.assertEqual(c.exp(10), d)
+        self.assertRaises(TypeError, c.exp, '10')
+
+    def test_fma(self):
+        c = Context()
+        d = c.fma(Decimal(2), Decimal(3), Decimal(4))
+        self.assertEqual(c.fma(2, 3, 4), d)
+        self.assertEqual(c.fma(Decimal(2), 3, 4), d)
+        self.assertEqual(c.fma(2, Decimal(3), 4), d)
+        self.assertEqual(c.fma(2, 3, Decimal(4)), d)
+        self.assertEqual(c.fma(Decimal(2), Decimal(3), 4), d)
+        self.assertRaises(TypeError, c.fma, '2', 3, 4)
+        self.assertRaises(TypeError, c.fma, 2, '3', 4)
+        self.assertRaises(TypeError, c.fma, 2, 3, '4')
+
+    def test_is_finite(self):
+        c = Context()
+        d = c.is_finite(Decimal(10))
+        self.assertEqual(c.is_finite(10), d)
+        self.assertRaises(TypeError, c.is_finite, '10')
+
+    def test_is_infinite(self):
+        c = Context()
+        d = c.is_infinite(Decimal(10))
+        self.assertEqual(c.is_infinite(10), d)
+        self.assertRaises(TypeError, c.is_infinite, '10')
+
+    def test_is_nan(self):
+        c = Context()
+        d = c.is_nan(Decimal(10))
+        self.assertEqual(c.is_nan(10), d)
+        self.assertRaises(TypeError, c.is_nan, '10')
+
+    def test_is_normal(self):
+        c = Context()
+        d = c.is_normal(Decimal(10))
+        self.assertEqual(c.is_normal(10), d)
+        self.assertRaises(TypeError, c.is_normal, '10')
+
+    def test_is_qnan(self):
+        c = Context()
+        d = c.is_qnan(Decimal(10))
+        self.assertEqual(c.is_qnan(10), d)
+        self.assertRaises(TypeError, c.is_qnan, '10')
+
+    def test_is_signed(self):
+        c = Context()
+        d = c.is_signed(Decimal(10))
+        self.assertEqual(c.is_signed(10), d)
+        self.assertRaises(TypeError, c.is_signed, '10')
+
+    def test_is_snan(self):
+        c = Context()
+        d = c.is_snan(Decimal(10))
+        self.assertEqual(c.is_snan(10), d)
+        self.assertRaises(TypeError, c.is_snan, '10')
+
+    def test_is_subnormal(self):
+        c = Context()
+        d = c.is_subnormal(Decimal(10))
+        self.assertEqual(c.is_subnormal(10), d)
+        self.assertRaises(TypeError, c.is_subnormal, '10')
+
+    def test_is_zero(self):
+        c = Context()
+        d = c.is_zero(Decimal(10))
+        self.assertEqual(c.is_zero(10), d)
+        self.assertRaises(TypeError, c.is_zero, '10')
+
+    def test_ln(self):
+        c = Context()
+        d = c.ln(Decimal(10))
+        self.assertEqual(c.ln(10), d)
+        self.assertRaises(TypeError, c.ln, '10')
+
+    def test_log10(self):
+        c = Context()
+        d = c.log10(Decimal(10))
+        self.assertEqual(c.log10(10), d)
+        self.assertRaises(TypeError, c.log10, '10')
+
+    def test_logb(self):
+        c = Context()
+        d = c.logb(Decimal(10))
+        self.assertEqual(c.logb(10), d)
+        self.assertRaises(TypeError, c.logb, '10')
+
+    def test_logical_and(self):
+        c = Context()
+        d = c.logical_and(Decimal(1), Decimal(1))
+        self.assertEqual(c.logical_and(1, 1), d)
+        self.assertEqual(c.logical_and(Decimal(1), 1), d)
+        self.assertEqual(c.logical_and(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.logical_and, '1', 1)
+        self.assertRaises(TypeError, c.logical_and, 1, '1')
+
+    def test_logical_invert(self):
+        c = Context()
+        d = c.logical_invert(Decimal(1000))
+        self.assertEqual(c.logical_invert(1000), d)
+        self.assertRaises(TypeError, c.logical_invert, '1000')
+
+    def test_logical_or(self):
+        c = Context()
+        d = c.logical_or(Decimal(1), Decimal(1))
+        self.assertEqual(c.logical_or(1, 1), d)
+        self.assertEqual(c.logical_or(Decimal(1), 1), d)
+        self.assertEqual(c.logical_or(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.logical_or, '1', 1)
+        self.assertRaises(TypeError, c.logical_or, 1, '1')
+
+    def test_logical_xor(self):
+        c = Context()
+        d = c.logical_xor(Decimal(1), Decimal(1))
+        self.assertEqual(c.logical_xor(1, 1), d)
+        self.assertEqual(c.logical_xor(Decimal(1), 1), d)
+        self.assertEqual(c.logical_xor(1, Decimal(1)), d)
+        self.assertRaises(TypeError, c.logical_xor, '1', 1)
+        self.assertRaises(TypeError, c.logical_xor, 1, '1')
+
+    def test_max(self):
+        c = Context()
+        d = c.max(Decimal(1), Decimal(2))
+        self.assertEqual(c.max(1, 2), d)
+        self.assertEqual(c.max(Decimal(1), 2), d)
+        self.assertEqual(c.max(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.max, '1', 2)
+        self.assertRaises(TypeError, c.max, 1, '2')
+
+    def test_max_mag(self):
+        c = Context()
+        d = c.max_mag(Decimal(1), Decimal(2))
+        self.assertEqual(c.max_mag(1, 2), d)
+        self.assertEqual(c.max_mag(Decimal(1), 2), d)
+        self.assertEqual(c.max_mag(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.max_mag, '1', 2)
+        self.assertRaises(TypeError, c.max_mag, 1, '2')
+
+    def test_min(self):
+        c = Context()
+        d = c.min(Decimal(1), Decimal(2))
+        self.assertEqual(c.min(1, 2), d)
+        self.assertEqual(c.min(Decimal(1), 2), d)
+        self.assertEqual(c.min(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.min, '1', 2)
+        self.assertRaises(TypeError, c.min, 1, '2')
+
+    def test_min_mag(self):
+        c = Context()
+        d = c.min_mag(Decimal(1), Decimal(2))
+        self.assertEqual(c.min_mag(1, 2), d)
+        self.assertEqual(c.min_mag(Decimal(1), 2), d)
+        self.assertEqual(c.min_mag(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.min_mag, '1', 2)
+        self.assertRaises(TypeError, c.min_mag, 1, '2')
+
+    def test_minus(self):
+        c = Context()
+        d = c.minus(Decimal(10))
+        self.assertEqual(c.minus(10), d)
+        self.assertRaises(TypeError, c.minus, '10')
+
+    def test_multiply(self):
+        c = Context()
+        d = c.multiply(Decimal(1), Decimal(2))
+        self.assertEqual(c.multiply(1, 2), d)
+        self.assertEqual(c.multiply(Decimal(1), 2), d)
+        self.assertEqual(c.multiply(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.multiply, '1', 2)
+        self.assertRaises(TypeError, c.multiply, 1, '2')
+
+    def test_next_minus(self):
+        c = Context()
+        d = c.next_minus(Decimal(10))
+        self.assertEqual(c.next_minus(10), d)
+        self.assertRaises(TypeError, c.next_minus, '10')
+
+    def test_next_plus(self):
+        c = Context()
+        d = c.next_plus(Decimal(10))
+        self.assertEqual(c.next_plus(10), d)
+        self.assertRaises(TypeError, c.next_plus, '10')
+
+    def test_next_toward(self):
+        c = Context()
+        d = c.next_toward(Decimal(1), Decimal(2))
+        self.assertEqual(c.next_toward(1, 2), d)
+        self.assertEqual(c.next_toward(Decimal(1), 2), d)
+        self.assertEqual(c.next_toward(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.next_toward, '1', 2)
+        self.assertRaises(TypeError, c.next_toward, 1, '2')
+
+    def test_normalize(self):
+        c = Context()
+        d = c.normalize(Decimal(10))
+        self.assertEqual(c.normalize(10), d)
+        self.assertRaises(TypeError, c.normalize, '10')
+
+    def test_number_class(self):
+        c = Context()
+        self.assertEqual(c.number_class(123), c.number_class(Decimal(123)))
+        self.assertEqual(c.number_class(0), c.number_class(Decimal(0)))
+        self.assertEqual(c.number_class(-45), c.number_class(Decimal(-45)))
+
+    def test_power(self):
+        c = Context()
+        d = c.power(Decimal(1), Decimal(4), Decimal(2))
+        self.assertEqual(c.power(1, 4, 2), d)
+        self.assertEqual(c.power(Decimal(1), 4, 2), d)
+        self.assertEqual(c.power(1, Decimal(4), 2), d)
+        self.assertEqual(c.power(1, 4, Decimal(2)), d)
+        self.assertEqual(c.power(Decimal(1), Decimal(4), 2), d)
+        self.assertRaises(TypeError, c.power, '1', 4, 2)
+        self.assertRaises(TypeError, c.power, 1, '4', 2)
+        self.assertRaises(TypeError, c.power, 1, 4, '2')
+
+    def test_plus(self):
+        c = Context()
+        d = c.plus(Decimal(10))
+        self.assertEqual(c.plus(10), d)
+        self.assertRaises(TypeError, c.plus, '10')
+
+    def test_quantize(self):
+        c = Context()
+        d = c.quantize(Decimal(1), Decimal(2))
+        self.assertEqual(c.quantize(1, 2), d)
+        self.assertEqual(c.quantize(Decimal(1), 2), d)
+        self.assertEqual(c.quantize(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.quantize, '1', 2)
+        self.assertRaises(TypeError, c.quantize, 1, '2')
+
+    def test_remainder(self):
+        c = Context()
+        d = c.remainder(Decimal(1), Decimal(2))
+        self.assertEqual(c.remainder(1, 2), d)
+        self.assertEqual(c.remainder(Decimal(1), 2), d)
+        self.assertEqual(c.remainder(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.remainder, '1', 2)
+        self.assertRaises(TypeError, c.remainder, 1, '2')
+
+    def test_remainder_near(self):
+        c = Context()
+        d = c.remainder_near(Decimal(1), Decimal(2))
+        self.assertEqual(c.remainder_near(1, 2), d)
+        self.assertEqual(c.remainder_near(Decimal(1), 2), d)
+        self.assertEqual(c.remainder_near(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.remainder_near, '1', 2)
+        self.assertRaises(TypeError, c.remainder_near, 1, '2')
+
+    def test_rotate(self):
+        c = Context()
+        d = c.rotate(Decimal(1), Decimal(2))
+        self.assertEqual(c.rotate(1, 2), d)
+        self.assertEqual(c.rotate(Decimal(1), 2), d)
+        self.assertEqual(c.rotate(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.rotate, '1', 2)
+        self.assertRaises(TypeError, c.rotate, 1, '2')
+
+    def test_sqrt(self):
+        c = Context()
+        d = c.sqrt(Decimal(10))
+        self.assertEqual(c.sqrt(10), d)
+        self.assertRaises(TypeError, c.sqrt, '10')
+
+    def test_same_quantum(self):
+        c = Context()
+        d = c.same_quantum(Decimal(1), Decimal(2))
+        self.assertEqual(c.same_quantum(1, 2), d)
+        self.assertEqual(c.same_quantum(Decimal(1), 2), d)
+        self.assertEqual(c.same_quantum(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.same_quantum, '1', 2)
+        self.assertRaises(TypeError, c.same_quantum, 1, '2')
+
+    def test_scaleb(self):
+        c = Context()
+        d = c.scaleb(Decimal(1), Decimal(2))
+        self.assertEqual(c.scaleb(1, 2), d)
+        self.assertEqual(c.scaleb(Decimal(1), 2), d)
+        self.assertEqual(c.scaleb(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.scaleb, '1', 2)
+        self.assertRaises(TypeError, c.scaleb, 1, '2')
+
+    def test_shift(self):
+        c = Context()
+        d = c.shift(Decimal(1), Decimal(2))
+        self.assertEqual(c.shift(1, 2), d)
+        self.assertEqual(c.shift(Decimal(1), 2), d)
+        self.assertEqual(c.shift(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.shift, '1', 2)
+        self.assertRaises(TypeError, c.shift, 1, '2')
+
+    def test_subtract(self):
+        c = Context()
+        d = c.subtract(Decimal(1), Decimal(2))
+        self.assertEqual(c.subtract(1, 2), d)
+        self.assertEqual(c.subtract(Decimal(1), 2), d)
+        self.assertEqual(c.subtract(1, Decimal(2)), d)
+        self.assertRaises(TypeError, c.subtract, '1', 2)
+        self.assertRaises(TypeError, c.subtract, 1, '2')
+
+    def test_to_eng_string(self):
+        c = Context()
+        d = c.to_eng_string(Decimal(10))
+        self.assertEqual(c.to_eng_string(10), d)
+        self.assertRaises(TypeError, c.to_eng_string, '10')
+
+    def test_to_sci_string(self):
+        c = Context()
+        d = c.to_sci_string(Decimal(10))
+        self.assertEqual(c.to_sci_string(10), d)
+        self.assertRaises(TypeError, c.to_sci_string, '10')
+
+    def test_to_integral_exact(self):
+        c = Context()
+        d = c.to_integral_exact(Decimal(10))
+        self.assertEqual(c.to_integral_exact(10), d)
+        self.assertRaises(TypeError, c.to_integral_exact, '10')
+
+    def test_to_integral_value(self):
+        c = Context()
+        d = c.to_integral_value(Decimal(10))
+        self.assertEqual(c.to_integral_value(10), d)
+        self.assertRaises(TypeError, c.to_integral_value, '10')
 
 class WithStatementTest(unittest.TestCase):
     # Can't do these as docstrings until Python 2.6
