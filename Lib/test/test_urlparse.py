@@ -142,7 +142,7 @@ class UrlParseTestCase(unittest.TestCase):
                          (base, relurl, expected))
 
     def test_unparse_parse(self):
-        for u in ['Python', './Python','x-newscheme://foo.com/stuff']:
+        for u in ['Python', './Python', 'x-newscheme://foo.com/stuff']:
             self.assertEqual(urllib.parse.urlunsplit(urllib.parse.urlsplit(u)), u)
             self.assertEqual(urllib.parse.urlunparse(urllib.parse.urlparse(u)), u)
 
@@ -349,10 +349,10 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_anyscheme(self):
         # Issue 7904: s3://foo.com/stuff has netloc "foo.com".
-        self.assertEqual(urlparse.urlparse("s3://foo.com/stuff"),
-                         ('s3','foo.com','/stuff','','',''))
-        self.assertEqual(urlparse.urlparse("x-newscheme://foo.com/stuff"),
-                         ('x-newscheme','foo.com','/stuff','','',''))
+        self.assertEqual(urllib.parse.urlparse("s3://foo.com/stuff"),
+                         ('s3', 'foo.com', '/stuff', '', '', ''))
+        self.assertEqual(urllib.parse.urlparse("x-newscheme://foo.com/stuff"),
+                         ('x-newscheme', 'foo.com', '/stuff', '', '', ''))
 
 def test_main():
     support.run_unittest(UrlParseTestCase)
