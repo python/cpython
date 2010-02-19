@@ -43,7 +43,7 @@ Argument names are not part of the specification, and only the arguments of
 
 .. seealso::
    :mod:`sys`
-       Contains the standard IO streams: :data:`sys.stdin`, :data:`sys.stdout`,
+       contains the standard IO streams: :data:`sys.stdin`, :data:`sys.stdout`,
        and :data:`sys.stderr`.
 
 
