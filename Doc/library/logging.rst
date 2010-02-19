@@ -2477,6 +2477,28 @@ module, you may not be able to use logging from within such handlers. This is
 because lock implementations in the :mod:`threading` module are not always
 re-entrant, and so cannot be invoked from such signal handlers.
 
+
+Integration with the warnings module
+------------------------------------
+
+The :func:`captureWarnings` function can be used to integrate :mod:`logging`
+with the :mod:`warnings` module.
+
+.. function:: captureWarnings(capture)
+
+   This function is used to turn the capture of warnings by logging on and
+   off.
+
+   If `capture` is `True`, warnings issued by the :mod:`warnings` module
+   will be redirected to the logging system. Specifically, a warning will be
+   formatted using :func:`warnings.formatwarning` and the resulting string
+   logged to a logger named "py.warnings" with a severity of `WARNING`.
+
+   If `capture` is `False`, the redirection of warnings to the logging system
+   will stop, and warnings will be redirected to their original destinations
+   (i.e. those in effect before `captureWarnings(True)` was called).
+
+
 Configuration
 -------------
 
