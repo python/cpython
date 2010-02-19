@@ -396,19 +396,24 @@ class PyPycLoader(PyLoader):
         bytecode_path = self.bytecode_path(fullname)
         if bytecode_path:
             data = self.get_data(bytecode_path)
-            magic = data[:4]
-            pyc_timestamp = marshal._r_long(data[4:8])
-            bytecode = data[8:]
             try:
+                magic = data[:4]
+                if len(magic) < 4:
+                    raise ImportError("bad magic number in {}".format(fullname))
+                raw_timestamp = data[4:8]
+                if len(raw_timestamp) < 4:
+                    raise EOFError("bad timestamp in {}".format(fullname))
+                pyc_timestamp = marshal._r_long(raw_timestamp)
+                bytecode = data[8:]
                 # Verify that the magic number is valid.
                 if imp.get_magic() != magic:
-                    raise ImportError("bad magic number")
+                    raise ImportError("bad magic number in {}".format(fullname))
                 # Verify that the bytecode is not stale (only matters when
                 # there is source to fall back on.
                 if source_timestamp:
                     if pyc_timestamp < source_timestamp:
                         raise ImportError("bytecode is stale")
-            except ImportError:
+            except (ImportError, EOFError):
                 # If source is available give it a shot.
                 if source_timestamp is not None:
                     pass

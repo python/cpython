@@ -113,42 +113,116 @@ class SimpleTest(unittest.TestCase):
 
 class BadBytecodeTest(unittest.TestCase):
 
-    """But there are several things about the bytecode which might lead to the
-    source being preferred. If the magic number differs from what the
-    interpreter uses, then the source is used with the bytecode regenerated.
-    If the timestamp is older than the modification time for the source then
-    the bytecode is not used [bad timestamp].
-
-    But if the marshal data is bad, even if the magic number and timestamp
-    work, a ValueError is raised and the source is not used [bad marshal].
-
-    The case of not being able to write out the bytecode must also be handled
-    as it's possible it was made read-only. In that instance the attempt to
-    write the bytecode should fail silently [bytecode read-only].
-
-    """
-
     def import_(self, file, module_name):
         loader = _bootstrap._PyPycFileLoader(module_name, file, False)
         module = loader.load_module(module_name)
         self.assertTrue(module_name in sys.modules)
 
-    # [bad magic]
+    def manipulate_bytecode(self, name, mapping, manipulator, *,
+                            del_source=False):
+        """Manipulate the bytecode of a module by passing it into a callable
+        that returns what to use as the new bytecode."""
+        try:
+            del sys.modules['_temp']
+        except KeyError:
+            pass
+        py_compile.compile(mapping[name])
+        bytecode_path = source_util.bytecode_path(mapping[name])
+        with open(bytecode_path, 'rb') as file:
+            bc = file.read()
+        new_bc = manipulator(bc)
+        with open(bytecode_path, 'wb') as file:
+            if new_bc:
+                file.write(new_bc)
+        if del_source:
+            os.unlink(mapping[name])
+        return bytecode_path
+
+    @source_util.writes_bytecode_files
+    def test_empty_file(self):
+        # When a .pyc is empty, regenerate it if possible, else raise
+        # ImportError.
+        with source_util.create_modules('_temp') as mapping:
+            bc_path = self.manipulate_bytecode('_temp', mapping,
+                                                lambda bc: None)
+            self.import_(mapping['_temp'], '_temp')
+            with open(bc_path, 'rb') as file:
+                self.assertGreater(len(file.read()), 8)
+            self.manipulate_bytecode('_temp', mapping, lambda bc: None,
+                                        del_source=True)
+            with self.assertRaises(ImportError):
+                self.import_(mapping['_temp'], '_temp')
+
+    @source_util.writes_bytecode_files
+    def test_partial_magic(self):
+        # When their are less than 4 bytes to a .pyc, regenerate it if
+        # possible, else raise ImportError.
+        with source_util.create_modules('_temp') as mapping:
+            bc_path = self.manipulate_bytecode('_temp', mapping,
+                                                lambda bc: bc[:3])
+            self.import_(mapping['_temp'], '_temp')
+            with open(bc_path, 'rb') as file:
+                self.assertGreater(len(file.read()), 8)
+            self.manipulate_bytecode('_temp', mapping, lambda bc: bc[:3],
+                                        del_source=True)
+            with self.assertRaises(ImportError):
+                self.import_(mapping['_temp'], '_temp')
+
+    @source_util.writes_bytecode_files
+    def test_magic_only(self):
+        # When there is only the magic number, regenerate the .pyc if possible,
+        # else raise EOFError.
+        with source_util.create_modules('_temp') as mapping:
+            bc_path = self.manipulate_bytecode('_temp', mapping,
+                                                lambda bc: bc[:4])
+            self.import_(mapping['_temp'], '_temp')
+            with open(bc_path, 'rb') as file:
+                self.assertGreater(len(file.read()), 8)
+            self.manipulate_bytecode('_temp', mapping, lambda bc: bc[:4],
+                                        del_source=True)
+            with self.assertRaises(EOFError):
+                self.import_(mapping['_temp'], '_temp')
+
+    @source_util.writes_bytecode_files
+    def test_partial_timestamp(self):
+        # When the timestamp is partial, regenerate the .pyc, else
+        # raise EOFError.
+        with source_util.create_modules('_temp') as mapping:
+            bc_path = self.manipulate_bytecode('_temp', mapping,
+                                                lambda bc: bc[:7])
+            self.import_(mapping['_temp'], '_temp')
+            with open(bc_path, 'rb') as file:
+                self.assertGreater(len(file.read()), 8)
+            self.manipulate_bytecode('_temp', mapping, lambda bc: bc[:7],
+                                        del_source=True)
+            with self.assertRaises(EOFError):
+                self.import_(mapping['_temp'], '_temp')
+
+    @source_util.writes_bytecode_files
+    def test_no_marshal(self):
+        # When there is only the magic number and timestamp, raise EOFError.
+        with source_util.create_modules('_temp') as mapping:
+            bc_path = self.manipulate_bytecode('_temp', mapping,
+                                                lambda bc: bc[:8])
+            with self.assertRaises(EOFError):
+                self.import_(mapping['_temp'], '_temp')
+
     @source_util.writes_bytecode_files
     def test_bad_magic(self):
+        # When the magic number is different, the bytecode should be
+        # regenerated.
         with source_util.create_modules('_temp') as mapping:
-            py_compile.compile(mapping['_temp'])
-            bytecode_path = source_util.bytecode_path(mapping['_temp'])
-            with open(bytecode_path, 'r+b') as bytecode_file:
-                bytecode_file.seek(0)
-                bytecode_file.write(b'\x00\x00\x00\x00')
+            bc_path = self.manipulate_bytecode('_temp', mapping,
+                                    lambda bc: b'\x00\x00\x00\x00' + bc[4:])
             self.import_(mapping['_temp'], '_temp')
-            with open(bytecode_path, 'rb') as bytecode_file:
+            with open(bc_path, 'rb') as bytecode_file:
                 self.assertEqual(bytecode_file.read(4), imp.get_magic())
 
     # [bad timestamp]
     @source_util.writes_bytecode_files
     def test_bad_bytecode(self):
+        # When the timestamp is older than the source, bytecode should be
+        # regenerated.
         zeros = b'\x00\x00\x00\x00'
         with source_util.create_modules('_temp') as mapping:
             py_compile.compile(mapping['_temp'])
@@ -166,6 +240,7 @@ class BadBytecodeTest(unittest.TestCase):
     # [bad marshal]
     @source_util.writes_bytecode_files
     def test_bad_marshal(self):
+        # Bad marshal data should raise a ValueError.
         with source_util.create_modules('_temp') as mapping:
             bytecode_path = source_util.bytecode_path(mapping['_temp'])
             source_mtime = os.path.getmtime(mapping['_temp'])
@@ -181,6 +256,7 @@ class BadBytecodeTest(unittest.TestCase):
     # [bytecode read-only]
     @source_util.writes_bytecode_files
     def test_read_only_bytecode(self):
+        # When bytecode is read-only but should be rewritten, fail silently.
         with source_util.create_modules('_temp') as mapping:
             # Create bytecode that will need to be re-created.
             py_compile.compile(mapping['_temp'])
@@ -201,8 +277,7 @@ class BadBytecodeTest(unittest.TestCase):
 
 def test_main():
     from test.support import run_unittest
-    run_unittest(SimpleTest, DontWriteBytecodeTest, BadDataTest,
-                 SourceBytecodeInteraction, BadBytecodeTest)
+    run_unittest(SimpleTest, BadBytecodeTest)
 
 
 if __name__ == '__main__':
