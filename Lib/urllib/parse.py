@@ -168,7 +168,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
                 break
         else:
             scheme, url = url[:i].lower(), url[i+1:]
-    if scheme in uses_netloc and url[:2] == '//':
+    if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
     if allow_fragments and scheme in uses_fragment and '#' in url:
         url, fragment = url.split('#', 1)
