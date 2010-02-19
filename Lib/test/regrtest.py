@@ -779,7 +779,7 @@ class saved_test_environment:
     # the corresponding method names.
 
     resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
-                 'os.environ', 'sys.path')
+                 'os.environ', 'sys.path', 'sys.path_hooks', '__import__')
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -819,6 +819,17 @@ class saved_test_environment:
     def restore_sys_path(self, saved_path):
         sys.path = saved_path[1]
         sys.path[:] = saved_path[2]
+
+    def get_sys_path_hooks(self):
+        return id(sys.path_hooks), sys.path_hooks, sys.path_hooks[:]
+    def restore_sys_path_hooks(self, saved_hooks):
+        sys.path_hooks = saved_hooks[1]
+        sys.path_hooks[:] = saved_hooks[2]
+
+    def get___import__(self):
+        return __builtins__.__import__
+    def restore___import__(self, import_):
+        __builtins__.__import__ = import_
 
     def resource_info(self):
         for name in self.resources:
