@@ -5,6 +5,7 @@ import UserDict
 
 from test import test_support
 
+
 class SortedDict(UserDict.UserDict):
     def items(self):
         result = self.data.items()
@@ -26,12 +27,16 @@ class SortedDict(UserDict.UserDict):
     __iter__ = iterkeys
     def itervalues(self): return iter(self.values())
 
+
 class TestCaseBase(unittest.TestCase):
+    allow_no_value = False
+
     def newconfig(self, defaults=None):
         if defaults is None:
-            self.cf = self.config_class()
+            self.cf = self.config_class(allow_no_value=self.allow_no_value)
         else:
-            self.cf = self.config_class(defaults)
+            self.cf = self.config_class(defaults,
+                                        allow_no_value=self.allow_no_value)
         return self.cf
 
     def fromstring(self, string, defaults=None):
@@ -41,7 +46,7 @@ class TestCaseBase(unittest.TestCase):
         return cf
 
     def test_basic(self):
-        cf = self.fromstring(
+        config_string = (
             "[Foo Bar]\n"
             "foo=bar\n"
             "[Spacey Bar]\n"
@@ -61,17 +66,28 @@ class TestCaseBase(unittest.TestCase):
             "key with spaces : value\n"
             "another with spaces = splat!\n"
             )
+        if self.allow_no_value:
+            config_string += (
+                "[NoValue]\n"
+                "option-without-value\n"
+                )
+
+        cf = self.fromstring(config_string)
         L = cf.sections()
         L.sort()
+        E = [r'Commented Bar',
+             r'Foo Bar',
+             r'Internationalized Stuff',
+             r'Long Line',
+             r'Section\with$weird%characters[' '\t',
+             r'Spaces',
+             r'Spacey Bar',
+             ]
+        if self.allow_no_value:
+            E.append(r'NoValue')
+        E.sort()
         eq = self.assertEqual
-        eq(L, [r'Commented Bar',
-               r'Foo Bar',
-               r'Internationalized Stuff',
-               r'Long Line',
-               r'Section\with$weird%characters[' '\t',
-               r'Spaces',
-               r'Spacey Bar',
-               ])
+        eq(L, E)
 
         # The use of spaces in the section names serves as a
         # regression test for SourceForge bug #583248:
@@ -81,6 +97,8 @@ class TestCaseBase(unittest.TestCase):
         eq(cf.get('Commented Bar', 'foo'), 'bar')
         eq(cf.get('Spaces', 'key with spaces'), 'value')
         eq(cf.get('Spaces', 'another with spaces'), 'splat!')
+        if self.allow_no_value:
+            eq(cf.get('NoValue', 'option-without-value'), None)
 
         self.assertNotIn('__name__', cf.options("Foo Bar"),
                          '__name__ "option" should not be exposed by the API!')
@@ -153,8 +171,6 @@ class TestCaseBase(unittest.TestCase):
         self.parse_error(ConfigParser.ParsingError,
                          "[Foo]\n  extra-spaces= splat\n")
         self.parse_error(ConfigParser.ParsingError,
-                         "[Foo]\noption-without-value\n")
-        self.parse_error(ConfigParser.ParsingError,
                          "[Foo]\n:value-without-option-name\n")
         self.parse_error(ConfigParser.ParsingError,
                          "[Foo]\n=value-without-option-name\n")
@@ -220,18 +236,24 @@ class TestCaseBase(unittest.TestCase):
                           cf.add_section, "Foo")
 
     def test_write(self):
-        cf = self.fromstring(
+        config_string = (
             "[Long Line]\n"
             "foo: this line is much, much longer than my editor\n"
             "   likes it.\n"
             "[DEFAULT]\n"
             "foo: another very\n"
-            " long line"
+            " long line\n"
             )
+        if self.allow_no_value:
+            config_string += (
+            "[Valueless]\n"
+            "option-without-value\n"
+            )
+
+        cf = self.fromstring(config_string)
         output = StringIO.StringIO()
         cf.write(output)
-        self.assertEqual(
-            output.getvalue(),
+        expect_string = (
             "[DEFAULT]\n"
             "foo = another very\n"
             "\tlong line\n"
@@ -241,6 +263,13 @@ class TestCaseBase(unittest.TestCase):
             "\tlikes it.\n"
             "\n"
             )
+        if self.allow_no_value:
+            expect_string += (
+                "[Valueless]\n"
+                "option-without-value\n"
+                "\n"
+                )
+        self.assertEqual(output.getvalue(), expect_string)
 
     def test_set_string_types(self):
         cf = self.fromstring("[sect]\n"
@@ -339,7 +368,7 @@ class ConfigParserTestCase(TestCaseBase):
         self.get_error(ConfigParser.InterpolationDepthError, "Foo", "bar11")
 
     def test_interpolation_missing_value(self):
-        cf = self.get_interpolation_config()
+        self.get_interpolation_config()
         e = self.get_error(ConfigParser.InterpolationError,
                            "Interpolation Error", "name")
         self.assertEqual(e.reference, "reference")
@@ -459,6 +488,11 @@ class SafeConfigParserTestCase(ConfigParserTestCase):
         cf = self.newconfig()
         self.assertRaises(ValueError, cf.add_section, "DEFAULT")
 
+
+class SafeConfigParserTestCaseNoValue(SafeConfigParserTestCase):
+    allow_no_value = True
+
+
 class SortedTestCase(RawConfigParserTestCase):
     def newconfig(self, defaults=None):
         self.cf = self.config_class(defaults=defaults, dict_type=SortedDict)
@@ -483,13 +517,16 @@ class SortedTestCase(RawConfigParserTestCase):
                           "o3 = 2\n"
                           "o4 = 1\n\n")
 
+
 def test_main():
     test_support.run_unittest(
         ConfigParserTestCase,
         RawConfigParserTestCase,
         SafeConfigParserTestCase,
-        SortedTestCase
-    )
+        SortedTestCase,
+        SafeConfigParserTestCaseNoValue,
+        )
+
 
 if __name__ == "__main__":
     test_main()
