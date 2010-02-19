@@ -41,6 +41,11 @@ stream for text.
 Argument names are not part of the specification, and only the arguments of
 :func:`.open` are intended to be used as keyword arguments.
 
+.. seealso::
+   :mod:`sys`
+       Contains the standard IO streams: :data:`sys.stdin`, :data:`sys.stdout`,
+       and :data:`sys.stderr`.
+
 
 Module Interface
 ----------------
