@@ -141,7 +141,7 @@ class UrlParseTestCase(unittest.TestCase):
                          (base, relurl, expected))
 
     def test_unparse_parse(self):
-        for u in ['Python', './Python']:
+        for u in ['Python', './Python','x-newscheme://foo.com/stuff']:
             self.assertEqual(urlparse.urlunsplit(urlparse.urlsplit(u)), u)
             self.assertEqual(urlparse.urlunparse(urlparse.urlparse(u)), u)
 
@@ -352,6 +352,15 @@ class UrlParseTestCase(unittest.TestCase):
         # Issue 1637: http://foo.com?query is legal
         self.assertEqual(urlparse.urlparse("http://example.com?blahblah=/foo"),
                          ('http', 'example.com', '', '', 'blahblah=/foo', ''))
+
+    def test_anyscheme(self):
+        # Issue 7904: s3://foo.com/stuff has netloc "foo.com".
+        self.assertEqual(urlparse.urlparse("s3://foo.com/stuff"),
+                         ('s3','foo.com','/stuff','','',''))
+        self.assertEqual(urlparse.urlparse("x-newscheme://foo.com/stuff"),
+                         ('x-newscheme','foo.com','/stuff','','',''))
+
+
 
 def test_main():
     test_support.run_unittest(UrlParseTestCase)
