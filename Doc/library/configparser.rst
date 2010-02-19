@@ -56,19 +56,28 @@ dictionary type is passed that sorts its keys, the sections will be sorted on
 write-back, as will be the keys within each section.
 
 
-.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict)
+.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict,
+                           allow_no_value=False)
 
    The basic configuration object.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it will
    be used to create the dictionary objects for the list of sections, for the
-   options within a section, and for the default values. This class does not
+   options within a section, and for the default values.  When *allow_no_value*
+   is true (default: ``False``), options without values are accepted; the value
+   presented for these is ``None``.
+
+   This class does not
    support the magical interpolation behavior.
 
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
+   .. versionchanged:: 3.2
+      *allow_no_value* was added.
 
-.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict)
+
+.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict,
+                        allow_no_value=False)
 
    Derived class of :class:`RawConfigParser` that implements the magical
    interpolation feature and adds optional arguments to the :meth:`get` and
@@ -86,8 +95,12 @@ write-back, as will be the keys within each section.
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
+   .. versionchanged:: 3.2
+      *allow_no_value* was added.
 
-.. class:: SafeConfigParser(defaults=None, dict_type=collections.OrderedDict)
+
+.. class:: SafeConfigParser(defaults=None, dict_type=collections.OrderedDict,
+                            allow_no_value=False)
 
    Derived class of :class:`ConfigParser` that implements a more-sane variant of
    the magical interpolation feature.  This implementation is more predictable as
@@ -98,6 +111,9 @@ write-back, as will be the keys within each section.
 
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
+
+   .. versionchanged:: 3.2
+      *allow_no_value* was added.
 
 
 .. exception:: NoSectionError
@@ -447,3 +463,38 @@ The function ``opt_move`` below can be used to move options between sections::
            opt_move(config, section1, section2, option)
        else:
            config.remove_option(section1, option)
+
+Some configuration files are known to include settings without values, but which
+otherwise conform to the syntax supported by :mod:`configparser`.  The
+*allow_no_value* parameter to the constructor can be used to indicate that such
+values should be accepted:
+
+.. doctest::
+
+   >>> import configparser
+   >>> import io
+
+   >>> sample_config = """
+   ... [mysqld]
+   ... user = mysql
+   ... pid-file = /var/run/mysqld/mysqld.pid
+   ... skip-external-locking
+   ... old_passwords = 1
+   ... skip-bdb
+   ... skip-innodb
+   ... """
+   >>> config = configparser.RawConfigParser(allow_no_value=True)
+   >>> config.readfp(io.BytesIO(sample_config))
+
+   >>> # Settings with values are treated as before:
+   >>> config.get("mysqld", "user")
+   'mysql'
+
+   >>> # Settings without values provide None:
+   >>> config.get("mysqld", "skip-bdb")
+
+   >>> # Settings which aren't specified still raise an error:
+   >>> config.get("mysqld", "does-not-exist")
+   Traceback (most recent call last):
+     ...
+   configparser.NoOptionError: No option 'does-not-exist' in section: 'mysqld'
