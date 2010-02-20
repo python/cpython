@@ -174,6 +174,19 @@ class AllCommonTest(unittest.TestCase):
 
             self.assertRaises(TypeError, genericpath.samefile)
 
+
+# XXX at some point this should probably go in some class that contains common
+# tests for all test_*path modules.
+def _issue3426(self, cwd, abspath):
+    # Issue 3426: check that abspath retuns unicode when the arg is unicode
+    # and str when it's str, with both ASCII and non-ASCII cwds
+    with test_support.temp_cwd(cwd):
+        for path in ('', 'foo', 'f\xf2\xf2', '/foo', 'C:\\'):
+            self.assertIsInstance(abspath(path), str)
+        for upath in (u'', u'fuu', u'f\xf9\xf9', u'/fuu', u'U:\\'):
+            self.assertIsInstance(abspath(upath), unicode)
+
+
 def test_main():
     test_support.run_unittest(AllCommonTest)
 
