@@ -146,7 +146,11 @@ def normpath(path):
 def abspath(path):
     """Return the absolute version of a path"""
     if not isabs(path):
-        path = join(os.getcwd(), path)
+        if isinstance(path, unicode):
+            cwd = os.getcwdu()
+        else:
+            cwd = os.getcwd()
+        path = join(cwd, path)
     return normpath(path)
 
 # realpath is a no-op on systems without islink support
