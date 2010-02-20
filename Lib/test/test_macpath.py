@@ -6,7 +6,7 @@ import unittest
 class MacPathTestCase(unittest.TestCase):
 
     def test_abspath(self):
-        self.assertTrue(macpath.abspath("xx:yy") == "xx:yy")
+        self.assertEqual(macpath.abspath("xx:yy"), "xx:yy")
 
         # Issue 3426: check that abspath retuns unicode when the arg is unicode
         # and str when it's str, with both ASCII and non-ASCII cwds
@@ -31,38 +31,38 @@ class MacPathTestCase(unittest.TestCase):
 
     def test_commonprefix(self):
         commonprefix = macpath.commonprefix
-        self.assertTrue(commonprefix(["home:swenson:spam", "home:swen:spam"])
-                     == "home:swen")
-        self.assertTrue(commonprefix([":home:swen:spam", ":home:swen:eggs"])
-                     == ":home:swen:")
-        self.assertTrue(commonprefix([":home:swen:spam", ":home:swen:spam"])
-                     == ":home:swen:spam")
+        self.assertEqual(commonprefix(["home:swenson:spam", "home:swen:spam"]),
+                         "home:swen")
+        self.assertEqual(commonprefix([":home:swen:spam", ":home:swen:eggs"]),
+                         ":home:swen:")
+        self.assertEqual(commonprefix([":home:swen:spam", ":home:swen:spam"]),
+                         ":home:swen:spam")
 
     def test_split(self):
         split = macpath.split
-        self.assertEquals(split("foo:bar"),
+        self.assertEqual(split("foo:bar"),
                           ('foo:', 'bar'))
-        self.assertEquals(split("conky:mountpoint:foo:bar"),
+        self.assertEqual(split("conky:mountpoint:foo:bar"),
                           ('conky:mountpoint:foo', 'bar'))
 
-        self.assertEquals(split(":"), ('', ''))
-        self.assertEquals(split(":conky:mountpoint:"),
+        self.assertEqual(split(":"), ('', ''))
+        self.assertEqual(split(":conky:mountpoint:"),
                           (':conky:mountpoint', ''))
 
     def test_splitdrive(self):
         splitdrive = macpath.splitdrive
-        self.assertEquals(splitdrive("foo:bar"), ('', 'foo:bar'))
-        self.assertEquals(splitdrive(":foo:bar"), ('', ':foo:bar'))
+        self.assertEqual(splitdrive("foo:bar"), ('', 'foo:bar'))
+        self.assertEqual(splitdrive(":foo:bar"), ('', ':foo:bar'))
 
     def test_splitext(self):
         splitext = macpath.splitext
-        self.assertEquals(splitext(":foo.ext"), (':foo', '.ext'))
-        self.assertEquals(splitext("foo:foo.ext"), ('foo:foo', '.ext'))
-        self.assertEquals(splitext(".ext"), ('.ext', ''))
-        self.assertEquals(splitext("foo.ext:foo"), ('foo.ext:foo', ''))
-        self.assertEquals(splitext(":foo.ext:"), (':foo.ext:', ''))
-        self.assertEquals(splitext(""), ('', ''))
-        self.assertEquals(splitext("foo.bar.ext"), ('foo.bar', '.ext'))
+        self.assertEqual(splitext(":foo.ext"), (':foo', '.ext'))
+        self.assertEqual(splitext("foo:foo.ext"), ('foo:foo', '.ext'))
+        self.assertEqual(splitext(".ext"), ('.ext', ''))
+        self.assertEqual(splitext("foo.ext:foo"), ('foo.ext:foo', ''))
+        self.assertEqual(splitext(":foo.ext:"), (':foo.ext:', ''))
+        self.assertEqual(splitext(""), ('', ''))
+        self.assertEqual(splitext("foo.bar.ext"), ('foo.bar', '.ext'))
 
 
 def test_main():

@@ -7,12 +7,6 @@ import os
 
 class BoolTest(unittest.TestCase):
 
-    def assertIs(self, a, b):
-        self.assertTrue(a is b)
-
-    def assertIsNot(self, a, b):
-        self.assertTrue(a is not b)
-
     def test_subclass(self):
         try:
             class C(bool):
