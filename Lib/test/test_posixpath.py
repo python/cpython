@@ -390,6 +390,21 @@ class PosixPathTest(unittest.TestCase):
     def test_abspath(self):
         self.assert_("foo" in posixpath.abspath("foo"))
 
+        # Issue 3426: check that abspath retuns unicode when the arg is unicode
+        # and str when it's str, with both ASCII and non-ASCII cwds
+        saved_cwd = os.getcwd()
+        for cwd in (u'cwd', u'\xe7w\xf0'):
+            try:
+                os.mkdir(cwd)
+                os.chdir(cwd)
+                for path in ('', 'foo', 'f\xf2\xf2', '/foo', 'C:\\'):
+                    self.assertTrue(isinstance(posixpath.abspath(path), str))
+                for upath in (u'', u'fuu', u'f\xf9\xf9', u'/fuu', u'U:\\'):
+                    self.assertTrue(isinstance(posixpath.abspath(upath), unicode))
+            finally:
+                os.chdir(saved_cwd)
+                os.rmdir(cwd)
+
         self.assertRaises(TypeError, posixpath.abspath)
 
     def test_realpath(self):
