@@ -177,7 +177,7 @@ class URLopener:
         fullurl = unwrap(toBytes(fullurl))
         # percent encode url. fixing lame server errors like space within url
         # parts
-        fullurl = quote(fullurl, safe="%/:=&?~#+!$,;'@()*[]")
+        fullurl = quote(fullurl, safe="%/:=&?~#+!$,;'@()*[]|")
         if self.tempcache and fullurl in self.tempcache:
             filename, headers = self.tempcache[fullurl]
             fp = open(filename, 'rb')
