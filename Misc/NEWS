@@ -66,6 +66,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3426: ``os.path.abspath`` now returns unicode when its arg is unicode.
+
 - Issue #7835: shelve should no longer produce mysterious warnings during
   interpreter shutdown.
 
