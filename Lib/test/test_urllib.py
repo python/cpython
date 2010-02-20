@@ -112,7 +112,6 @@ class urlopen_FileTests(unittest.TestCase):
         for line in self.returned_obj.__iter__():
             self.assertEqual(line, self.text)
 
-
 class ProxyTests(unittest.TestCase):
 
     def setUp(self):
@@ -865,6 +864,11 @@ class URLopener_Tests(unittest.TestCase):
 
         self.assertEqual(DummyURLopener().open(
             'spam://example/ /'),'//example/%20/')
+
+        # test the safe characters are not quoted by urlopen
+        self.assertEqual(DummyURLopener().open(
+            "spam://c:|windows%/:=&?~#+!$,;'@()*[]|/path/"),
+            "//c:|windows%/:=&?~#+!$,;'@()*[]|/path/")
 
 # Just commented them out.
 # Can't really tell why keep failing in windows and sparc.
