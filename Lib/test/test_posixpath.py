@@ -25,9 +25,6 @@ class PosixPathTest(unittest.TestCase):
             test_support.unlink(test_support.TESTFN + suffix)
             safe_rmdir(test_support.TESTFN + suffix)
 
-    def assertIs(self, a, b):
-        self.assertTrue(a is b)
-
     def test_normcase(self):
         # Check that normcase() is idempotent
         p = "FoO/./BaR"
@@ -158,8 +155,8 @@ class PosixPathTest(unittest.TestCase):
             f.close()
             self.assertEqual(d, "foobar")
 
-            self.assertTrue(
-                posixpath.getctime(test_support.TESTFN) <=
+            self.assertLessEqual(
+                posixpath.getctime(test_support.TESTFN),
                 posixpath.getmtime(test_support.TESTFN)
             )
         finally:
@@ -384,7 +381,7 @@ class PosixPathTest(unittest.TestCase):
         self.assertRaises(TypeError, posixpath.normpath)
 
     def test_abspath(self):
-        self.assertTrue("foo" in posixpath.abspath("foo"))
+        self.assertIn("foo", posixpath.abspath("foo"))
 
         # Issue 3426: check that abspath retuns unicode when the arg is unicode
         # and str when it's str, with both ASCII and non-ASCII cwds
@@ -398,7 +395,7 @@ class PosixPathTest(unittest.TestCase):
         self.assertRaises(TypeError, posixpath.abspath)
 
     def test_realpath(self):
-        self.assertTrue("foo" in realpath("foo"))
+        self.assertIn("foo", realpath("foo"))
         self.assertRaises(TypeError, posixpath.realpath)
 
     if hasattr(os, "symlink"):
@@ -470,7 +467,8 @@ class PosixPathTest(unittest.TestCase):
                 self.assertEqual(realpath(ABSTFN + "/link-y/.."), ABSTFN + "/k")
                 # Relative path.
                 os.chdir(dirname(ABSTFN))
-                self.assertEqual(realpath(basename(ABSTFN) + "/link-y/.."), ABSTFN + "/k")
+                self.assertEqual(realpath(basename(ABSTFN) + "/link-y/.."),
+                                 ABSTFN + "/k")
             finally:
                 os.chdir(old_path)
                 test_support.unlink(ABSTFN + "/link-y")
