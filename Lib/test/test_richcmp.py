@@ -279,9 +279,6 @@ class DictTest(unittest.TestCase):
 
 class ListTest(unittest.TestCase):
 
-    def assertIs(self, a, b):
-        self.assertTrue(a is b)
-
     def test_coverage(self):
         # exercise all comparisons for lists
         x = [42]

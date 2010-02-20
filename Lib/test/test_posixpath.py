@@ -25,9 +25,6 @@ class PosixPathTest(unittest.TestCase):
             support.unlink(support.TESTFN + suffix)
             safe_rmdir(support.TESTFN + suffix)
 
-    def assertIs(self, a, b):
-        self.assertTrue(a is b)
-
     def test_normcase(self):
         # Check that normcase() is idempotent
         p = "FoO/./BaR"
@@ -229,8 +226,8 @@ class PosixPathTest(unittest.TestCase):
             f.close()
             self.assertEqual(d, b"foobar")
 
-            self.assertTrue(
-                posixpath.getctime(support.TESTFN) <=
+            self.assertLessEqual(
+                posixpath.getctime(support.TESTFN),
                 posixpath.getmtime(support.TESTFN)
             )
         finally:
@@ -560,7 +557,8 @@ class PosixPathTest(unittest.TestCase):
                 self.assertEqual(realpath(ABSTFN + "/link-y/.."), ABSTFN + "/k")
                 # Relative path.
                 os.chdir(dirname(ABSTFN))
-                self.assertEqual(realpath(basename(ABSTFN) + "/link-y/.."), ABSTFN + "/k")
+                self.assertEqual(realpath(basename(ABSTFN) + "/link-y/.."),
+                                 ABSTFN + "/k")
             finally:
                 os.chdir(old_path)
                 support.unlink(ABSTFN + "/link-y")

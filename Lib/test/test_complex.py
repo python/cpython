@@ -65,9 +65,6 @@ class ComplexTest(unittest.TestCase):
         self.assertCloseAbs(x.real, y.real, eps)
         self.assertCloseAbs(x.imag, y.imag, eps)
 
-    def assertIs(self, a, b):
-        self.assertTrue(a is b)
-
     def check_div(self, x, y):
         """Compute complex z=x*y, and check that z/x==y and z/y==x."""
         z = x * y
