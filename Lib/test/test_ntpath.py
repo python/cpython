@@ -160,12 +160,24 @@ class TestNtpath(unittest.TestCase):
         # the rest of the tests for the ntpath module to be run to completion
         # on any platform, since most of the module is intended to be usable
         # from any platform.
+        # XXX this needs more tests
         try:
             import nt
         except ImportError:
-            pass
+            # check that the function is there even if we are not on Windows
+            ntpath.abspath
         else:
             tester('ntpath.abspath("C:\\")', "C:\\")
+
+            # Issue 3426: check that abspath retuns unicode when the arg is
+            # unicode and str when it's str, with both ASCII and non-ASCII cwds
+            for cwd in (u'cwd', u'\xe7w\xf0'):
+                with test_support.temp_cwd(cwd):
+                    for path in ('', 'foo', 'f\xf2\xf2', '/foo', 'C:\\'):
+                        self.assertIsInstance(ntpath.abspath(path), str)
+                    for upath in (u'', u'fuu', u'f\xf9\xf9', u'/fuu', u'U:\\'):
+                        self.assertIsInstance(ntpath.abspath(upath), unicode)
+
 
     def test_relpath(self):
         currentdir = os.path.split(os.getcwd())[-1]

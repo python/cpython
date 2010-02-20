@@ -15,6 +15,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3426: ``os.path.abspath`` now returns unicode when its arg is unicode.
+
 - Issue #7633: In the decimal module, Context class methods (with the
   exception of canonical and is_canonical) now accept instances of int
   and long wherever a Decimal instance is accepted, and implicitly
@@ -28,7 +30,7 @@ Library
   argument added to the TextTestRunner constructor allowing a different result
   class to be used without having to subclass.
 
-- Issue 7588: ``unittest.TextTestResult.getDescription`` now includes the test
+- Issue #7588: ``unittest.TextTestResult.getDescription`` now includes the test
   name in failure reports even if the test has a docstring.
 
 Extension Modules

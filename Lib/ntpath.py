@@ -449,7 +449,11 @@ except ImportError: # not running on Windows - mock up something sensible
     def abspath(path):
         """Return the absolute version of a path."""
         if not isabs(path):
-            path = join(os.getcwd(), path)
+            if isinstance(path, unicode):
+                cwd = os.getcwdu()
+            else:
+                cwd = os.getcwd()
+            path = join(cwd, path)
         return normpath(path)
 
 else:  # use native Windows method on Windows
@@ -461,6 +465,8 @@ else:  # use native Windows method on Windows
                 path = _getfullpathname(path)
             except WindowsError:
                 pass # Bad path - return unchanged.
+        elif isinstance(path, unicode):
+            path = os.getcwdu()
         else:
             path = os.getcwd()
         return normpath(path)
