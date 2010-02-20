@@ -7,15 +7,15 @@ from fnmatch import fnmatch, fnmatchcase
 
 
 class FnmatchTestCase(unittest.TestCase):
-    def check_match(self, filename, pattern, should_match=1):
+    def check_match(self, filename, pattern, should_match=1, fn=fnmatch):
         if should_match:
-            self.assert_(fnmatch(filename, pattern),
-                         "expected %r to match pattern %r"
-                         % (filename, pattern))
+            self.assertTrue(fn(filename, pattern),
+                            "expected %r to match pattern %r"
+                            % (filename, pattern))
         else:
-            self.assert_(not fnmatch(filename, pattern),
-                         "expected %r not to match pattern %r"
-                         % (filename, pattern))
+            self.assertTrue(not fn(filename, pattern),
+                            "expected %r not to match pattern %r"
+                            % (filename, pattern))
 
     def test_fnmatch(self):
         check = self.check_match
@@ -46,8 +46,8 @@ class FnmatchTestCase(unittest.TestCase):
 
     def test_fnmatchcase(self):
         check = self.check_match
-        check('AbC', 'abc', 0)
-        check('abc', 'AbC', 0)
+        check('AbC', 'abc', 0, fnmatchcase)
+        check('abc', 'AbC', 0, fnmatchcase)
 
 
 def test_main():
