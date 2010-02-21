@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 4?
 Core and Builtins
 -----------------
 
+- Issue #5211: the complex type no longer uses implicit coercion in
+  mixed-type binary arithmetic operations.
+
 Library
 -------
 

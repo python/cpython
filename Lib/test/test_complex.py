@@ -358,6 +358,61 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex(complex1(1j)), 2j)
         self.assertRaises(TypeError, complex, complex2(1j))
 
+    def test_subclass(self):
+        class xcomplex(complex):
+            def __add__(self,other):
+                return xcomplex(complex(self) + other)
+            __radd__ = __add__
+
+            def __sub__(self,other):
+                return xcomplex(complex(self) + other)
+            __rsub__ = __sub__
+
+            def __mul__(self,other):
+                return xcomplex(complex(self) * other)
+            __rmul__ = __mul__
+
+            def __div__(self,other):
+                return xcomplex(complex(self) / other)
+
+            def __rdiv__(self,other):
+                return xcomplex(other / complex(self))
+
+            __truediv__ = __div__
+            __rtruediv__ = __rdiv__
+
+            def __floordiv__(self,other):
+                return xcomplex(complex(self) // other)
+
+            def __rfloordiv__(self,other):
+                return xcomplex(other // complex(self))
+
+            def __pow__(self,other):
+                return xcomplex(complex(self) ** other)
+
+            def __rpow__(self,other):
+                return xcomplex(other ** complex(self) )
+
+            def __mod__(self,other):
+                return xcomplex(complex(self) % other)
+
+            def __rmod__(self,other):
+                return xcomplex(other % complex(self))
+
+        infix_binops = ('+', '-', '*', '**', '%', '//', '/')
+        xcomplex_values = (xcomplex(1), xcomplex(123.0),
+                           xcomplex(-10+2j), xcomplex(3+187j),
+                           xcomplex(3-78j))
+        test_values = (1, 123.0, 10-19j, xcomplex(1+2j),
+                       xcomplex(1+87j), xcomplex(10+90j))
+
+        for op in infix_binops:
+            for x in xcomplex_values:
+                for y in test_values:
+                    a = 'x %s y' % op
+                    b = 'y %s x' % op
+                    self.assertTrue(type(eval(a)) is type(eval(b)) is xcomplex)
+
     def test_hash(self):
         for x in xrange(-30, 30):
             self.assertEqual(hash(x), hash(complex(x, 0)))
