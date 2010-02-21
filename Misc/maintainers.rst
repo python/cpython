@@ -206,7 +206,7 @@ termios
 test
 textwrap
 threading
-time                brett.cannon
+time
 timeit
 tkinter             gpolo
 token               georg.brandl
