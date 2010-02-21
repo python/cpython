@@ -178,6 +178,18 @@ class TestMessageAPI(TestEmailBase):
         self.assertRaises(errors.HeaderParseError,
                           msg.set_boundary, 'BOUNDARY')
 
+    def test_message_rfc822_only(self):
+        # Issue 7970: message/rfc822 not in multipart parsed by
+        # HeaderParser caused an exception when flattened.
+        fp = openfile(findfile('msg_46.txt'))
+        msgdata = fp.read()
+        parser = HeaderParser()
+        msg = parser.parsestr(msgdata)
+        out = StringIO()
+        gen = Generator(out, True, 0)
+        gen.flatten(msg, False)
+        self.assertEqual(out.getvalue(), msgdata)
+
     def test_get_decoded_payload(self):
         eq = self.assertEqual
         msg = self._msgobj('msg_10.txt')

@@ -242,6 +242,9 @@ C-API
 Library
 -------
 
+- Issue #7970: email.Generator.flatten now correctly flattens message/rfc822
+  messages parsed by email.Parser.HeaderParser.
+
 - Issue #7361: Importlib was not properly checking the number of bytes in
   bytecode file when it was less then 8 bytes.
 
