@@ -2271,12 +2271,14 @@ will not be supported.
 *
 
   In the current implementation, the built-in numeric types :class:`int`,
-  :class:`long` and :class:`float` do not use coercion; the type :class:`complex`
-  however does use coercion for binary operators and rich comparisons, despite
-  the above rules.  The difference can become apparent when subclassing these
-  types.  Over time, the type :class:`complex` may be fixed to avoid coercion.
+  :class:`long`, :class:`float`, and :class:`complex` do not use coercion.
   All these types implement a :meth:`__coerce__` method, for use by the built-in
   :func:`coerce` function.
+
+  .. versionchanged:: 2.7
+
+     The complex type no longer makes implicit calls to the :meth:`__coerce__`
+     method for mixed-type binary arithmetic operations.
 
 
 .. _context-managers:
