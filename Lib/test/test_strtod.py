@@ -80,7 +80,7 @@ def strtod(s, mant_dig=53, min_exp = -1021, max_exp = 1024):
         hexdigs,
         e + 4*hexdigs)
 
-TEST_SIZE = 16
+TEST_SIZE = 10
 
 class StrtodTests(unittest.TestCase):
     def check_strtod(self, s):
@@ -111,7 +111,7 @@ class StrtodTests(unittest.TestCase):
             lower = -(-2**53//5**k)
             if lower % 2 == 0:
                 lower += 1
-            for i in range(10 * TEST_SIZE):
+            for i in range(TEST_SIZE):
                 # Select a random odd n in [2**53/5**k,
                 # 2**54/5**k). Then n * 10**k gives a halfway case
                 # with small number of significant digits.
@@ -147,34 +147,29 @@ class StrtodTests(unittest.TestCase):
 
     def test_halfway_cases(self):
         # test halfway cases for the round-half-to-even rule
-        for i in range(1000):
-            for j in range(TEST_SIZE):
-                # bit pattern for a random finite positive (or +0.0) float
-                bits = random.randrange(2047*2**52)
+        for i in range(100 * TEST_SIZE):
+            # bit pattern for a random finite positive (or +0.0) float
+            bits = random.randrange(2047*2**52)
 
-                # convert bit pattern to a number of the form m * 2**e
-                e, m = divmod(bits, 2**52)
-                if e:
-                    m, e = m + 2**52, e - 1
-                e -= 1074
+            # convert bit pattern to a number of the form m * 2**e
+            e, m = divmod(bits, 2**52)
+            if e:
+                m, e = m + 2**52, e - 1
+            e -= 1074
 
-                # add 0.5 ulps
-                m, e = 2*m + 1, e - 1
+            # add 0.5 ulps
+            m, e = 2*m + 1, e - 1
 
-                # convert to a decimal string
-                if e >= 0:
-                    digits = m << e
-                    exponent = 0
-                else:
-                    # m * 2**e = (m * 5**-e) * 10**e
-                    digits = m * 5**-e
-                    exponent = e
-                s = '{}e{}'.format(digits, exponent)
-                self.check_strtod(s)
-
-                # get expected answer via struct, to triple check
-                #fs = struct.unpack('<d', struct.pack('<Q', bits + (bits&1)))[0]
-                #self.assertEqual(fs, float(s))
+            # convert to a decimal string
+            if e >= 0:
+                digits = m << e
+                exponent = 0
+            else:
+                # m * 2**e = (m * 5**-e) * 10**e
+                digits = m * 5**-e
+                exponent = e
+            s = '{}e{}'.format(digits, exponent)
+            self.check_strtod(s)
 
     def test_boundaries(self):
         # boundaries expressed as triples (n, e, u), where
@@ -188,11 +183,10 @@ class StrtodTests(unittest.TestCase):
             ]
         for n, e, u in boundaries:
             for j in range(1000):
-                for i in range(TEST_SIZE):
-                    digits = n + random.randrange(-3*u, 3*u)
-                    exponent = e
-                    s = '{}e{}'.format(digits, exponent)
-                    self.check_strtod(s)
+                digits = n + random.randrange(-3*u, 3*u)
+                exponent = e
+                s = '{}e{}'.format(digits, exponent)
+                self.check_strtod(s)
                 n *= 10
                 u *= 10
                 e -= 1
@@ -211,7 +205,7 @@ class StrtodTests(unittest.TestCase):
     def test_bigcomp(self):
         for ndigs in 5, 10, 14, 15, 16, 17, 18, 19, 20, 40, 41, 50:
             dig10 = 10**ndigs
-            for i in range(100 * TEST_SIZE):
+            for i in range(10 * TEST_SIZE):
                 digits = random.randrange(dig10)
                 exponent = random.randrange(-400, 400)
                 s = '{}e{}'.format(digits, exponent)
