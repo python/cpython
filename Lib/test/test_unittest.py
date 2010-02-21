@@ -16,6 +16,7 @@ import types
 from copy import deepcopy
 from cStringIO import StringIO
 import pickle
+import warnings
 
 
 ### Support code
@@ -2573,10 +2574,12 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         with self.assertRaises(self.failureException):
             self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
 
-        one = ''.join(chr(i) for i in range(255))
-        # this used to cause a UnicodeDecodeError constructing the failure msg
-        with self.assertRaises(self.failureException):
-            self.assertDictContainsSubset({'foo': one}, {'foo': u'\uFFFD'})
+        with warnings.catch_warnings(record=True):
+            # silence the UnicodeWarning
+            one = ''.join(chr(i) for i in range(255))
+            # this used to cause a UnicodeDecodeError constructing the failure msg
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'foo': one}, {'foo': u'\uFFFD'})
 
     def testAssertEqual(self):
         equal_pairs = [
