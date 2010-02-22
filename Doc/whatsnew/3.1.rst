@@ -119,6 +119,12 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
+* Directories and zip archives containing a :file:`__main__.py`
+  file can now be executed directly by passing their name to the
+  interpreter. The directory/zipfile is automatically inserted as the
+  first entry in sys.path.  (Suggestion and initial patch by Andy Chu;
+  revised patch by Phillip J. Eby and Nick Coghlan; :issue:`1739468`.)
+
 * The :func:`int` type gained a ``bit_length`` method that returns the
   number of bits necessary to represent its argument in binary::
 
