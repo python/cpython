@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 4?
 Core and Builtins
 -----------------
 
+- Issue #2560: remove an unnecessary 'for' loop from my_fgets() in
+  Parser/myreadline.c.
+
 - Issue #7988: Fix default alignment to be right aligned for
   complex.__format__. Now it matches other numeric types.
 
