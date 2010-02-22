@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7988: Fix default alignment to be right aligned for
+  complex.__format__. Now it matches other numeric types.
+
 - Issue #7385: Fix a crash in `MemoryView_FromObject` when
   `PyObject_GetBuffer` fails.  Patch by Florent Xicluna.
 

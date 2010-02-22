@@ -491,6 +491,8 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(format(1.5+3j, '^20'),   '      (1.5+3j)      ')
         self.assertEqual(format(1.123-3.123j, '^20.2'), '     (1.1-3.1j)     ')
 
+        self.assertEqual(format(1.5+3j, '20.2f'), '          1.50+3.00j')
+        self.assertEqual(format(1.5+3j, '>20.2f'), '          1.50+3.00j')
         self.assertEqual(format(1.5+3j, '<20.2f'), '1.50+3.00j          ')
         self.assertEqual(format(1.5e20+3j, '<20.2f'), '150000000000000000000.00+3.00j')
         self.assertEqual(format(1.5e20+3j, '>40.2f'), '          150000000000000000000.00+3.00j')
