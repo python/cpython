@@ -1,6 +1,0 @@
-
-static int
-$abbrev$_compare($abbrev$object *v, $abbrev$object *w)
-{
-	/* XXXX Compare objects and return -1, 0 or 1 */
-}

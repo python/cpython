@@ -25,9 +25,6 @@ i18n		Tools for internationalization. pygettext.py
 		and msgfmt.py generates a binary message catalog 
 		from a catalog in text format.
 
-modulator	Interactively generate boiler plate for an extension
-		module.	 Works easiest if you have Tk.
-
 pynche		A Tkinter-based color editor.
 
 scripts		A number of useful single-file programs, e.g. tabnanny.py
