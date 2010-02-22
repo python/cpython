@@ -117,7 +117,7 @@ class Ignore:
         self._mods = modules or []
         self._dirs = dirs or []
 
-        self._dirs = map(os.path.normpath, self._dirs)
+        self._dirs = list(map(os.path.normpath, self._dirs))
         self._ignore = { '<string>': 1 }
 
     def names(self, filename, modulename):
