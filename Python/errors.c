@@ -360,25 +360,17 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 	PyObject *message;
 	PyObject *v;
 	int i = errno;
-#ifdef PLAN9
-	char errbuf[ERRMAX];
-#else
 #ifndef MS_WINDOWS
 	char *s;
 #else
 	WCHAR *s_buf = NULL;
 #endif /* Unix/Windows */
-#endif /* PLAN 9*/
 
 #ifdef EINTR
 	if (i == EINTR && PyErr_CheckSignals())
 		return NULL;
 #endif
 
-#ifdef PLAN9
-	rerrstr(errbuf, sizeof errbuf);
-	message = PyUnicode_DecodeUTF8(errbuf, strlen(errbuf), "ignore");
-#else
 #ifndef MS_WINDOWS
 	if (i == 0)
 		s = "Error"; /* Sometimes errno didn't get set */
@@ -425,7 +417,6 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 		}
 	}
 #endif /* Unix/Windows */
-#endif /* PLAN 9*/
 
 	if (message == NULL)
 	{
