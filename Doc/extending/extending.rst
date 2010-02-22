@@ -372,12 +372,7 @@ source distribution.
 
 A more substantial example module is included in the Python source distribution
 as :file:`Modules/xxmodule.c`.  This file may be used as a  template or simply
-read as an example.  The :program:`modulator.py` script included in the source
-distribution or Windows install provides  a simple graphical user interface for
-declaring the functions and objects which a module should implement, and can
-generate a template which can be filled in.  The script lives in the
-:file:`Tools/modulator/` directory; see the :file:`README` file there for more
-information.
+read as an example.
 
 
 .. _compilation:
