@@ -2590,8 +2590,6 @@ PyCurses_Use_Env(PyObject *self, PyObject *args)
 {
   int flag;
 
-  PyCursesInitialised
-
   switch(PyTuple_Size(args)) {
   case 1:
     if (!PyArg_ParseTuple(args,"i;True(1), False(0)",&flag))
