@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7597: curses.use_env() can now be called before initscr().
+  Noted by Kan-Ru Chen.
+
 - Issue #7970: email.Generator.flatten now correctly flattens message/rfc822
   messages parsed by email.Parser.HeaderParser.
 
