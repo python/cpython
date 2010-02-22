@@ -267,10 +267,13 @@ _safechars = string.ascii_letters + string.digits + '!@%_-+=:,./' # Safe unquote
 _funnychars = '"`$\\'                           # Unsafe inside "double quotes"
 
 def quote(file):
+    ''' return a shell-escaped version of the file string '''
     for c in file:
         if c not in _safechars:
             break
     else:
+        if not file:
+            return "''"
         return file
     if '\'' not in file:
         return '\'' + file + '\''

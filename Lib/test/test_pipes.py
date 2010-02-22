@@ -74,6 +74,8 @@ class SimplePipeTests(unittest.TestCase):
             self.assertEqual(pipes.quote("test%s'name'" % u),
                               '"test\\%s\'name\'"' % u)
 
+        self.assertEqual(pipes.quote(''), "''")
+
     def testRepr(self):
         t = pipes.Template()
         self.assertEqual(repr(t), "<Template instance, steps=[]>")
