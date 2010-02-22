@@ -51,21 +51,6 @@ The return value (*rv*) for these functions should be interpreted as follows:
 The following functions provide locale-independent string to number conversions.
 
 
-.. cfunction:: double PyOS_ascii_strtod(const char *nptr, char **endptr)
-
-   Convert a string to a :ctype:`double`. This function behaves like the Standard C
-   function :cfunc:`strtod` does in the C locale. It does this without changing the
-   current locale, since that would not be thread-safe.
-
-   :cfunc:`PyOS_ascii_strtod` should typically be used for reading configuration
-   files or other non-user input that should be locale independent.
-
-   See the Unix man page :manpage:`strtod(2)` for details.
-
-   .. deprecated:: 3.1
-      Use :cfunc:`PyOS_string_to_double` instead.
-
-
 .. cfunction:: double PyOS_string_to_double(const char *s, char **endptr, PyObject *overflow_exception)
 
    Convert a string ``s`` to a :ctype:`double`, raising a Python
@@ -100,20 +85,6 @@ The following functions provide locale-independent string to number conversions.
    .. versionadded:: 3.1
 
 
-.. cfunction:: char* PyOS_ascii_formatd(char *buffer, size_t buf_len, const char *format, double d)
-
-   Convert a :ctype:`double` to a string using the ``'.'`` as the decimal
-   separator. *format* is a :cfunc:`printf`\ -style format string specifying the
-   number format. Allowed conversion characters are ``'e'``, ``'E'``, ``'f'``,
-   ``'F'``, ``'g'`` and ``'G'``.
-
-   The return value is a pointer to *buffer* with the converted string or NULL if
-   the conversion failed.
-
-   .. deprecated:: 3.1
-     Use :cfunc:`PyOS_double_to_string` instead.
-
-
 .. cfunction:: char* PyOS_double_to_string(double val, char format_code, int precision, int flags, int *ptype)
 
    Convert a :ctype:`double` *val* to a string using supplied
@@ -146,16 +117,6 @@ The following functions provide locale-independent string to number conversions.
    returned string by calling :cfunc:`PyMem_Free`.
 
    .. versionadded:: 3.1
-
-
-.. cfunction:: double PyOS_ascii_atof(const char *nptr)
-
-   Convert a string to a :ctype:`double` in a locale-independent way.
-
-   See the Unix man page :manpage:`atof(2)` for details.
-
-   .. deprecated:: 3.1
-      Use :cfunc:`PyOS_string_to_double` instead.
 
 
 .. cfunction:: char* PyOS_stricmp(char *s1, char *s2)

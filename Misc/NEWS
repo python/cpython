@@ -12,6 +12,11 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #5988: Remove deprecated functions PyOS_ascii_formatd,
+  PyOS_ascii_strtod, and PyOS_ascii_atof. Use PyOS_double_to_string
+  and PyOS_string_to_double instead. See issue #5835 for the original
+  deprecations.
+
 - Issue #7385: Fix a crash in `MemoryView_FromObject` when
   `PyObject_GetBuffer` fails.  Patch by Florent Xicluna.
 
