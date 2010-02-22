@@ -387,22 +387,32 @@ class _Environ(MutableMapping):
         self.data = data = {}
         for key, value in environ.items():
             data[keymap(key)] = str(value)
+
     def __getitem__(self, key):
         return self.data[self.keymap(key)]
+
     def __setitem__(self, key, value):
         value = str(value)
         self.putenv(key, value)
         self.data[self.keymap(key)] = value
+
     def __delitem__(self, key):
         self.unsetenv(key)
         del self.data[self.keymap(key)]
+
     def __iter__(self):
         for key in self.data:
             yield key
+
     def __len__(self):
         return len(self.data)
+
+    def __repr__(self):
+        return 'environ({!r})'.format(self.data)
+
     def copy(self):
         return dict(self)
+
     def setdefault(self, key, value):
         if key not in self:
             self[key] = value
