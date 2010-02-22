@@ -1215,9 +1215,12 @@ In addition to the three supplied contexts, new contexts can be created with the
          - at least one of ``x`` or ``y`` must be nonzero
          - ``modulo`` must be nonzero and have at most 'precision' digits
 
-      The result of ``Context.power(x, y, modulo)`` is identical to the result
-      that would be obtained by computing ``(x**y) % modulo`` with unbounded
-      precision, but is computed more efficiently.  It is always exact.
+      The value resulting from ``Context.power(x, y, modulo)`` is
+      equal to the value that would be obtained by computing ``(x**y)
+      % modulo`` with unbounded precision, but is computed more
+      efficiently.  The exponent of the result is zero, regardless of
+      the exponents of ``x``, ``y`` and ``modulo``.  The result is
+      always exact.
 
 
    .. method:: quantize(x, y)
