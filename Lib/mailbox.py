@@ -892,17 +892,9 @@ class MH(Mailbox):
                 raise KeyError('No message with key: %s' % key)
             else:
                 raise
-        try:
-            if self._locked:
-                _lock_file(f)
-            try:
-                f.close()
-                os.remove(os.path.join(self._path, str(key)))
-            finally:
-                if self._locked:
-                    _unlock_file(f)
-        finally:
+        else:
             f.close()
+            os.remove(path)
 
     def __setitem__(self, key, message):
         """Replace the keyed message; raise KeyError if it doesn't exist."""

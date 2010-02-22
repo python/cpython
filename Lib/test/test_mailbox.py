@@ -979,6 +979,13 @@ class TestMH(TestMailbox):
         key0 = self._box.add(msg0)
         refmsg0 = self._box.get_message(key0)
 
+    def test_issue7627(self):
+        msg0 = mailbox.MHMessage(self._template % 0)
+        key0 = self._box.add(msg0)
+        self._box.lock()
+        self._box.remove(key0)
+        self._box.unlock()
+
     def test_pack(self):
         # Pack the contents of the mailbox
         msg0 = mailbox.MHMessage(self._template % 0)
