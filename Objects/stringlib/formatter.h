@@ -123,6 +123,26 @@ typedef struct {
     STRINGLIB_CHAR type;
 } InternalFormatSpec;
 
+
+#if 0
+/* Occassionally useful for debugging. Should normally be commented out. */
+static void
+DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
+{
+    printf("internal format spec: fill_char %d\n", format->fill_char);
+    printf("internal format spec: align %d\n", format->align);
+    printf("internal format spec: alternate %d\n", format->alternate);
+    printf("internal format spec: sign %d\n", format->sign);
+    printf("internal format spec: width %d\n", format->width);
+    printf("internal format spec: thousands_separators %d\n",
+           format->thousands_separators);
+    printf("internal format spec: precision %d\n", format->precision);
+    printf("internal format spec: type %c\n", format->type);
+    printf("\n");
+}
+#endif
+
+
 /*
   ptr points to the start of the format_spec, end points just past its end.
   fills in format with the parsed information.
@@ -133,7 +153,8 @@ static int
 parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
                                   Py_ssize_t format_spec_len,
                                   InternalFormatSpec *format,
-                                  char default_type)
+                                  char default_type,
+                                  char default_align)
 {
     STRINGLIB_CHAR *ptr = format_spec;
     STRINGLIB_CHAR *end = format_spec + format_spec_len;
@@ -144,7 +165,7 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     Py_ssize_t consumed;
 
     format->fill_char = '\0';
-    format->align = '\0';
+    format->align = default_align;
     format->alternate = 0;
     format->sign = '\0';
     format->width = -1;
@@ -279,14 +300,19 @@ calc_padding(Py_ssize_t nchars, Py_ssize_t width, STRINGLIB_CHAR align,
         *n_total = nchars;
     }
 
-    /* figure out how much leading space we need, based on the
+    /* Figure out how much leading space we need, based on the
        aligning */
     if (align == '>')
         *n_lpadding = *n_total - nchars;
     else if (align == '^')
         *n_lpadding = (*n_total - nchars) / 2;
-    else
+    else if (align == '<' || align == '=')
         *n_lpadding = 0;
+    else {
+        /* We should never have an unspecified alignment. */
+        *n_lpadding = 0;
+        assert(0);
+    }
 
     *n_rpadding = *n_total - nchars - *n_lpadding;
 }
@@ -488,9 +514,13 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
         case '=':
             spec->n_spadding = n_padding;
             break;
-        default:
-            /* Handles '>', plus catch-all just in case. */
+        case '>':
             spec->n_lpadding = n_padding;
+            break;
+        default:
+            /* Shouldn't get here, but treat it as '>' */
+            spec->n_lpadding = n_padding;
+            assert(0);
             break;
         }
     }
@@ -1193,7 +1223,7 @@ format_complex_internal(PyObject *value,
     /* Turn off any padding. We'll do it later after we've composed
        the numbers without padding. */
     tmp_format.fill_char = '\0';
-    tmp_format.align = '\0';
+    tmp_format.align = '<';
     tmp_format.width = -1;
 
     /* Calculate how much memory we'll need. */
@@ -1269,7 +1299,7 @@ FORMAT_STRING(PyObject *obj,
 
     /* parse the format_spec */
     if (!parse_internal_render_format_spec(format_spec, format_spec_len,
-                                           &format, 's'))
+                                           &format, 's', '<'))
         goto done;
 
     /* type conversion? */
@@ -1309,7 +1339,7 @@ format_int_or_long(PyObject* obj,
     /* parse the format_spec */
     if (!parse_internal_render_format_spec(format_spec,
                                            format_spec_len,
-                                           &format, 'd'))
+                                           &format, 'd', '>'))
         goto done;
 
     /* type conversion? */
@@ -1420,7 +1450,7 @@ FORMAT_FLOAT(PyObject *obj,
     /* parse the format_spec */
     if (!parse_internal_render_format_spec(format_spec,
                                            format_spec_len,
-                                           &format, '\0'))
+                                           &format, '\0', '>'))
         goto done;
 
     /* type conversion? */
@@ -1468,7 +1498,7 @@ FORMAT_COMPLEX(PyObject *obj,
     /* parse the format_spec */
     if (!parse_internal_render_format_spec(format_spec,
                                            format_spec_len,
-                                           &format, '\0'))
+                                           &format, '\0', '>'))
         goto done;
 
     /* type conversion? */
