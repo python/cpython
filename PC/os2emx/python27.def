@@ -1048,11 +1048,6 @@ EXPORTS
   "_PyThreadState_Current"
   "_PyThreadState_GetFrame"
 
-; From python26_s.lib(pystrtod)
-  "PyOS_ascii_strtod"
-  "PyOS_ascii_formatd"
-  "PyOS_ascii_atof"
-
 ; From python26_s.lib(pythonrun)
   "Py_IgnoreEnvironmentFlag"
   "Py_DebugFlag"
