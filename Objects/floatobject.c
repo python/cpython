@@ -668,7 +668,7 @@ float_div(PyObject *v, PyObject *w)
 #ifdef Py_NAN
 	if (b == 0.0) {
 		PyErr_SetString(PyExc_ZeroDivisionError,
-				"float division");
+				"float division by zero");
 		return NULL;
 	}
 #endif
@@ -690,7 +690,7 @@ float_classic_div(PyObject *v, PyObject *w)
 #ifdef Py_NAN
 	if (b == 0.0) {
 		PyErr_SetString(PyExc_ZeroDivisionError,
-				"float division");
+				"float division by zero");
 		return NULL;
 	}
 #endif
