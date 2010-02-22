@@ -2062,6 +2062,53 @@ class Test_TestResult(TestCase):
                 'Tests getDescription() for a method with a longer '
                 'docstring.'))
 
+classDict = dict(unittest.TestResult.__dict__)
+for m in 'addSkip', 'addExpectedFailure', 'addUnexpectedSuccess':
+    del classDict[m]
+OldResult = type('OldResult', (object,), classDict)
+
+class Test_OldTestResult(unittest.TestCase):
+
+    def assertOldResultWarning(self, test, failures):
+        with warnings.catch_warnings(record=True) as log:
+            result = OldResult()
+            test.run(result)
+            self.assertEqual(len(result.failures), failures)
+            warning, = log
+            self.assertIs(warning.category, RuntimeWarning)
+
+    def testOldTestResult(self):
+        class Test(unittest.TestCase):
+            def testSkip(self):
+                self.skipTest('foobar')
+            @unittest.expectedFailure
+            def testExpectedFail(self):
+                raise TypeError
+            @unittest.expectedFailure
+            def testUnexpectedSuccess(self):
+                pass
+
+        for test_name, should_pass in (('testSkip', True),
+                                       ('testExpectedFail', True),
+                                       ('testUnexpectedSuccess', False)):
+            test = Test(test_name)
+            self.assertOldResultWarning(test, int(not should_pass))
+
+    def testOldTestTesultSetup(self):
+        class Test(unittest.TestCase):
+            def setUp(self):
+                self.skipTest('no reason')
+            def testFoo(self):
+                pass
+        self.assertOldResultWarning(Test('testFoo'), 0)
+
+    def testOldTestResultClass(self):
+        @unittest.skip('no reason')
+        class Test(unittest.TestCase):
+            def testFoo(self):
+                pass
+        self.assertOldResultWarning(Test('testFoo'), 0)
+
 
 ### Support code for Test_TestCase
 ################################################################
@@ -3826,7 +3873,8 @@ def test_main():
     test_support.run_unittest(Test_TestCase, Test_TestLoader,
         Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
         Test_TestSkipping, Test_Assertions, TestLongMessage,
-        Test_TestProgram, TestCleanUp, TestDiscovery, Test_TextTestRunner)
+        Test_TestProgram, TestCleanUp, TestDiscovery, Test_TextTestRunner,
+        Test_OldTestResult)
 
 if __name__ == "__main__":
     test_main()

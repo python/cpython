@@ -107,6 +107,6 @@ class TestResult(object):
         return length
 
     def __repr__(self):
-        return "<%s run=%i errors=%i failures=%i>" % \
+        return ("<%s run=%i errors=%i failures=%i>" %
                (util.strclass(self.__class__), self.testsRun, len(self.errors),
-                len(self.failures))
+                len(self.failures)))
