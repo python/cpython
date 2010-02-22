@@ -535,7 +535,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
               'Request forbidden -- authorization will not help'),
         404: ('Not Found', 'Nothing matches the given URI'),
         405: ('Method Not Allowed',
-              'Specified method is invalid for this server.'),
+              'Specified method is invalid for this resource.'),
         406: ('Not Acceptable', 'URI not available in preferred format.'),
         407: ('Proxy Authentication Required', 'You must authenticate with '
               'this proxy before proceeding.'),
