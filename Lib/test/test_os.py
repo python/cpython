@@ -400,6 +400,14 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         for key, value in self._reference().items():
             self.assertEqual(os.environ.get(key), value)
 
+    # Issue 7310
+    def test___repr__(self):
+        """Check that the repr() of os.environ looks like environ({...})."""
+        env = os.environ
+        self.assertTrue(isinstance(env.data, dict))
+        self.assertEqual(repr(env), 'environ({!r})'.format(env.data))
+
+
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
 

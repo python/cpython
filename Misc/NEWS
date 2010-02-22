@@ -79,6 +79,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7310: fix the __repr__ of os.environ to show the environment variables.
+
 - Issue #7970: email.Generator.flatten now correctly flattens message/rfc822
   messages parsed by email.Parser.HeaderParser.
 
