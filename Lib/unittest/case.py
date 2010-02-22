@@ -249,6 +249,15 @@ class TestCase(object):
         return "<%s testMethod=%s>" % \
                (strclass(self.__class__), self._testMethodName)
 
+    def _addSkip(self, result, reason):
+        addSkip = getattr(result, 'addSkip', None)
+        if addSkip is not None:
+            addSkip(self, reason)
+        else:
+            warnings.warn("TestResult has no addSkip method, skips not reported",
+                          RuntimeWarning, 2)
+            result.addSuccess(self)
+
     def run(self, result=None):
         orig_result = result
         if result is None:
@@ -262,7 +271,7 @@ class TestCase(object):
         if getattr(self.__class__, "__unittest_skip__", False):
             # If the whole class was skipped.
             try:
-                result.addSkip(self, self.__class__.__unittest_skip_why__)
+                self._addSkip(result, self.__class__.__unittest_skip_why__)
             finally:
                 result.stopTest(self)
             return
@@ -272,7 +281,7 @@ class TestCase(object):
             try:
                 self.setUp()
             except SkipTest as e:
-                result.addSkip(self, str(e))
+                self._addSkip(result, str(e))
             except Exception:
                 result.addError(self, sys.exc_info())
             else:
@@ -281,11 +290,23 @@ class TestCase(object):
                 except self.failureException:
                     result.addFailure(self, sys.exc_info())
                 except _ExpectedFailure as e:
-                    result.addExpectedFailure(self, e.exc_info)
+                    addExpectedFailure = getattr(result, 'addExpectedFailure', None)
+                    if addExpectedFailure is not None:
+                        addExpectedFailure(self, e.exc_info)
+                    else:
+                        warnings.warn("TestResult has no addExpectedFailure method, reporting as passes",
+                                      RuntimeWarning)
+                        result.addSuccess(self)
                 except _UnexpectedSuccess:
-                    result.addUnexpectedSuccess(self)
+                    addUnexpectedSuccess = getattr(result, 'addUnexpectedSuccess', None)
+                    if addUnexpectedSuccess is not None:
+                        addUnexpectedSuccess(self)
+                    else:
+                        warnings.warn("TestResult has no addUnexpectedSuccess method, reporting as failures",
+                                      RuntimeWarning)
+                        result.addFailure(self, sys.exc_info())
                 except SkipTest as e:
-                    result.addSkip(self, str(e))
+                    self._addSkip(result, str(e))
                 except Exception:
                     result.addError(self, sys.exc_info())
                 else:
