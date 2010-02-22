@@ -1481,6 +1481,13 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
+* Directories and zip archives containing a :file:`__main__.py` file
+  can now be executed directly by passing their name to the
+  interpreter. The directory or zip archive is automatically inserted
+  as the first entry in sys.path.  (Suggestion and initial patch by
+  Andy Chu, subsequently revised by Phillip J. Eby and Nick Coghlan;
+  :issue:`1739468`.)
+
 * The :func:`hasattr` function was catching and ignoring all errors,
   under the assumption that they meant a :meth:`__getattr__` method
   was failing somehow and the return value of :func:`hasattr` would
