@@ -129,7 +129,7 @@ static wchar_t prefix[MAXPATHLEN+1];
 static wchar_t exec_prefix[MAXPATHLEN+1];
 static wchar_t progpath[MAXPATHLEN+1];
 static wchar_t *module_search_path = NULL;
-static wchar_t lib_python[] = L"lib/python" VERSION;
+static wchar_t *lib_python = L"lib/python" VERSION;
 
 /* In principle, this should use HAVE__WSTAT, and _wstat
    should be detected by autoconf. However, no current
