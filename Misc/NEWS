@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6243: curses.getkey() can segfault when used with ungetch.
+  Fix by Trundle and Jerry Chen.
+
 - Issue #7597: curses.use_env() can now be called before initscr().
   Noted by Kan-Ru Chen.
 

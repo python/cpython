@@ -882,14 +882,17 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
     /* getch() returns ERR in nodelay mode */
     PyErr_SetString(PyCursesError, "no input");
     return NULL;
-  } else if (rtn<=255)
+  } else if (rtn<=255) {
     return Py_BuildValue("c", rtn);
-  else
+  } else {
+    const char *knp;
 #if defined(__NetBSD__)
-    return PyString_FromString(unctrl(rtn));
+    knp = unctrl(rtn);
 #else
-    return PyString_FromString((char *)keyname(rtn));
+    knp = keyname(rtn);
 #endif
+    return PyString_FromString((knp == NULL) ? "" : knp);
+  }
 }
 
 static PyObject *
