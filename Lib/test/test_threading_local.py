@@ -106,6 +106,21 @@ class ThreadingLocalTest(unittest.TestCase):
 
         self.assertTrue(passed)
 
+    def test_arguments(self):
+        # Issue 1522237
+        from _thread import _local as local
+        from _threading_local import local as py_local
+
+        for cls in (local, py_local):
+            class MyLocal(cls):
+                def __init__(self, *args, **kwargs):
+                    pass
+
+            MyLocal(a=1)
+            MyLocal(1)
+            self.assertRaises(TypeError, cls, a=1)
+            self.assertRaises(TypeError, cls, 1)
+
 
 def test_main():
     suite = unittest.TestSuite()
