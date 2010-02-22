@@ -1084,22 +1084,6 @@ floatsleep(double secs)
 		return -1;
 	}
 	Py_END_ALLOW_THREADS
-#elif defined(PLAN9)
-	{
-		double millisecs = secs * 1000.0;
-		if (millisecs > (double)LONG_MAX) {
-			PyErr_SetString(PyExc_OverflowError, "sleep length is too large");
-			return -1;
-		}
-		/* This sleep *CAN BE* interrupted. */
-		Py_BEGIN_ALLOW_THREADS
-		if(sleep((long)millisecs) < 0){
-			Py_BLOCK_THREADS
-			PyErr_SetFromErrno(PyExc_IOError);
-			return -1;
-		}
-		Py_END_ALLOW_THREADS
-	}
 #else
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
