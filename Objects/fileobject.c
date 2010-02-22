@@ -22,7 +22,7 @@
 
 #define BUF(v) PyString_AS_STRING((PyStringObject *)v)
 
-#ifndef DONT_HAVE_ERRNO_H
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
 
