@@ -563,7 +563,7 @@ complex_div(PyObject *v, PyObject *w)
 	quot = c_quot(a, b);
 	PyFPE_END_PROTECT(quot)
 	if (errno == EDOM) {
-		PyErr_SetString(PyExc_ZeroDivisionError, "complex division");
+		PyErr_SetString(PyExc_ZeroDivisionError, "complex division by zero");
 		return NULL;
 	}
 	return PyComplex_FromCComplex(quot);
@@ -586,7 +586,7 @@ complex_classic_div(PyObject *v, PyObject *w)
 	quot = c_quot(a, b);
 	PyFPE_END_PROTECT(quot)
 	if (errno == EDOM) {
-		PyErr_SetString(PyExc_ZeroDivisionError, "complex division");
+		PyErr_SetString(PyExc_ZeroDivisionError, "complex division by zero");
 		return NULL;
 	}
 	return PyComplex_FromCComplex(quot);
