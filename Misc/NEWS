@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7988: Fix default alignment to be right aligned for
+  complex.__format__. Now it matches other numeric types.
+
 - Issue #5988: Remove deprecated functions PyOS_ascii_formatd,
   PyOS_ascii_strtod, and PyOS_ascii_atof. Use PyOS_double_to_string
   and PyOS_string_to_double instead. See issue #5835 for the original
