@@ -180,7 +180,7 @@ Py_InitializeEx(int install_sigs)
 		return;
 	initialized = 1;
 
-#ifdef HAVE_SETLOCALE
+#if defined(HAVE_LANGINFO_H) && defined(HAVE_SETLOCALE)
 	/* Set up the LC_CTYPE locale, so we can obtain
 	   the locale's charset without having to switch
 	   locales. */
