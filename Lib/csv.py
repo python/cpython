@@ -132,6 +132,10 @@ class DictWriter:
         self.extrasaction = extrasaction
         self.writer = writer(f, dialect, *args, **kwds)
 
+    def writeheader(self):
+        header = dict(zip(self.fieldnames, self.fieldnames))
+        self.writerow(header)
+
     def _dict_to_list(self, rowdict):
         if self.extrasaction == "raise":
             wrong_fields = [k for k in rowdict if k not in self.fieldnames]
