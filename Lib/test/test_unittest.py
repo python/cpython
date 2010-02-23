@@ -2067,8 +2067,16 @@ class Test_TestResult(TestCase):
                 'docstring.'))
 
 classDict = dict(unittest.TestResult.__dict__)
-for m in 'addSkip', 'addExpectedFailure', 'addUnexpectedSuccess':
+for m in ('addSkip', 'addExpectedFailure', 'addUnexpectedSuccess',
+           '__init__'):
     del classDict[m]
+
+def __init__(self, stream=None, descriptions=None, verbosity=None):
+    self.failures = []
+    self.errors = []
+    self.testsRun = 0
+    self.shouldStop = False
+classDict['__init__'] = __init__
 OldResult = type('OldResult', (object,), classDict)
 
 class Test_OldTestResult(unittest.TestCase):
@@ -2113,6 +2121,15 @@ class Test_OldTestResult(unittest.TestCase):
                 pass
         self.assertOldResultWarning(Test('testFoo'), 0)
 
+    def testOldResultWithRunner(self):
+        class Test(unittest.TestCase):
+            def testFoo(self):
+                pass
+        runner = unittest.TextTestRunner(resultclass=OldResult,
+                                          stream=StringIO())
+        # This will raise an exception if TextTestRunner can't handle old
+        # test result objects
+        runner.run(Test('testFoo'))
 
 ### Support code for Test_TestCase
 ################################################################
