@@ -20,7 +20,6 @@ def format_date_time(timestamp):
     )
 
 
-
 class BaseHandler:
     """Manage the invocation of a WSGI application"""
 
@@ -54,13 +53,6 @@ class BaseHandler:
     headers_sent = False
     headers = None
     bytes_sent = 0
-
-
-
-
-
-
-
 
     def run(self, application):
         """Invoke the application"""
@@ -351,15 +343,6 @@ class BaseHandler:
         raise NotImplementedError
 
 
-
-
-
-
-
-
-
-
-
 class SimpleHandler(BaseHandler):
     """Handler that's just initialized with streams, environment, etc.
 
@@ -430,23 +413,6 @@ class BaseCGIHandler(SimpleHandler):
     origin_server = False
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class CGIHandler(BaseCGIHandler):
 
     """CGI-based invocation via sys.stdin/stdout/stderr and os.environ
@@ -471,20 +437,3 @@ class CGIHandler(BaseCGIHandler):
             self, sys.stdin, sys.stdout, sys.stderr, dict(os.environ.items()),
             multithread=False, multiprocess=True
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#
