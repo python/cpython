@@ -2057,6 +2057,9 @@ order (MRO) for bases """
         else:
             self.fail("expected ZeroDivisionError from bad property")
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_properties_doc_attrib(self):
         class E(object):
             def getter(self):
                 "getter method"
@@ -2069,6 +2072,7 @@ order (MRO) for bases """
             prop2 = property(fset=setter)
             self.assertEqual(prop2.__doc__, None)
 
+    def test_testcapi_no_segfault(self):
         # this segfaulted in 2.5b2
         try:
             import _testcapi

@@ -2041,6 +2041,8 @@ class Test_TestResult(TestCase):
                 'testGetDescriptionWithoutDocstring (' + __name__ +
                 '.Test_TestResult)')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def testGetDescriptionWithOneLineDocstring(self):
         """Tests getDescription() for a method with a docstring."""
         result = unittest.TextTestResult(None, True, 1)
@@ -2050,6 +2052,8 @@ class Test_TestResult(TestCase):
                 '(' + __name__ + '.Test_TestResult)\n'
                 'Tests getDescription() for a method with a docstring.'))
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def testGetDescriptionWithMultiLineDocstring(self):
         """Tests getDescription() for a method with a longer docstring.
         The second line of the docstring.
@@ -2525,12 +2529,16 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
     def testShortDescriptionWithoutDocstring(self):
         self.assertIsNone(self.shortDescription())
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def testShortDescriptionWithOneLineDocstring(self):
         """Tests shortDescription() for a method with a docstring."""
         self.assertEqual(
                 self.shortDescription(),
                 'Tests shortDescription() for a method with a docstring.')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def testShortDescriptionWithMultiLineDocstring(self):
         """Tests shortDescription() for a method with a longer docstring.
 

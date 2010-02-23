@@ -51,7 +51,8 @@ class Test(unittest.TestCase):
 
     def tearDown(self):
         sys.path[:] = self.syspath
-        cleanout(self.root)
+        if self.root: # Only clean if the test was actually run
+            cleanout(self.root)
 
         # delete all modules concerning the tested hiearchy
         if self.pkgname:
@@ -100,9 +101,6 @@ class Test(unittest.TestCase):
          ("t2 sub subsub __init__"+os.extsep+"py", "spam = 1"),
         ]
         self.mkhier(hier)
-
-        import t2
-        self.assertEqual(t2.__doc__, "doc for t2")
 
         import t2.sub
         import t2.sub.subsub
@@ -274,6 +272,17 @@ class Test(unittest.TestCase):
         self.assertFalse(sub)
         self.assertFalse(subsub)
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_8(self):
+        hier = [
+                ("t8", None),
+                ("t8 __init__"+os.extsep+"py", "'doc for t8'"),
+               ]
+        self.mkhier(hier)
+
+        import t8
+        self.assertEqual(t8.__doc__, "doc for t8")
 
 def test_main():
     test_support.run_unittest(__name__)

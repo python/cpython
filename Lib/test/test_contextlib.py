@@ -2,6 +2,7 @@
 
 
 import os
+import sys
 import tempfile
 import unittest
 import threading
@@ -84,7 +85,7 @@ class ContextManagerTestCase(unittest.TestCase):
             raise ZeroDivisionError(999)
         self.assertEqual(state, [1, 42, 999])
 
-    def test_contextmanager_attribs(self):
+    def _create_contextmanager_attribs(self):
         def attribs(**kw):
             def decorate(func):
                 for k,v in kw.items():
@@ -95,8 +96,17 @@ class ContextManagerTestCase(unittest.TestCase):
         @attribs(foo='bar')
         def baz(spam):
             """Whee!"""
+        return baz
+
+    def test_contextmanager_attribs(self):
+        baz = self._create_contextmanager_attribs()
         self.assertEqual(baz.__name__,'baz')
         self.assertEqual(baz.foo, 'bar')
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_contextmanager_doc_attrib(self):
+        baz = self._create_contextmanager_attribs()
         self.assertEqual(baz.__doc__, "Whee!")
 
 class NestedTestCase(unittest.TestCase):

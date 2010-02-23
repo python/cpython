@@ -57,6 +57,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #6292: for the moment at least, the test suite runs cleanly if python
+  is run with the -OO flag.  Tests requiring docstrings are skipped.
+
 - Issue #7712: test_support gained a new `temp_cwd` context manager which is
   now also used by regrtest to run all the tests in a temporary directory.
   The original CWD is saved in `test_support.SAVEDCWD`.
