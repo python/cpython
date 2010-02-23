@@ -118,6 +118,22 @@ class Callbacks(unittest.TestCase):
         prototype = self.functype.im_func(object)
         self.assertRaises(TypeError, prototype, lambda: None)
 
+    def test_issue_7959(self):
+        proto = self.functype.im_func(None)
+
+        class X(object):
+            def func(self): pass
+            def __init__(self):
+                self.v = proto(self.func)
+
+        import gc
+        for i in range(32):
+            X()
+        gc.collect()
+        live = [x for x in gc.get_objects()
+                if isinstance(x, X)]
+        self.failUnlessEqual(len(live), 0)
+
 try:
     WINFUNCTYPE
 except NameError:
