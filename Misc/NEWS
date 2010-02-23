@@ -12,6 +12,9 @@ What's New in Python 2.7 alpha 4?
 Core and Builtins
 -----------------
 
+- Issue #7649: Fix u'%c' % char for character in range 0x80..0xFF, raise an
+  UnicodeDecodeError
+
 - Issue #6902: Fix problem with built-in types format incorrectly with
   0 padding.
 
@@ -249,7 +252,7 @@ Tests
 
 Documentation
 -------------
- 
+
 - Updating `Using Python` documentation to include description of CPython's
   -J, -U and -X options.
 
