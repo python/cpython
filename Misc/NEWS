@@ -53,6 +53,8 @@ Library
 
 - Issue #5801: removed spurious empty lines in wsgiref.
 
+- Issue #1537721: Add a writeheader() method to csv.DictWriter.
+
 Extension Modules
 -----------------
 
