@@ -38,8 +38,6 @@ class ServerHandler(SimpleHandler):
 
 
 
-
-
 class WSGIServer(HTTPServer):
 
     """BaseHTTPServer that implements the Python WSGI protocol"""
@@ -66,18 +64,6 @@ class WSGIServer(HTTPServer):
 
     def set_app(self,application):
         self.application = application
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -139,29 +125,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def demo_app(environ,start_response):
     from io import StringIO
     stdout = StringIO()
@@ -190,16 +153,3 @@ if __name__ == '__main__':
     import webbrowser
     webbrowser.open('http://localhost:8000/xyz?abc')
     httpd.handle_request()  # serve one request, then exit
-
-
-
-
-
-
-
-
-
-
-
-
-#
