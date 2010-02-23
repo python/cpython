@@ -877,6 +877,9 @@ changes, or look through the Subversion logs for all the details.
   accepts a file object, in addition to the path names accepted in earlier
   versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
 
+* XXX the :mod:`shutil` module has now a :func:`make_archive` function
+    (see the module doc, contributed by Tarek)
+
 .. ======================================================================
 .. whole new modules get described in subsections here
 
