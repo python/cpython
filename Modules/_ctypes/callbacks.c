@@ -18,7 +18,7 @@ CThunkObject_dealloc(PyObject *_self)
 	Py_XDECREF(self->restype);
 	if (self->pcl)
 		_ctypes_free_closure(self->pcl);
-	PyObject_Del(self);
+	PyObject_GC_Del(self);
 }
 
 static int
@@ -61,7 +61,7 @@ PyTypeObject PyCThunk_Type = {
 	0,					/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,			/* tp_flags */
 	"CThunkObject",				/* tp_doc */
 	CThunkObject_traverse,			/* tp_traverse */
 	CThunkObject_clear,	       		/* tp_clear */
@@ -364,7 +364,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
 	CThunkObject *p;
 	int i;
 
-	p = PyObject_NewVar(CThunkObject, &PyCThunk_Type, nArgs);
+	p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nArgs);
 	if (p == NULL) {
 		PyErr_NoMemory();
 		return NULL;
@@ -379,6 +379,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
 	
 	for (i = 0; i < nArgs + 1; ++i)
 		p->atypes[i] = NULL;
+	PyObject_GC_Track((PyObject *)p);
 	return p;
 }
 
