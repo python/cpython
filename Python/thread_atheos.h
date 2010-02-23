@@ -128,60 +128,19 @@ long PyThread_get_thread_ident(void)
 }
 
 
-static void do_PyThread_exit_thread(int no_cleanup)
+void PyThread_exit_thread(void)
 {
 	dprintf(("PyThread_exit_thread called\n"));
 
 	/* Thread-safe way to read a variable without a mutex: */
 	if (atomic_add(&thread_count, 0) == 0) {
 		/* No threads around, so exit main(). */
-		if (no_cleanup)
-			_exit(0);
-		else
-			exit(0);
+		exit(0);
 	} else {
 		/* We're a thread */
 		exit_thread(0);
 	}
 }
-
-
-void PyThread_exit_thread(void)
-{
-	do_PyThread_exit_thread(0);
-}
-
-
-void PyThread__exit_thread(void)
-{
-	do_PyThread_exit_thread(1);
-}
-
-
-#ifndef NO_EXIT_PROG
-static void do_PyThread_exit_prog(int status, int no_cleanup)
-{
-	dprintf(("PyThread_exit_prog(%d) called\n", status));
-
-	/* No need to do anything, the threads get torn down if main()exits. */
-	if (no_cleanup)
-		_exit(status);
-	else
-		exit(status);
-}
-
-
-void PyThread_exit_prog(int status)
-{
-	do_PyThread_exit_prog(status, 0);
-}
-
-
-void PyThread__exit_prog(int status)
-{
-	do_PyThread_exit_prog(status, 1);
-}
-#endif				/* NO_EXIT_PROG */
 
 
 /*

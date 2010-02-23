@@ -203,16 +203,6 @@ PyThread_exit_thread(void)
 #endif
 }
 
-#ifndef NO_EXIT_PROG
-void
-PyThread_exit_prog(int status)
-{
-	dprintf(("PyThread_exit_prog(%d) called\n", status));
-	if (!initialized)
-		exit(status);
-}
-#endif /* NO_EXIT_PROG */
-
 /*
  * Lock support. It has too be implemented as semaphores.
  * I [Dag] tried to implement it with mutex but I could find a way to

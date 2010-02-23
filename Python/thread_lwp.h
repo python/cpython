@@ -47,49 +47,13 @@ long PyThread_get_thread_ident(void)
 	return tid.thread_id;
 }
 
-static void do_PyThread_exit_thread(int no_cleanup)
+void PyThread_exit_thread(void)
 {
 	dprintf(("PyThread_exit_thread called\n"));
 	if (!initialized)
-		if (no_cleanup)
-			_exit(0);
-		else
-			exit(0);
+		exit(0);
 	lwp_destroy(SELF);
 }
-
-void PyThread_exit_thread(void)
-{
-	do_PyThread_exit_thread(0);
-}
-
-void PyThread__exit_thread(void)
-{
-	do_PyThread_exit_thread(1);
-}
-
-#ifndef NO_EXIT_PROG
-static void do_PyThread_exit_prog(int status, int no_cleanup)
-{
-	dprintf(("PyThread_exit_prog(%d) called\n", status));
-	if (!initialized)
-		if (no_cleanup)
-			_exit(status);
-		else
-			exit(status);
-	pod_exit(status);
-}
-
-void PyThread_exit_prog(int status)
-{
-	do_PyThread_exit_prog(status, 0);
-}
-
-void PyThread__exit_prog(int status)
-{
-	do_PyThread_exit_prog(status, 1);
-}
-#endif /* NO_EXIT_PROG */
 
 /*
  * Lock support.

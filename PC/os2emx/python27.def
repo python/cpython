@@ -1160,7 +1160,6 @@ EXPORTS
   "PyThread_delete_key"
   "PyThread_set_key_value"
   "PyThread_get_key_value"
-  "PyThread__exit_thread"
 
 ; From python27_s.lib(gcmodule)
 ;  "initgc"
