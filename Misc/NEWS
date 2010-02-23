@@ -12,6 +12,10 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+=======
+- Issue #6902: Fix problem with built-in types format incorrectly with
+  0 padding.
+
 - Issue #7988: Fix default alignment to be right aligned for
   complex.__format__. Now it matches other numeric types.
 
