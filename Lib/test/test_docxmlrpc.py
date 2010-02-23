@@ -1,5 +1,6 @@
 from DocXMLRPCServer import DocXMLRPCServer
 import httplib
+import sys
 from test import test_support
 import threading
 import time
@@ -7,6 +8,20 @@ import socket
 import unittest
 
 PORT = None
+
+def make_request_and_skipIf(condition, reason):
+    # If we skip the test, we have to make a request because the
+    # the server created in setUp blocks expecting one to come in.
+    if not condition:
+        return lambda func: func
+    def decorator(func):
+        def make_request_and_skip(self):
+            self.client.request("GET", "/")
+            self.client.getresponse()
+            raise unittest.SkipTest(reason)
+        return make_request_and_skip
+    return decorator
+
 
 def server(evt, numrequests):
     serv = DocXMLRPCServer(("localhost", 0), logRequests=False)
@@ -111,10 +126,12 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
                       '&lt;lambda&gt;</strong></a>(x, y)</dt></dl>',
                       response.read())
 
+    @make_request_and_skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def test_autolinking(self):
-        """Test that the server correctly automatically wraps references to PEPS
-        and RFCs with links, and that it linkifies text starting with http or
-        ftp protocol prefixes.
+        """Test that the server correctly automatically wraps references to
+        PEPS and RFCs with links, and that it linkifies text starting with
+        http or ftp protocol prefixes.
 
         The documentation for the "add" method contains the test material.
         """
@@ -133,11 +150,13 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
              'auto-linked,&nbsp;too:<br>\n<a href="http://google.com">'
              'http://google.com</a>.</tt></dd></dl>'), response.read())
 
+    @make_request_and_skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def test_system_methods(self):
         """Test the precense of three consecutive system.* methods.
 
-        This also tests their use of parameter type recognition and the systems
-        related to that process.
+        This also tests their use of parameter type recognition and the
+        systems related to that process.
         """
         self.client.request("GET", "/")
         response = self.client.getresponse()
