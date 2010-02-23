@@ -392,6 +392,16 @@ Writer objects have the following public attribute:
    A read-only description of the dialect in use by the writer.
 
 
+DictWriter objects have the following public method:
+
+
+.. method:: DictWriter.writeheader()
+
+   Write a row with the field names (as specified in the constructor).
+
+   .. versionadded:: 2.7
+
+
 .. _csv-examples:
 
 Examples
