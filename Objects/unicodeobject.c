@@ -8357,6 +8357,7 @@ formatchar(Py_UNICODE *buf,
            size_t buflen,
            PyObject *v)
 {
+    PyObject *s;
     /* presume that the buffer is at least 2 characters long */
     if (PyUnicode_Check(v)) {
         if (PyUnicode_GET_SIZE(v) != 1)
@@ -8367,7 +8368,14 @@ formatchar(Py_UNICODE *buf,
     else if (PyString_Check(v)) {
         if (PyString_GET_SIZE(v) != 1)
             goto onError;
-        buf[0] = (Py_UNICODE)PyString_AS_STRING(v)[0];
+        /* #7649: if the char is a non-ascii (i.e. in range(0x80,0x100)) byte
+           string, "u'%c' % char" should fail with a UnicodeDecodeError */
+        s = PyUnicode_FromStringAndSize(PyString_AS_STRING(v), 1);
+        /* if the char is not decodable return -1 */
+        if (s == NULL)
+            return -1;
+        buf[0] = PyUnicode_AS_UNICODE(s)[0];
+        Py_DECREF(s);
     }
 
     else {

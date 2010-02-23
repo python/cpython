@@ -393,6 +393,19 @@ class UnicodeTest(
         self.assertEqual(u'%c' % 0x1234, u'\u1234')
         self.assertRaises(OverflowError, u"%c".__mod__, (sys.maxunicode+1,))
 
+        for num in range(0x00,0x80):
+            char = chr(num)
+            self.assertEqual(u"%c" % char, char)
+            self.assertEqual(u"%c" % num, char)
+        # Issue 7649
+        for num in range(0x80,0x100):
+            uchar = unichr(num)
+            self.assertEqual(uchar, u"%c" % num)   # works only with ints
+            self.assertEqual(uchar, u"%c" % uchar) # and unicode chars
+            # the implicit decoding should fail for non-ascii chars
+            self.assertRaises(UnicodeDecodeError, u"%c".__mod__, chr(num))
+            self.assertRaises(UnicodeDecodeError, u"%s".__mod__, chr(num))
+
         # formatting jobs delegated from the string implementation:
         self.assertEqual('...%(foo)s...' % {'foo':u"abc"}, u'...abc...')
         self.assertEqual('...%(foo)s...' % {'foo':"abc"}, '...abc...')
