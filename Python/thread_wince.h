@@ -53,48 +53,13 @@ long PyThread_get_thread_ident(void)
 	return GetCurrentThreadId();
 }
 
-static void do_PyThread_exit_thread(int no_cleanup)
-{
-	dprintf(("%ld: do_PyThread_exit_thread called\n", PyThread_get_thread_ident()));
-	if (!initialized)
-		if (no_cleanup)
-			exit(0); /* XXX - was _exit()!! */
-		else
-			exit(0);
-	_endthread();
-}
-
 void PyThread_exit_thread(void)
 {
-	do_PyThread_exit_thread(0);
-}
-
-void PyThread__exit_thread(void)
-{
-	do_PyThread_exit_thread(1);
-}
-
-#ifndef NO_EXIT_PROG
-static void do_PyThread_exit_prog(int status, int no_cleanup)
-{
-	dprintf(("PyThread_exit_prog(%d) called\n", status));
+	dprintf(("%ld: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
 	if (!initialized)
-		if (no_cleanup)
-			_exit(status);
-		else
-			exit(status);
+		exit(0);
+	_endthread();
 }
-
-void PyThread_exit_prog(int status)
-{
-	do_PyThread_exit_prog(status, 0);
-}
-
-void PyThread__exit_prog(int status)
-{
-	do_PyThread_exit_prog(status, 1);
-}
-#endif /* NO_EXIT_PROG */
 
 /*
  * Lock support. It has to be implemented using Mutexes, as
