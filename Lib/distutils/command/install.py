@@ -499,10 +499,7 @@ class install(Command):
             if val is not None:
                 if os.name == 'posix' or os.name == 'nt':
                     val = os.path.expanduser(val)
-                try:
-                    val = _subst_vars(val, self.config_vars)
-                except:
-                    import pdb; pdb.set_trace()
+                val = _subst_vars(val, self.config_vars)
                 setattr(self, attr, val)
 
     def expand_basedirs(self):
