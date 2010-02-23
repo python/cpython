@@ -26,6 +26,8 @@ copying and removal. For operations on individual files, see also the
    not be correct. On Windows, file owners, ACLs and alternate data streams
    are not copied.
 
+Directory and files operations
+------------------------------
 
 .. function:: copyfileobj(fsrc, fdst[, length])
 
@@ -150,8 +152,8 @@ copying and removal. For operations on individual files, see also the
 
 .. _shutil-example:
 
-Example
--------
+copytree example
+::::::::::::::::
 
 This example is the implementation of the :func:`copytree` function, described
 above, with the docstring omitted.  It demonstrates many of the other functions
@@ -188,4 +190,118 @@ provided by this module. ::
            errors.extend((src, dst, str(why)))
        if errors:
            raise Error(errors)
+
+Another example that uses the :func:`ignore_patterns` helper::
+
+   from shutil import copytree, ignore_patterns
+
+   copytree(source, destination, ignore=ignore_patterns('*.pyc', 'tmp*'))
+
+This will copy everything except ``.pyc`` files and files or directories whose
+name starts with ``tmp``.
+
+Another example that uses the *ignore* argument to add a logging call::
+
+   from shutil import copytree
+   import logging
+
+   def _logpath(path, names):
+       logging.info('Working in %s' % path)
+       return []   # nothing will be ignored
+
+   copytree(source, destination, ignore=_logpath)
+
+
+Archives operations
+-------------------
+
+.. function:: make_archive(base_name, format, [root_dir, [base_dir, [verbose, [dry_run, [owner, [group, [logger]]]]]]])
+
+   Create an archive file (eg. zip or tar) and returns its name.
+
+   *base_name* is the name of the file to create, including the path, minus
+   any format-specific extension. *format* is the archive format: one of
+   "zip", "tar", "ztar", or "gztar".
+
+   *root_dir* is a directory that will be the root directory of the
+   archive; ie. we typically chdir into *root_dir* before creating the
+   archive.
+
+   *base_dir* is the directory where we start archiving from;
+   ie. *base_dir* will be the common prefix of all files and
+   directories in the archive.
+
+   *root_dir* and *base_dir* both default to the current directory.
+
+   *owner* and *group* are used when creating a tar archive. By default,
+   uses the current owner and group.
+
+   .. versionadded:: 2.7
+
+
+.. function:: get_archive_formats()
+
+   Returns a list of supported formats for archiving.
+   Each element of the returned sequence is a tuple ``(name, description)``
+
+   By default :mod:`shutil` provides these formats:
+
+   - *gztar*: gzip'ed tar-file
+   - *bztar*: bzip2'ed tar-file
+   - *ztar*: compressed tar file
+   - *tar*: uncompressed tar file
+   - *zip*: ZIP file
+
+   You can register new formats or provide your own archiver for any existing
+   formats, by using :func:`register_archive_format`.
+
+   .. versionadded:: 2.7
+
+
+.. function:: register_archive_format(name, function, [extra_args, [description]])
+
+   Registers an archiver for the format *name*. *function* is a callable that
+   will be used to invoke the archiver.
+
+   If given, *extra_args* is a sequence of ``(name, value)`` that will be
+   used as extra keywords arguments when the archiver callable is used.
+
+   *description* is used by :func:`get_archive_formats` which returns the
+   list of archivers. Defaults to an empty list.
+
+   .. versionadded:: 2.7
+
+
+.. function::  unregister_archive_format(name)
+
+   Remove the archive format *name* from the list of supported formats.
+
+   .. versionadded:: 2.7
+
+
+Archiving example
+:::::::::::::::::
+
+In this example, we create a gzip'ed tar-file archive containing all files
+found in the :file:`.ssh` directory of the user::
+
+    >>> from shutil import make_archive
+    >>> import os
+    >>> archive_name = os.path.expanduser(os.path.join('~', 'myarchive'))
+    >>> root_dir = os.path.expanduser(os.path.join('~', '.ssh'))
+    >>> make_archive(archive_name, 'gztar', root_dir)
+    '/Users/tarek/myarchive.tar.gz'
+
+The resulting archive contains::
+
+    $ tar -tzvf /Users/tarek/myarchive.tar.gz
+    drwx------ tarek/staff       0 2010-02-01 16:23:40 ./
+    -rw-r--r-- tarek/staff     609 2008-06-09 13:26:54 ./authorized_keys
+    -rwxr-xr-x tarek/staff      65 2008-06-09 13:26:54 ./config
+    -rwx------ tarek/staff     668 2008-06-09 13:26:54 ./id_dsa
+    -rwxr-xr-x tarek/staff     609 2008-06-09 13:26:54 ./id_dsa.pub
+    -rw------- tarek/staff    1675 2008-06-09 13:26:54 ./id_rsa
+    -rw-r--r-- tarek/staff     397 2008-06-09 13:26:54 ./id_rsa.pub
+    -rw-r--r-- tarek/staff   37192 2010-02-06 18:23:10 ./known_hosts
+
 
