@@ -926,6 +926,9 @@ changes, or look through the Subversion logs for all the details.
   :class:`ZipFile` constructor.  (Contributed by Ronald Oussoren;
   :issue:`6003`.)
 
+* XXX the :mod:`shutil` module has now a :func:`make_archive` function
+  (see the module doc, contributed by Tarek)
+
 
 New module: sysconfig
 ---------------------------------
@@ -935,7 +938,7 @@ XXX A new :mod:`sysconfig` module has been extracted from
 
 The :mod:`sysconfig` module provides access to Python's configuration
 information like the list of installation paths and the configuration
-variables relevant for the current platform.
+variables relevant for the current platform. (contributed by Tarek)
 
 .. ======================================================================
 .. whole new modules get described in subsections here
