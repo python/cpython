@@ -1,4 +1,4 @@
-"""Utility functions for copying files and directory trees.
+"""Utility functions for copying and archiving files and directory trees.
 
 XXX The functions here don't copy the resource fork or other metadata on Mac.
 
@@ -22,9 +22,10 @@ try:
 except ImportError:
     getgrnam = None
 
-__all__ = ["copyfileobj","copyfile","copymode","copystat","copy","copy2",
-           "copytree","move","rmtree","Error", "SpecialFileError",
-           "ExecError","make_archive"]
+__all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
+           "copytree", "move", "rmtree", "Error", "SpecialFileError",
+           "ExecError", "make_archive", "get_archive_formats",
+           "register_archive_format", "unregister_archive_format"]
 
 class Error(EnvironmentError):
     pass
