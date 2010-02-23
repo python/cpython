@@ -322,7 +322,7 @@ class AttributesImpl:
         return name in self._attrs
 
     def __contains__(self, name):
-        return self._attrs.has_key(name)
+        return name in self._attrs
 
     def get(self, name, alternative=None):
         return self._attrs.get(name, alternative)
