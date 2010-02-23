@@ -55,18 +55,18 @@ def testboth(formatstr, *args, **kwargs):
 class FormatTest(unittest.TestCase):
     def test_format(self):
         testboth("%.1d", (1,), "1")
-        testboth("%.*d", (sys.maxint,1), overflowok = True)  # expect overflow
+        testboth("%.*d", (sys.maxint,1), overflowok=True)  # expect overflow
         testboth("%.100d", (1,), '00000000000000000000000000000000000000'
                  '000000000000000000000000000000000000000000000000000000'
-                 '00000001', overflowok = True)
+                 '00000001', overflowok=True)
         testboth("%#.117x", (1,), '0x00000000000000000000000000000000000'
                  '000000000000000000000000000000000000000000000000000000'
                  '0000000000000000000000000001',
-                 overflowok = True)
+                 overflowok=True)
         testboth("%#.118x", (1,), '0x00000000000000000000000000000000000'
                  '000000000000000000000000000000000000000000000000000000'
                  '00000000000000000000000000001',
-                 overflowok = True)
+                 overflowok=True)
 
         testboth("%f", (1.0,), "1.000000")
         # these are trying to test the limits of the internal magic-number-length
