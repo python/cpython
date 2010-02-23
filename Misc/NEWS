@@ -254,6 +254,8 @@ C-API
 Library
 -------
 
+- Issue #1537721: Add a writeheader() method to csv.DictWriter.
+
 - Issue #7959: ctypes callback functions are now registered correctly
   with the cylce garbage collector.
 
