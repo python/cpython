@@ -10,12 +10,7 @@ maxsize = test_support.MAX_Py_ssize_t
 # they crash python)
 # test on unicode strings as well
 
-overflowok = 1
-
-
-def testformat(formatstr, args, output=None, limit=None):
-    global overflowok
-
+def testformat(formatstr, args, output=None, limit=None, overflowok=False):
     if verbose:
         if output:
             print "%s %% %s =? %s ..." %\
@@ -51,21 +46,27 @@ def testformat(formatstr, args, output=None, limit=None):
                 print 'yes'
 
 
-def testboth(formatstr, *args):
-    testformat(formatstr, *args)
+def testboth(formatstr, *args, **kwargs):
+    testformat(formatstr, *args, **kwargs)
     if have_unicode:
-        testformat(unicode(formatstr), *args)
+        testformat(unicode(formatstr), *args, **kwargs)
 
 
 class FormatTest(unittest.TestCase):
     def test_format(self):
-        global overflowok
-
         testboth("%.1d", (1,), "1")
-        testboth("%.*d", (sys.maxint,1))  # expect overflow
-        testboth("%.100d", (1,), '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001')
-        testboth("%#.117x", (1,), '0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001')
-        testboth("%#.118x", (1,), '0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001')
+        testboth("%.*d", (sys.maxint,1), overflowok = True)  # expect overflow
+        testboth("%.100d", (1,), '00000000000000000000000000000000000000'
+                 '000000000000000000000000000000000000000000000000000000'
+                 '00000001', overflowok = True)
+        testboth("%#.117x", (1,), '0x00000000000000000000000000000000000'
+                 '000000000000000000000000000000000000000000000000000000'
+                 '0000000000000000000000000001',
+                 overflowok = True)
+        testboth("%#.118x", (1,), '0x00000000000000000000000000000000000'
+                 '000000000000000000000000000000000000000000000000000000'
+                 '00000000000000000000000000001',
+                 overflowok = True)
 
         testboth("%f", (1.0,), "1.000000")
         # these are trying to test the limits of the internal magic-number-length
@@ -87,7 +88,6 @@ class FormatTest(unittest.TestCase):
         testboth("%#.*F", (110, -1.e+100/3.))
 
         # Formatting of long integers. Overflow is not ok
-        overflowok = 0
         testboth("%x", 10L, "a")
         testboth("%x", 100000000000L, "174876e800")
         testboth("%o", 10L, "12")
