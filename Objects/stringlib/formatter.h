@@ -151,10 +151,10 @@ DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
     printf("internal format spec: align %d\n", format->align);
     printf("internal format spec: alternate %d\n", format->alternate);
     printf("internal format spec: sign %d\n", format->sign);
-    printf("internal format spec: width %d\n", format->width);
+    printf("internal format spec: width %zd\n", format->width);
     printf("internal format spec: thousands_separators %d\n",
            format->thousands_separators);
-    printf("internal format spec: precision %d\n", format->precision);
+    printf("internal format spec: precision %zd\n", format->precision);
     printf("internal format spec: type %c\n", format->type);
     printf("\n");
 }
@@ -181,6 +181,7 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
        the input string */
 
     Py_ssize_t consumed;
+    int align_specified = 0;
 
     format->fill_char = '\0';
     format->align = default_align;
@@ -196,10 +197,12 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     if (end-ptr >= 2 && is_alignment_token(ptr[1])) {
         format->align = ptr[1];
         format->fill_char = ptr[0];
+        align_specified = 1;
         ptr += 2;
     }
     else if (end-ptr >= 1 && is_alignment_token(ptr[0])) {
         format->align = ptr[0];
+        align_specified = 1;
         ++ptr;
     }
 
@@ -219,7 +222,7 @@ parse_internal_render_format_spec(STRINGLIB_CHAR *format_spec,
     /* The special case for 0-padding (backwards compat) */
     if (format->fill_char == '\0' && end-ptr >= 1 && ptr[0] == '0') {
         format->fill_char = '0';
-        if (format->align == '\0') {
+        if (!align_specified) {
             format->align = '=';
         }
         ++ptr;
@@ -495,7 +498,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
 
     /* min_width can go negative, that's okay. format->width == -1 means
        we don't care. */
-    if (format->fill_char == '0')
+    if (format->fill_char == '0' && format->align == '=')
         spec->n_min_width = format->width - n_non_digit_non_padding;
     else
         spec->n_min_width = 0;
