@@ -139,8 +139,14 @@ _ctypes_get_errobj(int **pspace)
 			return NULL;
 	}
 	errobj = PyDict_GetItem(dict, error_object_name);
-	if (errobj)
+	if (errobj) {
+		if (!PyCapsule_IsValid(errobj, CTYPES_CAPSULE_NAME_PYMEM)) {
+			PyErr_SetString(PyExc_RuntimeError,
+				"ctypes.error_object is an invalid capsule");
+			return NULL;
+		}
 		Py_INCREF(errobj);
+	}
 	else {
 		void *space = PyMem_Malloc(sizeof(int) * 2);
 		if (space == NULL)
