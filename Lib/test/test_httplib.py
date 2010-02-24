@@ -91,6 +91,10 @@ class BasicTest(TestCase):
         resp = httplib.HTTPResponse(sock)
         self.assertRaises(httplib.BadStatusLine, resp.begin)
 
+    def test_bad_status_repr(self):
+        exc = httplib.BadStatusLine('')
+        self.assertEquals(repr(exc), '''BadStatusLine("\'\'",)''')
+
     def test_partial_reads(self):
         # if we have a lenght, the system knows when to close itself
         # same behaviour than when we read the whole thing with read()
