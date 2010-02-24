@@ -60,6 +60,8 @@ Library
 
 - Issue #1537721: Add a writeheader() method to csv.DictWriter.
 
+- Issue #7427: improve the representation of httplib.BadStatusLine exceptions.
+
 Extension Modules
 -----------------
 
