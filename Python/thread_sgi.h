@@ -17,9 +17,6 @@ static ulock_t wait_lock;	/* lock used to wait for other threads */
 static int waiting_for_threads;	/* protected by count_lock */
 static int nthreads;		/* protected by count_lock */
 static int exit_status;
-#ifndef NO_EXIT_PROG
-static int do_exit;		/* indicates that the program is to exit */
-#endif
 static int exiting;		/* we're already exiting (for maybe_exit) */
 static pid_t my_pid;		/* PID of main thread */
 static struct pidlist {
@@ -27,53 +24,11 @@ static struct pidlist {
 	pid_t child;
 } pidlist[MAXPROC];	/* PIDs of other threads; protected by count_lock */
 static int maxpidindex;		/* # of PIDs in pidlist */
-
-#ifndef NO_EXIT_PROG
-/*
- * This routine is called as a signal handler when another thread
- * exits.  When that happens, we must see whether we have to exit as
- * well (because of an PyThread_exit_prog()) or whether we should continue on.
- */
-static void exit_sig(void)
-{
-	d2printf(("exit_sig called\n"));
-	if (exiting && getpid() == my_pid) {
-		d2printf(("already exiting\n"));
-		return;
-	}
-	if (do_exit) {
-		d2printf(("exiting in exit_sig\n"));
-#ifdef Py_DEBUG
-		if ((thread_debug & 8) == 0)
-			thread_debug &= ~1; /* don't produce debug messages */
-#endif
-		PyThread_exit_thread();
-	}
-}
-
-/*
- * This routine is called when a process calls exit().  If that wasn't
- * done from the library, we do as if an PyThread_exit_prog() was intended.
- */
-static void maybe_exit(void)
-{
-	dprintf(("maybe_exit called\n"));
-	if (exiting) {
-		dprintf(("already exiting\n"));
-		return;
-	}
-	PyThread_exit_prog(0);
-}
-#endif /* NO_EXIT_PROG */
-
 /*
  * Initialization.
  */
 static void PyThread__init_thread(void)
 {
-#ifndef NO_EXIT_PROG
-	struct sigaction s;
-#endif /* NO_EXIT_PROG */
 #ifdef USE_DL
 	long addr, size;
 #endif /* USE_DL */
@@ -93,16 +48,6 @@ static void PyThread__init_thread(void)
 	if (usconfig(CONF_INITUSERS, 16) < 0)
 		perror("usconfig - CONF_INITUSERS");
 	my_pid = getpid();	/* so that we know which is the main thread */
-#ifndef NO_EXIT_PROG
-	atexit(maybe_exit);
-	s.sa_handler = exit_sig;
-	sigemptyset(&s.sa_mask);
-	/*sigaddset(&s.sa_mask, SIGUSR1);*/
-	s.sa_flags = 0;
-	sigaction(SIGUSR1, &s, 0);
-	if (prctl(PR_SETEXITSIG, SIGUSR1) < 0)
-		perror("prctl - PR_SETEXITSIG");
-#endif /* NO_EXIT_PROG */
 	if (usconfig(CONF_ARENATYPE, US_SHAREDONLY) < 0)
 		perror("usconfig - CONF_ARENATYPE");
 	usconfig(CONF_LOCKTYPE, US_DEBUG); /* XXX */
@@ -227,46 +172,24 @@ long PyThread_get_thread_ident(void)
 	return getpid();
 }
 
-static void do_PyThread_exit_thread(int no_cleanup)
+void PyThread_exit_thread(void)
 {
 	dprintf(("PyThread_exit_thread called\n"));
 	if (!initialized)
-		if (no_cleanup)
-			_exit(0);
-		else
-			exit(0);
+		exit(0);
 	if (ussetlock(count_lock) < 0)
 		perror("ussetlock (count_lock)");
 	nthreads--;
 	if (getpid() == my_pid) {
 		/* main thread; wait for other threads to exit */
 		exiting = 1;
-#ifndef NO_EXIT_PROG
-		if (do_exit) {
-			int i;
-
-			/* notify other threads */
-			clean_threads();
-			if (nthreads >= 0) {
-				dprintf(("kill other threads\n"));
-				for (i = 0; i < maxpidindex; i++)
-					if (pidlist[i].child > 0)
-						(void) kill(pidlist[i].child,
-							    SIGKILL);
-				_exit(exit_status);
-			}
-		}
-#endif /* NO_EXIT_PROG */
 		waiting_for_threads = 1;
 		if (ussetlock(wait_lock) < 0)
 			perror("ussetlock (wait_lock)");
 		for (;;) {
 			if (nthreads < 0) {
 				dprintf(("really exit (%d)\n", exit_status));
-				if (no_cleanup)
-					_exit(exit_status);
-				else
-					exit(exit_status);
+				exit(exit_status);
 			}
 			if (usunsetlock(count_lock) < 0)
 				perror("usunsetlock (count_lock)");
@@ -283,49 +206,10 @@ static void do_PyThread_exit_thread(int no_cleanup)
 		if (usunsetlock(wait_lock) < 0)
 			perror("usunsetlock (wait_lock)");
 	}
-#ifndef NO_EXIT_PROG
-	else if (do_exit)
-		(void) kill(my_pid, SIGUSR1);
-#endif /* NO_EXIT_PROG */
 	if (usunsetlock(count_lock) < 0)
 		perror("usunsetlock (count_lock)");
 	_exit(0);
 }
-
-void PyThread_exit_thread(void)
-{
-	do_PyThread_exit_thread(0);
-}
-
-void PyThread__exit_thread(void)
-{
-	do_PyThread_exit_thread(1);
-}
-
-#ifndef NO_EXIT_PROG
-static void do_PyThread_exit_prog(int status, int no_cleanup)
-{
-	dprintf(("PyThread_exit_prog(%d) called\n", status));
-	if (!initialized)
-		if (no_cleanup)
-			_exit(status);
-		else
-			exit(status);
-	do_exit = 1;
-	exit_status = status;
-	do_PyThread_exit_thread(no_cleanup);
-}
-
-void PyThread_exit_prog(int status)
-{
-	do_PyThread_exit_prog(status, 0);
-}
-
-void PyThread__exit_prog(int status)
-{
-	do_PyThread_exit_prog(status, 1);
-}
-#endif /* NO_EXIT_PROG */
 
 /*
  * Lock support.
