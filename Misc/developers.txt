@@ -20,6 +20,9 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Dino Viehland was given SVN access on February 23 2010 by Brett
+  Cannon, for backporting tests from IronPython.
+
 - Larry Hastings was given SVN access on February 22 2010 by
   Andrew Kuchling, based on Brett Cannon's recommendation.
 
