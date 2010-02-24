@@ -27,6 +27,7 @@ help:
 	@echo "  suspicious to check for suspicious markup in output text"
 	@echo "  coverage  to check documentation coverage for library and C API"
 	@echo "  dist      to create a \"dist\" directory with archived docs for download"
+	@echo "  serve     to serve the documentation on the localhost (8000)"
 
 # Note: if you update versions here, do the same in make.bat and README.txt
 checkout:
@@ -149,3 +150,6 @@ dist:
 
 check:
 	$(PYTHON) tools/rstlint.py -i tools
+
+serve:
+	../Tools/scripts/serve.py build/html
