@@ -1,6 +1,7 @@
 # Test case for property
 # more tests are in test_descr
 
+import sys
 import unittest
 from test.support import run_unittest
 
@@ -91,7 +92,6 @@ class PropertyTests(unittest.TestCase):
         base.spam = 20
         self.assertEqual(base.spam, 20)
         self.assertEqual(base._spam, 20)
-        self.assertEqual(base.__class__.spam.__doc__, "BaseClass.getter")
 
     def test_property_decorator_subclass(self):
         # see #1620
@@ -99,7 +99,18 @@ class PropertyTests(unittest.TestCase):
         self.assertRaises(PropertyGet, getattr, sub, "spam")
         self.assertRaises(PropertySet, setattr, sub, "spam", None)
         self.assertRaises(PropertyDel, delattr, sub, "spam")
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_property_decorator_subclass_doc(self):
+        sub = SubClass()
         self.assertEqual(sub.__class__.spam.__doc__, "SubClass.getter")
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_property_decorator_baseclass_doc(self):
+        base = BaseClass()
+        self.assertEqual(base.__class__.spam.__doc__, "BaseClass.getter")
 
     def test_property_decorator_doc(self):
         base = PropertyDocBase()
@@ -107,6 +118,8 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(base.__class__.spam.__doc__, "spam spam spam")
         self.assertEqual(sub.__class__.spam.__doc__, "spam spam spam")
 
+    @unittest.skipIf(sys.flags.optimize >= 1,
+                     "Docstrings are omitted with -O2 and above")
     def test_property_getter_doc_override(self):
         newgettersub = PropertySubNewGetter()
         self.assertEqual(newgettersub.spam, 5)
@@ -126,16 +139,6 @@ class PropertySubSlots(property):
 
 class PropertySubclassTests(unittest.TestCase):
 
-    def test_docstring_copy(self):
-        class Foo(object):
-            @PropertySub
-            def spam(self):
-                """spam wrapped in property subclass"""
-                return 1
-        self.assertEqual(
-            Foo.spam.__doc__,
-            "spam wrapped in property subclass")
-
     def test_slots_docstring_copy_exception(self):
         try:
             class Foo(object):
@@ -148,6 +151,20 @@ class PropertySubclassTests(unittest.TestCase):
         else:
             raise Exception("AttributeError not raised")
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_docstring_copy(self):
+        class Foo(object):
+            @PropertySub
+            def spam(self):
+                """spam wrapped in property subclass"""
+                return 1
+        self.assertEqual(
+            Foo.spam.__doc__,
+            "spam wrapped in property subclass")
+
+    @unittest.skipIf(sys.flags.optimize <= 2,
+                     "Docstrings are omitted with -O2 and above")
     def test_property_setter_copies_getter_docstring(self):
         class Foo(object):
             def __init__(self): self._spam = 1
@@ -179,6 +196,8 @@ class PropertySubclassTests(unittest.TestCase):
             FooSub.spam.__doc__,
             "spam wrapped in property subclass")
 
+    @unittest.skipIf(sys.flags.optimize <= 2,
+                     "Docstrings are omitted with -O2 and above")
     def test_property_new_getter_new_docstring(self):
 
         class Foo(object):

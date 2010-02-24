@@ -383,6 +383,22 @@ def is_unavailable_exception(e):
     if exc_mess and 'temporarily unavailable' in exc_mess.lower():
         return True
 
+def make_request_and_skipIf(condition, reason):
+    # If we skip the test, we have to make a request because the
+    # the server created in setUp blocks expecting one to come in.
+    if not condition:
+        return lambda func: func
+    def decorator(func):
+        def make_request_and_skip(self):
+            try:
+                xmlrpclib.ServerProxy(URL).my_function()
+            except (xmlrpclib.ProtocolError, socket.error) as e:
+                if not is_unavailable_exception(e):
+                    raise
+            raise unittest.SkipTest(reason)
+        return make_request_and_skip
+    return decorator
+
 class BaseServerTestCase(unittest.TestCase):
     requestHandler = None
     request_count = 1
@@ -403,6 +419,7 @@ class BaseServerTestCase(unittest.TestCase):
     def tearDown(self):
         # wait on the server thread to terminate
         self.evt.wait(4.0)
+        # XXX this code does not work, and in fact stop_serving doesn't exist.
         if not self.evt.is_set():
             self.evt.set()
             stop_serving()
@@ -474,6 +491,8 @@ class SimpleServerTestCase(BaseServerTestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
 
+    @make_request_and_skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def test_introspection3(self):
         try:
             # test native doc

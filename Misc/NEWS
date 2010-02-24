@@ -12,7 +12,6 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
-=======
 - Issue #6902: Fix problem with built-in types format incorrectly with
   0 padding.
 
@@ -781,6 +780,9 @@ Documentation
 
 Tests
 -----
+
+- Issue #6292: for the moment at least, the test suite runs cleanly if python
+  is run with the -OO flag.  Tests requiring docstrings are skipped.
 
 - Issue #7712: test.support gained a new `temp_cwd` context manager which is
   now also used by regrtest to run all the tests in a temporary directory.
