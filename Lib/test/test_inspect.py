@@ -236,6 +236,8 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(functions, [('eggs', mod.eggs),
                                      ('spam', mod.spam)])
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def test_getdoc(self):
         self.assertEqual(inspect.getdoc(mod), 'A module docstring.')
         self.assertEqual(inspect.getdoc(mod.StupidGit),

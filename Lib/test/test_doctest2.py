@@ -12,7 +12,11 @@ the example.  It should be ignored:
 
 """
 
+import sys
+import unittest
 from test import support
+if sys.flags.optimize >= 2:
+    raise unittest.SkipTest("Cannot test docstrings with -O2")
 
 class C(object):
     """Class C.

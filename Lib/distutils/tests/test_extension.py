@@ -1,6 +1,7 @@
 """Tests for distutils.extension."""
-import unittest
 import os
+import sys
+import unittest
 import warnings
 
 from test.support import check_warnings
@@ -32,16 +33,22 @@ class ExtensionTestCase(unittest.TestCase):
 
         self.assertEquals(names, wanted)
 
-    def test_extension_init(self):
-        # the first argument, which is the name, must be a string
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Assertions are omitted with -O2 and above")
+    def test_extension_init_assertions(self):
+        # The first argument, which is the name, must be a string.
         self.assertRaises(AssertionError, Extension, 1, [])
-        ext = Extension('name', [])
-        self.assertEquals(ext.name, 'name')
 
         # the second argument, which is the list of files, must
         # be a list of strings
         self.assertRaises(AssertionError, Extension, 'name', 'file')
         self.assertRaises(AssertionError, Extension, 'name', ['file', 1])
+
+    def test_extension_init(self):
+        ext = Extension('name', [])
+        self.assertEquals(ext.name, 'name')
+
+
         ext = Extension('name', ['file1', 'file2'])
         self.assertEquals(ext.sources, ['file1', 'file2'])
 
