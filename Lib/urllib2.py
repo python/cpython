@@ -839,7 +839,7 @@ class AbstractBasicAuthHandler:
             auth = 'Basic %s' % base64.b64encode(raw).strip()
             if req.headers.get(self.auth_header, None) == auth:
                 return None
-            req.add_header(self.auth_header, auth)
+            req.add_unredirected_header(self.auth_header, auth)
             return self.parent.open(req, timeout=req.timeout)
         else:
             return None
