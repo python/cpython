@@ -17,7 +17,7 @@ Core and Builtins
   strings.
 
 - Issue #7649: Fix u'%c' % char for character in range 0x80..0xFF, raise an
-  UnicodeDecodeError
+  UnicodeDecodeError.
 
 - Issue #6902: Fix problem with built-in types format incorrectly with
   0 padding.
@@ -37,7 +37,7 @@ Library
 - Issue #7975: correct regression in dict methods supported by bsddb.dbshelve.
 
 - Issue #7959: ctypes callback functions are now registered correctly
-  with the cylce garbage collector.
+  with the cycle garbage collector.
 
 - Issue #7970: email.Generator.flatten now correctly flattens message/rfc822
   messages parsed by email.Parser.HeaderParser.
