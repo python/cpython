@@ -376,7 +376,6 @@ EXPORTS
                PyThreadState_GetDict
                PyThreadState_New
                PyThreadState_Swap
-               PyThread__exit_thread
                PyThread_acquire_lock
                PyThread_allocate_lock
                PyThread_allocate_sema

@@ -825,18 +825,6 @@ Raise a KeyboardInterrupt in the main thread.\n\
 A subthread can use this function to interrupt the main thread."
 );
 
-#ifndef NO_EXIT_PROG
-static PyObject *
-thread_PyThread_exit_prog(PyObject *self, PyObject *args)
-{
-	int sts;
-	if (!PyArg_ParseTuple(args, "i:exit_prog", &sts))
-		return NULL;
-	Py_Exit(sts); /* Calls PyThread_exit_prog(sts) or _PyThread_exit_prog(sts) */
-	for (;;) { } /* Should not be reached */
-}
-#endif
-
 static lockobject *newlockobject(void);
 
 static PyObject *
@@ -970,10 +958,6 @@ static PyMethodDef thread_methods[] = {
 	{"stack_size",		(PyCFunction)thread_stack_size,
 				METH_VARARGS,
 				stack_size_doc},
-#ifndef NO_EXIT_PROG
-	{"exit_prog",		(PyCFunction)thread_PyThread_exit_prog,
-	 METH_VARARGS},
-#endif
 	{NULL,			NULL}		/* sentinel */
 };
 
