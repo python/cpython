@@ -1434,8 +1434,20 @@ static PyObject *
 UnicodeEncodeError_str(PyObject *self)
 {
     PyUnicodeErrorObject *uself = (PyUnicodeErrorObject *)self;
+    PyObject *result = NULL;
+    PyObject *reason_str = NULL;
+    PyObject *encoding_str = NULL;
 
-    if (uself->end==uself->start+1) {
+    /* Get reason and encoding as strings, which they might not be if
+       they've been modified after we were contructed. */
+    reason_str = PyObject_Str(uself->reason);
+    if (reason_str == NULL)
+        goto done;
+    encoding_str = PyObject_Str(uself->encoding);
+    if (encoding_str == NULL)
+        goto done;
+
+    if (uself->start < PyUnicode_GET_SIZE(uself->object) && uself->end == uself->start+1) {
         int badchar = (int)PyUnicode_AS_UNICODE(uself->object)[uself->start];
         const char *fmt;
         if (badchar <= 0xff)
@@ -1444,21 +1456,25 @@ UnicodeEncodeError_str(PyObject *self)
             fmt = "'%U' codec can't encode character '\\u%04x' in position %zd: %U";
         else
             fmt = "'%U' codec can't encode character '\\U%08x' in position %zd: %U";
-        return PyUnicode_FromFormat(
+        result = PyUnicode_FromFormat(
             fmt,
-            ((PyUnicodeErrorObject *)self)->encoding,
+            encoding_str,
             badchar,
             uself->start,
-            ((PyUnicodeErrorObject *)self)->reason
-        );
+            reason_str);
     }
-    return PyUnicode_FromFormat(
-        "'%U' codec can't encode characters in position %zd-%zd: %U",
-        ((PyUnicodeErrorObject *)self)->encoding,
-        uself->start,
-        uself->end-1,
-        ((PyUnicodeErrorObject *)self)->reason
-    );
+    else {
+        result = PyUnicode_FromFormat(
+            "'%U' codec can't encode characters in position %zd-%zd: %U",
+            encoding_str,
+            uself->start,
+            uself->end-1,
+            reason_str);
+    }
+done:
+    Py_XDECREF(reason_str);
+    Py_XDECREF(encoding_str);
+    return result;
 }
 
 static PyTypeObject _PyExc_UnicodeEncodeError = {
@@ -1536,24 +1552,41 @@ static PyObject *
 UnicodeDecodeError_str(PyObject *self)
 {
     PyUnicodeErrorObject *uself = (PyUnicodeErrorObject *)self;
+    PyObject *result = NULL;
+    PyObject *reason_str = NULL;
+    PyObject *encoding_str = NULL;
 
-    if (uself->end==uself->start+1) {
+    /* Get reason and encoding as strings, which they might not be if
+       they've been modified after we were contructed. */
+    reason_str = PyObject_Str(uself->reason);
+    if (reason_str == NULL)
+        goto done;
+    encoding_str = PyObject_Str(uself->encoding);
+    if (encoding_str == NULL)
+        goto done;
+
+    if (uself->start < PyBytes_GET_SIZE(uself->object) && uself->end == uself->start+1) {
         int byte = (int)(PyBytes_AS_STRING(((PyUnicodeErrorObject *)self)->object)[uself->start]&0xff);
-        return PyUnicode_FromFormat(
+        result = PyUnicode_FromFormat(
             "'%U' codec can't decode byte 0x%02x in position %zd: %U",
-            ((PyUnicodeErrorObject *)self)->encoding,
+            encoding_str,
             byte,
             uself->start,
-            ((PyUnicodeErrorObject *)self)->reason
-        );
+            reason_str);
     }
-    return PyUnicode_FromFormat(
-        "'%U' codec can't decode bytes in position %zd-%zd: %U",
-        ((PyUnicodeErrorObject *)self)->encoding,
-        uself->start,
-        uself->end-1,
-        ((PyUnicodeErrorObject *)self)->reason
-    );
+    else {
+        result = PyUnicode_FromFormat(
+            "'%U' codec can't decode bytes in position %zd-%zd: %U",
+            encoding_str,
+            uself->start,
+            uself->end-1,
+            reason_str
+            );
+    }
+done:
+    Py_XDECREF(reason_str);
+    Py_XDECREF(encoding_str);
+    return result;
 }
 
 static PyTypeObject _PyExc_UnicodeDecodeError = {
@@ -1617,8 +1650,16 @@ static PyObject *
 UnicodeTranslateError_str(PyObject *self)
 {
     PyUnicodeErrorObject *uself = (PyUnicodeErrorObject *)self;
+    PyObject *result = NULL;
+    PyObject *reason_str = NULL;
 
-    if (uself->end==uself->start+1) {
+    /* Get reason as a string, which it might not be if it's been
+       modified after we were contructed. */
+    reason_str = PyObject_Str(uself->reason);
+    if (reason_str == NULL)
+        goto done;
+
+    if (uself->start < PyUnicode_GET_SIZE(uself->object) && uself->end == uself->start+1) {
         int badchar = (int)PyUnicode_AS_UNICODE(uself->object)[uself->start];
         const char *fmt;
         if (badchar <= 0xff)
@@ -1631,15 +1672,19 @@ UnicodeTranslateError_str(PyObject *self)
             fmt,
             badchar,
             uself->start,
-            uself->reason
+            reason_str
         );
+    } else {
+        result = PyUnicode_FromFormat(
+            "can't translate characters in position %zd-%zd: %U",
+            uself->start,
+            uself->end-1,
+            reason_str
+            );
     }
-    return PyUnicode_FromFormat(
-        "can't translate characters in position %zd-%zd: %U",
-        uself->start,
-        uself->end-1,
-        uself->reason
-    );
+done:
+    Py_XDECREF(reason_str);
+    return result;
 }
 
 static PyTypeObject _PyExc_UnicodeTranslateError = {

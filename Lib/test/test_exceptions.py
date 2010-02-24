@@ -568,6 +568,42 @@ class ExceptionTests(unittest.TestCase):
             pass
         self.assertEquals(e, (None, None, None))
 
+    def testUnicodeChangeAttributes(self):
+        # See issue 7309. This was a crasher.
+
+        u = UnicodeEncodeError('baz', 'xxxxx', 1, 5, 'foo')
+        self.assertEqual(str(u), "'baz' codec can't encode characters in position 1-4: foo")
+        u.end = 2
+        self.assertEqual(str(u), "'baz' codec can't encode character '\\x78' in position 1: foo")
+        u.end = 5
+        u.reason = 0x345345345345345345
+        self.assertEqual(str(u), "'baz' codec can't encode characters in position 1-4: 965230951443685724997")
+        u.encoding = 4000
+        self.assertEqual(str(u), "'4000' codec can't encode characters in position 1-4: 965230951443685724997")
+        u.start = 1000
+        self.assertEqual(str(u), "'4000' codec can't encode characters in position 1000-4: 965230951443685724997")
+
+        u = UnicodeDecodeError('baz', b'xxxxx', 1, 5, 'foo')
+        self.assertEqual(str(u), "'baz' codec can't decode bytes in position 1-4: foo")
+        u.end = 2
+        self.assertEqual(str(u), "'baz' codec can't decode byte 0x78 in position 1: foo")
+        u.end = 5
+        u.reason = 0x345345345345345345
+        self.assertEqual(str(u), "'baz' codec can't decode bytes in position 1-4: 965230951443685724997")
+        u.encoding = 4000
+        self.assertEqual(str(u), "'4000' codec can't decode bytes in position 1-4: 965230951443685724997")
+        u.start = 1000
+        self.assertEqual(str(u), "'4000' codec can't decode bytes in position 1000-4: 965230951443685724997")
+
+        u = UnicodeTranslateError('xxxx', 1, 5, 'foo')
+        self.assertEqual(str(u), "can't translate characters in position 1-4: foo")
+        u.end = 2
+        self.assertEqual(str(u), "can't translate character '\\x78' in position 1: foo")
+        u.end = 5
+        u.reason = 0x345345345345345345
+        self.assertEqual(str(u), "can't translate characters in position 1-4: 965230951443685724997")
+        u.start = 1000
+        self.assertEqual(str(u), "can't translate characters in position 1000-4: 965230951443685724997")
 
     def test_badisinstance(self):
         # Bug #2542: if issubclass(e, MyException) raises an exception,
