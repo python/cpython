@@ -1145,7 +1145,8 @@ class HandlerTests(unittest.TestCase):
             base64.encodebytes(userpass).strip().decode())
         self.assertEqual(http_handler.requests[1].get_header(auth_header),
                          auth_hdr_value)
-
+        self.assertEqual(http_handler.requests[1].unredirected_hdrs[auth_header],
+                         auth_hdr_value)
         # if the password manager can't find a password, the handler won't
         # handle the HTTP auth error
         password_manager.user = password_manager.password = None
