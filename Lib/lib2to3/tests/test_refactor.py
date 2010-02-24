@@ -242,21 +242,19 @@ from __future__ import print_function"""
     def test_refactor_docstring(self):
         rt = self.rt()
 
-        def example():
-            """
-            >>> example()
-            42
-            """
-        out = rt.refactor_docstring(example.__doc__, "<test>")
-        self.assertEqual(out, example.__doc__)
+        doc = """
+>>> example()
+42
+"""
+        out = rt.refactor_docstring(doc, "<test>")
+        self.assertEqual(out, doc)
 
-        def parrot():
-            """
-            >>> def parrot():
-            ...      return 43
-            """
-        out = rt.refactor_docstring(parrot.__doc__, "<test>")
-        self.assertNotEqual(out, parrot.__doc__)
+        doc = """
+>>> def parrot():
+...      return 43
+"""
+        out = rt.refactor_docstring(doc, "<test>")
+        self.assertNotEqual(out, doc)
 
     def test_explicit(self):
         from myfixes.fix_explicit import FixExplicit
