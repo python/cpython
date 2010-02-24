@@ -91,7 +91,7 @@ Library
 -------
 
 - Issue #7959: ctypes callback functions are now registered correctly
-  with the cylce garbage collector.
+  with the cycle garbage collector.
 
 - Issue #6666: fix bug in trace.py that applied the list of directories
   to be ignored only to the first file.  Noted by Bogdan Opanchuk.
