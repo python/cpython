@@ -17,7 +17,7 @@ Core and Builtins
   strings.
 
 - Issue #7649: Fix u'%c' % char for character in range 0x80..0xFF, raise an
-  UnicodeDecodeError
+  UnicodeDecodeError.
 
 - Issue #5677: Explicitly forbid write operations on read-only file objects,
   and read operations on write-only file objects.  On Windows, the system C
@@ -76,7 +76,7 @@ Library
 - Issue #7975: correct regression in dict methods supported by bsddb.dbshelve.
 
 - Issue #7959: ctypes callback functions are now registered correctly
-  with the cylce garbage collector.
+  with the cycle garbage collector.
 
 - Issue #6243: curses.getkey() can segfault when used with ungetch.
   Fix by Trundle and Jerry Chen.
