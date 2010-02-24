@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+'''
+Small wsgiref based web server. Takes a path to serve from and an
+optional port number (defaults to 8000), then tries to serve files.
+Mime types are guessed from the file names, 404 errors are thrown
+if the file is not found. Used for the make serve target in Doc.
+'''
 import sys
 import os
 import mimetypes
