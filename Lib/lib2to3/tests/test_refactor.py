@@ -239,9 +239,6 @@ from __future__ import print_function"""
         finally:
             os.linesep = old_sep
 
-
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
     def test_refactor_docstring(self):
         rt = self.rt()
 
