@@ -59,16 +59,11 @@ else:
         return cPickle.dumps(object, bin=protocol)
 
 
-if sys.version_info[0:2] <= (2, 5) :
-    try:
-        from UserDict import DictMixin
-    except ImportError:
-        # DictMixin is new in Python 2.3
-        class DictMixin: pass
-    MutableMapping = DictMixin
-else :
-    import collections
-    MutableMapping = collections.MutableMapping
+try:
+    from UserDict import DictMixin
+except ImportError:
+    # DictMixin is new in Python 2.3
+    class DictMixin: pass
 
 #------------------------------------------------------------------------
 
@@ -111,7 +106,7 @@ def open(filename, flags=db.DB_CREATE, mode=0660, filetype=db.DB_HASH,
 class DBShelveError(db.DBError): pass
 
 
-class DBShelf(MutableMapping):
+class DBShelf(DictMixin):
     """A shelf to hold pickled objects, built upon a bsddb DB object.  It
     automatically pickles/unpickles data objects going to/from the DB.
     """
@@ -161,10 +156,6 @@ class DBShelf(MutableMapping):
             return self.db.keys(txn)
         else:
             return self.db.keys()
-
-    if sys.version_info[0:2] >= (2, 6) :
-        def __iter__(self) :
-            return self.db.__iter__()
 
 
     def open(self, *args, **kwargs):
