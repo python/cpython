@@ -12,7 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
-=======
+- Issue #5939: Add additional runtime checking to ensure a valid capsule
+  in Modules/_ctypes/callproc.c.
+
 - Issue #7309: Fix unchecked attribute access when converting
   UnicodeEncodeError, UnicodeDecodeError, and UnicodeTranslateError to
   strings.
