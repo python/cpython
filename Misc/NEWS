@@ -13,6 +13,10 @@ Core and Builtins
 -----------------
 
 =======
+- Issue #7309: Fix unchecked attribute access when converting
+  UnicodeEncodeError, UnicodeDecodeError, and UnicodeTranslateError to
+  strings.
+
 - Issue #6902: Fix problem with built-in types format incorrectly with
   0 padding.
 
