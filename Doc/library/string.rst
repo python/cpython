@@ -226,7 +226,8 @@ The grammar for a replacement field is as follows:
       field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
       arg_name: (`identifier` | `integer`)?
       attribute_name: `identifier`
-      element_index: `integer`
+      element_index: `integer` | `index_string`
+      index_string: <any source character except "]"> +
       conversion: "r" | "s"
       format_spec: <described in the next section>
 
