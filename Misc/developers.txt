@@ -20,6 +20,15 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Florent Xicluna was given commit access on February 25 2010 by
+  MvL, based on Antoine Pitrou's recommendation.
+
+- Dino Viehland was given SVN access on February 23 2010 by Brett
+  Cannon, for backporting tests from IronPython.
+
+- Larry Hastings was given SVN access on February 22 2010 by
+  Andrew Kuchling, based on Brett Cannon's recommendation.
+
 - Victor Stinner was given SVN access on January 30 2010 by MvL,
   at recommendation by Mark Dickinson and Amaury Forgeot d'Arc.
 
