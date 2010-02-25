@@ -321,8 +321,9 @@ specification is to be interpreted.
 Most built-in types implement the following options for format specifications,
 although some of the formatting options are only supported by the numeric types.
 
-A general convention is that an empty format string (``""``) produces the same
-result as if you had called :func:`str` on the value.
+A general convention is that an empty format string (``""``) produces
+the same result as if you had called :func:`str` on the value. A
+non-empty format string typically modifies the result.
 
 The general form of a *standard format specifier* is:
 
@@ -333,7 +334,7 @@ The general form of a *standard format specifier* is:
    sign: "+" | "-" | " "
    width: `integer`
    precision: `integer`
-   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "x" | "X" | "%"
+   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 The *fill* character can be any character other than '}' (which signifies the
 end of the field).  The presence of a fill character is signaled by the *next*
@@ -405,6 +406,17 @@ used from the field content. The *precision* is not allowed for integer values.
 
 Finally, the *type* determines how the data should be presented.
 
+The available string presentation types are:
+
+   +---------+----------------------------------------------------------+
+   | Type    | Meaning                                                  |
+   +=========+==========================================================+
+   | ``'s'`` | String format. This is the default type for strings and  |
+   |         | may be omitted.                                          |
+   +---------+----------------------------------------------------------+
+   | None    | The same as ``'s'``.                                     |
+   +---------+----------------------------------------------------------+
+
 The available integer presentation types are:
 
    +---------+----------------------------------------------------------+
@@ -431,6 +443,11 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
+
+In addition to the above presentation types, integers can be formatted
+with the floating point presentation types listed below (except
+``'n'`` and None). When doing so, :func:`float` is used to convert the
+integer to a floating point number before formatting.
 
 The available presentation types for floating point and decimal values are:
 
