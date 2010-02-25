@@ -1668,7 +1668,7 @@ UnicodeTranslateError_str(PyObject *self)
             fmt = "can't translate character '\\u%04x' in position %zd: %U";
         else
             fmt = "can't translate character '\\U%08x' in position %zd: %U";
-        return PyUnicode_FromFormat(
+        result = PyUnicode_FromFormat(
             fmt,
             badchar,
             uself->start,
