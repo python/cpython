@@ -16,8 +16,9 @@ Core and Builtins
   UnicodeEncodeError, UnicodeDecodeError, and UnicodeTranslateError to
   strings.
 
-- Issue #7649: Fix u'%c' % char for character in range 0x80..0xFF, raise an
-  UnicodeDecodeError.
+- Issue #7649: "u'%c' % char" now behaves like "u'%s' % char" and raises a
+  UnicodeDecodeError if 'char' is a byte string that can't be decoded using
+  the default encoding.
 
 - Issue #6902: Fix problem with built-in types format incorrectly with
   0 padding.
