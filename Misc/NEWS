@@ -260,6 +260,12 @@ C-API
 Library
 -------
 
+- Issue #7869: logging: improved diagnostic for format-time errors.
+
+- Issue #7868: logging: added loggerClass attribute to Manager.
+
+- logging: Implemented PEP 391.
+
 - Issue #1537721: Add a writeheader() method to csv.DictWriter.
 
 - Issue #7959: ctypes callback functions are now registered correctly

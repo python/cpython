@@ -1,4 +1,4 @@
-# Copyright 2001-2009 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2010 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -46,8 +46,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-__version__ = "0.5.1.1"
-__date__    = "25 November 2009"
+__version__ = "0.5.1.2"
+__date__    = "07 February 2010"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -767,7 +767,10 @@ class Handler(Filterer):
         if raiseExceptions:
             ei = sys.exc_info()
             try:
-                traceback.print_exception(ei[0], ei[1], ei[2], None, sys.stderr)
+                traceback.print_exception(ei[0], ei[1], ei[2],
+                                          None, sys.stderr)
+                sys.stderr.write('Logged from file %s, line %s\n' % (
+                                 record.filename, record.lineno))
             except IOError:
                 pass    # see issue 5971
             finally:
@@ -960,6 +963,7 @@ class Manager(object):
         self.disable = 0
         self.emittedNoHandlerWarning = 0
         self.loggerDict = {}
+        self.loggerClass = None
 
     def getLogger(self, name):
         """
@@ -979,19 +983,29 @@ class Manager(object):
                 rv = self.loggerDict[name]
                 if isinstance(rv, PlaceHolder):
                     ph = rv
-                    rv = _loggerClass(name)
+                    rv = (self.loggerClass or _loggerClass)(name)
                     rv.manager = self
                     self.loggerDict[name] = rv
                     self._fixupChildren(ph, rv)
                     self._fixupParents(rv)
             else:
-                rv = _loggerClass(name)
+                rv = (self.loggerClass or _loggerClass)(name)
                 rv.manager = self
                 self.loggerDict[name] = rv
                 self._fixupParents(rv)
         finally:
             _releaseLock()
         return rv
+
+    def setLoggerClass(self, klass):
+        """
+        Set the class to be used when instantiating a logger with this Manager.
+        """
+        if klass != Logger:
+            if not issubclass(klass, Logger):
+                raise TypeError("logger not derived from logging.Logger: "
+                                + klass.__name__)
+        self.loggerClass = klass
 
     def _fixupParents(self, alogger):
         """
