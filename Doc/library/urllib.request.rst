@@ -164,6 +164,14 @@ The :mod:`urllib.request` module defines the following functions:
    path.  This does not accept a complete URL.  This function uses :func:`unquote`
    to decode *path*.
 
+.. function:: getproxies()
+
+   This helper function returns a dictionary of scheme to proxy server URL
+   mappings. It scans the environment for variables named ``<scheme>_proxy``
+   for all operating systems first, and when it cannot find it, looks for proxy
+   information from Mac OSX System Configuration for Mac OS X and Windows
+   Systems Registry for Windows.
+
 
 The following classes are provided:
 
