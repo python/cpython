@@ -437,6 +437,21 @@ class UTF16Test(ReadTest):
     def test_errors(self):
         self.assertRaises(UnicodeDecodeError, codecs.utf_16_decode, "\xff", "strict", True)
 
+    def test_bug691291(self):
+        # Files are always opened in binary mode, even if no binary mode was
+        # specified.  This means that no automatic conversion of '\n' is done
+        # on reading and writing.
+        s1 = u'Hello\r\nworld\r\n'
+
+        s = s1.encode(self.encoding)
+        try:
+            with open(test_support.TESTFN, 'wb') as fp:
+                fp.write(s)
+            with codecs.open(test_support.TESTFN, 'U', encoding=self.encoding) as reader:
+                self.assertEqual(reader.read(), s1)
+        finally:
+            test_support.unlink(test_support.TESTFN)
+
 class UTF16LETest(ReadTest):
     encoding = "utf-16-le"
 
