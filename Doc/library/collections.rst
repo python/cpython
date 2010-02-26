@@ -52,7 +52,7 @@ ABC                        Inherits               Abstract Methods        Mixin 
 :class:`Container`                                ``__contains__``
 :class:`Hashable`                                 ``__hash__``
 :class:`Iterable`                                 ``__iter__``
-:class:`Iterator`          :class:`Iterable`      ``__next__``            ``__iter__``
+:class:`Iterator`          :class:`Iterable`      ``next``                ``__iter__``
 :class:`Sized`                                    ``__len__``
 :class:`Callable`                                 ``__call__``
 
