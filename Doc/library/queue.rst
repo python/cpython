@@ -21,15 +21,14 @@ lowest valued entry is retrieved first.
 
 The :mod:`queue` module defines the following classes and exceptions:
 
-.. class:: Queue(maxsize)
+.. class:: Queue(maxsize=0)
 
    Constructor for a FIFO queue.  *maxsize* is an integer that sets the upperbound
    limit on the number of items that can be placed in the queue.  Insertion will
    block once this size has been reached, until queue items are consumed.  If
    *maxsize* is less than or equal to zero, the queue size is infinite.
 
-
-.. class:: LifoQueue(maxsize)
+.. class:: LifoQueue(maxsize=0)
 
    Constructor for a LIFO queue.  *maxsize* is an integer that sets the upperbound
    limit on the number of items that can be placed in the queue.  Insertion will
@@ -37,7 +36,7 @@ The :mod:`queue` module defines the following classes and exceptions:
    *maxsize* is less than or equal to zero, the queue size is infinite.
 
 
-.. class:: PriorityQueue(maxsize)
+.. class:: PriorityQueue(maxsize=0)
 
    Constructor for a priority queue.  *maxsize* is an integer that sets the upperbound
    limit on the number of items that can be placed in the queue.  Insertion will
