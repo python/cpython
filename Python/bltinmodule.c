@@ -131,12 +131,12 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 		ns = PyEval_CallObjectWithKeywords(prep, pargs, mkw);
 		Py_DECREF(pargs);
 		Py_DECREF(prep);
-		if (ns == NULL) {
-			Py_DECREF(meta);
-			Py_XDECREF(mkw);
-			Py_DECREF(bases);
-			return NULL;
-		}
+	}
+	if (ns == NULL) {
+		Py_DECREF(meta);
+		Py_XDECREF(mkw);
+		Py_DECREF(bases);
+		return NULL;
 	}
 	cell = PyObject_CallFunctionObjArgs(func, ns, NULL);
 	if (cell != NULL) {
