@@ -260,6 +260,8 @@ C-API
 Library
 -------
 
+- Issue #1729305: Fix doctest to handle encode error with "backslashreplace".
+
 - Issue #691291: codecs.open() should not convert end of lines on reading and
   writing.
 
