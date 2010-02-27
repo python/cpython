@@ -78,7 +78,7 @@ It defines the following functions:
    * ``'xmlcharrefreplace'``: replace with the appropriate XML character
      reference (for encoding only)
    * ``'backslashreplace'``: replace with backslashed escape sequences (for
-     encoding only
+     encoding only)
 
    as well as any other error handling name defined via :func:`register_error`.
 
