@@ -505,7 +505,19 @@ Example:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-   >>> Point = namedtuple('Point', 'x y', verbose=True)
+   >>> Point = namedtuple('Point', 'x y')
+   >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
+   >>> p[0] + p[1]             # indexable like the plain tuple (11, 22)
+   33
+   >>> x, y = p                # unpack like a regular tuple
+   >>> x, y
+   (11, 22)
+   >>> p.x + p.y               # fields also accessible by name
+   33
+   >>> p                       # readable __repr__ with a name=value style
+   Point(x=11, y=22)
+
+   >>> Point = namedtuple('Point', 'x y', verbose=True) # show the class definition
    class Point(tuple):
            'Point(x, y)'
    <BLANKLINE>
@@ -543,17 +555,6 @@ Example:
    <BLANKLINE>
            x = _property(_itemgetter(0))
            y = _property(_itemgetter(1))
-
-   >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
-   >>> p[0] + p[1]             # indexable like the plain tuple (11, 22)
-   33
-   >>> x, y = p                # unpack like a regular tuple
-   >>> x, y
-   (11, 22)
-   >>> p.x + p.y               # fields also accessible by name
-   33
-   >>> p                       # readable __repr__ with a name=value style
-   Point(x=11, y=22)
 
 Named tuples are especially useful for assigning field names to result tuples returned
 by the :mod:`csv` or :mod:`sqlite3` modules::
