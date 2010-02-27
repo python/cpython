@@ -61,6 +61,12 @@ class MacPathTestCase(unittest.TestCase):
         self.assertEqual(splitext(""), ('', ''))
         self.assertEqual(splitext("foo.bar.ext"), ('foo.bar', '.ext'))
 
+    def test_normpath(self):
+        # Issue 5827: Make sure normpath preserves unicode
+        for path in (u'', u'.', u'/', u'\\', u':', u'///foo/.//bar//'):
+            self.assertIsInstance(macpath.normpath(path), unicode,
+                                  'normpath() returned str instead of unicode')
+
 
 def test_main():
     test_support.run_unittest(MacPathTestCase)
