@@ -483,6 +483,21 @@ class UTF16Test(ReadTest):
         self.check_state_handling_decode(self.encoding,
                                          "spamspam", self.spambe)
 
+    def test_bug691291(self):
+        # Files are always opened in binary mode, even if no binary mode was
+        # specified.  This means that no automatic conversion of '\n' is done
+        # on reading and writing.
+        s1 = 'Hello\r\nworld\r\n'
+
+        s = s1.encode(self.encoding)
+        try:
+            with open(support.TESTFN, 'wb') as fp:
+                fp.write(s)
+            with codecs.open(support.TESTFN, 'U', encoding=self.encoding) as reader:
+                self.assertEqual(reader.read(), s1)
+        finally:
+            support.unlink(support.TESTFN)
+
 class UTF16LETest(ReadTest):
     encoding = "utf-16-le"
 
