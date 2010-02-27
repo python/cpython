@@ -136,6 +136,17 @@ process and user.
    These functions are described in :ref:`os-file-dir`.
 
 
+.. function:: get_exec_path(env=None)
+
+   Returns the list of directories that will be searched for a named
+   executable, similar to a shell, when launching a process.
+   *env*, when specified, should be an environment variable dictionary
+   to lookup the PATH in.
+   By default, when *env* is None, :data:`environ` is used.
+
+   .. versionadded:: 3.2
+
+
 .. function:: ctermid()
 
    Return the filename corresponding to the controlling terminal of the process.

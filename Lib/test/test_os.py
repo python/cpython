@@ -407,6 +407,27 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self.assertTrue(isinstance(env.data, dict))
         self.assertEqual(repr(env), 'environ({!r})'.format(env.data))
 
+    def test_get_exec_path(self):
+        defpath_list = os.defpath.split(os.pathsep)
+        test_path = ['/monty', '/python', '', '/flying/circus']
+        test_env = {'PATH': os.pathsep.join(test_path)}
+
+        saved_environ = os.environ
+        try:
+            os.environ = dict(test_env)
+            # Test that defaulting to os.environ works.
+            self.assertSequenceEqual(test_path, os.get_exec_path())
+            self.assertSequenceEqual(test_path, os.get_exec_path(env=None))
+        finally:
+            os.environ = saved_environ
+
+        # No PATH environment variable
+        self.assertSequenceEqual(defpath_list, os.get_exec_path({}))
+        # Empty PATH environment variable
+        self.assertSequenceEqual(('',), os.get_exec_path({'PATH':''}))
+        # Supplied PATH environment variable
+        self.assertSequenceEqual(test_path, os.get_exec_path(test_env))
+
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
