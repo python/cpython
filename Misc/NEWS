@@ -701,6 +701,9 @@ Library
 
 - Issue #6218: io.StringIO and io.BytesIO instances are now picklable.
 
+- The os.get_exec_path() function to return the list of directories that will
+  be searched for an executable when launching a subprocess was added.
+
 Extension Modules
 -----------------
 

@@ -342,28 +342,23 @@ __all__.extend(["execl","execle","execlp","execlpe","execvp","execvpe"])
 
 def _execvpe(file, args, env=None):
     if env is not None:
-        func = execve
+        exec_func = execve
         argrest = (args, env)
     else:
-        func = execv
+        exec_func = execv
         argrest = (args,)
         env = environ
 
     head, tail = path.split(file)
     if head:
-        func(file, *argrest)
+        exec_func(file, *argrest)
         return
-    if 'PATH' in env:
-        envpath = env['PATH']
-    else:
-        envpath = defpath
-    PATH = envpath.split(pathsep)
     last_exc = saved_exc = None
     saved_tb = None
-    for dir in PATH:
+    for dir in get_exec_path(env):
         fullname = path.join(dir, file)
         try:
-            func(fullname, *argrest)
+            exec_func(fullname, *argrest)
         except error as e:
             last_exc = e
             tb = sys.exc_info()[2]
@@ -374,6 +369,18 @@ def _execvpe(file, args, env=None):
     if saved_exc:
         raise saved_exc.with_traceback(saved_tb)
     raise last_exc.with_traceback(tb)
+
+
+def get_exec_path(env=None):
+    """Returns the sequence of directories that will be searched for the
+    named executable (similar to a shell) when launching a process.
+
+    *env* must be an environment variable dict or None.  If *env* is None,
+    os.environ will be used.
+    """
+    if env is None:
+        env = environ
+    return env.get('PATH', defpath).split(pathsep)
 
 
 # Change environ to automatically call putenv(), unsetenv if they exist.
