@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Test script for doctest.
 """
@@ -372,7 +373,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print tests  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:16 (1 example)>]
+    [<DocTest sample_func from ...:17 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -2143,6 +2144,13 @@ doctest examples in a given file.  In its simple invokation, it is
 called with the name of a file, which is taken to be relative to the
 calling module.  The return value is (#failures, #tests).
 
+We don't want `-v` in sys.argv for these tests.
+
+    >>> save_argv = sys.argv
+    >>> if '-v' in sys.argv:
+    ...     sys.argv = [arg for arg in save_argv if arg != '-v']
+
+
     >>> doctest.testfile('test_doctest.txt') # doctest: +ELLIPSIS
     **********************************************************************
     File "...", line 6, in test_doctest.txt
@@ -2282,6 +2290,41 @@ using the optional keyword argument `encoding`:
     >>> doctest.testfile('test_doctest4.txt', encoding='utf-8')
     TestResults(failed=0, attempted=4)
     >>> doctest.master = None  # Reset master.
+
+Switch the module encoding to 'utf-8' to test the verbose output without
+bothering with the current sys.stdout encoding.
+
+    >>> doctest._encoding, saved_encoding = 'utf-8', doctest._encoding
+    >>> doctest.testfile('test_doctest4.txt', encoding='utf-8', verbose=True)
+    Trying:
+        u'föö'
+    Expecting:
+        u'f\xf6\xf6'
+    ok
+    Trying:
+        u'bąr'
+    Expecting:
+        u'b\u0105r'
+    ok
+    Trying:
+        'föö'
+    Expecting:
+        'f\xc3\xb6\xc3\xb6'
+    ok
+    Trying:
+        'bąr'
+    Expecting:
+        'b\xc4\x85r'
+    ok
+    1 items passed all tests:
+       4 tests in test_doctest4.txt
+    4 tests in 1 items.
+    4 passed and 0 failed.
+    Test passed.
+    TestResults(failed=0, attempted=4)
+    >>> doctest._encoding = saved_encoding
+    >>> doctest.master = None  # Reset master.
+    >>> sys.argv = save_argv
 """
 
 # old_test1, ... used to live in doctest.py, but cluttered it.  Note

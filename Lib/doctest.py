@@ -218,11 +218,18 @@ def _load_testfile(filename, package, module_relative):
                 return file_contents.replace(os.linesep, '\n'), filename
     return open(filename).read(), filename
 
+# Use sys.stdout encoding for ouput.
+_encoding = getattr(sys.__stdout__, 'encoding', None) or 'utf-8'
+
 def _indent(s, indent=4):
     """
-    Add the given number of space characters to the beginning every
-    non-blank line in `s`, and return the result.
+    Add the given number of space characters to the beginning of
+    every non-blank line in `s`, and return the result.
+    If the string `s` is Unicode, it is encoded using the stdout
+    encoding and the `backslashreplace` error handler.
     """
+    if isinstance(s, unicode):
+        s = s.encode(_encoding, 'backslashreplace')
     # This regexp matches the start of non-blank lines:
     return re.sub('(?m)^(?!$)', indent*' ', s)
 
