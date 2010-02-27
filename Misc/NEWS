@@ -74,6 +74,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #691291: codecs.open() should not convert end of lines on reading and
+  writing.
+
 - Issue #7975: correct regression in dict methods supported by bsddb.dbshelve.
 
 - Issue #7959: ctypes callback functions are now registered correctly
