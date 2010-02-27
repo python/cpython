@@ -1609,7 +1609,8 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 }
 
 /* Convert the argument to a bytes object, according to the file
-   system encoding */
+   system encoding.  The addr param must be a PyObject**.
+   This is designed to be used with "O&" in PyArg_Parse APIs. */
 
 int
 PyUnicode_FSConverter(PyObject* arg, void* addr)
