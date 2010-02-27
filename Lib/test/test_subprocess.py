@@ -643,7 +643,7 @@ class POSIXProcessTestCase(unittest.TestCase):
 
         self.assertIs(p.poll(), None)
         p.send_signal(signal.SIGINT)
-        self.assertIsNot(p.wait(), None)
+        self.assertNotEqual(p.wait(), 0)
 
     @unittest.skip("See issue #2777")
     def test_kill(self):
@@ -741,7 +741,7 @@ class Win32ProcessTestCase(unittest.TestCase):
 
         self.assertIs(p.poll(), None)
         p.send_signal(signal.SIGTERM)
-        self.assertIsNot(p.wait(), None)
+        self.assertNotEqual(p.wait(), 0)
 
     @unittest.skip("See issue #2777")
     def test_kill(self):
@@ -749,7 +749,7 @@ class Win32ProcessTestCase(unittest.TestCase):
 
         self.assertIs(p.poll(), None)
         p.kill()
-        self.assertIsNot(p.wait(), None)
+        self.assertNotEqual(p.wait(), 0)
 
     @unittest.skip("See issue #2777")
     def test_terminate(self):
@@ -757,7 +757,7 @@ class Win32ProcessTestCase(unittest.TestCase):
 
         self.assertIs(p.poll(), None)
         p.terminate()
-        self.assertIsNot(p.wait(), None)
+        self.assertNotEqual(p.wait(), 0)
 
 
 @unittest.skipUnless(getattr(subprocess, '_has_poll', False),
