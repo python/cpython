@@ -12,6 +12,8 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Handle errors from looking up __prepare__ correctly.
+
 - Issue #5939: Add additional runtime checking to ensure a valid capsule
   in Modules/_ctypes/callproc.c.
 
