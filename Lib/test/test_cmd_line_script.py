@@ -62,7 +62,8 @@ print('sys.argv[0]==%r' % sys.argv[0])
 def _make_test_script(script_dir, script_basename, source=test_source):
     script_filename = script_basename+os.path.extsep+'py'
     script_name = os.path.join(script_dir, script_filename)
-    script_file = open(script_name, 'w')
+    # The script should be encoded to UTF-8, the default string encoding
+    script_file = open(script_name, 'w', encoding='utf-8')
     script_file.write(source)
     script_file.close()
     return script_name
