@@ -230,6 +230,20 @@ Make sure it works with subclassing.
     42
     >>>
 
+Test failures in looking up the __prepare__ method work.
+    >>> class ObscureException(Exception):
+    ...     pass
+    >>> class FailDescr:
+    ...     def __get__(self, instance, owner):
+    ...        raise ObscureException
+    >>> class Meta(type):
+    ...     __prepare__ = FailDescr()
+    >>> class X(metaclass=Meta):
+    ...     pass
+    Traceback (most recent call last):
+    [...]
+    test.test_metaclass.ObscureException
+
 """
 
 __test__ = {'doctests' : doctests}

@@ -108,8 +108,16 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 	}
 	prep = PyObject_GetAttrString(meta, "__prepare__");
 	if (prep == NULL) {
-		PyErr_Clear();
-		ns = PyDict_New();
+		if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+			PyErr_Clear();
+			ns = PyDict_New();
+		}
+		else {
+			Py_DECREF(meta);
+			Py_XDECREF(mkw);
+			Py_DECREF(bases);
+			return NULL;
+		}
 	}
 	else {
 		PyObject *pargs = PyTuple_Pack(2, name, bases);
