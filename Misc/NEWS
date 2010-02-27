@@ -260,6 +260,9 @@ C-API
 Library
 -------
 
+- Issue #691291: codecs.open() should not convert end of lines on reading and
+  writing.
+
 - Issue #7869: logging: improved diagnostic for format-time errors.
 
 - Issue #7868: logging: added loggerClass attribute to Manager.
