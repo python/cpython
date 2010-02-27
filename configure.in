@@ -3526,7 +3526,6 @@ AH_TEMPLATE(Py_UNICODE_SIZE,
 case "$unicode_size" in
   4) AC_DEFINE(Py_UNICODE_SIZE, 4) ;;
   *) AC_DEFINE(Py_UNICODE_SIZE, 2) ;;
-*) AC_MSG_ERROR([invalid value for --enable-unicode. Use either ucs2 or ucs4 (lowercase).]) ;;
 esac
 
 AH_TEMPLATE(PY_UNICODE_TYPE,
