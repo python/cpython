@@ -218,8 +218,8 @@ def _load_testfile(filename, package, module_relative, encoding):
 
 def _indent(s, indent=4):
     """
-    Add the given number of space characters to the beginning every
-    non-blank line in `s`, and return the result.
+    Add the given number of space characters to the beginning of
+    every non-blank line in `s`, and return the result.
     """
     # This regexp matches the start of non-blank lines:
     return re.sub('(?m)^(?!$)', indent*' ', s)
@@ -1354,7 +1354,14 @@ class DocTestRunner:
 
         save_stdout = sys.stdout
         if out is None:
-            out = save_stdout.write
+            encoding = save_stdout.encoding
+            if encoding is None or encoding.lower() == 'utf-8':
+                out = save_stdout.write
+            else:
+                # Use backslashreplace error handling on write
+                def out(s):
+                    s = str(s.encode(encoding, 'backslashreplace'), encoding)
+                    save_stdout.write(s)
         sys.stdout = self._fakeout
 
         # Patch pdb.set_trace to restore sys.stdout during interactive

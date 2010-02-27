@@ -2147,6 +2147,13 @@ doctest examples in a given file.  In its simple invokation, it is
 called with the name of a file, which is taken to be relative to the
 calling module.  The return value is (#failures, #tests).
 
+We don't want `-v` in sys.argv for these tests.
+
+    >>> save_argv = sys.argv
+    >>> if '-v' in sys.argv:
+    ...     sys.argv = [arg for arg in save_argv if arg != '-v']
+
+
     >>> doctest.testfile('test_doctest.txt') # doctest: +ELLIPSIS
     **********************************************************************
     File "...", line 6, in test_doctest.txt
@@ -2286,6 +2293,28 @@ using the optional keyword argument `encoding`:
     >>> doctest.testfile('test_doctest4.txt', encoding='utf-8')
     TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
+
+Test the verbose output:
+
+    >>> doctest.testfile('test_doctest4.txt', encoding='utf-8', verbose=True)
+    Trying:
+        'föö'
+    Expecting:
+        'f\xf6\xf6'
+    ok
+    Trying:
+        'bąr'
+    Expecting:
+        'b\u0105r'
+    ok
+    1 items passed all tests:
+       2 tests in test_doctest4.txt
+    2 tests in 1 items.
+    2 passed and 0 failed.
+    Test passed.
+    TestResults(failed=0, attempted=2)
+    >>> doctest.master = None  # Reset master.
+    >>> sys.argv = save_argv
 """
 
 def test_testmod(): r"""
@@ -2295,7 +2324,7 @@ fail with a UnicodeDecodeError because doctest tried to read the "source" lines
 out of the binary module.
 
     >>> import unicodedata
-    >>> doctest.testmod(unicodedata)
+    >>> doctest.testmod(unicodedata, verbose=False)
     TestResults(failed=0, attempted=0)
 """
 
