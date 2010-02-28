@@ -247,6 +247,25 @@ class ThreadTests(BaseTestCase):
             t.join()
         # else the thread is still running, and we have no way to kill it
 
+    def test_limbo_cleanup(self):
+        # Issue 7481: Failure to start thread should cleanup the limbo map.
+        def fail_new_thread(*args):
+            raise threading.ThreadError()
+        _start_new_thread = threading._start_new_thread
+        threading._start_new_thread = fail_new_thread
+        try:
+            t = threading.Thread(target=lambda: None)
+            try:
+                t.start()
+                assert False
+            except threading.ThreadError:
+                self.assertFalse(
+                    t in threading._limbo,
+                    "Failed to cleanup _limbo map on failure of Thread.start()."
+                )
+        finally:
+            threading._start_new_thread = _start_new_thread
+
     def test_finalize_runnning_thread(self):
         # Issue 1402: the PyGILState_Ensure / _Release functions may be called
         # very late on python exit: on deallocation of a running thread for

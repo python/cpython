@@ -711,6 +711,9 @@ Library
 - The os.get_exec_path() function to return the list of directories that will
   be searched for an executable when launching a subprocess was added.
 
+- Issue #7481: When a threading.Thread failed to start it would leave the
+  instance stuck in initial state and present in threading.enumerate().
+
 Extension Modules
 -----------------
 
