@@ -72,6 +72,9 @@ Library
 
 - Issue #7427: improve the representation of httplib.BadStatusLine exceptions.
 
+- Issue #7481: When a threading.Thread failed to start it would leave the
+  instance stuck in initial state and present in threading.enumerate().
+
 Extension Modules
 -----------------
 
