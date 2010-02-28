@@ -232,6 +232,9 @@ Library
 - Issue #5037: Proxy the __unicode__ special method to __unicode__ instead of
   __str__.
 
+- Issue #7481: When a threading.Thread failed to start it would leave the
+  instance stuck in initial state and present in threading.enumerate().
+
 Extension Modules
 -----------------
 
