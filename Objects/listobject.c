@@ -2537,7 +2537,7 @@ static PySequenceMethods list_as_sequence = {
 
 PyDoc_STRVAR(list_doc,
 "list() -> new list\n"
-"list(sequence) -> new list initialized from sequence's items");
+"list(iterable) -> new list initialized from iterable's items");
 
 
 static PyObject *
