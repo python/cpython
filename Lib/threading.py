@@ -455,7 +455,12 @@ class Thread(_Verbose):
             self._note("%s.start(): starting thread", self)
         with _active_limbo_lock:
             _limbo[self] = self
-        _start_new_thread(self._bootstrap, ())
+        try:
+            _start_new_thread(self._bootstrap, ())
+        except Exception:
+            with _active_limbo_lock:
+                del _limbo[self]
+            raise
         self._started.wait()
 
     def run(self):
