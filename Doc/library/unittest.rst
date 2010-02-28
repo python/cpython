@@ -106,17 +106,17 @@ Here is a short script to test three functions from the :mod:`random` module::
        def setUp(self):
            self.seq = range(10)
 
-       def testshuffle(self):
+       def test_shuffle(self):
            # make sure the shuffled sequence does not lose any elements
            random.shuffle(self.seq)
            self.seq.sort()
            self.assertEqual(self.seq, range(10))
 
-       def testchoice(self):
+       def test_choice(self):
            element = random.choice(self.seq)
            self.assertTrue(element in self.seq)
 
-       def testsample(self):
+       def test_sample(self):
            self.assertRaises(ValueError, random.sample, self.seq, 20)
            for element in random.sample(self.seq, 5):
                self.assertTrue(element in self.seq)
@@ -160,9 +160,9 @@ command line.  For example, the last two lines may be replaced with::
 Running the revised script from the interpreter or another script produces the
 following output::
 
-   testchoice (__main__.TestSequenceFunctions) ... ok
-   testsample (__main__.TestSequenceFunctions) ... ok
-   testshuffle (__main__.TestSequenceFunctions) ... ok
+   test_choice (__main__.TestSequenceFunctions) ... ok
+   test_sample (__main__.TestSequenceFunctions) ... ok
+   test_shuffle (__main__.TestSequenceFunctions) ... ok
 
    ----------------------------------------------------------------------
    Ran 3 tests in 0.110s
@@ -281,31 +281,32 @@ mechanism::
            self.widget.dispose()
            self.widget = None
 
-       def testDefaultSize(self):
+       def test_default_size(self):
            self.assertEqual(self.widget.size(), (50,50),
                             'incorrect default size')
 
-       def testResize(self):
+       def test_resize(self):
            self.widget.resize(100,150)
            self.assertEqual(self.widget.size(), (100,150),
                             'wrong size after resize')
 
-Here we have not provided a :meth:`runTest` method, but have instead provided
-two different test methods.  Class instances will now each run one of the
-:meth:`test\*`  methods, with ``self.widget`` created and destroyed separately
-for each instance.  When creating an instance we must specify the test method it
-is to run.  We do this by passing the method name in the constructor::
+Here we have not provided a :meth:`~TestCase.runTest` method, but have instead
+provided two different test methods.  Class instances will now each run one of
+the :meth:`test_\*` methods, with ``self.widget`` created and destroyed
+separately for each instance.  When creating an instance we must specify the
+test method it is to run.  We do this by passing the method name in the
+constructor::
 
-   defaultSizeTestCase = WidgetTestCase('testDefaultSize')
-   resizeTestCase = WidgetTestCase('testResize')
+   defaultSizeTestCase = WidgetTestCase('test_default_size')
+   resizeTestCase = WidgetTestCase('test_resize')
 
 Test case instances are grouped together according to the features they test.
 :mod:`unittest` provides a mechanism for this: the :dfn:`test suite`,
 represented by :mod:`unittest`'s :class:`TestSuite` class::
 
    widgetTestSuite = unittest.TestSuite()
-   widgetTestSuite.addTest(WidgetTestCase('testDefaultSize'))
-   widgetTestSuite.addTest(WidgetTestCase('testResize'))
+   widgetTestSuite.addTest(WidgetTestCase('test_default_size'))
+   widgetTestSuite.addTest(WidgetTestCase('test_resize'))
 
 For the ease of running tests, as we will see later, it is a good idea to
 provide in each test module a callable object that returns a pre-built test
@@ -313,14 +314,14 @@ suite::
 
    def suite():
        suite = unittest.TestSuite()
-       suite.addTest(WidgetTestCase('testDefaultSize'))
-       suite.addTest(WidgetTestCase('testResize'))
+       suite.addTest(WidgetTestCase('test_default_size'))
+       suite.addTest(WidgetTestCase('test_resize'))
        return suite
 
 or even::
 
    def suite():
-       tests = ['testDefaultSize', 'testResize']
+       tests = ['test_default_size', 'test_resize']
 
        return unittest.TestSuite(map(WidgetTestCase, tests))
 
@@ -331,8 +332,8 @@ populating it with individual tests. For example, ::
 
    suite = unittest.TestLoader().loadTestsFromTestCase(WidgetTestCase)
 
-will create a test suite that will run ``WidgetTestCase.testDefaultSize()`` and
-``WidgetTestCase.testResize``. :class:`TestLoader` uses the ``'test'`` method
+will create a test suite that will run ``WidgetTestCase.test_default_size()`` and
+``WidgetTestCase.test_resize``. :class:`TestLoader` uses the ``'test'`` method
 name prefix to identify test methods automatically.
 
 Note that the order in which the various test cases will be run is determined by
@@ -435,8 +436,8 @@ Classes and functions
 
       def suite():
           suite = unittest.TestSuite()
-          suite.addTest(WidgetTestCase('testDefaultSize'))
-          suite.addTest(WidgetTestCase('testResize'))
+          suite.addTest(WidgetTestCase('test_default_size'))
+          suite.addTest(WidgetTestCase('test_resize'))
           return suite
 
    Here, we create two instances of :class:`WidgetTestCase`, each of which runs a
