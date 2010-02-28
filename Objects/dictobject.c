@@ -2327,9 +2327,9 @@ dict_iter(PyDictObject *dict)
 }
 
 PyDoc_STRVAR(dictionary_doc,
-"dict() -> new empty dictionary.\n"
+"dict() -> new empty dictionary\n"
 "dict(mapping) -> new dictionary initialized from a mapping object's\n"
-"    (key, value) pairs.\n"
+"    (key, value) pairs\n"
 "dict(iterable) -> new dictionary initialized as if via:\n"
 "    d = {}\n"
 "    for k, v in iterable:\n"
