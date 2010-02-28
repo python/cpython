@@ -332,6 +332,9 @@ Library
 - Issue #7066: archive_util.make_archive now restores the cwd if an error is
   raised. Initial patch by Ezio Melotti.
 
+- Issue #7481: When a threading.Thread failed to start it would leave the
+  instance stuck in initial state and present in threading.enumerate().
+
 Extension Modules
 -----------------
 
