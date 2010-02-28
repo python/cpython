@@ -2102,7 +2102,7 @@ static PyNumberMethods set_as_number = {
 };
 
 PyDoc_STRVAR(set_doc,
-"set(iterable) --> set object\n\
+"set(iterable) -> new set object\n\
 \n\
 Build an unordered collection of unique elements.");
 
@@ -2200,7 +2200,7 @@ static PyNumberMethods frozenset_as_number = {
 };
 
 PyDoc_STRVAR(frozenset_doc,
-"frozenset(iterable) --> frozenset object\n\
+"frozenset(iterable) -> frozenset object\n\
 \n\
 Build an immutable unordered collection of unique elements.");
 
