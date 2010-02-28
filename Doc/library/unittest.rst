@@ -729,11 +729,15 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertSameElements(expected, actual, msg=None)
+   .. method:: assertSameElements(actual, expected, msg=None)
 
       Test that sequence *expected* contains the same elements as *actual*,
       regardless of their order. When they don't, an error message listing
       the differences between the sequences will be generated.
+
+      Duplicate elements are ignored when comparing *actual* and *expected*.
+      It is the equivalent of ``assertEqual(set(expected), set(actual))``
+      but it works with sequences of unhashable objects as well.
 
       If specified *msg* will be used as the error message on failure.
 
