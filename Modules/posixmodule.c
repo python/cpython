@@ -3762,15 +3762,18 @@ To both, return fd of newly opened pseudo-terminal.\n");
 static PyObject *
 posix_forkpty(PyObject *self, PyObject *noargs)
 {
-	int master_fd = -1, result;
+	int master_fd = -1, result = 0;
 	pid_t pid;
 
 	_PyImport_AcquireLock();
 	pid = forkpty(&master_fd, NULL, NULL, NULL);
-	if (pid == 0)
+	if (pid == 0) {
+		/* child: this clobbers and resets the import lock. */
 		PyOS_AfterFork();
-
-	result = _PyImport_ReleaseLock();
+	} else {
+		/* parent: release the import lock. */
+		result = _PyImport_ReleaseLock();
+	}
 	if (pid == -1)
 		return posix_error();
 	if (result < 0) {
