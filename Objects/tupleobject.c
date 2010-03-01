@@ -656,10 +656,10 @@ tuple_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(tuple_doc,
-"tuple() -> an empty tuple\n"
-"tuple(sequence) -> tuple initialized from sequence's items\n"
-"\n"
-"If the argument is a tuple, the return value is the same object.");
+"tuple() -> empty tuple\n\
+tuple(iterable) -> tuple initialized from iterable's items\n\
+\n\
+If the argument is a tuple, the return value is the same object.");
 
 static PySequenceMethods tuple_as_sequence = {
 	(lenfunc)tuplelength,			/* sq_length */
