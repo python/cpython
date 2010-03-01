@@ -3632,14 +3632,18 @@ static PyObject *
 posix_fork1(PyObject *self, PyObject *noargs)
 {
 	pid_t pid;
-	int result;
+	int result = 0;
 	_PyImport_AcquireLock();
 	pid = fork1();
-	result = _PyImport_ReleaseLock();
+	if (pid == 0) {
+		/* child: this clobbers and resets the import lock. */
+		PyOS_AfterFork();
+	} else {
+		/* parent: release the import lock. */
+		result = _PyImport_ReleaseLock();
+	}
 	if (pid == -1)
 		return posix_error();
-	if (pid == 0)
-		PyOS_AfterFork();
 	if (result < 0) {
 		/* Don't clobber the OSError if the fork failed. */
 		PyErr_SetString(PyExc_RuntimeError,
@@ -3661,14 +3665,18 @@ static PyObject *
 posix_fork(PyObject *self, PyObject *noargs)
 {
 	pid_t pid;
-	int result;
+	int result = 0;
 	_PyImport_AcquireLock();
 	pid = fork();
-	result = _PyImport_ReleaseLock();
+	if (pid == 0) {
+		/* child: this clobbers and resets the import lock. */
+		PyOS_AfterFork();
+	} else {
+		/* parent: release the import lock. */
+		result = _PyImport_ReleaseLock();
+	}
 	if (pid == -1)
 		return posix_error();
-	if (pid == 0)
-		PyOS_AfterFork();
 	if (result < 0) {
 		/* Don't clobber the OSError if the fork failed. */
 		PyErr_SetString(PyExc_RuntimeError,
@@ -3777,16 +3785,20 @@ To both, return fd of newly opened pseudo-terminal.\n");
 static PyObject *
 posix_forkpty(PyObject *self, PyObject *noargs)
 {
-	int master_fd = -1, result;
+	int master_fd = -1, result = 0;
 	pid_t pid;
 
 	_PyImport_AcquireLock();
 	pid = forkpty(&master_fd, NULL, NULL, NULL);
-	result = _PyImport_ReleaseLock();
+	if (pid == 0) {
+		/* child: this clobbers and resets the import lock. */
+		PyOS_AfterFork();
+	} else {
+		/* parent: release the import lock. */
+		result = _PyImport_ReleaseLock();
+	}
 	if (pid == -1)
 		return posix_error();
-	if (pid == 0)
-		PyOS_AfterFork();
 	if (result < 0) {
 		/* Don't clobber the OSError if the fork failed. */
 		PyErr_SetString(PyExc_RuntimeError,
