@@ -19,7 +19,7 @@
 #include <fcntl.h>
 #endif
 #ifdef __cplusplus
-extern "C" { 
+extern "C" {
 #endif
 
 #ifdef MS_WINDOWS
@@ -530,7 +530,7 @@ PyImport_GetMagicNumber(void)
    dictionary is stored by calling _PyImport_FixupExtension()
    immediately after the module initialization function succeeds.  A
    copy can be retrieved from there by calling
-   _PyImport_FindExtension(). 
+   _PyImport_FindExtension().
 
    Modules which do support multiple multiple initialization set
    their m_size field to a non-negative number (indicating the size
@@ -566,7 +566,7 @@ _PyImport_FixupExtension(PyObject *mod, char *name, char *filename)
 	}
 	if (def->m_size == -1) {
 		if (def->m_base.m_copy) {
-			/* Somebody already imported the module, 
+			/* Somebody already imported the module,
 			   likely under a different name.
 			   XXX this should really not happen. */
 			Py_DECREF(def->m_base.m_copy);
@@ -624,7 +624,7 @@ _PyImport_FindExtension(char *name, char *filename)
 		PySys_WriteStderr("import %s # previously loaded (%s)\n",
 				  name, filename);
 	return mod;
-	
+
 }
 
 
@@ -862,7 +862,7 @@ parse_source_module(const char *pathname, FILE *fp)
 
 	flags.cf_flags = 0;
 	mod = PyParser_ASTFromFile(fp, pathname, NULL,
-				   Py_file_input, 0, 0, &flags, 
+				   Py_file_input, 0, 0, &flags,
 				   NULL, arena);
 	if (mod) {
 		co = PyAST_Compile(mod, pathname, NULL, arena);
@@ -920,7 +920,7 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
 	mode_t mode = srcstat->st_mode & ~S_IEXEC;
 #else
 	mode_t mode = srcstat->st_mode & ~S_IXUSR & ~S_IXGRP & ~S_IXOTH;
-#endif 
+#endif
 
 	fp = open_exclusive(cpathname, mode);
 	if (fp == NULL) {
@@ -1010,7 +1010,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
 	char *cpathname;
 	PyCodeObject *co;
 	PyObject *m;
-	
+
 	if (fstat(fileno(fp), &st) != 0) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "unable to get file status from '%s'",
@@ -1383,7 +1383,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		if (!v)
 			return NULL;
 		if (PyUnicode_Check(v)) {
-			v = PyUnicode_AsEncodedString(v, 
+			v = PyUnicode_AsEncodedString(v,
 			    Py_FileSystemDefaultEncoding, NULL);
 			if (v == NULL)
 				return NULL;
@@ -1456,7 +1456,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			else {
 				char warnstr[MAXPATHLEN+80];
 				sprintf(warnstr, "Not importing directory "
-					"'%.*s': missing __init__.py", 
+					"'%.*s': missing __init__.py",
 					MAXPATHLEN, buf);
 				if (PyErr_WarnEx(PyExc_ImportWarning,
 						 warnstr, 1)) {
@@ -2270,7 +2270,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 		modname = PyDict_GetItem(globals, namestr);
 		if (modname == NULL || !PyUnicode_Check(modname))
 			return Py_None;
-	
+
 		modpath = PyDict_GetItem(globals, pathstr);
 		if (modpath != NULL) {
 			/* __path__ is set, so modname is already the package name */
@@ -2643,7 +2643,7 @@ PyImport_ReloadModule(PyObject *m)
 	struct filedescr *fdp;
 	FILE *fp = NULL;
 	PyObject *newm;
-    
+
 	if (modules_reloading == NULL) {
 		Py_FatalError("PyImport_ReloadModule: "
 			      "no modules_reloading dictionary!");
@@ -3039,8 +3039,8 @@ imp_load_compiled(PyObject *self, PyObject *args)
 	PyObject *m;
 	FILE *fp;
 	if (!PyArg_ParseTuple(args, "ses|O:load_compiled",
-			      &name, 
-			      Py_FileSystemDefaultEncoding, &pathname, 
+			      &name,
+			      Py_FileSystemDefaultEncoding, &pathname,
 			      &fob))
 		return NULL;
 	fp = get_file(pathname, fob, "rb");
@@ -3065,8 +3065,8 @@ imp_load_dynamic(PyObject *self, PyObject *args)
 	PyObject *m;
 	FILE *fp = NULL;
 	if (!PyArg_ParseTuple(args, "ses|O:load_dynamic",
-			      &name, 
-			      Py_FileSystemDefaultEncoding, &pathname, 
+			      &name,
+			      Py_FileSystemDefaultEncoding, &pathname,
 			      &fob))
 		return NULL;
 	if (fob) {
@@ -3094,7 +3094,7 @@ imp_load_source(PyObject *self, PyObject *args)
 	PyObject *m;
 	FILE *fp;
 	if (!PyArg_ParseTuple(args, "ses|O:load_source",
-			      &name, 
+			      &name,
 			      Py_FileSystemDefaultEncoding, &pathname,
 			      &fob))
 		return NULL;
@@ -3122,7 +3122,7 @@ imp_load_module(PyObject *self, PyObject *args)
 	FILE *fp;
 
 	if (!PyArg_ParseTuple(args, "sOes(ssi):load_module",
-			      &name, &fob, 
+			      &name, &fob,
 			      Py_FileSystemDefaultEncoding, &pathname,
 			      &suffix, &mode, &type))
 		return NULL;
@@ -3146,7 +3146,7 @@ imp_load_module(PyObject *self, PyObject *args)
 			PyMem_Free(pathname);
 			return NULL;
 		}
-	} 
+	}
 	ret = load_module(name, fp, pathname, type, NULL);
 	PyMem_Free(pathname);
 	if (fp)
@@ -3160,7 +3160,7 @@ imp_load_package(PyObject *self, PyObject *args)
 	char *name;
 	char *pathname;
 	PyObject * ret;
-	if (!PyArg_ParseTuple(args, "ses:load_package", 
+	if (!PyArg_ParseTuple(args, "ses:load_package",
 			      &name, Py_FileSystemDefaultEncoding, &pathname))
 		return NULL;
 	ret = load_package(name, pathname);
