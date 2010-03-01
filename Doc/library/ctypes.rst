@@ -2207,6 +2207,13 @@ These are the fundamental ctypes data types:
    Represents the C :ctype:`size_t` datatype.
 
 
+.. class:: c_ssize_t
+
+   Represents the C :ctype:`ssize_t` datatype.
+
+   .. versionadded:: 3.2
+
+
 .. class:: c_ubyte
 
    Represents the C :ctype:`unsigned char` datatype, it interprets the value as

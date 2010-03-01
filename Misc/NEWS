@@ -717,6 +717,8 @@ Library
 - Issue #1068268: The subprocess module now handles EINTR in internal
   os.waitpid and os.read system calls where appropriate.
 
+- Issue #6729: Added ctypes.c_ssize_t to represent ssize_t.
+
 Extension Modules
 -----------------
 
