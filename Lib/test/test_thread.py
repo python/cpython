@@ -174,11 +174,7 @@ class TestForkInThread(unittest.TestCase):
     def setUp(self):
         self.read_fd, self.write_fd = os.pipe()
 
-    def test_forkinthread(self):
-        if sys.platform.startswith('win'):
-            from test.test_support import TestSkipped
-            raise TestSkipped("This test is only appropriate for "
-                              "POSIX-like systems.")
+    def _test_forkinthread(self):
         def thread1():
             try:
                 pid = os.fork() # fork in a thread
@@ -195,6 +191,9 @@ class TestForkInThread(unittest.TestCase):
         thread.start_new_thread(thread1, ())
         self.assertEqual(os.read(self.read_fd, 2), "OK",
                          "Unable to fork() in thread")
+
+    if sys.platform.startswith('win'):
+        test_forkinthread = _test_forkinthread
 
     def tearDown(self):
         try:
