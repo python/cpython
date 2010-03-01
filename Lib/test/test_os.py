@@ -642,6 +642,7 @@ if sys.platform != 'win32':
                     self.assertRaises(os.error, os.setreuid, 0, 0)
                 self.assertRaises(OverflowError, os.setreuid, 1<<32, 0)
                 self.assertRaises(OverflowError, os.setreuid, 0, 1<<32)
+                os.setreuid(-1, -1)  # Does nothing, but it needs to accept -1
 
         if hasattr(os, 'setregid'):
             def test_setregid(self):
@@ -649,6 +650,7 @@ if sys.platform != 'win32':
                     self.assertRaises(os.error, os.setregid, 0, 0)
                 self.assertRaises(OverflowError, os.setregid, 1<<32, 0)
                 self.assertRaises(OverflowError, os.setregid, 0, 1<<32)
+                os.setregid(-1, -1)  # Does nothing, but it needs to accept -1
 else:
     class PosixUidGidTests(unittest.TestCase):
         pass
