@@ -255,14 +255,10 @@ class ThreadTests(BaseTestCase):
         threading._start_new_thread = fail_new_thread
         try:
             t = threading.Thread(target=lambda: None)
-            try:
-                t.start()
-                assert False
-            except threading.ThreadError:
-                self.assertFalse(
-                    t in threading._limbo,
-                    "Failed to cleanup _limbo map on failure of Thread.start()."
-                )
+            self.assertRaises(threading.ThreadError, t.start)
+            self.assertFalse(
+                t in threading._limbo,
+                "Failed to cleanup _limbo map on failure of Thread.start().")
         finally:
             threading._start_new_thread = _start_new_thread
 
