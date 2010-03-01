@@ -4,6 +4,7 @@ import subprocess
 import sys
 import signal
 import os
+import errno
 import tempfile
 import time
 import re
@@ -813,6 +814,25 @@ if getattr(subprocess, '_has_poll', False):
 
     unit_tests.append(ProcessTestCaseNoPoll)
 
+
+class HelperFunctionTests(unittest.TestCase):
+    def test_eintr_retry_call(self):
+        record_calls = []
+        def fake_os_func(*args):
+            record_calls.append(args)
+            if len(record_calls) == 2:
+                raise OSError(errno.EINTR, "fake interrupted system call")
+            return tuple(reversed(args))
+
+        self.assertEqual((999, 256),
+                         subprocess._eintr_retry_call(fake_os_func, 256, 999))
+        self.assertEqual([(256, 999)], record_calls)
+        # This time there will be an EINTR so it will loop once.
+        self.assertEqual((666,),
+                         subprocess._eintr_retry_call(fake_os_func, 666))
+        self.assertEqual([(256, 999), (666,), (666,)], record_calls)
+
+unit_tests.append(HelperFunctionTests)
 
 def test_main():
     support.run_unittest(*unit_tests)
