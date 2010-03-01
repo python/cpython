@@ -193,6 +193,7 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
             errorOut = temp.getvalue()
             if not successRe.search(errorOut):
                 self.fail("unexpected stderr output:\n"+errorOut)
+        sys.exc_traceback = sys.last_traceback = None
 
     def _test_compare_function_exception (self):
         self.startTest ()

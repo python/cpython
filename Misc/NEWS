@@ -241,6 +241,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #7808: Fix reference leaks in _bsddb and related tests.
+
 - Stop providing crtassem.h symbols when compiling with Visual Studio 2010, as
   msvcr100.dll is not a platform assembly anymore.
 
