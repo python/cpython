@@ -4,6 +4,7 @@
 import os
 import time
 import unittest
+import weakref
 
 from test_all import db, test_support, have_threads, verbose, \
         get_new_environment_path, get_new_database_path
@@ -34,13 +35,16 @@ class DBReplicationManager(unittest.TestCase):
                 | db.DB_INIT_LOG | db.DB_INIT_MPOOL | db.DB_INIT_LOCK |
                 db.DB_INIT_REP | db.DB_RECOVER | db.DB_THREAD, 0666)
 
+        wr = weakref.ref(self)
         self.confirmed_master=self.client_startupdone=False
         def confirmed_master(a,b,c) :
             if b==db.DB_EVENT_REP_MASTER :
+                self = wr()
                 self.confirmed_master=True
 
         def client_startupdone(a,b,c) :
             if b==db.DB_EVENT_REP_STARTUPDONE :
+                self = wr()
                 self.client_startupdone=True
 
         self.dbenvMaster.set_event_notify(confirmed_master)
@@ -215,12 +219,15 @@ class DBReplicationManager(unittest.TestCase):
 class DBBaseReplication(DBReplicationManager):
     def setUp(self) :
         DBReplicationManager.setUp(self)
+        wr = weakref.ref(self)
         def confirmed_master(a,b,c) :
             if (b == db.DB_EVENT_REP_MASTER) or (b == db.DB_EVENT_REP_ELECTED) :
+                self = wr()
                 self.confirmed_master = True
 
         def client_startupdone(a,b,c) :
             if b == db.DB_EVENT_REP_STARTUPDONE :
+                self = wr()
                 self.client_startupdone = True
 
         self.dbenvMaster.set_event_notify(confirmed_master)
@@ -233,9 +240,11 @@ class DBBaseReplication(DBReplicationManager):
         # There are only two nodes, so we don't need to
         # do any routing decision
         def m2c(dbenv, control, rec, lsnp, envid, flags) :
+            self = wr()
             self.m2c.put((control, rec))
 
         def c2m(dbenv, control, rec, lsnp, envid, flags) :
+            self = wr()
             self.c2m.put((control, rec))
 
         self.dbenvMaster.rep_set_transport(13,m2c)
@@ -252,10 +261,12 @@ class DBBaseReplication(DBReplicationManager):
         #self.dbenvClient.set_verbose(db.DB_VERB_FILEOPS_ALL, True)
 
         def thread_master() :
+            self = wr()
             return self.thread_do(self.dbenvMaster, self.c2m, 3,
                     self.master_doing_election, True)
 
         def thread_client() :
+            self = wr()
             return self.thread_do(self.dbenvClient, self.m2c, 13,
                     self.client_doing_election, False)
 
@@ -408,6 +419,7 @@ class DBBaseReplication(DBReplicationManager):
                                     break
                                 except db.DBRepUnavailError :
                                     pass
+
                         if not election_status[0] and not self.confirmed_master :
                             from threading import Thread
                             election_status[0] = True
