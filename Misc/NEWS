@@ -235,6 +235,9 @@ Library
 - Issue #7481: When a threading.Thread failed to start it would leave the
   instance stuck in initial state and present in threading.enumerate().
 
+- Issue #1068268: The subprocess module now handles EINTR in internal
+  os.waitpid and os.read system calls where appropriate.
+
 Extension Modules
 -----------------
 
