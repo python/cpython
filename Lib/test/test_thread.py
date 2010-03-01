@@ -4,6 +4,7 @@ import random
 from test import support
 import _thread as thread
 import time
+import sys
 import weakref
 
 from test import lock_tests
@@ -193,8 +194,47 @@ class LockTests(lock_tests.LockTests):
     locktype = thread.allocate_lock
 
 
+class TestForkInThread(unittest.TestCase):
+    def setUp(self):
+        self.read_fd, self.write_fd = os.pipe()
+
+    @unittest.skipIf(sys.platform.startswith('win'),
+                    "This test is only appropriate for POSIX-like systems.")
+    def test_forkinthread(self):
+        def thread1():
+            try:
+                pid = os.fork() # fork in a thread
+            except RuntimeError:
+                os._exit(1) # exit the child
+
+            if pid == 0: # child
+                try:
+                    os.close(self.read_fd)
+                    os.write(self.write_fd, b"OK")
+                finally:
+                    os._exit(0)
+            else: # parent
+                os.close(self.write_fd)
+
+        thread.start_new_thread(thread1, ())
+        self.assertEqual(os.read(self.read_fd, 2), b"OK",
+                         "Unable to fork() in thread")
+
+    def tearDown(self):
+        try:
+            os.close(self.read_fd)
+        except OSError:
+            pass
+
+        try:
+            os.close(self.write_fd)
+        except OSError:
+            pass
+
+
 def test_main():
-    support.run_unittest(ThreadRunningTests, BarrierTest, LockTests)
+    support.run_unittest(ThreadRunningTests, BarrierTest, LockTests,
+                         TestForkInThread)
 
 if __name__ == "__main__":
     test_main()
