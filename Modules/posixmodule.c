@@ -4370,9 +4370,16 @@ posix_setreuid (PyObject *self, PyObject *args)
 	uid_t ruid, euid;
 	if (!PyArg_ParseTuple(args, "ll", &ruid_arg, &euid_arg))
 		return NULL;
-	ruid = ruid_arg;
-	euid = euid_arg;
-	if (euid != euid_arg || ruid != ruid_arg) {
+	if (ruid_arg == -1)
+		ruid = (uid_t)-1;  /* let the compiler choose how -1 fits */
+	else
+		ruid = ruid_arg;  /* otherwise, assign from our long */
+	if (euid_arg == -1)
+		euid = (uid_t)-1;
+	else
+		euid = euid_arg;
+	if ((euid_arg != -1 && euid != euid_arg) || 
+	    (ruid_arg != -1 && ruid != ruid_arg)) {
 		PyErr_SetString(PyExc_OverflowError, "user id too big");
 		return NULL;
 	}
@@ -4397,9 +4404,16 @@ posix_setregid (PyObject *self, PyObject *args)
 	gid_t rgid, egid;
 	if (!PyArg_ParseTuple(args, "ll", &rgid_arg, &egid_arg))
 		return NULL;
-	rgid = rgid_arg;
-	egid = egid_arg;
-	if (egid != egid_arg || rgid != rgid_arg) {
+	if (rgid_arg == -1)
+		rgid = (gid_t)-1;  /* let the compiler choose how -1 fits */
+	else
+		rgid = rgid_arg;  /* otherwise, assign from our long */
+	if (egid_arg == -1)
+		egid = (gid_t)-1;
+	else
+		egid = egid_arg;
+	if ((egid_arg != -1 && egid != egid_arg) || 
+	    (rgid_arg != -1 && rgid != rgid_arg)) {
 		PyErr_SetString(PyExc_OverflowError, "group id too big");
 		return NULL;
 	}
