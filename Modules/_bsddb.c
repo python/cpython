@@ -2382,8 +2382,6 @@ _db_compareCallback(DB* db,
 
 	args = BuildValue_SS(leftKey->data, leftKey->size, rightKey->data, rightKey->size);
 	if (args != NULL) {
-		/* XXX(twouters) I highly doubt this INCREF is correct */
-		Py_INCREF(self);
 		result = PyEval_CallObject(self->btCompareCallback, args);
 	}
 	if (args == NULL || result == NULL) {
@@ -2432,10 +2430,12 @@ DB_set_bt_compare(DBObject* self, PyObject* comparator)
     if (result == NULL)
         return NULL;
     if (!NUMBER_Check(result)) {
+	Py_DECREF(result);
 	PyErr_SetString(PyExc_TypeError,
 		        "callback MUST return an int");
 	return NULL;
     } else if (NUMBER_AsLong(result) != 0) {
+	Py_DECREF(result);
 	PyErr_SetString(PyExc_TypeError,
 		        "callback failed to return 0 on two empty strings");
 	return NULL;
@@ -5776,6 +5776,8 @@ DBEnv_repmgr_site_list(DBEnvObject* self)
             free(listp);
             return NULL;
         }
+        Py_DECREF(key);
+        Py_DECREF(tuple);
     }
     free(listp);
     return stats;
@@ -7578,4 +7580,3 @@ PyMODINIT_FUNC PyInit__pybsddb(void)  /* Note the two underscores */
     return PyInit__bsddb();   /* Note the two underscores */
 #endif
 }
-

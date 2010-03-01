@@ -35,7 +35,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #1729305: Fix doctest to handle encode error with "backsplashreplace".
+- Issue #1729305: Fix doctest to handle encode error with "backslashreplace".
 
 - Issue #691291: codecs.open() should not convert end of lines on reading and
   writing.
@@ -82,6 +82,8 @@ Library
 
 Extension Modules
 -----------------
+
+- Issue #7808: Fix reference leaks in _bsddb and related tests.
 
 - Issue #6544: fix a reference leak in the kqueue implementation's error
   handling.
