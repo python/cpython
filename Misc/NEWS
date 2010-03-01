@@ -254,6 +254,9 @@ Extension Modules
   thread could raise an incorrect RuntimeError about not holding the import
   lock.  The import lock is now reinitialized after fork.
 
+- Issue #7999: os.setreuid() and os.setregid() would refuse to accept a -1
+  parameter on some platforms such as OS X.
+
 Build
 -----
 
