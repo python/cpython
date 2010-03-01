@@ -734,7 +734,7 @@ class ProcessTestCase(unittest.TestCase):
             self.assertNotEqual(p.wait(), 0)
 
 class HelperFunctionTests(unittest.TestCase):
-    def test_eintr_retry_call(self):
+    def _test_eintr_retry_call(self):
         record_calls = []
         def fake_os_func(*args):
             record_calls.append(args)
@@ -749,6 +749,9 @@ class HelperFunctionTests(unittest.TestCase):
         self.assertEqual((666,),
                          subprocess._eintr_retry_call(fake_os_func, 666))
         self.assertEqual([(256, 999), (666,), (666,)], record_calls)
+
+    if not mswindows:
+        test_eintr_retry_call = _test_eintr_retry_call
 
 
 def test_main():
