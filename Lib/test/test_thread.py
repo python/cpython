@@ -201,11 +201,9 @@ class TestForkInThread(unittest.TestCase):
     def setUp(self):
         self.read_fd, self.write_fd = os.pipe()
 
+    @unittest.skipIf(sys.platform.startswith('win'),
+                    "This test is only appropriate for POSIX-like systems.")
     def test_forkinthread(self):
-        if sys.platform.startswith('win'):
-            from test.test_support import TestSkipped
-            raise TestSkipped("This test is only appropriate for "
-                              "POSIX-like systems.")
         def thread1():
             try:
                 pid = os.fork() # fork in a thread
