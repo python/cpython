@@ -751,6 +751,9 @@ Extension Modules
 - Expat: Fix DoS via XML document with malformed UTF-8 sequences
   (CVE_2009_3560).
 
+- Issue #7999: os.setreuid() and os.setregid() would refuse to accept a -1
+  parameter on some platforms such as OS X.
+
 Build
 -----
 
