@@ -407,6 +407,16 @@ PIPE = -1
 STDOUT = -2
 
 
+def _eintr_retry_call(func, *args):
+    while True:
+        try:
+            return func(*args)
+        except OSError as e:
+            if e.errno == errno.EINTR:
+                continue
+            raise
+
+
 def call(*popenargs, **kwargs):
     """Run command with arguments.  Wait for command to complete, then
     return the returncode attribute.
@@ -1134,13 +1144,13 @@ class Popen(object):
 
                 # Wait for exec to fail or succeed; possibly raising an
                 # exception (limited to 1 MB)
-                data = os.read(errpipe_read, 1048576)
+                data = _eintr_retry_call(os.read, errpipe_read, 1048576)
             finally:
                 # be sure the FD is closed no matter what
                 os.close(errpipe_read)
 
             if data:
-                os.waitpid(self.pid, 0)
+                _eintr_retry_call(os.waitpid, self.pid, 0)
                 child_exception = pickle.loads(data)
                 for fd in (p2cwrite, c2pread, errread):
                     if fd is not None:
@@ -1176,7 +1186,7 @@ class Popen(object):
             """Wait for child process to terminate.  Returns returncode
             attribute."""
             if self.returncode is None:
-                pid, sts = os.waitpid(self.pid, 0)
+                pid, sts = _eintr_retry_call(os.waitpid, self.pid, 0)
                 self._handle_exitstatus(sts)
             return self.returncode
 
