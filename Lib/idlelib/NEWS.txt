@@ -1,7 +1,7 @@
 What's New in Python 2.6.4rc1
 =============================
 
-*Release date: XX-Oct-2009*
+*Release date: 07-Oct-2009*
 
 - OutputWindow/PyShell right click menu "Go to file/line" wasn't working with
   file paths containing spaces.  Bug 5559.
