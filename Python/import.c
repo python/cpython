@@ -295,14 +295,18 @@ _PyImport_ReleaseLock(void)
 	return 1;
 }
 
-/* This function used to be called from PyOS_AfterFork to ensure that newly
-   created child processes do not share locks with the parent, but for some
-   reason only on AIX systems. Instead of re-initializing the lock, we now
-   acquire the import lock around fork() calls. */
+/* This function is called from PyOS_AfterFork to ensure that newly
+   created child processes do not share locks with the parent.
+   We now acquire the import lock around fork() calls but on some platforms
+   (Solaris 9 and earlier? see isue7242) that still left us with problems. */
 
 void
 _PyImport_ReInitLock(void)
 {
+ 	if (import_lock != NULL)
+ 		import_lock = PyThread_allocate_lock();
+ 	import_lock_thread = -1;
+ 	import_lock_level = 0;
 }
 
 #endif
