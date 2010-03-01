@@ -816,6 +816,7 @@ if getattr(subprocess, '_has_poll', False):
 
 
 class HelperFunctionTests(unittest.TestCase):
+    @unittest.skipIf(mswindows, "errno and EINTR make no sense on windows")
     def test_eintr_retry_call(self):
         record_calls = []
         def fake_os_func(*args):
