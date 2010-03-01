@@ -74,6 +74,15 @@ Using :func:`new` with an algorithm provided by OpenSSL:
    >>> h.hexdigest()
    'cc4a5ce1b3df48aec5d22d1f16b894a0b894eccc'
 
+This module provides the following constant attribute:
+
+.. data:: hashlib.algorithms
+
+   A tuple providing the names of the hash algorithms guaranteed to be
+   supported by this module.
+
+   .. versionadded:: 2.7
+
 The following values are provided as constant attributes of the hash objects
 returned by the constructors:
 

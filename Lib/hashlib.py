@@ -58,7 +58,9 @@ More condensed:
 # always available algorithm is added.
 __always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
 
-__all__ = __always_supported + ('new',)
+algorithms = __always_supported
+
+__all__ = __always_supported + ('new', 'algorithms')
 
 
 def __get_builtin_constructor(name):
