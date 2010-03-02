@@ -19,6 +19,7 @@ import sys
 import textwrap
 import tempfile
 import unittest
+import warnings
 import argparse
 
 from test import test_support
@@ -43,29 +44,6 @@ except NameError:
         if reverse:
             result.reverse()
         return result
-
-# silence Python 2.6 buggy warnings about Exception.message
-if sys.version_info[:2] == (2, 6):
-    import warnings
-    warnings.filterwarnings(
-        action='ignore',
-        message='BaseException.message has been deprecated as of Python 2.6',
-        category=DeprecationWarning)
-
-# silence warnings about version argument - these are expected
-import warnings
-warnings.filterwarnings(
-    action='ignore',
-    message='The "version" argument to ArgumentParser is deprecated.',
-    category=DeprecationWarning)
-warnings.filterwarnings(
-    action='ignore',
-    message='The format_version method is deprecated',
-    category=DeprecationWarning)
-warnings.filterwarnings(
-    action='ignore',
-    message='The print_version method is deprecated',
-    category=DeprecationWarning)
 
 
 class TestCase(unittest.TestCase):
@@ -4204,7 +4182,28 @@ class TestImportStar(TestCase):
             self.failUnless(hasattr(argparse, name))
 
 def test_main():
-    test_support.run_unittest(__name__)
+    with warnings.catch_warnings():
+        # silence Python 2.6 buggy warnings about Exception.message
+        warnings.filterwarnings(
+            action='ignore',
+            message='BaseException.message has been deprecated as of'
+            'Python 2.6',
+            category=DeprecationWarning)
+        # silence warnings about version argument - these are expected
+        warnings.filterwarnings(
+            action='ignore',
+            message='The "version" argument to ArgumentParser is deprecated.',
+            category=DeprecationWarning)
+        warnings.filterwarnings(
+            action='ignore',
+            message='The format_version method is deprecated',
+            category=DeprecationWarning)
+        warnings.filterwarnings(
+            action='ignore',
+            message='The print_version method is deprecated',
+            category=DeprecationWarning)
+
+        test_support.run_unittest(__name__)
 
 
 if __name__ == '__main__':
