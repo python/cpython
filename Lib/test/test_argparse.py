@@ -4178,6 +4178,10 @@ def test_main():
             category=DeprecationWarning)
 
         test_support.run_unittest(__name__)
+    # Remove global references to avoid looking like we have refleaks.
+    RFile.seen = {}
+    WFile.seen = set()
+
 
 
 if __name__ == '__main__':
