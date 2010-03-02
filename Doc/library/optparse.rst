@@ -1,8 +1,8 @@
-:mod:`optparse` --- More powerful command line option parser
-============================================================
+:mod:`optparse` --- Parser for command line options
+===================================================
 
 .. module:: optparse
-   :synopsis: More convenient, flexible, and powerful command-line parsing library.
+   :synopsis: Command-line option parsing library.
 .. moduleauthor:: Greg Ward <gward@python.net>
 .. sectionauthor:: Greg Ward <gward@python.net>
 
