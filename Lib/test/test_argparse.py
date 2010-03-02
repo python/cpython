@@ -22,29 +22,9 @@ import unittest
 import warnings
 import argparse
 
+from StringIO import StringIO
+
 from test import test_support
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-try:
-    set
-except NameError:
-    from sets import Set as set
-
-try:
-    sorted
-except NameError:
-
-    def sorted(iterable, reverse=False):
-        result = list(iterable)
-        result.sort()
-        if reverse:
-            result.reverse()
-        return result
-
 
 class TestCase(unittest.TestCase):
 
