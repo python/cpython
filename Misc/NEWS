@@ -722,6 +722,8 @@ Library
 
 - Issue #6729: Added ctypes.c_ssize_t to represent ssize_t.
 
+- Issue #6247: The argparse module has been added to the standard library.
+
 Extension Modules
 -----------------
 
