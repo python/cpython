@@ -22,29 +22,9 @@ import unittest
 import warnings
 import argparse
 
+from io import StringIO
+
 from test import support
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-try:
-    set
-except NameError:
-    from sets import Set as set
-
-try:
-    sorted
-except NameError:
-
-    def sorted(iterable, reverse=False):
-        result = list(iterable)
-        result.sort()
-        if reverse:
-            result.reverse()
-        return result
-
 
 class TestCase(unittest.TestCase):
 
@@ -4183,12 +4163,6 @@ class TestImportStar(TestCase):
 
 def test_main():
     with warnings.catch_warnings():
-        # silence Python 2.6 buggy warnings about Exception.message
-        warnings.filterwarnings(
-            action='ignore',
-            message='BaseException.message has been deprecated as of'
-            'Python 2.6',
-            category=DeprecationWarning)
         # silence warnings about version argument - these are expected
         warnings.filterwarnings(
             action='ignore',
