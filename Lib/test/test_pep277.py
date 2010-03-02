@@ -38,8 +38,8 @@ class UnicodeFileTests(unittest.TestCase):
                 f = open(name, 'w')
             except UnicodeEncodeError:
                 if not os.path.supports_unicode_filenames:
-                    raise unittest.SkipTest("test works only on NT+, and with "
-                                            "pseudo-Unicode filesystems")
+                    raise unittest.SkipTest("only NT+ and systems with Unicode"
+                                            "-friendly filesystem encoding")
             f.write((name+'\n').encode("utf-8"))
             f.close()
             os.stat(name)
