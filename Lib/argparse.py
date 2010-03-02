@@ -95,27 +95,6 @@ import textwrap as _textwrap
 
 from gettext import gettext as _
 
-try:
-    _set = set
-except NameError:
-    from sets import Set as _set
-
-try:
-    _basestring = basestring
-except NameError:
-    _basestring = str
-
-try:
-    _sorted = sorted
-except NameError:
-
-    def _sorted(iterable, reverse=False):
-        result = list(iterable)
-        result.sort()
-        if reverse:
-            result.reverse()
-        return result
-
 
 def _callable(obj):
     return hasattr(obj, '__call__') or hasattr(obj, '__bases__')
@@ -152,7 +131,7 @@ class _AttributeHolder(object):
         return '%s(%s)' % (type_name, ', '.join(arg_strings))
 
     def _get_kwargs(self):
-        return _sorted(self.__dict__.items())
+        return sorted(self.__dict__.items())
 
     def _get_args(self):
         return []
@@ -405,7 +384,7 @@ class HelpFormatter(object):
 
     def _format_actions_usage(self, actions, groups):
         # find group indices and identify actions in groups
-        group_actions = _set()
+        group_actions = set()
         inserts = {}
         for group in groups:
             try:
@@ -475,7 +454,7 @@ class HelpFormatter(object):
                 parts.append(part)
 
         # insert things at the necessary indices
-        for i in _sorted(inserts, reverse=True):
+        for i in sorted(inserts, reverse=True):
             parts[i:i] = [inserts[i]]
 
         # join all the action items with spaces
@@ -1705,7 +1684,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 if not hasattr(namespace, action.dest):
                     if action.default is not SUPPRESS:
                         default = action.default
-                        if isinstance(action.default, _basestring):
+                        if isinstance(action.default, basestring):
                             default = self._get_value(action, default)
                         setattr(namespace, action.dest, default)
 
@@ -1765,8 +1744,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         arg_strings_pattern = ''.join(arg_string_pattern_parts)
 
         # converts arg strings to the appropriate and then takes the action
-        seen_actions = _set()
-        seen_non_default_actions = _set()
+        seen_actions = set()
+        seen_non_default_actions = set()
 
         def take_action(action, argument_strings, option_string=None):
             seen_actions.add(action)
@@ -2179,7 +2158,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 value = action.const
             else:
                 value = action.default
-            if isinstance(value, _basestring):
+            if isinstance(value, basestring):
                 value = self._get_value(action, value)
                 self._check_value(action, value)
 
