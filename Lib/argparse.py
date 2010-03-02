@@ -120,15 +120,6 @@ except NameError:
 def _callable(obj):
     return hasattr(obj, '__call__') or hasattr(obj, '__bases__')
 
-# silence Python 2.6 buggy warnings about Exception.message
-if _sys.version_info[:2] == (2, 6):
-    import warnings
-    warnings.filterwarnings(
-        action='ignore',
-        message='BaseException.message has been deprecated as of Python 2.6',
-        category=DeprecationWarning,
-        module='argparse')
-
 
 SUPPRESS = '==SUPPRESS=='
 

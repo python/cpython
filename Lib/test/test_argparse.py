@@ -4183,12 +4183,6 @@ class TestImportStar(TestCase):
 
 def test_main():
     with warnings.catch_warnings():
-        # silence Python 2.6 buggy warnings about Exception.message
-        warnings.filterwarnings(
-            action='ignore',
-            message='BaseException.message has been deprecated as of'
-            'Python 2.6',
-            category=DeprecationWarning)
         # silence warnings about version argument - these are expected
         warnings.filterwarnings(
             action='ignore',
