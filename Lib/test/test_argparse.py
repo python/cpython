@@ -21,6 +21,8 @@ import tempfile
 import unittest
 import argparse
 
+from test import test_support
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -1951,6 +1953,8 @@ class TestParentParsers(TestCase):
         group.add_argument('-a', action='store_true')
         group.add_argument('-b', action='store_true')
 
+        self.main_program = os.path.basename(sys.argv[0])
+
     def test_single_parent(self):
         parser = ErrorRaisingArgumentParser(parents=[self.wxyz_parent])
         self.assertEqual(parser.parse_args('-y 1 2 --w 3'.split()),
@@ -2043,7 +2047,7 @@ class TestParentParsers(TestCase):
         parser = ErrorRaisingArgumentParser(parents=parents)
         parser_help = parser.format_help()
         self.assertEqual(parser_help, textwrap.dedent('''\
-            usage: test_argparse.py [-h] [-b B] [--d D] [--w W] [-y Y] a z
+            usage: {} [-h] [-b B] [--d D] [--w W] [-y Y] a z
 
             positional arguments:
               a
@@ -2059,7 +2063,7 @@ class TestParentParsers(TestCase):
 
             x:
               -y Y
-        '''))
+        '''.format(self.main_program)))
 
     def test_groups_parents(self):
         parent = ErrorRaisingArgumentParser(add_help=False)
@@ -2076,7 +2080,7 @@ class TestParentParsers(TestCase):
 
         parser_help = parser.format_help()
         self.assertEqual(parser_help, textwrap.dedent('''\
-            usage: test_argparse.py [-h] [-w W] [-x X] [-y Y | -z Z]
+            usage: {} [-h] [-w W] [-x X] [-y Y | -z Z]
 
             optional arguments:
               -h, --help  show this help message and exit
@@ -2088,7 +2092,7 @@ class TestParentParsers(TestCase):
 
               -w W
               -x X
-        '''))
+        '''.format(self.main_program)))
 
 # ==============================
 # Mutually exclusive group tests
@@ -4198,6 +4202,9 @@ class TestImportStar(TestCase):
     def test(self):
         for name in argparse.__all__:
             self.failUnless(hasattr(argparse, name))
+
+def test_main():
+    test_support.run_unittest(__name__)
 
 
 if __name__ == '__main__':
