@@ -2,9 +2,6 @@
 # open, os.open, os.stat. os.listdir, os.rename, os.remove, os.mkdir, os.chdir, os.rmdir
 import sys, os, unittest
 from test import test_support
-## There's no obvious reason to skip these tests on POSIX systems
-# if not os.path.supports_unicode_filenames:
-#     raise unittest.SkipTest, "test works only on NT+"
 
 filenames = [
     'abc',
@@ -37,7 +34,12 @@ class UnicodeFileTests(unittest.TestCase):
         except OSError:
             pass
         for name in self.files:
-            f = open(name, 'w')
+            try:
+                f = open(name, 'w')
+            except UnicodeEncodeError:
+                if not os.path.supports_unicode_filenames:
+                    raise unittest.SkipTest("test works only on NT+, and with "
+                                            "pseudo-Unicode filesystems")
             f.write((name+'\n').encode("utf-8"))
             f.close()
             os.stat(name)

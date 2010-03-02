@@ -106,7 +106,8 @@ Extension Modules
 Tests
 -----
 
-- Issue #767675: enable test_pep277 on all platforms.
+- Issue #767675: enable test_pep277 on POSIX platforms with Unicode-friendly
+  filesystem encoding.
 
 - Issue #6292: for the moment at least, the test suite runs cleanly if python
   is run with the -OO flag.  Tests requiring docstrings are skipped.
