@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Copyright © 2006-2009 Steven J. Bethard <steven.bethard@gmail.com>.
+# Copyright 2006-2009 Steven J. Bethard <steven.bethard@gmail.com>.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy
@@ -21,7 +19,10 @@ import sys
 import textwrap
 import tempfile
 import unittest
+import warnings
 import argparse
+
+from test import support
 
 try:
     from StringIO import StringIO
@@ -43,29 +44,6 @@ except NameError:
         if reverse:
             result.reverse()
         return result
-
-# silence Python 2.6 buggy warnings about Exception.message
-if sys.version_info[:2] == (2, 6):
-    import warnings
-    warnings.filterwarnings(
-        action='ignore',
-        message='BaseException.message has been deprecated as of Python 2.6',
-        category=DeprecationWarning)
-
-# silence warnings about version argument - these are expected
-import warnings
-warnings.filterwarnings(
-    action='ignore',
-    message='The "version" argument to ArgumentParser is deprecated.',
-    category=DeprecationWarning)
-warnings.filterwarnings(
-    action='ignore',
-    message='The format_version method is deprecated',
-    category=DeprecationWarning)
-warnings.filterwarnings(
-    action='ignore',
-    message='The print_version method is deprecated',
-    category=DeprecationWarning)
 
 
 class TestCase(unittest.TestCase):
@@ -1953,6 +1931,8 @@ class TestParentParsers(TestCase):
         group.add_argument('-a', action='store_true')
         group.add_argument('-b', action='store_true')
 
+        self.main_program = os.path.basename(sys.argv[0])
+
     def test_single_parent(self):
         parser = ErrorRaisingArgumentParser(parents=[self.wxyz_parent])
         self.assertEqual(parser.parse_args('-y 1 2 --w 3'.split()),
@@ -2045,7 +2025,7 @@ class TestParentParsers(TestCase):
         parser = ErrorRaisingArgumentParser(parents=parents)
         parser_help = parser.format_help()
         self.assertEqual(parser_help, textwrap.dedent('''\
-            usage: test_argparse.py [-h] [-b B] [--d D] [--w W] [-y Y] a z
+            usage: {} [-h] [-b B] [--d D] [--w W] [-y Y] a z
 
             positional arguments:
               a
@@ -2061,7 +2041,7 @@ class TestParentParsers(TestCase):
 
             x:
               -y Y
-        '''))
+        '''.format(self.main_program)))
 
     def test_groups_parents(self):
         parent = ErrorRaisingArgumentParser(add_help=False)
@@ -2078,7 +2058,7 @@ class TestParentParsers(TestCase):
 
         parser_help = parser.format_help()
         self.assertEqual(parser_help, textwrap.dedent('''\
-            usage: test_argparse.py [-h] [-w W] [-x X] [-y Y | -z Z]
+            usage: {} [-h] [-w W] [-x X] [-y Y | -z Z]
 
             optional arguments:
               -h, --help  show this help message and exit
@@ -2090,7 +2070,7 @@ class TestParentParsers(TestCase):
 
               -w W
               -x X
-        '''))
+        '''.format(self.main_program)))
 
 # ==============================
 # Mutually exclusive group tests
@@ -4201,6 +4181,30 @@ class TestImportStar(TestCase):
         for name in argparse.__all__:
             self.assertTrue(hasattr(argparse, name))
 
+def test_main():
+    with warnings.catch_warnings():
+        # silence Python 2.6 buggy warnings about Exception.message
+        warnings.filterwarnings(
+            action='ignore',
+            message='BaseException.message has been deprecated as of'
+            'Python 2.6',
+            category=DeprecationWarning)
+        # silence warnings about version argument - these are expected
+        warnings.filterwarnings(
+            action='ignore',
+            message='The "version" argument to ArgumentParser is deprecated.',
+            category=DeprecationWarning)
+        warnings.filterwarnings(
+            action='ignore',
+            message='The format_version method is deprecated',
+            category=DeprecationWarning)
+        warnings.filterwarnings(
+            action='ignore',
+            message='The print_version method is deprecated',
+            category=DeprecationWarning)
+
+        support.run_unittest(__name__)
+
 
 if __name__ == '__main__':
-    unittest.main()
+    test_main()
