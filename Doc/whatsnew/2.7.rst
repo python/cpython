@@ -222,6 +222,16 @@ module, but it's easier to use.
    :pep:`378` - Format Specifier for Thousands Separator
      PEP written by Raymond Hettinger; implemented by Eric Smith.
 
+PEP 389: The argparse Module for Parsing Command Lines
+======================================================
+
+XXX write this section.
+
+.. seealso::
+
+   :pep:`389` - argparse - New Command Line Parsing Module
+     PEP written and implemented by Steven Bethard.
+
 PEP 391: Dictionary-Based Configuration For Logging
 ====================================================
 
