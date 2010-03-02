@@ -1,6 +1,6 @@
 
-:mod:`getopt` --- Parser for command line options
-=================================================
+:mod:`getopt` --- C-style parser for command line options
+=========================================================
 
 .. module:: getopt
    :synopsis: Portable parser for command line options; support both short and long option
