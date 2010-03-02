@@ -658,7 +658,12 @@ _get_peer_alt_names (X509 *certificate) {
 	char buf[2048];
 	char *vptr;
 	int len;
+	/* Issue #2973: ASN1_item_d2i() API changed in OpenSSL 0.9.6m */
+#if OPENSSL_VERSION_NUMBER >= 0x009060dfL
+	const unsigned char *p;
+#else
 	unsigned char *p;
+#endif
 
 	if (certificate == NULL)
 		return peer_alt_names;
