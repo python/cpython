@@ -316,46 +316,51 @@ check_bom(int get_char(struct tok_state *),
 	  int set_readline(struct tok_state *, const char *),
 	  struct tok_state *tok)
 {
-	int ch = get_char(tok);
+	int ch1, ch2, ch3;
+	ch1 = get_char(tok);
 	tok->decoding_state = STATE_RAW;
-	if (ch == EOF) {
+	if (ch1 == EOF) {
 		return 1;
-	} else if (ch == 0xEF) {
-		ch = get_char(tok); 
-		if (ch != 0xBB) {
-			unget_char(ch, tok);
-			unget_char(0xEF, tok);
-			/* any token beginning with '\xEF' is a bad token */
+	} else if (ch1 == 0xEF) {
+		ch2 = get_char(tok);
+		if (ch2 != 0xBB) {
+			unget_char(ch2, tok);
+			unget_char(ch1, tok);
 			return 1;
 		}
-		ch = get_char(tok); 
-		if (ch != 0xBF) {
-			unget_char(ch, tok);
-			unget_char(0xBB, tok);
-			unget_char(0xEF, tok);
-			/* any token beginning with '\xEF' is a bad token */
+		ch3 = get_char(tok);
+		if (ch3 != 0xBF) {
+			unget_char(ch3, tok);
+			unget_char(ch2, tok);
+			unget_char(ch1, tok);
 			return 1;
 		}
 #if 0
 	/* Disable support for UTF-16 BOMs until a decision
 	   is made whether this needs to be supported.  */
-	} else if (ch == 0xFE) {
-		ch = get_char(tok);
-		if (ch != 0xFF)
-			goto NON_BOM;
+	} else if (ch1 == 0xFE) {
+		ch2 = get_char(tok);
+		if (ch2 != 0xFF) {
+			unget_char(ch2, tok);
+			unget_char(ch1, tok);
+			return 1;
+		}
 		if (!set_readline(tok, "utf-16-be"))
 			return 0;
 		tok->decoding_state = STATE_NORMAL;
-	} else if (ch == 0xFF) {
-		ch = get_char(tok);
-		if (ch != 0xFE)
-			goto NON_BOM;
+	} else if (ch1 == 0xFF) {
+		ch2 = get_char(tok);
+		if (ch2 != 0xFE) {
+			unget_char(ch2, tok);
+			unget_char(ch1, tok);
+			return 1;
+		}
 		if (!set_readline(tok, "utf-16-le"))
 			return 0;
 		tok->decoding_state = STATE_NORMAL;
 #endif
 	} else {
-		unget_char(ch, tok);
+		unget_char(ch1, tok);
 		return 1;
 	}
 	if (tok->encoding != NULL)

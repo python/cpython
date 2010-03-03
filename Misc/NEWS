@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7820: The parser tokenizer restores all bytes in the right if
+  the BOM check fails.
+
 - Handle errors from looking up __prepare__ correctly.
 
 - Issue #5939: Add additional runtime checking to ensure a valid capsule

@@ -44,6 +44,17 @@ class PEP263Test(unittest.TestCase):
         self.assertEqual(len(d['a']), len(d['b']))
         self.assertEqual(ascii(d['a']), ascii(d['b']))
 
+    def test_issue7820(self):
+        # Ensure that check_bom() restores all bytes in the right order if
+        # check_bom() fails in pydebug mode: a buffer starts with the first
+        # byte of a valid BOM, but next bytes are different
+
+        # one byte in common with the UTF-16-LE BOM
+        self.assertRaises(SyntaxError, eval, b'\xff\x20')
+
+        # two bytes in common with the UTF-8 BOM
+        self.assertRaises(SyntaxError, eval, b'\xef\xbb\x20')
+
 def test_main():
     support.run_unittest(PEP263Test)
 
