@@ -363,7 +363,7 @@ epilog_ texts in command-line help messages::
    will be wrapped across a couple lines
 
 Passing :class:`argparse.RawDescriptionHelpFormatter` as ``formatter_class=``
-indicates that description_ and eiplog_ are already correctly formatted and
+indicates that description_ and epilog_ are already correctly formatted and
 should not be line-wrapped::
 
    >>> parser = argparse.ArgumentParser(
@@ -1581,8 +1581,9 @@ Parser defaults
 
    Most of the time, the attributes of the object returned by :meth:`parse_args`
    will be fully determined by inspecting the command-line args and the argument
-   actions.  :method:`set_defaults` allows some additional attributes that are
-   determined without any inspection of the command-line to be added::
+   actions.  :meth:`ArgumentParser.set_defaults` allows some additional
+   attributes that are determined without any inspection of the command-line to
+   be added::
 
      >>> parser = argparse.ArgumentParser()
      >>> parser.add_argument('foo', type=int)
