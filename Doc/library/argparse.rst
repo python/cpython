@@ -30,7 +30,7 @@ produces either the sum or the max::
                       help='sum the integers (default: find the max)')
 
    args = parser.parse_args()
-   print args.accumulate(args.integers)
+   print(args.accumulate(args.integers))
 
 Assuming the Python code above is saved into a file called ``prog.py``, it can
 be run at the command line and provides useful help messages::
@@ -698,7 +698,7 @@ An example of a custom action::
 
    >>> class FooAction(argparse.Action):
    ...     def __call__(self, parser, namespace, values, option_string=None):
-   ...     print '%r %r %r' % (namespace, values, option_string)
+   ...     print('%r %r %r' % (namespace, values, option_string))
    ...     setattr(namespace, self.dest, values)
    ...
    >>> parser = argparse.ArgumentParser()
@@ -1413,10 +1413,10 @@ Sub-commands
 
      >>> # sub-command functions
      >>> def foo(args):
-     ...     print args.x * args.y
+     ...     print(args.x * args.y)
      ...
      >>> def bar(args):
-     ...     print '((%s))' % args.z
+     ...     print('((%s))' % args.z)
      ...
      >>> # create the top-level parser
      >>> parser = argparse.ArgumentParser()
