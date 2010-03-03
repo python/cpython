@@ -12,6 +12,9 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7544: Preallocate thread memory before creating the thread to avoid
+  a fatal error in low memory condition.
+
 - Issue #7820: The parser tokenizer restores all bytes in the right if
   the BOM check fails.
 
