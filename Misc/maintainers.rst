@@ -47,6 +47,7 @@ _dummy_thread       brett.cannon
 _thread
 abc
 aifc                r.david.murray
+argparse            bethard
 array
 ast
 asynchat            josiahcarlson
