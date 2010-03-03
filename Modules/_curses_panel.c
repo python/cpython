@@ -178,12 +178,13 @@ PyCursesPanel_New(PANEL *pan, PyCursesWindowObject *wo)
     po = PyObject_NEW(PyCursesPanelObject, &PyCursesPanel_Type);
     if (po == NULL) return NULL;
     po->pan = pan;
-    po->wo = wo;
-    Py_INCREF(wo);
     if (insert_lop(po) < 0) {
-	PyObject_DEL(po);
+	po->wo = NULL;
+	Py_DECREF(po);
 	return NULL;
     }
+    po->wo = wo;
+    Py_INCREF(wo);
     return (PyObject *)po;
 }
 
@@ -191,8 +192,10 @@ static void
 PyCursesPanel_Dealloc(PyCursesPanelObject *po)
 {
     (void)del_panel(po->pan);
-    Py_DECREF(po->wo);
-    remove_lop(po);
+    if (po->wo != NULL) {
+	Py_DECREF(po->wo);
+	remove_lop(po);
+    }
     PyObject_DEL(po);
 }
 
