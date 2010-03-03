@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7232: Add support for the context manager protocol to the TarFile
+  class.
+
 - Issue #7250: Fix info leak of os.environ across multi-run uses of
   wsgiref.handlers.CGIHandler.
 

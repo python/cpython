@@ -234,6 +234,14 @@ a header block followed by data blocks. It is possible to store a file in a tar
 archive several times. Each archive member is represented by a :class:`TarInfo`
 object, see :ref:`tarinfo-objects` for details.
 
+A :class:`TarFile` object can be used as a context manager in a :keyword:`with`
+statement. It will automatically be closed when the block is completed. Please
+note that in the event of an exception an archive opened for writing will not
+be finalized, only the internally used file object will be closed. See the
+:ref:`tar-examples` section for a use case.
+
+.. versionadded:: 2.7
+   Added support for the context manager protocol.
 
 .. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors=None, pax_headers=None, debug=0, errorlevel=0)
 
@@ -649,6 +657,13 @@ How to create an uncompressed tar archive from a list of filenames::
    for name in ["foo", "bar", "quux"]:
        tar.add(name)
    tar.close()
+
+The same example using the :keyword:`with` statement::
+
+    import tarfile
+    with tarfile.open("sample.tar", "w") as tar:
+        for name in ["foo", "bar", "quux"]:
+            tar.add(name)
 
 How to read a gzip compressed tar archive and display some member information::
 
