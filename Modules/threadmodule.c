@@ -27,14 +27,15 @@ typedef struct {
 static void
 lock_dealloc(lockobject *self)
 {
-	assert(self->lock_lock);
 	if (self->in_weakreflist != NULL)
 		PyObject_ClearWeakRefs((PyObject *) self);
-	/* Unlock the lock so it's safe to free it */
-	PyThread_acquire_lock(self->lock_lock, 0);
-	PyThread_release_lock(self->lock_lock);
-	
-	PyThread_free_lock(self->lock_lock);
+	if (self->lock_lock != NULL) {
+		/* Unlock the lock so it's safe to free it */
+		PyThread_acquire_lock(self->lock_lock, 0);
+		PyThread_release_lock(self->lock_lock);
+		
+		PyThread_free_lock(self->lock_lock);
+	}
 	PyObject_Del(self);
 }
 
@@ -165,9 +166,9 @@ newlockobject(void)
 	self->lock_lock = PyThread_allocate_lock();
 	self->in_weakreflist = NULL;
 	if (self->lock_lock == NULL) {
-		PyObject_Del(self);
-		self = NULL;
+		Py_DECREF(self);
 		PyErr_SetString(ThreadError, "can't allocate lock");
+		return NULL;
 	}
 	return self;
 }
