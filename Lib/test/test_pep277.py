@@ -2,8 +2,6 @@
 # open, os.open, os.stat. os.listdir, os.rename, os.remove, os.mkdir, os.chdir, os.rmdir
 import sys, os, unittest
 from test import support
-if not os.path.supports_unicode_filenames:
-    raise unittest.SkipTest("test works only on NT+")
 
 filenames = [
     'abc',
@@ -36,7 +34,12 @@ class UnicodeFileTests(unittest.TestCase):
         except OSError:
             pass
         for name in self.files:
-            f = open(name, 'wb')
+            try:
+                f = open(name, 'wb')
+            except UnicodeEncodeError:
+                if not os.path.supports_unicode_filenames:
+                    raise unittest.SkipTest("only NT+ and systems with Unicode"
+                                            "-friendly filesystem encoding")
             f.write((name+'\n').encode("utf-8"))
             f.close()
             os.stat(name)
@@ -51,6 +54,9 @@ class UnicodeFileTests(unittest.TestCase):
             raise support.TestFailed("Expected to fail calling '%s(%r)'"
                              % (fn.__name__, filename))
         except expected_exception as details:
+            # the "filename" exception attribute may be encoded
+            if isinstance(details.filename, bytes):
+                filename = filename.encode(sys.getfilesystemencoding())
             if check_fn_in_exception and details.filename != filename:
                 raise support.TestFailed("Function '%s(%r) failed with "
                                  "bad filename in the exception: %r"
@@ -80,7 +86,7 @@ class UnicodeFileTests(unittest.TestCase):
         f1 = os.listdir(support.TESTFN)
         f2 = os.listdir(str(support.TESTFN.encode("utf-8"),
                                 sys.getfilesystemencoding()))
-        sf2 = set("\\".join((str(support.TESTFN), f))
+        sf2 = set(os.path.join(str(support.TESTFN), f)
                   for f in f2)
         self.assertEqual(len(f1), len(self.files))
         self.assertEqual(sf2, set(self.files))
