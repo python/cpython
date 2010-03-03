@@ -157,8 +157,8 @@ threadstate_getframe(PyThreadState *self)
 	return self->frame;
 }
 
-PyThreadState *
-PyThreadState_New(PyInterpreterState *interp)
+static PyThreadState *
+new_threadstate(PyInterpreterState *interp, int init)
 {
 	PyThreadState *tstate = (PyThreadState *)malloc(sizeof(PyThreadState));
 
@@ -198,9 +198,8 @@ PyThreadState_New(PyInterpreterState *interp)
 		tstate->c_profileobj = NULL;
 		tstate->c_traceobj = NULL;
 
-#ifdef WITH_THREAD
-		_PyGILState_NoteThreadState(tstate);
-#endif
+		if (init)
+			_PyThreadState_Init(tstate);
 
 		HEAD_LOCK();
 		tstate->next = interp->tstate_head;
@@ -209,6 +208,26 @@ PyThreadState_New(PyInterpreterState *interp)
 	}
 
 	return tstate;
+}
+
+PyThreadState *
+PyThreadState_New(PyInterpreterState *interp)
+{
+	return new_threadstate(interp, 1);
+}
+
+PyThreadState *
+_PyThreadState_Prealloc(PyInterpreterState *interp)
+{
+	return new_threadstate(interp, 0);
+}
+
+void
+_PyThreadState_Init(PyThreadState *tstate)
+{
+#ifdef WITH_THREAD
+	_PyGILState_NoteThreadState(tstate);
+#endif
 }
 
 PyObject*
