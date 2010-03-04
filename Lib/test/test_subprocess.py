@@ -99,9 +99,9 @@ class ProcessTestCase(unittest.TestCase):
         newenv = os.environ.copy()
         newenv["FRUIT"] = "banana"
         rc = subprocess.call([sys.executable, "-c",
-                          'import sys, os;' \
-                          'sys.exit(os.getenv("FRUIT")=="banana")'],
-                        env=newenv)
+                              'import sys, os;'
+                              'sys.exit(os.getenv("FRUIT")=="banana")'],
+                             env=newenv)
         self.assertEqual(rc, 1)
 
     def test_stdin_none(self):
@@ -552,7 +552,7 @@ class _SuppressCoreFiles(object):
             pass
 
 
-@unittest.skipIf(sys.platform == "win32", "POSIX specific tests")
+@unittest.skipIf(mswindows, "POSIX specific tests")
 class POSIXProcessTestCase(unittest.TestCase):
     def setUp(self):
         # Try to minimize the number of children we have so this test
@@ -663,7 +663,7 @@ class POSIXProcessTestCase(unittest.TestCase):
         self.assertEqual(p.wait(), -signal.SIGTERM)
 
 
-@unittest.skipUnless(sys.platform == "win32", "Windows specific tests")
+@unittest.skipUnless(mswindows, "Windows specific tests")
 class Win32ProcessTestCase(unittest.TestCase):
     def setUp(self):
         # Try to minimize the number of children we have so this test
