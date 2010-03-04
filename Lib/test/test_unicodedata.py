@@ -186,6 +186,11 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         # The rest can be found in test_normalization.py
         # which requires an external file.
 
+    def test_pr29(self):
+        # http://www.unicode.org/review/pr-29.html
+        for text in (u"\u0b47\u0300\u0b3e", u"\u1100\u0300\u1161"):
+            self.assertEqual(self.db.normalize('NFC', text), text)
+
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width
         self.assertRaises(TypeError, eaw, 'a')
