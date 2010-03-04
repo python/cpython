@@ -1070,8 +1070,16 @@ class _TestPoolWorkerLifetime(BaseTestCase):
             self.assertEqual(res.get(), sqr(j))
         # Refill the pool
         p._repopulate_pool()
-        # Finally, check that the worker pids have changed
+        # Wait until all workers are alive
+        countdown = 5
+        while countdown and not all(w.is_alive() for w in p._pool):
+            countdown -= 1
+            time.sleep(DELTA)
         finalworkerpids = [w.pid for w in p._pool]
+        # All pids should be assigned.  See issue #7805.
+        self.assertNotIn(None, origworkerpids)
+        self.assertNotIn(None, finalworkerpids)
+        # Finally, check that the worker pids have changed
         self.assertNotEqual(sorted(origworkerpids), sorted(finalworkerpids))
         p.close()
         p.join()
