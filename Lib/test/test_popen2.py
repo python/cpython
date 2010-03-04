@@ -50,7 +50,13 @@ class Popen2Test(unittest.TestCase):
         for inst in popen2._active:
             inst.wait()
         popen2._cleanup()
-        self.assertFalse(popen2._active, "_active not empty")
+        self.assertFalse(popen2._active, "popen2._active not empty")
+        # The os.popen*() API delegates to the subprocess module (on Unix)
+        import subprocess
+        for inst in subprocess._active:
+            inst.wait()
+        subprocess._cleanup()
+        self.assertFalse(subprocess._active, "subprocess._active not empty")
         reap_children()
 
     def validate_output(self, teststr, expected_out, r, w, e=None):
