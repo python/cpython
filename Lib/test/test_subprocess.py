@@ -39,6 +39,12 @@ class ProcessTestCase(unittest.TestCase):
         # doesn't crash on some buildbots (Alphas in particular).
         test_support.reap_children()
 
+    def tearDown(self):
+        for inst in subprocess._active:
+            inst.wait()
+        subprocess._cleanup()
+        self.assertFalse(subprocess._active, "subprocess._active not empty")
+
     def assertStderrEqual(self, stderr, expected, msg=None):
         # In a debug build, stuff like "[6580 refs]" is printed to stderr at
         # shutdown time.  That frustrates tests trying to check stderr produced
@@ -559,6 +565,12 @@ class POSIXProcessTestCase(unittest.TestCase):
         # doesn't crash on some buildbots (Alphas in particular).
         test_support.reap_children()
 
+    def tearDown(self):
+        for inst in subprocess._active:
+            inst.wait()
+        subprocess._cleanup()
+        self.assertFalse(subprocess._active, "subprocess._active not empty")
+
     def test_exceptions(self):
         # caught & re-raised exceptions
         with self.assertRaises(OSError) as c:
@@ -638,15 +650,15 @@ class POSIXProcessTestCase(unittest.TestCase):
         os.remove(fname)
         self.assertEqual(rc, 47)
 
-    @unittest.skip("See issue #2777")
     def test_send_signal(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
+        # Let the process initialize correctly (Issue #3137)
+        time.sleep(.1)
         self.assertIs(p.poll(), None)
         p.send_signal(signal.SIGINT)
         self.assertNotEqual(p.wait(), 0)
 
-    @unittest.skip("See issue #2777")
     def test_kill(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
@@ -654,7 +666,6 @@ class POSIXProcessTestCase(unittest.TestCase):
         p.kill()
         self.assertEqual(p.wait(), -signal.SIGKILL)
 
-    @unittest.skip("See issue #2777")
     def test_terminate(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
@@ -669,6 +680,12 @@ class Win32ProcessTestCase(unittest.TestCase):
         # Try to minimize the number of children we have so this test
         # doesn't crash on some buildbots (Alphas in particular).
         test_support.reap_children()
+
+    def tearDown(self):
+        for inst in subprocess._active:
+            inst.wait()
+        subprocess._cleanup()
+        self.assertFalse(subprocess._active, "subprocess._active not empty")
 
     def test_startupinfo(self):
         # startupinfo argument
@@ -736,7 +753,6 @@ class Win32ProcessTestCase(unittest.TestCase):
                              ' -c "import sys; sys.exit(47)"')
         self.assertEqual(rc, 47)
 
-    @unittest.skip("See issue #2777")
     def test_send_signal(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
@@ -744,7 +760,6 @@ class Win32ProcessTestCase(unittest.TestCase):
         p.send_signal(signal.SIGTERM)
         self.assertNotEqual(p.wait(), 0)
 
-    @unittest.skip("See issue #2777")
     def test_kill(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
@@ -752,7 +767,6 @@ class Win32ProcessTestCase(unittest.TestCase):
         p.kill()
         self.assertNotEqual(p.wait(), 0)
 
-    @unittest.skip("See issue #2777")
     def test_terminate(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
