@@ -9,6 +9,7 @@ from StringIO import StringIO
 import tempfile
 import csv
 import gc
+import io
 from test import test_support
 
 class Test_Csv(unittest.TestCase):
@@ -595,7 +596,7 @@ class TestDictFields(unittest.TestCase):
     ### "short" means there are fewer elements in the row than fieldnames
     def test_write_simple_dict(self):
         fd, name = tempfile.mkstemp()
-        fileobj = os.fdopen(fd, "w+b")
+        fileobj = io.open(fd, 'w+b')
         try:
             writer = csv.DictWriter(fileobj, fieldnames = ["f1", "f2", "f3"])
             writer.writeheader()
