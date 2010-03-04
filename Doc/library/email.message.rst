@@ -447,9 +447,10 @@ Here are the methods of the :class:`Message` class:
       Return the value of the ``filename`` parameter of the
       :mailheader:`Content-Disposition` header of the message.  If the header
       does not have a ``filename`` parameter, this method falls back to looking
-      for the ``name`` parameter.  If neither is found, or the header is
-      missing, then *failobj* is returned.  The returned string will always be
-      unquoted as per :func:`email.utils.unquote`.
+      for the ``name`` parameter on the :mailheader:`Content-Type` header.  If
+      neither is found, or the header is missing, then *failobj* is returned.
+      The returned string will always be unquoted as per
+      :func:`email.utils.unquote`.
 
 
    .. method:: get_boundary([failobj])
