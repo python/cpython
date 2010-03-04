@@ -303,12 +303,17 @@ static void clearEntries(ProfilerObject *pObj)
 {
 	RotatingTree_Enum(pObj->profilerEntries, freeEntry, NULL);
 	pObj->profilerEntries = EMPTY_ROTATING_TREE;
-	/* release the memory hold by the free list of ProfilerContexts */
+	/* release the memory hold by the ProfilerContexts */
+	if (pObj->currentProfilerContext) {
+		free(pObj->currentProfilerContext);
+		pObj->currentProfilerContext = NULL;
+	}
 	while (pObj->freelistProfilerContext) {
 		ProfilerContext *c = pObj->freelistProfilerContext;
 		pObj->freelistProfilerContext = c->previous;
 		free(c);
 	}
+	pObj->freelistProfilerContext = NULL;
 }
 
 static void
