@@ -100,6 +100,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7494: fix a crash in _lsprof (cProfile) after clearing the profiler,
+  reset also the pointer to the current pointer context.
+
 - Issue #7250: Fix info leak of os.environ across multi-run uses of
   wsgiref.handlers.CGIHandler.
 
