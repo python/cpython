@@ -192,7 +192,7 @@ class TestForkInThread(unittest.TestCase):
         self.assertEqual(os.read(self.read_fd, 2), "OK",
                          "Unable to fork() in thread")
 
-    if sys.platform.startswith('win'):
+    if not sys.platform.startswith('win'):
         test_forkinthread = _test_forkinthread
 
     def tearDown(self):
