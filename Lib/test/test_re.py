@@ -706,6 +706,7 @@ class ReTests(unittest.TestCase):
         long_overflow = 2**128
         self.assertRaises(TypeError, re.finditer, "a", {})
         self.assertRaises(OverflowError, _sre.compile, "abc", 0, [long_overflow])
+        self.assertRaises(TypeError, _sre.compile, {}, 0, [])
 
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR

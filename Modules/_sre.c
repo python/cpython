@@ -2702,7 +2702,7 @@ _compile(PyObject* self_, PyObject* args)
 	else {
 		Py_ssize_t p_length;
 		if (!getstring(pattern, &p_length, &self->charsize)) {
-			PyObject_DEL(self);
+			Py_DECREF(self);
 			return NULL;
 		}
 	}
