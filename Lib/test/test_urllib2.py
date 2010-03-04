@@ -1209,7 +1209,6 @@ class RequestTests(unittest.TestCase):
         self.get.add_data("spam")
         self.assert_(self.get.has_data())
         self.assertEqual("POST", self.get.get_method())
-        self.assertRaises(TypeError,self.get.add_data, "more spam")
 
     def test_get_full_url(self):
         self.assertEqual("http://www.python.org/~jeremy/",
