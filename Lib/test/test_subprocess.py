@@ -39,6 +39,12 @@ class ProcessTestCase(unittest.TestCase):
         # doesn't crash on some buildbots (Alphas in particular).
         support.reap_children()
 
+    def tearDown(self):
+        for inst in subprocess._active:
+            inst.wait()
+        subprocess._cleanup()
+        self.assertFalse(subprocess._active, "subprocess._active not empty")
+
     def assertStderrEqual(self, stderr, expected, msg=None):
         # In a debug build, stuff like "[6580 refs]" is printed to stderr at
         # shutdown time.  That frustrates tests trying to check stderr produced
@@ -548,12 +554,18 @@ class _SuppressCoreFiles(object):
             pass
 
 
-@unittest.skipIf(sys.platform == "win32", "POSIX specific tests")
+@unittest.skipIf(mswindows, "POSIX specific tests")
 class POSIXProcessTestCase(unittest.TestCase):
     def setUp(self):
         # Try to minimize the number of children we have so this test
         # doesn't crash on some buildbots (Alphas in particular).
         support.reap_children()
+
+    def tearDown(self):
+        for inst in subprocess._active:
+            inst.wait()
+        subprocess._cleanup()
+        self.assertFalse(subprocess._active, "subprocess._active not empty")
 
     def test_exceptions(self):
         # caught & re-raised exceptions
@@ -636,15 +648,15 @@ class POSIXProcessTestCase(unittest.TestCase):
         os.remove(fname)
         self.assertEqual(rc, 47)
 
-    @unittest.skip("See issue #2777")
     def test_send_signal(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
+        # Let the process initialize correctly (Issue #3137)
+        time.sleep(.1)
         self.assertIs(p.poll(), None)
         p.send_signal(signal.SIGINT)
-        self.assertIsNot(p.wait(), None)
+        self.assertNotEqual(p.wait(), 0)
 
-    @unittest.skip("See issue #2777")
     def test_kill(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
@@ -652,7 +664,6 @@ class POSIXProcessTestCase(unittest.TestCase):
         p.kill()
         self.assertEqual(p.wait(), -signal.SIGKILL)
 
-    @unittest.skip("See issue #2777")
     def test_terminate(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
@@ -661,12 +672,18 @@ class POSIXProcessTestCase(unittest.TestCase):
         self.assertEqual(p.wait(), -signal.SIGTERM)
 
 
-@unittest.skipUnless(sys.platform == "win32", "Windows specific tests")
+@unittest.skipUnless(mswindows, "Windows specific tests")
 class Win32ProcessTestCase(unittest.TestCase):
     def setUp(self):
         # Try to minimize the number of children we have so this test
         # doesn't crash on some buildbots (Alphas in particular).
         support.reap_children()
+
+    def tearDown(self):
+        for inst in subprocess._active:
+            inst.wait()
+        subprocess._cleanup()
+        self.assertFalse(subprocess._active, "subprocess._active not empty")
 
     def test_startupinfo(self):
         # startupinfo argument
@@ -734,7 +751,6 @@ class Win32ProcessTestCase(unittest.TestCase):
                              ' -c "import sys; sys.exit(47)"')
         self.assertEqual(rc, 47)
 
-    @unittest.skip("See issue #2777")
     def test_send_signal(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
@@ -742,7 +758,6 @@ class Win32ProcessTestCase(unittest.TestCase):
         p.send_signal(signal.SIGTERM)
         self.assertNotEqual(p.wait(), 0)
 
-    @unittest.skip("See issue #2777")
     def test_kill(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
@@ -750,7 +765,6 @@ class Win32ProcessTestCase(unittest.TestCase):
         p.kill()
         self.assertNotEqual(p.wait(), 0)
 
-    @unittest.skip("See issue #2777")
     def test_terminate(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
@@ -764,7 +778,7 @@ class Win32ProcessTestCase(unittest.TestCase):
 #
 # Actually, getoutput should work on any platform with an os.popen, but
 # I'll take the comment as given, and skip this suite.
-@unittest.skipUnless(os.name != 'posix', "only relevant for UNIX")
+@unittest.skipUnless(os.name == 'posix', "only relevant for UNIX")
 class CommandTests(unittest.TestCase):
     def test_getoutput(self):
         self.assertEqual(subprocess.getoutput('echo xyzzy'), 'xyzzy')
