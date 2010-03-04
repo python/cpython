@@ -684,7 +684,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
       comb = 0;
       while (i1 < end) {
           int comb1 = _getrecord_ex(*i1)->combining;
-          if (comb1 && comb == comb1) {
+          if (comb && (comb1 == 0 || comb == comb1)) {
               /* Character is blocked. */
               i1++;
               continue;
