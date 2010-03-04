@@ -189,7 +189,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     def test_pr29(self):
         # http://www.unicode.org/review/pr-29.html
-        for text in (u"\u0b47\u0300\u0b3e", u"\u1100\u0300\u1161"):
+        for text in ("\u0b47\u0300\u0b3e", "\u1100\u0300\u1161"):
             self.assertEqual(self.db.normalize('NFC', text), text)
 
     def test_east_asian_width(self):
