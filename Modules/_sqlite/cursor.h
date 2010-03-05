@@ -1,6 +1,6 @@
 /* cursor.h - definitions for the cursor type
  *
- * Copyright (C) 2004-2007 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2010 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -40,9 +40,14 @@ typedef struct
     long rowcount;
     PyObject* row_factory;
     pysqlite_Statement* statement;
+    int closed;
+    int reset;
+    int initialized;
 
     /* the next row to be returned, NULL if no next row available */
     PyObject* next_row;
+
+    PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Cursor;
 
 typedef enum {
@@ -53,8 +58,6 @@ typedef enum {
 
 extern PyTypeObject pysqlite_CursorType;
 
-int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject* kwargs);
-void pysqlite_cursor_dealloc(pysqlite_Cursor* self);
 PyObject* pysqlite_cursor_execute(pysqlite_Cursor* self, PyObject* args);
 PyObject* pysqlite_cursor_executemany(pysqlite_Cursor* self, PyObject* args);
 PyObject* pysqlite_cursor_getiter(pysqlite_Cursor *self);

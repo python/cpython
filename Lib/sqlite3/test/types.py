@@ -78,6 +78,33 @@ class SqliteTypeTests(unittest.TestCase):
         row = self.cur.fetchone()
         self.assertEqual(row[0], u"Österreich")
 
+    def CheckNonUtf8_Default(self):
+        try:
+            self.cur.execute("select ?", (chr(150),))
+            self.fail("should have raised a ProgrammingError")
+        except sqlite.ProgrammingError:
+            pass
+
+    def CheckNonUtf8_TextFactoryString(self):
+        orig_text_factory = self.con.text_factory
+        try:
+            self.con.text_factory = str
+            self.cur.execute("select ?", (chr(150),))
+        finally:
+            self.con.text_factory = orig_text_factory
+
+    def CheckNonUtf8_TextFactoryOptimizedUnicode(self):
+        orig_text_factory = self.con.text_factory
+        try:
+            try:
+                self.con.text_factory = sqlite.OptimizedUnicode
+                self.cur.execute("select ?", (chr(150),))
+                self.fail("should have raised a ProgrammingError")
+            except sqlite.ProgrammingError:
+                pass
+        finally:
+            self.con.text_factory = orig_text_factory
+
 class DeclTypesTests(unittest.TestCase):
     class Foo:
         def __init__(self, _val):
