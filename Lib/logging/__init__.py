@@ -434,6 +434,12 @@ class Formatter(object):
             s = s[:-1]
         return s
 
+    def usesTime(self):
+        """
+        Check if the format uses the creation time of the record.
+        """
+        return self._fmt.find("%(asctime)") >= 0
+
     def format(self, record):
         """
         Format the specified record as text.
@@ -442,13 +448,13 @@ class Formatter(object):
         string formatting operation which yields the returned string.
         Before formatting the dictionary, a couple of preparatory steps
         are carried out. The message attribute of the record is computed
-        using LogRecord.getMessage(). If the formatting string contains
-        "%(asctime)", formatTime() is called to format the event time.
-        If there is exception information, it is formatted using
-        formatException() and appended to the message.
+        using LogRecord.getMessage(). If the formatting string uses the
+        time (as determined by a call to usesTime(), formatTime() is
+        called to format the event time. If there is exception information,
+        it is formatted using formatException() and appended to the message.
         """
         record.message = record.getMessage()
-        if self._fmt.find("%(asctime)") >= 0:
+        if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
         s = self._fmt % record.__dict__
         if record.exc_info:
