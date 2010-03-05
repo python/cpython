@@ -653,17 +653,16 @@ class POSIXProcessTestCase(unittest.TestCase):
 
         # Let the process initialize correctly (Issue #3137)
         time.sleep(0.1)
-        self.assertIs(p.poll(), None)
+        self.assertIsNone(p.poll())
         count, maxcount = 0, 3
         # Retry if the process do not receive the SIGINT signal.
         while count < maxcount and p.poll() is None:
             p.send_signal(signal.SIGINT)
             time.sleep(0.1)
             count += 1
-        if p.poll() is None:
-            raise support.TestFailed("the subprocess did not receive "
-                                     "the signal SIGINT")
-        elif count > 1:
+        self.assertIsNotNone(p.poll(), "the subprocess did not receive "
+                                       "the signal SIGINT")
+        if count > 1:
             print("p.send_signal(SIGINT) succeeded "
                   "after {} attempts".format(count), file=sys.stderr)
         self.assertNotEqual(p.wait(), 0)
