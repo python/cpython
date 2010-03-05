@@ -85,13 +85,14 @@ class ImportTests(unittest.TestCase):
         # and issue never happens for dynamic modules.
         # But sources modified to follow generic way for processing pathes.
 
-        locale_encoding = locale.getpreferredencoding()
+        # the return encoding can be uppercase
+        locale_encoding = locale.getpreferredencoding().lower()
 
         # covers utf-8 and Windows ANSI code pages
         # one non-space symbol from every page
         # (http://en.wikipedia.org/wiki/Code_page)
         known_locales = {
-            'utf-8' : b'\xe4',
+            'utf-8' : b'\xc3\xa4',
             'cp1250' : b'\x8C',
             'cp1251' : b'\xc0',
             'cp1252' : b'\xc0',
@@ -104,46 +105,48 @@ class ImportTests(unittest.TestCase):
             }
 
         special_char = known_locales.get(locale_encoding)
-        if special_char:
-            encoded_char = special_char.decode(locale_encoding)
-            temp_mod_name = 'test_imp_helper_' + encoded_char
-            test_package_name = 'test_imp_helper_package_' + encoded_char
-            init_file_name = os.path.join(test_package_name, '__init__.py')
-            try:
-                with open(temp_mod_name + '.py', 'w') as file:
-                    file.write('a = 1\n')
-                file, filename, info = imp.find_module(temp_mod_name)
-                self.assertNotEquals(None, file)
-                self.assertTrue(filename[:-3].endswith(temp_mod_name))
-                self.assertEquals('.py', info[0])
-                self.assertEquals('U', info[1])
-                self.assertEquals(imp.PY_SOURCE, info[2])
+        if not special_char:
+            self.skipTest("can't run this test with %s as preferred encoding"
+                          % locale_encoding)
+        decoded_char = special_char.decode(locale_encoding)
+        temp_mod_name = 'test_imp_helper_' + decoded_char
+        test_package_name = 'test_imp_helper_package_' + decoded_char
+        init_file_name = os.path.join(test_package_name, '__init__.py')
+        try:
+            with open(temp_mod_name + '.py', 'w') as file:
+                file.write('a = 1\n')
+            file, filename, info = imp.find_module(temp_mod_name)
+            self.assertNotEquals(None, file)
+            self.assertTrue(filename[:-3].endswith(temp_mod_name))
+            self.assertEquals('.py', info[0])
+            self.assertEquals('U', info[1])
+            self.assertEquals(imp.PY_SOURCE, info[2])
 
-                mod = imp.load_module(temp_mod_name, file, filename, info)
-                self.assertEquals(1, mod.a)
-                file.close()
+            mod = imp.load_module(temp_mod_name, file, filename, info)
+            self.assertEquals(1, mod.a)
+            file.close()
 
-                mod = imp.load_source(temp_mod_name, temp_mod_name + '.py')
-                self.assertEquals(1, mod.a)
+            mod = imp.load_source(temp_mod_name, temp_mod_name + '.py')
+            self.assertEquals(1, mod.a)
 
-                mod = imp.load_compiled(temp_mod_name, temp_mod_name + '.pyc')
-                self.assertEquals(1, mod.a)
+            mod = imp.load_compiled(temp_mod_name, temp_mod_name + '.pyc')
+            self.assertEquals(1, mod.a)
 
-                if not os.path.exists(test_package_name):
-                    os.mkdir(test_package_name)
-                with open(init_file_name, 'w') as file:
-                    file.write('b = 2\n')
-                package = imp.load_package(test_package_name, test_package_name)
-                self.assertEquals(2, package.b)
-            finally:
-                support.unlink(temp_mod_name + '.py')
-                support.unlink(temp_mod_name + '.pyc')
-                support.unlink(temp_mod_name + '.pyo')
+            if not os.path.exists(test_package_name):
+                os.mkdir(test_package_name)
+            with open(init_file_name, 'w') as file:
+                file.write('b = 2\n')
+            package = imp.load_package(test_package_name, test_package_name)
+            self.assertEquals(2, package.b)
+        finally:
+            support.unlink(temp_mod_name + '.py')
+            support.unlink(temp_mod_name + '.pyc')
+            support.unlink(temp_mod_name + '.pyo')
 
-                support.unlink(init_file_name + '.py')
-                support.unlink(init_file_name + '.pyc')
-                support.unlink(init_file_name + '.pyo')
-                support.rmtree(test_package_name)
+            support.unlink(init_file_name + '.py')
+            support.unlink(init_file_name + '.pyc')
+            support.unlink(init_file_name + '.pyo')
+            support.rmtree(test_package_name)
 
 
 class ReloadTests(unittest.TestCase):
