@@ -1,15 +1,12 @@
 import array
 import unittest
 import struct
-import warnings
-
-from functools import wraps
-from test.support import TestFailed, verbose, run_unittest
-
 import sys
+
+from test.support import run_unittest
+
 ISBIGENDIAN = sys.byteorder == "big"
 IS32BIT = sys.maxsize == 0x7fffffff
-del sys
 
 def string_reverse(s):
     return s[::-1]
@@ -377,7 +374,6 @@ class StructTest(unittest.TestCase):
     def test_1229380(self):
         # SF bug 1229380. No struct.pack exception for some out of
         # range integers
-        import sys
         for endian in ('', '>', '<'):
             for fmt in ('B', 'H', 'I', 'L'):
                 self.assertRaises((struct.error, OverflowError), struct.pack,
