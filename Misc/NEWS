@@ -103,6 +103,9 @@ Library
 Extension Modules
 -----------------
 
+- The sqlite3 module was updated to pysqlite 2.6.0. This fixes several obscure
+  bugs and allows loading SQLite extensions from shared libraries.
+
 - Issue #7808: Fix reference leaks in _bsddb and related tests.
 
 - Issue #6544: fix a reference leak in the kqueue implementation's error

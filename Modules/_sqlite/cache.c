@@ -1,6 +1,6 @@
 /* cache .c - a LRU cache
  *
- * Copyright (C) 2004-2007 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2010 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -21,6 +21,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "sqlitecompat.h"
 #include "cache.h"
 #include <limits.h>
 

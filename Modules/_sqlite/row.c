@@ -1,6 +1,6 @@
 /* row.c - an enhanced tuple for database rows
  *
- * Copyright (C) 2005-2006 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2005-2010 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -177,17 +177,17 @@ static long pysqlite_row_hash(pysqlite_Row *self)
 static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, int opid)
 {
     if (opid != Py_EQ && opid != Py_NE) {
-	Py_INCREF(Py_NotImplemented);
-	return Py_NotImplemented;
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
     }
     if (PyType_IsSubtype(Py_TYPE(_other), &pysqlite_RowType)) {
-	pysqlite_Row *other = (pysqlite_Row *)_other;
-	PyObject *res = PyObject_RichCompare(self->description, other->description, opid);
-	if ((opid == Py_EQ && res == Py_True)
-	    || (opid == Py_NE && res == Py_False)) {
-	    Py_DECREF(res);
-	    return PyObject_RichCompare(self->data, other->data, opid);
-	}
+        pysqlite_Row *other = (pysqlite_Row *)_other;
+        PyObject *res = PyObject_RichCompare(self->description, other->description, opid);
+        if ((opid == Py_EQ && res == Py_True)
+            || (opid == Py_NE && res == Py_False)) {
+            Py_DECREF(res);
+            return PyObject_RichCompare(self->data, other->data, opid);
+        }
     }
     Py_INCREF(Py_NotImplemented);
     return Py_NotImplemented;
