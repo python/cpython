@@ -23,13 +23,6 @@ except struct.error:
 else:
     HAVE_LONG_LONG = True
 
-try:
-    import _struct
-except ImportError:
-    PY_STRUCT_FLOAT_COERCE = 2
-else:
-    PY_STRUCT_FLOAT_COERCE = getattr(_struct, '_PY_STRUCT_FLOAT_COERCE', 0)
-
 def string_reverse(s):
     return "".join(reversed(s))
 
@@ -39,39 +32,25 @@ def bigendian_to_native(value):
     else:
         return string_reverse(value)
 
-def with_warning_restore(func):
-    @wraps(func)
-    def decorator(*args, **kw):
-        with warnings.catch_warnings():
-            # We need this function to warn every time, so stick an
-            # unqualifed 'always' at the head of the filter list
-            warnings.simplefilter("always")
-            warnings.filterwarnings("error", category=DeprecationWarning)
-            return func(*args, **kw)
-    return decorator
-
 class StructTest(unittest.TestCase):
 
-    @with_warning_restore
     def check_float_coerce(self, format, number):
         # SF bug 1530559. struct.pack raises TypeError where it used to convert.
-        if PY_STRUCT_FLOAT_COERCE == 2:
-            # Test for pre-2.5 struct module
-            packed = struct.pack(format, number)
-            floored = struct.unpack(format, packed)[0]
-            self.assertEqual(floored, int(number),
-                             "did not correcly coerce float to int")
-            return
-        try:
-            struct.pack(format, number)
-        except struct.error:
-            if PY_STRUCT_FLOAT_COERCE:
-                self.fail("expected DeprecationWarning for float coerce")
-        except DeprecationWarning:
-            if not PY_STRUCT_FLOAT_COERCE:
-                self.fail("expected to raise struct.error for float coerce")
-        else:
-            self.fail("did not raise error for float coerce")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=DeprecationWarning,
+                message=".*integer argument expected, got float",
+                module=__name__)
+            self.assertEqual(struct.pack(format, number), struct.pack(format, int(number)))
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "error",
+                category=DeprecationWarning,
+                message=".*integer argument expected, got float",
+                module="unittest")
+            self.assertRaises(DeprecationWarning, struct.pack, format, number)
 
     def test_isbigendian(self):
         self.assertEqual((struct.pack('=i', 1)[0] == chr(0)), ISBIGENDIAN)

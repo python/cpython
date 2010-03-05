@@ -121,7 +121,7 @@ get_pylong(PyObject *v)
 	}
 #ifdef PY_STRUCT_FLOAT_COERCE
 	if (PyFloat_Check(v)) {
-		if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2)<0)
+		if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 1)<0)
 			return NULL;
 		return PyNumber_Long(v);
 	}
