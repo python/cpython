@@ -765,6 +765,10 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
     int narg;
     int rc;
 
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "siO", kwlist,
                                      &name, &narg, &func))
     {
@@ -793,6 +797,10 @@ PyObject* pysqlite_connection_create_aggregate(pysqlite_Connection* self, PyObje
     char* name;
     static char *kwlist[] = { "name", "n_arg", "aggregate_class", NULL };
     int rc;
+
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "siO:create_aggregate",
                                       kwlist, &name, &n_arg, &aggregate_class)) {
@@ -884,6 +892,10 @@ PyObject* pysqlite_connection_set_authorizer(pysqlite_Connection* self, PyObject
     static char *kwlist[] = { "authorizer_callback", NULL };
     int rc;
 
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:set_authorizer",
                                       kwlist, &authorizer_cb)) {
         return NULL;
@@ -908,6 +920,10 @@ PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* self, Py
     int n;
 
     static char *kwlist[] = { "progress_handler", "n", NULL };
+
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Oi:set_progress_handler",
                                       kwlist, &progress_handler, &n)) {
@@ -1019,6 +1035,10 @@ PyObject* pysqlite_connection_call(pysqlite_Connection* self, PyObject* args, Py
     pysqlite_Statement* statement;
     PyObject* weakref;
     int rc;
+
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
 
     if (!PyArg_ParseTuple(args, "O", &sql)) {
         return NULL;

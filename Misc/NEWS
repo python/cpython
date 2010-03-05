@@ -15,6 +15,10 @@ Core and Builtins
 Library
 -------
 
+Extension Modules
+-----------------
+
+- Issue #7670: sqlite3: Fixed crashes when operating on closed connections.
 
 What's New in Python 2.6.5 rc 1?
 ================================

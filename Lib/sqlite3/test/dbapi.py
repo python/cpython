@@ -763,6 +763,73 @@ class ClosedTests(unittest.TestCase):
         except:
             self.fail("Should have raised a ProgrammingError")
 
+
+    def CheckClosedCreateFunction(self):
+        con = sqlite.connect(":memory:")
+        con.close()
+        def f(x): return 17
+        try:
+            con.create_function("foo", 1, f)
+            self.fail("Should have raised a ProgrammingError")
+        except sqlite.ProgrammingError:
+            pass
+        except:
+            self.fail("Should have raised a ProgrammingError")
+
+    def CheckClosedCreateAggregate(self):
+        con = sqlite.connect(":memory:")
+        con.close()
+        class Agg:
+            def __init__(self):
+                pass
+            def step(self, x):
+                pass
+            def finalize(self):
+                return 17
+        try:
+            con.create_aggregate("foo", 1, Agg)
+            self.fail("Should have raised a ProgrammingError")
+        except sqlite.ProgrammingError:
+            pass
+        except:
+            self.fail("Should have raised a ProgrammingError")
+
+    def CheckClosedSetAuthorizer(self):
+        con = sqlite.connect(":memory:")
+        con.close()
+        def authorizer(*args):
+            return sqlite.DENY
+        try:
+            con.set_authorizer(authorizer)
+            self.fail("Should have raised a ProgrammingError")
+        except sqlite.ProgrammingError:
+            pass
+        except:
+            self.fail("Should have raised a ProgrammingError")
+
+    def CheckClosedSetProgressCallback(self):
+        con = sqlite.connect(":memory:")
+        con.close()
+        def progress(): pass
+        try:
+            con.set_progress_handler(progress, 100)
+            self.fail("Should have raised a ProgrammingError")
+        except sqlite.ProgrammingError:
+            pass
+        except:
+            self.fail("Should have raised a ProgrammingError")
+
+    def CheckClosedCall(self):
+        con = sqlite.connect(":memory:")
+        con.close()
+        try:
+            con()
+            self.fail("Should have raised a ProgrammingError")
+        except sqlite.ProgrammingError:
+            pass
+        except:
+            self.fail("Should have raised a ProgrammingError")
+
 def suite():
     module_suite = unittest.makeSuite(ModuleTests, "Check")
     connection_suite = unittest.makeSuite(ConnectionTests, "Check")
