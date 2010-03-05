@@ -652,9 +652,20 @@ class POSIXProcessTestCase(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
         # Let the process initialize correctly (Issue #3137)
-        time.sleep(.1)
+        time.sleep(0.1)
         self.assertIs(p.poll(), None)
-        p.send_signal(signal.SIGINT)
+        count, maxcount = 0, 3
+        # Retry if the process do not receive the SIGINT signal.
+        while count < maxcount and p.poll() is None:
+            p.send_signal(signal.SIGINT)
+            time.sleep(0.1)
+            count += 1
+        if p.poll() is None:
+            raise support.TestFailed("the subprocess did not receive "
+                                     "the signal SIGINT")
+        elif count > 1:
+            print("p.send_signal(SIGINT) succeeded "
+                  "after {} attempts".format(count), file=sys.stderr)
         self.assertNotEqual(p.wait(), 0)
 
     def test_kill(self):
@@ -839,6 +850,7 @@ def test_main():
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests)
 
+    unit_tests = (POSIXProcessTestCase,)
     support.run_unittest(*unit_tests)
     support.reap_children()
 
