@@ -850,7 +850,6 @@ def test_main():
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests)
 
-    unit_tests = (POSIXProcessTestCase,)
     support.run_unittest(*unit_tests)
     support.reap_children()
 
