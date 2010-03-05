@@ -1,7 +1,7 @@
 #-*- coding: ISO-8859-1 -*-
 # pysqlite2/test/regression.py: pysqlite regression tests
 #
-# Copyright (C) 2006 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2006-2010 Gerhard Häring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -69,16 +69,6 @@ class RegressionTests(unittest.TestCase):
 
         cur.execute('select 1 as "foo baz"')
         self.assertEqual(cur.description[0][0], "foo baz")
-
-    def CheckStatementAvailable(self):
-        # pysqlite up to 2.3.2 crashed on this, because the active statement handle was not checked
-        # before trying to fetch data from it. close() destroys the active statement ...
-        con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_DECLTYPES)
-        cur = con.cursor()
-        cur.execute("select 4 union select 5")
-        cur.close()
-        cur.fetchone()
-        cur.fetchone()
 
     def CheckStatementFinalizationOnCloseDb(self):
         # pysqlite versions <= 2.3.3 only finalized statements in the statement
@@ -169,12 +159,115 @@ class RegressionTests(unittest.TestCase):
         con = sqlite.connect(":memory:")
         setattr(con, "isolation_level", "\xe9")
 
+    def CheckCursorConstructorCallCheck(self):
+        """
+        Verifies that cursor methods check wether base class __init__ was called.
+        """
+        class Cursor(sqlite.Cursor):
+            def __init__(self, con):
+                pass
+
+        con = sqlite.connect(":memory:")
+        cur = Cursor(con)
+        try:
+            cur.execute("select 4+5").fetchall()
+            self.fail("should have raised ProgrammingError")
+        except sqlite.ProgrammingError:
+            pass
+        except:
+            self.fail("should have raised ProgrammingError")
+
+
     def CheckStrSubclass(self):
         """
         The Python 3.0 port of the module didn't cope with values of subclasses of str.
         """
         class MyStr(str): pass
         self.con.execute("select ?", (MyStr("abc"),))
+
+    def CheckConnectionConstructorCallCheck(self):
+        """
+        Verifies that connection methods check wether base class __init__ was called.
+        """
+        class Connection(sqlite.Connection):
+            def __init__(self, name):
+                pass
+
+        con = Connection(":memory:")
+        try:
+            cur = con.cursor()
+            self.fail("should have raised ProgrammingError")
+        except sqlite.ProgrammingError:
+            pass
+        except:
+            self.fail("should have raised ProgrammingError")
+
+    def CheckCursorRegistration(self):
+        """
+        Verifies that subclassed cursor classes are correctly registered with
+        the connection object, too.  (fetch-across-rollback problem)
+        """
+        class Connection(sqlite.Connection):
+            def cursor(self):
+                return Cursor(self)
+
+        class Cursor(sqlite.Cursor):
+            def __init__(self, con):
+                sqlite.Cursor.__init__(self, con)
+
+        con = Connection(":memory:")
+        cur = con.cursor()
+        cur.execute("create table foo(x)")
+        cur.executemany("insert into foo(x) values (?)", [(3,), (4,), (5,)])
+        cur.execute("select x from foo")
+        con.rollback()
+        try:
+            cur.fetchall()
+            self.fail("should have raised InterfaceError")
+        except sqlite.InterfaceError:
+            pass
+        except:
+            self.fail("should have raised InterfaceError")
+
+    def CheckAutoCommit(self):
+        """
+        Verifies that creating a connection in autocommit mode works.
+        2.5.3 introduced a regression so that these could no longer
+        be created.
+        """
+        con = sqlite.connect(":memory:", isolation_level=None)
+
+    def CheckPragmaAutocommit(self):
+        """
+        Verifies that running a PRAGMA statement that does an autocommit does
+        work. This did not work in 2.5.3/2.5.4.
+        """
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        cur.execute("create table foo(bar)")
+        cur.execute("insert into foo(bar) values (5)")
+
+        cur.execute("pragma page_size")
+        row = cur.fetchone()
+
+    def CheckSetDict(self):
+        """
+        See http://bugs.python.org/issue7478
+
+        It was possible to successfully register callbacks that could not be
+        hashed. Return codes of PyDict_SetItem were not checked properly.
+        """
+        class NotHashable:
+            def __call__(self, *args, **kw):
+                pass
+            def __hash__(self):
+                raise TypeError()
+        var = NotHashable()
+        con = sqlite.connect(":memory:")
+        self.assertRaises(TypeError, con.create_function, var)
+        self.assertRaises(TypeError, con.create_aggregate, var)
+        self.assertRaises(TypeError, con.set_authorizer, var)
+        self.assertRaises(TypeError, con.set_progress_handler, var)
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")

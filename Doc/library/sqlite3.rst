@@ -365,6 +365,25 @@ Connection Objects
    method with :const:`None` for *handler*.
 
 
+.. method:: Connection.enable_load_extension(enabled)
+
+   .. versionadded:: 2.7
+
+   This routine allows/disallows the SQLite engine to load SQLite extensions
+   from shared libraries.  SQLite extensions can define new functions,
+   aggregates or whole new virtual table implementations. One well-known
+   extension is the fulltext-search extension distributed with SQLite.
+
+   .. literalinclude:: ../includes/sqlite3/load_extension.py
+
+.. method:: Connection.load_extension(path)
+
+   .. versionadded:: 2.7
+
+   This routine loads a SQLite extension from a shared library. You have to
+   enable extension loading with ``enable_load_extension`` before you can use
+   this routine.
+
 .. attribute:: Connection.row_factory
 
    You can change this attribute to a callable that accepts the cursor and the
@@ -434,7 +453,7 @@ Connection Objects
 Cursor Objects
 --------------
 
-.. class:: Cursor
+A :class:`Cursor` instance has the following attributes and methods:
 
    A SQLite database cursor has the following attributes and methods:
 
