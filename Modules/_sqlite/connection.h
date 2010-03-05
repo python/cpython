@@ -1,6 +1,6 @@
 /* connection.h - definitions for the connection type
  *
- * Copyright (C) 2004-2007 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2010 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -63,17 +63,21 @@ typedef struct
      * used from the same thread it was created in */
     int check_same_thread;
 
+    int initialized;
+
     /* thread identification of the thread the connection was created in */
     long thread_ident;
 
     pysqlite_Cache* statement_cache;
 
-    /* A list of weak references to statements used within this connection */
+    /* Lists of weak references to statements and cursors used within this connection */
     PyObject* statements;
+    PyObject* cursors;
 
-    /* a counter for how many statements were created in the connection. May be
+    /* Counters for how many statements/cursors were created in the connection. May be
      * reset to 0 at certain intervals */
     int created_statements;
+    int created_cursors;
 
     PyObject* row_factory;
 
@@ -120,6 +124,7 @@ PyObject* pysqlite_connection_rollback(pysqlite_Connection* self, PyObject* args
 PyObject* pysqlite_connection_new(PyTypeObject* type, PyObject* args, PyObject* kw);
 int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject* kwargs);
 
+int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor);
 int pysqlite_check_thread(pysqlite_Connection* self);
 int pysqlite_check_connection(pysqlite_Connection* con);
 

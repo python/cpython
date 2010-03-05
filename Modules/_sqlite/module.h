@@ -1,6 +1,6 @@
 /* module.h - definitions for the module
  *
- * Copyright (C) 2004-2007 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2010 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -25,7 +25,7 @@
 #define PYSQLITE_MODULE_H
 #include "Python.h"
 
-#define PYSQLITE_VERSION "2.4.1"
+#define PYSQLITE_VERSION "2.6.0"
 
 extern PyObject* pysqlite_Error;
 extern PyObject* pysqlite_Warning;

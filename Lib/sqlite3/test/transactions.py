@@ -147,6 +147,26 @@ class TransactionTests(unittest.TestCase):
         # NO self.con2.rollback() HERE!!!
         self.con1.commit()
 
+    def CheckRollbackCursorConsistency(self):
+        """
+        Checks if cursors on the connection are set into a "reset" state
+        when a rollback is done on the connection.
+        """
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        cur.execute("create table test(x)")
+        cur.execute("insert into test(x) values (5)")
+        cur.execute("select 1 union select 2 union select 3")
+
+        con.rollback()
+        try:
+            cur.fetchall()
+            self.fail("InterfaceError should have been raised")
+        except sqlite.InterfaceError as e:
+            pass
+        except:
+            self.fail("InterfaceError should have been raised")
+
 class SpecialCommandTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
