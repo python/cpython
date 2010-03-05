@@ -651,7 +651,10 @@ class POSIXProcessTestCase(unittest.TestCase):
         self.assertEqual(rc, 47)
 
     def test_send_signal(self):
-        p = subprocess.Popen([sys.executable, "-c", "input()"])
+        # Do not inherit file handles from the parent.
+        # It should fix failures on some platforms.
+        p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True,
+                             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Let the process initialize correctly (Issue #3137)
         time.sleep(0.1)
@@ -672,14 +675,14 @@ class POSIXProcessTestCase(unittest.TestCase):
     def test_kill(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
-        self.assertIs(p.poll(), None)
+        self.assertIsNone(p.poll())
         p.kill()
         self.assertEqual(p.wait(), -signal.SIGKILL)
 
     def test_terminate(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"])
 
-        self.assertIs(p.poll(), None)
+        self.assertIsNone(p.poll())
         p.terminate()
         self.assertEqual(p.wait(), -signal.SIGTERM)
 
