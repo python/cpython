@@ -17,15 +17,7 @@ static PyTypeObject PyStructType;
 typedef int Py_ssize_t;
 #endif
 
-/* If PY_STRUCT_FLOAT_COERCE is defined, the struct module will allow float
-   arguments for integer formats with a warning for backwards
-   compatibility. */
-
-#define PY_STRUCT_FLOAT_COERCE 1
-
-#ifdef PY_STRUCT_FLOAT_COERCE
 #define FLOAT_COERCE "integer argument expected, got float"
-#endif
 
 
 /* The translation function for each format character is table driven */
@@ -119,13 +111,11 @@ get_pylong(PyObject *v)
 		Py_INCREF(v);
 		return v;
 	}
-#ifdef PY_STRUCT_FLOAT_COERCE
 	if (PyFloat_Check(v)) {
 		if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 1)<0)
 			return NULL;
 		return PyNumber_Long(v);
 	}
-#endif
 	PyErr_SetString(StructError,
 			"cannot convert argument to long");
 	return NULL;
@@ -1972,8 +1962,5 @@ init_struct(void)
 	PyModule_AddObject(m, "__version__", ver);
 
 	PyModule_AddIntConstant(m, "_PY_STRUCT_RANGE_CHECKING", 1);
-#ifdef PY_STRUCT_FLOAT_COERCE
 	PyModule_AddIntConstant(m, "_PY_STRUCT_FLOAT_COERCE", 1);
-#endif
-
 }
