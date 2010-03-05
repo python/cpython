@@ -1,5 +1,4 @@
 import imp
-import locale
 import os
 import os.path
 import sys
@@ -86,7 +85,7 @@ class ImportTests(unittest.TestCase):
         # But sources modified to follow generic way for processing pathes.
 
         # the return encoding can be uppercase
-        locale_encoding = locale.getpreferredencoding().lower()
+        fs_encoding = sys.getfilesystemencoding().lower()
 
         # covers utf-8 and Windows ANSI code pages
         # one non-space symbol from every page
@@ -104,11 +103,11 @@ class ImportTests(unittest.TestCase):
             'cp1258' : b'\xc0',
             }
 
-        special_char = known_locales.get(locale_encoding)
+        special_char = known_locales.get(fs_encoding)
         if not special_char:
-            self.skipTest("can't run this test with %s as preferred encoding"
-                          % locale_encoding)
-        decoded_char = special_char.decode(locale_encoding)
+            self.skipTest("can't run this test with %s as filesystem encoding"
+                          % fs_encoding)
+        decoded_char = special_char.decode(fs_encoding)
         temp_mod_name = 'test_imp_helper_' + decoded_char
         test_package_name = 'test_imp_helper_package_' + decoded_char
         init_file_name = os.path.join(test_package_name, '__init__.py')
