@@ -845,6 +845,9 @@ Documentation
 Tests
 -----
 
+- Print platform information when running the whole test suite, or using
+  the --verbose flag.
+
 - Issue #767675: enable test_pep277 on POSIX platforms with Unicode-friendly
   filesystem encoding.
 
