@@ -474,6 +474,12 @@ class BaseConfigurator(object):
                 setattr(result, name, value)
         return result
 
+    def as_tuple(self, value):
+        """Utility function which converts lists to tuples."""
+        if isinstance(value, list):
+            value = tuple(value)
+        return value
+
 class DictConfigurator(BaseConfigurator):
     """
     Configure logging using a dictionary-like object to describe the
@@ -688,6 +694,12 @@ class DictConfigurator(BaseConfigurator):
                 except StandardError, e:
                     raise ValueError('Unable to set target handler '
                                      '%r: %s' % (config['target'], e))
+            elif issubclass(klass, logging.handlers.SMTPHandler) and\
+                'mailhost' in config:
+                config['mailhost'] = self.as_tuple(config['mailhost'])
+            elif issubclass(klass, logging.handlers.SysLogHandler) and\
+                'address' in config:
+                config['address'] = self.as_tuple(config['address'])
             factory = klass
         kwargs = dict([(k, config[k]) for k in config if valid_ident(k)])
         try:
