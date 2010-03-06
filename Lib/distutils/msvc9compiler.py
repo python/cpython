@@ -38,6 +38,7 @@ HKEYS = (_winreg.HKEY_USERS,
          _winreg.HKEY_CLASSES_ROOT)
 
 VS_BASE = r"Software\Microsoft\VisualStudio\%0.1f"
+VSEXPRESS_BASE = r"Software\Microsoft\VCExpress\%0.1f"
 WINSDK_BASE = r"Software\Microsoft\Microsoft SDKs\Windows"
 NET_BASE = r"Software\Microsoft\.NETFramework"
 
@@ -216,8 +217,17 @@ def find_vcvarsall(version):
         productdir = Reg.get_value(r"%s\Setup\VC" % vsbase,
                                    "productdir")
     except KeyError:
-        log.debug("Unable to find productdir in registry")
         productdir = None
+
+    # trying Express edition
+    if productdir is None:
+        vsbase = VSEXPRESS_BASE % version
+        try:
+            productdir = Reg.get_value(r"%s\Setup\VC" % vsbase,
+                                       "productdir")
+        except KeyError:
+            productdir = None
+            log.debug("Unable to find productdir in registry")
 
     if not productdir or not os.path.isdir(productdir):
         toolskey = "VS%0.f0COMNTOOLS" % version
