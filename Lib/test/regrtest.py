@@ -374,13 +374,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     resource_denieds = []
     environment_changed = []
 
-    if not quiet:
-        # Print basic platform information
-        print "==", platform.python_implementation(), \
-                    " ".join(sys.version.split())
-        print "==  ", platform.platform(aliased=True)
-        print "==  ", os.getcwd()
-
     if findleaks:
         try:
             import gc
@@ -425,6 +418,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 stdtests.remove(arg)
             nottests.add(arg)
         args = []
+
+    # For a partial run, we do not need to clutter the output.
+    if verbose or not (quiet or tests or args):
+        # Print basic platform information
+        print "==", platform.python_implementation(), \
+                    " ".join(sys.version.split())
+        print "==  ", platform.platform(aliased=True)
+        print "==  ", os.getcwd()
+
     alltests = findtests(testdir, stdtests, nottests)
     tests = tests or args or alltests
     if single:
