@@ -484,6 +484,10 @@ class DictConfigurator(BaseConfigurator):
         """Do the configuration."""
 
         config = self.config
+        if 'version' not in config:
+            raise ValueError("dictionary doesn't specify a version")
+        if config['version'] != 1:
+            raise ValueError("Unsupported version: %s" % config['version'])
         incremental = config.pop('incremental', False)
         EMPTY_DICT = {}
         logging._acquireLock()
