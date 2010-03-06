@@ -160,6 +160,7 @@ import warnings
 import unittest
 import tempfile
 import imp
+import sysconfig
 
 
 # Some times __path__ and __file__ are not absolute (e.g. while running from
@@ -404,10 +405,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         fp.close()
 
     # Strip .py extensions.
-    if args:
-        args = map(removepy, args)
-    if tests:
-        tests = map(removepy, tests)
+    removepy(args)
+    removepy(tests)
 
     stdtests = STDTESTS[:]
     nottests = NOTTESTS[:]
@@ -665,16 +664,15 @@ NOTTESTS = [
 
 def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     """Return a list of all applicable test modules."""
-    if not testdir: testdir = findtestdir()
+    testdir = findtestdir(testdir)
     names = os.listdir(testdir)
     tests = []
+    others = set(stdtests + nottests)
     for name in names:
-        if name[:5] == "test_" and name[-3:] == os.extsep+"py":
-            modname = name[:-3]
-            if modname not in stdtests and modname not in nottests:
-                tests.append(modname)
-    tests.sort()
-    return stdtests + tests
+        modname, ext = os.path.splitext(name)
+        if modname[:5] == "test_" and ext == ".py" and modname not in others:
+            tests.append(modname)
+    return stdtests + sorted(tests)
 
 def runtest(test, verbose, quiet,
             testdir=None, huntrleaks=False, use_resources=None):
@@ -825,8 +823,7 @@ class saved_test_environment:
 def runtest_inner(test, verbose, quiet,
                   testdir=None, huntrleaks=False):
     test_support.unload(test)
-    if not testdir:
-        testdir = findtestdir()
+    testdir = findtestdir(testdir)
     if verbose:
         capture_stdout = None
     else:
@@ -1054,18 +1051,16 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     # Collect cyclic trash.
     gc.collect()
 
-def findtestdir():
-    if __name__ == '__main__':
-        file = sys.argv[0]
-    else:
-        file = __file__
-    testdir = os.path.dirname(file) or os.curdir
-    return testdir
+def findtestdir(path=None):
+    return path or os.path.dirname(__file__) or os.curdir
 
-def removepy(name):
-    if name.endswith(os.extsep + "py"):
-        name = name[:-3]
-    return name
+def removepy(names):
+    if not names:
+        return
+    for idx, name in enumerate(names):
+        basename, ext = os.path.splitext(name)
+        if ext == '.py':
+            names[idx] = basename
 
 def count(n, word):
     if n == 1:
@@ -1083,7 +1078,7 @@ def printlist(x, width=70, indent=4):
 
     from textwrap import fill
     blanks = ' ' * indent
-    print fill(' '.join(map(str, x)), width,
+    print fill(' '.join(str(elt) for elt in x), width,
                initial_indent=blanks, subsequent_indent=blanks)
 
 # Map sys.platform to a string containing the basenames of tests
@@ -1510,31 +1505,25 @@ class _ExpectedSkips:
         return self.expected
 
 if __name__ == '__main__':
-    # Remove regrtest.py's own directory from the module search path.  This
-    # prevents relative imports from working, and relative imports will screw
-    # up the testing framework.  E.g. if both test.test_support and
-    # test_support are imported, they will not contain the same globals, and
-    # much of the testing framework relies on the globals in the
-    # test.test_support module.
-    mydir = os.path.abspath(os.path.normpath(os.path.dirname(sys.argv[0])))
-    i = len(sys.path)
-    while i >= 0:
-        i -= 1
-        if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
-            del sys.path[i]
+    # Simplification for findtestdir().
+    assert __file__ == os.path.abspath(sys.argv[0])
 
-    # findtestdir() gets the dirname out of sys.argv[0], so we have to make it
-    # absolute before changing the CWD.
-    if sys.argv[0]:
-        sys.argv[0] = os.path.abspath(sys.argv[0])
-
+    # When tests are run from the Python build directory, it is best practice
+    # to keep the test files in a subfolder.  It eases the cleanup of leftover
+    # files using command "make distclean".
+    if sysconfig.is_python_build():
+        parent_dir = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
+        if not os.path.exists(parent_dir):
+            os.mkdir(parent_dir)
+    else:
+        parent_dir = os.path.abspath(tempfile.gettempdir())
 
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
     TESTCWD = 'test_python_{}'.format(os.getpid())
 
-    TESTCWD = os.path.abspath(os.path.join(tempfile.gettempdir(), TESTCWD))
+    TESTCWD = os.path.join(parent_dir, TESTCWD)
 
     # Run the tests in a context manager that temporary changes the CWD to a
     # temporary and writable directory. If it's not possible to create or
