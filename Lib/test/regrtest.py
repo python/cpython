@@ -160,6 +160,7 @@ import warnings
 import unittest
 import tempfile
 import imp
+import platform
 import sysconfig
 
 
@@ -362,6 +363,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         usage(2, "-T and -j don't go together!")
     if use_mp and findleaks:
         usage(2, "-l and -j don't go together!")
+    if use_mp and max(sys.flags):
+        # TODO: inherit the environment and the flags
+        print "Warning: flags and environment variables are ignored with -j option"
 
     good = []
     bad = []
@@ -369,8 +373,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     resource_denieds = []
     environment_changed = []
 
-    if verbose:
-        print 'The CWD is now', os.getcwd()
+    if not quiet:
+        # Print basic platform information
+        print "== {} {}".format(
+            platform.python_implementation(),
+            " ".join(sys.version.split())
+        )
+        print "==   {}".format(platform.platform(aliased=True))
+        print "==   {}".format(os.getcwd())
 
     if findleaks:
         try:
