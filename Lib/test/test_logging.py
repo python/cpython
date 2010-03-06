@@ -952,6 +952,7 @@ class ConfigDictTest(BaseTest):
 
     # config0 is a standard configuration.
     config0 = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -973,6 +974,7 @@ class ConfigDictTest(BaseTest):
 
     # config1 adds a little to the standard configuration.
     config1 = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -999,6 +1001,7 @@ class ConfigDictTest(BaseTest):
 
     # config2 has a subtle configuration error that should be reported
     config2 = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1025,6 +1028,7 @@ class ConfigDictTest(BaseTest):
 
     #As config1 but with a misspelt level on a handler
     config2a = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1052,6 +1056,7 @@ class ConfigDictTest(BaseTest):
 
     #As config1 but with a misspelt level on a logger
     config2b = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1078,6 +1083,7 @@ class ConfigDictTest(BaseTest):
 
     # config3 has a less subtle configuration error
     config3 = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1104,6 +1110,7 @@ class ConfigDictTest(BaseTest):
 
     # config4 specifies a custom formatter class to be loaded
     config4 = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 '()' : __name__ + '.ExceptionFormatter',
@@ -1126,6 +1133,7 @@ class ConfigDictTest(BaseTest):
 
     # As config4 but using an actual callable rather than a string
     config4a = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 '()' : ExceptionFormatter,
@@ -1159,6 +1167,7 @@ class ConfigDictTest(BaseTest):
 
     # config5 specifies a custom handler class to be loaded
     config5 = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1186,6 +1195,7 @@ class ConfigDictTest(BaseTest):
     # config6 specifies a custom handler class to be loaded
     # but has bad arguments
     config6 = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1214,6 +1224,7 @@ class ConfigDictTest(BaseTest):
     #config 7 does not define compiler.parser but defines compiler.lexer
     #so compiler.parser should be disabled after applying it
     config7 = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1239,6 +1250,7 @@ class ConfigDictTest(BaseTest):
     }
 
     config8 = {
+        'version': 1,
         'disable_existing_loggers' : False,
         'formatters': {
             'form1' : {
@@ -1267,6 +1279,7 @@ class ConfigDictTest(BaseTest):
     }
 
     config9 = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1292,6 +1305,7 @@ class ConfigDictTest(BaseTest):
     }
 
     config9a = {
+        'version': 1,
         'incremental' : True,
         'handlers' : {
             'hand1' : {
@@ -1306,6 +1320,7 @@ class ConfigDictTest(BaseTest):
     }
 
     config9b = {
+        'version': 1,
         'incremental' : True,
         'handlers' : {
             'hand1' : {
@@ -1321,6 +1336,7 @@ class ConfigDictTest(BaseTest):
 
     #As config1 but with a filter added
     config10 = {
+        'version': 1,
         'formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1354,6 +1370,68 @@ class ConfigDictTest(BaseTest):
 
     #As config1 but using cfg:// references
     config11 = {
+        'version': 1,
+        'true_formatters': {
+            'form1' : {
+                'format' : '%(levelname)s ++ %(message)s',
+            },
+        },
+        'handler_configs': {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'form1',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'formatters' : 'cfg://true_formatters',
+        'handlers' : {
+            'hand1' : 'cfg://handler_configs[hand1]',
+        },
+        'loggers' : {
+            'compiler.parser' : {
+                'level' : 'DEBUG',
+                'handlers' : ['hand1'],
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+        },
+    }
+
+    #As config11 but missing the version key
+    config12 = {
+        'true_formatters': {
+            'form1' : {
+                'format' : '%(levelname)s ++ %(message)s',
+            },
+        },
+        'handler_configs': {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'form1',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'formatters' : 'cfg://true_formatters',
+        'handlers' : {
+            'hand1' : 'cfg://handler_configs[hand1]',
+        },
+        'loggers' : {
+            'compiler.parser' : {
+                'level' : 'DEBUG',
+                'handlers' : ['hand1'],
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+        },
+    }
+
+    #As config11 but using an unsupported version
+    config13 = {
+        'version': 2,
         'true_formatters': {
             'form1' : {
                 'format' : '%(levelname)s ++ %(message)s',
@@ -1568,6 +1646,12 @@ class ConfigDictTest(BaseTest):
 
     def test_config11_ok(self):
         self.test_config1_ok(self.config11)
+
+    def test_config12_failure(self):
+        self.assertRaises(StandardError, self.apply_config, self.config12)
+
+    def test_config13_failure(self):
+        self.assertRaises(StandardError, self.apply_config, self.config13)
 
     def setup_via_listener(self, text):
         port = find_unused_port()
