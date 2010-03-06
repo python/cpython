@@ -1,5 +1,4 @@
 import imp
-import locale
 import os
 import os.path
 import sys
@@ -85,13 +84,15 @@ class ImportTests(unittest.TestCase):
         # and issue never happens for dynamic modules.
         # But sources modified to follow generic way for processing pathes.
 
-        locale_encoding = locale.getpreferredencoding()
+        # the return encoding could be uppercase or None
+        fs_encoding = sys.getfilesystemencoding()
+        fs_encoding = fs_encoding.lower() if fs_encoding else 'ascii'
 
         # covers utf-8 and Windows ANSI code pages
         # one non-space symbol from every page
         # (http://en.wikipedia.org/wiki/Code_page)
         known_locales = {
-            'utf-8' : b'\xe4',
+            'utf-8' : b'\xc3\xa4',
             'cp1250' : b'\x8C',
             'cp1251' : b'\xc0',
             'cp1252' : b'\xc0',
@@ -103,47 +104,49 @@ class ImportTests(unittest.TestCase):
             'cp1258' : b'\xc0',
             }
 
-        special_char = known_locales.get(locale_encoding)
-        if special_char:
-            encoded_char = special_char.decode(locale_encoding)
-            temp_mod_name = 'test_imp_helper_' + encoded_char
-            test_package_name = 'test_imp_helper_package_' + encoded_char
-            init_file_name = os.path.join(test_package_name, '__init__.py')
-            try:
-                with open(temp_mod_name + '.py', 'w') as file:
-                    file.write('a = 1\n')
-                file, filename, info = imp.find_module(temp_mod_name)
-                self.assertNotEquals(None, file)
-                self.assertTrue(filename[:-3].endswith(temp_mod_name))
-                self.assertEquals('.py', info[0])
-                self.assertEquals('U', info[1])
-                self.assertEquals(imp.PY_SOURCE, info[2])
+        special_char = known_locales.get(fs_encoding)
+        if not special_char:
+            self.skipTest("can't run this test with %s as filesystem encoding"
+                          % fs_encoding)
+        decoded_char = special_char.decode(fs_encoding)
+        temp_mod_name = 'test_imp_helper_' + decoded_char
+        test_package_name = 'test_imp_helper_package_' + decoded_char
+        init_file_name = os.path.join(test_package_name, '__init__.py')
+        try:
+            # if the curdir is not in sys.path the test fails when run with
+            # ./python ./Lib/test/regrtest.py test_imp
+            sys.path.insert(0, os.curdir)
+            with open(temp_mod_name + '.py', 'w') as file:
+                file.write('a = 1\n')
+            file, filename, info = imp.find_module(temp_mod_name)
+            self.assertIsNotNone(file)
+            self.assertTrue(filename[:-3].endswith(temp_mod_name))
+            self.assertEqual(info[0], '.py')
+            self.assertEqual(info[1], 'U')
+            self.assertEqual(info[2], imp.PY_SOURCE)
 
-                mod = imp.load_module(temp_mod_name, file, filename, info)
-                self.assertEquals(1, mod.a)
-                file.close()
+            mod = imp.load_module(temp_mod_name, file, filename, info)
+            self.assertEqual(mod.a, 1)
+            file.close()
 
-                mod = imp.load_source(temp_mod_name, temp_mod_name + '.py')
-                self.assertEquals(1, mod.a)
+            mod = imp.load_source(temp_mod_name, temp_mod_name + '.py')
+            self.assertEqual(mod.a, 1)
 
-                mod = imp.load_compiled(temp_mod_name, temp_mod_name + '.pyc')
-                self.assertEquals(1, mod.a)
+            mod = imp.load_compiled(temp_mod_name, temp_mod_name + '.pyc')
+            self.assertEqual(mod.a, 1)
 
-                if not os.path.exists(test_package_name):
-                    os.mkdir(test_package_name)
-                with open(init_file_name, 'w') as file:
-                    file.write('b = 2\n')
-                package = imp.load_package(test_package_name, test_package_name)
-                self.assertEquals(2, package.b)
-            finally:
-                support.unlink(temp_mod_name + '.py')
-                support.unlink(temp_mod_name + '.pyc')
-                support.unlink(temp_mod_name + '.pyo')
-
-                support.unlink(init_file_name + '.py')
-                support.unlink(init_file_name + '.pyc')
-                support.unlink(init_file_name + '.pyo')
-                support.rmtree(test_package_name)
+            if not os.path.exists(test_package_name):
+                os.mkdir(test_package_name)
+            with open(init_file_name, 'w') as file:
+                file.write('b = 2\n')
+            package = imp.load_package(test_package_name, test_package_name)
+            self.assertEqual(package.b, 2)
+        finally:
+            del sys.path[0]
+            for ext in ('.py', '.pyc', '.pyo'):
+                support.unlink(temp_mod_name + ext)
+                support.unlink(init_file_name + ext)
+            support.rmtree(test_package_name)
 
 
     def test_reload(self):
