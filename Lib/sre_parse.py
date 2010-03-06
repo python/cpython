@@ -786,12 +786,18 @@ def parse_template(source, pattern):
     groups = []
     groupsappend = groups.append
     literals = [None] * len(p)
+    if isinstance(source, str):
+        encode = lambda x: x
+    else:
+        # The tokenizer implicitly decodes bytes objects as latin-1, we must
+        # therefore re-encode the final representation.
+        encode = lambda x: x.encode('latin1')
     for c, s in p:
         if c is MARK:
             groupsappend((i, s))
             # literal[i] is already None
         else:
-            literals[i] = s
+            literals[i] = encode(s)
         i = i + 1
     return groups, literals
 

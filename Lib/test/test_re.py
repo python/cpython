@@ -717,6 +717,24 @@ class ReTests(unittest.TestCase):
         self.assertRaises(ValueError, re.compile, '(?a)\w', re.UNICODE)
         self.assertRaises(ValueError, re.compile, '(?au)\w')
 
+    def test_bug_6509(self):
+        # Replacement strings of both types must parse properly.
+        # all strings
+        pat = re.compile('a(\w)')
+        self.assertEqual(pat.sub('b\\1', 'ac'), 'bc')
+        pat = re.compile('a(.)')
+        self.assertEqual(pat.sub('b\\1', 'a\u1234'), 'b\u1234')
+        pat = re.compile('..')
+        self.assertEqual(pat.sub(lambda m: 'str', 'a5'), 'str')
+
+        # all bytes
+        pat = re.compile(b'a(\w)')
+        self.assertEqual(pat.sub(b'b\\1', b'ac'), b'bc')
+        pat = re.compile(b'a(.)')
+        self.assertEqual(pat.sub(b'b\\1', b'a\xCD'), b'b\xCD')
+        pat = re.compile(b'..')
+        self.assertEqual(pat.sub(lambda m: b'bytes', b'a5'), b'bytes')
+
     def test_dealloc(self):
         # issue 3299: check for segfault in debug build
         import _sre
