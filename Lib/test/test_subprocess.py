@@ -767,21 +767,23 @@ class Win32ProcessTestCase(unittest.TestCase):
         self.assertEqual(rc, 47)
 
     def test_send_signal(self):
-        p = subprocess.Popen([sys.executable, "-c", "input()"])
+        # Do not inherit file handles from the parent.
+        # It should fix failure on some platforms.
+        p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True)
 
         self.assertIs(p.poll(), None)
         p.send_signal(signal.SIGTERM)
         self.assertNotEqual(p.wait(), 0)
 
     def test_kill(self):
-        p = subprocess.Popen([sys.executable, "-c", "input()"])
+        p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True)
 
         self.assertIs(p.poll(), None)
         p.kill()
         self.assertNotEqual(p.wait(), 0)
 
     def test_terminate(self):
-        p = subprocess.Popen([sys.executable, "-c", "input()"])
+        p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True)
 
         self.assertIs(p.poll(), None)
         p.terminate()
