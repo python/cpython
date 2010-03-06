@@ -84,8 +84,8 @@ class ImportTests(unittest.TestCase):
         # and issue never happens for dynamic modules.
         # But sources modified to follow generic way for processing pathes.
 
-        # the return encoding can be uppercase
-        fs_encoding = sys.getfilesystemencoding().lower()
+        # the return encoding could be uppercase or None
+        fs_encoding = sys.getfilesystemencoding()
         fs_encoding = fs_encoding.lower() if fs_encoding else 'ascii'
 
         # covers utf-8 and Windows ANSI code pages
@@ -116,36 +116,32 @@ class ImportTests(unittest.TestCase):
             with open(temp_mod_name + '.py', 'w') as file:
                 file.write('a = 1\n')
             file, filename, info = imp.find_module(temp_mod_name)
-            self.assertNotEquals(None, file)
+            self.assertIsNotNone(file)
             self.assertTrue(filename[:-3].endswith(temp_mod_name))
-            self.assertEquals('.py', info[0])
-            self.assertEquals('U', info[1])
-            self.assertEquals(imp.PY_SOURCE, info[2])
+            self.assertEqual(info[0], '.py')
+            self.assertEqual(info[1], 'U')
+            self.assertEqual(info[2], imp.PY_SOURCE)
 
             mod = imp.load_module(temp_mod_name, file, filename, info)
-            self.assertEquals(1, mod.a)
+            self.assertEqual(mod.a, 1)
             file.close()
 
             mod = imp.load_source(temp_mod_name, temp_mod_name + '.py')
-            self.assertEquals(1, mod.a)
+            self.assertEqual(mod.a, 1)
 
             mod = imp.load_compiled(temp_mod_name, temp_mod_name + '.pyc')
-            self.assertEquals(1, mod.a)
+            self.assertEqual(mod.a, 1)
 
             if not os.path.exists(test_package_name):
                 os.mkdir(test_package_name)
             with open(init_file_name, 'w') as file:
                 file.write('b = 2\n')
             package = imp.load_package(test_package_name, test_package_name)
-            self.assertEquals(2, package.b)
+            self.assertEqual(package.b, 2)
         finally:
-            support.unlink(temp_mod_name + '.py')
-            support.unlink(temp_mod_name + '.pyc')
-            support.unlink(temp_mod_name + '.pyo')
-
-            support.unlink(init_file_name + '.py')
-            support.unlink(init_file_name + '.pyc')
-            support.unlink(init_file_name + '.pyo')
+            for ext in ('.py', '.pyc', '.pyo'):
+                support.unlink(temp_mod_name + ext)
+                support.unlink(init_file_name + ext)
             support.rmtree(test_package_name)
 
 
