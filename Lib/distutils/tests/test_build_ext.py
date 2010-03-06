@@ -19,7 +19,11 @@ ALREADY_TESTED = False
 
 def _get_source_filename():
     srcdir = sysconfig.get_config_var('srcdir')
-    return os.path.join(srcdir, 'Modules', 'xxmodule.c')
+    xxmodule = os.path.join(srcdir, 'Modules', 'xxmodule.c')
+    if not os.path.exists(xxmodule):
+        # local fallback
+        xxmodule = os.path.join(os.path.dirname(__file__), 'xxmodule.c')
+    return xxmodule
 
 class BuildExtTestCase(support.TempdirManager,
                        support.LoggingSilencer,
