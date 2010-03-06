@@ -41,6 +41,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6906: Tk should not set Unicode environment variables on Windows.
+
 - Issue #1054943: Fix unicodedata.normalize('NFC', text) for the Public Review
   Issue #29
 
