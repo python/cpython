@@ -113,6 +113,9 @@ class ImportTests(unittest.TestCase):
         test_package_name = 'test_imp_helper_package_' + decoded_char
         init_file_name = os.path.join(test_package_name, '__init__.py')
         try:
+            # if the curdir is not in sys.path the test fails when run with
+            # ./python ./Lib/test/regrtest.py test_imp
+            sys.path.insert(0, os.curdir)
             with open(temp_mod_name + '.py', 'w') as file:
                 file.write('a = 1\n')
             file, filename, info = imp.find_module(temp_mod_name)
@@ -139,6 +142,7 @@ class ImportTests(unittest.TestCase):
             package = imp.load_package(test_package_name, test_package_name)
             self.assertEqual(package.b, 2)
         finally:
+            del sys.path[0]
             for ext in ('.py', '.pyc', '.pyo'):
                 support.unlink(temp_mod_name + ext)
                 support.unlink(init_file_name + ext)
