@@ -673,14 +673,16 @@ class POSIXProcessTestCase(unittest.TestCase):
         self.assertNotEqual(p.wait(), 0)
 
     def test_kill(self):
-        p = subprocess.Popen([sys.executable, "-c", "input()"])
+        p = subprocess.Popen([sys.executable, "-c", "input()"],
+                             stdin=subprocess.PIPE, close_fds=True)
 
         self.assertIsNone(p.poll())
         p.kill()
         self.assertEqual(p.wait(), -signal.SIGKILL)
 
     def test_terminate(self):
-        p = subprocess.Popen([sys.executable, "-c", "input()"])
+        p = subprocess.Popen([sys.executable, "-c", "input()"],
+                             stdin=subprocess.PIPE, close_fds=True)
 
         self.assertIsNone(p.poll())
         p.terminate()
