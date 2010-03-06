@@ -890,6 +890,11 @@ always available.
 
    .. versionadded:: 2.4
 
+   .. impl-detail::
+
+      This function is intimately bound to CPython implementation details and
+      thus not likely to be implemented elsewhere.
+
 
 .. data:: stdin
           stdout
