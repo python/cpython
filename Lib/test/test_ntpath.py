@@ -1,7 +1,7 @@
 import ntpath
 import os
 from test.test_support import TestFailed
-import test.test_support as test_support
+from test import test_support, test_genericpath
 import unittest
 
 
@@ -123,11 +123,6 @@ class TestNtpath(unittest.TestCase):
         tester("ntpath.normpath('C:////a/b')", r'C:\a\b')
         tester("ntpath.normpath('//machine/share//a/b')", r'\\machine\share\a\b')
 
-        # Issue 5827: Make sure normpath preserves unicode
-        for path in (u'', u'.', u'/', u'\\', u'///foo/.//bar//'):
-            self.assertIsInstance(ntpath.normpath(path), unicode,
-                                  'normpath() returned str instead of unicode')
-
     def test_expandvars(self):
         with test_support.EnvironmentVarGuard() as env:
             env.clear()
@@ -169,16 +164,6 @@ class TestNtpath(unittest.TestCase):
         else:
             tester('ntpath.abspath("C:\\")', "C:\\")
 
-            # Issue 3426: check that abspath retuns unicode when the arg is
-            # unicode and str when it's str, with both ASCII and non-ASCII cwds
-            for cwd in (u'cwd', u'\xe7w\xf0'):
-                with test_support.temp_cwd(cwd):
-                    for path in ('', 'foo', 'f\xf2\xf2', '/foo', 'C:\\'):
-                        self.assertIsInstance(ntpath.abspath(path), str)
-                    for upath in (u'', u'fuu', u'f\xf9\xf9', u'/fuu', u'U:\\'):
-                        self.assertIsInstance(ntpath.abspath(upath), unicode)
-
-
     def test_relpath(self):
         currentdir = os.path.split(os.getcwd())[-1]
         tester('ntpath.relpath("a")', 'a')
@@ -192,8 +177,13 @@ class TestNtpath(unittest.TestCase):
         tester('ntpath.relpath("a", "a")', '.')
 
 
+class NtCommonTest(test_genericpath.CommonTest):
+    path = ntpath
+    attributes = ['relpath', 'splitunc']
+
+
 def test_main():
-    test_support.run_unittest(TestNtpath)
+    test_support.run_unittest(TestNtpath, NtCommonTest)
 
 
 if __name__ == "__main__":

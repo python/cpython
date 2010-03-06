@@ -1,38 +1,72 @@
+"""
+Tests common to genericpath, macpath, ntpath and posixpath
+"""
+
 import unittest
 from test import test_support
 import os
 import genericpath
 
-class AllCommonTest(unittest.TestCase):
+
+def safe_rmdir(dirname):
+    try:
+        os.rmdir(dirname)
+    except OSError:
+        pass
+
+
+class GenericTest(unittest.TestCase):
+    # The path module to be tested
+    path = genericpath
+    common_attributes = ['commonprefix', 'getsize', 'getatime', 'getctime',
+                         'getmtime', 'exists', 'isdir', 'isfile']
+    attributes = []
+
+    def test_no_argument(self):
+        for attr in self.common_attributes + self.attributes:
+            with self.assertRaises(TypeError):
+                getattr(self.path, attr)()
+                raise self.fail("{}.{}() do not raise a TypeError"
+                                .format(self.path.__name__, attr))
 
     def test_commonprefix(self):
         self.assertEqual(
-            genericpath.commonprefix([]),
+            self.path.commonprefix([]),
             ""
         )
         self.assertEqual(
-            genericpath.commonprefix(["/home/swenson/spam", "/home/swen/spam"]),
+            self.path.commonprefix(["/home/swenson/spam", "/home/swen/spam"]),
             "/home/swen"
         )
         self.assertEqual(
-            genericpath.commonprefix(["/home/swen/spam", "/home/swen/eggs"]),
+            self.path.commonprefix(["/home/swen/spam", "/home/swen/eggs"]),
             "/home/swen/"
         )
         self.assertEqual(
-            genericpath.commonprefix(["/home/swen/spam", "/home/swen/spam"]),
+            self.path.commonprefix(["/home/swen/spam", "/home/swen/spam"]),
             "/home/swen/spam"
         )
+
+        testlist = ['', 'abc', 'Xbcd', 'Xb', 'XY', 'abcd', 'aXc', 'abd', 'ab', 'aX', 'abcX']
+        for s1 in testlist:
+            for s2 in testlist:
+                p = self.path.commonprefix([s1, s2])
+                self.assertTrue(s1.startswith(p))
+                self.assertTrue(s2.startswith(p))
+                if s1 != s2:
+                    n = len(p)
+                    self.assertNotEqual(s1[n:n+1], s2[n:n+1])
 
     def test_getsize(self):
         f = open(test_support.TESTFN, "wb")
         try:
             f.write("foo")
             f.close()
-            self.assertEqual(genericpath.getsize(test_support.TESTFN), 3)
+            self.assertEqual(self.path.getsize(test_support.TESTFN), 3)
         finally:
             if not f.closed:
                 f.close()
-            os.remove(test_support.TESTFN)
+            test_support.unlink(test_support.TESTFN)
 
     def test_time(self):
         f = open(test_support.TESTFN, "wb")
@@ -48,147 +82,150 @@ class AllCommonTest(unittest.TestCase):
             self.assertEqual(d, "foobar")
 
             self.assertLessEqual(
-                genericpath.getctime(test_support.TESTFN),
-                genericpath.getmtime(test_support.TESTFN)
+                self.path.getctime(test_support.TESTFN),
+                self.path.getmtime(test_support.TESTFN)
             )
         finally:
             if not f.closed:
                 f.close()
-            os.remove(test_support.TESTFN)
+            test_support.unlink(test_support.TESTFN)
 
     def test_exists(self):
-        self.assertIs(genericpath.exists(test_support.TESTFN), False)
+        self.assertIs(self.path.exists(test_support.TESTFN), False)
         f = open(test_support.TESTFN, "wb")
         try:
             f.write("foo")
             f.close()
-            self.assertIs(genericpath.exists(test_support.TESTFN), True)
+            self.assertIs(self.path.exists(test_support.TESTFN), True)
+            if not self.path == genericpath:
+                self.assertIs(self.path.lexists(test_support.TESTFN), True)
         finally:
             if not f.close():
                 f.close()
-            try:
-                os.remove(test_support.TESTFN)
-            except os.error:
-                pass
-
-        self.assertRaises(TypeError, genericpath.exists)
+            test_support.unlink(test_support.TESTFN)
 
     def test_isdir(self):
-        self.assertIs(genericpath.isdir(test_support.TESTFN), False)
+        self.assertIs(self.path.isdir(test_support.TESTFN), False)
         f = open(test_support.TESTFN, "wb")
         try:
             f.write("foo")
             f.close()
-            self.assertIs(genericpath.isdir(test_support.TESTFN), False)
+            self.assertIs(self.path.isdir(test_support.TESTFN), False)
             os.remove(test_support.TESTFN)
             os.mkdir(test_support.TESTFN)
-            self.assertIs(genericpath.isdir(test_support.TESTFN), True)
+            self.assertIs(self.path.isdir(test_support.TESTFN), True)
             os.rmdir(test_support.TESTFN)
         finally:
             if not f.close():
                 f.close()
-            try:
-                os.remove(test_support.TESTFN)
-            except os.error:
-                pass
-            try:
-                os.rmdir(test_support.TESTFN)
-            except os.error:
-                pass
-
-        self.assertRaises(TypeError, genericpath.isdir)
+            test_support.unlink(test_support.TESTFN)
+            safe_rmdir(test_support.TESTFN)
 
     def test_isfile(self):
-        self.assertIs(genericpath.isfile(test_support.TESTFN), False)
+        self.assertIs(self.path.isfile(test_support.TESTFN), False)
         f = open(test_support.TESTFN, "wb")
         try:
             f.write("foo")
             f.close()
-            self.assertIs(genericpath.isfile(test_support.TESTFN), True)
+            self.assertIs(self.path.isfile(test_support.TESTFN), True)
             os.remove(test_support.TESTFN)
             os.mkdir(test_support.TESTFN)
-            self.assertIs(genericpath.isfile(test_support.TESTFN), False)
+            self.assertIs(self.path.isfile(test_support.TESTFN), False)
             os.rmdir(test_support.TESTFN)
         finally:
             if not f.close():
                 f.close()
-            try:
-                os.remove(test_support.TESTFN)
-            except os.error:
-                pass
-            try:
-                os.rmdir(test_support.TESTFN)
-            except os.error:
-                pass
-
-        self.assertRaises(TypeError, genericpath.isdir)
-
-        def test_samefile(self):
-            f = open(test_support.TESTFN + "1", "wb")
-            try:
-                f.write("foo")
-                f.close()
-                self.assertIs(
-                    genericpath.samefile(
-                        test_support.TESTFN + "1",
-                        test_support.TESTFN + "1"
-                    ),
-                    True
-                )
-                # If we don't have links, assume that os.stat doesn't return resonable
-                # inode information and thus, that samefile() doesn't work
-                if hasattr(os, "symlink"):
-                    os.symlink(
-                        test_support.TESTFN + "1",
-                        test_support.TESTFN + "2"
-                    )
-                    self.assertIs(
-                        genericpath.samefile(
-                            test_support.TESTFN + "1",
-                            test_support.TESTFN + "2"
-                        ),
-                        True
-                    )
-                    os.remove(test_support.TESTFN + "2")
-                    f = open(test_support.TESTFN + "2", "wb")
-                    f.write("bar")
-                    f.close()
-                    self.assertIs(
-                        genericpath.samefile(
-                            test_support.TESTFN + "1",
-                            test_support.TESTFN + "2"
-                        ),
-                        False
-                    )
-            finally:
-                if not f.close():
-                    f.close()
-                try:
-                    os.remove(test_support.TESTFN + "1")
-                except os.error:
-                    pass
-                try:
-                    os.remove(test_support.TESTFN + "2")
-                except os.error:
-                    pass
-
-            self.assertRaises(TypeError, genericpath.samefile)
+            test_support.unlink(test_support.TESTFN)
+            safe_rmdir(test_support.TESTFN)
 
 
-# XXX at some point this should probably go in some class that contains common
-# tests for all test_*path modules.
-def _issue3426(self, cwd, abspath):
-    # Issue 3426: check that abspath retuns unicode when the arg is unicode
-    # and str when it's str, with both ASCII and non-ASCII cwds
-    with test_support.temp_cwd(cwd):
+class CommonTest(GenericTest):
+    # The path module to be tested
+    path = None
+    common_attributes = GenericTest.common_attributes + [
+        # Properties
+        'curdir', 'pardir', 'extsep', 'sep',
+        'pathsep', 'defpath', 'altsep', 'devnull',
+        # Methods
+        'normcase', 'splitdrive', 'expandvars', 'normpath', 'abspath',
+        'join', 'split', 'splitext', 'isabs', 'basename', 'dirname',
+        'lexists', 'islink', 'ismount', 'expanduser', 'normpath', 'realpath',
+    ]
+
+    def test_normcase(self):
+        # Check that normcase() is idempotent
+        p = "FoO/./BaR"
+        p = self.path.normcase(p)
+        self.assertEqual(p, self.path.normcase(p))
+
+    def test_splitdrive(self):
+        # splitdrive for non-NT paths
+        self.assertEqual(self.path.splitdrive("/foo/bar"), ("", "/foo/bar"))
+        self.assertEqual(self.path.splitdrive("foo:bar"), ('', 'foo:bar'))
+        self.assertEqual(self.path.splitdrive(":foo:bar"), ('', ':foo:bar'))
+
+    def test_expandvars(self):
+        if self.path.__name__ == 'macpath':
+            raise unittest.SkipTest('macpath.expandvars is a stub')
+        with test_support.EnvironmentVarGuard() as env:
+            env.clear()
+            env["foo"] = "bar"
+            env["{foo"] = "baz1"
+            env["{foo}"] = "baz2"
+            self.assertEqual(self.path.expandvars("foo"), "foo")
+            self.assertEqual(self.path.expandvars("$foo bar"), "bar bar")
+            self.assertEqual(self.path.expandvars("${foo}bar"), "barbar")
+            self.assertEqual(self.path.expandvars("$[foo]bar"), "$[foo]bar")
+            self.assertEqual(self.path.expandvars("$bar bar"), "$bar bar")
+            self.assertEqual(self.path.expandvars("$?bar"), "$?bar")
+            self.assertEqual(self.path.expandvars("${foo}bar"), "barbar")
+            self.assertEqual(self.path.expandvars("$foo}bar"), "bar}bar")
+            self.assertEqual(self.path.expandvars("${foo"), "${foo")
+            self.assertEqual(self.path.expandvars("${{foo}}"), "baz1}")
+            self.assertEqual(self.path.expandvars("$foo$foo"), "barbar")
+            self.assertEqual(self.path.expandvars("$bar$bar"), "$bar$bar")
+
+    def test_abspath(self):
+        self.assertIn("foo", self.path.abspath("foo"))
+
+        # Abspath returns bytes when the arg is bytes
         for path in ('', 'foo', 'f\xf2\xf2', '/foo', 'C:\\'):
-            self.assertIsInstance(abspath(path), str)
-        for upath in (u'', u'fuu', u'f\xf9\xf9', u'/fuu', u'U:\\'):
-            self.assertIsInstance(abspath(upath), unicode)
+            self.assertIsInstance(self.path.abspath(path), str)
+
+    def test_realpath(self):
+        self.assertIn("foo", self.path.realpath("foo"))
+
+    def test_normpath_issue5827(self):
+        # Make sure normpath preserves unicode
+        for path in (u'', u'.', u'/', u'\\', u'///foo/.//bar//'):
+            self.assertIsInstance(self.path.normpath(path), unicode)
+
+    def test_abspath_issue3426(self):
+        # Check that abspath returns unicode when the arg is unicode
+        # with both ASCII and non-ASCII cwds.
+        for path in (u'', u'fuu', u'f\xf9\xf9', u'/fuu', u'U:\\'):
+            self.assertIsInstance(self.path.abspath(path), unicode)
+
+        unicwd = u'\xe7w\xf0'
+        try:
+            fsencoding = test_support.TESTFN_ENCODING or "ascii"
+            unicwd.encode(fsencoding)
+        except (AttributeError, UnicodeEncodeError):
+            # FS encoding is probably ASCII
+            pass
+        else:
+            with test_support.temp_cwd(unicwd):
+                for path in (u'', u'fuu', u'f\xf9\xf9', u'/fuu', u'U:\\'):
+                    self.assertIsInstance(self.path.abspath(path), unicode)
+
+        # Test non-ASCII, non-UTF8 bytes in the path.
+        with test_support.temp_cwd('\xe7w\xf0'):
+            self.test_abspath()
 
 
 def test_main():
-    test_support.run_unittest(AllCommonTest)
+    test_support.run_unittest(GenericTest)
+
 
 if __name__=="__main__":
     test_main()
