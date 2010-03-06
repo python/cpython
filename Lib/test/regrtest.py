@@ -162,6 +162,7 @@ import tempfile
 import platform
 import sysconfig
 
+
 # Some times __path__ and __file__ are not absolute (e.g. while running from
 # Lib/) and, if we change the CWD to run the tests in a temporary dir, some
 # imports might fail.  This affects only the modules imported before os.chdir().
@@ -385,9 +386,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if single and fromfile:
         usage("-s and -f don't go together!")
     if use_mp and trace:
-        usage(2, "-T and -j don't go together!")
+        usage("-T and -j don't go together!")
     if use_mp and findleaks:
-        usage(2, "-l and -j don't go together!")
+        usage("-l and -j don't go together!")
     if use_mp and max(sys.flags):
         # TODO: inherit the environment and the flags
         print("Warning: flags and environment variables are ignored with -j option")
