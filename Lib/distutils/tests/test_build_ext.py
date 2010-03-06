@@ -19,10 +19,15 @@ ALREADY_TESTED = False
 
 def _get_source_filename():
     srcdir = sysconfig.get_config_var('srcdir')
+    fallback_path = os.path.join(os.path.dirname(__file__), 'xxmodule.c')
     if srcdir is None:
-        # local fallback
-        return os.path.join(os.path.dirname(__file__), 'xxmodule.c')
-    return os.path.join(srcdir, 'Modules', 'xxmodule.c')
+        return fallback_path
+    locations = (srcdir, os.path.dirname(sys.executable))
+    for location in locations:
+        path = os.path.join(location, 'Modules', 'xxmodule.c')
+        if os.path.exists(path):
+            return path
+    return fallback_path
 
 class BuildExtTestCase(support.TempdirManager,
                        support.LoggingSilencer,
@@ -81,7 +86,7 @@ class BuildExtTestCase(support.TempdirManager,
     def tearDown(self):
         # Get everything back to normal
         test_support.unload('xx')
-        sys.path = self.sys_path
+        sys.path[:] = self.sys_path
         # XXX on Windows the test leaves a directory with xx module in TEMP
         shutil.rmtree(self.tmp_dir, os.name == 'nt' or sys.platform == 'cygwin')
         super(BuildExtTestCase, self).tearDown()
@@ -350,22 +355,31 @@ class BuildExtTestCase(support.TempdirManager,
         self.assertEquals(wanted, path)
 
     def test_setuptools_compat(self):
-        from setuptools_build_ext import build_ext as setuptools_build_ext
-        from setuptools_extension import Extension
+        import distutils.core, distutils.extension, distutils.command.build_ext
+        saved_ext = distutils.extension.Extension
+        try:
+            # theses import patch Distutils' Extension class
+            from setuptools_build_ext import build_ext as setuptools_build_ext
+            from setuptools_extension import Extension
 
-        etree_c = os.path.join(self.tmp_dir, 'lxml.etree.c')
-        etree_ext = Extension('lxml.etree', [etree_c])
-        dist = Distribution({'name': 'lxml', 'ext_modules': [etree_ext]})
-        cmd = setuptools_build_ext(dist)
-        cmd.ensure_finalized()
-        cmd.inplace = 1
-        cmd.distribution.package_dir = {'': 'src'}
-        cmd.distribution.packages = ['lxml', 'lxml.html']
-        curdir = os.getcwd()
-        ext = sysconfig.get_config_var("SO")
-        wanted = os.path.join(curdir, 'src', 'lxml', 'etree' + ext)
-        path = cmd.get_ext_fullpath('lxml.etree')
-        self.assertEquals(wanted, path)
+            etree_c = os.path.join(self.tmp_dir, 'lxml.etree.c')
+            etree_ext = Extension('lxml.etree', [etree_c])
+            dist = Distribution({'name': 'lxml', 'ext_modules': [etree_ext]})
+            cmd = setuptools_build_ext(dist)
+            cmd.ensure_finalized()
+            cmd.inplace = 1
+            cmd.distribution.package_dir = {'': 'src'}
+            cmd.distribution.packages = ['lxml', 'lxml.html']
+            curdir = os.getcwd()
+            ext = sysconfig.get_config_var("SO")
+            wanted = os.path.join(curdir, 'src', 'lxml', 'etree' + ext)
+            path = cmd.get_ext_fullpath('lxml.etree')
+            self.assertEquals(wanted, path)
+        finally:
+            # restoring Distutils' Extension class otherwise its broken
+            distutils.extension.Extension = saved_ext
+            distutils.core.Extension = saved_ext
+            distutils.command.build_ext.Extension = saved_ext
 
     def test_build_ext_path_with_os_sep(self):
         dist = Distribution({'name': 'UpdateManager'})
@@ -391,13 +405,7 @@ class BuildExtTestCase(support.TempdirManager,
         self.assertEquals(ext_path, wanted)
 
 def test_suite():
-    src = _get_source_filename()
-    if not os.path.exists(src):
-        if test_support.verbose:
-            print ('test_build_ext: Cannot find source code (test'
-                   ' must run in python build dir)')
-        return unittest.TestSuite()
-    else: return unittest.makeSuite(BuildExtTestCase)
+    return unittest.makeSuite(BuildExtTestCase)
 
 if __name__ == '__main__':
     test_support.run_unittest(test_suite())
