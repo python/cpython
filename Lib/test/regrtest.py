@@ -82,7 +82,7 @@ be of the form stab:run:fname where 'stab' is the number of times the
 test is run to let gettotalrefcount settle down, 'run' is the number
 of times further it is run and 'fname' is the name of the file the
 reports are written to.  These parameters all have defaults (5, 4 and
-"reflog.txt" respectively), so the minimal invocation is '-R ::'.
+"reflog.txt" respectively), and the minimal invocation is '-R :'.
 
 -M runs tests that require an exorbitant amount of memory. These tests
 typically try to ascertain containers keep working when containing more than
@@ -248,9 +248,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     files beginning with test_ will be used.
 
     The other default arguments (verbose, quiet, exclude,
-    single, randomize, findleaks, use_resources, trace, coverdir, print_slow and
-    random_seed) allow programmers calling main() directly to set the
-    values that would normally be set by flags on the command line.
+    single, randomize, findleaks, use_resources, trace, coverdir,
+    print_slow, and random_seed) allow programmers calling main()
+    directly to set the values that would normally be set by flags
+    on the command line.
     """
 
     test_support.record_original_stdout(sys.stdout)
@@ -308,19 +309,19 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             coverdir = None
         elif o in ('-R', '--huntrleaks'):
             huntrleaks = a.split(':')
-            if len(huntrleaks) != 3:
+            if len(huntrleaks) not in (2, 3):
                 print a, huntrleaks
-                usage(2, '-R takes three colon-separated arguments')
-            if len(huntrleaks[0]) == 0:
+                usage(2, '-R takes 2 or 3 colon-separated arguments')
+            if not huntrleaks[0]:
                 huntrleaks[0] = 5
             else:
                 huntrleaks[0] = int(huntrleaks[0])
-            if len(huntrleaks[1]) == 0:
+            if not huntrleaks[1]:
                 huntrleaks[1] = 4
             else:
                 huntrleaks[1] = int(huntrleaks[1])
-            if len(huntrleaks[2]) == 0:
-                huntrleaks[2] = "reflog.txt"
+            if len(huntrleaks) == 2 or not huntrleaks[2]:
+                huntrleaks[2:] = ["reflog.txt"]
         elif o in ('-M', '--memlimit'):
             test_support.set_memlimit(a)
         elif o in ('-u', '--use'):
@@ -375,12 +376,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     if not quiet:
         # Print basic platform information
-        print "== {} {}".format(
-            platform.python_implementation(),
-            " ".join(sys.version.split())
-        )
-        print "==   {}".format(platform.platform(aliased=True))
-        print "==   {}".format(os.getcwd())
+        print "==", platform.python_implementation(), \
+                    " ".join(sys.version.split())
+        print "==  ", platform.platform(aliased=True)
+        print "==  ", os.getcwd()
 
     if findleaks:
         try:
@@ -419,12 +418,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     removepy(tests)
 
     stdtests = STDTESTS[:]
-    nottests = NOTTESTS[:]
+    nottests = NOTTESTS.copy()
     if exclude:
         for arg in args:
             if arg in stdtests:
                 stdtests.remove(arg)
-        nottests[:0] = args
+            nottests.add(arg)
         args = []
     alltests = findtests(testdir, stdtests, nottests)
     tests = tests or args or alltests
@@ -664,20 +663,20 @@ STDTESTS = [
     'test_unittest',
     'test_doctest',
     'test_doctest2',
-   ]
+]
 
-NOTTESTS = [
+NOTTESTS = {
     'test_support',
     'test_future1',
     'test_future2',
-    ]
+}
 
 def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     """Return a list of all applicable test modules."""
     testdir = findtestdir(testdir)
     names = os.listdir(testdir)
     tests = []
-    others = set(stdtests + nottests)
+    others = set(stdtests) | nottests
     for name in names:
         modname, ext = os.path.splitext(name)
         if modname[:5] == "test_" and ext == ".py" and modname not in others:
