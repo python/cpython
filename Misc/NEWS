@@ -126,6 +126,9 @@ Extension Modules
 Tests
 -----
 
+- The four path modules (genericpath, macpath, ntpath, posixpath) share a
+  common TestCase for some tests: test_genericpath.CommonTest.
+
 - Print platform information when running the whole test suite, or using
   the --verbose flag.
 

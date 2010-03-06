@@ -56,7 +56,7 @@ class MacPathTestCase(unittest.TestCase):
                                   'normpath() returned str instead of unicode')
 
 class MacCommonTest(test_genericpath.CommonTest):
-    path = macpath
+    pathmodule = macpath
 
 
 def test_main():

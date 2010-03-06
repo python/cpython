@@ -327,7 +327,7 @@ class PosixPathTest(unittest.TestCase):
 
 
 class PosixCommonTest(test_genericpath.CommonTest):
-    path = posixpath
+    pathmodule = posixpath
     attributes = ['relpath', 'samefile', 'sameopenfile', 'samestat']
 
 

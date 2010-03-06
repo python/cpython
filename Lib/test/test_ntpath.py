@@ -178,7 +178,7 @@ class TestNtpath(unittest.TestCase):
 
 
 class NtCommonTest(test_genericpath.CommonTest):
-    path = ntpath
+    pathmodule = ntpath
     attributes = ['relpath', 'splitunc']
 
 
