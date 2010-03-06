@@ -14,6 +14,10 @@ from test.support import (
 
 from test import pydoc_mod
 
+# Just in case sys.modules["test"] has the optional attribute __loader__.
+if hasattr(pydoc_mod, "__loader__"):
+    del pydoc_mod.__loader__
+
 expected_text_pattern = \
 """
 NAME
