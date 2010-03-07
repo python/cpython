@@ -3260,8 +3260,9 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 		/* Not something you can raise.  You get an exception
 		   anyway, just not what you specified :-) */
 		PyErr_Format(PyExc_TypeError,
-			"exceptions must be classes or instances, not %s",
-			type->ob_type->tp_name);
+			     "exceptions must be old-style classes or "
+			     "derived from BaseException, not %s",
+			     type->ob_type->tp_name);
 		goto raise_error;
 	}
 
