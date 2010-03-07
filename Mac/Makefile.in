@@ -114,7 +114,7 @@ install_versionedtools:
 
 
 pythonw: $(srcdir)/Tools/pythonw.c Makefile
-	$(CC) $(LDFLAGS) -o $@ $(srcdir)/Tools/pythonw.c -I.. -I$(srcdir)/../Include ../$(PYTHONFRAMEWORK).framework/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
+	$(CC) $(LDFLAGS) -DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' -o $@ $(srcdir)/Tools/pythonw.c -I.. -I$(srcdir)/../Include ../$(PYTHONFRAMEWORK).framework/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
 
 install_PythonLauncher:
 	cd PythonLauncher && make install DESTDIR=$(DESTDIR)
