@@ -1143,6 +1143,8 @@ class Namespace(_AttributeHolder):
         for name in kwargs:
             setattr(self, name, kwargs[name])
 
+    __hash__ = None
+
     def __eq__(self, other):
         return vars(self) == vars(other)
 
