@@ -766,8 +766,9 @@ class Win32ProcessTestCase(unittest.TestCase):
         self.assertEqual(rc, 47)
 
     def _kill_process(self, method, *args):
-        # Do not inherit file handles from the parent.
-        p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True)
+        # Some win32 buildbot raises EOFError if stdin is inherited
+        p = subprocess.Popen([sys.executable, "-c", "input()"],
+                             stdin=subprocess.PIPE)
 
         # Let the process initialize
         time.sleep(0.1)
