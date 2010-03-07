@@ -212,11 +212,9 @@ class CalendarTestCase(unittest.TestCase):
         self.assertEqual(calendar.isleap(2003), 0)
 
     def test_setfirstweekday(self):
-        # Silence a py3k warning claiming to affect Lib/calendar.py
-        with test_support.check_warnings():
-            self.assertRaises(ValueError, calendar.setfirstweekday, 'flabber')
-            self.assertRaises(ValueError, calendar.setfirstweekday, -1)
-            self.assertRaises(ValueError, calendar.setfirstweekday, 200)
+        self.assertRaises(ValueError, calendar.setfirstweekday, 'flabber')
+        self.assertRaises(ValueError, calendar.setfirstweekday, -1)
+        self.assertRaises(ValueError, calendar.setfirstweekday, 200)
         orig = calendar.firstweekday()
         calendar.setfirstweekday(calendar.SUNDAY)
         self.assertEqual(calendar.firstweekday(), calendar.SUNDAY)

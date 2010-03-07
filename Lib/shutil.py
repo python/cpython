@@ -10,6 +10,7 @@ import stat
 from os.path import abspath
 import fnmatch
 from warnings import warn
+import collections
 
 try:
     from pwd import getpwnam
@@ -500,7 +501,7 @@ def register_archive_format(name, function, extra_args=None, description=''):
     """
     if extra_args is None:
         extra_args = []
-    if not callable(function):
+    if not isinstance(function, collections.Callable):
         raise TypeError('The %s object is not callable' % function)
     if not isinstance(extra_args, (tuple, list)):
         raise TypeError('extra_args needs to be a sequence')

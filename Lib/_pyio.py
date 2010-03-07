@@ -839,8 +839,8 @@ class BytesIO(BufferedIOBase):
         if self.closed:
             raise ValueError("seek on closed file")
         try:
-            pos = pos.__index__()
-        except AttributeError as err:
+            pos.__index__
+        except AttributeError:
             raise TypeError("an integer is required")
         if whence == 0:
             if pos < 0:
@@ -864,8 +864,13 @@ class BytesIO(BufferedIOBase):
             raise ValueError("truncate on closed file")
         if pos is None:
             pos = self._pos
-        elif pos < 0:
-            raise ValueError("negative truncate position %r" % (pos,))
+        else:
+            try:
+                pos.__index__
+            except AttributeError:
+                raise TypeError("an integer is required")
+            if pos < 0:
+                raise ValueError("negative truncate position %r" % (pos,))
         del self._buffer[pos:]
         return pos
 
@@ -1813,6 +1818,10 @@ class TextIOWrapper(TextIOBase):
         if n is None:
             n = -1
         decoder = self._decoder or self._get_decoder()
+        try:
+            n.__index__
+        except AttributeError:
+            raise TypeError("an integer is required")
         if n < 0:
             # Read everything.
             result = (self._get_decoded_chars() +
