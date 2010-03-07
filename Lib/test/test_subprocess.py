@@ -768,7 +768,6 @@ class Win32ProcessTestCase(unittest.TestCase):
                              ' -c "import sys; sys.exit(47)"')
         self.assertEqual(rc, 47)
 
-    @unittest.skip("It fails on some win32 platforms. See issue #2777")
     def test_send_signal(self):
         # Redirect the stdin file handle.
         # It should fix failure on some win32 platforms.
@@ -779,7 +778,6 @@ class Win32ProcessTestCase(unittest.TestCase):
         p.send_signal(signal.SIGTERM)
         self.assertNotEqual(p.wait(), 0)
 
-    @unittest.skip("It fails on some win32 platforms. See issue #2777")
     def test_kill(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"],
                              stdin=subprocess.PIPE)
@@ -788,7 +786,6 @@ class Win32ProcessTestCase(unittest.TestCase):
         p.kill()
         self.assertNotEqual(p.wait(), 0)
 
-    @unittest.skip("It fails on some win32 platforms. See issue #2777")
     def test_terminate(self):
         p = subprocess.Popen([sys.executable, "-c", "input()"],
                              stdin=subprocess.PIPE)
