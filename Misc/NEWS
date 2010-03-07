@@ -15,6 +15,18 @@ Core and Builtins
 Library
 -------
 
+Extension Modules
+-----------------
+
+- Issue #1530559: When passing a non-integer argument to struct.pack
+  with *any* integer format code (one of 'bBhHiIlLqQ'), struct.pack
+  attempts to use the argument's __int__ method to convert to an
+  integer before packing.  It also produces a DeprecationWarning in
+  this case.  (In Python 2.6, the behaviour was inconsistent: __int__
+  was used for some integer codes but not for others, and the set of
+  integer codes for which it was used differed between native packing
+  and standard packing.)
+
 
 What's New in Python 2.7 alpha 4?
 =================================
@@ -2191,6 +2203,10 @@ Extension Modules
       'q', 'Q', '*q', '*Q'; for x with neither __int__ nor __long__,
       TypeError used to be raised (with a confusing error message) for
       'I', 'L', '*B', '*H', '*I', '*L', and struct.error in other cases.
+
+  Note: as of Python 2.7 beta 1, the above is out of date.  In 2.7
+  beta 1, any argument with an __int__ method can be packed, but use
+  of this feature triggers a DeprecationWarning.
 
 - Issue #4873: Fix resource leaks in error cases of pwd and grp.
 
