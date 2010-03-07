@@ -226,9 +226,6 @@ class Request:
     # XXX these helper methods are lame
 
     def add_data(self, data):
-        if self.has_data():
-            raise TypeError("Request Obj already contains data: %s" %
-                            self.data)
         self.data = data
 
     def has_data(self):
