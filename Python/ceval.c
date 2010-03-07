@@ -1159,7 +1159,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	assert(stack_pointer != NULL);
 	f->f_stacktop = NULL;	/* remains NULL unless yield suspends frame */
 
-	if (f->f_code->co_flags & CO_GENERATOR) {
+	if (co->co_flags & CO_GENERATOR && !throwflag) {
 		if (f->f_exc_type != NULL && f->f_exc_type != Py_None) {
 			/* We were in an except handler when we left,
 			   restore the exception state which was put aside
