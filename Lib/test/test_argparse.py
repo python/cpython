@@ -73,6 +73,8 @@ class NS(object):
         kwarg_str = ', '.join(['%s=%r' % tup for tup in sorted_items])
         return '%s(%s)' % (type(self).__name__, kwarg_str)
 
+    __hash__ = None
+
     def __eq__(self, other):
         return vars(self) == vars(other)
 
@@ -1383,6 +1385,8 @@ class RFile(object):
     def __init__(self, name):
         self.name = name
 
+    __hash__ = None
+
     def __eq__(self, other):
         if other in self.seen:
             text = self.seen[other]
@@ -1445,6 +1449,8 @@ class WFile(object):
 
     def __init__(self, name):
         self.name = name
+
+    __hash__ = None
 
     def __eq__(self, other):
         if other not in self.seen:
@@ -1511,6 +1517,8 @@ class TestTypeUserDefined(ParserTestCase):
         def __init__(self, value):
             self.value = value
 
+        __hash__ = None
+
         def __eq__(self, other):
             return (type(self), self.value) == (type(other), other.value)
 
@@ -1532,6 +1540,8 @@ class TestTypeClassicClass(ParserTestCase):
 
         def __init__(self, value):
             self.value = value
+
+        __hash__ = None
 
         def __eq__(self, other):
             return (type(self), self.value) == (type(other), other.value)
