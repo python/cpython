@@ -185,6 +185,7 @@ brackets:
    list_comprehension: `expression` `list_for`
    list_for: "for" `target_list` "in" `old_expression_list` [`list_iter`]
    old_expression_list: `old_expression` [("," `old_expression`)+ [","]]
+   old_expression: `or_test` | `old_lambda_form`
    list_iter: `list_for` | `list_if`
    list_if: "if" `old_expression` [`list_iter`]
 
@@ -1186,12 +1187,7 @@ Boolean operations
    pair: Conditional; expression
    pair: Boolean; operation
 
-Boolean operations have the lowest priority of all Python operations:
-
 .. productionlist::
-   expression: `conditional_expression` | `lambda_form`
-   old_expression: `or_test` | `old_lambda_form`
-   conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    or_test: `and_test` | `or_test` "or" `and_test`
    and_test: `not_test` | `and_test` "and" `not_test`
    not_test: `comparison` | "not" `not_test`
@@ -1207,12 +1203,6 @@ special method for a way to change this.)
 
 The operator :keyword:`not` yields ``True`` if its argument is false, ``False``
 otherwise.
-
-The expression ``x if C else y`` first evaluates *C* (*not* *x*); if *C* is
-true, *x* is evaluated and its value is returned; otherwise, *y* is evaluated
-and its value is returned.
-
-.. versionadded:: 2.5
 
 .. index:: operator: and
 
@@ -1231,6 +1221,29 @@ replaced by a default value if it is empty, the expression ``s or 'foo'`` yields
 the desired value.  Because :keyword:`not` has to invent a value anyway, it does
 not bother to return a value of the same type as its argument, so e.g., ``not
 'foo'`` yields ``False``, not ``''``.)
+
+
+Conditional Expressions
+=======================
+
+.. versionadded:: 2.5
+
+.. index::
+   pair: conditional; expression
+   pair: ternary; operator
+
+.. productionlist::
+   conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
+   expression: `conditional_expression` | `lambda_form`
+
+Conditional expressions (sometimes called a "ternary operator") have the lowest
+priority of all Python operations.
+
+The expression ``x if C else y`` first evaluates the condition, *C* (*not* *a*);
+if *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is
+evaluated and its value is returned.
+
+See :pep:`308` for more details about conditional expressions.
 
 
 .. _lambdas:
@@ -1325,6 +1338,8 @@ groups from right to left).
 | Operator                                      | Description                         |
 +===============================================+=====================================+
 | :keyword:`lambda`                             | Lambda expression                   |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`if` -- :keyword:`else`              | Conditional expression              |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`or`                                 | Boolean OR                          |
 +-----------------------------------------------+-------------------------------------+
