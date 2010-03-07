@@ -774,26 +774,23 @@ class TestCase(object):
         set(actual))`` but it works with sequences of unhashable objects as
         well.
         """
-        try:
-            expected = set(expected_seq)
-            actual = set(actual_seq)
-            missing = list(expected.difference(actual))
-            unexpected = list(actual.difference(expected))
-            missing.sort()
-            unexpected.sort()
-        except TypeError:
-            # Fall back to slower list-compare if any of the objects are
-            # not hashable.
-            expected = list(expected_seq)
-            actual = list(actual_seq)
-            with warnings.catch_warnings():
-                if sys.py3kwarning:
-                    # Silence Py3k warning
-                    warnings.filterwarnings("ignore",
-                                            "dict inequality comparisons "
-                                            "not supported", DeprecationWarning)
-                expected.sort()
-                actual.sort()
+        with warnings.catch_warnings():
+            if sys.py3kwarning:
+                # Silence Py3k warning raised during the sorting
+                for msg in ["dict inequality comparisons",
+                            "builtin_function_or_method order comparisons",
+                            "comparing unequal types"]:
+                    warnings.filterwarnings("ignore", msg, DeprecationWarning)
+            try:
+                expected = set(expected_seq)
+                actual = set(actual_seq)
+                missing = sorted(expected.difference(actual))
+                unexpected = sorted(actual.difference(expected))
+            except TypeError:
+                # Fall back to slower list-compare if any of the objects are
+                # not hashable.
+                expected = sorted(expected_seq)
+                actual = sorted(actual_seq)
                 missing, unexpected = sorted_list_difference(expected, actual)
         errors = []
         if missing:

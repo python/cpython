@@ -133,9 +133,7 @@ class MemoryTestMixin:
         pos = memio.tell()
         self.assertEqual(memio.truncate(None), pos)
         self.assertEqual(memio.tell(), pos)
-        # Silence a py3k warning
-        with support.check_warnings():
-            self.assertRaises(TypeError, memio.truncate, '0')
+        self.assertRaises(TypeError, memio.truncate, '0')
         memio.close()
         self.assertRaises(ValueError, memio.truncate, 0)
 
@@ -172,9 +170,7 @@ class MemoryTestMixin:
         self.assertEqual(type(memio.read()), type(buf))
         memio.seek(0)
         self.assertEqual(memio.read(None), buf)
-        # Silence a py3k warning
-        with support.check_warnings():
-            self.assertRaises(TypeError, memio.read, '')
+        self.assertRaises(TypeError, memio.read, '')
         memio.close()
         self.assertRaises(ValueError, memio.read)
 

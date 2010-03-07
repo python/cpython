@@ -406,7 +406,7 @@ def execute (func, args, msg=None, verbose=0, dry_run=0):
 
     log.info(msg)
     if not dry_run:
-        apply(func, args)
+        func(*args)
 
 
 def strtobool (val):
