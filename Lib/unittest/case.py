@@ -820,7 +820,6 @@ class TestCase(object):
         if unexpected:
             errors.append('Unexpected, but present:\n    %s' %
                           safe_repr(unexpected))
-        print 'errors', errors
         if errors:
             standardMsg = '\n'.join(errors)
             self.fail(self._formatMessage(msg, standardMsg))
