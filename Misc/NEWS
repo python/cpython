@@ -12,6 +12,8 @@ What's New in Python 3.1.2?
 Core and Builtins
 -----------------
 
+- Issue #7173: Generator finalization could invalidate sys.exc_info().
+
 Library
 -------
 
