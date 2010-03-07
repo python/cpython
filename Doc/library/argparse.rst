@@ -855,7 +855,7 @@ By default, ArgumentParser objects read command-line args in as simple strings.
 However, quite often the command-line string should instead be interpreted as
 another type, like a :class:`float`, :class:`int` or :class:`file`.  The
 ``type`` keyword argument of :meth:`add_argument` allows any necessary
-type-checking and type-conversions to be performed.  Many common builtin types
+type-checking and type-conversions to be performed.  Many common built-in types
 can be used directly as the value of the ``type`` argument::
 
    >>> parser = argparse.ArgumentParser()
