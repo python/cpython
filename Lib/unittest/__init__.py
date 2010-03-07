@@ -51,13 +51,12 @@ __all__ = ['TestResult', 'TestCase', 'TestSuite',
 
 # Expose obsolete functions for backwards compatibility
 __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
-__all__.append('_TextTestResult')
 
 
 from .result import TestResult
 from .case import (TestCase, FunctionTestCase, SkipTest, skip, skipIf,
                    skipUnless, expectedFailure)
-from .suite import TestSuite
+from .suite import BaseTestSuite, TestSuite
 from .loader import (TestLoader, defaultTestLoader, makeSuite, getTestCaseNames,
                      findTestCases)
 from .main import TestProgram, main
