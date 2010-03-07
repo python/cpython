@@ -81,7 +81,7 @@ static char* get_python_path(void)
 	if (end[1] == '.') {
 		end++;
 	}
-	strcpy(end, "Resources/Python.app/Contents/MacOS/Python");
+	strcpy(end, "Resources/Python.app/Contents/MacOS/" PYTHONFRAMEWORK);
 
 	return g_path;
 }
