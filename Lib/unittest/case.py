@@ -45,14 +45,15 @@ def skip(reason):
     Unconditionally skip a test.
     """
     def decorator(test_item):
-        if isinstance(test_item, type) and issubclass(test_item, TestCase):
-            test_item.__unittest_skip__ = True
-            test_item.__unittest_skip_why__ = reason
-            return test_item
-        @functools.wraps(test_item)
-        def skip_wrapper(*args, **kwargs):
-            raise SkipTest(reason)
-        return skip_wrapper
+        if not (isinstance(test_item, type) and issubclass(test_item, TestCase)):
+            @functools.wraps(test_item)
+            def skip_wrapper(*args, **kwargs):
+                raise SkipTest(reason)
+            test_item = skip_wrapper
+
+        test_item.__unittest_skip__ = True
+        test_item.__unittest_skip_why__ = reason
+        return test_item
     return decorator
 
 def skipIf(condition, reason):
@@ -268,14 +269,18 @@ class TestCase(object):
 
         self._resultForDoCleanups = result
         result.startTest(self)
-        if getattr(self.__class__, "__unittest_skip__", False):
-            # If the whole class was skipped.
+
+        testMethod = getattr(self, self._testMethodName)
+        if (getattr(self.__class__, "__unittest_skip__", False) or
+            getattr(testMethod, "__unittest_skip__", False)):
+            # If the class or method was skipped.
             try:
-                self._addSkip(result, self.__class__.__unittest_skip_why__)
+                skip_why = (getattr(self.__class__, '__unittest_skip_why__', '')
+                            or getattr(testMethod, '__unittest_skip_why__', ''))
+                self._addSkip(result, skip_why)
             finally:
                 result.stopTest(self)
             return
-        testMethod = getattr(self, self._testMethodName)
         try:
             success = False
             try:
@@ -386,7 +391,12 @@ class TestCase(object):
             return msg or standardMsg
         if msg is None:
             return standardMsg
-        return standardMsg + ' : ' + msg
+        try:
+            # don't switch to '{}' formatting in Python 2.X
+            # it changes the way unicode input is handled
+            return '%s : %s' % (standardMsg, msg)
+        except UnicodeDecodeError:
+            return  '%s : %s' % (safe_repr(standardMsg), safe_repr(msg))
 
 
     def assertRaises(self, excClass, callableObj=None, *args, **kwargs):

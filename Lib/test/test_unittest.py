@@ -3118,6 +3118,43 @@ class Test_TestSkipping(TestCase):
         self.assertEqual(result.unexpectedSuccesses, [test])
         self.assertTrue(result.wasSuccessful())
 
+    def test_skip_doesnt_run_setup(self):
+        class Foo(unittest.TestCase):
+            wasSetUp = False
+            wasTornDown = False
+            def setUp(self):
+                Foo.wasSetUp = True
+            def tornDown(self):
+                Foo.wasTornDown = True
+            @unittest.skip('testing')
+            def test_1(self):
+                pass
+
+        result = unittest.TestResult()
+        test = Foo("test_1")
+        suite = unittest.TestSuite([test])
+        suite.run(result)
+        self.assertEqual(result.skipped, [(test, "testing")])
+        self.assertFalse(Foo.wasSetUp)
+        self.assertFalse(Foo.wasTornDown)
+
+    def test_decorated_skip(self):
+        def decorator(func):
+            def inner(*a):
+                return func(*a)
+            return inner
+
+        class Foo(unittest.TestCase):
+            @decorator
+            @unittest.skip('testing')
+            def test_1(self):
+                pass
+
+        result = unittest.TestResult()
+        test = Foo("test_1")
+        suite = unittest.TestSuite([test])
+        suite.run(result)
+        self.assertEqual(result.skipped, [(test, "testing")])
 
 
 class Test_Assertions(TestCase):
@@ -3219,6 +3256,16 @@ class TestLongMessage(TestCase):
 
         self.assertEquals(self.testableTrue._formatMessage(None, "foo"), "foo")
         self.assertEquals(self.testableTrue._formatMessage("foo", "bar"), "bar : foo")
+
+        # This blows up if _formatMessage uses string concatenation
+        self.testableTrue._formatMessage(object(), 'foo')
+
+    def test_formatMessage_unicode_error(self):
+        with warnings.catch_warnings(record=True):
+            # This causes a UnicodeWarning due to its craziness
+            one = ''.join(chr(i) for i in range(255))
+            # this used to cause a UnicodeDecodeError constructing msg
+            self.testableTrue._formatMessage(one, u'\uFFFD')
 
     def assertMessages(self, methodName, args, errors):
         def getMethod(i):
