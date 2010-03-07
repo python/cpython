@@ -279,16 +279,14 @@ class OverflowTestCase(unittest.TestCase):
 
     def test_getitem(self):
         self._getitem_helper(object)
-        # Silence Py3k warning
-        with test_support.check_warnings():
+        with test_support.check_py3k_warnings():
             self._getslice_helper_deprecated(object)
 
     def test_getitem_classic(self):
         class Empty: pass
         # XXX This test fails (see bug #7532)
         #self._getitem_helper(Empty)
-        # Silence Py3k warning
-        with test_support.check_warnings():
+        with test_support.check_py3k_warnings():
             self._getslice_helper_deprecated(Empty)
 
     def test_sequence_repeat(self):
@@ -308,8 +306,7 @@ def test_main():
         XRangeTestCase,
         OverflowTestCase,
     )
-    # Silence Py3k warning
-    with test_support.check_warnings():
+    with test_support.check_py3k_warnings():
         test_support.run_unittest(
             ClassicSeqDeprecatedTestCase,
             NewSeqDeprecatedTestCase,

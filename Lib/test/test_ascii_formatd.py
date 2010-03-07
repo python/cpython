@@ -17,13 +17,10 @@ class FormatDeprecationTests(unittest.TestCase):
         PyOS_ascii_formatd = pythonapi.PyOS_ascii_formatd
         buf = create_string_buffer(' ' * 100)
 
-        with check_warnings() as w:
-            warnings.simplefilter('default')
+        with check_warnings():
             PyOS_ascii_formatd(byref(buf), sizeof(buf), '%+.10f',
                                c_double(10.0))
             self.assertEqual(buf.value, '+10.0000000000')
-
-        self.assertEqual(w.category, DeprecationWarning)
 
 class FormatTests(unittest.TestCase):
     # ensure that, for the restricted set of format codes,
