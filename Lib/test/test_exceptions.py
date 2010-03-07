@@ -6,7 +6,8 @@ import unittest
 import pickle
 import weakref
 
-from test.support import TESTFN, unlink, run_unittest, captured_output
+from test.support import (TESTFN, unlink, run_unittest, captured_output,
+                          gc_collect)
 
 # XXX This is not really enough, each *operation* should be tested!
 
@@ -553,6 +554,20 @@ class ExceptionTests(unittest.TestCase):
             self.assertEquals(next(g), TypeError)
             del g
             self.assertEquals(sys.exc_info()[0], TypeError)
+
+    def test_generator_finalizing_and_exc_info(self):
+        # See #7173
+        def simple_gen():
+            yield 1
+        def run_gen():
+            gen = simple_gen()
+            try:
+                raise RuntimeError
+            except RuntimeError:
+                return next(gen)
+        run_gen()
+        gc_collect()
+        self.assertEqual(sys.exc_info(), (None, None, None))
 
     def test_3114(self):
         # Bug #3114: in its destructor, MyObject retrieves a pointer to
