@@ -798,10 +798,10 @@ class TestCase(object):
         with warnings.catch_warnings():
             if sys.py3kwarning:
                 # Silence Py3k warning raised during the sorting
-                for msg in ["dict inequality comparisons",
+                for _msg in ["dict inequality comparisons",
                             "builtin_function_or_method order comparisons",
                             "comparing unequal types"]:
-                    warnings.filterwarnings("ignore", msg, DeprecationWarning)
+                    warnings.filterwarnings("ignore", _msg, DeprecationWarning)
             try:
                 expected = set(expected_seq)
                 actual = set(actual_seq)
@@ -820,6 +820,7 @@ class TestCase(object):
         if unexpected:
             errors.append('Unexpected, but present:\n    %s' %
                           safe_repr(unexpected))
+        print 'errors', errors
         if errors:
             standardMsg = '\n'.join(errors)
             self.fail(self._formatMessage(msg, standardMsg))
