@@ -155,8 +155,11 @@ get_pylong(PyObject *v)
 		assert(PyLong_Check(v));
 		r = v;
 	}
-	else
+	else {
+		r = NULL;   /* silence compiler warning about
+			       possibly uninitialized variable */
 		assert(0);  /* shouldn't ever get here */
+	}
 
 	return r;
 }
