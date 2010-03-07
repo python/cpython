@@ -138,6 +138,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #7849: Now the utility ``check_warnings`` verifies if the warnings are
+  effectively raised.  A new utility ``check_py3k_warnings`` is available.
+
 - The four path modules (genericpath, macpath, ntpath, posixpath) share a
   common TestCase for some tests: test_genericpath.CommonTest.
 
