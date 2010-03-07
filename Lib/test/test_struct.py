@@ -2,10 +2,6 @@ import array
 import unittest
 import struct
 import warnings
-warnings.filterwarnings("ignore", "struct integer overflow masking is deprecated",
-                        DeprecationWarning)
-
-from functools import wraps
 from test.test_support import run_unittest
 
 import sys
@@ -35,22 +31,27 @@ def bigendian_to_native(value):
 class StructTest(unittest.TestCase):
 
     def check_float_coerce(self, format, number):
-        # SF bug 1530559. struct.pack raises TypeError where it used to convert.
-        with warnings.catch_warnings():
+        # SF bug 1530559. struct.pack raises TypeError where it used
+        # to convert.
+        with warnings.catch_warnings(record=True) as w:
+            # ignore everything except the
+            # DeprecationWarning we're looking for
+            warnings.simplefilter("ignore")
             warnings.filterwarnings(
-                "ignore",
-                category=DeprecationWarning,
+                "always",
                 message=".*integer argument expected, got float",
-                module=__name__)
-            self.assertEqual(struct.pack(format, number), struct.pack(format, int(number)))
-
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "error",
                 category=DeprecationWarning,
-                message=".*integer argument expected, got float",
-                module="unittest")
-            self.assertRaises(DeprecationWarning, struct.pack, format, number)
+                module=__name__
+                )
+            got = struct.pack(format, number)
+            nwarn = len(w)
+        self.assertEqual(nwarn, 1,
+                         "expected exactly one warning from "
+                         "struct.pack({!r}, {!r});  "
+                         "got {} warnings".format(
+                format, number, nwarn))
+        expected = struct.pack(format, int(number))
+        self.assertEqual(got, expected)
 
     def test_isbigendian(self):
         self.assertEqual((struct.pack('=i', 1)[0] == chr(0)), ISBIGENDIAN)
@@ -291,16 +292,40 @@ class StructTest(unittest.TestCase):
 
                 class NotAnIntOS:
                     def __int__(self):
-                        return 10585
+                        return 85
 
                     def __long__(self):
                         return -163L
 
-                for badobject in ("a string", 3+42j, randrange,
-                                  NotAnIntNS(), NotAnIntOS()):
-                    self.assertRaises(struct.error,
-                                      struct.pack, format,
+                for badobject in ("a string", 3+42j, randrange):
+                    self.assertRaises((TypeError, struct.error),
+                                      struct.pack, self.format,
                                       badobject)
+
+                # an attempt to convert a non-integer (with an
+                # implicit conversion via __int__) should succeed,
+                # with a DeprecationWarning
+                for nonint in NotAnIntNS(), NotAnIntOS():
+                    with warnings.catch_warnings(record=True) as w:
+                        # ignore everything except the
+                        # DeprecationWarning we're looking for
+                        warnings.simplefilter("ignore")
+                        warnings.filterwarnings(
+                            "always",
+                            message=(".*integer argument expected, "
+                                     "got non-integer.*"),
+                            category=DeprecationWarning,
+                            module=__name__
+                            )
+                        got = struct.pack(self.format, nonint)
+                        nwarn = len(w)
+                    self.assertEqual(nwarn, 1,
+                                     "expected exactly one warning from "
+                                     "struct.pack({!r}, {!r});  "
+                                     "got {} warnings".format(
+                            self.format, nonint, nwarn))
+                    expected = struct.pack(self.format, int(nonint))
+                    self.assertEqual(got, expected)
 
         byteorders = '', '@', '=', '<', '>', '!'
         for code in integer_codes:

@@ -17,7 +17,10 @@ static PyTypeObject PyStructType;
 typedef int Py_ssize_t;
 #endif
 
-#define FLOAT_COERCE "integer argument expected, got float"
+/* warning messages */
+#define FLOAT_COERCE_WARN "integer argument expected, got float"
+#define NON_INTEGER_WARN "integer argument expected, got non-integer " \
+	"(implicit conversion using __int__ is deprecated)"
 
 
 /* The translation function for each format character is table driven */
@@ -104,21 +107,58 @@ static char *integer_codes = "bBhHiIlLqQ";
 static PyObject *
 get_pylong(PyObject *v)
 {
+	PyObject *r;
 	assert(v != NULL);
-	if (PyInt_Check(v))
-		return PyLong_FromLong(PyInt_AS_LONG(v));
-	if (PyLong_Check(v)) {
-		Py_INCREF(v);
-		return v;
-	}
-	if (PyFloat_Check(v)) {
-		if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 1)<0)
+	if (!PyInt_Check(v) && !PyLong_Check(v)) {
+		PyNumberMethods *m;
+		/* Not an integer; try to use __int__ to convert to an
+		   integer.  This behaviour is deprecated, and is removed in
+		   Python 3.x. */
+		m = Py_TYPE(v)->tp_as_number;
+		if (m != NULL && m->nb_int != NULL) {
+			/* Special case warning message for floats, for
+			   backwards compatibility. */
+			if (PyFloat_Check(v)) {
+				if (PyErr_WarnEx(PyExc_DeprecationWarning,
+						 FLOAT_COERCE_WARN, 1))
+					return NULL;
+			}
+			else {
+				if (PyErr_WarnEx(PyExc_DeprecationWarning,
+						 NON_INTEGER_WARN, 1))
+					return NULL;
+			}
+			v = m->nb_int(v);
+			if (v == NULL)
+				return NULL;
+			if (!PyInt_Check(v) && !PyLong_Check(v)) {
+				PyErr_SetString(PyExc_TypeError,
+				  "__int__ method returned non-integer");
+				return NULL;
+			}
+		}
+		else {
+			PyErr_SetString(StructError,
+					"cannot convert argument to integer");
 			return NULL;
-		return PyNumber_Long(v);
+		}
 	}
-	PyErr_SetString(StructError,
-			"cannot convert argument to long");
-	return NULL;
+	else
+		/* Ensure we own a reference to v. */
+		Py_INCREF(v);
+
+	if (PyInt_Check(v)) {
+		r = PyLong_FromLong(PyInt_AS_LONG(v));
+		Py_DECREF(v);
+	}
+	else if (PyLong_Check(v)) {
+		assert(PyLong_Check(v));
+		r = v;
+	}
+	else
+		assert(0);  /* shouldn't ever get here */
+
+	return r;
 }
 
 /* Helper to convert a Python object to a C long.  Sets an exception

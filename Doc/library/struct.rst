@@ -123,6 +123,18 @@ Notes:
 
    .. versionadded:: 2.2
 
+(3)
+   When attempting to pack a non-integer using any of the integer conversion
+   codes, the non-integer's :meth:`__int__` method (if present) will be called
+   to convert to an integer before packing.  However, this behaviour is
+   deprecated, and will raise :exc:`DeprecationWarning`.
+
+   .. versionchanged:: 2.7
+      Prior to version 2.7, not all integer conversion codes would use the
+      :meth:`__int__` method to convert, and :exc:`DeprecationWarning` was
+      raised only for float arguments.
+
+
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
 
