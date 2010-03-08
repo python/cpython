@@ -561,6 +561,8 @@ else:  # use native Windows method on Windows
                 path = _getfullpathname(path)
             except WindowsError:
                 pass # Bad path - return unchanged.
+        elif isinstance(path, bytes):
+            path = os.getcwdb()
         else:
             path = os.getcwd()
         return normpath(path)
