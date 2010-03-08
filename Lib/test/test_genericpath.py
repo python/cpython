@@ -285,7 +285,7 @@ class CommonTest(GenericTest):
                     self.assertIsInstance(abspath(path), str)
 
         # Test non-ASCII, non-UTF8 bytes in the path.
-        with support.temp_cwd('\xe7w\xf0'):
+        with support.temp_cwd(b'\xe7w\xf0'):
             self.test_abspath()
 
 
