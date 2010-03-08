@@ -492,6 +492,9 @@ class PyBuildExt(build_ext):
         do_readline = self.compiler_obj.find_library_file(lib_dirs, 'readline')
         if platform == 'darwin':
             os_release = int(os.uname()[2].split('.')[0])
+            dep_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+            if dep_target and dep_target.split('.') < ['10', '5']:
+                os_release = 8
             if os_release < 9:
                 # MacOSX 10.4 has a broken readline. Don't try to build
                 # the readline module unless the user has installed a fixed
