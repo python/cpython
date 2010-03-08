@@ -1,7 +1,7 @@
 import ntpath
 import os
 from test.support import verbose, TestFailed
-import test.support as support
+from test import support, test_genericpath
 import unittest
 
 
@@ -174,7 +174,6 @@ class TestNtpath(unittest.TestCase):
         tester("ntpath.normpath('C:////a/b')", r'C:\a\b')
         tester("ntpath.normpath('//machine/share//a/b')", r'\\machine\share\a\b')
 
-
     def test_expandvars(self):
         with support.EnvironmentVarGuard() as env:
             env.clear()
@@ -236,8 +235,13 @@ class TestNtpath(unittest.TestCase):
         tester('ntpath.relpath("/a/b", "/a/b")', '.')
 
 
+class NtCommonTest(test_genericpath.CommonTest):
+    pathmodule = ntpath
+    attributes = ['relpath', 'splitunc']
+
+
 def test_main():
-    support.run_unittest(TestNtpath)
+    support.run_unittest(TestNtpath, NtCommonTest)
 
 
 if __name__ == "__main__":
