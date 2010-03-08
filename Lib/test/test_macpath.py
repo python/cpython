@@ -18,16 +18,6 @@ class MacPathTestCase(unittest.TestCase):
         self.assertFalse(isabs(":foo:bar"))
         self.assertFalse(isabs(":foo:bar:"))
 
-
-    def test_commonprefix(self):
-        commonprefix = macpath.commonprefix
-        self.assertEqual(commonprefix(["home:swenson:spam", "home:swen:spam"]),
-                         "home:swen")
-        self.assertEqual(commonprefix([":home:swen:spam", ":home:swen:eggs"]),
-                         ":home:swen:")
-        self.assertEqual(commonprefix([":home:swen:spam", ":home:swen:spam"]),
-                         ":home:swen:spam")
-
     def test_split(self):
         split = macpath.split
         self.assertEqual(split("foo:bar"),

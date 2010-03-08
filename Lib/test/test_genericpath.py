@@ -47,6 +47,18 @@ class GenericTest(unittest.TestCase):
             commonprefix(["/home/swen/spam", "/home/swen/spam"]),
             "/home/swen/spam"
         )
+        self.assertEqual(
+            commonprefix(["home:swenson:spam", "home:swen:spam"]),
+            "home:swen"
+        )
+        self.assertEqual(
+            commonprefix([":home:swen:spam", ":home:swen:eggs"]),
+            ":home:swen:"
+        )
+        self.assertEqual(
+            commonprefix([":home:swen:spam", ":home:swen:spam"]),
+            ":home:swen:spam"
+        )
 
         testlist = ['', 'abc', 'Xbcd', 'Xb', 'XY', 'abcd',
                     'aXc', 'abd', 'ab', 'aX', 'abcX']
