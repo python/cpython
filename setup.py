@@ -558,6 +558,9 @@ class PyBuildExt(build_ext):
         do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
         if platform == 'darwin':
             os_release = int(os.uname()[2].split('.')[0])
+            dep_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+            if dep_target and dep_target.split('.') < ['10', '5']:
+                os_release = 8
             if os_release < 9:
                 # MacOSX 10.4 has a broken readline. Don't try to build
                 # the readline module unless the user has installed a fixed
@@ -1366,7 +1369,7 @@ class PyBuildExt(build_ext):
         if platform == 'darwin' and ("--disable-toolbox-glue" not in
                 sysconfig.get_config_var("CONFIG_ARGS")):
 
-            if os.uname()[2] > '8.':
+            if int(os.uname()[2].split('.')[0]) >= 8:
                 # We're on Mac OS X 10.4 or later, the compiler should
                 # support '-Wno-deprecated-declarations'. This will
                 # surpress deprecation warnings for the Carbon extensions,
