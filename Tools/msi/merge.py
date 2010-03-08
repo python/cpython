@@ -69,7 +69,7 @@ def merge(msi, feature, rootdir, modules):
         msilib.add_stream(db, stream,  cabname)
         os.unlink(cabname)
         maxmedia += count
-    # The merge module sets ALLUSERS to 1 in the property table. 
+    # The merge module sets ALLUSERS to 1 in the property table.
     # This is undesired; delete that
     v = db.OpenView("DELETE FROM Property WHERE Property='ALLUSERS'")
     v.Execute(None)
