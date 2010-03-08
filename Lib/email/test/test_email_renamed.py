@@ -194,8 +194,12 @@ class TestMessageAPI(TestEmailBase):
         # Subpart 3 is base64
         eq(msg.get_payload(2).get_payload(decode=True),
            'This is a Base64 encoded message.')
-        # Subpart 4 has no Content-Transfer-Encoding: header.
+        # Subpart 4 is base64 with a trailing newline, which
+        # used to be stripped (issue 7143).
         eq(msg.get_payload(3).get_payload(decode=True),
+           'This is a Base64 encoded message.\n')
+        # Subpart 5 has no Content-Transfer-Encoding: header.
+        eq(msg.get_payload(4).get_payload(decode=True),
            'This has no Content-Transfer-Encoding: header.\n')
 
     def test_get_decoded_uu_payload(self):
