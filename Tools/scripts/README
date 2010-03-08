@@ -56,6 +56,7 @@ pysource.py		Find Python source files
 redemo.py		Basic regular expression demonstration facility
 reindent.py		Change .py files to use 4-space indents.
 rgrep.py		Reverse grep through a file (useful for big logfiles)
+serve.py		Small wsgiref-based web server, used in make serve in Doc
 setup.py		Install all scripts listed here
 suff.py			Sort a list of files by suffix
 svneol.py		Sets svn:eol-style on all files in directory

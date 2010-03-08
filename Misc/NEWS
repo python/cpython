@@ -832,6 +832,9 @@ Build
 Documentation
 ------------
 
+- A small wsgi server was added as Tools/scripts/serve.py, and is used to
+  implement a local documentation server via 'make serve' in the doc directory.
+
 - Updating `Using Python` documentation to include description of CPython's
   -J and -X options.
 
