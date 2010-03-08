@@ -1239,7 +1239,7 @@ Conditional Expressions
 Conditional expressions (sometimes called a "ternary operator") have the lowest
 priority of all Python operations.
 
-The expression ``x if C else y`` first evaluates the condition, *C* (*not* *a*);
+The expression ``x if C else y`` first evaluates the condition, *C* (*not* *x*);
 if *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is
 evaluated and its value is returned.
 
