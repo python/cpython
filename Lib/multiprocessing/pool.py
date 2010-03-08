@@ -448,12 +448,10 @@ class Pool(object):
         if pool and hasattr(pool[0], 'terminate'):
             debug('joining pool workers')
             for p in pool:
-                p.join()
-            for w in pool:
-                if w.exitcode is None:
+                if p.is_alive():
                     # worker has not yet exited
-                    debug('cleaning up worker %d' % w.pid)
-                    w.join()
+                    debug('cleaning up worker %d' % p.pid)
+                    p.join()
 
 #
 # Class whose instances are returned by `Pool.apply_async()`

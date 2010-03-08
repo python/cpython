@@ -104,7 +104,12 @@ if sys.platform != 'win32':
 
         def poll(self, flag=os.WNOHANG):
             if self.returncode is None:
-                pid, sts = os.waitpid(self.pid, flag)
+                try:
+                    pid, sts = os.waitpid(self.pid, flag)
+                except os.error:
+                    # Child process not yet created. See #1731717
+                    # e.errno == errno.ECHILD == 10
+                    return None
                 if pid == self.pid:
                     if os.WIFSIGNALED(sts):
                         self.returncode = -os.WTERMSIG(sts)
