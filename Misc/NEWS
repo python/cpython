@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7624: Fix isinstance(foo(), collections.Callable) for old-style
+  classes.
+
 - Issue #7143: get_payload used to strip any trailing newline from a
   base64 transfer-encoded payload *after* decoding it; it no longer does.
   This is a behavior change, so email's minor version number is now

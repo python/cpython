@@ -231,6 +231,27 @@ class ABCTestCase(unittest.TestCase):
             C = type('C', (abc,), stubs)
             self.assertRaises(TypeError, C, name)
 
+    def validate_isinstance(self, abc, name):
+        stub = lambda s, *args: 0
+
+        # new-style class
+        C = type('C', (object,), {name: stub})
+        self.assertIsInstance(C(), abc)
+        self.assertTrue(issubclass(C, abc))
+        # old-style class
+        class C: pass
+        setattr(C, name, stub)
+        self.assertIsInstance(C(), abc)
+        self.assertTrue(issubclass(C, abc))
+
+        # new-style class
+        C = type('C', (object,), {'__hash__': None})
+        self.assertNotIsInstance(C(), abc)
+        self.assertFalse(issubclass(C, abc))
+        # old-style class
+        class C: pass
+        self.assertNotIsInstance(C(), abc)
+        self.assertFalse(issubclass(C, abc))
 
 class TestOneTrickPonyABCs(ABCTestCase):
 
@@ -259,6 +280,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
         self.assertEqual(hash(H()), 0)
         self.assertFalse(issubclass(int, H))
         self.validate_abstract_methods(Hashable, '__hash__')
+        self.validate_isinstance(Hashable, '__hash__')
 
     def test_Iterable(self):
         # Check some non-iterables
@@ -283,6 +305,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
         self.assertEqual(list(I()), [])
         self.assertFalse(issubclass(str, I))
         self.validate_abstract_methods(Iterable, '__iter__')
+        self.validate_isinstance(Iterable, '__iter__')
 
     def test_Iterator(self):
         non_samples = [None, 42, 3.14, 1j, "".encode('ascii'), "", (), [],
@@ -302,6 +325,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
             self.assertIsInstance(x, Iterator)
             self.assertTrue(issubclass(type(x), Iterator), repr(type(x)))
         self.validate_abstract_methods(Iterator, 'next')
+        self.validate_isinstance(Iterator, 'next')
 
     def test_Sized(self):
         non_samples = [None, 42, 3.14, 1j,
@@ -319,6 +343,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
             self.assertIsInstance(x, Sized)
             self.assertTrue(issubclass(type(x), Sized), repr(type(x)))
         self.validate_abstract_methods(Sized, '__len__')
+        self.validate_isinstance(Sized, '__len__')
 
     def test_Container(self):
         non_samples = [None, 42, 3.14, 1j,
@@ -336,6 +361,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
             self.assertIsInstance(x, Container)
             self.assertTrue(issubclass(type(x), Container), repr(type(x)))
         self.validate_abstract_methods(Container, '__contains__')
+        self.validate_isinstance(Container, '__contains__')
 
     def test_Callable(self):
         non_samples = [None, 42, 3.14, 1j,
@@ -355,6 +381,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
             self.assertIsInstance(x, Callable)
             self.assertTrue(issubclass(type(x), Callable), repr(type(x)))
         self.validate_abstract_methods(Callable, '__call__')
+        self.validate_isinstance(Callable, '__call__')
 
     def test_direct_subclassing(self):
         for B in Hashable, Iterable, Iterator, Sized, Container, Callable:
@@ -515,8 +542,9 @@ class TestCounter(unittest.TestCase):
                          [('a', 3), ('b', 2), ('c', 1)])
         self.assertEqual(c['b'], 2)
         self.assertEqual(c['z'], 0)
-        self.assertEqual(c.has_key('c'), True)
-        self.assertEqual(c.has_key('z'), False)
+        with test_support.check_py3k_warnings():
+            self.assertEqual(c.has_key('c'), True)
+            self.assertEqual(c.has_key('z'), False)
         self.assertEqual(c.__contains__('c'), True)
         self.assertEqual(c.__contains__('z'), False)
         self.assertEqual(c.get('b', 10), 2)
