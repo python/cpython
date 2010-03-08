@@ -110,7 +110,7 @@ call(*popenargs, **kwargs):
 
     The arguments are the same as for the Popen constructor.  Example:
 
-    >>> retcode = call(["ls", "-l"])
+    >>> retcode = subprocess.call(["ls", "-l"])
 
 check_call(*popenargs, **kwargs):
     Run command with arguments.  Wait for command to complete.  If the
@@ -120,7 +120,7 @@ check_call(*popenargs, **kwargs):
 
     The arguments are the same as for the Popen constructor.  Example:
 
-    >>> check_call(["ls", "-l"])
+    >>> subprocess.check_call(["ls", "-l"])
     0
 
 getstatusoutput(cmd):

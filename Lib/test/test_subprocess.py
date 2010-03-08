@@ -648,42 +648,39 @@ class POSIXProcessTestCase(unittest.TestCase):
         os.remove(fname)
         self.assertEqual(rc, 47)
 
-    def test_send_signal(self):
+    def _kill_process(self, method, *args):
         # Do not inherit file handles from the parent.
         # It should fix failures on some platforms.
         p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True,
-                             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+                             stdin=subprocess.PIPE)
 
-        # Let the process initialize correctly (Issue #3137)
+        # Let the process initialize (Issue #3137)
         time.sleep(0.1)
+        # The process should not terminate prematurely
         self.assertIsNone(p.poll())
+        # Retry if the process do not receive the signal.
         count, maxcount = 0, 3
-        # Retry if the process do not receive the SIGINT signal.
         while count < maxcount and p.poll() is None:
-            p.send_signal(signal.SIGINT)
+            getattr(p, method)(*args)
             time.sleep(0.1)
             count += 1
-        self.assertIsNotNone(p.poll(), "the subprocess did not receive "
-                                       "the signal SIGINT")
+
+        self.assertIsNotNone(p.poll(), "the subprocess did not terminate")
         if count > 1:
-            print("p.send_signal(SIGINT) succeeded "
-                  "after {} attempts".format(count), file=sys.stderr)
+            print("p.{}{} succeeded after "
+                  "{} attempts".format(method, args, count), file=sys.stderr)
+        return p
+
+    def test_send_signal(self):
+        p = self._kill_process('send_signal', signal.SIGINT)
         self.assertNotEqual(p.wait(), 0)
 
     def test_kill(self):
-        p = subprocess.Popen([sys.executable, "-c", "input()"],
-                             stdin=subprocess.PIPE, close_fds=True)
-
-        self.assertIsNone(p.poll())
-        p.kill()
+        p = self._kill_process('kill')
         self.assertEqual(p.wait(), -signal.SIGKILL)
 
     def test_terminate(self):
-        p = subprocess.Popen([sys.executable, "-c", "input()"],
-                             stdin=subprocess.PIPE, close_fds=True)
-
-        self.assertIsNone(p.poll())
-        p.terminate()
+        p = self._kill_process('terminate')
         self.assertEqual(p.wait(), -signal.SIGTERM)
 
 
@@ -766,28 +763,38 @@ class Win32ProcessTestCase(unittest.TestCase):
                              ' -c "import sys; sys.exit(47)"')
         self.assertEqual(rc, 47)
 
-    def test_send_signal(self):
-        # Do not inherit file handles from the parent.
-        # It should fix failure on some platforms.
-        p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True)
+    def _kill_process(self, method, *args):
+        # Some win32 buildbot raises EOFError if stdin is inherited
+        p = subprocess.Popen([sys.executable, "-c", "input()"],
+                             stdin=subprocess.PIPE)
 
-        self.assertIs(p.poll(), None)
-        p.send_signal(signal.SIGTERM)
-        self.assertNotEqual(p.wait(), 0)
+        # Let the process initialize (Issue #3137)
+        time.sleep(0.1)
+        # The process should not terminate prematurely
+        self.assertIsNone(p.poll())
+        # Retry if the process do not receive the signal.
+        count, maxcount = 0, 3
+        while count < maxcount and p.poll() is None:
+            getattr(p, method)(*args)
+            time.sleep(0.1)
+            count += 1
+
+        returncode = p.poll()
+        self.assertIsNotNone(returncode, "the subprocess did not terminate")
+        if count > 1:
+            print("p.{}{} succeeded after "
+                  "{} attempts".format(method, args, count), file=sys.stderr)
+        self.assertEqual(p.wait(), returncode)
+        self.assertNotEqual(returncode, 0)
+
+    def test_send_signal(self):
+        self._kill_process('send_signal', signal.SIGTERM)
 
     def test_kill(self):
-        p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True)
-
-        self.assertIs(p.poll(), None)
-        p.kill()
-        self.assertNotEqual(p.wait(), 0)
+        self._kill_process('kill')
 
     def test_terminate(self):
-        p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True)
-
-        self.assertIs(p.poll(), None)
-        p.terminate()
-        self.assertNotEqual(p.wait(), 0)
+        self._kill_process('terminate')
 
 
 # The module says:
