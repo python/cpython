@@ -15,6 +15,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #7143: get_payload used to strip any trailing newline from a
+  base64 transfer-encoded payload *after* decoding it; it no longer does.
+  This is a behavior change, so email's minor version number is now
+  bumped, to version 4.0.2, for the 2.7 release.
+
 Extension Modules
 -----------------
 
@@ -26,6 +31,7 @@ Extension Modules
   was used for some integer codes but not for others, and the set of
   integer codes for which it was used differed between native packing
   and standard packing.)
+
 
 
 What's New in Python 2.7 alpha 4?
