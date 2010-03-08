@@ -770,7 +770,7 @@ class Win32ProcessTestCase(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c", "input()"],
                              stdin=subprocess.PIPE)
 
-        # Let the process initialize
+        # Let the process initialize (Issue #3137)
         time.sleep(0.1)
         # The process should not terminate prematurely
         self.assertIsNone(p.poll())
@@ -786,10 +786,8 @@ class Win32ProcessTestCase(unittest.TestCase):
         if count > 1:
             print >>sys.stderr, ("p.{}{} succeeded after "
                                  "{} attempts".format(method, args, count))
-        if returncode == 0:
-            # On some win32 platforms, it returns 0. See #2777.
-            print >>sys.stderr, "p.{}{} returned 0".format(method, args)
         self.assertEqual(p.wait(), returncode)
+        self.assertNotEqual(returncode, 0)
 
     def test_send_signal(self):
         self._kill_process('send_signal', signal.SIGTERM)
