@@ -451,7 +451,7 @@ class Pool(object):
             for w in pool:
                 if w.exitcode is None:
                     # worker has not yet exited
-                    debug('cleaning up worker %d' % w.pid)
+                    debug('cleaning up worker %s' % w.pid)
                     w.join()
 
 #
