@@ -204,7 +204,6 @@ class Message:
                 if isinstance(payload, str):
                     payload = payload.encode('raw-unicode-escape')
                 return base64.b64decode(payload)
-                #return utils._bdecode(payload)
             except binascii.Error:
                 # Incorrect padding
                 pass

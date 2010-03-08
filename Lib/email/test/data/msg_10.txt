@@ -26,6 +26,13 @@ VGhpcyBpcyBhIEJhc2U2NCBlbmNvZGVkIG1lc3NhZ2Uu
 
 --BOUNDARY
 Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: Base64
+
+VGhpcyBpcyBhIEJhc2U2NCBlbmNvZGVkIG1lc3NhZ2UuCg==
+
+
+--BOUNDARY
+Content-Type: text/plain; charset="iso-8859-1"
 
 This has no Content-Transfer-Encoding: header.
 
