@@ -812,6 +812,10 @@ changes, or look through the Subversion logs for all the details.
   named pipes like a regular file by opening them for reading, and
   this would block indefinitely.  (Fixed by Antoine Pitrou; :issue:`3002`.)
 
+  New function: :func:`make_archive` takes a filename, archive type
+  (zip or tar-format), and a directory path, and creates an archive
+  containing the directory's contents.  (Added by Tarek Ziadé.)
+
 * New functions: in the :mod:`site` module, three new functions
   return various site- and user-specific paths.
   :func:`getsitepackages` returns a list containing all
@@ -836,6 +840,13 @@ changes, or look through the Subversion logs for all the details.
   new request connections will have the TCP_NODELAY option set to
   prevent buffering many small sends into a single TCP packet.
   (Contributed by Kristjan Valur Jonsson; :issue:`6192`.)
+
+* Updated module: the :mod:`sqlite` module has been updated to
+  version 2.6.0 of the `pysqlite package <http://code.google.com/p/pysqlite/>`__. Version 2.6.0 includes a number of bugfixes, and adds
+  the ability to load SQLite extensions from shared libraries.
+  Call the ``enable_load_extension(True)`` method to enable extensions,
+  and then call :meth:`load_extension` to load a particular shared library.
+  (Updated by Gerhard Häring.)
 
 * The :mod:`struct` module will no longer silently ignore overflow
   errors when a value is too large for a particular integer format
@@ -893,6 +904,8 @@ changes, or look through the Subversion logs for all the details.
   resulting archive.  This is more powerful than the existing
   *exclude* argument, which has therefore been deprecated.
   (Added by Lars Gustäbel; :issue:`6856`.)
+  The :class:`TarFile` class also now supports the context manager protocol.
+  (Added by Lars Gustäbel; :issue:`7232`.)
 
 * The :mod:`threading` module's :meth:`Event.wait` method now returns
   the internal flag on exit.  This means the method will usually
