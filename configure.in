@@ -967,7 +967,7 @@ yes)
 		   ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
 		   UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
 		   UNIVERSAL_ARCH32_FLAGS="-arch i386 -arch ppc"
-		   UNIVERSAL_ARCH64_FLAGS="-arch x86_64 -arch x86_64"
+		   UNIVERSAL_ARCH64_FLAGS="-arch x86_64 -arch ppc64"
 		   LIPO_32BIT_FLAGS="-extract i386 -extract ppc7400"
 		   LIPO_64BIT_FLAGS="-extract x86_64 -extract ppc64"
 
