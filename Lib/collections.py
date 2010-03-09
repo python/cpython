@@ -10,16 +10,12 @@ from operator import itemgetter as _itemgetter, eq as _eq
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 import heapq as _heapq
-from weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap, \
                       ifilter as _ifilter, imap as _imap
 
 ################################################################################
 ### OrderedDict
 ################################################################################
-
-class _Link(object):
-    __slots__ = 'prev', 'next', 'key', '__weakref__'
 
 class OrderedDict(dict, MutableMapping):
     'Dictionary that remembers insertion order'
@@ -31,9 +27,7 @@ class OrderedDict(dict, MutableMapping):
     # The internal self.__map dictionary maps keys to links in a doubly linked list.
     # The circular doubly linked list starts and ends with a sentinel element.
     # The sentinel element never gets deleted (this simplifies the algorithm).
-    # The prev/next links are weakref proxies (to prevent circular references).
-    # Individual links are kept alive by the hard reference in self.__map.
-    # Those hard references disappear when a key is deleted from an OrderedDict.
+    # Each link is stored as a list of length three:  [PREV, NEXT, KEY].
 
     def __init__(self, *args, **kwds):
         '''Initialize an ordered dictionary.  Signature is the same as for
@@ -46,28 +40,21 @@ class OrderedDict(dict, MutableMapping):
         try:
             self.__root
         except AttributeError:
-            self.__root = root = _Link()    # sentinel node for the doubly linked list
-            root.prev = root.next = root
+            self.__root = root = [None, None, None]     # sentinel node
+            PREV, NEXT = 0, 1
+            root[PREV] = root[NEXT] = root
             self.__map = {}
         self.update(*args, **kwds)
-
-    def clear(self):
-        'od.clear() -> None.  Remove all items from od.'
-        root = self.__root
-        root.prev = root.next = root
-        self.__map.clear()
-        dict.clear(self)
 
     def __setitem__(self, key, value):
         'od.__setitem__(i, y) <==> od[i]=y'
         # Setting a new item creates a new link which goes at the end of the linked
         # list, and the inherited dictionary is updated with the new key/value pair.
         if key not in self:
-            self.__map[key] = link = _Link()
+            PREV, NEXT = 0, 1
             root = self.__root
-            last = root.prev
-            link.prev, link.next, link.key = last, root, key
-            last.next = root.prev = _proxy(link)
+            last = root[PREV]
+            last[NEXT] = root[PREV] = self.__map[key] = [last, root, key]
         dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
@@ -75,27 +62,30 @@ class OrderedDict(dict, MutableMapping):
         # Deleting an existing item uses self.__map to find the link which is
         # then removed by updating the links in the predecessor and successor nodes.
         dict.__delitem__(self, key)
+        PREV, NEXT = 0, 1
         link = self.__map.pop(key)
-        link.prev.next = link.next
-        link.next.prev = link.prev
+        link[PREV][NEXT] = link[NEXT]
+        link[NEXT][PREV] = link[PREV]
 
     def __iter__(self):
         'od.__iter__() <==> iter(od)'
         # Traverse the linked list in order.
+        NEXT, KEY = 1, 2
         root = self.__root
-        curr = root.next
+        curr = root[NEXT]
         while curr is not root:
-            yield curr.key
-            curr = curr.next
+            yield curr[KEY]
+            curr = curr[NEXT]
 
     def __reversed__(self):
         'od.__reversed__() <==> reversed(od)'
         # Traverse the linked list in reverse order.
+        PREV, KEY = 0, 2
         root = self.__root
-        curr = root.prev
+        curr = root[PREV]
         while curr is not root:
-            yield curr.key
-            curr = curr.prev
+            yield curr[KEY]
+            curr = curr[PREV]
 
     def __reduce__(self):
         'Return state information for pickling'
@@ -108,6 +98,7 @@ class OrderedDict(dict, MutableMapping):
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
 
+    clear = MutableMapping.clear
     setdefault = MutableMapping.setdefault
     update = MutableMapping.update
     pop = MutableMapping.pop
