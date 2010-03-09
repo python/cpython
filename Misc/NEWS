@@ -4,21 +4,32 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.6.5 final?
-=================================
+What's New in Python 2.6.5 rc 2?
+================================
 
-*Release date: 2010-03-XX*
+*Release date: 2010-03-09*
 
 Core and Builtins
 -----------------
 
+- Issue #8089: a OS X framework build with --with-universal-archs=3-way|intel
+  had no way to select a 32-bit executable.
+
+- Issue #8084: fixes build issues on OSX 10.6 when targetting OSX 10.4.
+
 Library
 -------
+
+- Reverting the changes made in r78432. Discussed in the tracker issue #7540.
 
 Extension Modules
 -----------------
 
 - Issue #7670: sqlite3: Fixed crashes when operating on closed connections.
+
+- Issue #8053: logic was inverted on which platforms to run a test on.
+  caused test_thread to fail on Windows.
+
 
 What's New in Python 2.6.5 rc 1?
 ================================
