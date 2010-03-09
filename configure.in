@@ -863,7 +863,7 @@ fi],
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
-if test -z "$OPT"
+if test "${OPT-unset}" == "unset"
 then
     case $GCC in
     yes)
