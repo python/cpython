@@ -1914,6 +1914,8 @@ LIBS="$withval $LIBS"
 ],
 [AC_MSG_RESULT(no)])
 
+AC_PATH_TOOL([PKG_CONFIG], [pkg-config])
+
 # Check for use of the system expat library
 AC_MSG_CHECKING(for --with-system-expat)
 AC_ARG_WITH(system_expat,
@@ -1926,8 +1928,7 @@ AC_MSG_CHECKING(for --with-system-ffi)
 AC_ARG_WITH(system_ffi,
             AC_HELP_STRING(--with-system-ffi, build _ctypes module using an installed ffi library))
 
-if test "$with_system_ffi" = "yes"; then
-    AC_PATH_TOOL([PKG_CONFIG], [pkg-config])
+if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
 else
     LIBFFI_INCLUDEDIR=""
