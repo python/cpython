@@ -508,7 +508,7 @@ def execusercustomize():
             sys.excepthook(*sys.exc_info())
         else:
             print>>sys.stderr, \
-                "'import sitecustomize' failed; use -v for traceback"
+                "'import usercustomize' failed; use -v for traceback"
 
 
 def main():
