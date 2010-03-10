@@ -573,10 +573,16 @@ Py_Main(int argc, char **argv)
 		}
 
 		if (sts==-1) {
-			sts = PyRun_AnyFileExFlags(
-				fp,
-				filename == NULL ? "<stdin>" : filename,
-				filename != NULL, &cf) != 0;
+			/* call pending calls like signal handlers (SIGINT) */
+			if (Py_MakePendingCalls() == -1) {
+				PyErr_Print();
+				sts = 1;
+			} else {
+				sts = PyRun_AnyFileExFlags(
+					fp,
+					filename == NULL ? "<stdin>" : filename,
+					filename != NULL, &cf) != 0;
+			}
 		}
 		
 	}

@@ -12,6 +12,11 @@ What's New in Python 2.7 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #3137: Don't ignore errors at startup, especially a keyboard interrupt
+  (SIGINT). If an error occurs while importing the site module, the error is
+  printed and Python exits. Initialize the GIL before importing the site
+  module.
+
 Library
 -------
 

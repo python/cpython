@@ -489,6 +489,12 @@ def execsitecustomize():
         import sitecustomize
     except ImportError:
         pass
+    except Exception:
+        if sys.flags.verbose:
+            sys.excepthook(*sys.exc_info())
+        else:
+            print >>sys.stderr, \
+                "'import sitecustomize' failed; use -v for traceback"
 
 
 def execusercustomize():
@@ -497,6 +503,12 @@ def execusercustomize():
         import usercustomize
     except ImportError:
         pass
+    except Exception:
+        if sys.flags.verbose:
+            sys.excepthook(*sys.exc_info())
+        else:
+            print>>sys.stderr, \
+                "'import sitecustomize' failed; use -v for traceback"
 
 
 def main():

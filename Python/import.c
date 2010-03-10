@@ -2748,8 +2748,6 @@ PyImport_Import(PyObject *module_name)
 	}
 	else {
 		/* No globals -- use standard builtins, and fake globals */
-		PyErr_Clear();
-
 		builtins = PyImport_ImportModuleLevel("__builtin__",
 						      NULL, NULL, NULL, 0);
 		if (builtins == NULL)
