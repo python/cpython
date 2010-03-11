@@ -131,7 +131,7 @@ def check_element(element):
 # element tree tests
 
 def interface():
-    """
+    r"""
     Test element tree interface.
 
     >>> element = ET.Element("tag")
@@ -139,10 +139,11 @@ def interface():
     >>> tree = ET.ElementTree(element)
     >>> check_element(tree.getroot())
 
-    >>> element = ET.Element("tag", key="value")
+    >>> element = ET.Element("t\xe4g", key="value")
     >>> tree = ET.ElementTree(element)
     >>> repr(element)   # doctest: +ELLIPSIS
-    "<Element 'tag' at 0x...>"
+    "<Element 't\\xe4g' at 0x...>"
+    >>> element = ET.Element("tag", key="value")
 
     Make sure all standard element methods exist.
 
