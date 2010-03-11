@@ -8,9 +8,10 @@ import unittest
 import sys
 import test
 import os
+import subprocess
 from copy import copy, deepcopy
 
-from test.support import run_unittest, TESTFN
+from test.support import run_unittest, TESTFN, unlink, get_attribute
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -236,6 +237,23 @@ class TestSysConfig(unittest.TestCase):
         wanted = ('nt', 'nt_user', 'os2', 'os2_home', 'posix_home',
                   'posix_prefix', 'posix_user')
         self.assertEquals(get_scheme_names(), wanted)
+
+    def test_symlink(self):
+        # Issue 7880
+        symlink = get_attribute(os, "symlink")
+        def get(python):
+            cmd = [python, '-c',
+                   'import sysconfig; print sysconfig.get_platform()']
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
+            return p.communicate()
+        real = os.path.realpath(sys.executable)
+        link = os.path.abspath(TESTFN)
+        symlink(real, link)
+        try:
+            self.assertEqual(get(real), get(link))
+        finally:
+            unlink(link)
 
 
 def test_main():

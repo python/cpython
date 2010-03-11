@@ -270,6 +270,8 @@ C-API
 Library
 -------
 
+- Issue #7880: Fix sysconfig when the python executable is a symbolic link.
+
 - Issue #6509: fix re.sub to work properly when the pattern, the string, and
   the replacement were all bytes. Patch by Antoine Pitrou.
 
