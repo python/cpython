@@ -135,7 +135,7 @@ class ProcessTestCase(unittest.TestCase):
         self.assertEqual(p.stderr, None)
 
     def test_executable_with_cwd(self):
-        python_dir = os.path.realpath(os.path.dirname(sys.executable))
+        python_dir = os.path.dirname(os.path.realpath(sys.executable))
         p = subprocess.Popen(["somethingyoudonthave", "-c",
                               "import sys; sys.exit(47)"],
                              executable=sys.executable, cwd=python_dir)
