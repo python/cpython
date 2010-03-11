@@ -84,7 +84,8 @@ _PREFIX = os.path.normpath(sys.prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
-_PROJECT_BASE = os.path.dirname(realpath(sys.executable))
+# Note: sys.executable can be '' or even a directory, until #7774 is fixed.
+_PROJECT_BASE = realpath(os.path.dirname(sys.executable))
 
 if os.name == "nt" and "pcbuild" in _PROJECT_BASE[-8:].lower():
     _PROJECT_BASE = realpath(os.path.join(_PROJECT_BASE, pardir))
@@ -296,7 +297,7 @@ def _init_non_posix(vars):
     vars['SO'] = '.pyd'
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
-    vars['BINDIR'] = os.path.dirname(realpath(sys.executable))
+    vars['BINDIR'] = realpath(os.path.dirname(sys.executable))
 
 #
 # public APIs
