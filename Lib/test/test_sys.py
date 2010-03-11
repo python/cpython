@@ -443,11 +443,11 @@ class SysModuleTest(unittest.TestCase):
         # retrieve the real program name
         import subprocess
         p = subprocess.Popen(
-            ["nonexistent", "-c", 'import sys; print "executable=%r" % sys.executable'],
+            ["nonexistent", "-c", 'import sys; print repr(sys.executable)'],
             executable=sys.executable, stdout=subprocess.PIPE)
         executable = p.communicate()[0].strip()
         p.wait()
-        self.assertEqual(executable, "executable=''")
+        self.assertIn(executable, ["''", repr(sys.executable)])
 
 class SizeofTest(unittest.TestCase):
 
