@@ -3,7 +3,7 @@
 """
 import sys
 import os
-from os.path import pardir, abspath
+from os.path import pardir, realpath
 
 _INSTALL_SCHEMES = {
     'posix_prefix': {
@@ -84,16 +84,16 @@ _PREFIX = os.path.normpath(sys.prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
-_PROJECT_BASE = abspath(os.path.dirname(sys.executable))
+_PROJECT_BASE = os.path.dirname(realpath(sys.executable))
 
 if os.name == "nt" and "pcbuild" in _PROJECT_BASE[-8:].lower():
-    _PROJECT_BASE = abspath(os.path.join(_PROJECT_BASE, pardir))
+    _PROJECT_BASE = realpath(os.path.join(_PROJECT_BASE, pardir))
 # PC/VS7.1
 if os.name == "nt" and "\\pc\\v" in _PROJECT_BASE[-10:].lower():
-    _PROJECT_BASE = abspath(os.path.join(_PROJECT_BASE, pardir, pardir))
+    _PROJECT_BASE = realpath(os.path.join(_PROJECT_BASE, pardir, pardir))
 # PC/AMD64
 if os.name == "nt" and "\\pcbuild\\amd64" in _PROJECT_BASE[-14:].lower():
-    _PROJECT_BASE = abspath(os.path.join(_PROJECT_BASE, pardir, pardir))
+    _PROJECT_BASE = realpath(os.path.join(_PROJECT_BASE, pardir, pardir))
 
 def is_python_build():
     for fn in ("Setup.dist", "Setup.local"):
@@ -296,7 +296,7 @@ def _init_non_posix(vars):
     vars['SO'] = '.pyd'
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
-    vars['BINDIR'] = os.path.dirname(os.path.abspath(sys.executable))
+    vars['BINDIR'] = os.path.dirname(realpath(sys.executable))
 
 #
 # public APIs
