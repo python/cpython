@@ -442,9 +442,12 @@ class SysModuleTest(unittest.TestCase):
         # has been set to an non existent program name and Python is unable to
         # retrieve the real program name
         import subprocess
+        # For a normal installation, it should work without 'cwd'
+        # argument. For test runs in the build directory, see #7774.
+        python_dir = os.path.dirname(os.path.realpath(sys.executable))
         p = subprocess.Popen(
             ["nonexistent", "-c", 'import sys; print repr(sys.executable)'],
-            executable=sys.executable, stdout=subprocess.PIPE)
+            executable=sys.executable, stdout=subprocess.PIPE, cwd=python_dir)
         executable = p.communicate()[0].strip()
         p.wait()
         self.assertIn(executable, ["''", repr(sys.executable)])
