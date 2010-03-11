@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 """Mirror a remote ftp subtree into a local directory tree.
 

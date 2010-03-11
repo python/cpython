@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # test_multibytecodec.py
 #   Unit test for multibytecodec itself

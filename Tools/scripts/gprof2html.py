@@ -1,4 +1,4 @@
-#! /usr/bin/env python2.3
+#! /usr/bin/env python32.3
 
 """Transform gprof(1) output into useful HTML."""
 

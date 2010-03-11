@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # test_codecmaps_cn.py
 #   Codec mapping tests for PRC encodings

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Print From and Subject of messages in $MAIL.
 # Extension to multiple mailboxes and other bells & whistles are left

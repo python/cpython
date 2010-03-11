@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 """Consolidate a bunch of CVS or RCS logs read from stdin.
 

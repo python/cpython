@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2006 Google, Inc. All Rights Reserved.
 # Licensed to PSF under a Contributor Agreement.
 

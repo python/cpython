@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Factorize numbers.
 # The algorithm is not efficient, but easy to understand.

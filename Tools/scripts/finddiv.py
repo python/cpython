@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 """finddiv - a grep-like tool that looks for division operators.
 

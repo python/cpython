@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2001-2010 by Vinay Sajip. All Rights Reserved.
 #

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 """Play with the new Tk 8.0 toplevel menu option."""
 

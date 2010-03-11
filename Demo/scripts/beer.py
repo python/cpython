@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # By GvR, demystified after a version by Fredrik Lundh.
 

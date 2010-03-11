@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Simulate "electrons" migrating across the screen.
 # An optional bitmap file in can be in the background.

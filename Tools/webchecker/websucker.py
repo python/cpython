@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 """A variant on webchecker that creates a mirror copy of a remote site."""
 

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Released to the public domain, by Tim Peters, 28 February 2000.
 

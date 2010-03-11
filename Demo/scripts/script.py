@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # script.py -- Make typescript of terminal session.
 # Usage:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # fetch the certificate that the server(s) are providing in PEM form
 #

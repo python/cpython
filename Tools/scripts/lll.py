@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Find symbolic links and show where they point to.
 # Arguments are directories to search; default is current directory.

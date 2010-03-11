@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Update a bunch of files according to a script.
 # The input file contains lines of the form <filename>:<lineno>:<text>,

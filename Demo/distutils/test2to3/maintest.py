@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # The above line should get replaced with the path to the Python
 # interpreter; the block below should get 2to3-converted.

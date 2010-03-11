@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 from tkinter import *
 from Canvas import Oval, Group, CanvasText
