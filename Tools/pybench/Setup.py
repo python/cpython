@@ -1,4 +1,4 @@
-#!python
+#!/usr/bin/env python
 
 # Setup file for pybench
 #

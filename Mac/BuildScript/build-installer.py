@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 This script is used to build the "official unofficial" universal build on
 Mac OS X. It requires Mac OS X 10.4, Xcode 2.2 and the 10.4u SDK to do its
