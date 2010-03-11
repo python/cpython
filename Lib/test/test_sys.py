@@ -437,6 +437,17 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.call_tracing(str, (2,)), "2")
         self.assertRaises(TypeError, sys.call_tracing, str, 2)
 
+    def test_executable(self):
+        # Issue #7774: Ensure that sys.executable is an empty string if argv[0]
+        # has been set to an non existent program name and Python is unable to
+        # retrieve the real program name
+        import subprocess
+        p = subprocess.Popen(
+            ["nonexistent", "-c", 'import sys; print "executable=%r" % sys.executable'],
+            executable=sys.executable, stdout=subprocess.PIPE)
+        executable = p.communicate()[0].strip()
+        p.wait()
+        self.assertEqual(executable, "executable=''")
 
 class SizeofTest(unittest.TestCase):
 

@@ -12,6 +12,10 @@ What's New in Python 2.7 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #7774: Set sys.executable to an empty string if argv[0] has been
+  set to an non existent program name and Python is unable to retrieve the real
+  program name
+
 - Issue #3137: Don't ignore errors at startup, especially a keyboard interrupt
   (SIGINT). If an error occurs while importing the site module, the error is
   printed and Python exits. Initialize the GIL before importing the site
