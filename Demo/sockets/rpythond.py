@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Remote python server.
 # Execute Python commands remotely and send output back.

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: iso-8859-1 -*-
 # Originally written by Barry Warsaw <barry@zope.com>
 #

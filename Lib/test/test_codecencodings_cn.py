@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # test_codecencodings_cn.py
 #   Codec encoding tests for PRC encodings.

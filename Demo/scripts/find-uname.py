@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 For each argument on the command line, look for it in the set of all Unicode

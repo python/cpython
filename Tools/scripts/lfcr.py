@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 "Replace LF with CRLF in argument files.  Print names of changed files."
 

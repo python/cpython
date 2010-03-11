@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # portions copyright 2001, Autonomous Zones Industries, Inc., all rights...
 # err...  reserved and offered to the public under the terms of the

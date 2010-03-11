@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Emulate some Perl command line options.
 # Usage: pp [-a] [-c] [-d] [-e scriptline] [-F fieldsep] [-n] [-p] [file] ...

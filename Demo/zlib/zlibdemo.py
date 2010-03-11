@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Takes an optional filename, defaulting to this file itself.
 # Reads the file and compresses the content using level 1 and level 9

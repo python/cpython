@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- mode: python -*-
 
 # Re test suite and benchmark suite v1.5

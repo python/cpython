@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Fix Python script(s) to reference the interpreter via /usr/bin/env python.
 # Warning: this overwrites the file without making a backup.

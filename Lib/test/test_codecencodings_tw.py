@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # test_codecencodings_tw.py
 #   Codec encoding tests for ROC encodings.

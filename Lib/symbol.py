@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 """Non-terminal symbols of Python grammar (from "graminit.h")."""
 

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Like mkdir, but also make intermediate directories if necessary.
 # It is not an error if the given directory already exists (as long

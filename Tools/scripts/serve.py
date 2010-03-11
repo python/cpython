@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 Small wsgiref based web server. Takes a path to serve from and an
 optional port number (defaults to 8000), then tries to serve files.

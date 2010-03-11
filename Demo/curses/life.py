@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # life.py -- A curses-based version of Conway's Game of Life.
 # Contributed by AMK
 #

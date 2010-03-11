@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
     Convert the X11 locale.alias file into a mapping dictionary suitable
     for locale.py.
