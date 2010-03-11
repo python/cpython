@@ -26,7 +26,8 @@ Each element has a number of properties associated with it:
 
 * a number of child elements, stored in a Python sequence
 
-To create an element instance, use the Element or SubElement factory functions.
+To create an element instance, use the :class:`Element` constructor or the
+:func:`SubElement` factory function.
 
 The :class:`ElementTree` class can be used to wrap an element structure, and
 convert it from and to XML.
@@ -46,9 +47,10 @@ Functions
 .. function:: Comment([text])
 
    Comment element factory.  This factory function creates a special element that
-   will be serialized as an XML comment. The comment string can be either an 8-bit
-   ASCII string or a Unicode string. *text* is a string containing the comment
-   string. Returns an element instance representing a comment.
+   will be serialized as an XML comment by the standard serializer. The comment
+   string can be either an 8-bit ASCII string or a Unicode string. *text* is a
+   string containing the comment string. Returns an element instance representing
+   a comment.
 
 
 .. function:: dump(elem)
@@ -62,23 +64,20 @@ Functions
    *elem* is an element tree or an individual element.
 
 
-.. function:: Element(tag[, attrib][, **extra])
-
-   Element factory.  This function returns an object implementing the standard
-   Element interface.  The exact class or type of that object is implementation
-   dependent, but it will always be compatible with the _ElementInterface class in
-   this module.
-
-   The element name, attribute names, and attribute values can be either 8-bit
-   ASCII strings or Unicode strings. *tag* is the element name. *attrib* is an
-   optional dictionary, containing element attributes. *extra* contains additional
-   attributes, given as keyword arguments. Returns an element instance.
-
-
 .. function:: fromstring(text)
 
    Parses an XML section from a string constant.  Same as XML. *text* is a string
    containing XML data. Returns an Element instance.
+
+
+.. function:: fromstringlist(sequence[, parser])
+
+   Parses an XML document from a sequence of string fragments. *sequence* is a list
+   or other sequence containing XML data fragments. *parser* is an optional parser
+   instance. If not given, the standard :class:`XMLParser` parser is used.
+   Returns an Element instance.
+
+   .. versionadded:: 2.7
 
 
 .. function:: iselement(element)
@@ -87,12 +86,14 @@ Functions
    element instance. Returns a true value if this is an element object.
 
 
-.. function:: iterparse(source[, events])
+.. function:: iterparse(source[, events[, parser]])
 
    Parses an XML section into an element tree incrementally, and reports what's
    going on to the user. *source* is a filename or file object containing XML data.
    *events* is a list of events to report back.  If omitted, only "end" events are
-   reported. Returns an :term:`iterator` providing ``(event, elem)`` pairs.
+   reported.  *parser* is an optional parser instance. If not given, the standard
+   :class:`XMLParser` parser is used. Returns an :term:`iterator`
+   providing ``(event, elem)`` pairs.
 
    .. note::
 
@@ -109,8 +110,8 @@ Functions
 
    Parses an XML section into an element tree. *source* is a filename or file
    object containing XML data. *parser* is an optional parser instance.  If not
-   given, the standard XMLTreeBuilder parser is used. Returns an ElementTree
-   instance.
+   given, the standard :class:`XMLParser` parser is used. Returns an
+   :class:`ElementTree` instance.
 
 
 .. function:: ProcessingInstruction(target[, text])
@@ -119,6 +120,16 @@ Functions
    be serialized as an XML processing instruction. *target* is a string containing
    the PI target. *text* is a string containing the PI contents, if given. Returns
    an element instance, representing a processing instruction.
+
+
+.. function:: register_namespace(prefix, uri)
+
+   Registers a namespace prefix.  The registry is global, and any existing mapping
+   for either the given prefix or the namespace URI will be removed. *prefix* is a
+   namespace prefix. *uri* is a namespace uri.  Tags and attributes in this namespace
+   will be serialized with the given prefix, if at all possible.
+
+   .. versionadded:: 2.7
 
 
 .. function:: SubElement(parent, tag[, attrib[,  **extra]])
@@ -140,163 +151,201 @@ Functions
    US-ASCII). Returns an encoded string containing the XML data.
 
 
-.. function:: XML(text)
+.. function:: tostringlist(element[, encoding])
+
+   Generates a string representation of an XML element, including all subelements.
+   *element* is an Element instance. *encoding* is the output encoding (default is
+   US-ASCII). Returns a sequence object containing the XML data.
+
+   .. versionadded:: 2.7
+
+
+.. function:: XML(text[, parser])
 
    Parses an XML section from a string constant.  This function can be used to
    embed "XML literals" in Python code. *text* is a string containing XML data.
-   Returns an Element instance.
+   *parser* is an optional parser instance. If not given, the standard
+   :class:`XMLParser` parser is used. Returns an Element instance.
 
 
-.. function:: XMLID(text)
+.. function:: XMLID(text[, parser])
 
    Parses an XML section from a string constant, and also returns a dictionary
    which maps from element id:s to elements. *text* is a string containing XML
-   data. Returns a tuple containing an Element instance and a dictionary.
+   data. *parser* is an optional parser instance. If not given, the standard
+   :class:`XMLParser` parser is used. Returns a tuple containing an Element
+   instance and a dictionary.
 
 
-.. _elementtree-element-interface:
+.. _elementtree-element-objects:
 
-The Element Interface
----------------------
+Element Objects
+---------------
 
-Element objects returned by Element or SubElement have the  following methods
-and attributes.
 
+.. class:: Element(tag[, attrib[, **extra]])
 
-.. attribute:: Element.tag
+   Element class. This class defines the Element interface, and provides a
+   reference implementation of this interface.
 
-   A string identifying what kind of data this element represents (the element
-   type, in other words).
+   The element name, attribute names, and attribute values can be either 8-bit
+   ASCII strings or Unicode strings. *tag* is the element name. *attrib* is an
+   optional dictionary, containing element attributes. *extra* contains additional
+   attributes, given as keyword arguments.
 
 
-.. attribute:: Element.text
+   .. attribute:: tag
 
-   The *text* attribute can be used to hold additional data associated with the
-   element. As the name implies this attribute is usually a string but may be any
-   application-specific object. If the element is created from an XML file the
-   attribute will contain any text found between the element tags.
+      A string identifying what kind of data this element represents (the element
+      type, in other words).
 
 
-.. attribute:: Element.tail
+   .. attribute:: text
 
-   The *tail* attribute can be used to hold additional data associated with the
-   element. This attribute is usually a string but may be any application-specific
-   object. If the element is created from an XML file the attribute will contain
-   any text found after the element's end tag and before the next tag.
+      The *text* attribute can be used to hold additional data associated with the
+      element. As the name implies this attribute is usually a string but may be
+      any application-specific object. If the element is created from an XML file
+      the attribute will contain any text found between the element tags.
 
 
-.. attribute:: Element.attrib
+   .. attribute:: tail
 
-   A dictionary containing the element's attributes. Note that while the *attrib*
-   value is always a real mutable Python dictionary, an ElementTree implementation
-   may choose to use another internal representation, and create the dictionary
-   only if someone asks for it. To take advantage of such implementations, use the
-   dictionary methods below whenever possible.
+      The *tail* attribute can be used to hold additional data associated with the
+      element. This attribute is usually a string but may be any
+      application-specific object. If the element is created from an XML file the
+      attribute will contain any text found after the element's end tag and before
+      the next tag.
 
-The following dictionary-like methods work on the element attributes.
 
+   .. attribute:: attrib
 
-.. method:: Element.clear()
+      A dictionary containing the element's attributes. Note that while the
+      *attrib* value is always a real mutable Python dictionary, an ElementTree
+      implementation may choose to use another internal representation, and create
+      the dictionary only if someone asks for it. To take advantage of such
+      implementations, use the dictionary methods below whenever possible.
 
-   Resets an element.  This function removes all subelements, clears all
-   attributes, and sets the text and tail attributes to None.
+   The following dictionary-like methods work on the element attributes.
 
 
-.. method:: Element.get(key[, default=None])
+   .. method:: clear()
 
-   Gets the element attribute named *key*.
+      Resets an element.  This function removes all subelements, clears all
+      attributes, and sets the text and tail attributes to None.
 
-   Returns the attribute value, or *default* if the attribute was not found.
 
+   .. method:: get(key[, default])
 
-.. method:: Element.items()
+      Gets the element attribute named *key*.
 
-   Returns the element attributes as a sequence of (name, value) pairs. The
-   attributes are returned in an arbitrary order.
+      Returns the attribute value, or *default* if the attribute was not found.
 
 
-.. method:: Element.keys()
+   .. method:: items()
 
-   Returns the elements attribute names as a list. The names are returned in an
-   arbitrary order.
+      Returns the element attributes as a sequence of (name, value) pairs. The
+      attributes are returned in an arbitrary order.
 
 
-.. method:: Element.set(key, value)
+   .. method:: keys()
 
-   Set the attribute *key* on the element to *value*.
+      Returns the elements attribute names as a list. The names are returned in an
+      arbitrary order.
 
-The following methods work on the element's children (subelements).
 
+   .. method:: set(key, value)
 
-.. method:: Element.append(subelement)
+      Set the attribute *key* on the element to *value*.
 
-   Adds the element *subelement* to the end of this elements internal list of
-   subelements.
+   The following methods work on the element's children (subelements).
 
 
-.. method:: Element.find(match)
+   .. method:: append(subelement)
 
-   Finds the first subelement matching *match*.  *match* may be a tag name or path.
-   Returns an element instance or ``None``.
+      Adds the element *subelement* to the end of this elements internal list of
+      subelements.
 
 
-.. method:: Element.findall(match)
+   .. method:: extend(subelements)
 
-   Finds all subelements matching *match*.  *match* may be a tag name or path.
-   Returns an iterable yielding all matching elements in document order.
+      Appends *subelements* from a sequence object with zero or more elements.
+      Raises :exc:`AssertionError` if a subelement is not a valid object.
 
+      .. versionadded:: 2.7
 
-.. method:: Element.findtext(condition[, default=None])
 
-   Finds text for the first subelement matching *condition*.  *condition* may be a
-   tag name or path. Returns the text content of the first matching element, or
-   *default* if no element was found.  Note that if the matching element has no
-   text content an empty string is returned.
+   .. method:: find(match)
 
+      Finds the first subelement matching *match*.  *match* may be a tag name or path.
+      Returns an element instance or ``None``.
 
-.. method:: Element.getchildren()
 
-   Returns all subelements.  The elements are returned in document order.
+   .. method:: findall(match)
 
+      Finds all subelements matching *match*.  *match* may be a tag name or path.
+      Returns an iterable yielding all matching elements in document order.
 
-.. method:: Element.getiterator([tag=None])
 
-   Creates a tree iterator with the current element as the root.   The iterator
-   iterates over this element and all elements below it, in document (depth first)
-   order.  If *tag* is not ``None`` or ``'*'``, only elements whose tag equals
-   *tag* are returned from the iterator.
+   .. method:: findtext(condition[, default])
 
+      Finds text for the first subelement matching *condition*.  *condition* may be
+      a tag name or path. Returns the text content of the first matching element,
+      or *default* if no element was found.  Note that if the matching element has
+      no text content an empty string is returned.
 
-.. method:: Element.insert(index, element)
 
-   Inserts a subelement at the given position in this element.
+   .. method:: getchildren()
 
+      .. deprecated:: 2.7
+         Use ``list(elem)`` or iteration.
 
-.. method:: Element.makeelement(tag, attrib)
 
-   Creates a new element object of the same type as this element. Do not call this
-   method, use the SubElement factory function instead.
+   .. method:: getiterator([tag])
 
+      .. deprecated:: 2.7
+         Use method :meth:`Element.iter` instead.
 
-.. method:: Element.remove(subelement)
 
-   Removes *subelement* from the element.   Unlike the findXYZ methods this method
-   compares elements based on  the instance identity, not on tag value or contents.
+   .. method:: insert(index, element)
 
-Element objects also support the following sequence type methods for working
-with subelements: :meth:`__delitem__`, :meth:`__getitem__`, :meth:`__setitem__`,
-:meth:`__len__`.
+      Inserts a subelement at the given position in this element.
 
-Caution: Because Element objects do not define a :meth:`__nonzero__` method,
-elements with no subelements will test as ``False``. ::
 
-   element = root.find('foo')
+   .. method:: iter([tag])
 
-   if not element: # careful!
-       print "element not found, or element has no subelements"
+      Creates a tree iterator with the current element as the root. The iterator
+      iterates over this element and all elements below it, in document (depth
+      first) order.  If *tag* is not ``None`` or ``'*'``, only elements whose tag
+      equals *tag* are returned from the iterator. If the tree structure is
+      modified during iteration, the result is undefined.
 
-   if element is None:
-       print "element not found"
+
+   .. method:: makeelement(tag, attrib)
+
+      Creates a new element object of the same type as this element. Do not call
+      this method, use the SubElement factory function instead.
+
+
+   .. method:: remove(subelement)
+
+      Removes *subelement* from the element. Unlike the findXYZ methods this
+      method compares elements based on  the instance identity, not on tag value
+      or contents.
+
+   Element objects also support the following sequence type methods for working
+   with subelements: :meth:`__delitem__`, :meth:`__getitem__`, :meth:`__setitem__`,
+   :meth:`__len__`.
+
+   Caution: Because Element objects do not define a :meth:`__nonzero__` method,
+   elements with no subelements will test as ``False``. ::
+
+     element = root.find('foo')
+
+     if not element:  # careful!
+         print "element not found, or element has no subelements"
+
+     if element is None:
+         print "element not found"
 
 
 .. _elementtree-elementtree-objects:
@@ -348,9 +397,8 @@ ElementTree Objects
 
    .. method:: getiterator([tag])
 
-      Creates and returns a tree iterator for the root element.  The iterator
-      loops over all elements in this tree, in section order. *tag* is the tag
-      to look for (default is to return all elements)
+      .. deprecated:: 2.7
+         Use method :meth:`ElementTree.iter` instead.
 
 
    .. method:: getroot()
@@ -358,19 +406,28 @@ ElementTree Objects
       Returns the root element for this tree.
 
 
+   .. method:: iter([tag])
+
+      Creates and returns a tree iterator for the root element.  The iterator
+      loops over all elements in this tree, in section order. *tag* is the tag
+      to look for (default is to return all elements)
+
+
    .. method:: parse(source[, parser])
 
       Loads an external XML section into this element tree. *source* is a file
       name or file object. *parser* is an optional parser instance.  If not
-      given, the standard XMLTreeBuilder parser is used. Returns the section
+      given, the standard XMLParser parser is used. Returns the section
       root element.
 
 
-   .. method:: write(file[, encoding])
+   .. method:: write(file[, encoding[, xml_declaration]])
 
       Writes the element tree to a file, as XML. *file* is a file name, or a
       file object opened for writing. *encoding* [1]_ is the output encoding
-      (default is US-ASCII).
+      (default is US-ASCII). *xml_declaration* controls if an XML declaration
+      should be added to the file.  Use False for never, True for always, None
+      for only if not US-ASCII or UTF-8.  None is default.
 
 This is the XML file that is going to be manipulated::
 
@@ -389,13 +446,13 @@ Example of changing the attribute "target" of every link in first paragraph::
     >>> from xml.etree.ElementTree import ElementTree
     >>> tree = ElementTree()
     >>> tree.parse("index.xhtml")
-    <Element html at b7d3f1ec>
+    <Element 'html' at b7d3f1ec>
     >>> p = tree.find("body/p")     # Finds first occurrence of tag p in body
     >>> p
-    <Element p at 8416e0c>
-    >>> links = p.getiterator("a")  # Returns list of all links
+    <Element 'p' at 8416e0c>
+    >>> links = list(p.iter("a"))   # Returns list of all links
     >>> links
-    [<Element a at b7d4f9ec>, <Element a at b7d4fb0c>]
+    [<Element 'a' at b7d4f9ec>, <Element 'a' at b7d4fb0c>]
     >>> for i in links:             # Iterates through all found links
     ...     i.attrib["target"] = "blank"
     >>> tree.write("output.xhtml")
@@ -433,7 +490,7 @@ TreeBuilder Objects
 
    .. method:: close()
 
-      Flushes the parser buffers, and returns the toplevel document
+      Flushes the builder buffers, and returns the toplevel document
       element. Returns an Element instance.
 
 
@@ -455,18 +512,31 @@ TreeBuilder Objects
       containing element attributes. Returns the opened element.
 
 
-.. _elementtree-xmltreebuilder-objects:
+   In addition, a custom :class:`TreeBuilder` object can provide the
+   following method:
 
-XMLTreeBuilder Objects
-----------------------
+   .. method:: doctype(name, pubid, system)
+
+      Handles a doctype declaration. *name* is the doctype name. *pubid* is the
+      public identifier. *system* is the system identifier. This method does not
+      exist on the default :class:`TreeBuilder` class.
+
+      .. versionadded:: 2.7
 
 
-.. class:: XMLTreeBuilder([html,] [target])
+.. _elementtree-xmlparser-objects:
+
+XMLParser Objects
+-----------------
+
+
+.. class:: XMLParser([html [, target[, encoding]]])
 
    Element structure builder for XML source data, based on the expat parser. *html*
    are predefined HTML entities.  This flag is not supported by the current
    implementation. *target* is the target object.  If omitted, the builder uses an
-   instance of the standard TreeBuilder class.
+   instance of the standard TreeBuilder class. *encoding* [1]_ is optional.
+   If given, the value overrides the encoding specified in the XML file.
 
 
    .. method:: close()
@@ -476,22 +546,23 @@ XMLTreeBuilder Objects
 
    .. method:: doctype(name, pubid, system)
 
-      Handles a doctype declaration. *name* is the doctype name. *pubid* is the
-      public identifier. *system* is the system identifier.
+      .. deprecated:: 2.7
+         Define the :meth:`TreeBuilder.doctype` method on a custom TreeBuilder
+         target.
 
 
    .. method:: feed(data)
 
       Feeds data to the parser. *data* is encoded data.
 
-:meth:`XMLTreeBuilder.feed` calls *target*\'s :meth:`start` method
+:meth:`XMLParser.feed` calls *target*\'s :meth:`start` method
 for each opening tag, its :meth:`end` method for each closing tag,
-and data is processed by method :meth:`data`. :meth:`XMLTreeBuilder.close`
+and data is processed by method :meth:`data`. :meth:`XMLParser.close`
 calls *target*\'s method :meth:`close`.
-:class:`XMLTreeBuilder` can be used not only for building a tree structure.
+:class:`XMLParser` can be used not only for building a tree structure.
 This is an example of counting the maximum depth of an XML file::
 
-    >>> from xml.etree.ElementTree import XMLTreeBuilder
+    >>> from xml.etree.ElementTree import XMLParser
     >>> class MaxDepth:                     # The target object of the parser
     ...     maxDepth = 0
     ...     depth = 0
@@ -507,7 +578,7 @@ This is an example of counting the maximum depth of an XML file::
     ...         return self.maxDepth
     ...
     >>> target = MaxDepth()
-    >>> parser = XMLTreeBuilder(target=target)
+    >>> parser = XMLParser(target=target)
     >>> exampleXml = """
     ... <a>
     ...   <b>
@@ -530,4 +601,3 @@ This is an example of counting the maximum depth of an XML file::
    appropriate standards. For example, "UTF-8" is valid, but "UTF8" is
    not. See http://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
    and http://www.iana.org/assignments/character-sets.
-
