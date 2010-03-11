@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 #------------------------------------------------------------------------
 #           Copyright (c) 1997-2001 by Total Control Software
 #                         All Rights Reserved
