@@ -1190,15 +1190,16 @@ element_remove(ElementObject* self, PyObject* args)
 static PyObject*
 element_repr(ElementObject* self)
 {
-    PyObject* repr;
-    char buffer[100];
-    
-    repr = PyString_FromString("<Element ");
+    PyObject *repr, *tag;
 
-    PyString_ConcatAndDel(&repr, PyObject_Repr(self->tag));
+    tag = PyObject_Repr(self->tag);
+    if (!tag)
+        return NULL;
 
-    sprintf(buffer, " at %p>", self);
-    PyString_ConcatAndDel(&repr, PyString_FromString(buffer));
+    repr = PyString_FromFormat("<Element %s at %p>",
+                               PyString_AS_STRING(tag), self);
+
+    Py_DECREF(tag);
 
     return repr;
 }
