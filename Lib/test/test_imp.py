@@ -51,7 +51,7 @@ class ImportTests(unittest.TestCase):
         self.assertNotEqual(fp, None)
         self.assertEqual(fp.encoding, "iso-8859-1")
         self.assertEqual(fp.tell(), 0)
-        self.assertEqual(fp.readline(), '#!/usr/bin/env python\n')
+        self.assertEqual(fp.readline(), '#!/usr/bin/env python3\n')
         fp.close()
 
         fp, filename, info = imp.find_module("tokenize")
