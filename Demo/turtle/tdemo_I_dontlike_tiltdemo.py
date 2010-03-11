@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """       turtle-example-suite:
 
      tdemo-I_dont_like_tiltdemo.py

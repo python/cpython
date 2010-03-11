@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 #
 # Test suite for Optik.  Supplied by Johannes Gijsbers

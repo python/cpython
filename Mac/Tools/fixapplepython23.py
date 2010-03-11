@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """fixapplepython23 - Fix Apple-installed Python 2.3 (on Mac OS X 10.3)
 
 Python 2.3 (and 2.3.X for X<5) have the problem that building an extension

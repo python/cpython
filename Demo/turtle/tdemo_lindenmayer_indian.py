@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """       turtle-example-suite:
 
         xtx_lindenmayer_indian.py
