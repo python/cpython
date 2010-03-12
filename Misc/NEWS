@@ -21,6 +21,7 @@ Library
 -------
 
 - Reverting the changes made in r78432. Discussed in the tracker issue #7540.
+- Issue #8107: Fixed test_distutils so it uses a local xxmodule.c file.
 
 Extension Modules
 -----------------

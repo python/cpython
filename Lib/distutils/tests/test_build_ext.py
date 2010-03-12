@@ -18,8 +18,7 @@ from test import test_support
 ALREADY_TESTED = False
 
 def _get_source_filename():
-    srcdir = sysconfig.get_config_var('srcdir')
-    return os.path.join(srcdir, 'Modules', 'xxmodule.c')
+    return os.path.join(os.path.dirname(__file__), 'xxmodule.c')
 
 class BuildExtTestCase(support.TempdirManager,
                        support.LoggingSilencer,
