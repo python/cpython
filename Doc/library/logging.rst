@@ -1894,6 +1894,11 @@ timed intervals.
    The extensions are date-and-time based, using the strftime format
    ``%Y-%m-%d_%H-%M-%S`` or a leading portion thereof, depending on the
    rollover interval.
+
+   When computing the next rollover time for the first time (when the handler
+   is created), the last modification time of an existing log file, or else
+   the current time, is used to compute when the next rotation will occur.
+
    If the *utc* argument is true, times in UTC will be used; otherwise
    local time is used.
 
