@@ -271,8 +271,9 @@ echo "</body>" >> $RESULT_FILE
 echo "</html>" >> $RESULT_FILE
 
 ## copy results
-chgrp -R webmaster build/html
-chmod -R g+w build/html
-rsync $RSYNC_OPTS build/html/* $REMOTE_SYSTEM:$REMOTE_DIR
-cd ../build
-rsync $RSYNC_OPTS index.html *.out $REMOTE_SYSTEM:$REMOTE_DIR/results/
+## (not used anymore, the daily build is now done directly on the server)
+#chgrp -R webmaster build/html
+#chmod -R g+w build/html
+#rsync $RSYNC_OPTS build/html/* $REMOTE_SYSTEM:$REMOTE_DIR
+#cd ../build
+#rsync $RSYNC_OPTS index.html *.out $REMOTE_SYSTEM:$REMOTE_DIR/results/
