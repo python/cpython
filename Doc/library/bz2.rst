@@ -73,15 +73,16 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
 
    .. method:: read([size])
 
-      Read at most *size* uncompressed bytes, returned as a string. If the
+      Read at most *size* uncompressed bytes, returned as a byte string. If the
       *size* argument is negative or omitted, read until EOF is reached.
 
 
    .. method:: readline([size])
 
-      Return the next line from the file, as a string, retaining newline. A
-      non-negative *size* argument limits the maximum number of bytes to return
-      (an incomplete line may be returned then). Return an empty string at EOF.
+      Return the next line from the file, as a byte string, retaining newline.
+      A non-negative *size* argument limits the maximum number of bytes to
+      return (an incomplete line may be returned then). Return an empty byte
+      string at EOF.
 
 
    .. method:: readlines([size])
@@ -111,15 +112,16 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
 
    .. method:: write(data)
 
-      Write string *data* to file. Note that due to buffering, :meth:`close` may
-      be needed before the file on disk reflects the data written.
+      Write the byte string *data* to file. Note that due to buffering,
+      :meth:`close` may be needed before the file on disk reflects the data
+      written.
 
 
-   .. method:: writelines(sequence_of_strings)
+   .. method:: writelines(sequence_of_byte_strings)
 
-      Write the sequence of strings to the file. Note that newlines are not
-      added. The sequence can be any iterable object producing strings. This is
-      equivalent to calling write() for each string.
+      Write the sequence of byte strings to the file. Note that newlines are not
+      added. The sequence can be any iterable object producing byte strings.
+      This is equivalent to calling write() for each byte string.
 
 
 Sequential (de)compression
