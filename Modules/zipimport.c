@@ -321,15 +321,12 @@ zipimporter_load_module(PyObject *obj, PyObject *args)
 		/* add __path__ to the module *before* the code gets
 		   executed */
 		PyObject *pkgpath, *fullpath;
-		char *prefix = _PyUnicode_AsString(self->prefix);
 		char *subname = get_subname(fullname);
 		int err;
 
-		fullpath = PyUnicode_FromFormat("%s%c%s%s",
-					_PyUnicode_AsString(self->archive),
-					SEP,
-					prefix ? prefix : "",
-					subname);
+		fullpath = PyUnicode_FromFormat("%U%c%U%s",
+					self->archive, SEP,
+					self->prefix, subname);
 		if (fullpath == NULL)
 			goto error;
 

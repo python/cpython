@@ -1295,10 +1295,15 @@ check_duplicates(PyObject *list)
 		for (j = i + 1; j < n; j++) {
 			if (PyList_GET_ITEM(list, j) == o) {
 				o = class_name(o);
-				PyErr_Format(PyExc_TypeError,
-					     "duplicate base class %.400s",
-					     o ? _PyUnicode_AsString(o) : "?");
-				Py_XDECREF(o);
+				if (o != NULL) {
+					PyErr_Format(PyExc_TypeError,
+						     "duplicate base class %U",
+						     o);
+					Py_DECREF(o);
+				} else {
+					PyErr_SetString(PyExc_TypeError,
+						     "duplicate base class");
+				}
 				return -1;
 			}
 		}

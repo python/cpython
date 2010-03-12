@@ -294,10 +294,7 @@ static PyGetSetDef EVP_getseters[] = {
 static PyObject *
 EVP_repr(EVPobject *self)
 {
-    char buf[100];
-    PyOS_snprintf(buf, sizeof(buf), "<%s HASH object @ %p>",
-            _PyUnicode_AsString(self->name), self);
-    return PyUnicode_FromString(buf);
+    return PyUnicode_FromFormat("<%U HASH object @ %p>", self->name, self);
 }
 
 #if HASH_OBJ_CONSTRUCTOR
