@@ -270,6 +270,10 @@ C-API
 Library
 -------
 
+- Issue #7774: Set sys.executable to an empty string if argv[0] has been set to
+  an non existent program name and Python is unable to retrieve the real
+  program name
+
 - Issue #7880: Fix sysconfig when the python executable is a symbolic link.
 
 - Issue #6509: fix re.sub to work properly when the pattern, the string, and
