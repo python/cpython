@@ -313,7 +313,7 @@ APIs:
    .. note::
 
       The `"%lld"` and `"%llu"` format specifiers are only available
-      when `HAVE_LONG_LONG` is defined.
+      when :const:`HAVE_LONG_LONG` is defined.
 
    .. versionchanged:: 3.2
       Support for `"%lld"` and `"%llu"` added.
