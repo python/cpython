@@ -140,9 +140,9 @@ empty, and the path manipulations are skipped; however the import of
 
 .. function:: getuserbase()
 
-   Returns the `user base` directory path.
+   Returns the "user base" directory path.
 
-   The `user base` directory can be used to store data. If the global
+   The "user base" directory can be used to store data. If the global
    variable ``USER_BASE`` is not initialized yet, this function will also set
    it.
 
