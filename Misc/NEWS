@@ -24,7 +24,10 @@ Core and Builtins
 Library
 -------
 
-- Issue #8117: logging: Improved algorithm for computing initial rollover time.
+- Issue #8117: logging: Improved algorithm for computing initial rollover time
+  for TimedRotatingFileHandler by using the modification time of an existing
+  log file to compute the next rollover time. If the log file does not exist,
+  the current time is used as the basis for the computation.
 
 - Issue #6472: The xml.etree package is updated to ElementTree 1.3.  The
   cElementTree module is updated too.
