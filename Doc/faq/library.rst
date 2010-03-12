@@ -205,7 +205,7 @@ without curses::
        while 1:
            try:
                c = sys.stdin.read(1)
-               print "Got character", `c`
+               print "Got character", repr(c)
            except IOError: pass
    finally:
        termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
