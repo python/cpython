@@ -84,7 +84,12 @@ _PREFIX = os.path.normpath(sys.prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
-_PROJECT_BASE = os.path.dirname(realpath(sys.executable))
+if sys.executable:
+    _PROJECT_BASE = os.path.dirname(realpath(sys.executable))
+else:
+    # sys.executable can be empty if argv[0] has been changed and Python is
+    # unable to retrieve the real program name
+    _PROJECT_BASE = realpath(os.getcwd())
 
 if os.name == "nt" and "pcbuild" in _PROJECT_BASE[-8:].lower():
     _PROJECT_BASE = realpath(os.path.join(_PROJECT_BASE, pardir))
