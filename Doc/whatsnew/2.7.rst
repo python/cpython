@@ -609,7 +609,7 @@ changes, or look through the Subversion logs for all the details.
 
   Contributed by Raymond Hettinger; :issue:`1696199`.
 
-  The new `OrderedDict` class is described in the earlier section
+  The new `~collections.OrderedDict` class is described in the earlier section
   :ref:`pep-0372`.
 
   The :class:`namedtuple` class now has an optional *rename* parameter.

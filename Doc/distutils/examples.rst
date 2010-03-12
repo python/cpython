@@ -257,9 +257,9 @@ Running the ``check`` command will display some warnings::
              (maintainer and maintainer_email) must be supplied
 
 
-If you use the reStructuredText syntax in the `long_description` field and
+If you use the reStructuredText syntax in the ``long_description`` field and
 `docutils <http://docutils.sourceforge.net/>`_ is installed you can check if
-the syntax is fine with the ``check`` command, using the `restructuredtext`
+the syntax is fine with the ``check`` command, using the ``restructuredtext``
 option.
 
 For example, if the :file:`setup.py` script is changed like this::
@@ -278,7 +278,7 @@ For example, if the :file:`setup.py` script is changed like this::
         url='http://example.com', long_description=desc)
 
 Where the long description is broken, ``check`` will be able to detect it
-by using the `docutils` parser::
+by using the :mod:`docutils` parser::
 
     $ pythontrunk setup.py check --restructuredtext
     running check
@@ -293,20 +293,20 @@ Reading the metadata
 
 The :func:`distutils.core.setup` function provides a command-line interface
 that allows you to query the metadata fields of a project through the
-`setup.py` script of a given project::
+:file:`setup.py` script of a given project::
 
     $ python setup.py --name
     distribute
 
-This call reads the `name` metadata by running the
+This call reads the ``name`` metadata by running the
 :func:`distutils.core.setup`  function. Although, when a source or binary
 distribution is created with Distutils, the metadata fields are written
 in a static file called :file:`PKG-INFO`. When a Distutils-based project is
 installed in Python, the :file:`PKG-INFO` file is copied alongside the modules
 and packages of the distribution under :file:`NAME-VERSION-pyX.X.egg-info`,
-where `NAME` is the name of the project, `VERSION` its version as defined
-in the Metadata, and `pyX.X` the major and minor version of Python like
-`2.7` or `3.2`.
+where ``NAME`` is the name of the project, ``VERSION`` its version as defined
+in the Metadata, and ``pyX.X`` the major and minor version of Python like
+``2.7`` or ``3.2``.
 
 You can read back this static file, by using the
 :class:`distutils.dist.DistributionMetadata` class and its

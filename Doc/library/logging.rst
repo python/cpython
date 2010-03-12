@@ -424,10 +424,10 @@ noncoders to easily modify the logging properties.
 
 Note that the class names referenced in config files need to be either relative
 to the logging module, or absolute values which can be resolved using normal
-import mechanisms. Thus, you could use either `handlers.WatchedFileHandler`
-(relative to the logging module) or `mypackage.mymodule.MyHandler` (for a
-class defined in package `mypackage` and module `mymodule`, where `mypackage`
-is available on the Python import path).
+import mechanisms. Thus, you could use either :class:`handlers.WatchedFileHandler`
+(relative to the logging module) or :class:`mypackage.mymodule.MyHandler` (for a
+class defined in package :mod:`mypackage` and module :mod:`mymodule`, where
+:mod:`mypackage` is available on the Python import path).
 
 .. _library-config:
 
@@ -1233,12 +1233,12 @@ swallowed. Other exceptions which occur during the :meth:`emit` method of a
 :class:`Handler` subclass are passed to its :meth:`handleError` method.
 
 The default implementation of :meth:`handleError` in :class:`Handler` checks
-to see if a module-level variable, `raiseExceptions`, is set. If set, a
-traceback is printed to `sys.stderr`. If not set, the exception is swallowed.
+to see if a module-level variable, :data:`raiseExceptions`, is set. If set, a
+traceback is printed to :data:`sys.stderr`. If not set, the exception is swallowed.
 
-**Note:** The default value of `raiseExceptions` is `True`. This is because
+**Note:** The default value of :data:`raiseExceptions` is ``True``. This is because
 during development, you typically want to be notified of any exceptions that
-occur. It's advised that you set `raiseExceptions` to `False` for production
+occur. It's advised that you set :data:`raiseExceptions` to ``False`` for production
 usage.
 
 .. _context-info:
@@ -2494,14 +2494,14 @@ with the :mod:`warnings` module.
    This function is used to turn the capture of warnings by logging on and
    off.
 
-   If `capture` is `True`, warnings issued by the :mod:`warnings` module
+   If *capture* is ``True``, warnings issued by the :mod:`warnings` module
    will be redirected to the logging system. Specifically, a warning will be
    formatted using :func:`warnings.formatwarning` and the resulting string
-   logged to a logger named "py.warnings" with a severity of `WARNING`.
+   logged to a logger named "py.warnings" with a severity of ``WARNING``.
 
-   If `capture` is `False`, the redirection of warnings to the logging system
+   If *capture* is ``False``, the redirection of warnings to the logging system
    will stop, and warnings will be redirected to their original destinations
-   (i.e. those in effect before `captureWarnings(True)` was called).
+   (i.e. those in effect before ``captureWarnings(True)`` was called).
 
 
 Configuration

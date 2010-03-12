@@ -221,7 +221,7 @@ is a separate error indicator for each thread.
    .. note::
 
       The `"%lld"` and `"%llu"` format specifiers are only available
-      when `HAVE_LONG_LONG` is defined.
+      when :const:`HAVE_LONG_LONG` is defined.
 
    .. versionchanged:: 2.7
       Support for `"%lld"` and `"%llu"` added.
