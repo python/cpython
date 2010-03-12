@@ -3989,10 +3989,10 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
 		if (PyDict_GetItem(kwdict, key) != NULL) {
 			PyErr_Format(PyExc_TypeError,
 				     "%.200s%s got multiple values "
-				     "for keyword argument '%.200s'",
+				     "for keyword argument '%U'",
 				     PyEval_GetFuncName(func),
 				     PyEval_GetFuncDesc(func),
-				     _PyUnicode_AsString(key));
+				     key);
 			Py_DECREF(key);
 			Py_DECREF(value);
 			Py_DECREF(kwdict);

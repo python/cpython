@@ -2691,8 +2691,8 @@ PyImport_ReloadModule(PyObject *m)
 		parent = PyDict_GetItem(modules, parentname);
 		if (parent == NULL) {
 			PyErr_Format(PyExc_ImportError,
-			    "reload(): parent %.200s not in sys.modules",
-			     _PyUnicode_AsString(parentname));
+			    "reload(): parent %U not in sys.modules",
+			     parentname);
 			Py_DECREF(parentname);
 			imp_modules_reloading_clear();
 			return NULL;
