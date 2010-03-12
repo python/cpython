@@ -479,6 +479,23 @@ class SysModuleTest(unittest.TestCase):
         out = p.communicate()[0].strip()
         self.assertEqual(out, b'?')
 
+    def test_executable(self):
+        # Issue #7774: Ensure that sys.executable is an empty string if argv[0]
+        # has been set to an non existent program name and Python is unable to
+        # retrieve the real program name
+        import subprocess
+        # For a normal installation, it should work without 'cwd'
+        # argument. For test runs in the build directory, see #7774.
+        python_dir = os.path.dirname(os.path.realpath(sys.executable))
+        p = subprocess.Popen(
+            ["nonexistent", "-c",
+             'import sys; print(sys.executable.encode("ascii", "backslashreplace"))'],
+            executable=sys.executable, stdout=subprocess.PIPE, cwd=python_dir)
+        stdout = p.communicate()[0]
+        executable = stdout.strip().decode("ASCII")
+        p.wait()
+        self.assertIn(executable, ["b''", repr(sys.executable.encode("ascii", "backslashreplace"))])
+
 
 class SizeofTest(unittest.TestCase):
 
