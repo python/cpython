@@ -479,6 +479,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, getattr, sys, 1, "foo")
         self.assertRaises(TypeError, getattr)
         self.assertRaises(AttributeError, getattr, sys, chr(sys.maxunicode))
+        # unicode surrogates are not encodable to the default encoding (utf8)
+        self.assertRaises(AttributeError, getattr, 1, "\uDAD1\uD51E")
 
     def test_hasattr(self):
         import sys
