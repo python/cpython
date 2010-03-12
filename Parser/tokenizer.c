@@ -1242,21 +1242,28 @@ indenterror(struct tok_state *tok)
 }
 
 #ifdef PGEN
-#define verify_identifier(s,e) 1
+#define verify_identifier(tok) 1
 #else
 /* Verify that the identifier follows PEP 3131. */
 static int
-verify_identifier(char *start, char *end)
+verify_identifier(struct tok_state *tok)
 {
 	PyObject *s;
 	int result;
-	s = PyUnicode_DecodeUTF8(start, end-start, NULL);
+	s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
 	if (s == NULL) {
-		PyErr_Clear();
+		if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
+			PyErr_Clear();
+			tok->done = E_IDENTIFIER;
+		} else {
+			tok->done = E_ERROR;
+		}
 		return 0;
 	}
 	result = PyUnicode_IsIdentifier(s);
 	Py_DECREF(s);
+	if (result == 0)
+		tok->done = E_IDENTIFIER;
 	return result;
 }
 #endif
@@ -1405,7 +1412,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 		}
 		tok_backup(tok, c);
 		if (nonascii &&
-		    !verify_identifier(tok->start, tok->cur)) {
+		    !verify_identifier(tok)) {
 			tok->done = E_IDENTIFIER;
 			return ERRORTOKEN;
 		}
