@@ -595,10 +595,16 @@ Py_Main(int argc, wchar_t **argv)
 				else
 					p_cfilename = "<decoding error>";
 			}
-			sts = PyRun_AnyFileExFlags(
-				fp,
-				p_cfilename,
-				filename != NULL, &cf) != 0;
+			/* call pending calls like signal handlers (SIGINT) */
+			if (Py_MakePendingCalls() == -1) {
+				PyErr_Print();
+				sts = 1;
+			} else {
+				sts = PyRun_AnyFileExFlags(
+					fp,
+					p_cfilename,
+					filename != NULL, &cf) != 0;
+			}
 			Py_XDECREF(filenameObj);
 		}
 		

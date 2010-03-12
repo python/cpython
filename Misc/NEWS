@@ -12,6 +12,11 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #3137: Don't ignore errors at startup, especially a keyboard interrupt
+  (SIGINT). If an error occurs while importing the site module, the error is
+  printed and Python exits. Initialize the GIL before importing the site
+  module.
+
 - Issue #7173: Generator finalization could invalidate sys.exc_info().
 
 - Issue #7544: Preallocate thread memory before creating the thread to avoid
