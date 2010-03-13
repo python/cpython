@@ -1,10 +1,8 @@
 # test for xml.dom.minidom
 
-import os
-import sys
 import pickle
 from StringIO import StringIO
-from test.test_support import verbose, run_unittest
+from test.test_support import verbose, run_unittest, findfile
 import unittest
 
 import xml.dom
@@ -15,12 +13,8 @@ from xml.dom.minidom import parse, Node, Document, parseString
 from xml.dom.minidom import getDOMImplementation
 
 
-if __name__ == "__main__":
-    base = sys.argv[0]
-else:
-    base = __file__
-tstfile = os.path.join(os.path.dirname(base), "xmltestdata", "test.xml")
-del base
+tstfile = findfile("test.xml", subdir="xmltestdata")
+
 
 # The tests of DocumentType importing use these helpers to construct
 # the documents to work with, since not all DOM builders actually
