@@ -14,19 +14,26 @@ DISTVERSION  = $(shell $(PYTHON) tools/sphinxext/patchlevel.py)
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
 
-.PHONY: help checkout update build html htmlhelp clean coverage dist check
+.PHONY: help checkout update build html htmlhelp latex text changes linkcheck \
+	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
+	autobuild-dev autobuild-stable
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  html      to make standalone HTML files"
-	@echo "  htmlhelp  to make HTML files and a HTML help project"
-	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
-	@echo "  text      to make plain text files"
-	@echo "  changes   to make an overview over all changed/added/deprecated items"
-	@echo "  linkcheck to check all external links for integrity"
+	@echo "  clean      to remove build files"
+	@echo "  update     to update build tools"
+	@echo "  html       to make standalone HTML files"
+	@echo "  htmlhelp   to make HTML files and a HTML help project"
+	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  text       to make plain text files"
+	@echo "  changes    to make an overview over all changed/added/deprecated items"
+	@echo "  linkcheck  to check all external links for integrity"
+	@echo "  coverage   to check documentation coverage for library and C API"
+	@echo "  doctest    to run doctests in the documentation"
+	@echo "  pydoc-topics  to regenerate the pydoc topics file"
+	@echo "  dist       to create a \"dist\" directory with archived docs for download"
 	@echo "  suspicious to check for suspicious markup in output text"
-	@echo "  coverage  to check documentation coverage for library and C API"
-	@echo "  dist      to create a \"dist\" directory with archived docs for download"
+	@echo "  check      to run a check for frequent markup errors"
 
 # Note: if you update versions here, do the same in make.bat and README.txt
 checkout:
@@ -149,3 +156,17 @@ dist:
 
 check:
 	$(PYTHON) tools/rstlint.py -i tools
+
+# Targets for automatic doc build
+
+# for development releases: always build
+autobuild-dev:
+	make update
+	make dist
+
+# for stable releases: only build if not in development mode
+autobuild-stable:
+	@case $(DISTVERSION) in *[abc]*) \
+		echo "Not building; not a release version.";  exit 1;; \
+	esac
+	@make autobuild-dev
