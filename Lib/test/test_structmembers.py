@@ -87,8 +87,8 @@ class ReadWriteTests(unittest.TestCase):
             'T_BOOL',
             'T_BYTE', 'T_UBYTE',
             'T_SHORT', 'T_USHORT',
-            'T_INT', #'T_UINT',
-            'T_LONG', #'T_ULONG',
+            'T_INT', 'T_UINT',
+            'T_LONG', 'T_ULONG',
             'T_PYSSIZET'
             ]
 
