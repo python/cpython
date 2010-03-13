@@ -2387,11 +2387,25 @@ test_c_api(PySetObject *so)
 	Py_ssize_t i;
 	PyObject *elem=NULL, *dup=NULL, *t, *f, *dup2, *x;
 	PyObject *ob = (PyObject *)so;
+	PyObject *str;
 
-	/* Verify preconditions and exercise type/size checks */
+	/* Verify preconditions */
 	assert(PyAnySet_Check(ob));
 	assert(PyAnySet_CheckExact(ob));
 	assert(!PyFrozenSet_CheckExact(ob));
+
+	/* so.clear(); so |= set("abc"); */
+	str = PyString_FromString("abc");
+	if (str == NULL)
+		return NULL;
+	set_clear_internal(so);
+	if (set_update_internal(so, str) == -1) {
+		Py_DECREF(str);
+		return NULL;
+	}
+	Py_DECREF(str);
+
+	/* Exercise type/size checks */
 	assert(PySet_Size(ob) == 3);
 	assert(PySet_GET_SIZE(ob) == 3);
 
