@@ -172,12 +172,12 @@ exception and traceback:
 
    try:
        lumberjack()
-   except:
-       exceptionType, exceptionValue, exceptionTraceback = sys.exc_info()
+   except IndexError:
+       exc_type, exc_value, exc_traceback = sys.exc_info()
        print("*** print_tb:")
-       traceback.print_tb(exceptionTraceback, limit=1, file=sys.stdout)
+       traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
        print("*** print_exception:")
-       traceback.print_exception(exceptionType, exceptionValue, exceptionTraceback,
+       traceback.print_exception(exc_type, exc_value, exc_traceback,
                                  limit=2, file=sys.stdout)
        print("*** print_exc:")
        traceback.print_exc()
@@ -186,13 +186,13 @@ exception and traceback:
        print(formatted_lines[0])
        print(formatted_lines[-1])
        print("*** format_exception:")
-       print(repr(traceback.format_exception(exceptionType, exceptionValue,
-                                             exceptionTraceback)))
+       print(repr(traceback.format_exception(exc_type, exc_value,
+                                             exc_traceback)))
        print("*** extract_tb:")
-       print(repr(traceback.extract_tb(exceptionTraceback)))
+       print(repr(traceback.extract_tb(exc_traceback)))
        print("*** format_tb:")
-       print(repr(traceback.format_tb(exceptionTraceback)))
-       print("*** tb_lineno:", traceback.tb_lineno(exceptionTraceback))
+       print(repr(traceback.format_tb(exc_traceback)))
+       print("*** tb_lineno:", exc_traceback.tb_lineno)
 
 The output for the example would look similar to this:
 
