@@ -257,12 +257,13 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		}
 	case T_UINT:{
 		unsigned long ulong_val = PyLong_AsUnsignedLong(v);
-		if ((ulong_val == (unsigned int)-1) && PyErr_Occurred()) {
+		if ((ulong_val == (unsigned long)-1) && PyErr_Occurred()) {
 			/* XXX: For compatibility, accept negative int values
 			   as well. */
 			PyErr_Clear();
 			ulong_val = PyLong_AsLong(v);
-			if ((ulong_val == (unsigned int)-1) && PyErr_Occurred())
+			if ((ulong_val == (unsigned long)-1) &&
+			    PyErr_Occurred())
 				return -1;
 			*(unsigned int *)addr = (unsigned int)ulong_val;
 			WARN("Writing negative value into unsigned field");
@@ -286,7 +287,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 			   as well. */
 			PyErr_Clear();
 			*(unsigned long*)addr = PyLong_AsLong(v);
-			if ((*(unsigned long*)addr == (unsigned int)-1)
+			if ((*(unsigned long*)addr == (unsigned long)-1)
 			    && PyErr_Occurred())
 				return -1;
 			WARN("Writing negative value into unsigned field");
