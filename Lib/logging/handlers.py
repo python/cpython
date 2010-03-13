@@ -25,7 +25,7 @@ To use, simply 'import logging.handlers' and log away!
 """
 
 import logging, socket, os, pickle, struct, time, re
-from stat import ST_DEV, ST_INO
+from stat import ST_DEV, ST_INO, ST_MTIME
 
 try:
     import codecs
@@ -203,7 +203,11 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
 
         self.extMatch = re.compile(self.extMatch, re.ASCII)
         self.interval = self.interval * interval # multiply by units requested
-        self.rolloverAt = self.computeRollover(int(time.time()))
+        if os.path.exists(filename):
+            t = os.stat(filename)[ST_MTIME]
+        else:
+            t = int(time.time())
+        self.rolloverAt = self.computeRollover(t)
 
     def computeRollover(self, currentTime):
         """
