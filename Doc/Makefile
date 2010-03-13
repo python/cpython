@@ -40,19 +40,19 @@ help:
 checkout:
 	@if [ ! -d tools/sphinx ]; then \
 	  echo "Checking out Sphinx..."; \
-	  svn checkout $(SVNROOT)/external/Sphinx-0.6.3/sphinx tools/sphinx; \
+	  svn checkout $(SVNROOT)/external/Sphinx-0.6.5/sphinx tools/sphinx; \
 	fi
 	@if [ ! -d tools/docutils ]; then \
 	  echo "Checking out Docutils..."; \
-	  svn checkout $(SVNROOT)/external/docutils-0.5/docutils tools/docutils; \
+	  svn checkout $(SVNROOT)/external/docutils-0.6/docutils tools/docutils; \
 	fi
 	@if [ ! -d tools/jinja2 ]; then \
 	  echo "Checking out Jinja..."; \
-	  svn checkout $(SVNROOT)/external/Jinja-2.1.1/jinja2 tools/jinja2; \
+	  svn checkout $(SVNROOT)/external/Jinja-2.3.1/jinja2 tools/jinja2; \
 	fi
 	@if [ ! -d tools/pygments ]; then \
 	  echo "Checking out Pygments..."; \
-	  svn checkout $(SVNROOT)/external/Pygments-1.1.1/pygments tools/pygments; \
+	  svn checkout $(SVNROOT)/external/Pygments-1.3.1/pygments tools/pygments; \
 	fi
 
 update: clean checkout
