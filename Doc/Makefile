@@ -47,11 +47,7 @@ checkout:
 	  svn checkout $(SVNROOT)/external/Pygments-1.1.1/pygments tools/pygments; \
 	fi
 
-update: checkout
-	svn update tools/sphinx
-	svn update tools/docutils
-	svn update tools/jinja2
-	svn update tools/pygments
+update: clean checkout
 
 build: checkout
 	mkdir -p build/$(BUILDER) build/doctrees
@@ -111,6 +107,9 @@ htmlview: html
 clean:
 	-rm -rf build/*
 	-rm -rf tools/sphinx
+	-rm -rf tools/pygments
+	-rm -rf tools/jinja2
+	-rm -rf tools/docutils
 
 dist:
 	-rm -rf dist
