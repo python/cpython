@@ -869,6 +869,9 @@ Documentation
 Tests
 -----
 
+- Issue #7849: Now the utility ``check_warnings`` verifies if the warnings are
+  effectively raised.
+
 - The four path modules (genericpath, macpath, ntpath, posixpath) share a
   common TestCase for some tests: test_genericpath.CommonTest.
 
