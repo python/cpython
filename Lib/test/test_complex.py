@@ -3,6 +3,7 @@ from test import support
 
 from random import random
 from math import atan2, isnan, copysign
+import operator
 
 INF = float("inf")
 NAN = float("nan")
@@ -110,15 +111,23 @@ class ComplexTest(unittest.TestCase):
 
     def test_richcompare(self):
         self.assertRaises(OverflowError, complex.__eq__, 1+1j, 1<<10000)
-        self.assertEqual(complex.__lt__(1+1j, None), NotImplemented)
+        self.assertIs(complex.__lt__(1+1j, None), NotImplemented)
         self.assertIs(complex.__eq__(1+1j, 1+1j), True)
         self.assertIs(complex.__eq__(1+1j, 2+2j), False)
         self.assertIs(complex.__ne__(1+1j, 1+1j), False)
         self.assertIs(complex.__ne__(1+1j, 2+2j), True)
-        self.assertRaises(TypeError, complex.__lt__, 1+1j, 2+2j)
-        self.assertRaises(TypeError, complex.__le__, 1+1j, 2+2j)
-        self.assertRaises(TypeError, complex.__gt__, 1+1j, 2+2j)
-        self.assertRaises(TypeError, complex.__ge__, 1+1j, 2+2j)
+        self.assertIs(complex.__lt__(1+1j, 2+2j), NotImplemented)
+        self.assertIs(complex.__le__(1+1j, 2+2j), NotImplemented)
+        self.assertIs(complex.__gt__(1+1j, 2+2j), NotImplemented)
+        self.assertIs(complex.__ge__(1+1j, 2+2j), NotImplemented)
+        self.assertRaises(TypeError, operator.lt, 1+1j, 2+2j)
+        self.assertRaises(TypeError, operator.le, 1+1j, 2+2j)
+        self.assertRaises(TypeError, operator.gt, 1+1j, 2+2j)
+        self.assertRaises(TypeError, operator.ge, 1+1j, 2+2j)
+        self.assertIs(operator.eq(1+1j, 1+1j), True)
+        self.assertIs(operator.eq(1+1j, 2+2j), False)
+        self.assertIs(operator.ne(1+1j, 1+1j), False)
+        self.assertIs(operator.ne(1+1j, 2+2j), True)
 
     def test_mod(self):
         # % is no longer supported on complex numbers

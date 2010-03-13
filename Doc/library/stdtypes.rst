@@ -168,8 +168,9 @@ Objects of different types, except different numeric types, never compare equal.
 Furthermore, some types (for example, function objects) support only a degenerate
 notion of comparison where any two objects of that type are unequal.  The ``<``,
 ``<=``, ``>`` and ``>=`` operators will raise a :exc:`TypeError` exception when
-any operand is a complex number, the objects are of different types that cannot
-be compared, or other cases where there is no defined ordering.
+comparing a complex number with another built-in numeric type, when the objects
+are of different types that cannot be compared, or in other cases where there is
+no defined ordering.
 
 .. index::
    single: __eq__() (instance method)
