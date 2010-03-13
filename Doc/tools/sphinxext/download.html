@@ -1,15 +1,14 @@
 {% extends "layout.html" %}
 {% set title = 'Download' %}
-{% set dlbase = 'http://docs.python.org/ftp/python/doc/' + release %}
-{% block body %}
+{% if daily is defined %}
+  {% set dlbase = pathto('archives', 1) %}
+{% else %}
+  {% set dlbase = 'http://docs.python.org/ftp/python/doc/' + release %}
+{% endif %}
 
+{% block body %}
 <h1>Download Python {{ release }} Documentation</h1>
 
-{% if 'a' in release or 'b' in release or 'c' in release %}
-<p>We don't package the documentation for development releases for download.
-  Downloads will be available for the final release.</p>
-
-{% else %}
 {% if last_updated %}<p><b>Last updated on: {{ last_updated }}.</b></p>{% endif %}
 
 <p>To download an archive containing all the documents for this version of
@@ -55,6 +54,4 @@ platform. These are created on Unix using the InfoZIP zip program.</p>
 
 <p>If you have comments or suggestions for the Python documentation, please send
 email to <a href="mailto:docs@python.org">docs@python.org</a>.</p>
-{% endif %}
-
 {% endblock %}
