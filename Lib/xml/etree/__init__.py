@@ -1,10 +1,10 @@
-# $Id: __init__.py 1821 2004-06-03 16:57:49Z fredrik $
+# $Id: __init__.py 3375 2008-02-13 08:05:08Z fredrik $
 # elementtree package
 
 # --------------------------------------------------------------------
 # The ElementTree toolkit is
 #
-# Copyright (c) 1999-2004 by Fredrik Lundh
+# Copyright (c) 1999-2008 by Fredrik Lundh
 #
 # By obtaining, using, and/or copying this software and/or its
 # associated documentation, you agree that you have read, understood,
@@ -30,4 +30,4 @@
 # --------------------------------------------------------------------
 
 # Licensed to PSF under a Contributor Agreement.
-# See http://www.python.org/2.4/license for licensing details.
+# See http://www.python.org/psf/license for licensing details.

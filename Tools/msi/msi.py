@@ -1006,8 +1006,6 @@ def add_files(db):
             lib.add_file("audiotest.au")
             lib.add_file("cfgparser.1")
             lib.add_file("sgml_input.html")
-            lib.add_file("test.xml")
-            lib.add_file("test.xml.out")
             lib.add_file("testtar.tar")
             lib.add_file("test_difflib_expect.html")
             lib.add_file("check_soundcard.vbs")
@@ -1019,6 +1017,9 @@ def add_files(db):
             lib.add_file("zipdir.zip")
         if dir=='decimaltestdata':
             lib.glob("*.decTest")
+        if dir=='xmltestdata':
+            lib.glob("*.xml")
+            lib.add_file("test.xml.out")
         if dir=='output':
             lib.glob("test_*")
         if dir=='idlelib':
