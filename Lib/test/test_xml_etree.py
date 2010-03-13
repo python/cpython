@@ -14,11 +14,12 @@
 import sys
 
 from test import test_support
+from test.test_support import findfile
 
 from xml.etree import ElementTree as ET
 
-SIMPLE_XMLFILE = "xmltestdata/simple.xml"
-SIMPLE_NS_XMLFILE = "xmltestdata/simple-ns.xml"
+SIMPLE_XMLFILE = findfile("simple.xml", subdir="xmltestdata")
+SIMPLE_NS_XMLFILE = findfile("simple-ns.xml", subdir="xmltestdata")
 
 SAMPLE_XML = """\
 <body>
@@ -1791,30 +1792,19 @@ def check_issue6565():
 
 
 class CleanContext(object):
-    """Provide default namespace mapping, path cache and working directory.
+    """Provide default namespace mapping and path cache."""
 
-    Save and restore the default namespace mapping and the path cache.
-    Change directory to the "Lib/test/" directory: some tests open
-    xml files in the "samples/" directory relative to the test module.
-    """
     def __enter__(self):
-        import os
         from xml.etree import ElementTree
         self._nsmap = ElementTree._namespace_map
         self._path_cache = ElementTree.ElementPath._cache
-        self._previous_cwd = os.getcwd()
         # Copy the default namespace mapping
         ElementTree._namespace_map = self._nsmap.copy()
         # Copy the path cache (should be empty)
         ElementTree.ElementPath._cache = self._path_cache.copy()
-        # Change directory to Lib/test/
-        os.chdir(os.path.dirname(__file__))
 
     def __exit__(self, *args):
-        import os
         from xml.etree import ElementTree
-        # Restore working directory
-        os.chdir(self._previous_cwd)
         # Restore mapping and path cache
         ElementTree._namespace_map = self._nsmap
         ElementTree.ElementPath._cache = self._path_cache

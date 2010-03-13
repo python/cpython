@@ -15,10 +15,9 @@ from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from cStringIO import StringIO
 from test.test_support import findfile, run_unittest
 import unittest
-import os
 
-TEST_XMLFILE = findfile(os.path.join("xmltestdata", "test.xml"))
-TEST_XMLFILE_OUT = findfile(os.path.join("xmltestdata", "test.xml.out"))
+TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
+TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
 
 ns_uri = "http://www.python.org/xml-ns/saxtest/"
 
