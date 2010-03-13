@@ -243,9 +243,8 @@ class TestSysConfig(unittest.TestCase):
         symlink = get_attribute(os, "symlink")
         def get(python):
             cmd = [python, '-c',
-                   'import sysconfig; print sysconfig.get_platform()']
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE)
+                   'import sysconfig; print(sysconfig.get_platform())']
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
             return p.communicate()
         real = os.path.realpath(sys.executable)
         link = os.path.abspath(TESTFN)
