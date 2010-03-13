@@ -3,13 +3,25 @@ from _testcapi import test_structmembersType, \
     SHRT_MAX, SHRT_MIN, USHRT_MAX, \
     INT_MAX, INT_MIN, UINT_MAX, \
     LONG_MAX, LONG_MIN, ULONG_MAX, \
-    LLONG_MAX, LLONG_MIN, ULLONG_MAX
+    LLONG_MAX, LLONG_MIN, ULLONG_MAX, \
+    PY_SSIZE_T_MAX, PY_SSIZE_T_MIN
 
 import warnings, unittest, sys
 from test import support
 
-ts=test_structmembersType(False, 1, 2, 3, 4, 5, 6, 7, 8,
-                          9.99999, 10.1010101010)
+ts=test_structmembersType(False,  # T_BOOL
+                          1,      # T_BYTE
+                          2,      # T_UBYTE
+                          3,      # T_SHORT
+                          4,      # T_USHORT
+                          5,      # T_INT
+                          6,      # T_UINT
+                          7,      # T_LONG
+                          8,      # T_ULONG
+                          23,     # T_PYSSIZET
+                          9.99999,# T_FLOAT
+                          10.1010101010 # T_DOUBLE
+                          )
 
 class ReadWriteTests(unittest.TestCase):
     def test_types(self):
@@ -47,6 +59,11 @@ class ReadWriteTests(unittest.TestCase):
         ts.T_ULONG = ULONG_MAX
         self.assertEquals(ts.T_ULONG, ULONG_MAX)
 
+        ts.T_PYSSIZET = PY_SSIZE_T_MAX
+        self.assertEquals(ts.T_PYSSIZET, PY_SSIZE_T_MAX)
+        ts.T_PYSSIZET = PY_SSIZE_T_MIN
+        self.assertEquals(ts.T_PYSSIZET, PY_SSIZE_T_MIN)
+
         ## T_LONGLONG and T_ULONGLONG may not be present on some platforms
         if hasattr(ts, 'T_LONGLONG'):
             ts.T_LONGLONG = LLONG_MAX
@@ -62,6 +79,27 @@ class ReadWriteTests(unittest.TestCase):
             self.assertEquals(ts.T_LONGLONG, 3)
             ts.T_ULONGLONG = 4
             self.assertEquals(ts.T_ULONGLONG, 4)
+
+    def test_bad_assignments(self):
+        # XXX testing of T_UINT and T_ULONG temporarily disabled;
+        # see issue 8014.
+        integer_attributes = [
+            'T_BOOL',
+            'T_BYTE', 'T_UBYTE',
+            'T_SHORT', 'T_USHORT',
+            'T_INT', #'T_UINT',
+            'T_LONG', #'T_ULONG',
+            'T_PYSSIZET'
+            ]
+
+        if hasattr(ts, 'T_LONGLONG'):
+            integer_attributes.extend(['T_LONGLONG', 'T_ULONGLONG'])
+
+        # issue8014: this produced 'bad argument to internal function'
+        # internal error
+        for nonint in None, 3.2j, "full of eels", {}, []:
+            for attr in integer_attributes:
+                self.assertRaises(TypeError, setattr, ts, attr, nonint)
 
 
 class TestWarnings(unittest.TestCase):

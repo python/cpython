@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8014: Setting a T_UINT or T_PYSSIZET attribute of an object with
+  PyMemberDefs could produce an internal error;  raise TypeError instead.
+
 - Issue #7845: Rich comparison methods on the complex type now return
   NotImplemented rather than raising a TypeError when comparing with an
   incompatible type; this allows user-defined classes to implement their own
