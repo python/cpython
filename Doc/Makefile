@@ -161,16 +161,17 @@ check:
 serve:
 	../Tools/scripts/serve.py build/html
 
-# Targets for automatic doc build
+# Targets for daily automated doc build
 
 # for development releases: always build
 autobuild-dev:
 	make update
-	make dist
+	make dist SPHINXOPTS='-A daily=1'
 
-# for stable releases: only build if not in development mode
+# for stable releases: only build if not in pre-release stage (alpha, beta, rc)
 autobuild-stable:
 	@case $(DISTVERSION) in *[abc]*) \
-		echo "Not building; not a release version.";  exit 1;; \
+		echo "Not building; $(DISTVERSION) is not a release version."; \
+		exit 1;; \
 	esac
 	@make autobuild-dev
