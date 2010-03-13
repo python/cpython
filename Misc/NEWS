@@ -54,6 +54,12 @@ Extension Modules
   integer codes for which it was used differed between native packing
   and standard packing.)
 
+Tools/Demos
+-----------
+
+- Issue #7993: Add a test of IO packet processing bandwidth to ccbench.
+  It measures the number of UDP packets processed per second depending on
+  the number of background CPU-bound Python threads.
 
 
 What's New in Python 2.7 alpha 4?
