@@ -50,7 +50,7 @@ Functions
 ---------
 
 
-.. function:: Comment([text])
+.. function:: Comment(text=None)
 
    Comment element factory.  This factory function creates a special element
    that will be serialized as an XML comment by the standard serializer.  The
@@ -76,7 +76,7 @@ Functions
    string containing XML data.  Returns an :class:`Element` instance.
 
 
-.. function:: fromstringlist(sequence[, parser])
+.. function:: fromstringlist(sequence, parser=None)
 
    Parses an XML document from a sequence of string fragments.  *sequence* is a
    list or other sequence containing XML data fragments.  *parser* is an
@@ -92,7 +92,7 @@ Functions
    element instance.  Returns a true value if this is an element object.
 
 
-.. function:: iterparse(source[, events[, parser]])
+.. function:: iterparse(source, events=None, parser=None)
 
    Parses an XML section into an element tree incrementally, and reports what's
    going on to the user.  *source* is a filename or file object containing XML
@@ -112,7 +112,7 @@ Functions
       If you need a fully populated element, look for "end" events instead.
 
 
-.. function:: parse(source[, parser])
+.. function:: parse(source, parser=None)
 
    Parses an XML section into an element tree.  *source* is a filename or file
    object containing XML data.  *parser* is an optional parser instance.  If
@@ -120,7 +120,7 @@ Functions
    :class:`ElementTree` instance.
 
 
-.. function:: ProcessingInstruction(target[, text])
+.. function:: ProcessingInstruction(target, text=None)
 
    PI element factory.  This factory function creates a special element that
    will be serialized as an XML processing instruction.  *target* is a string
@@ -139,7 +139,7 @@ Functions
    .. versionadded:: 2.7
 
 
-.. function:: SubElement(parent, tag[, attrib[,  **extra]])
+.. function:: SubElement(parent, tag, attrib={},  **extra)
 
    Subelement factory.  This function creates an element instance, and appends
    it to an existing element.
@@ -151,25 +151,27 @@ Functions
    arguments.  Returns an element instance.
 
 
-.. function:: tostring(element[, encoding])
+.. function:: tostring(element, encoding=None, method=None)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* is the
-   output encoding (default is US-ASCII).  Returns an encoded string containing
-   the XML data.
+   output encoding (default is US-ASCII).  *method* is either ``"xml"``,
+   ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns an encoded string
+   containing the XML data.
 
 
-.. function:: tostringlist(element[, encoding])
+.. function:: tostringlist(element, encoding=None, method=None)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* is the
-   output encoding (default is US-ASCII).  Returns a sequence object containing
-   the XML data.
+   output encoding (default is US-ASCII).   *method* is either ``"xml"``,
+   ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns a sequence object
+   containing the XML data.
 
    .. versionadded:: 2.7
 
 
-.. function:: XML(text[, parser])
+.. function:: XML(text, parser=None)
 
    Parses an XML section from a string constant.  This function can be used to
    embed "XML literals" in Python code.  *text* is a string containing XML
@@ -177,7 +179,7 @@ Functions
    :class:`XMLParser` parser is used.  Returns an :class:`Element` instance.
 
 
-.. function:: XMLID(text[, parser])
+.. function:: XMLID(text, parser=None)
 
    Parses an XML section from a string constant, and also returns a dictionary
    which maps from element id:s to elements.  *text* is a string containing XML
@@ -192,7 +194,7 @@ Element Objects
 ---------------
 
 
-.. class:: Element(tag[, attrib[, **extra]])
+.. class:: Element(tag, attrib={}, **extra)
 
    Element class.  This class defines the Element interface, and provides a
    reference implementation of this interface.
@@ -244,7 +246,7 @@ Element Objects
       attributes, and sets the text and tail attributes to None.
 
 
-   .. method:: get(key[, default])
+   .. method:: get(key, default=None)
 
       Gets the element attribute named *key*.
 
@@ -296,7 +298,7 @@ Element Objects
       containing all matching elements in document order.
 
 
-   .. method:: findtext(match[, default])
+   .. method:: findtext(match, default=None)
 
       Finds text for the first subelement matching *match*.  *match* may be
       a tag name or path.  Returns the text content of the first matching
@@ -310,7 +312,7 @@ Element Objects
          Use ``list(elem)`` or iteration.
 
 
-   .. method:: getiterator([tag])
+   .. method:: getiterator(tag=None)
 
       .. deprecated:: 2.7
          Use method :meth:`Element.iter` instead.
@@ -321,7 +323,7 @@ Element Objects
       Inserts a subelement at the given position in this element.
 
 
-   .. method:: iter([tag])
+   .. method:: iter(tag=None)
 
       Creates a tree :term:`iterator` with the current element as the root.
       The iterator iterates over this element and all elements below it, in
@@ -381,7 +383,7 @@ ElementTree Objects
 -------------------
 
 
-.. class:: ElementTree([element,] [file])
+.. class:: ElementTree(element=None, file=None)
 
    ElementTree wrapper class.  This class represents an entire element
    hierarchy, and adds some extra support for serialization to and from
@@ -412,7 +414,7 @@ ElementTree Objects
       list containing all matching elements, in document order.
 
 
-   .. method:: findtext(match[, default])
+   .. method:: findtext(match, default=None)
 
       Finds the element text for the first toplevel element with given tag.
       Same as getroot().findtext(match).  *match* may be a tag name or path.
@@ -422,7 +424,7 @@ ElementTree Objects
       content, this method returns an empty string.
 
 
-   .. method:: getiterator([tag])
+   .. method:: getiterator(tag=None)
 
       .. deprecated:: 2.7
          Use method :meth:`ElementTree.iter` instead.
@@ -433,7 +435,7 @@ ElementTree Objects
       Returns the root element for this tree.
 
 
-   .. method:: iter([tag])
+   .. method:: iter(tag=None)
 
       Creates and returns a tree iterator for the root element.  The iterator
       loops over all elements in this tree, in section order.  *tag* is the tag
@@ -449,7 +451,7 @@ ElementTree Objects
       .. versionadded:: 2.7
 
 
-   .. method:: parse(source[, parser])
+   .. method:: parse(source, parser=None)
 
       Loads an external XML section into this element tree.  *source* is a file
       name or file object.  *parser* is an optional parser instance.  If not
@@ -457,13 +459,15 @@ ElementTree Objects
       root element.
 
 
-   .. method:: write(file[, encoding[, xml_declaration]])
+   .. method:: write(file, encoding=None, xml_declaration=None, method=None)
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       file object opened for writing.  *encoding* [1]_ is the output encoding
       (default is US-ASCII).  *xml_declaration* controls if an XML declaration
       should be added to the file.  Use False for never, True for always, None
-      for only if not US-ASCII or UTF-8.  None is default.
+      for only if not US-ASCII or UTF-8 (default is None).  *method* is either
+      ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns an
+      encoded string.
 
 This is the XML file that is going to be manipulated::
 
@@ -499,7 +503,7 @@ QName Objects
 -------------
 
 
-.. class:: QName(text_or_uri[, tag])
+.. class:: QName(text_or_uri, tag=None)
 
    QName wrapper.  This can be used to wrap a QName attribute value, in order
    to get proper namespace handling on output.  *text_or_uri* is a string
@@ -515,7 +519,7 @@ TreeBuilder Objects
 -------------------
 
 
-.. class:: TreeBuilder([element_factory])
+.. class:: TreeBuilder(element_factory=None)
 
    Generic element structure builder.  This builder converts a sequence of
    start, data, and end method calls to a well-formed element structure.  You
@@ -566,7 +570,7 @@ XMLParser Objects
 -----------------
 
 
-.. class:: XMLParser([html [, target[, encoding]]])
+.. class:: XMLParser(html=0, target=None, encoding=None)
 
    :class:`Element` structure builder for XML source data, based on the expat
    parser.  *html* are predefined HTML entities.  This flag is not supported by
