@@ -435,10 +435,15 @@ PyLong_AsSsize_t(PyObject *vv) {
 	Py_ssize_t i;
 	int sign;
 
-	if (vv == NULL || !PyLong_Check(vv)) {
+	if (vv == NULL) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
+	if (!PyLong_Check(vv)) {
+		PyErr_SetString(PyExc_TypeError, "an integer is required");
+		return -1;
+	}
+
 	v = (PyLongObject *)vv;
 	i = Py_SIZE(v);
 	switch (i) {
@@ -485,10 +490,15 @@ PyLong_AsUnsignedLong(PyObject *vv)
 	unsigned long x, prev;
 	Py_ssize_t i;
 
-	if (vv == NULL || !PyLong_Check(vv)) {
+	if (vv == NULL) {
 		PyErr_BadInternalCall();
-		return (unsigned long) -1;
+		return (unsigned long)-1;
 	}
+	if (!PyLong_Check(vv)) {
+		PyErr_SetString(PyExc_TypeError, "an integer is required");
+		return (unsigned long)-1;
+	}
+
 	v = (PyLongObject *)vv;
 	i = Py_SIZE(v);
 	x = 0;
@@ -523,10 +533,15 @@ PyLong_AsSize_t(PyObject *vv)
 	size_t x, prev;
 	Py_ssize_t i;
 
-	if (vv == NULL || !PyLong_Check(vv)) {
+	if (vv == NULL) {
 		PyErr_BadInternalCall();
-		return (unsigned long) -1;
+		return (size_t) -1;
 	}
+	if (!PyLong_Check(vv)) {
+		PyErr_SetString(PyExc_TypeError, "an integer is required");
+		return (size_t)-1;
+	}
+
 	v = (PyLongObject *)vv;
 	i = Py_SIZE(v);
 	x = 0;
