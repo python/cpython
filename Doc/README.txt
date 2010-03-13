@@ -77,25 +77,27 @@ A "make update" updates the Subversion checkouts in `tools/`.
 Without make
 ------------
 
-You'll need to checkout the Sphinx package to the `tools/` directory::
+You'll need to install the Sphinx package, either by checking it out via ::
 
-   svn co http://svn.python.org/projects/external/Sphinx-0.6.1/sphinx tools/sphinx
+   svn co http://svn.python.org/projects/external/Sphinx-0.6.5/sphinx tools/sphinx
+
+or by installing it from PyPI.
 
 Then, you need to install Docutils, either by checking it out via ::
 
-   svn co http://svn.python.org/projects/external/docutils-0.5/docutils tools/docutils
+   svn co http://svn.python.org/projects/external/docutils-0.6/docutils tools/docutils
 
 or by installing it from http://docutils.sf.net/.
 
 You also need Jinja2, either by checking it out via ::
 
-   svn co http://svn.python.org/projects/external/Jinja-2.1.1/jinja2 tools/jinja2
+   svn co http://svn.python.org/projects/external/Jinja-2.3.1/jinja2 tools/jinja2
 
 or by installing it from PyPI.
 
 You can optionally also install Pygments, either as a checkout via :: 
 
-   svn co http://svn.python.org/projects/external/Pygments-1.1.1/pygments tools/pygments
+   svn co http://svn.python.org/projects/external/Pygments-1.3.1/pygments tools/pygments
 
 or from PyPI at http://pypi.python.org/pypi/Pygments.
 
