@@ -53,7 +53,8 @@ def build_one(checkout, target, isdev):
     print 'Copying HTML files'
     os.system('cp -a Doc/build/html/* %s' % target)
     print 'Copying dist files'
-    os.system('cp -a Doc/dist %s/dist' % target)
+    os.system('mkdir %s/archives' % target)
+    os.system('cp -a Doc/dist/* %s/archives' % target)
     print 'Finished'
     print '=' * 80
 
