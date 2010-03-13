@@ -625,10 +625,8 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
 	TO_COMPLEX(w, j);
 
 	if (op != Py_EQ && op != Py_NE) {
-		/* XXX Should eventually return NotImplemented */
-		PyErr_SetString(PyExc_TypeError,
-			"no ordering relation is defined for complex numbers");
-		return NULL;
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
 	}
 
 	if ((i.real == j.real && i.imag == j.imag) == (op == Py_EQ))
