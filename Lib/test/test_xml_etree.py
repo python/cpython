@@ -17,6 +17,9 @@ from test import test_support
 
 from xml.etree import ElementTree as ET
 
+SIMPLE_XMLFILE = "xmltestdata/simple.xml"
+SIMPLE_NS_XMLFILE = "xmltestdata/simple-ns.xml"
+
 SAMPLE_XML = """\
 <body>
   <tag class='a'>text</tag>
@@ -418,7 +421,7 @@ def file_init():
     >>> tree.find("section/tag").tag
     'tag'
 
-    >>> tree = ET.ElementTree(file="samples/simple.xml")
+    >>> tree = ET.ElementTree(file=SIMPLE_XMLFILE)
     >>> tree.find("element").tag
     'element'
     >>> tree.find("element/../empty-element").tag
@@ -564,7 +567,7 @@ def parsefile():
     """
     Test parsing from file.
 
-    >>> tree = ET.parse("samples/simple.xml")
+    >>> tree = ET.parse(SIMPLE_XMLFILE)
     >>> normalize_crlf(tree)
     >>> tree.write(sys.stdout)
     <root>
@@ -572,7 +575,7 @@ def parsefile():
        <element>text</element>tail
        <empty-element />
     </root>
-    >>> tree = ET.parse("samples/simple-ns.xml")
+    >>> tree = ET.parse(SIMPLE_NS_XMLFILE)
     >>> normalize_crlf(tree)
     >>> tree.write(sys.stdout)
     <ns0:root xmlns:ns0="namespace">
@@ -584,7 +587,7 @@ def parsefile():
     >>> parser = ET.XMLParser()
     >>> parser.version  # XXX: Upgrade to 2.0.1?
     'Expat 2.0.0'
-    >>> parser.feed(open("samples/simple.xml").read())
+    >>> parser.feed(open(SIMPLE_XMLFILE).read())
     >>> print serialize(parser.close())
     <root>
        <element key="value">text</element>
@@ -593,7 +596,7 @@ def parsefile():
     </root>
 
     >>> parser = ET.XMLTreeBuilder() # 1.2 compatibility
-    >>> parser.feed(open("samples/simple.xml").read())
+    >>> parser.feed(open(SIMPLE_XMLFILE).read())
     >>> print serialize(parser.close())
     <root>
        <element key="value">text</element>
@@ -603,7 +606,7 @@ def parsefile():
 
     >>> target = ET.TreeBuilder()
     >>> parser = ET.XMLParser(target=target)
-    >>> parser.feed(open("samples/simple.xml").read())
+    >>> parser.feed(open(SIMPLE_XMLFILE).read())
     >>> print serialize(parser.close())
     <root>
        <element key="value">text</element>
@@ -644,7 +647,7 @@ def iterparse():
 
     >>> iterparse = ET.iterparse
 
-    >>> context = iterparse("samples/simple.xml")
+    >>> context = iterparse(SIMPLE_XMLFILE)
     >>> action, elem = next(context)
     >>> print action, elem.tag
     end element
@@ -656,7 +659,7 @@ def iterparse():
     >>> context.root.tag
     'root'
 
-    >>> context = iterparse("samples/simple-ns.xml")
+    >>> context = iterparse(SIMPLE_NS_XMLFILE)
     >>> for action, elem in context:
     ...   print action, elem.tag
     end {namespace}element
@@ -665,17 +668,17 @@ def iterparse():
     end {namespace}root
 
     >>> events = ()
-    >>> context = iterparse("samples/simple.xml", events)
+    >>> context = iterparse(SIMPLE_XMLFILE, events)
     >>> for action, elem in context:
     ...   print action, elem.tag
 
     >>> events = ()
-    >>> context = iterparse("samples/simple.xml", events=events)
+    >>> context = iterparse(SIMPLE_XMLFILE, events=events)
     >>> for action, elem in context:
     ...   print action, elem.tag
 
     >>> events = ("start", "end")
-    >>> context = iterparse("samples/simple.xml", events)
+    >>> context = iterparse(SIMPLE_XMLFILE, events)
     >>> for action, elem in context:
     ...   print action, elem.tag
     start root
@@ -688,7 +691,7 @@ def iterparse():
     end root
 
     >>> events = ("start", "end", "start-ns", "end-ns")
-    >>> context = iterparse("samples/simple-ns.xml", events)
+    >>> context = iterparse(SIMPLE_NS_XMLFILE, events)
     >>> for action, elem in context:
     ...   if action in ("start", "end"):
     ...     print action, elem.tag
@@ -706,7 +709,7 @@ def iterparse():
     end-ns None
 
     >>> events = ("start", "end", "bogus")
-    >>> context = iterparse("samples/simple.xml", events)
+    >>> context = iterparse(SIMPLE_XMLFILE, events)
     Traceback (most recent call last):
     ValueError: unknown event 'bogus'
 
@@ -767,7 +770,7 @@ def custom_builder():
     ...         pass
     >>> builder = Builder()
     >>> parser = ET.XMLParser(target=builder)
-    >>> parser.feed(open("samples/simple.xml", "r").read())
+    >>> parser.feed(open(SIMPLE_XMLFILE, "r").read())
     start root
     start element
     end element
@@ -790,7 +793,7 @@ def custom_builder():
     ...         print "comment", repr(data)
     >>> builder = Builder()
     >>> parser = ET.XMLParser(target=builder)
-    >>> parser.feed(open("samples/simple-ns.xml", "r").read())
+    >>> parser.feed(open(SIMPLE_NS_XMLFILE, "r").read())
     pi pi 'data'
     comment ' comment '
     start {namespace}root
@@ -808,7 +811,7 @@ def getchildren():
     """
     Test Element.getchildren()
 
-    >>> tree = ET.parse(open("samples/simple.xml", "r"))
+    >>> tree = ET.parse(open(SIMPLE_XMLFILE, "r"))
     >>> for elem in tree.getroot().iter():
     ...     summarize_list(elem.getchildren())
     ['element', 'element', 'empty-element']
@@ -1286,9 +1289,9 @@ XINCLUDE["default.xml"] = """\
 <?xml version='1.0'?>
 <document xmlns:xi="http://www.w3.org/2001/XInclude">
   <p>Example.</p>
-  <xi:include href="samples/simple.xml"/>
+  <xi:include href="{}"/>
 </document>
-"""
+""".format(SIMPLE_XMLFILE)
 
 def xinclude_loader(href, parse="xml", encoding=None):
     try:
@@ -1822,8 +1825,10 @@ def test_main(module_name='xml.etree.ElementTree'):
     from test import test_xml_etree
     def ignore(message, category=DeprecationWarning):
         warnings.filterwarnings("ignore", message, category)
+
     # The same doctests are used for both the Python and the C implementations
     assert test_xml_etree.ET.__name__ == module_name
+
     with warnings.catch_warnings(), CleanContext():
         # Search behaviour is broken if search path starts with "/".
         ignore("This search is broken in 1.3 and earlier, and will be fixed "
@@ -1838,8 +1843,8 @@ def test_main(module_name='xml.etree.ElementTree'):
 
         test_support.run_doctest(test_xml_etree, verbosity=True)
 
-        # The module should not be changed by the tests
-        assert test_xml_etree.ET.__name__ == module_name
+    # The module should not be changed by the tests
+    assert test_xml_etree.ET.__name__ == module_name
 
 if __name__ == '__main__':
     test_main()
