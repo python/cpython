@@ -18,9 +18,10 @@ For other archive formats, see the :mod:`gzip`, :mod:`zipfile`, and
 Here is a summary of the features offered by the bz2 module:
 
 * :class:`BZ2File` class implements a complete file interface, including
-  :meth:`readline`, :meth:`readlines`, :meth:`writelines`, :meth:`seek`, etc;
+  :meth:`~BZ2File.readline`, :meth:`~BZ2File.readlines`,
+  :meth:`~BZ2File.writelines`, :meth:`~BZ2File.seek`, etc;
 
-* :class:`BZ2File` class implements emulated :meth:`seek` support;
+* :class:`BZ2File` class implements emulated :meth:`~BZ2File.seek` support;
 
 * :class:`BZ2File` class implements universal newline support;
 
