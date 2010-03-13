@@ -22,13 +22,18 @@ def test_main():
     test_support.run_doctest(test_xml_etree_c, verbosity=True)
 
     # Assign the C implementation before running the doctests
+    # Patch the __name__, to prevent confusion with the pure Python test
     pyET = test_xml_etree.ET
+    py__name__ = test_xml_etree.__name__
     test_xml_etree.ET = cET
+    if __name__ != '__main__':
+        test_xml_etree.__name__ = __name__
     try:
         # Run the same test suite as xml.etree.ElementTree
         test_xml_etree.test_main(module_name='xml.etree.cElementTree')
     finally:
         test_xml_etree.ET = pyET
+        test_xml_etree.__name__ = py__name__
 
 if __name__ == '__main__':
     test_main()
