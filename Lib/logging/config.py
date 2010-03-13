@@ -261,7 +261,6 @@ def _install_loggers(cp, handlers, disable_existing_loggers):
             logger.disabled = 1
 
 
-
 IDENTIFIER = re.compile('^[a-z_][a-z0-9_]*$', re.I)
 
 
@@ -448,7 +447,7 @@ class BaseConfigurator(object):
                  isinstance(value, tuple):
             value = ConvertingTuple(value)
             value.configurator = self
-        elif isinstance(value, str):
+        elif isinstance(value, str): # str for py3k
             m = self.CONVERT_PATTERN.match(value)
             if m:
                 d = m.groupdict()
@@ -474,6 +473,12 @@ class BaseConfigurator(object):
                 setattr(result, name, value)
         return result
 
+    def as_tuple(self, value):
+        """Utility function which converts lists to tuples."""
+        if isinstance(value, list):
+            value = tuple(value)
+        return value
+
 class DictConfigurator(BaseConfigurator):
     """
     Configure logging using a dictionary-like object to describe the
@@ -484,6 +489,10 @@ class DictConfigurator(BaseConfigurator):
         """Do the configuration."""
 
         config = self.config
+        if 'version' not in config:
+            raise ValueError("dictionary doesn't specify a version")
+        if config['version'] != 1:
+            raise ValueError("Unsupported version: %s" % config['version'])
         incremental = config.pop('incremental', False)
         EMPTY_DICT = {}
         logging._acquireLock()
@@ -684,6 +693,12 @@ class DictConfigurator(BaseConfigurator):
                 except Exception as e:
                     raise ValueError('Unable to set target handler '
                                      '%r: %s' % (config['target'], e))
+            elif issubclass(klass, logging.handlers.SMTPHandler) and\
+                'mailhost' in config:
+                config['mailhost'] = self.as_tuple(config['mailhost'])
+            elif issubclass(klass, logging.handlers.SysLogHandler) and\
+                'address' in config:
+                config['address'] = self.as_tuple(config['address'])
             factory = klass
         kwargs = dict([(k, config[k]) for k in config if valid_ident(k)])
         try:
@@ -788,7 +803,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
                     chunk = self.connection.recv(slen)
                     while len(chunk) < slen:
                         chunk = chunk + conn.recv(slen - len(chunk))
-                    chunk = chunk.decode('utf-8')
+                    chunk = chunk.decode("utf-8")
                     try:
                         import json
                         d =json.loads(chunk)
