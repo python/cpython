@@ -242,8 +242,7 @@ class RegressionTests(unittest.TestCase):
         Verifies that running a PRAGMA statement that does an autocommit does
         work. This did not work in 2.5.3/2.5.4.
         """
-        con = sqlite.connect(":memory:")
-        cur = con.cursor()
+        cur = self.con.cursor()
         cur.execute("create table foo(bar)")
         cur.execute("insert into foo(bar) values (5)")
 
@@ -263,11 +262,17 @@ class RegressionTests(unittest.TestCase):
             def __hash__(self):
                 raise TypeError()
         var = NotHashable()
-        con = sqlite.connect(":memory:")
-        self.assertRaises(TypeError, con.create_function, var)
-        self.assertRaises(TypeError, con.create_aggregate, var)
-        self.assertRaises(TypeError, con.set_authorizer, var)
-        self.assertRaises(TypeError, con.set_progress_handler, var)
+        self.assertRaises(TypeError, self.con.create_function, var)
+        self.assertRaises(TypeError, self.con.create_aggregate, var)
+        self.assertRaises(TypeError, self.con.set_authorizer, var)
+        self.assertRaises(TypeError, self.con.set_progress_handler, var)
+
+    def CheckConnectionCall(self):
+        """
+        Call a connection with a non-string SQL request: check error handling
+        of the statement constructor.
+        """
+        self.assertRaises(sqlite.Warning, self.con, 1)
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
