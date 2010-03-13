@@ -836,7 +836,7 @@ EXTRAPLATDIR= @EXTRAPLATDIR@
 MACHDEPS=	$(PLATDIR) $(EXTRAPLATDIR)
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 LIBSUBDIRS=	tkinter site-packages test test/output test/data \
-		test/decimaltestdata \
+		test/decimaltestdata test/xmltestdata \
 		encodings \
 		email email/mime email/test email/test/data \
 		html json json/tests http dbm xmlrpc \
