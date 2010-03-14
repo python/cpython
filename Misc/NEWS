@@ -287,6 +287,11 @@ Library
   by an extension module (_posixsubprocess) so that the fork()+exec() can be
   done safely without the possibility of deadlock in multithreaded applications.
 
+- subprocess.Popen now has restore_signals and start_new_session features.
+  The default of restore_signals=True is a new behavior compared to earlier
+  Python versions.  This means that signals such as SIGPIPE are not ignored
+  by default in subprocesses launched by Python (Issue #1652).
+
 - Issue #6472: The xml.etree package is updated to ElementTree 1.3.  The
   cElementTree module is updated too.
 
