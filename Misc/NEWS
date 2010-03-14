@@ -283,6 +283,10 @@ C-API
 Library
 -------
 
+- The internals of the subprocess module on POSIX systems have been replaced
+  by an extension module (_posixsubprocess) so that the fork()+exec() can be
+  done safely without the possibility of deadlock in multithreaded applications.
+
 - Issue #6472: The xml.etree package is updated to ElementTree 1.3.  The
   cElementTree module is updated too.
 
