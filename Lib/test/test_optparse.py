@@ -441,7 +441,7 @@ def _check_duration(option, opt, value):
             return int(value)
         else:
             return int(value[:-1]) * _time_units[value[-1]]
-    except ValueError as IndexError:
+    except (ValueError, IndexError):
         raise OptionValueError(
             'option %s: invalid duration: %r' % (opt, value))
 

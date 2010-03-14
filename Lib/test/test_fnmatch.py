@@ -50,6 +50,11 @@ class FnmatchTestCase(unittest.TestCase):
         self.assertRaises(TypeError, fnmatchcase, 'test', b'*')
         self.assertRaises(TypeError, fnmatchcase, b'test', '*')
 
+    def test_fnmatchcase(self):
+        check = self.check_match
+        check('AbC', 'abc', 0)
+        check('abc', 'AbC', 0)
+
     def test_bytes(self):
         self.check_match(b'test', b'te*')
         self.check_match(b'test\xff', b'te*\xff')

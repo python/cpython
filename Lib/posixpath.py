@@ -158,7 +158,7 @@ def islink(path):
 def lexists(path):
     """Test whether a path exists.  Returns True for broken symbolic links"""
     try:
-        st = os.lstat(path)
+        os.lstat(path)
     except os.error:
         return False
     return True

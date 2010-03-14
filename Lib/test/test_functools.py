@@ -45,9 +45,17 @@ class TestPartial(unittest.TestCase):
         # attributes should not be writable
         if not isinstance(self.thetype, type):
             return
-        self.assertRaises(TypeError, setattr, p, 'func', map)
-        self.assertRaises(TypeError, setattr, p, 'args', (1, 2))
-        self.assertRaises(TypeError, setattr, p, 'keywords', dict(a=1, b=2))
+        self.assertRaises(AttributeError, setattr, p, 'func', map)
+        self.assertRaises(AttributeError, setattr, p, 'args', (1, 2))
+        self.assertRaises(AttributeError, setattr, p, 'keywords', dict(a=1, b=2))
+
+        p = self.thetype(hex)
+        try:
+            del p.__dict__
+        except TypeError:
+            pass
+        else:
+            self.fail('partial object allowed __dict__ to be deleted')
 
     def test_argument_checking(self):
         self.assertRaises(TypeError, self.thetype)     # need at least a func arg
@@ -122,15 +130,6 @@ class TestPartial(unittest.TestCase):
         self.assertRaises(ZeroDivisionError, self.thetype(f, 1), 0)
         self.assertRaises(ZeroDivisionError, self.thetype(f), 1, 0)
         self.assertRaises(ZeroDivisionError, self.thetype(f, y=0), 1)
-
-    def test_attributes(self):
-        p = self.thetype(hex)
-        try:
-            del p.__dict__
-        except TypeError:
-            pass
-        else:
-            self.fail('partial object allowed __dict__ to be deleted')
 
     def test_weakref(self):
         f = self.thetype(int, base=16)

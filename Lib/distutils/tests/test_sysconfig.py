@@ -2,6 +2,7 @@
 import os
 import test
 import unittest
+import shutil
 
 from distutils import sysconfig
 from distutils.tests import support

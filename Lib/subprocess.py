@@ -930,7 +930,7 @@ class Popen(object):
             """Wait for child process to terminate.  Returns returncode
             attribute."""
             if self.returncode is None:
-                obj = WaitForSingleObject(self._handle, INFINITE)
+                WaitForSingleObject(self._handle, INFINITE)
                 self.returncode = GetExitCodeProcess(self._handle)
             return self.returncode
 

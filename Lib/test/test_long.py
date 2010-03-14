@@ -502,7 +502,7 @@ class LongTest(unittest.TestCase):
                     self.d = d
                     assert float(n) / float(d) == value
                 else:
-                    raise TypeError("can't deal with %r" % val)
+                    raise TypeError("can't deal with %r" % value)
 
             def _cmp__(self, other):
                 if not isinstance(other, Rat):

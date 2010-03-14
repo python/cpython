@@ -9,6 +9,7 @@ import sys
 import test
 import os
 import subprocess
+import shutil
 from copy import copy, deepcopy
 
 from test.support import run_unittest, TESTFN, unlink, get_attribute
