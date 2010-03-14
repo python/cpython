@@ -4,6 +4,7 @@ import sys
 from test import support
 import threading
 import time
+import socket
 import unittest
 
 PORT = None

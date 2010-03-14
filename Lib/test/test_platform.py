@@ -175,8 +175,10 @@ class PlatformTest(unittest.TestCase):
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
             # Cygwin horror
-            executable = executable + '.exe'
-        res = platform.libc_ver(sys.executable)
+            executable = sys.executable + '.exe'
+        else:
+            executable = sys.executable
+        res = platform.libc_ver(executable)
 
     def test_parse_release_file(self):
 

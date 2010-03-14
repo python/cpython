@@ -1063,9 +1063,9 @@ else:
                                     ssl_version=ssl.PROTOCOL_TLSv1)
                 s.connect((HOST, server.port))
             except ssl.SSLError as x:
-                raise support.TestFailed("Unexpected SSL error:  " + str(x))
+                self.fail("Unexpected SSL error:  " + str(x))
             except Exception as x:
-                raise support.TestFailed("Unexpected exception:  " + str(x))
+                self.fail("Unexpected exception:  " + str(x))
             else:
                 # helper methods for standardising recv* method signatures
                 def _recv_into():
@@ -1099,7 +1099,7 @@ else:
                         outdata = s.read()
                         outdata = str(outdata, 'ASCII', 'strict')
                         if outdata != indata.lower():
-                            raise support.TestFailed(
+                            self.fail(
                                 "While sending with <<{name:s}>> bad data "
                                 "<<{outdata:s}>> ({nout:d}) received; "
                                 "expected <<{indata:s}>> ({nin:d})\n".format(
@@ -1110,12 +1110,12 @@ else:
                             )
                     except ValueError as e:
                         if expect_success:
-                            raise support.TestFailed(
+                            self.fail(
                                 "Failed to send with method <<{name:s}>>; "
                                 "expected to succeed.\n".format(name=meth_name)
                             )
                         if not str(e).startswith(meth_name):
-                            raise support.TestFailed(
+                            self.fail(
                                 "Method <<{name:s}>> failed with unexpected "
                                 "exception message: {exp:s}\n".format(
                                     name=meth_name, exp=e
@@ -1129,7 +1129,7 @@ else:
                         outdata = recv_meth(*args)
                         outdata = str(outdata, 'ASCII', 'strict')
                         if outdata != indata.lower():
-                            raise support.TestFailed(
+                            self.fail(
                                 "While receiving with <<{name:s}>> bad data "
                                 "<<{outdata:s}>> ({nout:d}) received; "
                                 "expected <<{indata:s}>> ({nin:d})\n".format(
@@ -1140,12 +1140,12 @@ else:
                             )
                     except ValueError as e:
                         if expect_success:
-                            raise support.TestFailed(
+                            self.fail(
                                 "Failed to receive with method <<{name:s}>>; "
                                 "expected to succeed.\n".format(name=meth_name)
                             )
                         if not str(e).startswith(meth_name):
-                            raise support.TestFailed(
+                            self.fail(
                                 "Method <<{name:s}>> failed with unexpected "
                                 "exception message: {exp:s}\n".format(
                                     name=meth_name, exp=e

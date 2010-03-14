@@ -86,13 +86,6 @@ class TestTemplate(unittest.TestCase):
         s = Template('$who likes $100')
         raises(ValueError, s.substitute, dict(who='tim'))
 
-    def test_delimiter_override(self):
-        class PieDelims(Template):
-            delimiter = '@'
-        s = PieDelims('@who likes to eat a bag of @{what} worth $100')
-        self.assertEqual(s.substitute(dict(who='tim', what='ham')),
-                         'tim likes to eat a bag of ham worth $100')
-
     def test_idpattern_override(self):
         class PathPattern(Template):
             idpattern = r'[_a-z][._a-z0-9]*'
@@ -182,6 +175,12 @@ class TestTemplate(unittest.TestCase):
         s = AmpersandTemplate('this &gift is for &{who} &')
         raises(ValueError, s.substitute, dict(gift='bud', who='you'))
         eq(s.safe_substitute(), 'this &gift is for &{who} &')
+
+        class PieDelims(Template):
+            delimiter = '@'
+        s = PieDelims('@who likes to eat a bag of @{what} worth $100')
+        self.assertEqual(s.substitute(dict(who='tim', what='ham')),
+                         'tim likes to eat a bag of ham worth $100')
 
 
 def test_main():

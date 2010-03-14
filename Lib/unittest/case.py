@@ -96,7 +96,7 @@ class _AssertRaisesContext(object):
                 self.obj_name = str(callable_obj)
         else:
             self.obj_name = None
-        self.expected_regex = expected_regexp
+        self.expected_regexp = expected_regexp
 
     def __enter__(self):
         return self
@@ -118,10 +118,10 @@ class _AssertRaisesContext(object):
             return False
         # store exception, without traceback, for later retrieval
         self.exception = exc_value.with_traceback(None)
-        if self.expected_regex is None:
+        if self.expected_regexp is None:
             return True
 
-        expected_regexp = self.expected_regex
+        expected_regexp = self.expected_regexp
         if isinstance(expected_regexp, (bytes, str)):
             expected_regexp = re.compile(expected_regexp)
         if not expected_regexp.search(str(exc_value)):
@@ -865,12 +865,12 @@ class TestCase(object):
         with context:
             callable_obj(*args, **kwargs)
 
-    def assertRegexpMatches(self, text, expected_regex, msg=None):
-        if isinstance(expected_regex, (str, bytes)):
-            expected_regex = re.compile(expected_regex)
-        if not expected_regex.search(text):
+    def assertRegexpMatches(self, text, expected_regexp, msg=None):
+        if isinstance(expected_regexp, (str, bytes)):
+            expected_regexp = re.compile(expected_regexp)
+        if not expected_regexp.search(text):
             msg = msg or "Regexp didn't match"
-            msg = '%s: %r not found in %r' % (msg, expected_regex.pattern, text)
+            msg = '%s: %r not found in %r' % (msg, expected_regexp.pattern, text)
             raise self.failureException(msg)
 
 

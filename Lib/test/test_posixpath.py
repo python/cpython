@@ -2,7 +2,7 @@ import unittest
 from test import support, test_genericpath
 
 import posixpath, os
-from posixpath import realpath, abspath, join, dirname, basename, relpath
+from posixpath import realpath, abspath, dirname, basename
 
 # An absolute path to a temporary filename for testing. We can't rely on TESTFN
 # being an absolute path, so we need this.

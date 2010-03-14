@@ -4,7 +4,7 @@ import sys
 import os
 import warnings
 
-from test.support import check_warnings
+from test.support import check_warnings, run_unittest
 from test.support import captured_stdout
 
 from distutils.emxccompiler import get_versions
@@ -30,4 +30,4 @@ def test_suite():
     return unittest.makeSuite(EmxCCompilerTestCase)
 
 if __name__ == '__main__':
-    test_support.run_unittest(test_suite())
+    run_unittest(test_suite())

@@ -676,7 +676,7 @@ Test cases
       will be *msg* if given, otherwise it will be :const:`None`.
 
       .. deprecated:: 3.1
-         :meth:`failUnless`.
+         :meth:`failUnless`; use one of the ``assert`` variants.
          :meth:`assert_`; use :meth:`assertTrue`.
 
 
@@ -704,7 +704,7 @@ Test cases
          function for comparing strings.
 
       .. deprecated:: 3.1
-         :meth:`failUnlessEqual`.
+         :meth:`failUnlessEqual`; use :meth:`assertEqual`.
 
 
    .. method:: assertNotEqual(first, second, msg=None)
@@ -718,7 +718,7 @@ Test cases
       *first* and *second*.
 
       .. deprecated:: 3.1
-         :meth:`failIfEqual`.
+         :meth:`failIfEqual`; use :meth:`assertNotEqual`.
 
 
    .. method:: assertAlmostEqual(first, second, *, places=7, msg=None)
@@ -737,7 +737,7 @@ Test cases
          Objects that compare equal are automatically almost equal.
 
       .. deprecated:: 3.1
-         :meth:`failUnlessAlmostEqual`.
+         :meth:`failUnlessAlmostEqual`; use :meth:`assertAlmostEqual`.
 
 
    .. method:: assertNotAlmostEqual(first, second, *, places=7, msg=None)
@@ -756,7 +756,7 @@ Test cases
          Objects that compare equal automatically fail.
 
       .. deprecated:: 3.1
-         :meth:`failIfAlmostEqual`.
+         :meth:`failIfAlmostEqual`; use :meth:`assertNotAlmostEqual`.
 
 
    .. method:: assertGreater(first, second, msg=None)
@@ -923,7 +923,7 @@ Test cases
          Added the :attr:`exception` attribute.
 
       .. deprecated:: 3.1
-         :meth:`failUnlessRaises`.
+         :meth:`failUnlessRaises`; use :meth:`assertRaises`.
 
 
    .. method:: assertRaisesRegexp(exception, regexp[, callable, ...])
@@ -1000,7 +1000,7 @@ Test cases
       for the error message.
 
       .. deprecated:: 3.1
-         :meth:`failIf`.
+         :meth:`failIf`; use :meth:`assertFalse`.
 
 
    .. method:: fail(msg=None)
