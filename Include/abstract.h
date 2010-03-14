@@ -1232,6 +1232,9 @@ PyAPI_FUNC(int) _PyObject_RealIsInstance(PyObject *inst, PyObject *cls);
 
 PyAPI_FUNC(int) _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
 
+PyAPI_FUNC(char *const *) _PySequence_BytesToCharpArray(PyObject* self);
+
+PyAPI_FUNC(void) _Py_FreeCharPArray(char *const array[]);
 
 #ifdef __cplusplus
 }

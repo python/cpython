@@ -568,12 +568,53 @@ class POSIXProcessTestCase(unittest.TestCase):
         self.assertFalse(subprocess._active, "subprocess._active not empty")
 
     def test_exceptions(self):
-        # caught & re-raised exceptions
-        with self.assertRaises(OSError) as c:
+        nonexistent_dir = "/_this/pa.th/does/not/exist"
+        try:
+            os.chdir(nonexistent_dir)
+        except OSError as e:
+            # This avoids hard coding the errno value or the OS perror()
+            # string and instead capture the exception that we want to see
+            # below for comparison.
+            desired_exception = e
+        else:
+            self.fail("chdir to nonexistant directory %s succeeded." %
+                      nonexistent_dir)
+
+        # Error in the child re-raised in the parent.
+        try:
             p = subprocess.Popen([sys.executable, "-c", ""],
-                                 cwd="/this/path/does/not/exist")
-        # The attribute child_traceback should contain "os.chdir" somewhere.
-        self.assertIn("os.chdir", c.exception.child_traceback)
+                                 cwd=nonexistent_dir)
+        except OSError as e:
+            # Test that the child process chdir failure actually makes
+            # it up to the parent process as the correct exception.
+            self.assertEqual(desired_exception.errno, e.errno)
+            self.assertEqual(desired_exception.strerror, e.strerror)
+        else:
+            self.fail("Expected OSError: %s" % desired_exception)
+
+    def test_restore_signals(self):
+        # Code coverage for both values of restore_signals to make sure it
+        # at least does not blow up.
+        # A test for behavior would be complex.  Contributions welcome.
+        subprocess.call([sys.executable, "-c", ""], restore_signals=True)
+        subprocess.call([sys.executable, "-c", ""], restore_signals=False)
+
+    def test_start_new_session(self):
+        # For code coverage of calling setsid().  We don't care if we get an
+        # EPERM error from it depending on the test execution environment, that
+        # still indicates that it was called.
+        try:
+            output = subprocess.check_output(
+                    [sys.executable, "-c",
+                     "import os; print(os.getpgid(os.getpid()))"],
+                    start_new_session=True)
+        except OSError as e:
+            if e.errno != errno.EPERM:
+                raise
+        else:
+            parent_pgid = os.getpgid(os.getpid())
+            child_pgid = int(output)
+            self.assertNotEqual(parent_pgid, child_pgid)
 
     def test_run_abort(self):
         # returncode handles signal termination
@@ -584,13 +625,30 @@ class POSIXProcessTestCase(unittest.TestCase):
         self.assertEqual(-p.returncode, signal.SIGABRT)
 
     def test_preexec(self):
-        # preexec function
+        # DISCLAIMER: Setting environment variables is *not* a good use
+        # of a preexec_fn.  This is merely a test.
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os;'
                               'sys.stdout.write(os.getenv("FRUIT"))'],
                              stdout=subprocess.PIPE,
                              preexec_fn=lambda: os.putenv("FRUIT", "apple"))
         self.assertEqual(p.stdout.read(), b"apple")
+
+    def test_preexec_exception(self):
+        def raise_it():
+            raise ValueError("What if two swallows carried a coconut?")
+        try:
+            p = subprocess.Popen([sys.executable, "-c", ""],
+                                 preexec_fn=raise_it)
+        except RuntimeError as e:
+            self.assertTrue(
+                    subprocess._posixsubprocess,
+                    "Expected a ValueError from the preexec_fn")
+        except ValueError as e:
+            self.assertIn("coconut", e.args[0])
+        else:
+            self.fail("Exception raised by preexec_fn did not make it "
+                      "to the parent process.")
 
     def test_args_string(self):
         # args is a string
@@ -836,6 +894,20 @@ class ProcessTestCaseNoPoll(ProcessTestCase):
         ProcessTestCase.tearDown(self)
 
 
+@unittest.skipUnless(getattr(subprocess, '_posixsubprocess', False),
+                     "_posixsubprocess extension module not found.")
+class ProcessTestCasePOSIXPurePython(ProcessTestCase, POSIXProcessTestCase):
+    def setUp(self):
+        subprocess._posixsubprocess = None
+        ProcessTestCase.setUp(self)
+        POSIXProcessTestCase.setUp(self)
+
+    def tearDown(self):
+        subprocess._posixsubprocess = sys.modules['_posixsubprocess']
+        POSIXProcessTestCase.tearDown(self)
+        ProcessTestCase.tearDown(self)
+
+
 class HelperFunctionTests(unittest.TestCase):
     @unittest.skipIf(mswindows, "errno and EINTR make no sense on windows")
     def test_eintr_retry_call(self):
@@ -859,6 +931,7 @@ def test_main():
     unit_tests = (ProcessTestCase,
                   POSIXProcessTestCase,
                   Win32ProcessTestCase,
+                  ProcessTestCasePOSIXPurePython,
                   CommandTests,
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests)

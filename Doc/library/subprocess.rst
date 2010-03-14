@@ -28,7 +28,7 @@ Using the subprocess Module
 This module defines one class called :class:`Popen`:
 
 
-.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None, preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None, universal_newlines=False, startupinfo=None, creationflags=0)
+.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None, preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None, universal_newlines=False, startupinfo=None, creationflags=0, restore_signals=True, start_new_session=False)
 
    Arguments are:
 
@@ -41,7 +41,8 @@ This module defines one class called :class:`Popen`:
    name for the executing program in utilities such as :program:`ps`.
 
    On Unix, with *shell=False* (default): In this case, the Popen class uses
-   :meth:`os.execvp` to execute the child program. *args* should normally be a
+   :meth:`os.execvp` like behavior to execute the child program.
+   *args* should normally be a
    sequence.  If a string is specified for *args*, it will be used as the name
    or path of the program to execute; this will only work if the program is
    being given no arguments.
@@ -108,7 +109,23 @@ This module defines one class called :class:`Popen`:
    applications should be captured into the same file handle as for stdout.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
-   child process just before the child is executed. (Unix only)
+   child process just before the child is executed.
+   (Unix only)
+
+   .. warning::
+
+      The *preexec_fn* parameter is not safe to use in the presence of threads
+      in your application.  The child process could deadlock before exec is
+      called.
+      If you must use it, keep it trivial!  Minimize the number of libraries
+      you call into.
+
+   .. note::
+
+      If you need to modify the environment for the child use the *env*
+      parameter rather than doing it in a *preexec_fn*.
+      The *start_new_session* parameter can take the place of a previously
+      common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
    :const:`2` will be closed before the child process is executed. (Unix only).
@@ -124,9 +141,23 @@ This module defines one class called :class:`Popen`:
    searching the executable, so you can't specify the program's path relative to
    *cwd*.
 
+   If *restore_signals* is True (the default) all signals that Python has set to
+   SIG_IGN are restored to SIG_DFL in the child process before the exec.
+   Currently this includes the SIGPIPE, SIGXFZ and SIGXFSZ signals.
+   (Unix only)
+
+   .. versionchanged:: 3.2
+      *restore_signals* was added.
+
+   If *start_new_session* is True the setsid() system call will be made in the
+   child process prior to the execution of the subprocess.  (Unix only)
+
+   .. versionchanged:: 3.2
+      *start_new_session* was added.
+
    If *env* is not ``None``, it must be a mapping that defines the environment
-   variables for the new process; these are used instead of inheriting the current
-   process' environment, which is the default behavior.
+   variables for the new process; these are used instead of the default
+   behavior of inheriting the current process' environment.
 
    .. note::
 

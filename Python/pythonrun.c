@@ -2130,6 +2130,27 @@ initsigs(void)
 }
 
 
+/* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
+ *
+ * All of the code in this function must only use async-signal-safe functions,
+ * listed at `man 7 signal` or
+ * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
+ */
+void
+_Py_RestoreSignals(void)
+{
+#ifdef SIGPIPE
+	PyOS_setsig(SIGPIPE, SIG_DFL);
+#endif
+#ifdef SIGXFZ
+	PyOS_setsig(SIGXFZ, SIG_DFL);
+#endif
+#ifdef SIGXFSZ
+	PyOS_setsig(SIGXFSZ, SIG_DFL);
+#endif
+}
+
+
 /*
  * The file descriptor fd is considered ``interactive'' if either
  *   a) isatty(fd) is TRUE, or
@@ -2223,6 +2244,11 @@ PyOS_getsig(int sig)
 #endif
 }
 
+/*
+ * All of the code in this function must only use async-signal-safe functions,
+ * listed at `man 7 signal` or
+ * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
+ */
 PyOS_sighandler_t
 PyOS_setsig(int sig, PyOS_sighandler_t handler)
 {
