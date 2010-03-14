@@ -350,9 +350,10 @@ A high-level explanation of the context management protocol is:
 
 * The code in *BLOCK* is executed.
 
-* If *BLOCK* raises an exception, the :meth:`__exit__(type, value, traceback)`
-  is called with the exception details, the same values returned by
-  :func:`sys.exc_info`.  The method's return value controls whether the exception
+* If *BLOCK* raises an exception, the context manager's :meth:`__exit__` method
+  is called with three arguments, the exception details (``type, value, traceback``,
+  the same values returned by :func:`sys.exc_info`, which can also be ``None``
+  if no exception occurred).  The method's return value controls whether an exception
   is re-raised: any false value re-raises the exception, and ``True`` will result
   in suppressing it.  You'll only rarely want to suppress the exception, because
   if you do the author of the code containing the ':keyword:`with`' statement will
@@ -463,7 +464,7 @@ could be written as::
    with db_transaction(db) as cursor:
        ...
 
-The :mod:`contextlib` module also has a :func:`nested(mgr1, mgr2, ...)` function
+The :mod:`contextlib` module also has a ``nested(mgr1, mgr2, ...)`` function
 that combines a number of context managers so you don't need to write nested
 ':keyword:`with`' statements.  In this example, the single ':keyword:`with`'
 statement both starts a database transaction and acquires a thread lock::
@@ -472,8 +473,9 @@ statement both starts a database transaction and acquires a thread lock::
    with nested (db_transaction(db), lock) as (cursor, locked):
        ...
 
-Finally, the :func:`closing(object)` function returns *object* so that it can be
-bound to a variable, and calls ``object.close`` at the end of the block. ::
+Finally, the :func:`closing` function returns its argument so that it can be
+bound to a variable, and calls the argument's ``.close()`` method at the end
+of the block. ::
 
    import urllib, sys
    from contextlib import closing
