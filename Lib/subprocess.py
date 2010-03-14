@@ -681,11 +681,11 @@ class Popen(object):
                             restore_signals, start_new_session)
 
         if mswindows:
-            if p2cwrite is not None:
+            if p2cwrite != -1:
                 p2cwrite = msvcrt.open_osfhandle(p2cwrite.Detach(), 0)
-            if c2pread is not None:
+            if c2pread != -1:
                 c2pread = msvcrt.open_osfhandle(c2pread.Detach(), 0)
-            if errread is not None:
+            if errread != -1:
                 errread = msvcrt.open_osfhandle(errread.Detach(), 0)
 
         if bufsize == 0:
@@ -909,11 +909,11 @@ class Popen(object):
             # output pipe are maintained in this process or else the
             # pipe will not close when the child process exits and the
             # ReadFile will hang.
-            if p2cread is not None:
+            if p2cread != -1:
                 p2cread.Close()
-            if c2pwrite is not None:
+            if c2pwrite != -1:
                 c2pwrite.Close()
-            if errwrite is not None:
+            if errwrite != -1:
                 errwrite.Close()
 
 
