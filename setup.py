@@ -546,6 +546,9 @@ class PyBuildExt(build_ext):
         # CSV files
         exts.append( Extension('_csv', ['_csv.c']) )
 
+        # POSIX subprocess module helper.
+        exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
+
         # socket(2)
         exts.append( Extension('_socket', ['socketmodule.c'],
                                depends = ['socketmodule.h']) )

@@ -2722,3 +2722,63 @@ PyIter_Next(PyObject *iter)
 		PyErr_Clear();
 	return result;
 }
+
+
+/*
+ * Flatten a sequence of bytes() objects into a C array of
+ * NULL terminated string pointers with a NULL char* terminating the array.
+ * (ie: an argv or env list)
+ *
+ * Memory allocated for the returned list is allocated using malloc() and MUST
+ * be freed by the caller using a free() loop or _Py_FreeCharPArray().
+ */
+char *const *
+_PySequence_BytesToCharpArray(PyObject* self)
+{
+	char **array;
+	Py_ssize_t i, argc;
+
+	argc = PySequence_Size(self);
+	if (argc == -1)
+		return NULL;
+
+	array = malloc((argc + 1) * sizeof(char *));
+	if (array == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+	for (i = 0; i < argc; ++i) {
+		char *data;
+		PyObject *item = PySequence_GetItem(self, i);
+		data = PyBytes_AsString(item);
+		if (data == NULL) {
+			/* NULL terminate before freeing. */
+			array[i] = NULL;
+			goto fail;
+		}
+		array[i] = strdup(data);
+		if (!array[i]) {
+			PyErr_NoMemory();
+			goto fail;
+		}
+	}
+	array[argc] = NULL;
+
+	return array;
+
+fail:
+	_Py_FreeCharPArray(array);
+	return NULL;
+}
+
+
+/* Free's a NULL terminated char** array of C strings. */
+void
+_Py_FreeCharPArray(char *const array[])
+{
+	Py_ssize_t i;
+	for (i = 0; array[i] != NULL; ++i) {
+		free(array[i]);
+	}
+	free((void*)array);
+}

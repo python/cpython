@@ -81,6 +81,9 @@ PyAPI_FUNC(int) Py_AtExit(void (*func)(void));
 
 PyAPI_FUNC(void) Py_Exit(int);
 
+/* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL. */
+PyAPI_FUNC(void) _Py_RestoreSignals(void);
+
 PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 
 /* Bootstrap */
