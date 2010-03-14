@@ -586,8 +586,8 @@ def parsefile():
     </ns0:root>
 
     >>> parser = ET.XMLParser()
-    >>> parser.version  # XXX: Upgrade to 2.0.1?
-    'Expat 2.0.0'
+    >>> parser.version  # doctest: +ELLIPSIS
+    'Expat ...'
     >>> parser.feed(open(SIMPLE_XMLFILE).read())
     >>> print serialize(parser.close())
     <root>
