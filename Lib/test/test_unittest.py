@@ -18,9 +18,14 @@ import types
 from copy import deepcopy
 import io
 import pickle
+import warnings
+
 
 ### Support code
 ################################################################
+
+def resultFactory(*_):
+    return unittest.TestResult()
 
 class LoggingResult(unittest.TestResult):
     def __init__(self, log):
@@ -2076,6 +2081,70 @@ class Test_TestResult(TestCase):
                 'Tests getDescription() for a method with a longer '
                 'docstring.'))
 
+classDict = dict(unittest.TestResult.__dict__)
+for m in ('addSkip', 'addExpectedFailure', 'addUnexpectedSuccess',
+           '__init__'):
+    del classDict[m]
+
+def __init__(self, stream=None, descriptions=None, verbosity=None):
+    self.failures = []
+    self.errors = []
+    self.testsRun = 0
+    self.shouldStop = False
+classDict['__init__'] = __init__
+OldResult = type('OldResult', (object,), classDict)
+
+class Test_OldTestResult(unittest.TestCase):
+
+    def assertOldResultWarning(self, test, failures):
+        with warnings.catch_warnings(record=True) as log:
+            result = OldResult()
+            test.run(result)
+            self.assertEqual(len(result.failures), failures)
+            warning, = log
+            self.assertIs(warning.category, RuntimeWarning)
+
+    def testOldTestResult(self):
+        class Test(unittest.TestCase):
+            def testSkip(self):
+                self.skipTest('foobar')
+            @unittest.expectedFailure
+            def testExpectedFail(self):
+                raise TypeError
+            @unittest.expectedFailure
+            def testUnexpectedSuccess(self):
+                pass
+
+        for test_name, should_pass in (('testSkip', True),
+                                       ('testExpectedFail', True),
+                                       ('testUnexpectedSuccess', False)):
+            test = Test(test_name)
+            self.assertOldResultWarning(test, int(not should_pass))
+
+    def testOldTestTesultSetup(self):
+        class Test(unittest.TestCase):
+            def setUp(self):
+                self.skipTest('no reason')
+            def testFoo(self):
+                pass
+        self.assertOldResultWarning(Test('testFoo'), 0)
+
+    def testOldTestResultClass(self):
+        @unittest.skip('no reason')
+        class Test(unittest.TestCase):
+            def testFoo(self):
+                pass
+        self.assertOldResultWarning(Test('testFoo'), 0)
+
+    def testOldResultWithRunner(self):
+        class Test(unittest.TestCase):
+            def testFoo(self):
+                pass
+        runner = unittest.TextTestRunner(resultclass=OldResult,
+                                          stream=io.StringIO())
+        # This will raise an exception if TextTestRunner can't handle old
+        # test result objects
+        runner.run(Test('testFoo'))
 
 ### Support code for Test_TestCase
 ################################################################
@@ -2578,21 +2647,27 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         self.assertDictContainsSubset({'a': 1}, {'a': 1, 'b': 2})
         self.assertDictContainsSubset({'a': 1, 'b': 2}, {'a': 1, 'b': 2})
 
-        self.assertRaises(unittest.TestCase.failureException,
-                          self.assertDictContainsSubset, {'a': 2}, {'a': 1},
-                          '.*Mismatched values:.*')
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({1: "one"}, {})
 
-        self.assertRaises(unittest.TestCase.failureException,
-                          self.assertDictContainsSubset, {'c': 1}, {'a': 1},
-                          '.*Missing:.*')
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({'a': 2}, {'a': 1})
 
-        self.assertRaises(unittest.TestCase.failureException,
-                          self.assertDictContainsSubset, {'a': 1, 'c': 1},
-                          {'a': 1}, '.*Missing:.*')
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({'c': 1}, {'a': 1})
 
-        self.assertRaises(unittest.TestCase.failureException,
-                          self.assertDictContainsSubset, {'a': 1, 'c': 1},
-                          {'a': 1}, '.*Missing:.*Mismatched values:.*')
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
+
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
+
+        with warnings.catch_warnings(record=True):
+            # silence the UnicodeWarning
+            one = ''.join(chr(i) for i in range(255))
+            # this used to cause a UnicodeDecodeError constructing the failure msg
+            with self.assertRaises(self.failureException):
+                self.assertDictContainsSubset({'foo': one}, {'foo': '\uFFFD'})
 
     def testAssertEqual(self):
         equal_pairs = [
@@ -3028,6 +3103,43 @@ class Test_TestSkipping(TestCase):
         self.assertEqual(result.unexpectedSuccesses, [test])
         self.assertTrue(result.wasSuccessful())
 
+    def test_skip_doesnt_run_setup(self):
+        class Foo(unittest.TestCase):
+            wasSetUp = False
+            wasTornDown = False
+            def setUp(self):
+                Foo.wasSetUp = True
+            def tornDown(self):
+                Foo.wasTornDown = True
+            @unittest.skip('testing')
+            def test_1(self):
+                pass
+
+        result = unittest.TestResult()
+        test = Foo("test_1")
+        suite = unittest.TestSuite([test])
+        suite.run(result)
+        self.assertEqual(result.skipped, [(test, "testing")])
+        self.assertFalse(Foo.wasSetUp)
+        self.assertFalse(Foo.wasTornDown)
+
+    def test_decorated_skip(self):
+        def decorator(func):
+            def inner(*a):
+                return func(*a)
+            return inner
+
+        class Foo(unittest.TestCase):
+            @decorator
+            @unittest.skip('testing')
+            def test_1(self):
+                pass
+
+        result = unittest.TestResult()
+        test = Foo("test_1")
+        suite = unittest.TestSuite([test])
+        suite.run(result)
+        self.assertEqual(result.skipped, [(test, "testing")])
 
 
 class Test_Assertions(TestCase):
@@ -3130,6 +3242,16 @@ class TestLongMessage(TestCase):
 
         self.assertEquals(self.testableTrue._formatMessage(None, "foo"), "foo")
         self.assertEquals(self.testableTrue._formatMessage("foo", "bar"), "bar : foo")
+
+        # This blows up if _formatMessage uses string concatenation
+        self.testableTrue._formatMessage(object(), 'foo')
+
+    def test_formatMessage_unicode_error(self):
+        with warnings.catch_warnings(record=True):
+            # This causes a UnicodeWarning due to its craziness
+            one = ''.join(chr(i) for i in range(255))
+            # this used to cause a UnicodeDecodeError constructing msg
+            self.testableTrue._formatMessage(one, '\uFFFD')
 
     def assertMessages(self, methodName, args, errors):
         def getMethod(i):
@@ -3795,6 +3917,397 @@ class TestDiscovery(TestCase):
         self.assertEqual(program.verbosity, 2)
 
 
+class TestSetups(unittest.TestCase):
+
+    def getRunner(self):
+        return unittest.TextTestRunner(resultclass=resultFactory,
+                                          stream=io.StringIO())
+    def runTests(self, *cases):
+        suite = unittest.TestSuite()
+        for case in cases:
+            tests = unittest.defaultTestLoader.loadTestsFromTestCase(case)
+            suite.addTests(tests)
+
+        runner = self.getRunner()
+
+        # creating a nested suite exposes some potential bugs
+        realSuite = unittest.TestSuite()
+        realSuite.addTest(suite)
+        # adding empty suites to the end exposes potential bugs
+        suite.addTest(unittest.TestSuite())
+        realSuite.addTest(unittest.TestSuite())
+        return runner.run(realSuite)
+
+    def test_setup_class(self):
+        class Test(unittest.TestCase):
+            setUpCalled = 0
+            @classmethod
+            def setUpClass(cls):
+                Test.setUpCalled += 1
+                unittest.TestCase.setUpClass()
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        result = self.runTests(Test)
+
+        self.assertEqual(Test.setUpCalled, 1)
+        self.assertEqual(result.testsRun, 2)
+        self.assertEqual(len(result.errors), 0)
+
+    def test_teardown_class(self):
+        class Test(unittest.TestCase):
+            tearDownCalled = 0
+            @classmethod
+            def tearDownClass(cls):
+                Test.tearDownCalled += 1
+                unittest.TestCase.tearDownClass()
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        result = self.runTests(Test)
+
+        self.assertEqual(Test.tearDownCalled, 1)
+        self.assertEqual(result.testsRun, 2)
+        self.assertEqual(len(result.errors), 0)
+
+    def test_teardown_class_two_classes(self):
+        class Test(unittest.TestCase):
+            tearDownCalled = 0
+            @classmethod
+            def tearDownClass(cls):
+                Test.tearDownCalled += 1
+                unittest.TestCase.tearDownClass()
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        class Test2(unittest.TestCase):
+            tearDownCalled = 0
+            @classmethod
+            def tearDownClass(cls):
+                Test2.tearDownCalled += 1
+                unittest.TestCase.tearDownClass()
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        result = self.runTests(Test, Test2)
+
+        self.assertEqual(Test.tearDownCalled, 1)
+        self.assertEqual(Test2.tearDownCalled, 1)
+        self.assertEqual(result.testsRun, 4)
+        self.assertEqual(len(result.errors), 0)
+
+    def test_error_in_setupclass(self):
+        class BrokenTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                raise TypeError('foo')
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        result = self.runTests(BrokenTest)
+
+        self.assertEqual(result.testsRun, 0)
+        self.assertEqual(len(result.errors), 1)
+        error, _ = result.errors[0]
+        self.assertEqual(str(error),
+                    'classSetUp (%s.BrokenTest)' % __name__)
+
+    def test_error_in_teardown_class(self):
+        class Test(unittest.TestCase):
+            tornDown = 0
+            @classmethod
+            def tearDownClass(cls):
+                Test.tornDown += 1
+                raise TypeError('foo')
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        class Test2(unittest.TestCase):
+            tornDown = 0
+            @classmethod
+            def tearDownClass(cls):
+                Test2.tornDown += 1
+                raise TypeError('foo')
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        result = self.runTests(Test, Test2)
+        self.assertEqual(result.testsRun, 4)
+        self.assertEqual(len(result.errors), 2)
+        self.assertEqual(Test.tornDown, 1)
+        self.assertEqual(Test2.tornDown, 1)
+
+        error, _ = result.errors[0]
+        self.assertEqual(str(error),
+                    'classTearDown (%s.Test)' % __name__)
+
+    def test_class_not_torndown_when_setup_fails(self):
+        class Test(unittest.TestCase):
+            tornDown = False
+            @classmethod
+            def setUpClass(cls):
+                raise TypeError
+            @classmethod
+            def tearDownClass(cls):
+                Test.tornDown = True
+                raise TypeError('foo')
+            def test_one(self):
+                pass
+
+        self.runTests(Test)
+        self.assertFalse(Test.tornDown)
+
+    def test_class_not_setup_or_torndown_when_skipped(self):
+        class Test(unittest.TestCase):
+            classSetUp = False
+            tornDown = False
+            @classmethod
+            def setUpClass(cls):
+                Test.classSetUp = True
+            @classmethod
+            def tearDownClass(cls):
+                Test.tornDown = True
+            def test_one(self):
+                pass
+
+        Test = unittest.skip("hop")(Test)
+        self.runTests(Test)
+        self.assertFalse(Test.classSetUp)
+        self.assertFalse(Test.tornDown)
+
+    def test_setup_teardown_order_with_pathological_suite(self):
+        results = []
+
+        class Module1(object):
+            @staticmethod
+            def setUpModule():
+                results.append('Module1.setUpModule')
+            @staticmethod
+            def tearDownModule():
+                results.append('Module1.tearDownModule')
+
+        class Module2(object):
+            @staticmethod
+            def setUpModule():
+                results.append('Module2.setUpModule')
+            @staticmethod
+            def tearDownModule():
+                results.append('Module2.tearDownModule')
+
+        class Test1(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                results.append('setup 1')
+            @classmethod
+            def tearDownClass(cls):
+                results.append('teardown 1')
+            def testOne(self):
+                results.append('Test1.testOne')
+            def testTwo(self):
+                results.append('Test1.testTwo')
+
+        class Test2(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                results.append('setup 2')
+            @classmethod
+            def tearDownClass(cls):
+                results.append('teardown 2')
+            def testOne(self):
+                results.append('Test2.testOne')
+            def testTwo(self):
+                results.append('Test2.testTwo')
+
+        class Test3(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                results.append('setup 3')
+            @classmethod
+            def tearDownClass(cls):
+                results.append('teardown 3')
+            def testOne(self):
+                results.append('Test3.testOne')
+            def testTwo(self):
+                results.append('Test3.testTwo')
+
+        Test1.__module__ = Test2.__module__ = 'Module'
+        Test3.__module__ = 'Module2'
+        sys.modules['Module'] = Module1
+        sys.modules['Module2'] = Module2
+
+        first = unittest.TestSuite((Test1('testOne'),))
+        second = unittest.TestSuite((Test1('testTwo'),))
+        third = unittest.TestSuite((Test2('testOne'),))
+        fourth = unittest.TestSuite((Test2('testTwo'),))
+        fifth = unittest.TestSuite((Test3('testOne'),))
+        sixth = unittest.TestSuite((Test3('testTwo'),))
+        suite = unittest.TestSuite((first, second, third, fourth, fifth, sixth))
+
+        runner = self.getRunner()
+        result = runner.run(suite)
+        self.assertEqual(result.testsRun, 6)
+        self.assertEqual(len(result.errors), 0)
+
+        self.assertEqual(results,
+                         ['Module1.setUpModule', 'setup 1',
+                          'Test1.testOne', 'Test1.testTwo', 'teardown 1',
+                          'setup 2', 'Test2.testOne', 'Test2.testTwo',
+                          'teardown 2', 'Module1.tearDownModule',
+                          'Module2.setUpModule', 'setup 3',
+                          'Test3.testOne', 'Test3.testTwo',
+                          'teardown 3', 'Module2.tearDownModule'])
+
+    def test_setup_module(self):
+        class Module(object):
+            moduleSetup = 0
+            @staticmethod
+            def setUpModule():
+                Module.moduleSetup += 1
+
+        class Test(unittest.TestCase):
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+        Test.__module__ = 'Module'
+        sys.modules['Module'] = Module
+
+        result = self.runTests(Test)
+        self.assertEqual(Module.moduleSetup, 1)
+        self.assertEqual(result.testsRun, 2)
+        self.assertEqual(len(result.errors), 0)
+
+    def test_error_in_setup_module(self):
+        class Module(object):
+            moduleSetup = 0
+            moduleTornDown = 0
+            @staticmethod
+            def setUpModule():
+                Module.moduleSetup += 1
+                raise TypeError('foo')
+            @staticmethod
+            def tearDownModule():
+                Module.moduleTornDown += 1
+
+        class Test(unittest.TestCase):
+            classSetUp = False
+            classTornDown = False
+            @classmethod
+            def setUpClass(cls):
+                Test.classSetUp = True
+            @classmethod
+            def tearDownClass(cls):
+                Test.classTornDown = True
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        class Test2(unittest.TestCase):
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+        Test.__module__ = 'Module'
+        Test2.__module__ = 'Module'
+        sys.modules['Module'] = Module
+
+        result = self.runTests(Test, Test2)
+        self.assertEqual(Module.moduleSetup, 1)
+        self.assertEqual(Module.moduleTornDown, 0)
+        self.assertEqual(result.testsRun, 0)
+        self.assertFalse(Test.classSetUp)
+        self.assertFalse(Test.classTornDown)
+        self.assertEqual(len(result.errors), 1)
+        error, _ = result.errors[0]
+        self.assertEqual(str(error), 'setUpModule (Module)')
+
+    def test_testcase_with_missing_module(self):
+        class Test(unittest.TestCase):
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+        Test.__module__ = 'Module'
+        sys.modules.pop('Module', None)
+
+        result = self.runTests(Test)
+        self.assertEqual(result.testsRun, 2)
+
+    def test_teardown_module(self):
+        class Module(object):
+            moduleTornDown = 0
+            @staticmethod
+            def tearDownModule():
+                Module.moduleTornDown += 1
+
+        class Test(unittest.TestCase):
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+        Test.__module__ = 'Module'
+        sys.modules['Module'] = Module
+
+        result = self.runTests(Test)
+        self.assertEqual(Module.moduleTornDown, 1)
+        self.assertEqual(result.testsRun, 2)
+        self.assertEqual(len(result.errors), 0)
+
+    def test_error_in_teardown_module(self):
+        class Module(object):
+            moduleTornDown = 0
+            @staticmethod
+            def tearDownModule():
+                Module.moduleTornDown += 1
+                raise TypeError('foo')
+
+        class Test(unittest.TestCase):
+            classSetUp = False
+            classTornDown = False
+            @classmethod
+            def setUpClass(cls):
+                Test.classSetUp = True
+            @classmethod
+            def tearDownClass(cls):
+                Test.classTornDown = True
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        class Test2(unittest.TestCase):
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+        Test.__module__ = 'Module'
+        Test2.__module__ = 'Module'
+        sys.modules['Module'] = Module
+
+        result = self.runTests(Test, Test2)
+        self.assertEqual(Module.moduleTornDown, 1)
+        self.assertEqual(result.testsRun, 4)
+        self.assertTrue(Test.classSetUp)
+        self.assertTrue(Test.classTornDown)
+        self.assertEqual(len(result.errors), 1)
+        error, _ = result.errors[0]
+        self.assertEqual(str(error), 'tearDownModule (Module)')
+
 ######################################################################
 ## Main
 ######################################################################
@@ -3803,7 +4316,8 @@ def test_main():
     support.run_unittest(Test_TestCase, Test_TestLoader,
         Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
         Test_TestSkipping, Test_Assertions, TestLongMessage,
-        Test_TestProgram, TestCleanUp, TestDiscovery, Test_TextTestRunner)
+        Test_TestProgram, TestCleanUp, TestDiscovery, Test_TextTestRunner,
+        Test_OldTestResult, TestSetups)
 
 if __name__ == "__main__":
     test_main()
