@@ -3,7 +3,6 @@ import tempfile
 import os
 import sys
 import re
-import errno
 import warnings
 
 import unittest

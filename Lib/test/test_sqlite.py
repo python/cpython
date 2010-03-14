@@ -1,4 +1,3 @@
-import unittest
 from test.support import run_unittest, import_module
 
 # Skip test if _sqlite3 module not installed

@@ -624,7 +624,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
     def test_module_subclasses(self):
         # Testing Python subclass of module...
         log = []
-        import types, sys
         MT = type(sys)
         class MM(MT):
             def __init__(self, name):
@@ -1006,7 +1005,6 @@ order (MRO) for bases """
         # Test cyclical leaks [SF bug 519621]
         class F(object):
             __slots__ = ['a', 'b']
-        log = []
         s = F()
         s.a = [Counted(), s]
         self.assertEqual(Counted.counter, 1)
@@ -1015,7 +1013,7 @@ order (MRO) for bases """
         self.assertEqual(Counted.counter, 0)
 
         # Test lookup leaks [SF bug 572567]
-        import sys,gc
+        import gc
         if hasattr(gc, 'get_objects'):
             class G(object):
                 def __eq__(self, other):
@@ -2038,7 +2036,6 @@ order (MRO) for bases """
         ## self.assertIn('__self__', dir(a.Amethod))
 
         # Try a module subclass.
-        import sys
         class M(type(sys)):
             pass
         minstance = M("m")
@@ -3206,7 +3203,6 @@ order (MRO) for bases """
             self.fail("d.foo should be undefined now")
 
         # Test a nasty bug in recurse_down_subclasses()
-        import gc
         class A(object):
             pass
         class B(A):
@@ -3996,7 +3992,6 @@ order (MRO) for bases """
 
     def test_file_fault(self):
         # Testing sys.stdout is changed in getattr...
-        import sys
         test_stdout = sys.stdout
         class StdoutGuard:
             def __getattr__(self, attr):
@@ -4087,8 +4082,6 @@ order (MRO) for bases """
     def test_not_implemented(self):
         # Testing NotImplemented...
         # all binary methods should be able to return a NotImplemented
-        import sys
-        import types
         import operator
 
         def specialmethod(self, other):

@@ -6,7 +6,6 @@ from test.test_urllib2 import sanepathname2url
 
 import os
 import socket
-import sys
 import urllib.error
 import urllib.request
 
@@ -75,8 +74,6 @@ class AuthTests(unittest.TestCase):
 class CloseSocketTest(unittest.TestCase):
 
     def test_close(self):
-        import socket, http.client, gc
-
         # calling .close() on urllib2's response objects should close the
         # underlying socket
 
@@ -150,7 +147,6 @@ class OtherNetworkTests(unittest.TestCase):
 ##             self._test_urls(urls, self._extra_handlers()+[bauth, dauth])
 
     def _test_urls(self, urls, handlers, retry=True):
-        import socket
         import time
         import logging
         debug = logging.getLogger("test_urllib2").debug

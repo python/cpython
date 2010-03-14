@@ -402,8 +402,6 @@ class LongTest(unittest.TestCase):
             self.assertEqual(int(float(x)), y)
 
     def test_float_overflow(self):
-        import math
-
         for x in -2.0, -1.0, 0.0, 1.0, 2.0:
             self.assertEqual(float(int(x)), x)
 
@@ -435,8 +433,6 @@ class LongTest(unittest.TestCase):
             "float(shuge) should not equal int(shuge)")
 
     def test_logs(self):
-        import math
-
         LOG10E = math.log10(math.e)
 
         for exp in list(range(10)) + [100, 1000, 10000]:
@@ -456,7 +452,6 @@ class LongTest(unittest.TestCase):
 
     def test_mixed_compares(self):
         eq = self.assertEqual
-        import math
 
         # We're mostly concerned with that mixing floats and longs does the
         # right stuff, even when longs are too large to fit in a float.

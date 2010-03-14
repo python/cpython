@@ -2,7 +2,6 @@
 # All tests are executed with environment variables ignored
 # See test_cmd_line_script.py for testing of script execution
 
-import os
 import test.support, unittest
 import os
 import sys

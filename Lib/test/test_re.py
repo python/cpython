@@ -1,7 +1,7 @@
 from test.support import verbose, run_unittest
 import re
 from re import Scanner
-import sys, os, traceback
+import sys, traceback
 from weakref import proxy
 
 # Misc tests from Tim Peters' re.doc
@@ -748,7 +748,7 @@ class ReTests(unittest.TestCase):
         self.assertRaises(TypeError, _sre.compile, {}, 0, [])
 
 def run_re_tests():
-    from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
+    from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:
         print('Running re_tests test suite')
     else:

@@ -5,13 +5,10 @@ import unittest
 from test import support
 import socket
 import select
-import errno
-import subprocess
 import time
 import os
 import pprint
 import urllib.parse, urllib.request
-import shutil
 import traceback
 import asyncore
 

@@ -7,7 +7,6 @@ from collections import namedtuple, Counter, OrderedDict
 from test import mapping_tests
 import pickle, copy
 from random import randrange, shuffle
-import operator
 import keyword
 import re
 import sys

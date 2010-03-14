@@ -7,10 +7,7 @@ threading = support.import_module('threading')
 from contextlib import contextmanager
 import imaplib
 import os.path
-import select
-import socket
 import socketserver
-import sys
 import time
 
 from test.support import reap_threads, verbose

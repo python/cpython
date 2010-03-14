@@ -21,12 +21,10 @@
 """
 Tests for epoll wrapper.
 """
-import os
 import socket
 import errno
 import time
 import select
-import tempfile
 import unittest
 
 from test import support

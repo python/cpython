@@ -146,7 +146,6 @@ option '-uall,-gui'.
 """
 
 import getopt
-import itertools
 import json
 import os
 import random
@@ -509,8 +508,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     if use_mp:
         from threading import Thread
-        from queue import Queue, Empty
-        from subprocess import Popen, PIPE, STDOUT
+        from queue import Queue
+        from subprocess import Popen, PIPE
         from collections import deque
         debug_output_pat = re.compile(r"\[\d+ refs\]$")
         pending = deque()

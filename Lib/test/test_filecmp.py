@@ -1,5 +1,5 @@
 
-import os, filecmp, shutil, tempfile, shutil
+import os, filecmp, shutil, tempfile
 import unittest
 from test import support
 

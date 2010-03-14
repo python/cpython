@@ -7,7 +7,6 @@ import copy
 import pickle
 from io import StringIO
 import random
-import os
 
 BIG = 100000
 

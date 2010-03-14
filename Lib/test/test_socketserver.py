@@ -3,7 +3,6 @@ Test suite for socketserver.
 """
 
 import contextlib
-import errno
 import imp
 import os
 import select
@@ -11,13 +10,11 @@ import signal
 import socket
 import tempfile
 import threading
-import time
 import unittest
 import socketserver
 
 import test.support
 from test.support import reap_children, reap_threads, verbose
-from test.support import TESTFN as TEST_FILE
 
 test.support.requires("network")
 

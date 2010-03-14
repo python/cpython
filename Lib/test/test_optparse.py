@@ -16,9 +16,9 @@ from io import StringIO
 from test import support
 
 
-from optparse import make_option, Option, IndentedHelpFormatter, \
-     TitledHelpFormatter, OptionParser, OptionContainer, OptionGroup, \
-     SUPPRESS_HELP, SUPPRESS_USAGE, OptionError, OptionConflictError, \
+from optparse import make_option, Option, \
+     TitledHelpFormatter, OptionParser, OptionGroup, \
+     SUPPRESS_USAGE, OptionError, OptionConflictError, \
      BadOptionError, OptionValueError, Values
 from optparse import _match_abbrev
 from optparse import _parse_num
@@ -1224,7 +1224,6 @@ class TestCallbackVarArgs(BaseTest):
 
     def variable_args(self, option, opt, value, parser):
         self.assertTrue(value is None)
-        done = 0
         value = []
         rargs = parser.rargs
         while rargs:

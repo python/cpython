@@ -5,7 +5,6 @@ import weakref
 import operator
 import copy
 import pickle
-import os
 from random import randrange, shuffle
 import sys
 import warnings

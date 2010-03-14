@@ -1,4 +1,4 @@
-from test.support import verbose, run_unittest
+from test.support import run_unittest
 from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, localeconv, Error)
 try:
     from _locale import (RADIXCHAR, THOUSEP, nl_langinfo)

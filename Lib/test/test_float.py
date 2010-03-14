@@ -546,7 +546,6 @@ class IEEEFormatTestCase(unittest.TestCase):
 
     if float.__getformat__("double").startswith("IEEE"):
         def test_negative_zero(self):
-            import math
             def pos_pos():
                 return 0.0, math.atan2(0.0, -1)
             def pos_neg():

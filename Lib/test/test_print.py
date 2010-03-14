@@ -8,7 +8,6 @@ from __future__ import print_function
 import unittest
 from test import support
 
-import sys
 try:
     # 3.x
     from io import StringIO

@@ -1,12 +1,12 @@
 # Python test set -- built-in functions
 
 import platform
-import test.support, unittest
-from test.support import fcmp, TESTFN, unlink,  run_unittest, \
-                              run_with_locale
+import unittest
+from test.support import fcmp, TESTFN, unlink,  run_unittest
 from operator import neg
 
-import sys, warnings, random, collections, io, fractions
+import sys, warnings, random, collections, io
+
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
                         FutureWarning, __name__)
 warnings.filterwarnings("ignore", "integer argument expected",
