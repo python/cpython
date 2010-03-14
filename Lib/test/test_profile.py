@@ -1,6 +1,5 @@
 """Test suite for the profile module."""
 
-import os
 import sys
 import pstats
 import unittest

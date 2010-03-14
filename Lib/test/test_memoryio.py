@@ -8,7 +8,6 @@ from test import support
 
 import io
 import _pyio as pyio
-import sys
 import pickle
 
 class MemorySeekTestMixin:

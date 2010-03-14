@@ -1,7 +1,6 @@
 from test.support import run_unittest
 from test.test_math import parse_testfile, test_file
 import unittest
-import os, sys
 import cmath, math
 from cmath import phase, polar, rect, pi
 

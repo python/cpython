@@ -18,7 +18,6 @@ class TypesTests(unittest.TestCase):
         if not {'x': 1}: self.fail('{\'x\': 1} is false instead of true')
         def f(): pass
         class C: pass
-        import sys
         x = C()
         if not f: self.fail('f is false instead of true')
         if not C: self.fail('C is false instead of true')

@@ -2,7 +2,6 @@ import sys
 import os
 import io
 import shutil
-import tempfile
 import io
 from hashlib import md5
 import errno

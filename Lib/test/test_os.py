@@ -154,7 +154,6 @@ class TemporaryFileTests(unittest.TestCase):
         self.assertTrue(s == "foobar")
 
     def test_tmpnam(self):
-        import sys
         if not hasattr(os, "tmpnam"):
             return
         warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning,
@@ -214,8 +213,6 @@ class StatAttributeTests(unittest.TestCase):
         # Make sure direct access works
         self.assertEquals(result[stat.ST_SIZE], 3)
         self.assertEquals(result.st_size, 3)
-
-        import sys
 
         # Make sure all the attributes are there
         members = dir(result)

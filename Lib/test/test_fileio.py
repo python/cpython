@@ -8,9 +8,7 @@ from array import array
 from weakref import proxy
 from functools import wraps
 
-from test.support import (TESTFN, findfile, check_warnings, run_unittest,
-                          make_bad_fd)
-from collections import UserList
+from test.support import TESTFN, check_warnings, run_unittest, make_bad_fd
 
 from _io import FileIO as _FileIO
 

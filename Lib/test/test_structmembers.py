@@ -6,7 +6,7 @@ from _testcapi import test_structmembersType, \
     LLONG_MAX, LLONG_MIN, ULLONG_MAX, \
     PY_SSIZE_T_MAX, PY_SSIZE_T_MIN
 
-import warnings, unittest, sys
+import unittest
 from test import support
 
 ts=test_structmembersType(False,  # T_BOOL

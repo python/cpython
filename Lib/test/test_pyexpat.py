@@ -5,7 +5,6 @@ from io import BytesIO
 import sys
 import unittest
 
-import pyexpat
 from xml.parsers import expat
 
 from test.support import sortdict, run_unittest

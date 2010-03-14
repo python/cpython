@@ -24,7 +24,6 @@ you're working through IDLE, you can import this test module and call test_main(
 with the corresponding argument.
 """
 
-import glob
 import math
 import os, sys
 import pickle, copy

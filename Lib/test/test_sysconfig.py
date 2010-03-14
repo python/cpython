@@ -6,7 +6,6 @@ executing have not been removed.
 """
 import unittest
 import sys
-import test
 import os
 import subprocess
 import shutil

@@ -1,9 +1,7 @@
 """Unit tests for contextlib.py, and other context managers."""
 
 
-import sys
 import os
-import decimal
 import sys
 import tempfile
 import unittest
