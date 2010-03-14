@@ -617,7 +617,7 @@ def parsefile():
     """
 
 def parseliteral():
-    r"""
+    """
     >>> element = ET.XML("<html><body>text</body></html>")
     >>> ET.ElementTree(element).write(sys.stdout)
     <html><body>text</body></html>
@@ -631,7 +631,7 @@ def parseliteral():
     >>> print "".join(ET.tostringlist(element))
     <html><body>text</body></html>
     >>> ET.tostring(element, "ascii")
-    "<?xml version='1.0' encoding='ascii'?>\n<html><body>text</body></html>"
+    "<?xml version='1.0' encoding='ascii'?>\\n<html><body>text</body></html>"
     >>> _, ids = ET.XMLID("<html><body>text</body></html>")
     >>> len(ids)
     0

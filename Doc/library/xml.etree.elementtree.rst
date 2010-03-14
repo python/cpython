@@ -72,8 +72,8 @@ Functions
 
 .. function:: fromstring(text)
 
-   Parses an XML section from a string constant.  Same as XML.  *text* is a
-   string containing XML data.  Returns an :class:`Element` instance.
+   Parses an XML section from a string constant.  Same as :func:`XML`.  *text*
+   is a string containing XML data.  Returns an :class:`Element` instance.
 
 
 .. function:: fromstringlist(sequence, parser=None)
@@ -139,7 +139,7 @@ Functions
    .. versionadded:: 2.7
 
 
-.. function:: SubElement(parent, tag, attrib={},  **extra)
+.. function:: SubElement(parent, tag, attrib={}, **extra)
 
    Subelement factory.  This function creates an element instance, and appends
    it to an existing element.
@@ -151,22 +151,24 @@ Functions
    arguments.  Returns an element instance.
 
 
-.. function:: tostring(element, encoding=None, method=None)
+.. function:: tostring(element, encoding="us-ascii", method="xml")
 
    Generates a string representation of an XML element, including all
-   subelements.  *element* is an :class:`Element` instance.  *encoding* is the
-   output encoding (default is US-ASCII).  *method* is either ``"xml"``,
+   subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
+   the output encoding (default is US-ASCII).  *method* is either ``"xml"``,
    ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns an encoded string
    containing the XML data.
 
 
-.. function:: tostringlist(element, encoding=None, method=None)
+.. function:: tostringlist(element, encoding="us-ascii", method="xml")
 
    Generates a string representation of an XML element, including all
-   subelements.  *element* is an :class:`Element` instance.  *encoding* is the
-   output encoding (default is US-ASCII).   *method* is either ``"xml"``,
-   ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns a sequence object
-   containing the XML data.
+   subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
+   the output encoding (default is US-ASCII).   *method* is either ``"xml"``,
+   ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns a list of encoded
+   strings containing the XML data.  It does not guarantee any specific
+   sequence, except that ``"".join(tostringlist(element)) ==
+   tostring(element)``.
 
    .. versionadded:: 2.7
 
@@ -459,7 +461,7 @@ ElementTree Objects
       root element.
 
 
-   .. method:: write(file, encoding=None, xml_declaration=None, method=None)
+   .. method:: write(file, encoding="us-ascii", xml_declaration=None, method="xml")
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       file object opened for writing.  *encoding* [1]_ is the output encoding
