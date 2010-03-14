@@ -30,8 +30,8 @@ is maintained at ActiveState.)
 Tkinter Modules
 ---------------
 
-Most of the time, the :mod:`tkinter` is all you really need, but a number
-of additional modules are available as well.  The Tk interface is located in a
+Most of the time, :mod:`tkinter` is all you really need, but a number of
+additional modules are available as well.  The Tk interface is located in a
 binary module named :mod:`_tkinter`. This module contains the low-level
 interface to Tk, and should never be used directly by application programmers.
 It is usually a shared library (or DLL), but might in some cases be statically
@@ -112,13 +112,13 @@ orientation on the system.
 
 Credits:
 
-* Tkinter was written by Steen Lumholt and Guido van Rossum.
-
 * Tk was written by John Ousterhout while at Berkeley.
+
+* Tkinter was written by Steen Lumholt and Guido van Rossum.
 
 * This Life Preserver was written by Matt Conway at the University of Virginia.
 
-* The html rendering, and some liberal editing, was produced from a FrameMaker
+* The HTML rendering, and some liberal editing, was produced from a FrameMaker
   version by Ken Manheimer.
 
 * Fredrik Lundh elaborated and revised the class interface descriptions, to get
@@ -143,10 +143,10 @@ order to use Tkinter, you will have to know a little bit about Tk. This document
 can't fulfill that role, so the best we can do is point you to the best
 documentation that exists. Here are some hints:
 
-* The authors strongly suggest getting a copy of the Tk man pages. Specifically,
-  the man pages in the ``mann`` directory are most useful. The ``man3`` man pages
-  describe the C interface to the Tk library and thus are not especially helpful
-  for script writers.
+* The authors strongly suggest getting a copy of the Tk man pages.
+  Specifically, the man pages in the ``manN`` directory are most useful.
+  The ``man3`` man pages describe the C interface to the Tk library and thus
+  are not especially helpful for script writers.
 
 * Addison-Wesley publishes a book called Tcl and the Tk Toolkit by John
   Ousterhout (ISBN 0-201-63337-X) which is a good introduction to Tcl and Tk for
@@ -158,6 +158,9 @@ documentation that exists. Here are some hints:
 
 
 .. seealso::
+
+   `Tcl/Tk 8.6 man pages <http://www.tcl.tk/man/tcl8.6/>`_
+      The Tcl/Tk manual on www.tcl.tk.
 
    `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
       The Tk/Tcl development is largely taking place at ActiveState.
@@ -183,8 +186,8 @@ A Simple Hello World Program
        def createWidgets(self):
            self.QUIT = Button(self)
            self.QUIT["text"] = "QUIT"
-           self.QUIT["fg"]   = "red"
-           self.QUIT["command"] =  self.quit
+           self.QUIT["fg"] = "red"
+           self.QUIT["command"] = self.quit
 
            self.QUIT.pack({"side": "left"})
 
@@ -257,7 +260,7 @@ To make a widget in Tk, the command is always of the form::
 For example::
 
    button   .fred   -fg red -text "hi there"
-      ^       ^     \_____________________/
+      ^       ^     \______________________/
       |       |                |
     class    new            options
    command  widget  (-opt val -opt val ...)
@@ -301,15 +304,15 @@ constructor, and keyword-args for configure calls or as instance indices, in
 dictionary style, for established instances.  See section
 :ref:`tkinter-setting-options` on setting options. ::
 
-   button .fred -fg red        =====>  fred = Button(panel, fg = "red")
+   button .fred -fg red        =====>  fred = Button(panel, fg="red")
    .fred configure -fg red     =====>  fred["fg"] = red
-                               OR ==>  fred.config(fg = "red")
+                               OR ==>  fred.config(fg="red")
 
 In Tk, to perform an action on a widget, use the widget name as a command, and
 follow it with an action name, possibly with arguments (options).  In Tkinter,
 you call methods on the class instance to invoke actions on the widget.  The
-actions (methods) that a given widget can perform are listed in the Tkinter.py
-module. ::
+actions (methods) that a given widget can perform are listed in
+:file:`tkinter/__init__.py`. ::
 
    .fred invoke                =====>  fred.invoke()
 
@@ -320,7 +323,7 @@ various forms of the pack command are implemented as methods.  All widgets in
 methods. See the :mod:`tkinter.tix` module documentation for additional
 information on the Form geometry manager. ::
 
-   pack .fred -side left       =====>  fred.pack(side = "left")
+   pack .fred -side left       =====>  fred.pack(side="left")
 
 
 How Tk and Tkinter are Related
@@ -332,14 +335,15 @@ Your App Here (Python)
    A Python application makes a :mod:`tkinter` call.
 
 tkinter (Python Package)
-   This call (say, for example, creating a button widget), is implemented in the
-   *tkinter* package, which is written in Python.  This Python function will parse
-   the commands and the arguments and convert them into a form that makes them look
-   as if they had come from a Tk script instead of a Python script.
+   This call (say, for example, creating a button widget), is implemented in
+   the :mod:`tkinter` package, which is written in Python.  This Python
+   function will parse the commands and the arguments and convert them into a
+   form that makes them look as if they had come from a Tk script instead of
+   a Python script.
 
-tkinter (C)
+_tkinter (C)
    These commands and their arguments will be passed to a C function in the
-   *tkinter* - note the lowercase - extension module.
+   :mod:`_tkinter` - note the underscore - extension module.
 
 Tk Widgets (C and Tcl)
    This C function is able to make calls into other C modules, including the C
@@ -370,7 +374,7 @@ be set in three ways:
 At object creation time, using keyword arguments
    ::
 
-      fred = Button(self, fg = "red", bg = "blue")
+      fred = Button(self, fg="red", bg="blue")
 
 After object creation, treating the option name like a dictionary index
    ::
@@ -381,7 +385,7 @@ After object creation, treating the option name like a dictionary index
 Use the config() method to update multiple attrs subsequent to object creation
    ::
 
-      fred.config(fg = "red", bg = "blue")
+      fred.config(fg="red", bg="blue")
 
 For a complete explanation of a given option and its behavior, see the Tk man
 pages for the widget in question.
@@ -464,8 +468,8 @@ where the widget is to appear within its container, and how it is to behave when
 the main application window is resized.  Here are some examples::
 
    fred.pack()                     # defaults to side = "top"
-   fred.pack(side = "left")
-   fred.pack(expand = 1)
+   fred.pack(side="left")
+   fred.pack(expand=1)
 
 
 Packer Options
@@ -506,7 +510,7 @@ Unfortunately, in the current implementation of :mod:`tkinter` it is not
 possible to hand over an arbitrary Python variable to a widget through a
 ``variable`` or ``textvariable`` option.  The only kinds of variables for which
 this works are variables that are subclassed from a class called Variable,
-defined in the :mod:`tkinter`.
+defined in :mod:`tkinter`.
 
 There are many useful subclasses of Variable already defined:
 :class:`StringVar`, :class:`IntVar`, :class:`DoubleVar`, and
@@ -606,7 +610,7 @@ callback
    This is any Python function that takes no arguments.  For example::
 
       def print_it():
-              print("hi there")
+          print("hi there")
       fred["command"] = print_it
 
 color
@@ -702,24 +706,32 @@ Notice how the widget field of the event is being accessed in the
 :meth:`turnRed` callback.  This field contains the widget that caught the X
 event.  The following table lists the other event fields you can access, and how
 they are denoted in Tk, which can be useful when referring to the Tk man pages.
-::
 
-   Tk      Tkinter Event Field             Tk      Tkinter Event Field
-   --      -------------------             --      -------------------
-   %f      focus                           %A      char
-   %h      height                          %E      send_event
-   %k      keycode                         %K      keysym
-   %s      state                           %N      keysym_num
-   %t      time                            %T      type
-   %w      width                           %W      widget
-   %x      x                               %X      x_root
-   %y      y                               %Y      y_root
++----+---------------------+----+---------------------+
+| Tk | Tkinter Event Field | Tk | Tkinter Event Field |
++====+=====================+====+=====================+
+| %f | focus               | %A | char                |
++----+---------------------+----+---------------------+
+| %h | height              | %E | send_event          |
++----+---------------------+----+---------------------+
+| %k | keycode             | %K | keysym              |
++----+---------------------+----+---------------------+
+| %s | state               | %N | keysym_num          |
++----+---------------------+----+---------------------+
+| %t | time                | %T | type                |
++----+---------------------+----+---------------------+
+| %w | width               | %W | widget              |
++----+---------------------+----+---------------------+
+| %x | x                   | %X | x_root              |
++----+---------------------+----+---------------------+
+| %y | y                   | %Y | y_root              |
++----+---------------------+----+---------------------+
 
 
 The index Parameter
 ^^^^^^^^^^^^^^^^^^^
 
-A number of widgets require"index" parameters to be passed.  These are used to
+A number of widgets require "index" parameters to be passed.  These are used to
 point at a specific place in a Text widget, or to particular characters in an
 Entry widget, or to particular menu items in a Menu widget.
 
@@ -755,7 +767,7 @@ Menu indexes (menu.invoke(), menu.entryconfig(), etc.)
    * an integer which refers to the numeric position of the entry in the widget,
      counted from the top, starting with 0;
 
-   * the string ``'active'``, which refers to the menu position that is currently
+   * the string ``"active"``, which refers to the menu position that is currently
      under the cursor;
 
    * the string ``"last"`` which refers to the last menu item;

@@ -35,13 +35,13 @@ programmer to use all the commands, classes and methods interactively when using
 the module from within IDLE run with the ``-n`` switch.
 
 The turtle module provides turtle graphics primitives, in both object-oriented
-and procedure-oriented ways.  Because it uses :mod:`Tkinter` for the underlying
+and procedure-oriented ways.  Because it uses :mod:`tkinter` for the underlying
 graphics, it needs a version of Python installed with Tk support.
 
 The object-oriented interface uses essentially two+two classes:
 
 1. The :class:`TurtleScreen` class defines graphics windows as a playground for
-   the drawing turtles.  Its constructor needs a :class:`Tkinter.Canvas` or a
+   the drawing turtles.  Its constructor needs a :class:`tkinter.Canvas` or a
    :class:`ScrolledCanvas` as argument.  It should be used when :mod:`turtle` is
    used as part of some application.
 
@@ -1998,7 +1998,7 @@ The public classes of the module :mod:`turtle`
 .. class:: RawTurtle(canvas)
            RawPen(canvas)
 
-   :param canvas: a :class:`Tkinter.Canvas`, a :class:`ScrolledCanvas` or a
+   :param canvas: a :class:`tkinter.Canvas`, a :class:`ScrolledCanvas` or a
                   :class:`TurtleScreen`
 
    Create a turtle.  The turtle has all methods described above as "methods of
@@ -2013,7 +2013,7 @@ The public classes of the module :mod:`turtle`
 
 .. class:: TurtleScreen(cv)
 
-   :param cv: a :class:`Tkinter.Canvas`
+   :param cv: a :class:`tkinter.Canvas`
 
    Provides screen oriented methods like :func:`setbg` etc. that are described
    above.

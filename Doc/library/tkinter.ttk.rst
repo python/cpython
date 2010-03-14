@@ -116,12 +116,13 @@ All the :mod:`ttk` Widgets accepts the following options:
    |           | for the parent widget.                                       |
    +-----------+--------------------------------------------------------------+
    | takefocus | Determines whether the window accepts the focus during       |
-   |           | keyboard traversal. 0, 1 or an empty is return. If 0 is      |
-   |           | returned, it means that the window should be skipped entirely|
-   |           | during keyboard traversal. If 1, it means that the window    |
-   |           | should receive the input focus as long as it is viewable. And|
-   |           | an empty string means that the traversal scripts make the    |
-   |           | decision about whether or not to focus on the window.        |
+   |           | keyboard traversal. 0, 1 or an empty string is returned.     |
+   |           | If 0 is returned, it means that the window should be skipped |
+   |           | entirely during keyboard traversal. If 1, it means that the  |
+   |           | window should receive the input focus as long as it is       |
+   |           | viewable. And an empty string means that the traversal       |
+   |           | scripts make the decision about whether or not to focus      |
+   |           | on the window.                                               |
    +-----------+--------------------------------------------------------------+
    | style     | May be used to specify a custom widget style.                |
    +-----------+--------------------------------------------------------------+
