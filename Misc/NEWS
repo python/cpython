@@ -13,53 +13,52 @@ Core and Builtins
 -----------------
 
 - Issue #3137: Don't ignore errors at startup, especially a keyboard interrupt
-  (SIGINT). If an error occurs while importing the site module, the error is
-  printed and Python exits. Initialize the GIL before importing the site
+  (SIGINT).  If an error occurs while importing the site module, the error is
+  printed and Python exits.  Initialize the GIL before importing the site
   module.
 
 Library
 -------
 
-- Issue #7774: Set sys.executable to an empty string if argv[0] has been
+- Issue #7774: Set sys.executable to an empty string if ``argv[0]`` has been
   set to an non existent program name and Python is unable to retrieve the real
-  program name
+  program name.
 
 - Issue #8117: logging: Improved algorithm for computing initial rollover time
-  for TimedRotatingFileHandler by using the modification time of an existing
-  log file to compute the next rollover time. If the log file does not exist,
-  the current time is used as the basis for the computation.
+  for ``TimedRotatingFileHandler`` by using the modification time of an
+  existing log file to compute the next rollover time.  If the log file does
+  not exist, the current time is used as the basis for the computation.
 
-- Issue #6472: The xml.etree package is updated to ElementTree 1.3.  The
+- Issue #6472: The ``xml.etree`` package is updated to ElementTree 1.3.  The
   cElementTree module is updated too.
 
 - Issue #7880: Fix sysconfig when the python executable is a symbolic link.
 
-- Issue #7624: Fix isinstance(foo(), collections.Callable) for old-style
+- Issue #7624: Fix ``isinstance(foo(), collections.Callable)`` for old-style
   classes.
 
-- Issue #7143: get_payload used to strip any trailing newline from a
-  base64 transfer-encoded payload *after* decoding it; it no longer does.
-  This is a behavior change, so email's minor version number is now
-  bumped, to version 4.0.2, for the 2.7 release.
+- Issue #7143: email: ``get_payload()`` used to strip any trailing newline from
+  a base64 transfer-encoded payload *after* decoding it; it no longer does.
+  This is a behavior change, so email's minor version number is now bumped, to
+  version 4.0.2, for the 2.7 release.
 
 Extension Modules
 -----------------
 
-- Issue #1530559: When passing a non-integer argument to struct.pack
-  with *any* integer format code (one of 'bBhHiIlLqQ'), struct.pack
-  attempts to use the argument's __int__ method to convert to an
-  integer before packing.  It also produces a DeprecationWarning in
-  this case.  (In Python 2.6, the behaviour was inconsistent: __int__
-  was used for some integer codes but not for others, and the set of
-  integer codes for which it was used differed between native packing
-  and standard packing.)
+- Issue #1530559: When passing a non-integer argument to struct.pack with *any*
+  integer format code (one of 'bBhHiIlLqQ'), struct.pack attempts to use the
+  argument's __int__ method to convert to an integer before packing.  It also
+  produces a DeprecationWarning in this case.  (In Python 2.6, the behaviour
+  was inconsistent: __int__ was used for some integer codes but not for others,
+  and the set of integer codes for which it was used differed between native
+  packing and standard packing.)
 
 Tools/Demos
 -----------
 
-- Issue #7993: Add a test of IO packet processing bandwidth to ccbench.
-  It measures the number of UDP packets processed per second depending on
-  the number of background CPU-bound Python threads.
+- Issue #7993: Add a test of IO packet processing bandwidth to ccbench.  It
+  measures the number of UDP packets processed per second depending on the
+  number of background CPU-bound Python threads.
 
 
 What's New in Python 2.7 alpha 4?
@@ -70,72 +69,70 @@ What's New in Python 2.7 alpha 4?
 Core and Builtins
 -----------------
 
-- Issue #7544: Preallocate thread memory before creating the thread to avoid
-  a fatal error in low memory condition.
+- Issue #7544: Preallocate thread memory before creating the thread to avoid a
+  fatal error in low memory condition.
 
-- Issue #7820: The parser tokenizer restores all bytes in the right if
-  the BOM check fails.
+- Issue #7820: The parser tokenizer restores all bytes in the right if the BOM
+  check fails.
 
 - Issue #7309: Fix unchecked attribute access when converting
-  UnicodeEncodeError, UnicodeDecodeError, and UnicodeTranslateError to
-  strings.
+  UnicodeEncodeError, UnicodeDecodeError, and UnicodeTranslateError to strings.
 
 - Issue #7649: "u'%c' % char" now behaves like "u'%s' % char" and raises a
-  UnicodeDecodeError if 'char' is a byte string that can't be decoded using
-  the default encoding.
+  UnicodeDecodeError if 'char' is a byte string that can't be decoded using the
+  default encoding.
 
-- Issue #6902: Fix problem with built-in types format incorrectly with
-  0 padding.
+- Issue #6902: Fix problem with built-in types format incorrectly with 0
+  padding.
 
-- Issue #2560: remove an unnecessary 'for' loop from my_fgets() in
+- Issue #2560: Remove an unnecessary 'for' loop from ``my_fgets()`` in
   Parser/myreadline.c.
 
 - Issue #7988: Fix default alignment to be right aligned for
-  complex.__format__. Now it matches other numeric types.
+  ``complex.__format__``.  Now it matches other numeric types.
 
-- Issue #5211: the complex type no longer uses implicit coercion in
-  mixed-type binary arithmetic operations.
+- Issue #5211: The complex type no longer uses implicit coercion in mixed-type
+  binary arithmetic operations.
 
 Library
 -------
 
 - Issue #6906: Tk should not set Unicode environment variables on Windows.
 
-- Issue #1054943: Fix unicodedata.normalize('NFC', text) for the Public Review
-  Issue #29
+- Issue #1054943: Fix ``unicodedata.normalize('NFC', text)`` for the Public
+  Review Issue #29.
 
-- Issue #7494: fix a crash in _lsprof (cProfile) after clearing the profiler,
+- Issue #7494: Fix a crash in ``_lsprof`` (cProfile) after clearing the profiler,
   reset also the pointer to the current pointer context.
 
-- Issue #7232: Add support for the context manager protocol to the TarFile
-  class.
+- Issue #7232: Add support for the context manager protocol to the
+  ``tarfile.TarFile`` class.
 
 - Issue #7250: Fix info leak of os.environ across multi-run uses of
-  wsgiref.handlers.CGIHandler.
+  ``wsgiref.handlers.CGIHandler``.
 
 - Issue #1729305: Fix doctest to handle encode error with "backslashreplace".
 
-- Issue #691291: codecs.open() should not convert end of lines on reading and
-  writing.
+- Issue #691291: ``codecs.open()`` should not convert end of lines on reading
+  and writing.
 
-- Issue #7975: correct regression in dict methods supported by bsddb.dbshelve.
+- Issue #7975: Correct regression in dict methods supported by bsddb.dbshelve.
 
-- Issue #7959: ctypes callback functions are now registered correctly
-  with the cycle garbage collector.
+- Issue #7959: ctypes callback functions are now registered correctly with the
+  cycle garbage collector.
 
-- Issue #7970: email.Generator.flatten now correctly flattens message/rfc822
-  messages parsed by email.Parser.HeaderParser.
+- Issue #7970: ``email.Generator.flatten`` now correctly flattens
+  message/rfc822 messages parsed by ``email.Parser.HeaderParser``.
 
 - Issue #3426: ``os.path.abspath`` now returns unicode when its arg is unicode.
 
-- Issue #7633: In the decimal module, Context class methods (with the
-  exception of canonical and is_canonical) now accept instances of int
-  and long wherever a Decimal instance is accepted, and implicitly
-  convert that argument to Decimal.  Previously only some arguments
-  were converted.
+- Issue #7633: In the decimal module, ``Context`` class methods (with the
+  exception of canonical and is_canonical) now accept instances of int and long
+  wherever a Decimal instance is accepted, and implicitly convert that argument
+  to Decimal.  Previously only some arguments were converted.
 
-- Issue #6003: add an argument to ``zipfile.Zipfile.writestr`` to
-  specify the compression type.
+- Issue #6003: Add an argument to ``zipfile.Zipfile.writestr`` to specify the
+  compression type.
 
 - Issue #7893: ``unittest.TextTestResult`` is made public and a ``resultclass``
   argument added to the TextTestRunner constructor allowing a different result
@@ -144,65 +141,66 @@ Library
 - Issue #7588: ``unittest.TextTestResult.getDescription`` now includes the test
   name in failure reports even if the test has a docstring.
 
-- Issue #5801: removed spurious empty lines in wsgiref.
+- Issue #5801: Remove spurious empty lines in wsgiref.
 
-- Issue #1537721: Add a writeheader() method to csv.DictWriter.
+- Issue #1537721: Add a ``writeheader()`` method to ``csv.DictWriter``.
 
-- Issue #7427: improve the representation of httplib.BadStatusLine exceptions.
+- Issue #7427: Improve the representation of httplib.BadStatusLine exceptions.
 
-- Issue #7481: When a threading.Thread failed to start it would leave the
-  instance stuck in initial state and present in threading.enumerate().
+- Issue #7481: When a ``threading.Thread`` failed to start it would leave the
+  instance stuck in initial state and present in ``threading.enumerate()``.
 
 - Issue #1068268: The subprocess module now handles EINTR in internal
-  os.waitpid and os.read system calls where appropriate.
+  ``os.waitpid()`` and ``os.read()`` system calls where appropriate.
 
-- Issue #6729: Added ctypes.c_ssize_t to represent ssize_t.
+- Issue #6729: Add ``ctypes.c_ssize_t`` to represent ssize_t.
 
 - Issue #6247: The argparse module has been added to the standard library.
 
 Extension Modules
 -----------------
 
-- The sqlite3 module was updated to pysqlite 2.6.0. This fixes several obscure
+- The sqlite3 module was updated to pysqlite 2.6.0.  This fixes several obscure
   bugs and allows loading SQLite extensions from shared libraries.
 
 - Issue #7808: Fix reference leaks in _bsddb and related tests.
 
-- Issue #6544: fix a reference leak in the kqueue implementation's error
+- Issue #6544: Fix a reference leak in the kqueue implementation's error
   handling.
 
 - Stop providing crtassem.h symbols when compiling with Visual Studio 2010, as
   msvcr100.dll is not a platform assembly anymore.
 
-- Issue #7242: On Solaris 9 and earlier calling os.fork() from within a
+- Issue #7242: On Solaris 9 and earlier calling ``os.fork()`` from within a
   thread could raise an incorrect RuntimeError about not holding the import
   lock.  The import lock is now reinitialized after fork.
 
-- Issue #7999: os.setreuid() and os.setregid() would refuse to accept a -1
-  parameter on some platforms such as OS X.
+- Issue #7999: ``os.setreuid()`` and ``os.setregid()`` would refuse to accept a
+  -1 parameter on some platforms such as OS X.
 
 Tests
 -----
 
-- Issue #7849: Now the utility ``check_warnings`` verifies if the warnings are
-  effectively raised.  A new utility ``check_py3k_warnings`` is available.
+- Issue #7849: The utility ``test.test_support.check_warnings()`` verifies if
+  warnings are effectively raised.  A new utility ``check_py3k_warnings()`` is
+  available.
 
 - The four path modules (genericpath, macpath, ntpath, posixpath) share a
   common TestCase for some tests: test_genericpath.CommonTest.
 
-- Print platform information when running the whole test suite, or using
-  the --verbose flag.
+- Print platform information when running the whole test suite, or using the
+  ``--verbose`` flag.
 
-- Issue #767675: enable test_pep277 on POSIX platforms with Unicode-friendly
+- Issue #767675: Enable test_pep277 on POSIX platforms with Unicode-friendly
   filesystem encoding.
 
-- Issue #6292: for the moment at least, the test suite runs cleanly if python
+- Issue #6292: For the moment at least, the test suite runs cleanly if python
   is run with the -OO flag.  Tests requiring docstrings are skipped.
 
-- Issue #7712: test_support gained a new `temp_cwd` context manager which is
-  now also used by regrtest to run all the tests in a temporary directory.
-  The original CWD is saved in `test_support.SAVEDCWD`.
-  Thanks to Florent Xicluna who helped with the patch.
+- Issue #7712: test_support gained a new ``temp_cwd`` context manager which is
+  now also used by regrtest to run all the tests in a temporary directory.  The
+  original CWD is saved in ``test.test_support.SAVEDCWD``.  Thanks to Florent
+  Xicluna who helped with the patch.
 
 Build
 -----
@@ -220,44 +218,46 @@ Core and Builtins
 
 - Issue #5677: Explicitly forbid write operations on read-only file objects,
   and read operations on write-only file objects.  On Windows, the system C
-  library would return a bogus result; on Solaris, it was possible to crash
-  the interpreter.  Patch by Stefan Krah.
+  library would return a bogus result; on Solaris, it was possible to crash the
+  interpreter.  Patch by Stefan Krah.
 
 - Issue #7853: Normalize exceptions before they are passed to a context
-  managers __exit__ method.
+  manager's ``__exit__()`` method.
 
-- Issue #7385: Fix a crash in `MemoryView_FromObject` when
-  `PyObject_GetBuffer` fails.  Patch by Florent Xicluna.
+- Issue #7385: Fix a crash in ``PyMemoryView_FromObject()`` when
+  ``PyObject_GetBuffer()`` fails.  Patch by Florent Xicluna.
 
-- Issue #7819: Check sys.call_tracing() arguments types.
+- Issue #7819: Check ``sys.call_tracing()`` arguments types.
 
-- Issue #7788: Fix an interpreter crash produced by deleting a list
-  slice with very large step value.
+- Issue #7788: Fix an interpreter crash produced by deleting a list slice with
+  very large step value.
 
-- Issue #7766: Change sys.getwindowsversion() return value to a named
-  tuple and add the additional members returned in an OSVERSIONINFOEX
-  structure. The new members are service_pack_major, service_pack_minor,
-  suite_mask, and product_type.
+- Issue #7766: Change ``sys.getwindowsversion()`` return value to a named tuple
+  and add the additional members returned in an OSVERSIONINFOEX structure.  The
+  new members are service_pack_major, service_pack_minor, suite_mask, and
+  product_type.
 
-- Issue #7561: Operations on empty bytearrays (such as `int(bytearray())`)
-  could crash in many places because of the PyByteArray_AS_STRING() macro
-  returning NULL.  The macro now returns a statically allocated empty
-  string instead.
+- Issue #7561: Operations on empty bytearrays (such as ``int(bytearray())``)
+  could crash in many places because of the ``PyByteArray_AS_STRING()`` macro
+  returning NULL.  The macro now returns a statically allocated empty string
+  instead.
 
 - Issue #7622: Improve the split(), rsplit(), splitlines() and replace()
   methods of bytes, bytearray and unicode objects by using a common
   implementation based on stringlib's fast search.  Patch by Florent Xicluna.
 
-- Issue #7632: Fix various str -> float conversion bugs present in 2.7
-  alpha 2, including: (1) a serious 'wrong output' bug that could
-  occur for long (> 40 digit) input strings, (2) a crash in dtoa.c
-  that occurred in debug builds when parsing certain long numeric
-  strings corresponding to subnormal values, (3) a memory leak for
-  some values large enough to cause overflow, and (4) a number of
-  flaws that could lead to incorrectly rounded results.
+- Issue #7632: Fix various str -> float conversion bugs present in 2.7 alpha 2,
+  including:
 
-- Issue #7319, #7770: Silence DeprecationWarning by default when -3 is not
-  used.
+  (1) a serious 'wrong output' bug that could occur for long (> 40 digit) input
+      strings,
+  (2) a crash in dtoa.c that occurred in debug builds when parsing certain long
+      numeric strings corresponding to subnormal values,
+  (3) a memory leak for some values large enough to cause overflow, and
+  (4) a number of flaws that could lead to incorrectly rounded results.
+
+- Issue #7319, #7770: Silence ``DeprecationWarning`` by default when the -3
+  option is not used.
 
 - Issue #2335: Backport set literals syntax from Python 3.x.
 
@@ -265,80 +265,79 @@ Core and Builtins
 
 - Issue #1967: Backport dictionary views from Python 3.x.
 
-
 Library
 -------
 
 - Issue #7835: shelve should no longer produce mysterious warnings during
   interpreter shutdown.
 
-- Issue #2746: Don't escape ampersands and angle brackets ("&", "<", ">")
-  in XML processing instructions and comments.  These raw characters are
-  allowed by the XML specification, and are necessary when outputting e.g.
-  PHP code in a processing instruction.  Patch by Neil Muller.
+- Issue #2746: Don't escape ampersands and angle brackets ("&", "<", ">") in
+  XML processing instructions and comments.  These raw characters are allowed
+  by the XML specification, and are necessary when outputting e.g.  PHP code in
+  a processing instruction.  Patch by Neil Muller.
 
-- Issue #7869: logging: improved diagnostic for format-time errors.
+- Issue #7869: logging: Improved diagnostic for format-time errors.
 
-- Issue #7868: logging: added loggerClass attribute to Manager.
+- Issue #7868: logging: Added loggerClass attribute to Manager.
 
-- Issue #7851: logging: clarification on logging configuration files.
+- Issue #7851: logging: Clarification on logging configuration files.
 
 - Issue #4772: Raise a ValueError when an unknown Bluetooth protocol is
-  specified, rather than fall through to AF_PACKET (in the `socket` module).
+  specified, rather than fall through to AF_PACKET (in the ``socket`` module).
   Also, raise ValueError rather than TypeError when an unknown TIPC address
   type is specified.  Patch by Brian Curtin.
 
 - logging: Implemented PEP 391.
 
 - Issue #6939: Fix file I/O objects in the `io` module to keep the original
-  file position when calling `truncate()`.  It would previously change the
-  file position to the given argument, which goes against the tradition of
+  file position when calling `truncate()`.  It would previously change the file
+  position to the given argument, which goes against the tradition of
   ftruncate() and other truncation APIs.  Patch by Pascal Chambon.
 
 - UserDict is now a new-style class.
 
-- Issue #7610: Reworked implementation of the internal
-  :class:`zipfile.ZipExtFile` class used to represent files stored inside
-  an archive.  The new implementation is significantly faster and can
-  be wrapped in a :class:`io.BufferedReader` object for more speedups.
-  It also solves an issue where interleaved calls to `read()` and
-  `readline()` give wrong results.  Patch by Nir Aides.
+- Issue #7610: Reworked implementation of the internal ``zipfile.ZipExtFile``
+  class used to represent files stored inside an archive.  The new
+  implementation is significantly faster and can be wrapped in a
+  ``io.BufferedReader`` object for more speedups.  It also solves an issue
+  where interleaved calls to ``read()`` and ``readline()`` give wrong results.
+  Patch by Nir Aides.
 
 - Issue #7792: Registering non-classes to ABCs raised an obscure error.
 
-- Removed the functions 'verify' and 'vereq' from Lib/test/test_support.py.
+- Removed the deprecated functions ``verify()`` and ``vereq()`` from
+  Lib/test/test_support.py.
 
-- Issue #7773: Fix an UnboundLocalError in platform.linux_distribution() when
-  the release file is empty.
+- Issue #7773: Fix an UnboundLocalError in ``platform.linux_distribution()``
+  when the release file is empty.
 
-- Issue #7748: Since unicode values are supported for some metadata options
-  in Distutils, the DistributionMetadata get_* methods will now return an utf-8
-  encoded string for them. This ensure that the upload and register commands
-  send the right values to PyPI without any error.
+- Issue #7748: Since unicode values are supported for some metadata options in
+  Distutils, the DistributionMetadata get_* methods will now return an utf-8
+  encoded string for them.  This ensures that the upload and register commands
+  send the correct values to PyPI without any error.
 
-- Issue #1670765: Prevent email.generator.Generator from re-wrapping
+- Issue #1670765: Prevent ``email.generator.Generator`` from re-wrapping
   headers in multipart/signed MIME parts, which fixes one of the sources of
   invalid modifications to such parts by Generator.
 
-- Issue #7701: Fix crash in binascii.b2a_uu() in debug mode when given a
+- Issue #7701: Fix crash in ``binascii.b2a_uu()`` in debug mode when given a
   1-byte argument.  Patch by Victor Stinner.
 
-- Issue #3299: Fix possible crash in the _sre module when given bad
-  argument values in debug mode.  Patch by Victor Stinner.
+- Issue #3299: Fix possible crash in the _sre module when given bad argument
+  values in debug mode.  Patch by Victor Stinner.
 
-- Issue #7703: Add support for the new buffer API to functions of the
-  binascii module.  Backported from py3k by Florent Xicluna, with some
-  additional tests.
+- Issue #7703: Add support for the new buffer API to functions of the binascii
+  module.  Backported from py3k by Florent Xicluna, with some additional tests.
 
-- Issue #2846: Add support for gzip.GzipFile reading zero-padded files.
-  Patch by Brian Curtin.
+- Issue #2846: Add support for gzip.GzipFile reading zero-padded files.  Patch
+  by Brian Curtin.
 
-- Issue #5827: Make sure that normpath preserves unicode.  Initial patch
-  by Matt Giuca.
+- Issue #5827: Make sure that normpath preserves unicode.  Initial patch by
+  Matt Giuca.
 
 - Issue #5372: Drop the reuse of .o files in Distutils' ccompiler (since
-  Extension extra options may change the output without changing the .c
-  file). Initial patch by Collin Winter.
+  Extension extra options may change the output without changing the .c file).
+  Initial patch by Collin Winter.
 
 Extension Modules
 -----------------
@@ -349,9 +348,9 @@ Extension Modules
 Build
 -----
 
-- Issue #7632: When Py_USING_MEMORY_DEBUGGER is defined, disable the
-  private memory allocation scheme in dtoa.c and use PyMem_Malloc and
-  PyMem_Free instead.  Also disable caching of powers of 5.
+- Issue #7632: When Py_USING_MEMORY_DEBUGGER is defined, disable the private
+  memory allocation scheme in dtoa.c and use PyMem_Malloc and PyMem_Free
+  instead.  Also disable caching of powers of 5.
 
 - Issue #7658: Ensure that the new pythonw executable works on OSX 10.4
 
@@ -365,24 +364,22 @@ Tools/Demos
 -----------
 
 - iobench (a file I/O benchmark) and ccbench (a concurrency benchmark) were
-  added to the `Tools/` directory.  They were previously living in the
+  added to the ``Tools`` directory.  They were previously living in the
   sandbox.
-
 
 Tests
 -----
 
-- issue #7728: test_timeout was changed to use test_support.bind_port
+- issue #7728: test_timeout was changed to use ``test_support.bind_port()``
   instead of a hard coded port.
-
 
 Documentation
 -------------
 
-- Updating `Using Python` documentation to include description of CPython's
-  -J, -U and -X options.
+- Updated "Using Python" documentation to include description of CPython's -J,
+  -U and -X options.
 
-- Update python manual page (options -B, -O0, -s, environment variables
+- Updated Python manual page (options -B, -O0, -s, environment variables
   PYTHONDONTWRITEBYTECODE, PYTHONNOUSERSITE).
 
 
@@ -394,140 +391,138 @@ What's New in Python 2.7 alpha 2?
 Core and Builtins
 -----------------
 
-- The __complex__ method is now looked up on the class of instances to make it
-  consistent with other special methods.
+- The ``__complex__()`` method is now looked up on the class of instances to
+  make it consistent with other special methods.
 
 - Issue #7462: Implement the stringlib fast search algorithm for the `rfind`,
   `rindex`, `rsplit` and `rpartition` methods.  Patch by Florent Xicluna.
 
 - Issue #5080: A number of functions and methods previously produced a
-  DeprecationWarning when passed a float argument where an integer was
-  expected.  These functions and methods now raise TypeError instead.
-  The majority of the effects of this change are in the extension
-  modules, but some core functions and methods are affected: notably
-  the 'chr', 'range' and 'xrange' builtins, and many unicode/str
-  methods.
+  DeprecationWarning when passed a float argument where an integer was expected.
+  These functions and methods now raise TypeError instead.  The majority of the
+  effects of this change are in the extension modules, but some core functions
+  and methods are affected: notably the 'chr', 'range' and 'xrange' builtins,
+  and many unicode/str methods.
 
 - Issue #7604: Deleting an unset slotted attribute did not raise an
   AttributeError.
 
-- Issue #7534: Fix handling of IEEE specials (infinities, nans,
-  negative zero) in ** operator.  The behaviour now conforms to that
-  described in C99 Annex F.
+- Issue #7534: Fix handling of IEEE specials (infinities, nans, negative zero)
+  in ** operator.  The behaviour now conforms to that described in C99 Annex F.
 
-- Issue #7579: the msvcrt module now has docstrings for all its functions.
+- Issue #7579: The msvcrt module now has docstrings for all its functions.
 
 - Issue #7413: Passing '\0' as the separator to datetime.datetime.isoformat()
   used to drop the time part of the result.
 
-- Issue #1811: improve accuracy and cross-platform consistency for
-  true division of integers: the result of a/b is now correctly
-  rounded for ints a and b (at least on IEEE 754 platforms), and in
-  particular does not depend on the internal representation of a long.
+- Issue #1811: Improve accuracy and cross-platform consistency for true division
+  of integers: the result of a/b is now correctly rounded for ints a and b (at
+  least on IEEE 754 platforms), and in particular does not depend on the
+  internal representation of a long.
 
-- Issue #6108: unicode(exception) and str(exception) should return the same
-  message when only __str__ (and not __unicode__) is overridden in the subclass.
+- Issue #6108: ``unicode(exception)`` and ``str(exception)`` should return the
+  same message when only ``__str__()`` (and not ``__unicode__()``) is overridden
+  in the subclass.
 
-- Issue #6834: replace the implementation for the 'python' and 'pythonw'
+- Issue #6834: Replace the implementation for the 'python' and 'pythonw'
   executables on OSX.
 
-  These executables now work properly with the arch(1) command:
-  ``arch -ppc python`` will start a universal binary version of python
-  in PPC mode (unlike previous releases).
+  These executables now work properly with the arch(1) command: ``arch -ppc
+  python`` will start a universal binary version of python in PPC mode (unlike
+  previous releases).
 
-- Issue #1680159: unicode coercion during an 'in' operation no longer masks
-  the underlying error when the coercion fails for the left hand operand.
+- Issue #1680159: Unicode coercion during an 'in' operation no longer masks the
+  underlying error when the coercion fails for the left hand operand.
 
 - Issue #7491: Metaclass's __cmp__ method was ignored.
 
-- Issue #7466: segmentation fault when the garbage collector is called
-  in the middle of populating a tuple.  Patch by Florent Xicluna.
+- Issue #7466: Segmentation fault when the garbage collector is called in the
+  middle of populating a tuple.  Patch by Florent Xicluna.
 
 
 Library
 -------
 
-- Issue #6963: Added "maxtasksperchild" argument to multiprocessing.Pool,
-  allowing for a maximum number of tasks within the pool to be completed by
-  the worker before that worker is terminated, and a new one created to
-  replace it.
+- Issue #6963: Added "maxtasksperchild" argument to ``multiprocessing.Pool``,
+  allowing for a maximum number of tasks within the pool to be completed by the
+  worker before that worker is terminated, and a new one created to replace it.
 
-- Issue #7617: Make sure distutils.unixccompiler.UnixCCompiler recognizes
-  gcc when it has a fully qualified configuration prefix. Initial patch
-  by Arfrever.
+- Issue #7617: Make sure distutils.unixccompiler.UnixCCompiler recognizes gcc
+  when it has a fully qualified configuration prefix.  Initial patch by
+  Arfrever.
 
 - Issue #7092: Remove py3k warning when importing cPickle.  2to3 handles
-  renaming of `cPickle` to `pickle`.  The warning was annoying since there's
-  no alternative to cPickle if you care about performance.  Patch by Florent
+  renaming of `cPickle` to `pickle`.  The warning was annoying since there's no
+  alternative to cPickle if you care about performance.  Patch by Florent
   Xicluna.
 
-- Issue #7455: Fix possible crash in cPickle on invalid input.  Patch by
-  Victor Stinner.
+- Issue #7455: Fix possible crash in cPickle on invalid input.  Patch by Victor
+  Stinner.
 
-- Issue #7092: Fix the DeprecationWarnings emitted by the standard library
-  when using the -3 flag.  Patch by Florent Xicluna.
+- Issue #7092: Fix the DeprecationWarnings emitted by the standard library when
+  using the -3 flag.  Patch by Florent Xicluna.
 
-- Issue #7471: Improve the performance of GzipFile's buffering mechanism,
-  and make it implement the `io.BufferedIOBase` ABC to allow for further
-  speedups by wrapping it in an `io.BufferedReader`.  Patch by Nir Aides.
+- Issue #7471: Improve the performance of GzipFile's buffering mechanism, and
+  make it implement the ``io.BufferedIOBase`` ABC to allow for further speedups
+  by wrapping it in an ``io.BufferedReader``.  Patch by Nir Aides.
 
-- Issue #3972: httplib.HTTPConnection now accepts an optional source_address
+- Issue #3972: ``httplib.HTTPConnection`` now accepts an optional source_address
   parameter to allow specifying where your connections come from.
 
-- socket.create_connection now accepts an optional source_address parameter.
+- ``socket.create_connection()`` now accepts an optional source_address
+  parameter.
 
-- Issue #5511: now zipfile.ZipFile can be used as a context manager.
+- Issue #5511: ``zipfile.ZipFile`` can now be used as a context manager.
   Initial patch by Brian Curtin.
 
-- Distutils now correctly identifies the build architecture as "x86_64"
-  when building on OSX 10.6 without "-arch" flags.
+- Distutils now correctly identifies the build architecture as "x86_64" when
+  building on OSX 10.6 without "-arch" flags.
 
-- Issue #7556: Distutils' msvc9compiler now opens the MSVC Manifest
-  file in text mode.
+- Issue #7556: Distutils' msvc9compiler now opens the MSVC Manifest file in text
+  mode.
 
-- Issue #7552: Removed line feed in the base64 Authorization header in
-  the Distutils upload command to avoid an error when PyPI reads it.
-  This occurs on long passwords. Initial patch by JP St. Pierre.
+- Issue #7552: Removed line feed in the base64 Authorization header in the
+  Distutils upload command to avoid an error when PyPI reads it.  This occurs on
+  long passwords.  Initial patch by JP St. Pierre.
 
-- Issue #7231: urllib2 cannot handle https with proxy requiring auth.
-  Patch by Tatsuhiro Tsujikawa.
+- Issue #7231: urllib2 cannot handle https with proxy requiring auth.  Patch by
+  Tatsuhiro Tsujikawa.
 
 - Issue #7349: Make methods of file objects in the io module accept None as an
   argument where file-like objects (ie StringIO and BytesIO) accept them to mean
   the same as passing no argument.
 
-- Issue #7348: StringIO.StringIO.readline(-1) now acts as if it got no argument
-  like other file objects.
+- Issue #7348: ``StringIO.StringIO.readline(-1)`` now acts as if it got no
+  argument like other file objects.
 
-- Issue #7357: tarfile no longer suppresses fatal extraction errors by
-  default.
+- Issue #7357: tarfile no longer suppresses fatal extraction errors by default.
 
-- Issue #7470: logging: fix bug in Unicode encoding fallback.
+- Issue #7470: logging: Fix bug in Unicode encoding fallback.
 
-- Issue #5949: fixed IMAP4_SSL hang when the IMAP server response is
-  missing proper end-of-line termination.
+- Issue #5949: Fixed IMAP4_SSL hang when the IMAP server response is missing
+  proper end-of-line termination.
 
-- Issue #7457: added a read_pkg_file method to
-  distutils.dist.DistributionMetadata.
+- Issue #7457: Added a read_pkg_file method to
+  ``distutils.dist.DistributionMetadata``.
 
-- Issue #3745: Undo the 2.7a1 change to have hashlib to reject unicode and
-  non buffer-api supporting objects as input.  That behavior is for 3.x only.
+- Issue #3745: Undo the 2.7a1 change to have hashlib to reject unicode and non
+  buffer API supporting objects as input.  That behavior is for 3.x only.
 
 C-API
 -----
 
-- Issue #7767: New function PyLong_AsLongLongAndOverflow added,
-  analogous to PyLong_AsLongAndOverflow.
+- Issue #7767: New function ``PyLong_AsLongLongAndOverflow()`` added, analogous
+  to ``PyLong_AsLongAndOverflow()``.
 
-- Issue #5080: The argument parsing functions PyArg_ParseTuple,
-  PyArg_ParseTupleAndKeywords, PyArg_VaParse,
-  PyArg_VaParseTupleAndKeywords and PyArg_Parse no longer accept float
-  arguments for integer format codes (other than 'L'): previously an
-  attempt to pass a float resulted in a DeprecationWarning; now it
-  gives a TypeError.  For the 'L' format code (which previously had no
-  warning) there is now a DeprecationWarning.
+- Issue #5080: The argument parsing functions ``PyArg_ParseTuple()``,
+  ``PyArg_ParseTupleAndKeywords()``, ``PyArg_VaParse()``,
+  ``PyArg_VaParseTupleAndKeywords()`` and ``PyArg_Parse()`` no longer accept
+  float arguments for integer format codes (other than 'L'): previously an
+  attempt to pass a float resulted in a DeprecationWarning; now it gives a
+  TypeError.  For the 'L' format code (which previously had no warning) there is
+  now a DeprecationWarning.
 
-- Issue #7033: function ``PyErr_NewExceptionWithDoc()`` added.
+- Issue #7033: Function ``PyErr_NewExceptionWithDoc()`` added.
 
 Build
 -----
@@ -535,31 +530,30 @@ Build
 - Issue #6491: Allow --with-dbmliborder to specify that no dbms will be built.
 
 - Issue #6943: Use pkg-config to find the libffi headers when the
-  --with-system-ffi flag is used.
+  ``--with-system-ffi`` flag is used.
 
-- Issue #7609: Add a --with-system-expat option that causes the system's expat
-  library to be used for the pyexpat module instead of the one included with
-  Python.
+- Issue #7609: Add a ``--with-system-expat`` option that causes the system's
+  expat library to be used for the pyexpat module instead of the one included
+  with Python.
 
 - Issue #7589: Only build the nis module when the correct header files are
   found.
 
 - Switch to OpenSSL 0.9.8l and sqlite 3.6.21 on Windows.
 
-- Issue #7541: when using ``python-config`` with a framework install the compiler might
-  use the wrong library.
+- Issue #7541: when using ``python-config`` with a framework install the
+  compiler might use the wrong library.
 
 Tests
 -----
 
-- Issue #7376: instead of running a self-test (which was failing) when called
+- Issue #7376: Instead of running a self-test (which was failing) when called
   with no arguments, doctest.py now gives a usage message.
 
-- Issue #7396: fix regrtest -s, which was broken by the -j enhancement.
+- Issue #7396: Fix regrtest -s, which was broken by the -j enhancement.
 
 - Issue #7498: test_multiprocessing now uses test_support.find_unused_port
   instead of a hardcoded port number in test_rapid_restart.
-
 
 
 What's New in Python 2.7 alpha 1
@@ -570,97 +564,94 @@ What's New in Python 2.7 alpha 1
 Core and Builtins
 -----------------
 
-- Issue #7419: setlocale() could crash the interpreter on Windows when called
-  with invalid values.
+- Issue #7419: ``locale.setlocale()`` could crash the interpreter on Windows
+  when called with invalid values.
 
-- Issue #3382: 'F' formatting for float and complex now convert the
-  result to upper case. This only affects 'inf' and 'nan', since 'f'
-  no longer converts to 'g' for large values.
+- Issue #3382: 'F' formatting for float and complex now convert the result to
+  upper case.  This only affects 'inf' and 'nan', since 'f' no longer converts
+  to 'g' for large values.
 
-- Remove switch from "%f" formatting to "%g" formatting for floats
-  larger than 1e50 in absolute value.
+- Remove switch from "%f" formatting to "%g" formatting for floats larger than
+  1e50 in absolute value.
 
-- Remove restrictions on precision when formatting floats.  E.g.,
-  "%.120g" % 1e-100 used to raise OverflowError, but now gives the
-  requested 120 significant digits instead.
+- Remove restrictions on precision when formatting floats.  E.g., "%.120g" %
+  1e-100 used to raise OverflowError, but now gives the requested 120
+  significant digits instead.
 
-- Add Py3k warnings for parameter names in parenthesis.
+- Add Py3k warnings for parameter names in parentheses.
 
-- Issue #7362: Give a proper error message for def f((x)=3): pass.
+- Issue #7362: Give a proper error message for ``def f((x)=3): pass``.
 
-- Issue #7085: Fix crash when importing some extensions in a thread
-  on MacOSX 10.6.
+- Issue #7085: Fix crash when importing some extensions in a thread on MacOSX
+  10.6.
 
-- Issue #7117: repr(x) for a float x returns a result based on the
-  shortest decimal string that's guaranteed to round back to x under
-  correct rounding (with round-half-to-even rounding mode).
-  Previously it gave a string based on rounding x to 17 decimal digits.
-  repr(x) for a complex number behaves similarly.  On platforms where
-  the correctly-rounded strtod and dtoa code is not supported (see below),
-  repr is unchanged.
+- Issue #7117: ``repr(x)`` for a float x returns a result based on the shortest
+  decimal string that's guaranteed to round back to x under correct rounding
+  (with round-half-to-even rounding mode).  Previously it gave a string based on
+  rounding x to 17 decimal digits.  repr(x) for a complex number behaves
+  similarly.  On platforms where the correctly-rounded strtod and dtoa code is
+  not supported (see below), repr is unchanged.
 
-- Issue #7117: On almost all platforms: float-to-string and
-  string-to-float conversions within Python are now correctly rounded.
-  Places these conversions occur include: str for floats and complex
-  numbers; the float and complex constructors; old-style and new-style
-  numeric formatting; serialization and deserialization of floats and
-  complex numbers using marshal, pickle and json; parsing of float and
-  imaginary literals in Python code; Decimal-to-float conversion.
+- Issue #7117: On almost all platforms: float-to-string and string-to-float
+  conversions within Python are now correctly rounded.  Places these conversions
+  occur include: str for floats and complex numbers; the float and complex
+  constructors; old-style and new-style numeric formatting; serialization and
+  deserialization of floats and complex numbers using marshal, pickle and json;
+  parsing of float and imaginary literals in Python code; Decimal-to-float
+  conversion.
 
-  The conversions use a Python-adapted version of David Gay's
-  well-known dtoa.c, providing correctly-rounded strtod and dtoa C
-  functions.  This code is supported on Windows, and on Unix-like
-  platforms using gcc, icc or suncc as the C compiler.  There may be a
-  small number of platforms on which correct operation of this code
-  cannot be guaranteed, so the code is not used: notably, this applies
-  to platforms where the C double format is not IEEE 754 binary64, and
-  to platforms on x86 hardware where the x87 FPU is set to 64-bit
-  precision and Python's configure script is unable to determine how
-  to change the FPU precision.  On these platforms conversions use the
-  platform strtod and dtoa, as before.
+  The conversions use a Python-adapted version of David Gay's well-known dtoa.c,
+  providing correctly-rounded strtod and dtoa C functions.  This code is
+  supported on Windows, and on Unix-like platforms using gcc, icc or suncc as
+  the C compiler.  There may be a small number of platforms on which correct
+  operation of this code cannot be guaranteed, so the code is not used: notably,
+  this applies to platforms where the C double format is not IEEE 754 binary64,
+  and to platforms on x86 hardware where the x87 FPU is set to 64-bit precision
+  and Python's configure script is unable to determine how to change the FPU
+  precision.  On these platforms conversions use the platform strtod and dtoa,
+  as before.
 
-- Issue #7117: Backport round implementation from Python 3.x.  round
-  now uses the correctly-rounded string <-> float conversions
-  described above (when available), and so produces correctly rounded
-  results that will display nicely under the float repr.  There are
-  two related small changes: (1) round now accepts any class with an
-  __index__ method for its second argument (but no longer accepts
-  floats for the second argument), and (2) an excessively large second
-  integer argument (e.g., round(1.234, 10**100)) no longer raises an
-  exception.
+- Issue #7117: Backport round implementation from Python 3.x.  ``round()`` now
+  uses the correctly-rounded string <-> float conversions described above (when
+  available), and so produces correctly rounded results that will display nicely
+  under the float repr.  There are two related small changes: (1) round now
+  accepts any class with an ``__index__()`` method for its second argument (but
+  no longer accepts floats for the second argument), and (2) an excessively
+  large second integer argument (e.g., ``round(1.234, 10**100)``) no longer
+  raises an exception.
 
 - Issue #1757126: Fix the cyrillic-asian alias for the ptcp154 encoding.
 
-- Fix several issues with compile().  The input can now contain Windows and Mac
-  newlines and is no longer required to end in a newline.
+- Fix several issues with ``compile()``.  The input can now contain Windows and
+  Mac newlines and is no longer required to end in a newline.
 
-- Remove length limitation when constructing a complex number from a
-  unicode string.
+- Remove length limitation when constructing a complex number from a unicode
+  string.
 
-- Issue #7244: itertools.izip_longest() no longer ignores exceptions
-  raised during the formation of an output tuple.
+- Issue #7244: ``itertools.izip_longest()`` no longer ignores exceptions raised
+  during the formation of an output tuple.
 
 - Issue #1087418: Boost performance of bitwise operations for longs.
 
-- Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
-  fixes the problem of some exceptions being thrown at shutdown when the
-  interpreter is killed. Patch by Adam Olsen.
+- Issue #1722344: ``threading._shutdown()`` is now called in ``Py_Finalize()``,
+  which fixes the problem of some exceptions being thrown at shutdown when the
+  interpreter is killed.  Patch by Adam Olsen.
 
-- Issue #7168: Document PyFloat_AsString and PyFloat_AsReprString, and
-  note that they are unsafe and deprecated.
+- Issue #7168: Document ``PyFloat_AsString()`` and ``PyFloat_AsReprString()``,
+  and note that they are unsafe and deprecated.
 
-- Issue #7120: logging: Removed import of multiprocessing which is causing
-  crash in GAE.
+- Issue #7120: logging: Remove import of multiprocessing which is causing crash
+  in GAE.
 
-- Issue #7140: The __dict__ of a module should not be cleared unless the module
-  is the only object holding a reference to it.
+- Issue #7140: The ``__dict__`` of a module should not be cleared unless the
+  module is the only object holding a reference to it.
 
-- Issue #1754094: Improve the stack depth calculation in the compiler.
-  There should be no other effect than a small decrease in memory use.
-  Patch by Christopher Tur Lesniewski-Laas.
+- Issue #1754094: Improve the stack depth calculation in the compiler.  There
+  should be no other effect than a small decrease in memory use.  Patch by
+  Christopher Tur Lesniewski-Laas.
 
-- Issue #7084: Fix a (very unlikely) crash when printing a list from one
-  thread, and mutating it from another one.  Patch by Scott Dial.
+- Issue #7084: Fix a (very unlikely) crash when printing a list from one thread,
+  and mutating it from another one.  Patch by Scott Dial.
 
 - Issue #1571184: The Unicode database contains properties for more characters.
   The tables for code points representing numeric values, white spaces or line
@@ -670,24 +661,23 @@ Core and Builtins
 - Issue #7050: Fix a SystemError when trying to use unpacking and augmented
   assignment.
 
-- Issue #5329: Fix os.popen* regression from 2.5 with commands as a
-  sequence running through the shell.  Patch by Jean-Paul Calderone
-  and Jani Hakala.
+- Issue #5329: Fix ``os.popen*`` regression from 2.5 with commands as a sequence
+  running through the shell.  Patch by Jean-Paul Calderone and Jani Hakala.
 
-- Issue #7019: Raise ValueError when unmarshalling bad long data, instead
-  of producing internally inconsistent Python longs.
+- Issue #7019: Raise ValueError when unmarshalling bad long data, instead of
+  producing internally inconsistent Python longs.
 
-- Issue #6990: Fix threading.local subclasses leaving old state around
-  after a reference cycle GC which could be recycled by new locals.
+- Issue #6990: Fix ``threading.local`` subclasses leaving old state around after
+  a reference cycle GC which could be recycled by new locals.
 
 - Issue #6300: unicode.encode, unicode.decode, str.decode, and str.encode now
   take keyword arguments.
 
-- Issue #6922: Fix an infinite loop when trying to decode an invalid
-  UTF-32 stream with a non-raising error handler like "replace" or "ignore".
+- Issue #6922: Fix an infinite loop when trying to decode an invalid UTF-32
+  stream with a non-raising error handler like "replace" or "ignore".
 
-- Issue #6713: Improve performance of base 10 int -> string and
-  long -> string conversions.
+- Issue #6713: Improve performance of base 10 int -> string and long -> string
+  conversions.
 
 - Issue #1590864: Fix potential deadlock when mixing threads and fork().
 
@@ -696,35 +686,35 @@ Core and Builtins
 
 - Issue #6846: Fix bug where bytearray.pop() returns negative integers.
 
-- classmethod no longer checks if its argument is callable.
+- ``classmethod()`` no longer checks if its argument is callable.
 
-- Issue #6750: A text file opened with io.open() could duplicate its output
+- Issue #6750: A text file opened with ``io.open()`` could duplicate its output
   when writing from multiple threads at the same time.
 
-- Issue #6704: Improve the col_offset in AST for "for" statements with
-  a target of tuple unpacking.
+- Issue #6704: Improve the col_offset in AST for "for" statements with a target
+  of tuple unpacking.
 
-- Issue #6707: dir() on an uninitialized module caused a crash.
+- Issue #6707: ``dir()`` on an uninitialized module caused a crash.
 
-- Issue #6540: Fixed crash for bytearray.translate() with invalid parameters.
+- Issue #6540: Fixed crash for ``bytearray.translate()`` with invalid parameters.
 
-- Issue #6573: set.union() stopped processing inputs if an instance of self
+- Issue #6573: ``set.union()`` stopped processing inputs if an instance of self
   occurred in the argument chain.
 
 - Issue #1616979: Added the cp720 (Arabic DOS) encoding.
 
-- Issue #6070: On posix platforms import no longer copies the execute bit
-  from the .py file to the .pyc file if it is set.  Patch by Marco N.
+- Issue #6070: On posix platforms import no longer copies the execute bit from
+  the .py file to the .pyc file if it is set.  Patch by Marco N.
 
-- Issue #4618: When unicode arguments are passed to print(), the default
+- Issue #4618: When unicode arguments are passed to ``print()``, the default
   separator and end should be unicode also.
 
 - Issue #6119: Fixed an incorrect Py3k warning about order comparisons of
   built-in functions and methods.
 
-- Issue #6347: Include inttypes.h as well as stdint.h in pyport.h.
-  This fixes a build failure on HP-UX: int32_t and uint32_t are
-  defined in inttypes.h instead of stdint.h on that platform.
+- Issue #6347: Include inttypes.h as well as stdint.h in pyport.h.  This fixes a
+  build failure on HP-UX: int32_t and uint32_t are defined in inttypes.h instead
+  of stdint.h on that platform.
 
 - Issue #4856: Remove checks for win NT.
 
@@ -736,161 +726,157 @@ Core and Builtins
 - Issue #6329: Fixed iteration for memoryview objects (it was being blocked
   because it wasn't recognized as a sequence).
 
-- Issue #6289: Encoding errors from compile() were being masked.
+- Issue #6289: Encoding errors from ``compile()`` were being masked.
 
 - When no module is given in a relative import, the module field of the
   ImportFrom AST node is now None instead of an empty string.
 
 - Assignment to None using import statements now raises a SyntaxError.
 
-- Issue #4547: When debugging a very large function, it was not always
-  possible to update the lineno attribute of the current frame.
+- Issue #4547: When debugging a very large function, it was not always possible
+  to update the lineno attribute of the current frame.
 
 - Issue #5330: C functions called with keyword arguments were not reported by
-  the various profiling modules (profile, cProfile). Patch by Hagen Fürstenau.
+  the various profiling modules (profile, cProfile).  Patch by Hagen Fürstenau.
 
-- Issue #5982: staticmethod and classmethod now expose the wrapped
-  function with __func__.
+- Issue #5982: staticmethod and classmethod now expose the wrapped function with
+  ``__func__``.
 
 - Added support for multiple context managers in the same with-statement.
-  Deprecated contextlib.nested() which is no longer needed.
+  Deprecated ``contextlib.nested()`` which is no longer needed.
 
 - Issue #6101: A new opcode, SETUP_WITH, has been added to speed up the with
   statement and correctly lookup the __enter__ and __exit__ special methods.
 
-- Issue #5829: complex("1e500") no longer raises OverflowError.  This
-  makes it consistent with float("1e500") and interpretation of real
-  and imaginary literals.
+- Issue #5829: complex("1e500") no longer raises OverflowError.  This makes it
+  consistent with float("1e500") and interpretation of real and imaginary
+  literals.
 
 - Issue #3527: Removed Py_WIN_WIDE_FILENAMES which is not used any more.
 
-- __instancecheck__ and __subclasscheck__ are now completely ignored on classic
-  classes and instances.
+- ``__instancecheck__()`` and ``__subclasscheck__()`` are now completely ignored
+  on classic classes and instances.
 
-- Issue #5994: the marshal module now has docstrings.
+- Issue #5994: The marshal module now has docstrings.
 
 - Issue #5981: Fix three minor inf/nan issues in float.fromhex:
-  (1) inf and nan strings with trailing whitespace were incorrectly
-  rejected;  (2) parsing of strings representing infinities and nans
-  was locale aware; and (3) the interpretation of fromhex('-nan')
-  didn't match that of float('-nan').
 
-- Issue #5920: For float.__format__, change the behavior with the
-  empty presentation type (that is, not one of 'e', 'f', 'g', or 'n')
-  to be like 'g' but with at least one decimal point and with a
-  default precision of 12. Previously, the behavior the same but with
-  a default precision of 6.  This more closely matches str(), and
-  reduces surprises when adding alignment flags to the empty
-  presentation type. This also affects the new complex.__format__ in
-  the same way.
+  (1) inf and nan strings with trailing whitespace were incorrectly rejected;
+  (2) parsing of strings representing infinities and nans was locale aware; and
+  (3) the interpretation of fromhex('-nan') didn't match that of float('-nan').
 
-- Issue #5890: in subclasses of 'property' the __doc__ attribute was
-  shadowed by classtype's, even if it was None.  property now
-  inserts the __doc__ into the subclass instance __dict__.
+- Issue #5920: For ``float.__format__()``, change the behavior with the empty
+  presentation type (that is, not one of 'e', 'f', 'g', or 'n') to be like 'g'
+  but with at least one decimal point and with a default precision
+  of 12. Previously, the behavior the same but with a default precision of 6.
+  This more closely matches ``str()``, and reduces surprises when adding
+  alignment flags to the empty presentation type. This also affects the new
+  complex.__format__ in the same way.
+
+- Issue #5890: In subclasses of 'property' the __doc__ attribute was shadowed by
+  classtype's, even if it was None.  property now inserts the __doc__ into the
+  subclass instance __dict__.
 
 - Issue #4426: The UTF-7 decoder was too strict and didn't accept some legal
-  sequences. Patch by Nick Barnes and Victor Stinner.
+  sequences.  Patch by Nick Barnes and Victor Stinner.
 
-- Issue #1588: Add complex.__format__. For example,
-  format(complex(1, 2./3), '.5') now produces a sensible result.
+- Issue #1588: Add complex.__format__. For example, ``format(complex(1, 2./3),
+  '.5')`` now produces a sensible result.
 
-- Issue #5864: Fix empty format code formatting for floats so that it
-  never gives more than the requested number of significant digits.
+- Issue #5864: Fix empty format code formatting for floats so that it never
+  gives more than the requested number of significant digits.
 
-- Issue #5793: Rationalize isdigit / isalpha / tolower, etc. Includes
-  new Py_ISDIGIT / Py_ISALPHA / Py_TOLOWER, etc. in pctypes.h.
+- Issue #5793: Rationalize isdigit / isalpha / tolower, etc. Includes new
+  Py_ISDIGIT / Py_ISALPHA / Py_TOLOWER, etc. in pctypes.h.
 
-- Issue #4971: Fix titlecase for characters that are their own
-  titlecase, but not their own uppercase.
+- Issue #4971: Fix titlecase for characters that are their own titlecase, but
+  not their own uppercase.
 
 - Issue #5835: Deprecate PyOS_ascii_formatd and replace it with
   _PyOS_double_to_string or PyOS_double_to_string.
 
 - Issue #5283: Setting __class__ in __del__ caused a segfault.
 
-- Issue #5816: complex(repr(z)) now recovers z exactly, even when
-  z involves nans, infs or negative zeros.
+- Issue #5816: ``complex(repr(z))`` now recovers z exactly, even when z involves
+  nans, infs or negative zeros.
 
-- Implement PEP 378, Format Specifier for Thousands Separator, for
-  floats, ints, and longs.
+- Implement PEP 378, Format Specifier for Thousands Separator, for floats, ints,
+  and longs.
 
-- Issue #5515: 'n' formatting for ints, longs, and floats handles
-  leading zero formatting poorly.
+- Issue #5515: 'n' formatting for ints, longs, and floats handles leading zero
+  formatting poorly.
 
-- Issue #5772: For float.__format__, don't add a trailing ".0" if
-  we're using no type code and we have an exponent.
+- Issue #5772: For float.__format__, don't add a trailing ".0" if we're using no
+  type code and we have an exponent.
 
-- Issue #3166: Make long -> float (and int -> float) conversions
-  correctly rounded.
+- Issue #3166: Make long -> float (and int -> float) conversions correctly
+  rounded.
 
-- Issue #5787: object.__getattribute__(some_type, "__bases__") segfaulted on
+- Issue #5787: ``object.__getattribute__(some_type, "__bases__")`` segfaulted on
   some built-in types.
 
-- Issue #1869: fix a couple of minor round() issues.  round(5e15+1)
-  was giving 5e15+2; round(-0.0) was losing the sign of the zero.
+- Issue #1869: Fix a couple of minor round() issues.  ``round(5e15+1)`` was
+  giving 5e15+2; ``round(-0.0)`` was losing the sign of the zero.
 
 - Issue #5759: float() didn't call __float__ on str subclasses.
 
-- Issue #5704: the "-3" command-line option now implies "-t".
+- Issue #5704: The "-3" command-line option now implies "-t".
 
-- Issue #2170: refactored xml.dom.minidom.normalize, increasing both
-  its clarity and its speed.
+- Issue #2170: Refactored ``xml.dom.minidom.normalize``, increasing both its
+  clarity and its speed.
 
-- Issue #2396: the memoryview object was backported from Python 3.1.
+- Issue #2396: The memoryview object was backported from Python 3.1.
 
 - Fix a problem in PyErr_NormalizeException that leads to "undetected errors"
   when hitting the recursion limit under certain circumstances.
 
 - Issue #1665206: Remove the last eager import in _warnings.c and make it lazy.
 
-- Issue #4865: On MacOSX /Library/Python/2.7/site-packages is added to
-  the end sys.path, for compatibility with the system install of Python.
+- Issue #4865: On MacOSX /Library/Python/2.7/site-packages is added to the end
+  sys.path, for compatibility with the system install of Python.
 
 - Issue #4688: Add a heuristic so that tuples and dicts containing only
-  untrackable objects are not tracked by the garbage collector. This can
-  reduce the size of collections and therefore the garbage collection overhead
-  on long-running programs, depending on their particular use of datatypes.
+  untrackable objects are not tracked by the garbage collector. This can reduce
+  the size of collections and therefore the garbage collection overhead on
+  long-running programs, depending on their particular use of datatypes.
 
-- Issue #5512: Rewrite PyLong long division algorithm (x_divrem) to
-  improve its performance.  Long divisions and remainder operations
-  are now between 50% and 150% faster.
+- Issue #5512: Rewrite PyLong long division algorithm (x_divrem) to improve its
+  performance.  Long divisions and remainder operations are now between 50% and
+  150% faster.
 
-- Issue #4258: Make it possible to use base 2**30 instead of base
-  2**15 for the internal representation of integers, for performance
-  reasons.  Base 2**30 is enabled by default on 64-bit machines.  Add
-  --enable-big-digits option to configure, which overrides the
-  default.  Add sys.long_info structseq to provide information about
-  the internal format.
+- Issue #4258: Make it possible to use base 2**30 instead of base 2**15 for the
+  internal representation of integers, for performance reasons.  Base 2**30 is
+  enabled by default on 64-bit machines.  Add --enable-big-digits option to
+  configure, which overrides the default.  Add sys.long_info structseq to
+  provide information about the internal format.
 
 - Issue #4034: Fix weird attribute error messages of the traceback object. (As a
   result traceback.__members__ no longer exists.)
 
-- Issue #4474: PyUnicode_FromWideChar now converts characters outside
-  the BMP to surrogate pairs, on systems with sizeof(wchar_t) == 4
-  and sizeof(Py_UNICODE) == 2.
+- Issue #4474: PyUnicode_FromWideChar now converts characters outside the BMP to
+  surrogate pairs, on systems with sizeof(wchar_t) == 4 and sizeof(Py_UNICODE)
+  == 2.
 
-- Issue #5237: Allow auto-numbered fields in str.format(). For
-  example: '{} {}'.format(1, 2) == '1 2'.
+- Issue #5237: Allow auto-numbered fields in str.format(). For example: ``'{}
+  {}'.format(1, 2) == '1 2'``.
 
-- Issue #3652: Make the 'line' argument for warnings.showwarning() a
+- Issue #3652: Make the 'line' argument for ``warnings.showwarning()`` a
   requirement.  Means the DeprecationWarning from Python 2.6 can go away.
 
-- Issue #5247: Improve error message when unknown format codes are
-  used when using str.format() with str, unicode, long, int, and
-  float arguments.
+- Issue #5247: Improve error message when unknown format codes are used when
+  using ``str.format()`` with str, unicode, long, int, and float arguments.
 
-- Running Python with the -3 option now also warns about classic division
-  for ints and longs.
+- Running Python with the -3 option now also warns about classic division for
+  ints and longs.
 
-- Issue #5260: Long integers now consume less memory:  average
-  saving is 2 bytes per long on a 32-bit system and 6 bytes per long
-  on a 64-bit system.
+- Issue #5260: Long integers now consume less memory: average saving is 2 bytes
+  per long on a 32-bit system and 6 bytes per long on a 64-bit system.
 
 - Issue #5186: Reduce hash collisions for objects with no __hash__ method by
   rotating the object pointer by 4 bits to the right.
 
-- Issue #4575: Fix Py_IS_INFINITY macro to work correctly on x87 FPUs:
-  it now forces its argument to double before testing for infinity.
+- Issue #4575: Fix Py_IS_INFINITY macro to work correctly on x87 FPUs: it now
+  forces its argument to double before testing for infinity.
 
 - Issue #4978: Passing keyword arguments as unicode strings is now allowed.
 
@@ -906,9 +892,9 @@ Core and Builtins
 
 - Issue #4807: Port the _winreg module to Windows CE.
 
-- Issue #4935: The overflow checking code in the expandtabs() method common
-  to str, bytes and bytearray could be optimized away by the compiler, letting
-  the interpreter segfault instead of raising an error.
+- Issue #4935: The overflow checking code in the expandtabs() method common to
+  str, bytes and bytearray could be optimized away by the compiler, letting the
+  interpreter segfault instead of raising an error.
 
 - Issue #3720: Fix a crash when an iterator modifies its class and removes its
   __next__ method.
@@ -925,13 +911,13 @@ Core and Builtins
 
 - Issue #4850: Change COUNT_ALLOCS variables to Py_ssize_t.
 
-- Issue #1180193: When importing a module from a .pyc (or .pyo) file with
-  an existing .py counterpart, override the co_filename attributes of all
-  code objects if the original filename is obsolete (which can happen if the
-  file has been renamed, moved, or if it is accessed through different paths).
-  Patch by Ziga Seilnacht and Jean-Paul Calderone.
+- Issue #1180193: When importing a module from a .pyc (or .pyo) file with an
+  existing .py counterpart, override the co_filename attributes of all code
+  objects if the original filename is obsolete (which can happen if the file has
+  been renamed, moved, or if it is accessed through different paths).  Patch by
+  Ziga Seilnacht and Jean-Paul Calderone.
 
-- Issue #4075: Use OutputDebugStringW in Py_FatalError.
+- Issue #4075: Use ``OutputDebugStringW()`` in Py_FatalError.
 
 - Issue #4797: IOError.filename was not set when _fileio.FileIO failed to open
   file with `str' filename on Windows.
@@ -939,8 +925,8 @@ Core and Builtins
 - Issue #3680: Reference cycles created through a dict, set or deque iterator
   did not get collected.
 
-- Issue #4701: PyObject_Hash now implicitly calls PyType_Ready on types
-  where the tp_hash and tp_dict slots are both NULL.
+- Issue #4701: PyObject_Hash now implicitly calls PyType_Ready on types where
+  the tp_hash and tp_dict slots are both NULL.
 
 - Issue #4764: With io.open, IOError.filename is set when trying to open a
   directory on POSIX systems.
@@ -949,50 +935,49 @@ Core and Builtins
   systems.
 
 - Issue #4759: None is now allowed as the first argument of
-  bytearray.translate().  It was always allowed for bytes.translate().
+  ``bytearray.translate()``.  It was always allowed for ``bytes.translate()``.
 
 - Added test case to ensure attempts to read from a file opened for writing
   fail.
 
-- Issue #2467: gc.DEBUG_STATS reported invalid elapsed times. Also, always
-  print elapsed times, not only when some objects are uncollectable /
-  unreachable. Original patch by Neil Schemenauer.
+- Issue #2467: gc.DEBUG_STATS reported invalid elapsed times. Also, always print
+  elapsed times, not only when some objects are uncollectable/unreachable.
+  Original patch by Neil Schemenauer.
 
 - Issue #3439: Add a bit_length method to int and long.
 
-- Issue #2183: Simplify and optimize bytecode for list comprehensions.
-  Original patch by Neal Norwitz.
+- Issue #2183: Simplify and optimize bytecode for list comprehensions.  Original
+  patch by Neal Norwitz.
 
-- Issue #4597: Fixed exception handling when the __exit__ function of a
-  context manager returns a value that cannot be converted to a bool.
+- Issue #4597: Fixed exception handling when the __exit__ function of a context
+  manager returns a value that cannot be converted to a bool.
 
-- Issue #4597: Fixed several opcodes that weren't always propagating
-  exceptions.
+- Issue #4597: Fixed several opcodes that weren't always propagating exceptions.
 
-- Issue #4445: Replace "sizeof(PyStringObject)" with
-  "offsetof(PyStringObject, ob_sval) + 1" when allocating memory for
-  str instances.  On a typical machine this saves 3 bytes of memory
-  (on average) per string allocation.
+- Issue #4445: Replace ``sizeof(PyStringObject)`` with
+  ``offsetof(PyStringObject, ob_sval) + 1`` when allocating memory for str
+  instances.  On a typical machine this saves 3 bytes of memory (on average) per
+  string allocation.
 
 - Issue #3996: On Windows, the PyOS_CheckStack function would cause the
   interpreter to abort ("Fatal Python error: Could not reset the stack!")
   instead of throwing a MemoryError.
 
-- Issue #3689: The list reversed iterator now supports __length_hint__
-  instead of __len__.  Behavior now matches other reversed iterators.
+- Issue #3689: The list reversed iterator now supports __length_hint__ instead
+  of __len__.  Behavior now matches other reversed iterators.
 
 - Issue #4367: Python would segfault during compiling when the unicodedata
   module couldn't be imported and \N escapes were present.
 
-- Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()``
-  method on file objects with closefd=False. The file descriptor is still
-  kept open but the file object behaves like a closed file. The ``FileIO``
-  object also got a new readonly attribute ``closefd``.
+- Issue #4233: Changed semantic of ``_fileio.FileIO``'s ``close()`` method on
+  file objects with closefd=False. The file descriptor is still kept open but
+  the file object behaves like a closed file. The ``FileIO`` object also got a
+  new readonly attribute ``closefd``.
 
 - Issue #4348: Some bytearray methods returned that didn't cause any change to
   the bytearray, returned the same bytearray instead of a copy.
 
-- Issue #4317: Fixed a crash in the imageop.rgb2rgb8() function.
+- Issue #4317: Fixed a crash in the ``imageop.rgb2rgb8()`` function.
 
 - Issue #4230: If ``__getattr__`` is a descriptor, it now functions correctly.
 
@@ -1001,8 +986,8 @@ Core and Builtins
 - Issue #4225: ``from __future__ import unicode_literals`` didn't work in an
   exec statement.
 
-- Issue #4176: Fixed a crash when pickling an object which ``__reduce__``
-  method does not return iterators for the 4th and 5th items.
+- Issue #4176: Fixed a crash when pickling an object which ``__reduce__`` method
+  does not return iterators for the 4th and 5th items.
 
 - Issue #4209: Enabling unicode_literals and the print_function in the same
   __future__ import didn't work.
@@ -1010,17 +995,18 @@ Core and Builtins
 - Using ``nonlocal`` as a variable name will now raise a Py3k SyntaxWarning
   because it is a reserved word in 3.x.
 
-- On windows, os.chdir given unicode was not working if GetCurrentDirectoryW
-  returned a path longer than MAX_PATH. (But It's doubtful this code path is
-  really executed because I cannot move to such directory on win2k)
+- On windows, ``os.chdir()`` given unicode was not working if
+  GetCurrentDirectoryW returned a path longer than MAX_PATH. (But It's doubtful
+  this code path is really executed because I cannot move to such directory on
+  win2k)
 
-- Issue #4069: When set.remove(element) is used with a set element, the element
-  is temporarily replaced with an equivalent frozenset.  But the eventual
-  KeyError would always report the empty frozenset([]) as the missing key. Now
-  it correctly refers to the initial element.
+- Issue #4069: When ``set.remove(element)`` is used with a set element, the
+  element is temporarily replaced with an equivalent frozenset.  But the
+  eventual KeyError would always report the empty ``frozenset()`` as the missing
+  key.  Now it correctly refers to the initial element.
 
-- Issue #4509: Various issues surrounding resize of bytearray objects to
-  which there are buffer exports.
+- Issue #4509: Various issues surrounding resize of bytearray objects to which
+  there are buffer exports.
 
 - Issue #4748: Lambda generators no longer return a value.
 
@@ -1028,8 +1014,8 @@ Core and Builtins
 
 - The re.sub(), re.subn() and re.split() functions now accept a flags parameter.
 
-- Issue #3845: In PyRun_SimpleFileExFlags avoid invalid memory access with
-  short file names.
+- Issue #3845: In PyRun_SimpleFileExFlags avoid invalid memory access with short
+  file names.
 
 - Issue #1113244: Py_XINCREF, Py_DECREF, Py_XDECREF: Add `do { ... } while (0)'
   to avoid compiler warnings.
@@ -1045,10 +1031,10 @@ Core and Builtins
 - Issue #3739: The unicode-internal encoder now reports the number of characters
   consumed like any other encoder (instead of the number of bytes).
 
-- Issue #2422: When compiled with the ``--with-valgrind`` option, the
-  pymalloc allocator will be automatically disabled when running under
-  Valgrind.  This gives improved memory leak detection when running
-  under Valgrind, while taking advantage of pymalloc at other times.
+- Issue #2422: When compiled with the ``--with-valgrind`` option, the pymalloc
+  allocator will be automatically disabled when running under Valgrind.  This
+  gives improved memory leak detection when running under Valgrind, while taking
+  advantage of pymalloc at other times.
 
 Library
 -------
@@ -1057,105 +1043,103 @@ Library
 
 - Fix variations of extending deques:  d.extend(d)  d.extendleft(d)  d+=d
 
-- Issue #6986: Fix crash in the JSON C accelerator when called with the
-  wrong parameter types.  Patch by Victor Stinner.
+- Issue #6986: Fix crash in the JSON C accelerator when called with the wrong
+  parameter types.  Patch by Victor Stinner.
 
-- logging: Added optional `secure` parameter to SMTPHandler, to enable use of
+- logging: Added optional "secure" parameter to SMTPHandler, to enable use of
   TLS with authentication credentials.
 
-- Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is
-  generated in Distutils. Patch by Stephen Emslie.
+- Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is generated
+  in Distutils. Patch by Stephen Emslie.
 
 - Issue #4120: Drop reference to CRT from manifest when building extensions with
   msvc9compiler.
 
-- Issue #7333: The `posix` module gains an `initgroups()` function providing
-  access to the initgroups(3) C library call on Unix systems which implement
-  it.  Patch by Jean-Paul Calderone.
+- Issue #7333: The ``posix`` module gains an ``initgroups()`` function providing
+  access to the initgroups(3) C library call on Unix systems which implement it.
+  Patch by Jean-Paul Calderone.
 
 - Issue #7408: Fixed distutils.tests.sdist so it doesn't check for group
   ownership when the group is not forced, because the group may be different
   from the user's group and inherit from its container when the test is run.
 
-- Issue #1515: Enable use of deepcopy() with instance methods.  Patch by
-  Robert Collins.
+- Issue #1515: Enable use of deepcopy() with instance methods.  Patch by Robert
+  Collins.
 
 - Issue #7403: logging: Fixed possible race condition in lock creation.
 
 - Issue #6845: Add restart support for binary upload in ftplib.  The
-  `storbinary()` method of FTP and FTP_TLS objects gains an optional `rest`
+  ``storbinary()`` method of FTP and FTP_TLS objects gains an optional "rest"
   argument.  Patch by Pablo Mouzo.
 
-- Issue #5788: `datetime.timedelta` objects get a new `total_seconds()`
-  method returning the total number of seconds in the duration.  Patch by
-  Brian Quinlan.
+- Issue #5788: ``datetime.timedelta`` objects get a new ``total_seconds()``
+  method returning the total number of seconds in the duration.  Patch by Brian
+  Quinlan.
 
 - Issue #6615: logging: Used weakrefs in internal handler list.
 
-- Issue #1488943: difflib.Differ() doesn't always add hints for tab characters
+- Issue #1488943: ``difflib.Differ`` doesn't always add hints for tab
+  characters.
 
 - Issue #6123: tarfile now opens empty archives correctly and consistently
   raises ReadError on empty files.
 
-- Issue #7354: distutils.tests.test_msvc9compiler - dragfullwindows can
-  be 2.
+- Issue #7354: distutils.tests.test_msvc9compiler - dragfullwindows can be 2.
 
 - Issue #5037: Proxy the __unicode__ special method to __unicode__ instead of
   __str__.
 
-- Issue #7341: Close the internal file object in the TarFile constructor in
-  case of an error.
+- Issue #7341: Close the internal file object in the TarFile constructor in case
+  of an error.
 
-- Issue #7293: distutils.test_msvc9compiler is fixed to work on any fresh
-  Windows box. Help provided by David Bolen.
+- Issue #7293: ``distutils.test_msvc9compiler`` is fixed to work on any fresh
+  Windows box.  Help provided by David Bolen.
 
-- Issue #7328: pydoc no longer corrupts sys.path when run with the '-m' switch
+- Issue #7328: pydoc no longer corrupts sys.path when run with the '-m' switch.
 
-- Issue #2054: ftplib now provides an FTP_TLS class to do secure FTP using
-  TLS or SSL.  Patch by Giampaolo Rodola'.
+- Issue #2054: ftplib now provides an FTP_TLS class to do secure FTP using TLS
+  or SSL.  Patch by Giampaolo Rodola'.
 
-- Issue #4969: The mimetypes module now reads the MIME database from
-  the registry under Windows.  Patch by Gabriel Genellina.
+- Issue #4969: The mimetypes module now reads the MIME database from the
+  registry under Windows.  Patch by Gabriel Genellina.
 
-- Issue #6816: runpy now provides a run_path function that allows Python code
-  to execute file paths that refer to source or compiled Python files as well
-  as zipfiles, directories and other valid sys.path entries that contain a
+- Issue #6816: runpy now provides a run_path function that allows Python code to
+  execute file paths that refer to source or compiled Python files as well as
+  zipfiles, directories and other valid sys.path entries that contain a
   __main__.py file. This allows applications that run other Python scripts to
   support the same flexibility as the CPython command line itself.
 
-- Issue #7318: multiprocessing now uses a timeout when it fails to establish
-  a connection with another process, rather than looping endlessly. The
-  default timeout is 20 seconds, which should be amply sufficient for
-  local connections.
+- Issue #7318: multiprocessing now uses a timeout when it fails to establish a
+  connection with another process, rather than looping endlessly. The default
+  timeout is 20 seconds, which should be amply sufficient for local connections.
 
 - Issue #7197: Allow unittest.TextTestRunner objects to be pickled and
-  unpickled. This fixes crashes under Windows when trying to run
+  unpickled.  This fixes crashes under Windows when trying to run
   test_multiprocessing in verbose mode.
 
-- Issue #7282: Fix a memory leak when an RLock was used in a thread other
-  than those started through `threading.Thread` (for example, using
-  `thread.start_new_thread()`.
+- Issue #7282: Fix a memory leak when an RLock was used in a thread other than
+  those started through ``threading.Thread`` (for example, using
+  ``thread.start_new_thread()``.
 
 - Issue #7264: Fix a possible deadlock when deallocating thread-local objects
   which are part of a reference cycle.
 
-- Issue #7211: Allow 64-bit values for the `ident` and `data` fields of kevent
-  objects on 64-bit systems.  Patch by Michael Broghton.
+- Issue #7211: Allow 64-bit values for the ``ident`` and ``data`` fields of
+  kevent objects on 64-bit systems.  Patch by Michael Broghton.
 
-- Issue #6896: mailbox.Maildir now invalidates its internal cache each time
+- Issue #6896: ``mailbox.Maildir`` now invalidates its internal cache each time
   a modification is done through it.  This fixes inconsistencies and test
   failures on systems with slightly bogus mtime behaviour.
 
-- Issue #7246 & Issue #7208: getpass now properly flushes input before
-  reading from stdin so that existing input does not confuse it and
-  lead to incorrect entry or an IOError.  It also properly flushes it
-  afterwards to avoid the terminal echoing the input afterwards on
-  OSes such as Solaris.
+- Issue #7246 & Issue #7208: getpass now properly flushes input before reading
+  from stdin so that existing input does not confuse it and lead to incorrect
+  entry or an IOError.  It also properly flushes it afterwards to avoid the
+  terminal echoing the input afterwards on OSes such as Solaris.
 
-- Issue #7233: Fix a number of two-argument Decimal methods to make
-  sure that they accept an int or long as the second argument.  Also
-  fix buggy handling of large arguments (those with coefficient longer
-  than the current precision) in shift and rotate.
+- Issue #7233: Fix a number of two-argument Decimal methods to make sure that
+  they accept an int or long as the second argument.  Also fix buggy handling of
+  large arguments (those with coefficient longer than the current precision) in
+  shift and rotate.
 
 - Issue #4750: Store the basename of the original filename in the gzip FNAME
   header as required by RFC 1952.
@@ -1166,8 +1150,8 @@ Library
 - Issue #7218: Fix test_site for win32, the directory comparison was done with
   an uppercase.
 
-- Issue #7205: Fix a possible deadlock when using a BZ2File object from
-  several threads at once.
+- Issue #7205: Fix a possible deadlock when using a BZ2File object from several
+  threads at once.
 
 - Issue #7071: byte-compilation in Distutils is now done with respect to
   sys.dont_write_bytecode.
@@ -1183,76 +1167,75 @@ Library
 - Issue #7099: Decimal.is_normal now returns True for numbers with exponent
   larger than emax.
 
-- Issue #5833: Fix extra space character in readline completion with the
-  GNU readline library version 6.0.
+- Issue #5833: Fix extra space character in readline completion with the GNU
+  readline library version 6.0.
 
 - Issue #7133: SSL objects now support the new buffer API.
 
-- Issue #7149: urllib fails on OSX in the proxy detection code
+- Issue #7149: urllib fails on OSX in the proxy detection code.
 
 - Issue #7069: Make inspect.isabstract() return a boolean.
 
-- Add support to the `ihooks` module for relative imports.
+- Add support to the ``ihooks`` module for relative imports.
 
-- Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment
+- Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment.
 
 - Issue #7086: Added TCP support to SysLogHandler, and tidied up some
   anachronisms in the code which were a relic of 1.5.2 compatibility.
 
-- Issue #7082: When falling back to the MIME 'name' parameter, the
-  correct place to look for it is the Content-Type header.
+- Issue #7082: When falling back to the MIME 'name' parameter, the correct place
+  to look for it is the Content-Type header.
 
-- Issue #7048: Force Decimal.logb to round its result when that result
-  is too large to fit in the current precision.
+- Issue #7048: Force Decimal.logb to round its result when that result is too
+  large to fit in the current precision.
 
 - Issue #6516: Added owner/group support when creating tar archives in
   Distutils.
 
-- Issue #7031: Add TestCase.assert(Not)IsInstance() methods.
+- Issue #7031: Add ``TestCase.assert(Not)IsInstance()`` methods.
 
-- Issue #6790: Make it possible again to pass an `array.array` to
-  `httplib.HTTPConnection.send`. Patch by Kirk McDonald.
+- Issue #6790: Make it possible again to pass an ``array.array`` to
+  ``httplib.HTTPConnection.send``.  Patch by Kirk McDonald.
 
-- Issue #6236, #6348: Fix various failures in the `io` module under AIX
-  and other platforms, when using a non-gcc compiler. Patch by egreen.
+- Issue #6236, #6348: Fix various failures in the `io` module under AIX and
+  other platforms, when using a non-gcc compiler.  Patch by egreen.
 
 - Issue #6954: Fixed crash when using DISTUTILS_DEBUG flag in Distutils.
 
 - Issue #6851: Fix urllib.urlopen crash on secondairy threads on OSX 10.6
 
-- Issue #4606: Passing 'None' if ctypes argtype is set to POINTER(...)
-  does now always result in NULL.
+- Issue #4606: Passing 'None' if ctypes argtype is set to POINTER(...)  does now
+  always result in NULL.
 
-- Issue #5042: ctypes Structure sub-subclass does now initialize
-  correctly with base class positional arguments.
+- Issue #5042: ctypes Structure sub-subclass does now initialize correctly with
+  base class positional arguments.
 
-- Issue #6938: Fix a TypeError in string formatting of a multiprocessing
-  debug message.
+- Issue #6938: Fix a TypeError in string formatting of a multiprocessing debug
+  message.
 
 - Issue #6635: Fix profiler printing usage message.
 
 - Issue #6856: Add a filter keyword argument to TarFile.add().
 
 - Issue #6163: Fixed HP-UX runtime library dir options in
-  distutils.unixcompiler. Initial patch by Sridhar Ratnakumar and
-  Michael Haubenwallner.
+  distutils.unixcompiler.  Initial patch by Sridhar Ratnakumar and Michael
+  Haubenwallner.
 
-- Issue #6857: Default format() alignment should be '>' for Decimal
-  instances.
+- Issue #6857: Default format() alignment should be '>' for Decimal instances.
 
-- Issue #6795: int(Decimal('nan')) now raises ValueError instead of
-  returning NaN or raising InvalidContext.  Also, fix infinite recursion
-  in long(Decimal('nan')).
+- Issue #6795: int(Decimal('nan')) now raises ValueError instead of returning
+  NaN or raising InvalidContext.  Also, fix infinite recursion in
+  long(Decimal('nan')).
 
-- Issue #6850: Fix bug in Decimal._parse_format_specifier for formats
-  with no type specifier.
+- Issue #6850: Fix bug in Decimal._parse_format_specifier for formats with no
+  type specifier.
 
-- Issue #4937: plat-mac/bundlebuilder revers to non-existing version.plist
+- Issue #4937: plat-mac/bundlebuilder refers to non-existing version.plist.
 
-- Issue #6838: Use a list to accumulate the value instead of
-  repeatedly concatenating strings in httplib's
-  HTTPResponse._read_chunked providing a significant speed increase
-  when downloading large files servend with a Transfer-Encoding of 'chunked'.
+- Issue #6838: Use a list to accumulate the value instead of repeatedly
+  concatenating strings in httplib's HTTPResponse._read_chunked providing a
+  significant speed increase when downloading large files servend with a
+  Transfer-Encoding of 'chunked'.
 
 - Issue #5275: In Cookie's Cookie.load(), properly handle non-string arguments
   as documented.
@@ -1280,8 +1263,8 @@ Library
 
 - Issue #6665: Fix fnmatch to properly match filenames with newlines in them.
 
-- Issue #1135: Add the XView and YView mix-ins to avoid duplicating
-  the xview* and yview* methods.
+- Issue #1135: Add the XView and YView mix-ins to avoid duplicating the xview*
+  and yview* methods.
 
 - Issue #6629: Fix a data corruption issue in the new `io` package, which could
   occur when writing to a BufferedRandom object (e.g. a file opened in "rb+" or
@@ -1292,12 +1275,12 @@ Library
   possible to get a spurious 'task_done() called too many times' error.
 
 - Issue #1628205: Socket file objects returned by socket.socket.makefile() now
-  properly handles EINTR within the read, readline, write & flush methods.
-  The socket.sendall() method now properly handles interrupted system calls.
+  properly handles EINTR within the read, readline, write & flush methods.  The
+  socket.sendall() method now properly handles interrupted system calls.
 
-- Issue #6595: The Decimal constructor now allows arbitrary Unicode
-  decimal digits in input, as recommended by the standard.  Previously
-  it was restricted to accepting [0-9].
+- Issue #6595: The Decimal constructor now allows arbitrary Unicode decimal
+  digits in input, as recommended by the standard.  Previously it was restricted
+  to accepting [0-9].
 
 - Issue #6511: ZipFile now raises BadZipfile (instead of an IOError) when
   opening an empty or very small file.
@@ -1305,23 +1288,23 @@ Library
 - Issue #6553: Fixed a crash in cPickle.load(), when given a file-like object
   containing incomplete data.
 
-- Issue #6545: Removed assert statements in distutils.Extension, so the
-  behavior is similar when used with -O.
+- Issue #6545: Removed assert statements in distutils.Extension, so the behavior
+  is similar when used with -O.
 
 - unittest has been split up into a package.  All old names should still work.
 
-- Issue #6431: Make Fraction type return NotImplemented when it doesn't
-  know how to handle a comparison without loss of precision.  Also add
-  correct handling of infinities and nans for comparisons with float.
+- Issue #6431: Make Fraction type return NotImplemented when it doesn't know how
+  to handle a comparison without loss of precision.  Also add correct handling
+  of infinities and nans for comparisons with float.
 
 - Issue #6415: Fixed warnings.warn segfault on bad formatted string.
 
-- Issue #6466: now distutils.cygwinccompiler and distutils.emxccompiler
-  uses the same refactored function to get gcc/ld/dllwrap versions numbers.
-  It's `distutils.util.get_compiler_versions`. Added deprecation warnings
-  for the obsolete get_versions() functions.
+- Issue #6466: Now distutils.cygwinccompiler and distutils.emxccompiler uses the
+  same refactored function to get gcc/ld/dllwrap versions numbers.  It's
+  ``distutils.util.get_compiler_versions()``.  Added deprecation warnings for
+  the obsolete get_versions() functions.
 
-- Issue #6433: fixed issues with multiprocessing.pool.map hanging on empty list
+- Issue #6433: Fixed issues with multiprocessing.pool.map hanging on empty list.
 
 - Issue #6314: logging: Extra checks on the "level" argument in more places.
 
@@ -1340,26 +1323,26 @@ Library
 
 - Issue #6403: Fixed package path usage in build_ext.
 
-- Issues #5155, 5313, 5331: multiprocessing.Process._bootstrap was
+- Issues #5155, #5313, #5331: multiprocessing.Process._bootstrap was
   unconditionally calling "os.close(sys.stdin.fileno())" resulting in file
-  descriptor errors
+  descriptor errors.
 
 - Issue #6365: Distutils build_ext inplace mode was copying the compiled
   extension in a subdirectory if the extension name had dots.
 
 - Issue #6344: Fixed a crash of mmap.read() when passed a negative argument.
 
-- Issue #5230: pydoc would report no documentation found if a module generated
-  a 'not found' import error when loaded; it now reports the import errors.
+- Issue #5230: pydoc would report no documentation found if a module generated a
+  'not found' import error when loaded; it now reports the import errors.
   Thanks to Lucas Prado Melo for initial fix and collaboration on the tests.
 
-- Issue #6314: logging.basicConfig() performs extra checks on the "level"
+- Issue #6314: ``logging.basicConfig()`` performs extra checks on the "level"
   argument.
 
-- Issue #6164: Added an AIX specific linker argument in Distutils
-  unixcompiler. Original patch by Sridhar Ratnakumar.
+- Issue #6164: Added an AIX specific linker argument in Distutils unixcompiler.
+  Original patch by Sridhar Ratnakumar.
 
-- Issue #6274: Fixed possible file descriptors leak in subprocess.py
+- Issue #6274: Fixed possible file descriptors leak in subprocess.py.
 
 - Issue #6189: Restored compatibility of subprocess.py with Python 2.2.
 
@@ -1368,8 +1351,8 @@ Library
 - Issue #6286: Now Distutils upload command is based on urllib2 instead of
   httplib, allowing the usage of http_proxy.
 
-- Issue #6271: mmap tried to close invalid file handle (-1) when annonymous.
-  (On Unix)
+- Issue #6271: mmap tried to close invalid file handle (-1) for anonymous maps
+  on Unix.
 
 - Issue #6215: All bug fixes and enhancements from the Python 3.1 io library
   (including the fast C implementation) have been backported to the standard
@@ -1382,31 +1365,31 @@ Library
 
 - Issue #6263: Fixed syntax error in distutils.cygwincompiler.
 
-- Issue #5201: distutils.sysconfig.parse_makefile() now understands `$$`
-  in Makefiles. This prevents compile errors when using syntax like:
-  `LDFLAGS='-rpath=\$$LIB:/some/other/path'`. Patch by Floris Bruynooghe.
+- Issue #5201: distutils.sysconfig.parse_makefile() now understands ``$$`` in
+  Makefiles.  This prevents compile errors when using syntax like:
+  ``LDFLAGS='-rpath=\$$LIB:/some/other/path'``.  Patch by Floris Bruynooghe.
 
 - Issue #5767: Removed sgmlop support from xmlrpclib.
 
-- Issue #6131: test_modulefinder leaked when run after test_distutils.
-  Patch by Hirokazu Yamamoto.
+- Issue #6131: test_modulefinder leaked when run after test_distutils.  Patch by
+  Hirokazu Yamamoto.
 
 - Issue #6048: Now Distutils uses the tarfile module in archive_util.
 
 - Issue #5150: IDLE's format menu now has an option to strip trailing
   whitespace.
 
-- Issue #6121: pydoc now ignores leading and trailing spaces in the
-  argument to the 'help' function.
+- Issue #6121: pydoc now ignores leading and trailing spaces in the argument to
+  the 'help' function.
 
 - In unittest, using a skipping decorator on a class is now equivalent to
   skipping every test on the class.  The ClassTestSuite class has been removed.
 
-- Issue #6050: Don't fail extracting a directory from a zipfile if
-  the directory already exists.
+- Issue #6050: Don't fail extracting a directory from a zipfile if the directory
+  already exists.
 
-- Issue #5311: bdist_msi can now build packages that do not depend on a
-  specific Python version.
+- Issue #5311: bdist_msi can now build packages that do not depend on a specific
+  Python version.
 
 - Issue #1309352: fcntl now converts its third arguments to a C `long` rather
   than an int, which makes some operations possible under 64-bit Linux (e.g.
@@ -1415,20 +1398,20 @@ Library
 - Issue #1424152: Fix for httplib, urllib2 to support SSL while working through
   proxy. Original patch by Christopher Li, changes made by Senthil Kumaran.
 
-- Issue #1983: Fix functions taking or returning a process identifier to use
-  the dedicated C type ``pid_t`` instead of a C ``int``. Some platforms have
-  a process identifier type wider than the standard C integer type.
+- Issue #1983: Fix functions taking or returning a process identifier to use the
+  dedicated C type ``pid_t`` instead of a C ``int``.  Some platforms have a
+  process identifier type wider than the standard C integer type.
 
 - Issue #4066: smtplib.SMTP_SSL._get_socket now correctly returns the socket.
   Patch by Farhan Ahmad, test by Marcin Bachry.
 
-- Issue #6062: In distutils, fixed the package option of build_ext. Feedback
+- Issue #6062: In distutils, fixed the package option of build_ext.  Feedback
   and tests on pywin32 by Tim Golden.
 
-- Issue #6053: Fixed distutils tests on win32. patch by Hirokazu Yamamoto.
+- Issue #6053: Fixed distutils tests on win32.  Patch by Hirokazu Yamamoto.
 
-- Issue #6046: Fixed the library extension when distutils build_ext is used
-  inplace. Initial patch by Roumen Petrov.
+- Issue #6046: Fixed the library extension when distutils build_ext is used in
+  place.  Initial patch by Roumen Petrov.
 
 - Issue #6041: Now distutils `sdist` and `register` commands use `check` as a
   subcommand.
@@ -1436,56 +1419,56 @@ Library
 - Issue #2116: Weak references and weak dictionaries now support copy()ing and
   deepcopy()ing.
 
-- Issue #1655: Make imaplib IPv6-capable. Patch by Derek Morr.
+- Issue #1655: Make imaplib IPv6-capable.  Patch by Derek Morr.
 
 - Issue #5918: Fix a crash in the parser module.
 
-- Issue #1664: Make nntplib IPv6-capable. Patch by Derek Morr.
+- Issue #1664: Make nntplib IPv6-capable.  Patch by Derek Morr.
 
-- Issue #6022: a test file was created in the current working directory by
+- Issue #6022: A test file was created in the current working directory by
   test_get_outputs in Distutils.
 
 - Issue #4050: inspect.findsource/getsource now raise an IOError if the 'source'
   file is a binary.  Patch by Brodie Rao, tests by Daniel Diniz.
 
 - Issue #5977: distutils build_ext.get_outputs was not taking into account the
-  inplace option. Initial patch by kxroberto.
+  inplace option.  Initial patch by kxroberto.
 
-- Issue #5984: distutils.command.build_ext.check_extensions_list checks were broken
-  for old-style extensions.
+- Issue #5984: distutils.command.build_ext.check_extensions_list checks were
+  broken for old-style extensions.
 
 - Issue #5971: StreamHandler.handleError now swallows IOErrors which occur when
   trying to print a traceback.
 
 - Issue #5976: Fixed Distutils test_check_environ.
 
-- Issue #5900: Ensure RUNPATH is added to extension modules with RPATH if GNU
-  ld is used. Original patch by Floris Bruynooghe.
+- Issue #5900: Ensure RUNPATH is added to extension modules with RPATH if GNU ld
+  is used.  Original patch by Floris Bruynooghe.
 
-- Issue #5941: Distutils build_clib command was not working anymore because
-  of an incomplete costumization of the archiver command. Added ARFLAGS in the
-  Makefile besides AR and make Distutils use it. Original patch by David
+- Issue #5941: Distutils build_clib command was not working anymore because of
+  an incomplete costumization of the archiver command.  Added ARFLAGS in the
+  Makefile besides AR and make Distutils use it.  Original patch by David
   Cournapeau.
 
-- Issue 5955: aifc's close method did not close the file it wrapped,
-  now it does.  This also means getfp method now returns the real fp.
+- Issue 5955: aifc's close method did not close the file it wrapped, now it
+  does.  This also means getfp method now returns the real fp.
 
-- Issue #4875: On win32, ctypes.util.find_library does no longer
-  return directories.
+- Issue #4875: On win32, ctypes.util.find_library does no longer return
+  directories.
 
 - Issue #5142: Add the ability to skip modules while stepping to pdb.
 
 - Issue #1309567: Fix linecache behavior of stripping subdirectories when
   looking for files given by a relative filename.
 
-- Issue #5692: In :class:`zipfile.Zipfile`, fix wrong path calculation when
+- Issue #5692: In ``zipfile.Zipfile``, fix wrong path calculation when
   extracting a file to the root directory.
 
-- Issue #5913: os.listdir() should fail for empty path on windows.
+- Issue #5913: ``os.listdir()`` should fail for empty path on windows.
 
-- Issue #5084: unpickling now interns the attribute names of pickled objects,
-  saving memory and avoiding growth in size of subsequent pickles. Proposal
-  and original patch by Jake McGuire.
+- Issue #5084: Unpickling now interns the attribute names of pickled objects,
+  saving memory and avoiding growth in size of subsequent pickles.  Proposal and
+  original patch by Jake McGuire.
 
 - Issue #3002: ``shutil.copyfile()`` and ``shutil.copytree()`` now raise an
   error when a named pipe is encountered, rather than blocking infinitely.
@@ -1495,16 +1478,15 @@ Library
 
 - Issue #2245: aifc now skips chunk types it doesn't recognize, per spec.
 
-- Issue #5874: distutils.tests.test_config_cmd is not locale-sensitive
-  anymore.
+- Issue #5874: distutils.tests.test_config_cmd is not locale-sensitive anymore.
 
 - Issue #4305: ctypes should now build again on mipsel-linux-gnu
 
-- Issue #1734234: Massively speedup ``unicodedata.normalize()`` when the
-  string is already in normalized form, by performing a quick check beforehand.
+- Issue #1734234: Massively speedup ``unicodedata.normalize()`` when the string
+  is already in normalized form, by performing a quick check beforehand.
   Original patch by Rauli Ruohonen.
 
-- Issue #5853: calling a function of the mimetypes module from several threads
+- Issue #5853: Calling a function of the mimetypes module from several threads
   at once could hit the recursion limit if the mimetypes database hadn't been
   initialized before.
 
@@ -1512,80 +1494,80 @@ Library
   names which should not be exported.
 
 - Issue #5810: Fixed Distutils test_build_scripts so it uses
-  sysconfig.get_config_vars.
+  ``sysconfig.get_config_vars()``.
 
 - Issue #4951: Fixed failure in test_httpservers.
 
-- Issue #3102:  All global symbols that the _ctypes extension defines
-  are now prefixed with 'Py' or '_ctypes'.
+- Issue #3102: All global symbols that the _ctypes extension defines are now
+  prefixed with 'Py' or '_ctypes'.
 
 - Issue #5041: ctypes does now allow pickling wide character.
 
 - Issue #5812: For the two-argument form of the Fraction constructor,
-  Fraction(m, n), m and n are permitted to be arbitrary Rational
-  instances.
+  ``Fraction(m, n)``, m and n are permitted to be arbitrary Rational instances.
 
-- Issue #5812: Fraction('1e6') is valid: more generally, any string
-  that's valid for float() is now valid for Fraction(), with the
-  exception of strings representing NaNs and infinities.
+- Issue #5812: Fraction('1e6') is valid: more generally, any string that's valid
+  for float() is now valid for Fraction(), with the exception of strings
+  representing NaNs and infinities.
 
 - Issue #5795: Fixed test_distutils failure on Debian ppc.
 
 - Issue #5768: Fixed bug in Unicode output logic and test case for same.
 
-- Issue #1161031: fix readwrite select flag handling: POLLPRI now
-  results in a handle_expt_event call, not handle_read_event, and POLLERR
-  and POLLNVAL now call handle_close, not handle_expt_event.  Also,
-  dispatcher now has an 'ignore_log_types' attribute for suppressing
-  log messages, which is set to 'warning' by default.
+- Issue #1161031: Fix readwrite select flag handling: POLLPRI now results in a
+  handle_expt_event call, not handle_read_event, and POLLERR and POLLNVAL now
+  call handle_close, not handle_expt_event.  Also, dispatcher now has an
+  'ignore_log_types' attribute for suppressing log messages, which is set to
+  'warning' by default.
 
-- Issue #5607: fixed Distutils test_get_platform for Mac OS X fat binaries.
+- Issue #5607: Fixed Distutils test_get_platform for Mac OS X fat binaries.
 
-- Issue #5741: don't disallow "%%" (which is an escape for "%") when setting
-  a value in SafeConfigParser.
+- Issue #5741: Don't disallow "%%" (which is an escape for "%") when setting a
+  value in SafeConfigParser.
 
-- Issue #5732: added a new command in Distutils: check.
+- Issue #5732: Added a new command in Distutils: check.
 
 - Issue #5731: Distutils bdist_wininst no longer worked on non-Windows
-  platforms. Initial patch by Paul Moore.
+  platforms.  Initial patch by Paul Moore.
 
-- Issue #2254: Fix CGIHTTPServer information disclosure.  Relative paths are
-  now collapsed within the url properly before looking in cgi_directories.
+- Issue #2254: Fix CGIHTTPServer information disclosure.  Relative paths are now
+  collapsed within the url properly before looking in cgi_directories.
 
-- Issue #5095: Added bdist_msi to the list of bdist supported formats.
-  Initial fix by Steven Bethard.
+- Issue #5095: Added bdist_msi to the list of bdist supported formats.  Initial
+  fix by Steven Bethard.
 
-- Issue #1491431: Fixed distutils.filelist.glob_to_re for edge cases.
-  Initial fix by Wayne Davison.
+- Issue #1491431: Fixed distutils.filelist.glob_to_re for edge cases.  Initial
+  fix by Wayne Davison.
 
-- Issue #5693: TestSuite.__iter__ can now be consistently overridden in subclasses.
+- Issue #5693: TestSuite.__iter__ can now be consistently overridden in
+  subclasses.
 
-- Issue #5694: removed spurious test output in Distutils (test_clean).
+- Issue #5694: Removed spurious test output in Distutils (test_clean).
 
 - Issue #5471: Fix os.path.expanduser() for $HOME set to '/'.
 
-- Issue #1326077: fix the formatting of SyntaxErrors by the traceback module.
+- Issue #1326077: Fix the formatting of SyntaxErrors by the traceback module.
 
-- Issue #1726172: fix IndexError in the case of and empty response in ftplib.
+- Issue #1726172: Fix IndexError in the case of and empty response in ftplib.
 
-- Issue #2625: added missing iteritems() call to the for loop in
+- Issue #2625: Added missing iteritems() call to the for loop in
   mailbox.MH.get_message().
 
-- Issue #5585: Add the ability to call an initializer to mulitiprocessing.manager
-  so that users can install custom handlers/etc.
+- Issue #5585: Add the ability to call an initializer to
+  mulitiprocessing.manager so that users can install custom handlers/etc.
 
-- Issue #3551: Patch multiprocessing to raise a proper exception if the size of the
-  object when writefile is called causes a ERROR_NO_SYSTEM_RESOURCES. Added docs
-  to note the limitation
+- Issue #3551: Patch multiprocessing to raise a proper exception if the size of
+  the object when writefile is called causes a ERROR_NO_SYSTEM_RESOURCES.  Added
+  docs to note the limitation.
 
-- unittest.assertNotEqual() now uses the inequality operator (!=) instead
-  of the equality operator.
+- unittest.assertNotEqual() now uses the inequality operator (!=) instead of the
+  equality operator.
 
 - Issue #6001: Test discovery for unittest. Implemented in
   unittest.TestLoader.discover and from the command line.
 
-- Issue #5679: The methods unittest.TestCase.addCleanup and doCleanups were added.
-  addCleanup allows you to add cleanup functions that will be called
+- Issue #5679: The methods unittest.TestCase.addCleanup and doCleanups were
+  added.  addCleanup allows you to add cleanup functions that will be called
   unconditionally (after setUp if setUp fails, otherwise after tearDown). This
   allows for much simpler resource allocation and deallocation during tests.
 
@@ -1601,17 +1583,17 @@ Library
 - Issue #5728: unittest.TestResult has new startTestRun and stopTestRun methods;
   called immediately before and after a test run.
 
-- Issue #5663: better failure messages for unittest asserts. Default assertTrue
+- Issue #5663: Better failure messages for unittest asserts. Default assertTrue
   and assertFalse messages are now useful. TestCase has a longMessage attribute.
   This defaults to False, but if set to True useful error messages are shown in
   addition to explicit messages passed to assert methods.
 
-- Issue #3110: Add additional protect around SEM_VALUE_MAX for multiprocessing
+- Issue #3110: Add additional protect around SEM_VALUE_MAX for multiprocessing.
 
 - In Pdb, prevent the reassignment of __builtin__._ by sys.displayhook on
   printing out values.
 
-- Issue #4572: added SEEK_* symbolic constants to io module.
+- Issue #4572: Added SEEK_* symbolic constants to io module.
 
 - Issue #1665206 (partially): Move imports in cgitb to the top of the module
   instead of performing them in functions. Helps prevent import deadlocking in
@@ -1621,32 +1603,32 @@ Library
 
 - Actually make the SimpleXMLRPCServer CGI handler work.
 
-- Issue #2522: locale.format now checks its first argument to ensure it has
+- Issue #2522: locale.format() now checks its first argument to ensure it has
   been passed only one pattern, avoiding mysterious errors where it appeared
   that it was failing to do localization.
 
-- Issue #5583: Added optional Extensions in Distutils. Initial patch by Georg
+- Issue #5583: Added optional extensions in Distutils.  Initial patch by Georg
   Brandl.
 
-- Issue #5619: Multiprocessing children disobey the debug flag and causes
-  popups on windows buildbots. Patch applied to work around this issue.
+- Issue #5619: Multiprocessing children disobey the debug flag and causes popups
+  on windows buildbots.  Patch applied to work around this issue.
 
 - Issue #5632: Thread.ident was None for the main thread and threads not created
   with the threading module.
 
-- Issue #5400: Added patch for multiprocessing on netbsd compilation/support
+- Issue #5400: Added patch for multiprocessing on netbsd compilation/support.
 
 - Issue #5387: Fixed mmap.move crash by integer overflow.
 
-- Issue #5261: Patch multiprocessing's semaphore.c to support context
-  manager use: "with multiprocessing.Lock()" works now.
+- Issue #5261: Patch multiprocessing's semaphore.c to support context manager
+  use: "with multiprocessing.Lock()" works now.
 
 - Issue #5177: Multiprocessing's SocketListener class now uses
-  socket.SO_REUSEADDR on all connections so that the user no longer needs
-  to wait 120 seconds for the socket to expire.
+  socket.SO_REUSEADDR on all connections so that the user no longer needs to
+  wait 120 seconds for the socket to expire.
 
-- Adjusted _tkinter to compile without warnings when WITH_THREAD is not
-  defined (part of issue #5035).
+- Adjusted _tkinter to compile without warnings when WITH_THREAD is not defined
+  (part of issue #5035).
 
 - Issue #5561: Removed the sys.version_info shortcuts from platform's
   python_version() and python_version_tuple() since they produced different
@@ -1655,18 +1637,18 @@ Library
 - Issue #1034053: unittest now supports skipping tests and expected failures.
 
 - The unittest.TestCase.assertRaises() method now returns a context manager when
-  not given a callable so that code to be tested can be written inline using
-  a with statement.
+  not given a callable so that code to be tested can be written inline using a
+  with statement.
 
-- The unittest.TestCase.assertEqual() now displays the differences in lists,
-  tuples, dicts and sets on failure.  Many new handy type and comparison
-  specific assert* methods have been added that fail with error messages
-  actually useful for debugging.  Contributed in part by Google.  [Issue #2578]
+- Issue #2578: The unittest.TestCase.assertEqual() now displays the differences
+  in lists, tuples, dicts and sets on failure.  Many new handy type and
+  comparison specific assert* methods have been added that fail with error
+  messages actually useful for debugging.  Contributed in part by Google.
 
-- Issue #5068: Fixed the tarfile._BZ2Proxy.read() method that would loop
-  forever on incomplete input. That caused tarfile.open() to hang when used
-  with mode 'r' or 'r:bz2' and a fileobj argument that contained no data or
-  partial bzip2 compressed data.
+- Issue #5068: Fixed the tarfile._BZ2Proxy.read() method that would loop forever
+  on incomplete input.  That caused tarfile.open() to hang when used with mode
+  'r' or 'r:bz2' and a fileobj argument that contained no data or partial bzip2
+  compressed data.
 
 - Issue #5536: urllib.urlretrieve makes sure to close the file it's writing to
   even if an exception occurs.
@@ -1674,38 +1656,38 @@ Library
 - Issue #5381: Added object_pairs_hook to the json module.  This allows
   OrderedDicts to be built by the decoder.
 
-- Issue #2110: Add support for thousands separator and 'n' type
-  specifier to Decimal.__format__
+- Issue #2110: Add support for thousands separator and 'n' type specifier to
+  ``Decimal.__format__()``.
 
-- Fix Decimal.__format__ bug that swapped the meanings of the '<' and
-  '>' alignment characters.
+- Fix Decimal.__format__ bug that swapped the meanings of the '<' and '>'
+  alignment characters.
 
-- Issue #1222: locale.format() bug when the thousands separator is a space
+- Issue #1222: ``locale.format()`` bug when the thousands separator is a space
   character.
 
-- Issue #5472: Fixed distutils.test_util tear down. Original patch by
-  Tim Golden.
+- Issue #5472: Fixed distutils.test_util tear down. Original patch by Tim
+  Golden.
 
-- collections.deque() objects now have a read-only attribute called maxlen.
+- collections.deque objects now have a read-only attribute called maxlen.
 
 - Issue #2638: Show a window constructed with tkSimpleDialog.Dialog only after
-  it is has been populated and properly configured in order to prevent
-  window flashing.
+  it is has been populated and properly configured in order to prevent window
+  flashing.
 
-- Issue #4792: Prevent a segfault in _tkinter by using the
-  guaranteed to be safe interp argument given to the PythonCmd in place of
-  the Tcl interpreter taken from a PythonCmd_ClientData.
+- Issue #4792: Prevent a segfault in _tkinter by using the guaranteed to be safe
+  interp argument given to the PythonCmd in place of the Tcl interpreter taken
+  from a PythonCmd_ClientData.
 
 - Issue #5193: Guarantee that Tkinter.Text.search returns a string.
 
-- Issue #5394: removed > 2.3 syntax from distutils.msvc9compiler.
+- Issue #5394: Removed > 2.3 syntax from distutils.msvc9compiler.
   Original patch by Akira Kitada.
 
 - Issue #5385: Fixed mmap crash after resize failure on windows.
 
 - Issue #5179: Fixed subprocess handle leak on failure on windows.
 
-- PEP 372:  Added collections.OrderedDict().
+- PEP 372: Added collections.OrderedDict().
 
 - The _asdict() for method for namedtuples now returns an OrderedDict().
 
@@ -1717,8 +1699,8 @@ Library
 - Issue #5401: Fixed a performance problem in mimetypes when ``from mimetypes
   import guess_extension`` was used.
 
-- Issue #1733986: Fixed mmap crash in accessing elements of second map object
-  with same tagname but larger size than first map. (Windows)
+- Issue #1733986: Fixed mmap crash on Windows in accessing elements of second
+  map object with same tagname but larger size than first map.
 
 - Issue #5386: mmap.write_byte didn't check map size, so it could cause buffer
   overrun.
@@ -1726,37 +1708,37 @@ Library
 - Issue #1533164: Installed but not listed *.pyo was breaking Distutils
   bdist_rpm command.
 
-- Issue #5378: added --quiet option to Distutils bdist_rpm command.
+- Issue #5378: Added --quiet option to Distutils bdist_rpm command.
 
-- Issue #5052: make Distutils compatible with 2.3 again.
+- Issue #5052: Make Distutils compatible with 2.3 again.
 
 - Deprecated methods of symtable.Symbol have been removed: is_keywordarg(),
   is_vararg(), and is_in_tuple().
 
-- Issue #5316: Fixed buildbot failures introduced by multiple inheritance
-  in Distutils tests.
+- Issue #5316: Fixed buildbot failures introduced by multiple inheritance in
+  Distutils tests.
 
 - Issue #5287: Add exception handling around findCaller() call to help out
   IronPython.
 
-- Issue #5282: Fixed mmap resize on 32bit windows and unix. When offset > 0,
-  The file was resized to wrong size.
+- Issue #5282: Fixed mmap resize on 32bit Windows and Unix.  When ``offset >
+  0``, the file was resized to wrong size.
 
 - Issue #5292: Fixed mmap crash on its boundary access m[len(m)].
 
-- Issue #2279: distutils.sdist.add_defaults now add files
-  from the package_data and the data_files metadata.
+- Issue #2279: distutils.sdist.add_defaults now add files from the package_data
+  and the data_files metadata.
 
-- Issue #5257: refactored all tests in distutils, so they use
+- Issue #5257: Refactored all tests in distutils, so they use
   support.TempdirManager, to avoid writing in the tests directory.
 
 - Issue #4524: distutils build_script command failed with --with-suffix=3.
   Initial patch by Amaury Forgeot d'Arc.
 
-- Issue #2461: added tests for distutils.util
+- Issue #2461: Added tests for distutils.util.
 
-- Issue #1008086: Fixed socket.inet_aton() to always return 4 bytes even on
-  LP64 platforms (most 64-bit Linux, bsd, unix systems).
+- Issue #1008086: Fixed socket.inet_aton() to always return 4 bytes even on LP64
+  platforms (most 64-bit Linux, bsd, unix systems).
 
 - Issue #5203: Fixed ctypes segfaults when passing a unicode string to a
   function without argtypes (only occurs if HAVE_USABLE_WCHAR_T is false).
@@ -1765,39 +1747,38 @@ Library
   under NT and OS2. Patch by Philip Jenvey.
 
 - Issue #5128: Make compileall properly inspect bytecode to determine if needs
-  to be recreated. This avoids a timing hole thanks to the old reliance on the
+  to be recreated.  This avoids a timing hole thanks to the old reliance on the
   ctime of the files involved.
 
 - Issue #5122: Synchronize tk load failure check to prevent a potential
   deadlock.
 
-- Issue #1818: collections.namedtuple() now supports a keyword argument
-  'rename' which lets invalid fieldnames be automatically converted to
-  positional names in the form, _1, _2, ...
+- Issue #1818: collections.namedtuple() now supports a keyword argument 'rename'
+  which lets invalid fieldnames be automatically converted to positional names
+  in the form, _1, _2, ...
 
 - Issue #4890: Handle empty text search pattern in Tkinter.Text.search.
 
-- Issue #5170: Fixed Unicode output bug in logging and added test case.
-  This is a regression which did not occur in 2.5.
+- Issue #5170: Fixed Unicode output bug in logging and added test case.  This is
+  a regression which did not occur in 2.5.
 
-- Issue #4512 (part 2): Promote ``ZipImporter._get_filename()`` to be a
-  public documented method ``ZipImporter.get_filename()``.
+- Issue #4512 (part 2): Promote ``ZipImporter._get_filename()`` to be a public
+  documented method ``ZipImporter.get_filename()``.
 
-- Issue #4195: The ``runpy`` module (and the ``-m`` switch) now support
-  the execution of packages by looking for and executing a ``__main__``
-  submodule when a package name is supplied. Initial patch by Andi
-  Vajda.
+- Issue #4195: The ``runpy`` module (and the ``-m`` switch) now support the
+  execution of packages by looking for and executing a ``__main__`` submodule
+  when a package name is supplied. Initial patch by Andi Vajda.
 
-- Issue #1731706: Call Tcl_ConditionFinalize for Tcl_Conditions that will
-  not be used again (this requires Tcl/Tk 8.3.1), also fix a memory leak in
-  Tkapp_Call when calling from a thread different than the one that created
-  the Tcl interpreter. Patch by Robert Hancock.
+- Issue #1731706: Call Tcl_ConditionFinalize for Tcl_Conditions that will not be
+  used again (this requires Tcl/Tk 8.3.1), also fix a memory leak in Tkapp_Call
+  when calling from a thread different than the one that created the Tcl
+  interpreter.  Patch by Robert Hancock.
 
 - Issue #1520877: Now distutils.sysconfig reads $AR from the
   environment/Makefile. Patch by Douglas Greiman.
 
-- Issue #4285: Change sys.version_info to be a named tuple. Patch by
-  Ross Light.
+- Issue #4285: Change sys.version_info to be a named tuple.  Patch by Ross
+  Light.
 
 - Issue #1276768: The verbose option was not used in the code of
   distutils.file_util and distutils.dir_util.
@@ -1807,53 +1788,50 @@ Library
 
 - Issue #1581476: Always use the Tcl global namespace when calling into Tcl.
 
-- Issue #2047: shutil.move() could believe that its destination path was
-  inside its source path if it began with the same letters (e.g. "src" vs.
-  "src.new").
+- Issue #2047: shutil.move() could believe that its destination path was inside
+  its source path if it began with the same letters (e.g. "src" vs.  "src.new").
 
-- Issue #4920:  Fixed .next() vs .__next__() issues in the ABCs for
-  Iterator and MutableSet.
+- Issue #4920: Fixed .next() vs .__next__() issues in the ABCs for Iterator and
+  MutableSet.
 
 - Added the ttk module. See issue #2983: Ttk support for Tkinter.
 
-- Issue #5021:  doctest.testfile() did not create __name__ and
+- Issue #5021: doctest.testfile() did not create __name__ and
   collections.namedtuple() relied on __name__ being defined.
 
-- Backport importlib from Python 3.1. Only the import_module() function has
-  been backported to help facilitate transitions from 2.7 to 3.1.
+- Backport importlib from Python 3.1. Only the import_module() function has been
+  backported to help facilitate transitions from 2.7 to 3.1.
 
-- Issue #1885: distutils. When running sdist with --formats=tar,gztar
-  the tar file was overriden by the gztar one.
+- Issue #1885: distutils: When running sdist with --formats=tar,gztar the tar
+  file was overriden by the gztar one.
 
 - Issue #4863: distutils.mwerkscompiler has been removed.
 
-- Added a new itertools functions:  combinations_with_replacement()
-  and compress().
+- Added new itertools functions: combinations_with_replacement() and compress().
 
-- Issue #5032:  added a step argument to itertools.count() and
-  allowed non-integer arguments.
+- Issue #5032: Added a step argument to itertools.count() and allowed
+  non-integer arguments.
 
-- Fix and properly document the multiprocessing module's logging
-  support, expose the internal levels and provide proper usage
-  examples.
+- Fix and properly document the multiprocessing module's logging support, expose
+  the internal levels and provide proper usage examples.
 
-- Issue #1672332: fix unpickling of subnormal floats, which was
+- Issue #1672332: Fix unpickling of subnormal floats, which was
   producing a ValueError on some platforms.
 
-- Issue #3881: Help Tcl to load even when started through the
-  unreadable local symlink to "Program Files" on Vista.
+- Issue #3881: Help Tcl to load even when started through the unreadable local
+  symlink to "Program Files" on Vista.
 
-- Issue #4710: Extract directories properly in the zipfile module;
-  allow adding directories to a zipfile.
+- Issue #4710: Extract directories properly in the zipfile module; allow adding
+  directories to a zipfile.
 
 - Issue #3807: _multiprocessing build fails when configure is passed
-  --without-threads argument. When this occurs, _multiprocessing will
-  be disabled, and not compiled.
+  --without-threads argument. When this occurs, _multiprocessing will be
+  disabled, and not compiled.
 
-- Issue #5008: When a file is opened in append mode with the new IO library,
-  do an explicit seek to the end of file (so that e.g. tell() returns the
-  file size rather than 0). This is consistent with the behaviour of the
-  traditional 2.x file object.
+- Issue #5008: When a file is opened in append mode with the new IO library, do
+  an explicit seek to the end of file (so that e.g. tell() returns the file size
+  rather than 0). This is consistent with the behaviour of the traditional 2.x
+  file object.
 
 - Issue #5013: Fixed a bug in FileHandler which occurred when the delay
   parameter was set.
@@ -1863,8 +1841,8 @@ Library
   numbers hierarchy now has its own __slots__ declarations.
 
 - Issue #3321: _multiprocessing.Connection() doesn't check handle; added checks
-  for *nix machines for negative handles and large int handles. Without this check
-  it is possible to segfault the interpreter.
+  for *nix machines for negative handles and large int handles.  Without this
+  check it is possible to segfault the interpreter.
 
 - Issue #4449: AssertionError in mp_benchmarks.py, caused by an underlying issue
   in sharedctypes.py.
@@ -1872,20 +1850,19 @@ Library
 - Issue #1225107: inspect.isclass() returned True for instances with a custom
   __getattr__.
 
-- Issue #3997: zipfiles generated with more than 65536 files could not be
-  opened with other applications.
+- Issue #3997: Zipfiles generated with more than 65536 files could not be opened
+  with other applications.
 
-- Issue #1162154: inspect.getmembers() now skips attributes that raise
+- Issue #1162154: ``inspect.getmembers()`` now skips attributes that raise
   AttributeError, e.g. a __slots__ attribute which has not been set.
 
-- Issue #1696199: Add collections.Counter() for rapid and convenient
-  counting.
+- Issue #1696199: Add collections.Counter() for rapid and convenient counting.
 
 - Issue #3860: GzipFile and BZ2File now support the context manager protocol.
 
 - Issue #4272: Add an optional argument to the GzipFile constructor to override
-  the timestamp in the gzip stream. The default value remains the current time.
-  The information can be used by e.g. gunzip when decompressing. Patch by
+  the timestamp in the gzip stream.  The default value remains the current time.
+  The information can be used by e.g. gunzip when decompressing.  Patch by
   Jacques Frechet.
 
 - Restore Python 2.3 compatibility for decimal.py.
@@ -1894,39 +1871,39 @@ Library
   Windows. Inital solution by Guy Dalberto.
 
 - The _tkinter module functions "createfilehandler", "deletefilehandler",
-  "createtimerhandler", "mainloop", "dooneevent" and "quit" have been
-  deprecated for removal in 3.x
+  "createtimerhandler", "mainloop", "dooneevent" and "quit" have been deprecated
+  for removal in 3.x
 
-- Issue #4796: Added Decimal.from_float() and Context.create_decimal_from_float()
-  to the decimal module.
+- Issue #4796: Added Decimal.from_float() and
+  Context.create_decimal_from_float() to the decimal module.
 
-- Issue #4812: add missing underscore prefix to some internal-use-only
-  constants in the decimal module.  (Dec_0 becomes _Dec_0, etc.)
+- Issue #4812: Add missing underscore prefix to some internal-use-only constants
+  in the decimal module.  (Dec_0 becomes _Dec_0, etc.)
 
 - Issue #4795: inspect.isgeneratorfunction() returns False instead of None when
   the function is not a generator.
 
-- Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case
-  no MSVC compiler is found under Windows. Original patch by Philip Jenvey.
+- Issue #4702: Throwing a DistutilsPlatformError instead of IOError in case no
+  MSVC compiler is found under Windows.  Original patch by Philip Jenvey.
 
-- Issue #4646: distutils was choking on empty options arg in the setup
-  function. Original patch by Thomas Heller.
+- Issue #4646: distutils was choking on empty options arg in the setup function.
+  Original patch by Thomas Heller.
 
-- Fractions.from_float() no longer loses precision for integers too big to
-  cast as floats.
+- Fractions.from_float() no longer loses precision for integers too big to cast
+  as floats.
 
-- Issue #4790: The nsmallest() and nlargest() functions in the heapq module
-  did unnecessary work in the common case where no key function was specified.
+- Issue #4790: The nsmallest() and nlargest() functions in the heapq module did
+  unnecessary work in the common case where no key function was specified.
 
 - Issue #3767: Convert Tk object to string in tkColorChooser.
 
 - Issue #3248: Allow placing ScrolledText in a PanedWindow.
 
-- Issue #4444: Allow assertRaises() to be used as a context handler, so that
-  the code under test can be written inline if more practical.
+- Issue #4444: Allow assertRaises() to be used as a context handler, so that the
+  code under test can be written inline if more practical.
 
-- Issue #4739: Add pydoc help topics for symbols, so that e.g. help('@')
-  works as expected in the interactive environment.
+- Issue #4739: Add pydoc help topics for symbols, so that e.g. help('@') works
+  as expected in the interactive environment.
 
 - Issue #4756: zipfile.is_zipfile() now supports file-like objects. Patch by
   Gabriel Genellina.
@@ -1935,71 +1912,67 @@ Library
 
 - Issue #4736: io.BufferedRWPair's closed property now functions properly.
 
-- Issue #3954: Fix a potential SystemError in _hotshot.logreader error
-  handling.
+- Issue #3954: Fix a potential SystemError in _hotshot.logreader error handling.
 
-- Issue #4574: fix a crash in io.IncrementalNewlineDecoder when a carriage
-  return encodes to more than one byte in the source encoding (e.g. UTF-16)
-  and gets split on a chunk boundary.
+- Issue #4574: Fix a crash in io.IncrementalNewlineDecoder when a carriage
+  return encodes to more than one byte in the source encoding (e.g. UTF-16) and
+  gets split on a chunk boundary.
 
-- Issue #4223: inspect.getsource() will now correctly display source code
-  for packages loaded via zipimport (or any other conformant PEP 302
+- Issue #4223: inspect.getsource() will now correctly display source code for
+  packages loaded via zipimport (or any other conformant PEP 302
   loader). Original patch by Alexander Belopolsky.
 
-- Issue #4201: pdb can now access and display source code loaded via
-  zipimport (or any other conformant PEP 302 loader). Original patch by
-  Alexander Belopolsky.
+- Issue #4201: pdb can now access and display source code loaded via zipimport
+  (or any other conformant PEP 302 loader).  Original patch by Alexander
+  Belopolsky.
 
-- Issue #4197: doctests in modules loaded via zipimport (or any other PEP
-  302 conformant loader) will now work correctly in most cases (they
-  are still subject to the constraints that exist for all code running
-  from inside a module loaded via a PEP 302 loader and attempting to
-  perform IO operations based on __file__). Original patch by
-  Alexander Belopolsky.
+- Issue #4197: Doctests in modules loaded via zipimport (or any other PEP 302
+  conformant loader) will now work correctly in most cases (they are still
+  subject to the constraints that exist for all code running from inside a
+  module loaded via a PEP 302 loader and attempting to perform IO operations
+  based on __file__).  Original patch by Alexander Belopolsky.
 
-- Issues #4082 and #4512: Add runpy support to zipimport in a manner that
-  allows backporting to maintenance branches. Original patch by
-  Alexander Belopolsky.
+- Issues #4082 and #4512: Add runpy support to zipimport in a manner that allows
+  backporting to maintenance branches.  Original patch by Alexander Belopolsky.
 
 - Issue #4163: Use unicode-friendly word splitting in the textwrap functions
   when given an unicode string.
 
 - Issue #4616: TarFile.utime(): Restore directory times on Windows.
 
-- Issue #4084: Fix max, min, max_mag and min_mag Decimal methods to
-  give correct results in the case where one argument is a quiet NaN
-  and the other is a finite number that requires rounding.
+- Issue #4084: Fix max, min, max_mag and min_mag Decimal methods to give correct
+  results in the case where one argument is a quiet NaN and the other is a
+  finite number that requires rounding.
 
-- Issue #1030250: Distutils created directories even when run with the
-  --dry-run option.
+- Issue #1030250: Distutils created directories even when run with the --dry-run
+  option.
 
-- Issue #4483: _dbm module now builds on systems with gdbm & gdbm_compat
-  libs.
+- Issue #4483: _dbm module now builds on systems with gdbm & gdbm_compat libs.
 
-- Issue #4529: fix the parser module's validation of try-except-finally
+- Issue #4529: Fix the parser module's validation of try-except-finally
   statements.
 
 - Issue #4458: getopt.gnu_getopt() now recognizes a single "-" as an argument,
   not a malformed option.
 
-- Added the subprocess.check_output() convenience function to get output
-  from a subprocess on success or raise an exception on error.
+- Added the subprocess.check_output() convenience function to get output from a
+  subprocess on success or raise an exception on error.
 
 - Issue #1055234: cgi.parse_header(): Fixed parsing of header parameters to
   support unusual filenames (such as those containing semi-colons) in
   Content-Disposition headers.
 
 - Issue #4384: Added logging integration with warnings module using
-  captureWarnings(). This change includes a NullHandler which does nothing;
-  it will be of use to library developers who want to avoid the "No handlers
-  could be found for logger XXX" message which can appear if the library user
-  doesn't configure logging.
+  captureWarnings().  This change includes a NullHandler which does nothing; it
+  will be of use to library developers who want to avoid the "No handlers could
+  be found for logger XXX" message which can appear if the library user doesn't
+  configure logging.
 
 - Issue #3741: DISTUTILS_USE_SDK set causes msvc9compiler.py to raise an
   exception.
 
-- Issue #4363: The uuid.uuid1() and uuid.uuid4() functions now work even if
-  the ctypes module is not present.
+- Issue #4363: The uuid.uuid1() and uuid.uuid4() functions now work even if the
+  ctypes module is not present.
 
 - FileIO's mode attribute now always includes ``"b"``.
 
@@ -2035,28 +2008,28 @@ Library
 
 - Issue #16278952: plat-mac/videoreader.py now correctly imports MediaDescr
 
-- Issue #1737832 : plat-mac/EasyDialog.py no longer uses the broken aepack
+- Issue #1737832: plat-mac/EasyDialog.py no longer uses the broken aepack
   module.
 
-- Issue #1149804: macostools.mkdirs now even works when another process
-  creates one of the needed subdirectories.
+- Issue #1149804: macostools.mkdirs now even works when another process creates
+  one of the needed subdirectories.
 
-- Issue #900506: added --no-zipimport flag to the bundlebuilder script
+- Issue #900506: added --no-zipimport flag to the bundlebuilder script.
 
-- Issue #841800: bundlebuilder now works with 'python -O'
+- Issue #841800: bundlebuilder now works with 'python -O'.
 
 - Issue #4861: ctypes.util.find_library(): Robustify. Fix library detection on
-  biarch systems. Try to rely on ldconfig only, without using objdump and gcc.
+  biarch systems.  Try to rely on ldconfig only, without using objdump and gcc.
 
 - Issue #5104: The socket module now raises OverflowError when 16-bit port and
-  protocol numbers are supplied outside the allowed 0-65536 range on bind()
-  and getservbyport().
+  protocol numbers are supplied outside the allowed 0-65536 range on bind() and
+  getservbyport().
 
 - Issue #999042: The Python compiler now handles explict global statements
   correctly (should be assigned using STORE_GLOBAL opcode).
 
-- Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for
-  new arguments introduced in 2.5.
+- Issue #2703: SimpleXMLRPCDispatcher.__init__: Provide default values for new
+  arguments introduced in 2.5.
 
 - Issue #5828 (Invalid behavior of unicode.lower): Fixed bogus logic in
   makeunicodedata.py and regenerated the Unicode database (This fixes
@@ -2067,42 +2040,40 @@ Library
 Tools/Demos
 -----------
 
-- Ttk demos added in Demo/tkinter/ttk/
+- Ttk demos added in Demo/tkinter/ttk/.
 
-- Issue #4677: add two list comprehension tests to pybench.
+- Issue #4677: Add two list comprehension tests to pybench.
 
 Build
 -----
 
-- Issue #6603: Change READ_TIMESTAMP macro in ceval.c so that it
-  compiles correctly under gcc on x86-64.  This fixes a reported
-  problem with the --with-tsc build on x86-64.
+- Issue #6603: Change READ_TIMESTAMP macro in ceval.c so that it compiles
+  correctly under gcc on x86-64.  This fixes a reported problem with the
+  --with-tsc build on x86-64.
 
-- Add 2 new options to ``--with-universal-archs`` on MacOSX:
-  ``intel`` builds a distribution with ``i386`` and ``x86_64`` architectures,
-  while ``3-way`` builds a distribution with the ``ppc``, ``i386``
-  and ``x86_64`` architectures.
+- Add 2 new options to ``--with-universal-archs`` on MacOSX: ``intel`` builds a
+  distribution with ``i386`` and ``x86_64`` architectures, while ``3-way``
+  builds a distribution with the ``ppc``, ``i386`` and ``x86_64`` architectures.
 
-- Issue #6802: Fix build issues on MacOSX 10.6
+- Issue #6802: Fix build issues on MacOSX 10.6.
 
 - Issue #6244: Allow detect_tkinter to look for Tcl/Tk 8.6.
 
-- Issue 5390: Add uninstall icon independent of whether file
-  extensions are installed.
+- Issue 5390: Add uninstall icon independent of whether file extensions are
+  installed.
 
-- Issue 5809: Specifying both --enable-framework and --enable-shared is
-  an error. Configure now explicity tells you about this.
+- Issue 5809: Specifying both --enable-framework and --enable-shared is an
+  error. Configure now explicity tells you about this.
 
-- Issue #3585: Add pkg-config support. It creates a python-2.7.pc file
-  and a python.pc symlink in the $(LIBDIR)/pkgconfig directory. Patch by
-  Clinton Roy.
+- Issue #3585: Add pkg-config support.  It creates a python-2.7.pc file and a
+  python.pc symlink in the $(LIBDIR)/pkgconfig directory.  Patch by Clinton Roy.
 
 - Issue #6094: Build correctly with Subversion 1.7.
 
 - Issue #5847: Remove -n switch on "Edit with IDLE" menu item.
 
-- Issue #5726: Make Modules/ld_so_aix return the actual exit code of the
-  linker, rather than always exit successfully. Patch by Floris Bruynooghe.
+- Issue #5726: Make Modules/ld_so_aix return the actual exit code of the linker,
+  rather than always exit successfully.  Patch by Floris Bruynooghe.
 
 - Issue #4587: Add configure option --with-dbmliborder=db1:db2:... to specify
   the order that backends for the dbm extension are checked.
@@ -2115,7 +2086,7 @@ Build
 
 - Issue #4895: Use _strdup on Windows CE.
 
-- Issue #4472: "configure --enable-shared" now works on OSX
+- Issue #4472: ``configure --enable-shared`` now works on OSX.
 
 - Issues #4728 and #4060: WORDS_BIGEDIAN is now correct in Universal builds.
 
@@ -2131,36 +2102,35 @@ Build
 
 - Issue #4018: Disable "for me" installations on Vista.
 
-- Issue #3758: Add ``patchcheck`` build target to .PHONY.
+- Issue #3758: Add ``patchcheck`` build target to ``.PHONY``.
 
 - Issue #4204: Fixed module build errors on FreeBSD 4.
 
 Documentation
 -------------
 
-- Issue #6556: Fixed the Distutils configuration files location explanation
-  for Windows.
+- Issue #6556: Fixed the Distutils configuration files location explanation for
+  Windows.
 
-- Issue #6801 : symmetric_difference_update also accepts |.
-  Thanks to Carl Chenet.
+- Issue #6801: symmetric_difference_update also accepts ``|``.  Thanks to Carl
+  Chenet.
 
 C-API
 -----
 
 - Issue #7528: Add PyLong_AsLongAndOverflow (backported from py3k).
 
-- Issue #7228: Add '%lld' and '%llu' support to PyString_FromFormat(V)
-  and PyErr_Format, on machines with HAVE_LONG_LONG defined.
+- Issue #7228: Add '%lld' and '%llu' support to PyString_FromFormat(V) and
+  PyErr_Format, on machines with HAVE_LONG_LONG defined.
 
-- Add new C-API function PyOS_string_to_double, and deprecated
-  PyOS_ascii_atof and PyOS_ascii_strtod.
+- Add new C-API function PyOS_string_to_double, and deprecated PyOS_ascii_atof
+  and PyOS_ascii_strtod.
 
-- Removed _PyOS_double_to_string. Use PyOS_double_to_string
-  instead. This is in preparation for (but not strictly related to)
-  issue #7117, short float repr.
+- Removed _PyOS_double_to_string. Use PyOS_double_to_string instead.  This is in
+  preparation for (but not strictly related to) issue #7117, short float repr.
 
-- Issue #6624: PyArg_ParseTuple with "s" format when parsing argument with
-  NULL: Bogus TypeError detail string.
+- Issue #6624: PyArg_ParseTuple with "s" format when parsing argument with NULL:
+  Bogus TypeError detail string.
 
 - Issue #5954: Add a PyFrame_GetLineNumber() function to replace most uses of
   PyCode_Addr2Line().
@@ -2173,18 +2143,18 @@ C-API
 
 - Some PyBytes_* aliases have been removed because they don't exist in 3.x.
 
-- Issue #5175: PyLong_AsUnsignedLongLong now raises OverflowError
-  for negative arguments.  Previously, it raised TypeError.
+- Issue #5175: PyLong_AsUnsignedLongLong now raises OverflowError for negative
+  arguments.  Previously, it raised TypeError.
 
 - Issue #4720: The format for PyArg_ParseTupleAndKeywords can begin with '|'.
 
-- Issue #3632: from the gdb debugger, the 'pyo' macro can now be called when
-  the GIL is released, or owned by another thread.
+- Issue #3632: From the gdb debugger, the 'pyo' macro can now be called when the
+  GIL is released, or owned by another thread.
 
 - Issue #4122: On Windows, fix a compilation error when using the
   Py_UNICODE_ISSPACE macro in an extension module.
 
-- Issue #4293: Py_AddPendingCall is now thread safe and can be used for
+- Issue #4293: Py_AddPendingCall() is now thread safe and can be used for
   asynchronous notifications to python from any thread.  Documentation added.
 
 Extension Modules
@@ -2194,18 +2164,16 @@ Extension Modules
 
 - Issue #7078: Set struct.__doc__ from _struct.__doc__.
 
-- Issue #3366: Add erf, erfc, expm1, gamma, lgamma functions to math
-  module.
+- Issue #3366: Add erf, erfc, expm1, gamma, lgamma functions to math module.
 
 - Issue #6823: Allow time.strftime() to accept a tuple with a isdst field
-  outside of the range of [-1, 1] by normalizing the value to within that
-  range.
+  outside of the range of [-1, 1] by normalizing the value to within that range.
 
-- Issue #6877: Make it possible to link the readline extension to libedit
-  on OSX.
+- Issue #6877: Make it possible to link the readline extension to libedit on
+  OSX.
 
-- Issue #6944: Fix a SystemError when socket.getnameinfo() was called
-  with something other than a tuple as first argument.
+- Issue #6944: Fix a SystemError when socket.getnameinfo() was called with
+  something other than a tuple as first argument.
 
 - Issue #6865: Fix reference counting issue in the initialization of the pwd
   module.
@@ -2215,37 +2183,37 @@ Extension Modules
 - Fix a segfault in expat when given a specially crafted input lead to the
   tokenizer not stopping. CVE-2009-3720.
 
-- Issue #6561: '\d' in a regex now matches only characters with
-  Unicode category 'Nd' (Number, Decimal Digit).  Previously it also
-  matched characters with category 'No'.
+- Issue #6561: '\d' in a regex now matches only characters with Unicode category
+  'Nd' (Number, Decimal Digit).  Previously it also matched characters with
+  category 'No'.
 
-- Issue #1523: Remove deprecated overflow wrapping for struct.pack
-  with an integer format code ('bBhHiIlLqQ').  Packing an out-of-range
-  integer now consistently raises struct.error.
+- Issue #1523: Remove deprecated overflow wrapping for struct.pack with an
+  integer format code ('bBhHiIlLqQ').  Packing an out-of-range integer now
+  consistently raises struct.error.
 
-- Issues #1530559, #1741130: Fix various struct.pack inconsistencies
-  for the integer formats ('bBhHiIlLqQ').  In the following, '*'
-  represents any of '=', '<', '>'.
+- Issues #1530559, #1741130: Fix various struct.pack inconsistencies for the
+  integer formats ('bBhHiIlLqQ').  In the following, '*' represents any of '=',
+  '<', '>'.
 
-    - Packing a float now always gives a Deprecation Warning.
-      Previously it only warned for 'I', 'L', '*B', '*H', '*I', '*L'.
+    - Packing a float now always gives a Deprecation Warning.  Previously it
+      only warned for 'I', 'L', '*B', '*H', '*I', '*L'.
 
-    - If x is not an int, long or float, then packing x will always
-      result in struct.error.  Previously an x with an __int__ method
-      could be packed by 'b', 'B', 'h', 'H', 'i', 'l', '*b', '*h'
-      ,'*i', '*l', and an x with a __long__ method could be packed by
-      'q', 'Q', '*q', '*Q'; for x with neither __int__ nor __long__,
-      TypeError used to be raised (with a confusing error message) for
-      'I', 'L', '*B', '*H', '*I', '*L', and struct.error in other cases.
+    - If x is not an int, long or float, then packing x will always result in
+      struct.error.  Previously an x with an __int__ method could be packed by
+      'b', 'B', 'h', 'H', 'i', 'l', '*b', '*h' ,'*i', '*l', and an x with a
+      __long__ method could be packed by 'q', 'Q', '*q', '*Q'; for x with
+      neither __int__ nor __long__, TypeError used to be raised (with a
+      confusing error message) for 'I', 'L', '*B', '*H', '*I', '*L', and
+      struct.error in other cases.
 
-  Note: as of Python 2.7 beta 1, the above is out of date.  In 2.7
-  beta 1, any argument with an __int__ method can be packed, but use
-  of this feature triggers a DeprecationWarning.
+  Note: as of Python 2.7 beta 1, the above is out of date.  In 2.7 beta 1, any
+  argument with an __int__ method can be packed, but use of this feature
+  triggers a DeprecationWarning.
 
 - Issue #4873: Fix resource leaks in error cases of pwd and grp.
 
-- Issue #4751: For hashlib algorithms provided by OpenSSL, the Python
-  GIL is now released during computation on data lengths >= 2048 bytes.
+- Issue #4751: For hashlib algorithms provided by OpenSSL, the Python GIL is now
+  released during computation on data lengths >= 2048 bytes.
 
 - Issue #3745: Fix hashlib to always reject unicode and non buffer-api
   supporting objects as input no matter how it was compiled (built in
@@ -2273,15 +2241,15 @@ Extension Modules
 Tests
 -----
 
-- Issue #7431: use TESTFN in test_linecache instead of trying to create a
-  file in the Lib/test directory, which might be read-only for the
-  user running the tests.
+- Issue #7431: Use TESTFN in test_linecache instead of trying to create a file
+  in the Lib/test directory, which might be read-only for the user running the
+  tests.
 
-- Issue #7324: add a sanity check to regrtest argument parsing to
-  catch the case of an option with no handler.
+- Issue #7324: Add a sanity check to regrtest argument parsing to catch the case
+  of an option with no handler.
 
-- Issue #7312: Add a -F flag to run the selected tests in a loop until
-  a test fails.  Can be combined with -j.
+- Issue #7312: Add a -F flag to run the selected tests in a loop until a test
+  fails.  Can be combined with -j.
 
 - Issue #7295: Do not use a hardcoded file name in test_tarfile.
 
@@ -2289,13 +2257,12 @@ Tests
   primitives such as Lock, RLock, Condition, Event and Semaphore.
 
 - Issue #7222: Make thread "reaping" more reliable so that reference
-  leak-chasing test runs give sensible results. The previous method of
-  reaping threads could return successfully while some Thread objects were
-  still referenced. This also introduces a new private function:
-  :func:`thread._count()`.
+  leak-chasing test runs give sensible results.  The previous method of reaping
+  threads could return successfully while some Thread objects were still
+  referenced.  This also introduces a new private function: ``thread._count()``.
 
-- Issue #7151: fixed regrtest -j so that output to stderr from a test no
-  longer runs the risk of causing the worker thread to fail.
+- Issue #7151: Fixed regrtest -j so that output to stderr from a test no longer
+  runs the risk of causing the worker thread to fail.
 
 - Issue #7055: test___all__ now greedily detects all modules which have an
   __all__ attribute, rather than using a hardcoded and incomplete list.
@@ -2311,17 +2278,17 @@ Tests
 
 - Issue #5450: Moved tests involving loading tk from Lib/test/test_tcl to
   Lib/lib-tk/test/test_tkinter/test_loadtk. With this, these tests demonstrate
-  the same behaviour as test_ttkguionly (and now also test_tk) which is to
-  skip the tests if DISPLAY is defined but can't be used.
+  the same behaviour as test_ttkguionly (and now also test_tk) which is to skip
+  the tests if DISPLAY is defined but can't be used.
 
 - Issue #6152: New option '-j'/'--multiprocess' for regrtest allows running
   regression tests in parallel, shortening the total runtime.
 
-- Issue #5354: New test support function import_fresh_module() makes
-  it easy to import both normal and optimised versions of modules.
-  test_heapq and test_warnings have been adjusted to use it, tests for
-  other modules with both C and Python implementations in the stdlib
-  can be adjusted to use it over time.
+- Issue #5354: New test support function import_fresh_module() makes it easy to
+  import both normal and optimised versions of modules.  test_heapq and
+  test_warnings have been adjusted to use it, tests for other modules with both
+  C and Python implementations in the stdlib can be adjusted to use it over
+  time.
 
 - Fix test_warnings to no longer reset the warnings filter.
 
@@ -2329,9 +2296,9 @@ Tests
 
 - Issue #5635: Fix running test_sys with tracing enabled.
 
-- regrtest no longer treats ImportError as equivalent to SkipTest.  Imports
-  that should cause a test to be skipped are now done using import_module
-  from test support, which does the conversion.
+- regrtest no longer treats ImportError as equivalent to SkipTest.  Imports that
+  should cause a test to be skipped are now done using import_module from test
+  support, which does the conversion.
 
 - Issue #5083: New 'gui' resource for regrtest.
 
