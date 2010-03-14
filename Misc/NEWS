@@ -60,6 +60,11 @@ Tools/Demos
   measures the number of UDP packets processed per second depending on the
   number of background CPU-bound Python threads.
 
+Build
+-----
+
+- Issue #7705: Fix linking on FreeBSD.
+
 
 What's New in Python 2.7 alpha 4?
 =================================
