@@ -40,8 +40,7 @@ mapRE = re.compile('((?:0x[0-9a-fA-F]+\+?)+)'
                    '\s*'
                    '(#.+)?')
 
-def parsecodes(codes,
-               len=len, filter=filter,range=range):
+def parsecodes(codes, len=len, range=range):
 
     """ Converts code combinations to either a single code integer
         or a tuple of integers.
@@ -62,7 +61,7 @@ def parsecodes(codes,
             l[i] = int(l[i],16)
         except ValueError:
             l[i] = None
-    l = filter(lambda x: x is not None, l)
+    l = [x for x in l if x is not None]
     if len(l) == 1:
         return l[0]
     else:
@@ -138,7 +137,7 @@ def python_mapdef_code(varname, map, comments=1, precisions=(2, 4)):
 
     l = []
     append = l.append
-    if map.has_key("IDENTITY"):
+    if "IDENTITY" in map:
         append("%s = codecs.make_identity_dict(range(%d))" %
                (varname, map["IDENTITY"]))
         append("%s.update({" % varname)
@@ -150,8 +149,7 @@ def python_mapdef_code(varname, map, comments=1, precisions=(2, 4)):
         splits = 0
         identity = 0
 
-    mappings = map.items()
-    mappings.sort()
+    mappings = sorted(map.items())
     i = 0
     key_precision, value_precision = precisions
     for mapkey, mapvalue in mappings:
@@ -199,11 +197,10 @@ def python_tabledef_code(varname, map, comments=1, key_precision=2):
     append('%s = (' % varname)
 
     # Analyze map and create table dict
-    mappings = map.items()
-    mappings.sort()
+    mappings = sorted(map.items())
     table = {}
     maxkey = 0
-    if map.has_key('IDENTITY'):
+    if 'IDENTITY' in map:
         for key in range(256):
             table[key] = (key, '')
         maxkey = 255
@@ -421,6 +418,6 @@ if __name__ == '__main__':
 
     import sys
     if 1:
-        apply(convertdir,tuple(sys.argv[1:]))
+        convertdir(*sys.argv[1:])
     else:
-        apply(rewritepythondir,tuple(sys.argv[1:]))
+        rewritepythondir(*sys.argv[1:])
