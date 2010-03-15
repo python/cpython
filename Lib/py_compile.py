@@ -103,13 +103,12 @@ def compile(file, cfile=None, dfile=None, doraise=False):
     directories).
 
     """
-    f = open(file, 'U')
-    try:
-        timestamp = long(os.fstat(f.fileno()).st_mtime)
-    except AttributeError:
-        timestamp = long(os.stat(file).st_mtime)
-    codestring = f.read()
-    f.close()
+    with open(file, 'U') as f:
+        try:
+            timestamp = long(os.fstat(f.fileno()).st_mtime)
+        except AttributeError:
+            timestamp = long(os.stat(file).st_mtime)
+        codestring = f.read()
     if codestring and codestring[-1] != '\n':
         codestring = codestring + '\n'
     try:
@@ -123,14 +122,13 @@ def compile(file, cfile=None, dfile=None, doraise=False):
             return
     if cfile is None:
         cfile = file + (__debug__ and 'c' or 'o')
-    fc = open(cfile, 'wb')
-    fc.write('\0\0\0\0')
-    wr_long(fc, timestamp)
-    marshal.dump(codeobject, fc)
-    fc.flush()
-    fc.seek(0, 0)
-    fc.write(MAGIC)
-    fc.close()
+    with open(cfile, 'wb') as fc:
+        fc.write('\0\0\0\0')
+        wr_long(fc, timestamp)
+        marshal.dump(codeobject, fc)
+        fc.flush()
+        fc.seek(0, 0)
+        fc.write(MAGIC)
 
 def main(args=None):
     """Compile several source files.
