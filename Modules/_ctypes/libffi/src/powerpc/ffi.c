@@ -1,6 +1,6 @@
 /* -----------------------------------------------------------------------
    ffi.c - Copyright (c) 1998 Geoffrey Keating
-   Copyright (C) 2007 Free Software Foundation, Inc
+   Copyright (C) 2007, 2008 Free Software Foundation, Inc
    Copyright (C) 2008 Red Hat, Inc
 
    PowerPC Foreign Function Interface
@@ -43,6 +43,11 @@ enum {
   FLAG_RETURNS_64BITS   = 1 << (31-28),
 
   FLAG_RETURNS_128BITS  = 1 << (31-27), /* cr6  */
+  FLAG_SYSV_SMST_R4     = 1 << (31-26), /* use r4 for FFI_SYSV 8 byte
+					   structs.  */
+  FLAG_SYSV_SMST_R3     = 1 << (31-25), /* use r3 for FFI_SYSV 4 byte
+					   structs.  */
+  /* Bits (31-24) through (31-19) store shift value for SMST */
 
   FLAG_ARG_NEEDS_COPY   = 1 << (31- 7),
   FLAG_FP_ARGUMENTS     = 1 << (31- 6), /* cr1.eq; specified by ABI */
@@ -180,6 +185,7 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 	    {
 	      *next_arg.f = (float) double_tmp;
 	      next_arg.u += 1;
+	      intarg_count++;
 	    }
 	  else
 	    *fpr_base.d++ = double_tmp;
@@ -680,15 +686,15 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 		 The same applies for the structs returned in r3/r4.  */
 	      if (size <= 4)
 		{
-		  flags |= 1 << (31 - FFI_SYSV_TYPE_SMALL_STRUCT - 1);
-		  flags |= 8 * (4 - size) << 4;
+		  flags |= FLAG_SYSV_SMST_R3;
+		  flags |= 8 * (4 - size) << 8;
 		  break;
 		}
 	      /* These structs are returned in r3 and r4. See above.   */
 	      if  (size <= 8)
 		{
-		  flags |= 1 << (31 - FFI_SYSV_TYPE_SMALL_STRUCT - 2);
-		  flags |= 8 * (8 - size) << 4;
+		  flags |= FLAG_SYSV_SMST_R3 | FLAG_SYSV_SMST_R4;
+		  flags |= 8 * (8 - size) << 8;
 		  break;
 		}
 	    }
@@ -1144,6 +1150,7 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 		pst++;
 	      avalue[i] = pst;
 	      pst += 2;
+	      ng = 8;
 	    }
 	  break;
 
@@ -1217,6 +1224,7 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 		{
 		  avalue[i] = pst;
 		  pst += 4;
+		  ng = 8;
 		}
 	      break;
 	    }
@@ -1249,10 +1257,15 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 
   /* Tell ffi_closure_SYSV how to perform return type promotions.
      Because the FFI_SYSV ABI returns the structures <= 8 bytes in r3/r4
-     we have to tell ffi_closure_SYSV how to treat them.  */
+     we have to tell ffi_closure_SYSV how to treat them. We combine the base
+     type FFI_SYSV_TYPE_SMALL_STRUCT - 1  with the size of the struct.
+     So a one byte struct gets the return type 16. Return type 1 to 15 are
+     already used and we never have a struct with size zero. That is the reason
+     for the subtraction of 1. See the comment in ffitarget.h about ordering.
+  */
   if (cif->abi == FFI_SYSV && cif->rtype->type == FFI_TYPE_STRUCT
       && size <= 8)
-    return FFI_SYSV_TYPE_SMALL_STRUCT + size;
+    return (FFI_SYSV_TYPE_SMALL_STRUCT - 1) + size;
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
   else if (cif->rtype->type == FFI_TYPE_LONGDOUBLE
 	   && cif->abi != FFI_LINUX && cif->abi != FFI_LINUX_SOFT_FLOAT)

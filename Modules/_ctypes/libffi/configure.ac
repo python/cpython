@@ -3,9 +3,9 @@ dnl Process this with autoconf to create configure
 # file from libffi - slightly patched for ctypes
 #
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.63)
 
-AC_INIT([libffi], [3.0.5], [http://gcc.gnu.org/bugs.html])
+AC_INIT([libffi], [3.0.9], [http://gcc.gnu.org/bugs.html])
 AC_CONFIG_HEADERS([fficonfig.h])
 
 AC_CANONICAL_SYSTEM
@@ -23,6 +23,7 @@ AM_INIT_AUTOMAKE
 m4_rename([_AC_ARG_VAR_PRECIOUS],[real_PRECIOUS])
 m4_define([_AC_ARG_VAR_PRECIOUS],[])
 AC_PROG_CC
+m4_undefine([_AC_ARG_VAR_PRECIOUS])
 m4_rename([real_PRECIOUS],[_AC_ARG_VAR_PRECIOUS])
 
 AC_SUBST(CFLAGS)
@@ -30,6 +31,7 @@ AC_SUBST(CFLAGS)
 AM_PROG_AS
 AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
+AC_CONFIG_MACRO_DIR([m4])
 
 AM_MAINTAINER_MODE
 
@@ -52,9 +54,13 @@ case "$host" in
 	TARGET=ARM; TARGETDIR=arm
 	;;
 
-  amd64-*-freebsd*)
+  amd64-*-freebsd* | amd64-*-openbsd*)
 	TARGET=X86_64; TARGETDIR=x86
   	;;
+
+  avr32*-*-*)
+	TARGET=AVR32; TARGETDIR=avr32
+	;;
 
   cris-*-*)
 	TARGET=LIBFFI_CRIS; TARGETDIR=cris
@@ -74,11 +80,13 @@ case "$host" in
 	TARGET=PA_HPUX; TARGETDIR=pa
 	;;
 
-  i386-*-freebsd* | i386-*-openbsd*)
+  i?86-*-freebsd* | i?86-*-openbsd*)
 	TARGET=X86_FREEBSD; TARGETDIR=x86
 	;;
   i?86-win32* | i?86-*-cygwin* | i?86-*-mingw*)
 	TARGET=X86_WIN32; TARGETDIR=x86
+	# All mingw/cygwin/win32 builds require this for sharedlib
+	AM_LTLDFLAGS="-no-undefined"
 	;;
   i?86-*-darwin*)
 	TARGET=X86_DARWIN; TARGETDIR=x86
@@ -109,7 +117,9 @@ case "$host" in
 	TARGET=MIPS_IRIX; TARGETDIR=mips
 	;;
   mips*-*-linux*)
-	TARGET=MIPS_LINUX; TARGETDIR=mips
+	# Support 128-bit long double for NewABI.
+	HAVE_LONG_DOUBLE='defined(__mips64)'
+	TARGET=MIPS_IRIX; TARGETDIR=mips
 	;;
 
   powerpc*-*-linux* | powerpc-*-sysv*)
@@ -149,14 +159,18 @@ case "$host" in
   x86_64-*-darwin*)
 	TARGET=X86_DARWIN; TARGETDIR=x86
 	;;
+
   x86_64-*-cygwin* | x86_64-*-mingw*)
+	TARGET=X86_WIN64; TARGETDIR=x86
 	;;
+
   x86_64-*-*)
 	TARGET=X86_64; TARGETDIR=x86
 	;;
 esac
 
 AC_SUBST(AM_RUNTESTFLAGS)
+AC_SUBST(AM_LTLDFLAGS)
 
 if test $TARGETDIR = unknown; then
   AC_MSG_ERROR(["libffi has not been ported to $host."])
@@ -167,6 +181,7 @@ AM_CONDITIONAL(SPARC, test x$TARGET = xSPARC)
 AM_CONDITIONAL(X86, test x$TARGET = xX86)
 AM_CONDITIONAL(X86_FREEBSD, test x$TARGET = xX86_FREEBSD)
 AM_CONDITIONAL(X86_WIN32, test x$TARGET = xX86_WIN32)
+AM_CONDITIONAL(X86_WIN64, test x$TARGET = xX86_WIN64)
 AM_CONDITIONAL(X86_DARWIN, test x$TARGET = xX86_DARWIN)
 AM_CONDITIONAL(ALPHA, test x$TARGET = xALPHA)
 AM_CONDITIONAL(IA64, test x$TARGET = xIA64)
@@ -177,6 +192,7 @@ AM_CONDITIONAL(POWERPC_AIX, test x$TARGET = xPOWERPC_AIX)
 AM_CONDITIONAL(POWERPC_DARWIN, test x$TARGET = xPOWERPC_DARWIN)
 AM_CONDITIONAL(POWERPC_FREEBSD, test x$TARGET = xPOWERPC_FREEBSD)
 AM_CONDITIONAL(ARM, test x$TARGET = xARM)
+AM_CONDITIONAL(AVR32, test x$TARGET = xAVR32)
 AM_CONDITIONAL(LIBFFI_CRIS, test x$TARGET = xLIBFFI_CRIS)
 AM_CONDITIONAL(FRV, test x$TARGET = xFRV)
 AM_CONDITIONAL(S390, test x$TARGET = xS390)
@@ -250,6 +266,29 @@ if test x$TARGET = xSPARC; then
 	       [Define if your assembler supports .register.])
     fi
 fi
+
+if test x$TARGET = xX86 || test x$TARGET = xX86_WIN32 || test x$TARGET = xX86_64; then
+    AC_CACHE_CHECK([assembler supports pc related relocs],
+	libffi_cv_as_x86_pcrel, [
+	libffi_cv_as_x86_pcrel=yes
+	echo '.text; foo: nop; .data; .long foo-.; .text' > conftest.s
+	if $CC $CFLAGS -c conftest.s 2>&1 | grep -i warning > /dev/null; then
+	    libffi_cv_as_x86_pcrel=no
+	fi
+	])
+    if test "x$libffi_cv_as_x86_pcrel" = xyes; then
+	AC_DEFINE(HAVE_AS_X86_PCREL, 1,
+		  [Define if your assembler supports PC relative relocs.])
+    fi
+fi
+
+case "$target" in
+     *-apple-darwin10* | *-*-freebsd* | *-*-openbsd* | *-pc-solaris*)
+       AC_DEFINE(FFI_MMAP_EXEC_WRIT, 1,
+                 [Cannot use malloc on this target, so, we revert to
+                   alternative means])
+     ;;
+esac
 
 AC_CACHE_CHECK([whether .eh_frame section should be read-only],
     libffi_cv_ro_eh_frame, [

@@ -308,14 +308,24 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
 	cif->flags = FFI_TYPE_STRUCT;
       break;
 
+    case FFI_TYPE_SINT8:
+    case FFI_TYPE_UINT8:
+    case FFI_TYPE_SINT16:
+    case FFI_TYPE_UINT16:
+      if (cif->abi == FFI_V9)
+	cif->flags = FFI_TYPE_INT;
+      else
+	cif->flags = cif->rtype->type;
+      break;
+
     case FFI_TYPE_SINT64:
     case FFI_TYPE_UINT64:
-      if (cif->abi != FFI_V9)
-	{
-	  cif->flags = FFI_TYPE_SINT64;
-	  break;
-	}
-      /* FALLTHROUGH */
+      if (cif->abi == FFI_V9)
+	cif->flags = FFI_TYPE_INT;
+      else
+	cif->flags = FFI_TYPE_SINT64;
+      break;
+
     default:
       cif->flags = FFI_TYPE_INT;
       break;
@@ -589,6 +599,11 @@ ffi_closure_sparc_inner_v9(ffi_closure *closure,
 	  /* Right-justify.  */
 	  argn += ALIGN(arg_types[i]->size, FFI_SIZEOF_ARG) / FFI_SIZEOF_ARG;
 
+	  /* Align on a 16-byte boundary.  */
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
+	  if (arg_types[i]->type == FFI_TYPE_LONGDOUBLE && (argn % 2) != 0)
+	    argn++;
+#endif
 	  if (i < fp_slot_max
 	      && (arg_types[i]->type == FFI_TYPE_FLOAT
 		  || arg_types[i]->type == FFI_TYPE_DOUBLE

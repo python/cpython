@@ -73,21 +73,63 @@ _ffi_call_v8:
 	be,a	done
 	st	%f0, [%i4+0]	! (delay)
 
-	cmp	%i3, FFI_TYPE_SINT64
-	be	longlong
-
 	cmp	%i3, FFI_TYPE_DOUBLE
-	bne	done
-	nop
-	st	%f0, [%i4+0]
-	st	%f1, [%i4+4]
-	
+	be,a	double
+	st	%f0, [%i4+0]	! (delay)
+
+	cmp	%i3, FFI_TYPE_SINT8
+	be,a	sint8
+	sll	%o0, 24, %o0	! (delay)
+
+	cmp	%i3, FFI_TYPE_UINT8
+	be,a	uint8
+	sll	%o0, 24, %o0	! (delay)
+
+	cmp	%i3, FFI_TYPE_SINT16
+	be,a	sint16
+	sll	%o0, 16, %o0	! (delay)
+
+	cmp	%i3, FFI_TYPE_UINT16
+	be,a	uint16
+	sll	%o0, 16, %o0	! (delay)
+
+	cmp	%i3, FFI_TYPE_SINT64
+	be,a	longlong
+	st	%o0, [%i4+0]	! (delay)
 done:
 	ret
 	restore
 
-longlong:
+double:
+	st	%f1, [%i4+4]
+	ret
+	restore
+
+sint8:
+	sra	%o0, 24, %o0
 	st	%o0, [%i4+0]
+	ret
+	restore
+
+uint8:
+	srl	%o0, 24, %o0
+	st	%o0, [%i4+0]
+	ret
+	restore
+
+sint16:
+	sra	%o0, 16, %o0
+	st	%o0, [%i4+0]
+	ret
+	restore
+
+uint16:
+	srl	%o0, 16, %o0
+	st	%o0, [%i4+0]
+	ret
+	restore
+
+longlong:
 	st	%o1, [%i4+4]
 	ret
 	restore
@@ -148,7 +190,8 @@ ffi_closure_v8:
 	be	done1
 
 	cmp	%o0, FFI_TYPE_INT
-	be	integer
+	be	done1
+	 ld	[%fp-8], %i0
 
 	cmp	%o0, FFI_TYPE_FLOAT
 	be,a	done1
@@ -166,13 +209,11 @@ ffi_closure_v8:
 	cmp	%o0, FFI_TYPE_STRUCT
 	be	done2
 
-	! FFI_TYPE_SINT64
-	! FFI_TYPE_UINT64
-	ld	[%fp-4], %i1
+	cmp	%o0, FFI_TYPE_SINT64
+	be,a	done1
+	 ldd	[%fp-8], %i0
 
-integer:
 	ld	[%fp-8], %i0
-
 done1:
 	jmp	%i7+8
 	 restore

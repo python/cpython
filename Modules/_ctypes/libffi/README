@@ -1,7 +1,7 @@
 Status
 ======
 
-libffi-3.0.5 was released on April 3, 2008. Check the libffi web
+libffi-3.0.9 was released on December 31, 2009. Check the libffi web
 page for updates: <URL:http://sourceware.org/libffi/>.
 
 
@@ -9,27 +9,27 @@ What is libffi?
 ===============
 
 Compilers for high level languages generate code that follow certain
-conventions.  These conventions are necessary, in part, for separate
-compilation to work.  One such convention is the "calling convention".
-The "calling convention" is a set of assumptions made by the compiler
-about where function arguments will be found on entry to a function.
-A "calling convention" also specifies where the return value for a
-function is found.
+conventions. These conventions are necessary, in part, for separate
+compilation to work. One such convention is the "calling
+convention". The "calling convention" is essentially a set of
+assumptions made by the compiler about where function arguments will
+be found on entry to a function. A "calling convention" also specifies
+where the return value for a function is found.
 
 Some programs may not know at the time of compilation what arguments
-are to be passed to a function.  For instance, an interpreter may be
+are to be passed to a function. For instance, an interpreter may be
 told at run-time about the number and types of arguments used to call
-a given function.  Libffi can be used in such programs to provide a
+a given function. Libffi can be used in such programs to provide a
 bridge from the interpreter program to compiled code.
 
 The libffi library provides a portable, high level programming
-interface to various calling conventions.  This allows a programmer to
+interface to various calling conventions. This allows a programmer to
 call any function specified by a call interface description at run
-time.
+time.  
 
 FFI stands for Foreign Function Interface.  A foreign function
 interface is the popular name for the interface that allows code
-written in one language to call code written in another language.  The
+written in one language to call code written in another language. The
 libffi library really only provides the lowest, machine dependent
 layer of a fully featured foreign function interface. A layer must
 exist above libffi that handles type conversions for values passed
@@ -39,35 +39,55 @@ between the two languages.
 Supported Platforms
 ===================
 
-Libffi has been ported to many different platforms, although this
-release was only tested on:
+Libffi has been ported to many different platforms.
+For specific configuration details and testing status, please
+refer to the wiki page here:
 
-     arm oabi linux
-     arm eabi linux
-     hppa linux
-     mips o32 linux (little endian)
-     powerpc darwin
-     powerpc64 linux
-     sparc solaris
-     sparc64 solaris
-     x86 cygwin
-     x86 darwin
-     x86 freebsd
-     x86 linux
-     x86 openbsd
-     x86-64 darwin
-     x86-64 linux
-     x86-64 OS X
-     x86-64 freebsd
-     
+ http://www.moxielogic.org/wiki/index.php?title=Libffi_3.0.9
+
+At the time of release, the following basic configurations have been
+tested:
+
+|--------------+------------------|
+| Architecture | Operating System |
+|--------------+------------------|
+| Alpha        | Linux            |
+| ARM          | Linux            |
+| AVR32        | Linux            |
+| HPPA         | HPUX             |
+| IA-64        | Linux            |
+| MIPS         | IRIX             |
+| MIPS         | Linux            |
+| MIPS64       | Linux            |
+| PowerPC      | Linux            |
+| PowerPC      | Mac OSX          |
+| PowerPC      | FreeBSD          |
+| PowerPC64    | Linux            |
+| S390         | Linux            |
+| S390X        | Linux            |
+| SPARC        | Linux            |
+| SPARC        | Solaris          |
+| SPARC64      | Linux            |
+| SPARC64      | FreeBSD          |
+| X86          | FreeBSD          |
+| X86          | kFreeBSD         |
+| X86          | Linux            |
+| X86          | Mac OSX          |
+| X86          | OpenBSD          |
+| X86          | Solaris          |
+| X86          | Windows/Cygwin   |
+| X86          | Windows/MingW    |
+| X86-64       | FreeBSD          |
+| X86-64       | Linux            |
+| X86-64       | OpenBSD          |
+|--------------+------------------|
+
 Please send additional platform test results to
-libffi-discuss@sourceware.org.
+libffi-discuss@sourceware.org and feel free to update the wiki page
+above.
 
 Installing libffi
 =================
-
-[Note: before actually performing any of these installation steps,
- you may wish to read the "Platform Specific Notes" below.]
 
 First you must configure the distribution for your particular
 system. Go to the directory you wish to build libffi in and run the
@@ -98,65 +118,28 @@ This will require that you have DejaGNU installed.
 To install the library and header files, type "make install".
 
 
-Platform Specific Notes
-=======================
-
-	MIPS - Irix 5.3 & 6.x
-	---------------------
-
-Irix 6.2 and better supports three different calling conventions: o32,
-n32 and n64. Currently, libffi only supports both o32 and n32 under
-Irix 6.x, but only o32 under Irix 5.3. Libffi will automatically be
-configured for whichever calling convention it was built for.
-
-By default, the configure script will try to build libffi with the GNU
-development tools. To build libffi with the SGI development tools, set
-the environment variable CC to either "cc -32" or "cc -n32" before
-running configure under Irix 6.x (depending on whether you want an o32
-or n32 library), or just "cc" for Irix 5.3.
-
-With the n32 calling convention, when returning structures smaller
-than 16 bytes, be sure to provide an RVALUE that is 8 byte aligned.
-Here's one way of forcing this:
-
-	double struct_storage[2];
-	my_small_struct *s = (my_small_struct *) struct_storage;  
-	/* Use s for RVALUE */
-
-If you don't do this you are liable to get spurious bus errors. 
-
-"long long" values are not supported yet.
-
-You must use GNU Make to build libffi on SGI platforms.
-
-
-	PowerPC System V ABI
-	--------------------
-
-There are two `System V ABI's which libffi implements for PowerPC.
-They differ only in how small structures are returned from functions.
-
-In the FFI_SYSV version, structures that are 8 bytes or smaller are
-returned in registers.  This is what GCC does when it is configured
-for solaris, and is what the System V ABI I have (dated September
-1995) says.
-
-In the FFI_GCC_SYSV version, all structures are returned the same way:
-by passing a pointer as the first argument to the function.  This is
-what GCC does when it is configured for linux or a generic sysv
-target.
-
-EGCS 1.0.1 (and probably other versions of EGCS/GCC) also has a
-inconsistency with the SysV ABI: When a procedure is called with many
-floating-point arguments, some of them get put on the stack.  They are
-all supposed to be stored in double-precision format, even if they are
-only single-precision, but EGCS stores single-precision arguments as
-single-precision anyway.  This causes one test to fail (the `many
-arguments' test).
-
-
 History
 =======
+
+See the ChangeLog files for details.
+
+3.0.9 Dec-31-09
+        Add AVR32 and win64 ports.  Add ARM softfp support.
+	Many fixes for AIX, Solaris, HP-UX, *BSD.
+	Several PowerPC and x86-64 bug fixes.
+	Build DLL for windows.
+
+3.0.8 Dec-19-08
+        Add *BSD, BeOS, and PA-Linux support.
+
+3.0.7 Nov-11-08
+        Fix for ppc FreeBSD.
+	(thanks to Andreas Tobler)
+
+3.0.6 Jul-17-08
+        Fix for closures on sh.
+	Mark the sh/sh64 stack as non-executable.
+	(both thanks to Kaz Kojima)
 
 3.0.5 Apr-3-08
         Fix libffi.pc file.

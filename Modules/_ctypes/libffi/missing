@@ -1,9 +1,9 @@
 #! /bin/sh
 # Common stub for a few missing GNU programs while installing.
 
-scriptversion=2004-09-07.08
+scriptversion=2005-06-08.21
 
-# Copyright (C) 1996, 1997, 1999, 2000, 2002, 2003, 2004
+# Copyright (C) 1996, 1997, 1999, 2000, 2002, 2003, 2004, 2005
 #   Free Software Foundation, Inc.
 # Originally by Fran,cois Pinard <pinard@iro.umontreal.ca>, 1996.
 
@@ -19,8 +19,8 @@ scriptversion=2004-09-07.08
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-# 02111-1307, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 # As a special exception to the GNU General Public License, if you
 # distribute this file as part of a program that contains a
@@ -87,12 +87,12 @@ Supported PROGRAM values:
   yacc         create \`y.tab.[ch]', if possible, from existing .[ch]
 
 Send bug reports to <bug-automake@gnu.org>."
-    exit 0
+    exit $?
     ;;
 
   -v|--v|--ve|--ver|--vers|--versi|--versio|--version)
     echo "missing $scriptversion (GNU Automake)"
-    exit 0
+    exit $?
     ;;
 
   -*)
@@ -288,11 +288,18 @@ WARNING: \`$1' is $msg.  You should only need it if
          call might also be the consequence of using a buggy \`make' (AIX,
          DU, IRIX).  You might want to install the \`Texinfo' package or
          the \`GNU make' package.  Grab either from any GNU archive site."
+    # The file to touch is that specified with -o ...
     file=`echo "$*" | sed -n 's/.*-o \([^ ]*\).*/\1/p'`
     if test -z "$file"; then
-      file=`echo "$*" | sed 's/.* \([^ ]*\) *$/\1/'`
-      file=`sed -n '/^@setfilename/ { s/.* \([^ ]*\) *$/\1/; p; q; }' $file`
+      # ... or it is the one specified with @setfilename ...
+      infile=`echo "$*" | sed 's/.* \([^ ]*\) *$/\1/'`
+      file=`sed -n '/^@setfilename/ { s/.* \([^ ]*\) *$/\1/; p; q; }' $infile`
+      # ... or it is derived from the source name (dir/f.texi becomes f.info)
+      test -z "$file" && file=`echo "$infile" | sed 's,.*/,,;s,.[^.]*$,,'`.info
     fi
+    # If the file does not exist, the user really needs makeinfo;
+    # let's fail without touching anything.
+    test -f $file || exit 1
     touch $file
     ;;
 
