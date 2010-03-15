@@ -156,8 +156,7 @@ def makeunicodedata(unicode, trace):
                 prefix = i
                 assert prefix < 256
                 # content
-                decomp = [prefix + (len(decomp)<<8)] +\
-                         map(lambda s: int(s, 16), decomp)
+                decomp = [prefix + (len(decomp)<<8)] + [int(s, 16) for s in decomp]
                 # Collect NFC pairs
                 if not prefix and len(decomp) == 3 and \
                    char not in unicode.exclusions and \
@@ -459,8 +458,7 @@ def makeunicodetype(unicode, trace):
     Array("index2", index2).dump(fp, trace)
 
     # Generate code for _PyUnicode_ToNumeric()
-    numeric_items = numeric.items()
-    numeric_items.sort()
+    numeric_items = sorted(numeric.items())
     print >>fp, '/* Returns the numeric value as double for Unicode characters'
     print >>fp, ' * having this property, -1.0 otherwise.'
     print >>fp, ' */'
@@ -506,8 +504,7 @@ def makeunicodetype(unicode, trace):
 
     haswide = False
     hasnonewide = False
-    spaces.sort()
-    for codepoint in spaces:
+    for codepoint in sorted(spaces):
         if codepoint < 0x10000:
             hasnonewide = True
         if codepoint >= 0x10000 and not haswide:
@@ -535,8 +532,7 @@ def makeunicodetype(unicode, trace):
     print >>fp, '    switch (ch) {'
     haswide = False
     hasnonewide = False
-    linebreaks.sort()
-    for codepoint in linebreaks:
+    for codepoint in sorted(linebreaks):
         if codepoint < 0x10000:
             hasnonewide = True
         if codepoint >= 0x10000 and not haswide:
@@ -601,12 +597,10 @@ def makeunicodename(unicode, trace):
     wordlist = words.items()
 
     # sort on falling frequency, then by name
-    def cmpwords((aword, alist),(bword, blist)):
-        r = -cmp(len(alist),len(blist))
-        if r:
-            return r
-        return cmp(aword, bword)
-    wordlist.sort(cmpwords)
+    def word_key(a):
+        aword, alist = a
+        return -len(alist), aword
+    wordlist.sort(key=word_key)
 
     # figure out how many phrasebook escapes we need
     escapes = 0
@@ -630,7 +624,7 @@ def makeunicodename(unicode, trace):
     # length (to maximize overlap)
 
     wordlist, wordtail = wordlist[:short], wordlist[short:]
-    wordtail.sort(lambda a, b: len(b[0])-len(a[0]))
+    wordtail.sort(key=lambda a: a[0], reverse=True)
     wordlist.extend(wordtail)
 
     # generate lexicon from words
