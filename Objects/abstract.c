@@ -2737,6 +2737,7 @@ _PySequence_BytesToCharpArray(PyObject* self)
 {
 	char **array;
 	Py_ssize_t i, argc;
+	PyObject *item = NULL;
 
 	argc = PySequence_Size(self);
 	if (argc == -1)
@@ -2749,7 +2750,7 @@ _PySequence_BytesToCharpArray(PyObject* self)
 	}
 	for (i = 0; i < argc; ++i) {
 		char *data;
-		PyObject *item = PySequence_GetItem(self, i);
+		item = PySequence_GetItem(self, i);
 		data = PyBytes_AsString(item);
 		if (data == NULL) {
 			/* NULL terminate before freeing. */
@@ -2761,12 +2762,14 @@ _PySequence_BytesToCharpArray(PyObject* self)
 			PyErr_NoMemory();
 			goto fail;
 		}
+		Py_DECREF(item);
 	}
 	array[argc] = NULL;
 
 	return array;
 
 fail:
+	Py_XDECREF(item);
 	_Py_FreeCharPArray(array);
 	return NULL;
 }

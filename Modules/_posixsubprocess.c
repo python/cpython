@@ -172,7 +172,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     PyObject *gc_module = NULL;
     PyObject *executable_list, *py_close_fds;
     PyObject *env_list, *preexec_fn;
-    PyObject *process_args = NULL, *converted_args = NULL;
+    PyObject *process_args, *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
     int p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite;
     int errpipe_read, errpipe_write, close_fds, restore_signals;
@@ -224,15 +224,17 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     /* These conversions are done in the parent process to avoid allocating
        or freeing memory in the child process. */
     if (process_args != Py_None) {
+        Py_ssize_t num_args;
         /* Equivalent to:  */
         /*  tuple(PyUnicode_FSConverter(arg) for arg in process_args)  */
-        process_args = PySequence_Fast(process_args, "argv must be a tuple");
-        converted_args = PyTuple_New(PySequence_Size(process_args));
+        fast_args = PySequence_Fast(process_args, "argv must be a tuple");
+        num_args = PySequence_Fast_GET_SIZE(fast_args);
+        converted_args = PyTuple_New(num_args);
         if (converted_args == NULL)
             goto cleanup;
-        for (arg_num = 0; arg_num < PySequence_Size(process_args); ++arg_num) {
+        for (arg_num = 0; arg_num < num_args; ++arg_num) {
             PyObject *borrowed_arg, *converted_arg;
-            borrowed_arg = PySequence_Fast_GET_ITEM(process_args, arg_num);
+            borrowed_arg = PySequence_Fast_GET_ITEM(fast_args, arg_num);
             if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0)
                 goto cleanup;
             PyTuple_SET_ITEM(converted_args, arg_num, converted_arg);
@@ -240,7 +242,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
 
         argv = _PySequence_BytesToCharpArray(converted_args);
         Py_CLEAR(converted_args);
-        Py_CLEAR(process_args);
+        Py_CLEAR(fast_args);
         if (!argv)
             goto cleanup;
     }
@@ -319,7 +321,7 @@ cleanup:
         _Py_FreeCharPArray(argv);
     _Py_FreeCharPArray(exec_array);
     Py_XDECREF(converted_args);
-    Py_XDECREF(process_args);
+    Py_XDECREF(fast_args);
 
     /* Reenable gc if it was disabled. */
     if (need_to_reenable_gc)
