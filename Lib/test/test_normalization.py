@@ -6,15 +6,12 @@ import sys
 import os
 from unicodedata import normalize, unidata_version
 
-TESTDATAFILE = "NormalizationTest" + os.extsep + "txt"
+TESTDATAFILE = "NormalizationTest.txt"
 TESTDATAURL = "http://www.unicode.org/Public/" + unidata_version + "/ucd/" + TESTDATAFILE
 
-if os.path.exists(TESTDATAFILE):
-    f = open(TESTDATAFILE)
-    l = f.readline()
-    f.close()
-    if not unidata_version in l:
-        os.unlink(TESTDATAFILE)
+def check_version(testfile):
+    hdr = testfile.readline()
+    return unidata_version in hdr
 
 class RangeError(Exception):
     pass
@@ -40,13 +37,14 @@ def unistr(data):
 
 class NormalizationTest(unittest.TestCase):
     def test_main(self):
+        part = None
         part1_data = {}
         # Hit the exception early
         try:
-            open_urlresource(TESTDATAURL)
+            testdata = open_urlresource(TESTDATAURL, check_version)
         except (IOError, HTTPException):
             self.skipTest("Could not retrieve " + TESTDATAURL)
-        for line in open_urlresource(TESTDATAURL):
+        for line in testdata:
             if '#' in line:
                 line = line.split('#')[0]
             line = line.strip()

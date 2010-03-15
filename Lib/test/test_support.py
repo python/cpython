@@ -32,6 +32,7 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "threading_cleanup", "reap_children", "cpython_only",
            "check_impl_detail", "get_attribute", "py3k_bytes"]
 
+
 class Error(Exception):
     """Base class for regression test exceptions."""
 
@@ -463,15 +464,30 @@ def check_syntax_error(testcase, statement):
     testcase.assertRaises(SyntaxError, compile, statement,
                           '<test string>', 'exec')
 
-def open_urlresource(url):
+def open_urlresource(url, check=None):
     import urlparse, urllib2
 
-    requires('urlfetch')
     filename = urlparse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
 
     fn = os.path.join(os.path.dirname(__file__), "data", filename)
+
+    def check_valid_file(fn):
+        f = open(fn)
+        if check is None:
+            return f
+        elif check(f):
+            f.seek(0)
+            return f
+        f.close()
+
     if os.path.exists(fn):
-        return open(fn)
+        f = check_valid_file(fn)
+        if f is not None:
+            return f
+        unlink(fn)
+
+    # Verify the requirement before downloading the file
+    requires('urlfetch')
 
     print >> get_original_stdout(), '\tfetching %s ...' % url
     f = urllib2.urlopen(url, timeout=15)
@@ -483,7 +499,11 @@ def open_urlresource(url):
                 s = f.read()
     finally:
         f.close()
-    return open(fn)
+
+    f = check_valid_file(fn)
+    if f is not None:
+        return f
+    raise TestFailed('invalid resource "%s"' % fn)
 
 
 class WarningsRecorder(object):

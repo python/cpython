@@ -76,6 +76,12 @@ Build
 
 - Issue #7705: Fix linking on FreeBSD.
 
+Tests
+-----
+
+- Issue #7783: test.test_support.open_urlresource invalidates the outdated
+  files from the local cache.
+
 
 What's New in Python 2.7 alpha 4?
 =================================
