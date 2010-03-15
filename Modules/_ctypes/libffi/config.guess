@@ -1,10 +1,10 @@
 #! /bin/sh
 # Attempt to guess a canonical system name.
 #   Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-#   2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation,
-#   Inc.
+#   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
+#   Free Software Foundation, Inc.
 
-timestamp='2007-05-17'
+timestamp='2009-11-19'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -27,16 +27,16 @@ timestamp='2007-05-17'
 # the same distribution terms that you use for the rest of that program.
 
 
-# Originally written by Per Bothner <per@bothner.com>.
-# Please send patches to <config-patches@gnu.org>.  Submit a context
-# diff and a properly formatted ChangeLog entry.
+# Originally written by Per Bothner.  Please send patches (context
+# diff format) to <config-patches@gnu.org> and include a ChangeLog
+# entry.
 #
 # This script attempts to guess a canonical system name similar to
 # config.sub.  If it succeeds, it prints the system name on stdout, and
 # exits with 0.  Otherwise, it exits with 1.
 #
-# The plan is that this can be called by configure scripts if you
-# don't specify an explicit build system type.
+# You can get the latest version of this script from:
+# http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD
 
 me=`echo "$0" | sed -e 's,.*/,,'`
 
@@ -56,8 +56,8 @@ version="\
 GNU config.guess ($timestamp)
 
 Originally written by Per Bothner.
-Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005
-Free Software Foundation, Inc.
+Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
+2002, 2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
 
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
@@ -170,7 +170,7 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	    arm*|i386|m68k|ns32k|sh3*|sparc|vax)
 		eval $set_cc_for_build
 		if echo __ELF__ | $CC_FOR_BUILD -E - 2>/dev/null \
-			| grep __ELF__ >/dev/null
+			| grep -q __ELF__
 		then
 		    # Once all utilities can be ECOFF (netbsdecoff) or a.out (netbsdaout).
 		    # Return netbsd for either.  FIX?
@@ -324,14 +324,30 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	case `/usr/bin/uname -p` in
 	    sparc) echo sparc-icl-nx7; exit ;;
 	esac ;;
+    s390x:SunOS:*:*)
+	echo ${UNAME_MACHINE}-ibm-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
+	exit ;;
     sun4H:SunOS:5.*:*)
 	echo sparc-hal-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
 	exit ;;
     sun4*:SunOS:5.*:* | tadpole*:SunOS:5.*:*)
 	echo sparc-sun-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
 	exit ;;
-    i86pc:SunOS:5.*:* | ix86xen:SunOS:5.*:*)
-	echo i386-pc-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
+    i86pc:SunOS:5.*:* | i86xen:SunOS:5.*:*)
+	eval $set_cc_for_build
+	SUN_ARCH="i386"
+	# If there is a compiler, see if it is configured for 64-bit objects.
+	# Note that the Sun cc does not turn __LP64__ into 1 like gcc does.
+	# This test works for both compilers.
+	if [ "$CC_FOR_BUILD" != 'no_compiler_found' ]; then
+	    if (echo '#ifdef __amd64'; echo IS_64BIT_ARCH; echo '#endif') | \
+		(CCOPTS= $CC_FOR_BUILD -E - 2>/dev/null) | \
+		grep IS_64BIT_ARCH >/dev/null
+	    then
+		SUN_ARCH="x86_64"
+	    fi
+	fi
+	echo ${SUN_ARCH}-pc-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
 	exit ;;
     sun4*:SunOS:6*:*)
 	# According to config.sub, this is the proper way to canonicalize
@@ -532,7 +548,7 @@ EOF
 		echo rs6000-ibm-aix3.2
 	fi
 	exit ;;
-    *:AIX:*:[45])
+    *:AIX:*:[456])
 	IBM_CPU_ID=`/usr/sbin/lsdev -C -c processor -S available | sed 1q | awk '{ print $1 }'`
 	if /usr/sbin/lsattr -El ${IBM_CPU_ID} | grep ' POWER' >/dev/null 2>&1; then
 		IBM_ARCH=rs6000
@@ -640,7 +656,7 @@ EOF
 	    # => hppa64-hp-hpux11.23
 
 	    if echo __LP64__ | (CCOPTS= $CC_FOR_BUILD -E - 2>/dev/null) |
-		grep __LP64__ >/dev/null
+		grep -q __LP64__
 	    then
 		HP_ARCH="hppa2.0w"
 	    else
@@ -791,17 +807,23 @@ EOF
     i*:PW*:*)
 	echo ${UNAME_MACHINE}-pc-pw32
 	exit ;;
-    *:Interix*:[3456]*)
+    *:Interix*:*)
     	case ${UNAME_MACHINE} in
-	    x86) 
+	    x86)
 		echo i586-pc-interix${UNAME_RELEASE}
 		exit ;;
-	    EM64T | authenticamd)
+	    authenticamd | genuineintel | EM64T)
 		echo x86_64-unknown-interix${UNAME_RELEASE}
+		exit ;;
+	    IA64)
+		echo ia64-unknown-interix${UNAME_RELEASE}
 		exit ;;
 	esac ;;
     [345]86:Windows_95:* | [345]86:Windows_98:* | [345]86:Windows_NT:*)
 	echo i${UNAME_MACHINE}-pc-mks
+	exit ;;
+    8664:Windows_NT:*)
+	echo x86_64-pc-mks
 	exit ;;
     i*:Windows_NT*:* | Pentium*:Windows_NT*:*)
 	# How do we know it's Interix rather than the generic POSIX subsystem?
@@ -832,8 +854,29 @@ EOF
     i*86:Minix:*:*)
 	echo ${UNAME_MACHINE}-pc-minix
 	exit ;;
+    alpha:Linux:*:*)
+	case `sed -n '/^cpu model/s/^.*: \(.*\)/\1/p' < /proc/cpuinfo` in
+	  EV5)   UNAME_MACHINE=alphaev5 ;;
+	  EV56)  UNAME_MACHINE=alphaev56 ;;
+	  PCA56) UNAME_MACHINE=alphapca56 ;;
+	  PCA57) UNAME_MACHINE=alphapca56 ;;
+	  EV6)   UNAME_MACHINE=alphaev6 ;;
+	  EV67)  UNAME_MACHINE=alphaev67 ;;
+	  EV68*) UNAME_MACHINE=alphaev68 ;;
+        esac
+	objdump --private-headers /bin/sh | grep -q ld.so.1
+	if test "$?" = 0 ; then LIBC="libc1" ; else LIBC="" ; fi
+	echo ${UNAME_MACHINE}-unknown-linux-gnu${LIBC}
+	exit ;;
     arm*:Linux:*:*)
-	echo ${UNAME_MACHINE}-unknown-linux-gnu
+	eval $set_cc_for_build
+	if echo __ARM_EABI__ | $CC_FOR_BUILD -E - 2>/dev/null \
+	    | grep -q __ARM_EABI__
+	then
+	    echo ${UNAME_MACHINE}-unknown-linux-gnu
+	else
+	    echo ${UNAME_MACHINE}-unknown-linux-gnueabi
+	fi
 	exit ;;
     avr32*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
@@ -847,6 +890,17 @@ EOF
     frv:Linux:*:*)
     	echo frv-unknown-linux-gnu
 	exit ;;
+    i*86:Linux:*:*)
+	LIBC=gnu
+	eval $set_cc_for_build
+	sed 's/^	//' << EOF >$dummy.c
+	#ifdef __dietlibc__
+	LIBC=dietlibc
+	#endif
+EOF
+	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep '^LIBC'`
+	echo "${UNAME_MACHINE}-pc-linux-${LIBC}"
+	exit ;;
     ia64:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit ;;
@@ -856,74 +910,33 @@ EOF
     m68*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit ;;
-    mips:Linux:*:*)
+    mips:Linux:*:* | mips64:Linux:*:*)
 	eval $set_cc_for_build
 	sed 's/^	//' << EOF >$dummy.c
 	#undef CPU
-	#undef mips
-	#undef mipsel
+	#undef ${UNAME_MACHINE}
+	#undef ${UNAME_MACHINE}el
 	#if defined(__MIPSEL__) || defined(__MIPSEL) || defined(_MIPSEL) || defined(MIPSEL)
-	CPU=mipsel
+	CPU=${UNAME_MACHINE}el
 	#else
 	#if defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || defined(MIPSEB)
-	CPU=mips
+	CPU=${UNAME_MACHINE}
 	#else
 	CPU=
 	#endif
 	#endif
 EOF
-	eval "`$CC_FOR_BUILD -E $dummy.c 2>/dev/null | sed -n '
-	    /^CPU/{
-		s: ::g
-		p
-	    }'`"
-	test x"${CPU}" != x && { echo "${CPU}-unknown-linux-gnu"; exit; }
-	;;
-    mips64:Linux:*:*)
-	eval $set_cc_for_build
-	sed 's/^	//' << EOF >$dummy.c
-	#undef CPU
-	#undef mips64
-	#undef mips64el
-	#if defined(__MIPSEL__) || defined(__MIPSEL) || defined(_MIPSEL) || defined(MIPSEL)
-	CPU=mips64el
-	#else
-	#if defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || defined(MIPSEB)
-	CPU=mips64
-	#else
-	CPU=
-	#endif
-	#endif
-EOF
-	eval "`$CC_FOR_BUILD -E $dummy.c 2>/dev/null | sed -n '
-	    /^CPU/{
-		s: ::g
-		p
-	    }'`"
+	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep '^CPU'`
 	test x"${CPU}" != x && { echo "${CPU}-unknown-linux-gnu"; exit; }
 	;;
     or32:Linux:*:*)
 	echo or32-unknown-linux-gnu
 	exit ;;
-    ppc:Linux:*:*)
-	echo powerpc-unknown-linux-gnu
+    padre:Linux:*:*)
+	echo sparc-unknown-linux-gnu
 	exit ;;
-    ppc64:Linux:*:*)
-	echo powerpc64-unknown-linux-gnu
-	exit ;;
-    alpha:Linux:*:*)
-	case `sed -n '/^cpu model/s/^.*: \(.*\)/\1/p' < /proc/cpuinfo` in
-	  EV5)   UNAME_MACHINE=alphaev5 ;;
-	  EV56)  UNAME_MACHINE=alphaev56 ;;
-	  PCA56) UNAME_MACHINE=alphapca56 ;;
-	  PCA57) UNAME_MACHINE=alphapca56 ;;
-	  EV6)   UNAME_MACHINE=alphaev6 ;;
-	  EV67)  UNAME_MACHINE=alphaev67 ;;
-	  EV68*) UNAME_MACHINE=alphaev68 ;;
-        esac
-	objdump --private-headers /bin/sh | grep ld.so.1 >/dev/null
-	if test "$?" = 0 ; then LIBC="libc1" ; else LIBC="" ; fi
-	echo ${UNAME_MACHINE}-unknown-linux-gnu${LIBC}
+    parisc64:Linux:*:* | hppa64:Linux:*:*)
+	echo hppa64-unknown-linux-gnu
 	exit ;;
     parisc:Linux:*:* | hppa:Linux:*:*)
 	# Look for CPU level
@@ -933,8 +946,11 @@ EOF
 	  *)    echo hppa-unknown-linux-gnu ;;
 	esac
 	exit ;;
-    parisc64:Linux:*:* | hppa64:Linux:*:*)
-	echo hppa64-unknown-linux-gnu
+    ppc64:Linux:*:*)
+	echo powerpc64-unknown-linux-gnu
+	exit ;;
+    ppc:Linux:*:*)
+	echo powerpc-unknown-linux-gnu
 	exit ;;
     s390:Linux:*:* | s390x:Linux:*:*)
 	echo ${UNAME_MACHINE}-ibm-linux
@@ -954,72 +970,9 @@ EOF
     x86_64:Linux:*:*)
 	echo x86_64-unknown-linux-gnu
 	exit ;;
-    xtensa:Linux:*:*)
-    	echo xtensa-unknown-linux-gnu
+    xtensa*:Linux:*:*)
+    	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit ;;
-    i*86:Linux:*:*)
-	# The BFD linker knows what the default object file format is, so
-	# first see if it will tell us. cd to the root directory to prevent
-	# problems with other programs or directories called `ld' in the path.
-	# Set LC_ALL=C to ensure ld outputs messages in English.
-	ld_supported_targets=`cd /; LC_ALL=C ld --help 2>&1 \
-			 | sed -ne '/supported targets:/!d
-				    s/[ 	][ 	]*/ /g
-				    s/.*supported targets: *//
-				    s/ .*//
-				    p'`
-        case "$ld_supported_targets" in
-	  elf32-i386)
-		TENTATIVE="${UNAME_MACHINE}-pc-linux-gnu"
-		;;
-	  a.out-i386-linux)
-		echo "${UNAME_MACHINE}-pc-linux-gnuaout"
-		exit ;;
-	  coff-i386)
-		echo "${UNAME_MACHINE}-pc-linux-gnucoff"
-		exit ;;
-	  "")
-		# Either a pre-BFD a.out linker (linux-gnuoldld) or
-		# one that does not give us useful --help.
-		echo "${UNAME_MACHINE}-pc-linux-gnuoldld"
-		exit ;;
-	esac
-	# Determine whether the default compiler is a.out or elf
-	eval $set_cc_for_build
-	sed 's/^	//' << EOF >$dummy.c
-	#include <features.h>
-	#ifdef __ELF__
-	# ifdef __GLIBC__
-	#  if __GLIBC__ >= 2
-	LIBC=gnu
-	#  else
-	LIBC=gnulibc1
-	#  endif
-	# else
-	LIBC=gnulibc1
-	# endif
-	#else
-	#if defined(__INTEL_COMPILER) || defined(__PGI) || defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-	LIBC=gnu
-	#else
-	LIBC=gnuaout
-	#endif
-	#endif
-	#ifdef __dietlibc__
-	LIBC=dietlibc
-	#endif
-EOF
-	eval "`$CC_FOR_BUILD -E $dummy.c 2>/dev/null | sed -n '
-	    /^LIBC/{
-		s: ::g
-		p
-	    }'`"
-	test x"${LIBC}" != x && {
-		echo "${UNAME_MACHINE}-pc-linux-${LIBC}"
-		exit
-	}
-	test x"${TENTATIVE}" != x && { echo "${TENTATIVE}"; exit; }
-	;;
     i*86:DYNIX/ptx:4*:*)
 	# ptx 4.0 does uname -s correctly, with DYNIX/ptx in there.
 	# earlier versions are messed up and put the nodename in both
@@ -1048,7 +1001,7 @@ EOF
     i*86:syllable:*:*)
 	echo ${UNAME_MACHINE}-pc-syllable
 	exit ;;
-    i*86:LynxOS:2.*:* | i*86:LynxOS:3.[01]*:* | i*86:LynxOS:4.0*:*)
+    i*86:LynxOS:2.*:* | i*86:LynxOS:3.[01]*:* | i*86:LynxOS:4.[02]*:*)
 	echo i386-unknown-lynxos${UNAME_RELEASE}
 	exit ;;
     i*86:*DOS:*:*)
@@ -1092,8 +1045,11 @@ EOF
     pc:*:*:*)
 	# Left here for compatibility:
         # uname -m prints for DJGPP always 'pc', but it prints nothing about
-        # the processor, so we play safe by assuming i386.
-	echo i386-pc-msdosdjgpp
+        # the processor, so we play safe by assuming i586.
+	# Note: whatever this is, it MUST be the same as what config.sub
+	# prints for the "djgpp" host, or else GDB configury will decide that
+	# this is a cross-build.
+	echo i586-pc-msdosdjgpp
         exit ;;
     Intel:Mach:3*:*)
 	echo i386-pc-mach3
@@ -1131,6 +1087,16 @@ EOF
     3[34]??:*:4.0:* | 3[34]??,*:*:4.0:*)
         /bin/uname -p 2>/dev/null | grep 86 >/dev/null \
           && { echo i486-ncr-sysv4; exit; } ;;
+    NCR*:*:4.2:* | MPRAS*:*:4.2:*)
+	OS_REL='.3'
+	test -r /etc/.relid \
+	    && OS_REL=.`sed -n 's/[^ ]* [^ ]* \([0-9][0-9]\).*/\1/p' < /etc/.relid`
+	/bin/uname -p 2>/dev/null | grep 86 >/dev/null \
+	    && { echo i486-ncr-sysv4.3${OS_REL}; exit; }
+	/bin/uname -p 2>/dev/null | /bin/grep entium >/dev/null \
+	    && { echo i586-ncr-sysv4.3${OS_REL}; exit; }
+	/bin/uname -p 2>/dev/null | /bin/grep pteron >/dev/null \
+	    && { echo i586-ncr-sysv4.3${OS_REL}; exit; } ;;
     m68*:LynxOS:2.*:* | m68*:LynxOS:3.0*:*)
 	echo m68k-unknown-lynxos${UNAME_RELEASE}
 	exit ;;
@@ -1143,7 +1109,7 @@ EOF
     rs6000:LynxOS:2.*:*)
 	echo rs6000-unknown-lynxos${UNAME_RELEASE}
 	exit ;;
-    PowerPC:LynxOS:2.*:* | PowerPC:LynxOS:3.[01]*:* | PowerPC:LynxOS:4.0*:*)
+    PowerPC:LynxOS:2.*:* | PowerPC:LynxOS:3.[01]*:* | PowerPC:LynxOS:4.[02]*:*)
 	echo powerpc-unknown-lynxos${UNAME_RELEASE}
 	exit ;;
     SM[BE]S:UNIX_SV:*:*)
@@ -1206,6 +1172,9 @@ EOF
     BePC:BeOS:*:*)	# BeOS running on Intel PC compatible.
 	echo i586-pc-beos
 	exit ;;
+    BePC:Haiku:*:*)	# Haiku running on Intel PC compatible.
+	echo i586-pc-haiku
+	exit ;;
     SX-4:SUPER-UX:*:*)
 	echo sx4-nec-superux${UNAME_RELEASE}
 	exit ;;
@@ -1233,6 +1202,16 @@ EOF
     *:Darwin:*:*)
 	UNAME_PROCESSOR=`uname -p` || UNAME_PROCESSOR=unknown
 	case $UNAME_PROCESSOR in
+	    i386)
+		eval $set_cc_for_build
+		if [ "$CC_FOR_BUILD" != 'no_compiler_found' ]; then
+		  if (echo '#ifdef __LP64__'; echo IS_64BIT_ARCH; echo '#endif') | \
+		      (CCOPTS= $CC_FOR_BUILD -E - 2>/dev/null) | \
+		      grep IS_64BIT_ARCH >/dev/null
+		  then
+		      UNAME_PROCESSOR="x86_64"
+		  fi
+		fi ;;
 	    unknown) UNAME_PROCESSOR=powerpc ;;
 	esac
 	echo ${UNAME_PROCESSOR}-apple-darwin${UNAME_RELEASE}
@@ -1313,6 +1292,9 @@ EOF
 	exit ;;
     i*86:rdos:*:*)
 	echo ${UNAME_MACHINE}-pc-rdos
+	exit ;;
+    i*86:AROS:*:*)
+	echo ${UNAME_MACHINE}-pc-aros
 	exit ;;
 esac
 
@@ -1474,9 +1456,9 @@ This script, last modified $timestamp, has failed to recognize
 the operating system you are using. It is advised that you
 download the most up to date version of the config scripts from
 
-  http://savannah.gnu.org/cgi-bin/viewcvs/*checkout*/config/config/config.guess
+  http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD
 and
-  http://savannah.gnu.org/cgi-bin/viewcvs/*checkout*/config/config/config.sub
+  http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD
 
 If the version you run ($0) is already up to date, please
 send the following data and any information you think might be

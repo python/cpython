@@ -36,11 +36,26 @@
 #define X86
 #endif
 
+#ifdef X86_WIN64
+#define FFI_SIZEOF_ARG 8
+#define USE_BUILTIN_FFS 0 // not yet implemented in mingw-64 
+#endif
+
 /* ---- Generic type definitions ----------------------------------------- */
 
 #ifndef LIBFFI_ASM
+#ifdef X86_WIN64
+#ifdef _MSC_VER
+typedef unsigned __int64       ffi_arg;
+typedef __int64                ffi_sarg;
+#else
+typedef unsigned long long     ffi_arg;
+typedef long long              ffi_sarg;
+#endif
+#else
 typedef unsigned long          ffi_arg;
 typedef signed long            ffi_sarg;
+#endif
 
 typedef enum ffi_abi {
   FFI_FIRST_ABI = 0,
@@ -53,6 +68,11 @@ typedef enum ffi_abi {
   FFI_DEFAULT_ABI = FFI_SYSV,
 #endif
 
+#ifdef X86_WIN64
+  FFI_WIN64,
+  FFI_DEFAULT_ABI = FFI_WIN64,
+#else
+
   /* ---- Intel x86 and AMD x86-64 - */
 #if !defined(X86_WIN32) && (defined(__i386__) || defined(__x86_64__))
   FFI_SYSV,
@@ -63,6 +83,7 @@ typedef enum ffi_abi {
   FFI_DEFAULT_ABI = FFI_UNIX64,
 #endif
 #endif
+#endif /* X86_WIN64 */
 
   FFI_LAST_ABI = FFI_DEFAULT_ABI + 1
 } ffi_abi;
@@ -73,6 +94,7 @@ typedef enum ffi_abi {
 #define FFI_CLOSURES 1
 #define FFI_TYPE_SMALL_STRUCT_1B (FFI_TYPE_LAST + 1)
 #define FFI_TYPE_SMALL_STRUCT_2B (FFI_TYPE_LAST + 2)
+#define FFI_TYPE_SMALL_STRUCT_4B (FFI_TYPE_LAST + 3)
 
 #if defined (X86_64) || (defined (__x86_64__) && defined (X86_DARWIN))
 #define FFI_TRAMPOLINE_SIZE 24
@@ -81,9 +103,17 @@ typedef enum ffi_abi {
 #ifdef X86_WIN32
 #define FFI_TRAMPOLINE_SIZE 13
 #else
+#ifdef X86_WIN64
+#define FFI_TRAMPOLINE_SIZE 29
+#define FFI_NATIVE_RAW_API 0
+#define FFI_NO_RAW_API 1
+#else
 #define FFI_TRAMPOLINE_SIZE 10
 #endif
+#endif
+#ifndef X86_WIN64
 #define FFI_NATIVE_RAW_API 1	/* x86 has native raw api support */
+#endif
 #endif
 
 #endif
