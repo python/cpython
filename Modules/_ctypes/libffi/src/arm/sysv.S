@@ -74,7 +74,8 @@
 #endif
 
 #if defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__) \
-        || defined(__ARM_ARCH_7R__) || defined(__ARM_ARCH_7M__)
+        || defined(__ARM_ARCH_7R__) || defined(__ARM_ARCH_7M__) \
+	|| defined(__ARM_ARCH_7EM__)
 # undef __ARM_ARCH__
 # define __ARM_ARCH__ 7
 #endif
