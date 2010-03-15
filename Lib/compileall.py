@@ -17,7 +17,7 @@ import py_compile
 import struct
 import imp
 
-__all__ = ["compile_dir","compile_files","compile_path"]
+__all__ = ["compile_dir","compile_file","compile_path"]
 
 def compile_dir(dir, maxlevels=10, ddir=None,
                 force=0, rx=None, quiet=0):
