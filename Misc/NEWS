@@ -283,6 +283,9 @@ C-API
 Library
 -------
 
+- Issue #7356: ctypes.util: Make parsing of ldconfig output independent of
+  the locale.
+
 - The internals of the subprocess module on POSIX systems have been replaced
   by an extension module (_posixsubprocess) so that the fork()+exec() can be
   done safely without the possibility of deadlock in multithreaded applications.
