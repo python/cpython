@@ -17,6 +17,9 @@ class CompileallTests(unittest.TestCase):
         self.bc_path = self.source_path + ('c' if __debug__ else 'o')
         with open(self.source_path, 'w') as file:
             file.write('x = 123\n')
+        self.source_path2 = os.path.join(self.directory, '_test2.py')
+        self.bc_path2 = self.source_path2 + ('c' if __debug__ else 'o')
+        shutil.copyfile(self.source_path, self.source_path2)
 
     def tearDown(self):
         shutil.rmtree(self.directory)
@@ -52,6 +55,22 @@ class CompileallTests(unittest.TestCase):
         # Test a change in mtime leads to a new .pyc.
         self.recreation_check(b'\0\0\0\0')
 
+    def test_compile_files(self):
+        # Test compiling a single file, and complete directory
+        for fn in (self.bc_path, self.bc_path2):
+            try:
+                os.unlink(fn)
+            except:
+                pass
+        compileall.compile_file(self.source_path, force=False, quiet=True)
+        self.assertTrue(os.path.isfile(self.bc_path) \
+                        and not os.path.isfile(self.bc_path2))
+        os.unlink(self.bc_path)
+        compileall.compile_dir(self.directory, force=False, quiet=True)
+        self.assertTrue(os.path.isfile(self.bc_path) \
+                        and os.path.isfile(self.bc_path2))
+        os.unlink(self.bc_path)
+        os.unlink(self.bc_path2)
 
 def test_main():
     test_support.run_unittest(CompileallTests)
