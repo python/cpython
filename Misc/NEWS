@@ -45,6 +45,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6949: Allow the _bsddb extension to be built with db-4.8.x.
+
 - Issue #8142: Update libffi to the 3.0.9 release.
 
 - Issue #1530559: When passing a non-integer argument to struct.pack with *any*
