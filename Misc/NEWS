@@ -781,6 +781,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6949: Allow the _dbm extension to be built with db 4.8.x.
+
 - Issue #6544: fix a reference leak in the kqueue implementation's error
   handling.
 
