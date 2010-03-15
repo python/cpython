@@ -92,6 +92,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7356: ctypes.util: Make parsing of ldconfig output independent of the
+  locale.
+
 - Issue #25738: Stop BaseHTTPServer.BaseHTTPRequestHandler.send_error() from
   sending a message body for 205 Reset Content.  Also, don't send the
   Content-Type header field in responses that don't have a body.  Based on
@@ -6231,9 +6234,6 @@ Library
   with Tcl/Tk-8.5.
 
 - Issue #8140: Extend compileall to compile single files.  Add -i option.
-
-- Issue #7356: ctypes.util: Make parsing of ldconfig output independent of the
-  locale.
 
 - Issue #7774: Set sys.executable to an empty string if ``argv[0]`` has been set
   to an non existent program name and Python is unable to retrieve the real
