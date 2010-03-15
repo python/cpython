@@ -503,7 +503,7 @@ Notes:
    As in Standard C, up to three octal digits are accepted.
 
 (2)
-   Unlike in Standard C, at most two hex digits are accepted.
+   Unlike in Standard C, exactly two hex digits are required.
 
 (3)
    In a bytes literal, hexadecimal and octal escapes denote the byte with the
