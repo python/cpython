@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7356: ctypes.util: Make parsing of ldconfig output independent of
+  the locale.
+
 - Issue #7774: Set sys.executable to an empty string if ``argv[0]`` has been
   set to an non existent program name and Python is unable to retrieve the real
   program name.
