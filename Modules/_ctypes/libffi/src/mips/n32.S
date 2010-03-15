@@ -14,14 +14,14 @@
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
-	ANY CLAIM, DAMAGES OR
-   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-   OTHER DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
 #define LIBFFI_ASM	
@@ -40,7 +40,9 @@
 
 #define SIZEOF_FRAME	( 8 * FFI_SIZEOF_ARG )
 
+#ifdef linux
 	.abicalls
+#endif
 	.text
 	.align	2
 	.globl	ffi_call_N32
@@ -217,8 +219,10 @@ callit:
 
 	# Shift the return type flag over
 	SRL	t6, 8*FFI_FLAG_BITS
-	
+
+	beq	t6, FFI_TYPE_SINT32, retint	
 	bne     t6, FFI_TYPE_INT, retfloat
+retint:
 	jal	t9
 	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
 	REG_S	v0, 0(t4)
@@ -277,11 +281,57 @@ retstruct_d_f:
 	b	epilogue
 	
 retstruct_f_d:	
-	bne	t6, FFI_TYPE_STRUCT_FD, retstruct_small
+	bne	t6, FFI_TYPE_STRUCT_FD, retstruct_d_soft
 	jal	t9
 	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
 	s.s	$f0, 0(t4)
 	s.d	$f2, 8(t4)
+	b	epilogue
+
+retstruct_d_soft:
+	bne	t6, FFI_TYPE_STRUCT_D_SOFT, retstruct_f_soft
+	jal	t9
+	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
+	sd	v0, 0(t4)
+	b	epilogue
+	
+retstruct_f_soft:	
+	bne	t6, FFI_TYPE_STRUCT_F_SOFT, retstruct_d_d_soft
+	jal	t9
+	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
+	sw	v0, 0(t4)
+	b	epilogue
+	
+retstruct_d_d_soft:	
+	bne	t6, FFI_TYPE_STRUCT_DD_SOFT, retstruct_f_f_soft
+	jal	t9
+	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
+	sd	v0, 0(t4)
+	sd	v1, 8(t4)
+	b	epilogue
+	
+retstruct_f_f_soft:	
+	bne	t6, FFI_TYPE_STRUCT_FF_SOFT, retstruct_d_f_soft
+	jal	t9
+	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
+	sw	v0, 0(t4)
+	sw	v1, 4(t4)
+	b	epilogue
+	
+retstruct_d_f_soft:	
+	bne	t6, FFI_TYPE_STRUCT_DF_SOFT, retstruct_f_d_soft
+	jal	t9
+	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
+	sd	v0, 0(t4)
+	sw	v1, 8(t4)
+	b	epilogue
+	
+retstruct_f_d_soft:	
+	bne	t6, FFI_TYPE_STRUCT_FD_SOFT, retstruct_small
+	jal	t9
+	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
+	sw	v0, 0(t4)
+	sd	v1, 8(t4)
 	b	epilogue
 	
 retstruct_small:	
@@ -413,6 +463,11 @@ ffi_closure_N32:
 	jalr	t9
 
 	# Return flags are in v0
+	bne     v0, FFI_TYPE_SINT32, cls_retint
+	lw	v0, V0_OFF2($sp)
+	b	cls_epilogue
+
+cls_retint:
 	bne     v0, FFI_TYPE_INT, cls_retfloat
 	REG_L	v0, V0_OFF2($sp)
 	b	cls_epilogue
@@ -474,6 +529,7 @@ cls_epilogue:
 .LFE2:	
 	.end	ffi_closure_N32
 
+#ifdef linux
         .section        .eh_frame,"aw",@progbits
 .Lframe1:
         .4byte  .LECIE1-.LSCIE1		# length
@@ -530,5 +586,6 @@ cls_epilogue:
 	.uleb128 (SIZEOF_FRAME2 - RA_OFF2)/4
 	.align	EH_FRAME_ALIGN
 .LEFDE3:
+#endif /* linux */	
 	
 #endif

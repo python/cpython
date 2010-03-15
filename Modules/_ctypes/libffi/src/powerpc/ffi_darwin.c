@@ -3,7 +3,7 @@
 
    Copyright (C) 1998 Geoffrey Keating
    Copyright (C) 2001 John Hornkvist
-   Copyright (C) 2002, 2006, 2007 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2006, 2007, 2009 Free Software Foundation, Inc.
 
    FFI support for Darwin and AIX.
    
@@ -32,7 +32,7 @@
 
 #include <stdlib.h>
 
-extern void ffi_closure_ASM(void);
+extern void ffi_closure_ASM (void);
 
 enum {
   /* The assembly depends on these exact flags.  */
@@ -80,34 +80,37 @@ enum { ASM_NEEDS_REGISTERS = 4 };
 
    */
 
-void ffi_prep_args(extended_cif *ecif, unsigned *const stack)
+void
+ffi_prep_args (extended_cif *ecif, unsigned long *const stack)
 {
   const unsigned bytes = ecif->cif->bytes;
   const unsigned flags = ecif->cif->flags;
+  const unsigned nargs = ecif->cif->nargs;
+  const ffi_abi abi = ecif->cif->abi;
 
   /* 'stacktop' points at the previous backchain pointer.  */
-  unsigned *const stacktop = stack + (bytes / sizeof(unsigned));
+  unsigned long *const stacktop = stack + (bytes / sizeof(unsigned long));
 
   /* 'fpr_base' points at the space for fpr1, and grows upwards as
      we use FPR registers.  */
-  double *fpr_base = (double*) (stacktop - ASM_NEEDS_REGISTERS) - NUM_FPR_ARG_REGISTERS;
+  double *fpr_base = (double *) (stacktop - ASM_NEEDS_REGISTERS) - NUM_FPR_ARG_REGISTERS;
   int fparg_count = 0;
 
 
   /* 'next_arg' grows up as we put parameters in it.  */
-  unsigned *next_arg = stack + 6; /* 6 reserved positions.  */
+  unsigned long *next_arg = stack + 6; /* 6 reserved positions.  */
 
-  int i = ecif->cif->nargs;
+  int i;
   double double_tmp;
   void **p_argv = ecif->avalue;
-  unsigned gprvalue;
+  unsigned long gprvalue;
   ffi_type** ptr = ecif->cif->arg_types;
   char *dest_cpy;
   unsigned size_al = 0;
 
   /* Check that everything starts aligned properly.  */
-  FFI_ASSERT(((unsigned)(char *)stack & 0xF) == 0);
-  FFI_ASSERT(((unsigned)(char *)stacktop & 0xF) == 0);
+  FFI_ASSERT(((unsigned) (char *) stack & 0xF) == 0);
+  FFI_ASSERT(((unsigned) (char *) stacktop & 0xF) == 0);
   FFI_ASSERT((bytes & 0xF) == 0);
 
   /* Deal with return values that are actually pass-by-reference.
@@ -115,12 +118,10 @@ void ffi_prep_args(extended_cif *ecif, unsigned *const stack)
      Return values are referenced by r3, so r4 is the first parameter.  */
 
   if (flags & FLAG_RETVAL_REFERENCE)
-    *next_arg++ = (unsigned)(char *)ecif->rvalue;
+    *next_arg++ = (unsigned long) (char *) ecif->rvalue;
 
   /* Now for the arguments.  */
-  for (;
-       i > 0;
-       i--, ptr++, p_argv++)
+  for (i = nargs; i > 0; i--, ptr++, p_argv++)
     {
       switch ((*ptr)->type)
 	{
@@ -128,7 +129,7 @@ void ffi_prep_args(extended_cif *ecif, unsigned *const stack)
 	   purpose registers are filled, the corresponding GPRs that match
 	   the size of the floating-point parameter are skipped.  */
 	case FFI_TYPE_FLOAT:
-	  double_tmp = *(float *)*p_argv;
+	  double_tmp = *(float *) *p_argv;
 	  if (fparg_count >= NUM_FPR_ARG_REGISTERS)
 	    *(double *)next_arg = double_tmp;
 	  else
@@ -139,12 +140,16 @@ void ffi_prep_args(extended_cif *ecif, unsigned *const stack)
 	  break;
 
 	case FFI_TYPE_DOUBLE:
-	  double_tmp = *(double *)*p_argv;
+	  double_tmp = *(double *) *p_argv;
 	  if (fparg_count >= NUM_FPR_ARG_REGISTERS)
 	    *(double *)next_arg = double_tmp;
 	  else
 	    *fpr_base++ = double_tmp;
+#ifdef POWERPC64
+	  next_arg++;
+#else
 	  next_arg += 2;
+#endif
 	  fparg_count++;
 	  FFI_ASSERT(flags & FLAG_FP_ARGUMENTS);
 	  break;
@@ -152,42 +157,71 @@ void ffi_prep_args(extended_cif *ecif, unsigned *const stack)
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
 
 	case FFI_TYPE_LONGDOUBLE:
-	  double_tmp = ((double *)*p_argv)[0];
-	  if (fparg_count >= NUM_FPR_ARG_REGISTERS)
-	    *(double *)next_arg = double_tmp;
+#ifdef POWERPC64
+	  if (fparg_count < NUM_FPR_ARG_REGISTERS)
+	    *(long double *) fpr_base++ = *(long double *) *p_argv;
 	  else
+	    *(long double *) next_arg = *(long double *) *p_argv;
+	  next_arg += 2;
+	  fparg_count += 2;
+#else
+	  double_tmp = ((double *) *p_argv)[0];
+	  if (fparg_count < NUM_FPR_ARG_REGISTERS)
 	    *fpr_base++ = double_tmp;
+	  else
+	    *(double *) next_arg = double_tmp;
 	  next_arg += 2;
 	  fparg_count++;
-	  double_tmp = ((double *)*p_argv)[1];
-	  if (fparg_count >= NUM_FPR_ARG_REGISTERS)
-	    *(double *)next_arg = double_tmp;
-	  else
+
+	  double_tmp = ((double *) *p_argv)[1];
+	  if (fparg_count < NUM_FPR_ARG_REGISTERS)
 	    *fpr_base++ = double_tmp;
+	  else
+	    *(double *) next_arg = double_tmp;
 	  next_arg += 2;
 	  fparg_count++;
+#endif
 	  FFI_ASSERT(flags & FLAG_FP_ARGUMENTS);
 	  break;
 #endif
 	case FFI_TYPE_UINT64:
 	case FFI_TYPE_SINT64:
-	  *(long long *)next_arg = *(long long *)*p_argv;
-	  next_arg+=2;
+#ifdef POWERPC64
+	  gprvalue = *(long long *) *p_argv;
+	  goto putgpr;
+#else
+	  *(long long *) next_arg = *(long long *) *p_argv;
+	  next_arg += 2;
+#endif
 	  break;
+	case FFI_TYPE_POINTER:
+	  gprvalue = *(unsigned long *) *p_argv;
+	  goto putgpr;
 	case FFI_TYPE_UINT8:
-	  gprvalue = *(unsigned char *)*p_argv;
+	  gprvalue = *(unsigned char *) *p_argv;
 	  goto putgpr;
 	case FFI_TYPE_SINT8:
-	  gprvalue = *(signed char *)*p_argv;
+	  gprvalue = *(signed char *) *p_argv;
 	  goto putgpr;
 	case FFI_TYPE_UINT16:
-	  gprvalue = *(unsigned short *)*p_argv;
+	  gprvalue = *(unsigned short *) *p_argv;
 	  goto putgpr;
 	case FFI_TYPE_SINT16:
-	  gprvalue = *(signed short *)*p_argv;
+	  gprvalue = *(signed short *) *p_argv;
 	  goto putgpr;
 
 	case FFI_TYPE_STRUCT:
+#ifdef POWERPC64
+	  dest_cpy = (char *) next_arg;
+	  size_al = (*ptr)->size;
+	  if ((*ptr)->elements[0]->type == 3)
+	    size_al = ALIGN((*ptr)->size, 8);
+	  if (size_al < 3 && abi == FFI_DARWIN)
+	    dest_cpy += 4 - size_al;
+
+	  memcpy ((char *) dest_cpy, (char *) *p_argv, size_al);
+	  next_arg += (size_al + 7) / 8;
+#else
 	  dest_cpy = (char *) next_arg;
 
 	  /* Structures that match the basic modes (QI 1 byte, HI 2 bytes,
@@ -195,22 +229,24 @@ void ffi_prep_args(extended_cif *ecif, unsigned *const stack)
 	     Structures with 3 byte in size are padded upwards.  */
 	  size_al = (*ptr)->size;
 	  /* If the first member of the struct is a double, then align
-	     the struct to double-word.
-	     Type 3 is defined in include/ffi.h. #define FFI_TYPE_DOUBLE 3.  */
-	  if ((*ptr)->elements[0]->type == 3)
+	     the struct to double-word.  */
+	  if ((*ptr)->elements[0]->type == FFI_TYPE_DOUBLE)
 	    size_al = ALIGN((*ptr)->size, 8);
-	  if (size_al < 3 && ecif->cif->abi == FFI_DARWIN)
+	  if (size_al < 3 && abi == FFI_DARWIN)
 	    dest_cpy += 4 - size_al;
 
-	  memcpy((char *)dest_cpy, (char *)*p_argv, size_al);
+	  memcpy((char *) dest_cpy, (char *) *p_argv, size_al);
 	  next_arg += (size_al + 3) / 4;
+#endif
 	  break;
 
 	case FFI_TYPE_INT:
-	case FFI_TYPE_UINT32:
 	case FFI_TYPE_SINT32:
-	case FFI_TYPE_POINTER:
-	  gprvalue = *(unsigned *)*p_argv;
+	  gprvalue = *(signed int *) *p_argv;
+	  goto putgpr;
+
+	case FFI_TYPE_UINT32:
+	  gprvalue = *(unsigned int *) *p_argv;
 	putgpr:
 	  *next_arg++ = gprvalue;
 	  break;
@@ -268,8 +304,44 @@ darwin_adjust_aggregate_sizes (ffi_type *s)
   /* Do not add additional tail padding.  */
 }
 
+/* Adjust the size of S to be correct for AIX.
+   Word-align double unless it is the first member of a structure.  */
+
+static void
+aix_adjust_aggregate_sizes (ffi_type *s)
+{
+  int i;
+
+  if (s->type != FFI_TYPE_STRUCT)
+    return;
+
+  s->size = 0;
+  for (i = 0; s->elements[i] != NULL; i++)
+    {
+      ffi_type *p;
+      int align;
+      
+      p = s->elements[i];
+      aix_adjust_aggregate_sizes (p);
+      align = p->alignment;
+      if (i != 0 && p->type == FFI_TYPE_DOUBLE)
+	align = 4;
+      s->size = ALIGN(s->size, align) + p->size;
+    }
+  
+  s->size = ALIGN(s->size, s->alignment);
+  
+  if (s->elements[0]->type == FFI_TYPE_UINT64
+      || s->elements[0]->type == FFI_TYPE_SINT64
+      || s->elements[0]->type == FFI_TYPE_DOUBLE
+      || s->elements[0]->alignment == 8)
+    s->alignment = s->alignment > 8 ? s->alignment : 8;
+  /* Do not add additional tail padding.  */
+}
+
 /* Perform machine dependent cif processing.  */
-ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
+ffi_status
+ffi_prep_cif_machdep (ffi_cif *cif)
 {
   /* All this is for the DARWIN ABI.  */
   int i;
@@ -288,6 +360,13 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
       darwin_adjust_aggregate_sizes (cif->rtype);
       for (i = 0; i < cif->nargs; i++)
 	darwin_adjust_aggregate_sizes (cif->arg_types[i]);
+    }
+
+  if (cif->abi == FFI_AIX)
+    {
+      aix_adjust_aggregate_sizes (cif->rtype);
+      for (i = 0; i < cif->nargs; i++)
+	aix_adjust_aggregate_sizes (cif->arg_types[i]);
     }
 
   /* Space for the frame pointer, callee's LR, CR, etc, and for
@@ -324,6 +403,9 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
 
     case FFI_TYPE_UINT64:
     case FFI_TYPE_SINT64:
+#ifdef POWERPC64
+    case FFI_TYPE_POINTER:
+#endif
       flags |= FLAG_RETURNS_64BITS;
       break;
 
@@ -387,11 +469,14 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
 	case FFI_TYPE_STRUCT:
 	  size_al = (*ptr)->size;
 	  /* If the first member of the struct is a double, then align
-	     the struct to double-word.
-	     Type 3 is defined in include/ffi.h. #define FFI_TYPE_DOUBLE 3.  */
-	  if ((*ptr)->elements[0]->type == 3)
+	     the struct to double-word.  */
+	  if ((*ptr)->elements[0]->type == FFI_TYPE_DOUBLE)
 	    size_al = ALIGN((*ptr)->size, 8);
+#ifdef POWERPC64
+	  intarg_count += (size_al + 7) / 8;
+#else
 	  intarg_count += (size_al + 3) / 4;
+#endif
 	  break;
 
 	default:
@@ -410,8 +495,13 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
     bytes += NUM_FPR_ARG_REGISTERS * sizeof(double);
 
   /* Stack space.  */
+#ifdef POWERPC64
+  if ((intarg_count + fparg_count) > NUM_GPR_ARG_REGISTERS)
+    bytes += (intarg_count + fparg_count) * sizeof(long);
+#else
   if ((intarg_count + 2 * fparg_count) > NUM_GPR_ARG_REGISTERS)
     bytes += (intarg_count + 2 * fparg_count) * sizeof(long);
+#endif
   else
     bytes += NUM_GPR_ARG_REGISTERS * sizeof(long);
 
@@ -424,12 +514,13 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
   return FFI_OK;
 }
 
-extern void ffi_call_AIX(extended_cif *, unsigned, unsigned, unsigned *,
+extern void ffi_call_AIX(extended_cif *, long, unsigned, unsigned *,
 			 void (*fn)(void), void (*fn2)(void));
-extern void ffi_call_DARWIN(extended_cif *, unsigned, unsigned, unsigned *,
+extern void ffi_call_DARWIN(extended_cif *, long, unsigned, unsigned *,
 			    void (*fn)(void), void (*fn2)(void));
 
-void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
+void
+ffi_call (ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 {
   extended_cif ecif;
 
@@ -442,7 +533,7 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
   if ((rvalue == NULL) &&
       (cif->rtype->type == FFI_TYPE_STRUCT))
     {
-      ecif.rvalue = alloca(cif->rtype->size);
+      ecif.rvalue = alloca (cif->rtype->size);
     }
   else
     ecif.rvalue = rvalue;
@@ -450,11 +541,11 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
   switch (cif->abi)
     {
     case FFI_AIX:
-      ffi_call_AIX(&ecif, -cif->bytes, cif->flags, ecif.rvalue, fn,
+      ffi_call_AIX(&ecif, -(long)cif->bytes, cif->flags, ecif.rvalue, fn,
 		   ffi_prep_args);
       break;
     case FFI_DARWIN:
-      ffi_call_DARWIN(&ecif, -cif->bytes, cif->flags, ecif.rvalue, fn,
+      ffi_call_DARWIN(&ecif, -(long)cif->bytes, cif->flags, ecif.rvalue, fn,
 		      ffi_prep_args);
       break;
     default:
@@ -617,8 +708,9 @@ typedef union
   double d;
 } ffi_dblfl;
 
-int ffi_closure_helper_DARWIN (ffi_closure*, void*,
-			       unsigned long*, ffi_dblfl*);
+int
+ffi_closure_helper_DARWIN (ffi_closure *, void *,
+			   unsigned long *, ffi_dblfl *);
 
 /* Basically the trampoline invokes ffi_closure_ASM, and on
    entry, r11 holds the address of the closure.
@@ -627,8 +719,9 @@ int ffi_closure_helper_DARWIN (ffi_closure*, void*,
    up space for a return value, ffi_closure_ASM invokes the
    following helper function to do most of the work.  */
 
-int ffi_closure_helper_DARWIN (ffi_closure* closure, void * rvalue,
-			       unsigned long * pgr, ffi_dblfl * pfr)
+int
+ffi_closure_helper_DARWIN (ffi_closure *closure, void *rvalue,
+			   unsigned long *pgr, ffi_dblfl *pfr)
 {
   /* rvalue is the pointer to space for return value in closure assembly
      pgr is the pointer to where r3-r10 are stored in ffi_closure_ASM
@@ -645,18 +738,12 @@ int ffi_closure_helper_DARWIN (ffi_closure* closure, void * rvalue,
   void **          avalue;
   ffi_type **      arg_types;
   long             i, avn;
-  long             nf;   /* number of floating registers already used.  */
-  long             ng;   /* number of general registers already used.  */
   ffi_cif *        cif;
-  double           temp;
+  ffi_dblfl *      end_pfr = pfr + NUM_FPR_ARG_REGISTERS;
   unsigned         size_al;
-  union ldu        temp_ld;
 
   cif = closure->cif;
-  avalue = alloca(cif->nargs * sizeof(void *));
-
-  nf = 0;
-  ng = 0;
+  avalue = alloca (cif->nargs * sizeof(void *));
 
   /* Copy the caller's structure return value address so that the closure
      returns the data directly to the caller.  */
@@ -664,7 +751,6 @@ int ffi_closure_helper_DARWIN (ffi_closure* closure, void * rvalue,
     {
       rvalue = (void *) *pgr;
       pgr++;
-      ng++;
     }
 
   i = 0;
@@ -678,58 +764,82 @@ int ffi_closure_helper_DARWIN (ffi_closure* closure, void * rvalue,
 	{
 	case FFI_TYPE_SINT8:
 	case FFI_TYPE_UINT8:
+#ifdef POWERPC64
+	  avalue[i] = (char *) pgr + 7;
+#else
 	  avalue[i] = (char *) pgr + 3;
-	  ng++;
+#endif
 	  pgr++;
 	  break;
 
 	case FFI_TYPE_SINT16:
 	case FFI_TYPE_UINT16:
+#ifdef POWERPC64
+	  avalue[i] = (char *) pgr + 6;
+#else
 	  avalue[i] = (char *) pgr + 2;
-	  ng++;
+#endif
 	  pgr++;
 	  break;
 
 	case FFI_TYPE_SINT32:
 	case FFI_TYPE_UINT32:
+#ifdef POWERPC64
+	  avalue[i] = (char *) pgr + 4;
+#else
 	case FFI_TYPE_POINTER:
 	  avalue[i] = pgr;
-	  ng++;
+#endif
 	  pgr++;
 	  break;
 
 	case FFI_TYPE_STRUCT:
+#ifdef POWERPC64
+	  size_al = arg_types[i]->size;
+	  if (arg_types[i]->elements[0]->type == FFI_TYPE_DOUBLE)
+	    size_al = ALIGN (arg_types[i]->size, 8);
+	  if (size_al < 3 && cif->abi == FFI_DARWIN)
+	    avalue[i] = (void *) pgr + 8 - size_al;
+	  else
+	    avalue[i] = (void *) pgr;
+	  pgr += (size_al + 7) / 8;
+#else
 	  /* Structures that match the basic modes (QI 1 byte, HI 2 bytes,
 	     SI 4 bytes) are aligned as if they were those modes.  */
 	  size_al = arg_types[i]->size;
 	  /* If the first member of the struct is a double, then align
-	     the struct to double-word.
-	     Type 3 is defined in include/ffi.h. #define FFI_TYPE_DOUBLE 3.  */
-	  if (arg_types[i]->elements[0]->type == 3)
+	     the struct to double-word.  */
+	  if (arg_types[i]->elements[0]->type == FFI_TYPE_DOUBLE)
 	    size_al = ALIGN(arg_types[i]->size, 8);
 	  if (size_al < 3 && cif->abi == FFI_DARWIN)
 	    avalue[i] = (void*) pgr + 4 - size_al;
 	  else
 	    avalue[i] = (void*) pgr;
-	  ng += (size_al + 3) / 4;
 	  pgr += (size_al + 3) / 4;
+#endif
 	  break;
 
 	case FFI_TYPE_SINT64:
 	case FFI_TYPE_UINT64:
+#ifdef POWERPC64
+	case FFI_TYPE_POINTER:
+	  avalue[i] = pgr;
+	  pgr++;
+	  break;
+#else
 	  /* Long long ints are passed in two gpr's.  */
 	  avalue[i] = pgr;
-	  ng += 2;
 	  pgr += 2;
 	  break;
+#endif
 
 	case FFI_TYPE_FLOAT:
 	  /* A float value consumes a GPR.
 	     There are 13 64bit floating point registers.  */
-	  if (nf < NUM_FPR_ARG_REGISTERS)
+	  if (pfr < end_pfr)
 	    {
-	      temp = pfr->d;
-	      pfr->f = (float)temp;
+	      double temp = pfr->d;
+	      pfr->f = (float) temp;
 	      avalue[i] = pfr;
 	      pfr++;
 	    }
@@ -737,15 +847,13 @@ int ffi_closure_helper_DARWIN (ffi_closure* closure, void * rvalue,
 	    {
 	      avalue[i] = pgr;
 	    }
-	  nf++;
-	  ng++;
 	  pgr++;
 	  break;
 
 	case FFI_TYPE_DOUBLE:
 	  /* A double value consumes two GPRs.
 	     There are 13 64bit floating point registers.  */
-	  if (nf < NUM_FPR_ARG_REGISTERS)
+	  if (pfr < end_pfr)
 	    {
 	      avalue[i] = pfr;
 	      pfr++;
@@ -754,17 +862,36 @@ int ffi_closure_helper_DARWIN (ffi_closure* closure, void * rvalue,
 	    {
 	      avalue[i] = pgr;
 	    }
-	  nf++;
-	  ng += 2;
+#ifdef POWERPC64
+	  pgr++;
+#else
 	  pgr += 2;
+#endif
 	  break;
 
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
 
 	case FFI_TYPE_LONGDOUBLE:
+#ifdef POWERPC64
+	  if (pfr + 1 < end_pfr)
+	    {
+	      avalue[i] = pfr;
+	      pfr += 2;
+	    }
+	  else
+	    {
+	      if (pfr < end_pfr)
+		{
+		  *pgr = *(unsigned long *) pfr;
+		  pfr++;
+		}
+	      avalue[i] = pgr;
+	    }
+	  pgr += 2;
+#else  /* POWERPC64 */
 	  /* A long double value consumes four GPRs and two FPRs.
 	     There are 13 64bit floating point registers.  */
-	  if (nf < NUM_FPR_ARG_REGISTERS - 1)
+	  if (pfr + 1 < end_pfr)
 	    {
 	      avalue[i] = pfr;
 	      pfr += 2;
@@ -772,19 +899,20 @@ int ffi_closure_helper_DARWIN (ffi_closure* closure, void * rvalue,
 	  /* Here we have the situation where one part of the long double
 	     is stored in fpr13 and the other part is already on the stack.
 	     We use a union to pass the long double to avalue[i].  */
-	  else if (nf == NUM_FPR_ARG_REGISTERS - 1)
+	  else if (pfr + 1 == end_pfr)
 	    {
+	      union ldu temp_ld;
 	      memcpy (&temp_ld.lb[0], pfr, sizeof(ldbits));
 	      memcpy (&temp_ld.lb[1], pgr + 2, sizeof(ldbits));
 	      avalue[i] = &temp_ld.ld;
+	      pfr++;
 	    }
 	  else
 	    {
 	      avalue[i] = pgr;
 	    }
-	  nf += 2;
-	  ng += 4;
 	  pgr += 4;
+#endif  /* POWERPC64 */
 	  break;
 #endif
 	default:

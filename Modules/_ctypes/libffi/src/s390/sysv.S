@@ -1,7 +1,7 @@
 /* -----------------------------------------------------------------------
    sysv.S - Copyright (c) 2000 Software AG
             Copyright (c) 2008 Red Hat, Inc.
-	
+ 
    S390 Foreign Function Interface
  
    Permission is hereby granted, free of charge, to any person obtaining

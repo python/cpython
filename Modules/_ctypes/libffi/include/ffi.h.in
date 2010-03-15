@@ -57,15 +57,17 @@ extern "C" {
 #endif
 
 /* Specify which architecture libffi is configured for. */
-#ifndef @TARGET@
 #define @TARGET@
-#endif
 
 /* ---- System configuration information --------------------------------- */
 
 #include <ffitarget.h>
 
 #ifndef LIBFFI_ASM
+
+#ifdef _MSC_VER
+#define __attribute__(X)
+#endif
 
 #include <stddef.h>
 #include <limits.h>
@@ -254,7 +256,11 @@ typedef struct {
   ffi_cif   *cif;
   void     (*fun)(ffi_cif*,void*,void**,void*);
   void      *user_data;
+#ifdef __GNUC__
 } ffi_closure __attribute__((aligned (8)));
+#else
+} ffi_closure;
+#endif
 
 void *ffi_closure_alloc (size_t size, void **code);
 void ffi_closure_free (void *);
