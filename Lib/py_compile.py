@@ -61,15 +61,6 @@ class PyCompileError(Exception):
         return self.msg
 
 
-# Define an internal helper according to the platform
-if os.name == "mac":
-    import MacOS
-    def set_creator_type(file):
-        MacOS.SetCreatorAndType(file, 'Pyth', 'PYC ')
-else:
-    def set_creator_type(file):
-        pass
-
 def wr_long(f, x):
     """Internal; write a 32-bit int to a file in little-endian order."""
     f.write(chr( x        & 0xff))
@@ -140,7 +131,6 @@ def compile(file, cfile=None, dfile=None, doraise=False):
     fc.seek(0, 0)
     fc.write(MAGIC)
     fc.close()
-    set_creator_type(cfile)
 
 def main(args=None):
     """Compile several source files.
