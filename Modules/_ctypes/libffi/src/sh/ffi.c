@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   ffi.c - Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007 Kaz Kojima
+   ffi.c - Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008 Kaz Kojima
            Copyright (c) 2008 Red Hat, Inc.
    
    SuperH Foreign Function Interface 
@@ -461,7 +461,7 @@ ffi_prep_closure_loc (ffi_closure* closure,
 		      void *codeloc)
 {
   unsigned int *tramp;
-  unsigned short insn;
+  unsigned int insn;
 
   FFI_ASSERT (cif->abi == FFI_GCC_SYSV);
 

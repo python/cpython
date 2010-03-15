@@ -1,5 +1,8 @@
 /* fficonfig.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
    */
@@ -13,6 +16,9 @@
 
 /* Define this if you want extra debugging. */
 #undef FFI_DEBUG
+
+/* Cannot use malloc on this target, so, we revert to alternative means */
+#undef FFI_MMAP_EXEC_WRIT
 
 /* Define this is you do not want support for the raw API. */
 #undef FFI_NO_RAW_API
@@ -36,6 +42,9 @@
 /* Define if your assembler and linker support unaligned PC relative relocs.
    */
 #undef HAVE_AS_SPARC_UA_PCREL
+
+/* Define if your assembler supports PC relative relocs. */
+#undef HAVE_AS_X86_PCREL
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -94,6 +103,10 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
 
@@ -139,9 +152,17 @@
 /* Version number of package */
 #undef VERSION
 
-/* Define to 1 if your processor stores words with the most significant byte
-   first (like Motorola and SPARC, unlike Intel and VAX). */
-#undef WORDS_BIGENDIAN
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
 
 
 #ifdef HAVE_HIDDEN_VISIBILITY_ATTRIBUTE

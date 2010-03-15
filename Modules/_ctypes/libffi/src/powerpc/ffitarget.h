@@ -1,6 +1,6 @@
 /* -----------------------------------------------------------------*-C-*-
    ffitarget.h - Copyright (c) 1996-2003  Red Hat, Inc.
-   Copyright (C) 2007 Free Software Foundation, Inc
+   Copyright (C) 2007, 2008 Free Software Foundation, Inc
    Target configuration macros for PowerPC.
 
    Permission is hereby granted, free of charge, to any person obtaining
@@ -30,7 +30,11 @@
 
 /* ---- System specific configurations ----------------------------------- */
 
-#if defined (POWERPC) && defined (__powerpc64__)
+#if defined (POWERPC) && defined (__powerpc64__)	/* linux64 */
+#define POWERPC64
+#elif defined (POWERPC_DARWIN) && defined (__ppc64__)	/* Darwin */
+#define POWERPC64
+#elif defined (POWERPC_AIX) && defined (__64BIT__)	/* AIX64 */
 #define POWERPC64
 #endif
 
@@ -78,6 +82,8 @@ typedef enum ffi_abi {
   FFI_SYSV,
   FFI_GCC_SYSV,
   FFI_LINUX64,
+  FFI_LINUX,
+  FFI_LINUX_SOFT_FLOAT,
   FFI_DEFAULT_ABI = FFI_SYSV,
 #endif
 
@@ -96,7 +102,9 @@ typedef enum ffi_abi {
 /* Needed for soft-float long-double-128 support.  */
 #define FFI_TYPE_UINT128 (FFI_TYPE_LAST + 1)
 
-/* Needed for FFI_SYSV small structure returns.  */
+/* Needed for FFI_SYSV small structure returns.
+   We use two flag bits, (FLAG_SYSV_SMST_R3, FLAG_SYSV_SMST_R4) which are
+   defined in ffi.c, to determine the exact return type and its size.  */
 #define FFI_SYSV_TYPE_SMALL_STRUCT (FFI_TYPE_LAST + 2)
 
 #if defined(POWERPC64) || defined(POWERPC_AIX)

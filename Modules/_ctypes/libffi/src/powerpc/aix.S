@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   aix.S - Copyright (c) 2002 Free Software Foundation, Inc.
+   aix.S - Copyright (c) 2002,2009 Free Software Foundation, Inc.
    based on darwin.S by John Hornkvist
 
    PowerPC Assembly glue.
@@ -86,9 +86,13 @@
 #define L(x) x
 	.file "aix.S"
 	.toc
-	.csect .text[PR]
-	.align 2
-.globl ffi_prep_args
+
+	/* void ffi_call_AIX(extended_cif *ecif, unsigned long bytes,
+	 *		     unsigned int flags, unsigned int *rvalue,
+	 *		     void (*fn)(),
+	 *		     void (*prep_args)(extended_cif*, unsigned *const));
+	 * r3=ecif, r4=bytes, r5=flags, r6=rvalue, r7=fn, r8=prep_args
+	 */
 
 .csect .text[PR]
 	.align 2
@@ -96,61 +100,151 @@
 	.globl .ffi_call_AIX
 .csect ffi_call_AIX[DS]
 ffi_call_AIX:
+#ifdef __64BIT__
+	.llong .ffi_call_AIX, TOC[tc0], 0
+	.csect .text[PR]
+.ffi_call_AIX:
+	/* Save registers we use.  */
+	mflr	r0
+
+	std	r28,-32(r1)
+	std	r29,-24(r1)
+	std	r30,-16(r1)
+	std	r31, -8(r1)
+
+	std	r0, 16(r1)
+	mr	r28, r1		/* our AP.  */
+	stdux	r1, r1, r4
+
+	/* Save arguments over call...  */
+	mr	r31, r5	/* flags, */
+	mr	r30, r6	/* rvalue, */
+	mr	r29, r7	/* function address.  */
+	std	r2, 40(r1)
+
+	/* Call ffi_prep_args.  */
+	mr	r4, r1
+	bl	.ffi_prep_args
+
+	/* Now do the call.  */
+	ld	r0, 0(r29)
+	ld	r2, 8(r29)
+	ld	r11, 16(r29)
+	/* Set up cr1 with bits 4-7 of the flags.  */
+	mtcrf	0x40, r31
+	mtctr	r0
+	/* Load all those argument registers.  */
+	// We have set up a nice stack frame, just load it into registers.
+	ld	r3, 40+(1*8)(r1)
+	ld	r4, 40+(2*8)(r1)
+	ld	r5, 40+(3*8)(r1)
+	ld	r6, 40+(4*8)(r1)
+	nop
+	ld	r7, 40+(5*8)(r1)
+	ld	r8, 40+(6*8)(r1)
+	ld	r9, 40+(7*8)(r1)
+	ld	r10,40+(8*8)(r1)
+
+L1:
+	/* Load all the FP registers.  */
+	bf	6,L2 // 2f + 0x18
+	lfd	f1,-32-(13*8)(r28)
+	lfd	f2,-32-(12*8)(r28)
+	lfd	f3,-32-(11*8)(r28)
+	lfd	f4,-32-(10*8)(r28)
+	nop
+	lfd	f5,-32-(9*8)(r28)
+	lfd	f6,-32-(8*8)(r28)
+	lfd	f7,-32-(7*8)(r28)
+	lfd	f8,-32-(6*8)(r28)
+	nop
+	lfd	f9,-32-(5*8)(r28)
+	lfd	f10,-32-(4*8)(r28)
+	lfd	f11,-32-(3*8)(r28)
+	lfd	f12,-32-(2*8)(r28)
+	nop
+	lfd	f13,-32-(1*8)(r28)
+
+L2:
+	/* Make the call.  */
+	bctrl
+	ld	r2, 40(r1)
+
+	/* Now, deal with the return value.  */
+	mtcrf	0x01, r31
+
+	bt	30, L(done_return_value)
+	bt	29, L(fp_return_value)
+	std	r3, 0(r30)
+
+	/* Fall through...  */
+
+L(done_return_value):
+	/* Restore the registers we used and return.  */
+	mr	r1, r28
+	ld	r0, 16(r28)
+	ld	r28, -32(r1)
+	mtlr	r0
+	ld	r29, -24(r1)
+	ld	r30, -16(r1)
+	ld	r31, -8(r1)
+	blr
+
+L(fp_return_value):
+	bf	28, L(float_return_value)
+	stfd	f1, 0(r30)
+	bf	31, L(done_return_value)
+	stfd	f2, 8(r30)
+	b	L(done_return_value)
+L(float_return_value):
+	stfs	f1, 0(r30)
+	b	L(done_return_value)
+
+#else /* ! __64BIT__ */
+	
 	.long .ffi_call_AIX, TOC[tc0], 0
 	.csect .text[PR]
 .ffi_call_AIX:
-	mr      r12,r8 // We only need r12 until the call, so it doesn't have to be saved...
-	/* Save the old stack pointer as AP.  */
-	mr	r8,r1
-
-	/* Allocate the stack space we need.  */
-	stwux	r1,r1,r4
-
 	/* Save registers we use.  */
-	mflr	r9
+	mflr	r0
 
-	stw	r28,-16(r8)
-	stw	r29,-12(r8)
-	stw	r30, -8(r8)
-	stw	r31, -4(r8)
+	stw	r28,-16(r1)
+	stw	r29,-12(r1)
+	stw	r30, -8(r1)
+	stw	r31, -4(r1)
 
-	stw	r9,  8(r8)
-	stw	r2, 20(r1)
+	stw	r0, 8(r1)
+	mr	r28, r1		/* out AP.  */
+	stwux	r1, r1, r4
 
 	/* Save arguments over call...  */
-	mr	r31,r5	/* flags, */
-	mr	r30,r6	/* rvalue, */
-	mr	r29,r7	/* function address, */
-	mr	r28,r8	/* our AP. */
+	mr	r31, r5	/* flags, */
+	mr	r30, r6	/* rvalue, */
+	mr	r29, r7	/* function address, */
+	stw	r2, 20(r1)
 
 	/* Call ffi_prep_args.  */
-	mr	r4,r1
-	li	r9,0
-
-	lwz	r2,4(r12)
-	lwz	r12,0(r12)
-	mtctr	r12 // r12 holds address of _ffi_prep_args
-	bctrl
-	lwz     r2,20(r1)
+	mr	r4, r1
+	bl	.ffi_prep_args
 
 	/* Now do the call.  */
-	lwz	r12,0(r29)
+	lwz	r0, 0(r29)
+	lwz	r2, 4(r29)
+	lwz	r11, 8(r29)
 	/* Set up cr1 with bits 4-7 of the flags.  */
-	mtcrf	0x40,r31
-	stw	r2,20(r1)
-	mtctr	r12
-	lwz	r2,4(r29)
+	mtcrf	0x40, r31
+	mtctr	r0
 	/* Load all those argument registers.  */
 	// We have set up a nice stack frame, just load it into registers.
-	lwz     r3, 20+(1*4)(r1)
-	lwz     r4, 20+(2*4)(r1)
-	lwz     r5, 20+(3*4)(r1)
-	lwz     r6, 20+(4*4)(r1)
+	lwz	r3, 20+(1*4)(r1)
+	lwz	r4, 20+(2*4)(r1)
+	lwz	r5, 20+(3*4)(r1)
+	lwz	r6, 20+(4*4)(r1)
 	nop
-	lwz     r7, 20+(5*4)(r1)
-	lwz     r8, 20+(6*4)(r1)
-	lwz     r9, 20+(7*4)(r1)
-	lwz     r10,20+(8*4)(r1)
+	lwz	r7, 20+(5*4)(r1)
+	lwz	r8, 20+(6*4)(r1)
+	lwz	r9, 20+(7*4)(r1)
+	lwz	r10,20+(8*4)(r1)
 
 L1:
 	/* Load all the FP registers.  */
@@ -165,47 +259,48 @@ L1:
 	lfd	f7,-16-(7*8)(r28)
 	lfd	f8,-16-(6*8)(r28)
 	nop
-	lfd     f9,-16-(5*8)(r28)
-	lfd     f10,-16-(4*8)(r28)
-	lfd     f11,-16-(3*8)(r28)
-	lfd     f12,-16-(2*8)(r28)
+	lfd	f9,-16-(5*8)(r28)
+	lfd	f10,-16-(4*8)(r28)
+	lfd	f11,-16-(3*8)(r28)
+	lfd	f12,-16-(2*8)(r28)
 	nop
-	lfd     f13,-16-(1*8)(r28)
+	lfd	f13,-16-(1*8)(r28)
 
 L2:
 	/* Make the call.  */
 	bctrl
-	lwz r2,20(r1)
+	lwz	r2, 20(r1)
 
 	/* Now, deal with the return value.  */
-	mtcrf	0x01,r31
+	mtcrf	0x01, r31
 
-	bt	30,L(done_return_value)
-	bt	29,L(fp_return_value)
-	stw	r3,0(r30)
-	bf	28,L(done_return_value)
-	stw	r4,4(r30)
+	bt	30, L(done_return_value)
+	bt	29, L(fp_return_value)
+	stw	r3, 0(r30)
+	bf	28, L(done_return_value)
+	stw	r4, 4(r30)
 
 	/* Fall through...  */
 
 L(done_return_value):
 	/* Restore the registers we used and return.  */
-	lwz	r9,   8(r28)
-	lwz	r31,  -4(r28)
-	mtlr	r9
-	lwz	r30, -8(r28)
-	lwz	r29,-12(r28)
-	lwz	r28,-16(r28)
-	lwz	r1,0(r1)
+	mr	r1, r28
+	lwz	r0, 8(r28)
+	lwz	r28,-16(r1)
+	mtlr	r0
+	lwz	r29,-12(r1)
+	lwz	r30, -8(r1)
+	lwz	r31, -4(r1)
 	blr
 
 L(fp_return_value):
-	bf	28,L(float_return_value)
-	stfd	f1,0(r30)
+	bf	28, L(float_return_value)
+	stfd	f1, 0(r30)
 	b	L(done_return_value)
 L(float_return_value):
-	stfs	f1,0(r30)
+	stfs	f1, 0(r30)
 	b	L(done_return_value)
+#endif
 	.long 0
 	.byte 0,0,0,1,128,4,0,0
 //END(ffi_call_AIX)
@@ -216,7 +311,11 @@ L(float_return_value):
 	.globl .ffi_call_DARWIN
 .csect ffi_call_DARWIN[DS]
 ffi_call_DARWIN:
+#ifdef __64BIT__
+	.llong .ffi_call_DARWIN, TOC[tc0], 0
+#else
 	.long .ffi_call_DARWIN, TOC[tc0], 0
+#endif
 	.csect .text[PR]
 .ffi_call_DARWIN:
 	blr
