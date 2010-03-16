@@ -838,6 +838,7 @@ Build
 -----
 
 - Issue #6716: Quote -x arguments of compileall in MSI installer.
+  Exclude 2to3 tests from compileall.
 
 - Issue #3920, #7903: Define _BSD_SOURCE on OpenBSD 4.4 through 4.9.
 
