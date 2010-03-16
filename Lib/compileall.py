@@ -104,7 +104,10 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
                     print('*** Error compiling', fullname, '...')
                 else:
                     print('*** ', end='')
-                print(err.msg)
+                # escape non-printable characters in msg
+                msg = err.msg.encode(sys.stdout.encoding, errors='backslashreplace')
+                msg = msg.decode(sys.stdout.encoding)
+                print(msg)
                 success = 0
             except (SyntaxError, UnicodeError, IOError) as e:
                 if quiet:
