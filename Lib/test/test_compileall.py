@@ -1,3 +1,4 @@
+import sys
 import compileall
 import imp
 import os
@@ -7,6 +8,7 @@ import struct
 import tempfile
 from test import support
 import unittest
+import io
 
 
 class CompileallTests(unittest.TestCase):
@@ -72,8 +74,30 @@ class CompileallTests(unittest.TestCase):
         os.unlink(self.bc_path)
         os.unlink(self.bc_path2)
 
+class EncodingTest(unittest.TestCase):
+    'Issue 6716: compileall should escape source code when printing errors to stdout.'
+
+    def setUp(self):
+        self.directory = tempfile.mkdtemp()
+        self.source_path = os.path.join(self.directory, '_test.py')
+        with open(self.source_path, 'w', encoding='utf-8') as file:
+            file.write('# -*- coding: utf-8 -*-\n')
+            file.write('print u"\u20ac"\n')
+
+    def tearDown(self):
+        shutil.rmtree(self.directory)
+
+    def test_error(self):
+        try:
+            orig_stdout = sys.stdout
+            sys.stdout = io.TextIOWrapper(io.BytesIO(),encoding='ascii')
+            compileall.compile_dir(self.directory)
+        finally:
+            sys.stdout = orig_stdout
+
 def test_main():
-    support.run_unittest(CompileallTests)
+    support.run_unittest(CompileallTests,
+                         EncodingTest)
 
 
 if __name__ == "__main__":
