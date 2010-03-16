@@ -113,6 +113,7 @@ pythondll_uuid = {
     "27":"{4fe21c76-1760-437b-a2f2-99909130a175}",
     "30":"{6953bc3b-6768-4291-8410-7914ce6e2ca8}",
     "31":"{4afcba0b-13e4-47c3-bebe-477428b46913}",
+    "32":"{3ff95315-1096-4d31-bd86-601d5438ad5e}",
     } [major+minor]
 
 # Compute the name that Sphinx gives to the docfile
