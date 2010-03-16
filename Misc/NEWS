@@ -283,6 +283,8 @@ C-API
 Library
 -------
 
+- Issue #8140: extend compileall to compile single files. Add -i option.
+
 - Issue #7356: ctypes.util: Make parsing of ldconfig output independent of
   the locale.
 
