@@ -835,6 +835,8 @@ Extension Modules
 Build
 -----
 
+- Issue #6716: Quote -x arguments of compileall in MSI installer.
+
 - Issue #3920, #7903: Define _BSD_SOURCE on OpenBSD 4.4 through 4.9.
 
 - Issue #7632: When Py_USING_MEMORY_DEBUGGER is defined, disable the
