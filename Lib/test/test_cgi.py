@@ -1,11 +1,10 @@
-from test.support import run_unittest
+from test.support import run_unittest, check_warnings
 import cgi
 import os
 import sys
 import tempfile
 import unittest
 from io import StringIO
-from warnings import catch_warnings, filterwarnings
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -15,10 +14,6 @@ class HackedSysModule:
 
 cgi.sys = HackedSysModule()
 
-try:
-    from io import StringIO
-except ImportError:
-    from io import StringIO
 
 class ComparableException:
     def __init__(self, err):
@@ -117,7 +112,7 @@ def gen_result(data, environ):
 
     result = {}
     for k, v in dict(form).items():
-        result[k] = type(v) is list and form.getlist(k) or v.value
+        result[k] = isinstance(v, list) and form.getlist(k) or v.value
 
     return result
 
@@ -133,7 +128,7 @@ class CgiTests(unittest.TestCase):
 
             env = {'QUERY_STRING': orig}
             fs = cgi.FieldStorage(environ=env)
-            if type(expect) == type({}):
+            if isinstance(expect, dict):
                 # test dict interface
                 self.assertEqual(len(expect), len(fs))
                 self.assertEqual(norm(expect.keys()), norm(fs.keys()))
@@ -308,20 +303,16 @@ this is the content of the fake file
         self.assertEqual(result, v)
 
     def test_deprecated_parse_qs(self):
-        # this func is moved to urlparse, this is just a sanity check
-        with catch_warnings():
-            filterwarnings('ignore',
-                'cgi.parse_qs is deprecated, use urllib.parse.parse_qs instead',
-                DeprecationWarning)
+        # this func is moved to urllib.parse, this is just a sanity check
+        with check_warnings(('cgi.parse_qs is deprecated, use urllib.parse.'
+                             'parse_qs instead', DeprecationWarning)):
             self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
                              cgi.parse_qs('a=A1&b=B2&B=B3'))
 
     def test_deprecated_parse_qsl(self):
-        # this func is moved to urlparse, this is just a sanity check
-        with catch_warnings():
-            filterwarnings('ignore',
-                'cgi.parse_qsl is deprecated, use urllib.parse.parse_qsl instead',
-                DeprecationWarning)
+        # this func is moved to urllib.parse, this is just a sanity check
+        with check_warnings(('cgi.parse_qsl is deprecated, use urllib.parse.'
+                             'parse_qsl instead', DeprecationWarning)):
             self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
                              cgi.parse_qsl('a=A1&b=B2&B=B3'))
 
