@@ -462,30 +462,26 @@ class TestShutil(unittest.TestCase):
         old_dir = os.getcwd()
         os.chdir(tmpdir)
         try:
-            with captured_stdout() as s:
-                with check_warnings() as w:
-                    warnings.simplefilter("always")
-                    _make_tarball(base_name, 'dist', compress='compress')
+            with captured_stdout() as s, check_warnings(quiet=False) as w:
+                _make_tarball(base_name, 'dist', compress='compress')
         finally:
             os.chdir(old_dir)
         tarball = base_name + '.tar.Z'
         self.assertTrue(os.path.exists(tarball))
-        self.assertEquals(len(w.warnings), 1)
+        self.assertEqual(len(w.warnings), 1)
 
         # same test with dry_run
         os.remove(tarball)
         old_dir = os.getcwd()
         os.chdir(tmpdir)
         try:
-            with captured_stdout() as s:
-                with check_warnings() as w:
-                    warnings.simplefilter("always")
-                    _make_tarball(base_name, 'dist', compress='compress',
-                                    dry_run=True)
+            with captured_stdout() as s, check_warnings(quiet=False) as w:
+                _make_tarball(base_name, 'dist', compress='compress',
+                              dry_run=True)
         finally:
             os.chdir(old_dir)
-        self.assertTrue(not os.path.exists(tarball))
-        self.assertEquals(len(w.warnings), 1)
+        self.assertFalse(os.path.exists(tarball))
+        self.assertEqual(len(w.warnings), 1)
 
     @unittest.skipUnless(zlib, "Requires zlib")
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')

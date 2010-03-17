@@ -17,7 +17,7 @@ class FormatDeprecationTests(unittest.TestCase):
         PyOS_ascii_formatd = pythonapi.PyOS_ascii_formatd
         buf = create_string_buffer(' ' * 100)
 
-        with check_warnings():
+        with check_warnings(quiet=False):
             PyOS_ascii_formatd(byref(buf), sizeof(buf), '%+.10f',
                                c_double(10.0))
             self.assertEqual(buf.value, '+10.0000000000')
@@ -46,7 +46,7 @@ class FormatTests(unittest.TestCase):
             ('%-e', 1.234),
             ]
 
-        with check_warnings():
+        with check_warnings(quiet=False):
             for format, val in tests:
                 PyOS_ascii_formatd(byref(buf), sizeof(buf), format,
                                    c_double(val))
