@@ -115,7 +115,7 @@ def gen_result(data, environ):
 
     result = {}
     for k, v in dict(form).items():
-        result[k] = type(v) is list and form.getlist(k) or v.value
+        result[k] = isinstance(v, list) and form.getlist(k) or v.value
 
     return result
 
@@ -133,7 +133,7 @@ class CgiTests(unittest.TestCase):
             fcd = cgi.FormContentDict(env)
             sd = cgi.SvFormContentDict(env)
             fs = cgi.FieldStorage(environ=env)
-            if type(expect) == type({}):
+            if isinstance(expect, dict):
                 # test dict interface
                 self.assertEqual(len(expect), len(fcd))
                 self.assertSameElements(expect.keys(), fcd.keys())
@@ -340,13 +340,13 @@ this is the content of the fake file
         self.assertEqual(result, v)
 
     def test_deprecated_parse_qs(self):
-        with check_warnings():
+        with check_warnings(quiet=False):
             # this func is moved to urlparse, this is just a sanity check
             self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
                              cgi.parse_qs('a=A1&b=B2&B=B3'))
 
     def test_deprecated_parse_qsl(self):
-        with check_warnings():
+        with check_warnings(quiet=False):
             # this func is moved to urlparse, this is just a sanity check
             self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
                              cgi.parse_qsl('a=A1&b=B2&B=B3'))

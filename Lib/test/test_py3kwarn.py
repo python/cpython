@@ -1,6 +1,6 @@
 import unittest
 import sys
-from test.test_support import check_warnings, CleanImport, run_unittest
+from test.test_support import check_py3k_warnings, CleanImport, run_unittest
 import warnings
 
 if not sys.py3kwarning:
@@ -41,21 +41,19 @@ class TestPy3KWarnings(unittest.TestCase):
 
     def test_backquote(self):
         expected = 'backquote not supported in 3.x; use repr()'
-        with check_warnings() as w:
+        with check_py3k_warnings((expected, SyntaxWarning)):
             exec "`2`" in {}
-        self.assertWarning(None, w, expected)
 
     def test_paren_arg_names(self):
         expected = 'parenthesized argument names are invalid in 3.x'
         def check(s):
-            exec s in {}
-            self.assertWarning(None, w, expected)
-        with check_warnings() as w:
-            check("def f((x)): pass")
-            check("def f((((x))), (y)): pass")
-            check("def f((x), (((y))), m=32): pass")
-            # Something like def f((a, (b))): pass will raise the tuple
-            # unpacking warning.
+            with check_py3k_warnings((expected, SyntaxWarning)):
+                exec s in {}
+        check("def f((x)): pass")
+        check("def f((((x))), (y)): pass")
+        check("def f((x), (((y))), m=32): pass")
+        # Something like def f((a, (b))): pass will raise the tuple
+        # unpacking warning.
 
     def test_forbidden_names(self):
         # So we don't screw up our globals
@@ -66,7 +64,7 @@ class TestPy3KWarnings(unittest.TestCase):
         tests = [("True", "assignment to True or False is forbidden in 3.x"),
                  ("False", "assignment to True or False is forbidden in 3.x"),
                  ("nonlocal", "nonlocal is a keyword in 3.x")]
-        with check_warnings() as w:
+        with check_py3k_warnings(('', SyntaxWarning)) as w:
             for keyword, expected in tests:
                 safe_exec("{0} = False".format(keyword))
                 self.assertWarning(None, w, expected)
@@ -90,21 +88,21 @@ class TestPy3KWarnings(unittest.TestCase):
 
     def test_type_inequality_comparisons(self):
         expected = 'type inequality comparisons not supported in 3.x'
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning(int < str, w, expected)
             w.reset()
             self.assertWarning(type < object, w, expected)
 
     def test_object_inequality_comparisons(self):
         expected = 'comparing unequal types not supported in 3.x'
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning(str < [], w, expected)
             w.reset()
             self.assertWarning(object() < (1, 2), w, expected)
 
     def test_dict_inequality_comparisons(self):
         expected = 'dict inequality comparisons not supported in 3.x'
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning({} < {2:3}, w, expected)
             w.reset()
             self.assertWarning({} <= {}, w, expected)
@@ -121,7 +119,7 @@ class TestPy3KWarnings(unittest.TestCase):
             return g
         cell0, = f(0).func_closure
         cell1, = f(1).func_closure
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning(cell0 == cell1, w, expected)
             w.reset()
             self.assertWarning(cell0 < cell1, w, expected)
@@ -132,7 +130,7 @@ class TestPy3KWarnings(unittest.TestCase):
             pass
         def g(x):
             pass
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning(f.func_code < g.func_code, w, expected)
             w.reset()
             self.assertWarning(f.func_code <= g.func_code, w, expected)
@@ -146,7 +144,7 @@ class TestPy3KWarnings(unittest.TestCase):
                     'order comparisons not supported in 3.x')
         func = eval
         meth = {}.get
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning(func < meth, w, expected)
             w.reset()
             self.assertWarning(func > meth, w, expected)
@@ -166,7 +164,7 @@ class TestPy3KWarnings(unittest.TestCase):
         f = sys._getframe(0)
         for attr in ("f_exc_traceback", "f_exc_value", "f_exc_type"):
             expected = template % attr
-            with check_warnings() as w:
+            with check_py3k_warnings() as w:
                 self.assertWarning(getattr(f, attr), w, expected)
                 w.reset()
                 self.assertWarning(setattr(f, attr, None), w, expected)
@@ -176,7 +174,7 @@ class TestPy3KWarnings(unittest.TestCase):
         lst = range(5)
         cmp = lambda x,y: -1
 
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning(lst.sort(cmp=cmp), w, expected)
             w.reset()
             self.assertWarning(sorted(lst, cmp=cmp), w, expected)
@@ -187,7 +185,7 @@ class TestPy3KWarnings(unittest.TestCase):
 
     def test_sys_exc_clear(self):
         expected = 'sys.exc_clear() not supported in 3.x; use except clauses'
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning(sys.exc_clear(), w, expected)
 
     def test_methods_members(self):
@@ -196,17 +194,17 @@ class TestPy3KWarnings(unittest.TestCase):
             __methods__ = ['a']
             __members__ = ['b']
         c = C()
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning(dir(c), w, expected)
 
     def test_softspace(self):
         expected = 'file.softspace not supported in 3.x'
         with file(__file__) as f:
-            with check_warnings() as w:
+            with check_py3k_warnings() as w:
                 self.assertWarning(f.softspace, w, expected)
             def set():
                 f.softspace = 0
-            with check_warnings() as w:
+            with check_py3k_warnings() as w:
                 self.assertWarning(set(), w, expected)
 
     def test_slice_methods(self):
@@ -222,7 +220,7 @@ class TestPy3KWarnings(unittest.TestCase):
         expected = "in 3.x, __{0}slice__ has been removed; use __{0}item__"
 
         for obj in (Spam(), Egg()):
-            with check_warnings() as w:
+            with check_py3k_warnings() as w:
                 self.assertWarning(obj[1:2], w, expected.format('get'))
                 w.reset()
                 del obj[3:4]
@@ -233,24 +231,23 @@ class TestPy3KWarnings(unittest.TestCase):
 
     def test_tuple_parameter_unpacking(self):
         expected = "tuple parameter unpacking has been removed in 3.x"
-        with check_warnings() as w:
+        with check_py3k_warnings((expected, SyntaxWarning)):
             exec "def f((a, b)): pass"
-            self.assertWarning(None, w, expected)
 
     def test_buffer(self):
         expected = 'buffer() not supported in 3.x'
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning(buffer('a'), w, expected)
 
     def test_file_xreadlines(self):
         expected = ("f.xreadlines() not supported in 3.x, "
                     "try 'for line in f' instead")
         with file(__file__) as f:
-            with check_warnings() as w:
+            with check_py3k_warnings() as w:
                 self.assertWarning(f.xreadlines(), w, expected)
 
     def test_hash_inheritance(self):
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             # With object as the base class
             class WarnOnlyCmp(object):
                 def __cmp__(self, other): pass
@@ -313,7 +310,7 @@ class TestPy3KWarnings(unittest.TestCase):
                          "Use hasattr(obj, '__call__').")
         seq_warn = ("operator.sequenceIncludes() is not supported "
                     "in 3.x. Use operator.contains().")
-        with check_warnings() as w:
+        with check_py3k_warnings() as w:
             self.assertWarning(isCallable(self), w, callable_warn)
             w.reset()
             self.assertWarning(sequenceIncludes(range(3), 2), w, seq_warn)
@@ -400,7 +397,7 @@ class TestStdlibRemovals(unittest.TestCase):
         for path_mod in ("ntpath", "macpath", "os2emxpath", "posixpath"):
             mod = __import__(path_mod)
             reset_module_registry(mod)
-            with check_warnings() as w:
+            with check_py3k_warnings() as w:
                 mod.walk("crashers", dumbo, None)
             self.assertEquals(str(w.message), msg)
 
