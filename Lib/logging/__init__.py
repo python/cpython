@@ -1557,7 +1557,7 @@ def log(level, msg, *args, **kwargs):
 
 def disable(level):
     """
-    Disable all logging calls less severe than 'level'.
+    Disable all logging calls of severity 'level' and below.
     """
     root.manager.disable = level
 
