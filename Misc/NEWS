@@ -22,6 +22,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8104: socket.recv_into() and socket.recvfrom_into() now support
+  writing into objects supporting the new buffer API, for example bytearrays
+  or memoryviews.
+
 - Issue #4961: Inconsistent/wrong result of askyesno function in tkMessageBox
   with Tcl/Tk-8.5.
 

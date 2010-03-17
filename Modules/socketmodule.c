@@ -2449,19 +2449,20 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 
 	int recvlen = 0, flags = 0;
         ssize_t readlen;
-	char *buf;
-	int buflen;
+	Py_buffer buf;
+	Py_ssize_t buflen;
 
 	/* Get the buffer's memory */
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recv_into", kwlist,
-					 &buf, &buflen, &recvlen, &flags))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w*|ii:recv_into", kwlist,
+					 &buf, &recvlen, &flags))
 		return NULL;
-	assert(buf != 0 && buflen > 0);
+	buflen = buf.len;
+	assert(buf.buf != 0 && buflen > 0);
 
 	if (recvlen < 0) {
 		PyErr_SetString(PyExc_ValueError,
 				"negative buffersize in recv_into");
-		return NULL;
+		goto error;
 	}
 	if (recvlen == 0) {
             /* If nbytes was not specified, use the buffer's length */
@@ -2472,19 +2473,24 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 	if (buflen < recvlen) {
 		PyErr_SetString(PyExc_ValueError,
 				"buffer too small for requested bytes");
-		return NULL;
+		goto error;
 	}
 
 	/* Call the guts */
-	readlen = sock_recv_guts(s, buf, recvlen, flags);
+	readlen = sock_recv_guts(s, buf.buf, recvlen, flags);
 	if (readlen < 0) {
 		/* Return an error. */
-		return NULL;
+		goto error;
 	}
 
+	PyBuffer_Release(&buf);
 	/* Return the number of bytes read.  Note that we do not do anything
 	   special here in the case that readlen < recvlen. */
 	return PyInt_FromSsize_t(readlen);
+
+error:
+	PyBuffer_Release(&buf);
+	return NULL;
 }
 
 PyDoc_STRVAR(recv_into_doc,
@@ -2623,37 +2629,43 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 
 	int recvlen = 0, flags = 0;
         ssize_t readlen;
-	char *buf;
+	Py_buffer buf;
 	int buflen;
 
 	PyObject *addr = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recvfrom_into",
-					 kwlist, &buf, &buflen,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w*|ii:recvfrom_into",
+					 kwlist, &buf,
 					 &recvlen, &flags))
 		return NULL;
-	assert(buf != 0 && buflen > 0);
+	buflen = buf.len;
+	assert(buf.buf != 0 && buflen > 0);
 
 	if (recvlen < 0) {
 		PyErr_SetString(PyExc_ValueError,
 				"negative buffersize in recvfrom_into");
-		return NULL;
+		goto error;
 	}
 	if (recvlen == 0) {
             /* If nbytes was not specified, use the buffer's length */
             recvlen = buflen;
 	}
 
-	readlen = sock_recvfrom_guts(s, buf, recvlen, flags, &addr);
+	readlen = sock_recvfrom_guts(s, buf.buf, recvlen, flags, &addr);
 	if (readlen < 0) {
 		/* Return an error */
-		Py_XDECREF(addr);
-		return NULL;
+		goto error;
 	}
 
+	PyBuffer_Release(&buf);
 	/* Return the number of bytes read and the address.  Note that we do
 	   not do anything special here in the case that readlen < recvlen. */
  	return Py_BuildValue("lN", readlen, addr);
+
+error:
+	Py_XDECREF(addr);
+	PyBuffer_Release(&buf);
+	return NULL;
 }
 
 PyDoc_STRVAR(recvfrom_into_doc,
