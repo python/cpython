@@ -1,3 +1,4 @@
+import builtins
 import imp
 import marshal
 import os
@@ -9,7 +10,7 @@ import sys
 import unittest
 import warnings
 from test.support import (unlink, TESTFN, unload, run_unittest,
-                          TestFailed, EnvironmentVarGuard)
+                          TestFailed, EnvironmentVarGuard, swap_attr, swap_item)
 
 
 def remove_files(name):
@@ -446,8 +447,29 @@ class RelativeImportTests(unittest.TestCase):
         self.assertRaises(ValueError, check_relative)
 
 
+class OverridingImportBuiltinTests(unittest.TestCase):
+    def test_override_builtin(self):
+        # Test that overriding builtins.__import__ can bypass sys.modules.
+        import os
+
+        def foo():
+            import os
+            return os
+        self.assertEqual(foo(), os)  # Quick sanity check.
+
+        with swap_attr(builtins, "__import__", lambda *x: 5):
+            self.assertEqual(foo(), 5)
+
+        # Test what happens when we shadow __import__ in globals(); this
+        # currently does not impact the import process, but if this changes,
+        # other code will need to change, so keep this test as a tripwire.
+        with swap_item(globals(), "__import__", lambda *x: 5):
+            self.assertEqual(foo(), os)
+
+
 def test_main(verbose=None):
-    run_unittest(ImportTests, PycRewritingTests, PathsTests, RelativeImportTests)
+    run_unittest(ImportTests, PycRewritingTests, PathsTests, RelativeImportTests,
+                 OverridingImportBuiltinTests)
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.
