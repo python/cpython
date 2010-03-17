@@ -1518,6 +1518,11 @@ compiler_lambda(struct compiler *c, expr_ty e)
 
 	/* unpack nested arguments */
 	compiler_arguments(c, args);
+
+	/* Make None the first constant, so the lambda can't have a
+	   docstring. */
+	if (compiler_add_o(c, c->u->u_consts, Py_None) < 0)
+		return 0;
 	
 	c->u->u_argcount = asdl_seq_LEN(args->args);
 	VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
