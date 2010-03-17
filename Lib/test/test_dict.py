@@ -660,11 +660,14 @@ class SubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = Dict
 
 def test_main():
-    test_support.run_unittest(
-        DictTest,
-        GeneralMappingTests,
-        SubclassMappingTests,
-    )
+    with test_support.check_py3k_warnings(
+        ('dict(.has_key..| inequality comparisons) not supported in 3.x',
+         DeprecationWarning)):
+        test_support.run_unittest(
+            DictTest,
+            GeneralMappingTests,
+            SubclassMappingTests,
+        )
 
 if __name__ == "__main__":
     test_main()
