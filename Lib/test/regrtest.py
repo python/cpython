@@ -993,12 +993,13 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     print >> sys.stderr, ("1234567890"*(repcount//10 + 1))[:repcount]
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
     for i in range(repcount):
-        rc = sys.gettotalrefcount()
+        rc_before = sys.gettotalrefcount()
         run_the_test()
         sys.stderr.write('.')
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        rc_after = sys.gettotalrefcount()
         if i >= nwarmup:
-            deltas.append(sys.gettotalrefcount() - rc - 2)
+            deltas.append(rc_after - rc_before)
     print >> sys.stderr
     if any(deltas):
         msg = '%s leaked %s references, sum=%s' % (test, deltas, sum(deltas))
