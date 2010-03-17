@@ -23,16 +23,16 @@ class ObjectsTestCase(unittest.TestCase):
 
     def test_ints(self):
         i = 42000123
-        self.assertEqual(3, grc(i))
+        refcnt = grc(i)
         ci = c_int(i)
-        self.assertEqual(3, grc(i))
+        self.assertEqual(refcnt, grc(i))
         self.assertEqual(ci._objects, None)
 
     def test_c_char_p(self):
         s = "Hello, World"
-        self.assertEqual(3, grc(s))
+        refcnt = grc(s)
         cs = c_char_p(s)
-        self.assertEqual(4, grc(s))
+        self.assertEqual(refcnt + 1, grc(s))
         self.assertSame(cs._objects, s)
 
     def test_simple_struct(self):
