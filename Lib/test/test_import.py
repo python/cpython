@@ -1,4 +1,3 @@
-import __builtin__
 import imp
 import marshal
 import os
