@@ -353,6 +353,10 @@ if 1:
         f1, f2 = f()
         self.assertNotEqual(id(f1.func_code), id(f2.func_code))
 
+    def test_lambda_doc(self):
+        l = lambda: "foo"
+        self.assertIsNone(l.__doc__)
+
     def test_unicode_encoding(self):
         code = u"# -*- coding: utf-8 -*-\npass\n"
         self.assertRaises(SyntaxError, compile, code, "tmp", "exec")
