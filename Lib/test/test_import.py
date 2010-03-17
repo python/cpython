@@ -162,7 +162,7 @@ class ImportTests(unittest.TestCase):
         unlink(filename + 'c')
         unlink(filename + 'o')
 
-    def test_0Bfailing_import_sticks(self):
+    def test_failing_import_sticks(self):
         source = TESTFN + os.extsep + "py"
         with open(source, "w") as f:
             print >> f, "a = 1 // 0"

@@ -4,7 +4,6 @@ import os
 import sys
 import tempfile
 import unittest
-from StringIO import StringIO
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -340,14 +339,16 @@ this is the content of the fake file
         self.assertEqual(result, v)
 
     def test_deprecated_parse_qs(self):
-        with check_warnings(quiet=False):
-            # this func is moved to urlparse, this is just a sanity check
+        # this func is moved to urlparse, this is just a sanity check
+        with check_warnings(('cgi.parse_qs is deprecated, use urlparse.'
+                             'parse_qs instead', PendingDeprecationWarning)):
             self.assertEqual({'a': ['A1'], 'B': ['B3'], 'b': ['B2']},
                              cgi.parse_qs('a=A1&b=B2&B=B3'))
 
     def test_deprecated_parse_qsl(self):
-        with check_warnings(quiet=False):
-            # this func is moved to urlparse, this is just a sanity check
+        # this func is moved to urlparse, this is just a sanity check
+        with check_warnings(('cgi.parse_qsl is deprecated, use urlparse.'
+                             'parse_qsl instead', PendingDeprecationWarning)):
             self.assertEqual([('a', 'A1'), ('b', 'B2'), ('B', 'B3')],
                              cgi.parse_qsl('a=A1&b=B2&B=B3'))
 
