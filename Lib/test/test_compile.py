@@ -296,6 +296,10 @@ if 1:
         l = lambda: "foo"
         self.assertIsNone(l.__doc__)
 
+##     def test_unicode_encoding(self):
+##         code = "# -*- coding: utf-8 -*-\npass\n"
+##         self.assertRaises(SyntaxError, compile, code, "tmp", "exec")
+
     def test_subscripts(self):
         # SF bug 1448804
         # Class to make testing subscript results easy
