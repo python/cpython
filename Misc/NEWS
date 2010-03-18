@@ -283,6 +283,8 @@ C-API
 Library
 -------
 
+- Issue #8168: py_compile now handles files with utf-8 BOMS.
+
 - ``tokenize.detect_encoding`` now returns ``'utf-8-sig'`` when a UTF-8 BOM is
   detected.
 
