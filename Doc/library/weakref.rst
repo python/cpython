@@ -59,13 +59,13 @@ Not all objects can be weakly referenced; those objects which can include class
 instances, functions written in Python (but not in C), methods (both bound and
 unbound), sets, frozensets, file objects, :term:`generator`\s, type objects,
 :class:`DBcursor` objects from the :mod:`bsddb` module, sockets, arrays, deques,
-and regular expression pattern objects.
+regular expression pattern objects, and code objects.
 
 .. versionchanged:: 2.4
    Added support for files, sockets, arrays, and patterns.
 
 .. versionchanged:: 2.7
-   Added support for thread.lock and threading.Lock.
+   Added support for thread.lock, threading.Lock, and code objects.
 
 Several built-in types such as :class:`list` and :class:`dict` do not directly
 support weak references but can add support through subclassing::

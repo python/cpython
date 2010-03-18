@@ -26,6 +26,7 @@ typedef struct {
     PyObject *co_lnotab;	/* string (encoding addr<->lineno mapping) See
 				   Objects/lnotab_notes.txt for details. */
     void *co_zombieframe;     /* for optimization only (see frameobject.c) */
+    PyObject *co_weakreflist;   /* to support weakrefs to code objects */
 } PyCodeObject;
 
 /* Masks for co_flags above */
