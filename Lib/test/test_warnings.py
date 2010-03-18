@@ -644,18 +644,33 @@ class CatchWarningTests(BaseTest):
     def test_check_warnings(self):
         # Explicit tests for the test.support convenience wrapper
         wmod = self.module
-        if wmod is sys.modules['warnings']:
-            with support.check_warnings() as w:
-                self.assertEqual(w.warnings, [])
-                wmod.simplefilter("always")
+        if wmod is not sys.modules['warnings']:
+            return
+        with support.check_warnings(quiet=False) as w:
+            self.assertEqual(w.warnings, [])
+            wmod.simplefilter("always")
+            wmod.warn("foo")
+            self.assertEqual(str(w.message), "foo")
+            wmod.warn("bar")
+            self.assertEqual(str(w.message), "bar")
+            self.assertEqual(str(w.warnings[0].message), "foo")
+            self.assertEqual(str(w.warnings[1].message), "bar")
+            w.reset()
+            self.assertEqual(w.warnings, [])
+
+        with support.check_warnings():
+            # defaults to quiet=True without argument
+            pass
+        with support.check_warnings(('foo', UserWarning)):
+            wmod.warn("foo")
+
+        with self.assertRaises(AssertionError):
+            with support.check_warnings(('', RuntimeWarning)):
+                # defaults to quiet=False with argument
+                pass
+        with self.assertRaises(AssertionError):
+            with support.check_warnings(('foo', RuntimeWarning)):
                 wmod.warn("foo")
-                self.assertEqual(str(w.message), "foo")
-                wmod.warn("bar")
-                self.assertEqual(str(w.message), "bar")
-                self.assertEqual(str(w.warnings[0].message), "foo")
-                self.assertEqual(str(w.warnings[1].message), "bar")
-                w.reset()
-                self.assertEqual(w.warnings, [])
 
 class CCatchWarningTests(CatchWarningTests):
     module = c_warnings
