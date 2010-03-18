@@ -7,8 +7,8 @@ import builtins
 import imp
 import marshal
 import os
-import re
 import sys
+import tokenize
 import traceback
 
 MAGIC = imp.get_magic()
@@ -69,21 +69,6 @@ def wr_long(f, x):
                    (x >> 16) & 0xff,
                    (x >> 24) & 0xff]))
 
-def read_encoding(file, default):
-    """Read the first two lines of the file looking for coding: xyzzy."""
-    f = open(file, "rb")
-    try:
-        for i in range(2):
-            line = f.readline()
-            if not line:
-                break
-            m = re.match(br".*\bcoding:\s*(\S+)\b", line)
-            if m:
-                return m.group(1).decode("ascii")
-        return default
-    finally:
-        f.close()
-
 def compile(file, cfile=None, dfile=None, doraise=False):
     """Byte-compile one Python source file to Python bytecode.
 
@@ -119,7 +104,8 @@ def compile(file, cfile=None, dfile=None, doraise=False):
     directories).
 
     """
-    encoding = read_encoding(file, "utf-8")
+    with open(file, "rb") as f:
+        encoding = tokenize.detect_encoding(f.readline)[0]
     with open(file, encoding=encoding) as f:
         try:
             timestamp = int(os.fstat(f.fileno()).st_mtime)
