@@ -22,6 +22,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8024: Update the Unicode database to 5.2.
+
 - Issue #8104: socket.recv_into() and socket.recvfrom_into() now support
   writing into objects supporting the new buffer API, for example bytearrays
   or memoryviews.
