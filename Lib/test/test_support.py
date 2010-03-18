@@ -577,14 +577,19 @@ def check_warnings(*filters, **kwargs):
 
     Optional argument:
      - if 'quiet' is True, it does not fail if a filter catches nothing
-        (default False)
+        (default True without argument,
+         default False if some filters are defined)
 
     Without argument, it defaults to:
-        check_warnings(("", Warning), quiet=False)
+        check_warnings(("", Warning), quiet=True)
     """
+    quiet = kwargs.get('quiet')
     if not filters:
         filters = (("", Warning),)
-    return _filterwarnings(filters, kwargs.get('quiet'))
+        # Preserve backward compatibility
+        if quiet is None:
+            quiet = True
+    return _filterwarnings(filters, quiet)
 
 
 @contextlib.contextmanager
