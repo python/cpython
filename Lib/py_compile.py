@@ -109,8 +109,6 @@ def compile(file, cfile=None, dfile=None, doraise=False):
         except AttributeError:
             timestamp = long(os.stat(file).st_mtime)
         codestring = f.read()
-    if codestring and codestring[-1] != '\n':
-        codestring = codestring + '\n'
     try:
         codeobject = __builtin__.compile(codestring, dfile or file,'exec')
     except Exception,err:
