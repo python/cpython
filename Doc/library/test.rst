@@ -89,17 +89,17 @@ The goal for regression testing is to try to break code. This leads to a few
 guidelines to be followed:
 
 * The testing suite should exercise all classes, functions, and constants. This
-  includes not just the external API that is to be presented to the outside world
-  but also "private" code.
+  includes not just the external API that is to be presented to the outside
+  world but also "private" code.
 
 * Whitebox testing (examining the code being tested when the tests are being
   written) is preferred. Blackbox testing (testing only the published user
-  interface) is not complete enough to make sure all boundary and edge cases are
-  tested.
+  interface) is not complete enough to make sure all boundary and edge cases
+  are tested.
 
 * Make sure all possible values are tested including invalid ones. This makes
-  sure that not only all valid values are acceptable but also that improper values
-  are handled correctly.
+  sure that not only all valid values are acceptable but also that improper
+  values are handled correctly.
 
 * Exhaust as many code paths as possible. Test where branching occurs and thus
   tailor input to make sure as many different paths through the code are taken.
@@ -119,8 +119,8 @@ guidelines to be followed:
   behavior from side-effects of importing a module.
 
 * Try to maximize code reuse. On occasion, tests will vary by something as small
-  as what type of input is used. Minimize code duplication by subclassing a basic
-  test class with a class that specifies the input::
+  as what type of input is used. Minimize code duplication by subclassing a
+  basic test class with a class that specifies the input::
 
      class TestFuncAcceptsSequences(unittest.TestCase):
 
@@ -154,10 +154,10 @@ Running tests using :mod:`test.regrtest`
 suite. Running the script by itself automatically starts running all regression
 tests in the :mod:`test` package. It does this by finding all modules in the
 package whose name starts with ``test_``, importing them, and executing the
-function :func:`test_main` if present. The names of tests to execute may also be
-passed to the script. Specifying a single regression test (:program:`python
-regrtest.py` :option:`test_spam.py`) will minimize output and only print whether
-the test passed or failed and thus minimize output.
+function :func:`test_main` if present. The names of tests to execute may also
+be passed to the script. Specifying a single regression test (:program:`python
+regrtest.py` :option:`test_spam.py`) will minimize output and only print
+whether the test passed or failed and thus minimize output.
 
 Running :mod:`test.regrtest` directly allows what resources are available for
 tests to use to be set. You do this by using the :option:`-u` command-line
@@ -172,10 +172,10 @@ list of all resources and more command-line options, run :program:`python
 regrtest.py` :option:`-h`.
 
 Some other ways to execute the regression tests depend on what platform the
-tests are being executed on. On Unix, you can run :program:`make` :option:`test`
-at the top-level directory where Python was built. On Windows, executing
-:program:`rt.bat` from your :file:`PCBuild` directory will run all regression
-tests.
+tests are being executed on. On Unix, you can run :program:`make`
+:option:`test` at the top-level directory where Python was built. On Windows,
+executing :program:`rt.bat` from your :file:`PCBuild` directory will run all
+regression tests.
 
 
 :mod:`test.support` --- Utility functions for tests
@@ -200,8 +200,9 @@ This module defines the following exceptions:
 
 .. exception:: ResourceDenied
 
-   Subclass of :exc:`unittest.SkipTest`. Raised when a resource (such as a network
-   connection) is not available. Raised by the :func:`requires` function.
+   Subclass of :exc:`unittest.SkipTest`. Raised when a resource (such as a
+   network connection) is not available. Raised by the :func:`requires`
+   function.
 
 The :mod:`test.support` module defines the following constants:
 
@@ -242,22 +243,23 @@ The :mod:`test.support` module defines the following functions:
 .. function:: requires(resource, msg=None)
 
    Raise :exc:`ResourceDenied` if *resource* is not available. *msg* is the
-   argument to :exc:`ResourceDenied` if it is raised. Always returns True if called
-   by a function whose ``__name__`` is ``'__main__'``. Used when tests are executed
-   by :mod:`test.regrtest`.
+   argument to :exc:`ResourceDenied` if it is raised. Always returns
+   :const:`True` if called by a function whose ``__name__`` is ``'__main__'``.
+   Used when tests are executed by :mod:`test.regrtest`.
 
 
 .. function:: findfile(filename)
 
-   Return the path to the file named *filename*. If no match is found *filename* is
-   returned. This does not equal a failure since it could be the path to the file.
+   Return the path to the file named *filename*. If no match is found
+   *filename* is returned. This does not equal a failure since it could be the
+   path to the file.
 
 
 .. function:: run_unittest(*classes)
 
    Execute :class:`unittest.TestCase` subclasses passed to the function. The
-   function scans the classes for methods starting with the prefix ``test_`` and
-   executes the tests individually.
+   function scans the classes for methods starting with the prefix ``test_``
+   and executes the tests individually.
 
    It is also legal to pass strings as parameters; these should be keys in
    ``sys.modules``. Each associated module will be scanned by
@@ -270,7 +272,7 @@ The :mod:`test.support` module defines the following functions:
    This will run all tests defined in the named module.
 
 
-.. function:: check_warnings(*filters, quiet=False)
+.. function:: check_warnings(*filters, quiet=None)
 
    A convenience wrapper for ``warnings.catch_warnings()`` that makes
    it easier to test that a warning was correctly raised with a single
@@ -278,30 +280,31 @@ The :mod:`test.support` module defines the following functions:
    ``warnings.catch_warnings(record=True)``.
 
    It accepts 2-tuples ``("message regexp", WarningCategory)`` as positional
-   arguments. When the optional keyword argument ``quiet`` is True, it does
-   not fail if a filter catches nothing. Without argument, it defaults to::
+   arguments. If there's some ``*filters`` defined, or if the optional keyword
+   argument ``quiet`` is :const:`False`, it checks if the warnings are
+   effective. If some filter did not catch any warning, the test fails. If some
+   warnings are not caught, the test fails, too. To disable these checks, set
+   argument ``quiet`` to :const:`True`.
 
-      check_warnings(("", Warning), quiet=False)
+   Without argument, it defaults to::
 
-   The main difference is that it verifies the warnings raised. If some filter
-   did not catch any warning, the test fails. If some warnings are not caught,
-   the test fails, too. To disable these checks, use argument ``quiet=True``.
+      check_warnings(("", Warning), quiet=True)
 
-   Another significant difference is that on entry to the context manager, a
-   :class:`WarningRecorder` instance is returned instead of a simple list.
-   The underlying warnings list is available via the recorder object's
-   :attr:`warnings` attribute, while the attributes of the last raised
-   warning are also accessible directly on the object. If no warning has
-   been raised, then the latter attributes will all be :const:`None`.
+   Additionally, on entry to the context manager, a :class:`WarningRecorder`
+   instance is returned. The underlying warnings list is available via the
+   recorder object's :attr:`warnings` attribute, while the attributes of the
+   last raised warning are also accessible directly on the object. If no
+   warning has been raised, then the latter attributes will all be
+   :const:`None`.
 
    A :meth:`reset` method is also provided on the recorder object. This
-   method simply clears the warning list.
+   method simply clears the warnings list.
 
    The context manager may be used like this::
 
       import warnings
 
-      with check_warnings():
+      with check_warnings(quiet=False):
           exec('assert(False, "Hey!")')
           warnings.warn(UserWarning("Hide me!"))
 
@@ -322,7 +325,6 @@ The :mod:`test.support` module defines the following functions:
           assert len(w.warnings) == 0
 
    .. versionchanged:: 2.7
-      The test fails when the context manager do not catch any warning.
       New optional attributes ``*filters`` and ``quiet``.
 
 
@@ -400,18 +402,19 @@ The :mod:`test.support` module defines the following classes:
 
 .. class:: EnvironmentVarGuard()
 
-   Class used to temporarily set or unset environment variables.  Instances can be
-   used as a context manager and have a complete dictionary interface for
-   querying/modifying the underlying ``os.environ``. After exit from the context
-   manager all changes to environment variables done through this instance will
-   be rolled back.
+   Class used to temporarily set or unset environment variables.  Instances can
+   be used as a context manager and have a complete dictionary interface for
+   querying/modifying the underlying ``os.environ``. After exit from the
+   context manager all changes to environment variables done through this
+   instance will be rolled back.
 
    .. versionchanged:: 3.1
       Added dictionary interface.
 
 .. method:: EnvironmentVarGuard.set(envvar, value)
 
-   Temporarily set the environment variable ``envvar`` to the value of ``value``.
+   Temporarily set the environment variable ``envvar`` to the value of
+   ``value``.
 
 
 .. method:: EnvironmentVarGuard.unset(envvar)
@@ -423,4 +426,3 @@ The :mod:`test.support` module defines the following classes:
 
    Class used to record warnings for unit tests. See documentation of
    :func:`check_warnings` above for more details.
-
