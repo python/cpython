@@ -726,7 +726,7 @@ class TestDetectEncoding(TestCase):
             b'do_something(else)\n'
         )
         encoding, consumed_lines = detect_encoding(self.get_readline(lines))
-        self.assertEquals(encoding, 'utf-8')
+        self.assertEquals(encoding, 'utf-8-sig')
         self.assertEquals(consumed_lines,
                           [b'# something\n', b'print(something)\n'])
 
@@ -747,7 +747,7 @@ class TestDetectEncoding(TestCase):
             b'do_something(else)\n'
         )
         encoding, consumed_lines = detect_encoding(self.get_readline(lines))
-        self.assertEquals(encoding, 'utf-8')
+        self.assertEquals(encoding, 'utf-8-sig')
         self.assertEquals(consumed_lines, [b'# coding=utf-8\n'])
 
     def test_mismatched_bom_and_cookie_first_line_raises_syntaxerror(self):
@@ -779,7 +779,7 @@ class TestDetectEncoding(TestCase):
             b'do_something(else)\n'
         )
         encoding, consumed_lines = detect_encoding(self.get_readline(lines))
-        self.assertEquals(encoding, 'utf-8')
+        self.assertEquals(encoding, 'utf-8-sig')
         self.assertEquals(consumed_lines,
                           [b'#! something\n', b'f# coding=utf-8\n'])
 
@@ -833,12 +833,12 @@ class TestDetectEncoding(TestCase):
 
         readline = self.get_readline((b'\xef\xbb\xbfprint(something)\n',))
         encoding, consumed_lines = detect_encoding(readline)
-        self.assertEquals(encoding, 'utf-8')
+        self.assertEquals(encoding, 'utf-8-sig')
         self.assertEquals(consumed_lines, [b'print(something)\n'])
 
         readline = self.get_readline((b'\xef\xbb\xbf',))
         encoding, consumed_lines = detect_encoding(readline)
-        self.assertEquals(encoding, 'utf-8')
+        self.assertEquals(encoding, 'utf-8-sig')
         self.assertEquals(consumed_lines, [])
 
         readline = self.get_readline((b'# coding: bad\n',))

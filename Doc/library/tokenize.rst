@@ -95,7 +95,8 @@ function it uses to do this is available:
 
     It detects the encoding from the presence of a UTF-8 BOM or an encoding
     cookie as specified in :pep:`263`. If both a BOM and a cookie are present,
-    but disagree, a SyntaxError will be raised.
+    but disagree, a SyntaxError will be raised. Note that if the BOM is found,
+    ``'utf-8-sig'`` will be returned as an encoding.
 
     If no encoding is specified, then the default of ``'utf-8'`` will be returned.
 
