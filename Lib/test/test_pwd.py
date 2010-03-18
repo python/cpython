@@ -1,3 +1,4 @@
+import sys
 import unittest
 from test import test_support
 
@@ -83,11 +84,13 @@ class PwdTest(unittest.TestCase):
 
         self.assertRaises(KeyError, pwd.getpwnam, fakename)
 
-        # Choose a non-existent uid.
-        fakeuid = 4127
-        while fakeuid in byuids:
-            fakeuid = (fakeuid * 3) % 0x10000
-
+        # In some cases, byuids isn't a complete list of all users in the
+        # system, so if we try to pick a value not in byuids (via a perturbing
+        # loop, say), pwd.getpwuid() might still be able to find data for that
+        # uid. Using sys.maxint may provoke the same problems, but hopefully
+        # it will be a more repeatable failure.
+        fakeuid = sys.maxint
+        self.assertNotIn(fakeuid, byuids)
         self.assertRaises(KeyError, pwd.getpwuid, fakeuid)
 
 def test_main():
