@@ -103,7 +103,9 @@ consts: ('None',)
 """
 
 import unittest
+import weakref
 import _testcapi
+
 
 def consts(t):
     """Yield a doctest-safe sequence of object reprs."""
@@ -131,12 +133,37 @@ class CodeTest(unittest.TestCase):
         self.assertEquals(co.co_firstlineno, 15)
 
 
+class CodeWeakRefTest(unittest.TestCase):
+
+    def test_basic(self):
+        # Create a code object in a clean environment so that we know we have
+        # the only reference to it left.
+        namespace = {}
+        exec("def f(): pass", globals(), namespace)
+        f = namespace["f"]
+        del namespace
+
+        self.called = False
+        def callback(code):
+            self.called = True
+
+        # f is now the last reference to the function, and through it, the code
+        # object.  While we hold it, check that we can create a weakref and
+        # deref it.  Then delete it, and check that the callback gets called and
+        # the reference dies.
+        coderef = weakref.ref(f.__code__, callback)
+        self.assertTrue(bool(coderef()))
+        del f
+        self.assertFalse(bool(coderef()))
+        self.assertTrue(self.called)
+
+
 def test_main(verbose=None):
     from test.support import run_doctest, run_unittest
     from test import test_code
     run_doctest(test_code, verbose)
-    run_unittest(CodeTest)
+    run_unittest(CodeTest, CodeWeakRefTest)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_main()
