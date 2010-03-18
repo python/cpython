@@ -283,6 +283,8 @@ C-API
 Library
 -------
 
+- Issue #8024: Update the Unicode database to 5.2.
+
 - Issue #6716/2: Backslash-replace error output in compilall.
 
 - Issue #4961: Inconsistent/wrong result of askyesno function in tkMessageBox
