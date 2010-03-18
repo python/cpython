@@ -301,14 +301,16 @@ def detect_encoding(readline):
     in.
 
     It detects the encoding from the presence of a utf-8 bom or an encoding
-    cookie as specified in pep-0263. If both a bom and a cookie are present,
-    but disagree, a SyntaxError will be raised. If the encoding cookie is an
-    invalid charset, raise a SyntaxError.
+    cookie as specified in pep-0263. If both a bom and a cookie are present, but
+    disagree, a SyntaxError will be raised. If the encoding cookie is an invalid
+    charset, raise a SyntaxError.  Note that if a utf-8 bom is found,
+    'utf-8-sig' is returned.
 
     If no encoding is specified, then the default of 'utf-8' will be returned.
     """
     bom_found = False
     encoding = None
+    default = 'utf-8'
     def read_or_stop():
         try:
             return readline()
@@ -340,8 +342,9 @@ def detect_encoding(readline):
     if first.startswith(BOM_UTF8):
         bom_found = True
         first = first[3:]
+        default = 'utf-8-sig'
     if not first:
-        return 'utf-8', []
+        return default, []
 
     encoding = find_cookie(first)
     if encoding:
@@ -349,13 +352,13 @@ def detect_encoding(readline):
 
     second = read_or_stop()
     if not second:
-        return 'utf-8', [first]
+        return default, [first]
 
     encoding = find_cookie(second)
     if encoding:
         return encoding, [first, second]
 
-    return 'utf-8', [first, second]
+    return default, [first, second]
 
 
 def tokenize(readline):
@@ -394,6 +397,9 @@ def _tokenize(readline, encoding):
     indents = [0]
 
     if encoding is not None:
+        if encoding == "utf-8-sig":
+            # BOM will already have been stripped.
+            encoding = "utf-8"
         yield TokenInfo(ENCODING, encoding, (0, 0), (0, 0), '')
     while True:             # loop over lines in stream
         try:
