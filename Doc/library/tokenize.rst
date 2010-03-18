@@ -98,7 +98,17 @@ function it uses to do this is available:
     but disagree, a SyntaxError will be raised. Note that if the BOM is found,
     ``'utf-8-sig'`` will be returned as an encoding.
 
-    If no encoding is specified, then the default of ``'utf-8'`` will be returned.
+    If no encoding is specified, then the default of ``'utf-8'`` will be
+    returned.
+
+    :func:`detect_encoding` is useful for robustly reading Python source files.
+    A common pattern for this follows::
+
+        def read_python_source(file_name):
+            with open(file_name, "rb") as fp:
+                encoding = tokenize.detect_encoding(fp.readline)[0]
+            with open(file_name, "r", encoding=encoding) as fp:
+                return fp.read()
 
 
 Example of a script re-writer that transforms float literals into Decimal
