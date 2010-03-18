@@ -233,6 +233,8 @@ Core and Builtins
   instances from being copied with copy.copy(), and bytes subclasses
   from being pickled properly.
 
+- Code objects now support weak references.
+
 C-API
 -----
 

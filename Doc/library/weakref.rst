@@ -59,10 +59,10 @@ is exposed by the :mod:`weakref` module for the benefit of advanced uses.
 Not all objects can be weakly referenced; those objects which can include class
 instances, functions written in Python (but not in C), instance methods, sets,
 frozensets, file objects, :term:`generator`\s, type objects, sockets, arrays,
-deques, and regular expression pattern objects.
+deques, regular expression pattern objects, and code objects.
 
 .. versionchanged:: 3.2
-   Added support for thread.lock and threading.Lock.
+   Added support for thread.lock, threading.Lock, and code objects.
 
 Several built-in types such as :class:`list` and :class:`dict` do not directly
 support weak references but can add support through subclassing::
