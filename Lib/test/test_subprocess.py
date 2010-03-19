@@ -9,6 +9,10 @@ import tempfile
 import time
 import re
 import sysconfig
+try:
+    import gc
+except ImportError:
+    gc = None
 
 mswindows = (sys.platform == "win32")
 
@@ -649,6 +653,44 @@ class POSIXProcessTestCase(unittest.TestCase):
         else:
             self.fail("Exception raised by preexec_fn did not make it "
                       "to the parent process.")
+
+    @unittest.skipUnless(gc, "Requires a gc module.")
+    def test_preexec_gc_module_failure(self):
+        # This tests the code that disables garbage collection if the child
+        # process will execute any Python.
+        def raise_runtime_error():
+            raise RuntimeError("this shouldn't escape")
+        enabled = gc.isenabled()
+        orig_gc_disable = gc.disable
+        orig_gc_isenabled = gc.isenabled
+        try:
+            gc.disable()
+            self.assertFalse(gc.isenabled())
+            subprocess.call([sys.executable, '-c', ''],
+                            preexec_fn=lambda: None)
+            self.assertFalse(gc.isenabled(),
+                             "Popen enabled gc when it shouldn't.")
+
+            gc.enable()
+            self.assertTrue(gc.isenabled())
+            subprocess.call([sys.executable, '-c', ''],
+                            preexec_fn=lambda: None)
+            self.assertTrue(gc.isenabled(), "Popen left gc disabled.")
+
+            gc.disable = raise_runtime_error
+            self.assertRaises(RuntimeError, subprocess.Popen,
+                              [sys.executable, '-c', ''],
+                              preexec_fn=lambda: None)
+
+            del gc.isenabled  # force an AttributeError
+            self.assertRaises(AttributeError, subprocess.Popen,
+                              [sys.executable, '-c', ''],
+                              preexec_fn=lambda: None)
+        finally:
+            gc.disable = orig_gc_disable
+            gc.isenabled = orig_gc_isenabled
+            if not enabled:
+                gc.disable()
 
     def test_args_string(self):
         # args is a string
