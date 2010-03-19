@@ -1,86 +1,41 @@
-2009-12-27  Matthias Klose  <doko@ubuntu.com>
+2010-01-15  Anthony Green  <green@redhat.com>
 
-	* configure.ac (HAVE_LONG_DOUBLE): Define for mips when
-	appropriate.
-	* configure: Rebuilt.
+	* README: Add notes on building with Microsoft Visual C++.
 
-2009-12-27  Anthony Green  <green@redhat.com>
+2010-01-15  Daniel Witte  <dwitte@mozilla.com>
 
-	* testsuite/libffi.call/cls_longdouble.c: Don't xfail for ARM.
+	* msvcc.sh: New file.
 
-2009-12-26  Anthony Green  <green@redhat.com>
+	* src/x86/win32.S: Port assembly routines to MSVC and #ifdef.
+	* src/x86/ffi.c: Tweak function declaration and remove excess
+	parens.
+	* include/ffi.h.in: Add __declspec(align(8)) to typedef struct
+	ffi_closure.
 
-	* testsuite/libffi.call/huge_struct.c: Don't xfail for avr32*-*-*.
-	* testsuite/libffi.call/cls_longdouble_va.c: Mark as xfail for
-	avr32*-*-*.
-	* testsuite/libffi.call/cls_double_va.c: Ditto.
+	* src/x86/ffi.c: Merge ffi_call_SYSV and ffi_call_STDCALL into new
+	function ffi_call_win32 on X86_WIN32.
+	* src/x86/win32.S (ffi_call_SYSV): Rename to ffi_call_win32.
+	(ffi_call_STDCALL): Remove.
 
-2009-12-26  Andreas Tobler  <a.tobler@schweiz.org>
+	* src/prep_cif.c (ffi_prep_cif): Move stack space allocation code
+	to ffi_prep_cif_machdep for x86.
+	* src/x86/ffi.c (ffi_prep_cif_machdep): To here.
 
-	* testsuite/libffi.call/ffitest.h: Conditionally include stdint.h
-	and inttypes.h.
-	* testsuite/libffi.special/unwindtest.cc: Ditto.
-	* testsuite/libffi.call/huge_struct.c: Don't include stdint.h
-	directly.
+2010-01-15  Oliver Kiddle  <okiddle@yahoo.co.uk>
 
-2009-12-26  Andreas Tobler  <a.tobler@schweiz.org>
+	* src/x86/ffitarget.h (ffi_abi): Check for __i386 and __amd64 for
+	Sun Studio compiler compatibility. 
 
-	* configure.ac: Add amd64-*-openbsd*.
-	* configure: Rebuilt.
-	* testsuite/lib/libffi-dg.exp (libffi_target_compile): Link
-	openbsd programs with -lpthread.
+2010-01-12  Conrad Irwin <conrad.irwin@gmail.com>
 
-2009-12-26  Anthony Green  <green@redhat.com>
-
-	* testsuite/libffi.call/cls_double_va.c,
-	testsuite/libffi.call/cls_longdouble.c,
-	testsuite/libffi.call/cls_longdouble_va.c,
-	testsuite/libffi.call/cls_pointer.c,
-	testsuite/libffi.call/cls_pointer_stack.c: Remove xfail for
-	mips*-*-* and arm*-*-*.
-	* testsuite/libffi.call/cls_align_longdouble_split.c,
-	testsuite/libffi.call/cls_align_longdouble_split2.c,
-	testsuite/libffi.call/stret_medium2.c,
-	testsuite/libffi.call/stret_medium.c,
-	testsuite/libffi.call/stret_large.c,
-	testsuite/libffi.call/stret_large2.c: Remove xfail for arm*-*-*.
-
-2009-12-26  Andreas Tobler  <a.tobler@schweiz.org>
-	    Anthony Green  <green@redhat.com>
-
-	* testsuite/libffi.call/huge_struct.c (test_large_fn): Replace
-	format code %p with %#lx because %p does not add a leading 0x on
-	Solaris.  Also change relevant arguments to unsigned long.
+	* doc/libffi.texi: Add closure example.
+	* doc/libffi.info: Rebuilt.
 
 2009-12-25  Samuli Suominen  <ssuominen@gentoo.org>
 
 	* configure.ac: Undefine _AC_ARG_VAR_PRECIOUS for autoconf 2.64.
 	* configure: Rebuilt.
 	* fficonfig.h.in: Rebuilt.
-
-2009-12-29  Kay Tietz  <ktietz70@googlemail.com>
-
-	* testsuite/libffi.call/ffitest.h,
-	testsuite/libffi.special/ffitestcxx.h (PRIdLL, PRuLL): Fix
-	definitions.
-
-2009-12-25  Carlo Bramini  <carlo.bramix@libero.it>
-
-	* configure.ac (AM_LTLDFLAGS): Define for windows hosts.
-	* Makefile.am (libffi_la_LDFLAGS): Add AM_LTLDFLAGS.
-	* configure: Rebuilt.
-	* Makefile.in: Rebuilt.
-
-2009-12-24  Anthony Green  <green@redhat.com>
-
-	* testsuite/libffi.call/huge_struct.c: Fix printf format, and
-	don't xfail x86 Linux.
-	* testsuite/libffi.call/huge_struct.c: Don't xfail mips.
-	* testsuite/libffi.call/cls_pointer.c: Ditto.
-	* testsuite/libffi.call/cls_pointer_stack.c: Ditto.
-	* testsuite/libffi.call/cls_longdouble_va.c: Ditto.
-	* testsuite/libffi.call/cls_longdouble.c: Ditto.
-	* testsuite/libffi.call/cls_double_va.c: Ditto.
 
 2009-06-16  Andrew Haley  <aph@redhat.com>
 
@@ -257,20 +212,20 @@
 2008-12-22  Timothy Wall  <twall@users.sf.net>
 
 	* testsuite/libffi.call/closure_fn0.c,
-        testsuite/libffi.call/closure_fn1.c,
-        testsuite/libffi.call/closure_fn2.c,
-        testsuite/libffi.call/closure_fn3.c,
-        testsuite/libffi.call/closure_fn4.c,
-        testsuite/libffi.call/closure_fn5.c,
-        testsuite/libffi.call/closure_fn6.c,
-        testsuite/libffi.call/closure_loc_fn0.c,
-        testsuite/libffi.call/closure_stdcall.c,
-        testsuite/libffi.call/cls_align_pointer.c,
-        testsuite/libffi.call/cls_pointer.c,
+        testsuite/libffi.call/closure_fn1.c,    
+        testsuite/libffi.call/closure_fn2.c,    
+        testsuite/libffi.call/closure_fn3.c,    
+        testsuite/libffi.call/closure_fn4.c,    
+        testsuite/libffi.call/closure_fn5.c,    
+        testsuite/libffi.call/closure_fn6.c,    
+        testsuite/libffi.call/closure_loc_fn0.c,    
+        testsuite/libffi.call/closure_stdcall.c,    
+        testsuite/libffi.call/cls_align_pointer.c,    
+        testsuite/libffi.call/cls_pointer.c,    
         testsuite/libffi.call/cls_pointer_stack.c: use portable cast from
         pointer to integer (intptr_t).
         * testsuite/libffi.call/cls_longdouble.c: disable for win64.
-
+	
 2008-12-19  Anthony Green  <green@redhat.com>
 
 	* configure.ac: Bump version to 3.0.8.

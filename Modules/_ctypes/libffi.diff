@@ -111,31 +111,3 @@ diff -urN libffi.orig/configure.ac libffi/configure.ac
 +AC_CONFIG_FILES(fficonfig.py)
 +
  AC_OUTPUT
-diff -urN libffi.orig/src/x86/ffi64.c libffi/src/x86/ffi64.c
---- libffi.orig/src/x86/ffi64.c	2010-03-19 18:27:45.008523897 +0100
-+++ libffi/src/x86/ffi64.c	2010-03-19 18:24:36.437500070 +0100
-@@ -52,7 +52,7 @@
- /* Register class used for passing given 64bit part of the argument.
-    These represent classes as documented by the PS ABI, with the exception
-    of SSESF, SSEDF classes, that are basically SSE class, just gcc will
--   use SF or DFmode move instead of DImode to avoid reformating penalties.
-+   use SF or DFmode move instead of DImode to avoid reformatting penalties.
- 
-    Similary we play games with INTEGERSI_CLASS to use cheaper SImode moves
-    whenever possible (upper half does contain padding).  */
-diff -urN libffi.orig/src/x86/ffi.c libffi/src/x86/ffi.c
---- libffi.orig/src/x86/ffi.c	2010-03-19 18:27:45.008523897 +0100
-+++ libffi/src/x86/ffi.c	2010-03-19 18:24:36.441496039 +0100
-@@ -594,10 +594,10 @@
-     return FFI_BAD_ABI;
-   }
- 
--  // we currently don't support certain kinds of arguments for raw
-+  /* we currently don't support certain kinds of arguments for raw
-   // closures.  This should be implemented by a separate assembly language
-   // routine, since it would require argument processing, something we
--  // don't do now for performance.
-+  // don't do now for performance. */
- 
-   for (i = cif->nargs-1; i >= 0; i--)
-     {
