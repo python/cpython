@@ -618,7 +618,7 @@ class StrTest(unittest.TestCase, BaseStrTest):
     @precisionbigmemtest(size=_4G // 5, memuse=character_size * (6 + 1))
     def test_unicode_repr_overflow(self, size):
         try:
-            s = "\uAAAA"*size
+            s = "\uDCBA"*size
             r = repr(s)
         except MemoryError:
             pass # acceptable on 32-bit
@@ -679,22 +679,24 @@ class StrTest(unittest.TestCase, BaseStrTest):
 
     @bigmemtest(minsize=2**32 / 5, memuse=character_size * 7)
     def test_unicode_repr(self, size):
-        s = "\uAAAA" * size
+        # Use an assigned, but not printable code point.
+        # It is in the range of the low surrogates \uDC00-\uDFFF.
+        s = "\uDCBA" * size
         for f in (repr, ascii):
             r = f(s)
             self.assertTrue(len(r) > size)
-            self.assertTrue(r.endswith(r"\uaaaa'"), r[-10:])
+            self.assertTrue(r.endswith(r"\udcba'"), r[-10:])
             del r
 
     # The character takes 4 bytes even in UCS-2 builds because it will
     # be decomposed into surrogates.
     @bigmemtest(minsize=2**32 / 5, memuse=4 + character_size * 9)
     def test_unicode_repr_wide(self, size):
-        s = "\U0001AAAA" * size
+        s = "\U0001DCBA" * size
         for f in (repr, ascii):
             r = f(s)
             self.assertTrue(len(r) > size)
-            self.assertTrue(r.endswith(r"\U0001aaaa'"), r[-12:])
+            self.assertTrue(r.endswith(r"\U0001dcba'"), r[-12:])
             del r
 
 
