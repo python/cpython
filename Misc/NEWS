@@ -82,6 +82,8 @@ Tools/Demos
   measures the number of UDP packets processed per second depending on the
   number of background CPU-bound Python threads.
 
+- python-config now supports multiple options on the same command line.
+
 Build
 -----
 
