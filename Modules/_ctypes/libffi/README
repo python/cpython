@@ -1,7 +1,7 @@
 Status
 ======
 
-libffi-3.0.9 was released on December 31, 2009. Check the libffi web
+libffi-3.0.10 was released on XXXXXXXXXX, 2010. Check the libffi web
 page for updates: <URL:http://sourceware.org/libffi/>.
 
 
@@ -43,7 +43,7 @@ Libffi has been ported to many different platforms.
 For specific configuration details and testing status, please
 refer to the wiki page here:
 
- http://www.moxielogic.org/wiki/index.php?title=Libffi_3.0.9
+ http://www.moxielogic.org/wiki/index.php?title=Libffi_3.0.10
 
 At the time of release, the following basic configurations have been
 tested:
@@ -52,6 +52,7 @@ tested:
 | Architecture | Operating System |
 |--------------+------------------|
 | Alpha        | Linux            |
+| Alpha        | Tru64            |
 | ARM          | Linux            |
 | AVR32        | Linux            |
 | HPPA         | HPUX             |
@@ -80,6 +81,7 @@ tested:
 | X86-64       | FreeBSD          |
 | X86-64       | Linux            |
 | X86-64       | OpenBSD          |
+| X86-64       | Windows/MingW    |
 |--------------+------------------|
 
 Please send additional platform test results to
@@ -107,6 +109,14 @@ will add some extra code which will suppress certain warnings when you
 are using Purify with libffi. Only use this switch when using 
 Purify, as it will slow down the library.
 
+It's also possible to build libffi on Windows platforms with
+Microsoft's Visual C++ compiler.  In this case, use the msvcc.sh
+wrapper script during configuration like so:
+
+path/to/configure --enable-shared --enable-static \
+	CC=path/to/msvcc.sh LD=link \
+	CPP=\"cl -nologo -EP\"
+
 Configure has many other options. Use "configure --help" to see them all.
 
 Once configure has finished, type "make". Note that you must be using
@@ -122,6 +132,12 @@ History
 =======
 
 See the ChangeLog files for details.
+
+3.0.10 ???-??-??
+        Fix the N64 build on mips-sgi-irix6.5.
+	Testsuite fixes for Tru64 Unix.
+	Enable builds with Microsoft's compiler.
+	Enable x86 builds with Sun's compiler.
 
 3.0.9 Dec-31-09
         Add AVR32 and win64 ports.  Add ARM softfp support.

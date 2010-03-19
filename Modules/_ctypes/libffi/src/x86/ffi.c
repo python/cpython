@@ -148,13 +148,13 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
 /* Perform machine dependent cif processing */
 ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
 {
+  unsigned int i;
+  ffi_type **ptr;
+
   /* Set the return type flag */
   switch (cif->rtype->type)
     {
     case FFI_TYPE_VOID:
-#ifdef X86
-    case FFI_TYPE_STRUCT:
-#endif
 #if defined(X86) || defined (X86_WIN32) || defined(X86_FREEBSD) || defined(X86_DARWIN) || defined(X86_WIN64)
     case FFI_TYPE_UINT8:
     case FFI_TYPE_UINT16:
@@ -165,7 +165,6 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
     case FFI_TYPE_UINT32:
     case FFI_TYPE_SINT32:
 #endif
-
     case FFI_TYPE_SINT64:
     case FFI_TYPE_FLOAT:
     case FFI_TYPE_DOUBLE:
@@ -184,8 +183,8 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
       cif->flags = FFI_TYPE_SINT64;
       break;
 
-#ifndef X86
     case FFI_TYPE_STRUCT:
+#ifndef X86
       if (cif->rtype->size == 1)
         {
           cif->flags = FFI_TYPE_SMALL_STRUCT_1B; /* same as char size */
@@ -207,15 +206,13 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
           cif->flags = FFI_TYPE_SINT64; /* same as int64 type */
         }
       else
+#endif
         {
           cif->flags = FFI_TYPE_STRUCT;
-#ifdef X86_WIN64
           // allocate space for return value pointer
           cif->bytes += ALIGN(sizeof(void*), FFI_SIZEOF_ARG);
-#endif
         }
       break;
-#endif
 
     default:
 #ifdef X86_WIN64
@@ -229,41 +226,36 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
       break;
     }
 
-#ifdef X86_DARWIN
-  cif->bytes = (cif->bytes + 15) & ~0xF;
-#endif
+  for (ptr = cif->arg_types, i = cif->nargs; i > 0; i--, ptr++)
+    {
+      if (((*ptr)->alignment - 1) & cif->bytes)
+        cif->bytes = ALIGN(cif->bytes, (*ptr)->alignment);
+      cif->bytes += ALIGN((*ptr)->size, FFI_SIZEOF_ARG);
+    }
 
 #ifdef X86_WIN64
-  {
-    unsigned int i;
-    ffi_type **ptr;
-
-    for (ptr = cif->arg_types, i = cif->nargs; i > 0; i--, ptr++)
-      {
-        if (((*ptr)->alignment - 1) & cif->bytes)
-          cif->bytes = ALIGN(cif->bytes, (*ptr)->alignment);
-        cif->bytes += ALIGN((*ptr)->size, FFI_SIZEOF_ARG);
-      }
-  }
   // ensure space for storing four registers
   cif->bytes += 4 * sizeof(ffi_arg);
+#endif
+
+#ifdef X86_DARWIN
+  cif->bytes = (cif->bytes + 15) & ~0xF;
 #endif
 
   return FFI_OK;
 }
 
-extern void ffi_call_SYSV(void (*)(char *, extended_cif *), extended_cif *,
-                          unsigned, unsigned, unsigned *, void (*fn)(void));
-
-#ifdef X86_WIN32
-extern void ffi_call_STDCALL(void (*)(char *, extended_cif *), extended_cif *,
-                          unsigned, unsigned, unsigned *, void (*fn)(void));
-
-#endif /* X86_WIN32 */
 #ifdef X86_WIN64
 extern int
 ffi_call_win64(void (*)(char *, extended_cif *), extended_cif *,
                unsigned, unsigned, unsigned *, void (*fn)(void));
+#elif defined(X86_WIN32)
+extern void
+ffi_call_win32(void (*)(char *, extended_cif *), extended_cif *,
+               unsigned, unsigned, unsigned *, void (*fn)(void));
+#else
+extern void ffi_call_SYSV(void (*)(char *, extended_cif *), extended_cif *,
+                          unsigned, unsigned, unsigned *, void (*fn)(void));
 #endif
 
 void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
@@ -321,18 +313,18 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
                        cif->flags, ecif.rvalue, fn);
       }
       break;
+#elif defined(X86_WIN32)
+    case FFI_SYSV:
+    case FFI_STDCALL:
+      ffi_call_win32(ffi_prep_args, &ecif, cif->bytes, cif->flags,
+                     ecif.rvalue, fn);
+      break;
 #else
     case FFI_SYSV:
       ffi_call_SYSV(ffi_prep_args, &ecif, cif->bytes, cif->flags, ecif.rvalue,
                     fn);
       break;
-#ifdef X86_WIN32
-    case FFI_STDCALL:
-      ffi_call_STDCALL(ffi_prep_args, &ecif, cif->bytes, cif->flags,
-                       ecif.rvalue, fn);
-      break;
-#endif /* X86_WIN32 */
-#endif /* X86_WIN64 */
+#endif
     default:
       FFI_ASSERT(0);
       break;
@@ -342,6 +334,8 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 
 /** private members **/
 
+/* The following __attribute__((regparm(1))) decorations will have no effect
+   on MSVC - standard cdecl convention applies. */
 static void ffi_prep_incoming_args_SYSV (char *stack, void **ret,
                                          void** args, ffi_cif* cif);
 void FFI_HIDDEN ffi_closure_SYSV (ffi_closure *)
@@ -390,11 +384,8 @@ ffi_closure_win64_inner (ffi_closure *closure, void *args) {
 }
 
 #else
-unsigned int FFI_HIDDEN
-ffi_closure_SYSV_inner (closure, respp, args)
-     ffi_closure *closure;
-     void **respp;
-     void *args;
+unsigned int FFI_HIDDEN __attribute__ ((regparm(1)))
+ffi_closure_SYSV_inner (ffi_closure *closure, void **respp, void *args)
 {
   /* our various things...  */
   ffi_cif       *cif;
@@ -505,7 +496,7 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue, void **avalue,
 /* How to make a trampoline.  Derived from gcc/config/i386/i386.c. */
 
 #define FFI_INIT_TRAMPOLINE(TRAMP,FUN,CTX) \
-({ unsigned char *__tramp = (unsigned char*)(TRAMP); \
+{ unsigned char *__tramp = (unsigned char*)(TRAMP); \
    unsigned int  __fun = (unsigned int)(FUN); \
    unsigned int  __ctx = (unsigned int)(CTX); \
    unsigned int  __dis = __fun - (__ctx + 10);  \
@@ -513,10 +504,10 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue, void **avalue,
    *(unsigned int*)  &__tramp[1] = __ctx; /* movl __ctx, %eax */ \
    *(unsigned char *)  &__tramp[5] = 0xe9; \
    *(unsigned int*)  &__tramp[6] = __dis; /* jmp __fun  */ \
- })
+ }
 
 #define FFI_INIT_TRAMPOLINE_STDCALL(TRAMP,FUN,CTX,SIZE)  \
-({ unsigned char *__tramp = (unsigned char*)(TRAMP); \
+{ unsigned char *__tramp = (unsigned char*)(TRAMP); \
    unsigned int  __fun = (unsigned int)(FUN); \
    unsigned int  __ctx = (unsigned int)(CTX); \
    unsigned int  __dis = __fun - (__ctx + 10); \
@@ -527,7 +518,7 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue, void **avalue,
    *(unsigned int*)  &__tramp[6] = __dis; /* call __fun  */ \
    *(unsigned char *)  &__tramp[10] = 0xc2; \
    *(unsigned short*)  &__tramp[11] = __size; /* ret __size  */ \
- })
+ }
 
 /* the cif must already be prep'ed */
 
@@ -595,9 +586,9 @@ ffi_prep_raw_closure_loc (ffi_raw_closure* closure,
   }
 
   /* we currently don't support certain kinds of arguments for raw
-  // closures.  This should be implemented by a separate assembly language
-  // routine, since it would require argument processing, something we
-  // don't do now for performance. */
+     closures.  This should be implemented by a separate assembly
+     language routine, since it would require argument processing,
+     something we don't do now for performance.  */
 
   for (i = cif->nargs-1; i >= 0; i--)
     {
@@ -627,16 +618,6 @@ ffi_prep_args_raw(char *stack, extended_cif *ecif)
  * libffi-1.20, this is not the case.)
  */
 
-extern void
-ffi_call_SYSV(void (*)(char *, extended_cif *), extended_cif *, unsigned, 
-              unsigned, unsigned *, void (*fn)(void));
-
-#ifdef X86_WIN32
-extern void
-ffi_call_STDCALL(void (*)(char *, extended_cif *), extended_cif *, unsigned,
-                 unsigned, unsigned *, void (*fn)(void));
-#endif /* X86_WIN32 */
-
 void
 ffi_raw_call(ffi_cif *cif, void (*fn)(void), void *rvalue, ffi_raw *fake_avalue)
 {
@@ -660,16 +641,18 @@ ffi_raw_call(ffi_cif *cif, void (*fn)(void), void *rvalue, ffi_raw *fake_avalue)
   
   switch (cif->abi) 
     {
+#ifdef X86_WIN32
+    case FFI_SYSV:
+    case FFI_STDCALL:
+      ffi_call_win32(ffi_prep_args_raw, &ecif, cif->bytes, cif->flags,
+                     ecif.rvalue, fn);
+      break;
+#else
     case FFI_SYSV:
       ffi_call_SYSV(ffi_prep_args_raw, &ecif, cif->bytes, cif->flags,
                     ecif.rvalue, fn);
       break;
-#ifdef X86_WIN32
-    case FFI_STDCALL:
-      ffi_call_STDCALL(ffi_prep_args_raw, &ecif, cif->bytes, cif->flags,
-                       ecif.rvalue, fn);
-      break;
-#endif /* X86_WIN32 */
+#endif
     default:
       FFI_ASSERT(0);
       break;
