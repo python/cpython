@@ -1,9 +1,6 @@
 import unittest
 from test.support import check_syntax_error, run_unittest
 
-import warnings
-warnings.filterwarnings("ignore", r"import \*", SyntaxWarning, "<test string>")
-warnings.filterwarnings("ignore", r"import \*", SyntaxWarning, "<string>")
 
 class ScopeTests(unittest.TestCase):
 

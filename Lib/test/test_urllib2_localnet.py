@@ -223,10 +223,10 @@ class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self._threads = test_support.threading_setup()
+        self._threads = support.threading_setup()
 
     def tearDown(self):
-        test_support.threading_cleanup(*self._threads)
+        support.threading_cleanup(*self._threads)
 
 
 class ProxyAuthTests(BaseTestCase):
@@ -237,6 +237,7 @@ class ProxyAuthTests(BaseTestCase):
     REALM = "TestRealm"
 
     def setUp(self):
+        super(ProxyAuthTests, self).setUp()
         self.digest_auth_handler = DigestAuthHandler()
         self.digest_auth_handler.set_users({self.USER: self.PASSWD})
         self.digest_auth_handler.set_realm(self.REALM)
@@ -254,6 +255,7 @@ class ProxyAuthTests(BaseTestCase):
 
     def tearDown(self):
         self.server.stop()
+        super(ProxyAuthTests, self).tearDown()
 
     def test_proxy_with_bad_password_raises_httperror(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
@@ -347,11 +349,13 @@ class TestUrlopen(BaseTestCase):
     """
 
     def setUp(self):
+        super(TestUrlopen, self).setUp()
         self.server = None
 
     def tearDown(self):
         if self.server is not None:
             self.server.stop()
+        super(TestUrlopen, self).tearDown()
 
     def urlopen(self, url, data=None):
         l = []
