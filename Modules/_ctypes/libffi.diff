@@ -1,9 +1,65 @@
-This file contains the diffs between the files in the libffi
-subdirectory and the 'official' source files from
-ftp://sourceware.org/pub/libffi/libffi-3.0.9.tar.gz
-
---- libffi/configure.ac.orig	2009-12-31 13:41:51.000000000 +0100
-+++ libffi/configure.ac	2010-02-24 00:39:10.341610848 +0100
+diff -urN libffi.orig/configure libffi/configure
+--- libffi.orig/configure	2010-03-19 18:29:54.588499862 +0100
++++ libffi/configure	2010-03-19 18:32:09.113499479 +0100
+@@ -11228,6 +11228,9 @@
+   i?86-*-solaris2.1[0-9]*)
+ 	TARGET=X86_64; TARGETDIR=x86
+ 	;;
++  i*86-*-nto-qnx*)
++        TARGET=X86; TARGETDIR=x86
++        ;;
+   i?86-*-*)
+ 	TARGET=X86; TARGETDIR=x86
+ 	;;
+@@ -11245,12 +11248,12 @@
+ 	;;
+ 
+   mips-sgi-irix5.* | mips-sgi-irix6.*)
+-	TARGET=MIPS; TARGETDIR=mips
++	TARGET=MIPS_IRIX; TARGETDIR=mips
+ 	;;
+   mips*-*-linux*)
+ 	# Support 128-bit long double for NewABI.
+ 	HAVE_LONG_DOUBLE='defined(__mips64)'
+-	TARGET=MIPS; TARGETDIR=mips
++	TARGET=MIPS_IRIX; TARGETDIR=mips
+ 	;;
+ 
+   powerpc*-*-linux* | powerpc-*-sysv*)
+@@ -11307,7 +11310,7 @@
+   as_fn_error "\"libffi has not been ported to $host.\"" "$LINENO" 5
+ fi
+ 
+- if test x$TARGET = xMIPS; then
++ if expr x$TARGET : 'xMIPS' > /dev/null; then
+   MIPS_TRUE=
+   MIPS_FALSE='#'
+ else
+@@ -12422,6 +12425,12 @@
+ ac_config_files="$ac_config_files include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc"
+ 
+ 
++ac_config_links="$ac_config_links include/ffi_common.h:include/ffi_common.h"
++
++
++ac_config_files="$ac_config_files fficonfig.py"
++
++
+ cat >confcache <<\_ACEOF
+ # This file is a shell script that caches the results of configure
+ # tests run on this system so they can be shared between configure
+@@ -13521,6 +13530,8 @@
+     "testsuite/Makefile") CONFIG_FILES="$CONFIG_FILES testsuite/Makefile" ;;
+     "man/Makefile") CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;
+     "libffi.pc") CONFIG_FILES="$CONFIG_FILES libffi.pc" ;;
++    "include/ffi_common.h") CONFIG_LINKS="$CONFIG_LINKS include/ffi_common.h:include/ffi_common.h" ;;
++    "fficonfig.py") CONFIG_FILES="$CONFIG_FILES fficonfig.py" ;;
+ 
+   *) as_fn_error "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
+   esac
+diff -urN libffi.orig/configure.ac libffi/configure.ac
+--- libffi.orig/configure.ac	2010-03-19 18:27:44.988498585 +0100
++++ libffi/configure.ac	2010-03-19 18:31:29.252505178 +0100
 @@ -1,4 +1,7 @@
  dnl Process this with autoconf to create configure
 +#
@@ -46,86 +102,18 @@ ftp://sourceware.org/pub/libffi/libffi-3.0.9.tar.gz
  AM_CONDITIONAL(SPARC, test x$TARGET = xSPARC)
  AM_CONDITIONAL(X86, test x$TARGET = xX86)
  AM_CONDITIONAL(X86_FREEBSD, test x$TARGET = xX86_FREEBSD)
-@@ -399,6 +405,10 @@
+@@ -401,4 +407,8 @@
  
- AC_CONFIG_LINKS(include/ffitarget.h:src/$TARGETDIR/ffitarget.h)
+ AC_CONFIG_FILES(include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc)
  
--AC_CONFIG_FILES(include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc)
-+AC_CONFIG_FILES(include/ffi.h)
-+
 +AC_CONFIG_LINKS(include/ffi_common.h:include/ffi_common.h)
 +
 +AC_CONFIG_FILES(fficonfig.py)
- 
++
  AC_OUTPUT
---- libffi/configure.orig	2009-12-31 13:41:51.000000000 +0100
-+++ libffi/configure	2010-02-24 00:41:59.829608794 +0100
-@@ -12191,6 +12191,9 @@
-   i?86-*-solaris2.1[0-9]*)
- 	TARGET=X86_64; TARGETDIR=x86
- 	;;
-+  i*86-*-nto-qnx*)
-+        TARGET=X86; TARGETDIR=x86
-+        ;;
-   i?86-*-*)
- 	TARGET=X86; TARGETDIR=x86
- 	;;
-@@ -12208,12 +12211,12 @@
- 	;;
- 
-   mips-sgi-irix5.* | mips-sgi-irix6.*)
--	TARGET=MIPS; TARGETDIR=mips
-+	TARGET=MIPS_IRIX; TARGETDIR=mips
- 	;;
-   mips*-*-linux*)
- 	# Support 128-bit long double for NewABI.
- 	HAVE_LONG_DOUBLE='defined(__mips64)'
--	TARGET=MIPS; TARGETDIR=mips
-+	TARGET=MIPS_IRIX; TARGETDIR=mips
- 	;;
- 
-   powerpc*-*-linux* | powerpc-*-sysv*)
-@@ -12272,7 +12275,7 @@
-    { (exit 1); exit 1; }; }
- fi
- 
-- if test x$TARGET = xMIPS; then
-+ if expr x$TARGET : 'xMIPS' > /dev/null; then
-   MIPS_TRUE=
-   MIPS_FALSE='#'
- else
-@@ -14667,7 +14670,13 @@
- ac_config_links="$ac_config_links include/ffitarget.h:src/$TARGETDIR/ffitarget.h"
- 
- 
--ac_config_files="$ac_config_files include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc"
-+ac_config_files="$ac_config_files include/ffi.h"
-+
-+
-+ac_config_links="$ac_config_links include/ffi_common.h:include/ffi_common.h"
-+
-+
-+ac_config_files="$ac_config_files fficonfig.py"
- 
- 
- cat >confcache <<\_ACEOF
-@@ -15767,12 +15776,9 @@
-     "include") CONFIG_COMMANDS="$CONFIG_COMMANDS include" ;;
-     "src") CONFIG_COMMANDS="$CONFIG_COMMANDS src" ;;
-     "include/ffitarget.h") CONFIG_LINKS="$CONFIG_LINKS include/ffitarget.h:src/$TARGETDIR/ffitarget.h" ;;
--    "include/Makefile") CONFIG_FILES="$CONFIG_FILES include/Makefile" ;;
-     "include/ffi.h") CONFIG_FILES="$CONFIG_FILES include/ffi.h" ;;
--    "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
--    "testsuite/Makefile") CONFIG_FILES="$CONFIG_FILES testsuite/Makefile" ;;
--    "man/Makefile") CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;
--    "libffi.pc") CONFIG_FILES="$CONFIG_FILES libffi.pc" ;;
-+    "include/ffi_common.h") CONFIG_LINKS="$CONFIG_LINKS include/ffi_common.h:include/ffi_common.h" ;;
-+    "fficonfig.py") CONFIG_FILES="$CONFIG_FILES fficonfig.py" ;;
- 
-   *) { { $as_echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
- $as_echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
---- libffi/src/x86/ffi64.c.orig	2009-12-29 16:22:26.000000000 +0100
-+++ libffi/src/x86/ffi64.c	2010-02-24 00:36:46.678610932 +0100
+diff -urN libffi.orig/src/x86/ffi64.c libffi/src/x86/ffi64.c
+--- libffi.orig/src/x86/ffi64.c	2010-03-19 18:27:45.008523897 +0100
++++ libffi/src/x86/ffi64.c	2010-03-19 18:24:36.437500070 +0100
 @@ -52,7 +52,7 @@
  /* Register class used for passing given 64bit part of the argument.
     These represent classes as documented by the PS ABI, with the exception
@@ -135,8 +123,9 @@ ftp://sourceware.org/pub/libffi/libffi-3.0.9.tar.gz
  
     Similary we play games with INTEGERSI_CLASS to use cheaper SImode moves
     whenever possible (upper half does contain padding).  */
---- libffi/src/x86/ffi.c.orig	2009-12-29 16:22:26.000000000 +0100
-+++ libffi/src/x86/ffi.c	2010-02-24 00:36:46.678610932 +0100
+diff -urN libffi.orig/src/x86/ffi.c libffi/src/x86/ffi.c
+--- libffi.orig/src/x86/ffi.c	2010-03-19 18:27:45.008523897 +0100
++++ libffi/src/x86/ffi.c	2010-03-19 18:24:36.441496039 +0100
 @@ -594,10 +594,10 @@
      return FFI_BAD_ABI;
    }
