@@ -204,15 +204,21 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         if (gc_module == NULL)
             return NULL;
         result = PyObject_CallMethod(gc_module, "isenabled", NULL);
-        if (result == NULL)
+        if (result == NULL) {
+            Py_DECREF(gc_module);
             return NULL;
+        }
         need_to_reenable_gc = PyObject_IsTrue(result);
         Py_DECREF(result);
-        if (need_to_reenable_gc == -1)
+        if (need_to_reenable_gc == -1) {
+            Py_DECREF(gc_module);
             return NULL;
+        }
         result = PyObject_CallMethod(gc_module, "disable", NULL);
-        if (result == NULL)
+        if (result == NULL) {
+            Py_DECREF(gc_module);
             return NULL;
+        }
         Py_DECREF(result);
     }
 
@@ -307,6 +313,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         Py_XDECREF(gc_module);
         return NULL;
     }
+    Py_XDECREF(preexec_fn_args_tuple);
     Py_XDECREF(gc_module);
 
     if (pid == -1)
@@ -322,6 +329,7 @@ cleanup:
     _Py_FreeCharPArray(exec_array);
     Py_XDECREF(converted_args);
     Py_XDECREF(fast_args);
+    Py_XDECREF(preexec_fn_args_tuple);
 
     /* Reenable gc if it was disabled. */
     if (need_to_reenable_gc)
