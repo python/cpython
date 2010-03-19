@@ -935,6 +935,11 @@ $(srcdir)/Lib/$(PLATDIR):
 	export EXE; EXE="$(BUILDEXE)"; \
 	cd $(srcdir)/Lib/$(PLATDIR); $(RUNSHARED) ./regen
 
+python-config: $(srcdir)/Misc/python-config.in
+	# Substitution happens here, as the completely-expanded BINDIR
+	# is not available in configure
+	sed -e "s,@EXENAME@,$(BINDIR)/python$(VERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config
+
 # Install the include files
 INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
 inclinstall:
@@ -960,7 +965,7 @@ LIBPL=		$(LIBP)/config
 # pkgconfig directory
 LIBPC=		$(LIBDIR)/pkgconfig
 
-libainstall:	all
+libainstall:	all python-config
 	@for i in $(LIBDIR) $(LIBP) $(LIBPL) $(LIBPC); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -991,9 +996,6 @@ libainstall:	all
 	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
-	# Substitution happens here, as the completely-expanded BINDIR
-	# is not available in configure
-	sed -e "s,@EXENAME@,$(BINDIR)/python$(VERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config
 	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python$(VERSION)-config
 	rm python-config
 	@if [ -s Modules/python.exp -a \
