@@ -236,6 +236,7 @@ class ProxyAuthTests(BaseTestCase):
     REALM = "TestRealm"
 
     def setUp(self):
+        super(ProxyAuthTests, self).setUp()
         self.digest_auth_handler = DigestAuthHandler()
         self.digest_auth_handler.set_users({self.USER: self.PASSWD})
         self.digest_auth_handler.set_realm(self.REALM)
@@ -252,6 +253,7 @@ class ProxyAuthTests(BaseTestCase):
 
     def tearDown(self):
         self.server.stop()
+        super(ProxyAuthTests, self).tearDown()
 
     def test_proxy_with_bad_password_raises_httperror(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,

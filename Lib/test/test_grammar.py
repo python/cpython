@@ -1,13 +1,6 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-# NOTE: When you run this test as a script from the command line, you
-# get warnings about certain hex/oct constants.  Since those are
-# issued by the parser, you can't suppress them by adding a
-# filterwarnings() call to this module.  Therefore, to shut up the
-# regression test, the filterwarnings() call has been added to
-# regrtest.py.
-
 from test.test_support import run_unittest, check_syntax_error, \
                               check_py3k_warnings
 import unittest
@@ -15,27 +8,28 @@ import sys
 # testing import *
 from sys import *
 
+
 class TokenTests(unittest.TestCase):
 
     def testBackslash(self):
         # Backslash means line continuation:
         x = 1 \
         + 1
-        self.assertEquals(x, 2, 'backslash for line continuation')
+        self.assertEqual(x, 2, 'backslash for line continuation')
 
         # Backslash does not means continuation in comments :\
         x = 0
-        self.assertEquals(x, 0, 'backslash ending comment')
+        self.assertEqual(x, 0, 'backslash ending comment')
 
     def testPlainIntegers(self):
-        self.assertEquals(0xff, 255)
-        self.assertEquals(0377, 255)
-        self.assertEquals(2147483647, 017777777777)
+        self.assertEqual(0xff, 255)
+        self.assertEqual(0377, 255)
+        self.assertEqual(2147483647, 017777777777)
         # "0x" is not a valid literal
         self.assertRaises(SyntaxError, eval, "0x")
         from sys import maxint
         if maxint == 2147483647:
-            self.assertEquals(-2147483647-1, -020000000000)
+            self.assertEqual(-2147483647-1, -020000000000)
             # XXX -2147483648
             self.assertTrue(037777777777 > 0)
             self.assertTrue(0xffffffff > 0)
@@ -45,7 +39,7 @@ class TokenTests(unittest.TestCase):
                 except OverflowError:
                     self.fail("OverflowError on huge integer literal %r" % s)
         elif maxint == 9223372036854775807:
-            self.assertEquals(-9223372036854775807-1, -01000000000000000000000)
+            self.assertEqual(-9223372036854775807-1, -01000000000000000000000)
             self.assertTrue(01777777777777777777777 > 0)
             self.assertTrue(0xffffffffffffffff > 0)
             for s in '9223372036854775808', '02000000000000000000000', \
@@ -98,28 +92,28 @@ jumps over
 the 'lazy' dog.
 """
         y = '\nThe "quick"\nbrown fox\njumps over\nthe \'lazy\' dog.\n'
-        self.assertEquals(x, y)
+        self.assertEqual(x, y)
         y = '''
 The "quick"
 brown fox
 jumps over
 the 'lazy' dog.
 '''
-        self.assertEquals(x, y)
+        self.assertEqual(x, y)
         y = "\n\
 The \"quick\"\n\
 brown fox\n\
 jumps over\n\
 the 'lazy' dog.\n\
 "
-        self.assertEquals(x, y)
+        self.assertEqual(x, y)
         y = '\n\
 The \"quick\"\n\
 brown fox\n\
 jumps over\n\
 the \'lazy\' dog.\n\
 '
-        self.assertEquals(x, y)
+        self.assertEqual(x, y)
 
 
 class GrammarTests(unittest.TestCase):
@@ -156,18 +150,18 @@ class GrammarTests(unittest.TestCase):
         # Silence Py3k warning
         exec('def f4(two, (compound, (argument, list))): pass')
         exec('def f5((compound, first), two): pass')
-        self.assertEquals(f2.func_code.co_varnames, ('one_argument',))
-        self.assertEquals(f3.func_code.co_varnames, ('two', 'arguments'))
+        self.assertEqual(f2.func_code.co_varnames, ('one_argument',))
+        self.assertEqual(f3.func_code.co_varnames, ('two', 'arguments'))
         if sys.platform.startswith('java'):
-            self.assertEquals(f4.func_code.co_varnames,
+            self.assertEqual(f4.func_code.co_varnames,
                    ('two', '(compound, (argument, list))', 'compound', 'argument',
                                 'list',))
-            self.assertEquals(f5.func_code.co_varnames,
+            self.assertEqual(f5.func_code.co_varnames,
                    ('(compound, first)', 'two', 'compound', 'first'))
         else:
-            self.assertEquals(f4.func_code.co_varnames,
+            self.assertEqual(f4.func_code.co_varnames,
                   ('two', '.1', 'compound', 'argument',  'list'))
-            self.assertEquals(f5.func_code.co_varnames,
+            self.assertEqual(f5.func_code.co_varnames,
                   ('.0', 'two', 'compound', 'first'))
         def a1(one_arg,): pass
         def a2(two, args,): pass
@@ -204,10 +198,10 @@ class GrammarTests(unittest.TestCase):
         # ceval unpacks the formal arguments into the first argcount names;
         # thus, the names nested inside tuples must appear after these names.
         if sys.platform.startswith('java'):
-            self.assertEquals(v3.func_code.co_varnames, ('a', '(b, c)', 'rest', 'b', 'c'))
+            self.assertEqual(v3.func_code.co_varnames, ('a', '(b, c)', 'rest', 'b', 'c'))
         else:
-            self.assertEquals(v3.func_code.co_varnames, ('a', '.1', 'rest', 'b', 'c'))
-        self.assertEquals(v3(1, (2, 3), 4), (1, 2, 3, (4,)))
+            self.assertEqual(v3.func_code.co_varnames, ('a', '.1', 'rest', 'b', 'c'))
+        self.assertEqual(v3(1, (2, 3), 4), (1, 2, 3, (4,)))
         def d01(a=1): pass
         d01()
         d01(1)
@@ -289,7 +283,7 @@ class GrammarTests(unittest.TestCase):
         # keyword arguments after *arglist
         def f(*args, **kwargs):
             return args, kwargs
-        self.assertEquals(f(1, x=2, *[3, 4], y=5), ((1, 3, 4),
+        self.assertEqual(f(1, x=2, *[3, 4], y=5), ((1, 3, 4),
                                                     {'x':2, 'y':5}))
         self.assertRaises(SyntaxError, eval, "f(1, *(2,3), 4)")
         self.assertRaises(SyntaxError, eval, "f(1, x=2, *(3,4), x=5)")
@@ -301,15 +295,15 @@ class GrammarTests(unittest.TestCase):
     def testLambdef(self):
         ### lambdef: 'lambda' [varargslist] ':' test
         l1 = lambda : 0
-        self.assertEquals(l1(), 0)
+        self.assertEqual(l1(), 0)
         l2 = lambda : a[d] # XXX just testing the expression
         l3 = lambda : [2 < x for x in [-1, 3, 0L]]
-        self.assertEquals(l3(), [0, 1, 0])
+        self.assertEqual(l3(), [0, 1, 0])
         l4 = lambda x = lambda y = lambda z=1 : z : y() : x()
-        self.assertEquals(l4(), 1)
+        self.assertEqual(l4(), 1)
         l5 = lambda x, y, z=2: x + y + z
-        self.assertEquals(l5(1, 2), 5)
-        self.assertEquals(l5(1, 2, 3), 6)
+        self.assertEqual(l5(1, 2), 5)
+        self.assertEqual(l5(1, 2, 3), 6)
         check_syntax_error(self, "lambda x: x = 2")
         check_syntax_error(self, "lambda (None,): None")
 
@@ -545,8 +539,6 @@ hello world
         g = {}
         l = {}
 
-        import warnings
-        warnings.filterwarnings("ignore", "global statement", module="<string>")
         exec 'global a; a = 1; b = 2' in g, l
         if '__builtins__' in g: del g['__builtins__']
         if '__builtins__' in l: del l['__builtins__']
@@ -562,7 +554,7 @@ hello world
         try:
             assert 0, "msg"
         except AssertionError, e:
-            self.assertEquals(e.args[0], "msg")
+            self.assertEqual(e.args[0], "msg")
         else:
             if __debug__:
                 self.fail("AssertionError not raised by assert 0")
@@ -596,7 +588,7 @@ hello world
             x = 1
         else:
             x = 2
-        self.assertEquals(x, 2)
+        self.assertEqual(x, 2)
 
     def testFor(self):
         # 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]
@@ -751,7 +743,7 @@ hello world
         d[1,2,3] = 4
         L = list(d)
         L.sort()
-        self.assertEquals(str(L), '[1, (1,), (1, 2), (1, 2, 3)]')
+        self.assertEqual(str(L), '[1, (1,), (1, 2), (1, 2, 3)]')
 
     def testAtoms(self):
         ### atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING

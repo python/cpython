@@ -1,9 +1,7 @@
 import unittest
-from test.test_support import check_syntax_error, run_unittest
+from test.test_support import check_syntax_error, check_py3k_warnings, \
+                              check_warnings, run_unittest
 
-import warnings
-warnings.filterwarnings("ignore", r"import \*", SyntaxWarning, "<test string>")
-warnings.filterwarnings("ignore", r"import \*", SyntaxWarning, "<string>")
 
 class ScopeTests(unittest.TestCase):
 
@@ -321,11 +319,14 @@ else:
 
         self.assertEqual(makeReturner2(a=11)()['a'], 11)
 
-        def makeAddPair((a, b)):
-            def addPair((c, d)):
-                return (a + c, b + d)
-            return addPair
-
+        with check_py3k_warnings(("tuple parameter unpacking has been removed",
+                                  SyntaxWarning)):
+            exec """\
+def makeAddPair((a, b)):
+    def addPair((c, d)):
+        return (a + c, b + d)
+    return addPair
+""" in locals()
         self.assertEqual(makeAddPair((1, 2))((100, 200)), (101,202))
 
     def testScopeOfGlobalStmt(self):
@@ -471,7 +472,7 @@ self.assertTrue(X.passed)
             return g
 
         d = f(2)(4)
-        self.assertTrue(d.has_key('h'))
+        self.assertIn('h', d)
         del d['h']
         self.assertEqual(d, {'x': 2, 'y': 7, 'w': 6})
 
@@ -648,7 +649,9 @@ result2 = h()
 
 
 def test_main():
-    run_unittest(ScopeTests)
+    with check_warnings(("import \* only allowed at module level",
+                         SyntaxWarning)):
+        run_unittest(ScopeTests)
 
 if __name__ == '__main__':
     test_main()
