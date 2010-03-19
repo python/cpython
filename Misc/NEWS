@@ -886,8 +886,8 @@ Build
 - Issue 5390: Add uninstall icon independent of whether file
   extensions are installed.
 
-- Issue #7541: when using ``python-config`` with a framework install the compiler might
-  use the wrong library.
+- Issue #7541: when using ``python-config`` with a framework install the
+  compiler might use the wrong library.
 
 Documentation
 ------------
@@ -910,8 +910,8 @@ Documentation
 Tests
 -----
 
-- Issue #7783: test.test_support.open_urlresource invalidates the outdated
-  files from the local cache.
+- Issue #7783: test.support.open_urlresource invalidates the outdated files
+  from the local cache.
 
 - Issue #7849: Now the utility ``check_warnings`` verifies if the warnings are
   effectively raised.
@@ -937,8 +937,8 @@ Tests
   test_capi (only seen so far on platforms where the curses module
   wasn't built), due to an uncleared exception.
 
-- issue #7728: test_timeout was changed to use test_support.bind_port
-  instead of a hard coded port.
+- Issue #7728: test_timeout was changed to use support.bind_port instead of a
+  hard coded port.
 
 - Issue #7376: instead of running a self-test (which was failing) when called
   with no arguments, doctest.py now gives a usage message.
