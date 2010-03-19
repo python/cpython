@@ -40,16 +40,19 @@ def grepValue(fn, variable):
         if ln.startswith(variable):
             value = ln[len(variable):].strip()
             return value[1:-1]
+    raise RuntimeError, "Cannot find variable %s" % variable[:-1]
 
 def getVersion():
     return grepValue(os.path.join(SRCDIR, 'configure'), 'PACKAGE_VERSION')
+
+def getVersionTuple():
+    return tuple([int(n) for n in getVersion().split('.')])
 
 def getFullVersion():
     fn = os.path.join(SRCDIR, 'Include', 'patchlevel.h')
     for ln in open(fn):
         if 'PY_VERSION' in ln:
             return ln.split()[-1][1:-1]
-
     raise RuntimeError, "Cannot find full version??"
 
 # The directory we'll use to create the build (will be erased and recreated)
@@ -61,12 +64,33 @@ DEPSRC = os.path.join(WORKDIR, 'third-party')
 DEPSRC = os.path.expanduser('~/Universal/other-sources')
 
 # Location of the preferred SDK
+
+### There are some issues with the SDK selection below here,
+### The resulting binary doesn't work on all platforms that
+### it should. Always default to the 10.4u SDK until that
+### isue is resolved.
+###
+##if int(os.uname()[2].split('.')[0]) == 8:
+##    # Explicitly use the 10.4u (universal) SDK when
+##    # building on 10.4, the system headers are not
+##    # useable for a universal build
+##    SDKPATH = "/Developer/SDKs/MacOSX10.4u.sdk"
+##else:
+##    SDKPATH = "/"
+
 SDKPATH = "/Developer/SDKs/MacOSX10.4u.sdk"
-#SDKPATH = "/"
 
 universal_opts_map = { '32-bit': ('i386', 'ppc',),
                        '64-bit': ('x86_64', 'ppc64',),
-                       'all': ('i386', 'ppc', 'x86_64', 'ppc64',) }
+                       'intel':  ('i386', 'x86_64'),
+                       '3-way':  ('ppc', 'i386', 'x86_64'),
+                       'all':    ('i386', 'ppc', 'x86_64', 'ppc64',) }
+default_target_map = {
+        '64-bit': '10.5',
+        '3-way': '10.5',
+        'intel': '10.5',
+        'all': '10.5',
+}
 
 UNIVERSALOPTS = tuple(universal_opts_map.keys())
 
@@ -83,6 +107,17 @@ SRCDIR = os.path.dirname(
 
 # $MACOSX_DEPLOYMENT_TARGET -> minimum OS X level
 DEPTARGET = '10.3'
+
+target_cc_map = {
+        '10.3': 'gcc-4.0',
+        '10.4': 'gcc-4.0',
+        '10.5': 'gcc-4.0',
+        '10.6': 'gcc-4.2',
+}
+
+CC = target_cc_map[DEPTARGET]
+
+PYTHON_3 = getVersionTuple() >= (3, 0)
 
 USAGE = textwrap.dedent("""\
     Usage: build_python [options]
@@ -104,177 +139,203 @@ USAGE = textwrap.dedent("""\
 #   [The recipes are defined here for convenience but instantiated later after
 #    command line options have been processed.]
 def library_recipes():
-    return [
-      dict(
-          name="Bzip2 1.0.4",
-          url="http://www.bzip.org/1.0.4/bzip2-1.0.4.tar.gz",
-          checksum='fc310b254f6ba5fbb5da018f04533688',
-          configure=None,
-          install='make install PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
-              shellQuote(os.path.join(WORKDIR, 'libraries')),
-              ' -arch '.join(ARCHLIST),
-              SDKPATH,
-          ),
-      ),
-      dict(
-          name="ZLib 1.2.3",
-          url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
-          checksum='debc62758716a169df9f62e6ab2bc634',
-          configure=None,
-          install='make install prefix=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
-              shellQuote(os.path.join(WORKDIR, 'libraries')),
-              ' -arch '.join(ARCHLIST),
-              SDKPATH,
-          ),
-      ),
-      dict(
-          # Note that GNU readline is GPL'd software
-          name="GNU Readline 5.1.4",
-          url="http://ftp.gnu.org/pub/gnu/readline/readline-5.1.tar.gz" ,
-          checksum='7ee5a692db88b30ca48927a13fd60e46',
-          patchlevel='0',
-          patches=[
-              # The readline maintainers don't do actual micro releases, but
-              # just ship a set of patches.
-              'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-001',
-              'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-002',
-              'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-003',
-              'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-004',
-          ]
-      ),
+    result = []
 
+    if DEPTARGET < '10.5':
+        result.extend([
+          dict(
+              name="Bzip2 1.0.5",
+              url="http://www.bzip.org/1.0.5/bzip2-1.0.5.tar.gz",
+              checksum='3c15a0c8d1d3ee1c46a1634d00617b1a',
+              configure=None,
+              install='make install CC=%s PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
+                  CC,
+                  shellQuote(os.path.join(WORKDIR, 'libraries')),
+                  ' -arch '.join(ARCHLIST),
+                  SDKPATH,
+              ),
+          ),
+          dict(
+              name="ZLib 1.2.3",
+              url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
+              checksum='debc62758716a169df9f62e6ab2bc634',
+              configure=None,
+              install='make install CC=%s prefix=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
+                  CC,
+                  shellQuote(os.path.join(WORKDIR, 'libraries')),
+                  ' -arch '.join(ARCHLIST),
+                  SDKPATH,
+              ),
+          ),
+          dict(
+              # Note that GNU readline is GPL'd software
+              name="GNU Readline 5.1.4",
+              url="http://ftp.gnu.org/pub/gnu/readline/readline-5.1.tar.gz" ,
+              checksum='7ee5a692db88b30ca48927a13fd60e46',
+              patchlevel='0',
+              patches=[
+                  # The readline maintainers don't do actual micro releases, but
+                  # just ship a set of patches.
+                  'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-001',
+                  'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-002',
+                  'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-003',
+                  'http://ftp.gnu.org/pub/gnu/readline/readline-5.1-patches/readline51-004',
+              ]
+          ),
+          dict(
+              name="SQLite 3.6.11",
+              url="http://www.sqlite.org/sqlite-3.6.11.tar.gz",
+              checksum='7ebb099696ab76cc6ff65dd496d17858',
+              configure_pre=[
+                  '--enable-threadsafe',
+                  '--enable-tempstore',
+                  '--enable-shared=no',
+                  '--enable-static=yes',
+                  '--disable-tcl',
+              ]
+          ),
+          dict(
+              name="NCurses 5.5",
+              url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.5.tar.gz",
+              checksum='e73c1ac10b4bfc46db43b2ddfd6244ef',
+              configure_pre=[
+                  "--without-cxx",
+                  "--without-ada",
+                  "--without-progs",
+                  "--without-curses-h",
+                  "--enable-shared",
+                  "--with-shared",
+                  "--datadir=/usr/share",
+                  "--sysconfdir=/etc",
+                  "--sharedstatedir=/usr/com",
+                  "--with-terminfo-dirs=/usr/share/terminfo",
+                  "--with-default-terminfo-dir=/usr/share/terminfo",
+                  "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
+                  "--enable-termcap",
+              ],
+              patches=[
+                  "ncurses-5.5.patch",
+              ],
+              useLDFlags=False,
+              install='make && make install DESTDIR=%s && cd %s/usr/local/lib && ln -fs ../../../Library/Frameworks/Python.framework/Versions/%s/lib/lib* .'%(
+                  shellQuote(os.path.join(WORKDIR, 'libraries')),
+                  shellQuote(os.path.join(WORKDIR, 'libraries')),
+                  getVersion(),
+                  ),
+          ),
+        ])
+
+    result.extend([
       dict(
-          name="SQLite 3.6.11",
-          url="http://www.sqlite.org/sqlite-3.6.11.tar.gz",
-          checksum='7ebb099696ab76cc6ff65dd496d17858',
+          name="Sleepycat DB 4.7.25",
+          url="http://download.oracle.com/berkeley-db/db-4.7.25.tar.gz",
+          checksum='ec2b87e833779681a0c3a814aa71359e',
+          buildDir="build_unix",
+          configure="../dist/configure",
           configure_pre=[
-              '--enable-threadsafe',
-              '--enable-tempstore',
-              '--enable-shared=no',
-              '--enable-static=yes',
-              '--disable-tcl',
+              '--includedir=/usr/local/include/db4',
           ]
       ),
+    ])
 
-    dict(
-        name="NCurses 5.5",
-        url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.5.tar.gz",
-        checksum='e73c1ac10b4bfc46db43b2ddfd6244ef',
-        configure_pre=[
-            "--without-cxx",
-            "--without-ada",
-            "--without-progs",
-            "--without-curses-h",
-            "--enable-shared",
-            "--with-shared",
-            "--datadir=/usr/share",
-            "--sysconfdir=/etc",
-            "--sharedstatedir=/usr/com",
-            "--with-terminfo-dirs=/usr/share/terminfo",
-            "--with-default-terminfo-dir=/usr/share/terminfo",
-            "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
-            "--enable-termcap",
-        ],
-        patches=[
-            "ncurses-5.5.patch",
-        ],
-        useLDFlags=False,
-        install='make && make install DESTDIR=%s && cd %s/usr/local/lib && ln -fs ../../../Library/Frameworks/Python.framework/Versions/%s/lib/lib* .'%(
-            shellQuote(os.path.join(WORKDIR, 'libraries')),
-            shellQuote(os.path.join(WORKDIR, 'libraries')),
-            getVersion(),
-            ),
-    ),
-]
+    return result
+
 
 # Instructions for building packages inside the .mpkg.
-PKG_RECIPES = [
-    dict(
-        name="PythonFramework",
-        long_name="Python Framework",
-        source="/Library/Frameworks/Python.framework",
-        readme="""\
-            This package installs Python.framework, that is the python
-            interpreter and the standard library. This also includes Python
-            wrappers for lots of Mac OS X API's.
-        """,
-        postflight="scripts/postflight.framework",
-        selected='selected',
-    ),
-    dict(
-        name="PythonApplications",
-        long_name="GUI Applications",
-        source="/Applications/Python %(VER)s",
-        readme="""\
-            This package installs IDLE (an interactive Python IDE),
-            Python Launcher and Build Applet (create application bundles
-            from python scripts).
+def pkg_recipes():
+    unselected_for_python3 = ('selected', 'unselected')[PYTHON_3]
+    result = [
+        dict(
+            name="PythonFramework",
+            long_name="Python Framework",
+            source="/Library/Frameworks/Python.framework",
+            readme="""\
+                This package installs Python.framework, that is the python
+                interpreter and the standard library. This also includes Python
+                wrappers for lots of Mac OS X API's.
+            """,
+            postflight="scripts/postflight.framework",
+            selected='selected',
+        ),
+        dict(
+            name="PythonApplications",
+            long_name="GUI Applications",
+            source="/Applications/Python %(VER)s",
+            readme="""\
+                This package installs IDLE (an interactive Python IDE),
+                Python Launcher and Build Applet (create application bundles
+                from python scripts).
 
-            It also installs a number of examples and demos.
-            """,
-        required=False,
-        selected='selected',
-    ),
-    dict(
-        name="PythonUnixTools",
-        long_name="UNIX command-line tools",
-        source="/usr/local/bin",
-        readme="""\
-            This package installs the unix tools in /usr/local/bin for
-            compatibility with older releases of Python. This package
-            is not necessary to use Python.
-            """,
-        required=False,
-        selected='selected',
-    ),
-    dict(
-        name="PythonDocumentation",
-        long_name="Python Documentation",
-        topdir="/Library/Frameworks/Python.framework/Versions/%(VER)s/Resources/English.lproj/Documentation",
-        source="/pydocs",
-        readme="""\
-            This package installs the python documentation at a location
-            that is useable for pydoc and IDLE. If you have installed Xcode
-            it will also install a link to the documentation in
-            /Developer/Documentation/Python
-            """,
-        postflight="scripts/postflight.documentation",
-        required=False,
-        selected='selected',
-    ),
-    dict(
-        name="PythonProfileChanges",
-        long_name="Shell profile updater",
-        readme="""\
-            This packages updates your shell profile to make sure that
-            the Python tools are found by your shell in preference of
-            the system provided Python tools.
+                It also installs a number of examples and demos.
+                """,
+            required=False,
+            selected='selected',
+        ),
+        dict(
+            name="PythonUnixTools",
+            long_name="UNIX command-line tools",
+            source="/usr/local/bin",
+            readme="""\
+                This package installs the unix tools in /usr/local/bin for
+                compatibility with older releases of Python. This package
+                is not necessary to use Python.
+                """,
+            required=False,
+            selected='selected',
+        ),
+        dict(
+            name="PythonDocumentation",
+            long_name="Python Documentation",
+            topdir="/Library/Frameworks/Python.framework/Versions/%(VER)s/Resources/English.lproj/Documentation",
+            source="/pydocs",
+            readme="""\
+                This package installs the python documentation at a location
+                that is useable for pydoc and IDLE. If you have installed Xcode
+                it will also install a link to the documentation in
+                /Developer/Documentation/Python
+                """,
+            postflight="scripts/postflight.documentation",
+            required=False,
+            selected='selected',
+        ),
+        dict(
+            name="PythonProfileChanges",
+            long_name="Shell profile updater",
+            readme="""\
+                This packages updates your shell profile to make sure that
+                the Python tools are found by your shell in preference of
+                the system provided Python tools.
 
-            If you don't install this package you'll have to add
-            "/Library/Frameworks/Python.framework/Versions/%(VER)s/bin"
-            to your PATH by hand.
-            """,
-        postflight="scripts/postflight.patch-profile",
-        topdir="/Library/Frameworks/Python.framework",
-        source="/empty-dir",
-        required=False,
-        selected='unselected',
-    ),
-    dict(
-        name="PythonSystemFixes",
-        long_name="Fix system Python",
-        readme="""\
-            This package updates the system python installation on
-            Mac OS X 10.3 to ensure that you can build new python extensions
-            using that copy of python after installing this version.
-            """,
-        postflight="../Tools/fixapplepython23.py",
-        topdir="/Library/Frameworks/Python.framework",
-        source="/empty-dir",
-        required=False,
-        selected='unselected',
-    )
-]
+                If you don't install this package you'll have to add
+                "/Library/Frameworks/Python.framework/Versions/%(VER)s/bin"
+                to your PATH by hand.
+                """,
+            postflight="scripts/postflight.patch-profile",
+            topdir="/Library/Frameworks/Python.framework",
+            source="/empty-dir",
+            required=False,
+            selected=unselected_for_python3,
+        ),
+    ]
+
+    if DEPTARGET < '10.4':
+        result.append(
+            dict(
+                name="PythonSystemFixes",
+                long_name="Fix system Python",
+                readme="""\
+                    This package updates the system python installation on
+                    Mac OS X 10.3 to ensure that you can build new python extensions
+                    using that copy of python after installing this version.
+                    """,
+                postflight="../Tools/fixapplepython23.py",
+                topdir="/Library/Frameworks/Python.framework",
+                source="/empty-dir",
+                required=False,
+                selected=unselected_for_python3,
+            )
+        )
+    return result
 
 def fatal(msg):
     """
@@ -322,10 +383,10 @@ def checkEnvironment():
     """
 
     if platform.system() != 'Darwin':
-        fatal("This script should be run on a Mac OS X 10.4 system")
+        fatal("This script should be run on a Mac OS X 10.4 (or later) system")
 
-    if platform.release() <= '8.':
-        fatal("This script should be run on a Mac OS X 10.4 system")
+    if int(platform.release().split('.')[0]) < 8:
+        fatal("This script should be run on a Mac OS X 10.4 (or later) system")
 
     if not os.path.exists(SDKPATH):
         fatal("Please install the latest version of Xcode and the %s SDK"%(
@@ -338,7 +399,7 @@ def parseOptions(args=None):
     Parse arguments and update global settings.
     """
     global WORKDIR, DEPSRC, SDKPATH, SRCDIR, DEPTARGET
-    global UNIVERSALOPTS, UNIVERSALARCHS, ARCHLIST
+    global UNIVERSALOPTS, UNIVERSALARCHS, ARCHLIST, CC
 
     if args is None:
         args = sys.argv[1:]
@@ -355,6 +416,7 @@ def parseOptions(args=None):
         print "Additional arguments"
         sys.exit(1)
 
+    deptarget = None
     for k, v in options:
         if k in ('-h', '-?', '--help'):
             print USAGE
@@ -374,11 +436,16 @@ def parseOptions(args=None):
 
         elif k in ('--dep-target', ):
             DEPTARGET=v
+            deptarget=v
 
         elif k in ('--universal-archs', ):
             if v in UNIVERSALOPTS:
                 UNIVERSALARCHS = v
                 ARCHLIST = universal_opts_map[UNIVERSALARCHS]
+                if deptarget is None:
+                    # Select alternate default deployment
+                    # target
+                    DEPTARGET = default_target_map.get(v, '10.3')
             else:
                 raise NotImplementedError, v
 
@@ -390,6 +457,8 @@ def parseOptions(args=None):
     SDKPATH=os.path.abspath(SDKPATH)
     DEPSRC=os.path.abspath(DEPSRC)
 
+    CC=target_cc_map[DEPTARGET]
+
     print "Settings:"
     print " * Source directory:", SRCDIR
     print " * Build directory: ", WORKDIR
@@ -397,6 +466,7 @@ def parseOptions(args=None):
     print " * Third-party source:", DEPSRC
     print " * Deployment target:", DEPTARGET
     print " * Universal architectures:", ARCHLIST
+    print " * C compiler:", CC
     print ""
 
 
@@ -614,8 +684,8 @@ def buildPythonDocs():
     runCommand('make update')
     runCommand('make html')
     os.chdir(curDir)
-    if os.path.exists(docdir):
-        os.rmdir(docdir)
+    if not os.path.exists(docdir):
+        os.mkdir(docdir)
     os.rename(os.path.join(buildDir, 'build', 'html'), docdir)
 
 
@@ -650,18 +720,20 @@ def buildPython():
                                         'libraries', 'usr', 'local', 'lib')
     print "Running configure..."
     runCommand("%s -C --enable-framework --enable-universalsdk=%s "
-               "--with-universal-archs=%s --with-computed-gotos "
+               "--with-universal-archs=%s "
+               "%s "
                "LDFLAGS='-g -L%s/libraries/usr/local/lib' "
                "OPT='-g -O3 -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')), shellQuote(SDKPATH),
         UNIVERSALARCHS,
+        (' ', '--with-computed-gotos ')[PYTHON_3],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
     print "Running make"
     runCommand("make")
 
-    print "Running make frameworkinstall"
+    print "Running make install"
     runCommand("make install DESTDIR=%s"%(
         shellQuote(rootDir)))
 
@@ -684,8 +756,6 @@ def buildPython():
     print "Fix file modes"
     frmDir = os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework')
     gid = grp.getgrnam('admin').gr_gid
-
-
 
     for dirpath, dirnames, filenames in os.walk(frmDir):
         for dn in dirnames:
@@ -733,12 +803,11 @@ def buildPython():
 
     os.chdir(curdir)
 
-    # Remove the 'Current' link, that way we don't accidently mess with an already installed
-    # version of python
-    os.unlink(os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework', 'Versions', 'Current'))
-
-
-
+    if PYTHON_3:
+        # Remove the 'Current' link, that way we don't accidently mess
+        # with an already installed version of python 2
+        os.unlink(os.path.join(rootDir, 'Library', 'Frameworks',
+                            'Python.framework', 'Versions', 'Current'))
 
 def patchFile(inPath, outPath):
     data = fileContents(inPath)
@@ -872,9 +941,9 @@ def makeMpkgPlist(path):
             IFPkgFlagPackageList=[
                 dict(
                     IFPkgFlagPackageLocation='%s-%s.pkg'%(item['name'], getVersion()),
-                    IFPkgFlagPackageSelection=item['selected'],
+                    IFPkgFlagPackageSelection=item.get('selected', 'selected'),
                 )
-                for item in PKG_RECIPES
+                for item in pkg_recipes()
             ],
             IFPkgFormatVersion=0.10000000149011612,
             IFPkgFlagBackgroundScaling="proportional",
@@ -901,7 +970,7 @@ def buildInstaller():
     pkgroot = os.path.join(outdir, 'Python.mpkg', 'Contents')
     pkgcontents = os.path.join(pkgroot, 'Packages')
     os.makedirs(pkgcontents)
-    for recipe in PKG_RECIPES:
+    for recipe in pkg_recipes():
         packageFromRecipe(pkgcontents, recipe)
 
     rsrcDir = os.path.join(pkgroot, 'Resources')
@@ -949,9 +1018,9 @@ def buildDMG():
         shutil.rmtree(outdir)
 
     imagepath = os.path.join(outdir,
-                    'python-%s-macosx'%(getFullVersion(),))
+                    'python-%s-macosx%s'%(getFullVersion(),DEPTARGET))
     if INCLUDE_TIMESTAMP:
-        imagepath = imagepath + '%04d-%02d-%02d'%(time.localtime()[:3])
+        imagepath = imagepath + '-%04d-%02d-%02d'%(time.localtime()[:3])
     imagepath = imagepath + '.dmg'
 
     os.mkdir(outdir)
@@ -1009,6 +1078,7 @@ def main():
     checkEnvironment()
 
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = DEPTARGET
+    os.environ['CC'] = CC
 
     if os.path.exists(WORKDIR):
         shutil.rmtree(WORKDIR)
@@ -1055,11 +1125,8 @@ def main():
     print >> fp, "# By:", pwd.getpwuid(os.getuid()).pw_gecos
     fp.close()
 
-
-
     # And copy it to a DMG
     buildDMG()
-
 
 if __name__ == "__main__":
     main()
