@@ -329,6 +329,7 @@ class BuildExtTestCase(TempdirManager,
         self.assertEquals(so_dir, other_tmp_dir)
 
         cmd.inplace = 0
+        cmd.compiler = None
         cmd.run()
         so_file = cmd.get_outputs()[0]
         self.assertTrue(os.path.exists(so_file))
