@@ -170,7 +170,7 @@ class ListTestCase(SeqTestCase):
 
         lst = [5, 6, 7, 8, 9, 11]
         l2 = lst.__imul__(self.n)
-        self.assertTrue(l2 is lst)
+        self.assertIs(l2, lst)
         self.assertEqual(lst, [5, 6, 7, 8, 9, 11] * 3)
 
 
@@ -213,6 +213,9 @@ class TupleTestCase(SeqTestCase):
 
 class StringTestCase(SeqTestCase):
     seq = "this is a test"
+
+class ByteArrayTestCase(SeqTestCase):
+    seq = bytearray("this is a test")
 
 class UnicodeTestCase(SeqTestCase):
     seq = u"this is a test"
@@ -265,7 +268,7 @@ class OverflowTestCase(unittest.TestCase):
     def _getslice_helper_deprecated(self, base):
         class GetItem(base):
             def __len__(self):
-                return maxint #cannot return long here
+                return maxint # cannot return long here
             def __getitem__(self, key):
                 return key
             def __getslice__(self, i, j):
@@ -299,6 +302,7 @@ def test_main():
         BaseTestCase,
         ListTestCase,
         TupleTestCase,
+        ByteArrayTestCase,
         StringTestCase,
         UnicodeTestCase,
         ClassicSeqTestCase,

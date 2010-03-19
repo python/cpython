@@ -841,9 +841,9 @@ class AssortedBytesTest(unittest.TestCase):
         self.assertEqual(bytes(b"abc") <= b"ab", False)
 
     def test_doc(self):
-        self.assertTrue(bytearray.__doc__ != None)
+        self.assertIsNotNone(bytearray.__doc__)
         self.assertTrue(bytearray.__doc__.startswith("bytearray("), bytearray.__doc__)
-        self.assertTrue(bytes.__doc__ != None)
+        self.assertIsNotNone(bytes.__doc__)
         self.assertTrue(bytes.__doc__.startswith("bytes("), bytes.__doc__)
 
     def test_from_bytearray(self):

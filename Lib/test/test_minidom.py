@@ -950,7 +950,7 @@ class MinidomTest(unittest.TestCase):
         node = doc.documentElement
         node.childNodes[1].nodeValue = ""
         node.normalize()
-        self.confirm(node.childNodes[-1].nextSibling == None,
+        self.confirm(node.childNodes[-1].nextSibling is None,
                      "Final child's .nextSibling should be None")
 
     def testSiblings(self):
