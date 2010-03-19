@@ -1,7 +1,7 @@
 """      turtle-example-suite:
 
          tdemo_round_dance.py
-         
+
 (Needs version 1.1 of the turtle module that
 comes with Python 3.1)
 
@@ -84,7 +84,3 @@ def main():
 if __name__=='__main__':
     print(main())
     mainloop()
-    
-
-
-    
