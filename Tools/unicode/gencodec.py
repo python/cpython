@@ -40,8 +40,7 @@ mapRE = re.compile('((?:0x[0-9a-fA-F]+\+?)+)'
                    '\s*'
                    '(#.+)?')
 
-def parsecodes(codes,
-               len=len, filter=filter,range=range):
+def parsecodes(codes, len=len, range=range):
 
     """ Converts code combinations to either a single code integer
         or a tuple of integers.

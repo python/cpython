@@ -903,12 +903,15 @@ Documentation
 
 - Issue #6556: Fixed the Distutils configuration files location explanation
   for Windows.
- 
+
 - Update python manual page (options -B, -O0, -s, environment variables
   PYTHONDONTWRITEBYTECODE, PYTHONNOUSERSITE).
 
 Tests
 -----
+
+- Issue #7783: test.test_support.open_urlresource invalidates the outdated
+  files from the local cache.
 
 - Issue #7849: Now the utility ``check_warnings`` verifies if the warnings are
   effectively raised.
