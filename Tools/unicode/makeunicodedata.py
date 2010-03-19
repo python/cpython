@@ -517,8 +517,7 @@ def makeunicodetype(unicode, trace):
 
     haswide = False
     hasnonewide = False
-    spaces.sort()
-    for codepoint in spaces:
+    for codepoint in sorted(spaces):
         if codepoint < 0x10000:
             hasnonewide = True
         if codepoint >= 0x10000 and not haswide:
@@ -546,8 +545,7 @@ def makeunicodetype(unicode, trace):
     print('    switch (ch) {', file=fp)
     haswide = False
     hasnonewide = False
-    linebreaks.sort()
-    for codepoint in linebreaks:
+    for codepoint in sorted(linebreaks):
         if codepoint < 0x10000:
             hasnonewide = True
         if codepoint >= 0x10000 and not haswide:

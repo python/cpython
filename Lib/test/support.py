@@ -33,6 +33,7 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "reap_children", "cpython_only", "check_impl_detail", "get_attribute",
            "swap_item", "swap_attr"]
 
+
 class Error(Exception):
     """Base class for regression test exceptions."""
 
@@ -444,12 +445,29 @@ def check_syntax_error(testcase, statement):
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
 
-    requires('urlfetch')
+    check = kw.pop('check', None)
+
     filename = urllib.parse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
 
     fn = os.path.join(os.path.dirname(__file__), "data", filename)
+
+    def check_valid_file(fn):
+        f = open(fn, *args, **kw)
+        if check is None:
+            return f
+        elif check(f):
+            f.seek(0)
+            return f
+        f.close()
+
     if os.path.exists(fn):
-        return open(fn, *args, **kw)
+        f = check_valid_file(fn)
+        if f is not None:
+            return f
+        unlink(fn)
+
+    # Verify the requirement before downloading the file
+    requires('urlfetch')
 
     print('\tfetching %s ...' % url, file=get_original_stdout())
     f = urllib.request.urlopen(url, timeout=15)
@@ -461,7 +479,12 @@ def open_urlresource(url, *args, **kw):
                 s = f.read()
     finally:
         f.close()
-    return open(fn, *args, **kw)
+
+    f = check_valid_file(fn)
+    if f is not None:
+        return f
+    raise TestFailed('invalid resource "%s"' % fn)
+
 
 class WarningsRecorder(object):
     """Convenience wrapper for the warnings list returned on
