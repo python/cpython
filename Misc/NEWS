@@ -17,6 +17,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #2698: The --compiler ignored was ignored for distutils' build_ext.
+
 - Issue #4961: Inconsistent/wrong result of askyesno function in tkMessageBox
   with Tcl/Tk-8.5.
 
