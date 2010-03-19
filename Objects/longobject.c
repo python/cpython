@@ -2560,9 +2560,6 @@ long_hash(PyLongObject *v)
 	Py_ssize_t i;
 	int sign;
 
-	/* This is designed so that Python ints and longs with the
-	   same value hash to the same value, otherwise comparisons
-	   of mapping keys will turn out weird */
 	i = Py_SIZE(v);
 	switch(i) {
 	case -1: return v->ob_digit[0]==1 ? -2 : -(sdigit)v->ob_digit[0];
