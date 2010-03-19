@@ -5,6 +5,7 @@
    Originator:	<hos@tamanegi.org> 20031203	 */
 
 /* { dg-do run } */
+/* { dg-options "-Wno-format" { target alpha*-dec-osf* } } */
 #include "ffitest.h"
 
 typedef struct cls_struct_align {

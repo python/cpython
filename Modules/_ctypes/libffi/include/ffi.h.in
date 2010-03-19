@@ -251,6 +251,9 @@ size_t ffi_java_raw_size (ffi_cif *cif);
 
 #if FFI_CLOSURES
 
+#ifdef _MSC_VER
+__declspec(align(8))
+#endif
 typedef struct {
   char tramp[FFI_TRAMPOLINE_SIZE];
   ffi_cif   *cif;

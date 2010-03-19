@@ -4,7 +4,7 @@ from ../libffi/doc/libffi.texi.
 This manual is for Libffi, a portable foreign-function interface
 library.
 
-   Copyright (C) 2008 Red Hat, Inc.
+   Copyright (C) 2008, 2010 Red Hat, Inc.
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@ libffi
 This manual is for Libffi, a portable foreign-function interface
 library.
 
-   Copyright (C) 2008 Red Hat, Inc.
+   Copyright (C) 2008, 2010 Red Hat, Inc.
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU General Public License as
@@ -89,6 +89,7 @@ File: libffi.info,  Node: Using libffi,  Next: Missing Features,  Prev: Introduc
 * Types::                       libffi type descriptions.
 * Multiple ABIs::               Different passing styles on one platform.
 * The Closure API::             Writing a generic function.
+* Closure Example::             A closure example.
 
 
 File: libffi.info,  Node: The Basics,  Next: Simple Example,  Up: Using libffi
@@ -368,7 +369,7 @@ instance, the x86 platform has both `stdcall' and `fastcall' functions.
 necessarily platform-specific.
 
 
-File: libffi.info,  Node: The Closure API,  Prev: Multiple ABIs,  Up: Using libffi
+File: libffi.info,  Node: The Closure API,  Next: Closure Example,  Prev: Multiple ABIs,  Up: Using libffi
 
 2.5 The Closure API
 ===================
@@ -444,6 +445,62 @@ is deprecated, as it cannot handle the need for separate writable and
 executable addresses.
 
 
+File: libffi.info,  Node: Closure Example,  Prev: The Closure API,  Up: Using libffi
+
+2.6 Closure Example
+===================
+
+A trivial example that creates a new `puts' by binding `fputs' with
+`stdin'.
+
+     #include <stdio.h>
+     #include <ffi.h>
+
+     /* Acts like puts with the file given at time of enclosure. */
+     void puts_binding(ffi_cif *cif, unsigned int *ret, void* args[],
+                       FILE *stream)
+     {
+       *ret = fputs(*(char **)args[0], stream);
+     }
+
+     int main()
+     {
+       ffi_cif cif;
+       ffi_type *args[1];
+       ffi_closure *closure;
+
+       int (*bound_puts)(char *);
+       int rc;
+
+       /* Allocate closure and bound_puts */
+       closure = ffi_closure_alloc(sizeof(ffi_closure), &bound_puts);
+
+       if (closure)
+         {
+           /* Initialize the argument info vectors */
+           args[0] = &ffi_type_pointer;
+
+           /* Initialize the cif */
+           if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
+                            &ffi_type_uint, args) == FFI_OK)
+             {
+               /* Initialize the closure, setting stream to stdout */
+               if (ffi_prep_closure_loc(closure, &cif, puts_binding,
+                                        stdout, bound_puts) == FFI_OK)
+                 {
+                   rc = bound_puts("Hello World!");
+                   /* rc now holds the result of the call to fputs */
+                 }
+             }
+         }
+
+       /* Deallocate both closure, and bound_puts */
+       ffi_closure_free(closure);
+
+       return 0;
+     }
+
+
 File: libffi.info,  Node: Missing Features,  Next: Index,  Prev: Using libffi,  Up: Top
 
 3 Missing Features
@@ -516,18 +573,19 @@ Index
 
 
 Tag Table:
-Node: Top700
-Node: Introduction1436
-Node: Using libffi3072
-Node: The Basics3507
-Node: Simple Example6114
-Node: Types7141
-Node: Primitive Types7424
-Node: Structures9244
-Node: Type Example10104
-Node: Multiple ABIs11327
-Node: The Closure API11698
-Node: Missing Features14618
-Node: Index15111
+Node: Top706
+Node: Introduction1448
+Node: Using libffi3084
+Node: The Basics3570
+Node: Simple Example6177
+Node: Types7204
+Node: Primitive Types7487
+Node: Structures9307
+Node: Type Example10167
+Node: Multiple ABIs11390
+Node: The Closure API11761
+Node: Closure Example14705
+Node: Missing Features16264
+Node: Index16757
 
 End Tag Table

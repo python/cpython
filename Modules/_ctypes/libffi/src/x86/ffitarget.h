@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------*-C-*-
-   ffitarget.h - Copyright (c) 1996-2003  Red Hat, Inc.
+   ffitarget.h - Copyright (c) 1996-2003, 2010  Red Hat, Inc.
    Copyright (C) 2008  Free Software Foundation, Inc.
 
    Target configuration macros for x86 and x86-64.
@@ -74,10 +74,10 @@ typedef enum ffi_abi {
 #else
 
   /* ---- Intel x86 and AMD x86-64 - */
-#if !defined(X86_WIN32) && (defined(__i386__) || defined(__x86_64__))
+#if !defined(X86_WIN32) && (defined(__i386__) || defined(__x86_64__) || defined(__i386) || defined(__amd64))
   FFI_SYSV,
   FFI_UNIX64,   /* Unix variants all use the same ABI for x86-64  */
-#ifdef __i386__
+#if defined(__i386__) || defined(__i386)
   FFI_DEFAULT_ABI = FFI_SYSV,
 #else
   FFI_DEFAULT_ABI = FFI_UNIX64,
