@@ -247,7 +247,7 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
             for n in sys.modules.keys():
                 if n.startswith(parent):
                     del sys.modules[n]
-        with test_support.check_py3k_warnings():
+        with test_support.check_py3k_warnings(), test_support.check_warnings():
             for mname in mnames:
                 m = __import__(mname, globals(), locals(), ["__dummy__"])
                 m.__loader__  # to make sure we actually handled the import
