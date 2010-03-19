@@ -7,6 +7,7 @@
    Originator:	Blake Chaffin	6/21/2007	*/
 
 /* { dg-do run { xfail strongarm*-*-* xscale*-*-*  } } */
+/* { dg-options "-Wno-format" { target alpha*-dec-osf* } } */
 #include "ffitest.h"
 
 typedef struct struct_72byte {

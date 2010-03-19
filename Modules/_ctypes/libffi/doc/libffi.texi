@@ -19,7 +19,7 @@
 This manual is for Libffi, a portable foreign-function interface
 library.
 
-Copyright @copyright{} 2008 Red Hat, Inc.
+Copyright @copyright{} 2008, 2010 Red Hat, Inc.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -106,6 +106,7 @@ values passed between the two languages.
 * Types::                       libffi type descriptions.
 * Multiple ABIs::               Different passing styles on one platform.
 * The Closure API::             Writing a generic function.
+* Closure Example::             A closure example.
 @end menu
 
 
@@ -500,11 +501,65 @@ After calling @code{ffi_prep_closure_loc}, you can cast @var{codeloc}
 to the appropriate pointer-to-function type.
 @end defun
 
-@c FIXME: example
-
 You may see old code referring to @code{ffi_prep_closure}.  This
 function is deprecated, as it cannot handle the need for separate
 writable and executable addresses.
+
+@node Closure Example
+@section Closure Example
+
+A trivial example that creates a new @code{puts} by binding 
+@code{fputs} with @code{stdin}.
+
+@example
+#include <stdio.h>
+#include <ffi.h>
+
+/* Acts like puts with the file given at time of enclosure. */
+void puts_binding(ffi_cif *cif, unsigned int *ret, void* args[], 
+                  FILE *stream)
+@{
+  *ret = fputs(*(char **)args[0], stream);
+@}
+
+int main()
+@{
+  ffi_cif cif;
+  ffi_type *args[1];
+  ffi_closure *closure;
+
+  int (*bound_puts)(char *);
+  int rc;
+  
+  /* Allocate closure and bound_puts */
+  closure = ffi_closure_alloc(sizeof(ffi_closure), &bound_puts);
+
+  if (closure)
+    @{
+      /* Initialize the argument info vectors */
+      args[0] = &ffi_type_pointer;
+
+      /* Initialize the cif */
+      if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
+                       &ffi_type_uint, args) == FFI_OK)
+        @{
+          /* Initialize the closure, setting stream to stdout */
+          if (ffi_prep_closure_loc(closure, &cif, puts_binding, 
+                                   stdout, bound_puts) == FFI_OK)
+            @{
+              rc = bound_puts("Hello World!");
+              /* rc now holds the result of the call to fputs */
+            @}
+        @}
+    @}
+
+  /* Deallocate both closure, and bound_puts */
+  ffi_closure_free(closure);
+
+  return 0;
+@}
+
+@end example
 
 
 @node Missing Features
@@ -524,6 +579,8 @@ There is no support for bit fields in structures.
 
 @item
 The closure API is
+
+@c FIXME: ...
 
 @item
 The ``raw'' API is undocumented.

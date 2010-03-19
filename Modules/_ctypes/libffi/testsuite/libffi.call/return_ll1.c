@@ -5,6 +5,7 @@
    Originator:	<andreast@gcc.gnu.org> 20050222  */
 
 /* { dg-do run } */
+/* { dg-options "-Wno-format" { target alpha*-dec-osf* } } */
 #include "ffitest.h"
 static long long return_ll(int ll0, long long ll1, int ll2)
 {

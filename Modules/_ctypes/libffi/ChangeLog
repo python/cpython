@@ -1,3 +1,89 @@
+2010-03-14  Matthias Klose  <doko@ubuntu.com>
+
+	* src/x86/ffi64.c: Fix typo in comment.
+	* src/x86/ffi.c: Use /* ... */ comment style.
+
+2010-01-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libffi/40701
+	* testsuite/libffi.call/ffitest.h [__alpha__ && __osf__] (PRIdLL,
+	PRIuLL, PRId64, PRIu64, PRIuPTR): Define.
+	* testsuite/libffi.call/cls_align_sint64.c: Add -Wno-format on
+	alpha*-dec-osf*.
+	* testsuite/libffi.call/cls_align_uint64.c: Likewise.
+	* testsuite/libffi.call/cls_ulonglong.c: Likewise.
+	* testsuite/libffi.call/return_ll1.c: Likewise.
+	* testsuite/libffi.call/stret_medium2.c: Likewise.
+	* testsuite/libffi.special/ffitestcxx.h (allocate_mmap): Cast
+	MAP_FAILED to char *.
+
+2010-01-06  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* src/mips/n32.S: Use .abicalls and .eh_frame with __GNUC__.
+
+2009-12-31  Anthony Green  <green@redhat.com>
+
+	* README: Update for libffi 3.0.9.
+
+2009-12-27  Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac (HAVE_LONG_DOUBLE): Define for mips when
+	appropriate.
+	* configure: Rebuilt.
+
+2009-12-26  Anthony Green  <green@redhat.com>
+
+	* testsuite/libffi.call/cls_longdouble_va.c: Mark as xfail for
+	avr32*-*-*.
+	* testsuite/libffi.call/cls_double_va.c: Ditto.
+
+2009-12-26  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* testsuite/libffi.call/ffitest.h: Conditionally include stdint.h
+	and inttypes.h.
+	* testsuite/libffi.special/unwindtest.cc: Ditto.
+
+2009-12-26  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* configure.ac: Add amd64-*-openbsd*.
+	* configure: Rebuilt.
+	* testsuite/lib/libffi-dg.exp (libffi_target_compile): Link
+	openbsd programs with -lpthread.
+
+2009-12-26  Anthony Green  <green@redhat.com>
+
+	* testsuite/libffi.call/cls_double_va.c,
+	testsuite/libffi.call/cls_longdouble.c,
+	testsuite/libffi.call/cls_longdouble_va.c,
+	testsuite/libffi.call/cls_pointer.c,
+	testsuite/libffi.call/cls_pointer_stack.c: Remove xfail for
+	mips*-*-* and arm*-*-*.
+	* testsuite/libffi.call/cls_align_longdouble_split.c,
+	testsuite/libffi.call/cls_align_longdouble_split2.c,
+	testsuite/libffi.call/stret_medium2.c,
+	testsuite/libffi.call/stret_medium.c,
+	testsuite/libffi.call/stret_large.c,
+	testsuite/libffi.call/stret_large2.c: Remove xfail for arm*-*-*.
+
+2009-12-31  Kay Tietz  <ktietz70@googlemail.com>
+
+	* testsuite/libffi.call/ffitest.h,
+	testsuite/libffi.special/ffitestcxx.h (PRIdLL, PRuLL): Fix
+	definitions.
+
+2009-12-31  Carlo Bramini  <carlo.bramix@libero.it>
+
+	* configure.ac (AM_LTLDFLAGS): Define for windows hosts.
+	* Makefile.am (libffi_la_LDFLAGS): Add AM_LTLDFLAGS.
+	* configure: Rebuilt.
+	* Makefile.in: Rebuilt.
+
+2009-12-31  Anthony Green  <green@redhat.com>
+	    Blake Chaffin.
+
+	* testsuite/libffi.call/huge_struct.c: New test case from Blake
+	Chaffin @ Apple.
+
 2009-12-28  David Edelsohn  <edelsohn@gnu.org>
 
 	* src/powerpc/ffi_darwin.c (ffi_prep_args): Copy abi and nargs to
