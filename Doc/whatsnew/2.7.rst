@@ -1086,7 +1086,7 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 * :meth:`assertIn` and :meth:`assertNotIn` tests whether
   *first* is or is not in  *second*.
 
-* :meth:`assertSameElements` tests whether two provided sequences
+* :meth:`assertItemsEqual` tests whether two provided sequences
   contain the same elements.
 
 * :meth:`assertSetEqual` compares whether two sets are equal, and

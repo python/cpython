@@ -135,18 +135,18 @@ class CgiTests(unittest.TestCase):
             if isinstance(expect, dict):
                 # test dict interface
                 self.assertEqual(len(expect), len(fcd))
-                self.assertSameElements(expect.keys(), fcd.keys())
-                self.assertSameElements(expect.values(), fcd.values())
-                self.assertSameElements(expect.items(), fcd.items())
+                self.assertItemsEqual(expect.keys(), fcd.keys())
+                self.assertItemsEqual(expect.values(), fcd.values())
+                self.assertItemsEqual(expect.items(), fcd.items())
                 self.assertEqual(fcd.get("nonexistent field", "default"), "default")
                 self.assertEqual(len(sd), len(fs))
-                self.assertSameElements(sd.keys(), fs.keys())
+                self.assertItemsEqual(sd.keys(), fs.keys())
                 self.assertEqual(fs.getvalue("nonexistent field", "default"), "default")
                 # test individual fields
                 for key in expect.keys():
                     expect_val = expect[key]
                     self.assertTrue(fcd.has_key(key))
-                    self.assertSameElements(fcd[key], expect[key])
+                    self.assertItemsEqual(fcd[key], expect[key])
                     self.assertEqual(fcd.get(key, "default"), fcd[key])
                     self.assertTrue(fs.has_key(key))
                     if len(expect_val) > 1:
@@ -162,11 +162,11 @@ class CgiTests(unittest.TestCase):
                         self.assertTrue(single_value)
                         self.assertEqual(val, expect_val[0])
                         self.assertEqual(fs.getvalue(key), expect_val[0])
-                    self.assertSameElements(sd.getlist(key), expect_val)
+                    self.assertItemsEqual(sd.getlist(key), expect_val)
                     if single_value:
-                        self.assertSameElements(sd.values(),
+                        self.assertItemsEqual(sd.values(),
                                                 first_elts(expect.values()))
-                        self.assertSameElements(sd.items(),
+                        self.assertItemsEqual(sd.items(),
                                                 first_second_elts(expect.items()))
 
     def test_weird_formcontentdict(self):
@@ -178,7 +178,7 @@ class CgiTests(unittest.TestCase):
             self.assertEqual(d[k], v)
         for k, v in d.items():
             self.assertEqual(expect[k], v)
-        self.assertSameElements(expect.values(), d.values())
+        self.assertItemsEqual(expect.values(), d.values())
 
     def test_log(self):
         cgi.log("Testing")

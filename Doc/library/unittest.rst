@@ -786,7 +786,7 @@ Test cases
       will be included in the error message. This method is used by default
       when comparing Unicode strings with :meth:`assertEqual`.
 
-      If specified *msg* will be used as the error message on failure.
+      If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 2.7
 
@@ -807,22 +807,24 @@ Test cases
       Tests that *first* is or is not in *second* with an explanatory error
       message as appropriate.
 
-      If specified *msg* will be used as the error message on failure.
+      If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 2.7
 
 
-   .. method:: assertSameElements(actual, expected, msg=None)
+   .. method:: assertItemsEqual(actual, expected, msg=None)
 
       Test that sequence *expected* contains the same elements as *actual*,
-      regardless of their order. When they don't, an error message listing
-      the differences between the sequences will be generated.
+      regardless of their order. When they don't, an error message listing the
+      differences between the sequences will be generated.
 
-      Duplicate elements are ignored when comparing *actual* and *expected*.
-      It is the equivalent of ``assertEqual(set(expected), set(actual))``
-      but it works with sequences of unhashable objects as well.
+      Duplicate elements are *not* ignored when comparing *actual* and
+      *expected*. It verifies if each element has the same count in both
+      sequences. It is the equivalent of ``assertEqual(sorted(expected),
+      sorted(actual))`` but it works with sequences of unhashable objects as
+      well.
 
-      If specified *msg* will be used as the error message on failure.
+      If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 2.7
 
@@ -836,7 +838,7 @@ Test cases
       Fails if either of *set1* or *set2* does not have a :meth:`set.difference`
       method.
 
-      If specified *msg* will be used as the error message on failure.
+      If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 2.7
 
@@ -848,7 +850,7 @@ Test cases
       method will be used by default to compare dictionaries in
       calls to :meth:`assertEqual`.
 
-      If specified *msg* will be used as the error message on failure.
+      If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 2.7
 
@@ -859,7 +861,7 @@ Test cases
       superset of those in *expected*.  If not, an error message listing
       the missing keys and mismatched values is generated.
 
-      If specified *msg* will be used as the error message on failure.
+      If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 2.7
 
@@ -873,7 +875,7 @@ Test cases
       These methods are used by default when comparing lists or tuples with
       :meth:`assertEqual`.
 
-      If specified *msg* will be used as the error message on failure.
+      If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 2.7
 
@@ -885,7 +887,7 @@ Test cases
       be raised.  If the sequences are different an error message is
       constructed that shows the difference between the two.
 
-      If specified *msg* will be used as the error message on failure.
+      If specified, *msg* will be used as the error message on failure.
 
       This method is used to implement :meth:`assertListEqual` and
       :meth:`assertTupleEqual`.

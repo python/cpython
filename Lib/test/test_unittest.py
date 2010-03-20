@@ -2575,9 +2575,9 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         class SadSnake(object):
             """Dummy class for test_addTypeEqualityFunc."""
         s1, s2 = SadSnake(), SadSnake()
-        self.assertFalse(s1 == s2)
+        self.assertNotEqual(s1, s2)
         def AllSnakesCreatedEqual(a, b, msg=None):
-            return type(a) == type(b) == SadSnake
+            return type(a) is type(b) is SadSnake
         self.addTypeEqualityFunc(SadSnake, AllSnakesCreatedEqual)
         self.assertEqual(s1, s2)
         # No this doesn't clean up and remove the SadSnake equality func
@@ -2745,20 +2745,50 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         self.assertRaises(self.failureException, self.assertDictEqual, [], d)
         self.assertRaises(self.failureException, self.assertDictEqual, 1, 1)
 
-        self.assertSameElements([1, 2, 3], [3, 2, 1])
-        self.assertSameElements([1, 2] + [3] * 100, [1] * 100 + [2, 3])
-        self.assertSameElements(['foo', 'bar', 'baz'], ['bar', 'baz', 'foo'])
-        self.assertRaises(self.failureException, self.assertSameElements,
+    def testAssertItemsEqual(self):
+        a = object()
+        self.assertItemsEqual([1, 2, 3], [3, 2, 1])
+        self.assertItemsEqual(['foo', 'bar', 'baz'], ['bar', 'baz', 'foo'])
+        self.assertItemsEqual([a, a, 2, 2, 3], (a, 2, 3, a, 2))
+        self.assertItemsEqual([1, "2", "a", "a"], ["a", "2", True, "a"])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [1, 2] + [3] * 100, [1] * 100 + [2, 3])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [1, "2", "a", "a"], ["a", "2", True, 1])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
                           [10], [10, 11])
-        self.assertRaises(self.failureException, self.assertSameElements,
+        self.assertRaises(self.failureException, self.assertItemsEqual,
                           [10, 11], [10])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [10, 11, 10], [10, 11])
 
         # Test that sequences of unhashable objects can be tested for sameness:
-        self.assertSameElements([[1, 2], [3, 4]], [[3, 4], [1, 2]])
-
-        self.assertSameElements([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
-        self.assertRaises(self.failureException, self.assertSameElements,
+        self.assertItemsEqual([[1, 2], [3, 4], 0], [False, [3, 4], [1, 2]])
+        with test_support.check_warnings(quiet=True) as w:
+            # hashable types, but not orderable
+            self.assertRaises(self.failureException, self.assertItemsEqual,
+                              [], [divmod, 'x', 1, 5j, 2j, frozenset()])
+            # comparing dicts raises a py3k warning
+            self.assertItemsEqual([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
+            # comparing heterogenous non-hashable sequences raises a py3k warning
+            self.assertItemsEqual([1, 'x', divmod, []], [divmod, [], 'x', 1])
+            self.assertRaises(self.failureException, self.assertItemsEqual,
+                              [], [divmod, [], 'x', 1, 5j, 2j, set()])
+            # fail the test if warnings are not silenced
+            if w.warnings:
+                self.fail('assertItemsEqual raised a warning: ' +
+                          str(w.warnings[0]))
+        self.assertRaises(self.failureException, self.assertItemsEqual,
                           [[1]], [[2]])
+
+        # Same elements, but not same sequence length
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [1, 1, 2], [2, 1])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [1, 1, "2", "a", "a"], ["2", "2", True, "a"])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [1, {'b': 2}, None, True], [{'b': 2}, True, None])
+
 
     def testAssertSetEqual(self):
         set1 = set()
@@ -3009,13 +3039,14 @@ test case
 
         Do not use these methods.  They will go away in 3.3.
         """
-        self.failIfEqual(3, 5)
-        self.failUnlessEqual(3, 3)
-        self.failUnlessAlmostEqual(2.0, 2.0)
-        self.failIfAlmostEqual(3.0, 5.0)
-        self.failUnless(True)
-        self.failUnlessRaises(TypeError, lambda _: 3.14 + u'spam')
-        self.failIf(False)
+        with test_support.check_warnings():
+            self.failIfEqual(3, 5)
+            self.failUnlessEqual(3, 3)
+            self.failUnlessAlmostEqual(2.0, 2.0)
+            self.failIfAlmostEqual(3.0, 5.0)
+            self.failUnless(True)
+            self.failUnlessRaises(TypeError, lambda _: 3.14 + u'spam')
+            self.failIf(False)
 
     def testDeepcopy(self):
         # Issue: 5660
@@ -3355,8 +3386,8 @@ class TestLongMessage(TestCase):
                              "^Missing: 'key'$",
                              "^Missing: 'key' : oops$"])
 
-    def testAssertSameElements(self):
-        self.assertMessages('assertSameElements', ([], [None]),
+    def testAssertItemsEqual(self):
+        self.assertMessages('assertItemsEqual', ([], [None]),
                             [r"\[None\]$", "^oops$",
                              r"\[None\]$",
                              r"\[None\] : oops$"])
