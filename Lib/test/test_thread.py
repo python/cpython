@@ -63,10 +63,10 @@ class ThreadRunningTests(BasicThreadTest):
 
     def test_stack_size(self):
         # Various stack size tests.
-        self.assertEquals(thread.stack_size(), 0, "intial stack size is not 0")
+        self.assertEqual(thread.stack_size(), 0, "initial stack size is not 0")
 
         thread.stack_size(0)
-        self.assertEquals(thread.stack_size(), 0, "stack_size not reset to default")
+        self.assertEqual(thread.stack_size(), 0, "stack_size not reset to default")
 
         if os.name not in ("nt", "os2", "posix"):
             return
@@ -86,7 +86,7 @@ class ThreadRunningTests(BasicThreadTest):
             fail_msg = "stack_size(%d) failed - should succeed"
             for tss in (262144, 0x100000, 0):
                 thread.stack_size(tss)
-                self.assertEquals(thread.stack_size(), tss, fail_msg % tss)
+                self.assertEqual(thread.stack_size(), tss, fail_msg % tss)
                 verbose_print("successfully set stack_size(%d)" % tss)
 
             for tss in (262144, 0x100000):
@@ -115,7 +115,7 @@ class ThreadRunningTests(BasicThreadTest):
         thread.start_new_thread(task, ())
         while not started:
             time.sleep(0.01)
-        self.assertEquals(thread._count(), orig + 1)
+        self.assertEqual(thread._count(), orig + 1)
         # Allow the task to finish.
         mut.release()
         # The only reliable way to be sure that the thread ended from the
@@ -126,7 +126,7 @@ class ThreadRunningTests(BasicThreadTest):
         del task
         while not done:
             time.sleep(0.01)
-        self.assertEquals(thread._count(), orig)
+        self.assertEqual(thread._count(), orig)
 
 
 class Barrier:
@@ -199,7 +199,8 @@ class TestForkInThread(unittest.TestCase):
         self.read_fd, self.write_fd = os.pipe()
 
     @unittest.skipIf(sys.platform.startswith('win'),
-                    "This test is only appropriate for POSIX-like systems.")
+                     "This test is only appropriate for POSIX-like systems.")
+    @support.reap_threads
     def test_forkinthread(self):
         def thread1():
             try:
