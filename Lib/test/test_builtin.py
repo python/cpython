@@ -2,15 +2,11 @@
 
 import platform
 import unittest
-from test.support import fcmp, TESTFN, unlink,  run_unittest
+from test.support import fcmp, TESTFN, unlink,  run_unittest, check_warnings
 from operator import neg
 
 import sys, warnings, random, collections, io
 
-warnings.filterwarnings("ignore", "hex../oct.. of negative int",
-                        FutureWarning, __name__)
-warnings.filterwarnings("ignore", "integer argument expected",
-                        DeprecationWarning, "unittest")
 import builtins
 
 class Squares:
@@ -427,9 +423,10 @@ class BuiltinTest(unittest.TestCase):
         g = {}
         l = {}
 
-        import warnings
-        warnings.filterwarnings("ignore", "global statement", module="<string>")
-        exec('global a; a = 1; b = 2', g, l)
+        with check_warnings():
+            warnings.filterwarnings("ignore", "global statement",
+                    module="<string>")
+            exec('global a; a = 1; b = 2', g, l)
         if '__builtins__' in g:
             del g['__builtins__']
         if '__builtins__' in l:
