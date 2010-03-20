@@ -2758,24 +2758,6 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         self.assertRaises(self.failureException, self.assertDictEqual, [], d)
         self.assertRaises(self.failureException, self.assertDictEqual, 1, 1)
 
-        self.assertSameElements([1, 2, 3], [3, 2, 1])
-        self.assertSameElements([1, 2] + [3] * 100, [1] * 100 + [2, 3])
-        self.assertSameElements(['foo', 'bar', 'baz'], ['bar', 'baz', 'foo'])
-        self.assertRaises(self.failureException, self.assertSameElements,
-                          [10], [10, 11])
-        self.assertRaises(self.failureException, self.assertSameElements,
-                          [10, 11], [10])
-
-        # Test that sequences of unhashable objects can be tested for sameness:
-        self.assertSameElements([[1, 2], [3, 4]], [[3, 4], [1, 2]])
-
-        self.assertSameElements([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
-        self.assertRaises(self.failureException, self.assertSameElements,
-                          [[1]], [[2]])
-        self.assertRaises(self.failureException, self.assertSameElements,
-                          [{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 2}])
-
-
     def testAssertItemsEqual(self):
         a = object()
         self.assertItemsEqual([1, 2, 3], [3, 2, 1])
@@ -3032,7 +3014,8 @@ test case
             (self.failIfAlmostEqual, (3.0, 5.0)),
             (self.failUnless, (True,)),
             (self.failUnlessRaises, (TypeError, lambda _: 3.14 + 'spam')),
-            (self.failIf, (False,))
+            (self.failIf, (False,)),
+            (self.assertSameElements, ([1, 1, 2, 3], [1, 2, 3]))
         )
         for meth, args in old:
             with warnings.catch_warnings(record=True) as w:
