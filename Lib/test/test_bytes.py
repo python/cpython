@@ -27,12 +27,6 @@ class Indexable:
 
 class BaseBytesTest(unittest.TestCase):
 
-    def setUp(self):
-        self.warning_filters = warnings.filters[:]
-
-    def tearDown(self):
-        warnings.filters = self.warning_filters
-
     def test_basics(self):
         b = self.type2test()
         self.assertEqual(type(b), self.type2test)
@@ -127,15 +121,19 @@ class BaseBytesTest(unittest.TestCase):
         self.assertFalse(b3 <= b2)
 
     def test_compare_to_str(self):
-        warnings.simplefilter('ignore', BytesWarning)
-        # Byte comparisons with unicode should always fail!
-        # Test this for all expected byte orders and Unicode character sizes
-        self.assertEqual(self.type2test(b"\0a\0b\0c") == "abc", False)
-        self.assertEqual(self.type2test(b"\0\0\0a\0\0\0b\0\0\0c") == "abc", False)
-        self.assertEqual(self.type2test(b"a\0b\0c\0") == "abc", False)
-        self.assertEqual(self.type2test(b"a\0\0\0b\0\0\0c\0\0\0") == "abc", False)
-        self.assertEqual(self.type2test() == str(), False)
-        self.assertEqual(self.type2test() != str(), True)
+        with test.support.check_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+            # Byte comparisons with unicode should always fail!
+            # Test this for all expected byte orders and Unicode character
+            # sizes.
+            self.assertEqual(self.type2test(b"\0a\0b\0c") == "abc", False)
+            self.assertEqual(self.type2test(b"\0\0\0a\0\0\0b\0\0\0c") == "abc",
+                                False)
+            self.assertEqual(self.type2test(b"a\0b\0c\0") == "abc", False)
+            self.assertEqual(self.type2test(b"a\0\0\0b\0\0\0c\0\0\0") == "abc",
+                                False)
+            self.assertEqual(self.type2test() == str(), False)
+            self.assertEqual(self.type2test() != str(), True)
 
     def test_reversed(self):
         input = list(map(ord, "Hello"))
@@ -829,22 +827,17 @@ class AssortedBytesTest(unittest.TestCase):
     # Test various combinations of bytes and bytearray
     #
 
-    def setUp(self):
-        self.warning_filters = warnings.filters[:]
-
-    def tearDown(self):
-        warnings.filters = self.warning_filters
-
     def test_repr_str(self):
-        warnings.simplefilter('ignore', BytesWarning)
-        for f in str, repr:
-            self.assertEqual(f(bytearray()), "bytearray(b'')")
-            self.assertEqual(f(bytearray([0])), "bytearray(b'\\x00')")
-            self.assertEqual(f(bytearray([0, 1, 254, 255])),
-                             "bytearray(b'\\x00\\x01\\xfe\\xff')")
-            self.assertEqual(f(b"abc"), "b'abc'")
-            self.assertEqual(f(b"'"), '''b"'"''') # '''
-            self.assertEqual(f(b"'\""), r"""b'\'"'""") # '
+        with test.support.check_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+            for f in str, repr:
+                self.assertEqual(f(bytearray()), "bytearray(b'')")
+                self.assertEqual(f(bytearray([0])), "bytearray(b'\\x00')")
+                self.assertEqual(f(bytearray([0, 1, 254, 255])),
+                                 "bytearray(b'\\x00\\x01\\xfe\\xff')")
+                self.assertEqual(f(b"abc"), "b'abc'")
+                self.assertEqual(f(b"'"), '''b"'"''') # '''
+                self.assertEqual(f(b"'\""), r"""b'\'"'""") # '
 
     def test_compare_bytes_to_bytearray(self):
         self.assertEqual(b"abc" == bytes(b"abc"), True)
@@ -888,13 +881,14 @@ class AssortedBytesTest(unittest.TestCase):
         self.assertEqual(b, bytearray(sample))
 
     def test_to_str(self):
-        warnings.simplefilter('ignore', BytesWarning)
-        self.assertEqual(str(b''), "b''")
-        self.assertEqual(str(b'x'), "b'x'")
-        self.assertEqual(str(b'\x80'), "b'\\x80'")
-        self.assertEqual(str(bytearray(b'')), "bytearray(b'')")
-        self.assertEqual(str(bytearray(b'x')), "bytearray(b'x')")
-        self.assertEqual(str(bytearray(b'\x80')), "bytearray(b'\\x80')")
+        with test.support.check_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+            self.assertEqual(str(b''), "b''")
+            self.assertEqual(str(b'x'), "b'x'")
+            self.assertEqual(str(b'\x80'), "b'\\x80'")
+            self.assertEqual(str(bytearray(b'')), "bytearray(b'')")
+            self.assertEqual(str(bytearray(b'x')), "bytearray(b'x')")
+            self.assertEqual(str(bytearray(b'\x80')), "bytearray(b'\\x80')")
 
     def test_literal(self):
         tests =  [
@@ -940,11 +934,16 @@ class AssortedBytesTest(unittest.TestCase):
 
     def test_compare(self):
         if sys.flags.bytes_warning:
-            warnings.simplefilter('error', BytesWarning)
-            self.assertRaises(BytesWarning, operator.eq, b'', '')
-            self.assertRaises(BytesWarning, operator.ne, b'', '')
-            self.assertRaises(BytesWarning, operator.eq, bytearray(b''), '')
-            self.assertRaises(BytesWarning, operator.ne, bytearray(b''), '')
+            with test.support.check_warnings():
+                warnings.simplefilter('error', BytesWarning)
+                with self.assertRaises(BytesWarning):
+                    b'' == ''
+                with self.assertRaises(BytesWarning):
+                    b'' != ''
+                with self.assertRaises(BytesWarning):
+                    bytearray(b'') == ''
+                with self.assertRaises(BytesWarning):
+                    bytearray(b'') != ''
         else:
             # self.skipTest("BytesWarning is needed for this test: use -bb option")
             pass
