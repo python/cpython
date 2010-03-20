@@ -198,7 +198,7 @@ elif os.name == "posix":
             expr = r'(\S+)\s+\((%s(?:, OS ABI:[^\)]*)?)\)[^/]*(/[^\(\)\s]*lib%s\.[^\(\)\s]*)' \
                    % (abi_type, re.escape(name))
             res = re.search(expr,
-                            os.popen('/sbin/ldconfig -p 2>/dev/null').read())
+                            os.popen('LANG=C /sbin/ldconfig -p 2>/dev/null').read())
             if not res:
                 return None
             return res.group(1)
