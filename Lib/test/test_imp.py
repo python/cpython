@@ -162,7 +162,7 @@ class ReloadTests(unittest.TestCase):
     reload()."""
 
     def test_source(self):
-        # XXX (ncoghlan): It would be nice to use test_support.CleanImport
+        # XXX (ncoghlan): It would be nice to use test.support.CleanImport
         # here, but that breaks because the os module registers some
         # handlers in copy_reg on import. Since CleanImport doesn't
         # revert that registration, the module is left in a broken
