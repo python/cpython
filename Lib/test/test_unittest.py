@@ -2775,6 +2775,47 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         self.assertRaises(self.failureException, self.assertSameElements,
                           [{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 2}])
 
+
+    def testAssertItemsEqual(self):
+        a = object()
+        self.assertItemsEqual([1, 2, 3], [3, 2, 1])
+        self.assertItemsEqual(['foo', 'bar', 'baz'], ['bar', 'baz', 'foo'])
+        self.assertItemsEqual([a, a, 2, 2, 3], (a, 2, 3, a, 2))
+        self.assertItemsEqual([1, "2", "a", "a"], ["a", "2", True, "a"])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [1, 2] + [3] * 100, [1] * 100 + [2, 3])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [1, "2", "a", "a"], ["a", "2", True, 1])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [10], [10, 11])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [10, 11], [10])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [10, 11, 10], [10, 11])
+
+        # Test that sequences of unhashable objects can be tested for sameness:
+        self.assertItemsEqual([[1, 2], [3, 4], 0], [False, [3, 4], [1, 2]])
+
+        # hashable types, but not orderable
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [], [divmod, 'x', 1, 5j, 2j, frozenset()])
+        # comparing dicts raises a py3k warning
+        self.assertItemsEqual([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
+        # comparing heterogenous non-hashable sequences raises a py3k warning
+        self.assertItemsEqual([1, 'x', divmod, []], [divmod, [], 'x', 1])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [], [divmod, [], 'x', 1, 5j, 2j, set()])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [[1]], [[2]])
+
+        # Same elements, but not same sequence length
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [1, 1, 2], [2, 1])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [1, 1, "2", "a", "a"], ["2", "2", True, "a"])
+        self.assertRaises(self.failureException, self.assertItemsEqual,
+                          [1, {'b': 2}, None, True], [{'b': 2}, True, None])
+
     def testAssertSetEqual(self):
         set1 = set()
         set2 = set()
@@ -3338,8 +3379,8 @@ class TestLongMessage(TestCase):
                              "^Missing: 'key'$",
                              "^Missing: 'key' : oops$"])
 
-    def testAssertSameElements(self):
-        self.assertMessages('assertSameElements', ([], [None]),
+    def testAssertItemsEqual(self):
+        self.assertMessages('assertItemsEqual', ([], [None]),
                             [r"\[None\]$", "^oops$",
                              r"\[None\]$",
                              r"\[None\] : oops$"])
