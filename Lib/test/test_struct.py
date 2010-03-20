@@ -1,8 +1,9 @@
+import os
 import array
 import unittest
 import struct
-import warnings
-from test.test_support import run_unittest
+import inspect
+from test.test_support import run_unittest, check_warnings, check_py3k_warnings
 
 import sys
 ISBIGENDIAN = sys.byteorder == "big"
@@ -10,6 +11,7 @@ IS32BIT = sys.maxsize == 0x7fffffff
 
 integer_codes = 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q'
 
+testmod_filename = os.path.splitext(__file__)[0] + '.py'
 # Native 'q' packing isn't available on systems that don't have the C
 # long long type.
 try:
@@ -33,23 +35,13 @@ class StructTest(unittest.TestCase):
     def check_float_coerce(self, format, number):
         # SF bug 1530559. struct.pack raises TypeError where it used
         # to convert.
-        with warnings.catch_warnings(record=True) as w:
-            # ignore everything except the
-            # DeprecationWarning we're looking for
-            warnings.simplefilter("ignore")
-            warnings.filterwarnings(
-                "always",
-                message=".*integer argument expected, got float",
-                category=DeprecationWarning,
-                module=__name__
-                )
+        with check_warnings((".*integer argument expected, got float",
+                             DeprecationWarning)) as w:
             got = struct.pack(format, number)
-            nwarn = len(w)
-        self.assertEqual(nwarn, 1,
-                         "expected exactly one warning from "
-                         "struct.pack({!r}, {!r});  "
-                         "got {} warnings".format(
-                format, number, nwarn))
+        lineno = inspect.currentframe().f_lineno - 1
+        self.assertEqual(w.filename, testmod_filename)
+        self.assertEqual(w.lineno, lineno)
+        self.assertEqual(len(w.warnings), 1)
         expected = struct.pack(format, int(number))
         self.assertEqual(got, expected)
 
@@ -297,33 +289,29 @@ class StructTest(unittest.TestCase):
                     def __long__(self):
                         return -163L
 
-                for badobject in ("a string", 3+42j, randrange):
+                self.assertRaises((TypeError, struct.error),
+                                  struct.pack, self.format,
+                                  "a string")
+                self.assertRaises((TypeError, struct.error),
+                                  struct.pack, self.format,
+                                  randrange)
+                with check_warnings(("integer argument expected, "
+                                     "got non-integer", DeprecationWarning)):
                     self.assertRaises((TypeError, struct.error),
                                       struct.pack, self.format,
-                                      badobject)
+                                      3+42j)
 
                 # an attempt to convert a non-integer (with an
                 # implicit conversion via __int__) should succeed,
                 # with a DeprecationWarning
                 for nonint in NotAnIntNS(), NotAnIntOS():
-                    with warnings.catch_warnings(record=True) as w:
-                        # ignore everything except the
-                        # DeprecationWarning we're looking for
-                        warnings.simplefilter("ignore")
-                        warnings.filterwarnings(
-                            "always",
-                            message=(".*integer argument expected, "
-                                     "got non-integer.*"),
-                            category=DeprecationWarning,
-                            module=__name__
-                            )
+                    with check_warnings((".*integer argument expected, got non"
+                                         "-integer", DeprecationWarning)) as w:
                         got = struct.pack(self.format, nonint)
-                        nwarn = len(w)
-                    self.assertEqual(nwarn, 1,
-                                     "expected exactly one warning from "
-                                     "struct.pack({!r}, {!r});  "
-                                     "got {} warnings".format(
-                            self.format, nonint, nwarn))
+                    lineno = inspect.currentframe().f_lineno - 1
+                    self.assertEqual(w.filename, testmod_filename)
+                    self.assertEqual(w.lineno, lineno)
+                    self.assertEqual(len(w.warnings), 1)
                     expected = struct.pack(self.format, int(nonint))
                     self.assertEqual(got, expected)
 
@@ -395,28 +383,19 @@ class StructTest(unittest.TestCase):
                 self.check_float_coerce(endian + fmt, 1.0)
                 self.check_float_coerce(endian + fmt, 1.5)
 
-    def test_unpack_from(self):
-        test_string = 'abcd01234'
+    def test_unpack_from(self, cls=str):
+        data = cls('abcd01234')
         fmt = '4s'
         s = struct.Struct(fmt)
-        for cls in (str, buffer):
-            data = cls(test_string)
-            self.assertEqual(s.unpack_from(data), ('abcd',))
-            self.assertEqual(s.unpack_from(data, 2), ('cd01',))
-            self.assertEqual(s.unpack_from(data, 4), ('0123',))
-            for i in xrange(6):
-                self.assertEqual(s.unpack_from(data, i), (data[i:i+4],))
-            for i in xrange(6, len(test_string) + 1):
-                self.assertRaises(struct.error, s.unpack_from, data, i)
-        for cls in (str, buffer):
-            data = cls(test_string)
-            self.assertEqual(struct.unpack_from(fmt, data), ('abcd',))
-            self.assertEqual(struct.unpack_from(fmt, data, 2), ('cd01',))
-            self.assertEqual(struct.unpack_from(fmt, data, 4), ('0123',))
-            for i in xrange(6):
-                self.assertEqual(struct.unpack_from(fmt, data, i), (data[i:i+4],))
-            for i in xrange(6, len(test_string) + 1):
-                self.assertRaises(struct.error, struct.unpack_from, fmt, data, i)
+
+        self.assertEqual(s.unpack_from(data), ('abcd',))
+        self.assertEqual(struct.unpack_from(fmt, data), ('abcd',))
+        for i in xrange(6):
+            self.assertEqual(s.unpack_from(data, i), (data[i:i+4],))
+            self.assertEqual(struct.unpack_from(fmt, data, i), (data[i:i+4],))
+        for i in xrange(6, len(data) + 1):
+            self.assertRaises(struct.error, s.unpack_from, data, i)
+            self.assertRaises(struct.error, struct.unpack_from, fmt, data, i)
 
     def test_pack_into(self):
         test_string = 'Reykjavik rocks, eow!'
@@ -465,17 +444,21 @@ class StructTest(unittest.TestCase):
         self.assertRaises(struct.error, pack_into, small_buf, 2, test_string)
 
     def test_unpack_with_buffer(self):
-        # SF bug 1563759: struct.unpack doens't support buffer protocol objects
-        data1 = array.array('B', '\x12\x34\x56\x78')
-        data2 = buffer('......\x12\x34\x56\x78......', 6, 4)
-        for data in [data1, data2]:
-            value, = struct.unpack('>I', data)
-            self.assertEqual(value, 0x12345678)
+        with check_py3k_warnings(("buffer.. not supported in 3.x",
+                                  DeprecationWarning)):
+            # SF bug 1563759: struct.unpack doesn't support buffer protocol objects
+            data1 = array.array('B', '\x12\x34\x56\x78')
+            data2 = buffer('......\x12\x34\x56\x78......', 6, 4)
+            for data in [data1, data2]:
+                value, = struct.unpack('>I', data)
+                self.assertEqual(value, 0x12345678)
+
+            self.test_unpack_from(cls=buffer)
 
     def test_bool(self):
         for prefix in tuple("<>!=")+('',):
             false = (), [], [], '', 0
-            true = [1], 'test', 5, -1, 0xffffffffL+1, 0xffffffff/2
+            true = [1], 'test', 5, -1, 0xffffffffL+1, 0xffffffff//2
 
             falseFormat = prefix + '?' * len(false)
             packedFalse = struct.pack(falseFormat, *false)
@@ -504,10 +487,9 @@ class StructTest(unittest.TestCase):
             for c in '\x01\x7f\xff\x0f\xf0':
                 self.assertTrue(struct.unpack('>?', c)[0])
 
-    if IS32BIT:
-        def test_crasher(self):
-            self.assertRaises(MemoryError, struct.pack, "357913941c", "a")
-
+    @unittest.skipUnless(IS32BIT, "Specific to 32bit machines")
+    def test_crasher(self):
+        self.assertRaises(MemoryError, struct.pack, "357913941c", "a")
 
 
 def test_main():
