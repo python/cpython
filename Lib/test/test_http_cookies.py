@@ -1,15 +1,22 @@
 # Simple test suite for http/cookies.py
 
-from test.support import run_unittest, run_doctest
+from test.support import run_unittest, run_doctest, check_warnings
 import unittest
 from http import cookies
 
 import warnings
-warnings.filterwarnings("ignore",
-                        ".* class is insecure.*",
-                        DeprecationWarning)
 
 class CookieTests(unittest.TestCase):
+
+    def setUp(self):
+        self._warnings_manager = check_warnings()
+        self._warnings_manager.__enter__()
+        warnings.filterwarnings("ignore", ".* class is insecure.*",
+                                DeprecationWarning)
+
+    def tearDown(self):
+        self._warnings_manager.__exit__(None, None, None)
+
     def test_basic(self):
         cases = [
             { 'data': 'chips=ahoy; vienna=finger',
