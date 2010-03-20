@@ -700,10 +700,9 @@ class TestCase(object):
             msg: Optional message to use on failure instead of a list of
                     differences.
 
-        For more general containership equality, assertSameElements will work
-        with things other than sets.    This uses ducktyping to support
-        different types of sets, and is optimized for sets specifically
-        (parameters must support a difference method).
+        assertSetEqual uses ducktyping to support different types of sets, and
+        is optimized for sets specifically (parameters must support a
+        difference method).
         """
         try:
             difference1 = set1.difference(set2)
@@ -809,6 +808,8 @@ class TestCase(object):
         set(actual))`` but it works with sequences of unhashable objects as
         well.
         """
+        warnings.warn('assertSameElements is deprecated',
+                      DeprecationWarning)
         try:
             expected = set(expected_seq)
             actual = set(actual_seq)
