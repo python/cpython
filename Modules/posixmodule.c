@@ -2979,6 +2979,11 @@ posix_execv(PyObject *self, PyObject *args)
                 PyMem_Free(path);
 		return NULL;
 	}
+	if (argc < 1) {
+		PyErr_SetString(PyExc_ValueError, "execv() arg 2 must not be empty");
+                PyMem_Free(path);
+		return NULL;
+	}
 
 	argvlist = PyMem_NEW(char *, argc+1);
 	if (argvlist == NULL) {
