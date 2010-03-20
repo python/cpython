@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Make a reST file compliant to our pre-commit hook.
 # Currently just remove trailing whitespace.
