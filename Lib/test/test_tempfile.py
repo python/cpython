@@ -8,9 +8,6 @@ import warnings
 import unittest
 from test import support
 
-warnings.filterwarnings("ignore",
-                        category=RuntimeWarning,
-                        message="mktemp", module=__name__)
 
 if hasattr(os, 'stat'):
     import stat
@@ -38,6 +35,16 @@ else:
 class TC(unittest.TestCase):
 
     str_check = re.compile(r"[a-zA-Z0-9_-]{6}$")
+
+    def setUp(self):
+        self._warnings_manager = support.check_warnings()
+        self._warnings_manager.__enter__()
+        warnings.filterwarnings("ignore", category=RuntimeWarning,
+                                message="mktemp", module=__name__)
+
+    def tearDown(self):
+        self._warnings_manager.__exit__(None, None, None)
+
 
     def failOnException(self, what, ei=None):
         if ei is None:
@@ -98,6 +105,7 @@ class test__RandomNameSequence(TC):
 
     def setUp(self):
         self.r = tempfile._RandomNameSequence()
+        super().setUp()
 
     def test_get_six_char_str(self):
         # _RandomNameSequence returns a six-character string
@@ -499,11 +507,13 @@ class test_mktemp(TC):
     # We must also suppress the RuntimeWarning it generates.
     def setUp(self):
         self.dir = tempfile.mkdtemp()
+        super().setUp()
 
     def tearDown(self):
         if self.dir:
             os.rmdir(self.dir)
             self.dir = None
+        super().tearDown()
 
     class mktemped:
         _unlink = os.unlink
