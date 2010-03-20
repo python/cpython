@@ -13,8 +13,6 @@ import shutil
 import unittest
 import warnings
 
-warnings.filterwarnings('ignore', '.* potential security risk .*',
-                        RuntimeWarning)
 
 class PosixTester(unittest.TestCase):
 
@@ -22,9 +20,14 @@ class PosixTester(unittest.TestCase):
         # create empty file
         fp = open(support.TESTFN, 'w+')
         fp.close()
+        self._warnings_manager = support.check_warnings()
+        self._warnings_manager.__enter__()
+        warnings.filterwarnings('ignore', '.* potential security risk .*',
+                                RuntimeWarning)
 
     def tearDown(self):
         support.unlink(support.TESTFN)
+        self._warnings_manager.__exit__(None, None, None)
 
     def testNoArgFunctions(self):
         # test posix functions which take no arguments and have
