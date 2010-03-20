@@ -148,6 +148,11 @@ and off individually.  They are described here in more detail.
    Removes usage of :func:`execfile`.  The argument to :func:`execfile` is
    wrapped in calls to :func:`open`, :func:`compile`, and :func:`exec`.
 
+.. 2to3fixer:: exitfunc
+
+   Changes assignment of :attr:`sys.exitfunc` to use of the :mod:`atexit`
+   module.
+
 .. 2to3fixer:: filter
 
    Wraps :func:`filter` usage in a :class:`list` call.
