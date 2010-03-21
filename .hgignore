@@ -1,8 +1,8 @@
 .gdb_history
 .purify
 .svn
-Makefile
-Makefile.pre
+Makefile$
+Makefile.pre$
 TAGS
 autom4te.cache
 build
