@@ -37,6 +37,13 @@ Library
 - Issue #7356: ctypes.util: Make parsing of ldconfig output independent of
   the locale.
 
+Build
+-----
+
+- Issue #1628484: The Makefile doesn't ignore the CFLAGS environment
+  variable anymore.  It also forwards the LDFLAGS settings to the linker
+  when building a shared library.
+
 
 What's New in Python 2.6.5?
 ===========================
