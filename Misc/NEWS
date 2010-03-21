@@ -15,8 +15,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #1039, #8154: Fix os.execlp() crash with missing 2nd argument.
-
 - Issue #4961: Inconsistent/wrong result of askyesno function in tkMessageBox
   with Tcl/Tk-8.5.
 

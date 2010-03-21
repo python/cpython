@@ -511,9 +511,6 @@ class URandomTests (unittest.TestCase):
         except NotImplementedError:
             pass
 
-    def test_execvpe_with_bad_arglist(self):
-        self.assertRaises(ValueError, os.execvpe, 'notepad', [], None)
-
 class Win32ErrorTests(unittest.TestCase):
     def test_rename(self):
         self.assertRaises(WindowsError, os.rename, test_support.TESTFN, test_support.TESTFN+".bak")
