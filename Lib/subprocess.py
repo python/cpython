@@ -447,7 +447,8 @@ _active = []
 
 def _cleanup():
     for inst in _active[:]:
-        if inst._internal_poll(_deadstate=sys.maxint) >= 0:
+        res = inst._internal_poll(_deadstate=sys.maxint)
+        if res is not None and res >= 0:
             try:
                 _active.remove(inst)
             except ValueError:
