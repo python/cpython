@@ -295,9 +295,9 @@ func_set_code(PyFunctionObject *op, PyObject *value)
 		    PyTuple_GET_SIZE(op->func_closure));
 	if (nclosure != nfree) {
 		PyErr_Format(PyExc_ValueError,
-			     "%s() requires a code object with %zd free vars,"
+			     "%U() requires a code object with %zd free vars,"
 			     " not %zd",
-			     _PyUnicode_AsString(op->func_name),
+			     op->func_name,
 			     nclosure, nfree);
 		return -1;
 	}
