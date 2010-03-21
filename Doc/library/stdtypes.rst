@@ -883,12 +883,12 @@ string functions based on regular expressions.
 
 .. method:: str.format(*args, **kwargs)
 
-   Perform a string formatting operation.  The *format_string* argument can
-   contain literal text or replacement fields delimited by braces ``{}``.  Each
-   replacement field contains either the numeric index of a positional argument,
-   or the name of a keyword argument.  Returns a copy of *format_string* where
-   each replacement field is replaced with the string value of the corresponding
-   argument.
+   Perform a string formatting operation.  The string on which this method is
+   called can contain literal text or replacement fields delimited by braces
+   ``{}``.  Each replacement field contains either the numeric index of a
+   positional argument, or the name of a keyword argument.  Returns a copy of
+   the string where each replacement field is replaced with the string value of
+   the corresponding argument.
 
       >>> "The sum of 1 + 2 is {0}".format(1+2)
       'The sum of 1 + 2 is 3'

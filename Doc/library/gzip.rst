@@ -58,6 +58,7 @@ The module defines the following items:
    writing as *fileobj*, and retrieve the resulting memory buffer using the
    :class:`StringIO` object's :meth:`getvalue` method.
 
+   :class:`GzipFile` supports iteration.
 
 .. function:: open(filename[, mode[, compresslevel]])
 

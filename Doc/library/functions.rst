@@ -336,7 +336,7 @@ available.  They are listed here in alphabetical order.
    This function can also be used to execute arbitrary code objects (such as
    those created by :func:`compile`).  In this case pass a code object instead
    of a string.  If the code object has been compiled with ``'exec'`` as the
-   *kind* argument, :func:`eval`\'s return value will be ``None``.
+   *mode* argument, :func:`eval`\'s return value will be ``None``.
 
    Hints: dynamic execution of statements is supported by the :keyword:`exec`
    statement.  Execution of statements from a file is supported by the
@@ -1135,7 +1135,8 @@ available.  They are listed here in alphabetical order.
    value is ``None``.
 
    *key* specifies a function of one argument that is used to extract a comparison
-   key from each list element: ``key=str.lower``.  The default value is ``None``.
+   key from each list element: ``key=str.lower``.  The default value is ``None``
+   (compare the elements directly).
 
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
