@@ -358,6 +358,9 @@ class BuildExtTestCase(support.TempdirManager,
         import distutils.core, distutils.extension, distutils.command.build_ext
         saved_ext = distutils.extension.Extension
         try:
+            # on some platforms, it loads the deprecated "dl" module
+            test_support.import_module('setuptools_build_ext', deprecated=True)
+
             # theses import patch Distutils' Extension class
             from setuptools_build_ext import build_ext as setuptools_build_ext
             from setuptools_extension import Extension
