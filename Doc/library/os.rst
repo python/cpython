@@ -13,19 +13,24 @@ module.  For creating temporary files and directories see the :mod:`tempfile`
 module, and for high-level file and directory handling see the :mod:`shutil`
 module.
 
-The design of all built-in operating system dependent modules of Python is such
-that as long as the same functionality is available, it uses the same interface;
-for example, the function ``os.stat(path)`` returns stat information about
-*path* in the same format (which happens to have originated with the POSIX
-interface).
+Notes on the availability of these functions:
 
-Extensions peculiar to a particular operating system are also available through
-the :mod:`os` module, but using them is of course a threat to portability!
+* The design of all built-in operating system dependent modules of Python is
+  such that as long as the same functionality is available, it uses the same
+  interface; for example, the function ``os.stat(path)`` returns stat
+  information about *path* in the same format (which happens to have originated
+  with the POSIX interface).
 
-.. note::
+* Extensions peculiar to a particular operating system are also available
+  through the :mod:`os` module, but using them is of course a threat to
+  portability.
 
-   If not separately noted, all functions that claim "Availability: Unix" are
-   supported on Mac OS X, which builds on a Unix core.
+* An "Availability: Unix" note means that this function is commonly found on
+  Unix systems.  It does not make any claims about its existence on a specific
+  operating system.
+
+* If not separately noted, all functions that claim "Availability: Unix" are
+  supported on Mac OS X, which builds on a Unix core.
 
 .. note::
 
@@ -41,9 +46,9 @@ the :mod:`os` module, but using them is of course a threat to portability!
 
 .. data:: name
 
-   The name of the operating system dependent module imported.  The following names
-   have currently been registered: ``'posix'``, ``'nt'``, ``'mac'``, ``'os2'``,
-   ``'ce'``, ``'java'``, ``'riscos'``.
+   The name of the operating system dependent module imported.  The following
+   names have currently been registered: ``'posix'``, ``'nt'``, ``'mac'``,
+   ``'os2'``, ``'ce'``, ``'java'``, ``'riscos'``.
 
 
 .. _os-procinfo:
