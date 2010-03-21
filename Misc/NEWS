@@ -914,6 +914,9 @@ Documentation
 Tests
 -----
 
+- Issue #8180: Fix test_pep277 on OS X and add more tests for special Unicode
+  normalization cases.
+
 - Issue #7783: test.support.open_urlresource invalidates the outdated files
   from the local cache.
 

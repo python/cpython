@@ -1,6 +1,7 @@
 # Test the Unicode versions of normal file functions
 # open, os.open, os.stat. os.listdir, os.rename, os.remove, os.mkdir, os.chdir, os.rmdir
 import sys, os, unittest
+from unicodedata import normalize
 from test import support
 
 filenames = [
@@ -13,7 +14,20 @@ filenames = [
     '\u05d4\u05e9\u05e7\u05e6\u05e5\u05e1',
     '\u66e8\u66e9\u66eb',
     '\u66e8\u05e9\u3093\u0434\u0393\xdf',
+    # Specific code points: fn, NFC(fn) and NFKC(fn) all differents
+    '\u2000\u2000\u2000A',
+    '\u2001\u2001\u2001A',
+    '\u2003\u2003\u2003A',  # == NFC('\u2001\u2001\u2001A')
+    '\u0020\u0020\u0020A',  # '\u0020' == ' ' == NFKC('\u2000')
+                            # '\u0020' == NFKC('\u2001') == NFKC('\u2003')
+    '\u1fee\u1ffd',
+    # Specific code points: NFC(fn), NFD(fn), NFKC(fn) and NFKD(fn) all differents
+    '\u0385\u03d3\u03d4',
+    '\u00a8\u0301\u03d2\u0301\u03d2\u0308',     # == NFD('\u0385\u03d3\u03d4')
+    '\u0020\u0308\u0301\u038e\u03ab',           # == NFKC('\u0385\u03d3\u03d4')
+    '\u1e9b\u1fc1\u1fcd\u1fce\u1fcf\u1fdd\u1fde\u1fdf\u1fed',
     ]
+
 
 # Destroy directory dirname and all files under it, to one level.
 def deltree(dirname):
@@ -25,43 +39,51 @@ def deltree(dirname):
             os.unlink(os.path.join(dirname, fname))
         os.rmdir(dirname)
 
+
 class UnicodeFileTests(unittest.TestCase):
-    files = [os.path.join(support.TESTFN, f) for f in filenames]
+    files = set(filenames)
+    normal_form = None
 
     def setUp(self):
         try:
             os.mkdir(support.TESTFN)
         except OSError:
             pass
+        files = set()
         for name in self.files:
+            name = os.path.join(support.TESTFN, self.norm(name))
             try:
                 f = open(name, 'wb')
             except UnicodeEncodeError:
                 if not os.path.supports_unicode_filenames:
-                    raise unittest.SkipTest("only NT+ and systems with Unicode"
-                                            "-friendly filesystem encoding")
+                    self.skipTest("only NT+ and systems with Unicode-friendly"
+                                  "filesystem encoding")
             f.write((name+'\n').encode("utf-8"))
             f.close()
             os.stat(name)
+            files.add(name)
+        self.files = files
 
     def tearDown(self):
         deltree(support.TESTFN)
 
+    def norm(self, s):
+        if self.normal_form:
+            return normalize(self.normal_form, s)
+        return s
+
     def _apply_failure(self, fn, filename, expected_exception,
                        check_fn_in_exception = True):
-        try:
+        with self.assertRaises(expected_exception) as c:
             fn(filename)
-            raise support.TestFailed("Expected to fail calling '%s(%r)'"
-                             % (fn.__name__, filename))
-        except expected_exception as details:
-            # the "filename" exception attribute may be encoded
-            if isinstance(details.filename, bytes):
-                filename = filename.encode(sys.getfilesystemencoding())
-            if check_fn_in_exception and details.filename != filename:
-                raise support.TestFailed("Function '%s(%r) failed with "
-                                 "bad filename in the exception: %r"
-                                 % (fn.__name__, filename,
-                                    details.filename))
+        exc_filename = c.exception.filename
+        # the "filename" exception attribute may be encoded
+        if isinstance(exc_filename, bytes):
+            filename = filename.encode(sys.getfilesystemencoding())
+        if check_fn_in_exception:
+            self.assertEqual(exc_filename, filename, "Function '%s(%r) failed "
+                             "with bad filename in the exception: %r" %
+                             (fn.__name__, filename, exc_filename))
 
     def test_failures(self):
         # Pass non-existing Unicode filenames all over the place.
@@ -82,39 +104,90 @@ class UnicodeFileTests(unittest.TestCase):
             f.close()
             os.stat(name)
 
+    def test_normalize(self):
+        files = set(self.files)
+        others = set()
+        for nf in set(['NFC', 'NFD', 'NFKC', 'NFKD']):
+            others |= set(normalize(nf, file) for file in files)
+        others -= files
+        if sys.platform == 'darwin':
+            files = set(normalize('NFD', file) for file in files)
+        for name in others:
+            if sys.platform == 'darwin' and normalize('NFD', name) in files:
+                # Mac OS X decomposes Unicode names, using Normal Form D.
+                # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
+                os.stat(name)
+                continue
+            self._apply_failure(open, name, IOError)
+            self._apply_failure(os.stat, name, OSError)
+            self._apply_failure(os.chdir, name, OSError)
+            self._apply_failure(os.rmdir, name, OSError)
+            self._apply_failure(os.remove, name, OSError)
+            # listdir may append a wildcard to the filename, so dont check
+            self._apply_failure(os.listdir, name, OSError, False)
+
     def test_listdir(self):
-        f1 = os.listdir(support.TESTFN)
-        f2 = os.listdir(str(support.TESTFN.encode("utf-8"),
-                                sys.getfilesystemencoding()))
-        sf2 = set(os.path.join(str(support.TESTFN), f)
-                  for f in f2)
-        self.assertEqual(len(f1), len(self.files))
-        self.assertEqual(sf2, set(self.files))
+        sf0 = set(self.files)
+        f1 = os.listdir(support.TESTFN.encode(sys.getfilesystemencoding()))
+        f2 = os.listdir(support.TESTFN)
+        if sys.platform == 'darwin':
+            # Mac OS X returns canonically decomposed Unicode (Normal Form D)
+            # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
+            sf0 = set(normalize('NFD', f) for f in self.files)
+            f2 = [normalize('NFD', f) for f in f2]
+        sf2 = set(os.path.join(support.TESTFN, f) for f in f2)
+        self.assertEqual(sf0, sf2)
+        self.assertEqual(len(f1), len(f2))
 
     def test_rename(self):
         for name in self.files:
-            os.rename(name,"tmp")
-            os.rename("tmp",name)
+            os.rename(name, "tmp")
+            os.rename("tmp", name)
 
     def test_directory(self):
-        dirname = os.path.join(support.TESTFN,'Gr\xfc\xdf-\u66e8\u66e9\u66eb')
+        dirname = os.path.join(support.TESTFN, 'Gr\xfc\xdf-\u66e8\u66e9\u66eb')
         filename = '\xdf-\u66e8\u66e9\u66eb'
         oldwd = os.getcwd()
         os.mkdir(dirname)
         os.chdir(dirname)
-        f = open(filename, 'wb')
-        f.write((filename + '\n').encode("utf-8"))
-        f.close()
-        os.access(filename,os.R_OK)
-        os.remove(filename)
-        os.chdir(oldwd)
-        os.rmdir(dirname)
+        try:
+            with open(filename, 'wb') as f:
+                f.write((filename + '\n').encode("utf-8"))
+            os.access(filename,os.R_OK)
+            os.remove(filename)
+        finally:
+            os.chdir(oldwd)
+            os.rmdir(dirname)
+
+
+class UnicodeNFCFileTests(UnicodeFileTests):
+    normal_form = 'NFC'
+
+
+class UnicodeNFDFileTests(UnicodeFileTests):
+    normal_form = 'NFD'
+
+
+class UnicodeNFKCFileTests(UnicodeFileTests):
+    normal_form = 'NFKC'
+
+
+class UnicodeNFKDFileTests(UnicodeFileTests):
+    normal_form = 'NFKD'
+
 
 def test_main():
     try:
-        support.run_unittest(UnicodeFileTests)
+        support.run_unittest(
+            UnicodeFileTests,
+            UnicodeNFCFileTests,
+            UnicodeNFDFileTests,
+            UnicodeNFKCFileTests,
+            UnicodeNFKDFileTests,
+        )
     finally:
         deltree(support.TESTFN)
+
 
 if __name__ == "__main__":
     test_main()
