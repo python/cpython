@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+import sys
+
 """Doctest for method/function calls.
 
 We're going the use these types for extra testing
@@ -275,7 +278,7 @@ import unittest
 from test import test_support
 
 
-class UnicodeKeywordArgsTest(unittest.TestCase):
+class ExtCallTest(unittest.TestCase):
 
     def test_unicode_keywords(self):
         def f(a):
@@ -292,9 +295,8 @@ class UnicodeKeywordArgsTest(unittest.TestCase):
 
 
 def test_main():
-    from test import test_extcall # self import
-    test_support.run_doctest(test_extcall, True)
-    test_support.run_unittest(UnicodeKeywordArgsTest)
+    test_support.run_doctest(sys.modules[__name__], True)
+    test_support.run_unittest(ExtCallTest)
 
 if __name__ == '__main__':
     test_main()
