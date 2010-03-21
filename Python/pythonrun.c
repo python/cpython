@@ -296,13 +296,14 @@ Py_InitializeEx(int install_sigs)
 	if (initstdio() < 0)
 		Py_FatalError(
 		    "Py_Initialize: can't initialize sys standard streams");
-	if (!Py_NoSiteFlag)
-		initsite(); /* Module site */
 
 	/* auto-thread-state API, if available */
 #ifdef WITH_THREAD
 	_PyGILState_Init(interp, tstate);
 #endif /* WITH_THREAD */
+
+	if (!Py_NoSiteFlag)
+		initsite(); /* Module site */
 }
 
 void
@@ -711,22 +712,12 @@ initmain(void)
 static void
 initsite(void)
 {
-	PyObject *m, *f;
+	PyObject *m;
 	m = PyImport_ImportModule("site");
 	if (m == NULL) {
-		f = PySys_GetObject("stderr");
-		if (f == NULL || f == Py_None)
-			return;
-		if (Py_VerboseFlag) {
-			PyFile_WriteString(
-				"'import site' failed; traceback:\n", f);
-			PyErr_Print();
-		}
-		else {
-			PyFile_WriteString(
-			  "'import site' failed; use -v for traceback\n", f);
-			PyErr_Clear();
-		}
+		PyErr_Print();
+		Py_Finalize();
+		exit(1);
 	}
 	else {
 		Py_DECREF(m);
@@ -1907,6 +1898,8 @@ err_input(perrdetail *err)
 	char *msg = NULL;
 	errtype = PyExc_SyntaxError;
 	switch (err->error) {
+	case E_ERROR:
+		return;
 	case E_SYNTAX:
 		errtype = PyExc_IndentationError;
 		if (err->expected == INDENT)
