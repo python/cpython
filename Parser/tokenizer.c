@@ -764,8 +764,12 @@ error_nomem:
 	return -1;
 
 error_clear:
-	/* Fallback to iso-8859-1: for backward compatibility */
 	Py_DECREF(enc);
+	if (!PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
+		tok->done = E_ERROR;
+		return -1;
+	}
+	/* Fallback to iso-8859-1: for backward compatibility */
 	PyErr_Clear();
 	return 0;
 }
