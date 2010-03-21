@@ -7,12 +7,17 @@
 #include "intrcheck.h"
 
 #ifdef MS_WINDOWS
+#ifdef HAVE_PROCESS_H
 #include <process.h>
 #endif
+#endif
 
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
-
+#endif
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif

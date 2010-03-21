@@ -67,7 +67,7 @@ The following sections walk you through this example.
 Creating a parser
 ^^^^^^^^^^^^^^^^^
 
-Mose uses of the :mod:`argparse` module will start out by creating an
+The first step in using the :mod:`argparse` is creating an
 :class:`ArgumentParser` object::
 
    >>> parser = argparse.ArgumentParser(description='Process some integers.')

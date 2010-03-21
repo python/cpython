@@ -31,8 +31,6 @@
  *   PERFORMANCE OF THIS SOFTWARE.
  */
 
-/* CVS: $Id$ */
-
 /*
 
 A number of SysV or ncurses functions don't have wrappers yet; if you

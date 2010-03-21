@@ -1,7 +1,0 @@
-
-static PyObject *
-$abbrev$_call($abbrev$object *self, PyObject *args, PyObject *kwargs)
-{
-	/* XXXX Return the result of calling self with argument args */
-}
-

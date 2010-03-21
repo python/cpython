@@ -1,7 +1,0 @@
-
-static void
-$abbrev$_dealloc($abbrev$object *self)
-{
-	/* XXXX Add your own cleanup code here */
-	PyMem_DEL(self);
-}

@@ -1,9 +1,0 @@
-
-static int
-$abbrev$_setattr($abbrev$object *self, char *name, PyObject *v)
-{
-	/* Set attribute 'name' to value 'v'. v==NULL means delete */
-	
-	/* XXXX Add your own setattr code here */
-	return -1;
-}
