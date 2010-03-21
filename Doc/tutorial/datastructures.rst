@@ -153,6 +153,11 @@ the queue, use :meth:`pop` with ``0`` as the index.  For example::
    >>> queue
    ['Michael', 'Terry', 'Graham']
 
+However, since lists are implemented as an array of elements, they are not the
+optimal data structure to use as a queue (the ``pop(0)`` needs to move all
+following elements).  See :ref:`tut-list-tools` for a look at
+:class:`collections.deque`, which is designed to work efficiently as a queue.
+
 
 .. _tut-listcomps:
 
