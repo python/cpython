@@ -1,9 +1,0 @@
-
-static PyObject *
-$abbrev$_repr($abbrev$object *self)
-{
-	PyObject *s;
-
-	/* XXXX Add code here to put self into s */
-	return s;
-}

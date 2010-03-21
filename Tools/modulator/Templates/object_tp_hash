@@ -1,6 +1,0 @@
-
-static long
-$abbrev$_hash($abbrev$object *self)
-{
-	/* XXXX Return a hash of self (or -1) */
-}
