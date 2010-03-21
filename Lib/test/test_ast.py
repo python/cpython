@@ -302,7 +302,9 @@ class ASTHelpers_Test(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(AST_Tests, ASTHelpers_Test)
+    with test_support.check_py3k_warnings(("backquote not supported",
+                                             SyntaxWarning)):
+        test_support.run_unittest(AST_Tests, ASTHelpers_Test)
 
 def main():
     if __name__ != '__main__':

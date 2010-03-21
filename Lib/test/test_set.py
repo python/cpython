@@ -1345,6 +1345,10 @@ class TestOnlySetsOperator(TestOnlySetsInBinaryOps):
         self.other = operator.add
         self.otherIsIterable = False
 
+    def test_ge_gt_le_lt(self):
+        with test_support.check_py3k_warnings():
+            super(TestOnlySetsOperator, self).test_ge_gt_le_lt()
+
 #------------------------------------------------------------------------------
 
 class TestOnlySetsTuple(TestOnlySetsInBinaryOps):
