@@ -12,6 +12,9 @@ What's New in Python 2.7 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #6474: Make error message from passing an inadequate number of keyword
+  arguments to a function correct.
+
 - Issue #8164: Don't allow lambda functions to have a docstring.
 
 - Issue #3137: Don't ignore errors at startup, especially a keyboard interrupt
