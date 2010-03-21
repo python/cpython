@@ -227,15 +227,9 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
 
     def testBlocker(self):
         mname = "exceptions"  # an arbitrary harmless builtin module
-        if mname in sys.modules:
-            del sys.modules[mname]
+        test_support.unload(mname)
         sys.meta_path.append(ImportBlocker(mname))
-        try:
-            __import__(mname)
-        except ImportError:
-            pass
-        else:
-            self.fail("'%s' was not supposed to be importable" % mname)
+        self.assertRaises(ImportError, __import__, mname)
 
     def testImpWrapper(self):
         i = ImpWrapper()
@@ -247,7 +241,8 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
             for n in sys.modules.keys():
                 if n.startswith(parent):
                     del sys.modules[n]
-        with test_support.check_warnings():
+        with test_support.check_warnings(("The compiler package is deprecated "
+                                          "and removed", DeprecationWarning)):
             for mname in mnames:
                 m = __import__(mname, globals(), locals(), ["__dummy__"])
                 m.__loader__  # to make sure we actually handled the import
