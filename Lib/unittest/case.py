@@ -568,7 +568,7 @@ class TestCase(object):
             msg: Optional message to use on failure instead of a list of
                     differences.
         """
-        if seq_type != None:
+        if seq_type is not None:
             seq_type_name = seq_type.__name__
             if not isinstance(seq1, seq_type):
                 raise self.failureException('First sequence is not a %s: %s'
@@ -802,7 +802,7 @@ class TestCase(object):
         with warnings.catch_warnings():
             if sys.py3kwarning:
                 # Silence Py3k warning raised during the sorting
-                for _msg in ["dict inequality comparisons",
+                for _msg in ["(code|dict|type) inequality comparisons",
                              "builtin_function_or_method order comparisons",
                              "comparing unequal types"]:
                     warnings.filterwarnings("ignore", _msg, DeprecationWarning)
