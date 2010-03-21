@@ -166,12 +166,12 @@ class TestInterpreterStack(IsTestBase):
 
     def test_trace(self):
         self.assertEqual(len(git.tr), 3)
-        self.assertEqual(revise(*git.tr[0][1:]),
-             (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
-        self.assertEqual(revise(*git.tr[1][1:]),
-             (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
-        self.assertEqual(revise(*git.tr[2][1:]),
-             (modfile, 18, 'eggs', ['    q = y / 0\n'], 0))
+        self.assertEqual(git.tr[0][1:], (modfile, 43, 'argue',
+                                         ['            spam(a, b, c)\n'], 0))
+        self.assertEqual(git.tr[1][1:], (modfile, 9, 'spam',
+                                         ['    eggs(b + d, c + f)\n'], 0))
+        self.assertEqual(git.tr[2][1:], (modfile, 18, 'eggs',
+                                         ['    q = y / 0\n'], 0))
 
     def test_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
