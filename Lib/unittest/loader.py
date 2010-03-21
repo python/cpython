@@ -33,13 +33,13 @@ def _make_failed_import_test(name, suiteClass):
         # Python 2.3 compatibility
         # format_exc returns two frames of discover.py as well
         message += '\n%s' % traceback.format_exc()
-    return _make_failed_test('ModuleImportFailure', name, suiteClass,
-                             ImportError(message))
+    return _make_failed_test('ModuleImportFailure', name, ImportError(message),
+                             suiteClass)
 
 def _make_failed_load_tests(name, exception, suiteClass):
-    return _make_failed_test('LoadTestsFailure', name, suiteClass, exception)
+    return _make_failed_test('LoadTestsFailure', name, exception, suiteClass)
 
-def _make_failed_test(classname, methodname, suiteClass, exception):
+def _make_failed_test(classname, methodname, exception, suiteClass):
     def testFailure(self):
         raise exception
     attrs = {methodname: testFailure}
