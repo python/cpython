@@ -270,6 +270,15 @@ the function call setup. See <http://bugs.python.org/issue2016>.
     ...     print a,b
     >>> f(**x)
     1 2
+
+A obscure message:
+
+    >>> def f(a, b):
+    ...    pass
+    >>> f(b=1)
+    Traceback (most recent call last):
+      ...
+    TypeError: f() takes exactly 2 arguments (1 given)
 """
 
 import unittest
