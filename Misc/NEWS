@@ -4,6 +4,19 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 3.1.3?
+===========================
+
+*Release date: 20XX-XX-XX*
+
+Build
+-----
+
+- Issue #1628484: The Makefile doesn't ignore the CFLAGS environment
+  variable anymore.  It also forwards the LDFLAGS settings to the linker
+  when building a shared library.
+
+
 What's New in Python 3.1.2?
 ===========================
 
