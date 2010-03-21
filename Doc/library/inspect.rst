@@ -457,7 +457,7 @@ Classes and functions
 
 .. function:: getargspec(func)
 
-   Get the names and default values of a function's arguments. A tuple of four
+   Get the names and default values of a Python function's arguments. A tuple of four
    things is returned: ``(args, varargs, varkw, defaults)``. *args* is a list of
    the argument names (it may contain nested lists). *varargs* and *varkw* are the
    names of the ``*`` and ``**`` arguments or ``None``. *defaults* is a tuple of
