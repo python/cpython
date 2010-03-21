@@ -13,8 +13,8 @@ EUC-JISX0213.TXT
 EUC-JP.TXT
 EUC-KR.TXT
 JOHAB.TXT
-Makefile
-Makefile.pre
+Makefile$
+Makefile.pre$
 NormalizationTest-3.2.0.txt
 NormalizationTest.txt
 SHIFTJIS.TXT
