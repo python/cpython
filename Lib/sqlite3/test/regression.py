@@ -167,6 +167,12 @@ class RegressionTests(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, setattr, con,
                           "isolation_level", u"\xe9")
 
+    def CheckConnectionCall(self):
+        """
+        Call a connection with a non-string SQL request: check error handling
+        of the statement constructor.
+        """
+        self.assertRaises(sqlite.Warning, self.con, 1)
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
