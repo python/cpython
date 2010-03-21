@@ -4622,9 +4622,14 @@ class PTypesLongInitTest(unittest.TestCase):
 
 
 def test_main():
-    # Run all local test cases, with PTypesLongInitTest first.
-    test_support.run_unittest(PTypesLongInitTest, OperatorsTest,
-                              ClassPropertiesAndMethods, DictProxyTests)
+    with test_support.check_py3k_warnings(
+            ("classic (int|long) division", DeprecationWarning),
+            ("coerce.. not supported", DeprecationWarning),
+            ("Overriding __cmp__ ", DeprecationWarning),
+            (".+__(get|set|del)slice__ has been removed", DeprecationWarning)):
+        # Run all local test cases, with PTypesLongInitTest first.
+        test_support.run_unittest(PTypesLongInitTest, OperatorsTest,
+                                  ClassPropertiesAndMethods, DictProxyTests)
 
 if __name__ == "__main__":
     test_main()

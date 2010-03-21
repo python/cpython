@@ -2023,7 +2023,9 @@ def test_main(run=None):
 
     loadTestsFromTestCase = unittest.defaultTestLoader.loadTestsFromTestCase
     suite = unittest.TestSuite(loadTestsFromTestCase(tc) for tc in testcases)
-    run(suite)
+    with test_support.check_py3k_warnings(
+            (".+__(get|set)slice__ has been removed", DeprecationWarning)):
+        run(suite)
 
     ThreadsMixin.pool.terminate()
     ProcessesMixin.pool.terminate()
