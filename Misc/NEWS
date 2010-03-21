@@ -848,6 +848,10 @@ Extension Modules
 Build
 -----
 
+- Issue #1628484: The Makefile doesn't ignore the CFLAGS environment
+  variable anymore.  It also forwards the LDFLAGS settings to the linker
+  when building a shared library.
+
 - Issue #6716: Quote -x arguments of compileall in MSI installer.
   Exclude 2to3 tests from compileall.
 
