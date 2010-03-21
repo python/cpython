@@ -7,6 +7,8 @@ The Python Profilers
 
 .. sectionauthor:: James Roskind
 
+.. module:: profile
+   :synopsis: Python source profiler.
 
 .. index:: single: InfoSeek Corporation
 

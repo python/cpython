@@ -173,7 +173,7 @@ available.  They are listed here in alphabetical order.
 
    .. note::
 
-      When compiling a string with multi-line statements, line endings must be
+      When compiling a string with multi-line code, line endings must be
       represented by a single newline character (``'\n'``), and the input must
       be terminated by at least one newline character.  If line endings are
       represented by ``'\r\n'``, use :meth:`str.replace` to change them into
