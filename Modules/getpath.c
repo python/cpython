@@ -522,7 +522,7 @@ calculate_path(void)
 	}
 	else
 		progpath[0] = '\0';
-	if (progpath[0] != SEP)
+	if (progpath[0] != SEP && progpath[0] != '\0')
 		absolutize(progpath);
 	wcsncpy(argv0_path, progpath, MAXPATHLEN);
 	argv0_path[MAXPATHLEN] = '\0';
