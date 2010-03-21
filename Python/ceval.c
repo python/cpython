@@ -3115,23 +3115,21 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				else if (cmp < 0)
 					goto fail;
 			}
-			if (j >= co->co_argcount) {
-				if (kwdict == NULL) {
-					PyObject *kwd_str = kwd_as_string(keyword);
-					if (kwd_str) {
-						PyErr_Format(PyExc_TypeError,
-							     "%.200s() got an unexpected "
-							     "keyword argument '%.400s'",
-							     PyString_AsString(co->co_name),
-							     PyString_AsString(kwd_str));
-						Py_DECREF(kwd_str);
-					}
-					goto fail;
+			if (kwdict == NULL) {
+				PyObject *kwd_str = kwd_as_string(keyword);
+				if (kwd_str) {
+					PyErr_Format(PyExc_TypeError,
+						     "%.200s() got an unexpected "
+						     "keyword argument '%.400s'",
+						     PyString_AsString(co->co_name),
+						     PyString_AsString(kwd_str));
+					Py_DECREF(kwd_str);
 				}
-				PyDict_SetItem(kwdict, keyword, value);
-				continue;
+				goto fail;
 			}
-kw_found:
+			PyDict_SetItem(kwdict, keyword, value);
+			continue;
+		  kw_found:
 			if (GETLOCAL(j) != NULL) {
 				PyObject *kwd_str = kwd_as_string(keyword);
 				if (kwd_str) {
