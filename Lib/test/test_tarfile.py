@@ -68,7 +68,7 @@ class UstarReadTest(ReadTest):
                 "fileobj.readlines() failed")
         self.assertTrue(len(lines2) == 114,
                 "fileobj.readlines() failed")
-        self.assertTrue(lines2[83] == \
+        self.assertTrue(lines2[83] ==
                 "I will gladly admit that Python is not the fastest running scripting language.\n",
                 "fileobj.readlines() failed")
 
@@ -706,11 +706,12 @@ class WriteTest(WriteTestBase):
                 name = os.path.join(tempdir, name)
                 open(name, "wb").close()
 
-            def exclude(name):
-                return os.path.isfile(name)
+            exclude = os.path.isfile
 
             tar = tarfile.open(tmpname, self.mode, encoding="iso8859-1")
-            tar.add(tempdir, arcname="empty_dir", exclude=exclude)
+            with support.check_warnings(("use the filter argument",
+                                         DeprecationWarning)):
+                tar.add(tempdir, arcname="empty_dir", exclude=exclude)
             tar.close()
 
             tar = tarfile.open(tmpname, "r")
@@ -888,10 +889,12 @@ class GNUWriteTest(unittest.TestCase):
 
         tar = tarfile.open(tmpname)
         member = tar.next()
-        self.assertFalse(member is None, "unable to read longname member")
-        self.assertTrue(tarinfo.name == member.name and \
-                     tarinfo.linkname == member.linkname, \
-                     "unable to read longname member")
+        self.assertIsNotNone(member,
+                "unable to read longname member")
+        self.assertEqual(tarinfo.name, member.name,
+                "unable to read longname member")
+        self.assertEqual(tarinfo.linkname, member.linkname,
+                "unable to read longname member")
 
     def test_longname_1023(self):
         self._test(("longnam/" * 127) + "longnam")
@@ -993,7 +996,7 @@ class PaxWriteTest(GNUWriteTest):
                 "test": "\xe4\xf6\xfc",
                 "\xe4\xf6\xfc": "test"}
 
-        tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT, \
+        tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT,
                 pax_headers=pax_headers)
         tar.addfile(tarfile.TarInfo("test"))
         tar.close()

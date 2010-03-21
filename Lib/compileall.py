@@ -97,8 +97,6 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=0):
                 print('Compiling', fullname, '...')
             try:
                 ok = py_compile.compile(fullname, None, dfile, True)
-            except KeyboardInterrupt:
-                raise KeyboardInterrupt
             except py_compile.PyCompileError as err:
                 if quiet:
                     print('*** Error compiling', fullname, '...')

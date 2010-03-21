@@ -221,15 +221,9 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
 
     def testBlocker(self):
         mname = "exceptions"  # an arbitrary harmless builtin module
-        if mname in sys.modules:
-            del sys.modules[mname]
+        support.unload(mname)
         sys.meta_path.append(ImportBlocker(mname))
-        try:
-            __import__(mname)
-        except ImportError:
-            pass
-        else:
-            self.fail("'%s' was not supposed to be importable" % mname)
+        self.assertRaises(ImportError, __import__, mname)
 
     def testImpWrapper(self):
         i = ImpWrapper()
