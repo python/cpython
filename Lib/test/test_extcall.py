@@ -272,8 +272,6 @@ the function call setup. See <http://bugs.python.org/issue2016>.
     1 2
 """
 
-__test__ = {"extcall" : __doc__}
-
 import unittest
 import sys
 from test import test_support
