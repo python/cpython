@@ -3177,14 +3177,12 @@ kw_found:
 			}
 		}
 	}
-	else {
-		if (argcount > 0 || kwcount > 0) {
-			PyErr_Format(PyExc_TypeError,
-				     "%.200s() takes no arguments (%d given)",
-				     PyString_AsString(co->co_name),
-				     argcount + kwcount);
-			goto fail;
-		}
+	else if (argcount > 0 || kwcount > 0) {
+		PyErr_Format(PyExc_TypeError,
+			     "%.200s() takes no arguments (%d given)",
+			     PyString_AsString(co->co_name),
+			     argcount + kwcount);
+		goto fail;
 	}
 	/* Allocate and initialize storage for cell vars, and copy free
 	   vars into frame.  This isn't too efficient right now. */
