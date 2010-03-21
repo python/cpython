@@ -129,9 +129,11 @@ and off individually.  They are described here in more detail.
 
    Fixes dictionary iteration methods.  :meth:`dict.iteritems` is converted to
    :meth:`dict.items`, :meth:`dict.iterkeys` to :meth:`dict.keys`, and
-   :meth:`dict.itervalues` to :meth:`dict.values`.  It also wraps existing
-   usages of :meth:`dict.items`, :meth:`dict.keys`, and :meth:`dict.values` in a
-   call to :class:`list`.
+   :meth:`dict.itervalues` to :meth:`dict.values`.  Similarly,
+   :meth:`dict.viewitems`, :meth:`dict.viewkeys` and :meth:`dict.viewvalues` are
+   converted respectively to :meth:`dict.items`, :meth:`dict.keys` and
+   :meth:`dict.values`.  It also wraps existing usages of :meth:`dict.items`,
+   :meth:`dict.keys`, and :meth:`dict.values` in a call to :class:`list`.
 
 .. 2to3fixer:: except
 
@@ -145,6 +147,11 @@ and off individually.  They are described here in more detail.
 
    Removes usage of :func:`execfile`.  The argument to :func:`execfile` is
    wrapped in calls to :func:`open`, :func:`compile`, and :func:`exec`.
+
+.. 2to3fixer:: exitfunc
+
+   Changes assignment of :attr:`sys.exitfunc` to use of the :mod:`atexit`
+   module.
 
 .. 2to3fixer:: filter
 
