@@ -3076,13 +3076,12 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if (!(co->co_flags & CO_VARARGS)) {
 				PyErr_Format(PyExc_TypeError,
 				    "%U() takes %s %d "
-				    "%spositional argument%s (%d given)",
+				    "argument%s (%d given)",
 				    co->co_name,
 				    defcount ? "at most" : "exactly",
 				    co->co_argcount,
-				    kwcount ? "non-keyword " : "",
 				    co->co_argcount == 1 ? "" : "s",
-				    argcount);
+				    argcount + kwcount);
 				goto fail;
 			}
 			n = co->co_argcount;
@@ -3116,7 +3115,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			}
 			/* Speed hack: do raw pointer compares. As names are
 			   normally interned this should almost always hit. */
-			co_varnames = PySequence_Fast_ITEMS(co->co_varnames);
+			co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
 			for (j = 0;
 			     j < co->co_argcount + co->co_kwonlyargcount;
 			     j++) {
@@ -3148,10 +3147,10 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					    keyword);
 					goto fail;
 				}
-				PyDict_SetItem(kwdict, keyword, value);
-				continue;
 			}
-kw_found:
+			PyDict_SetItem(kwdict, keyword, value);
+			continue;
+		  kw_found:
 			if (GETLOCAL(j) != NULL) {
 				PyErr_Format(PyExc_TypeError,
 					 "%U() got multiple "
@@ -3190,16 +3189,19 @@ kw_found:
 			int m = co->co_argcount - defcount;
 			for (i = argcount; i < m; i++) {
 				if (GETLOCAL(i) == NULL) {
+					int j, given = 0;
+					for (j = 0; j < co->co_argcount; j++)
+						if (GETLOCAL(j))
+							given++;
 					PyErr_Format(PyExc_TypeError,
 					    "%U() takes %s %d "
-					    "%spositional argument%s "
+					    "argument%s "
 					    "(%d given)",
 					    co->co_name,
 					    ((co->co_flags & CO_VARARGS) ||
 					     defcount) ? "at least"
 						       : "exactly",
-					    m, kwcount ? "non-keyword " : "",
-					    m == 1 ? "" : "s", i);
+						     m, m == 1 ? "" : "s", given);
 					goto fail;
 				}
 			}
@@ -3216,14 +3218,12 @@ kw_found:
 			}
 		}
 	}
-	else {
-		if (argcount > 0 || kwcount > 0) {
-			PyErr_Format(PyExc_TypeError,
-				     "%U() takes no arguments (%d given)",
-				     co->co_name,
-				     argcount + kwcount);
-			goto fail;
-		}
+	else if (argcount > 0 || kwcount > 0) {
+		PyErr_Format(PyExc_TypeError,
+			     "%U() takes no arguments (%d given)",
+			     co->co_name,
+			     argcount + kwcount);
+		goto fail;
 	}
 	/* Allocate and initialize storage for cell vars, and copy free
 	   vars into frame.  This isn't too efficient right now. */
