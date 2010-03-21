@@ -43,7 +43,6 @@ the `Python Package Index <http://pypi.python.org/pypi>`_.
    intro.rst
    functions.rst
    constants.rst
-   objects.rst
    stdtypes.rst
    exceptions.rst
 
