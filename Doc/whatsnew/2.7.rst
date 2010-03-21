@@ -636,7 +636,10 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`ctypes` module now always converts ``None`` to a C NULL
   pointer for arguments declared as pointers.  (Changed by Thomas
-  Heller; :issue:`4606`.)
+  Heller; :issue:`4606`.)  The underlying `libffi library
+  <http://sourceware.org/libffi/>`__ has been updated to version
+  3.0.9, containing various fixes for different platforms.  (Updated
+  by Matthias Klose; :issue:`8142`.)
 
 * New method: the :mod:`datetime` module's :class:`timedelta` class
   gained a :meth:`total_seconds` method that returns the number of seconds
@@ -794,6 +797,10 @@ changes, or look through the Subversion logs for all the details.
   contributed by Travis H.; :issue:`6508`.  Support for initgroups added
   by Jean-Paul Calderone; :issue:`7333`.)
 
+  The :func:`os.fork` function now re-initializes the import lock in
+  the child process; this fixes problems on Solaris when :func:`fork`
+  is called from a thread.  (Fixed by Zsolt Cserna; :issue:`7242`.)
+
   The :func:`normpath` function now preserves Unicode; if its input path
   is a Unicode string, the return value is also a Unicode string.
   (Fixed by Matt Giuca; :issue:`5827`.)
@@ -827,12 +834,24 @@ changes, or look through the Subversion logs for all the details.
   to store data.
   (Contributed by Tarek Ziadé; :issue:`6693`.)
 
+  The :mod:`site` module now reports exceptions occurring
+  when the :mod:`sitecustomize` module is imported, and will no longer
+  catch and swallow the :exc:`KeyboardError` exception.  (Fixed by
+  Victor Stinner; :issue:`3137`.)
+
 * The :mod:`socket` module's :class:`SSL` objects now support the
   buffer API, which fixed a test suite failure.  (Fixed by Antoine
-  Pitrou; :issue:`7133`.)  The :func:`create_connection` function
+  Pitrou; :issue:`7133`.)
+
+  The :func:`create_connection` function
   gained a *source_address* parameter, a ``(host, port)`` 2-tuple
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
+
+  The :meth:`recv_into` and `recvfrom_into` methods will now write
+  into objects that support the buffer API, most usefully
+  the :class:`bytearray` and :class:`memoryview` objects.  (Implemented by
+  Antoine Pitrou; :issue:`8104`.)
 
 * The :mod:`SocketServer` module's :class:`TCPServer` class now
   has a :attr:`disable_nagle_algorithm` class attribute.
@@ -962,6 +981,11 @@ XXX A new :mod:`sysconfig` module has been extracted from
 The :mod:`sysconfig` module provides access to Python's configuration
 information like the list of installation paths and the configuration
 variables relevant for the current platform. (contributed by Tarek)
+
+Updated module: ElementTree 1.3
+---------------------------------
+
+XXX write this.
 
 .. ======================================================================
 .. whole new modules get described in subsections here
@@ -1365,9 +1389,10 @@ Other Changes and Fixes
 * Two benchmark scripts, :file:`iobench` and :file:`ccbench`, were
   added to the :file:`Tools` directory.  :file:`iobench` measures the
   speed of built-in file I/O objects (as returned by :func:`open`)
-  while performing various operations, and :file:`ccbench` is a concurrency
-  benchmark that tries to measure computing throughput and thread switching
-  latency when performing several tasks using a varying number of threads.
+  while performing various operations, and :file:`ccbench` is a
+  concurrency benchmark that tries to measure computing throughput,
+  thread switching latency, and IO processing bandwidth when
+  performing several tasks using a varying number of threads.
 
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
   with an existing :file:`.py` counterpart, the :attr:`co_filename`
