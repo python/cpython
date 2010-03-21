@@ -33,6 +33,8 @@ Using the built-in :func:`reload` function will fail if called on a module
 loaded from a ZIP archive; it is unlikely that :func:`reload` would be needed,
 since this would imply that the ZIP has been altered during runtime.
 
+ZIP archives with an archive comment are currently not supported.
+
 .. seealso::
 
    `PKZIP Application Note <http://www.pkware.com/documents/casestudies/APPNOTE.TXT>`_

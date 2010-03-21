@@ -1,5 +1,4 @@
-# Copyright (C) 2001-2006 Python Software Foundation
-# Author: Barry Warsaw
+# Copyright (C) 2001-2010 Python Software Foundation
 # Contact: email-sig@python.org
 
 """Classes to generate plain text from a message object tree."""

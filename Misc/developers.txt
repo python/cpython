@@ -17,7 +17,31 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
-- Tarek Ziadé as given SVN access on Decmeber 21 2008 by NCN,
+- Stefan Krah was given SVN access on January 5 2010 by GFB, at
+  suggestion of Mark Dickinson, for work on the decimal module.
+
+- Doug Hellmann was given SVN access on September 19 2009 by GFB, at
+  suggestion of Jesse Noller, for documentation work.
+
+- Ezio Melotti was given SVN access on June 7 2009 by GFB, for work on and
+  fixes to the documentation.
+
+- Paul Kippes was given commit privileges at PyCon 2009 by BAC to work on 3to2.
+
+- Ron DuPlain was given commit privileges at PyCon 2009 by BAC to work on 3to2.
+
+- Several developers of alternative Python implementations where
+  given access for test suite and library adaptions by MvL:
+  Allison Randal (Parrot), Michael Foord (IronPython),
+  Jim Baker, Philip Jenvey, and Frank Wierzbicki (all Jython).
+
+- R. David Murray was given SVN access on March 30 2009 by MvL, after
+  recommendation by BAC.
+
+- Chris Withers was given SVN access on March 8 2009 by MvL,
+  after recommendation by GvR.
+
+- Tarek Ziadé was given SVN access on December 21 2008 by NCN,
   for maintenance of distutils.
 
 - Hirokazu Yamamoto was given SVN access on August 12 2008 by MvL,
