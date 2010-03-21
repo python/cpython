@@ -37,7 +37,7 @@ Py_TRACE_REFS                                             introduced in 1.4
 
 Turn on heavy reference debugging.  This is major surgery.  Every PyObject
 grows two more pointers, to maintain a doubly-linked list of all live
-heap-allocated objects.  Most builtin type objects are not in this list,
+heap-allocated objects.  Most built-in type objects are not in this list,
 as they're statically allocated.  Starting in Python 2.3, if COUNT_ALLOCS
 (see below) is also defined, a static type object T does appear in this
 list if at least one object of type T has been created.
