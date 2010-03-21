@@ -712,12 +712,22 @@ initmain(void)
 static void
 initsite(void)
 {
-	PyObject *m;
+	PyObject *m, *f;
 	m = PyImport_ImportModule("site");
 	if (m == NULL) {
-		PyErr_Print();
-		Py_Finalize();
-		exit(1);
+		f = PySys_GetObject("stderr");
+		if (f == NULL || f == Py_None)
+			return;
+		if (Py_VerboseFlag) {
+			PyFile_WriteString(
+				"'import site' failed; traceback:\n", f);
+			PyErr_Print();
+		}
+		else {
+			PyFile_WriteString(
+			  "'import site' failed; use -v for traceback\n", f);
+			PyErr_Clear();
+		}
 	}
 	else {
 		Py_DECREF(m);
