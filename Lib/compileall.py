@@ -77,7 +77,10 @@ def compile_dir(dir, maxlevels=10, ddir=None,
                         print('*** Error compiling', fullname, '...')
                     else:
                         print('*** ', end='')
-                    print(err.msg)
+                    # escape non-printable characters in msg
+                    msg = err.msg.encode(sys.stdout.encoding, 'backslashreplace')
+                    msg = msg.decode(sys.stdout.encoding)
+                    print(msg)
                     success = 0
                 except (SyntaxError, UnicodeError, IOError) as e:
                     if quiet:
