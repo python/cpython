@@ -279,6 +279,15 @@ A obscure message:
     Traceback (most recent call last):
       ...
     TypeError: f() takes exactly 2 arguments (1 given)
+
+The number of arguments passed in includes keywords:
+
+    >>> def f(a):
+    ...    pass
+    >>> f(6, a=4, *(1, 2, 3))
+    Traceback (most recent call last):
+      ...
+    TypeError: f() takes exactly 1 argument (5 given)
 """
 
 import unittest
