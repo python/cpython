@@ -288,7 +288,7 @@ ZipFile Objects
       member of the given :class:`ZipInfo` instance.  By default, the
       :class:`ZipInfo` constructor sets this member to :const:`ZIP_STORED`.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.2
       The *compression_type* argument.
 
 The following data attributes are also available:

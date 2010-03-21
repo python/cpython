@@ -5,7 +5,7 @@
    :synopsis: Python's configuration information
 .. moduleauthor:: Tarek Ziade <tarek@ziade.org>
 .. sectionauthor:: Tarek Ziade <tarek@ziade.org>
-.. versionadded:: 2.7
+.. versionadded:: 3.2
 .. index::
    single: configuration information
 

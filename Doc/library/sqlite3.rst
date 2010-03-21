@@ -367,7 +367,7 @@ Connection Objects
 
 .. method:: Connection.enable_load_extension(enabled)
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
    This routine allows/disallows the SQLite engine to load SQLite extensions
    from shared libraries.  SQLite extensions can define new functions,
@@ -378,7 +378,7 @@ Connection Objects
 
 .. method:: Connection.load_extension(path)
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
    This routine loads a SQLite extension from a shared library. You have to
    enable extension loading with ``enable_load_extension`` before you can use
