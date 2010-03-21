@@ -245,13 +245,14 @@ Py_InitializeEx(int install_sigs)
 	}
 
 	initmain(); /* Module __main__ */
-	if (!Py_NoSiteFlag)
-		initsite(); /* Module site */
 
 	/* auto-thread-state API, if available */
 #ifdef WITH_THREAD
 	_PyGILState_Init(interp, tstate);
 #endif /* WITH_THREAD */
+
+	if (!Py_NoSiteFlag)
+		initsite(); /* Module site */
 
 	if ((p = Py_GETENV("PYTHONIOENCODING")) && *p != '\0') {
 		p = icodeset = codeset = strdup(p);
@@ -281,8 +282,13 @@ Py_InitializeEx(int install_sigs)
 				loc_codeset = strdup(loc_codeset);
 				Py_DECREF(enc);
 			} else {
-				loc_codeset = NULL;
-				PyErr_Clear();
+				if (PyErr_ExceptionMatches(PyExc_LookupError)) {
+					PyErr_Clear();
+					loc_codeset = NULL;
+				} else {
+					PyErr_Print();
+					exit(1);
+				}
 			}
 		} else
 			loc_codeset = NULL;
@@ -1543,6 +1549,8 @@ err_input(perrdetail *err)
 	char *msg = NULL;
 	errtype = PyExc_SyntaxError;
 	switch (err->error) {
+	case E_ERROR:
+		return;
 	case E_SYNTAX:
 		errtype = PyExc_IndentationError;
 		if (err->expected == INDENT)
