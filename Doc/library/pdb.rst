@@ -22,7 +22,7 @@ supports post-mortem debugging and can be called under program control.
 
 The debugger is extensible --- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
-extension interface uses the modules :mod:`bdb` (undocumented) and :mod:`cmd`.
+extension interface uses the modules :mod:`bdb` and :mod:`cmd`.
 
 The debugger's prompt is ``(Pdb)``. Typical usage to run a program under control
 of the debugger is::
