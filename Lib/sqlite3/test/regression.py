@@ -176,6 +176,13 @@ class RegressionTests(unittest.TestCase):
         class MyStr(str): pass
         self.con.execute("select ?", (MyStr("abc"),))
 
+    def CheckConnectionCall(self):
+        """
+        Call a connection with a non-string SQL request: check error handling
+        of the statement constructor.
+        """
+        self.assertRaises(sqlite.Warning, self.con, 1)
+
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
     return unittest.TestSuite((regression_suite,))
