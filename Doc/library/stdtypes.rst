@@ -1705,8 +1705,8 @@ altered after it is created; it can therefore be used as a dictionary key or as
 an element of another set.
 
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
-of elements pairs within braces, for example: ``{'jack', 'sjoerd'}``, in
-addition to the :class:`set` constructor.
+of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to the
+:class:`set` constructor.
 
 The constructors for both classes work the same:
 
