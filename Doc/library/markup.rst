@@ -35,10 +35,3 @@ definition of the Python bindings for the DOM and SAX interfaces.
    xml.sax.utils.rst
    xml.sax.reader.rst
    xml.etree.elementtree.rst
-
-.. seealso::
-
-   `Python/XML Libraries <http://pyxml.sourceforge.net/>`_
-      Home page for the PyXML package, containing an extension of :mod:`xml` package
-      bundled with Python.
-

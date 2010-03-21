@@ -1212,6 +1212,7 @@ static struct PyMemberDef kqueue_event_members[] = {
 #undef KQ_OFF
 
 static PyObject *
+
 kqueue_event_repr(kqueue_event_Object *s)
 {
 	char buf[1024];
@@ -1491,19 +1492,6 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
 		return NULL;
 	}
 
-	if (ch != NULL && ch != Py_None) {
-		it = PyObject_GetIter(ch);
-		if (it == NULL) {
-			PyErr_SetString(PyExc_TypeError,
-					"changelist is not iterable");
-			return NULL;
-		}
-		nchanges = PyObject_Size(ch);
-		if (nchanges < 0) {
-			return NULL;
-		}
-	}
-
 	if (otimeout == Py_None || otimeout == NULL) {
 		ptimeoutspec = NULL;
 	}
@@ -1539,11 +1527,22 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
 		return NULL;
 	}
 
-	if (nchanges) {
+	if (ch != NULL && ch != Py_None) {
+		it = PyObject_GetIter(ch);
+		if (it == NULL) {
+			PyErr_SetString(PyExc_TypeError,
+					"changelist is not iterable");
+			return NULL;
+		}
+		nchanges = PyObject_Size(ch);
+		if (nchanges < 0) {
+			goto error;
+		}
+
 		chl = PyMem_New(struct kevent, nchanges);
 		if (chl == NULL) {
 			PyErr_NoMemory();
-			return NULL;
+			goto error;
 		}
 		i = 0;
 		while ((ei = PyIter_Next(it)) != NULL) {
@@ -1566,7 +1565,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
 		evl = PyMem_New(struct kevent, nevents);
 		if (evl == NULL) {
 			PyErr_NoMemory();
-			return NULL;
+			goto error;
 		}
 	}
 

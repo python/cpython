@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6544: fix a reference leak in the kqueue implementation's error
+  handling.
+
 - Issue #7774: Set sys.executable to an empty string if argv[0] has been
   set to an non existent program name and Python is unable to retrieve the real
   program name
@@ -505,8 +508,8 @@ Core and Builtins
 - Issue #4618: When unicode arguments are passed to print(), the default
   separator and end should be unicode also.
 
-- Issue #6119: Fixed a incorrect Py3k warning about order comparisons of
-  builtin functions and methods.
+- Issue #6119: Fixed an incorrect Py3k warning about order comparisons of
+  built-in functions and methods.
 
 - Issue #5330: C functions called with keyword arguments were not reported by
   the various profiling modules (profile, cProfile). Patch by Hagen Fürstenau.
@@ -535,7 +538,7 @@ Core and Builtins
 - Issue #5829: complex('1e-500') no longer raises an exception
 
 - Issue #5787: object.__getattribute__(some_type, "__bases__") segfaulted on
-  some builtin types.
+  some built-in types.
 
 - Issue #5283: Setting __class__ in __del__ caused a segfault.
 
@@ -2799,7 +2802,7 @@ Core and builtins
 - Fixed a minor memory leak in dictobject.c. The content of the free
   list was not freed on interpreter shutdown.
 
-- Limit free list of method and builtin function objects to 256
+- Limit free list of method and built-in function objects to 256
   entries each.
 
 - Patch #1953: Added ``sys._compact_freelists()`` and the C API
@@ -2933,7 +2936,7 @@ Core and builtins
 
 - Fix warnings found by the new version of the Coverity checker.
 
-- The enumerate() builtin function is no longer bounded to sequences
+- The enumerate() built-in function is no longer bounded to sequences
   smaller than LONG_MAX.  Formerly, it raised an OverflowError.  Now,
   automatically shifts from ints to longs.
 
@@ -2994,7 +2997,7 @@ Core and builtins
 - Deprecate BaseException.message as per PEP 352.
 
 - Issue #1303614: don't expose object's __dict__ when the dict is
-  inherited from a builtin base.
+  inherited from a built-in base.
 
 - When __slots__ are set to a unicode string, make it work the same as
   setting a plain string, ie don't expand to single letter identifiers.
@@ -3903,7 +3906,7 @@ Library
   GNU modes.
 
 - Bug #1586448: the compiler module now emits the same bytecode for
-  list comprehensions as the builtin compiler, using the LIST_APPEND
+  list comprehensions as the built-in compiler, using the LIST_APPEND
   opcode.
 
 - Fix codecs.EncodedFile which did not use file_encoding in 2.5.0, and
@@ -4135,7 +4138,7 @@ Extension Modules
 - Bug #1653736: Complain about keyword arguments to time.isoformat.
 
 - Bug #1486663: don't reject keyword arguments for subclasses of
-  builtin types.
+  built-in types.
 
 - Patch #1610575: The struct module now supports the 't' code, for C99
   _Bool.
@@ -4318,7 +4321,7 @@ Documentation
 - Bug #1629566: clarify the docs on the return values of parsedate()
   and parsedate_tz() in email.utils and rfc822.
 
-- Patch #1671450: add a section about subclassing builtin types to the
+- Patch #1671450: add a section about subclassing built-in types to the
   "extending and embedding" tutorial.
 
 - Bug #1629125: fix wrong data type (int -> Py_ssize_t) in PyDict_Next
