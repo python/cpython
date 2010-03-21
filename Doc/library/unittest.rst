@@ -993,7 +993,7 @@ Test cases
       If :meth:`setUp` fails, meaning that :meth:`tearDown` is not called,
       then any cleanup functions added will still be called.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: doCleanups()
@@ -1009,7 +1009,7 @@ Test cases
       :meth:`doCleanups` pops methods off the stack of cleanup
       functions one at a time, so it can be called at any time.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)
@@ -1088,7 +1088,7 @@ Grouping tests
       (for example when counting tests or comparing for equality)
       so the tests returned must be the same for repeated iterations.
 
-      .. versionchanged:: 2.7
+      .. versionchanged:: 3.2
          In earlier versions the :class:`TestSuite` accessed tests directly rather
          than through iteration, so overriding :meth:`__iter__` wasn't sufficient
          for providing tests.
@@ -1302,14 +1302,14 @@ Loading and running tests
 
       Called once before any tests are executed.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: stopTestRun(test)
 
       Called once before any tests are executed.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: addError(test, err)
@@ -1411,5 +1411,5 @@ Loading and running tests
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
    This stores the result of the tests run as the ``result`` attribute.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.2
       The ``exit`` parameter was added.
