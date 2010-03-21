@@ -474,11 +474,12 @@ def execsitecustomize():
         pass
     except Exception as err:
         if os.environ.get("PYTHONVERBOSE"):
-            raise
-        sys.stderr.write(
-            "Error in sitecustomize; set PYTHONVERBOSE for traceback:\n"
-            "%s: %s\n" %
-            (err.__class__.__name__, err))
+            sys.excepthook(*sys.exc_info())
+        else:
+            sys.stderr.write(
+                "Error in sitecustomize; set PYTHONVERBOSE for traceback:\n"
+                "%s: %s\n" %
+                (err.__class__.__name__, err))
 
 
 def execusercustomize():
@@ -487,6 +488,14 @@ def execusercustomize():
         import usercustomize
     except ImportError:
         pass
+    except Exception as err:
+        if os.environ.get("PYTHONVERBOSE"):
+            sys.excepthook(*sys.exc_info())
+        else:
+            sys.stderr.write(
+                "Error in usercustomize; set PYTHONVERBOSE for traceback:\n"
+                "%s: %s\n" %
+                (err.__class__.__name__, err))
 
 
 def main():
