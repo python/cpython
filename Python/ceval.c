@@ -3099,7 +3099,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			}
 			/* Speed hack: do raw pointer compares. As names are
 			   normally interned this should almost always hit. */
-			co_varnames = PySequence_Fast_ITEMS(co->co_varnames);
+			co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
 			for (j = 0; j < co->co_argcount; j++) {
 				PyObject *nm = co_varnames[j];
 				if (nm == keyword)
