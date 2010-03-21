@@ -289,6 +289,21 @@ class Test_TestLoader(TestCase):
         suite = loader.loadTestsFromModule(m, use_load_tests=False)
         self.assertEquals(load_tests_args, [])
 
+    def test_loadTestsFromModule__faulty_load_tests(self):
+        m = types.ModuleType('m')
+
+        def load_tests(loader, tests, pattern):
+            raise TypeError('some failure')
+        m.load_tests = load_tests
+
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromModule(m)
+        self.assertIsInstance(suite, unittest.TestSuite)
+        self.assertEqual(suite.countTestCases(), 1)
+        test = list(suite)[0]
+
+        self.assertRaisesRegexp(TypeError, "some failure", test.m)
+
     ################################################################
     ### /Tests for TestLoader.loadTestsFromModule()
 
