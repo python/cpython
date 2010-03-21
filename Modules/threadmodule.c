@@ -411,6 +411,7 @@ struct bootstate {
 	PyObject *func;
 	PyObject *args;
 	PyObject *keyw;
+	PyThreadState *tstate;
 };
 
 static void
@@ -420,8 +421,9 @@ t_bootstrap(void *boot_raw)
 	PyThreadState *tstate;
 	PyObject *res;
 
-	tstate = PyThreadState_New(boot->interp);
-
+	tstate = boot->tstate;
+	tstate->thread_id = PyThread_get_thread_ident();
+	_PyThreadState_Init(tstate);
 	PyEval_AcquireThread(tstate);
 	res = PyEval_CallObjectWithKeywords(
 		boot->func, boot->args, boot->keyw);
@@ -484,6 +486,11 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 	boot->func = func;
 	boot->args = args;
 	boot->keyw = keyw;
+	boot->tstate = _PyThreadState_Prealloc(boot->interp);
+	if (boot->tstate == NULL) {
+		PyMem_DEL(boot);
+		return PyErr_NoMemory();
+	}
 	Py_INCREF(func);
 	Py_INCREF(args);
 	Py_XINCREF(keyw);
@@ -494,6 +501,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 		Py_DECREF(func);
 		Py_DECREF(args);
 		Py_XDECREF(keyw);
+		PyThreadState_Clear(boot->tstate);
 		PyMem_DEL(boot);
 		return NULL;
 	}
