@@ -206,7 +206,10 @@ def realpath(path):
     path = components[0] + ':'
     for c in components[1:]:
         path = join(path, c)
-        path = Carbon.File.FSResolveAliasFile(path, 1)[0].as_pathname()
+        try:
+            path = Carbon.File.FSResolveAliasFile(path, 1)[0].as_pathname()
+        except Carbon.File.Error:
+            pass
     return path
 
 supports_unicode_filenames = False

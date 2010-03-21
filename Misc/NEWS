@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8179: Fix macpath.realpath() on a non-existing path.
+
 - Issue #8024: Update the Unicode database to 5.2.
 
 - Issue #8104: socket.recv_into() and socket.recvfrom_into() now support
