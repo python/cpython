@@ -222,10 +222,69 @@ module, but it's easier to use.
    :pep:`378` - Format Specifier for Thousands Separator
      PEP written by Raymond Hettinger; implemented by Eric Smith.
 
+PEP 389: The argparse Module for Parsing Command Lines
+======================================================
+
+XXX write this section.
+
+.. seealso::
+
+   :pep:`389` - argparse - New Command Line Parsing Module
+     PEP written and implemented by Steven Bethard.
+
+PEP 391: Dictionary-Based Configuration For Logging
+====================================================
+
+XXX write this section.
+
+.. seealso::
+
+   :pep:`391` - Dictionary-Based Configuration For Logging
+     PEP written and implemented by Vinay Sajip.
+
+PEP 3106: Dictionary Views
+====================================================
+
+XXX write this section.
+
+.. seealso::
+
+   :pep:`3106` - Revamping dict.keys(), .values() and .items()
+     PEP written by Guido van Rossum.
+     Backported to 2.7 by Alexandre Vassalotti; :issue:`1967`.
+
+
 Other Language Changes
 ======================
 
 Some smaller changes made to the core Python language are:
+
+* The syntax for set literals has been backported from Python 3.x.
+  Curly brackets are used to surround the contents of the resulting
+  mutable set; set literals are
+  distinguished from dictionaries by not containing colons and values.
+  ``{}`` continues to represent an empty dictionary; use
+  ``set()`` for an empty set.
+
+    >>> {1,2,3,4,5}
+    set([1, 2, 3, 4, 5])
+    >>> set()
+    set([])
+    >>> {}
+    {}
+
+  Backported by Alexandre Vassalotti; :issue:`2335`.
+
+* Dictionary and set comprehensions are another feature backported from
+  3.x, generalizing list/generator comprehensions to use
+  the literal syntax for sets and dictionaries.
+
+    >>> {x:x*x for x in range(6)}
+    {0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25}
+    >>> {'a'*x for x in range(6)}
+    set(['', 'a', 'aa', 'aaa', 'aaaa', 'aaaaa'])
+
+  Backported by Alexandre Vassalotti; :issue:`2333`.
 
 * The :keyword:`with` statement can now use multiple context managers
   in one statement.  Context managers are processed from left to right
@@ -363,7 +422,10 @@ Some smaller changes made to the core Python language are:
 
 * The :class:`file` object will now set the :attr:`filename` attribute
   on the :exc:`IOError` exception when trying to open a directory
-  on POSIX platforms.  (Noted by Jan Kaliszewski; :issue:`4764`.)
+  on POSIX platforms (noted by Jan Kaliszewski; :issue:`4764`), and
+  now explicitly checks for and forbids writing to read-only file objects
+  instead of trusting the C library to catch and report the error
+  (fixed by Stefan Krah; :issue:`5677`).
 
 * The Python tokenizer now translates line endings itself, so the
   :func:`compile` built-in function can now accept code using any
@@ -374,6 +436,10 @@ Some smaller changes made to the core Python language are:
   meaning that you get a syntax error from ``def f((x)): pass``.  In
   Python3-warning mode, Python 2.7 will now warn about this odd usage.
   (Noted by James Lingard; :issue:`7362`.)
+
+* When a module object is garbage-collected, the module's dictionary is
+  now only cleared if no one else is holding a reference to the
+  dictionary (:issue:`7140`).
 
 .. ======================================================================
 
@@ -498,6 +564,10 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Maru Newby after a suggestion by
   Senthil Kumaran; :issue:`5142`.)
 
+* The :mod:`binascii` module now supports the buffer API, so it can be
+  used with :class:`memoryview` instances and other similar buffer objects.
+  (Backported from 3.x by Florent Xicluna; :issue:`7703`.)
+
 * The :mod:`bz2` module's :class:`BZ2File` now supports the context
   management protocol, so you can write ``with bz2.BZ2File(...) as f: ...``.
   (Contributed by Hagen Fuerstenau; :issue:`3860`.)
@@ -566,7 +636,10 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`ctypes` module now always converts ``None`` to a C NULL
   pointer for arguments declared as pointers.  (Changed by Thomas
-  Heller; :issue:`4606`.)
+  Heller; :issue:`4606`.)  The underlying `libffi library
+  <http://sourceware.org/libffi/>`__ has been updated to version
+  3.0.9, containing various fixes for different platforms.  (Updated
+  by Matthias Klose; :issue:`8142`.)
 
 * New method: the :mod:`datetime` module's :class:`timedelta` class
   gained a :meth:`total_seconds` method that returns the number of seconds
@@ -592,46 +665,6 @@ changes, or look through the Subversion logs for all the details.
   left-alignment.  This has been changed to right-alignment, which seems
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
-* Distutils is being more actively developed, thanks to Tarek Ziadé
-  who has taken over maintenance of the package, so there are a number
-  of fixes and improvments.
-
-  A new :file:`setup.py` subcommand, ``check``, will check that the
-  arguments being passed to the :func:`setup` function are complete
-  and correct (:issue:`5732`).
-
-  Byte-compilation by the ``install_lib``  subcommand is now only done
-  if the ``sys.dont_write_bytecode`` setting allows it (:issue:`7071`).
-
-  :func:`distutils.sdist.add_defaults` now uses
-  *package_dir* and *data_files* to create the MANIFEST file.
-  :mod:`distutils.sysconfig` now reads the :envvar:`AR` and
-  :envvar:`ARFLAGS` environment variables.
-
-  .. ARFLAGS done in #5941
-
-  It is no longer mandatory to store clear-text passwords in the
-  :file:`.pypirc` file when registering and uploading packages to PyPI. As long
-  as the username is present in that file, the :mod:`distutils` package will
-  prompt for the password if not present.  (Added by Tarek Ziadé,
-  based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
-
-  A Distutils setup can now specify that a C extension is optional by
-  setting the *optional* option setting to true.  If this optional is
-  supplied, failure to build the extension will not abort the build
-  process, but instead simply not install the failing extension.
-  (Contributed by Georg Brandl; :issue:`5583`.)
-
-  The :class:`distutils.dist.DistributionMetadata` class'
-  :meth:`read_pkg_file` method will read the contents of a package's
-  :file:`PKG-INFO` metadata file.  For an example of its use, see
-  :ref:`reading-metadata`.
-  (Contributed by Tarek Ziadé; :issue:`7457`.)
-
-  :file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
-  to skip reading the :file:`~/.pydistutils.cfg` file.  (Suggested by
-  by Michael Hoffman, and implemented by Paul Winkler; :issue:`1180`.)
-
 * The :class:`Fraction` class now accepts two rational numbers
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
@@ -649,9 +682,12 @@ changes, or look through the Subversion logs for all the details.
   otherwise. (Contributed by Antoine Pitrou; :issue:`4688`.)
 
 * The :mod:`gzip` module's :class:`GzipFile` now supports the context
-  management protocol, so you can write ``with gzip.GzipFile(...) as f: ...``.
-  (Contributed by Hagen Fuerstenau; :issue:`3860`.)
-  It's now possible to override the modification time
+  management protocol, so you can write ``with gzip.GzipFile(...) as f: ...``
+  (contributed by Hagen Fuerstenau; :issue:`3860`), and it now implements
+  the :class:`io.BufferedIOBase` ABC, so you can wrap it with
+  :class:`io.BufferedReader` for faster processing
+  (contributed by Nir Aides; :issue:`7471`).
+  It's also now possible to override the modification time
   recorded in a gzipped file by providing an optional timestamp to
   the constructor.  (Contributed by Jacques Frechet; :issue:`4272`.)
 
@@ -662,6 +698,11 @@ changes, or look through the Subversion logs for all the details.
 * The default :class:`HTTPResponse` class used by the :mod:`httplib` module now
   supports buffering, resulting in much faster reading of HTTP responses.
   (Contributed by Kristjan Valur Jonsson; :issue:`4879`.)
+
+  The :class:`HTTPConnection` and :class:`HTTPSConnection` classes
+  now support a *source_address* parameter, a ``(host, port)`` 2-tuple
+  giving the source address that will be used for the connection.
+  (Contributed by Eldon Ziegler; :issue:`3972`.)
 
 * The :mod:`imaplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1655`.)
@@ -756,6 +797,10 @@ changes, or look through the Subversion logs for all the details.
   contributed by Travis H.; :issue:`6508`.  Support for initgroups added
   by Jean-Paul Calderone; :issue:`7333`.)
 
+  The :func:`os.fork` function now re-initializes the import lock in
+  the child process; this fixes problems on Solaris when :func:`fork`
+  is called from a thread.  (Fixed by Zsolt Cserna; :issue:`7242`.)
+
   The :func:`normpath` function now preserves Unicode; if its input path
   is a Unicode string, the return value is also a Unicode string.
   (Fixed by Matt Giuca; :issue:`5827`.)
@@ -774,6 +819,10 @@ changes, or look through the Subversion logs for all the details.
   named pipes like a regular file by opening them for reading, and
   this would block indefinitely.  (Fixed by Antoine Pitrou; :issue:`3002`.)
 
+  New function: :func:`make_archive` takes a filename, archive type
+  (zip or tar-format), and a directory path, and creates an archive
+  containing the directory's contents.  (Added by Tarek Ziadé.)
+
 * New functions: in the :mod:`site` module, three new functions
   return various site- and user-specific paths.
   :func:`getsitepackages` returns a list containing all
@@ -785,9 +834,24 @@ changes, or look through the Subversion logs for all the details.
   to store data.
   (Contributed by Tarek Ziadé; :issue:`6693`.)
 
+  The :mod:`site` module now reports exceptions occurring
+  when the :mod:`sitecustomize` module is imported, and will no longer
+  catch and swallow the :exc:`KeyboardError` exception.  (Fixed by
+  Victor Stinner; :issue:`3137`.)
+
 * The :mod:`socket` module's :class:`SSL` objects now support the
-  buffer API, which fixed a test suite failure.  (Fixed by Antoine Pitrou;
-  :issue:`7133`.)
+  buffer API, which fixed a test suite failure.  (Fixed by Antoine
+  Pitrou; :issue:`7133`.)
+
+  The :func:`create_connection` function
+  gained a *source_address* parameter, a ``(host, port)`` 2-tuple
+  giving the source address that will be used for the connection.
+  (Contributed by Eldon Ziegler; :issue:`3972`.)
+
+  The :meth:`recv_into` and `recvfrom_into` methods will now write
+  into objects that support the buffer API, most usefully
+  the :class:`bytearray` and :class:`memoryview` objects.  (Implemented by
+  Antoine Pitrou; :issue:`8104`.)
 
 * The :mod:`SocketServer` module's :class:`TCPServer` class now
   has a :attr:`disable_nagle_algorithm` class attribute.
@@ -795,6 +859,13 @@ changes, or look through the Subversion logs for all the details.
   new request connections will have the TCP_NODELAY option set to
   prevent buffering many small sends into a single TCP packet.
   (Contributed by Kristjan Valur Jonsson; :issue:`6192`.)
+
+* Updated module: the :mod:`sqlite` module has been updated to
+  version 2.6.0 of the `pysqlite package <http://code.google.com/p/pysqlite/>`__. Version 2.6.0 includes a number of bugfixes, and adds
+  the ability to load SQLite extensions from shared libraries.
+  Call the ``enable_load_extension(True)`` method to enable extensions,
+  and then call :meth:`load_extension` to load a particular shared library.
+  (Updated by Gerhard Häring.)
 
 * The :mod:`struct` module will no longer silently ignore overflow
   errors when a value is too large for a particular integer format
@@ -852,6 +923,8 @@ changes, or look through the Subversion logs for all the details.
   resulting archive.  This is more powerful than the existing
   *exclude* argument, which has therefore been deprecated.
   (Added by Lars Gustäbel; :issue:`6856`.)
+  The :class:`TarFile` class also now supports the context manager protocol.
+  (Added by Lars Gustäbel; :issue:`7232`.)
 
 * The :mod:`threading` module's :meth:`Event.wait` method now returns
   the internal flag on exit.  This means the method will usually
@@ -860,8 +933,21 @@ changes, or look through the Subversion logs for all the details.
   a timeout was provided and the operation timed out.
   (Contributed by Tim Lesher; :issue:`1674032`.)
 
+* The Unicode database provided by the :mod:`unicodedata` module
+  remains at version 5.1.0, but Python now uses it internally to
+  determine which characters are numeric, whitespace, or represent
+  line breaks.  The database also now includes information from the
+  :file:`Unihan.txt` data file.  (Patch by Anders Chrigström
+  and Amaury Forgeot d'Arc; :issue:`1571184`.)
+
 * The :class:`UserDict` class is now a new-style class.  (Changed by
   Benjamin Peterson.)
+
+* The ElementTree library, :mod:`xml.etree`, no longer escapes
+  ampersands and angle brackets when outputting an XML processing
+  instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
+  or comment (which looks like `<!-- comment -->`).
+  (Patch by Neil Muller; :issue:`2746`.)
 
 * The :mod:`zipfile` module's :class:`ZipFile` now supports the context
   management protocol, so you can write ``with zipfile.ZipFile(...) as f: ...``.
@@ -877,18 +963,81 @@ changes, or look through the Subversion logs for all the details.
   accepts a file object, in addition to the path names accepted in earlier
   versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
 
+  The :meth:`writestr` method now has an optional *compress_type* parameter
+  that lets you override the default compression method specified in the
+  :class:`ZipFile` constructor.  (Contributed by Ronald Oussoren;
+  :issue:`6003`.)
+
 * XXX the :mod:`shutil` module has now a :func:`make_archive` function
-    (see the module doc, contributed by Tarek)
+  (see the module doc, contributed by Tarek)
+
+
+New module: sysconfig
+---------------------------------
+
+XXX A new :mod:`sysconfig` module has been extracted from
+:mod:`distutils` and put in the standard library.
+
+The :mod:`sysconfig` module provides access to Python's configuration
+information like the list of installation paths and the configuration
+variables relevant for the current platform. (contributed by Tarek)
+
+Updated module: ElementTree 1.3
+---------------------------------
+
+XXX write this.
 
 .. ======================================================================
 .. whole new modules get described in subsections here
 
-* XXX A new :mod:`sysconfig` module has been extracted from :mod:`distutils`
-  and put in the standard library.
 
-  The :mod:`sysconfig` module provides access to Python's configuration
-  information like the list of installation paths and the configuration
-  variables relevant for the current platform.
+Distutils Enhancements
+---------------------------------
+
+Distutils is being more actively developed, thanks to Tarek Ziadé
+who has taken over maintenance of the package, so there are a number
+of fixes and improvements.
+
+A new :file:`setup.py` subcommand, ``check``, will check that the
+arguments being passed to the :func:`setup` function are complete
+and correct (:issue:`5732`).
+
+Byte-compilation by the ``install_lib``  subcommand is now only done
+if the ``sys.dont_write_bytecode`` setting allows it (:issue:`7071`).
+
+:func:`distutils.sdist.add_defaults` now uses
+*package_dir* and *data_files* to create the MANIFEST file.
+:mod:`distutils.sysconfig` now reads the :envvar:`AR` and
+:envvar:`ARFLAGS` environment variables.
+
+.. ARFLAGS done in #5941
+
+It is no longer mandatory to store clear-text passwords in the
+:file:`.pypirc` file when registering and uploading packages to PyPI. As long
+as the username is present in that file, the :mod:`distutils` package will
+prompt for the password if not present.  (Added by Tarek Ziadé,
+based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
+
+A Distutils setup can now specify that a C extension is optional by
+setting the *optional* option setting to true.  If this optional is
+supplied, failure to build the extension will not abort the build
+process, but instead simply not install the failing extension.
+(Contributed by Georg Brandl; :issue:`5583`.)
+
+The :class:`distutils.dist.DistributionMetadata` class'
+:meth:`read_pkg_file` method will read the contents of a package's
+:file:`PKG-INFO` metadata file.  For an example of its use, see
+:ref:`reading-metadata`.
+(Contributed by Tarek Ziadé; :issue:`7457`.)
+
+:file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
+to skip reading the :file:`~/.pydistutils.cfg` file.  (Suggested by
+by Michael Hoffman, and implemented by Paul Winkler; :issue:`1180`.)
+
+When creating a tar-format archive, the ``sdist`` subcommand now
+allows specifying the user id and group that will own the files in the
+archives using the :option:`--owner` and :option:`--group` switches
+(:issue:`6516`).
 
 
 Unit Testing Enhancements
@@ -948,7 +1097,8 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 
 * :meth:`assertMultiLineEqual` compares two strings, and if they're
   not equal, displays a helpful comparison that highlights the
-  differences in the two strings.
+  differences in the two strings.  This comparison is now used by
+  default when Unicode strings are compared with :meth:`assertEqual`.)
 
 * :meth:`assertRegexpMatches` checks whether its first argument is a
   string matching a regular expression provided as its second argument.
@@ -967,18 +1117,22 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
   only reports the differences between the sets in case of error.
 
 * Similarly, :meth:`assertListEqual` and :meth:`assertTupleEqual`
-  compare the specified types and explain the differences.
+  compare the specified types and explain any differences without necessarily
+  printing their full values; these methods are now used by default
+  when comparing lists and tuples using :meth:`assertEqual`.
   More generally, :meth:`assertSequenceEqual` compares two sequences
   and can optionally check whether both sequences are of a
   particular type.
 
 * :meth:`assertDictEqual` compares two dictionaries and reports the
-  differences.  :meth:`assertDictContainsSubset` checks whether
+  differences; it's now used by default when you compare two dictionaries
+  using :meth:`assertEqual`.  :meth:`assertDictContainsSubset` checks whether
   all of the key/value pairs in *first* are found in *second*.
 
-* :meth:`assertAlmostEqual` and :meth:`assertNotAlmostEqual` short-circuit
-  (automatically pass or fail without checking decimal places) if the objects
-  are equal.
+* :meth:`assertAlmostEqual` and :meth:`assertNotAlmostEqual` test
+  whether *first* and *second* are approximately equal by computing
+  their difference, rounding the result to an optionally-specified number
+  of *places* (the default is 7), and comparing to zero.
 
 * :meth:`loadTestsFromName` properly honors the ``suiteClass`` attribute of
   the :class:`TestLoader`. (Fixed by Mark Roddy; :issue:`6866`.)
@@ -1232,6 +1386,14 @@ Port-Specific Changes: Mac OS X
 Other Changes and Fixes
 =======================
 
+* Two benchmark scripts, :file:`iobench` and :file:`ccbench`, were
+  added to the :file:`Tools` directory.  :file:`iobench` measures the
+  speed of built-in file I/O objects (as returned by :func:`open`)
+  while performing various operations, and :file:`ccbench` is a
+  concurrency benchmark that tries to measure computing throughput,
+  thread switching latency, and IO processing bandwidth when
+  performing several tasks using a varying number of threads.
+
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
   with an existing :file:`.py` counterpart, the :attr:`co_filename`
   attributes of the resulting code objects are overwritten when the
@@ -1282,6 +1444,14 @@ that may require changes to your code:
 * The :meth:`readline` method of :class:`StringIO` objects now does
   nothing when a negative length is requested, as other file-like
   objects do.  (:issue:`7348`).
+
+In the standard library:
+
+* The ElementTree library, :mod:`xml.etree`, no longer escapes
+  ampersands and angle brackets when outputting an XML processing
+  instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
+  or comment (which looks like `<!-- comment -->`).
+  (Patch by Neil Muller; :issue:`2746`.)
 
 For C extensions:
 
