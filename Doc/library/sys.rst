@@ -816,6 +816,10 @@ always available.
    available only if Python was compiled with :option:`--with-tsc`. To understand
    the output of this dump, read :file:`Python/ceval.c` in the Python sources.
 
+   .. impl-detail::
+      This function is intimately bound to CPython implementation details and
+      thus not likely to be implemented elsewhere.
+
 
 .. data:: stdin
           stdout

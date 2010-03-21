@@ -35,6 +35,18 @@ basic generator of your own devising: in that case, override the :meth:`random`,
 Optionally, a new generator can supply a :meth:`getrandbits` method --- this
 allows :meth:`randrange` to produce selections over an arbitrarily large range.
 
+As an example of subclassing, the :mod:`random` module provides the
+:class:`WichmannHill` class that implements an alternative generator in pure
+Python.  The class provides a backward compatible way to reproduce results from
+earlier versions of Python, which used the Wichmann-Hill algorithm as the core
+generator.  Note that this Wichmann-Hill generator can no longer be recommended:
+its period is too short by contemporary standards, and the sequence generated is
+known to fail some stringent randomness tests.  See the references below for a
+recent variant that repairs these flaws.
+
+The :mod:`random` module also provides the :class:`SystemRandom` class which
+uses the system function :func:`os.urandom` to generate random numbers
+from sources provided by the operating system.
 
 Bookkeeping functions:
 

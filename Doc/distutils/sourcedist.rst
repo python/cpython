@@ -54,9 +54,9 @@ Notes:
    requires the :program:`compress` program. Notice that this format is now
    pending for deprecation and will be removed in the future versions of Python.
 
-When using any ``tar`` format (``gztar``, ``bztar``, ``ztar`` or ``tar``), you
-can specify under Unix the ``owner`` and ``group`` names that will be set for
-each member of the archive.
+When using any ``tar`` format (``gztar``, ``bztar``, ``ztar`` or
+``tar``) under Unix, you can specify the ``owner`` and ``group`` names
+that will be set for each member of the archive.
 
 For example, if you want all files of the archive to be owned by root::
 
