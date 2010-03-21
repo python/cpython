@@ -2,6 +2,7 @@ import unittest
 import sys
 import _ast
 from test import test_support
+import textwrap
 
 class TestSpecifics(unittest.TestCase):
 
@@ -142,6 +143,9 @@ def f(x):
 
     def test_complex_args(self):
 
+        with test_support.check_py3k_warnings(
+                ("tuple parameter unpacking has been removed", SyntaxWarning)):
+            exec textwrap.dedent('''
         def comp_args((a, b)):
             return a,b
         self.assertEqual(comp_args((1, 2)), (1, 2))
@@ -159,6 +163,7 @@ def f(x):
             return a, b, c
         self.assertEqual(comp_args(1, (2, 3)), (1, 2, 3))
         self.assertEqual(comp_args(), (2, 3, 4))
+        ''')
 
     def test_argument_order(self):
         try:
