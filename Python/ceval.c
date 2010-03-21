@@ -3130,9 +3130,6 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				else if (cmp < 0)
 					goto fail;
 			}
-			/* Check errors from Compare */
-			if (PyErr_Occurred())
-				goto fail;
 			if (j >= total_args && kwdict == NULL) {
 				PyErr_Format(PyExc_TypeError,
 					     "%U() got an unexpected "
