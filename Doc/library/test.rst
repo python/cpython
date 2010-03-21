@@ -324,7 +324,7 @@ The :mod:`test.support` module defines the following functions:
           w.reset()
           assert len(w.warnings) == 0
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.2
       New optional attributes ``*filters`` and ``quiet``.
 
 

@@ -35,7 +35,7 @@ See http://effbot.org/zone/element-index.htm for tutorials and links to other
 docs.  Fredrik Lundh's page is also the location of the development version of
 the xml.etree.ElementTree.
 
-.. versionchanged:: 2.7
+.. versionchanged:: 3.2
    The ElementTree API is updated to 1.3.  For more information, see
    `Introducing ElementTree 1.3
    <http://effbot.org/zone/elementtree-13-intro.htm>`_.
@@ -80,7 +80,7 @@ Functions
    optional parser instance.  If not given, the standard :class:`XMLParser`
    parser is used.  Returns an :class:`Element` instance.
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
 
 .. function:: iselement(element)
@@ -133,7 +133,7 @@ Functions
    attributes in this namespace will be serialized with the given prefix, if at
    all possible.
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
 
 .. function:: SubElement(parent, tag, attrib={}, **extra)
@@ -167,7 +167,7 @@ Functions
    any specific sequence, except that ``"".join(tostringlist(element)) ==
    tostring(element)``.
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
 
 .. function:: XML(text, parser=None)
@@ -282,7 +282,7 @@ Element Objects
       Appends *subelements* from a sequence object with zero or more elements.
       Raises :exc:`AssertionError` if a subelement is not a valid object.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: find(match)
@@ -336,7 +336,7 @@ Element Objects
       Finds all matching subelements, by tag name or path.  Returns an iterable
       yielding all matching elements in document order.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: itertext()
@@ -344,7 +344,7 @@ Element Objects
       Creates a text iterator.  The iterator loops over this element and all
       subelements, in document order, and returns all inner text.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: makeelement(tag, attrib)
@@ -446,7 +446,7 @@ ElementTree Objects
       getroot().iterfind(match). Returns an iterable yielding all matching
       elements in document order.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: parse(source, parser=None)
@@ -559,7 +559,7 @@ TreeBuilder Objects
       the public identifier.  *system* is the system identifier.  This method
       does not exist on the default :class:`TreeBuilder` class.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
 .. _elementtree-xmlparser-objects:

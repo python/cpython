@@ -1152,8 +1152,6 @@ not bother to return a value of the same type as its argument, so e.g., ``not
 Conditional Expressions
 =======================
 
-.. versionadded:: 2.5
-
 .. index::
    pair: conditional; expression
    pair: ternary; operator
