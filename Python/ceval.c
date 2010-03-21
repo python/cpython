@@ -3155,17 +3155,17 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		}
 		if (co->co_kwonlyargcount > 0) {
 			for (i = co->co_argcount; i < total_args; i++) {
-				PyObject *name, *def;
+				PyObject *name;
 				if (GETLOCAL(i) != NULL)
 					continue;
 				name = PyTuple_GET_ITEM(co->co_varnames, i);
-				def = NULL;
-				if (kwdefs != NULL)
-					def = PyDict_GetItem(kwdefs, name);
-				if (def != NULL) {
-					Py_INCREF(def);
-					SETLOCAL(i, def);
-					continue;
+				if (kwdefs != NULL) {
+					PyObject *def = PyDict_GetItem(kwdefs, name);
+					if (def) {
+						Py_INCREF(def);
+						SETLOCAL(i, def);
+						continue;
+					}
 				}
 				PyErr_Format(PyExc_TypeError,
 					"%U() needs keyword-only argument %S",
