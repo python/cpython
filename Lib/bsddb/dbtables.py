@@ -22,7 +22,35 @@ import sys
 import copy
 import random
 import struct
-import cPickle as pickle
+
+
+if sys.version_info[0] >= 3 :
+    import pickle
+else :
+    if sys.version_info < (2, 6) :
+        import cPickle as pickle
+    else :
+        # When we drop support for python 2.3 and 2.4
+        # we could use: (in 2.5 we need a __future__ statement)
+        #
+        #    with warnings.catch_warnings():
+        #        warnings.filterwarnings(...)
+        #        ...
+        #
+        # We can not use "with" as is, because it would be invalid syntax
+        # in python 2.3, 2.4 and (with no __future__) 2.5.
+        # Here we simulate "with" following PEP 343 :
+        import warnings
+        w = warnings.catch_warnings()
+        w.__enter__()
+        try :
+            warnings.filterwarnings('ignore',
+                message='the cPickle module has been removed in Python 3.0',
+                category=DeprecationWarning)
+            import cPickle as pickle
+        finally :
+            w.__exit__()
+        del w
 
 try:
     # For Pythons w/distutils pybsddb
@@ -30,12 +58,6 @@ try:
 except ImportError:
     # For Python 2.3
     from bsddb import db
-
-# XXX(nnorwitz): is this correct? DBIncompleteError is conditional in _bsddb.c
-if not hasattr(db,"DBIncompleteError") :
-    class DBIncompleteError(Exception):
-        pass
-    db.DBIncompleteError = DBIncompleteError
 
 class TableDBError(StandardError):
     pass
@@ -261,16 +283,10 @@ class bsdTableDB :
             self.env = None
 
     def checkpoint(self, mins=0):
-        try:
-            self.env.txn_checkpoint(mins)
-        except db.DBIncompleteError:
-            pass
+        self.env.txn_checkpoint(mins)
 
     def sync(self):
-        try:
-            self.db.sync()
-        except db.DBIncompleteError:
-            pass
+        self.db.sync()
 
     def _db_print(self) :
         """Print the database to stdout for debugging"""
@@ -659,6 +675,13 @@ class bsdTableDB :
             a = atuple[1]
             b = btuple[1]
             if type(a) is type(b):
+
+                # Needed for python 3. "cmp" vanished in 3.0.1
+                def cmp(a, b) :
+                    if a==b : return 0
+                    if a<b : return -1
+                    return 1
+
                 if isinstance(a, PrefixCond) and isinstance(b, PrefixCond):
                     # longest prefix first
                     return cmp(len(b.prefix), len(a.prefix))

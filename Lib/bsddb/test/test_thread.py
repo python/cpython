@@ -21,7 +21,6 @@ from test_all import db, dbutils, test_support, verbose, have_threads, \
 
 if have_threads :
     from threading import Thread
-    import sys
     if sys.version_info[0] < 3 :
         from threading import currentThread
     else :
@@ -36,8 +35,7 @@ class BaseThreadedTestCase(unittest.TestCase):
     dbsetflags   = 0
     envflags     = 0
 
-    import sys
-    if sys.version_info[:3] < (2, 4, 0):
+    if sys.version_info < (2, 4) :
         def assertTrue(self, expr, msg=None):
             self.failUnless(expr,msg=msg)
 
@@ -99,7 +97,6 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
                         args = (self.d, x),
                         name = 'reader %d' % x,
                         )#verbose = verbose)
-            import sys
             if sys.version_info[0] < 3 :
                 rt.setDaemon(True)
             else :
@@ -118,7 +115,6 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
             writers.append(wt)
 
         for t in writers:
-            import sys
             if sys.version_info[0] < 3 :
                 t.setDaemon(True)
             else :
@@ -131,7 +127,6 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
             t.join()
 
     def writerThread(self, d, keys, readers):
-        import sys
         if sys.version_info[0] < 3 :
             name = currentThread().getName()
         else :
@@ -161,7 +156,6 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
             print "%s: thread finished" % name
 
     def readerThread(self, d, readerNum):
-        import sys
         if sys.version_info[0] < 3 :
             name = currentThread().getName()
         else :
@@ -231,7 +225,6 @@ class SimpleThreadedBase(BaseThreadedTestCase):
                         args = (self.d, x),
                         name = 'reader %d' % x,
                         )#verbose = verbose)
-            import sys
             if sys.version_info[0] < 3 :
                 rt.setDaemon(True)
             else :
@@ -250,7 +243,6 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             writers.append(wt)
 
         for t in writers:
-            import sys
             if sys.version_info[0] < 3 :
                 t.setDaemon(True)
             else :
@@ -263,7 +255,6 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             t.join()
 
     def writerThread(self, d, keys, readers):
-        import sys
         if sys.version_info[0] < 3 :
             name = currentThread().getName()
         else :
@@ -290,7 +281,6 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             print "%s: thread finished" % name
 
     def readerThread(self, d, readerNum):
-        import sys
         if sys.version_info[0] < 3 :
             name = currentThread().getName()
         else :
@@ -361,7 +351,6 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                         args = (self.d, x),
                         name = 'reader %d' % x,
                         )#verbose = verbose)
-            import sys
             if sys.version_info[0] < 3 :
                 rt.setDaemon(True)
             else :
@@ -379,7 +368,6 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
             writers.append(wt)
 
         dt = Thread(target = self.deadlockThread)
-        import sys
         if sys.version_info[0] < 3 :
             dt.setDaemon(True)
         else :
@@ -387,7 +375,6 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
         dt.start()
 
         for t in writers:
-            import sys
             if sys.version_info[0] < 3 :
                 t.setDaemon(True)
             else :
@@ -403,7 +390,6 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
         dt.join()
 
     def writerThread(self, d, keys, readers):
-        import sys
         if sys.version_info[0] < 3 :
             name = currentThread().getName()
         else :
@@ -424,14 +410,17 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                 readers.pop().start()
             except (db.DBLockDeadlockError, db.DBLockNotGrantedError), val:
                 if verbose:
-                    print "%s: Aborting transaction (%s)" % (name, val.args[1])
+                    if sys.version_info < (2, 6) :
+                        print "%s: Aborting transaction (%s)" % (name, val[1])
+                    else :
+                        print "%s: Aborting transaction (%s)" % (name,
+                                val.args[1])
                 txn.abort()
 
         if verbose:
             print "%s: thread finished" % name
 
     def readerThread(self, d, readerNum):
-        import sys
         if sys.version_info[0] < 3 :
             name = currentThread().getName()
         else :
@@ -455,7 +444,11 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                 finished = True
             except (db.DBLockDeadlockError, db.DBLockNotGrantedError), val:
                 if verbose:
-                    print "%s: Aborting transaction (%s)" % (name, val.args[1])
+                    if sys.version_info < (2, 6) :
+                        print "%s: Aborting transaction (%s)" % (name, val[1])
+                    else :
+                        print "%s: Aborting transaction (%s)" % (name,
+                                val.args[1])
                 c.close()
                 txn.abort()
 

@@ -12,6 +12,12 @@ from test_all import db, dbshelve, test_support, \
         get_new_environment_path, get_new_database_path
 
 
+# Needed for python 3. "cmp" vanished in 3.0.1
+def cmp(a, b) :
+    if a==b : return 0
+    if a<b : return -1
+    return 1
+
 lexical_cmp = cmp
 
 def lowercase_cmp(left, right):
@@ -26,12 +32,16 @@ _expected_lexical_test_data = ['', 'CCCP', 'a', 'aaa', 'b', 'c', 'cccce', 'ccccf
 _expected_lowercase_test_data = ['', 'a', 'aaa', 'b', 'c', 'CC', 'cccce', 'ccccf', 'CCCP']
 
 class ComparatorTests (unittest.TestCase):
+    if sys.version_info < (2, 4) :
+        def assertTrue(self, expr, msg=None) :
+            return self.failUnless(expr,msg=msg)
+
     def comparator_test_helper (self, comparator, expected_data):
         data = expected_data[:]
 
         import sys
-        if sys.version_info[:3] < (2, 6, 0):
-            if sys.version_info[:3] < (2, 4, 0):
+        if sys.version_info < (2, 6) :
+            if sys.version_info < (2, 4) :
                 data.sort(comparator)
             else :
                 data.sort(cmp=comparator)
@@ -47,7 +57,7 @@ class ComparatorTests (unittest.TestCase):
                     data2.append(i)
             data = data2
 
-        self.assertEqual (data, expected_data,
+        self.assertEqual(data, expected_data,
                          "comparator `%s' is not right: %s vs. %s"
                          % (comparator, expected_data, data))
     def test_lexical_comparator (self):
@@ -64,6 +74,15 @@ class ComparatorTests (unittest.TestCase):
 class AbstractBtreeKeyCompareTestCase (unittest.TestCase):
     env = None
     db = None
+
+    if sys.version_info < (2, 4) :
+        def assertTrue(self, expr, msg=None):
+            self.failUnless(expr,msg=msg)
+
+    if (sys.version_info < (2, 7)) or ((sys.version_info >= (3,0)) and
+            (sys.version_info < (3, 2))) :
+        def assertLess(self, a, b, msg=None) :
+            return self.assertTrue(a<b, msg=msg)
 
     def setUp (self):
         self.filename = self.__class__.__name__ + '.db'
@@ -115,14 +134,14 @@ class AbstractBtreeKeyCompareTestCase (unittest.TestCase):
             rec = curs.first ()
             while rec:
                 key, ignore = rec
-                self.assertLess (index, len (expected),
+                self.assertLess(index, len (expected),
                                  "to many values returned from cursor")
-                self.assertEqual (expected[index], key,
+                self.assertEqual(expected[index], key,
                                  "expected value `%s' at %d but got `%s'"
                                  % (expected[index], index, key))
                 index = index + 1
                 rec = curs.next ()
-            self.assertEqual (index, len (expected),
+            self.assertEqual(index, len (expected),
                              "not enough values returned from cursor")
         finally:
             curs.close ()
@@ -193,7 +212,8 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
             errorOut = temp.getvalue()
             if not successRe.search(errorOut):
                 self.fail("unexpected stderr output:\n"+errorOut)
-        sys.exc_traceback = sys.last_traceback = None
+        if sys.version_info < (3, 0) :  # XXX: How to do this in Py3k ???
+            sys.exc_traceback = sys.last_traceback = None
 
     def _test_compare_function_exception (self):
         self.startTest ()
@@ -237,8 +257,8 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
         def my_compare (a, b):
             return 0
 
-        self.startTest ()
-        self.createDB (my_compare)
+        self.startTest()
+        self.createDB(my_compare)
         self.assertRaises (RuntimeError, self.db.set_bt_compare, my_compare)
 
 def test_suite ():

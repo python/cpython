@@ -29,9 +29,6 @@ storage.
 
 #------------------------------------------------------------------------
 
-import cPickle
-import sys
-
 import sys
 absolute_import = (sys.version_info[0] >= 3)
 if absolute_import :
@@ -40,13 +37,41 @@ if absolute_import :
 else :
     import db
 
+if sys.version_info[0] >= 3 :
+    import cPickle  # Will be converted to "pickle" by "2to3"
+else :
+    if sys.version_info < (2, 6) :
+        import cPickle
+    else :
+        # When we drop support for python 2.3 and 2.4
+        # we could use: (in 2.5 we need a __future__ statement)
+        #
+        #    with warnings.catch_warnings():
+        #        warnings.filterwarnings(...)
+        #        ...
+        #
+        # We can not use "with" as is, because it would be invalid syntax
+        # in python 2.3, 2.4 and (with no __future__) 2.5.
+        # Here we simulate "with" following PEP 343 :
+        import warnings
+        w = warnings.catch_warnings()
+        w.__enter__()
+        try :
+            warnings.filterwarnings('ignore',
+                message='the cPickle module has been removed in Python 3.0',
+                category=DeprecationWarning)
+            import cPickle
+        finally :
+            w.__exit__()
+        del w
+
 #At version 2.3 cPickle switched to using protocol instead of bin
-if sys.version_info[:3] >= (2, 3, 0):
+if sys.version_info >= (2, 3):
     HIGHEST_PROTOCOL = cPickle.HIGHEST_PROTOCOL
 # In python 2.3.*, "cPickle.dumps" accepts no
 # named parameters. "pickle.dumps" accepts them,
 # so this seems a bug.
-    if sys.version_info[:3] < (2, 4, 0):
+    if sys.version_info < (2, 4):
         def _dumps(object, protocol):
             return cPickle.dumps(object, protocol)
     else :
@@ -59,11 +84,16 @@ else:
         return cPickle.dumps(object, bin=protocol)
 
 
-try:
-    from UserDict import DictMixin
-except ImportError:
-    # DictMixin is new in Python 2.3
-    class DictMixin: pass
+if sys.version_info < (2, 6) :
+    try:
+        from UserDict import DictMixin
+    except ImportError:
+        # DictMixin is new in Python 2.3
+        class DictMixin: pass
+    MutableMapping = DictMixin
+else :
+    import collections
+    MutableMapping = collections.MutableMapping
 
 #------------------------------------------------------------------------
 
@@ -106,7 +136,7 @@ def open(filename, flags=db.DB_CREATE, mode=0660, filetype=db.DB_HASH,
 class DBShelveError(db.DBError): pass
 
 
-class DBShelf(DictMixin):
+class DBShelf(MutableMapping):
     """A shelf to hold pickled objects, built upon a bsddb DB object.  It
     automatically pickles/unpickles data objects going to/from the DB.
     """
@@ -156,6 +186,17 @@ class DBShelf(DictMixin):
             return self.db.keys(txn)
         else:
             return self.db.keys()
+
+    if sys.version_info >= (2, 6) :
+        def __iter__(self) :  # XXX: Load all keys in memory :-(
+            for k in self.db.keys() :
+                yield k
+
+        # Do this when "DB"  support iteration
+        # Or is it enough to pass thru "getattr"?
+        #
+        # def __iter__(self) :
+        #    return self.db.__iter__()
 
 
     def open(self, *args, **kwargs):

@@ -81,7 +81,9 @@ Extension Modules
 
 - Issue #1039, #8154: Fix os.execlp() crash with missing 2nd argument.
 
-- Issue #6949: Allow the _bsddb extension to be built with db-4.8.x.
+- Issue #8156: bsddb module updated to version 4.8.4.
+  http://www.jcea.es/programacion/pybsddb.htm#bsddb3-4.8.4.
+  This update drops support for Berkeley DB 4.0, and adds support for 4.8.
 
 - Issue #8142: Update libffi to the 3.0.9 release.
 

@@ -2,14 +2,18 @@
 TestCases for checking dbShelve objects.
 """
 
-import os, string
+import os, string, sys
 import random
 import unittest
-import warnings
 
 
 from test_all import db, dbshelve, test_support, verbose, \
         get_new_environment_path, get_new_database_path
+
+
+
+if sys.version_info < (2, 4) :
+    from sets import Set as set
 
 
 
@@ -29,8 +33,17 @@ class DataClass:
 
 
 class DBShelveTestCase(unittest.TestCase):
+    if sys.version_info < (2, 4):
+        def assertTrue(self, expr, msg=None):
+            return self.failUnless(expr,msg=msg)
+
+    if (sys.version_info < (2, 7)) or ((sys.version_info >= (3, 0)) and
+            (sys.version_info < (3, 2))) :
+        def assertIn(self, a, b, msg=None) :
+            return self.assertTrue(a in b, msg=msg)
+
+
     def setUp(self):
-        import sys
         if sys.version_info[0] >= 3 :
             from test_all import do_proxy_db_py3k
             self._flag_proxy_db_py3k = do_proxy_db_py3k(False)
@@ -38,7 +51,6 @@ class DBShelveTestCase(unittest.TestCase):
         self.do_open()
 
     def tearDown(self):
-        import sys
         if sys.version_info[0] >= 3 :
             from test_all import do_proxy_db_py3k
             do_proxy_db_py3k(self._flag_proxy_db_py3k)
@@ -48,7 +60,6 @@ class DBShelveTestCase(unittest.TestCase):
     def mk(self, key):
         """Turn key into an appropriate key type for this db"""
         # override in child class for RECNO
-        import sys
         if sys.version_info[0] < 3 :
             return key
         else :
@@ -118,11 +129,14 @@ class DBShelveTestCase(unittest.TestCase):
 
         dbvalues = d.values()
         self.assertEqual(len(dbvalues), len(d.keys()))
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                                    'comparing unequal types not supported',
-                                    DeprecationWarning)
-            self.assertEqual(sorted(values), sorted(dbvalues))
+        if sys.version_info < (2, 6) :
+            values.sort()
+            dbvalues.sort()
+            self.assertEqual(values, dbvalues)
+        else :  # XXX: Convert all to strings. Please, improve
+            values.sort(key=lambda x : str(x))
+            dbvalues.sort(key=lambda x : str(x))
+            self.assertEqual(repr(values), repr(dbvalues))
 
         items = d.items()
         self.assertEqual(len(items), len(values))
@@ -197,10 +211,21 @@ class DBShelveTestCase(unittest.TestCase):
                           self.d.append, 'unit test was here')
 
 
+    def test04_iterable(self) :
+        self.populateDB(self.d)
+        d = self.d
+        keys = d.keys()
+        keyset = set(keys)
+        self.assertEqual(len(keyset), len(keys))
+
+        for key in d :
+            self.assertIn(key, keyset)
+            keyset.remove(key)
+        self.assertEqual(len(keyset), 0)
+
     def checkrec(self, key, value):
         # override this in a subclass if the key type is different
 
-        import sys
         if sys.version_info[0] >= 3 :
             if isinstance(key, bytes) :
                 key = key.decode("iso8859-1")  # 8 bits
@@ -219,7 +244,6 @@ class DBShelveTestCase(unittest.TestCase):
             self.assertEqual(value, [x] * 10)
 
         elif key[0] == 'O':
-            import sys
             if sys.version_info[0] < 3 :
                 from types import InstanceType
                 self.assertEqual(type(value), InstanceType)
@@ -287,7 +311,6 @@ class BasicEnvShelveTestCase(DBShelveTestCase):
         DBShelveTestCase.setUp(self)
 
     def tearDown(self):
-        import sys
         if sys.version_info[0] >= 3 :
             from test_all import do_proxy_db_py3k
             do_proxy_db_py3k(self._flag_proxy_db_py3k)
