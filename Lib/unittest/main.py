@@ -159,10 +159,9 @@ class TestProgram(object):
         for name, value in zip(('start', 'pattern', 'top'), args):
             setattr(options, name, value)
 
+        self.failfast = options.failfast
         if options.verbose:
             self.verbosity = 2
-        if options.failfast:
-            self.failfast = True
 
         start_dir = options.start
         pattern = options.pattern
