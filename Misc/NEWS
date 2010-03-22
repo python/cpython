@@ -143,6 +143,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4282: Fix the main function of the profile module for a non-ASCII
+  script, open the file in binary mode and not in text mode with the default
+  (utf8) encoding.
+
 - Issue #7774: Set sys.executable to an empty string if argv[0] has been set to
   an non existent program name and Python is unable to retrieve the real
   program name
