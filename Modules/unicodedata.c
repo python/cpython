@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------
 
-   unicodedata -- Provides access to the Unicode 5.1 data base.
+   unicodedata -- Provides access to the Unicode 5.2 data base.
 
-   Data was extracted from the Unicode 5.1 UnicodeData.txt file.
+   Data was extracted from the Unicode 5.2 UnicodeData.txt file.
 
    Written by Marc-Andre Lemburg (mal@lemburg.com).
    Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
@@ -1235,11 +1235,10 @@ PyDoc_STRVAR(unicodedata_docstring,
 "This module provides access to the Unicode Character Database which\n\
 defines character properties for all Unicode characters. The data in\n\
 this database is based on the UnicodeData.txt file version\n\
-5.1.0 which is publically available from ftp://ftp.unicode.org/.\n\
+5.2.0 which is publically available from ftp://ftp.unicode.org/.\n\
 \n\
 The module uses the same names and symbols as defined by the\n\
-UnicodeData File Format 5.1.0 (see\n\
-http://www.unicode.org/Public/5.1.0/ucd/UCD.html).");
+UnicodeData File Format 5.2.0 (see http://www.unicode.org/reports/tr44/).");
 
 
 static struct PyModuleDef unicodedatamodule = {

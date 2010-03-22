@@ -933,11 +933,13 @@ changes, or look through the Subversion logs for all the details.
   a timeout was provided and the operation timed out.
   (Contributed by Tim Lesher; :issue:`1674032`.)
 
-* The Unicode database provided by the :mod:`unicodedata` module
-  remains at version 5.1.0, but Python now uses it internally to
-  determine which characters are numeric, whitespace, or represent
-  line breaks.  The database also now includes information from the
-  :file:`Unihan.txt` data file.  (Patch by Anders Chrigström
+* The Unicode database has been updated to the version 5.2.0.
+  (Updated by Florent Xicluna; :issue:`8024`.)
+
+* The Unicode database provided by the :mod:`unicodedata` is used
+  internally to determine which characters are numeric, whitespace,
+  or represent line breaks.  The database also now includes information
+  from the :file:`Unihan.txt` data file.  (Patch by Anders Chrigström
   and Amaury Forgeot d'Arc; :issue:`1571184`.)
 
 * The :class:`UserDict` class is now a new-style class.  (Changed by
