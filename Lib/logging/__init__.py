@@ -1316,6 +1316,25 @@ class Logger(Filterer):
             return 0
         return level >= self.getEffectiveLevel()
 
+    def getChild(self, suffix):
+        """
+        Get a logger which is a descendant to this one.
+
+        This is a convenience method, such that
+
+        logging.getLogger('abc').getChild('def.ghi')
+
+        is the same as
+
+        logging.getLogger('abc.def.ghi')
+
+        It's useful, for example, when the parent logger is named using
+        __name__ rather than a literal string.
+        """
+        if self.root is not self:
+            suffix = '.'.join((self.name, suffix))
+        return self.manager.getLogger(suffix)
+
 class RootLogger(Logger):
     """
     A root logger is not that different to any other logger, except that
@@ -1419,6 +1438,12 @@ class LoggerAdapter(object):
         """
         msg, kwargs = self.process(msg, kwargs)
         self.logger.log(level, msg, *args, **kwargs)
+
+    def isEnabledFor(self, level):
+        """
+        See if the underlying logger is enabled for the specified level.
+        """
+        return self.logger.isEnabledFor(level)
 
 root = RootLogger(WARNING)
 Logger.root = root
