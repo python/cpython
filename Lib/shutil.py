@@ -9,6 +9,7 @@ import sys
 import stat
 from os.path import abspath
 import fnmatch
+import errno
 
 __all__ = ["copyfileobj","copyfile","copymode","copystat","copy","copy2",
            "copytree","move","rmtree","Error"]
@@ -74,8 +75,11 @@ def copystat(src, dst):
     if hasattr(os, 'chmod'):
         os.chmod(dst, mode)
     if hasattr(os, 'chflags') and hasattr(st, 'st_flags'):
-        os.chflags(dst, st.st_flags)
-
+        try:
+            os.chflags(dst, st.st_flags)
+        except OSError, why:
+            if not hasattr(errno, 'EOPNOTSUPP') or why.errno != errno.EOPNOTSUPP:
+                raise
 
 def copy(src, dst):
     """Copy data and mode bits ("cp src dst").
