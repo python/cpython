@@ -9124,7 +9124,7 @@ PyObject *PyUnicode_Format(PyObject *format,
             case 's':
             case 'r':
             case 'a':
-                if (PyUnicode_Check(v) && c == 's') {
+                if (PyUnicode_CheckExact(v) && c == 's') {
                     temp = v;
                     Py_INCREF(temp);
                 }
