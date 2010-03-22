@@ -29,6 +29,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8201: logging: Handle situation of non-ASCII and Unicode
+  logger names existing at the same time, causing a Unicode error
+  when configuration code attempted to sort the existing loggers.
+
 - Issue #8200: logging: Handle errors when multiprocessing is not
   fully loaded when logging occurs.
 
