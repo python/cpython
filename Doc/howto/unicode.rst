@@ -472,7 +472,7 @@ These are grouped into categories such as "Letter", "Number", "Punctuation", or
 from the above output, ``'Ll'`` means 'Letter, lowercase', ``'No'`` means
 "Number, other", ``'Mn'`` is "Mark, nonspacing", and ``'So'`` is "Symbol,
 other".  See
-<http://unicode.org/Public/5.1.0/ucd/UCD.html#General_Category_Values> for a
+<http://www.unicode.org/reports/tr44/#General_Category_Values> for a
 list of category codes.
 
 References
