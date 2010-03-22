@@ -209,6 +209,7 @@ def diff(fn, result, encoding):
     finally:
         f.close()
     try:
-        return os.system("diff -u %r @" % fn)
+        fn = fn.replace('"', '\\"')
+        return os.system('diff -u "%s" @' % fn)
     finally:
         os.remove("@")
