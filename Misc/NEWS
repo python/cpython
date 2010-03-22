@@ -285,6 +285,10 @@ C-API
 Library
 -------
 
+- Issue #4282: Fix the main function of the profile module for a non-ASCII
+  script, open the file in binary mode and not in text mode with the default
+  (utf8) encoding.
+
 - Issue #8179: Fix macpath.realpath() on a non-existing path.
 
 - Issue #8024: Update the Unicode database to 5.2.
