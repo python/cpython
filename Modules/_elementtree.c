@@ -2734,6 +2734,8 @@ xmlparser_setevents(XMLParserObject* self, PyObject* args)
         char* event;
         if (PyUnicode_Check(item)) {
             event = _PyUnicode_AsString(item);
+            if (event == NULL)
+                goto error;
         } else if (PyBytes_Check(item))
             event = PyBytes_AS_STRING(item);
         else {
