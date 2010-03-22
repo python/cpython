@@ -178,7 +178,7 @@ class TestProgram(object):
                 testRunner = self.testRunner(verbosity=self.verbosity,
                                              failfast=self.failfast)
             except TypeError:
-                # didn't accept the verbosity or failfast argument
+                # didn't accept the verbosity or failfast arguments
                 testRunner = self.testRunner()
         else:
             # it is assumed to be a TestRunner instance
