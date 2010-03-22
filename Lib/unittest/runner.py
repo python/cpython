@@ -124,10 +124,11 @@ class TextTestRunner(object):
     resultclass = TextTestResult
 
     def __init__(self, stream=sys.stderr, descriptions=True, verbosity=1,
-                 resultclass=None):
+                 failfast=False, resultclass=None):
         self.stream = _WritelnDecorator(stream)
         self.descriptions = descriptions
         self.verbosity = verbosity
+        self.failfast = failfast
         if resultclass is not None:
             self.resultclass = resultclass
 
@@ -137,6 +138,7 @@ class TextTestRunner(object):
     def run(self, test):
         "Run the given test case or test suite."
         result = self._makeResult()
+        result.failfast = self.failfast
         startTime = time.time()
         startTestRun = getattr(result, 'startTestRun', None)
         if startTestRun is not None:

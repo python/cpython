@@ -3,9 +3,17 @@
 import traceback
 
 from . import util
+from functools import wraps
 
 __unittest = True
 
+def failfast(method):
+    @wraps(method)
+    def inner(self, *args, **kw):
+        if getattr(self, 'failfast', False):
+            self.stop()
+        return method(self, *args, **kw)
+    return inner
 
 class TestResult(object):
     """Holder for test result information.
@@ -21,6 +29,7 @@ class TestResult(object):
     _previousTestClass = None
     _moduleSetUpFailed = False
     def __init__(self, stream=None, descriptions=None, verbosity=None):
+        self.failfast = False
         self.failures = []
         self.errors = []
         self.testsRun = 0
@@ -51,12 +60,14 @@ class TestResult(object):
         See stopTest for a method called after each test.
         """
 
+    @failfast
     def addError(self, test, err):
         """Called when an error has occurred. 'err' is a tuple of values as
         returned by sys.exc_info().
         """
         self.errors.append((test, self._exc_info_to_string(err, test)))
 
+    @failfast
     def addFailure(self, test, err):
         """Called when an error has occurred. 'err' is a tuple of values as
         returned by sys.exc_info()."""
@@ -70,11 +81,13 @@ class TestResult(object):
         """Called when a test is skipped."""
         self.skipped.append((test, reason))
 
+    @failfast
     def addExpectedFailure(self, test, err):
         """Called when an expected failure/error occured."""
         self.expectedFailures.append(
             (test, self._exc_info_to_string(err, test)))
 
+    @failfast
     def addUnexpectedSuccess(self, test):
         """Called when a test was expected to fail, but succeed."""
         self.unexpectedSuccesses.append(test)
