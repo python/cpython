@@ -5,6 +5,8 @@ import time
 
 from . import result
 
+__unittest = True
+
 
 class _WritelnDecorator(object):
     """Used to decorate file-like objects with a handy 'writeln' method"""

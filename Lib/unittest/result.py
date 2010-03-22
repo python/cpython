@@ -4,6 +4,8 @@ import traceback
 
 from . import util
 
+__unittest = True
+
 
 class TestResult(object):
     """Holder for test result information.
@@ -98,11 +100,7 @@ class TestResult(object):
         return ''.join(traceback.format_exception(exctype, value, tb))
 
     def _is_relevant_tb_level(self, tb):
-        globs = tb.tb_frame.f_globals
-        is_relevant =  '__name__' in globs and \
-            globs["__name__"].startswith("unittest")
-        del globs
-        return is_relevant
+        return '__unittest' in tb.tb_frame.f_globals
 
     def _count_relevant_tb_levels(self, tb):
         length = 0
