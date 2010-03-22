@@ -287,10 +287,18 @@ class LogRecord(object):
             self.threadName = None
         if not logMultiprocessing:
             self.processName = None
-        elif 'multiprocessing' not in sys.modules:
-            self.processName = 'MainProcess'
         else:
-            self.processName = sys.modules['multiprocessing'].current_process().name
+            self.processName = 'MainProcess'
+            mp = sys.modules.get('multiprocessing')
+            if mp is not None:
+                # Errors may occur if multiprocessing has not finished loading
+                # yet - e.g. if a custom import hook causes third-party code
+                # to run when multiprocessing calls import. See issue 8200
+                # for an example
+                try:
+                    self.processName = mp.current_process().name
+                except StandardError:
+                    pass
         if logProcesses and hasattr(os, 'getpid'):
             self.process = os.getpid()
         else:
