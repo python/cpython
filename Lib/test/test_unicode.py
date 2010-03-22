@@ -1195,8 +1195,6 @@ class UnicodeTest(
 
     def test_format_subclass(self):
         class U(unicode):
-            def __str__(self):
-                return '__str__ overridden'
             def __unicode__(self):
                 return u'__unicode__ overridden'
         u = U(u'xxx')
