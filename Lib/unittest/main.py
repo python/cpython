@@ -58,17 +58,11 @@ Examples:
                                                in MyTestCase
 """
 
-if __name__ == '__main__':
-    USAGE = USAGE_AS_MAIN
-else:
-    USAGE = USAGE_FROM_MODULE
-
-
 class TestProgram(object):
     """A command-line program that runs a set of tests; this is primarily
        for making test modules conveniently executable.
     """
-    USAGE = USAGE
+    USAGE = USAGE_FROM_MODULE
     def __init__(self, module='__main__', defaultTest=None,
                  argv=None, testRunner=None,
                  testLoader=loader.defaultTestLoader, exit=True,
