@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8205: Remove the "Modules" directory from sys.path when Python is
+  running from the build directory (POSIX only).
+
 - Issue #7667: Fix doctest failures with non-ASCII paths.
 
 - Issue #7512: shutil.copystat() could raise an OSError when the filesystem
