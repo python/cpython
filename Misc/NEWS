@@ -287,6 +287,8 @@ C-API
 Library
 -------
 
+- Issue #3890: Fix recv() and recv_into() on non-blocking SSL sockets.
+
 - Issue #4282: Fix the main function of the profile module for a non-ASCII
   script, open the file in binary mode and not in text mode with the default
   (utf8) encoding.
