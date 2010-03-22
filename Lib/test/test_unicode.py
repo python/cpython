@@ -1142,6 +1142,15 @@ class UnicodeTest(
         self.assertRaises(MemoryError, alloc)
         self.assertRaises(MemoryError, alloc)
 
+    def test_format_subclass(self):
+        class U(unicode):
+            def __unicode__(self):
+                return u'__unicode__ overridden'
+        u = U(u'xxx')
+        self.assertEquals("%s" % u, u'__unicode__ overridden')
+        self.assertEquals("{0}".format(u), u'__unicode__ overridden')
+
+
 def test_main():
     test_support.run_unittest(__name__)
 
