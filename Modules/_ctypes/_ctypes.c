@@ -1076,22 +1076,31 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 {
 	char *ptr;
 	Py_ssize_t size;
+	Py_buffer view = { 0 };
 	if (PyBuffer_Check(value)) {
 		size = Py_TYPE(value)->tp_as_buffer->bf_getreadbuffer(value, 0, (void *)&ptr);
 		if (size < 0)
-			return -1;
-	} else if (-1 == PyString_AsStringAndSize(value, &ptr, &size)) {
-		return -1;
+			goto fail;
+	} else {
+		if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
+			goto fail;
+		size = view.len;
+		ptr = view.buf;
 	}
 	if (size > self->b_size) {
 		PyErr_SetString(PyExc_ValueError,
 				"string too long");
-		return -1;
+		goto fail;
 	}
 
 	memcpy(self->b_ptr, ptr, size);
 
+	PyBuffer_Release(&view);
 	return 0;
+    fail:
+
+	PyBuffer_Release(&view);
+	return -1;
 }
 
 static PyObject *
