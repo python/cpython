@@ -2196,7 +2196,7 @@ class Test_OldTestResult(unittest.TestCase):
 
 class Foo(unittest.TestCase):
     def runTest(self): pass
-    def test1(self): 1/0
+    def test1(self): pass
 
 class Bar(Foo):
     def test2(self): pass
