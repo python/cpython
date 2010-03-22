@@ -127,6 +127,27 @@ class PlatformTest(unittest.TestCase):
         res = platform.uname()
         self.assertTrue(any(res))
 
+    @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
+    def test_uname_win32_ARCHITEW6432(self):
+        # Issue 7860: make sure we get architecture from the correct variable
+        # on 64 bit Windows: if PROCESSOR_ARCHITEW6432 exists we should be
+        # using it, per
+        # http://blogs.msdn.com/david.wang/archive/2006/03/26/HOWTO-Detect-Process-Bitness.aspx
+        try:
+            with test_support.EnvironmentVarGuard() as environ:
+                if 'PROCESSOR_ARCHITEW6432' in environ:
+                    del environ['PROCESSOR_ARCHITEW6432']
+                environ['PROCESSOR_ARCHITECTURE'] = 'foo'
+                platform._uname_cache = None
+                system, node, release, version, machine, processor = platform.uname()
+                self.assertEqual(machine, 'foo')
+                environ['PROCESSOR_ARCHITEW6432'] = 'bar'
+                platform._uname_cache = None
+                system, node, release, version, machine, processor = platform.uname()
+                self.assertEqual(machine, 'bar')
+        finally:
+            platform._uname_cache = None
+
     def test_java_ver(self):
         res = platform.java_ver()
         if sys.platform == 'java':

@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7860: platform.uname now reports the correct 'machine' type
+  when Python is running in WOW64 mode on 64 bit Windows.
+
 - logging: Added getChild utility method to Logger and added isEnabledFor
   method to LoggerAdapter.
 
