@@ -52,6 +52,7 @@ __all__ = ['TestResult', 'TestCase', 'TestSuite',
 # Expose obsolete functions for backwards compatibility
 __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
 
+__unittest = True
 
 from .result import TestResult
 from .case import (TestCase, FunctionTestCase, SkipTest, skip, skipIf,
@@ -64,5 +65,3 @@ from .runner import TextTestRunner, TextTestResult
 
 # deprecated
 _TextTestResult = TextTestResult
-
-__unittest = True
