@@ -1076,16 +1076,23 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 {
 	char *ptr;
 	Py_ssize_t size;
+#if (PY_VERSION_HEX >= 0x02060000)
 	Py_buffer view = { 0 };
+#endif
 	if (PyBuffer_Check(value)) {
 		size = Py_TYPE(value)->tp_as_buffer->bf_getreadbuffer(value, 0, (void *)&ptr);
 		if (size < 0)
 			goto fail;
 	} else {
+#if (PY_VERSION_HEX >= 0x02060000)
 		if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
 			goto fail;
 		size = view.len;
 		ptr = view.buf;
+#else
+		if (-1 == PyString_AsStringAndSize(value, &ptr, &size))
+			goto fail;
+#endif
 	}
 	if (size > self->b_size) {
 		PyErr_SetString(PyExc_ValueError,
@@ -1095,11 +1102,15 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 
 	memcpy(self->b_ptr, ptr, size);
 
+#if (PY_VERSION_HEX >= 0x02060000)
 	PyBuffer_Release(&view);
+#endif
 	return 0;
     fail:
 
+#if (PY_VERSION_HEX >= 0x02060000)
 	PyBuffer_Release(&view);
+#endif
 	return -1;
 }
 
