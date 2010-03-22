@@ -2113,12 +2113,6 @@ class Test_TestResult(TestCase):
         result.addUnexpectedSuccess(None)
         self.assertTrue(result.shouldStop)
 
-        result = unittest.TestResult()
-        result._exc_info_to_string = lambda *_: ''
-        result.failfast = True
-        result.addExpectedFailure(None, None)
-        self.assertTrue(result.shouldStop)
-
     def testFailFastSetByRunner(self):
         runner = unittest.TextTestRunner(stream=StringIO(), failfast=True)
         def test(result):
