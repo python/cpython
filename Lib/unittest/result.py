@@ -81,7 +81,6 @@ class TestResult(object):
         """Called when a test is skipped."""
         self.skipped.append((test, reason))
 
-    @failfast
     def addExpectedFailure(self, test, err):
         """Called when an expected failure/error occured."""
         self.expectedFailures.append(
