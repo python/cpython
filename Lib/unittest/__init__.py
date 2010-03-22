@@ -64,3 +64,5 @@ from .runner import TextTestRunner, TextTestResult
 
 # deprecated
 _TextTestResult = TextTestResult
+
+__unittest = True

@@ -10,6 +10,7 @@ from fnmatch import fnmatch
 
 from . import case, suite, util
 
+__unittest = True
 
 # what about .pyc or .pyo (etc)
 # we would need to avoid loading the same tests multiple times

@@ -11,6 +11,8 @@ from . import result
 from .util import (strclass, safe_repr, sorted_list_difference,
                    unorderable_list_difference)
 
+__unittest = True
+
 
 class SkipTest(Exception):
     """
