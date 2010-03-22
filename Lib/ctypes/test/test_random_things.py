@@ -2,7 +2,7 @@ from ctypes import *
 import unittest, sys
 
 def callback_func(arg):
-    42 / arg
+    42 // arg
     raise ValueError(arg)
 
 if sys.platform == "win32":
@@ -69,7 +69,7 @@ class CallbackTracbackTestCase(unittest.TestCase):
         out = self.capture_stderr(cb, "spam")
         self.assertEqual(out.splitlines()[-1],
                              "TypeError: "
-                             "unsupported operand type(s) for /: 'int' and 'str'")
+                             "unsupported operand type(s) for //: 'int' and 'str'")
 
 if __name__ == '__main__':
     unittest.main()
