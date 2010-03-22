@@ -62,7 +62,7 @@ class FixExitfunc(fixer_base.BaseFix):
             containing_stmt = self.sys_import.parent
             position = containing_stmt.children.index(self.sys_import)
             stmt_container = containing_stmt.parent
-            new_import = pytree.Node("import_name",
+            new_import = pytree.Node(syms.import_name,
                               [Name("import"), Name("atexit", " ")]
                               )
             new = pytree.Node("simple_stmt", [new_import])
