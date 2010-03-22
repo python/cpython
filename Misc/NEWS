@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- logging: Added getChild utility method to Logger and added isEnabledFor
+  method to LoggerAdapter.
+
 - Issue #8201: logging: Handle situation of non-ASCII and Unicode
   logger names existing at the same time, causing a Unicode error
   when configuration code attempted to sort the existing loggers.
