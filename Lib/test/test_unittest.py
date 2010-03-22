@@ -2094,6 +2094,38 @@ class Test_TestResult(TestCase):
         Frame.tb_frame.f_globals['__unittest'] = True
         self.assertTrue(result._is_relevant_tb_level(Frame))
 
+    def testFailFast(self):
+        result = unittest.TestResult()
+        result._exc_info_to_string = lambda *_: ''
+        result.failfast = True
+        result.addError(None, None)
+        self.assertTrue(result.shouldStop)
+
+        result = unittest.TestResult()
+        result._exc_info_to_string = lambda *_: ''
+        result.failfast = True
+        result.addFailure(None, None)
+        self.assertTrue(result.shouldStop)
+
+        result = unittest.TestResult()
+        result._exc_info_to_string = lambda *_: ''
+        result.failfast = True
+        result.addUnexpectedSuccess(None)
+        self.assertTrue(result.shouldStop)
+
+        result = unittest.TestResult()
+        result._exc_info_to_string = lambda *_: ''
+        result.failfast = True
+        result.addExpectedFailure(None, None)
+        self.assertTrue(result.shouldStop)
+
+    def testFailFastSetByRunner(self):
+        runner = unittest.TextTestRunner(stream=StringIO(), failfast=True)
+        def test(result):
+            self.assertTrue(result.failfast)
+        result = runner.run(test)
+
+
 classDict = dict(unittest.TestResult.__dict__)
 for m in ('addSkip', 'addExpectedFailure', 'addUnexpectedSuccess',
            '__init__'):
@@ -2164,26 +2196,28 @@ class Test_OldTestResult(unittest.TestCase):
 
 class Foo(unittest.TestCase):
     def runTest(self): pass
-    def test1(self): pass
+    def test1(self): 1/0
 
 class Bar(Foo):
     def test2(self): pass
 
-class LoggingTestCase(unittest.TestCase):
-    """A test case which logs its calls."""
+def getLoggingTestCase():
+    class LoggingTestCase(unittest.TestCase):
+        """A test case which logs its calls."""
 
-    def __init__(self, events):
-        super(LoggingTestCase, self).__init__('test')
-        self.events = events
+        def __init__(self, events):
+            super(LoggingTestCase, self).__init__('test')
+            self.events = events
 
-    def setUp(self):
-        self.events.append('setUp')
+        def setUp(self):
+            self.events.append('setUp')
 
-    def test(self):
-        self.events.append('test')
+        def test(self):
+            self.events.append('test')
 
-    def tearDown(self):
-        self.events.append('tearDown')
+        def tearDown(self):
+            self.events.append('tearDown')
+    return LoggingTestCase
 
 class ResultWithNoStartTestRunStopTestRun(object):
     """An object honouring TestResult before startTestRun/stopTestRun."""
@@ -2310,7 +2344,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         events = []
         result = LoggingResult(events)
 
-        class Foo(LoggingTestCase):
+        class Foo(getLoggingTestCase()):
             def setUp(self):
                 super(Foo, self).setUp()
                 raise RuntimeError('raised by Foo.setUp')
@@ -2323,7 +2357,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
     def test_run_call_order__error_in_setUp_default_result(self):
         events = []
 
-        class Foo(LoggingTestCase):
+        class Foo(getLoggingTestCase()):
             def defaultTestResult(self):
                 return LoggingResult(self.events)
 
@@ -2347,7 +2381,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         events = []
         result = LoggingResult(events)
 
-        class Foo(LoggingTestCase):
+        class Foo(getLoggingTestCase()):
             def test(self):
                 super(Foo, self).test()
                 raise RuntimeError('raised by Foo.test')
@@ -2362,7 +2396,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
     def test_run_call_order__error_in_test_default_result(self):
         events = []
 
-        class Foo(LoggingTestCase):
+        class Foo(getLoggingTestCase()):
             def defaultTestResult(self):
                 return LoggingResult(self.events)
 
@@ -2386,7 +2420,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         events = []
         result = LoggingResult(events)
 
-        class Foo(LoggingTestCase):
+        class Foo(getLoggingTestCase()):
             def test(self):
                 super(Foo, self).test()
                 self.fail('raised by Foo.test')
@@ -2399,7 +2433,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
     # "When a test fails with a default result stopTestRun is still called."
     def test_run_call_order__failure_in_test_default_result(self):
 
-        class Foo(LoggingTestCase):
+        class Foo(getLoggingTestCase()):
             def defaultTestResult(self):
                 return LoggingResult(self.events)
             def test(self):
@@ -2423,7 +2457,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         events = []
         result = LoggingResult(events)
 
-        class Foo(LoggingTestCase):
+        class Foo(getLoggingTestCase()):
             def tearDown(self):
                 super(Foo, self).tearDown()
                 raise RuntimeError('raised by Foo.tearDown')
@@ -2436,7 +2470,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
     # "When tearDown errors with a default result stopTestRun is still called."
     def test_run_call_order__error_in_tearDown_default_result(self):
 
-        class Foo(LoggingTestCase):
+        class Foo(getLoggingTestCase()):
             def defaultTestResult(self):
                 return LoggingResult(self.events)
             def tearDown(self):
