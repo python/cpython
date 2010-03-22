@@ -2084,6 +2084,16 @@ class Test_TestResult(TestCase):
                 'Tests getDescription() for a method with a longer '
                 'docstring.'))
 
+    def testStackFrameTrimming(self):
+        class Frame(object):
+            class tb_frame(object):
+                f_globals = {}
+        result = unittest.TestResult()
+        self.assertFalse(result._is_relevant_tb_level(Frame))
+
+        Frame.tb_frame.f_globals['__unittest'] = True
+        self.assertTrue(result._is_relevant_tb_level(Frame))
+
 classDict = dict(unittest.TestResult.__dict__)
 for m in ('addSkip', 'addExpectedFailure', 'addUnexpectedSuccess',
            '__init__'):

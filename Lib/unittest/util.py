@@ -1,5 +1,8 @@
 """Various utility functions."""
 
+__unittest = True
+
+
 def safe_repr(obj):
     try:
         return repr(obj)

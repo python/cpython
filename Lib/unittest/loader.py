@@ -10,6 +10,8 @@ from fnmatch import fnmatch
 
 from . import case, suite
 
+__unittest = True
+
 
 def _CmpToKey(mycmp):
     'Convert a cmp= function into a key= function'

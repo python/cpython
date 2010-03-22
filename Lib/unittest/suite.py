@@ -5,6 +5,8 @@ import sys
 from . import case
 from . import util
 
+__unittest = True
+
 
 class BaseTestSuite(object):
     """A simple test suite that doesn't provide class or module shared fixtures.
