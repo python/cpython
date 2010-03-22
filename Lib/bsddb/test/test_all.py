@@ -15,6 +15,51 @@ except ImportError:
 if sys.version_info[0] >= 3 :
     charset = "iso8859-1"  # Full 8 bit
 
+    class logcursor_py3k(object) :
+        def __init__(self, env) :
+            self._logcursor = env.log_cursor()
+
+        def __getattr__(self, v) :
+            return getattr(self._logcursor, v)
+
+        def __next__(self) :
+            v = getattr(self._logcursor, "next")()
+            if v is not None :
+                v = (v[0], v[1].decode(charset))
+            return v
+
+        next = __next__
+
+        def first(self) :
+            v = self._logcursor.first()
+            if v is not None :
+                v = (v[0], v[1].decode(charset))
+            return v
+
+        def last(self) :
+            v = self._logcursor.last()
+            if v is not None :
+                v = (v[0], v[1].decode(charset))
+            return v
+
+        def prev(self) :
+            v = self._logcursor.prev()
+            if v is not None :
+                v = (v[0], v[1].decode(charset))
+            return v
+
+        def current(self) :
+            v = self._logcursor.current()
+            if v is not None :
+                v = (v[0], v[1].decode(charset))
+            return v
+
+        def set(self, lsn) :
+            v = self._logcursor.set(lsn)
+            if v is not None :
+                v = (v[0], v[1].decode(charset))
+            return v
+
     class cursor_py3k(object) :
         def __init__(self, db, *args, **kwargs) :
             self._dbcursor = db.cursor(*args, **kwargs)
@@ -71,12 +116,12 @@ if sys.version_info[0] >= 3 :
             v = self._dbcursor.next_nodup()
             return self._fix(v)
 
-        def put(self, key, value, flags=0, dlen=-1, doff=-1) :
+        def put(self, key, data, flags=0, dlen=-1, doff=-1) :
             if isinstance(key, str) :
                 key = bytes(key, charset)
-            if isinstance(value, str) :
-                value = bytes(value, charset)
-            return self._dbcursor.put(key, value, flags=flags, dlen=dlen,
+            if isinstance(data, str) :
+                value = bytes(data, charset)
+            return self._dbcursor.put(key, data, flags=flags, dlen=dlen,
                     doff=doff)
 
         def current(self, flags=0, dlen=-1, doff=-1) :
@@ -203,12 +248,26 @@ if sys.version_info[0] >= 3 :
                 k = bytes(k, charset)
             return self._db.has_key(k, txn=txn)
 
-        def put(self, key, value, txn=None, flags=0, dlen=-1, doff=-1) :
+        def set_re_delim(self, c) :
+            if isinstance(c, str) :  # We can use a numeric value byte too
+                c = bytes(c, charset)
+            return self._db.set_re_delim(c)
+
+        def set_re_pad(self, c) :
+            if isinstance(c, str) :  # We can use a numeric value byte too
+                c = bytes(c, charset)
+            return self._db.set_re_pad(c)
+
+        def get_re_source(self) :
+            source = self._db.get_re_source()
+            return source.decode(charset)
+
+        def put(self, key, data, txn=None, flags=0, dlen=-1, doff=-1) :
             if isinstance(key, str) :
                 key = bytes(key, charset)
-            if isinstance(value, str) :
-                value = bytes(value, charset)
-            return self._db.put(key, value, flags=flags, txn=txn, dlen=dlen,
+            if isinstance(data, str) :
+                value = bytes(data, charset)
+            return self._db.put(key, data, flags=flags, txn=txn, dlen=dlen,
                     doff=doff)
 
         def append(self, value, txn=None) :
@@ -220,6 +279,11 @@ if sys.version_info[0] >= 3 :
             if isinstance(key, str) :
                 key = bytes(key, charset)
             return self._db.get_size(key)
+
+        def exists(self, key, *args, **kwargs) :
+            if isinstance(key, str) :
+                key = bytes(key, charset)
+            return self._db.exists(key, *args, **kwargs)
 
         def get(self, key, default="MagicCookie", txn=None, flags=0, dlen=-1, doff=-1) :
             if isinstance(key, str) :
@@ -288,13 +352,21 @@ if sys.version_info[0] >= 3 :
                         key = key.decode(charset)
                     data = data.decode(charset)
                     key = self._callback(key, data)
-                    if (key != bsddb._db.DB_DONOTINDEX) and isinstance(key,
-                            str) :
-                        key = bytes(key, charset)
+                    if (key != bsddb._db.DB_DONOTINDEX) :
+                        if isinstance(key, str) :
+                            key = bytes(key, charset)
+                        elif isinstance(key, list) :
+                            key2 = []
+                            for i in key :
+                                if isinstance(i, str) :
+                                    i = bytes(i, charset)
+                                key2.append(i)
+                            key = key2
                     return key
 
             return self._db.associate(secondarydb._db,
-                    associate_callback(callback).callback, flags=flags, txn=txn)
+                    associate_callback(callback).callback, flags=flags,
+                    txn=txn)
 
         def cursor(self, txn=None, flags=0) :
             return cursor_py3k(self._db, txn=txn, flags=flags)
@@ -309,6 +381,21 @@ if sys.version_info[0] >= 3 :
 
         def __getattr__(self, v) :
             return getattr(self._dbenv, v)
+
+        def log_cursor(self, flags=0) :
+            return logcursor_py3k(self._dbenv)
+
+        def get_lg_dir(self) :
+            return self._dbenv.get_lg_dir().decode(charset)
+
+        def get_tmp_dir(self) :
+            return self._dbenv.get_tmp_dir().decode(charset)
+
+        def get_data_dirs(self) :
+            # Have to use a list comprehension and not
+            # generators, because we are supporting Python 2.3.
+            return tuple(
+                [i.decode(charset) for i in self._dbenv.get_data_dirs()])
 
     class DBSequence_py3k(object) :
         def __init__(self, db, *args, **kwargs) :
@@ -332,7 +419,10 @@ if sys.version_info[0] >= 3 :
 
     bsddb._db.DBEnv_orig = bsddb._db.DBEnv
     bsddb._db.DB_orig = bsddb._db.DB
-    bsddb._db.DBSequence_orig = bsddb._db.DBSequence
+    if bsddb.db.version() <= (4, 3) :
+        bsddb._db.DBSequence_orig = None
+    else :
+        bsddb._db.DBSequence_orig = bsddb._db.DBSequence
 
     def do_proxy_db_py3k(flag) :
         flag2 = do_proxy_db_py3k.flag
@@ -396,8 +486,12 @@ def print_versions():
     print 'bsddb.db.version():   %s' % (db.version(), )
     print 'bsddb.db.__version__: %s' % db.__version__
     print 'bsddb.db.cvsid:       %s' % db.cvsid
-    print 'py module:            %s' % bsddb.__file__
-    print 'extension module:     %s' % bsddb._bsddb.__file__
+
+    # Workaround for allowing generating an EGGs as a ZIP files.
+    suffix="__"
+    print 'py module:            %s' % getattr(bsddb, "__file"+suffix)
+    print 'extension module:     %s' % getattr(bsddb, "__file"+suffix)
+
     print 'python version:       %s' % sys.version
     print 'My pid:               %s' % os.getpid()
     print '-=' * 38
@@ -481,6 +575,8 @@ def suite(module_prefix='', timing_check=None):
     test_modules = [
         'test_associate',
         'test_basics',
+        'test_dbenv',
+        'test_db',
         'test_compare',
         'test_compat',
         'test_cursor_pget_bug',
@@ -489,6 +585,7 @@ def suite(module_prefix='', timing_check=None):
         'test_dbtables',
         'test_distributed_transactions',
         'test_early_close',
+        'test_fileid',
         'test_get_none',
         'test_join',
         'test_lock',

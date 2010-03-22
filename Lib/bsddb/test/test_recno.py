@@ -1,7 +1,7 @@
 """TestCases for exercising a Recno DB.
 """
 
-import os
+import os, sys
 import errno
 from pprint import pprint
 import unittest
@@ -14,10 +14,19 @@ letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 #----------------------------------------------------------------------
 
 class SimpleRecnoTestCase(unittest.TestCase):
-    import sys
-    if sys.version_info[:3] < (2, 4, 0):
-        def assertFalse(self, expr, msg=None):
-            self.failIf(expr,msg=msg)
+    if sys.version_info < (2, 4) :
+        def assertFalse(self, expr, msg=None) :
+            return self.failIf(expr,msg=msg)
+        def assertTrue(self, expr, msg=None) :
+            return self.assert_(expr, msg=msg)
+
+    if (sys.version_info < (2, 7)) or ((sys.version_info >= (3, 0)) and
+            (sys.version_info < (3, 2))) :
+        def assertIsInstance(self, obj, datatype, msg=None) :
+            return self.assertEqual(type(obj), datatype, msg=msg)
+        def assertGreaterEqual(self, a, b, msg=None) :
+            return self.assertTrue(a>=b, msg=msg)
+
 
     def setUp(self):
         self.filename = get_new_database_path()
@@ -60,7 +69,10 @@ class SimpleRecnoTestCase(unittest.TestCase):
         try:
             data = d[0]  # This should raise a KeyError!?!?!
         except db.DBInvalidArgError, val:
-            self.assertEqual(val.args[0], db.EINVAL)
+            if sys.version_info < (2, 6) :
+                self.assertEqual(val[0], db.EINVAL)
+            else :
+                self.assertEqual(val.args[0], db.EINVAL)
             if verbose: print val
         else:
             self.fail("expected exception")
@@ -177,7 +189,10 @@ class SimpleRecnoTestCase(unittest.TestCase):
             if get_returns_none:
                 self.fail("unexpected DBKeyEmptyError exception")
             else:
-                self.assertEqual(val.args[0], db.DB_KEYEMPTY)
+                if sys.version_info < (2, 6) :
+                    self.assertEqual(val[0], db.DB_KEYEMPTY)
+                else :
+                    self.assertEqual(val.args[0], db.DB_KEYEMPTY)
                 if verbose: print val
         else:
             if not get_returns_none:
@@ -265,7 +280,10 @@ class SimpleRecnoTestCase(unittest.TestCase):
         try:                    # this one will fail
             d.append('bad' * 20)
         except db.DBInvalidArgError, val:
-            self.assertEqual(val.args[0], db.EINVAL)
+            if sys.version_info < (2, 6) :
+                self.assertEqual(val[0], db.EINVAL)
+            else :
+                self.assertEqual(val.args[0], db.EINVAL)
             if verbose: print val
         else:
             self.fail("expected exception")

@@ -2,7 +2,7 @@
 is closed before its DB objects.
 """
 
-import os
+import os, sys
 import unittest
 
 from test_all import db, test_support, verbose, get_new_environment_path, get_new_database_path
@@ -155,22 +155,43 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
                 db.DB_INIT_LOG | db.DB_CREATE)
         d = db.DB(dbenv)
         txn = dbenv.txn_begin()
-        if db.version() < (4,1) :
-            d.open(self.filename, dbtype = db.DB_HASH, flags = db.DB_CREATE)
-        else :
-            d.open(self.filename, dbtype = db.DB_HASH, flags = db.DB_CREATE,
-                    txn=txn)
+        d.open(self.filename, dbtype = db.DB_HASH, flags = db.DB_CREATE,
+                txn=txn)
         d.put("XXX", "yyy", txn=txn)
         txn.commit()
         txn = dbenv.txn_begin()
         c1 = d.cursor(txn)
         c2 = c1.dup()
         self.assertEquals(("XXX", "yyy"), c1.first())
-        import warnings
+
         # Not interested in warnings about implicit close.
-        with warnings.catch_warnings():
+        import warnings
+        if sys.version_info < (2, 6) :
+            # Completely resetting the warning state is
+            # problematic with python >=2.6 with -3 (py3k warning),
+            # because some stdlib modules selectively ignores warnings.
             warnings.simplefilter("ignore")
             txn.commit()
+            warnings.resetwarnings()
+        else :
+            # When we drop support for python 2.3 and 2.4
+            # we could use: (in 2.5 we need a __future__ statement)
+            #
+            #    with warnings.catch_warnings():
+            #        warnings.simplefilter("ignore")
+            #        txn.commit()
+            #
+            # We can not use "with" as is, because it would be invalid syntax
+            # in python 2.3, 2.4 and (with no __future__) 2.5.
+            # Here we simulate "with" following PEP 343 :
+            w = warnings.catch_warnings()
+            w.__enter__()
+            try :
+                warnings.simplefilter("ignore")
+                txn.commit()
+            finally :
+                w.__exit__()
+
         self.assertRaises(db.DBCursorClosedError, c2.first)
 
     if db.version() > (4,3,0) :

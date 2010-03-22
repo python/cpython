@@ -33,7 +33,7 @@
 #----------------------------------------------------------------------
 
 
-"""Support for Berkeley DB 4.0 through 4.7 with a simple interface.
+"""Support for Berkeley DB 4.1 through 4.8 with a simple interface.
 
 For the full featured object oriented interface use the bsddb.db module
 instead.  It mirrors the Oracle Berkeley DB C API.
@@ -42,11 +42,12 @@ instead.  It mirrors the Oracle Berkeley DB C API.
 import sys
 absolute_import = (sys.version_info[0] >= 3)
 
-if sys.py3kwarning:
-    import warnings
-    warnings.warnpy3k("in 3.x, the bsddb module has been removed; "
-                      "please use the pybsddb project instead",
-                      DeprecationWarning, 2)
+if (sys.version_info >= (2, 6)) and (sys.version_info < (3, 0)) :
+    if sys.py3kwarning and (__name__ != 'bsddb3') :
+        import warnings
+        warnings.warnpy3k("in 3.x, the bsddb module has been removed; "
+                          "please use the pybsddb project instead",
+                          DeprecationWarning, 2)
 
 try:
     if __name__ == 'bsddb3':
@@ -81,7 +82,7 @@ import sys, os
 
 from weakref import ref
 
-if sys.version_info[0:2] <= (2, 5) :
+if sys.version_info < (2, 6) :
     import UserDict
     MutableMapping = UserDict.DictMixin
 else :
@@ -256,7 +257,7 @@ class _DBWithCursor(_iter_mixin):
         self._checkOpen()
         return _DeadlockWrap(lambda: len(self.db))  # len(self.db)
 
-    if sys.version_info[0:2] >= (2, 6) :
+    if sys.version_info >= (2, 6) :
         def __repr__(self) :
             if self.isOpen() :
                 return repr(dict(_DeadlockWrap(self.db.items)))
@@ -442,8 +443,10 @@ def _checkflag(flag, file):
 # Berkeley DB was too.
 
 try:
-    import thread
-    del thread
+    # 2to3 automatically changes "import thread" to "import _thread"
+    import thread as T
+    del T
+
 except ImportError:
     db.DB_THREAD = 0
 

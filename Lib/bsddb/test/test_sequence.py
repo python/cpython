@@ -6,7 +6,7 @@ from test_all import db, test_support, get_new_environment_path, get_new_databas
 
 class DBSequenceTest(unittest.TestCase):
     import sys
-    if sys.version_info[:3] < (2, 4, 0):
+    if sys.version_info < (2, 4) :
         def assertTrue(self, expr, msg=None):
             self.failUnless(expr,msg=msg)
 
@@ -37,7 +37,7 @@ class DBSequenceTest(unittest.TestCase):
         self.seq = db.DBSequence(self.d, flags=0)
         start_value = 10 * self.int_32_max
         self.assertEqual(0xA00000000, start_value)
-        self.assertEquals(None, self.seq.init_value(start_value))
+        self.assertEquals(None, self.seq.initial_value(start_value))
         self.assertEquals(None, self.seq.open(key='id', txn=None, flags=db.DB_CREATE))
         self.assertEquals(start_value, self.seq.get(5))
         self.assertEquals(start_value + 5, self.seq.get())
@@ -77,7 +77,7 @@ class DBSequenceTest(unittest.TestCase):
         self.seq = db.DBSequence(self.d, flags=0)
         seq_range = (10 * self.int_32_max, 11 * self.int_32_max - 1)
         self.assertEquals(None, self.seq.set_range(seq_range))
-        self.seq.init_value(seq_range[0])
+        self.seq.initial_value(seq_range[0])
         self.assertEquals(None, self.seq.open(key='foo', txn=None, flags=db.DB_CREATE))
         self.assertEquals(seq_range, self.seq.get_range())
 
@@ -110,7 +110,7 @@ class DBSequenceTest(unittest.TestCase):
         value_minus=(-1L<<63)+1  # Two complement
         self.assertEquals(-9223372036854775807L,value_minus)
         self.seq = db.DBSequence(self.d, flags=0)
-        self.assertEquals(None, self.seq.init_value(value_plus-1))
+        self.assertEquals(None, self.seq.initial_value(value_plus-1))
         self.assertEquals(None, self.seq.open(key='id', txn=None,
             flags=db.DB_CREATE))
         self.assertEquals(value_plus-1, self.seq.get(1))
@@ -119,7 +119,7 @@ class DBSequenceTest(unittest.TestCase):
         self.seq.remove(txn=None, flags=0)
 
         self.seq = db.DBSequence(self.d, flags=0)
-        self.assertEquals(None, self.seq.init_value(value_minus))
+        self.assertEquals(None, self.seq.initial_value(value_minus))
         self.assertEquals(None, self.seq.open(key='id', txn=None,
             flags=db.DB_CREATE))
         self.assertEquals(value_minus, self.seq.get(1))
