@@ -19,11 +19,7 @@ VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
 
 
 def _make_failed_import_test(name, suiteClass):
-    message = 'Failed to import test module: %s' % name
-    if hasattr(traceback, 'format_exc'):
-        # Python 2.3 compatibility
-        # format_exc returns two frames of discover.py as well
-        message += '\n%s' % traceback.format_exc()
+    message = 'Failed to import test module: %s\n%s' % (name, traceback.format_exc())
     return _make_failed_test('ModuleImportFailure', name, ImportError(message),
                              suiteClass)
 

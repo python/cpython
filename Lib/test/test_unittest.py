@@ -3991,13 +3991,15 @@ class TestDiscovery(TestCase):
         program._do_discovery(['-p', 'fish'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'fish', None)])
+        self.assertFalse(program.failfast)
 
         Loader.args = []
         program = object.__new__(TestProgram)
-        program._do_discovery(['-p', 'eggs', '-s', 'fish', '-v'], Loader=Loader)
+        program._do_discovery(['-p', 'eggs', '-s', 'fish', '-v', '-f'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'eggs', None)])
         self.assertEqual(program.verbosity, 2)
+        self.assertTrue(program.failfast)
 
 
 class TestSetups(unittest.TestCase):
