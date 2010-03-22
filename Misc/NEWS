@@ -23,6 +23,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3890: Fix recv() and recv_into() on non-blocking SSL sockets.
+
 - Issue #6544: fix a reference leak in the kqueue implementation's error
   handling.
 
