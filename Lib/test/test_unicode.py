@@ -1223,6 +1223,14 @@ class UnicodeTest(
         self.assertRaises(MemoryError, alloc)
         self.assertRaises(MemoryError, alloc)
 
+    def test_format_subclass(self):
+        class S(str):
+            def __str__(self):
+                return '__str__ overridden'
+        s = S('xxx')
+        self.assertEquals("%s" % s, '__str__ overridden')
+        self.assertEquals("{}".format(s), '__str__ overridden')
+
 
 def test_main():
     support.run_unittest(__name__)
