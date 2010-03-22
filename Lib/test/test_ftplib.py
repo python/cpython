@@ -293,7 +293,9 @@ if ssl is not None:
             try:
                 return super(SSLConnection, self).send(data)
             except ssl.SSLError, err:
-                if err.args[0] in (ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_ZERO_RETURN):
+                if err.args[0] in (ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_ZERO_RETURN,
+                                   ssl.SSL_ERROR_WANT_READ,
+                                   ssl.SSL_ERROR_WANT_WRITE):
                     return 0
                 raise
 
@@ -301,6 +303,9 @@ if ssl is not None:
             try:
                 return super(SSLConnection, self).recv(buffer_size)
             except ssl.SSLError, err:
+                if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
+                                   ssl.SSL_ERROR_WANT_WRITE):
+                    return ''
                 if err.args[0] in (ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_ZERO_RETURN):
                     self.handle_close()
                     return ''
