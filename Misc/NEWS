@@ -287,6 +287,10 @@ C-API
 Library
 -------
 
+- Issue #7512: shutil.copystat() could raise an OSError when the filesystem
+  didn't support chflags() (for example ZFS under FreeBSD).  The error is
+  now silenced.
+
 - Issue #7860: platform.uname now reports the correct 'machine' type
   when Python is running in WOW64 mode on 64 bit Windows.
 
