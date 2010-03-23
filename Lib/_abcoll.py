@@ -21,6 +21,14 @@ __all__ = ["Hashable", "Iterable", "Iterator",
 
 ### ONE-TRICK PONIES ###
 
+def _hasattr(C, attr):
+    try:
+        return any(attr in B.__dict__ for B in C.__mro__)
+    except AttributeError:
+        # Old-style class
+        return hasattr(C, attr)
+
+
 class Hashable:
     __metaclass__ = ABCMeta
 
@@ -31,11 +39,16 @@ class Hashable:
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Hashable:
-            for B in C.__mro__:
-                if "__hash__" in B.__dict__:
-                    if B.__dict__["__hash__"]:
-                        return True
-                    break
+            try:
+                for B in C.__mro__:
+                    if "__hash__" in B.__dict__:
+                        if B.__dict__["__hash__"]:
+                            return True
+                        break
+            except AttributeError:
+                # Old-style class
+                if getattr(C, "__hash__", None):
+                    return True
         return NotImplemented
 
 
@@ -50,7 +63,7 @@ class Iterable:
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Iterable:
-            if any("__iter__" in B.__dict__ for B in C.__mro__):
+            if _hasattr(C, "__iter__"):
                 return True
         return NotImplemented
 
@@ -69,7 +82,7 @@ class Iterator(Iterable):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Iterator:
-            if any("next" in B.__dict__ for B in C.__mro__):
+            if _hasattr(C, "next"):
                 return True
         return NotImplemented
 
@@ -84,7 +97,7 @@ class Sized:
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Sized:
-            if any("__len__" in B.__dict__ for B in C.__mro__):
+            if _hasattr(C, "__len__"):
                 return True
         return NotImplemented
 
@@ -99,7 +112,7 @@ class Container:
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Container:
-            if any("__contains__" in B.__dict__ for B in C.__mro__):
+            if _hasattr(C, "__contains__"):
                 return True
         return NotImplemented
 
@@ -114,7 +127,7 @@ class Callable:
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Callable:
-            if any("__call__" in B.__dict__ for B in C.__mro__):
+            if _hasattr(C, "__call__"):
                 return True
         return NotImplemented
 
