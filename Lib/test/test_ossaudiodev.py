@@ -159,6 +159,15 @@ class OSSAudioDevTests(unittest.TestCase):
             dsp.close()
             self.assertTrue(dsp.closed)
 
+    def test_mixer_methods(self):
+        # Issue #8139: ossaudiodev didn't initialize its types properly,
+        # therefore some methods were unavailable.
+        mixer = ossaudiodev.openmixer()
+        try:
+            self.assertGreaterEqual(mixer.fileno(), 0)
+        finally:
+            mixer.close()
+
 
 def test_main():
     try:

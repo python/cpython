@@ -986,10 +986,16 @@ static struct PyModuleDef ossaudiodevmodule = {
 	NULL
 };
 
-PyObject*
+PyMODINIT_FUNC
 PyInit_ossaudiodev(void)
 {
     PyObject *m;
+
+    if (PyType_Ready(&OSSAudioType) < 0)
+        return NULL;
+
+    if (PyType_Ready(&OSSMixerType) < 0)
+        return NULL;
 
     m = PyModule_Create(&ossaudiodevmodule);
     if (m == NULL)
