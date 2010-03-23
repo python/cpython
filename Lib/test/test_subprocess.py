@@ -669,10 +669,7 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_send_signal(self):
         p = self._kill_process('send_signal', signal.SIGINT)
         _, stderr = p.communicate()
-        self.assertStderrEqual(stderr,
-            "Traceback (most recent call last):\n"
-            "  File \"<string>\", line 1, in <module>\n"
-            "KeyboardInterrupt\n")
+        self.assertIn('KeyboardInterrupt', stderr)
         self.assertNotEqual(p.wait(), 0)
 
     def test_kill(self):
