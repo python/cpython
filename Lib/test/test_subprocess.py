@@ -669,18 +669,22 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_send_signal(self):
         p = self._kill_process('send_signal', signal.SIGINT)
         _, stderr = p.communicate()
-        self.assertNotEqual(p.wait(), 0)
         self.assertStderrEqual(stderr,
             "Traceback (most recent call last):\n"
             "  File \"<string>\", line 1, in <module>\n"
             "KeyboardInterrupt\n")
+        self.assertNotEqual(p.wait(), 0)
 
     def test_kill(self):
         p = self._kill_process('kill')
+        _, stderr = p.communicate()
+        self.assertStderrEqual(stderr, '')
         self.assertEqual(p.wait(), -signal.SIGKILL)
 
     def test_terminate(self):
         p = self._kill_process('terminate')
+        _, stderr = p.communicate()
+        self.assertStderrEqual(stderr, '')
         self.assertEqual(p.wait(), -signal.SIGTERM)
 
 
@@ -756,7 +760,7 @@ class Win32ProcessTestCase(BaseTestCase):
     def _kill_process(self, method, *args):
         # Some win32 buildbot raises EOFError if stdin is inherited
         p = subprocess.Popen([sys.executable, "-c", "input()"],
-                             stdin=subprocess.PIPE)
+                             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Let the process initialize (Issue #3137)
         time.sleep(0.1)
@@ -774,6 +778,8 @@ class Win32ProcessTestCase(BaseTestCase):
         if count > 1:
             print >>sys.stderr, ("p.{}{} succeeded after "
                                  "{} attempts".format(method, args, count))
+        _, stderr = p.communicate()
+        self.assertStderrEqual(stderr, '')
         self.assertEqual(p.wait(), returncode)
         self.assertNotEqual(returncode, 0)
 
