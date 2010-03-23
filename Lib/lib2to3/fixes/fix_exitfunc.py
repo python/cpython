@@ -40,9 +40,9 @@ class FixExitfunc(fixer_base.BaseFix):
             return
 
         func = results["func"].clone()
-        func.prefix = ""
+        func.prefix = u""
         register = pytree.Node(syms.power,
-                               Attr(Name("atexit"), Name("register"))
+                               Attr(Name(u"atexit"), Name(u"register"))
                                )
         call = Call(register, [func], node.prefix)
         node.replace(call)
@@ -57,14 +57,14 @@ class FixExitfunc(fixer_base.BaseFix):
         names = self.sys_import.children[1]
         if names.type == syms.dotted_as_names:
             names.append_child(Comma())
-            names.append_child(Name("atexit", " "))
+            names.append_child(Name(u"atexit", u" "))
         else:
             containing_stmt = self.sys_import.parent
             position = containing_stmt.children.index(self.sys_import)
             stmt_container = containing_stmt.parent
             new_import = pytree.Node(syms.import_name,
-                              [Name("import"), Name("atexit", " ")]
+                              [Name(u"import"), Name(u"atexit", u" ")]
                               )
-            new = pytree.Node("simple_stmt", [new_import])
+            new = pytree.Node(syms.simple_stmt, [new_import])
             containing_stmt.insert_child(position + 1, Newline())
             containing_stmt.insert_child(position + 2, new)
