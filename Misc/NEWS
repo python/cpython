@@ -23,6 +23,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7624: Fix isinstance(foo(), collections.Callable) for old-style
+  classes.
+
 - Issue #7512: shutil.copystat() could raise an OSError when the filesystem
   didn't support chflags() (for example ZFS under FreeBSD).  The error is
   now silenced.
