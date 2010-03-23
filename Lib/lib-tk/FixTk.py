@@ -19,10 +19,10 @@ except (ImportError, AttributeError):
         return s
 else:
     def convert_path(s):
-        if isinstance(s, str):
-            s = s.decode("mbcs")
+        assert isinstance(s, str)   # sys.prefix contains only bytes
+        udir = s.decode("mbcs")
         hdir = ctypes.windll.kernel32.\
-            CreateFileW(s, 0x80,    # FILE_READ_ATTRIBUTES
+            CreateFileW(udir, 0x80, # FILE_READ_ATTRIBUTES
                         1,          # FILE_SHARE_READ
                         None, 3,    # OPEN_EXISTING
                         0x02000000, # FILE_FLAG_BACKUP_SEMANTICS
@@ -38,9 +38,9 @@ else:
         if res == 0:
             # Conversion failed (e.g. network location)
             return s
-        s = buf[:res]
+        s = buf[:res].encode("mbcs")
         # Ignore leading \\?\
-        if s.startswith(u"\\\\?\\"):
+        if s.startswith("\\\\?\\"):
             s = s[4:]
         return s
 

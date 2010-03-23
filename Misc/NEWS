@@ -36,6 +36,8 @@ Library
   set to an non existent program name and Python is unable to retrieve the real
   program name
 
+- Issue #6906: Tk should not set Unicode environment variables on Windows.
+
 - Issue #1054943: Fix unicodedata.normalize('NFC', text) for the Public Review
   Issue #29
 
