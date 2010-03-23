@@ -458,14 +458,14 @@ PyCursesWindow_AddStr(PyCursesWindowObject *self, PyObject *args)
 
   if (use_attr == TRUE) {
     attr_old = getattrs(self->win);
-    wattrset(self->win,attr);
+    (void)wattrset(self->win,attr);
   }
   if (use_xy == TRUE)
     rtn = mvwaddstr(self->win,y,x,str);
   else
     rtn = waddstr(self->win,str);
   if (use_attr == TRUE)
-    wattrset(self->win,attr_old);
+    (void)wattrset(self->win,attr_old);
   return PyCursesCheckERR(rtn, "addstr");
 }
 
@@ -507,14 +507,14 @@ PyCursesWindow_AddNStr(PyCursesWindowObject *self, PyObject *args)
 
   if (use_attr == TRUE) {
     attr_old = getattrs(self->win);
-    wattrset(self->win,attr);
+    (void)wattrset(self->win,attr);
   }
   if (use_xy == TRUE)
     rtn = mvwaddnstr(self->win,y,x,str,n);
   else
     rtn = waddnstr(self->win,str,n);
   if (use_attr == TRUE)
-    wattrset(self->win,attr_old);
+    (void)wattrset(self->win,attr_old);
   return PyCursesCheckERR(rtn, "addnstr");
 }
 
@@ -1148,14 +1148,14 @@ PyCursesWindow_InsStr(PyCursesWindowObject *self, PyObject *args)
 
   if (use_attr == TRUE) {
     attr_old = getattrs(self->win);
-    wattrset(self->win,attr);
+    (void)wattrset(self->win,attr);
   }
   if (use_xy == TRUE)
     rtn = mvwinsstr(self->win,y,x,str);
   else
     rtn = winsstr(self->win,str);
   if (use_attr == TRUE)
-    wattrset(self->win,attr_old);
+    (void)wattrset(self->win,attr_old);
   return PyCursesCheckERR(rtn, "insstr");
 }
 
@@ -1197,14 +1197,14 @@ PyCursesWindow_InsNStr(PyCursesWindowObject *self, PyObject *args)
 
   if (use_attr == TRUE) {
     attr_old = getattrs(self->win);
-    wattrset(self->win,attr);
+    (void)wattrset(self->win,attr);
   }
   if (use_xy == TRUE)
     rtn = mvwinsnstr(self->win,y,x,str,n);
   else
     rtn = winsnstr(self->win,str,n);
   if (use_attr == TRUE)
-    wattrset(self->win,attr_old);
+    (void)wattrset(self->win,attr_old);
   return PyCursesCheckERR(rtn, "insnstr");
 }
 
