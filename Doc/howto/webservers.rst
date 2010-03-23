@@ -38,7 +38,7 @@ The low-level view
 When a user enters a web site, his browser makes a connection to the site's
 webserver (this is called the *request*).  The server looks up the file in the
 file system and sends it back to the user's browser, which displays it (this is
-the *response*).  This is roughly how the unterlying protocol, HTTP works.
+the *response*).  This is roughly how the underlying protocol, HTTP, works.
 
 Now, dynamic web sites are not files in the file system, but rather programs
 which are run by the web server when a request comes in.  They can do all sorts
