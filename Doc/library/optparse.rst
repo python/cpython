@@ -762,7 +762,8 @@ The first step in using :mod:`optparse` is to create an OptionParser instance.
       The string to use when expanding ``"%prog"`` in ``usage`` and ``version``
       instead of ``os.path.basename(sys.argv[0])``.
 
-
+   ``epilog`` (default: ``None``)
+      A paragraph of help text to print after the option help.
 
 .. _optparse-populating-parser:
 
