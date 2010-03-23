@@ -287,6 +287,10 @@ C-API
 Library
 -------
 
+- Issue #8139: ossaudiodev didn't initialize its types properly, therefore
+  some methods (such as oss_mixer_device.fileno()) were not available.
+  Initial patch by Bertrand Janin.
+
 - Issue #7512: shutil.copystat() could raise an OSError when the filesystem
   didn't support chflags() (for example ZFS under FreeBSD).  The error is
   now silenced.
