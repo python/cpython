@@ -1139,21 +1139,28 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 * :meth:`loadTestsFromName` properly honors the ``suiteClass`` attribute of
   the :class:`TestLoader`. (Fixed by Mark Roddy; :issue:`6866`.)
 
-* A new hook, :meth:`addTypeEqualityFunc` takes a type object and a
-  function.  The :meth:`assertEqual` method will use the function
-  when both of the objects being compared are of the specified type.
-  This function should compare the two objects and raise an
-  exception if they don't match; it's a good idea for the function
-  to provide additional information about why the two objects are
-  matching, much as the new sequence comparison methods do.
+* A new hook lets you extend the :meth:`assertEqual` method to handle
+  new data types.  The :meth:`addTypeEqualityFunc` method takes a type
+  object and a function. The function will be used when both of the
+  objects being compared are of the specified type.  This function
+  should compare the two objects and raise an exception if they don't
+  match; it's a good idea for the function to provide additional
+  information about why the two objects are matching, much as the new
+  sequence comparison methods do.
 
-:func:`unittest.main` now takes an optional ``exit`` argument.
-If False ``main`` doesn't call :func:`sys.exit` allowing it to
-be used from the interactive interpreter. :issue:`3379`.
+:func:`unittest.main` now takes an optional ``exit`` argument.  If
+false, :func:`main` doesn't call :func:`sys.exit`, allowing it to be
+used from the interactive interpreter. (Contributed by J. Pablo
+Fernández; :issue:`3379`.)
+
+A new command-line switch, :option:`-f` or :option:`--failfast`, makes
+test execution stop immediately when a test fails instead of
+continuing to execute further tests.  (Suggested by Cliff Dyer and
+implemented by Michael Foord; :issue:`8074`.)
 
 :class:`TestResult` has new :meth:`startTestRun` and
-:meth:`stopTestRun` methods; called immediately before
-and after a test run. :issue:`5728` by Robert Collins.
+:meth:`stopTestRun` methods that are called immediately before
+and after a test run.  (Contributed by Robert Collins; :issue:`5728`.)
 
 With all these changes, the :file:`unittest.py` was becoming awkwardly
 large, so the module was turned into a package and the code split into
