@@ -189,7 +189,7 @@ class OtherFileTests(unittest.TestCase):
         except ValueError as msg:
             if msg.args[0] != 0:
                 s = str(msg)
-                if s.find(TESTFN) != -1 or s.find(bad_mode) == -1:
+                if TESTFN in s or bad_mode not in s:
                     self.fail("bad error message for invalid mode: %s" % s)
             # if msg.args[0] == 0, we're probably on Windows where there may be
             # no obvious way to discover why open() failed.

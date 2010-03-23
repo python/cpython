@@ -439,7 +439,7 @@ class MinidomTest(unittest.TestCase):
         string1 = repr(el)
         string2 = str(el)
         self.confirm(string1 == string2)
-        self.confirm(string1.find("slash:abc") != -1)
+        self.confirm("slash:abc" in string1)
         dom.unlink()
 
     def testAttributeRepr(self):
