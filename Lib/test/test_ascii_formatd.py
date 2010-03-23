@@ -3,30 +3,34 @@
 # Test that it works, and test that it's deprecated.
 
 import unittest
-from test_support import check_warnings, run_unittest, cpython_only
-import warnings
+from test.test_support import (check_warnings, run_unittest,
+                               cpython_only, import_module)
 
 
 class FormatDeprecationTests(unittest.TestCase):
 
     @cpython_only
-    def testFormatDeprecation(self):
+    def test_format_deprecation(self):
+        # skip if _ctypes is not available
+        import_module('_ctypes')
         # delay importing ctypes until we know we're in CPython
         from ctypes import (pythonapi, create_string_buffer, sizeof, byref,
                             c_double)
         PyOS_ascii_formatd = pythonapi.PyOS_ascii_formatd
         buf = create_string_buffer(' ' * 100)
 
-        with check_warnings(quiet=False):
+        with check_warnings(('PyOS_ascii_formatd is deprecated',
+                             DeprecationWarning)):
             PyOS_ascii_formatd(byref(buf), sizeof(buf), '%+.10f',
                                c_double(10.0))
             self.assertEqual(buf.value, '+10.0000000000')
+
 
 class FormatTests(unittest.TestCase):
     # ensure that, for the restricted set of format codes,
     # %-formatting returns the same values os PyOS_ascii_formatd
     @cpython_only
-    def testFormat(self):
+    def test_format(self):
         # delay importing ctypes until we know we're in CPython
         from ctypes import (pythonapi, create_string_buffer, sizeof, byref,
                             c_double)
@@ -46,7 +50,8 @@ class FormatTests(unittest.TestCase):
             ('%-e', 1.234),
             ]
 
-        with check_warnings(quiet=False):
+        with check_warnings(('PyOS_ascii_formatd is deprecated',
+                             DeprecationWarning)):
             for format, val in tests:
                 PyOS_ascii_formatd(byref(buf), sizeof(buf), format,
                                    c_double(val))
