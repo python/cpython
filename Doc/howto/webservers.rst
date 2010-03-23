@@ -676,7 +676,7 @@ project called `Grok <http://grok.zope.org/>`_ which makes it possible for
 "normal" Python programmers use the very mature Zope components.
 
 Another framework that's already been mentioned is `Pylons`_.  Pylons is much
-like TurboGears with ab even stronger emphasis on flexibility, which is bought
+like TurboGears with an even stronger emphasis on flexibility, which is bought
 at the cost of being more difficult to use.  Nearly every component can be
 exchanged, which makes it necessary to use the documentation of every single
 component, because there are so many Pylons combinations possible that can
