@@ -1406,6 +1406,7 @@ _expectations = {
         """,
     'openbsd3':
         """
+        test_ascii_formatd
         test_bsddb
         test_bsddb3
         test_ctypes
@@ -1424,6 +1425,7 @@ _expectations = {
         """,
     'netbsd3':
         """
+        test_ascii_formatd
         test_bsddb
         test_bsddb185
         test_bsddb3
