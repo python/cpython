@@ -669,13 +669,15 @@ changes, or look through the Subversion logs for all the details.
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
 
-* The :mod:`ftplib` module gained the ability to establish secure FTP
+* New class: a new :class:`ftplib.FTP_TLS` class in
+  the :mod:`ftplib` module provides secure FTP
   connections using TLS encapsulation of authentication as well as
-  subsequent control and data transfers.  This is provided by the new
-  :class:`ftplib.FTP_TLS` class.
-  (Contributed by Giampaolo Rodola', :issue:`2054`.)  The :meth:`storbinary`
-  method for binary uploads can now restart uploads thanks to an added
-  *rest* parameter (patch by Pablo Mouzo; :issue:`6845`.)
+  subsequent control and data transfers.
+  (Contributed by Giampaolo Rodola', :issue:`2054`.)
+
+  The :meth:`storbinary` method for binary uploads can now restart
+  uploads thanks to an added *rest* parameter (patch by Pablo Mouzo;
+  :issue:`6845`.)
 
 * New function: the :mod:`gc` module's :func:`is_tracked` returns
   true if a given instance is tracked by the garbage collector, false
@@ -707,9 +709,9 @@ changes, or look through the Subversion logs for all the details.
 * The :mod:`imaplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1655`.)
 
-* The :mod:`io` library has been upgraded to the version shipped with
+* Updated module: The :mod:`io` library has been upgraded to the version shipped with
   Python 3.1.  For 3.1, the I/O library was entirely rewritten in C
-  and is 2 to 20 times faster depending on the task at hand.  The
+  and is 2 to 20 times faster depending on the task being performed.  The
   original Python version was renamed to the :mod:`_pyio` module.
 
   One minor resulting change: the :class:`io.TextIOBase` class now
@@ -753,7 +755,7 @@ changes, or look through the Subversion logs for all the details.
   the input iterable.  This was deemed a specification error, so they
   now return an empty iterator.  (Fixed by Raymond Hettinger; :issue:`4816`.)
 
-* The :mod:`json` module was upgraded to version 2.0.9 of the
+* Updated module: The :mod:`json` module was upgraded to version 2.0.9 of the
   simplejson package, which includes a C extension that makes
   encoding and decoding faster.
   (Contributed by Bob Ippolito; :issue:`4136`.)
@@ -813,15 +815,16 @@ changes, or look through the Subversion logs for all the details.
   now accept an optional *flags* argument, for consistency with the
   other functions in the module.  (Added by Gregory P. Smith.)
 
-* The :mod:`shutil` module's :func:`copyfile` and :func:`copytree`
-  functions now raises a :exc:`SpecialFileError` exception when
+* New function: in the :mod:`shutil` module, :func:`make_archive`
+  takes a filename, archive type (zip or tar-format), and a directory
+  path, and creates an archive containing the directory's contents.
+  (Added by Tarek Ziadé.)
+
+  :mod:`shutil`'s :func:`copyfile` and :func:`copytree`
+  functions now raise a :exc:`SpecialFileError` exception when
   asked to copy a named pipe.  Previously the code would treat
   named pipes like a regular file by opening them for reading, and
   this would block indefinitely.  (Fixed by Antoine Pitrou; :issue:`3002`.)
-
-  New function: :func:`make_archive` takes a filename, archive type
-  (zip or tar-format), and a directory path, and creates an archive
-  containing the directory's contents.  (Added by Tarek Ziadé.)
 
 * New functions: in the :mod:`site` module, three new functions
   return various site- and user-specific paths.
@@ -889,6 +892,10 @@ changes, or look through the Subversion logs for all the details.
     subprocess.CalledProcessError: Command '['df', '-h', '/bogus']' returned non-zero exit status 1
 
   (Contributed by Gregory P. Smith.)
+
+  The :mod:`subprocess` module will now retry its internal system calls
+  on receiving an :const:`EINTR` signal.  (Reported by several people; final
+  patch by Gregory P. Smith in :issue:`1068268`.)
 
 * New function: :func:`is_declared_global` in the :mod:`symtable` module
   returns true for variables that are explicitly declared to be global,
@@ -961,7 +968,7 @@ changes, or look through the Subversion logs for all the details.
   :meth:`read` and :meth:`readline` now works correctly.
   (Contributed by Nir Aides; :issue:`7610`.)
 
-  The :func:`is_zipfile` function in the module now
+  The :func:`is_zipfile` function now
   accepts a file object, in addition to the path names accepted in earlier
   versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
 
@@ -969,9 +976,6 @@ changes, or look through the Subversion logs for all the details.
   that lets you override the default compression method specified in the
   :class:`ZipFile` constructor.  (Contributed by Ronald Oussoren;
   :issue:`6003`.)
-
-* XXX the :mod:`shutil` module has now a :func:`make_archive` function
-  (see the module doc, contributed by Tarek)
 
 
 New module: sysconfig
