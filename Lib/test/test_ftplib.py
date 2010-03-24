@@ -315,21 +315,12 @@ if ssl is not None:
             raise
 
         def close(self):
-            ssl_want_read_or_write = False
             try:
                 if isinstance(self.socket, ssl.SSLSocket):
                     if self.socket._sslobj is not None:
-                        try:
-                            self.socket.unwrap()
-                        except ssl.SSLError, err:
-                            if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
-                                               ssl.SSL_ERROR_WANT_WRITE):
-                                ssl_want_read_or_write = True
-                            else:
-                                raise
+                        self.socket.unwrap()
             finally:
-                if not ssl_want_read_or_write:
-                    super(SSLConnection, self).close()
+                super(SSLConnection, self).close()
 
 
     class DummyTLS_DTPHandler(SSLConnection, DummyDTPHandler):
