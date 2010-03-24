@@ -2071,8 +2071,8 @@ supports sending logging messages to a remote or local Unix syslog.
       or integers - if strings are passed, internal mapping dictionaries are
       used to convert them to integers.
 
-      The symbolic ``LOG_`` values mirror the values defined in the
-      ``sys/syslog.h`` header file.
+      The symbolic ``LOG_`` values are defined in :class:`SysLogHandler` and
+      mirror the values defined in the ``sys/syslog.h`` header file.
 
       +------------------------------------------+
       | Priorities                               |
