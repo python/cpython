@@ -3,20 +3,18 @@
 # Test that it works, and test that it's deprecated.
 
 import unittest
-from test.test_support import (check_warnings, run_unittest,
-                               cpython_only, import_module)
+from test.test_support import check_warnings, run_unittest, import_module
+
+# Skip tests if _ctypes module does not exist
+import_module('_ctypes')
+
+from ctypes import pythonapi, create_string_buffer, sizeof, byref, c_double
+PyOS_ascii_formatd = pythonapi.PyOS_ascii_formatd
 
 
 class FormatDeprecationTests(unittest.TestCase):
 
-    @cpython_only
     def test_format_deprecation(self):
-        # skip if _ctypes is not available
-        import_module('_ctypes')
-        # delay importing ctypes until we know we're in CPython
-        from ctypes import (pythonapi, create_string_buffer, sizeof, byref,
-                            c_double)
-        PyOS_ascii_formatd = pythonapi.PyOS_ascii_formatd
         buf = create_string_buffer(' ' * 100)
 
         with check_warnings(('PyOS_ascii_formatd is deprecated',
@@ -29,12 +27,7 @@ class FormatDeprecationTests(unittest.TestCase):
 class FormatTests(unittest.TestCase):
     # ensure that, for the restricted set of format codes,
     # %-formatting returns the same values os PyOS_ascii_formatd
-    @cpython_only
     def test_format(self):
-        # delay importing ctypes until we know we're in CPython
-        from ctypes import (pythonapi, create_string_buffer, sizeof, byref,
-                            c_double)
-        PyOS_ascii_formatd = pythonapi.PyOS_ascii_formatd
         buf = create_string_buffer(' ' * 100)
 
         tests = [
