@@ -2142,6 +2142,14 @@ supports sending logging messages to a remote or local Unix syslog.
       | ``local7``    | LOG_LOCAL7    |
       +---------------+---------------+
 
+   .. method:: mapPriority(levelname)
+
+      Maps a logging level name to a syslog priority name.
+      You may need to override this if you are using custom levels, or
+      if the default algorithm is not suitable for your needs. The
+      default algorithm maps ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR`` and
+      ``CRITICAL`` to the equivalent syslog names, and all other level
+      names to "warning".
 
 .. _nt-eventlog-handler:
 
