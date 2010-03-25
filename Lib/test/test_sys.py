@@ -799,6 +799,7 @@ class SizeofTest(unittest.TestCase):
         old = sys.getfilesystemencoding()
         sys.setfilesystemencoding("iso-8859-1")
         self.assertEqual(sys.getfilesystemencoding(), "iso-8859-1")
+        self.assertRaises(LookupError, sys.setfilesystemencoding, "xxx")
         sys.setfilesystemencoding(old)
 
 def test_main():
