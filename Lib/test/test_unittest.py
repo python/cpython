@@ -16,7 +16,6 @@ import types
 from copy import deepcopy
 from cStringIO import StringIO
 import pickle
-import warnings
 
 
 ### Support code
@@ -2136,12 +2135,11 @@ OldResult = type('OldResult', (object,), classDict)
 class Test_OldTestResult(unittest.TestCase):
 
     def assertOldResultWarning(self, test, failures):
-        with warnings.catch_warnings(record=True) as log:
+        with test_support.check_warnings(("TestResult has no add.+ method,",
+                                          RuntimeWarning)):
             result = OldResult()
             test.run(result)
             self.assertEqual(len(result.failures), failures)
-            warning, = log
-            self.assertIs(warning.category, RuntimeWarning)
 
     def testOldTestResult(self):
         class Test(unittest.TestCase):
@@ -2702,8 +2700,7 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         with self.assertRaises(self.failureException):
             self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
 
-        with warnings.catch_warnings(record=True):
-            # silence the UnicodeWarning
+        with test_support.check_warnings(("", UnicodeWarning)):
             one = ''.join(chr(i) for i in range(255))
             # this used to cause a UnicodeDecodeError constructing the failure msg
             with self.assertRaises(self.failureException):
@@ -3348,11 +3345,9 @@ class TestLongMessage(TestCase):
         self.testableTrue._formatMessage(object(), 'foo')
 
     def test_formatMessage_unicode_error(self):
-        with warnings.catch_warnings(record=True):
-            # This causes a UnicodeWarning due to its craziness
-            one = ''.join(chr(i) for i in range(255))
-            # this used to cause a UnicodeDecodeError constructing msg
-            self.testableTrue._formatMessage(one, u'\uFFFD')
+        one = ''.join(chr(i) for i in range(255))
+        # this used to cause a UnicodeDecodeError constructing msg
+        self.testableTrue._formatMessage(one, u'\uFFFD')
 
     def assertMessages(self, methodName, args, errors):
         def getMethod(i):
