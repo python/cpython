@@ -683,6 +683,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Include\pycapsule.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Include\code.h"
 				>
 			</File>
@@ -1428,6 +1432,10 @@
 			</File>
 			<File
 				RelativePath="..\Objects\cobject.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Objects\capsule.c"
 				>
 			</File>
 			<File
