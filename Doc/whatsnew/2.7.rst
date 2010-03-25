@@ -8,6 +8,9 @@
 
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
+.. Big jobs: argparse, ElementTree 1.3, pep 391, 3106, sysconfig
+..  unittest test discovery
+
 .. $Id$
    Rules for maintenance:
 
@@ -237,6 +240,20 @@ PEP 391: Dictionary-Based Configuration For Logging
 
 XXX write this section.
 
+Two smaller enhancements to the logging module are:
+
+.. rev79293
+
+* :class:`Logger` instances gained a :meth:`getChild` that retrieves a
+  descendant logger using a relative path.  For example,
+  once you retrieve a logger by doing ``log = getLogger('app')``,
+  calling ``log.getChild('network.listen')`` is equivalent to
+  ``getLogger('app.network.listen')``.
+
+* The :class:`LoggerAdapter` class gained a :meth:`isEnabledFor` method
+  that takes a *level* and returns whether the underlying logger would
+  process a message of that level of importance.
+
 .. seealso::
 
    :pep:`391` - Dictionary-Based Configuration For Logging
@@ -351,11 +368,12 @@ Some smaller changes made to the core Python language are:
   of them -- but you can mix auto-numbering and named fields, as in the second
   example above.  (Contributed by Eric Smith; :issue:`5237`.)
 
-  Complex numbers now correctly support usage with :func:`format`.
+  Complex numbers now correctly support usage with :func:`format`,
+  and default to being right-aligned.
   Specifying a precision or comma-separation applies to both the real
   and imaginary parts of the number, but a specified field width and
   alignment is applied to the whole of the resulting ``1.5+3j``
-  output.  (Contributed by Eric Smith; :issue:`1588`.)
+  output.  (Contributed by Eric Smith; :issue:`1588` and :issue:`7988`.)
 
   The 'F' format code now always formats its output using uppercase characters,
   so it will now produce 'INF' and 'NAN'.
@@ -405,6 +423,10 @@ Some smaller changes made to the core Python language are:
 
   Integer division is also more accurate in its rounding behaviours.  (Also
   implemented by Mark Dickinson; :issue:`1811`.)
+
+* It's now possible for a subclass of the built-in :class:`unicode` type
+  to override the :meth:`__unicode__` method.  (Implemented by
+  Victor Stinner; :issue:`1583863`.)
 
 * The :class:`bytearray` type's :meth:`translate` method now accepts
   ``None`` as its first argument.  (Fixed by Georg Brandl;
@@ -568,6 +590,14 @@ changes, or look through the Subversion logs for all the details.
   used with :class:`memoryview` instances and other similar buffer objects.
   (Backported from 3.x by Florent Xicluna; :issue:`7703`.)
 
+* Updated module: the :mod:`bsddb` module has been updated from 4.7.2devel9
+  to version 4.8.4 of
+  `the pybsddb package <http://www.jcea.es/programacion/pybsddb.htm>`__.
+  The new version features better Python 3.x compatibility, various bug fixes,
+  and adds several new BerkeleyDB flags and methods.
+  (Updated by Jesús Cea Avion; :issue:`8156`.  The pybsddb
+  changelog can be browsed at http://hg.jcea.es/pybsddb/file/tip/ChangeLog.)
+
 * The :mod:`bz2` module's :class:`BZ2File` now supports the context
   management protocol, so you can write ``with bz2.BZ2File(...) as f: ...``.
   (Contributed by Hagen Fuerstenau; :issue:`3860`.)
@@ -656,6 +686,11 @@ changes, or look through the Subversion logs for all the details.
   ``Decimal('0.1000000000000000055511151231257827021181583404541015625')``.
   (Implemented by Raymond Hettinger; :issue:`4796`.)
 
+  Most of the methods of the :class:`Context` class now accept integers
+  as well as :class:`Decimal` instances; the only exceptions are the
+  :meth:`canonical` and :meth:`is_canonical` methods.  (Patch by
+  Juan José Conti; :issue:`7633`.)
+
   The constructor for :class:`Decimal` now accepts non-European
   Unicode characters, such as Arabic-Indic digits.  (Contributed by
   Mark Dickinson; :issue:`6595`.)
@@ -696,6 +731,12 @@ changes, or look through the Subversion logs for all the details.
   Files in gzip format can be padded with trailing zero bytes; the
   :mod:`gzip` module will now consume these trailing bytes.  (Fixed by
   Tadek Pietraszek and Brian Curtin; :issue:`2846`.)
+
+* New attribute: the :mod:`hashlib` module now has an :attr:`algorithms`
+  attribute containing a tuple naming the supported algorithms.
+  In Python 2.7, ``hashlib.algorithms`` contains
+  ``('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')``
+  (Contributed by Carl Chenet; :issue:`7418`.)
 
 * The default :class:`HTTPResponse` class used by the :mod:`httplib` module now
   supports buffering, resulting in much faster reading of HTTP responses.
@@ -803,9 +844,11 @@ changes, or look through the Subversion logs for all the details.
   the child process; this fixes problems on Solaris when :func:`fork`
   is called from a thread.  (Fixed by Zsolt Cserna; :issue:`7242`.)
 
-  The :func:`normpath` function now preserves Unicode; if its input path
+* In the :mod:`os.path` module, the :func:`normpath` and
+  :func:`abspath` functions now preserve Unicode; if their input path
   is a Unicode string, the return value is also a Unicode string.
-  (Fixed by Matt Giuca; :issue:`5827`.)
+  (:meth:`normpath` fixed by Matt Giuca in :issue:`5827`;
+  :meth:`abspath` fixed by Ezio Melotti in :issue:`3426`.)
 
 * The :mod:`pydoc` module now has help for the various symbols that Python
   uses.  You can now do ``help('<<')`` or ``help('@')``, for example.
@@ -940,14 +983,13 @@ changes, or look through the Subversion logs for all the details.
   a timeout was provided and the operation timed out.
   (Contributed by Tim Lesher; :issue:`1674032`.)
 
-* The Unicode database has been updated to the version 5.2.0.
-  (Updated by Florent Xicluna; :issue:`8024`.)
-
-* The Unicode database provided by the :mod:`unicodedata` is used
-  internally to determine which characters are numeric, whitespace,
-  or represent line breaks.  The database also now includes information
-  from the :file:`Unihan.txt` data file.  (Patch by Anders Chrigström
-  and Amaury Forgeot d'Arc; :issue:`1571184`.)
+* The Unicode database provided by the :mod:`unicodedata` module is
+  now used internally to determine which characters are numeric,
+  whitespace, or represent line breaks.  The database also
+  includes information from the :file:`Unihan.txt` data file (patch
+  by Anders Chrigström and Amaury Forgeot d'Arc; :issue:`1571184`)
+  and has been updated to version 5.2.0 (updated by
+  Florent Xicluna; :issue:`8024`).
 
 * The :class:`UserDict` class is now a new-style class.  (Changed by
   Benjamin Peterson.)
@@ -1074,12 +1116,22 @@ object to run.  For example, you can write this::
 
 (Implemented by Antoine Pitrou; :issue:`4444`.)
 
+.. rev 78774
+
+Module- and class-level setup and teardown fixtures are now supported.
+Modules can contain :func:`setUpModule` and :func:`tearDownModule`
+functions.  Classes can have :meth:`setUpClass` and
+:meth:`tearDownClass` methods that must be defined as class methods
+(using ``@classmethod`` or the equivalent).  These functions and
+methods are invoked when the test runner switches to a test case in a
+different module or class.
+
 The methods :meth:`addCleanup` and :meth:`doCleanups` were added.
 :meth:`addCleanup` allows you to add cleanup functions that
 will be called unconditionally (after :meth:`setUp` if
 :meth:`setUp` fails, otherwise after :meth:`tearDown`). This allows
-for much simpler resource allocation and deallocation during tests.
-:issue:`5679`
+for much simpler resource allocation and deallocation during tests
+(:issue:`5679`).
 
 A number of new methods were added that provide more specialized
 tests.  Many of these methods were written by Google engineers
