@@ -2543,7 +2543,7 @@ PyCurses_tigetflag(PyObject *self, PyObject *args)
 
 	PyCursesSetupTermCalled;
 		
-	if (!PyArg_ParseTuple(args, "z", &capname))
+	if (!PyArg_ParseTuple(args, "s", &capname))
 		return NULL;
 
 	return PyLong_FromLong( (long) tigetflag( capname ) );
@@ -2556,7 +2556,7 @@ PyCurses_tigetnum(PyObject *self, PyObject *args)
 
 	PyCursesSetupTermCalled;
 		
-	if (!PyArg_ParseTuple(args, "z", &capname))
+	if (!PyArg_ParseTuple(args, "s", &capname))
 		return NULL;
 
 	return PyLong_FromLong( (long) tigetnum( capname ) );
@@ -2569,7 +2569,7 @@ PyCurses_tigetstr(PyObject *self, PyObject *args)
 
 	PyCursesSetupTermCalled;
 		
-	if (!PyArg_ParseTuple(args, "z", &capname))
+	if (!PyArg_ParseTuple(args, "s", &capname))
 		return NULL;
 
 	capname = tigetstr( capname );
