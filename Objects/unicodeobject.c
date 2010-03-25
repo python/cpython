@@ -2889,16 +2889,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             message = "malformed \\N character escape";
             if (ucnhash_CAPI == NULL) {
                 /* load the unicode data module */
-                PyObject *m, *api;
-                m = PyImport_ImportModuleNoBlock("unicodedata");
-                if (m == NULL)
-                    goto ucnhashError;
-                api = PyObject_GetAttrString(m, "ucnhash_CAPI");
-                Py_DECREF(m);
-                if (api == NULL)
-                    goto ucnhashError;
-                ucnhash_CAPI = (_PyUnicode_Name_CAPI *)PyCObject_AsVoidPtr(api);
-                Py_DECREF(api);
+                ucnhash_CAPI = (_PyUnicode_Name_CAPI *)PyCapsule_Import(PyUnicodeData_CAPSULE_NAME, 1);
                 if (ucnhash_CAPI == NULL)
                     goto ucnhashError;
             }

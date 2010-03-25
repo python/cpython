@@ -55,6 +55,45 @@ PyBuffer_FromReadWriteMemory:int:size::
 PyBuffer_New:PyObject*::+1:
 PyBuffer_New:int:size::
 
+PyCapsule_GetContext:void *:::
+PyCapsule_GetContext:PyObject*:self:0:
+
+PyCapsule_GetDestructor:void (*)(PyObject *):::
+PyCapsule_GetDestructor:PyObject*:self:0:
+
+PyCapsule_GetName:const char *:::
+PyCapsule_GetName:PyObject*:self:0:
+
+PyCapsule_GetPointer:void*:::
+PyCapsule_GetPointer:PyObject*:self:0:
+PyCapsule_GetPointer:const char *:name::
+
+PyCapsule_Import:void *:::
+PyCapsule_Import:const char *:name::
+PyCapsule_Import:int:no_block::
+
+PyCapsule_New:PyObject*::+1:
+PyCapsule_New:void*:pointer::
+PyCapsule_New:const char *:name::
+PyCapsule_New::void (* destructor)(PyObject* )::
+
+PyCapsule_SetContext:int:::
+PyCapsule_SetContext:PyObject*:self:0:
+PyCapsule_SetContext:void *:context::
+
+PyCapsule_SetDestructor:int:::
+PyCapsule_SetDestructor:PyObject*:self:0:
+PyCapsule_SetDestructor:void (*)(PyObject *):destructor::
+
+PyCapsule_SetName:int:::
+PyCapsule_SetName:PyObject*:self:0:
+PyCapsule_SetName:const char *:name::
+
+PyCapsule_SetPointer:int:::
+PyCapsule_SetPointer:PyObject*:self:0:
+PyCapsule_SetPointer:void*:pointer::
+
+
 PyCObject_AsVoidPtr:void*:::
 PyCObject_AsVoidPtr:PyObject*:self:0:
 

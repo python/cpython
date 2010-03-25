@@ -139,22 +139,33 @@ _PyArg_VaParse_SizeT(PyObject *args, char *format, va_list va)
 
 /* Handle cleanup of allocated memory in case of exception */
 
+#define GETARGS_CAPSULE_NAME_CLEANUP_PTR "getargs.cleanup_ptr"
+#define GETARGS_CAPSULE_NAME_CLEANUP_BUFFER "getargs.cleanup_buffer"
+
 static void
-cleanup_ptr(void *ptr)
+cleanup_ptr(PyObject *self)
 {
-	PyMem_FREE(ptr);
+	void *ptr = PyCapsule_GetPointer(self, GETARGS_CAPSULE_NAME_CLEANUP_PTR);
+	if (ptr) {
+	  PyMem_FREE(ptr);
+	}
 }
 
 static void
-cleanup_buffer(void *ptr)
+cleanup_buffer(PyObject *self)
 {
-	PyBuffer_Release((Py_buffer *) ptr);
+	Py_buffer *ptr = (Py_buffer *)PyCapsule_GetPointer(self, GETARGS_CAPSULE_NAME_CLEANUP_BUFFER);
+	if (ptr) {
+		PyBuffer_Release(ptr);
+	}
 }
 
 static int
-addcleanup(void *ptr, PyObject **freelist, void (*destr)(void *))
+addcleanup(void *ptr, PyObject **freelist, PyCapsule_Destructor destr)
 {
 	PyObject *cobj;
+	const char *name;
+
 	if (!*freelist) {
 		*freelist = PyList_New(0);
 		if (!*freelist) {
@@ -162,7 +173,15 @@ addcleanup(void *ptr, PyObject **freelist, void (*destr)(void *))
 			return -1;
 		}
 	}
-	cobj = PyCObject_FromVoidPtr(ptr, destr);
+
+	if (destr == cleanup_ptr) {
+		name = GETARGS_CAPSULE_NAME_CLEANUP_PTR;
+	} else if (destr == cleanup_buffer) {
+		name = GETARGS_CAPSULE_NAME_CLEANUP_BUFFER;
+	} else {
+		return -1;
+	}
+	cobj = PyCapsule_New(ptr, name, destr);
 	if (!cobj) {
 		destr(ptr);
 		return -1;
@@ -183,8 +202,7 @@ cleanreturn(int retval, PyObject *freelist)
 		   don't get called. */
 		Py_ssize_t len = PyList_GET_SIZE(freelist), i;
 		for (i = 0; i < len; i++)
-			((PyCObject *) PyList_GET_ITEM(freelist, i))
-				->destructor = NULL;
+			PyCapsule_SetDestructor(PyList_GET_ITEM(freelist, i), NULL);
 	}
 	Py_XDECREF(freelist);
 	return retval;

@@ -309,6 +309,7 @@ OBJECT_OBJS=	\
 		Objects/bufferobject.o \
 		Objects/bytes_methods.o \
 		Objects/bytearrayobject.o \
+		Objects/capsule.o \
 		Objects/cellobject.o \
 		Objects/classobject.o \
 		Objects/cobject.o \
@@ -642,6 +643,7 @@ PYTHON_HEADERS= \
 		Include/pgen.h \
 		Include/pgenheaders.h \
 		Include/pyarena.h \
+		Include/pycapsule.h \
 		Include/pyctype.h \
 		Include/pydebug.h \
 		Include/pyerrors.h \

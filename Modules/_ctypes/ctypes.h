@@ -445,6 +445,40 @@ PyObject *_ctypes_get_errobj(int **pspace);
 extern PyObject *ComError;
 #endif
 
+#if PY_VERSION_HEX >= 0x020700A4
+/* Use PyCapsule for 2.7 */
+
+#define CTYPES_USING_CAPSULE
+
+#define CTYPES_CAPSULE_INSTANTIATE_DESTRUCTOR(name) \
+static void capsule_destructor_ ## name(PyObject *ptr) \
+{ \
+	void *p = PyCapsule_GetPointer(ptr, name); \
+	if (p) { \
+		PyMem_Free(p); \
+	} \
+} \
+
+#define CAPSULE_NEW(pointer, name) \
+	(PyCapsule_New(pointer, name, capsule_destructor_ ## name))
+
+#define CAPSULE_DEREFERENCE(capsule, name) \
+  (PyCapsule_GetPointer(capsule, name))
+
+#else /* PY_VERSION_HEX >= 0x020700A4 */
+/* Use CObject for 2.6 and before */
+
+#define CTYPES_CAPSULE_INSTANTIATE_DESTRUCTOR(name)
+
+#define CAPSULE_NEW(pointer, name) \
+	(PyCObject_FromVoidPtr(pointer, PyMem_Free))
+
+#define CAPSULE_DEREFERENCE(capsule, name) \
+  (PyCObject_AsVoidPtr(capsule))
+
+#endif /* PY_VERSION_HEX >= 0x020700A4 */
+
+
 /*
  Local Variables:
  compile-command: "python setup.py -q build install --home ~"

@@ -10,6 +10,11 @@
 #endif
 #include "ctypes.h"
 
+
+#define CTYPES_CAPSULE_WCHAR_T "_ctypes/cfield.c wchar_t buffer from unicode"
+CTYPES_CAPSULE_INSTANTIATE_DESTRUCTOR(CTYPES_CAPSULE_WCHAR_T)
+
+
 /******************************************************************/
 /*
   PyCField_Type
@@ -1457,7 +1462,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 			return PyErr_NoMemory();
 		}
 		memset(buffer, 0, size);
-		keep = PyCObject_FromVoidPtr(buffer, PyMem_Free);
+		keep = CAPSULE_NEW(buffer, CTYPES_CAPSULE_WCHAR_T);
 		if (!keep) {
 			Py_DECREF(value);
 			PyMem_Free(buffer);

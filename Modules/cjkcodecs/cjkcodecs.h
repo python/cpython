@@ -282,7 +282,7 @@ getcodec(PyObject *self, PyObject *encoding)
 		return NULL;
 	}
 
-	codecobj = PyCObject_FromVoidPtr((void *)codec, NULL);
+	codecobj = PyCapsule_New((void *)codec, PyMultibyteCodec_CAPSULE_NAME, NULL);
 	if (codecobj == NULL)
 		return NULL;
 
@@ -307,7 +307,7 @@ register_maps(PyObject *module)
 		int r;
 		strcpy(mhname + sizeof("__map_") - 1, h->charset);
 		r = PyModule_AddObject(module, mhname,
-				PyCObject_FromVoidPtr((void *)h, NULL));
+				PyCapsule_New((void *)h, PyMultibyteCodec_CAPSULE_NAME, NULL));
 		if (r == -1)
 			return -1;
 	}
@@ -362,14 +362,14 @@ importmap(const char *modname, const char *symbol,
 	o = PyObject_GetAttrString(mod, (char*)symbol);
 	if (o == NULL)
 		goto errorexit;
-	else if (!PyCObject_Check(o)) {
+	else if (!PyCapsule_IsValid(o, PyMultibyteCodec_CAPSULE_NAME)) {
 		PyErr_SetString(PyExc_ValueError,
-				"map data must be a CObject.");
+				"map data must be a Capsule.");
 		goto errorexit;
 	}
 	else {
 		struct dbcs_map *map;
-		map = PyCObject_AsVoidPtr(o);
+		map = PyCapsule_GetPointer(o, PyMultibyteCodec_CAPSULE_NAME);
 		if (encmap != NULL)
 			*encmap = map->encmap;
 		if (decmap != NULL)

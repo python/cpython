@@ -4856,11 +4856,10 @@ initdatetime(void)
 	Py_INCREF(&PyDateTime_TZInfoType);
 	PyModule_AddObject(m, "tzinfo", (PyObject *) &PyDateTime_TZInfoType);
 
-        x = PyCObject_FromVoidPtrAndDesc(&CAPI, (void*) DATETIME_API_MAGIC,
-                NULL);
-        if (x == NULL)
-            return;
-        PyModule_AddObject(m, "datetime_CAPI", x);
+	x = PyCapsule_New(&CAPI, PyDateTime_CAPSULE_NAME, NULL);
+	if (x == NULL)
+		return NULL;
+	PyModule_AddObject(m, "datetime_CAPI", x);
 
 	/* A 4-year cycle has an extra leap day over what we'd get from
 	 * pasting together 4 single years.

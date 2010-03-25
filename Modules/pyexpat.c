@@ -2053,8 +2053,8 @@ MODULE_INITFUNC(void)
     capi.SetUnknownEncodingHandler = XML_SetUnknownEncodingHandler;
     capi.SetUserData = XML_SetUserData;
     
-    /* export as cobject */
-    capi_object = PyCObject_FromVoidPtr(&capi, NULL);
+    /* export using capsule */
+    capi_object = PyCapsule_New(&capi, PyExpat_CAPSULE_NAME, NULL);
     if (capi_object)
         PyModule_AddObject(m, "expat_CAPI", capi_object);
 }

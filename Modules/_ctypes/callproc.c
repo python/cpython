@@ -83,6 +83,13 @@
 #define DONT_USE_SEH
 #endif
 
+
+#define CTYPES_CAPSULE_ERROROBJ "_ctypes/callproc.c error object"
+CTYPES_CAPSULE_INSTANTIATE_DESTRUCTOR(CTYPES_CAPSULE_ERROROBJ)
+
+#define CTYPES_CAPSULE_WCHAR_T "_ctypes/callproc.c wchar_t buffer from unicode"
+CTYPES_CAPSULE_INSTANTIATE_DESTRUCTOR(CTYPES_CAPSULE_WCHAR_T)
+
 /*
   ctypes maintains thread-local storage that has space for two error numbers:
   private copies of the system 'errno' value and, on Windows, the system error code
@@ -134,14 +141,22 @@ _ctypes_get_errobj(int **pspace)
 			return NULL;
 	}
 	errobj = PyDict_GetItem(dict, error_object_name);
-	if (errobj)
+	if (errobj) {
+#ifdef CTYPES_USING_CAPSULE
+		if (!PyCapsule_IsValid(errobj, CTYPES_CAPSULE_ERROROBJ)) {
+			PyErr_SetString(PyExc_RuntimeError,
+				"ctypes.error_object is an invalid capsule");
+			return NULL;
+		}
+#endif /* CTYPES_USING_CAPSULE */
 		Py_INCREF(errobj);
+	}
 	else {
 		void *space = PyMem_Malloc(sizeof(int) * 2);
 		if (space == NULL)
 			return NULL;
 		memset(space, 0, sizeof(int) * 2);
-		errobj = PyCObject_FromVoidPtr(space, PyMem_Free);
+		errobj = CAPSULE_NEW(space, CTYPES_CAPSULE_ERROROBJ);
 		if (errobj == NULL)
 			return NULL;
 		if (-1 == PyDict_SetItem(dict, error_object_name,
@@ -150,7 +165,7 @@ _ctypes_get_errobj(int **pspace)
 			return NULL;
 		}
 	}
-	*pspace = (int *)PyCObject_AsVoidPtr(errobj);
+	*pspace = (int *)CAPSULE_DEREFERENCE(errobj, CTYPES_CAPSULE_ERROROBJ);
 	return errobj;
 }
 
@@ -670,7 +685,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 			return -1;
 		}
 		memset(pa->value.p, 0, size);
-		pa->keep = PyCObject_FromVoidPtr(pa->value.p, PyMem_Free);
+		pa->keep = CAPSULE_NEW(pa->value.p, CTYPES_CAPSULE_WCHAR_T);
 		if (!pa->keep) {
 			PyMem_Free(pa->value.p);
 			return -1;

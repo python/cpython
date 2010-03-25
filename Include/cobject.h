@@ -6,6 +6,8 @@
    to other extension modules, so that extension modules can use the
    Python import mechanism to link to one another.
 
+   DEPRECATED - Use PyCapsule objects instead.
+                CObject will be removed in 2.8 (if there is one).
 */
 
 #ifndef Py_COBJECT_H

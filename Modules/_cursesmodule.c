@@ -172,7 +172,7 @@ static int initialisedcolors = FALSE;
 /*
  * Check the return code from a curses function and return None 
  * or raise an exception as appropriate.  These are exported using the
- * CObject API. 
+ * capsule API.
  */
 
 static PyObject *
@@ -2745,8 +2745,8 @@ init_curses(void)
 		return;
 	ModDict = d; /* For PyCurses_InitScr to use later */
 
-	/* Add a CObject for the C API */
-	c_api_object = PyCObject_FromVoidPtr((void *)PyCurses_API, NULL);
+	/* Add a capsule for the C API */
+	c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME, NULL);
 	PyDict_SetItemString(d, "_C_API", c_api_object);
 	Py_DECREF(c_api_object);
 

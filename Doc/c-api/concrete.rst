@@ -100,6 +100,7 @@ Other Objects
    descriptor.rst
    slice.rst
    weakref.rst
+   capsule.rst
    cobject.rst
    cell.rst
    gen.rst
