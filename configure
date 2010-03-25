@@ -2302,6 +2302,7 @@ echo "$as_me: error: cached CC is different -- throw away $cache_file
    { (exit 1); exit 1; }; }
 fi
 
+save_CFLAGS=$CFLAGS
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3221,6 +3222,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+CFLAGS=$save_CFLAGS
 
 
 

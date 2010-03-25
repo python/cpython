@@ -441,7 +441,9 @@ then
 (it is also a good idea to do 'make clean' before compiling)])
 fi
 
+save_CFLAGS=$CFLAGS
 AC_PROG_CC
+CFLAGS=$save_CFLAGS
 
 AC_SUBST(CXX)
 AC_SUBST(MAINCC)

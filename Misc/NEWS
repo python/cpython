@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8211: Save/restore CFLAGS around AC_PROG_CC in configure.in, compiler
+  optimizations are disabled when --with-pydebug is used.
+
 - Issue #8226: sys.setfilesystemencoding() raises a LookupError if the encoding
   is unknown
 
