@@ -138,6 +138,12 @@ Build
 
 - Issue #7705: Fix linking on FreeBSD.
 
+C-API
+-----
+
+- Issue #7992: A replacement PyCObject API, PyCapsule, has been backported
+  from Python 3.1.
+
 Tests
 -----
 

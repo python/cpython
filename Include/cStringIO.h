@@ -18,9 +18,12 @@ extern "C" {
   This would typically be done in your init function.
 
 */
+
+#define PycStringIO_CAPSULE_NAME "cStringIO.cStringIO_CAPI"
+
 #define PycString_IMPORT \
-  PycStringIO = (struct PycStringIO_CAPI*)PyCObject_Import("cStringIO", \
-                                                           "cStringIO_CAPI")
+  PycStringIO = ((struct PycStringIO_CAPI*)PyCapsule_Import(\
+    PycStringIO_CAPSULE_NAME, 0))
 
 /* Basic functions to manipulate cStringIO objects from C */
 

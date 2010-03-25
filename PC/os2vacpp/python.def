@@ -6,6 +6,7 @@ DATA           MULTIPLE NONSHARED
 EXPORTS
                ; Data
                PyCFunction_Type
+               PyCapsule_Type
                PyCObject_Type
                PyClass_Type
                PyCode_Type
@@ -75,6 +76,7 @@ EXPORTS
                _Py_TrueStruct
                _Py_ZeroStruct
                _Py_abstract_hack
+               _Py_capsule_hack
                _Py_cobject_hack
                _Py_re_syntax
                _Py_re_syntax_table
@@ -89,6 +91,17 @@ EXPORTS
                PyCFunction_GetFunction
                PyCFunction_GetSelf
                PyCFunction_New
+               PyCapsule_GetContext
+               PyCapsule_GetDestructor
+               PyCapsule_GetName
+               PyCapsule_GetPointer
+               PyCapsule_Import
+               PyCapsule_IsValid
+               PyCapsule_New
+               PyCapsule_SetContext
+               PyCapsule_SetDestructor
+               PyCapsule_SetName
+               PyCapsule_SetPointer
                PyCObject_AsVoidPtr
                PyCObject_FromVoidPtrAndDesc
                PyCObject_FromVoidPtr

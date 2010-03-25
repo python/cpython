@@ -78,6 +78,7 @@ extern "C" {
 /* Python module and C API name */
 #define PySocket_MODULE_NAME	"_socket"
 #define PySocket_CAPI_NAME	"CAPI"
+#define PySocket_CAPSULE_NAME  (PySocket_MODULE_NAME "." PySocket_CAPI_NAME)
 
 /* Abstract the socket file descriptor type */
 #ifdef MS_WINDOWS
@@ -142,12 +143,12 @@ typedef struct {
     the _socket module. Since cross-DLL linking introduces a lot of
     problems on many platforms, the "trick" is to wrap the
     C API of a module in a struct which then gets exported to
-    other modules via a PyCObject.
+    other modules via a PyCapsule.
 
     The code in socketmodule.c defines this struct (which currently
     only contains the type object reference, but could very
     well also include other C APIs needed by other modules)
-    and exports it as PyCObject via the module dictionary
+    and exports it as PyCapsule via the module dictionary
     under the name "CAPI".
 
     Other modules can now include the socketmodule.h file
@@ -226,33 +227,18 @@ PySocketModule_APIObject PySocketModule;
 static
 int PySocketModule_ImportModuleAndAPI(void)
 {
-	PyObject *mod = 0, *v = 0;
-	char *apimodule = PySocket_MODULE_NAME;
-	char *apiname = PySocket_CAPI_NAME;
 	void *api;
 
-	DPRINTF("Importing the %s C API...\n", apimodule);
-	mod = PyImport_ImportModuleNoBlock(apimodule);
-	if (mod == NULL)
-		goto onError;
-	DPRINTF(" %s package found\n", apimodule);
-	v = PyObject_GetAttrString(mod, apiname);
-	if (v == NULL)
-		goto onError;
-	Py_DECREF(mod);
-	DPRINTF(" API object %s found\n", apiname);
-	api = PyCObject_AsVoidPtr(v);
+  DPRINTF(" Loading capsule %s\n", PySocket_CAPSULE_NAME);
+  api = PyCapsule_Import(PySocket_CAPSULE_NAME, 1);
 	if (api == NULL)
 		goto onError;
-	Py_DECREF(v);
 	memcpy(&PySocketModule, api, sizeof(PySocketModule));
 	DPRINTF(" API object loaded and initialized.\n");
 	return 0;
 
  onError:
 	DPRINTF(" not found.\n");
-	Py_XDECREF(mod);
-	Py_XDECREF(v);
 	return -1;
 }
 

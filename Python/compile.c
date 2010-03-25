@@ -181,6 +181,8 @@ static int compiler_with(struct compiler *, stmt_ty);
 static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__;
 
+#define COMPILER_CAPSULE_NAME_COMPILER_UNIT "compile.c compiler unit"
+
 PyObject *
 _Py_Mangle(PyObject *privateobj, PyObject *ident)
 {
@@ -490,13 +492,13 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 
 	/* Push the old compiler_unit on the stack. */
 	if (c->u) {
-		PyObject *wrapper = PyCObject_FromVoidPtr(c->u, NULL);
-		if (!wrapper || PyList_Append(c->c_stack, wrapper) < 0) {
-			Py_XDECREF(wrapper);
+		PyObject *capsule = PyCapsule_New(c->u, COMPILER_CAPSULE_NAME_COMPILER_UNIT, NULL);
+		if (!capsule || PyList_Append(c->c_stack, capsule) < 0) {
+			Py_XDECREF(capsule);
 			compiler_unit_free(u);
 			return 0;
 		}
-		Py_DECREF(wrapper);
+		Py_DECREF(capsule);
 		u->u_private = c->u->u_private;
 		Py_XINCREF(u->u_private);
 	}
@@ -513,15 +515,15 @@ static void
 compiler_exit_scope(struct compiler *c)
 {
 	int n;
-	PyObject *wrapper;
+	PyObject *capsule;
 
 	c->c_nestlevel--;
 	compiler_unit_free(c->u);
 	/* Restore c->u to the parent unit. */
 	n = PyList_GET_SIZE(c->c_stack) - 1;
 	if (n >= 0) {
-		wrapper = PyList_GET_ITEM(c->c_stack, n);
-		c->u = (struct compiler_unit *)PyCObject_AsVoidPtr(wrapper);
+		capsule = PyList_GET_ITEM(c->c_stack, n);
+		c->u = (struct compiler_unit *)PyCapsule_GetPointer(capsule, COMPILER_CAPSULE_NAME_COMPILER_UNIT);
 		assert(c->u);
 		/* we are deleting from a list so this really shouldn't fail */
 		if (PySequence_DelItem(c->c_stack, n) < 0)

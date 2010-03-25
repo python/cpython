@@ -3059,7 +3059,7 @@ init_elementtree(void)
 
 #if defined(USE_PYEXPAT_CAPI)
     /* link against pyexpat, if possible */
-    expat_capi = PyCObject_Import("pyexpat", "expat_CAPI");
+    expat_capi = PyCapsule_Import(PyExpat_CAPSULE_NAME, 0);
     if (expat_capi) {
         /* check that it's usable */
         if (strcmp(expat_capi->magic, PyExpat_CAPI_MAGIC) != 0 ||

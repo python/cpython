@@ -761,8 +761,8 @@ initcStringIO(void) {
   Py_TYPE(&Otype)=&PyType_Type;
   if (PyType_Ready(&Otype) < 0) return;
   if (PyType_Ready(&Itype) < 0) return;
-  PyDict_SetItemString(d,"cStringIO_CAPI",
-		       v = PyCObject_FromVoidPtr(&CAPI,NULL));
+  v = PyCapsule_New(&CAPI, PycStringIO_CAPSULE_NAME, NULL);
+  PyDict_SetItemString(d,"cStringIO_CAPI", v);
   Py_XDECREF(v);
 
   /* Export Types */

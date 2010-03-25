@@ -670,6 +670,7 @@ class SizeofTest(unittest.TestCase):
             x = property(getx, setx, delx, "")
             check(x, size(h + '4Pi'))
         # PyCObject
+        # PyCapsule
         # XXX
         # rangeiterator
         check(iter(xrange(1)), size(h + '4l'))

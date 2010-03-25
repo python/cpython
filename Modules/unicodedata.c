@@ -1261,7 +1261,7 @@ initunicodedata(void)
         PyModule_AddObject(m, "ucd_3_2_0", v);
 
     /* Export C API */
-    v = PyCObject_FromVoidPtr((void *) &hashAPI, NULL);
+    v = PyCapsule_New((void *)&hashAPI, PyUnicodeData_CAPSULE_NAME, NULL);
     if (v != NULL)
         PyModule_AddObject(m, "ucnhash_CAPI", v);
 }
