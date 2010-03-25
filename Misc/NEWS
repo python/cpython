@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8226: sys.setfilesystemencoding() raises a LookupError if the encoding
+  is unknown
+
 - Issue #1583863: An str subclass can now override the __str__ method
 
 - Issue #8014: Setting a T_UINT or T_PYSSIZET attribute of an object with
