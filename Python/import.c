@@ -661,7 +661,7 @@ PyImport_AddModule(const char *name)
 
 /* Remove name from sys.modules, if it's there. */
 static void
-_RemoveModule(const char *name)
+remove_module(const char *name)
 {
 	PyObject *modules = PyImport_GetModuleDict();
 	if (PyDict_GetItemString(modules, name) == NULL)
@@ -735,7 +735,7 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 	return m;
 
   error:
-	_RemoveModule(name);
+	remove_module(name);
 	return NULL;
 }
 
