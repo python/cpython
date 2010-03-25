@@ -4858,7 +4858,7 @@ initdatetime(void)
 
 	x = PyCapsule_New(&CAPI, PyDateTime_CAPSULE_NAME, NULL);
 	if (x == NULL)
-		return NULL;
+		return;
 	PyModule_AddObject(m, "datetime_CAPI", x);
 
 	/* A 4-year cycle has an extra leap day over what we'd get from
