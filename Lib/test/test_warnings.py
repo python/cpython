@@ -27,11 +27,15 @@ def warnings_state(module):
     except NameError:
         pass
     original_warnings = warning_tests.warnings
+    original_filters = module.filters
     try:
+        module.filters = original_filters[:]
+        module.simplefilter("once")
         warning_tests.warnings = module
         yield
     finally:
         warning_tests.warnings = original_warnings
+        module.filters = original_filters
 
 
 class BaseTest(unittest.TestCase):
@@ -194,6 +198,7 @@ class WarnTests(unittest.TestCase):
     def test_message(self):
         with original_warnings.catch_warnings(record=True,
                 module=self.module) as w:
+            self.module.simplefilter("once")
             for i in range(4):
                 text = 'multi %d' %i  # Different text on each call.
                 self.module.warn(text)
