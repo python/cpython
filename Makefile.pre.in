@@ -847,7 +847,7 @@ LIBSUBDIRS=	lib-tk lib-tk/test lib-tk/test/test_tkinter \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		multiprocessing multiprocessing/dummy \
-		unittest \
+		unittest unittest/test \
 		lib-old \
 		curses pydoc_data $(MACHDEPS)
 libinstall:	build_all $(srcdir)/Lib/$(PLATDIR)
