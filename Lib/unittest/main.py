@@ -5,9 +5,13 @@ import os
 import types
 
 from . import loader, runner
+from .signals import installHandler
 
 __unittest = True
 
+
+FAILFAST = "  -f, --failfast   Stop on first failure\n"
+CATCHBREAK = "  -c, --catch      Catch control-C and display results\n"
 
 USAGE_AS_MAIN = """\
 Usage: %(progName)s [options] [tests]
@@ -16,8 +20,7 @@ Options:
   -h, --help       Show this message
   -v, --verbose    Verbose output
   -q, --quiet      Minimal output
-  -f, --failfast   Stop on first failure
-
+%(failfast)s%(catchbreak)s
 Examples:
   %(progName)s test_module                       - run tests from test_module
   %(progName)s test_module.TestClass             - run tests from
@@ -31,8 +34,7 @@ Alternative Usage: %(progName)s discover [options]
 
 Options:
   -v, --verbose    Verbose output
-  -f, --failfast   Stop on first failure
-  -s directory     Directory to start discovery ('.' default)
+%(failfast)s%(catchbreak)s  -s directory     Directory to start discovery ('.' default)
   -p pattern       Pattern to match test files ('test*.py' default)
   -t directory     Top level directory of project (default to
                    start directory)
@@ -48,8 +50,7 @@ Options:
   -h, --help       Show this message
   -v, --verbose    Verbose output
   -q, --quiet      Minimal output
-  -f, --failfast   Stop on first failure
-
+%(failfast)s%(catchbreak)s
 Examples:
   %(progName)s                               - run default set of tests
   %(progName)s MyTestSuite                   - run suite 'MyTestSuite'
@@ -58,15 +59,21 @@ Examples:
                                                in MyTestCase
 """
 
+
+
 class TestProgram(object):
     """A command-line program that runs a set of tests; this is primarily
        for making test modules conveniently executable.
     """
     USAGE = USAGE_FROM_MODULE
+
+    # defaults for testing
+    failfast = catchbreak = None
+
     def __init__(self, module='__main__', defaultTest=None,
                  argv=None, testRunner=None,
                  testLoader=loader.defaultTestLoader, exit=True,
-                 verbosity=1, failfast=False):
+                 verbosity=1, failfast=None, catchbreak=None):
         if isinstance(module, basestring):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -78,6 +85,7 @@ class TestProgram(object):
 
         self.exit = exit
         self.failfast = failfast
+        self.catchbreak = catchbreak
         self.verbosity = verbosity
         self.defaultTest = defaultTest
         self.testRunner = testRunner
@@ -89,7 +97,12 @@ class TestProgram(object):
     def usageExit(self, msg=None):
         if msg:
             print msg
-        print self.USAGE % self.__dict__
+        usage = {'progName': self.progName, 'catchbreak': '', 'failfast': ''}
+        if self.failfast != False:
+            usage['failfast'] = FAILFAST
+        if self.catchbreak != False:
+            usage['catchbreak'] = CATCHBREAK
+        print self.USAGE % usage
         sys.exit(2)
 
     def parseArgs(self, argv):
@@ -98,9 +111,9 @@ class TestProgram(object):
             return
 
         import getopt
-        long_opts = ['help', 'verbose', 'quiet', 'failfast']
+        long_opts = ['help', 'verbose', 'quiet', 'failfast', 'catch']
         try:
-            options, args = getopt.getopt(argv[1:], 'hHvqf', long_opts)
+            options, args = getopt.getopt(argv[1:], 'hHvqfc', long_opts)
             for opt, value in options:
                 if opt in ('-h','-H','--help'):
                     self.usageExit()
@@ -109,7 +122,13 @@ class TestProgram(object):
                 if opt in ('-v','--verbose'):
                     self.verbosity = 2
                 if opt in ('-f','--failfast'):
-                    self.failfast = True
+                    if self.failfast is None:
+                        self.failfast = True
+                    # Should this raise an exception if -f is not valid?
+                if opt in ('-c','--catch'):
+                    if self.catchbreak is None:
+                        self.catchbreak = True
+                    # Should this raise an exception if -c is not valid?
             if len(args) == 0 and self.defaultTest is None:
                 # createTests will load tests from self.module
                 self.testNames = None
@@ -137,8 +156,14 @@ class TestProgram(object):
         parser = optparse.OptionParser()
         parser.add_option('-v', '--verbose', dest='verbose', default=False,
                           help='Verbose output', action='store_true')
-        parser.add_option('-f', '--failfast', dest='failfast', default=False,
-                          help='Stop on first fail or error', action='store_true')
+        if self.failfast != False:
+            parser.add_option('-f', '--failfast', dest='failfast', default=False,
+                              help='Stop on first fail or error',
+                              action='store_true')
+        if self.catchbreak != False:
+            parser.add_option('-c', '--catch', dest='catchbreak', default=False,
+                              help='Catch ctrl-C and display results so far',
+                              action='store_true')
         parser.add_option('-s', '--start-directory', dest='start', default='.',
                           help="Directory to start discovery ('.' default)")
         parser.add_option('-p', '--pattern', dest='pattern', default='test*.py',
@@ -153,7 +178,13 @@ class TestProgram(object):
         for name, value in zip(('start', 'pattern', 'top'), args):
             setattr(options, name, value)
 
-        self.failfast = options.failfast
+        # only set options from the parsing here
+        # if they weren't set explicitly in the constructor
+        if self.failfast is None:
+            self.failfast = options.failfast
+        if self.catchbreak is None:
+            self.catchbreak = options.catchbreak
+
         if options.verbose:
             self.verbosity = 2
 
@@ -165,6 +196,8 @@ class TestProgram(object):
         self.test = loader.discover(start_dir, pattern, top_level_dir)
 
     def runTests(self):
+        if self.catchbreak:
+            installHandler()
         if self.testRunner is None:
             self.testRunner = runner.TextTestRunner
         if isinstance(self.testRunner, (type, types.ClassType)):
