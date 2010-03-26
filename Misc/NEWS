@@ -304,7 +304,9 @@ Library
 - Issue #7860: platform.uname now reports the correct 'machine' type
   when Python is running in WOW64 mode on 64 bit Windows.
 
-- Issue #3890: Fix recv() and recv_into() on non-blocking SSL sockets.
+- Issue #3890, #8222: Fix recv() and recv_into() on non-blocking SSL sockets.
+  Also, enable the SSL_MODE_AUTO_RETRY flag on SSL sockets, so that blocking
+  reads and writes are always retried by OpenSSL itself.
 
 - Issue #4282: Fix the main function of the profile module for a non-ASCII
   script, open the file in binary mode and not in text mode with the default
