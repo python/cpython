@@ -59,7 +59,9 @@ Library
 - Issue #8200: logging: Handle errors when multiprocessing is not
   fully loaded when logging occurs.
 
-- Issue #3890: Fix recv() and recv_into() on non-blocking SSL sockets.
+- Issue #3890, #8222: Fix recv() and recv_into() on non-blocking SSL sockets.
+  Also, enable the SSL_MODE_AUTO_RETRY flag on SSL sockets, so that blocking
+  reads and writes are always retried by OpenSSL itself.
 
 - Issue #8179: Fix macpath.realpath() on a non-existing path.
 
