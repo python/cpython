@@ -47,7 +47,8 @@ SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 __all__ = ['TestResult', 'TestCase', 'TestSuite',
            'TextTestRunner', 'TestLoader', 'FunctionTestCase', 'main',
            'defaultTestLoader', 'SkipTest', 'skip', 'skipIf', 'skipUnless',
-           'expectedFailure', 'TextTestResult']
+           'expectedFailure', 'TextTestResult', 'installHandler',
+           'registerResult', 'removeResult']
 
 # Expose obsolete functions for backwards compatibility
 __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
@@ -62,6 +63,7 @@ from .loader import (TestLoader, defaultTestLoader, makeSuite, getTestCaseNames,
                      findTestCases)
 from .main import TestProgram, main
 from .runner import TextTestRunner, TextTestResult
+from .signals import installHandler, registerResult, removeResult
 
 # deprecated
 _TextTestResult = TextTestResult

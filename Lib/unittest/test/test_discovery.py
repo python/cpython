@@ -279,14 +279,17 @@ class TestDiscovery(unittest.TestCase):
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'fish', None)])
         self.assertFalse(program.failfast)
+        self.assertFalse(program.catchbreak)
 
         Loader.args = []
         program = object.__new__(unittest.TestProgram)
-        program._do_discovery(['-p', 'eggs', '-s', 'fish', '-v', '-f'], Loader=Loader)
+        program._do_discovery(['-p', 'eggs', '-s', 'fish', '-v', '-f', '-c'],
+                              Loader=Loader)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'eggs', None)])
         self.assertEqual(program.verbosity, 2)
         self.assertTrue(program.failfast)
+        self.assertTrue(program.catchbreak)
 
 
 if __name__ == '__main__':
