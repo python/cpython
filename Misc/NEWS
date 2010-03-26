@@ -32,7 +32,9 @@ Library
   didn't support chflags() (for example ZFS under FreeBSD).  The error is
   now silenced.
 
-- Issue #3890: Fix recv() and recv_into() on non-blocking SSL sockets.
+- Issue #3890, #8222: Fix recv() and recv_into() on non-blocking SSL sockets.
+  Also, enable the SSL_MODE_AUTO_RETRY flag on SSL sockets, so that blocking
+  reads and writes are always retried by OpenSSL itself.
 
 - Issue #6544: fix a reference leak in the kqueue implementation's error
   handling.

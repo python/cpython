@@ -9,8 +9,6 @@
    directly.
 
    XXX should partial writes be enabled, SSL_MODE_ENABLE_PARTIAL_WRITE?
-
-   XXX what about SSL_MODE_AUTO_RETRY?
 */
 
 #include "Python.h"
@@ -370,6 +368,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 	self->ssl = SSL_new(self->ctx); /* New ssl struct */
 	PySSL_END_ALLOW_THREADS
 	SSL_set_fd(self->ssl, Sock->sock_fd);	/* Set the socket for SSL */
+	SSL_set_mode(self->ssl, SSL_MODE_AUTO_RETRY);
 
 	/* If the socket is in non-blocking mode or timeout mode, set the BIO
 	 * to non-blocking mode (blocking is the default)
