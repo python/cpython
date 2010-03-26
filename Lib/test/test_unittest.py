@@ -1,5 +1,6 @@
-from test import test_support
 import unittest.test
+
+from test import test_support
 
 
 def test_main():
