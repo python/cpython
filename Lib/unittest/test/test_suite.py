@@ -6,15 +6,15 @@ from .support import LoggingResult, TestEquality
 ### Support code for Test_TestSuite
 ################################################################
 
-# This will be loaded as a test - problem?
-class Foo(unittest.TestCase):
-    def test_1(self): pass
-    def test_2(self): pass
-    def test_3(self): pass
-    def runTest(self): pass
+class Test(object):
+    class Foo(unittest.TestCase):
+        def test_1(self): pass
+        def test_2(self): pass
+        def test_3(self): pass
+        def runTest(self): pass
 
 def _mk_TestSuite(*names):
-    return unittest.TestSuite(Foo(n) for n in names)
+    return unittest.TestSuite(Test.Foo(n) for n in names)
 
 ################################################################
 
