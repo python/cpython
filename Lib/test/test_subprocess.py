@@ -37,7 +37,7 @@ except AttributeError:
         return os.open(fname, os.O_RDWR|os.O_CREAT), fname
 
 
-class ProcessTestCase(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     def setUp(self):
         # Try to minimize the number of children we have so this test
         # doesn't crash on some buildbots (Alphas in particular).
@@ -55,6 +55,9 @@ class ProcessTestCase(unittest.TestCase):
         # from a spawned Python process.
         actual = re.sub("\[\d+ refs\]\r?\n?$", "", stderr.decode()).encode()
         self.assertEqual(actual, expected, msg)
+
+
+class ProcessTestCase(BaseTestCase):
 
     def test_call_seq(self):
         # call() function with sequence argument
@@ -559,17 +562,7 @@ class _SuppressCoreFiles(object):
 
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
-class POSIXProcessTestCase(unittest.TestCase):
-    def setUp(self):
-        # Try to minimize the number of children we have so this test
-        # doesn't crash on some buildbots (Alphas in particular).
-        support.reap_children()
-
-    def tearDown(self):
-        for inst in subprocess._active:
-            inst.wait()
-        subprocess._cleanup()
-        self.assertFalse(subprocess._active, "subprocess._active not empty")
+class POSIXProcessTestCase(BaseTestCase):
 
     def test_exceptions(self):
         nonexistent_dir = "/_this/pa.th/does/not/exist"
@@ -752,7 +745,7 @@ class POSIXProcessTestCase(unittest.TestCase):
         # Do not inherit file handles from the parent.
         # It should fix failures on some platforms.
         p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True,
-                             stdin=subprocess.PIPE)
+                             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Let the process initialize (Issue #3137)
         time.sleep(0.1)
@@ -773,29 +766,25 @@ class POSIXProcessTestCase(unittest.TestCase):
 
     def test_send_signal(self):
         p = self._kill_process('send_signal', signal.SIGINT)
+        _, stderr = p.communicate()
+        self.assertIn(b'KeyboardInterrupt', stderr)
         self.assertNotEqual(p.wait(), 0)
 
     def test_kill(self):
         p = self._kill_process('kill')
+        _, stderr = p.communicate()
+        self.assertStderrEqual(stderr, b'')
         self.assertEqual(p.wait(), -signal.SIGKILL)
 
     def test_terminate(self):
         p = self._kill_process('terminate')
+        _, stderr = p.communicate()
+        self.assertStderrEqual(stderr, b'')
         self.assertEqual(p.wait(), -signal.SIGTERM)
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
-class Win32ProcessTestCase(unittest.TestCase):
-    def setUp(self):
-        # Try to minimize the number of children we have so this test
-        # doesn't crash on some buildbots (Alphas in particular).
-        support.reap_children()
-
-    def tearDown(self):
-        for inst in subprocess._active:
-            inst.wait()
-        subprocess._cleanup()
-        self.assertFalse(subprocess._active, "subprocess._active not empty")
+class Win32ProcessTestCase(BaseTestCase):
 
     def test_startupinfo(self):
         # startupinfo argument
@@ -866,7 +855,7 @@ class Win32ProcessTestCase(unittest.TestCase):
     def _kill_process(self, method, *args):
         # Some win32 buildbot raises EOFError if stdin is inherited
         p = subprocess.Popen([sys.executable, "-c", "input()"],
-                             stdin=subprocess.PIPE)
+                             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Let the process initialize (Issue #3137)
         time.sleep(0.1)
@@ -884,6 +873,8 @@ class Win32ProcessTestCase(unittest.TestCase):
         if count > 1:
             print("p.{}{} succeeded after "
                   "{} attempts".format(method, args, count), file=sys.stderr)
+        _, stderr = p.communicate()
+        self.assertStderrEqual(stderr, b'')
         self.assertEqual(p.wait(), returncode)
         self.assertNotEqual(returncode, 0)
 
