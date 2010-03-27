@@ -6,7 +6,7 @@ import unittest
 here = os.path.dirname(__file__)
 loader = unittest.defaultTestLoader
 
-def test_suite():
+def suite():
     suite = unittest.TestSuite()
     for fn in os.listdir(here):
         if fn.startswith("test") and fn.endswith(".py"):
@@ -18,4 +18,4 @@ def test_suite():
 
 
 if __name__ == "__main__":
-    unittest.main(defaultTest="test_suite")
+    unittest.main(defaultTest="suite")
