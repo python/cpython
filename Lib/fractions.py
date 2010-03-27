@@ -526,8 +526,6 @@ class Fraction(numbers.Rational):
         if isinstance(other, numbers.Rational):
             return op(self._numerator * other.denominator,
                       self._denominator * other.numerator)
-        if isinstance(other, numbers.Complex) and other.imag == 0:
-            other = other.real
         if isinstance(other, float):
             if math.isnan(other) or math.isinf(other):
                 return op(0.0, other)
