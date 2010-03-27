@@ -4,7 +4,7 @@ from test import test_support
 
 
 def test_main():
-    test_support.run_unittest(unittest.test.test_suite())
+    test_support.run_unittest(unittest.test.suite())
     test_support.reap_children()
 
 
