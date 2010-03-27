@@ -511,8 +511,10 @@ class Fraction(Rational):
         if isinstance(other, Rational):
             return op(self._numerator * other.denominator,
                       self._denominator * other.numerator)
-        if isinstance(other, numbers.Complex) and other.imag == 0:
-            other = other.real
+        # comparisons with complex should raise a TypeError, for consistency
+        # with int<->complex, float<->complex, and complex<->complex comparisons.
+        if isinstance(other, complex):
+            raise TypeError("no ordering relation is defined for complex numbers")
         if isinstance(other, float):
             if math.isnan(other) or math.isinf(other):
                 return op(0.0, other)
