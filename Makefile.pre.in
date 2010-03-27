@@ -852,7 +852,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		importlib/test/import_ importlib/test/source \
 		setuptools setuptools/command setuptools/tests setuptools.egg-info \
 		multiprocessing multiprocessing/dummy \
-		unittest \
+		unittest unittest/test \
 		curses pydoc_data $(MACHDEPS)
 libinstall:	build_all $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
