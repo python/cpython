@@ -293,6 +293,11 @@ C-API
 Library
 -------
 
+- Comparisons using one of <, <=, >, >= between a complex instance and
+  a Fractions instance now raise TypeError instead of returning
+  True/False.  This makes Fraction <=> complex comparisons consistent with
+  int <=> complex, float <=> complex, and complex <=> complex comparisons.
+
 - Issue #8139: ossaudiodev didn't initialize its types properly, therefore
   some methods (such as oss_mixer_device.fileno()) were not available.
   Initial patch by Bertrand Janin.
