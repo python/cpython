@@ -612,12 +612,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
 
-    # The lists won't be sorted if running with -r
-    good.sort()
-    bad.sort()
-    skipped.sort()
-    environment_changed.sort()
-
     if good and not quiet:
         if not bad and not skipped and len(good) > 1:
             print("All", end=' ')
@@ -1128,7 +1122,8 @@ def printlist(x, width=70, indent=4):
 
     from textwrap import fill
     blanks = ' ' * indent
-    print(fill(' '.join(str(elt) for elt in x), width,
+    # Print the sorted list: 'x' may be a '--random' list or a set()
+    print(fill(' '.join(str(elt) for elt in sorted(x)), width,
                initial_indent=blanks, subsequent_indent=blanks))
 
 # Map sys.platform to a string containing the basenames of tests

@@ -112,7 +112,7 @@ def addbuilddir():
     s = "build/lib.%s-%.3s" % (get_platform(), sys.version)
     if hasattr(sys, 'gettotalrefcount'):
         s += '-pydebug'
-    s = os.path.join(os.path.dirname(sys.path[-1]), s)
+    s = os.path.join(os.path.dirname(sys.path.pop()), s)
     sys.path.append(s)
 
 

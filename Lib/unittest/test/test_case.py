@@ -1,6 +1,5 @@
 import re
 import sys
-import warnings
 
 from copy import deepcopy
 from test import support
@@ -496,12 +495,10 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         with self.assertRaises(self.failureException):
             self.assertDictContainsSubset({'a': 1, 'c': 1}, {'a': 1})
 
-        with warnings.catch_warnings(record=True):
-            # silence the UnicodeWarning
-            one = ''.join(chr(i) for i in range(255))
-            # this used to cause a UnicodeDecodeError constructing the failure msg
-            with self.assertRaises(self.failureException):
-                self.assertDictContainsSubset({'foo': one}, {'foo': '\uFFFD'})
+        one = ''.join(chr(i) for i in range(255))
+        # this used to cause a UnicodeDecodeError constructing the failure msg
+        with self.assertRaises(self.failureException):
+            self.assertDictContainsSubset({'foo': one}, {'foo': '\uFFFD'})
 
     def testAssertEqual(self):
         equal_pairs = [
@@ -615,9 +612,9 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         # hashable types, but not orderable
         self.assertRaises(self.failureException, self.assertItemsEqual,
                           [], [divmod, 'x', 1, 5j, 2j, frozenset()])
-        # comparing dicts raises a py3k warning
+        # comparing dicts
         self.assertItemsEqual([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
-        # comparing heterogenous non-hashable sequences raises a py3k warning
+        # comparing heterogenous non-hashable sequences
         self.assertItemsEqual([1, 'x', divmod, []], [divmod, [], 'x', 1])
         self.assertRaises(self.failureException, self.assertItemsEqual,
                           [], [divmod, [], 'x', 1, 5j, 2j, set()])
@@ -852,10 +849,9 @@ test case
             (self.assertSameElements, ([1, 1, 2, 3], [1, 2, 3]))
         )
         for meth, args in old:
-            with warnings.catch_warnings(record=True) as w:
+            with support.check_warnings(('', DeprecationWarning)) as w:
                 meth(*args)
-            self.assertEqual(len(w), 1)
-            self.assertIs(w[0].category, DeprecationWarning)
+            self.assertEqual(len(w.warnings), 1)
 
     def testDeepcopy(self):
         # Issue: 5660
