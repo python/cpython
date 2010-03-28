@@ -179,7 +179,7 @@ class Process(object):
     @property
     def ident(self):
         '''
-        Return indentifier (PID) of process or `None` if it has yet to start
+        Return identifier (PID) of process or `None` if it has yet to start
         '''
         if self is _current_process:
             return os.getpid()
