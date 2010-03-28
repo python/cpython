@@ -783,7 +783,7 @@ class TurtleScreenBase(object):
         # needs amendment
         if not isinstance(self.cv, ScrolledCanvas):
             return self.canvwidth, self.canvheight
-        if canvwidth is None and canvheight is None and bg is None:
+        if canvwidth is canvheight is bg is None:
             return self.cv.canvwidth, self.cv.canvheight
         if canvwidth is not None:
             self.canvwidth = canvwidth
@@ -999,7 +999,7 @@ class TurtleScreen(TurtleScreenBase):
         >>> mode()
         'logo'
         """
-        if mode == None:
+        if mode is None:
             return self._mode
         mode = mode.lower()
         if mode not in ["standard", "logo", "world"]:
@@ -1339,7 +1339,7 @@ class TurtleScreen(TurtleScreenBase):
         ### repeatedly pressing the up-arrow key,
         ### consequently drawing a hexagon
         """
-        if fun == None:
+        if fun is None:
             if key in self._keys:
                 self._keys.remove(key)
         elif key not in self._keys:
@@ -1460,7 +1460,7 @@ class TNavigator(object):
     def _setmode(self, mode=None):
         """Set turtle-mode to 'standard', 'world' or 'logo'.
         """
-        if mode == None:
+        if mode is None:
             return self._mode
         if mode not in ["standard", "logo", "world"]:
             return
@@ -2704,7 +2704,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.shapesize(5, 5, 12)
         >>> turtle.shapesize(outline=8)
         """
-        if stretch_wid is None and stretch_len is None and outline == None:
+        if stretch_wid is stretch_len is outline is None:
             stretch_wid, stretch_len = self._stretchfactor
             return stretch_wid, stretch_len, self._outlinewidth
         if stretch_wid is not None:
