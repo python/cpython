@@ -20,6 +20,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8179: Fix macpath.realpath() on a non-existing path.
+
 - Issue #8139: ossaudiodev didn't initialize its types properly, therefore
   some methods (such as oss_mixer_device.fileno()) were not available.
   Initial patch by Bertrand Janin.
@@ -452,7 +454,7 @@ Tests
   test_capi (only seen so far on platforms where the curses module
   wasn't built), due to an uncleared exception.
 
-- issue #7728: test_timeout was changed to use test_support.bind_port
+- issue #7728: test_timeout was changed to use test.support.bind_port
   instead of a hard coded port.
 
 - Issue #7376: instead of running a self-test (which was failing) when called

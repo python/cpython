@@ -347,7 +347,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     rpcpid = None
 
     def spawn_subprocess(self):
-        if self.subprocess_arglist == None:
+        if self.subprocess_arglist is None:
             self.subprocess_arglist = self.build_subprocess_arglist()
         args = self.subprocess_arglist
         self.rpcpid = os.spawnv(os.P_NOWAIT, sys.executable, args)
