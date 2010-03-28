@@ -784,3 +784,9 @@ which incur interpreter overhead.
        except exception:
            pass
 
+Note, many of the above recipes can be optimized by replacing global lookups
+with local variables defined as default values.  For example, the
+*dotproduct* recipe can be written as::
+
+   def dotproduct(vec1, vec2, sum=sum, imap=imap, mul=operator.mul):
+       return sum(imap(mul, vec1, vec2))
