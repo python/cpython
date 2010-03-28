@@ -666,9 +666,6 @@ which incur interpreter overhead.
        "Return first n items of the iterable as a list"
        return list(islice(iterable, n))
 
-   def enumerate(iterable, start=0):
-       return izip(count(start), iterable)
-
    def tabulate(function, start=0):
        "Return function(0), function(1), ..."
        return imap(function, count(start))
@@ -747,10 +744,9 @@ which incur interpreter overhead.
        seen = set()
        seen_add = seen.add
        if key is None:
-           for element in iterable:
-               if element not in seen:
-                   seen_add(element)
-                   yield element
+           for element in ifilterfalse(seen.__contains__, iterable):
+               seen_add(element)
+               yield element
        else:
            for element in iterable:
                k = key(element)
@@ -763,3 +759,28 @@ which incur interpreter overhead.
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
        # unique_justseen('ABBCcAD', str.lower) --> A B C A D
        return imap(next, imap(itemgetter(1), groupby(iterable, key)))
+
+   def iter_except(func, exception, first=None):
+       """ Call a function repeatedly until an exception is raised.
+
+       Converts a call-until-exception interface to an iterator interface.
+       Like __builtin__.iter(func, sentinel) but uses an exception instead
+       of a sentinel to end the loop.
+
+       Examples:
+           bsddbiter = iter_except(db.next, bsddb.error, db.first)
+           heapiter = iter_except(functools.partial(heappop, h), IndexError)
+           dictiter = iter_except(d.popitem, KeyError)
+           dequeiter = iter_except(d.popleft, IndexError)
+           queueiter = iter_except(q.get_nowait, Queue.Empty)
+           setiter = iter_except(s.pop, KeyError)
+
+       """
+       try:
+           if first is not None:
+               yield first()
+           while 1:
+               yield func()
+       except exception:
+           pass
+
