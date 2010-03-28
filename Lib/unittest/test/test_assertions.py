@@ -1,7 +1,5 @@
 import unittest
 
-import warnings
-
 
 class Test_Assertions(unittest.TestCase):
     def test_AlmostEqual(self):
@@ -108,11 +106,9 @@ class TestLongMessage(unittest.TestCase):
         self.testableTrue._formatMessage(object(), 'foo')
 
     def test_formatMessage_unicode_error(self):
-        with warnings.catch_warnings(record=True):
-            # This causes a UnicodeWarning due to its craziness
-            one = ''.join(chr(i) for i in range(255))
-            # this used to cause a UnicodeDecodeError constructing msg
-            self.testableTrue._formatMessage(one, '\uFFFD')
+        one = ''.join(chr(i) for i in range(255))
+        # this used to cause a UnicodeDecodeError constructing msg
+        self.testableTrue._formatMessage(one, '\uFFFD')
 
     def assertMessages(self, methodName, args, errors):
         def getMethod(i):

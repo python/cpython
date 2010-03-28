@@ -64,6 +64,16 @@ HAVE_GETVALUE = not getattr(_multiprocessing,
 WIN32 = (sys.platform == "win32")
 
 #
+# Some tests require ctypes
+#
+
+try:
+    from ctypes import Structure, Value, copy, c_int, c_double
+except ImportError:
+    Structure = object
+    c_int = c_double = None
+
+#
 # Creates a wrapper for a function which records the time it takes to finish
 #
 
@@ -506,7 +516,7 @@ class _TestQueue(BaseTestCase):
         queue = self.JoinableQueue()
 
         if sys.version_info < (2, 5) and not hasattr(queue, 'task_done'):
-            return
+            self.skipTest("requires 'queue.task_done()' method")
 
         workers = [self.Process(target=self._test_task_done, args=(queue,))
                    for i in range(4)]
@@ -783,6 +793,8 @@ class _TestEvent(BaseTestCase):
 
 class _TestValue(BaseTestCase):
 
+    ALLOWED_TYPES = ('processes',)
+
     codes_values = [
         ('i', 4343, 24234),
         ('d', 3.625, -4.25),
@@ -795,10 +807,8 @@ class _TestValue(BaseTestCase):
             sv.value = cv[2]
 
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_value(self, raw=False):
-        if self.TYPE != 'processes':
-            return
-
         if raw:
             values = [self.RawValue(code, value)
                       for code, value, _ in self.codes_values]
@@ -816,13 +826,12 @@ class _TestValue(BaseTestCase):
         for sv, cv in zip(values, self.codes_values):
             self.assertEqual(sv.value, cv[2])
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_rawvalue(self):
         self.test_value(raw=True)
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_getobj_getlock(self):
-        if self.TYPE != 'processes':
-            return
-
         val1 = self.Value('i', 5)
         lock1 = val1.get_lock()
         obj1 = val1.get_obj()
@@ -850,14 +859,14 @@ class _TestValue(BaseTestCase):
 
 class _TestArray(BaseTestCase):
 
+    ALLOWED_TYPES = ('processes',)
+
     def f(self, seq):
         for i in range(1, len(seq)):
             seq[i] += seq[i-1]
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_array(self, raw=False):
-        if self.TYPE != 'processes':
-            return
-
         seq = [680, 626, 934, 821, 150, 233, 548, 982, 714, 831]
         if raw:
             arr = self.RawArray('i', seq)
@@ -880,13 +889,12 @@ class _TestArray(BaseTestCase):
 
         self.assertEqual(list(arr[:]), seq)
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_rawarray(self):
         self.test_array(raw=True)
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_getobj_getlock_obj(self):
-        if self.TYPE != 'processes':
-            return
-
         arr1 = self.Array('i', list(range(10)))
         lock1 = arr1.get_lock()
         obj1 = arr1.get_obj()
@@ -1570,12 +1578,6 @@ class _TestHeap(BaseTestCase):
 #
 #
 
-try:
-    from ctypes import Structure, Value, copy, c_int, c_double
-except ImportError:
-    Structure = object
-    c_int = c_double = None
-
 class _Foo(Structure):
     _fields_ = [
         ('x', c_int),
@@ -1595,10 +1597,8 @@ class _TestSharedCTypes(BaseTestCase):
         for i in range(len(arr)):
             arr[i] *= 2
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_sharedctypes(self, lock=False):
-        if c_int is None:
-            return
-
         x = Value('i', 7, lock=lock)
         y = Value(c_double, 1.0/3.0, lock=lock)
         foo = Value(_Foo, 3, 2, lock=lock)
@@ -1621,10 +1621,8 @@ class _TestSharedCTypes(BaseTestCase):
     def test_synchronize(self):
         self.test_sharedctypes(lock=True)
 
+    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_copy(self):
-        if c_int is None:
-            return
-
         foo = _Foo(2, 5.0)
         bar = copy(foo)
         foo.x = 0
@@ -1696,13 +1694,17 @@ class _TestImportStar(BaseTestCase):
     ALLOWED_TYPES = ('processes',)
 
     def test_import(self):
-        modules = (
+        modules = [
             'multiprocessing', 'multiprocessing.connection',
             'multiprocessing.heap', 'multiprocessing.managers',
             'multiprocessing.pool', 'multiprocessing.process',
-            'multiprocessing.reduction', 'multiprocessing.sharedctypes',
+            'multiprocessing.reduction',
             'multiprocessing.synchronize', 'multiprocessing.util'
-            )
+            ]
+
+        if c_int is not None:
+            # This module requires _ctypes
+            modules.append('multiprocessing.sharedctypes')
 
         for name in modules:
             __import__(name)
@@ -1782,12 +1784,12 @@ class _TestLogging(BaseTestCase):
 
 class TestInvalidHandle(unittest.TestCase):
 
+    @unittest.skipIf(WIN32, "skipped on Windows")
     def test_invalid_handles(self):
-        if WIN32:
-            return
         conn = _multiprocessing.Connection(44977608)
         self.assertRaises(IOError, conn.poll)
         self.assertRaises(IOError, _multiprocessing.Connection, -1)
+
 #
 # Functions used to create test cases from the base ones in this module
 #
@@ -1804,7 +1806,7 @@ def get_attributes(Source, names):
 def create_test_cases(Mixin, type):
     result = {}
     glob = globals()
-    Type = type[0].upper() + type[1:]
+    Type = type.capitalize()
 
     for name in list(glob.keys()):
         if name.startswith('_Test'):

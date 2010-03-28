@@ -302,6 +302,9 @@ Library
   some methods (such as oss_mixer_device.fileno()) were not available.
   Initial patch by Bertrand Janin.
 
+- Issue #8205: Remove the "Modules" directory from sys.path when Python is
+  running from the build directory (POSIX only).
+
 - Issue #7512: shutil.copystat() could raise an OSError when the filesystem
   didn't support chflags() (for example ZFS under FreeBSD).  The error is
   now silenced.
@@ -950,8 +953,8 @@ Documentation
 Tests
 -----
 
-- Issue #8180: Fix test_pep277 on OS X and add more tests for special Unicode
-  normalization cases.
+- Issue #8180 and #8207: Fix test_pep277 on OS X and add more tests for special
+  Unicode normalization cases.
 
 - Issue #7783: test.support.open_urlresource invalidates the outdated files
   from the local cache.

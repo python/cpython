@@ -15,11 +15,6 @@ filenames = [
     '\u66e8\u66e9\u66eb',
     '\u66e8\u05e9\u3093\u0434\u0393\xdf',
     # Specific code points: fn, NFC(fn) and NFKC(fn) all differents
-    '\u2000\u2000\u2000A',
-    '\u2001\u2001\u2001A',
-    '\u2003\u2003\u2003A',  # == NFC('\u2001\u2001\u2001A')
-    '\u0020\u0020\u0020A',  # '\u0020' == ' ' == NFKC('\u2000')
-                            # '\u0020' == NFKC('\u2001') == NFKC('\u2003')
     '\u1fee\u1ffd',
     # Specific code points: NFC(fn), NFD(fn), NFKC(fn) and NFKD(fn) all differents
     '\u0385\u03d3\u03d4',
@@ -28,6 +23,22 @@ filenames = [
     '\u1e9b\u1fc1\u1fcd\u1fce\u1fcf\u1fdd\u1fde\u1fdf\u1fed',
     ]
 
+# Mac OS X decomposes Unicode names, using Normal Form D.
+# http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
+# "However, most volume formats do not follow the exact specification for
+# these normal forms.  For example, HFS Plus uses a variant of Normal Form D
+# in which U+2000 through U+2FFF, U+F900 through U+FAFF, and U+2F800 through
+# U+2FAFF are not decomposed."
+if sys.platform != 'darwin':
+    filenames.extend([
+        # Specific code points: fn, NFC(fn) and NFKC(fn) all differents
+        '\u1fee\u1ffd\ufad1',
+        '\u2000\u2000\u2000A',
+        '\u2001\u2001\u2001A',
+        '\u2003\u2003\u2003A',  # == NFC('\u2001\u2001\u2001A')
+        '\u0020\u0020\u0020A',  # '\u0020' == ' ' == NFKC('\u2000') ==
+                                #  NFKC('\u2001') == NFKC('\u2003')
+])
 
 # Destroy directory dirname and all files under it, to one level.
 def deltree(dirname):
@@ -114,8 +125,7 @@ class UnicodeFileTests(unittest.TestCase):
             files = set(normalize('NFD', file) for file in files)
         for name in others:
             if sys.platform == 'darwin' and normalize('NFD', name) in files:
-                # Mac OS X decomposes Unicode names, using Normal Form D.
-                # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
+                # Mac OS X decomposes Unicode names.  See comment above.
                 os.stat(name)
                 continue
             self._apply_failure(open, name, IOError)
@@ -131,8 +141,7 @@ class UnicodeFileTests(unittest.TestCase):
         f1 = os.listdir(support.TESTFN.encode(sys.getfilesystemencoding()))
         f2 = os.listdir(support.TESTFN)
         if sys.platform == 'darwin':
-            # Mac OS X returns canonically decomposed Unicode (Normal Form D)
-            # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
+            # Mac OS X decomposes Unicode names.  See comment above.
             sf0 = set(normalize('NFD', f) for f in self.files)
             f2 = [normalize('NFD', f) for f in f2]
         sf2 = set(os.path.join(support.TESTFN, f) for f in f2)
