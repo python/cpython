@@ -209,6 +209,14 @@ methods of :class:`WeakKeyDictionary` objects.
    .. versionadded:: 2.5
 
 
+.. class:: WeakSet([elements])
+
+   Set class that keeps weak references to its elements.  An element will be
+   discarded when no strong reference to it exists any more.
+
+   .. versionadded:: 2.7
+
+
 .. data:: ReferenceType
 
    The type object for weak references objects.
