@@ -24,6 +24,7 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(result.testsRun, 0)
         self.assertEqual(result.shouldStop, False)
 
+
     # "This method can be called to signal that the set of tests being
     # run should be aborted by setting the TestResult's shouldStop
     # attribute to True."

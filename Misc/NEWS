@@ -37,6 +37,8 @@ Library
   True/False.  This makes Fraction <=> complex comparisons consistent with
   int <=> complex, float <=> complex, and complex <=> complex comparisons.
 
+- Addition of ``WeakSet`` to the ``weakref`` module.
+
 - logging: Added LOG_FTP to SysLogHandler and updated documentation.
 
 - Issue #8205: Remove the "Modules" directory from sys.path when Python is

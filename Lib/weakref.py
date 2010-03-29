@@ -20,6 +20,8 @@ from _weakref import (
      ProxyType,
      ReferenceType)
 
+from _weakrefset import WeakSet
+
 from exceptions import ReferenceError
 
 
@@ -27,7 +29,7 @@ ProxyTypes = (ProxyType, CallableProxyType)
 
 __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
            "WeakKeyDictionary", "ReferenceError", "ReferenceType", "ProxyType",
-           "CallableProxyType", "ProxyTypes", "WeakValueDictionary"]
+           "CallableProxyType", "ProxyTypes", "WeakValueDictionary", 'WeakSet']
 
 
 class WeakValueDictionary(UserDict.UserDict):
