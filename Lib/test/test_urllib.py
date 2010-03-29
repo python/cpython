@@ -440,6 +440,32 @@ class UnquotingTests(unittest.TestCase):
                          "using unquote(): not all characters escaped: "
                          "%s" % result)
 
+    def test_unquoting_badpercent(self):
+        # Test unquoting on bad percent-escapes
+        given = '%xab'
+        expect = given
+        result = urllib.unquote(given)
+        self.assertEqual(expect, result, "using unquote(): %r != %r"
+                         % (expect, result))
+        given = '%x'
+        expect = given
+        result = urllib.unquote(given)
+        self.assertEqual(expect, result, "using unquote(): %r != %r"
+                         % (expect, result))
+        given = '%'
+        expect = given
+        result = urllib.unquote(given)
+        self.assertEqual(expect, result, "using unquote(): %r != %r"
+                         % (expect, result))
+
+    def test_unquoting_mixed_case(self):
+        # Test unquoting on mixed-case hex digits in the percent-escapes
+        given = '%Ab%eA'
+        expect = '\xab\xea'
+        result = urllib.unquote(given)
+        self.assertEqual(expect, result, "using unquote(): %r != %r"
+                         % (expect, result))
+
     def test_unquoting_parts(self):
         # Make sure unquoting works when have non-quoted characters
         # interspersed

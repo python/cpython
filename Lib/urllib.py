@@ -1162,8 +1162,8 @@ def splitvalue(attr):
     if match: return match.group(1, 2)
     return attr, None
 
-_hextochr = dict(('%02x' % i, chr(i)) for i in range(256))
-_hextochr.update(('%02X' % i, chr(i)) for i in range(256))
+_hexdig = '0123456789ABCDEFabcdef'
+_hextochr = dict((a+b, chr(int(a+b,16))) for a in _hexdig for b in _hexdig)
 
 def unquote(s):
     """unquote('abc%20def') -> 'abc def'."""
