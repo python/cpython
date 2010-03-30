@@ -771,7 +771,6 @@ static int _call_function_pointer(int flags,
 	ffi_cif cif;
 	int cc;
 #ifdef MS_WIN32
-	int delta;
 #ifndef DONT_USE_SEH
 	DWORD dwExceptionCode = 0;
 	EXCEPTION_RECORD record;
@@ -822,9 +821,8 @@ static int _call_function_pointer(int flags,
 #ifndef DONT_USE_SEH
 	__try {
 #endif
-		delta =
 #endif
-			ffi_call(&cif, (void *)pProc, resmem, avalues);
+		ffi_call(&cif, (void *)pProc, resmem, avalues);
 #ifdef MS_WIN32
 #ifndef DONT_USE_SEH
 	}
@@ -853,35 +851,6 @@ static int _call_function_pointer(int flags,
 #ifndef DONT_USE_SEH
 	if (dwExceptionCode) {
 		SetException(dwExceptionCode, &record);
-		return -1;
-	}
-#endif
-#ifdef MS_WIN64
-	if (delta != 0) {
-		PyErr_Format(PyExc_RuntimeError,
-			     "ffi_call failed with code %d",
-			     delta);
-		return -1;
-	}
-#else
-	if (delta < 0) {
-		if (flags & FUNCFLAG_CDECL)
-			PyErr_Format(PyExc_ValueError,
-				     "Procedure called with not enough "
-				     "arguments (%d bytes missing) "
-				     "or wrong calling convention",
-				     -delta);
-		else
-			PyErr_Format(PyExc_ValueError,
-				     "Procedure probably called with not enough "
-				     "arguments (%d bytes missing)",
-				     -delta);
-		return -1;
-	} else if (delta > 0) {
-		PyErr_Format(PyExc_ValueError,
-			     "Procedure probably called with too many "
-			     "arguments (%d bytes in excess)",
-			     delta);
 		return -1;
 	}
 #endif
@@ -1161,11 +1130,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
 	}
 	for (i = 0; i < argcount; ++i) {
 		atypes[i] = args[i].ffi_type;
-		if (atypes[i]->type == FFI_TYPE_STRUCT 
-#ifdef _WIN64
-		    && atypes[i]->size <= sizeof(void *)
-#endif
-		    )
+		if (atypes[i]->type == FFI_TYPE_STRUCT)
 			avalues[i] = (void *)args[i].value.p;
 		else
 			avalues[i] = (void *)&args[i].value;

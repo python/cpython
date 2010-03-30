@@ -428,9 +428,6 @@ extern Py_ssize_t PyUnicode_AsWideChar_fixed(PyUnicodeObject *, wchar_t *, Py_ss
 #endif
 #endif
 
-extern void _ctypes_free_closure(void *);
-extern void *_ctypes_alloc_closure(void);
-
 extern void _ctypes_add_traceback(char *, char *, int);
 
 extern PyObject *PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr);

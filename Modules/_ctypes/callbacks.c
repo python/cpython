@@ -22,7 +22,7 @@ CThunkObject_dealloc(PyObject *_self)
 	Py_XDECREF(self->callable);
 	Py_XDECREF(self->restype);
 	if (self->pcl)
-		_ctypes_free_closure(self->pcl);
+		ffi_closure_free(self->pcl);
 	PyObject_GC_Del(self);
 }
 
@@ -421,8 +421,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 
 	assert(CThunk_CheckExact(p));
 
-	p->pcl = _ctypes_alloc_closure();
-	if (p->pcl == NULL) {
+	if (ffi_closure_alloc(sizeof(ffi_closure), &p->pcl) == NULL) {
 		PyErr_NoMemory();
 		goto error;
 	}
