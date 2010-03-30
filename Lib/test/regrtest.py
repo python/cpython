@@ -373,6 +373,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     skipped = []
     resource_denieds = []
     environment_changed = []
+    interrupted = False
 
     if findleaks:
         try:
@@ -428,17 +429,17 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         print "==  ", os.getcwd()
 
     alltests = findtests(testdir, stdtests, nottests)
-    tests = tests or args or alltests
+    selected = tests or args or alltests
     if single:
-        tests = tests[:1]
+        selected = selected[:1]
         try:
-            next_single_test = alltests[alltests.index(tests[0])+1]
+            next_single_test = alltests[alltests.index(selected[0])+1]
         except IndexError:
             next_single_test = None
     if randomize:
         random.seed(random_seed)
         print "Using random seed", random_seed
-        random.shuffle(tests)
+        random.shuffle(selected)
     if trace:
         import trace
         tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix],
@@ -465,7 +466,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             resource_denieds.append(test)
 
     if forever:
-        def test_forever(tests=list(tests)):
+        def test_forever(tests=list(selected)):
             while True:
                 for test in tests:
                     yield test
@@ -473,15 +474,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                         return
         tests = test_forever()
     else:
-        tests = iter(tests)
+        tests = iter(selected)
 
     if use_mp:
         from threading import Thread
         from Queue import Queue
         from subprocess import Popen, PIPE
-        from collections import deque
         debug_output_pat = re.compile(r"\[\d+ refs\]$")
-        pending = deque()
         output = Queue()
         def tests_and_args():
             for test in tests:
@@ -539,6 +538,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     raise KeyboardInterrupt   # What else?
                 accumulate_result(test, result)
         except KeyboardInterrupt:
+            interrupted = True
             pending.close()
         for worker in workers:
             worker.join()
@@ -561,8 +561,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                         print "Re-running test %r in verbose mode" % test
                         runtest(test, True, quiet, testdir, huntrleaks)
                 except KeyboardInterrupt:
-                    # print a newline separate from the ^C
-                    print
+                    interrupted = True
                     break
                 except:
                     raise
@@ -580,8 +579,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 if module not in save_modules and module.startswith("test."):
                     test_support.unload(module)
 
+    if interrupted:
+        # print a newline after ^C
+        print
+        print "Test suite interrupted by signal SIGINT."
+        omitted = set(selected) - set(good) - set(bad) - set(skipped)
+        print count(len(omitted), "test"), "omitted:"
+        printlist(omitted)
     if good and not quiet:
-        if not bad and not skipped and len(good) > 1:
+        if not bad and not skipped and not interrupted and len(good) > 1:
             print "All",
         print count(len(good), "test"), "OK."
     if print_slow:
@@ -646,7 +652,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if runleaks:
         os.system("leaks %d" % os.getpid())
 
-    sys.exit(len(bad) > 0)
+    sys.exit(len(bad) > 0 or interrupted)
 
 
 STDTESTS = [
