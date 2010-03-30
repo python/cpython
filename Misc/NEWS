@@ -883,6 +883,9 @@ Extension Modules
 Build
 -----
 
+- Issue #3326: Build Python without -fno-strict-aliasing when the gcc does not
+  give false warnings.
+
 - Issue #1628484: The Makefile doesn't ignore the CFLAGS environment
   variable anymore.  It also forwards the LDFLAGS settings to the linker
   when building a shared library.
