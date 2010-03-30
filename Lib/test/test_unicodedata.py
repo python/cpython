@@ -25,7 +25,7 @@ class UnicodeMethodsTest(unittest.TestCase):
 
     def test_method_checksum(self):
         h = hashlib.sha1()
-        for i in range(65536):
+        for i in range(0x10000):
             char = chr(i)
             data = [
                 # Predicates (single char)
@@ -283,6 +283,17 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         self.assertEqual("\u01c4".title(), "\u01c5")
         self.assertEqual("\u01c5".title(), "\u01c5")
         self.assertEqual("\u01c6".title(), "\u01c5")
+
+    def test_linebreak_7643(self):
+        for i in range(0x10000):
+            lines = (chr(i) + 'A').splitlines()
+            if i in (0x0a, 0x0b, 0x0c, 0x0d, 0x85,
+                     0x1c, 0x1d, 0x1e, 0x2028, 0x2029):
+                self.assertEqual(len(lines), 2,
+                                 r"\u%.4x should be a linebreak" % i)
+            else:
+                self.assertEqual(len(lines), 1,
+                                 r"\u%.4x should not be a linebreak" % i)
 
 def test_main():
     test.support.run_unittest(
