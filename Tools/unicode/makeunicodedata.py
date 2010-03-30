@@ -36,6 +36,7 @@ COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
 UNIHAN = "Unihan%s.txt"
 DERIVEDNORMALIZATION_PROPS = "DerivedNormalizationProps%s.txt"
+LINE_BREAK = "LineBreak%s.txt"
 
 old_versions = ["3.2.0"]
 
@@ -49,6 +50,8 @@ BIDIRECTIONAL_NAMES = [ "", "L", "LRE", "LRO", "R", "AL", "RLE", "RLO",
     "ON" ]
 
 EASTASIANWIDTH_NAMES = [ "F", "H", "W", "Na", "A", "N" ]
+
+MANDATORY_LINE_BREAKS = [ "BK", "CR", "LF", "NL" ]
 
 # note: should match definitions in Objects/unicodectype.c
 ALPHA_MASK = 0x01
@@ -71,7 +74,8 @@ def maketables(trace=0):
                           COMPOSITION_EXCLUSIONS % version,
                           EASTASIAN_WIDTH % version,
                           UNIHAN % version,
-                          DERIVEDNORMALIZATION_PROPS % version)
+                          DERIVEDNORMALIZATION_PROPS % version,
+                          LINE_BREAK % version)
 
     print len(filter(None, unicode.table)), "characters"
 
@@ -113,7 +117,7 @@ def makeunicodedata(unicode, trace):
             bidirectional = BIDIRECTIONAL_NAMES.index(record[4])
             mirrored = record[9] == "Y"
             eastasianwidth = EASTASIANWIDTH_NAMES.index(record[15])
-            normalizationquickcheck = record[16]
+            normalizationquickcheck = record[17]
             item = (
                 category, combining, bidirectional, mirrored, eastasianwidth,
                 normalizationquickcheck
@@ -365,13 +369,14 @@ def makeunicodetype(unicode, trace):
             # extract database properties
             category = record[2]
             bidirectional = record[4]
+            properties = record[16]
             flags = 0
             delta = True
             if category in ["Lm", "Lt", "Lu", "Ll", "Lo"]:
                 flags |= ALPHA_MASK
             if category == "Ll":
                 flags |= LOWER_MASK
-            if category == "Zl" or bidirectional == "B":
+            if 'Line_Break' in properties or bidirectional == "B":
                 flags |= LINEBREAK_MASK
                 linebreaks.append(char)
             if category == "Zs" or bidirectional in ("WS", "B", "S"):
@@ -524,8 +529,9 @@ def makeunicodetype(unicode, trace):
     print >>fp
 
     # Generate code for _PyUnicode_IsLinebreak()
-    print >>fp, "/* Returns 1 for Unicode characters having the category 'Zl',"
-    print >>fp, " * 'Zp' or type 'B', 0 otherwise."
+    print >>fp, "/* Returns 1 for Unicode characters having the line break"
+    print >>fp, " * property 'BK', 'CR', 'LF' or 'NL' or having bidirectional"
+    print >>fp, " * type 'B', 0 otherwise."
     print >>fp, " */"
     print >>fp, 'int _PyUnicode_IsLinebreak(register const Py_UNICODE ch)'
     print >>fp, '{'
@@ -787,6 +793,9 @@ def merge_old_version(version, new, old):
                     elif k == 14:
                         # change to simple titlecase mapping; ignore
                         pass
+                    elif k == 16:
+                        # change to properties; not yet
+                        pass
                     else:
                         class Difference(Exception):pass
                         raise Difference, (hex(i), k, old.table[i], new.table[i])
@@ -803,9 +812,15 @@ def merge_old_version(version, new, old):
 # load a unicode-data file from disk
 
 class UnicodeData:
+    # Record structure:
+    # [ID, name, category, combining, bidi, decomp,  (6)
+    #  decimal, digit, numeric, bidi-mirrored, Unicode-1-name, (11)
+    #  ISO-comment, uppercase, lowercase, titlecase, ea-width, (16)
+    #  properties] (17)
 
     def __init__(self, filename, exclusions, eastasianwidth, unihan,
-                 derivednormalizationprops=None, expand=1):
+                 derivednormalizationprops=None, linebreakprops=None,
+                 expand=1):
         self.changed = []
         file = open(filename)
         table = [None] * 0x110000
@@ -868,6 +883,23 @@ class UnicodeData:
         for i in range(0, 0x110000):
             if table[i] is not None:
                 table[i].append(widths[i])
+
+        for i in range(0, 0x110000):
+            if table[i] is not None:
+                table[i].append(set())
+        if linebreakprops:
+            for s in open(linebreakprops):
+                s = s.partition('#')[0]
+                s = [i.strip() for i in s.split(';')]
+                if len(s) < 2 or s[1] not in MANDATORY_LINE_BREAKS:
+                    continue
+                if '..' not in s[0]:
+                    first = last = int(s[0], 16)
+                else:
+                    first, last = [int(c, 16) for c in s[0].split('..')]
+                for char in range(first, last+1):
+                    table[char][-1].add('Line_Break')
+
         if derivednormalizationprops:
             quickchecks = [0] * 0x110000 # default is Yes
             qc_order = 'NFD_QC NFKD_QC NFC_QC NFKC_QC'.split()
