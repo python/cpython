@@ -52,10 +52,10 @@ class BoolTest(unittest.TestCase):
         self.assertIsNot(float(True), True)
 
     def test_long(self):
-        self.assertEqual(int(False), 0L)
-        self.assertIsNot(int(False), False)
-        self.assertEqual(int(True), 1L)
-        self.assertIsNot(int(True), True)
+        self.assertEqual(long(False), 0L)
+        self.assertIsNot(long(False), False)
+        self.assertEqual(long(True), 1L)
+        self.assertIsNot(long(True), True)
 
     def test_math(self):
         self.assertEqual(+False, 0)
