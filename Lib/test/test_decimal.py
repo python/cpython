@@ -476,6 +476,12 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         self.assertRaises(ValueError, Decimal, (1, (4, 10, 4, 9, 1), 2) )
         self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 'a', 1), 2) )
 
+    def test_explicit_from_bool(self):
+        self.assertIs(bool(Decimal(0)), False)
+        self.assertIs(bool(Decimal(1)), True)
+        self.assertEqual(Decimal(False), Decimal(0))
+        self.assertEqual(Decimal(True), Decimal(1))
+
     def test_explicit_from_Decimal(self):
 
         #positive
