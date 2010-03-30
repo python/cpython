@@ -449,6 +449,32 @@ Classes and functions
    metatype is in use, cls will be the first element of the tuple.
 
 
+.. function:: getcallargs(func[, *args][, **kwds])
+
+   Bind the *args* and *kwds* to the argument names of the Python function or
+   method *func*, as if it was called with them. For bound methods, bind also the
+   first argument (typically named ``self``) to the associated instance. A dict
+   is returned, mapping the argument names (including the names of the ``*`` and
+   ``**`` arguments, if any) to their values from *args* and *kwds*. In case of
+   invoking *func* incorrectly, i.e. whenever ``func(*args, **kwds)`` would raise
+   an exception because of incompatible signature, an exception of the same type
+   and the same or similar message is raised. For example::
+
+    >>> from inspect import getcallargs
+    >>> def f(a, b=1, *pos, **named):
+    ...     pass
+    >>> getcallargs(f, 1, 2, 3)
+    {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
+    >>> getcallargs(f, a=2, x=4)
+    {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
+    >>> getcallargs(f)
+    Traceback (most recent call last):
+    ...
+    TypeError: f() takes at least 1 argument (0 given)
+
+   .. versionadded:: 3.2
+
+
 .. _inspect-stack:
 
 The interpreter stack

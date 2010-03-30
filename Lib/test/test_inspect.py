@@ -1,3 +1,4 @@
+import re
 import sys
 import types
 import unittest
@@ -519,10 +520,183 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIn(('m1', 'method', D), attrs, 'missing plain method')
         self.assertIn(('datablob', 'data', A), attrs, 'missing data')
 
+class TestGetcallargsFunctions(unittest.TestCase):
+
+    def assertEqualCallArgs(self, func, call_params_string, locs=None):
+        locs = dict(locs or {}, func=func)
+        r1 = eval('func(%s)' % call_params_string, None, locs)
+        r2 = eval('inspect.getcallargs(func, %s)' % call_params_string, None,
+                  locs)
+        self.assertEqual(r1, r2)
+
+    def assertEqualException(self, func, call_param_string, locs=None):
+        locs = dict(locs or {}, func=func)
+        try:
+            eval('func(%s)' % call_param_string, None, locs)
+        except Exception as e:
+            ex1 = e
+        else:
+            self.fail('Exception not raised')
+        try:
+            eval('inspect.getcallargs(func, %s)' % call_param_string, None,
+                 locs)
+        except Exception as e:
+            ex2 = e
+        else:
+            self.fail('Exception not raised')
+        self.assertIs(type(ex1), type(ex2))
+        self.assertEqual(str(ex1), str(ex2))
+        del ex1, ex2
+
+    def makeCallable(self, signature):
+        """Create a function that returns its locals()"""
+        code = "lambda %s: locals()"
+        return eval(code % signature)
+
+    def test_plain(self):
+        f = self.makeCallable('a, b=1')
+        self.assertEqualCallArgs(f, '2')
+        self.assertEqualCallArgs(f, '2, 3')
+        self.assertEqualCallArgs(f, 'a=2')
+        self.assertEqualCallArgs(f, 'b=3, a=2')
+        self.assertEqualCallArgs(f, '2, b=3')
+        # expand *iterable / **mapping
+        self.assertEqualCallArgs(f, '*(2,)')
+        self.assertEqualCallArgs(f, '*[2]')
+        self.assertEqualCallArgs(f, '*(2, 3)')
+        self.assertEqualCallArgs(f, '*[2, 3]')
+        self.assertEqualCallArgs(f, '**{"a":2}')
+        self.assertEqualCallArgs(f, 'b=3, **{"a":2}')
+        self.assertEqualCallArgs(f, '2, **{"b":3}')
+        self.assertEqualCallArgs(f, '**{"b":3, "a":2}')
+        # expand UserList / UserDict
+        self.assertEqualCallArgs(f, '*collections.UserList([2])')
+        self.assertEqualCallArgs(f, '*collections.UserList([2, 3])')
+        self.assertEqualCallArgs(f, '**collections.UserDict(a=2)')
+        self.assertEqualCallArgs(f, '2, **collections.UserDict(b=3)')
+        self.assertEqualCallArgs(f, 'b=2, **collections.UserDict(a=3)')
+
+    def test_varargs(self):
+        f = self.makeCallable('a, b=1, *c')
+        self.assertEqualCallArgs(f, '2')
+        self.assertEqualCallArgs(f, '2, 3')
+        self.assertEqualCallArgs(f, '2, 3, 4')
+        self.assertEqualCallArgs(f, '*(2,3,4)')
+        self.assertEqualCallArgs(f, '2, *[3,4]')
+        self.assertEqualCallArgs(f, '2, 3, *collections.UserList([4])')
+
+    def test_varkw(self):
+        f = self.makeCallable('a, b=1, **c')
+        self.assertEqualCallArgs(f, 'a=2')
+        self.assertEqualCallArgs(f, '2, b=3, c=4')
+        self.assertEqualCallArgs(f, 'b=3, a=2, c=4')
+        self.assertEqualCallArgs(f, 'c=4, **{"a":2, "b":3}')
+        self.assertEqualCallArgs(f, '2, c=4, **{"b":3}')
+        self.assertEqualCallArgs(f, 'b=2, **{"a":3, "c":4}')
+        self.assertEqualCallArgs(f, '**collections.UserDict(a=2, b=3, c=4)')
+        self.assertEqualCallArgs(f, '2, c=4, **collections.UserDict(b=3)')
+        self.assertEqualCallArgs(f, 'b=2, **collections.UserDict(a=3, c=4)')
+
+    def test_keyword_only(self):
+        f = self.makeCallable('a=3, *, c, d=2')
+        self.assertEqualCallArgs(f, 'c=3')
+        self.assertEqualCallArgs(f, 'c=3, a=3')
+        self.assertEqualCallArgs(f, 'a=2, c=4')
+        self.assertEqualCallArgs(f, '4, c=4')
+        self.assertEqualException(f, '')
+        self.assertEqualException(f, '3')
+        self.assertEqualException(f, 'a=3')
+        self.assertEqualException(f, 'd=4')
+
+    def test_multiple_features(self):
+        f = self.makeCallable('a, b=2, *f, **g')
+        self.assertEqualCallArgs(f, '2, 3, 7')
+        self.assertEqualCallArgs(f, '2, 3, x=8')
+        self.assertEqualCallArgs(f, '2, 3, x=8, *[(4,[5,6]), 7]')
+        self.assertEqualCallArgs(f, '2, x=8, *[3, (4,[5,6]), 7], y=9')
+        self.assertEqualCallArgs(f, 'x=8, *[2, 3, (4,[5,6])], y=9')
+        self.assertEqualCallArgs(f, 'x=8, *collections.UserList('
+                                 '[2, 3, (4,[5,6])]), **{"y":9, "z":10}')
+        self.assertEqualCallArgs(f, '2, x=8, *collections.UserList([3, '
+                                 '(4,[5,6])]), **collections.UserDict('
+                                 'y=9, z=10)')
+
+    def test_errors(self):
+        f0 = self.makeCallable('')
+        f1 = self.makeCallable('a, b')
+        f2 = self.makeCallable('a, b=1')
+        # f0 takes no arguments
+        self.assertEqualException(f0, '1')
+        self.assertEqualException(f0, 'x=1')
+        self.assertEqualException(f0, '1,x=1')
+        # f1 takes exactly 2 arguments
+        self.assertEqualException(f1, '')
+        self.assertEqualException(f1, '1')
+        self.assertEqualException(f1, 'a=2')
+        self.assertEqualException(f1, 'b=3')
+        # f2 takes at least 1 argument
+        self.assertEqualException(f2, '')
+        self.assertEqualException(f2, 'b=3')
+        for f in f1, f2:
+            # f1/f2 takes exactly/at most 2 arguments
+            self.assertEqualException(f, '2, 3, 4')
+            self.assertEqualException(f, '1, 2, 3, a=1')
+            self.assertEqualException(f, '2, 3, 4, c=5')
+            self.assertEqualException(f, '2, 3, 4, a=1, c=5')
+            # f got an unexpected keyword argument
+            self.assertEqualException(f, 'c=2')
+            self.assertEqualException(f, '2, c=3')
+            self.assertEqualException(f, '2, 3, c=4')
+            self.assertEqualException(f, '2, c=4, b=3')
+            self.assertEqualException(f, '**{u"\u03c0\u03b9": 4}')
+            # f got multiple values for keyword argument
+            self.assertEqualException(f, '1, a=2')
+            self.assertEqualException(f, '1, **{"a":2}')
+            self.assertEqualException(f, '1, 2, b=3')
+            # XXX: Python inconsistency
+            # - for functions and bound methods: unexpected keyword 'c'
+            # - for unbound methods: multiple values for keyword 'a'
+            #self.assertEqualException(f, '1, c=3, a=2')
+
+class TestGetcallargsMethods(TestGetcallargsFunctions):
+
+    def setUp(self):
+        class Foo(object):
+            pass
+        self.cls = Foo
+        self.inst = Foo()
+
+    def makeCallable(self, signature):
+        assert 'self' not in signature
+        mk = super(TestGetcallargsMethods, self).makeCallable
+        self.cls.method = mk('self, ' + signature)
+        return self.inst.method
+
+class TestGetcallargsUnboundMethods(TestGetcallargsMethods):
+
+    def makeCallable(self, signature):
+        super(TestGetcallargsUnboundMethods, self).makeCallable(signature)
+        return self.cls.method
+
+    def assertEqualCallArgs(self, func, call_params_string, locs=None):
+        return super(TestGetcallargsUnboundMethods, self).assertEqualCallArgs(
+            *self._getAssertEqualParams(func, call_params_string, locs))
+
+    def assertEqualException(self, func, call_params_string, locs=None):
+        return super(TestGetcallargsUnboundMethods, self).assertEqualException(
+            *self._getAssertEqualParams(func, call_params_string, locs))
+
+    def _getAssertEqualParams(self, func, call_params_string, locs=None):
+        assert 'inst' not in call_params_string
+        locs = dict(locs or {}, inst=self.inst)
+        return (func, 'inst,' + call_params_string, locs)
+
 def test_main():
-    run_unittest(TestDecorators, TestRetrievingSourceCode, TestOneliners,
-                 TestBuggyCases,
-                 TestInterpreterStack, TestClassesAndFunctions, TestPredicates)
+    run_unittest(
+        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBuggyCases,
+        TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
+        TestGetcallargsFunctions, TestGetcallargsMethods,
+        TestGetcallargsUnboundMethods)
 
 if __name__ == "__main__":
     test_main()
