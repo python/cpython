@@ -661,7 +661,7 @@ static unsigned char index1[] = {
 };
 
 static unsigned char index2[] = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
     1, 1, 1, 1, 3, 3, 3, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
     4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 1, 1, 1, 1, 1, 1, 1, 14, 14, 14, 14, 
     14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 
@@ -3313,13 +3313,16 @@ int _PyUnicode_IsWhitespace(register const Py_UNICODE ch)
 #endif
 }
 
-/* Returns 1 for Unicode characters having the category 'Zl',
- * 'Zp' or type 'B', 0 otherwise.
+/* Returns 1 for Unicode characters having the line break
+ * property 'BK', 'CR', 'LF' or 'NL' or having bidirectional
+ * type 'B', 0 otherwise.
  */
 int _PyUnicode_IsLinebreak(register const Py_UNICODE ch)
 {
     switch (ch) {
     case 0x000A:
+    case 0x000B:
+    case 0x000C:
     case 0x000D:
     case 0x001C:
     case 0x001D:

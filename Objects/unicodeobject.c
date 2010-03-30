@@ -115,9 +115,9 @@ static char unicode_default_encoding[100];
 /* Fast detection of the most frequent whitespace characters */
 const unsigned char _Py_ascii_whitespace[] = {
     0, 0, 0, 0, 0, 0, 0, 0,
-/*     case 0x0009: * HORIZONTAL TABULATION */
+/*     case 0x0009: * CHARACTER TABULATION */
 /*     case 0x000A: * LINE FEED */
-/*     case 0x000B: * VERTICAL TABULATION */
+/*     case 0x000B: * LINE TABULATION */
 /*     case 0x000C: * FORM FEED */
 /*     case 0x000D: * CARRIAGE RETURN */
     0, 1, 1, 1, 1, 1, 0, 0,
@@ -147,8 +147,10 @@ const unsigned char _Py_ascii_whitespace[] = {
 static unsigned char ascii_linebreak[] = {
     0, 0, 0, 0, 0, 0, 0, 0,
 /*         0x000A, * LINE FEED */
+/*         0x000B, * LINE TABULATION */
+/*         0x000C, * FORM FEED */
 /*         0x000D, * CARRIAGE RETURN */
-    0, 0, 1, 0, 0, 1, 0, 0,
+    0, 0, 1, 1, 1, 1, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
 /*         0x001C, * FILE SEPARATOR */
 /*         0x001D, * GROUP SEPARATOR */
