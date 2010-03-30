@@ -956,6 +956,8 @@ Documentation
 Tests
 -----
 
+- Issue #8248: Add some tests for the bool type.  Patch by Gregory Nofi.
+
 - Issue #8180 and #8207: Fix test_pep277 on OS X and add more tests for special
   Unicode normalization cases.
 

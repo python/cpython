@@ -45,6 +45,12 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(int(True), 1)
         self.assertIsNot(int(True), True)
 
+    def test_float(self):
+        self.assertEqual(float(False), 0.0)
+        self.assertIsNot(float(False), False)
+        self.assertEqual(float(True), 1.0)
+        self.assertIsNot(float(True), True)
+
     def test_math(self):
         self.assertEqual(+False, 0)
         self.assertIsNot(+False, False)
@@ -234,6 +240,12 @@ class BoolTest(unittest.TestCase):
             self.assertIs(f.closed, True)
         finally:
             os.remove(support.TESTFN)
+
+    def test_types(self):
+        # types are always true.
+        for t in [bool, complex, dict, float, int, list, object,
+                  set, str, tuple, type]:
+            self.assertIs(bool(t), True)
 
     def test_operator(self):
         import operator
