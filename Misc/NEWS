@@ -32,8 +32,9 @@ Core and Builtins
 Library
 -------
 
-- Issue #7643: Unicode codepoints VT (0x0B) and FF (0x0C) are linebreaks
-  according to Unicode Standard Annex #14.
+- Backwards incompatible change: Unicode codepoints line tabulation (0x0B) and
+  form feed (0x0C) are now considered linebreaks, as specified in Unicode
+  Standard Annex #14.  See issue #7643.
   http://www.unicode.org/reports/tr14/
 
 - Comparisons using one of <, <=, >, >= between a complex instance and
