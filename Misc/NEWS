@@ -161,6 +161,9 @@ C-API
 Tests
 -----
 
+- Issue #8263: Now regrtest.py will report a failure if it receives a
+  KeyboardInterrupt (SIGINT).
+
 - Issue #8180 and #8207: Fix test_pep277 on OS X and add more tests for special
   Unicode normalization cases.
 
