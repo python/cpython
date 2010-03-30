@@ -45,6 +45,18 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(int(True), 1)
         self.assertIsNot(int(True), True)
 
+    def test_float(self):
+        self.assertEqual(float(False), 0.0)
+        self.assertIsNot(float(False), False)
+        self.assertEqual(float(True), 1.0)
+        self.assertIsNot(float(True), True)
+
+    def test_long(self):
+        self.assertEqual(int(False), 0L)
+        self.assertIsNot(int(False), False)
+        self.assertEqual(int(True), 1L)
+        self.assertIsNot(int(True), True)
+
     def test_math(self):
         self.assertEqual(+False, 0)
         self.assertIsNot(+False, False)
@@ -157,6 +169,12 @@ class BoolTest(unittest.TestCase):
         self.assertIs(bool(""), False)
         self.assertIs(bool(), False)
 
+    def test_format(self):
+        self.assertEqual("%d" % False, "0")
+        self.assertEqual("%d" % True, "1")
+        self.assertEqual("%x" % False, "0")
+        self.assertEqual("%x" % True, "1")
+
     def test_hasattr(self):
         self.assertIs(hasattr([], "append"), True)
         self.assertIs(hasattr([], "wobble"), False)
@@ -250,6 +268,12 @@ class BoolTest(unittest.TestCase):
             self.assertIs(f.closed, True)
         finally:
             os.remove(test_support.TESTFN)
+
+    def test_types(self):
+        # types are always true.
+        for t in [bool, complex, dict, file, float, int, list, long, object,
+                  set, str, tuple, type]:
+            self.assertIs(bool(t), True)
 
     def test_operator(self):
         import operator

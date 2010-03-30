@@ -49,6 +49,8 @@ class BaseTestCase(unittest.TestCase):
         self.assertEqual(-7L.__index__(), -7)
         self.assertEqual(self.o.__index__(), 4)
         self.assertEqual(self.n.__index__(), 5)
+        self.assertEqual(True.__index__(), 1)
+        self.assertEqual(False.__index__(), 0)
 
     def test_subclasses(self):
         r = range(10)
