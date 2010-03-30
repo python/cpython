@@ -38,6 +38,7 @@ EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
 UNIHAN = "Unihan%s.txt"
 DERIVED_CORE_PROPERTIES = "DerivedCoreProperties%s.txt"
 DERIVEDNORMALIZATION_PROPS = "DerivedNormalizationProps%s.txt"
+LINE_BREAK = "LineBreak%s.txt"
 
 old_versions = ["3.2.0"]
 
@@ -51,6 +52,8 @@ BIDIRECTIONAL_NAMES = [ "", "L", "LRE", "LRO", "R", "AL", "RLE", "RLO",
     "ON" ]
 
 EASTASIANWIDTH_NAMES = [ "F", "H", "W", "Na", "A", "N" ]
+
+MANDATORY_LINE_BREAKS = [ "BK", "CR", "LF", "NL" ]
 
 # note: should match definitions in Objects/unicodectype.c
 ALPHA_MASK = 0x01
@@ -77,7 +80,8 @@ def maketables(trace=0):
                           EASTASIAN_WIDTH % version,
                           UNIHAN % version,
                           DERIVED_CORE_PROPERTIES % version,
-                          DERIVEDNORMALIZATION_PROPS % version)
+                          DERIVEDNORMALIZATION_PROPS % version,
+                          LINE_BREAK % version)
 
     print(len(list(filter(None, unicode.table))), "characters")
 
@@ -378,7 +382,7 @@ def makeunicodetype(unicode, trace):
                 flags |= ALPHA_MASK
             if category == "Ll":
                 flags |= LOWER_MASK
-            if category == "Zl" or bidirectional == "B":
+            if 'Line_Break' in properties or bidirectional == "B":
                 flags |= LINEBREAK_MASK
                 linebreaks.append(char)
             if category == "Zs" or bidirectional in ("WS", "B", "S"):
@@ -537,8 +541,9 @@ def makeunicodetype(unicode, trace):
     print(file=fp)
 
     # Generate code for _PyUnicode_IsLinebreak()
-    print("/* Returns 1 for Unicode characters having the category 'Zl',", file=fp)
-    print(" * 'Zp' or type 'B', 0 otherwise.", file=fp)
+    print("/* Returns 1 for Unicode characters having the line break", file=fp)
+    print(" * property 'BK', 'CR', 'LF' or 'NL' or having bidirectional", file=fp)
+    print(" * type 'B', 0 otherwise.", file=fp)
     print(" */", file=fp)
     print('int _PyUnicode_IsLinebreak(register const Py_UNICODE ch)', file=fp)
     print('{', file=fp)
@@ -826,7 +831,8 @@ class UnicodeData:
     #  derived-props] (17)
 
     def __init__(self, filename, exclusions, eastasianwidth, unihan,
-                 derivedprops, derivednormalizationprops=None, expand=1):
+                 derivedprops, derivednormalizationprops=None, linebreakprops=None,
+                 expand=1):
         self.changed = []
         file = open(filename)
         table = [None] * 0x110000
@@ -911,6 +917,19 @@ class UnicodeData:
                     # Some properties (e.g. Default_Ignorable_Code_Point)
                     # apply to unassigned code points; ignore them
                     table[char][-1].add(p)
+
+        if linebreakprops:
+            for s in open(linebreakprops):
+                s = s.partition('#')[0]
+                s = [i.strip() for i in s.split(';')]
+                if len(s) < 2 or s[1] not in MANDATORY_LINE_BREAKS:
+                    continue
+                if '..' not in s[0]:
+                    first = last = int(s[0], 16)
+                else:
+                    first, last = [int(c, 16) for c in s[0].split('..')]
+                for char in range(first, last+1):
+                    table[char][-1].add('Line_Break')
 
         if derivednormalizationprops:
             quickchecks = [0] * 0x110000 # default is Yes

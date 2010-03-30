@@ -293,6 +293,11 @@ C-API
 Library
 -------
 
+- Backwards incompatible change: Unicode codepoints line tabulation (0x0B) and
+  form feed (0x0C) are now considered linebreaks, as specified in Unicode
+  Standard Annex #14.  See issue #7643.
+  http://www.unicode.org/reports/tr14/
+
 - Comparisons using one of <, <=, >, >= between a complex instance and
   a Fractions instance now raise TypeError instead of returning
   True/False.  This makes Fraction <=> complex comparisons consistent with
