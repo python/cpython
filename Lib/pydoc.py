@@ -350,7 +350,7 @@ class Doc:
                                  '_thread', 'zipimport') or
              (file.startswith(basedir) and
               not file.startswith(os.path.join(basedir, 'site-packages')))) and
-            object.__name__ not in ('xml.etree')):
+            object.__name__ != 'xml.etree'):
             if docloc.startswith("http://"):
                 docloc = "%s/%s" % (docloc.rstrip("/"), object.__name__)
             else:
