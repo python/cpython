@@ -680,6 +680,18 @@ class ReferencesTestCase(TestBase):
         # No exception should be raised here
         gc.collect()
 
+    def test_classes(self):
+        # Check that classes are weakrefable.
+        class A(object):
+            pass
+        l = []
+        weakref.ref(int)
+        a = weakref.ref(A, l.append)
+        A = None
+        gc.collect()
+        self.assertEqual(a(), None)
+        self.assertEqual(l, [a])
+
 
 class SubclassableWeakrefTestCase(TestBase):
 
