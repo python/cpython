@@ -123,6 +123,7 @@ alloc_error:
 	op->cl_dict = dict;
 	Py_XINCREF(name);
 	op->cl_name = name;
+	op->cl_weakreflist = NULL;
 
 	op->cl_getattr = class_lookup(op, getattrstr, &dummy);
 	op->cl_setattr = class_lookup(op, setattrstr, &dummy);
@@ -188,6 +189,8 @@ static void
 class_dealloc(PyClassObject *op)
 {
 	_PyObject_GC_UNTRACK(op);
+	if (op->cl_weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *) op);
 	Py_DECREF(op->cl_bases);
 	Py_DECREF(op->cl_dict);
 	Py_XDECREF(op->cl_name);
@@ -454,7 +457,7 @@ PyTypeObject PyClass_Type = {
 	(traverseproc)class_traverse,		/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
+	offsetof(PyClassObject, cl_weakreflist), /* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */

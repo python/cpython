@@ -18,6 +18,7 @@ typedef struct {
     PyObject	*cl_getattr;
     PyObject	*cl_setattr;
     PyObject	*cl_delattr;
+    PyObject    *cl_weakreflist; /* List of weak references */
 } PyClassObject;
 
 typedef struct {

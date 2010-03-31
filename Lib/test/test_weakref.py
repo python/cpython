@@ -685,6 +685,26 @@ class ReferencesTestCase(TestBase):
         # No exception should be raised here
         gc.collect()
 
+    def test_classes(self):
+        # Check that both old-style classes and new-style classes
+        # are weakrefable.
+        class A(object):
+            pass
+        class B:
+            pass
+        l = []
+        weakref.ref(int)
+        a = weakref.ref(A, l.append)
+        A = None
+        gc.collect()
+        self.assertEqual(a(), None)
+        self.assertEqual(l, [a])
+        b = weakref.ref(B, l.append)
+        B = None
+        gc.collect()
+        self.assertEqual(b(), None)
+        self.assertEqual(l, [a, b])
+
 
 class SubclassableWeakrefTestCase(TestBase):
 
