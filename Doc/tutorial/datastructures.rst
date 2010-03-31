@@ -138,26 +138,25 @@ Using Lists as Queues
 
 .. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
 
+It is also possible to use a list as a queue, where the first element added is
+the first element retrieved ("first-in, first-out"); however, lists are not
+efficient for this purpose.  While appends and pops from the end of list are
+fast, doing inserts or pops from the beginning of a list is slow (because all
+of the other elements have to be shifted by one).
 
-You can also use a list conveniently as a queue, where the first element added
-is the first element retrieved ("first-in, first-out").  To add an item to the
-back of the queue, use :meth:`append`.  To retrieve an item from the front of
-the queue, use :meth:`pop` with ``0`` as the index.  For example::
+To implement a queue, use :class:`collections.deque` which was designed to
+have fast appends and pops from both ends.  For example::
 
-   >>> queue = ["Eric", "John", "Michael"]
+   >>> from collections import deque
+   >>> queue = deque(["Eric", "John", "Michael"])
    >>> queue.append("Terry")           # Terry arrives
    >>> queue.append("Graham")          # Graham arrives
-   >>> queue.pop(0)
+   >>> queue.popleft()                 # The first to arrive now leaves
    'Eric'
-   >>> queue.pop(0)
+   >>> queue.popleft()                 # The second to arrive now leaves
    'John'
-   >>> queue
-   ['Michael', 'Terry', 'Graham']
-
-However, since lists are implemented as an array of elements, they are not the
-optimal data structure to use as a queue (the ``pop(0)`` needs to move all
-following elements).  See :ref:`tut-list-tools` for a look at
-:class:`collections.deque`, which is designed to work efficiently as a queue.
+   >>> queue                           # Remaining queue in order of arrival
+   deque(['Michael', 'Terry', 'Graham'])
 
 
 .. _tut-functional:
