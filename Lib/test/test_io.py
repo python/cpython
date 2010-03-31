@@ -29,7 +29,6 @@ import array
 import threading
 import random
 import unittest
-import warnings
 import weakref
 import abc
 from itertools import cycle, count

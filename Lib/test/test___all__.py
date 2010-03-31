@@ -4,7 +4,6 @@ import unittest
 from test import test_support as support
 import os
 import sys
-import warnings
 
 
 class NoAll(RuntimeError):
@@ -18,9 +17,8 @@ class AllTest(unittest.TestCase):
 
     def check_all(self, modname):
         names = {}
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", ".* (module|package)",
-                                    DeprecationWarning)
+        with support.check_warnings((".* (module|package)",
+                                     DeprecationWarning), quiet=True):
             try:
                 exec "import %s" % modname in names
             except:
