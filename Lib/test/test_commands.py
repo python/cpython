@@ -4,12 +4,9 @@
 '''
 import unittest
 import os, tempfile, re
-import warnings
 
-warnings.filterwarnings('ignore', r".*commands.getstatus.. is deprecated",
-                        DeprecationWarning)
-
-from test.test_support import run_unittest, reap_children, import_module
+from test.test_support import run_unittest, reap_children, import_module, \
+                              check_warnings
 
 # Silence Py3k warning
 commands = import_module('commands', deprecated=True)
@@ -59,7 +56,9 @@ class CommandTests(unittest.TestCase):
                   /\.          # and end with the name of the file.
                '''
 
-        self.assertTrue(re.match(pat, commands.getstatus("/."), re.VERBOSE))
+        with check_warnings((".*commands.getstatus.. is deprecated",
+                             DeprecationWarning)):
+            self.assertTrue(re.match(pat, commands.getstatus("/."), re.VERBOSE))
 
 
 def test_main():

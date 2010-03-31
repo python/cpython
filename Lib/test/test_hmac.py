@@ -213,19 +213,13 @@ class TestVectorsTestCase(unittest.TestCase):
 
         with warnings.catch_warnings():
             warnings.simplefilter('error', RuntimeWarning)
-            try:
+            with self.assertRaises(RuntimeWarning):
                 hmac.HMAC('a', 'b', digestmod=MockCrazyHash)
-            except RuntimeWarning:
-                pass
-            else:
                 self.fail('Expected warning about missing block_size')
 
             MockCrazyHash.block_size = 1
-            try:
+            with self.assertRaises(RuntimeWarning):
                 hmac.HMAC('a', 'b', digestmod=MockCrazyHash)
-            except RuntimeWarning:
-                pass
-            else:
                 self.fail('Expected warning about small block_size')
 
 

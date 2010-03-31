@@ -6,9 +6,6 @@ This is complex because of changes due to PEP 237.
 import unittest
 from test import test_support
 
-import warnings
-warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
-                        "<string>")
 
 class TestHexOctBin(unittest.TestCase):
 

@@ -1,4 +1,4 @@
-from test.test_support import verbose, run_unittest
+from test.test_support import verbose, run_unittest, import_module
 import re
 from re import Scanner
 import sys, traceback
@@ -447,11 +447,8 @@ class ReTests(unittest.TestCase):
         import cPickle
         self.pickle_test(cPickle)
         # old pickles expect the _compile() reconstructor in sre module
-        import warnings
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "The sre module is deprecated",
-                                    DeprecationWarning)
-            from sre import _compile
+        import_module("sre", deprecated=True)
+        from sre import _compile
 
     def pickle_test(self, pickle):
         oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')

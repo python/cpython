@@ -1,7 +1,6 @@
 import copy
-import warnings
 import unittest
-from test.test_support import run_unittest, TestFailed
+from test.test_support import run_unittest, TestFailed, check_warnings
 
 # Fake a number that implements numeric methods through __coerce__
 class CoerceNumber:
@@ -223,12 +222,6 @@ def process_infix_results():
             infix_results[key] = res
 
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", "classic int division",
-                            DeprecationWarning)
-    process_infix_results()
-# now infix_results has two lists of results for every pairing.
-
 prefix_binops = [ 'divmod' ]
 prefix_results = [
     [(1,0), (1L,0L), (0.0,2.0), ((1+0j),0j), TE, TE, TE, TE, (1,0)],
@@ -339,11 +332,13 @@ class CoercionTest(unittest.TestCase):
             raise exc
 
 def test_main():
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "complex divmod.., // and % "
-                                "are deprecated", DeprecationWarning)
-        warnings.filterwarnings("ignore", "classic (int|long) division",
-                                DeprecationWarning)
+    with check_warnings(("complex divmod.., // and % are deprecated",
+                         DeprecationWarning),
+                        ("classic (int|long) division", DeprecationWarning),
+                        quiet=True):
+        process_infix_results()
+        # now infix_results has two lists of results for every pairing.
+
         run_unittest(CoercionTest)
 
 if __name__ == "__main__":

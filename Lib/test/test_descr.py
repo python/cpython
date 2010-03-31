@@ -2,7 +2,6 @@ import __builtin__
 import sys
 import types
 import unittest
-import warnings
 
 from copy import deepcopy
 from test import test_support
@@ -58,15 +57,6 @@ class OperatorsTest(unittest.TestCase):
             else:
                 expr = '%s a' % expr
             self.unops[name] = expr
-
-    def setUp(self):
-        self.original_filters = warnings.filters[:]
-        warnings.filterwarnings("ignore",
-                 r'complex divmod\(\), // and % are deprecated$',
-                 DeprecationWarning, r'(<string>|%s)$' % __name__)
-
-    def tearDown(self):
-        warnings.filters = self.original_filters
 
     def unop_test(self, a, res, expr="len(a)", meth="__len__"):
         d = {'a': a}
@@ -4622,11 +4612,15 @@ class PTypesLongInitTest(unittest.TestCase):
 
 
 def test_main():
-    with test_support.check_py3k_warnings(
+    deprecations = [(r'complex divmod\(\), // and % are deprecated$',
+                     DeprecationWarning)]
+    if sys.py3kwarning:
+        deprecations += [
             ("classic (int|long) division", DeprecationWarning),
             ("coerce.. not supported", DeprecationWarning),
             ("Overriding __cmp__ ", DeprecationWarning),
-            (".+__(get|set|del)slice__ has been removed", DeprecationWarning)):
+            (".+__(get|set|del)slice__ has been removed", DeprecationWarning)]
+    with test_support.check_warnings(*deprecations):
         # Run all local test cases, with PTypesLongInitTest first.
         test_support.run_unittest(PTypesLongInitTest, OperatorsTest,
                                   ClassPropertiesAndMethods, DictProxyTests)

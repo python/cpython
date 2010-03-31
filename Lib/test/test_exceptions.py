@@ -4,9 +4,9 @@ import os
 import sys
 import unittest
 import pickle, cPickle
-import warnings
 
-from test.test_support import TESTFN, unlink, run_unittest, captured_output
+from test.test_support import (TESTFN, unlink, run_unittest, captured_output,
+                               check_warnings)
 from test.test_pep352 import ignore_deprecation_warnings
 
 # XXX This is not really enough, each *operation* should be tested!
@@ -308,24 +308,19 @@ class ExceptionTests(unittest.TestCase):
         # Accessing BaseException.message and relying on its value set by
         # BaseException.__init__ triggers a deprecation warning.
         exc = BaseException("foo")
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('default')
-            self.assertEquals(exc.message, "foo")
-        self.assertEquals(len(w), 1)
-        self.assertEquals(w[0].category, DeprecationWarning)
-        self.assertEquals(
-            str(w[0].message),
-            "BaseException.message has been deprecated as of Python 2.6")
-
+        with check_warnings(("BaseException.message has been deprecated "
+                             "as of Python 2.6", DeprecationWarning)) as w:
+            self.assertEqual(exc.message, "foo")
+        self.assertEqual(len(w.warnings), 1)
 
     def testRegularMessageAttribute(self):
         # Accessing BaseException.message after explicitly setting a value
         # for it does not trigger a deprecation warning.
         exc = BaseException("foo")
         exc.message = "bar"
-        with warnings.catch_warnings(record=True) as w:
-            self.assertEquals(exc.message, "bar")
-        self.assertEquals(len(w), 0)
+        with check_warnings(quiet=True) as w:
+            self.assertEqual(exc.message, "bar")
+        self.assertEqual(len(w.warnings), 0)
         # Deleting the message is supported, too.
         del exc.message
         with self.assertRaises(AttributeError):

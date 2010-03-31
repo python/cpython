@@ -3,7 +3,6 @@ Test the API of the symtable module.
 """
 import symtable
 import unittest
-import warnings
 
 from test import test_support
 
@@ -44,9 +43,8 @@ def find_block(block, name):
 
 class SymtableTest(unittest.TestCase):
 
-    with warnings.catch_warnings():
-        # Ignore warnings about "from blank import *"
-        warnings.simplefilter("ignore", SyntaxWarning)
+    with test_support.check_warnings(
+            ("import \* only allowed at module level", SyntaxWarning)):
         top = symtable.symtable(TEST_CODE, "?", "exec")
     # These correspond to scopes in TEST_CODE
     Mine = find_block(top, "Mine")

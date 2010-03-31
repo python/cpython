@@ -168,12 +168,14 @@ class ZipSupportTests(ImportHooksBaseTestCase):
                 test_zipped_doctest.test_unittest_reportflags,
             ]
             # Needed for test_DocTestParser and test_debug
-            with test.test_support.check_py3k_warnings(
-                    ("backquote not supported", SyntaxWarning),
-                    ("execfile.. not supported", DeprecationWarning)):
+            deprecations = [
                 # Ignore all warnings about the use of class Tester in this module.
-                warnings.filterwarnings("ignore", "class Tester is deprecated",
-                                        DeprecationWarning)
+                ("class Tester is deprecated", DeprecationWarning)]
+            if sys.py3kwarning:
+                deprecations += [
+                    ("backquote not supported", SyntaxWarning),
+                    ("execfile.. not supported", DeprecationWarning)]
+            with test.test_support.check_warnings(*deprecations):
                 for obj in known_good_tests:
                     _run_object_doctest(obj, test_zipped_doctest)
 
