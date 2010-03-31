@@ -544,7 +544,7 @@ class SizeofTest(unittest.TestCase):
         class class_oldstyle():
             def method():
                 pass
-        check(class_oldstyle, size(h + '6P'))
+        check(class_oldstyle, size(h + '7P'))
         # instance (old-style class)
         check(class_oldstyle(), size(h + '3P'))
         # instancemethod (old-style class)
