@@ -7,6 +7,7 @@ import re
 import pydoc
 import inspect
 import unittest
+import xml.etree
 import test.test_support
 from contextlib import contextmanager
 from test.test_support import (
@@ -243,6 +244,11 @@ class PyDocDocTest(unittest.TestCase):
         if result != expected_text:
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
+
+    def test_issue8225(self):
+        # Test issue8225 to ensure no doc link appears for xml.etree
+        result, doc_loc = get_pydoc_text(xml.etree)
+        self.assertEqual(doc_loc, "", "MODULE DOCS incorrectly includes a link")
 
     def test_not_here(self):
         missing_module = "test.i_am_not_here"
