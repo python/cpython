@@ -40,7 +40,7 @@ if "%1"=="-x64" (set prefix=amd64) & (set tcltk=tcltk64) & shift & goto CheckOpt
 
 PATH %PATH%;..\..\%tcltk%\bin
 set exe=%prefix%\python%suffix%
-set cmd=%exe% %dashO% -E -tt ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
+set cmd=%exe% %dashO% -Wd -3 -E -tt ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 if defined qmode goto Qmode
 
 echo Deleting .pyc/.pyo files ...
