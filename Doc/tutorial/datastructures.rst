@@ -158,11 +158,6 @@ have fast appends and pops from both ends.  For example::
    >>> queue                           # Remaining queue in order of arrival
    deque(['Michael', 'Terry', 'Graham'])
 
-However, since lists are implemented as an array of elements, they are not the
-optimal data structure to use as a queue (the ``pop(0)`` needs to move all
-following elements).  See :ref:`tut-list-tools` for a look at
-:class:`collections.deque`, which is designed to work efficiently as a queue.
-
 
 .. _tut-functional:
 
