@@ -3852,18 +3852,7 @@ Py_FlushLine(void)
 
 
 /* External interface to call any callable object.
-   The arg must be a tuple or NULL. */
-
-#undef PyEval_CallObject
-/* for backward compatibility: export this interface */
-
-PyObject *
-PyEval_CallObject(PyObject *func, PyObject *arg)
-{
-	return PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL);
-}
-#define PyEval_CallObject(func,arg) \
-        PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)
+   The arg must be a tuple or NULL.  The kw must be a dict or NULL. */
 
 PyObject *
 PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)

@@ -169,6 +169,10 @@ Build
 C-API
 -----
 
+- Issue #8276: PyEval_CallObject() is now only available in macro form.  The
+  function declaration, which was kept for backwards compatibility reasons,
+  is now removed (the macro was introduced in 1997!).
+
 - Issue #7992: A replacement PyCObject API, PyCapsule, has been backported
   from Python 3.1.
 
