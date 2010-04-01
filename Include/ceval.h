@@ -10,10 +10,6 @@ extern "C" {
 PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
 	PyObject *, PyObject *, PyObject *);
 
-/* DLL-level Backwards compatibility: */
-#undef PyEval_CallObject
-PyAPI_FUNC(PyObject *) PyEval_CallObject(PyObject *, PyObject *);
-
 /* Inline this */
 #define PyEval_CallObject(func,arg) \
         PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)

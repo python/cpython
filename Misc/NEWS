@@ -246,6 +246,10 @@ Core and Builtins
 C-API
 -----
 
+- Issue #8276: PyEval_CallObject() is now only available in macro form.  The
+  function declaration, which was kept for backwards compatibility reasons,
+  is now removed (the macro was introduced in 1997!).
+
 - Issue #7767: New function PyLong_AsLongLongAndOverflow added,
   analogous to PyLong_AsLongAndOverflow.
 
