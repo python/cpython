@@ -155,6 +155,9 @@ Tools/Demos
 Build
 -----
 
+- Issue #8032: For gdb7, a python-gdb.py file is added to the build,
+  allowing to use advanced gdb features when debugging Python.
+
 - Issue #1628484: The Makefile doesn't ignore the CFLAGS environment
   variable anymore.  It also forwards the LDFLAGS settings to the linker
   when building a shared library.

@@ -30,6 +30,7 @@ Modules/Setup.local
 Modules/config.c
 Parser/pgen
 core
+python-gdb.py
 
 syntax: glob
 libpython*.a

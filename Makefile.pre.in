@@ -360,7 +360,7 @@ LIBRARY_OBJS=	\
 
 # Default target
 all:		build_all
-build_all:	$(BUILDPYTHON) oldsharedmods sharedmods
+build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks
 
 # Compile a binary with gcc profile guided optimization.
 profile-opt:
@@ -432,6 +432,16 @@ libpython$(VERSION).dylib: $(LIBRARY_OBJS)
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
 	$(LDSHARED) $(LDFLAGS) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST)
+
+# Copy up the gdb python hooks into a position where they can be automatically
+# loaded by gdb during Lib/test/test_gdb.py
+#
+# Distributors are likely to want to install this somewhere else e.g. relative
+# to the stripped DWARF data for the shared library.
+gdbhooks: $(BUILDPYTHON)-gdb.py
+
+$(BUILDPYTHON)-gdb.py: Tools/gdb/libpython.py
+	$(INSTALL_SCRIPT) $< $(BUILDPYTHON)-gdb.py
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current
@@ -1238,5 +1248,6 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean 
 .PHONY: smelly funny patchcheck
+.PHONY: gdbhooks
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
