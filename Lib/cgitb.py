@@ -99,8 +99,9 @@ def scanvars(reader, frame, locals):
         lasttoken = token
     return vars
 
-def html((etype, evalue, etb), context=5):
+def html(einfo, context=5):
     """Return a nice HTML document describing a given traceback."""
+    etype, evalue, etb = einfo
     if type(etype) is types.ClassType:
         etype = etype.__name__
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
@@ -189,8 +190,9 @@ function calls leading up to the error, in the order they occurred.</p>'''
 ''' % pydoc.html.escape(
           ''.join(traceback.format_exception(etype, evalue, etb)))
 
-def text((etype, evalue, etb), context=5):
+def text(einfo, context=5):
     """Return a plain text document describing a given traceback."""
+    etype, evalue, etb = einfo
     if type(etype) is types.ClassType:
         etype = etype.__name__
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
