@@ -14,6 +14,7 @@ platform
 pyconfig.h
 libpython*.a
 python.exe
+python-gdb.py
 reflog.txt
 tags
 TAGS
