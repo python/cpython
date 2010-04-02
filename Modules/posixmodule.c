@@ -4075,6 +4075,53 @@ posix_killpg(PyObject *self, PyObject *args)
 }
 #endif
 
+#ifdef MS_WINDOWS
+PyDoc_STRVAR(win32_kill__doc__,
+"kill(pid, sig)\n\n\
+Kill a process with a signal.");
+
+static PyObject *
+win32_kill(PyObject *self, PyObject *args)
+{
+	PyObject *result, handle_obj;
+	DWORD pid, sig, err;
+	HANDLE handle;
+
+	if (!PyArg_ParseTuple(args, "kk:kill", &pid, &sig))
+		return NULL;
+
+	/* Console processes which share a common console can be sent CTRL+C or
+	   CTRL+BREAK events, provided they handle said events. */
+	if (sig == CTRL_C_EVENT || sig == CTRL_BREAK_EVENT) {
+		if (GenerateConsoleCtrlEvent(sig, pid) == 0) {
+			err = GetLastError();
+			PyErr_SetFromWindowsErr(err);
+		}
+		else
+			Py_RETURN_NONE;
+	}
+
+	/* If the signal is outside of what GenerateConsoleCtrlEvent can use,
+	   attempt to open and terminate the process. */
+	handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+	if (handle == NULL) {
+		err = GetLastError();
+		return PyErr_SetFromWindowsErr(err);
+	}
+
+	if (TerminateProcess(handle, sig) == 0) {
+		err = GetLastError();
+		result = PyErr_SetFromWindowsErr(err);
+	} else {
+		Py_INCREF(Py_None);
+		result = Py_None;
+	}
+
+	CloseHandle(handle);
+	return result;
+}
+#endif /* MS_WINDOWS */
+
 #ifdef HAVE_PLOCK
 
 #ifdef HAVE_SYS_LOCK_H
@@ -8660,6 +8707,7 @@ static PyMethodDef posix_methods[] = {
 	{"popen3",	win32_popen3, METH_VARARGS},
 	{"popen4",	win32_popen4, METH_VARARGS},
 	{"startfile",	win32_startfile, METH_VARARGS, win32_startfile__doc__},
+	{"kill",    win32_kill, METH_VARARGS, win32_kill__doc__},
 #else
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 	{"popen2",	os2emx_popen2, METH_VARARGS},
