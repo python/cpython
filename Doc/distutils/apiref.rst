@@ -1926,19 +1926,6 @@ This is described in more detail in :pep:`301`.
 
 .. % todo
 
-:mod:`distutils.command.check` --- Check the meta-data of a package
-===================================================================
-
-.. module:: distutils.command.check
-   :synopsis: Check the metadata of a package
-
-
-The ``check`` command performs some tests on the meta-data of a package.
-For example, it verifies that all required meta-data are provided as
-the arguments passed to the :func:`setup` function.
-
-.. % todo
-
 
 Creating a new Distutils command
 ================================
