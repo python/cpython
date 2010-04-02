@@ -383,6 +383,14 @@ Available Context Managers
 
     .. note::
 
+        The :class:`catch_warnings` manager works by replacing and
+        then later restoring the module's
+        :func:`showwarning` function and internal list of filter
+        specifications.  This means the context manager is modifying
+        global state and therefore is not thread-safe.
+
+    .. note::
+
         In Python 3.0, the arguments to the constructor for
         :class:`catch_warnings` are keyword-only arguments.
 
