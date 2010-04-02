@@ -203,19 +203,32 @@ RobotTest(13, doc, good, bad, agent="googlebot")
 
 
 
-class TestCase(unittest.TestCase):
-    def runTest(self):
+class NetworkTestCase(unittest.TestCase):
+
+    def testPasswordProtectedSite(self):
         test_support.requires('network')
-        # whole site is password-protected.
+        # XXX it depends on an external resource which could be unavailable
         url = 'http://mueblesmoraleda.com'
         parser = robotparser.RobotFileParser()
         parser.set_url(url)
-        parser.read()
+        try:
+            parser.read()
+        except IOError:
+            self.skipTest('%s is unavailable' % url)
         self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)
+
+    def testPythonOrg(self):
+        test_support.requires('network')
+        parser = robotparser.RobotFileParser(
+            "http://www.python.org/robots.txt")
+        parser.read()
+        self.assertTrue(parser.can_fetch("*",
+                                         "http://www.python.org/robots.txt"))
+
 
 def test_main():
     test_support.run_unittest(tests)
-    TestCase().run()
+    test_support.run_unittest(NetworkTestCase)
 
 if __name__=='__main__':
     test_support.verbose = 1
