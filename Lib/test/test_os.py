@@ -7,6 +7,9 @@ import errno
 import unittest
 import warnings
 import sys
+import signal
+import subprocess
+import time
 from test import test_support
 
 warnings.filterwarnings("ignore", "tempnam", RuntimeWarning, __name__)
@@ -649,7 +652,6 @@ if sys.platform != 'win32':
             def test_setreuid_neg1(self):
                 # Needs to accept -1.  We run this in a subprocess to avoid
                 # altering the test runner's process state (issue8045).
-                import subprocess
                 subprocess.check_call([
                         sys.executable, '-c',
                         'import os,sys;os.setreuid(-1,-1);sys.exit(0)'])
@@ -664,13 +666,69 @@ if sys.platform != 'win32':
             def test_setregid_neg1(self):
                 # Needs to accept -1.  We run this in a subprocess to avoid
                 # altering the test runner's process state (issue8045).
-                import subprocess
                 subprocess.check_call([
                         sys.executable, '-c',
                         'import os,sys;os.setregid(-1,-1);sys.exit(0)'])
 else:
     class PosixUidGidTests(unittest.TestCase):
         pass
+
+@unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
+class Win32KillTests(unittest.TestCase):
+    def _kill(self, sig, *args):
+        # Send a subprocess a signal (or in some cases, just an int to be
+        # the return value)
+        proc = subprocess.Popen(*args)
+        os.kill(proc.pid, sig)
+        self.assertEqual(proc.wait(), sig)
+
+    def test_kill_sigterm(self):
+        # SIGTERM doesn't mean anything special, but make sure it works
+        self._kill(signal.SIGTERM, [sys.executable])
+
+    def test_kill_int(self):
+        # os.kill on Windows can take an int which gets set as the exit code
+        self._kill(100, [sys.executable])
+
+    def _kill_with_event(self, event, name):
+        # Run a script which has console control handling enabled.
+        proc = subprocess.Popen([sys.executable,
+                   os.path.join(os.path.dirname(__file__),
+                                "win_console_handler.py")],
+                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+        # Let the interpreter startup before we send signals. See #3137.
+        time.sleep(0.1)
+        os.kill(proc.pid, event)
+        # proc.send_signal(event) could also be done here.
+        # Allow time for the signal to be passed and the process to exit.
+        time.sleep(0.1)
+        if not proc.poll():
+            # Forcefully kill the process if we weren't able to signal it.
+            os.kill(proc.pid, signal.SIGINT)
+            self.fail("subprocess did not stop on {}".format(name))
+
+    @unittest.skip("subprocesses aren't inheriting CTRL+C property")
+    def test_CTRL_C_EVENT(self):
+        from ctypes import wintypes
+        import ctypes
+
+        # Make a NULL value by creating a pointer with no argument.
+        NULL = ctypes.POINTER(ctypes.c_int)()
+        SetConsoleCtrlHandler = ctypes.windll.kernel32.SetConsoleCtrlHandler
+        SetConsoleCtrlHandler.argtypes = (ctypes.POINTER(ctypes.c_int),
+                                          wintypes.BOOL)
+        SetConsoleCtrlHandler.restype = wintypes.BOOL
+
+        # Calling this with NULL and FALSE causes the calling process to
+        # handle CTRL+C, rather than ignore it. This property is inherited
+        # by subprocesses.
+        SetConsoleCtrlHandler(NULL, 0)
+
+        self._kill_with_event(signal.CTRL_C_EVENT, "CTRL_C_EVENT")
+
+    def test_CTRL_BREAK_EVENT(self):
+        self._kill_with_event(signal.CTRL_BREAK_EVENT, "CTRL_BREAK_EVENT")
+
 
 def test_main():
     test_support.run_unittest(
@@ -684,7 +742,8 @@ def test_main():
         URandomTests,
         Win32ErrorTests,
         TestInvalidFD,
-        PosixUidGidTests
+        PosixUidGidTests,
+        Win32KillTests
     )
 
 if __name__ == "__main__":

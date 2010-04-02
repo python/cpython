@@ -7,6 +7,7 @@
 #include "intrcheck.h"
 
 #ifdef MS_WINDOWS
+#include <Windows.h>
 #ifdef HAVE_PROCESS_H
 #include <process.h>
 #endif
@@ -791,6 +792,18 @@ initsignal(void)
          PyExc_IOError, NULL);
     if (ItimerError != NULL)
     	PyDict_SetItemString(d, "ItimerError", ItimerError);
+#endif
+
+#ifdef CTRL_C_EVENT
+    x = PyInt_FromLong(CTRL_C_EVENT);
+    PyDict_SetItemString(d, "CTRL_C_EVENT", x);
+    Py_DECREF(x);
+#endif
+
+#ifdef CTRL_BREAK_EVENT
+    x = PyInt_FromLong(CTRL_BREAK_EVENT);
+    PyDict_SetItemString(d, "CTRL_BREAK_EVENT", x);
+    Py_DECREF(x);
 #endif
 
         if (!PyErr_Occurred())
