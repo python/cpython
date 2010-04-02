@@ -72,11 +72,11 @@ class InternalFunctionsTest(unittest.TestCase):
             {'-option': '{one two} three'})
 
         # ignore an option
-        amount_opts = len(ttk._format_optdict(opts, ignore=(u'á'))) / 2
+        amount_opts = len(ttk._format_optdict(opts, ignore=(u'á'))) // 2
         self.assertEqual(amount_opts, len(opts) - 1)
 
         # ignore non-existing options
-        amount_opts = len(ttk._format_optdict(opts, ignore=(u'á', 'b'))) / 2
+        amount_opts = len(ttk._format_optdict(opts, ignore=(u'á', 'b'))) // 2
         self.assertEqual(amount_opts, len(opts) - 1)
 
         # ignore every option

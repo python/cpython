@@ -301,11 +301,11 @@ class BZ2FileTest(BaseTest):
             self.fail("__enter__ on a closed file didn't raise an exception")
         try:
             with BZ2File(self.filename, "wb") as f:
-                1/0
+                1 // 0
         except ZeroDivisionError:
             pass
         else:
-            self.fail("1/0 didn't raise an exception")
+            self.fail("1 // 0 didn't raise an exception")
 
     def testThreading(self):
         # Using a BZ2File from several threads doesn't deadlock (issue #7205).
