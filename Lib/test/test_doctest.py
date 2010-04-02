@@ -5,6 +5,7 @@ Test script for doctest.
 from test import support
 import doctest
 
+
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
 
