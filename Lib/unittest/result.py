@@ -1,6 +1,10 @@
 """Test result object"""
 
+import os
+import sys
 import traceback
+
+from cStringIO import StringIO
 
 from . import util
 from functools import wraps
@@ -14,6 +18,15 @@ def failfast(method):
             self.stop()
         return method(self, *args, **kw)
     return inner
+
+
+_std_out = sys.stdout
+_std_err = sys.stderr
+
+NEWLINE = os.linesep
+STDOUT_LINE = '%sStdout:%s%%s' % (NEWLINE, NEWLINE)
+STDERR_LINE = '%sStderr:%s%%s' % (NEWLINE, NEWLINE)
+
 
 class TestResult(object):
     """Holder for test result information.
@@ -37,6 +50,10 @@ class TestResult(object):
         self.expectedFailures = []
         self.unexpectedSuccesses = []
         self.shouldStop = False
+        self.buffer = False
+        self._stdout_buffer = StringIO()
+        self._stderr_buffer = StringIO()
+        self._mirrorOutput = False
 
     def printErrors(self):
         "Called by TestRunner after test run"
@@ -44,6 +61,10 @@ class TestResult(object):
     def startTest(self, test):
         "Called when the given test is about to be run"
         self.testsRun += 1
+        self._mirrorOutput = False
+        if self.buffer:
+            sys.stdout = self._stdout_buffer
+            sys.stderr = self._stderr_buffer
 
     def startTestRun(self):
         """Called once before any tests are executed.
@@ -53,6 +74,26 @@ class TestResult(object):
 
     def stopTest(self, test):
         """Called when the given test has been run"""
+        if self.buffer:
+            if self._mirrorOutput:
+                output = sys.stdout.getvalue()
+                error = sys.stderr.getvalue()
+                if output:
+                    if not output.endswith(NEWLINE):
+                        output += NEWLINE
+                    sys.__stdout__.write(STDOUT_LINE % output)
+                if error:
+                    if not error.endswith(NEWLINE):
+                        error += NEWLINE
+                    sys.__stderr__.write(STDERR_LINE % error)
+
+            sys.stdout = _std_out
+            sys.stderr = _std_err
+            self._stdout_buffer.seek(0)
+            self._stdout_buffer.truncate()
+            self._stderr_buffer.seek(0)
+            self._stderr_buffer.truncate()
+        self._mirrorOutput = False
 
     def stopTestRun(self):
         """Called once after all tests are executed.
@@ -66,12 +107,14 @@ class TestResult(object):
         returned by sys.exc_info().
         """
         self.errors.append((test, self._exc_info_to_string(err, test)))
+        self._mirrorOutput = True
 
     @failfast
     def addFailure(self, test, err):
         """Called when an error has occurred. 'err' is a tuple of values as
         returned by sys.exc_info()."""
         self.failures.append((test, self._exc_info_to_string(err, test)))
+        self._mirrorOutput = True
 
     def addSuccess(self, test):
         "Called when a test has completed successfully"
@@ -105,11 +148,27 @@ class TestResult(object):
         # Skip test runner traceback levels
         while tb and self._is_relevant_tb_level(tb):
             tb = tb.tb_next
+
         if exctype is test.failureException:
             # Skip assert*() traceback levels
             length = self._count_relevant_tb_levels(tb)
-            return ''.join(traceback.format_exception(exctype, value, tb, length))
-        return ''.join(traceback.format_exception(exctype, value, tb))
+            msgLines = traceback.format_exception(exctype, value, tb, length)
+        else:
+            msgLines = traceback.format_exception(exctype, value, tb)
+
+        if self.buffer:
+            output = sys.stdout.getvalue()
+            error = sys.stderr.getvalue()
+            if output:
+                if not output.endswith(NEWLINE):
+                    output += NEWLINE
+                msgLines.append(STDOUT_LINE % output)
+            if error:
+                if not error.endswith(NEWLINE):
+                    error += NEWLINE
+                msgLines.append(STDERR_LINE % error)
+        return ''.join(msgLines)
+
 
     def _is_relevant_tb_level(self, tb):
         return '__unittest' in tb.tb_frame.f_globals
