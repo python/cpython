@@ -184,7 +184,9 @@ C-API
   is now removed (the macro was introduced in 1997!).
 
 - Issue #7992: A replacement PyCObject API, PyCapsule, has been backported
-  from Python 3.1.
+  from Python 3.1.  All existing Python CObjects in the main distribution
+  have been converted to capsules.  To address backwards-compatibility
+  concerns, PyCObject_AsVoidPtr() was changed to understand capsules.
 
 Tests
 -----

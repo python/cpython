@@ -384,6 +384,7 @@ SRC.OBJECT=	$(addprefix $(TOP), \
 		Objects/bytes_methods.c \
 		Objects/cellobject.c \
 		Objects/classobject.c \
+		Objects/capsule.c \
 		Objects/cobject.c \
 		Objects/codeobject.c \
 		Objects/complexobject.c \

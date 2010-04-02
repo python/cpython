@@ -855,6 +855,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Include\pycapsule.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Include\pyctype.h"
 				>
 			</File>
@@ -1420,6 +1424,10 @@
 			</File>
 			<File
 				RelativePath="..\Objects\stringobject.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Objects\capsule.c"
 				>
 			</File>
 			<File
