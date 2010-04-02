@@ -845,8 +845,11 @@ class Decimal(object):
     # subject of what should happen for a comparison involving a NaN.
     # We take the following approach:
     #
-    #   == comparisons involving a NaN always return False
-    #   != comparisons involving a NaN always return True
+    #   == comparisons involving a quiet NaN always return False
+    #   != comparisons involving a quiet NaN always return True
+    #   == or != comparisons involving a signaling NaN signal
+    #      InvalidOperation, and return False or True as above if the
+    #      InvalidOperation is not trapped.
     #   <, >, <= and >= comparisons involving a (quiet or signaling)
     #      NaN signal InvalidOperation, and return False if the
     #      InvalidOperation is not trapped.
@@ -854,19 +857,19 @@ class Decimal(object):
     # This behavior is designed to conform as closely as possible to
     # that specified by IEEE 754.
 
-    def __eq__(self, other):
+    def __eq__(self, other, context=None):
         other = _convert_other(other, allow_float=True)
         if other is NotImplemented:
             return other
-        if self.is_nan() or other.is_nan():
+        if self._check_nans(other, context):
             return False
         return self._cmp(other) == 0
 
-    def __ne__(self, other):
+    def __ne__(self, other, context=None):
         other = _convert_other(other, allow_float=True)
         if other is NotImplemented:
             return other
-        if self.is_nan() or other.is_nan():
+        if self._check_nans(other, context):
             return True
         return self._cmp(other) != 0
 
