@@ -1,5 +1,6 @@
 import sys
-from cStringIO import StringIO
+import textwrap
+from cStringIO import StringIO, OutputType
 from test import test_support
 
 import unittest
@@ -301,6 +302,8 @@ def __init__(self, stream=None, descriptions=None, verbosity=None):
     self.errors = []
     self.testsRun = 0
     self.shouldStop = False
+    self.buffer = False
+
 classDict['__init__'] = __init__
 OldResult = type('OldResult', (object,), classDict)
 
@@ -355,6 +358,131 @@ class Test_OldTestResult(unittest.TestCase):
         # test result objects
         runner.run(Test('testFoo'))
 
+
+class TestOutputBuffering(unittest.TestCase):
+
+    def setUp(self):
+        self._real_out = sys.__stdout__
+        self._real_err = sys.__stderr__
+
+    def tearDown(self):
+        sys.stdout = sys.__stdout__ = self._real_out
+        sys.stderr = sys.__stderr__ = self._real_err
+
+    def testBufferOutputOff(self):
+        real_out = self._real_out
+        real_err = self._real_err
+
+        result = unittest.TestResult()
+        self.assertFalse(result.buffer)
+
+        self.assertIs(real_out, sys.stdout)
+        self.assertIs(real_err, sys.stderr)
+
+        result.startTest(self)
+
+        self.assertIs(real_out, sys.stdout)
+        self.assertIs(real_err, sys.stderr)
+
+    def testBufferOutputStartTestAddSuccess(self):
+        real_out = self._real_out
+        real_err = self._real_err
+
+        result = unittest.TestResult()
+        self.assertFalse(result.buffer)
+
+        result.buffer = True
+
+        self.assertIs(real_out, sys.stdout)
+        self.assertIs(real_err, sys.stderr)
+
+        result.startTest(self)
+
+        self.assertIsNot(real_out, sys.stdout)
+        self.assertIsNot(real_err, sys.stderr)
+        self.assertIsInstance(sys.stdout, OutputType)
+        self.assertIsInstance(sys.stderr, OutputType)
+        self.assertIsNot(sys.stdout, sys.stderr)
+
+        out_stream = sys.stdout
+        err_stream = sys.stderr
+
+        sys.__stdout__ = StringIO()
+        sys.__stderr__ = StringIO()
+
+        print 'foo'
+        print >> sys.stderr, 'bar'
+
+        self.assertEqual(out_stream.getvalue(), 'foo\n')
+        self.assertEqual(err_stream.getvalue(), 'bar\n')
+
+        self.assertEqual(sys.__stdout__.getvalue(), '')
+        self.assertEqual(sys.__stderr__.getvalue(), '')
+
+        result.addSuccess(self)
+        result.stopTest(self)
+
+        self.assertIs(real_out, sys.stdout)
+        self.assertIs(real_err, sys.stderr)
+
+        self.assertEqual(sys.__stdout__.getvalue(), '')
+        self.assertEqual(sys.__stderr__.getvalue(), '')
+
+        self.assertEqual(out_stream.getvalue(), '')
+        self.assertEqual(err_stream.getvalue(), '')
+
+
+    def getStartedResult(self):
+        result = unittest.TestResult()
+        result.buffer = True
+        result.startTest(self)
+        return result
+
+    def testBufferOutputAddErrorOrFailure(self):
+        def clear():
+            sys.__stdout__ = StringIO()
+            sys.__stderr__ = StringIO()
+
+        for message_attr, add_attr, include_error in [
+            ('errors', 'addError', True),
+            ('failures', 'addFailure', False),
+            ('errors', 'addError', True),
+            ('failures', 'addFailure', False)
+        ]:
+            clear()
+            result = self.getStartedResult()
+            buffered_out = sys.stdout
+            buffered_err = sys.stderr
+
+            print >> sys.stdout, 'foo'
+            if include_error:
+                print >> sys.stderr, 'bar'
+
+
+            addFunction = getattr(result, add_attr)
+            addFunction(self, (None, None, None))
+            result.stopTest(self)
+
+            result_list = getattr(result, message_attr)
+            self.assertEqual(len(result_list), 1)
+
+            test, message = result_list[0]
+            expectedOutMessage = textwrap.dedent("""
+                Stdout:
+                foo
+            """)
+            expectedErrMessage = ''
+            if include_error:
+                expectedErrMessage = textwrap.dedent("""
+                Stderr:
+                bar
+            """)
+            expectedFullMessage = 'None\n%s%s' % (expectedOutMessage, expectedErrMessage)
+
+            self.assertIs(test, self)
+            self.assertEqual(sys.__stdout__.getvalue(), expectedOutMessage)
+            self.assertEqual(sys.__stderr__.getvalue(), expectedErrMessage)
+            self.assertMultiLineEqual(message, expectedFullMessage)
 
 if __name__ == '__main__':
     unittest.main()
