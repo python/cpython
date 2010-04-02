@@ -1009,6 +1009,9 @@ are always available.  They are listed here in alphabetical order.
    `CmpToKey recipe in the ASPN cookbook
    <http://code.activestate.com/recipes/576653/>`_\.
 
+   For sorting examples and a brief sorting tutorial, see `Sorting HowTo
+   <http://wiki.python.org/moin/HowTo/Sorting/>`_\.
+
 .. function:: staticmethod(function)
 
    Return a static method for *function*.
