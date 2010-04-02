@@ -3414,31 +3414,54 @@ object_format(PyObject *self, PyObject *args)
         PyObject *self_as_str = NULL;
         PyObject *result = NULL;
         PyObject *format_meth = NULL;
+        Py_ssize_t format_len;
 
         if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
                 return NULL;
 #ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(format_spec)) {
+	        format_len = PyUnicode_GET_SIZE(format_spec);
 	        self_as_str = PyObject_Unicode(self);
 	} else if (PyString_Check(format_spec)) {
 #else
         if (PyString_Check(format_spec)) {
 #endif
+	        format_len = PyString_GET_SIZE(format_spec);
 	        self_as_str = PyObject_Str(self);
 	} else {
-	        PyErr_SetString(PyExc_TypeError, "argument to __format__ must be unicode or str");
+	        PyErr_SetString(PyExc_TypeError,
+                         "argument to __format__ must be unicode or str");
 	        return NULL;
 	}
 
         if (self_as_str != NULL) {
+                /* Issue 7994: If we're converting to a string, we
+                   should reject format specifications */
+                if (format_len > 0) {
+                    if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+                         "object.__format__ with a non-empty format "
+                         "string is deprecated", 1) < 0) {
+                            goto done;
+                    }
+                    /* Eventually this will become an error:
+                    PyErr_Format(PyExc_TypeError,
+                       "non-empty format string passed to object.__format__");
+                    goto done;
+                    */
+                }
+
                 /* find the format function */
-                format_meth = PyObject_GetAttrString(self_as_str, "__format__");
+                format_meth = PyObject_GetAttrString(self_as_str,
+                                                     "__format__");
                 if (format_meth != NULL) {
                        /* and call it */
-                        result = PyObject_CallFunctionObjArgs(format_meth, format_spec, NULL);
+                        result = PyObject_CallFunctionObjArgs(format_meth,
+                                                              format_spec,
+                                                              NULL);
                 }
         }
 
+done:
         Py_XDECREF(self_as_str);
         Py_XDECREF(format_meth);
 

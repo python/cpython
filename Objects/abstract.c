@@ -777,8 +777,9 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
 							      NULL);
 			Py_DECREF(bound_method);
 		} else {
-			PyObject *self_as_str;
-			PyObject *format_method;
+			PyObject *self_as_str = NULL;
+			PyObject *format_method = NULL;
+			Py_ssize_t format_len;
 
 			PyErr_Clear();
 			/* Per the PEP, convert to str (or unicode,
@@ -786,29 +787,53 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
 			   specifier).  For new-style classes, this
 			   logic is done by object.__format__(). */
 #ifdef Py_USING_UNICODE
-			if (spec_is_unicode)
+			if (spec_is_unicode) {
+				format_len = PyUnicode_GET_SIZE(format_spec);
 				self_as_str = PyObject_Unicode(obj);
-			else
+			} else
 #endif
+			{
+				format_len = PyString_GET_SIZE(format_spec);
 				self_as_str = PyObject_Str(obj);
+			}
 			if (self_as_str == NULL)
-				goto done;
+				goto done1;
+
+			if (format_len > 0) {
+				/* See the almost identical code in
+				   typeobject.c for new-style
+				   classes. */
+				if (PyErr_WarnEx(
+					PyExc_PendingDeprecationWarning,
+					"object.__format__ with a non-empty "
+					"format string is deprecated", 1)
+				     < 0) {
+					goto done1;
+				}
+				/* Eventually this will become an
+				   error:
+				PyErr_Format(PyExc_TypeError,
+				   "non-empty format string passed to "
+				   "object.__format__");
+				goto done1;
+				*/
+			}
 
 			/* Then call str.__format__ on that result */
 			format_method = PyObject_GetAttr(self_as_str,
 							 str__format__);
 			if (format_method == NULL) {
-				Py_DECREF(self_as_str);
-				goto done;
+				goto done1;
 			}
-                        result = PyObject_CallFunctionObjArgs(format_method,
+			result = PyObject_CallFunctionObjArgs(format_method,
 							      format_spec,
 							      NULL);
-			Py_DECREF(self_as_str);
-			Py_DECREF(format_method);
+done1:
+			Py_XDECREF(self_as_str);
+			Py_XDECREF(format_method);
 			if (result == NULL)
 				goto done;
-                }
+		}
 	} else {
 		/* Not an instance of a classic class, use the code
 		   from py3k */
