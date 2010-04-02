@@ -308,7 +308,7 @@ Decimal objects
 
    Construct a new :class:`Decimal` object based from *value*.
 
-   *value* can be an integer, string, tuple, or another :class:`Decimal`
+   *value* can be an integer, string, tuple, :class:`float`, or another :class:`Decimal`
    object. If no *value* is given, returns ``Decimal('0')``.  If *value* is a
    string, it should conform to the decimal numeric string syntax after leading
    and trailing whitespace characters are removed::
@@ -333,6 +333,11 @@ Decimal objects
    (:const:`0` for positive or :const:`1` for negative), a :class:`tuple` of
    digits, and an integer exponent. For example, ``Decimal((0, (1, 4, 1, 4), -3))``
    returns ``Decimal('1.414')``.
+
+   If *value* is a :class:`float`, the binary floating point value is losslessly
+   converted to its exact decimal equivalent.  This conversion can often require
+   upto 53 digits of precision.  For example, ``Decimal(float('1.1'))`` converts
+   to ``Decimal('1.100000000000000088817841970012523233890533447265625')``.
 
    The *context* precision does not affect how many digits are stored. That is
    determined exclusively by the number of digits in *value*. For example,
@@ -1824,35 +1829,13 @@ value unchanged:
 Q. Is there a way to convert a regular float to a :class:`Decimal`?
 
 A. Yes, all binary floating point numbers can be exactly expressed as a
-Decimal.  An exact conversion may take more precision than intuition would
-suggest, so we trap :const:`Inexact` to signal a need for more precision:
-
-.. testcode::
-
-    def float_to_decimal(f):
-        "Convert a floating point number to a Decimal with no loss of information"
-        n, d = f.as_integer_ratio()
-        with localcontext() as ctx:
-            ctx.traps[Inexact] = True
-            while True:
-                try:
-                   return Decimal(n) / Decimal(d)
-                except Inexact:
-                    ctx.prec += 1
+Decimal though an exact conversion may take more precision than intuition would
+suggest:
 
 .. doctest::
 
-    >>> float_to_decimal(math.pi)
+    >>> Decimal(math.pi)
     Decimal('3.141592653589793115997963468544185161590576171875')
-
-Q. Why isn't the :func:`float_to_decimal` routine included in the module?
-
-A. There is some question about whether it is advisable to mix binary and
-decimal floating point.  Also, its use requires some care to avoid the
-representation issues associated with binary floating point:
-
-   >>> float_to_decimal(1.1)
-   Decimal('1.100000000000000088817841970012523233890533447265625')
 
 Q. Within a complex calculation, how can I make sure that I haven't gotten a
 spurious result because of insufficient precision or rounding anomalies.
