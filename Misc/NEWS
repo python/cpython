@@ -153,6 +153,9 @@ Library
 - Addition of -b command line option to unittest for buffering stdout / stderr
   during test runs.
 
+- Issue #1220212: Added os.kill support for Windows, including support for 
+  sending CTRL+C and CTRL+BREAK events to console subprocesses.
+
 Extension Modules
 -----------------
 
