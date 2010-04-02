@@ -134,6 +134,9 @@ Library
   This is a behavior change, so email's minor version number is now bumped, to
   version 4.0.2, for the 2.7 release.
 
+- Issue #8235: _socket: Add the constant ``SO_SETFIB``.  SO_SETFIB is
+  a socket option available on FreeBSD 7.1 and newer.
+
 Extension Modules
 -----------------
 
