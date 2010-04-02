@@ -952,6 +952,18 @@ class TestCase(object):
             msg = '%s: %r not found in %r' % (msg, expected_regexp.pattern, text)
             raise self.failureException(msg)
 
+    def assertNotRegexpMatches(self, text, unexpected_regexp, msg=None):
+        if isinstance(unexpected_regexp, basestring):
+            unexpected_regexp = re.compile(unexpected_regexp)
+        match = unexpected_regexp.search(text)
+        if match:
+            msg = msg or "Regexp matched"
+            msg = '%s: %r matches %r in %r' % (msg,
+                                               text[match.start():match.end()],
+                                               unexpected_regexp.pattern,
+                                               text)
+            raise self.failureException(msg)
+
 
 class FunctionTestCase(TestCase):
     """A test case that wraps a test function.

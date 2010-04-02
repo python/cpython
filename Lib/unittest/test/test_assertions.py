@@ -91,6 +91,16 @@ class Test_Assertions(unittest.TestCase):
         else:
             self.fail("assertRaises() didn't let exception pass through")
 
+    def testAssertNotRegexpMatches(self):
+        self.assertNotRegexpMatches('Ala ma kota', r'r+')
+        try:
+            self.assertNotRegexpMatches('Ala ma kota', r'k.t', 'Message')
+        except self.failureException, e:
+            self.assertIn("'kot'", e.args[0])
+            self.assertIn('Message', e.args[0])
+        else:
+            self.fail('assertNotRegexpMatches should have failed.')
+
 
 class TestLongMessage(unittest.TestCase):
     """Test that the individual asserts honour longMessage.
