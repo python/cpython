@@ -372,14 +372,6 @@ class HexFloatTestCase(unittest.TestCase):
                 return
         elif x == y and (x != 0.0 or copysign(1.0, x) == copysign(1.0, y)):
             return
-        # temporary debugging code for issue 8265
-        print("\n  MIN = {0!r}\n"
-              "  TINY = {1!r}\n"
-              "  3*TINY = {2!r}\n"
-              "  MIN - 3*TINY = {3!r}\n"
-              "  ldexp(1.0, -1074) = {4!r}\n".format(
-                self.MIN, self.TINY, 3*self.TINY,
-                self.MIN - 3*self.TINY, ldexp(1.0, -1074)))
         self.fail('%r not identical to %r' % (x, y))
 
     def test_ends(self):
@@ -662,7 +654,7 @@ class HexFloatTestCase(unittest.TestCase):
         self.identical(fromHex('-0X8p-1076'), -2*TINY)
         self.identical(fromHex('-0X9p-1076'), -2*TINY)
         self.identical(fromHex('-0Xap-1076'), -2*TINY)
-        self.identical(fromHex('-0xbp-1076'), -3*TINY)
+        self.identical(fromHex('-0xbp-1076'), -4*TINY)
         self.identical(fromHex('-0xcp-1076'), -3*TINY)
         self.identical(fromHex('-0Xdp-1076'), -3*TINY)
         self.identical(fromHex('-0xep-1076'), -4*TINY)
