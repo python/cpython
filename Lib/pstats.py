@@ -636,7 +636,7 @@ if __name__ == '__main__':
 
         def do_sort(self, line):
             abbrevs = self.stats.get_sort_arg_defs()
-            if line and not filter(lambda x,a=abbrevs: x not in a,line.split()):
+            if line and all((x in abbrevs) for x in line.split()):
                 self.stats.sort_stats(*line.split())
             else:
                 print("Valid sort keys (unique prefixes are accepted):", file=self.stream)
