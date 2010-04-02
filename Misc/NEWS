@@ -148,6 +148,11 @@ Library
 - Issue #8235: _socket: Add the constant ``SO_SETFIB``.  SO_SETFIB is
   a socket option available on FreeBSD 7.1 and newer.
 
+- Issue #8038: unittest.TestCase.assertNotRegexpMatches
+
+- Addition of -b command line option to unittest for buffering stdout / stderr
+  during test runs.
+
 Extension Modules
 -----------------
 
