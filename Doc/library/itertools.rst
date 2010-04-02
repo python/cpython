@@ -703,7 +703,8 @@ which incur interpreter overhead.
        return sum(imap(operator.mul, vec1, vec2))
 
    def flatten(listOfLists):
-       return list(chain.from_iterable(listOfLists))
+       "Flatten one level of nesting"
+       return chain.from_iterable(listOfLists)
 
    def repeatfunc(func, times=None, *args):
        """Repeat calls to func with specified arguments.
@@ -789,6 +790,27 @@ which incur interpreter overhead.
                yield func()
        except exception:
            pass
+
+   def random_product(*args, **kwds):
+       "Random selection from itertools.product(*args, **kwds)"
+       pools = map(tuple, args) * kwds.get('repeat', 1)
+       return map(random.choice, pools)
+
+   def random_permuation(iterable, r=None):
+       "Random selection from itertools.permutations(iterable, r)"
+       pool = list(iterable)
+       r = len(pool) if r is None else r
+       return random.sample(pool, r)
+
+   def random_combination(iterable, r):
+       "Random selection from itertools.combinations(iterable, r)"
+       pool = list(iterable)
+       return sorted(random.sample(pool, r), key=pool.index)
+
+   def random_combination_with_replacement(iterable, r):
+       "Random selection from itertools.combinations_with_replacement(iterable, r)"
+       pool = list(iterable)
+       return sorted(imap(random.choice, [pool]*r), key=pool.index)
 
 Note, many of the above recipes can be optimized by replacing global lookups
 with local variables defined as default values.  For example, the
