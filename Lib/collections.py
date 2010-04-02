@@ -233,6 +233,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
         __slots__ = () \n
         _fields = %(field_names)r \n
         def __new__(_cls, %(argtxt)s):
+            'Create new instance of %(typename)s(%(argtxt)s)'
             return _tuple.__new__(_cls, (%(argtxt)s)) \n
         @classmethod
         def _make(cls, iterable, new=tuple.__new__, len=len):
@@ -242,6 +243,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
                 raise TypeError('Expected %(numfields)d arguments, got %%d' %% len(result))
             return result \n
         def __repr__(self):
+            'Return a nicely formatted representation string'
             return '%(typename)s(%(reprtxt)s)' %% self \n
         def _asdict(self):
             'Return a new OrderedDict which maps field names to their values'
@@ -253,9 +255,10 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
                 raise ValueError('Got unexpected field names: %%r' %% kwds.keys())
             return result \n
         def __getnewargs__(self):
+            'Return self as a plain tuple.  Used by copy and pickle.'
             return tuple(self) \n\n''' % locals()
     for i, name in enumerate(field_names):
-        template += '        %s = _property(_itemgetter(%d))\n' % (name, i)
+        template += "        %s = _property(_itemgetter(%d), doc='Alias for field number %d')\n" % (name, i, i)
     if verbose:
         print(template)
 

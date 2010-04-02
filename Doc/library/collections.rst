@@ -653,6 +653,7 @@ Example:
            _fields = ('x', 'y')
    <BLANKLINE>
            def __new__(_cls, x, y):
+               'Create a new instance of Point(x, y)'
                return _tuple.__new__(_cls, (x, y))
    <BLANKLINE>
            @classmethod
@@ -664,6 +665,7 @@ Example:
                return result
    <BLANKLINE>
            def __repr__(self):
+               'Return a nicely formatted representation string'
                return 'Point(x=%r, y=%r)' % self
    <BLANKLINE>
            def _asdict(self):
@@ -678,10 +680,11 @@ Example:
                return result
    <BLANKLINE>
            def __getnewargs__(self):
+               'Return self as a plain tuple.   Used by copy and pickle.'
                return tuple(self)
    <BLANKLINE>
-           x = _property(_itemgetter(0))
-           y = _property(_itemgetter(1))
+           x = _property(_itemgetter(0), doc='Alias for field number 0')
+           y = _property(_itemgetter(1), doc='Alias for field number 1')
 
    >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
    >>> p[0] + p[1]             # indexable like the plain tuple (11, 22)
