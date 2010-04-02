@@ -4779,6 +4779,9 @@ init_socket(void)
 #ifdef	SO_TYPE
 	PyModule_AddIntConstant(m, "SO_TYPE", SO_TYPE);
 #endif
+#ifdef SO_SETFIB
+    PyModule_AddIntConstant(m, "SO_SETFIB", SO_SETFIB);
+#endif
 
 	/* Maximum number of connections for "listen" */
 #ifdef	SOMAXCONN
