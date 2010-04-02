@@ -855,7 +855,7 @@ class Decimal(object):
     # that specified by IEEE 754.
 
     def __eq__(self, other):
-        other = _convert_other(other)
+        other = _convert_other(other, allow_float=True)
         if other is NotImplemented:
             return other
         if self.is_nan() or other.is_nan():
@@ -863,7 +863,7 @@ class Decimal(object):
         return self._cmp(other) == 0
 
     def __ne__(self, other):
-        other = _convert_other(other)
+        other = _convert_other(other, allow_float=True)
         if other is NotImplemented:
             return other
         if self.is_nan() or other.is_nan():
@@ -871,7 +871,7 @@ class Decimal(object):
         return self._cmp(other) != 0
 
     def __lt__(self, other, context=None):
-        other = _convert_other(other)
+        other = _convert_other(other, allow_float=True)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -880,7 +880,7 @@ class Decimal(object):
         return self._cmp(other) < 0
 
     def __le__(self, other, context=None):
-        other = _convert_other(other)
+        other = _convert_other(other, allow_float=True)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -889,7 +889,7 @@ class Decimal(object):
         return self._cmp(other) <= 0
 
     def __gt__(self, other, context=None):
-        other = _convert_other(other)
+        other = _convert_other(other, allow_float=True)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -898,7 +898,7 @@ class Decimal(object):
         return self._cmp(other) > 0
 
     def __ge__(self, other, context=None):
-        other = _convert_other(other)
+        other = _convert_other(other, allow_float=True)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -932,12 +932,18 @@ class Decimal(object):
         # The hash of a nonspecial noninteger Decimal must depend only
         # on the value of that Decimal, and not on its representation.
         # For example: hash(Decimal('100E-1')) == hash(Decimal('10')).
-        if self._is_special:
-            if self._isnan():
-                raise TypeError('Cannot hash a NaN value.')
-            return hash(str(self))
-        if not self:
-            return 0
+        if self._is_special and self._isnan():
+            raise TypeError('Cannot hash a NaN value.')
+
+        # In Python 2.7, we're allowing comparisons (but not
+        # arithmetic operations) between floats and Decimals;  so if
+        # a Decimal instance is exactly representable as a float then
+        # its hash should match that of the float.  Note that this takes care
+        # of zeros and infinities, as well as small integers.
+        self_as_float = float(self)
+        if Decimal.from_float(self_as_float) == self:
+            return hash(self_as_float)
+
         if self._isinteger():
             op = _WorkRep(self.to_integral_value())
             # to make computation feasible for Decimals with large
@@ -5695,15 +5701,21 @@ def _log10_lb(c, correction = {
 
 ##### Helper Functions ####################################################
 
-def _convert_other(other, raiseit=False):
+def _convert_other(other, raiseit=False, allow_float=False):
     """Convert other to Decimal.
 
     Verifies that it's ok to use in an implicit construction.
+    If allow_float is true, allow conversion from float;  this
+    is used in the comparison methods (__eq__ and friends).
+
     """
     if isinstance(other, Decimal):
         return other
     if isinstance(other, (int, long)):
         return Decimal(other)
+    if allow_float and isinstance(other, float):
+        return Decimal.from_float(other)
+
     if raiseit:
         raise TypeError("Unable to convert %s to Decimal" % other)
     return NotImplemented

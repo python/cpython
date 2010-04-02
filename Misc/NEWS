@@ -35,6 +35,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #2531: Comparison operations between floats and Decimal
+  instances now return a result based on the numeric values of the
+  operands;  previously they returned an arbitrary result based on
+  the relative ordering of id(float) and id(Decimal).
+
 - Issue #8233: When run as a script, py_compile.py optionally takes a single
   argument `-` which tells it to read files to compile from stdin.  Each line
   is read on demand and the named file is compiled immediately.  (Original
