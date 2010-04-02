@@ -395,7 +395,8 @@ PyString_FromFormatV(const char *format, va_list vargs)
 	}
 
  end:
-	_PyString_Resize(&string, s - PyString_AS_STRING(string));
+	if (_PyString_Resize(&string, s - PyString_AS_STRING(string)))
+		return NULL;
 	return string;
 }
 
@@ -747,8 +748,8 @@ PyObject *PyString_DecodeEscape(const char *s,
 					 UTF-8 bytes may follow. */
 		}
 	}
-	if (p-buf < newlen)
-		_PyString_Resize(&v, p - buf);
+	if (p-buf < newlen && _PyString_Resize(&v, p - buf))
+		goto failed;
 	return v;
   failed:
 	Py_DECREF(v);
@@ -977,8 +978,8 @@ PyString_Repr(PyObject *obj, int smartquotes)
 		assert(newsize - (p - PyString_AS_STRING(v)) >= 1);
 		*p++ = quote;
 		*p = '\0';
-		_PyString_Resize(
-			&v, (p - PyString_AS_STRING(v)));
+		if (_PyString_Resize(&v, (p - PyString_AS_STRING(v))))
+			return NULL;
 		return v;
 	}
 }
@@ -2301,8 +2302,8 @@ string_translate(PyStringObject *self, PyObject *args)
 		return input_obj;
 	}
 	/* Fix the size of the resulting string */
-	if (inlen > 0)
-		_PyString_Resize(&result, output - output_start);
+	if (inlen > 0 && _PyString_Resize(&result, output - output_start))
+		return NULL;
 	return result;
 }
 
@@ -4254,7 +4255,7 @@ PyString_Format(PyObject *format, PyObject *args)
 			if (--rescnt < 0) {
 				rescnt = fmtcnt + 100;
 				reslen += rescnt;
-				if (_PyString_Resize(&result, reslen) < 0)
+				if (_PyString_Resize(&result, reslen))
 					return NULL;
 				res = PyString_AS_STRING(result)
 					+ reslen - rescnt;
@@ -4581,7 +4582,7 @@ PyString_Format(PyObject *format, PyObject *args)
 					Py_XDECREF(temp);
 					return PyErr_NoMemory();
 				}
-				if (_PyString_Resize(&result, reslen) < 0) {
+				if (_PyString_Resize(&result, reslen)) {
 					Py_XDECREF(temp);
 					return NULL;
 				}
@@ -4649,7 +4650,8 @@ PyString_Format(PyObject *format, PyObject *args)
 	if (args_owned) {
 		Py_DECREF(args);
 	}
-	_PyString_Resize(&result, reslen - rescnt);
+	if (_PyString_Resize(&result, reslen - rescnt))
+		return NULL;
 	return result;
 
 #ifdef Py_USING_UNICODE
