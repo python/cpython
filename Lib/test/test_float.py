@@ -654,7 +654,7 @@ class HexFloatTestCase(unittest.TestCase):
         self.identical(fromHex('-0X8p-1076'), -2*TINY)
         self.identical(fromHex('-0X9p-1076'), -2*TINY)
         self.identical(fromHex('-0Xap-1076'), -2*TINY)
-        self.identical(fromHex('-0xbp-1076'), -4*TINY)
+        self.identical(fromHex('-0xbp-1076'), -3*TINY)
         self.identical(fromHex('-0xcp-1076'), -3*TINY)
         self.identical(fromHex('-0Xdp-1076'), -3*TINY)
         self.identical(fromHex('-0xep-1076'), -4*TINY)
