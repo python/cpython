@@ -935,14 +935,30 @@ class Decimal(object):
         # The hash of a nonspecial noninteger Decimal must depend only
         # on the value of that Decimal, and not on its representation.
         # For example: hash(Decimal('100E-1')) == hash(Decimal('10')).
-        if self._is_special and self._isnan():
-            raise TypeError('Cannot hash a NaN value.')
+
+        # Equality comparisons involving signaling nans can raise an
+        # exception; since equality checks are implicitly and
+        # unpredictably used when checking set and dict membership, we
+        # prevent signaling nans from being used as set elements or
+        # dict keys by making __hash__ raise an exception.
+        if self._is_special:
+            if self.is_snan():
+                raise TypeError('Cannot hash a signaling NaN value.')
+            elif self.is_nan():
+                # 0 to match hash(float('nan'))
+                return 0
+            else:
+                # values chosen to match hash(float('inf')) and
+                # hash(float('-inf')).
+                if self._sign:
+                    return -271828
+                else:
+                    return 314159
 
         # In Python 2.7, we're allowing comparisons (but not
         # arithmetic operations) between floats and Decimals;  so if
         # a Decimal instance is exactly representable as a float then
-        # its hash should match that of the float.  Note that this takes care
-        # of zeros and infinities, as well as small integers.
+        # its hash should match that of the float.
         self_as_float = float(self)
         if Decimal.from_float(self_as_float) == self:
             return hash(self_as_float)

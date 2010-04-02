@@ -1274,6 +1274,10 @@ class DecimalUsabilityTest(unittest.TestCase):
     def test_hash_method(self):
         #just that it's hashable
         hash(Decimal(23))
+        hash(Decimal('Infinity'))
+        hash(Decimal('-Infinity'))
+        hash(Decimal('nan123'))
+        hash(Decimal('-NaN'))
 
         test_values = [Decimal(sign*(2**m + n))
                        for m in [0, 14, 15, 16, 17, 30, 31,
@@ -1308,7 +1312,7 @@ class DecimalUsabilityTest(unittest.TestCase):
 
         #the same hash that to an int
         self.assertEqual(hash(Decimal(23)), hash(23))
-        self.assertRaises(TypeError, hash, Decimal('NaN'))
+        self.assertRaises(TypeError, hash, Decimal('sNaN'))
         self.assertTrue(hash(Decimal('Inf')))
         self.assertTrue(hash(Decimal('-Inf')))
 
