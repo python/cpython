@@ -53,6 +53,8 @@ class TestResult(object):
         self.buffer = False
         self._stdout_buffer = StringIO()
         self._stderr_buffer = StringIO()
+        self._original_stdout = sys.stdout
+        self._original_stderr = sys.stderr
         self._mirrorOutput = False
 
     def printErrors(self):
@@ -81,11 +83,11 @@ class TestResult(object):
                 if output:
                     if not output.endswith(NEWLINE):
                         output += NEWLINE
-                    sys.__stdout__.write(STDOUT_LINE % output)
+                    self._original_stdout.write(STDOUT_LINE % output)
                 if error:
                     if not error.endswith(NEWLINE):
                         error += NEWLINE
-                    sys.__stderr__.write(STDERR_LINE % error)
+                    self._original_stderr.write(STDERR_LINE % error)
 
             sys.stdout = _std_out
             sys.stderr = _std_err
