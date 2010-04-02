@@ -9,10 +9,22 @@
 typedef void (*destructor1)(void *);
 typedef void (*destructor2)(void *, void*);
 
+static int cobject_deprecation_warning(void)
+{
+    return PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+        "The CObject type is marked Pending Deprecation in Python 2.7.  "
+        "Please use capsule objects instead.", 1);
+}
+
+
 PyObject *
 PyCObject_FromVoidPtr(void *cobj, void (*destr)(void *))
 {
     PyCObject *self;
+
+    if (cobject_deprecation_warning()) {
+        return NULL;
+    }
 
     self = PyObject_NEW(PyCObject, &PyCObject_Type);
     if (self == NULL)
@@ -29,6 +41,10 @@ PyCObject_FromVoidPtrAndDesc(void *cobj, void *desc,
                              void (*destr)(void *, void *))
 {
     PyCObject *self;
+
+    if (cobject_deprecation_warning()) {
+        return NULL;
+    }
 
     if (!desc) {
         PyErr_SetString(PyExc_TypeError,
@@ -50,6 +66,10 @@ void *
 PyCObject_AsVoidPtr(PyObject *self)
 {
     if (self) {
+        if (PyCapsule_CheckExact(self)) {
+            const char *name = PyCapsule_GetName(self);
+            return (void *)PyCapsule_GetPointer(self, name);
+        }
         if (self->ob_type == &PyCObject_Type)
             return ((PyCObject *)self)->cobject;
         PyErr_SetString(PyExc_TypeError,
