@@ -1,6 +1,7 @@
 from Tkinter import *
-import SearchEngine
-from SearchDialogBase import SearchDialogBase
+
+from idlelib import SearchEngine
+from idlelib.SearchDialogBase import SearchDialogBase
 
 def replace(text):
     root = text._root()

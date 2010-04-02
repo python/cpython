@@ -7,13 +7,13 @@ import thread
 import threading
 import Queue
 
-import CallTips
-import AutoComplete
+from idlelib import CallTips
+from idlelib import AutoComplete
 
-import RemoteDebugger
-import RemoteObjectBrowser
-import StackViewer
-import rpc
+from idlelib import RemoteDebugger
+from idlelib import RemoteObjectBrowser
+from idlelib import StackViewer
+from idlelib import rpc
 
 import __main__
 
@@ -122,7 +122,7 @@ def manage_socket(address):
             break
         except socket.error, err:
             print>>sys.__stderr__,"IDLE Subprocess: socket error: "\
-                                        + err[1] + ", retrying...."
+                                        + err.args[1] + ", retrying...."
     else:
         print>>sys.__stderr__, "IDLE Subprocess: Connection to "\
                                "IDLE GUI failed, exiting."
@@ -137,14 +137,15 @@ def show_socket_error(err, address):
     import tkMessageBox
     root = Tkinter.Tk()
     root.withdraw()
-    if err[0] == 61: # connection refused
+    if err.args[0] == 61: # connection refused
         msg = "IDLE's subprocess can't connect to %s:%d.  This may be due "\
               "to your personal firewall configuration.  It is safe to "\
               "allow this internal connection because no data is visible on "\
               "external ports." % address
         tkMessageBox.showerror("IDLE Subprocess Error", msg, parent=root)
     else:
-        tkMessageBox.showerror("IDLE Subprocess Error", "Socket Error: %s" % err[1])
+        tkMessageBox.showerror("IDLE Subprocess Error",
+                               "Socket Error: %s" % err.args[1])
     root.destroy()
 
 def print_exception():
@@ -257,7 +258,7 @@ class MyHandler(rpc.RPCHandler):
         sys.stdin = self.console = self.get_remote_proxy("stdin")
         sys.stdout = self.get_remote_proxy("stdout")
         sys.stderr = self.get_remote_proxy("stderr")
-        import IOBinding
+        from idlelib import IOBinding
         sys.stdin.encoding = sys.stdout.encoding = \
                              sys.stderr.encoding = IOBinding.encoding
         self.interp = self.get_remote_proxy("interp")

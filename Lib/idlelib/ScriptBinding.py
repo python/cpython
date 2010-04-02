@@ -23,9 +23,9 @@ import string
 import tabnanny
 import tokenize
 import tkMessageBox
-import PyShell
+from idlelib import PyShell
 
-from configHandler import idleConf
+from idlelib.configHandler import idleConf
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
 
