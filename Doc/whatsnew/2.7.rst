@@ -836,7 +836,7 @@ changes, or look through the Subversion logs for all the details.
 
   The :mod:`site` module now reports exceptions occurring
   when the :mod:`sitecustomize` module is imported, and will no longer
-  catch and swallow the :exc:`KeyboardError` exception.  (Fixed by
+  catch and swallow the :exc:`KeyboardInterrupt` exception.  (Fixed by
   Victor Stinner; :issue:`3137`.)
 
 * The :mod:`socket` module's :class:`SSL` objects now support the

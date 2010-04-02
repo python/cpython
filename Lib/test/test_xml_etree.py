@@ -12,6 +12,7 @@
 # except if the test is specific to the Python implementation.
 
 import sys
+import cgi
 
 from test import support
 from test.support import findfile
@@ -1305,7 +1306,7 @@ XINCLUDE["default.xml"] = """\
   <p>Example.</p>
   <xi:include href="{}"/>
 </document>
-""".format(SIMPLE_XMLFILE)
+""".format(cgi.escape(SIMPLE_XMLFILE, True))
 
 def xinclude_loader(href, parse="xml", encoding=None):
     try:
@@ -1808,6 +1809,23 @@ def check_issue6565():
 
 class CleanContext(object):
     """Provide default namespace mapping and path cache."""
+    checkwarnings = None
+
+    def __init__(self, quiet=False):
+        deprecations = (
+            # Search behaviour is broken if search path starts with "/".
+            ("This search is broken in 1.3 and earlier, and will be fixed "
+             "in a future version.  If you rely on the current behaviour, "
+             "change it to '.+'", FutureWarning),
+            # Element.getchildren() and Element.getiterator() are deprecated.
+            ("This method will be removed in future versions.  "
+             "Use .+ instead.", DeprecationWarning),
+            ("This method will be removed in future versions.  "
+             "Use .+ instead.", PendingDeprecationWarning),
+            # XMLParser.doctype() is deprecated.
+            ("This method of XMLParser is deprecated.  Define doctype.. "
+             "method on the TreeBuilder target.", DeprecationWarning))
+        self.checkwarnings = support.check_warnings(*deprecations, quiet=quiet)
 
     def __enter__(self):
         from xml.etree import ElementTree
@@ -1817,35 +1835,26 @@ class CleanContext(object):
         ElementTree._namespace_map = self._nsmap.copy()
         # Copy the path cache (should be empty)
         ElementTree.ElementPath._cache = self._path_cache.copy()
+        self.checkwarnings.__enter__()
 
     def __exit__(self, *args):
         from xml.etree import ElementTree
         # Restore mapping and path cache
         ElementTree._namespace_map = self._nsmap
         ElementTree.ElementPath._cache = self._path_cache
+        self.checkwarnings.__exit__(*args)
 
 
 def test_main(module_name='xml.etree.ElementTree'):
-    import warnings
     from test import test_xml_etree
-    def ignore(message, category=DeprecationWarning):
-        warnings.filterwarnings("ignore", message, category)
+
+    use_py_module = (module_name == 'xml.etree.ElementTree')
 
     # The same doctests are used for both the Python and the C implementations
     assert test_xml_etree.ET.__name__ == module_name
 
-    with warnings.catch_warnings(), CleanContext():
-        # Search behaviour is broken if search path starts with "/".
-        ignore("This search is broken in 1.3 and earlier, and will be fixed "
-               "in a future version.  If you rely on the current behaviour, "
-               "change it to '.+'", FutureWarning)
-        # Element.getchildren() and Element.getiterator() are deprecated.
-        ignore("This method will be removed in future versions.  "
-               "Use .+ instead.")
-        # XMLParser.doctype() is deprecated.
-        ignore("This method of XMLParser is deprecated.  "
-               "Define doctype.. method on the TreeBuilder target.")
-
+    # XXX the C module should give the same warnings as the Python module
+    with CleanContext(quiet=not use_py_module):
         support.run_doctest(test_xml_etree, verbosity=True)
 
     # The module should not be changed by the tests

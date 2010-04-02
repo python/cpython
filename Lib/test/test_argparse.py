@@ -7,7 +7,6 @@ import sys
 import textwrap
 import tempfile
 import unittest
-import warnings
 import argparse
 
 from io import StringIO
@@ -4150,21 +4149,12 @@ class TestImportStar(TestCase):
             self.assertTrue(hasattr(argparse, name))
 
 def test_main():
-    with warnings.catch_warnings():
-        # silence warnings about version argument - these are expected
-        warnings.filterwarnings(
-            action='ignore',
-            message='The "version" argument to ArgumentParser is deprecated.',
-            category=DeprecationWarning)
-        warnings.filterwarnings(
-            action='ignore',
-            message='The format_version method is deprecated',
-            category=DeprecationWarning)
-        warnings.filterwarnings(
-            action='ignore',
-            message='The print_version method is deprecated',
-            category=DeprecationWarning)
-
+    # silence warnings about version argument - these are expected
+    with support.check_warnings(
+            ('The "version" argument to ArgumentParser is deprecated.',
+             DeprecationWarning),
+            ('The (format|print)_version method is deprecated',
+             DeprecationWarning)):
         support.run_unittest(__name__)
     # Remove global references to avoid looking like we have refleaks.
     RFile.seen = {}
