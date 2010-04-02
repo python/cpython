@@ -648,8 +648,12 @@ class Decimal(object):
             return self
 
         if isinstance(value, float):
-            raise TypeError("Cannot convert float in Decimal constructor. "
-                            "Use from_float class method.")
+            value = Decimal.from_float(value)
+            self._exp  = value._exp
+            self._sign = value._sign
+            self._int  = value._int
+            self._is_special  = value._is_special
+            return self
 
         raise TypeError("Cannot convert %r to Decimal" % value)
 
