@@ -697,7 +697,7 @@ which incur interpreter overhead.
 
    def ncycles(iterable, n):
        "Returns the sequence elements n times"
-       return chain.from_iterable(repeat(iterable, n))
+       return chain.from_iterable(repeat(tuple(iterable), n))
 
    def dotproduct(vec1, vec2):
        return sum(imap(operator.mul, vec1, vec2))
@@ -794,23 +794,23 @@ which incur interpreter overhead.
    def random_product(*args, **kwds):
        "Random selection from itertools.product(*args, **kwds)"
        pools = map(tuple, args) * kwds.get('repeat', 1)
-       return map(random.choice, pools)
+       return tuple(random.choice(pool) for pool in pools)
 
    def random_permuation(iterable, r=None):
        "Random selection from itertools.permutations(iterable, r)"
-       pool = list(iterable)
+       pool = tuple(iterable)
        r = len(pool) if r is None else r
-       return random.sample(pool, r)
+       return tuple(random.sample(pool, r))
 
    def random_combination(iterable, r):
        "Random selection from itertools.combinations(iterable, r)"
-       pool = list(iterable)
-       return sorted(random.sample(pool, r), key=pool.index)
+       pool = tuple(iterable)
+       return tuple(sorted(random.sample(pool, r), key=pool.index))
 
    def random_combination_with_replacement(iterable, r):
        "Random selection from itertools.combinations_with_replacement(iterable, r)"
-       pool = list(iterable)
-       return sorted(imap(random.choice, [pool]*r), key=pool.index)
+       pool = tuple(iterable)
+       return tuple(sorted(imap(random.choice, [pool]*r), key=pool.index))
 
 Note, many of the above recipes can be optimized by replacing global lookups
 with local variables defined as default values.  For example, the
