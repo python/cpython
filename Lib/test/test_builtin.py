@@ -4,6 +4,7 @@ import platform
 import unittest
 from test.test_support import fcmp, have_unicode, TESTFN, unlink, \
                               run_unittest, check_py3k_warnings
+import warnings
 from operator import neg
 
 import sys, cStringIO, random, UserDict
@@ -1482,6 +1483,41 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, object().__format__, 3)
         self.assertRaises(TypeError, object().__format__, object())
         self.assertRaises(TypeError, object().__format__, None)
+
+        # --------------------------------------------------------------------
+        # Issue #7994: object.__format__ with a non-empty format string is
+        #  pending deprecated
+        def test_deprecated_format_string(obj, fmt_str, should_raise_warning):
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always", PendingDeprecationWarning)
+                format(obj, fmt_str)
+            if should_raise_warning:
+                self.assertEqual(len(w), 1)
+                self.assertIsInstance(w[0].message, PendingDeprecationWarning)
+                self.assertIn('object.__format__ with a non-empty format '
+                              'string', str(w[0].message))
+            else:
+                self.assertEqual(len(w), 0)
+
+        fmt_strs = ['', 's', u'', u's']
+
+        class A:
+            def __format__(self, fmt_str):
+                return format('', fmt_str)
+
+        for fmt_str in fmt_strs:
+            test_deprecated_format_string(A(), fmt_str, False)
+
+        class B:
+            pass
+
+        class C(object):
+            pass
+
+        for cls in [object, B, C]:
+            for fmt_str in fmt_strs:
+                test_deprecated_format_string(cls(), fmt_str, len(fmt_str) != 0)
+        # --------------------------------------------------------------------
 
         # make sure we can take a subclass of str as a format spec
         class DerivedFromStr(str): pass
