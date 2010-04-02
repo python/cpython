@@ -164,6 +164,9 @@ Extension Modules
   and the set of integer codes for which it was used differed between native
   packing and standard packing.)
 
+- Issue #7347: _winreg: Add CreateKeyEx and DeleteKeyEx, as well as fix a 
+  bug in the return value of QueryReflectionKey.
+
 Tools/Demos
 -----------
 
