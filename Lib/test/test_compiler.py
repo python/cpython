@@ -23,7 +23,9 @@ class CompilerTest(unittest.TestCase):
         # to generate some kind of code for it.
 
         next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
-        libdir = os.path.dirname(unittest.__file__)
+        # warning: if 'os' or 'test_support' are moved in some other dir,
+        # they should be changed here.
+        libdir = os.path.dirname(os.__file__)
         testdir = os.path.dirname(test.test_support.__file__)
 
         for dir in [libdir, testdir]:
