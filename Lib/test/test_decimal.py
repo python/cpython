@@ -1208,6 +1208,23 @@ class DecimalUsabilityTest(unittest.TestCase):
             self.assertFalse(Decimal(1) < None)
             self.assertTrue(Decimal(1) > None)
 
+    def test_decimal_float_comparison(self):
+        da = Decimal('0.25')
+        db = Decimal('3.0')
+        self.assert_(da < 3.0)
+        self.assert_(da <= 3.0)
+        self.assert_(db > 0.25)
+        self.assert_(db >= 0.25)
+        self.assert_(da != 1.5)
+        self.assert_(da == 0.25)
+        self.assert_(3.0 > da)
+        self.assert_(3.0 >= da)
+        self.assert_(0.25 < db)
+        self.assert_(0.25 <= db)
+        self.assert_(0.25 != db)
+        self.assert_(3.0 == db)
+        self.assert_(0.1 != Decimal('0.1'))
+
     def test_copy_and_deepcopy_methods(self):
         d = Decimal('43.24')
         c = copy.copy(d)
@@ -1255,6 +1272,15 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertRaises(TypeError, hash, Decimal('NaN'))
         self.assertTrue(hash(Decimal('Inf')))
         self.assertTrue(hash(Decimal('-Inf')))
+
+        # check that the hashes of a Decimal float match when they
+        # represent exactly the same values
+        test_strings = ['inf', '-Inf', '0.0', '-.0e1',
+                        '34.0', '2.5', '112390.625', '-0.515625']
+        for s in test_strings:
+            f = float(s)
+            d = Decimal(s)
+            self.assertEqual(hash(f), hash(d))
 
         # check that the value of the hash doesn't depend on the
         # current context (issue #1757)
