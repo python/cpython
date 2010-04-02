@@ -52,7 +52,7 @@ class BuildExtTestCase(TempdirManager, LoggingSilencer, unittest.TestCase):
     def tearDown(self):
         # Get everything back to normal
         if os.path.exists(_XX_MODULE_PATH):
-            test_support.unload('xx')
+            support.unload('xx')
             sys.path[:] = self.sys_path
             # XXX on Windows the test leaves a directory
             # with xx module in TEMP
