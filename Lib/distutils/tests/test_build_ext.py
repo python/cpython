@@ -25,19 +25,23 @@ ALREADY_TESTED = False
 
 def _get_source_filename():
     srcdir = sysconfig.get_config_var('srcdir')
+    if srcdir is None:
+        return os.path.join(sysconfig.project_base, 'Modules', 'xxmodule.c')
     return os.path.join(srcdir, 'Modules', 'xxmodule.c')
 
-class BuildExtTestCase(TempdirManager,
-                       LoggingSilencer,
-                       unittest.TestCase):
+_XX_MODULE_PATH = _get_source_filename()
+
+class BuildExtTestCase(TempdirManager, LoggingSilencer, unittest.TestCase):
+
     def setUp(self):
         # Create a simple test environment
         # Note that we're making changes to sys.path
         super(BuildExtTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
-        self.sys_path = sys.path, sys.path[:]
-        sys.path.append(self.tmp_dir)
-        shutil.copy(_get_source_filename(), self.tmp_dir)
+        if os.path.exists(_XX_MODULE_PATH):
+            self.sys_path = sys.path[:]
+            sys.path.append(self.tmp_dir)
+            shutil.copy(_XX_MODULE_PATH, self.tmp_dir)
         if sys.version > "2.6":
             import site
             self.old_user_base = site.USER_BASE
@@ -45,6 +49,19 @@ class BuildExtTestCase(TempdirManager,
             from distutils.command import build_ext
             build_ext.USER_BASE = site.USER_BASE
 
+    def tearDown(self):
+        # Get everything back to normal
+        if os.path.exists(_XX_MODULE_PATH):
+            test_support.unload('xx')
+            sys.path[:] = self.sys_path
+            # XXX on Windows the test leaves a directory
+            # with xx module in TEMP
+        shutil.rmtree(self.tmp_dir, os.name == 'nt' or
+                                    sys.platform == 'cygwin')
+        super(BuildExtTestCase, self).tearDown()
+
+    @unittest.skipIf(not os.path.exists(_XX_MODULE_PATH),
+                     'xxmodule.c not found')
     def test_build_ext(self):
         global ALREADY_TESTED
         xx_c = os.path.join(self.tmp_dir, 'xxmodule.c')
@@ -86,18 +103,6 @@ class BuildExtTestCase(TempdirManager,
         self.assertEquals(xx.__doc__, doc)
         self.assertTrue(isinstance(xx.Null(), xx.Null))
         self.assertTrue(isinstance(xx.Str(), xx.Str))
-
-    def tearDown(self):
-        # Get everything back to normal
-        support.unload('xx')
-        sys.path = self.sys_path[0]
-        sys.path[:] = self.sys_path[1]
-        if sys.version > "2.6":
-            import site
-            site.USER_BASE = self.old_user_base
-            from distutils.command import build_ext
-            build_ext.USER_BASE = self.old_user_base
-        super(BuildExtTestCase, self).tearDown()
 
     def test_solaris_enable_shared(self):
         dist = Distribution({'name': 'xx'})
