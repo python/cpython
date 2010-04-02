@@ -2,7 +2,6 @@ import builtins
 import sys
 import types
 import unittest
-import warnings
 
 from copy import deepcopy
 from test import support

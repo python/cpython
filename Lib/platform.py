@@ -942,7 +942,7 @@ def _syscmd_file(target,default=''):
     if sys.platform in ('dos','win32','win16','os2'):
         # XXX Others too ?
         return default
-    target = _follow_symlinks(target)
+    target = _follow_symlinks(target).replace('"', '\\"')
     try:
         f = os.popen('file "%s" 2> %s' % (target, DEV_NULL))
     except (AttributeError,os.error):

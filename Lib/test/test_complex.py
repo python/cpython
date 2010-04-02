@@ -1,4 +1,4 @@
-import unittest, os
+import unittest
 from test import support
 
 from random import random
@@ -395,10 +395,7 @@ class ComplexTest(unittest.TestCase):
         finally:
             if (fo is not None) and (not fo.closed):
                 fo.close()
-            try:
-                os.remove(support.TESTFN)
-            except (OSError, IOError):
-                pass
+            support.unlink(support.TESTFN)
 
     def test_getnewargs(self):
         self.assertEqual((1+2j).__getnewargs__(), (1.0, 2.0))

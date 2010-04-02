@@ -2,7 +2,6 @@
 
 from test.support import run_unittest, check_syntax_error, check_warnings
 import unittest
-
 import warnings
 
 
@@ -54,7 +53,9 @@ x = 2
 
 
 def test_main():
-    run_unittest(GlobalTests)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", module="<test string>")
+        run_unittest(GlobalTests)
 
 if __name__ == "__main__":
     test_main()
