@@ -422,8 +422,8 @@ class TestOutputBuffering(unittest.TestCase):
         result.addSuccess(self)
         result.stopTest(self)
 
-        self.assertIs(real_out, sys.stdout)
-        self.assertIs(real_err, sys.stderr)
+        self.assertIs(sys.stdout, result._original_stdout)
+        self.assertIs(sys.stderr, result._original_stderr)
 
         self.assertEqual(result._original_stdout.getvalue(), '')
         self.assertEqual(result._original_stderr.getvalue(), '')
