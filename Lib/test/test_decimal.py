@@ -52,6 +52,11 @@ def init():
         )
     setcontext(DefaultTestContext)
 
+# decorator for skipping tests on non-IEEE 754 platforms
+requires_IEEE_754 = unittest.skipUnless(
+    float.__getformat__("double").startswith("IEEE"),
+    "test requires IEEE 754 doubles")
+
 TESTDATADIR = 'decimaltestdata'
 if __name__ == '__main__':
     file = sys.argv[0]
@@ -503,6 +508,27 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         e = Decimal(d)
         self.assertEqual(str(e), '0')
         self.assertNotEqual(id(d), id(e))
+
+    @requires_IEEE_754
+    def test_explicit_from_float(self):
+        r = Decimal(0.1)
+        self.assertEqual(type(r), Decimal)
+        self.assertEqual(str(r),
+                '0.1000000000000000055511151231257827021181583404541015625')
+        self.assertTrue(Decimal(float('nan')).is_qnan())
+        self.assertTrue(Decimal(float('inf')).is_infinite())
+        self.assertTrue(Decimal(float('-inf')).is_infinite())
+        self.assertEqual(str(Decimal(float('nan'))),
+                         str(Decimal('NaN')))
+        self.assertEqual(str(Decimal(float('inf'))),
+                         str(Decimal('Infinity')))
+        self.assertEqual(str(Decimal(float('-inf'))),
+                         str(Decimal('-Infinity')))
+        self.assertEqual(str(Decimal(float('-0.0'))),
+                         str(Decimal('-0')))
+        for i in range(200):
+            x = random.expovariate(0.01) * (random.random() * 2.0 - 1.0)
+            self.assertEqual(x, float(Decimal(x))) # roundtrip
 
     def test_explicit_context_create_decimal(self):
 
