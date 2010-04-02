@@ -33,7 +33,7 @@ import sys
 import string
 import re
 import Tkinter
-import macosxSupport
+from idlelib import macosxSupport
 
 # the event type constants, which define the meaning of mc_type
 MC_KEYPRESS=0; MC_KEYRELEASE=1; MC_BUTTONPRESS=2; MC_BUTTONRELEASE=3;
@@ -111,12 +111,27 @@ _state_names = [''.join(m[0]+'-'
                         for i, m in enumerate(_modifiers)
                         if (1 << i) & s)
                 for s in _states]
-_state_subsets = map(lambda i: filter(lambda j: not (j & (~i)), _states),
-                      _states)
-for l in _state_subsets:
-    l.sort(lambda a, b, nummod = lambda x: len(filter(lambda i: (1<<i) & x,
-                                                      range(len(_modifiers)))):
-           nummod(b) - nummod(a))
+
+def expand_substates(states):
+    '''For each item of states return a list containing all combinations of
+    that item with individual bits reset, sorted by the number of set bits.
+    '''
+    def nbits(n):
+        "number of bits set in n base 2"
+        nb = 0
+        while n:
+            n, rem = divmod(n, 2)
+            nb += rem
+        return nb
+    statelist = []
+    for state in states:
+        substates = list(set(state & x for x in states))
+        substates.sort(key=nbits, reverse=True)
+        statelist.append(substates)
+    return statelist
+
+_state_subsets = expand_substates(_states)
+
 # _state_codes gives for each state, the portable code to be passed as mc_state
 _state_codes = []
 for s in _states:
@@ -297,7 +312,7 @@ def MultiCallCreator(widget):
         assert issubclass(widget, Tkinter.Misc)
 
         def __init__(self, *args, **kwargs):
-            apply(widget.__init__, (self,)+args, kwargs)
+            widget.__init__(self, *args, **kwargs)
             # a dictionary which maps a virtual event to a tuple with:
             #  0. the function binded
             #  1. a list of triplets - the sequences it is binded to

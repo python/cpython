@@ -57,10 +57,10 @@ def overrideRootMenu(root, flist):
     # Due to a (mis-)feature of TkAqua the user will also see an empty Help
     # menu.
     from Tkinter import Menu, Text, Text
-    from EditorWindow import prepstr, get_accelerator
-    import Bindings
-    import WindowList
-    from MultiCall import MultiCallCreator
+    from idlelib.EditorWindow import prepstr, get_accelerator
+    from idlelib import Bindings
+    from idlelib import WindowList
+    from idlelib.MultiCall import MultiCallCreator
 
     menubar = Menu(root)
     root.configure(menu=menubar)
@@ -83,11 +83,11 @@ def overrideRootMenu(root, flist):
     menubar.add_cascade(label='IDLE', menu=menu)
 
     def about_dialog(event=None):
-        import aboutDialog
+        from idlelib import aboutDialog
         aboutDialog.AboutDialog(root, 'About IDLE')
 
     def config_dialog(event=None):
-        import configDialog
+        from idlelib import configDialog
         root.instance_dict = flist.inversedict
         configDialog.ConfigDialog(root, 'Settings')
 

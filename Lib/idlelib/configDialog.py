@@ -13,13 +13,13 @@ from Tkinter import *
 import tkMessageBox, tkColorChooser, tkFont
 import string
 
-from configHandler import idleConf
-from dynOptionMenuWidget import DynOptionMenu
-from tabbedpages import TabbedPageSet
-from keybindingDialog import GetKeysDialog
-from configSectionNameDialog import GetCfgSectionNameDialog
-from configHelpSourceEdit import GetHelpSourceDialog
-import macosxSupport
+from idlelib.configHandler import idleConf
+from idlelib.dynOptionMenuWidget import DynOptionMenu
+from idlelib.tabbedpages import TabbedPageSet
+from idlelib.keybindingDialog import GetKeysDialog
+from idlelib.configSectionNameDialog import GetCfgSectionNameDialog
+from idlelib.configHelpSourceEdit import GetHelpSourceDialog
+from idlelib import macosxSupport
 
 class ConfigDialog(Toplevel):
 

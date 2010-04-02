@@ -11,7 +11,6 @@ import time
 import threading
 import traceback
 import types
-import macosxSupport
 
 import linecache
 from code import InteractiveInterpreter
@@ -24,17 +23,17 @@ except ImportError:
     sys.exit(1)
 import tkMessageBox
 
-from EditorWindow import EditorWindow, fixwordbreaks
-from FileList import FileList
-from ColorDelegator import ColorDelegator
-from UndoDelegator import UndoDelegator
-from OutputWindow import OutputWindow
-from configHandler import idleConf
-import idlever
-
-import rpc
-import Debugger
-import RemoteDebugger
+from idlelib.EditorWindow import EditorWindow, fixwordbreaks
+from idlelib.FileList import FileList
+from idlelib.ColorDelegator import ColorDelegator
+from idlelib.UndoDelegator import UndoDelegator
+from idlelib.OutputWindow import OutputWindow
+from idlelib.configHandler import idleConf
+from idlelib import idlever
+from idlelib import rpc
+from idlelib import Debugger
+from idlelib import RemoteDebugger
+from idlelib import macosxSupport
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
 HOST = '127.0.0.1' # python execution server on localhost loopback
@@ -561,13 +560,13 @@ class ModifiedInterpreter(InteractiveInterpreter):
         return
 
     def remote_stack_viewer(self):
-        import RemoteObjectBrowser
+        from idlelib import RemoteObjectBrowser
         oid = self.rpcclt.remotequeue("exec", "stackviewer", ("flist",), {})
         if oid is None:
             self.tkconsole.root.bell()
             return
         item = RemoteObjectBrowser.StubObjectTreeItem(self.rpcclt, oid)
-        from TreeWidget import ScrolledCanvas, TreeNode
+        from idlelib.TreeWidget import ScrolledCanvas, TreeNode
         top = Toplevel(self.tkconsole.root)
         theme = idleConf.GetOption('main','Theme','name')
         background = idleConf.GetHighlight(theme, 'normal')['background']
@@ -607,7 +606,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.save_warnings_filters = warnings.filters[:]
         warnings.filterwarnings(action="error", category=SyntaxWarning)
         if isinstance(source, types.UnicodeType):
-            import IOBinding
+            from idlelib import IOBinding
             try:
                 source = source.encode(IOBinding.encoding)
             except UnicodeError:
@@ -816,7 +815,7 @@ class PyShell(OutputWindow):
 
 
     # New classes
-    from IdleHistory import History
+    from idlelib.IdleHistory import History
 
     def __init__(self, flist=None):
         if use_subprocess:
@@ -854,7 +853,7 @@ class PyShell(OutputWindow):
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
-        import IOBinding
+        from idlelib import IOBinding
         self.stdout = PseudoFile(self, "stdout", IOBinding.encoding)
         self.stderr = PseudoFile(self, "stderr", IOBinding.encoding)
         self.console = PseudoFile(self, "console", IOBinding.encoding)
@@ -1014,7 +1013,7 @@ class PyShell(OutputWindow):
         if len(line) == 0:  # may be EOF if we quit our mainloop with Ctrl-C
             line = "\n"
         if isinstance(line, unicode):
-            import IOBinding
+            from idlelib import IOBinding
             try:
                 line = line.encode(IOBinding.encoding)
             except UnicodeError:
@@ -1192,7 +1191,7 @@ class PyShell(OutputWindow):
                 "(sys.last_traceback is not defined)",
                 master=self.text)
             return
-        from StackViewer import StackBrowser
+        from idlelib.StackViewer import StackBrowser
         sv = StackBrowser(self.root, self.flist)
 
     def view_restart_mark(self, event=None):
@@ -1246,8 +1245,9 @@ class PseudoFile(object):
     def write(self, s):
         self.shell.write(s, self.tags)
 
-    def writelines(self, l):
-        map(self.write, l)
+    def writelines(self, lines):
+        for line in lines:
+            self.write(line)
 
     def flush(self):
         pass
@@ -1375,7 +1375,7 @@ def main():
             pathx.append(os.path.dirname(filename))
         for dir in pathx:
             dir = os.path.abspath(dir)
-            if not dir in sys.path:
+            if dir not in sys.path:
                 sys.path.insert(0, dir)
     else:
         dir = os.getcwd()

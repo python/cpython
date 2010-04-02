@@ -9,8 +9,8 @@ windows.
 
 """
 import sys
-from configHandler import idleConf
-import macosxSupport
+from idlelib.configHandler import idleConf
+from idlelib import macosxSupport
 
 menudefs = [
  # underscore prefixes character to underscore

@@ -20,7 +20,7 @@ configuration problem notification and resolution.
 import os
 import sys
 import string
-import macosxSupport
+from idlelib import macosxSupport
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
 class InvalidConfigType(Exception): pass
