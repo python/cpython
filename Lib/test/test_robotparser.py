@@ -1,6 +1,7 @@
 import io
 import unittest
 import urllib.robotparser
+from urllib.error import URLError
 from test import support
 
 class RobotTestCase(unittest.TestCase):
@@ -214,8 +215,11 @@ class NetworkTestCase(unittest.TestCase):
         url = 'http://mueblesmoraleda.com'
         parser = urllib.robotparser.RobotFileParser()
         parser.set_url(url)
-        parser.read()
-        self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)
+        try:
+            parser.read()
+            self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)
+        except URLError:
+            self.skipTest('mueblesmoraleda.com is unavailable')
 
     def testPythonOrg(self):
         if not support.is_resource_enabled('network'):
