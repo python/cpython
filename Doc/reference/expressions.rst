@@ -1400,7 +1400,7 @@ groups from right to left).
    level, they may be counter-intuitive to users. For example, the
    strings ``u"\u00C7"`` and ``u"\u0043\u0327"`` compare differently,
    even though they both represent the same unicode character (LATIN
-   CAPTITAL LETTER C WITH CEDILLA). To compare strings in a human
+   CAPITAL LETTER C WITH CEDILLA). To compare strings in a human
    recognizable way, compare using :func:`unicodedata.normalize`.
 
 .. [#] The implementation computes this efficiently, without constructing lists or
