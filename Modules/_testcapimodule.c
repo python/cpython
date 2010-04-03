@@ -1672,6 +1672,7 @@ typedef struct {
 	unsigned long ulong_member;
 	float float_member;
 	double double_member;
+	char inplace_member[5];
 #ifdef HAVE_LONG_LONG
 	PY_LONG_LONG longlong_member;
 	unsigned PY_LONG_LONG ulonglong_member;
@@ -1695,6 +1696,7 @@ static struct PyMemberDef test_members[] = {
 	{"T_ULONG", T_ULONG, offsetof(test_structmembers, structmembers.ulong_member), 0, NULL},
 	{"T_FLOAT", T_FLOAT, offsetof(test_structmembers, structmembers.float_member), 0, NULL},
 	{"T_DOUBLE", T_DOUBLE, offsetof(test_structmembers, structmembers.double_member), 0, NULL},
+	{"T_STRING_INPLACE", T_STRING_INPLACE, offsetof(test_structmembers, structmembers.inplace_member), 0, NULL},
 #ifdef HAVE_LONG_LONG
 	{"T_LONGLONG", T_LONGLONG, offsetof(test_structmembers, structmembers.longlong_member), 0, NULL},
 	{"T_ULONGLONG", T_ULONGLONG, offsetof(test_structmembers, structmembers.ulonglong_member), 0, NULL},
@@ -1709,17 +1711,19 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 	static char *keywords[] = {
 		"T_BOOL", "T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT",
 		"T_INT", "T_UINT", "T_LONG", "T_ULONG",
-		"T_FLOAT", "T_DOUBLE",
+		"T_FLOAT", "T_DOUBLE", "T_INPLACE_STRING",
 #ifdef HAVE_LONG_LONG	
 		"T_LONGLONG", "T_ULONGLONG",
 #endif
 		NULL};
-	static char *fmt = "|bbBhHiIlkfd"
+	static char *fmt = "|bbBhHiIlkfds#"
 #ifdef HAVE_LONG_LONG
 		"LK"
 #endif
 		;
 	test_structmembers *ob;
+	const char *s;
+	Py_ssize_t string_len = 0;
 	ob = PyObject_New(test_structmembers, type);
 	if (ob == NULL)
 		return NULL;
@@ -1735,7 +1739,8 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 					 &ob->structmembers.long_member,
 					 &ob->structmembers.ulong_member,
 					 &ob->structmembers.float_member,
-					 &ob->structmembers.double_member
+					 &ob->structmembers.double_member,
+					 &s, &string_len
 #ifdef HAVE_LONG_LONG
 					 , &ob->structmembers.longlong_member,
 					 &ob->structmembers.ulonglong_member
@@ -1744,6 +1749,12 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 		Py_DECREF(ob);
 		return NULL;
 	}
+	if (string_len > 5) {
+		Py_DECREF(ob);
+		PyErr_SetString(PyExc_ValueError, "string too long");
+		return NULL;
+	}
+	strcpy(ob->structmembers.inplace_member, s);
 	return (PyObject *)ob;
 }
 
