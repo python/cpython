@@ -315,6 +315,24 @@ class StructTest(unittest.TestCase):
                     expected = struct.pack(self.format, int(nonint))
                     self.assertEqual(got, expected)
 
+                # Objects with an '__index__' method should be allowed
+                # to pack as integers.
+                class Indexable(object):
+                    def __init__(self, value):
+                        self._value = value
+
+                    def __index__(self):
+                        return self._value
+
+                for obj in (Indexable(0), Indexable(10), Indexable(17),
+                            Indexable(42), Indexable(100), Indexable(127)):
+                    try:
+                        struct.pack(format, obj)
+                    except:
+                        self.fail("integer code pack failed on object "
+                                  "with '__index__' method")
+
+
         byteorders = '', '@', '=', '<', '>', '!'
         for code in integer_codes:
             for byteorder in byteorders:

@@ -125,9 +125,14 @@ Notes:
 
 (3)
    When attempting to pack a non-integer using any of the integer conversion
-   codes, the non-integer's :meth:`__int__` method (if present) will be called
-   to convert to an integer before packing.  However, this behaviour is
-   deprecated, and will raise :exc:`DeprecationWarning`.
+   codes, if the non-integer has a :meth:`__index__` method then that method is
+   called to convert the argument to an integer before packing.  If no
+   :meth:`__index__` method exists, or the call to :meth:`__index__` raises
+   :exc:`TypeError`, then the :meth:`__int__` method is tried.  However, the use
+   of `__int__` is deprecated, and will raise :exc:`DeprecationWarning`.
+
+   .. versionchanged:: 2.7
+      Use of the :meth:`__index__` method for non-integers is new in 2.7.
 
    .. versionchanged:: 2.7
       Prior to version 2.7, not all integer conversion codes would use the
