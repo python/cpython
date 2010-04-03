@@ -230,6 +230,7 @@ PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/tokenizer.o
 PGOBJS=		\
 		Objects/obmalloc.o \
 		Python/mysnprintf.o \
+                Python/pyctype.o \
 		Parser/tokenizer_pgen.o \
 		Parser/printgrammar.o \
 		Parser/pgenmain.o
