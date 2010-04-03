@@ -932,7 +932,7 @@ initNav(void)
 {
 	PyObject *m, *d;
 	
-	if (PyErr_WarnPy3k("In 3.x, Nav is removed.", 1))
+	if (PyErr_WarnPy3k("In 3.x, the Nav module is removed.", 1))
 		return;
 
 #ifdef __LP64__

@@ -695,7 +695,7 @@ initMacOS(void)
 {
 	PyObject *m, *d;
 	
-	if (PyErr_WarnPy3k("In 3.x, MacOS is removed.", 1))
+	if (PyErr_WarnPy3k("In 3.x, the MacOS module is removed.", 1))
 		return;
 	
 	m = Py_InitModule("MacOS", MacOS_Methods);

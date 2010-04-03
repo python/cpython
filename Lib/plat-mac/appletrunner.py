@@ -4,7 +4,7 @@
 # we are not running in a framework build.
 
 from warnings import warnpy3k
-warnpy3k("In 3.x, appletrunner is removed.", stacklevel=2)
+warnpy3k("In 3.x, the appletrunner module is removed.", stacklevel=2)
 
 import os
 import sys
