@@ -172,7 +172,7 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
             aete = decode(data, verbose)
             aetelist.append((aete, res.GetResInfo()))
     finally:
-        if rf <> cur:
+        if rf != cur:
             CloseResFile(rf)
             UseResFile(cur)
     # switch back (needed for dialogs in Python)
@@ -335,7 +335,7 @@ def getpstr(f, *args):
 def getalign(f):
     if f.tell() & 1:
         c = f.read(1)
-        ##if c <> '\0':
+        ##if c != '\0':
         ##  print align:', repr(c)
 
 def getlist(f, description, getitem):
@@ -592,7 +592,7 @@ class SuiteCompiler:
 
         self.modname = os.path.splitext(os.path.split(self.pathname)[1])[0]
 
-        if self.basepackage and self.basepackage._code_to_module.has_key(code):
+        if self.basepackage and code in self.basepackage._code_to_module:
             # We are an extension of a baseclass (usually an application extending
             # Standard_Suite or so). Import everything from our base module
             basemodule = self.basepackage._code_to_module[code]
@@ -659,12 +659,12 @@ class SuiteCompiler:
         fp.write('import aetools\n')
         fp.write('import MacOS\n\n')
         fp.write("_code = %r\n\n"% (code,))
-        if self.basepackage and self.basepackage._code_to_module.has_key(code):
+        if self.basepackage and code in self.basepackage._code_to_module:
             # We are an extension of a baseclass (usually an application extending
             # Standard_Suite or so). Import everything from our base module
             fp.write('from %s import *\n'%self.basepackage._code_to_fullname[code][0])
             basemodule = self.basepackage._code_to_module[code]
-        elif self.basepackage and self.basepackage._code_to_module.has_key(code.lower()):
+        elif self.basepackage and code.lower() in self.basepackage._code_to_module:
             # This is needed by CodeWarrior and some others.
             fp.write('from %s import *\n'%self.basepackage._code_to_fullname[code.lower()][0])
             basemodule = self.basepackage._code_to_module[code.lower()]
@@ -782,7 +782,7 @@ class SuiteCompiler:
             if is_enum(a[2]):
                 kname = a[1]
                 ename = a[2][0]
-                if ename <> '****':
+                if ename != '****':
                     fp.write("        aetools.enumsubst(_arguments, %r, _Enum_%s)\n" %
                         (kname, identify(ename)))
                     self.enumsneeded[ename] = 1
@@ -801,7 +801,7 @@ class SuiteCompiler:
         #
         # Decode result
         #
-        fp.write("        if _arguments.has_key('----'):\n")
+        fp.write("        if '----' in _arguments:\n")
         if is_enum(returns):
             fp.write("            # XXXX Should do enum remapping here...\n")
         fp.write("            return _arguments['----']\n")
@@ -813,7 +813,7 @@ class SuiteCompiler:
         for a in arguments:
             if is_enum(a[2]):
                 ename = a[2][0]
-                if ename <> '****':
+                if ename != '****':
                     self.enumsneeded[ename] = 1
 
 #
@@ -845,17 +845,17 @@ class CodeNameMapper:
 
     def addnamecode(self, type, name, code):
         self.name2code[type][name] = code
-        if not self.code2name[type].has_key(code):
+        if code not in self.code2name[type]:
             self.code2name[type][code] = name
 
     def hasname(self, name):
         for dict in self.name2code.values():
-            if dict.has_key(name):
+            if name in dict:
                 return True
         return False
 
     def hascode(self, type, code):
-        return self.code2name[type].has_key(code)
+        return code in self.code2name[type]
 
     def findcodename(self, type, code):
         if not self.hascode(type, code):

@@ -1579,7 +1579,7 @@ smFHBlkDispErr  =   -311    #Error occurred during _sDisposePtr (Dispose of FHea
 smFHBlockRdErr  =   -310    #Error occurred during _sGetFHeader.
 smBLFieldBad    =   -309    #ByteLanes field was bad.
 smUnExBusErr    =   -308    #Unexpected BusError
-smResrvErr  =   -307    #Fatal reserved error. Resreved field <> 0.
+smResrvErr  =   -307    #Fatal reserved error. Reserved field != 0.
 smNosInfoArray  =   -306    #No sInfoArray. Memory Mgr error.
 smDisabledSlot  =   -305    #This slot is disabled (-305 use to be smLWTstBad)
 smNoDir =   -304    #Directory offset is Nil
