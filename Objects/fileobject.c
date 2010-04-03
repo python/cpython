@@ -1102,8 +1102,8 @@ file_read(PyFileObject *f, PyObject *args)
 			break;
 		}
 	}
-	if (bytesread != buffersize)
-		_PyString_Resize(&v, bytesread);
+	if (bytesread != buffersize && _PyString_Resize(&v, bytesread))
+		return NULL;
 	return v;
 }
 
@@ -1356,8 +1356,8 @@ getline_via_fgets(PyFileObject *f, FILE *fp)
 		/* overwrite the trailing null byte */
 		pvfree = BUF(v) + (prev_v_size - 1);
 	}
-	if (BUF(v) + total_v_size != p)
-		_PyString_Resize(&v, p - BUF(v));
+	if (BUF(v) + total_v_size != p && _PyString_Resize(&v, p - BUF(v)))
+		return NULL;
 	return v;
 #undef INITBUFSIZE
 #undef MAXBUFSIZE
@@ -1469,8 +1469,8 @@ get_line(PyFileObject *f, int n)
 	}
 
 	used_v_size = buf - BUF(v);
-	if (used_v_size != total_v_size)
-		_PyString_Resize(&v, used_v_size);
+	if (used_v_size != total_v_size && _PyString_Resize(&v, used_v_size))
+		return NULL;
 	return v;
 }
 
@@ -1536,8 +1536,10 @@ PyFile_GetLine(PyObject *f, int n)
 					"EOF when reading a line");
 		}
 		else if (s[len-1] == '\n') {
-			if (result->ob_refcnt == 1)
-				_PyString_Resize(&result, len-1);
+			if (result->ob_refcnt == 1) {
+				if (_PyString_Resize(&result, len-1))
+					return NULL;
+			}
 			else {
 				PyObject *v;
 				v = PyString_FromStringAndSize(s, len-1);

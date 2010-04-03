@@ -1237,7 +1237,8 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 					"too much marshall data for a string");
 			return NULL;
 		}
-		_PyString_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base));
+		if (_PyString_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)))
+			return NULL;
 	}
 	if (wf.error != WFERR_OK) {
 		Py_XDECREF(wf.str);

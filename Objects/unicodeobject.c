@@ -1848,7 +1848,8 @@ encode_char:
     if (inShift)
         *out++ = '-';
 
-    _PyString_Resize(&v, out - start);
+    if (_PyString_Resize(&v, out - start))
+        return NULL;
     return v;
 }
 
@@ -2169,7 +2170,8 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
         /* Cut back to size actually needed. */
         nneeded = p - PyString_AS_STRING(v);
         assert(nneeded <= nallocated);
-        _PyString_Resize(&v, nneeded);
+        if (_PyString_Resize(&v, nneeded))
+            return NULL;
     }
     return v;
 
@@ -3129,7 +3131,8 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
         *p++ = PyString_AS_STRING(repr)[1];
 
     *p = '\0';
-    _PyString_Resize(&repr, p - PyString_AS_STRING(repr));
+    if (_PyString_Resize(&repr, p - PyString_AS_STRING(repr)))
+        return NULL;
     return repr;
 }
 
@@ -3350,7 +3353,8 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
             *p++ = (char) ch;
     }
     *p = '\0';
-    _PyString_Resize(&repr, p - q);
+    if (_PyString_Resize(&repr, p - q))
+        return NULL;
     return repr;
 }
 
