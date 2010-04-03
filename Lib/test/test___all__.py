@@ -5,6 +5,12 @@ from test import test_support as support
 import os
 import sys
 
+# Setup bsddb warnings
+try:
+    import bsddb
+except ImportError:
+    pass
+
 
 class NoAll(RuntimeError):
     pass
