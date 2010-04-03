@@ -107,8 +107,14 @@ class OrderedDict(dict, MutableMapping):
 
     def clear(self):
         'od.clear() -> None.  Remove all items from od.'
-        for k in dict.keys(self):
-            del self[k]
+        try:
+            for node in self.__map.itervalues():
+                del node[:]
+            self.__root[:] = [self.__root, self.__root, None]
+            self.__map.clear()
+        except AttributeError:
+            pass
+        dict.clear(self)
 
     setdefault = MutableMapping.setdefault
     update = MutableMapping.update
