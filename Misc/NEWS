@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- collections.Counter() now supports a subtract() method.
+
 - Issue #8294: The Fraction constructor now accepts Decimal and float
   instances directly.
 
