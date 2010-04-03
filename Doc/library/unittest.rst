@@ -76,6 +76,11 @@ need to derive from a specific class.
    Module :mod:`doctest`
       Another test-support module with a very different flavor.
 
+   `unittest2: A backport of new unittest features for Python 2.4-2.6 <http://pypi.python.org/pypi/unittest2>`_
+      Many new features were added to unittest in Python 2.7, including test
+      discovery. unittest2 allows you to use these features with earlier
+      versions of Python.
+
    `Simple Smalltalk Testing: With Patterns <http://www.XProgramming.com/testfram.htm>`_
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
@@ -84,11 +89,13 @@ need to derive from a specific class.
       Third-party unittest frameworks with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
-   `python-mock <http://python-mock.sourceforge.net/>`_ and `minimock <http://blog.ianbicking.org/minimock.html>`_
-      Tools for creating mock test objects (objects simulating external
-      resources).
+   `The Python Testing Tools Taxonomy <http://pycheesecake.org/wiki/PythonTestingToolsTaxonomy>`_
+      An extensive list of Python testing tools including functional testing
+      frameworks and mock object libraries.
 
-
+   `Testing in Python Mailing List <http://lists.idyll.org/listinfo/testing-in-python>`_
+      A special-interest-group for discussion of testing, and testing tools,
+      in Python.
 
 
 .. _unittest-minimal-example:
@@ -209,6 +216,31 @@ For a list of all the command line options::
 ..  versionchanged:: 2.7
    In earlier versions it was only possible to run individual test methods and
    not modules or classes.
+
+
+failfast, catch and buffer command line options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+unittest supports three command options.
+
+* -f / --failfast
+
+  Stop the test run on the first error or failure.
+
+* -c / --catch
+
+  Control-C during the test run waits for the current test to end and then
+  reports all the results so far. A second control-C raises the normal
+  ``KeyboardInterrupt`` exception.
+
+* -b / --buffer
+
+  The standard out and standard error streams are buffered during the test
+  run. Output during a passing test is discarded. Output is echoed normally
+  on test fail or error and is added to the failure messages.
+
+..  versionadded:: 2.7
+   The command line options ``-c``, ``-b`` and ``-f`` where added.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -585,6 +617,9 @@ The following decorators implement test skipping and expected failures:
    Mark the test as an expected failure.  If the test fails when run, the test
    is not counted as a failure.
 
+Skipped tests will not have :meth:`setUp` or :meth:`tearDown` run around them. Skipped classes
+will not have :meth:`setUpClass` or :meth:`tearDownClass` run.
+
 
 .. _unittest-contents:
 
@@ -648,6 +683,36 @@ Test cases
       method will be considered an error rather than a test failure.  This
       method will only be called if the :meth:`setUp` succeeds, regardless of
       the outcome of the test method. The default implementation does nothing.
+
+
+   .. method:: setUpClass()
+
+      A class method called before tests in an individual class run.
+      ``setUpClass`` is called with the class as the only argument
+      and must be decorated as a :meth:`classmethod`::
+
+        @classmethod
+        def setUpClass(cls):
+            ...
+
+      See `Class and Module Fixtures`_ for more details.
+
+      .. versionadded:: 2.7
+
+
+   .. method:: tearDownClass()
+
+      A class method called after tests in an individual class have run.
+      ``tearDownClass`` is called with the class as the only argument
+      and must be decorated as a :meth:`classmethod`::
+
+        @classmethod
+        def tearDownClass(cls):
+            ...
+
+      See `Class and Module Fixtures`_ for more details.
+
+      .. versionadded:: 2.7
 
 
    .. method:: run([result])
@@ -726,7 +791,7 @@ Test cases
          :meth:`failIfEqual`; use :meth:`assertNotEqual`.
 
 
-   .. method:: assertAlmostEqual(first, second[, places[, msg]])
+   .. method:: assertAlmostEqual(first, second[, places[, msg[, delta]]])
                failUnlessAlmostEqual(first, second[, places[, msg]])
 
       Test that *first* and *second* are approximately equal by computing the
@@ -738,14 +803,20 @@ Test cases
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
 
+      If *delta* is supplied instead of *places* then the the difference
+      between *first* and *second* must be less than *delta*.
+
+      Supplying both *delta* and *places* raises a ``TypeError``.
+
       .. versionchanged:: 2.7
          Objects that compare equal are automatically almost equal.
+         Added the ``delta`` keyword argument.
 
       .. deprecated:: 2.7
          :meth:`failUnlessAlmostEqual`; use :meth:`assertAlmostEqual`.
 
 
-   .. method:: assertNotAlmostEqual(first, second[, places[, msg]])
+   .. method:: assertNotAlmostEqual(first, second[, places[, msg[, delta]]])
                failIfAlmostEqual(first, second[, places[, msg]])
 
       Test that *first* and *second* are not approximately equal by computing
@@ -757,8 +828,14 @@ Test cases
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
 
+      If *delta* is supplied instead of *places* then the the difference
+      between *first* and *second* must be more than *delta*.
+
+      Supplying both *delta* and *places* raises a ``TypeError``.
+
       .. versionchanged:: 2.7
          Objects that compare equal automatically fail.
+         Added the ``delta`` keyword argument.
 
       .. deprecated:: 2.7
          :meth:`failIfAlmostEqual`; use :meth:`assertNotAlmostEqual`.
@@ -794,6 +871,16 @@ Test cases
    .. method:: assertRegexpMatches(text, regexp, msg=None)
 
       Verifies that a *regexp* search matches *text*.  Fails with an error
+      message including the pattern and the *text*.  *regexp* may be
+      a regular expression object or a string containing a regular expression
+      suitable for use by :func:`re.search`.
+
+      .. versionadded:: 2.7
+
+
+   .. method:: assertNotRegexpMatches(text, regexp, msg=None)
+
+      Verifies that a *regexp* search does not match *text*.  Fails with an error
       message including the pattern and the *text*.  *regexp* may be
       a regular expression object or a string containing a regular expression
       suitable for use by :func:`re.search`.
@@ -1314,6 +1401,8 @@ Loading and running tests
       ``load_tests`` does not need to pass this argument in to
       ``loader.discover()``.
 
+      *start_dir* can be a dotted module name as well as a directory.
+
       .. versionadded:: 2.7
 
    The following attributes of a :class:`TestLoader` can be configured either by
@@ -1411,6 +1500,24 @@ Loading and running tests
    .. attribute:: testsRun
 
       The total number of tests run so far.
+
+
+   .. attribute:: buffer
+
+      If set to true, ``sys.stdout`` and ``sys.stderr`` will be buffered in between
+      :meth:`startTest` and :meth:`stopTest` being called. Collected output will
+      only be echoed onto the real ``sys.stdout`` and ``sys.stderr`` if the test
+      fails or errors. Any output is also attached to the failure / error message.
+
+      .. versionadded:: 2.7
+
+
+   .. attribute:: failfast
+
+      If set to true :meth:`stop` will be called on the first failure or error,
+      halting the test run.
+
+      .. versionadded:: 2.7
 
 
    .. method:: wasSuccessful()
@@ -1658,3 +1765,58 @@ continue (and potentially modify) test discovery. A 'do nothing'
         package_tests = loader.discover(start_dir=this_dir, pattern=pattern)
         standard_tests.addTests(package_tests)
         return standard_tests
+
+
+Class and Module Fixtures
+-------------------------
+
+Class and module level fixtures are implemented in :class:`TestSuite`. When the test suite encounters a test from a new class then :meth:`tearDownClass` from the previous class (if there is one) is called, followed by :meth:`setUpClass` from the new class.
+
+Similarly if a test is from a different module from the previous test then ``tearDownModule`` from the previous module is run, followed by ``setUpModule`` from the new module.
+
+After all the tests have run the final ``tearDownClass`` and ``tearDownModule`` are run.
+
+Note that shared fixtures do not play well with [potential] features like test parallelization and they break test isolation. They should be used with care.
+
+The default ordering of tests created by the unittest test loaders is to group all tests from the same modules and classes together. This will lead to ``setUpClass`` / ``setUpModule`` (etc) being called exactly once per class and module. If you randomize the order, so that tests from different modules and classes are adjacent to each other, then these shared fixture functions may be called multiple times in a single test run.
+
+Shared fixtures are not intended to work with suites with non-standard ordering. A ``BaseTestSuite`` still exists for frameworks that don't want to support shared fixtures.
+
+If there are any exceptions raised during one of the shared fixture functions the test is reported as an error. Because there is no corresponding test instance an ``_ErrorHolder`` object (that has the same interface as a :class:`TestCase`) is created to represent the error. If you are just using the standard unittest test runner then this detail doesn't matter, but if you are a framework author it may be relevant.
+
+
+setUpClass and tearDownClass
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These must be implemented as class methods::
+
+    import unittest
+
+    class Test(unittest.TestCase):
+        @classmethod
+        def setUpClass(cls):
+            cls._connection = createExpensiveConnectionObject()
+
+        @classmethod
+        def tearDownClass(cls):
+            cls._connection.destroy()
+
+If you want the ``setUpClass`` and ``tearDownClass`` on base classes called then you must call up to them yourself. The implementations in :class:`TestCase` are empty.
+
+If an exception is raised during a ``setUpClass`` then the tests in the class are not run and the ``tearDownClass`` is not run. Skipped classes will not have ``setUpClass`` or ``tearDownClass`` run.
+
+
+setUpModule and tearDownModule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These should be implemented as functions::
+
+    def setUpModule():
+        createConnection()
+
+    def tearDownModule():
+        closeConnection()
+
+If an exception is raised in a ``setUpModule`` then none of the tests in the module will be run and the ``tearDownModule`` will not be run.
+
+
