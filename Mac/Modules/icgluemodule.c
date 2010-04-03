@@ -454,7 +454,7 @@ initicglue(void)
 {
 	PyObject *m, *d;
 	
-	if (PyErr_WarnPy3k("In 3.x, icglue is removed.", 1))
+	if (PyErr_WarnPy3k("In 3.x, the icglue module is removed.", 1))
 		return;
 
 	/* Create the module and add the functions */

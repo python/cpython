@@ -96,7 +96,7 @@ static struct PyMethodDef OSATerminology_methods[] =
 void
 initOSATerminology(void)
 {
-	if (PyErr_WarnPy3k("In 3.x, OSATerminology is removed.", 1) < 0)
+	if (PyErr_WarnPy3k("In 3.x, the OSATerminology module is removed.", 1) < 0)
 		return;
 	Py_InitModule("OSATerminology", OSATerminology_methods);
 }

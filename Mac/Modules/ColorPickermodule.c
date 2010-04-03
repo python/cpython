@@ -71,7 +71,7 @@ void initColorPicker(void)
 {
 	PyObject *m;
 	
-	if (PyErr_WarnPy3k("In 3.x, ColorPicker is removed.", 1) < 0)
+	if (PyErr_WarnPy3k("In 3.x, the ColorPicker module is removed.", 1) < 0)
 		return;
 
 	/* Create the module and add the functions */
