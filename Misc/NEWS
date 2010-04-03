@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Ensure that tokenization of identifiers is not affected by locale.
+
 - Issue #1222585: Added LDCXXSHARED for C++ support. Patch by Arfrever.
 
 - Raise a TypeError when trying to delete a T_STRING_INPLACE struct member.
