@@ -301,6 +301,12 @@ C-API
 Library
 -------
 
+- Issue #8257: The Decimal construct now accepts a float instance
+  directly, converting that float to a Decimal of equal value:
+
+     >>> Decimal(1.1)
+     Decimal('1.100000000000000088817841970012523233890533447265625')
+
 - Issue #8294: The Fraction constructor now accepts Decimal and float
   instances directly.
 
