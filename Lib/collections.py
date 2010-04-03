@@ -67,8 +67,10 @@ class OrderedDict(dict, MutableMapping):
         PREV = 0
         NEXT = 1
         link = self.__map.pop(key)
-        link[PREV][NEXT] = link[NEXT]
-        link[NEXT][PREV] = link[PREV]
+        link_prev = link[PREV]
+        link_next = link[NEXT]
+        link_prev[NEXT] = link_next
+        link_next[PREV] = link_prev
 
     def __iter__(self):
         'od.__iter__() <==> iter(od)'
@@ -103,7 +105,11 @@ class OrderedDict(dict, MutableMapping):
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
 
-    clear = MutableMapping.clear
+    def clear(self):
+        'od.clear() -> None.  Remove all items from od.'
+        for k in dict.keys(self):
+            del self[k]
+
     setdefault = MutableMapping.setdefault
     update = MutableMapping.update
     pop = MutableMapping.pop
@@ -157,6 +163,8 @@ class OrderedDict(dict, MutableMapping):
                    all(_imap(_eq, self.iteritems(), other.iteritems()))
         return dict.__eq__(self, other)
 
+    def __del__(self):
+        self.clear()                # eliminate cyclical references
 
 
 ################################################################################
