@@ -1712,7 +1712,7 @@ typedef struct {
 	unsigned long ulong_member;
 	float float_member;
 	double double_member;
-	char inplace_member[5];
+	char inplace_member[6];
 #ifdef HAVE_LONG_LONG
 	PY_LONG_LONG longlong_member;
 	unsigned PY_LONG_LONG ulonglong_member;
@@ -1751,7 +1751,7 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 	static char *keywords[] = {
 		"T_BOOL", "T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT",
 		"T_INT", "T_UINT", "T_LONG", "T_ULONG",
-		"T_FLOAT", "T_DOUBLE", "T_INPLACE_STRING",
+		"T_FLOAT", "T_DOUBLE", "T_STRING_INPLACE",
 #ifdef HAVE_LONG_LONG	
 		"T_LONGLONG", "T_ULONGLONG",
 #endif
@@ -1762,7 +1762,7 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 #endif
 		;
 	test_structmembers *ob;
-	const char *s;
+	const char *s = NULL;
 	Py_ssize_t string_len = 0;
 	ob = PyObject_New(test_structmembers, type);
 	if (ob == NULL)
@@ -1775,7 +1775,7 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 					 &ob->structmembers.short_member,
 					 &ob->structmembers.ushort_member,
 					 &ob->structmembers.int_member,
-					 &ob->structmembers.uint_member, 
+					 &ob->structmembers.uint_member,
 					 &ob->structmembers.long_member,
 					 &ob->structmembers.ulong_member,
 					 &ob->structmembers.float_member,
@@ -1789,12 +1789,17 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 		Py_DECREF(ob);
 		return NULL;
 	}
-	if (string_len > 5) {
-		Py_DECREF(ob);
-		PyErr_SetString(PyExc_ValueError, "string too long");
-		return NULL;
+	if (s != NULL) {
+		if (string_len > 5) {
+			Py_DECREF(ob);
+			PyErr_SetString(PyExc_ValueError, "string too long");
+			return NULL;
+		}
+		strcpy(ob->structmembers.inplace_member, s);
 	}
-	strcpy(ob->structmembers.inplace_member, s);
+	else {
+		strcpy(ob->structmembers.inplace_member, "");
+	}
 	return (PyObject *)ob;
 }
 
@@ -1859,7 +1864,9 @@ init_testcapi(void)
 
 	Py_TYPE(&test_structmembersType)=&PyType_Type;
 	Py_INCREF(&test_structmembersType);
-	PyModule_AddObject(m, "test_structmembersType", (PyObject *)&test_structmembersType);
+	/* don't use a name starting with "test", since we don't want
+	   test_capi to automatically call this */
+	PyModule_AddObject(m, "_test_structmembersType", (PyObject *)&test_structmembersType);
 
 	PyModule_AddObject(m, "CHAR_MAX", PyInt_FromLong(CHAR_MAX));
 	PyModule_AddObject(m, "CHAR_MIN", PyInt_FromLong(CHAR_MIN));
