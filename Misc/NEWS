@@ -1223,7 +1223,7 @@ Core and Builtins
 Library
 -------
 
-- Add a reverse() method to collections.deque().
+- Add count() and reverse() methods to collections.deque().
 
 - Fix variations of extending deques:  d.extend(d)  d.extendleft(d)  d+=d
 
