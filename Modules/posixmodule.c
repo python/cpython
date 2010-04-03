@@ -4095,7 +4095,7 @@ win32_kill(PyObject *self, PyObject *args)
 	if (sig == CTRL_C_EVENT || sig == CTRL_BREAK_EVENT) {
 		if (GenerateConsoleCtrlEvent(sig, pid) == 0) {
 			err = GetLastError();
-			PyErr_SetFromWindowsErr(err);
+			return PyErr_SetFromWindowsErr(err);
 		}
 		else
 			Py_RETURN_NONE;
