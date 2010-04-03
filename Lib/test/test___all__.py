@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import bsddb
 import unittest
 from test import test_support as support
 import os
