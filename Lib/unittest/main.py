@@ -98,7 +98,8 @@ class TestProgram(object):
     def usageExit(self, msg=None):
         if msg:
             print msg
-        usage = {'progName': self.progName, 'catchbreak': '', 'failfast': ''}
+        usage = {'progName': self.progName, 'catchbreak': '', 'failfast': '',
+                 'buffer': ''}
         if self.failfast != False:
             usage['failfast'] = FAILFAST
         if self.catchbreak != False:
