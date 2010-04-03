@@ -1719,6 +1719,7 @@ esac
 # Set info about shared libraries.
 AC_SUBST(SO)
 AC_SUBST(LDSHARED)
+AC_SUBST(LDCXXSHARED)
 AC_SUBST(BLDSHARED)
 AC_SUBST(CCSHARED)
 AC_SUBST(LINKFORSHARED)
@@ -1771,36 +1772,47 @@ then
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/5*) 
-		if test "$GCC" = "yes"
-		then LDSHARED='$(CC) -shared'
-		else LDSHARED='$(CC) -G';
+		if test "$GCC" = "yes" ; then
+			LDSHARED='$(CC) -shared'
+			LDCXXSHARED='$(CXX) -shared'
+		else
+			LDSHARED='$(CC) -G'
+			LDCXXSHARED='$(CXX) -G'
 		fi ;;
 	hp*|HP*)
-		if test "$GCC" = "yes"
-		then LDSHARED='$(CC) -shared'
-		else LDSHARED='ld -b';
+		if test "$GCC" = "yes" ; then
+			LDSHARED='$(CC) -shared'
+			LDCXXSHARED='$(CXX) -shared'
+		else
+			LDSHARED='ld -b'
 		fi ;;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	Darwin/1.3*)
 		LDSHARED='$(CC) $(LDFLAGS) -bundle'
+		LDCXXSHARED='$(CXX) $(LDFLAGS) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
 			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			LDCXXSHARED="$LDCXXSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		else
 			# No framework. Ignore undefined symbols, assuming they come from Python
 			LDSHARED="$LDSHARED -undefined suppress"
+			LDCXXSHARED="$LDCXXSHARED -undefined suppress"
 		fi ;;
 	Darwin/1.4*|Darwin/5.*|Darwin/6.*)
 		LDSHARED='$(CC) $(LDFLAGS) -bundle'
+		LDCXXSHARED='$(CXX) $(LDFLAGS) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
 			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			LDCXXSHARED="$LDCXXSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		else
 			# No framework, use the Python app as bundle-loader
 			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
 			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
+			LDCXXSHARED="$LDCXXSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 		fi ;;
 	Darwin/*)
 		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
@@ -1812,26 +1824,35 @@ then
 				LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
 			fi
 			LDSHARED='$(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup'
+			LDCXXSHARED='$(CXX) $(LDFLAGS) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
 		else
 			LDSHARED='$(CC) $(LDFLAGS) -bundle'
+			LDCXXSHARED='$(CXX) $(LDFLAGS) -bundle'
 			if test "$enable_framework" ; then
 				# Link against the framework. All externals should be defined.
 				BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 				LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+				LDCXXSHARED="$LDCXXSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			else
 				# No framework, use the Python app as bundle-loader
 				BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
 				LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
+				LDCXXSHARED="$LDCXXSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 			fi
 		fi
 		;;
-	Linux*|GNU*|QNX*) LDSHARED='$(CC) -shared';;
-	BSD/OS*/4*) LDSHARED="gcc -shared";;
+	Linux*|GNU*|QNX*)
+		LDSHARED='$(CC) -shared'
+		LDCXXSHARED='$(CXX) -shared';;
+	BSD/OS*/4*)
+		LDSHARED="gcc -shared"
+		LDCXXSHARED="g++ -shared";;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
 			LDSHARED='$(CC) -shared ${LDFLAGS}'
+			LDCXXSHARED='$(CXX) -shared ${LDFLAGS}'
 		else
 			LDSHARED="ld -Bshareable ${LDFLAGS}"
 		fi;;
@@ -1839,6 +1860,7 @@ then
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
 				LDSHARED='$(CC) -shared $(CCSHARED) ${LDFLAGS}'
+				LDCXXSHARED='$(CXX) -shared $(CCSHARED) ${LDFLAGS}'
 		else
 				case `uname -r` in
 				[[01]].* | 2.[[0-7]] | 2.[[0-7]].*)
@@ -1846,22 +1868,35 @@ then
 				   ;;
 				*)
 				   LDSHARED='$(CC) -shared $(CCSHARED) ${LDFLAGS}'
+				   LDCXXSHARED='$(CXX) -shared $(CCSHARED) ${LDFLAGS}'
 				   ;;
 				esac
 		fi;;
-	NetBSD*|DragonFly*) LDSHARED="cc -shared ${LDFLAGS}";;
+	NetBSD*|DragonFly*)
+		LDSHARED="cc -shared ${LDFLAGS}"
+		LDCXXSHARED="c++ -shared ${LDFLAGS}";;
 	OpenUNIX*|UnixWare*)
-		if test "$GCC" = "yes"
-		then LDSHARED='$(CC) -shared'
-		else LDSHARED='$(CC) -G'
+		if test "$GCC" = "yes" ; then
+			LDSHARED='$(CC) -shared'
+			LDCXXSHARED='$(CXX) -shared'
+		else
+			LDSHARED='$(CC) -G'
+			LDCXXSHARED='$(CXX) -G'
 		fi;;
-	SCO_SV*) LDSHARED='$(CC) -Wl,-G,-Bexport';;
-	CYGWIN*) LDSHARED="gcc -shared -Wl,--enable-auto-image-base";;
-	atheos*) LDSHARED="gcc -shared";;
+	SCO_SV*)
+		LDSHARED='$(CC) -Wl,-G,-Bexport'
+		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+	CYGWIN*)
+		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
+		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
+	atheos*)
+		LDSHARED="gcc -shared"
+		LDCXXSHARED="g++ -shared";;
 	*)	LDSHARED="ld";;
 	esac
 fi
 AC_MSG_RESULT($LDSHARED)
+LDCXXSHARED=${LDCXXSHARED-$LDSHARED}
 BLDSHARED=${BLDSHARED-$LDSHARED}
 # CCSHARED are the C *flags* used to create objects to go into a shared
 # library (module) -- this is only needed for a few systems
