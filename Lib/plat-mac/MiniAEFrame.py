@@ -136,11 +136,11 @@ class AEServer:
         _class = _attributes['evcl'].type
         _type = _attributes['evid'].type
 
-        if self.ae_handlers.has_key((_class, _type)):
+        if (_class, _type) in self.ae_handlers:
             _function = self.ae_handlers[(_class, _type)]
-        elif self.ae_handlers.has_key((_class, '****')):
+        elif (_class, '****') in self.ae_handlers:
             _function = self.ae_handlers[(_class, '****')]
-        elif self.ae_handlers.has_key(('****', '****')):
+        elif ('****', '****') in self.ae_handlers:
             _function = self.ae_handlers[('****', '****')]
         else:
             raise 'Cannot happen: AE callback without handler', (_class, _type)
@@ -150,7 +150,7 @@ class AEServer:
         _parameters['_attributes'] = _attributes
         _parameters['_class'] = _class
         _parameters['_type'] = _type
-        if _parameters.has_key('----'):
+        if '----' in _parameters:
             _object = _parameters['----']
             del _parameters['----']
             # The try/except that used to be here can mask programmer errors.

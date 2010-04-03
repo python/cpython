@@ -152,7 +152,7 @@ class PimpUrllibDownloader(PimpDownloader):
         self.update("Downloading %s: opening connection" % url)
         keepgoing = True
         download = urllib2.urlopen(url)
-        if download.headers.has_key("content-length"):
+        if 'content-length' in download.headers:
             length = long(download.headers['content-length'])
         else:
             length = -1
@@ -420,7 +420,7 @@ class PimpDatabase:
 
         for p in packages:
             p = dict(p)
-            if p.has_key('Download-URL'):
+            if 'Download-URL' in p:
                 p['Download-URL'] = urllib.basejoin(url, p['Download-URL'])
             flavor = p.get('Flavor')
             if flavor == 'source':
@@ -552,9 +552,9 @@ class PimpPackage:
         installed through pimp, return the name in (parentheses)."""
 
         rv = self._dict['Name']
-        if self._dict.has_key('Version'):
+        if 'Version' in self._dict:
             rv = rv + '-%s' % self._dict['Version']
-        if self._dict.has_key('Flavor'):
+        if 'Flavor' in self._dict:
             rv = rv + '-%s' % self._dict['Flavor']
         if self._dict.get('Flavor') == 'hidden':
             # Pseudo-package, show in parentheses
@@ -647,9 +647,9 @@ class PimpPackage:
                 descr = str(item)
             else:
                 name = item['Name']
-                if item.has_key('Version'):
+                if 'Version' in item:
                     name = name + '-' + item['Version']
-                if item.has_key('Flavor'):
+                if 'Flavor' in item:
                     name = name + '-' + item['Flavor']
                 pkg = self._db.find(name)
                 if not pkg:
@@ -800,10 +800,10 @@ class PimpPackage_binary(PimpPackage):
         If output is given it should be a file-like object and it
         will receive a log of what happened."""
 
-        if self._dict.has_key('Install-command'):
+        if 'Install-command' in self._dict:
             return "%s: Binary package cannot have Install-command" % self.fullname()
 
-        if self._dict.has_key('Pre-install-command'):
+        if 'Pre-install-command' in self._dict:
             if _cmd(output, '/tmp', self._dict['Pre-install-command']):
                 return "pre-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Pre-install-command'])
@@ -836,7 +836,7 @@ class PimpPackage_binary(PimpPackage):
 
         self.afterInstall()
 
-        if self._dict.has_key('Post-install-command'):
+        if 'Post-install-command' in self._dict:
             if _cmd(output, '/tmp', self._dict['Post-install-command']):
                 return "%s: post-install: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Post-install-command'])
@@ -861,7 +861,7 @@ class PimpPackage_source(PimpPackage):
         If output is given it should be a file-like object and it
         will receive a log of what happened."""
 
-        if self._dict.has_key('Pre-install-command'):
+        if 'Pre-install-command' in self._dict:
             if _cmd(output, self._buildDirname, self._dict['Pre-install-command']):
                 return "pre-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Pre-install-command'])
@@ -898,7 +898,7 @@ class PimpPackage_source(PimpPackage):
 
         self.afterInstall()
 
-        if self._dict.has_key('Post-install-command'):
+        if 'Post-install-command' in self._dict:
             if _cmd(output, self._buildDirname, self._dict['Post-install-command']):
                 return "post-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Post-install-command'])
@@ -916,10 +916,10 @@ class PimpPackage_installer(PimpPackage):
         If output is given it should be a file-like object and it
         will receive a log of what happened."""
 
-        if self._dict.has_key('Post-install-command'):
+        if 'Post-install-command' in self._dict:
             return "%s: Installer package cannot have Post-install-command" % self.fullname()
 
-        if self._dict.has_key('Pre-install-command'):
+        if 'Pre-install-command' in self._dict:
             if _cmd(output, '/tmp', self._dict['Pre-install-command']):
                 return "pre-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Pre-install-command'])

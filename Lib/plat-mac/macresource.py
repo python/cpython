@@ -51,7 +51,7 @@ def need(restype, resid, filename=None, modname=None):
     if modname == '__main__':
         # If we're main we look in the current directory
         searchdirs = [os.curdir]
-    if sys.modules.has_key(modname):
+    if modname in sys.modules:
         mod = sys.modules[modname]
         if hasattr(mod, '__file__'):
             searchdirs = [os.path.dirname(mod.__file__)]
