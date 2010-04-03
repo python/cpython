@@ -9,7 +9,7 @@ import unittest
 from test import test_support
 
 ts=test_structmembersType(False, 1, 2, 3, 4, 5, 6, 7, 8,
-                          9.99999, 10.1010101010)
+                          9.99999, 10.1010101010, "hi")
 
 class ReadWriteTests(unittest.TestCase):
 
@@ -67,6 +67,11 @@ class ReadWriteTests(unittest.TestCase):
         self.assertEquals(ts.T_LONGLONG, 3)
         ts.T_ULONGLONG = 4
         self.assertEquals(ts.T_ULONGLONG, 4)
+
+    def test_inplace_string(self):
+        self.assertEquals(ts.T_STRING_INPLACE, "hi")
+        self.assertRaises(TypeError, setattr, ts, "T_STRING_INPLACE", "s")
+        self.assertRaises(TypeError, delattr, ts, "T_STRING_INPLACE")
 
 
 class TestWarnings(unittest.TestCase):
