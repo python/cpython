@@ -301,6 +301,16 @@ C-API
 Library
 -------
 
+- Issue #7279: Comparisons involving a Decimal signaling NaN now
+  signal InvalidOperation instead of returning False.  (Comparisons
+  involving a quiet NaN are unchanged.)  Also, Decimal quiet NaNs
+  are now hashable;  Decimal signaling NaNs remain unhashable.
+
+- Issue #2531: Comparison operations between floats and Decimal
+  instances now return a result based on the numeric values of the
+  operands;  previously they returned an arbitrary result based on
+  the relative ordering of id(float) and id(Decimal).
+
 - Added a subtract() method to collections.Counter().
 
 - Issue #8233: When run as a script, py_compile.py optionally takes a single
