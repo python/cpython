@@ -48,6 +48,7 @@ if (sys.version_info >= (2, 6)) and (sys.version_info < (3, 0)) :
         warnings.warnpy3k("in 3.x, the bsddb module has been removed; "
                           "please use the pybsddb project instead",
                           DeprecationWarning, 2)
+    warnings.filterwarnings("*PyCObject*", DeprecationWarning, "_bsddb")
 
 try:
     if __name__ == 'bsddb3':
