@@ -158,6 +158,7 @@ get_ulong(PyObject *v, unsigned long *p)
 		return -1;
 	assert(PyLong_Check(v));
 	x = PyLong_AsUnsignedLong(v);
+        Py_DECREF(v);
 	if (x == (unsigned long)-1 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
@@ -182,6 +183,7 @@ get_longlong(PyObject *v, PY_LONG_LONG *p)
 		return -1;
 	assert(PyLong_Check(v));
 	x = PyLong_AsLongLong(v);
+        Py_DECREF(v);
 	if (x == (PY_LONG_LONG)-1 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
@@ -204,6 +206,7 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 		return -1;
 	assert(PyLong_Check(v));
 	x = PyLong_AsUnsignedLongLong(v);
+        Py_DECREF(v);
 	if (x == (unsigned PY_LONG_LONG)-1 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
