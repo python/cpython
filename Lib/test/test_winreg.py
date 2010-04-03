@@ -242,11 +242,14 @@ class LocalWinregTests(BaseWinregTests):
             key = OpenKey(HKEY_CURRENT_USER, test_key_name)
             self.assertNotEqual(key.handle, 0)
 
-            self.assertRaises(NotImplementedError, DisableReflectionKey(key))
-            self.assertRaises(NotImplementedError, EnableReflectionKey(key))
-            self.assertRaises(NotImplementedError, QueryReflectionKey(key))
-            self.assertRaises(NotImplementedError,
-                              DeleteKeyEx(HKEY_CURRENT_USER, test_key_name))
+            with self.assertRaises(NotImplementedError):
+                DisableReflectionKey(key)
+            with self.assertRaises(NotImplementedError):
+                EnableReflectionKey(key)
+            with self.assertRaises(NotImplementedError):
+                QueryReflectionKey(key)
+            with self.assertRaises(NotImplementedError):
+                DeleteKeyEx(HKEY_CURRENT_USER, test_key_name)
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
