@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #1222585: Added LDCXXSHARED for C++ support. Patch by Arfrever.
+
 - Raise a TypeError when trying to delete a T_STRING_INPLACE struct member.
 
 - Issue #8211: Save/restore CFLAGS around AC_PROG_CC in configure.in, compiler
