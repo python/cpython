@@ -179,16 +179,6 @@ decode_str(const char *str, int exec_input, struct tok_state *tok)
 
 #else /* PGEN */
 
-/* Ensure that the locale does not interfere with tokenization. */
-
-static int
-ascii_isalnum(int c)
-{
-	return (('a' <= c && c <= 'z') ||
-		('A' <= c && c <= 'Z') ||
-		('0' <= c && c <= '9'));
-}
-
 static char *
 error_ret(struct tok_state *tok) /* XXX */
 {
@@ -255,7 +245,7 @@ get_coding_spec(const char *s, Py_ssize_t size)
 			} while (t[0] == '\x20' || t[0] == '\t');
 
 			begin = t;
-			while (ascii_isalnum(Py_CHARMASK(t[0])) ||
+			while (Py_ISALNUM(t[0]) ||
 			       t[0] == '-' || t[0] == '_' || t[0] == '.')
 				t++;
 
