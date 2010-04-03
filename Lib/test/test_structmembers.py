@@ -1,4 +1,4 @@
-from _testcapi import test_structmembersType, \
+from _testcapi import _test_structmembersType, \
     CHAR_MAX, CHAR_MIN, UCHAR_MAX, \
     SHRT_MAX, SHRT_MIN, USHRT_MAX, \
     INT_MAX, INT_MIN, UINT_MAX, \
@@ -9,7 +9,7 @@ from _testcapi import test_structmembersType, \
 import unittest
 from test import support
 
-ts=test_structmembersType(False,  # T_BOOL
+ts=_test_structmembersType(False,  # T_BOOL
                           1,      # T_BYTE
                           2,      # T_UBYTE
                           3,      # T_SHORT
