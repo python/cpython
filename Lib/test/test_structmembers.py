@@ -52,21 +52,21 @@ class ReadWriteTests(unittest.TestCase):
         ts.T_ULONG = ULONG_MAX
         self.assertEquals(ts.T_ULONG, ULONG_MAX)
 
-    @unittest.skipUnless(hasattr(ts, "T_LONGLONG"), "long long not present")
-    def test_longlong(self):
-        ts.T_LONGLONG = LLONG_MAX
-        self.assertEquals(ts.T_LONGLONG, LLONG_MAX)
-        ts.T_LONGLONG = LLONG_MIN
-        self.assertEquals(ts.T_LONGLONG, LLONG_MIN)
+    if hasattr(ts, "T_LONGLONG"):
+        def test_longlong(self):
+            ts.T_LONGLONG = LLONG_MAX
+            self.assertEquals(ts.T_LONGLONG, LLONG_MAX)
+            ts.T_LONGLONG = LLONG_MIN
+            self.assertEquals(ts.T_LONGLONG, LLONG_MIN)
 
-        ts.T_ULONGLONG = ULLONG_MAX
-        self.assertEquals(ts.T_ULONGLONG, ULLONG_MAX)
+            ts.T_ULONGLONG = ULLONG_MAX
+            self.assertEquals(ts.T_ULONGLONG, ULLONG_MAX)
 
-        ## make sure these will accept a plain int as well as a long
-        ts.T_LONGLONG = 3
-        self.assertEquals(ts.T_LONGLONG, 3)
-        ts.T_ULONGLONG = 4
-        self.assertEquals(ts.T_ULONGLONG, 4)
+            ## make sure these will accept a plain int as well as a long
+            ts.T_LONGLONG = 3
+            self.assertEquals(ts.T_LONGLONG, 3)
+            ts.T_ULONGLONG = 4
+            self.assertEquals(ts.T_ULONGLONG, 4)
 
     def test_inplace_string(self):
         self.assertEquals(ts.T_STRING_INPLACE, "hi")
