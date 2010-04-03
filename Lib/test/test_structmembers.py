@@ -1,4 +1,4 @@
-from _testcapi import test_structmembersType, \
+from _testcapi import _test_structmembersType, \
     CHAR_MAX, CHAR_MIN, UCHAR_MAX, \
     SHRT_MAX, SHRT_MIN, USHRT_MAX, \
     INT_MAX, INT_MIN, UINT_MAX, \
@@ -8,7 +8,7 @@ from _testcapi import test_structmembersType, \
 import warnings, exceptions, unittest, sys
 from test import test_support
 
-ts=test_structmembersType(False, 1, 2, 3, 4, 5, 6, 7, 8,
+ts=_test_structmembersType(False, 1, 2, 3, 4, 5, 6, 7, 8,
                           9.99999, 10.1010101010, "hi")
 
 class ReadWriteTests(unittest.TestCase):
