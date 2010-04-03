@@ -107,6 +107,7 @@ LIBP=		$(LIBDIR)/python$(VERSION)
 SO=		@SO@
 LDSHARED=	@LDSHARED@
 BLDSHARED=	@BLDSHARED@
+LDCXXSHARED=	@LDCXXSHARED@
 DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
 # Executable suffix (.exe on Windows and Mac OS X)
