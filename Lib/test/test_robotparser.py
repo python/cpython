@@ -1,6 +1,7 @@
 import io
 import unittest
 import urllib.robotparser
+from urllib.error import URLError
 from test import support
 
 class RobotTestCase(unittest.TestCase):
@@ -208,18 +209,19 @@ RobotTest(13, doc, good, bad, agent="googlebot")
 class NetworkTestCase(unittest.TestCase):
 
     def testPasswordProtectedSite(self):
-        if not support.is_resource_enabled('network'):
-            return
-        # whole site is password-protected.
+        support.requires('network')
+        # XXX it depends on an external resource which could be unavailable
         url = 'http://mueblesmoraleda.com'
         parser = urllib.robotparser.RobotFileParser()
         parser.set_url(url)
-        parser.read()
+        try:
+            parser.read()
+        except URLError:
+            self.skipTest('%s is unavailable' % url)
         self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)
 
     def testPythonOrg(self):
-        if not support.is_resource_enabled('network'):
-            return
+        support.requires('network')
         parser = urllib.robotparser.RobotFileParser(
             "http://www.python.org/robots.txt")
         parser.read()
