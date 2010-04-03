@@ -131,7 +131,7 @@ class Keyword:
         self.keyword = "%-4.4s" % str(keyword)
 
     def __repr__(self):
-        return "Keyword(%r)" % `self.keyword`
+        return "Keyword(%r)" % repr(self.keyword)
 
     def __str__(self):
         return string.strip(self.keyword)
