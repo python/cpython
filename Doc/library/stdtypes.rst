@@ -2539,12 +2539,12 @@ the particular object.
 
 .. _typememoryview:
 
-memoryview Types
-================
+memoryview type
+===============
 
-:class:`memoryview`\s allow Python code to access the internal data of an object
-that supports the buffer protocol without copying.  Memory can be interpreted as
-simple bytes or complex data structures.
+:class:`memoryview` objects allow Python code to access the internal data
+of an object that supports the buffer protocol without copying.  Memory
+is generally interpreted as simple bytes.
 
 .. class:: memoryview(obj)
 
