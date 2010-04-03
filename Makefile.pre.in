@@ -442,7 +442,7 @@ libpython$(VERSION).sl: $(LIBRARY_OBJS)
 gdbhooks: $(BUILDPYTHON)-gdb.py
 
 $(BUILDPYTHON)-gdb.py: Tools/gdb/libpython.py
-	$(INSTALL_SCRIPT) $< $(BUILDPYTHON)-gdb.py
+	$(INSTALL_DATA) $< $(BUILDPYTHON)-gdb.py
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current
