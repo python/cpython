@@ -92,22 +92,6 @@ char *_PyParser_TokenNames[] = {
 	"<N_TOKENS>"
 };
 
-
-/* Ensure that the locale does not interfere with tokenization. */
-
-static int
-ascii_isalpha(int c)
-{
-	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
-}
-
-static int
-ascii_isalnum(int c)
-{
-	return ascii_isalpha(c) || ('0' <= c && c <= '9');
-}
-
-
 /* Create and initialize a new tok_state structure */
 
 static struct tok_state *
@@ -245,7 +229,7 @@ get_coding_spec(const char *s, Py_ssize_t size)
 			} while (t[0] == '\x20' || t[0] == '\t');
 
 			begin = t;
-			while (ascii_isalnum(Py_CHARMASK(t[0])) ||
+			while (Py_ISALNUM(t[0]) ||
 			       t[0] == '-' || t[0] == '_' || t[0] == '.')
 				t++;
 
@@ -1355,7 +1339,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	}
 
 	/* Identifier (most frequent token!) */
-	if (ascii_isalpha(c) || c == '_') {
+	if (Py_ISALPHA(c) || c == '_') {
 		/* Process r"", u"" and ur"" */
 		switch (c) {
 		case 'b':
@@ -1381,7 +1365,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 				goto letter_quote;
 			break;
 		}
-		while (ascii_isalnum(c) || c == '_') {
+		while (Py_ISALNUM(c) || c == '_') {
 			c = tok_nextc(tok);
 		}
 		tok_backup(tok, c);
