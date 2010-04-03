@@ -107,25 +107,50 @@ static char *integer_codes = "bBhHiIlLqQ";
 static PyObject *
 get_pylong(PyObject *v)
 {
-	PyObject *r;
+	PyObject *r, *w;
+	int converted = 0;
 	assert(v != NULL);
 	if (!PyInt_Check(v) && !PyLong_Check(v)) {
 		PyNumberMethods *m;
-		/* Not an integer; try to use __int__ to convert to an
-		   integer.  This behaviour is deprecated, and is removed in
+		/* Not an integer; first try to use __index__ to
+		   convert to an integer.  If the __index__ method
+		   doesn't exist, or raises a TypeError, try __int__.
+		   Use of the latter is deprecated, and will fail in
 		   Python 3.x. */
+
 		m = Py_TYPE(v)->tp_as_number;
-		if (m != NULL && m->nb_int != NULL) {
+		if (PyIndex_Check(v)) {
+			w = PyNumber_Index(v);
+			if (w != NULL) {
+				v = w;
+				if (!PyInt_Check(v) && !PyLong_Check(v)) {
+					PyErr_SetString(PyExc_TypeError,
+							"__index__ method "
+							"returned non-integer");
+					return NULL;
+				}
+				/* successfully converted to an integer */
+				converted = 1;
+			}
+			else if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+				PyErr_Clear();
+			}
+			else
+				return NULL;
+		}
+		if (!converted && m != NULL && m->nb_int != NULL) {
 			/* Special case warning message for floats, for
 			   backwards compatibility. */
 			if (PyFloat_Check(v)) {
-				if (PyErr_WarnEx(PyExc_DeprecationWarning,
-						 FLOAT_COERCE_WARN, 1))
+				if (PyErr_WarnEx(
+					    PyExc_DeprecationWarning,
+					    FLOAT_COERCE_WARN, 1))
 					return NULL;
 			}
 			else {
-				if (PyErr_WarnEx(PyExc_DeprecationWarning,
-						 NON_INTEGER_WARN, 1))
+				if (PyErr_WarnEx(
+					    PyExc_DeprecationWarning,
+					    NON_INTEGER_WARN, 1))
 					return NULL;
 			}
 			v = m->nb_int(v);
@@ -133,13 +158,16 @@ get_pylong(PyObject *v)
 				return NULL;
 			if (!PyInt_Check(v) && !PyLong_Check(v)) {
 				PyErr_SetString(PyExc_TypeError,
-				  "__int__ method returned non-integer");
+						"__int__ method returned "
+						"non-integer");
 				return NULL;
 			}
+			converted = 1;
 		}
-		else {
+		if (!converted) {
 			PyErr_SetString(StructError,
-					"cannot convert argument to integer");
+					"cannot convert argument "
+					"to integer");
 			return NULL;
 		}
 	}

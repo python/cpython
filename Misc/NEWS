@@ -173,6 +173,11 @@ Extension Modules
 
 - Issue #8142: Update libffi to the 3.0.9 release.
 
+- Issue #8300: When passing a non-integer argument to struct.pack with any
+  integer format code, struct.pack first attempts to convert the non-integer
+  using its __index__ method.  If that method is non-existent or raises
+  TypeError it goes on to try the __int__ method, as described below.
+
 - Issue #1530559: When passing a non-integer argument to struct.pack with *any*
   integer format code (one of 'bBhHiIlLqQ'), struct.pack attempts to use the
   argument's __int__ method to convert to an integer before packing.  It also
