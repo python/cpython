@@ -172,7 +172,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 
 	addr += l->offset;
 
-	if ((l->flags & READONLY) || l->type == T_STRING)
+	if ((l->flags & READONLY))
 	{
 		PyErr_SetString(PyExc_TypeError, "readonly attribute");
 		return -1;
@@ -328,6 +328,10 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 			return -1;
 		}
 		break;
+	case T_STRING:
+        case T_STRING_INPLACE:
+		PyErr_SetString(PyExc_TypeError, "readonly attribute");
+		return -1;
 #ifdef HAVE_LONG_LONG
 	case T_LONGLONG:{
 		PY_LONG_LONG value;
