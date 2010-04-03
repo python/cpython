@@ -24,7 +24,7 @@ the format unit; the entry in (round) parentheses is the Python object type
 that matches the format unit; and the entry in [square] brackets is the type
 of the C variable(s) whose address should be passed.
 
-``s`` (string or Unicode object) [const char \*]
+``s`` (string or Unicode) [const char \*]
    Convert a Python string or Unicode object to a C pointer to a character
    string.  You must not provide storage for the string itself; a pointer to
    an existing string is stored into the character pointer variable whose
@@ -55,32 +55,32 @@ of the C variable(s) whose address should be passed.
 
    .. versionadded:: 2.6
 
-``z`` (string or ``None``) [const char \*]
+``z`` (string, Unicode  or ``None``) [const char \*]
    Like ``s``, but the Python object may also be ``None``, in which case the C
    pointer is set to *NULL*.
 
-``z#`` (string or ``None`` or any read buffer compatible object) [const char \*, int]
+``z#`` (string, Unicode, ``None`` or any read buffer compatible object) [const char \*, int]
    This is to ``s#`` as ``z`` is to ``s``.
 
-``z*`` (string or ``None`` or any buffer compatible object) [Py_buffer]
+``z*`` (string, Unicode, ``None`` or any buffer compatible object) [Py_buffer]
    This is to ``s*`` as ``z`` is to ``s``.
 
    .. versionadded:: 2.6
 
-``u`` (Unicode object) [Py_UNICODE \*]
+``u`` (Unicode) [Py_UNICODE \*]
    Convert a Python Unicode object to a C pointer to a NUL-terminated buffer
    of 16-bit Unicode (UTF-16) data.  As with ``s``, there is no need to
    provide storage for the Unicode data buffer; a pointer to the existing
    Unicode data is stored into the :ctype:`Py_UNICODE` pointer variable whose
    address you pass.
 
-``u#`` (Unicode object) [Py_UNICODE \*, int]
+``u#`` (Unicode) [Py_UNICODE \*, int]
    This variant on ``u`` stores into two C variables, the first one a pointer
    to a Unicode data buffer, the second one its length. Non-Unicode objects
    are handled by interpreting their read-buffer pointer as pointer to a
    :ctype:`Py_UNICODE` array.
 
-``es`` (string, Unicode object or character buffer compatible object) [const char \*encoding, char \*\*buffer]
+``es`` (string, Unicode or character buffer compatible object) [const char \*encoding, char \*\*buffer]
    This variant on ``s`` is used for encoding Unicode and objects convertible
    to Unicode into a character buffer. It only works for encoded data without
    embedded NUL bytes.
@@ -99,12 +99,12 @@ of the C variable(s) whose address should be passed.
    newly allocated storage.  The caller is responsible for calling
    :cfunc:`PyMem_Free` to free the allocated buffer after use.
 
-``et`` (string, Unicode object or character buffer compatible object) [const char \*encoding, char \*\*buffer]
+``et`` (string, Unicode or character buffer compatible object) [const char \*encoding, char \*\*buffer]
    Same as ``es`` except that 8-bit string objects are passed through without
    recoding them.  Instead, the implementation assumes that the string object
    uses the encoding passed in as parameter.
 
-``es#`` (string, Unicode object or character buffer compatible object) [const char \*encoding, char \*\*buffer, int \*buffer_length]
+``es#`` (string, Unicode or character buffer compatible object) [const char \*encoding, char \*\*buffer, int \*buffer_length]
    This variant on ``s#`` is used for encoding Unicode and objects convertible
    to Unicode into a character buffer.  Unlike the ``es`` format, this variant
    allows input data which contains NUL characters.
@@ -136,7 +136,7 @@ of the C variable(s) whose address should be passed.
    In both cases, *\*buffer_length* is set to the length of the encoded data
    without the trailing NUL byte.
 
-``et#`` (string, Unicode object or character buffer compatible object) [const char \*encoding, char \*\*buffer, int \*buffer_length]
+``et#`` (string, Unicode or character buffer compatible object) [const char \*encoding, char \*\*buffer, int \*buffer_length]
    Same as ``es#`` except that string objects are passed through without
    recoding them. Instead, the implementation assumes that the string object
    uses the encoding passed in as parameter.
