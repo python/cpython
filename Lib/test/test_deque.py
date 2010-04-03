@@ -119,6 +119,23 @@ class TestBasic(unittest.TestCase):
             d = deque(s)
             for letter in 'abcdefghijklmnopqrstuvwxyz':
                 self.assertEqual(s.count(letter), d.count(letter), (s, d, letter))
+        self.assertRaises(TypeError, d.count)       # too few args
+        self.assertRaises(TypeError, d.count, 1, 2) # too many args
+        class BadCompare:
+            def __eq__(self, other):
+                raise ArithmeticError
+        d = deque([1, 2, BadCompare(), 3])
+        self.assertRaises(ArithmeticError, d.count, 2)
+        d = deque([1, 2, 3])
+        self.assertRaises(ArithmeticError, d.count, BadCompare())
+        class MutatingCompare:
+            def __eq__(self, other):
+                self.d.pop()
+                return True
+        m = MutatingCompare()
+        d = deque([1, 2, 3, m, 4, 5])
+        m.d = d
+        self.assertRaises(RuntimeError, d.count, 3)
 
     def test_comparisons(self):
         d = deque('xabc'); d.popleft()
