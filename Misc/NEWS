@@ -576,7 +576,7 @@ Library
 - Issue #5949: added check for correct lineends in input from IMAP server
   in imaplib.
 
-- Add a reverse() method to collections.deque().
+- Add count() and reverse() methods to collections.deque().
 
 - Fix variations of extending deques:  d.extend(d)  d.extendleft(d)  d+=d
 
