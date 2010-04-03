@@ -3,6 +3,7 @@
 
 """Fraction, infinite-precision, real numbers."""
 
+from decimal import Decimal
 import math
 import numbers
 import operator
@@ -41,13 +42,21 @@ _RATIONAL_FORMAT = re.compile(r"""
 class Fraction(numbers.Rational):
     """This class implements rational numbers.
 
-    Fraction(8, 6) will produce a rational number equivalent to
-    4/3. Both arguments must be Integral. The numerator defaults to 0
-    and the denominator defaults to 1 so that Fraction(3) == 3 and
-    Fraction() == 0.
+    In the two-argument form of the constructor, Fraction(8, 6) will
+    produce a rational number equivalent to 4/3. Both arguments must
+    be Rational. The numerator defaults to 0 and the denominator
+    defaults to 1 so that Fraction(3) == 3 and Fraction() == 0.
 
-    Fraction can also be constructed from strings of the form
-    '[-+]?[0-9]+((/|.)[0-9]+)?', optionally surrounded by spaces.
+    Fractions can also be constructed from:
+
+      - numeric strings similar to those accepted by the
+        float constructor (for example, '-2.3' or '1e10')
+
+      - strings of the form '123/456'
+
+      - float and Decimal instances
+
+      - other Rational instances (including integers)
 
     """
 
@@ -57,8 +66,32 @@ class Fraction(numbers.Rational):
     def __new__(cls, numerator=0, denominator=None):
         """Constructs a Rational.
 
-        Takes a string like '3/2' or '1.5', another Rational, or a
-        numerator/denominator pair.
+        Takes a string like '3/2' or '1.5', another Rational instance, a
+        numerator/denominator pair, or a float.
+
+        Examples
+        --------
+
+        >>> Fraction(10, -8)
+        Fraction(-5, 4)
+        >>> Fraction(Fraction(1, 7), 5)
+        Fraction(1, 35)
+        >>> Fraction(Fraction(1, 7), Fraction(2, 3))
+        Fraction(3, 14)
+        >>> Fraction('314')
+        Fraction(314, 1)
+        >>> Fraction('-35/4')
+        Fraction(-35, 4)
+        >>> Fraction('3.1415') # conversion from numeric string
+        Fraction(6283, 2000)
+        >>> Fraction('-47e-2') # string may include a decimal exponent
+        Fraction(-47, 100)
+        >>> Fraction(1.47)  # direct construction from float (exact conversion)
+        Fraction(6620291452234629, 4503599627370496)
+        >>> Fraction(2.25)
+        Fraction(9, 4)
+        >>> Fraction(Decimal('1.47'))
+        Fraction(147, 100)
 
         """
         self = super(Fraction, cls).__new__(cls)
@@ -67,6 +100,19 @@ class Fraction(numbers.Rational):
             if isinstance(numerator, numbers.Rational):
                 self._numerator = numerator.numerator
                 self._denominator = numerator.denominator
+                return self
+
+            elif isinstance(numerator, float):
+                # Exact conversion from float
+                value = Fraction.from_float(numerator)
+                self._numerator = value._numerator
+                self._denominator = value._denominator
+                return self
+
+            elif isinstance(numerator, Decimal):
+                value = Fraction.from_decimal(numerator)
+                self._numerator = value._numerator
+                self._denominator = value._denominator
                 return self
 
             elif isinstance(numerator, str):

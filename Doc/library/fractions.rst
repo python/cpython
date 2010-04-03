@@ -15,17 +15,24 @@ another rational number, or from a string.
 
 .. class:: Fraction(numerator=0, denominator=1)
            Fraction(other_fraction)
+           Fraction(float)
+           Fraction(decimal)
            Fraction(string)
 
-   The first version requires that *numerator* and *denominator* are
-   instances of :class:`numbers.Rational` and returns a new
-   :class:`Fraction` instance with value ``numerator/denominator``. If
-   *denominator* is :const:`0`, it raises a
-   :exc:`ZeroDivisionError`. The second version requires that
-   *other_fraction* is an instance of :class:`numbers.Rational` and
-   returns an :class:`Fraction` instance with the same value.  The
-   last version of the constructor expects a string instance.  The
-   usual form for this string is::
+   The first version requires that *numerator* and *denominator* are instances
+   of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
+   with value ``numerator/denominator``. If *denominator* is :const:`0`, it
+   raises a :exc:`ZeroDivisionError`. The second version requires that
+   *other_fraction* is an instance of :class:`numbers.Rational` and returns a
+   :class:`Fraction` instance with the same value.  The next two versions accept
+   either a :class:`float` or a :class:`decimal.Decimal` instance, and return a
+   :class:`Fraction` instance with exactly the same value.  Note that due to the
+   usual issues with binary floating-point (see :ref:`tut-fp-issues`), the
+   argument to ``Fraction(1.1)`` is not exactly equal to 11/10, and so
+   ``Fraction(1.1)`` does *not* return ``Fraction(11, 10)`` as one might expect.
+   (But see the documentation for the :meth:`limit_denominator` method below.)
+   The last version of the constructor expects a string or unicode instance.
+   The usual form for this instance is::
 
       [sign] numerator ['/' denominator]
 
@@ -55,6 +62,13 @@ another rational number, or from a string.
       Fraction(-1, 8)
       >>> Fraction('7e-6')
       Fraction(7, 1000000)
+      >>> Fraction(2.25)
+      Fraction(9, 4)
+      >>> Fraction(1.1)
+      Fraction(2476979795053773, 2251799813685248)
+      >>> from decimal import Decimal
+      >>> Fraction(Decimal('1.1'))
+      Fraction(11, 10)
 
 
    The :class:`Fraction` class inherits from the abstract base class
@@ -63,6 +77,10 @@ another rational number, or from a string.
    and should be treated as immutable.  In addition,
    :class:`Fraction` has the following methods:
 
+   .. versionchanged:: 3.2
+      The :class:`Fraction` constructor now accepts :class:`float` and
+      :class:`decimal.Decimal` instances.
+
 
    .. method:: from_float(flt)
 
@@ -70,11 +88,18 @@ another rational number, or from a string.
       value of *flt*, which must be a :class:`float`. Beware that
       ``Fraction.from_float(0.3)`` is not the same value as ``Fraction(3, 10)``
 
+      .. note:: From Python 3.2 onwards, you can also construct a
+         :class:`Fraction` instance directly from a :class:`float`.
+
 
    .. method:: from_decimal(dec)
 
       This class method constructs a :class:`Fraction` representing the exact
       value of *dec*, which must be a :class:`decimal.Decimal` instance.
+
+      .. note:: From Python 3.2 onwards, you can also construct a
+         :class:`Fraction` instance directly from a :class:`decimal.Decimal`
+         instance.
 
 
    .. method:: limit_denominator(max_denominator=1000000)
@@ -90,10 +115,12 @@ another rational number, or from a string.
       or for recovering a rational number that's represented as a float:
 
          >>> from math import pi, cos
-         >>> Fraction.from_float(cos(pi/3))
+         >>> Fraction(cos(pi/3))
          Fraction(4503599627370497, 9007199254740992)
-         >>> Fraction.from_float(cos(pi/3)).limit_denominator()
+         >>> Fraction(cos(pi/3)).limit_denominator()
          Fraction(1, 2)
+         >>> Fraction(1.1).limit_denominator()
+         Fraction(11, 10)
 
 
    .. method:: __floor__()
