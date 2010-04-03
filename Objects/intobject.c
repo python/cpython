@@ -1150,7 +1150,7 @@ int_to_decimal_string(PyIntObject *v) {
 	p = bufend = buf + sizeof(buf);
 	absn = n < 0 ? 0UL - n : n;
 	do {
-		*--p = '0' + absn % 10;
+		*--p = '0' + (char)(absn % 10);
 		absn /= 10;
 	} while (absn);
 	if (n < 0)
