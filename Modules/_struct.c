@@ -89,7 +89,8 @@ typedef struct { char c; _Bool x; } s_bool;
 #pragma options align=reset
 #endif
 
-/* Helper to get a PyLongObject.  Caller should decref. */
+/* Helper for integer format codes: converts an arbitrary Python object to a
+   PyLongObject if possible, otherwise fails.  Caller should decref. */
 
 static PyObject *
 get_pylong(PyObject *v)
@@ -113,13 +114,13 @@ get_long(PyObject *v, long *p)
 {
 	long x;
 
-	if (!PyLong_Check(v)) {
-		PyErr_SetString(StructError,
-				"required argument is not an integer");
+	v = get_pylong(v);
+	if (v == NULL)
 		return -1;
-	}
+	assert(PyLong_Check(v));
 	x = PyLong_AsLong(v);
-	if (x == -1 && PyErr_Occurred()) {
+	Py_DECREF(v);
+	if (x == (long)-1 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
 					"argument out of range");
@@ -137,11 +138,10 @@ get_ulong(PyObject *v, unsigned long *p)
 {
 	unsigned long x;
 
-	if (!PyLong_Check(v)) {
-		PyErr_SetString(StructError,
-				"required argument is not an integer");
+	v = get_pylong(v);
+	if (v == NULL)
 		return -1;
-	}
+	assert(PyLong_Check(v));
 	x = PyLong_AsUnsignedLong(v);
 	if (x == (unsigned long)-1 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_OverflowError))
@@ -161,13 +161,13 @@ static int
 get_longlong(PyObject *v, PY_LONG_LONG *p)
 {
 	PY_LONG_LONG x;
-	if (!PyLong_Check(v)) {
-		PyErr_SetString(StructError,
-				"required argument is not an integer");
+
+	v = get_pylong(v);
+	if (v == NULL)
 		return -1;
-	}
+	assert(PyLong_Check(v));
 	x = PyLong_AsLongLong(v);
-	if (x == -1 && PyErr_Occurred()) {
+	if (x == (PY_LONG_LONG)-1 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
 					"argument out of range");
@@ -183,13 +183,13 @@ static int
 get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 {
 	unsigned PY_LONG_LONG x;
-	if (!PyLong_Check(v)) {
-		PyErr_SetString(StructError,
-				"required argument is not an integer");
+
+	v = get_pylong(v);
+	if (v == NULL)
 		return -1;
-	}
+	assert(PyLong_Check(v));
 	x = PyLong_AsUnsignedLongLong(v);
-	if (x == -1 && PyErr_Occurred()) {
+	if (x == (unsigned PY_LONG_LONG)-1 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
 					"argument out of range");
