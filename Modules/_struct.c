@@ -97,12 +97,27 @@ get_pylong(PyObject *v)
 {
 	assert(v != NULL);
 	if (!PyLong_Check(v)) {
-		PyErr_SetString(StructError,
-				"required argument is not an integer");
-		return NULL;
+		/* Not an integer;  try to use __index__ to convert. */
+		if (PyIndex_Check(v)) {
+			v = PyNumber_Index(v);
+			if (v == NULL)
+				return NULL;
+			if (!PyLong_Check(v)) {
+				PyErr_SetString(PyExc_TypeError,
+						"__index__ method "
+						"returned non-integer");
+				return NULL;
+			}
+		}
+		else {
+			PyErr_SetString(StructError,
+					"required argument is not an integer");
+			return NULL;
+		}
 	}
+	else
+		Py_INCREF(v);
 
-	Py_INCREF(v);
 	return v;
 }
 
