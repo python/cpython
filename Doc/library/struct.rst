@@ -119,6 +119,15 @@ Notes:
    the platform C compiler supports C :ctype:`long long`, or, on Windows,
    :ctype:`__int64`.  They are always available in standard modes.
 
+(4)
+   When attempting to pack a non-integer using any of the integer conversion
+   codes, if the non-integer has a :meth:`__index__` method then that method is
+   called to convert the argument to an integer before packing.
+
+   .. versionchanged:: 3.2
+      Use of the :meth:`__index__` method for non-integers is new in 3.2.
+
+
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
 
