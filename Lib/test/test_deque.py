@@ -113,6 +113,13 @@ class TestBasic(unittest.TestCase):
             d = deque('abc')
             d.maxlen = 10
 
+    def test_count(self):
+        for s in ('', 'abracadabra', 'simsalabim'*500+'abc'):
+            s = list(s)
+            d = deque(s)
+            for letter in 'abcdefghijklmnopqrstuvwxyz':
+                self.assertEqual(s.count(letter), d.count(letter), (s, d, letter))
+
     def test_comparisons(self):
         d = deque('xabc'); d.popleft()
         for e in [d, deque('abc'), deque('ab'), deque(), list(d)]:

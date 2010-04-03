@@ -504,6 +504,46 @@ deque_reverse(dequeobject *deque, PyObject *unused)
 PyDoc_STRVAR(reverse_doc,
 "D.reverse() -- reverse *IN PLACE*");
 
+static PyObject *
+deque_count(dequeobject *deque, PyObject *v)
+{
+	block *leftblock = deque->leftblock;
+	Py_ssize_t leftindex = deque->leftindex;
+	Py_ssize_t n = (deque->len);
+	Py_ssize_t i;
+	Py_ssize_t count = 0;
+	PyObject *item;
+	long start_state = deque->state;
+	int cmp;
+
+	for (i=0 ; i<n ; i++) {
+		item = leftblock->data[leftindex];
+		cmp = PyObject_RichCompareBool(item, v, Py_EQ);
+		if (cmp > 0)
+			count++;
+		else if (cmp < 0)
+			return NULL;
+
+		if (start_state != deque->state) {
+			PyErr_SetString(PyExc_RuntimeError,
+					"deque mutated during iteration");
+			return NULL;
+		}
+
+		/* Advance left block/index pair */
+		leftindex++;
+		if (leftindex == BLOCKLEN) {
+			assert (leftblock->rightlink != NULL);
+			leftblock = leftblock->rightlink;
+			leftindex = 0;
+		}
+	}
+	return PyInt_FromSsize_t(count);
+}
+
+PyDoc_STRVAR(count_doc,
+"D.count(value) -> integer -- return number of occurrences of value");
+
 static Py_ssize_t
 deque_len(dequeobject *deque)
 {
@@ -991,6 +1031,8 @@ static PyMethodDef deque_methods[] = {
 		METH_NOARGS,	 clear_doc},
 	{"__copy__",		(PyCFunction)deque_copy,
 		METH_NOARGS,	 copy_doc},
+	{"count",		(PyCFunction)deque_count,
+	    METH_O,			count_doc},
 	{"extend",		(PyCFunction)deque_extend,
 		METH_O,		 extend_doc},
 	{"extendleft",		(PyCFunction)deque_extendleft,

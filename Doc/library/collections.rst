@@ -358,6 +358,12 @@ counts, but the output will exclude results with counts of zero or less.
       Remove all elements from the deque leaving it with length 0.
 
 
+   .. method:: count(x)
+
+      Count the number of deque elements equal to *x*.
+
+      .. versionadded:: 2.7
+
    .. method:: extend(iterable)
 
       Extend the right side of the deque by appending elements from the iterable
