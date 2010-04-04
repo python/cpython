@@ -369,7 +369,7 @@ Decimal objects
    types described in the :ref:`expressions` section of the reference
    manual, leading to confusing results.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.2
       A comparison between a :class:`float` instance ``x`` and a
       :class:`Decimal` instance ``y`` now returns a result based on
       the values of ``x`` and ``y``.  In earlier versions ``x < y``
