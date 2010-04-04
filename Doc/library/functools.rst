@@ -38,6 +38,8 @@ The :mod:`functools` module defines the following functions:
                return ((self.lastname.lower(), self.firstname.lower()) <
                        (other.lastname.lower(), other.firstname.lower()))
 
+   .. versionadded:: 2.7
+
 .. function:: reduce(function, iterable[, initializer])
 
    This is the same function as :func:`reduce`.  It is made available in this module
