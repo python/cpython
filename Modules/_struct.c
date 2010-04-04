@@ -123,12 +123,6 @@ get_pylong(PyObject *v)
 			w = PyNumber_Index(v);
 			if (w != NULL) {
 				v = w;
-				if (!PyInt_Check(v) && !PyLong_Check(v)) {
-					PyErr_SetString(PyExc_TypeError,
-							"__index__ method "
-							"returned non-integer");
-					return NULL;
-				}
 				/* successfully converted to an integer */
 				converted = 1;
 			}
@@ -175,6 +169,7 @@ get_pylong(PyObject *v)
 		/* Ensure we own a reference to v. */
 		Py_INCREF(v);
 
+	assert(PyInt_Check(v) || PyLong_Check(v));
 	if (PyInt_Check(v)) {
 		r = PyLong_FromLong(PyInt_AS_LONG(v));
 		Py_DECREF(v);
