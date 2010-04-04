@@ -1618,7 +1618,8 @@ Notes:
    In general, the *key* and *reverse* conversion processes are much faster than
    specifying an equivalent *cmp* function.  This is because *cmp* is called
    multiple times for each list element while *key* and *reverse* touch each
-   element only once.
+   element only once.  Use :func:`functools.cmp_to_key` to convert an
+   old-style *cmp* function to a *key* function.
 
    .. versionchanged:: 2.3
       Support for ``None`` as an equivalent to omitting *cmp* was added.

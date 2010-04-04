@@ -76,7 +76,7 @@ def total_ordering(cls):
             setattr(cls, opname, opfunc)
     return cls
 
-def CmpToKey(mycmp):
+def cmp_to_key(mycmp):
     'Convert a cmp= function into a key= function'
     class K(object):
         def __init__(self, obj, *args):

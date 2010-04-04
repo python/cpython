@@ -60,7 +60,7 @@ Library
 - the functools module now has a total_ordering() class decorator
   to simplify the specifying rich comparisons.
 
-- The functools module also adds CmpToKey() as a tool to transition
+- The functools module also adds cmp_to_key() as a tool to transition
   old-style comparison functions to new-style key-functions.
 
 - Issue #8294: The Fraction constructor now accepts Decimal and float
