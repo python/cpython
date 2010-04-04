@@ -1665,8 +1665,8 @@ Loading and running tests
             stream, descriptions, verbosity
 
 
-.. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader[, exit, [verbosity]]]]]]])
-
+.. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader[, exit[, verbosity[, failfast[, catchbreak[,buffer]]]]]]]]]])
+,
    A command-line program that runs a set of tests; this is primarily for making
    test modules conveniently executable.  The simplest use for this function is to
    include the following line at the end of a test script::
@@ -1691,11 +1691,15 @@ Loading and running tests
       >>> from unittest import main
       >>> main(module='test_module', exit=False)
 
+   The ``failfast``, ``catchbreak`` and ``buffer`` parameters have the same
+   effect as the `failfast, catch and buffer command line options`_.
+
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
    This stores the result of the tests run as the ``result`` attribute.
 
    .. versionchanged:: 2.7
-      The ``exit`` and ``verbosity`` parameters were added.
+      The ``exit``, ``verbosity``, ``failfast``, ``catchbreak`` and ``buffer``
+      parameters were added.
 
 
 load_tests Protocol
