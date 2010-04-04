@@ -354,7 +354,7 @@ Decimal objects
    Once constructed, :class:`Decimal` objects are immutable.
 
    .. versionchanged:: 3.2
-      The argument to the constructor is now permitted to be a :float:`instance`.
+      The argument to the constructor is now permitted to be a :class:`float` instance.
 
    Decimal floating point objects share many properties with the other built-in
    numeric types such as :class:`float` and :class:`int`.  All of the usual math
