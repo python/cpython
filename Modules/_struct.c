@@ -153,7 +153,7 @@ get_ulong(PyObject *v, unsigned long *p)
 		return -1;
 	assert(PyLong_Check(v));
 	x = PyLong_AsUnsignedLong(v);
-        Py_DECREF(v);
+	Py_DECREF(v);
 	if (x == (unsigned long)-1 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
@@ -178,7 +178,7 @@ get_longlong(PyObject *v, PY_LONG_LONG *p)
 		return -1;
 	assert(PyLong_Check(v));
 	x = PyLong_AsLongLong(v);
-        Py_DECREF(v);
+	Py_DECREF(v);
 	if (x == (PY_LONG_LONG)-1 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
@@ -201,7 +201,7 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 		return -1;
 	assert(PyLong_Check(v));
 	x = PyLong_AsUnsignedLongLong(v);
-        Py_DECREF(v);
+	Py_DECREF(v);
 	if (x == (unsigned PY_LONG_LONG)-1 && PyErr_Occurred()) {
 		if (PyErr_ExceptionMatches(PyExc_OverflowError))
 			PyErr_SetString(StructError,
@@ -222,7 +222,7 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 
 static PyObject *
 unpack_float(const char *p,  /* start of 4-byte string */
-             int le)	     /* true for little-endian, false for big-endian */
+	     int le)	     /* true for little-endian, false for big-endian */
 {
 	double x;
 
@@ -234,7 +234,7 @@ unpack_float(const char *p,  /* start of 4-byte string */
 
 static PyObject *
 unpack_double(const char *p,  /* start of 8-byte string */
-              int le)         /* true for little-endian, false for big-endian */
+	      int le)         /* true for little-endian, false for big-endian */
 {
 	double x;
 
@@ -591,7 +591,7 @@ np_ulonglong(char *p, PyObject *v, const formatdef *f)
 static int
 np_bool(char *p, PyObject *v, const formatdef *f)
 {
-	BOOL_TYPE y; 
+	BOOL_TYPE y;
 	y = PyObject_IsTrue(v);
 	memcpy(p, (char *)&y, sizeof y);
 	return 0;
@@ -812,7 +812,7 @@ bp_longlong(char *p, PyObject *v, const formatdef *f)
 	if (v == NULL)
 		return -1;
 	res = _PyLong_AsByteArray((PyLongObject *)v,
-			   	  (unsigned char *)p,
+				  (unsigned char *)p,
 				  8,
 				  0, /* little_endian */
 				  1  /* signed */);
@@ -828,7 +828,7 @@ bp_ulonglong(char *p, PyObject *v, const formatdef *f)
 	if (v == NULL)
 		return -1;
 	res = _PyLong_AsByteArray((PyLongObject *)v,
-			   	  (unsigned char *)p,
+				  (unsigned char *)p,
 				  8,
 				  0, /* little_endian */
 				  0  /* signed */);
@@ -863,7 +863,7 @@ bp_double(char *p, PyObject *v, const formatdef *f)
 static int
 bp_bool(char *p, PyObject *v, const formatdef *f)
 {
-	char y; 
+	char y;
 	y = PyObject_IsTrue(v);
 	memcpy(p, (char *)&y, sizeof y);
 	return 0;
@@ -1030,7 +1030,7 @@ lp_longlong(char *p, PyObject *v, const formatdef *f)
 	if (v == NULL)
 		return -1;
 	res = _PyLong_AsByteArray((PyLongObject*)v,
-			   	  (unsigned char *)p,
+				  (unsigned char *)p,
 				  8,
 				  1, /* little_endian */
 				  1  /* signed */);
@@ -1046,7 +1046,7 @@ lp_ulonglong(char *p, PyObject *v, const formatdef *f)
 	if (v == NULL)
 		return -1;
 	res = _PyLong_AsByteArray((PyLongObject*)v,
-			   	  (unsigned char *)p,
+				  (unsigned char *)p,
 				  8,
 				  1, /* little_endian */
 				  0  /* signed */);
@@ -1407,7 +1407,7 @@ s_unpack(PyObject *self, PyObject *input)
 		PyErr_Format(StructError,
 			     "unpack requires a bytes argument of length %zd",
 			     soself->s_size);
-                PyBuffer_Release(&vbuf);
+		PyBuffer_Release(&vbuf);
 		return NULL;
 	}
 	result = s_unpack_internal(soself, vbuf.buf);
@@ -1449,7 +1449,7 @@ s_unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
 		PyErr_Format(StructError,
 			"unpack_from requires a buffer of at least %zd bytes",
 			soself->s_size);
-                PyBuffer_Release(&vbuf);
+		PyBuffer_Release(&vbuf);
 		return NULL;
 	}
 	result = s_unpack_internal(soself, (char*)vbuf.buf + offset);
@@ -1782,7 +1782,7 @@ calcsize(PyObject *self, PyObject *fmt)
 		return NULL;
 	n = ((PyStructObject *)s_object)->s_size;
 	Py_DECREF(s_object);
-    	return PyLong_FromSsize_t(n);
+	return PyLong_FromSsize_t(n);
 }
 
 PyDoc_STRVAR(pack_doc,
@@ -1808,7 +1808,7 @@ pack(PyObject *self, PyObject *args)
 		Py_DECREF(newargs);
 		return NULL;
 	}
-    	result = s_pack(s_object, newargs);
+	result = s_pack(s_object, newargs);
 	Py_DECREF(newargs);
 	Py_DECREF(s_object);
 	return result;
@@ -1838,7 +1838,7 @@ pack_into(PyObject *self, PyObject *args)
 		Py_DECREF(newargs);
 		return NULL;
 	}
-    	result = s_pack_into(s_object, newargs);
+	result = s_pack_into(s_object, newargs);
 	Py_DECREF(newargs);
 	Py_DECREF(s_object);
 	return result;
@@ -1859,7 +1859,7 @@ unpack(PyObject *self, PyObject *args)
 	s_object = cache_struct(fmt);
 	if (s_object == NULL)
 		return NULL;
-    	result = s_unpack(s_object, inputstr);
+	result = s_unpack(s_object, inputstr);
 	Py_DECREF(s_object);
 	return result;
 }
@@ -1888,20 +1888,20 @@ unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
 		Py_DECREF(newargs);
 		return NULL;
 	}
-    	result = s_unpack_from(s_object, newargs, kwds);
+	result = s_unpack_from(s_object, newargs, kwds);
 	Py_DECREF(newargs);
 	Py_DECREF(s_object);
 	return result;
 }
 
 static struct PyMethodDef module_functions[] = {
-	{"_clearcache",	(PyCFunction)clearcache,	METH_NOARGS, 	clearcache_doc},
-	{"calcsize",	calcsize,	METH_O, 	calcsize_doc},
-	{"pack",	pack,		METH_VARARGS, 	pack_doc},
-	{"pack_into",	pack_into,	METH_VARARGS, 	pack_into_doc},
-	{"unpack",	unpack,       	METH_VARARGS, 	unpack_doc},
-	{"unpack_from",	(PyCFunction)unpack_from, 	
-			METH_VARARGS|METH_KEYWORDS, 	unpack_from_doc},
+	{"_clearcache",	(PyCFunction)clearcache,	METH_NOARGS,	clearcache_doc},
+	{"calcsize",	calcsize,	METH_O,	calcsize_doc},
+	{"pack",	pack,		METH_VARARGS,	pack_doc},
+	{"pack_into",	pack_into,	METH_VARARGS,	pack_into_doc},
+	{"unpack",	unpack,	METH_VARARGS,	unpack_doc},
+	{"unpack_from",	(PyCFunction)unpack_from,
+			METH_VARARGS|METH_KEYWORDS,	unpack_from_doc},
 	{NULL,	 NULL}		/* sentinel */
 };
 
