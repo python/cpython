@@ -269,6 +269,25 @@ class StructTest(unittest.TestCase):
                     def __int__(self):
                         return 42
 
+                # Objects with an '__index__' method should be allowed
+                # to pack as integers.  That is assuming the implemented
+                # '__index__' method returns and 'int' or 'long'.
+                class Indexable(object):
+                    def __init__(self, value):
+                        self._value = value
+
+                    def __index__(self):
+                        return self._value
+
+                # If the '__index__' method raises a type error, then
+                # '__int__' should be used with a deprecation warning.
+                class BadIndex(object):
+                    def __index__(self):
+                        raise TypeError
+
+                    def __int__(self):
+                        return 42
+
                 self.assertRaises((TypeError, struct.error),
                                   struct.pack, self.format,
                                   "a string")
@@ -280,17 +299,12 @@ class StructTest(unittest.TestCase):
                                   3+42j)
                 self.assertRaises((TypeError, struct.error),
                                   struct.pack, self.format,
-                                  NotAnInt)
+                                  NotAnInt())
+                self.assertRaises((TypeError, struct.error),
+                                  struct.pack, self.format,
+                                  BadIndex())
 
-                # Objects with an '__index__' method should be allowed
-                # to pack as integers.
-                class Indexable(object):
-                    def __init__(self, value):
-                        self._value = value
-
-                    def __index__(self):
-                        return self._value
-
+                # Check for legitimate values from '__index__'.
                 for obj in (Indexable(0), Indexable(10), Indexable(17),
                             Indexable(42), Indexable(100), Indexable(127)):
                     try:
@@ -298,6 +312,13 @@ class StructTest(unittest.TestCase):
                     except:
                         self.fail("integer code pack failed on object "
                                   "with '__index__' method")
+
+                # Check for bogus values from '__index__'.
+                for obj in (Indexable(b'a'), Indexable('b'), Indexable(None),
+                            Indexable({'a': 1}), Indexable([1, 2, 3])):
+                    self.assertRaises((TypeError, struct.error),
+                                      struct.pack, self.format,
+                                      obj)
 
         for code in integer_codes:
             for byteorder in byteorders:

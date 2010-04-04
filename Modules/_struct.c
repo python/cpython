@@ -102,12 +102,6 @@ get_pylong(PyObject *v)
 			v = PyNumber_Index(v);
 			if (v == NULL)
 				return NULL;
-			if (!PyLong_Check(v)) {
-				PyErr_SetString(PyExc_TypeError,
-						"__index__ method "
-						"returned non-integer");
-				return NULL;
-			}
 		}
 		else {
 			PyErr_SetString(StructError,
@@ -118,6 +112,7 @@ get_pylong(PyObject *v)
 	else
 		Py_INCREF(v);
 
+	assert(PyLong_Check(v));
 	return v;
 }
 
