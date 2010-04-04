@@ -127,10 +127,9 @@ precision, rounding, or enabled traps::
 
    >>> getcontext().prec = 7       # Set a new precision
 
-Decimal instances can be constructed from integers, strings, or tuples.  To
-create a Decimal from a :class:`float`, first convert it to a string.  This
-serves as an explicit reminder of the details of the conversion (including
-representation error).  Decimal numbers include special values such as
+Decimal instances can be constructed from integers, strings, floats, or tuples.
+Construction from an integer or a float performs an exact conversion of the
+value of that integer or float.  Decimal numbers include special values such as
 :const:`NaN` which stands for "Not a number", positive and negative
 :const:`Infinity`, and :const:`-0`.
 
@@ -139,6 +138,8 @@ representation error).  Decimal numbers include special values such as
    Decimal('10')
    >>> Decimal('3.14')
    Decimal('3.14')
+   >>> Decimal(3.14)
+   Decimal('3.140000000000000124344978758017532527446746826171875')
    >>> Decimal((0, (3, 1, 4), -2))
    Decimal('3.14')
    >>> Decimal(str(2.0 ** 0.5))
@@ -336,8 +337,9 @@ Decimal objects
 
    If *value* is a :class:`float`, the binary floating point value is losslessly
    converted to its exact decimal equivalent.  This conversion can often require
-   upto 53 digits of precision.  For example, ``Decimal(float('1.1'))`` converts
-   to ``Decimal('1.100000000000000088817841970012523233890533447265625')``.
+   53 or more digits of precision.  For example, ``Decimal(float('1.1'))``
+   converts to
+   ``Decimal('1.100000000000000088817841970012523233890533447265625')``.
 
    The *context* precision does not affect how many digits are stored. That is
    determined exclusively by the number of digits in *value*. For example,
@@ -350,6 +352,9 @@ Decimal objects
    :const:`NaN`.
 
    Once constructed, :class:`Decimal` objects are immutable.
+
+   .. versionchanged:: 3.2
+      The argument to the constructor is now permitted to be a :float:`instance`.
 
    Decimal floating point objects share many properties with the other built-in
    numeric types such as :class:`float` and :class:`int`.  All of the usual math
@@ -489,6 +494,9 @@ Decimal objects
       value is stored as the nearest representable value which is
       `0x1.999999999999ap-4`.  That equivalent value in decimal is
       `0.1000000000000000055511151231257827021181583404541015625`.
+
+      .. note:: From Python 3.2 onwards, a :class:`Decimal` instance
+         can also be constructed directly from a :class:`float`.
 
       .. doctest::
 
@@ -1846,7 +1854,7 @@ value unchanged:
 
 Q. Is there a way to convert a regular float to a :class:`Decimal`?
 
-A. Yes, all binary floating point numbers can be exactly expressed as a
+A. Yes, any binary floating point number can be exactly expressed as a
 Decimal though an exact conversion may take more precision than intuition would
 suggest:
 
