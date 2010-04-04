@@ -27,6 +27,8 @@ Library
 
 - Issue #8179: Fix macpath.realpath() on a non-existing path.
 
+- Issue #8310: Allow dis to examine new style classes.
+
 - Issue #7667: Fix doctest failures with non-ASCII paths.
 
 - Issue #7624: Fix isinstance(foo(), collections.Callable) for old-style
