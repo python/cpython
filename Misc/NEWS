@@ -49,6 +49,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8310: Allow dis to examine new style classes.
+
 - Issue #8257: The Decimal construct now accepts a float instance
   directly, converting that float to a Decimal of equal value:
 

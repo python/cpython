@@ -10,6 +10,9 @@ __all__ = ["dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels"] + _opcodes_all
 del _opcodes_all
 
+_have_code = (types.MethodType, types.FunctionType, types.CodeType,
+              types.ClassType, type)
+
 def dis(x=None):
     """Disassemble classes, methods, functions, or code.
 
@@ -29,10 +32,7 @@ def dis(x=None):
         items = x.__dict__.items()
         items.sort()
         for name, x1 in items:
-            if isinstance(x1, (types.MethodType,
-                               types.FunctionType,
-                               types.CodeType,
-                               types.ClassType)):
+            if isinstance(x1, _have_code):
                 print "Disassembly of %s:" % name
                 try:
                     dis(x1)
