@@ -345,6 +345,75 @@ class TestCmpToKey(unittest.TestCase):
         self.assertEqual(sorted(range(5), key=functools.cmp_to_key(mycmp)),
                          [4, 3, 2, 1, 0])
 
+class TestTotalOrdering(unittest.TestCase):
+
+    def test_total_ordering_lt(self):
+        @functools.total_ordering
+        class A:
+            def __init__(self, value):
+                self.value = value
+            def __lt__(self, other):
+                return self.value < other.value
+        self.assert_(A(1) < A(2))
+        self.assert_(A(2) > A(1))
+        self.assert_(A(1) <= A(2))
+        self.assert_(A(2) >= A(1))
+        self.assert_(A(2) <= A(2))
+        self.assert_(A(2) >= A(2))
+
+    def test_total_ordering_le(self):
+        @functools.total_ordering
+        class A:
+            def __init__(self, value):
+                self.value = value
+            def __le__(self, other):
+                return self.value <= other.value
+        self.assert_(A(1) < A(2))
+        self.assert_(A(2) > A(1))
+        self.assert_(A(1) <= A(2))
+        self.assert_(A(2) >= A(1))
+        self.assert_(A(2) <= A(2))
+        self.assert_(A(2) >= A(2))
+
+    def test_total_ordering_gt(self):
+        @functools.total_ordering
+        class A:
+            def __init__(self, value):
+                self.value = value
+            def __gt__(self, other):
+                return self.value > other.value
+        self.assert_(A(1) < A(2))
+        self.assert_(A(2) > A(1))
+        self.assert_(A(1) <= A(2))
+        self.assert_(A(2) >= A(1))
+        self.assert_(A(2) <= A(2))
+        self.assert_(A(2) >= A(2))
+
+    def test_total_ordering_ge(self):
+        @functools.total_ordering
+        class A:
+            def __init__(self, value):
+                self.value = value
+            def __ge__(self, other):
+                return self.value >= other.value
+        self.assert_(A(1) < A(2))
+        self.assert_(A(2) > A(1))
+        self.assert_(A(1) <= A(2))
+        self.assert_(A(2) >= A(1))
+        self.assert_(A(2) <= A(2))
+        self.assert_(A(2) >= A(2))
+
+    def test_total_ordering_no_overwrite(self):
+        # new methods should not overwrite existing
+        @functools.total_ordering
+        class A(int):
+            pass
+        self.assert_(A(1) < A(2))
+        self.assert_(A(2) > A(1))
+        self.assert_(A(1) <= A(2))
+        self.assert_(A(2) >= A(1))
+        self.assert_(A(2) <= A(2))
+        self.assert_(A(2) >= A(2))
 
 def test_main(verbose=None):
     test_classes = (
