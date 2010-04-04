@@ -17,7 +17,7 @@ function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
 
-..  function:: CmpToKey(func)
+..  function:: cmp_to_key(func)
 
     Transform an old-style comparison function to a key-function.  Used with
     tools that accept key functions (such as :func:`sorted`, :func:`min`,
@@ -35,7 +35,7 @@ The :mod:`functools` module defines the following functions:
 
     Example::
 
-        sorted(iterable, key=CmpToKey(locale.strcoll))  # locale-aware sort order
+        sorted(iterable, key=cmp_to_key(locale.strcoll))  # locale-aware sort order
 
    .. versionadded:: 2.7
 

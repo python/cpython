@@ -6,22 +6,12 @@ import sys
 import traceback
 import types
 
+from functools import cmp_to_key as _CmpToKey
 from fnmatch import fnmatch
 
 from . import case, suite
 
 __unittest = True
-
-
-def _CmpToKey(mycmp):
-    'Convert a cmp= function into a key= function'
-    class K(object):
-        def __init__(self, obj):
-            self.obj = obj
-        def __lt__(self, other):
-            return mycmp(self.obj, other.obj) == -1
-    return K
-
 
 # what about .pyc or .pyo (etc)
 # we would need to avoid loading the same tests multiple times

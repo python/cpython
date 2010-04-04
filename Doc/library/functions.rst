@@ -1154,9 +1154,8 @@ available.  They are listed here in alphabetical order.
    In general, the *key* and *reverse* conversion processes are much faster
    than specifying an equivalent *cmp* function.  This is because *cmp* is
    called multiple times for each list element while *key* and *reverse* touch
-   each element only once.  To convert an old-style *cmp* function to a *key*
-   function, see the `CmpToKey recipe in the ASPN cookbook
-   <http://code.activestate.com/recipes/576653/>`_\.
+   each element only once.  Use :func:`functools.cmp_to_key` to convert an
+   old-style *cmp* function to a *key* function.
 
    For sorting examples and a brief sorting tutorial, see `Sorting HowTo
    <http://wiki.python.org/moin/HowTo/Sorting/>`_\.

@@ -338,7 +338,12 @@ class TestReduce(unittest.TestCase):
         self.assertEqual(reduce(42, "", "1"), "1") # func is never called with one item
         self.assertRaises(TypeError, reduce, 42, (42, 42))
 
-
+class TestCmpToKey(unittest.TestCase):
+    def test_cmp_to_key(self):
+        def mycmp(x, y):
+            return y - x
+        self.assertEqual(sorted(range(5), key=functools.cmp_to_key(mycmp)),
+                         [4, 3, 2, 1, 0])
 
 
 def test_main(verbose=None):
