@@ -241,6 +241,8 @@ For example::
             >>> c.subtract(d)
             Counter({'a': 3, 'b': 0, 'c': -3, 'd': -6})
 
+      .. versionadded:: 2.7
+
    The usual dictionary methods are available for :class:`Counter` objects
    except for two which work differently for counters.
 
