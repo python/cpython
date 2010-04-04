@@ -170,17 +170,17 @@ class StructTest(unittest.TestCase):
                 self.assertEqual(signed_size, unsigned_size)
 
         # bounds for native integer sizes
-        self.assertTrue(struct.calcsize('b')==1)
-        self.assertTrue(2 <= struct.calcsize('h'))
-        self.assertTrue(4 <= struct.calcsize('l'))
-        self.assertTrue(struct.calcsize('h') <= struct.calcsize('i'))
-        self.assertTrue(struct.calcsize('i') <= struct.calcsize('l'))
+        self.assertEqual(struct.calcsize('b'), 1)
+        self.assertLessEqual(2, struct.calcsize('h'))
+        self.assertLessEqual(4, struct.calcsize('l'))
+        self.assertLessEqual(struct.calcsize('h'), struct.calcsize('i'))
+        self.assertLessEqual(struct.calcsize('i'), struct.calcsize('l'))
 
         # tests for native 'q' and 'Q' when applicable
         if HAVE_LONG_LONG:
             self.assertEqual(struct.calcsize('q'), struct.calcsize('Q'))
-            self.assertTrue(8 <= struct.calcsize('q'))
-            self.assertTrue(struct.calcsize('l') <= struct.calcsize('q'))
+            self.assertLessEqual(8, struct.calcsize('q'))
+            self.assertLessEqual(struct.calcsize('l'), struct.calcsize('q'))
 
     def test_integers(self):
         # Integer tests (bBhHiIlLqQ).
@@ -218,7 +218,7 @@ class StructTest(unittest.TestCase):
                     expected = long(x)
                     if self.signed and x < 0:
                         expected += 1L << self.bitsize
-                    self.assertTrue(expected >= 0)
+                    self.assertGreaterEqual(expected, 0)
                     expected = '%x' % expected
                     if len(expected) & 1:
                         expected = "0" + expected
