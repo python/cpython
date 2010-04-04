@@ -330,7 +330,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		}
 		break;
 	case T_STRING:
-        case T_STRING_INPLACE:
+	case T_STRING_INPLACE:
 		PyErr_SetString(PyExc_TypeError, "readonly attribute");
 		return -1;
 #ifdef HAVE_LONG_LONG
