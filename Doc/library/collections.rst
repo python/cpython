@@ -207,7 +207,7 @@ For example::
    .. versionadded:: 2.7
 
 
-   Counter objects support two methods beyond those available for all
+   Counter objects support three methods beyond those available for all
    dictionaries:
 
    .. method:: elements()
@@ -240,8 +240,6 @@ For example::
             >>> d = Counter(a=1, b=2, c=3, d=4)
             >>> c.subtract(d)
             Counter({'a': 3, 'b': 0, 'c': -3, 'd': -6})
-
-      .. versionadded:: 2.7
 
    The usual dictionary methods are available for :class:`Counter` objects
    except for two which work differently for counters.
