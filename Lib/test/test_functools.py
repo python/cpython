@@ -345,6 +345,13 @@ class TestCmpToKey(unittest.TestCase):
         self.assertEqual(sorted(range(5), key=functools.cmp_to_key(mycmp)),
                          [4, 3, 2, 1, 0])
 
+    def test_hash(self):
+        def mycmp(x, y):
+            return y - x
+        key = functools.cmp_to_key(mycmp)
+        k = key(10)
+        self.assertRaises(TypeError, hash(k))
+
 class TestTotalOrdering(unittest.TestCase):
 
     def test_total_ordering_lt(self):

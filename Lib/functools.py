@@ -93,4 +93,6 @@ def cmp_to_key(mycmp):
             return mycmp(self.obj, other.obj) >= 0
         def __ne__(self, other):
             return mycmp(self.obj, other.obj) != 0
+        def __hash__(self):
+            raise TypeError('hash not implemented')
     return K
