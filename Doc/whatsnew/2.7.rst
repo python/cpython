@@ -1042,6 +1042,9 @@ XXX write this.
 Distutils Enhancements
 ---------------------------------
 
+XXX all of this work has been moved to Distutils2
+XXX Not sure what we should say here
+
 Distutils is being more actively developed, thanks to Tarek Ziadé
 who has taken over maintenance of the package, so there are a number
 of fixes and improvements.
