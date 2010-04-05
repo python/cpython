@@ -244,7 +244,7 @@ Functions, Constants, and Exceptions
     >>> ssl.OPENSSL_VERSION
     'OpenSSL 0.9.8k 25 Mar 2009'
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
 .. data:: OPENSSL_VERSION_INFO
 
@@ -254,18 +254,18 @@ Functions, Constants, and Exceptions
     >>> ssl.OPENSSL_VERSION_INFO
     (0, 9, 8, 11, 15)
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
 .. data:: OPENSSL_VERSION_NUMBER
 
    The raw version number of the OpenSSL library, as a single integer::
 
     >>> ssl.OPENSSL_VERSION_NUMBER
-    9470143L
+    9470143
     >>> hex(ssl.OPENSSL_VERSION_NUMBER)
-    '0x9080bfL'
+    '0x9080bf'
 
-   .. versionadded:: 2.7
+   .. versionadded:: 3.2
 
 
 SSLSocket Objects
