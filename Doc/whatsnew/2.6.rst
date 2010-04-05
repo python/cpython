@@ -2191,7 +2191,7 @@ changes, or look through the Subversion logs for all the details.
   This produces better results when operating on Unix's dot-files.
   For example, ``os.path.splitext('.ipython')``
   now returns ``('.ipython', '')`` instead of ``('', '.ipython')``.
-  (:issue:`115886`)
+  (:issue:`1115886`)
 
   A new function, ``os.path.relpath(path, start='.')``, returns a relative path
   from the ``start`` path, if it's supplied, or from the current
