@@ -129,7 +129,7 @@ Notes:
    called to convert the argument to an integer before packing.  If no
    :meth:`__index__` method exists, or the call to :meth:`__index__` raises
    :exc:`TypeError`, then the :meth:`__int__` method is tried.  However, the use
-   of `__int__` is deprecated, and will raise :exc:`DeprecationWarning`.
+   of :meth:`__int__` is deprecated, and will raise :exc:`DeprecationWarning`.
 
    .. versionchanged:: 2.7
       Use of the :meth:`__index__` method for non-integers is new in 2.7.
