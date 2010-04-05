@@ -894,7 +894,7 @@ changes, or look through the Subversion logs for all the details.
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
 
-  The :meth:`recv_into` and `recvfrom_into` methods will now write
+  The :meth:`recv_into` and :meth:`recvfrom_into` methods will now write
   into objects that support the buffer API, most usefully
   the :class:`bytearray` and :class:`memoryview` objects.  (Implemented by
   Antoine Pitrou; :issue:`8104`.)
