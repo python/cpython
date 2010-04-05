@@ -237,6 +237,36 @@ Functions, Constants, and Exceptions
    modern version, and probably the best choice for maximum protection, if both
    sides can speak it.
 
+.. data:: OPENSSL_VERSION
+
+   The version string of the OpenSSL library loaded by the interpreter::
+
+    >>> ssl.OPENSSL_VERSION
+    'OpenSSL 0.9.8k 25 Mar 2009'
+
+   .. versionadded:: 2.7
+
+.. data:: OPENSSL_VERSION_INFO
+
+   A tuple of five integers representing version information about the
+   OpenSSL library::
+
+    >>> ssl.OPENSSL_VERSION_INFO
+    (0, 9, 8, 11, 15)
+
+   .. versionadded:: 2.7
+
+.. data:: OPENSSL_VERSION_NUMBER
+
+   The raw version number of the OpenSSL library, as a single integer::
+
+    >>> ssl.OPENSSL_VERSION_NUMBER
+    9470143L
+    >>> hex(ssl.OPENSSL_VERSION_NUMBER)
+    '0x9080bfL'
+
+   .. versionadded:: 2.7
+
 
 SSLSocket Objects
 -----------------
