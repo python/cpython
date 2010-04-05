@@ -1209,8 +1209,7 @@ Basic customization
    Arguments to rich comparison methods are never coerced.
 
    To automatically generate ordering operations from a single root operation,
-   see the `Total Ordering recipe in the ASPN cookbook
-   <http://code.activestate.com/recipes/576529/>`_\.
+   see :func:`functools.total_ordering`.
 
 .. method:: object.__hash__(self)
 

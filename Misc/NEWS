@@ -303,6 +303,8 @@ C-API
 Library
 -------
 
+- Add functools.total_ordering() and functools.cmp_to_key().
+
 - Issue #8257: The Decimal construct now accepts a float instance
   directly, converting that float to a Decimal of equal value:
 

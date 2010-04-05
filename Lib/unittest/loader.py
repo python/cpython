@@ -5,6 +5,7 @@ import re
 import sys
 import traceback
 import types
+import functools
 
 from fnmatch import fnmatch
 
@@ -141,7 +142,7 @@ class TestLoader(object):
         testFnNames = testFnNames = list(filter(isTestMethod,
                                                 dir(testCaseClass)))
         if self.sortTestMethodsUsing:
-            testFnNames.sort(key=util.CmpToKey(self.sortTestMethodsUsing))
+            testFnNames.sort(key=functools.cmp_to_key(self.sortTestMethodsUsing))
         return testFnNames
 
     def discover(self, start_dir, pattern='test*.py', top_level_dir=None):
