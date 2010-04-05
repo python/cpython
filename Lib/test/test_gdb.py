@@ -125,9 +125,13 @@ class DebuggerTests(unittest.TestCase):
         gdb_output = self.get_stack_trace(source, breakpoint='PyObject_Print',
                                           cmds_after_breakpoint=cmds_after_breakpoint,
                                           import_site=import_site)
-        m = re.match('.*#0  PyObject_Print \(op\=(.*?), fp=.*\).*',
+        # gdb can insert additional '\n' and space characters in various places
+        # in its output, depending on the width of the terminal it's connected
+        # to (using its "wrap_here" function)
+        m = re.match('.*#0\s+PyObject_Print\s+\(\s*op\=\s*(.*?),\s+fp=.*\).*',
                      gdb_output, re.DOTALL)
-        #print m.groups()
+        if not m:
+            self.fail('Unexpected gdb output: %r\n%s' % (gdb_output, gdb_output))
         return m.group(1), gdb_output
 
     def assertEndsWith(self, actual, exp_end):
@@ -341,7 +345,7 @@ print foo''')
         gdb_repr, gdb_output = (
             self.get_gdb_repr('print 42',
                               cmds_after_breakpoint=['set variable op=0',
-                                                         'backtrace'])
+                                                     'backtrace'])
             )
 
         self.assertEquals(gdb_repr, '0x0')
@@ -453,7 +457,7 @@ print a''')
         'Verify that very long output is truncated'
         gdb_repr, gdb_output = self.get_gdb_repr('print range(1000)')
         self.assertEquals(gdb_repr,
-                          "\n    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "
+                          "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "
                           "14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, "
                           "27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, "
                           "40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, "
@@ -475,7 +479,7 @@ print a''')
                           "214, 215, 216, 217, 218, 219, 220, 221, 222, 223, "
                           "224, 225, 226...(truncated)")
         self.assertEquals(len(gdb_repr),
-                          len('\n    ') + 1024 + len('...(truncated)'))
+                          1024 + len('...(truncated)'))
 
     def test_builtin_function(self):
         gdb_repr, gdb_output = self.get_gdb_repr('print len')
@@ -498,15 +502,10 @@ print foo.__code__''',
                                           breakpoint='PyObject_Print',
                                           cmds_after_breakpoint=['print (PyFrameObject*)(((PyCodeObject*)op)->co_zombieframe)']
                                           )
-        for line in gdb_output.splitlines():
-            if line.startswith('$1'):
-                self.assertTrue(re.match(r'\$1 = Frame 0x[0-9a-f]+, for file <string>, line 3, in foo \(\)',
-                                         line),
-                                'Unexpected gdb representation: %r\n%s' % (line, gdb_output))
-                return
-        self.fail('Did not find expected line beginning with $1')
-
-
+        self.assertTrue(re.match(r'.*\s+\$1 =\s+Frame 0x[0-9a-f]+, for file <string>, line 3, in foo \(\)\s+.*',
+                                 gdb_output,
+                                 re.DOTALL),
+                        'Unexpected gdb representation: %r\n%s' % (gdb_output, gdb_output))
 
 class PyListTests(DebuggerTests):
     def assertListing(self, expected, actual):
