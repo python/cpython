@@ -697,11 +697,11 @@ class Win32KillTests(unittest.TestCase):
                                 "win_console_handler.py")],
                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         # Let the interpreter startup before we send signals. See #3137.
-        time.sleep(0.1)
+        time.sleep(0.5)
         os.kill(proc.pid, event)
         # proc.send_signal(event) could also be done here.
         # Allow time for the signal to be passed and the process to exit.
-        time.sleep(0.1)
+        time.sleep(0.5)
         if not proc.poll():
             # Forcefully kill the process if we weren't able to signal it.
             os.kill(proc.pid, signal.SIGINT)
