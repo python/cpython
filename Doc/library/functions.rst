@@ -1390,8 +1390,8 @@ available.  They are listed here in alphabetical order.
       restricts all arguments to native C longs ("short" Python integers), and
       also requires that the number of elements fit in a native C long.  If a
       larger range is needed, an alternate version can be crafted using the
-      :mod:`itertools` module: ``islice(count(start, step),
-      (stop-start+step-1)//step)``.
+      :mod:`itertools` module: ``takewhile(lambda x: x<stop, (start+i*step
+      for i in count()))``.
 
 
 .. function:: zip([iterable, ...])
