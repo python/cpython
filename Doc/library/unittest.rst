@@ -229,8 +229,8 @@ unittest supports three command options.
 
 * -c / --catch
 
-  Control-C during the test run waits for the current test to end and then
-  reports all the results so far. A second control-C raises the normal
+  Control-c during the test run waits for the current test to end and then
+  reports all the results so far. A second control-c raises the normal
   ``KeyboardInterrupt`` exception.
 
   See `Signal Handling`_ for the functions that provide this functionality.
@@ -1858,18 +1858,19 @@ functionality within test frameworks.
 
 .. function:: installHandler()
 
-   Install the control-C handler. When a :const:`signal.SIGINT` is received
-   (usually in response to the user pressing control-C) all registered results
+   Install the control-c handler. When a :const:`signal.SIGINT` is received
+   (usually in response to the user pressing control-c) all registered results
    have :meth:`~TestResult.stop` called.
 
 .. function:: registerResult(result)
 
-   Register a :class:`TestResult` object for control-C handling. Registering a
+   Register a :class:`TestResult` object for control-c handling. Registering a
    result stores a weak reference to it, so it doesn't prevent the result from
    being garbage collected.
 
 .. function:: removeResult(result)
 
-   Remove a registered result. One a result has been removed then ``stop`` will
-   no longer be called on that result object in response to a control-C.
+   Remove a registered result. Once a result has been removed then
+   :meth:`~Testresult.stop`` will no longer be called on that result object in
+   response to a control-c.
 
