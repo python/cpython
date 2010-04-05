@@ -233,6 +233,8 @@ unittest supports three command options.
   reports all the results so far. A second control-C raises the normal
   ``KeyboardInterrupt`` exception.
 
+  See `Signal Handling`_ for the functions that provide this functionality.
+
 * -b / --buffer
 
   The standard out and standard error streams are buffered during the test
@@ -1548,17 +1550,10 @@ Loading and running tests
 
       Called when the test case *test* is about to be run.
 
-      The default implementation simply increments the instance's :attr:`testsRun`
-      counter.
-
-
    .. method:: stopTest(test)
 
       Called after the test case *test* has been executed, regardless of the
       outcome.
-
-      The default implementation does nothing.
-
 
    .. method:: startTestRun(test)
 
@@ -1666,7 +1661,7 @@ Loading and running tests
 
 
 .. function:: main([module[, defaultTest[, argv[, testRunner[, testLoader[, exit[, verbosity[, failfast[, catchbreak[,buffer]]]]]]]]]])
-,
+
    A command-line program that runs a set of tests; this is primarily for making
    test modules conveniently executable.  The simplest use for this function is to
    include the following line at the end of a test script::
@@ -1847,4 +1842,34 @@ These should be implemented as functions::
 If an exception is raised in a ``setUpModule`` then none of the tests in the
 module will be run and the ``tearDownModule`` will not be run.
 
+
+Signal Handling
+---------------
+
+The -c / --catch command line option to unittest, along with the ``catchbreak``
+parameter to :func:`unittest.main()`, provide more friendly handling of
+control-c during a test run. With catch break behavior enabled control-c will
+allow the currently running test to complete, and the test run will then end
+and report all the results so far. A second control-c will raise a
+``KeyboardInterrupt`` in the usual way.
+
+There are a few utility functions for framework authors to enable this
+functionality within test frameworks.
+
+.. function:: installHandler()
+
+   Install the control-C handler. When a :const:`signal.SIGINT` is received
+   (usually in response to the user pressing control-C) all registered results
+   have :meth:`~TestResult.stop` called.
+
+.. function:: registerResult(result)
+
+   Register a :class:`TestResult` object for control-C handling. Registering a
+   result stores a weak reference to it, so it doesn't prevent the result from
+   being garbage collected.
+
+.. function:: removeResult(result)
+
+   Remove a registered result. One a result has been removed then ``stop`` will
+   no longer be called on that result object in response to a control-C.
 
