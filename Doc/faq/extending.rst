@@ -54,7 +54,8 @@ with a tool such as `SWIG <http://www.swig.org>`_.  `SIP
 <http://www.riverbankcomputing.co.uk/software/sip/>`__, `CXX
 <http://cxx.sourceforge.net/>`_ `Boost
 <http://www.boost.org/libs/python/doc/index.html>`_, or `Weave
-<http://www.scipy.org/Weave>`_ are also alternatives for wrapping C++ libraries.
+<http://www.scipy.org/Weave>`_ are also alternatives for wrapping
+C++ libraries.
 
 
 How can I execute arbitrary Python statements from C?
@@ -200,7 +201,7 @@ whole lot of difference between C and C++ -- so the strategy of building a new
 Python type around a C structure (pointer) type will also work for C++ objects.
 
 For C++ libraries, you can look at `SIP
-<http://www.riverbankcomputing.co.uk/sip/>`_, `CXX
+<http://www.riverbankcomputing.co.uk/software/sip/>`_, `CXX
 <http://cxx.sourceforge.net/>`_, `Boost
 <http://www.boost.org/libs/python/doc/index.html>`_, `Weave
 <http://www.scipy.org/Weave>`_ or `SWIG <http://www.swig.org>`_

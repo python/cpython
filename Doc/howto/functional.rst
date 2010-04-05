@@ -336,7 +336,7 @@ substring.
 
 List comprehensions and generator expressions (short form: "listcomps" and
 "genexps") are a concise notation for such operations, borrowed from the
-functional programming language Haskell (http://www.haskell.org).  You can strip
+functional programming language Haskell (http://www.haskell.org/).  You can strip
 all the whitespace from a stream of strings with the following code::
 
     line_list = ['  line 1\n', 'line 2  \n', ...]
