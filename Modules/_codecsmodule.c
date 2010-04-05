@@ -179,12 +179,13 @@ escape_encode(PyObject *self,
 	PyObject *str;
 	const char *errors = NULL;
 	char *buf;
-	Py_ssize_t len;
+	Py_ssize_t consumed, len;
 
-	if (!PyArg_ParseTuple(args, "O!|z:escape_encode",
-			      &PyString_Type, &str, &errors))
+	if (!PyArg_ParseTuple(args, "S|z:escape_encode",
+			      &str, &errors))
 		return NULL;
 
+	consumed = PyString_GET_SIZE(str);
 	str = PyString_Repr(str, 0);
 	if (!str)
 		return NULL;
@@ -196,7 +197,7 @@ escape_encode(PyObject *self,
 	if (_PyString_Resize(&str, len-2) < 0)
 		return NULL;
 	
-	return codec_tuple(str, PyString_Size(str));
+	return codec_tuple(str, consumed);
 }
 
 #ifdef Py_USING_UNICODE

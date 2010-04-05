@@ -835,6 +835,9 @@ class UnicodeInternalTest(unittest.TestCase):
         self.assertEquals(encoder(u"a")[1], 1)
         self.assertEquals(encoder(u"\xe9\u0142")[1], 2)
 
+        encoder = codecs.getencoder("string-escape")
+        self.assertEquals(encoder(r'\x00')[1], 4)
+
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
 nameprep_tests = [
     # 3.1 Map to nothing.
