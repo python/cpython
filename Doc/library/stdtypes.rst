@@ -1567,6 +1567,9 @@ Notes:
 
    *key* specifies a function of one argument that is used to extract a comparison
    key from each list element: ``key=str.lower``.  The default value is ``None``.
+   Use :func:`functools.cmp_to_key` to convert an
+   old-style *cmp* function to a *key* function.
+
 
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.

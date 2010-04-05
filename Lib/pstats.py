@@ -37,6 +37,7 @@ import os
 import time
 import marshal
 import re
+from functools import cmp_to_key
 
 __all__ = ["Stats"]
 
@@ -226,7 +227,7 @@ class Stats:
             stats_list.append((cc, nc, tt, ct) + func +
                               (func_std_string(func), func))
 
-        stats_list.sort(key=CmpToKey(TupleComp(sort_tuple).compare))
+        stats_list.sort(key=cmp_to_key(TupleComp(sort_tuple).compare))
 
         self.fcn_list = fcn_list = []
         for tuple in stats_list:
@@ -457,15 +458,6 @@ class TupleComp:
             if l > r:
                 return direction
         return 0
-
-def CmpToKey(mycmp):
-    'Convert a cmp= function into a key= function'
-    class K(object):
-        def __init__(self, obj):
-            self.obj = obj
-        def __lt__(self, other):
-            return mycmp(self.obj, other.obj) == -1
-    return K
 
 
 #**************************************************************************
