@@ -1871,6 +1871,6 @@ functionality within test frameworks.
 .. function:: removeResult(result)
 
    Remove a registered result. Once a result has been removed then
-   :meth:`~Testresult.stop` will no longer be called on that result object in
+   :meth:`~TestResult.stop` will no longer be called on that result object in
    response to a control-c.
 
