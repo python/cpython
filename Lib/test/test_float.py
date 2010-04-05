@@ -914,6 +914,15 @@ class InfNanTest(unittest.TestCase):
         self.assertFalse(NAN.is_inf())
         self.assertFalse((0.).is_inf())
 
+    def test_hash_inf(self):
+        # the actual values here should be regarded as an
+        # implementation detail, but they need to be
+        # identical to those used in the Decimal module.
+        self.assertEqual(hash(float('inf')), 314159)
+        self.assertEqual(hash(float('-inf')), -271828)
+        self.assertEqual(hash(float('nan')), 0)
+
+
 fromHex = float.fromhex
 toHex = float.hex
 class HexFloatTestCase(unittest.TestCase):
