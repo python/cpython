@@ -94,6 +94,34 @@ class BasicTests(unittest.TestCase):
         if (d1 != d2):
             raise support.TestFailed("PEM-to-DER or DER-to-PEM translation failed")
 
+    def test_openssl_version(self):
+        n = ssl.OPENSSL_VERSION_NUMBER
+        t = ssl.OPENSSL_VERSION_INFO
+        s = ssl.OPENSSL_VERSION
+        self.assertIsInstance(n, int)
+        self.assertIsInstance(t, tuple)
+        self.assertIsInstance(s, str)
+        # Some sanity checks follow
+        # >= 0.9
+        self.assertGreaterEqual(n, 0x900000)
+        # < 2.0
+        self.assertLess(n, 0x20000000)
+        major, minor, fix, patch, status = t
+        self.assertGreaterEqual(major, 0)
+        self.assertLess(major, 2)
+        self.assertGreaterEqual(minor, 0)
+        self.assertLess(minor, 256)
+        self.assertGreaterEqual(fix, 0)
+        self.assertLess(fix, 256)
+        self.assertGreaterEqual(patch, 0)
+        self.assertLessEqual(patch, 26)
+        self.assertGreaterEqual(status, 0)
+        self.assertLessEqual(status, 15)
+        # Version string as returned by OpenSSL, the format might change
+        self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
+                        (s, t))
+
+
 class NetworkedTests(unittest.TestCase):
 
     def testConnect(self):

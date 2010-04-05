@@ -303,6 +303,10 @@ C-API
 Library
 -------
 
+- Issue #8321: Give access to OpenSSL version numbers from the `ssl` module,
+  using the new attributes `ssl.OPENSSL_VERSION`, `ssl.OPENSSL_VERSION_INFO`
+  and `ssl.OPENSSL_VERSION_NUMBER`.
+
 - Add functools.total_ordering() and functools.cmp_to_key().
 
 - Issue #8257: The Decimal construct now accepts a float instance

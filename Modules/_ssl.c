@@ -1636,7 +1636,9 @@ static struct PyModuleDef _sslmodule = {
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
-	PyObject *m, *d;
+	PyObject *m, *d, *r;
+	unsigned long libver;
+	unsigned int major, minor, fix, patch, status;
         PySocketModule_APIObject *socket_api;
 
 	if (PyType_Ready(&PySSL_Type) < 0)
@@ -1710,5 +1712,32 @@ PyInit__ssl(void)
 				PY_SSL_VERSION_SSL23);
 	PyModule_AddIntConstant(m, "PROTOCOL_TLSv1",
 				PY_SSL_VERSION_TLS1);
+
+	/* OpenSSL version */
+	/* SSLeay() gives us the version of the library linked against,
+	   which could be different from the headers version.
+	*/
+	libver = SSLeay();
+	r = PyLong_FromUnsignedLong(libver);
+	if (r == NULL)
+		return NULL;
+	if (PyModule_AddObject(m, "OPENSSL_VERSION_NUMBER", r))
+		return NULL;
+	status = libver & 0xF;
+	libver >>= 4;
+	patch = libver & 0xFF;
+	libver >>= 8;
+	fix = libver & 0xFF;
+	libver >>= 8;
+	minor = libver & 0xFF;
+	libver >>= 8;
+	major = libver & 0xFF;
+	r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
+	if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r))
+		return NULL;
+	r = PyUnicode_FromString(SSLeay_version(SSLEAY_VERSION));
+	if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
+		return NULL;
+
 	return m;
 }
