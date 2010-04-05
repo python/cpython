@@ -49,6 +49,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8321: Give access to OpenSSL version numbers from the `ssl` module,
+  using the new attributes `ssl.OPENSSL_VERSION`, `ssl.OPENSSL_VERSION_INFO`
+  and `ssl.OPENSSL_VERSION_NUMBER`.
+
 - Issue #8310: Allow dis to examine new style classes.
 
 - Issue #8257: The Decimal construct now accepts a float instance

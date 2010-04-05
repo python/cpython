@@ -59,6 +59,7 @@ import textwrap
 
 import _ssl             # if we can't import it, let the error propagate
 
+from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
 from _ssl import SSLError
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from _ssl import PROTOCOL_SSLv2, PROTOCOL_SSLv3, PROTOCOL_SSLv23, PROTOCOL_TLSv1
