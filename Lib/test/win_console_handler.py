@@ -39,4 +39,5 @@ if __name__ == "__main__":
         exit(-1)
 
     # Do nothing but wait for the signal
-    input()
+    while True:
+        pass
