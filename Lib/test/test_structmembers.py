@@ -88,8 +88,6 @@ class ReadWriteTests(unittest.TestCase):
         self.assertEquals(ts.T_ULONGLONG, 4)
 
     def test_bad_assignments(self):
-        # XXX testing of T_UINT and T_ULONG temporarily disabled;
-        # see issue 8014.
         integer_attributes = [
             'T_BOOL',
             'T_BYTE', 'T_UBYTE',
