@@ -51,6 +51,11 @@ Build
   variable anymore.  It also forwards the LDFLAGS settings to the linker
   when building a shared library.
 
+Tests
+-----
+
+- Issue #8193: Fix test_zlib failure with zlib 1.2.4.
+
 
 What's New in Python 3.1.2?
 ===========================
