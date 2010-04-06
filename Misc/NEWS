@@ -251,6 +251,8 @@ C-API
 Tests
 -----
 
+- Issue #8193: Fix test_zlib failure with zlib 1.2.4.
+
 - Issue #8248: Add some tests for the bool type.  Patch by Gregory Nofi.
 
 - Issue #8263: Now regrtest.py will report a failure if it receives a
