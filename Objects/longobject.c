@@ -2278,7 +2278,7 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
 					break;
 				}
 	}
-	assert(1 <= x_size && x_size <= sizeof(x_digits)/sizeof(digit));
+	assert(1 <= x_size && x_size <= (Py_ssize_t)(sizeof(x_digits)/sizeof(digit)));
 
 	/* Round, and convert to double. */
 	x_digits[0] += half_even_correction[x_digits[0] & 7];
