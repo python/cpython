@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8259: 1L << (2**31) no longer produces an 'outrageous shift error'
+  on 64-bit machines.  The shift count for either left or right shift is
+  permitted to be up to sys.maxsize.
+
 - Ensure that tokenization of identifiers is not affected by locale.
 
 - Issue #1222585: Added LDCXXSHARED for C++ support. Patch by Arfrever.

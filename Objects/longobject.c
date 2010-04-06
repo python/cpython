@@ -3779,8 +3779,7 @@ static PyObject *
 long_rshift(PyLongObject *a, PyLongObject *b)
 {
 	PyLongObject *z = NULL;
-	long shiftby;
-	Py_ssize_t newsize, wordshift, loshift, hishift, i, j;
+	Py_ssize_t shiftby, newsize, wordshift, loshift, hishift, i, j;
 	digit lomask, himask;
 
 	CHECK_BINOP(a, b);
@@ -3799,8 +3798,7 @@ long_rshift(PyLongObject *a, PyLongObject *b)
 		Py_DECREF(a2);
 	}
 	else {
-
-		shiftby = PyLong_AsLong((PyObject *)b);
+		shiftby = PyLong_AsSsize_t((PyObject *)b);
 		if (shiftby == -1L && PyErr_Occurred())
 			goto rshift_error;
 		if (shiftby < 0) {
@@ -3841,27 +3839,21 @@ long_lshift(PyObject *v, PyObject *w)
 	PyLongObject *a = (PyLongObject*)v;
 	PyLongObject *b = (PyLongObject*)w;
 	PyLongObject *z = NULL;
-	long shiftby;
-	Py_ssize_t oldsize, newsize, wordshift, remshift, i, j;
+	Py_ssize_t shiftby, oldsize, newsize, wordshift, remshift, i, j;
 	twodigits accum;
 
 	CHECK_BINOP(a, b);
 
-	shiftby = PyLong_AsLong((PyObject *)b);
+	shiftby = PyLong_AsSsize_t((PyObject *)b);
 	if (shiftby == -1L && PyErr_Occurred())
 		goto lshift_error;
 	if (shiftby < 0) {
 		PyErr_SetString(PyExc_ValueError, "negative shift count");
 		goto lshift_error;
 	}
-	if ((long)(int)shiftby != shiftby) {
-		PyErr_SetString(PyExc_ValueError,
-				"outrageous left shift count");
-		goto lshift_error;
-	}
 	/* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
-	wordshift = (int)shiftby / PyLong_SHIFT;
-	remshift  = (int)shiftby - wordshift * PyLong_SHIFT;
+	wordshift = shiftby / PyLong_SHIFT;
+	remshift  = shiftby - wordshift * PyLong_SHIFT;
 
 	oldsize = ABS(Py_SIZE(a));
 	newsize = oldsize + wordshift;
