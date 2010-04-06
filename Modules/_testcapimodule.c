@@ -1670,6 +1670,7 @@ typedef struct {
 	unsigned int uint_member;
 	long long_member;
 	unsigned long ulong_member;
+	Py_ssize_t pyssizet_member;
 	float float_member;
 	double double_member;
 	char inplace_member[6];
@@ -1694,6 +1695,7 @@ static struct PyMemberDef test_members[] = {
 	{"T_UINT", T_UINT, offsetof(test_structmembers, structmembers.uint_member), 0, NULL},
 	{"T_LONG", T_LONG, offsetof(test_structmembers, structmembers.long_member), 0, NULL},
 	{"T_ULONG", T_ULONG, offsetof(test_structmembers, structmembers.ulong_member), 0, NULL},
+	{"T_PYSSIZET", T_PYSSIZET, offsetof(test_structmembers, structmembers.pyssizet_member), 0, NULL},
 	{"T_FLOAT", T_FLOAT, offsetof(test_structmembers, structmembers.float_member), 0, NULL},
 	{"T_DOUBLE", T_DOUBLE, offsetof(test_structmembers, structmembers.double_member), 0, NULL},
 	{"T_STRING_INPLACE", T_STRING_INPLACE, offsetof(test_structmembers, structmembers.inplace_member), 0, NULL},
@@ -1710,13 +1712,13 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
 	static char *keywords[] = {
 		"T_BOOL", "T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT",
-		"T_INT", "T_UINT", "T_LONG", "T_ULONG",
+		"T_INT", "T_UINT", "T_LONG", "T_ULONG", "T_PYSSIZET",
 		"T_FLOAT", "T_DOUBLE", "T_STRING_INPLACE",
-#ifdef HAVE_LONG_LONG	
+#ifdef HAVE_LONG_LONG
 		"T_LONGLONG", "T_ULONGLONG",
 #endif
 		NULL};
-	static char *fmt = "|bbBhHiIlkfds#"
+	static char *fmt = "|bbBhHiIlknfds#"
 #ifdef HAVE_LONG_LONG
 		"LK"
 #endif
@@ -1735,9 +1737,10 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 					 &ob->structmembers.short_member,
 					 &ob->structmembers.ushort_member,
 					 &ob->structmembers.int_member,
-					 &ob->structmembers.uint_member, 
+					 &ob->structmembers.uint_member,
 					 &ob->structmembers.long_member,
 					 &ob->structmembers.ulong_member,
+					 &ob->structmembers.pyssizet_member,
 					 &ob->structmembers.float_member,
 					 &ob->structmembers.double_member,
 					 &s, &string_len
