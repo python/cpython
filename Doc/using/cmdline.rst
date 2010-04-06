@@ -1,5 +1,8 @@
 .. highlightlang:: none
 
+.. ATTENTION: You probably should update Misc/python.man, too, if you modify
+.. this file.
+
 .. _using-on-general:
 
 Command line and environment
