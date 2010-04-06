@@ -1000,6 +1000,9 @@ A right shift by *n* bits is defined as division by ``pow(2, n)``.  A left shift
 by *n* bits is defined as multiplication with ``pow(2, n)``.  Negative shift
 counts raise a :exc:`ValueError` exception.
 
+.. note:: In the current implementation, the right-hand operand is required
+   to be at most :attr:`sys.maxsize`.  If the right-hand operand is larger than
+   :attr:`sys.maxsize` an :exc:`OverflowError` exception is raised.
 
 .. _bitwise:
 
