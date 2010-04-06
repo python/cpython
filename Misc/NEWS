@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8329: Don't return the same lists from select.select when no fds are
+  changed.
+
 - Issue #8259: 1L << (2**31) no longer produces an 'outrageous shift error'
   on 64-bit machines.  The shift count for either left or right shift is
   permitted to be up to sys.maxsize.
