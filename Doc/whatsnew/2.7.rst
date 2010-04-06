@@ -40,7 +40,7 @@
    * You can comment out your additions if you like, but it's not
    necessary (especially when a final release is some months away).
 
-   * Credit the author of a patch or bugfix.   Just the name is
+   * Credit the author of a patch or bugfix.  Just the name is
    sufficient; the e-mail address isn't necessary.
 
    * It's helpful to add the bug/patch number in a parenthetical comment.
@@ -109,11 +109,12 @@ Regular Python dictionaries iterate over key/value pairs in arbitrary order.
 Over the years, a number of authors have written alternative implementations
 that remember the order that the keys were originally inserted.  Based on
 the experiences from those implementations, a new
-:class:`collections.OrderedDict` class has been introduced.
+:class:`~collections.OrderedDict` class has been introduced in the
+:mod:`collections` module.
 
-The :class:`OrderedDict` API is substantially the same as regular dictionaries
-but will iterate over keys and values in a guaranteed order depending on
-when a key was first inserted::
+The :class:`~collections.OrderedDict` API is substantially the same as regular
+dictionaries but will iterate over keys and values in a guaranteed order
+depending on when a key was first inserted::
 
     >>> from collections import OrderedDict
     >>> d = OrderedDict([('first', 1), ('second', 2),
@@ -135,8 +136,8 @@ Deleting an entry and reinserting it will move it to the end::
     >>> d.items()
     [('first', 1), ('third', 3), ('second', 5)]
 
-The :meth:`popitem` method has an optional *last* argument
-that defaults to True.  If *last* is True, the most recently
+The :meth:`~collections.OrderedDict.popitem` method has an optional *last*
+argument that defaults to True.  If *last* is True, the most recently
 added key is returned and removed; if it's False, the
 oldest key is selected::
 
@@ -145,9 +146,9 @@ oldest key is selected::
     (19, 0)
     >>> od.popitem()
     (18, 0)
-    >>> od.popitem(False)
+    >>> od.popitem(last=False)
     (0, 0)
-    >>> od.popitem(False)
+    >>> od.popitem(last=False)
     (1, 0)
 
 Comparing two ordered dictionaries checks both the keys and values,
@@ -157,31 +158,35 @@ and requires that the insertion order was the same::
     ...                    ('third', 3)])
     >>> od2 = OrderedDict([('third', 3), ('first', 1),
     ...                    ('second', 2)])
-    >>> od1==od2
+    >>> od1 == od2
     False
     >>> # Move 'third' key to the end
-    >>> del od2['third'] ; od2['third'] = 3
-    >>> od1==od2
+    >>> del od2['third']; od2['third'] = 3
+    >>> od1 == od2
     True
 
-Comparing an :class:`OrderedDict` with a regular dictionary
+Comparing an :class:`~collections.OrderedDict` with a regular dictionary
 ignores the insertion order and just compares the keys and values.
 
-How does the :class:`OrderedDict` work?  It maintains a doubly-linked
-list of keys, appending new keys to the list as they're inserted.  A
-secondary dictionary maps keys to their corresponding list node, so
+How does the :class:`~collections.OrderedDict` work?  It maintains a
+doubly-linked list of keys, appending new keys to the list as they're inserted.
+A secondary dictionary maps keys to their corresponding list node, so
 deletion doesn't have to traverse the entire linked list and therefore
 remains O(1).
 
 .. XXX check O(1)-ness with Raymond
+..     Also check if the 'somenamedtuple' in the collection module should
+..     be replaced/removed in order to use
+..     :meth:`~collections.namedtuple._asdict()` (see below)
 
 The standard library now supports use of ordered dictionaries in several
-modules.  The :mod:`configparser` module uses them by default.  This lets
+modules.  The :mod:`ConfigParser` module uses them by default.  This lets
 configuration files be read, modified, and then written back in their original
-order.  The *_asdict()* method for :func:`collections.namedtuple` now
-returns an ordered dictionary with the values appearing in the same order as
-the underlying tuple indicies.  The :mod:`json` module is being built-out with
-an *object_pairs_hook* to allow OrderedDicts to be built by the decoder.
+order.  The :meth:`~collections.somenamedtuple._asdict()` method for
+:func:`collections.namedtuple` now returns an ordered dictionary with the
+values appearing in the same order as the underlying tuple indices.
+The :mod:`json` module is being built-out with an *object_pairs_hook* to allow
+OrderedDicts to be built by the decoder.
 Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_.
 
 .. seealso::
@@ -193,7 +198,7 @@ Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_
 .. _pep-0378:
 
 PEP 378: Format Specifier for Thousands Separator
-====================================================
+=================================================
 
 To make program output more readable, it can be useful to add
 separators to large numbers and render them as
@@ -206,12 +211,17 @@ to use and unsuitable for multi-threaded applications where different
 threads are producing output for different locales.
 
 Therefore, a simple comma-grouping mechanism has been added to the
-mini-language used by the string :meth:`format` method.  When
+mini-language used by the :meth:`str.format` method.  When
 formatting a floating-point number, simply include a comma between the
 width and the precision::
 
    >>> '{:20,.2}'.format(f)
    '18,446,744,073,709,551,616.00'
+
+.. XXX this example seems wrong:
+.. >>> f = 18446744073709551616.0
+.. >>> '{:20,.2}'.format(f)
+.. '             1.8e+19'
 
 This mechanism is not adaptable at all; commas are always used as the
 separator and the grouping is always into three-digit groups.  The
@@ -285,9 +295,9 @@ Some smaller changes made to the core Python language are:
 
     >>> {1,2,3,4,5}
     set([1, 2, 3, 4, 5])
-    >>> set()
+    >>> set() # empty set
     set([])
-    >>> {}
+    >>> {}    # empty dict
     {}
 
   Backported by Alexandre Vassalotti; :issue:`2335`.
@@ -333,13 +343,15 @@ Some smaller changes made to the core Python language are:
   :mod:`marshal`, :mod:`pickle`
   and :mod:`json` modules;
   parsing of float and imaginary literals in Python code;
-  and :class:`Decimal`-to-float conversion.
+  and :class:`~decimal.Decimal`-to-float conversion.
 
   Related to this, the :func:`repr` of a floating-point number *x*
   now returns a result based on the shortest decimal string that's
   guaranteed to round back to *x* under correct rounding (with
   round-half-to-even rounding mode).  Previously it gave a string
   based on rounding x to 17 decimal digits.
+
+  .. maybe add an example?
 
   The rounding library responsible for this improvement works on
   Windows, and on Unix platforms using the gcc, icc, or suncc
@@ -384,7 +396,7 @@ Some smaller changes made to the core Python language are:
   its argument in binary::
 
       >>> n = 37
-      >>> bin(37)
+      >>> bin(n)
       '0b100101'
       >>> n.bit_length()
       6
@@ -415,8 +427,7 @@ Some smaller changes made to the core Python language are:
     >>> n = 295147905179352891391
     >>> float(n)
     2.9514790517935289e+20
-    >>> n-long(float(n)
-    ... )
+    >>> n - long(float(n))
     -1L
 
   (Implemented by Mark Dickinson; :issue:`3166`.)
@@ -428,9 +439,11 @@ Some smaller changes made to the core Python language are:
   to override the :meth:`__unicode__` method.  (Implemented by
   Victor Stinner; :issue:`1583863`.)
 
-* The :class:`bytearray` type's :meth:`translate` method now accepts
+* The :class:`bytearray` type's :meth:`~bytearray.translate` method now accepts
   ``None`` as its first argument.  (Fixed by Georg Brandl;
   :issue:`4759`.)
+
+  .. bytearray doesn't seem to be documented
 
 * When using ``@classmethod`` and ``@staticmethod`` to wrap
   methods as class or static methods, the wrapper object now
@@ -490,7 +503,7 @@ Several performance enhancements have been added:
   the middle generation has been collected 10 times and when the
   number of survivor objects from the middle generation exceeds 10% of
   the number of objects in the oldest generation.  (Suggested by Martin
-  von Loewis and implemented by Antoine Pitrou; :issue:`4074`.)
+  von Löwis and implemented by Antoine Pitrou; :issue:`4074`.)
 
 * The garbage collector tries to avoid tracking simple containers
   which can't be part of a cycle. In Python 2.7, this is now true for
@@ -512,7 +525,7 @@ Several performance enhancements have been added:
 
   Apart from the performance improvements this change should be
   invisible to end users, with one exception: for testing and
-  debugging purposes there's a new structseq ``sys.long_info`` that
+  debugging purposes there's a new structseq :data:`sys.long_info` that
   provides information about the internal format, giving the number of
   bits per digit and the size in bytes of the C type used to store
   each digit::
@@ -578,7 +591,7 @@ changes, sorted alphabetically by module name. Consult the
 :file:`Misc/NEWS` file in the source tree for a more complete list of
 changes, or look through the Subversion logs for all the details.
 
-* The :mod:`bdb` module's base debugging class :class:`Bdb`
+* The :mod:`bdb` module's base debugging class :class:`~bdb.Bdb`
   gained a feature for skipping modules.  The constructor
   now takes an iterable containing glob-style patterns such as
   ``django.*``; the debugger will not step into stack frames
@@ -595,16 +608,16 @@ changes, or look through the Subversion logs for all the details.
   `the pybsddb package <http://www.jcea.es/programacion/pybsddb.htm>`__.
   The new version features better Python 3.x compatibility, various bug fixes,
   and adds several new BerkeleyDB flags and methods.
-  (Updated by Jesús Cea Avion; :issue:`8156`.  The pybsddb
+  (Updated by Jesús Cea Avión; :issue:`8156`.  The pybsddb
   changelog can be browsed at http://hg.jcea.es/pybsddb/file/tip/ChangeLog.)
 
-* The :mod:`bz2` module's :class:`BZ2File` now supports the context
+* The :mod:`bz2` module's :class:`~bz2.BZ2File` now supports the context
   management protocol, so you can write ``with bz2.BZ2File(...) as f: ...``.
   (Contributed by Hagen Fuerstenau; :issue:`3860`.)
 
-* New class: the :class:`Counter` class in the :mod:`collections` module is
-  useful for tallying data.  :class:`Counter` instances behave mostly
-  like dictionaries but return zero for missing keys instead of
+* New class: the :class:`~collections.Counter` class in the :mod:`collections`
+  module is useful for tallying data.  :class:`~collections.Counter` instances
+  behave mostly like dictionaries but return zero for missing keys instead of
   raising a :exc:`KeyError`:
 
   .. doctest::
@@ -624,8 +637,9 @@ changes, or look through the Subversion logs for all the details.
      >>> c['z']
      0
 
-  There are two additional :class:`Counter` methods: :meth:`most_common`
-  returns the N most common elements and their counts, and :meth:`elements`
+  There are two additional :class:`~collections.Counter` methods:
+  :meth:`~collections.Counter.most_common` returns the N most common elements
+  and their counts, and :meth:`~collections.Counter.elements`
   returns an iterator over the contained element, repeating each element
   as many times as its count::
 
@@ -637,12 +651,14 @@ changes, or look through the Subversion logs for all the details.
        'h', 'h', 'm', 'l', 'l', 'o', 'n', 'p', 's',
        's', 's', 'r', 't', 't', 'x'
 
+  .. maybe it's better to use list(c.elements()) here
+
   Contributed by Raymond Hettinger; :issue:`1696199`.
 
-  The new `~collections.OrderedDict` class is described in the earlier section
-  :ref:`pep-0372`.
+  The new :class:`~collections.OrderedDict` class is described in the earlier
+  section :ref:`pep-0372`.
 
-  The :class:`namedtuple` class now has an optional *rename* parameter.
+  The :class:`~collections.namedtuple` class now has an optional *rename* parameter.
   If *rename* is true, field names that are invalid because they've
   been repeated or that aren't legal Python identifiers will be
   renamed to legal names that are derived from the field's
@@ -655,12 +671,12 @@ changes, or look through the Subversion logs for all the details.
 
   (Added by Raymond Hettinger; :issue:`1818`.)
 
-  The :class:`deque` data type now exposes its maximum length as the
-  read-only :attr:`maxlen` attribute, and has a
-  :meth:`reverse` method that reverses the elements of the deque in-place.
+  The :class:`~collections.deque` data type now exposes its maximum length as the
+  read-only :attr:`~collections.deque.maxlen` attribute, and has a
+  :meth:`~collections.deque.reverse` method that reverses the elements of the deque in-place.
   (Added by Raymond Hettinger.)
 
-* The :mod:`copy` module's :func:`deepcopy` function will now
+* The :mod:`copy` module's :func:`~copy.deepcopy` function will now
   correctly copy bound instance methods.  (Implemented by
   Robert Collins; :issue:`1515`.)
 
@@ -671,13 +687,13 @@ changes, or look through the Subversion logs for all the details.
   3.0.9, containing various fixes for different platforms.  (Updated
   by Matthias Klose; :issue:`8142`.)
 
-* New method: the :mod:`datetime` module's :class:`timedelta` class
-  gained a :meth:`total_seconds` method that returns the number of seconds
-  in the duration.  (Contributed by Brian Quinlan; :issue:`5788`.)
+* New method: the :mod:`datetime` module's :class:`~datetime.timedelta` class
+  gained a :meth:`~datetime.timedelta.total_seconds` method that returns the
+  number of seconds in the duration.  (Contributed by Brian Quinlan; :issue:`5788`.)
 
-* New method: the :class:`Decimal` class gained a
-  :meth:`from_float` class method that performs an exact conversion
-  of a floating-point number to a :class:`Decimal`.
+* New method: the :class:`~decimal.Decimal` class gained a
+  :meth:`~decimal.Decimal.from_float` class method that performs an exact
+  conversion of a floating-point number to a :class:`~decimal.Decimal`.
   Note that this is an **exact** conversion that strives for the
   closest decimal approximation to the floating-point representation's value;
   the resulting decimal value will therefore still include the inaccuracy,
@@ -686,39 +702,39 @@ changes, or look through the Subversion logs for all the details.
   ``Decimal('0.1000000000000000055511151231257827021181583404541015625')``.
   (Implemented by Raymond Hettinger; :issue:`4796`.)
 
-  Most of the methods of the :class:`Context` class now accept integers
-  as well as :class:`Decimal` instances; the only exceptions are the
-  :meth:`canonical` and :meth:`is_canonical` methods.  (Patch by
-  Juan José Conti; :issue:`7633`.)
+  Most of the methods of the :class:`~decimal.Context` class now accept integers
+  as well as :class:`~decimal.Decimal` instances; the only exceptions are the
+  :meth:`~decimal.Context.canonical` and :meth:`~decimal.Context.is_canonical`
+  methods.  (Patch by Juan José Conti; :issue:`7633`.)
 
-  The constructor for :class:`Decimal` now accepts non-European
+  The constructor for :class:`~decimal.Decimal` now accepts non-European
   Unicode characters, such as Arabic-Indic digits.  (Contributed by
   Mark Dickinson; :issue:`6595`.)
 
-  When using :class:`Decimal` instances with a string's
-  :meth:`format` method, the default alignment was previously
+  When using :class:`~decimal.Decimal` instances with a string's
+  :meth:`~str.format` method, the default alignment was previously
   left-alignment.  This has been changed to right-alignment, which seems
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
-* The :class:`Fraction` class now accepts two rational numbers
+* The :class:`~fractions.Fraction` class now accepts two rational numbers
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
 
-* New class: a new :class:`ftplib.FTP_TLS` class in
+* New class: a new :class:`~ftplib.FTP_TLS` class in
   the :mod:`ftplib` module provides secure FTP
   connections using TLS encapsulation of authentication as well as
   subsequent control and data transfers.
   (Contributed by Giampaolo Rodola', :issue:`2054`.)
 
-  The :meth:`storbinary` method for binary uploads can now restart
+  The :meth:`~ftplib.FTP.storbinary` method for binary uploads can now restart
   uploads thanks to an added *rest* parameter (patch by Pablo Mouzo;
   :issue:`6845`.)
 
-* New function: the :mod:`gc` module's :func:`is_tracked` returns
+* New function: the :mod:`gc` module's :func:`~gc.is_tracked` returns
   true if a given instance is tracked by the garbage collector, false
   otherwise. (Contributed by Antoine Pitrou; :issue:`4688`.)
 
-* The :mod:`gzip` module's :class:`GzipFile` now supports the context
+* The :mod:`gzip` module's :class:`~gzip.GzipFile` now supports the context
   management protocol, so you can write ``with gzip.GzipFile(...) as f: ...``
   (contributed by Hagen Fuerstenau; :issue:`3860`), and it now implements
   the :class:`io.BufferedIOBase` ABC, so you can wrap it with
@@ -732,17 +748,17 @@ changes, or look through the Subversion logs for all the details.
   :mod:`gzip` module will now consume these trailing bytes.  (Fixed by
   Tadek Pietraszek and Brian Curtin; :issue:`2846`.)
 
-* New attribute: the :mod:`hashlib` module now has an :attr:`algorithms`
+* New attribute: the :mod:`hashlib` module now has an :attr:`~hashlib.hashlib.algorithms`
   attribute containing a tuple naming the supported algorithms.
   In Python 2.7, ``hashlib.algorithms`` contains
   ``('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')``
   (Contributed by Carl Chenet; :issue:`7418`.)
 
-* The default :class:`HTTPResponse` class used by the :mod:`httplib` module now
+* The default :class:`~httplib.HTTPResponse` class used by the :mod:`httplib` module now
   supports buffering, resulting in much faster reading of HTTP responses.
   (Contributed by Kristjan Valur Jonsson; :issue:`4879`.)
 
-  The :class:`HTTPConnection` and :class:`HTTPSConnection` classes
+  The :class:`~httplib.HTTPConnection` and :class:`~httplib.HTTPSConnection` classes
   now support a *source_address* parameter, a ``(host, port)`` 2-tuple
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
@@ -762,7 +778,7 @@ changes, or look through the Subversion logs for all the details.
 
   The :class:`io.FileIO` class now raises an :exc:`OSError` when passed
   an invalid file descriptor.  (Implemented by Benjamin Peterson;
-  :issue:`4991`.)  The :meth:`truncate` method now preserves the
+  :issue:`4991`.)  The :meth:`~io.IOBase.truncate` method now preserves the
   file position; previously it would change the file position to the
   end of the new file.  (Fixed by Pascal Chambon; :issue:`6939`.)
 
@@ -773,9 +789,11 @@ changes, or look through the Subversion logs for all the details.
     itertools.compress('ABCDEF', [1,0,1,0,1,1]) =>
       A, C, E, F
 
+  .. maybe here is better to use >>> list(itertools.compress(...)) instead
+
   New function: ``itertools.combinations_with_replacement(iter, r)``
   returns all the possible *r*-length combinations of elements from the
-  iterable *iter*.  Unlike :func:`combinations`, individual elements
+  iterable *iter*.  Unlike :func:`~itertools.combinations`, individual elements
   can be repeated in the generated combinations::
 
     itertools.combinations_with_replacement('abc', 2) =>
@@ -785,10 +803,10 @@ changes, or look through the Subversion logs for all the details.
   Note that elements are treated as unique depending on their position
   in the input, not their actual values.
 
-  The :class:`itertools.count` function now has a *step* argument that
-  allows incrementing by values other than 1.  :func:`count` also
+  The :func:`itertools.count` function now has a *step* argument that
+  allows incrementing by values other than 1.  :func:`~itertools.count` also
   now allows keyword arguments, and using non-integer values such as
-  floats or :class:`Decimal` instances.  (Implemented by Raymond
+  floats or :class:`~decimal.Decimal` instances.  (Implemented by Raymond
   Hettinger; :issue:`5032`.)
 
   :func:`itertools.combinations` and :func:`itertools.product` were
@@ -801,17 +819,17 @@ changes, or look through the Subversion logs for all the details.
   encoding and decoding faster.
   (Contributed by Bob Ippolito; :issue:`4136`.)
 
-  To support the new :class:`OrderedDict` type, :func:`json.load`
+  To support the new :class:`collections.OrderedDict` type, :func:`json.load`
   now has an optional *object_pairs_hook* parameter that will be called
   with any object literal that decodes to a list of pairs.
   (Contributed by Raymond Hettinger; :issue:`5381`.)
 
 * New functions: the :mod:`math` module gained
-  :func:`erf` and :func:`erfc` for the error function and the complementary error function,
-  :func:`expm1` which computes ``e**x - 1`` with more precision than
-  using :func:`exp` and subtracting 1,
-  :func:`gamma` for the Gamma function, and
-  :func:`lgamma` for the natural log of the Gamma function.
+  :func:`~math.erf` and :func:`~math.erfc` for the error function and the complementary error function,
+  :func:`~math.expm1` which computes ``e**x - 1`` with more precision than
+  using :func:`~math.exp` and subtracting 1,
+  :func:`~math.gamma` for the Gamma function, and
+  :func:`~math.lgamma` for the natural log of the Gamma function.
   (Contributed by Mark Dickinson and nirinA raseliarison; :issue:`3366`.)
 
 * The :mod:`multiprocessing` module's :class:`Manager*` classes
@@ -820,10 +838,10 @@ changes, or look through the Subversion logs for all the details.
   passed to the callable.
   (Contributed by lekma; :issue:`5585`.)
 
-  The :class:`Pool` class, which controls a pool of worker processes,
+  The :class:`~multiprocessing.Pool` class, which controls a pool of worker processes,
   now has an optional *maxtasksperchild* parameter.  Worker processes
   will perform the specified number of tasks and then exit, causing the
-  :class:`Pool` to start a new worker.  This is useful if tasks may leak
+  :class:`~multiprocessing.Pool` to start a new worker.  This is useful if tasks may leak
   memory or other resources, or if some tasks will cause the worker to
   become very large.
   (Contributed by Charles Cazabon; :issue:`6963`.)
@@ -832,50 +850,50 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Derek Morr; :issue:`1664`.)
 
 * New functions: the :mod:`os` module wraps the following POSIX system
-  calls: :func:`getresgid` and :func:`getresuid`, which return the
+  calls: :func:`~os.getresgid` and :func:`~os.getresuid`, which return the
   real, effective, and saved GIDs and UIDs;
-  :func:`setresgid` and :func:`setresuid`, which set
+  :func:`~os.setresgid` and :func:`~os.setresuid`, which set
   real, effective, and saved GIDs and UIDs to new values;
-  :func:`initgroups`.  (GID/UID functions
+  :func:`~os.initgroups`.  (GID/UID functions
   contributed by Travis H.; :issue:`6508`.  Support for initgroups added
   by Jean-Paul Calderone; :issue:`7333`.)
 
   The :func:`os.fork` function now re-initializes the import lock in
-  the child process; this fixes problems on Solaris when :func:`fork`
+  the child process; this fixes problems on Solaris when :func:`~os.fork`
   is called from a thread.  (Fixed by Zsolt Cserna; :issue:`7242`.)
 
-* In the :mod:`os.path` module, the :func:`normpath` and
-  :func:`abspath` functions now preserve Unicode; if their input path
+* In the :mod:`os.path` module, the :func:`~os.path.normpath` and
+  :func:`~os.path.abspath` functions now preserve Unicode; if their input path
   is a Unicode string, the return value is also a Unicode string.
-  (:meth:`normpath` fixed by Matt Giuca in :issue:`5827`;
-  :meth:`abspath` fixed by Ezio Melotti in :issue:`3426`.)
+  (:meth:`~os.path.normpath` fixed by Matt Giuca in :issue:`5827`;
+  :meth:`~os.path.abspath` fixed by Ezio Melotti in :issue:`3426`.)
 
 * The :mod:`pydoc` module now has help for the various symbols that Python
   uses.  You can now do ``help('<<')`` or ``help('@')``, for example.
   (Contributed by David Laban; :issue:`4739`.)
 
-* The :mod:`re` module's :func:`split`, :func:`sub`, and :func:`subn`
+* The :mod:`re` module's :func:`~re.split`, :func:`~re.sub`, and :func:`~re.subn`
   now accept an optional *flags* argument, for consistency with the
   other functions in the module.  (Added by Gregory P. Smith.)
 
-* New function: in the :mod:`shutil` module, :func:`make_archive`
+* New function: in the :mod:`shutil` module, :func:`~shutil.make_archive`
   takes a filename, archive type (zip or tar-format), and a directory
   path, and creates an archive containing the directory's contents.
   (Added by Tarek Ziadé.)
 
-  :mod:`shutil`'s :func:`copyfile` and :func:`copytree`
-  functions now raise a :exc:`SpecialFileError` exception when
+  :mod:`shutil`'s :func:`~shutil.copyfile` and :func:`~shutil.copytree`
+  functions now raise a :exc:`~shutil.SpecialFileError` exception when
   asked to copy a named pipe.  Previously the code would treat
   named pipes like a regular file by opening them for reading, and
   this would block indefinitely.  (Fixed by Antoine Pitrou; :issue:`3002`.)
 
 * New functions: in the :mod:`site` module, three new functions
   return various site- and user-specific paths.
-  :func:`getsitepackages` returns a list containing all
+  :func:`~site.getsitepackages` returns a list containing all
   global site-packages directories, and
-  :func:`getusersitepackages` returns the path of the user's
+  :func:`~site.getusersitepackages` returns the path of the user's
   site-packages directory.
-  :func:`getuserbase` returns the value of the :envvar:`USER_BASE`
+  :func:`~site.getuserbase` returns the value of the :envvar:`USER_BASE`
   environment variable, giving the path to a directory that can be used
   to store data.
   (Contributed by Tarek Ziadé; :issue:`6693`.)
@@ -885,32 +903,32 @@ changes, or look through the Subversion logs for all the details.
   catch and swallow the :exc:`KeyboardInterrupt` exception.  (Fixed by
   Victor Stinner; :issue:`3137`.)
 
-* The :mod:`socket` module's :class:`SSL` objects now support the
+* The :mod:`socket` module's :class:`~ssl.SSL` objects now support the
   buffer API, which fixed a test suite failure.  (Fixed by Antoine
   Pitrou; :issue:`7133`.)
 
-  The :func:`create_connection` function
+  The :func:`~socket.create_connection` function
   gained a *source_address* parameter, a ``(host, port)`` 2-tuple
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
 
-  The :meth:`recv_into` and :meth:`recvfrom_into` methods will now write
-  into objects that support the buffer API, most usefully
+  The :meth:`~socket.socket.recv_into` and :meth:`~socket.socket.recvfrom_into`
+  methods will now write into objects that support the buffer API, most usefully
   the :class:`bytearray` and :class:`memoryview` objects.  (Implemented by
   Antoine Pitrou; :issue:`8104`.)
 
-* The :mod:`SocketServer` module's :class:`TCPServer` class now
-  has a :attr:`disable_nagle_algorithm` class attribute.
+* The :mod:`SocketServer` module's :class:`~SocketServer.TCPServer` class now
+  has a :attr:`~SocketServer.TCPServer.disable_nagle_algorithm` class attribute.
   The default value is False; if overridden to be True,
   new request connections will have the TCP_NODELAY option set to
   prevent buffering many small sends into a single TCP packet.
   (Contributed by Kristjan Valur Jonsson; :issue:`6192`.)
 
-* Updated module: the :mod:`sqlite` module has been updated to
+* Updated module: the :mod:`sqlite3` module has been updated to
   version 2.6.0 of the `pysqlite package <http://code.google.com/p/pysqlite/>`__. Version 2.6.0 includes a number of bugfixes, and adds
   the ability to load SQLite extensions from shared libraries.
   Call the ``enable_load_extension(True)`` method to enable extensions,
-  and then call :meth:`load_extension` to load a particular shared library.
+  and then call :meth:`~sqlite3.Connection.load_extension` to load a particular shared library.
   (Updated by Gerhard Häring.)
 
 * The :mod:`struct` module will no longer silently ignore overflow
@@ -920,9 +938,9 @@ changes, or look through the Subversion logs for all the details.
   :issue:`1523`.)
 
 * New function: the :mod:`subprocess` module's
-  :func:`check_output` runs a command with a specified set of arguments
+  :func:`~subprocess.check_output` runs a command with a specified set of arguments
   and returns the command's output as a string when the command runs without
-  error, or raises a :exc:`CalledProcessError` exception otherwise.
+  error, or raises a :exc:`~subprocess.CalledProcessError` exception otherwise.
 
   ::
 
@@ -940,7 +958,7 @@ changes, or look through the Subversion logs for all the details.
   on receiving an :const:`EINTR` signal.  (Reported by several people; final
   patch by Gregory P. Smith in :issue:`1068268`.)
 
-* New function: :func:`is_declared_global` in the :mod:`symtable` module
+* New function: :func:`~symtable.is_declared_global` in the :mod:`symtable` module
   returns true for variables that are explicitly declared to be global,
   false for ones that are implicitly global.
   (Contributed by Jeremy Hylton.)
@@ -964,21 +982,21 @@ changes, or look through the Subversion logs for all the details.
   which raises an exception if there's an error.
   (Changed by Lars Gustäbel; :issue:`7357`.)
 
-  :mod:`tarfile` now supports filtering the :class:`TarInfo`
-  objects being added to a tar file.  When you call :meth:`TarFile.add`,
+  :mod:`tarfile` now supports filtering the :class:`~tarfile.TarInfo`
+  objects being added to a tar file.  When you call :meth:`~tarfile.TarFile.add`,
   instance, you may supply an optional *filter* argument
   that's a callable.  The *filter* callable will be passed the
-  :class:`TarInfo` for every file being added, and can modify and return it.
+  :class:`~tarfile.TarInfo` for every file being added, and can modify and return it.
   If the callable returns ``None``, the file will be excluded from the
   resulting archive.  This is more powerful than the existing
   *exclude* argument, which has therefore been deprecated.
   (Added by Lars Gustäbel; :issue:`6856`.)
-  The :class:`TarFile` class also now supports the context manager protocol.
+  The :class:`~tarfile.TarFile` class also now supports the context manager protocol.
   (Added by Lars Gustäbel; :issue:`7232`.)
 
-* The :mod:`threading` module's :meth:`Event.wait` method now returns
-  the internal flag on exit.  This means the method will usually
-  return true because :meth:`wait` is supposed to block until the
+* The :meth:`~threading.Event.wait` method of the :class:`threading.Event` class
+  now returns the internal flag on exit.  This means the method will usually
+  return true because :meth:`~threading.Event.wait` is supposed to block until the
   internal flag becomes true.  The return value will only be false if
   a timeout was provided and the operation timed out.
   (Contributed by Tim Lesher; :issue:`1674032`.)
@@ -991,32 +1009,32 @@ changes, or look through the Subversion logs for all the details.
   and has been updated to version 5.2.0 (updated by
   Florent Xicluna; :issue:`8024`).
 
-* The :class:`UserDict` class is now a new-style class.  (Changed by
+* The :class:`~UserDict.UserDict` class is now a new-style class.  (Changed by
   Benjamin Peterson.)
 
 * The ElementTree library, :mod:`xml.etree`, no longer escapes
   ampersands and angle brackets when outputting an XML processing
-  instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
-  or comment (which looks like `<!-- comment -->`).
+  instruction (which looks like ``<?xml-stylesheet href="#style1"?>``)
+  or comment (which looks like ``<!-- comment -->``).
   (Patch by Neil Muller; :issue:`2746`.)
 
-* The :mod:`zipfile` module's :class:`ZipFile` now supports the context
+* The :mod:`zipfile` module's :class:`~zipfile.ZipFile` now supports the context
   management protocol, so you can write ``with zipfile.ZipFile(...) as f: ...``.
   (Contributed by Brian Curtin; :issue:`5511`.)
 
   :mod:`zipfile` now supports archiving empty directories and
   extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
   Reading files out of an archive is now faster, and interleaving
-  :meth:`read` and :meth:`readline` now works correctly.
+  :meth:`~zipfile.ZipFile.read` and :meth:`~zipfile.ZipFile.readline` now works correctly.
   (Contributed by Nir Aides; :issue:`7610`.)
 
-  The :func:`is_zipfile` function now
+  The :func:`~zipfile.is_zipfile` function now
   accepts a file object, in addition to the path names accepted in earlier
   versions.  (Contributed by Gabriel Genellina; :issue:`4756`.)
 
-  The :meth:`writestr` method now has an optional *compress_type* parameter
+  The :meth:`~zipfile.ZipFile.writestr` method now has an optional *compress_type* parameter
   that lets you override the default compression method specified in the
-  :class:`ZipFile` constructor.  (Contributed by Ronald Oussoren;
+  :class:`~zipfile.ZipFile` constructor.  (Contributed by Ronald Oussoren;
   :issue:`6003`.)
 
 
@@ -1098,41 +1116,42 @@ The :mod:`unittest` module was enhanced in several ways.
 The progress messages now shows 'x' for expected failures
 and 'u' for unexpected successes when run in verbose mode.
 (Contributed by Benjamin Peterson.)
-Test cases can raise the :exc:`SkipTest` exception to skip a test.
+Test cases can raise the :exc:`~unittest.SkipTest` exception to skip a test.
 (:issue:`1034053`.)
 
 .. XXX describe test discovery (Contributed by Michael Foord; :issue:`6001`.)
 
-The error messages for :meth:`assertEqual`,
-:meth:`assertTrue`, and :meth:`assertFalse`
+The error messages for :meth:`~unittest.TestCase.assertEqual`,
+:meth:`~unittest.TestCase.assertTrue`, and :meth:`~unittest.TestCase.assertFalse`
 failures now provide more information.  If you set the
-:attr:`longMessage` attribute of your :class:`TestCase` classes to
-true, both the standard error message and any additional message you
+:attr:`~unittest.TestCase.longMessage` attribute of your :class:`~unittest.TestCase` classes to
+True, both the standard error message and any additional message you
 provide will be printed for failures.  (Added by Michael Foord; :issue:`5663`.)
 
-The :meth:`assertRaises` and :meth:`failUnlessRaises` methods now
+The :meth:`~unittest.TestCase.assertRaises` method now
 return a context handler when called without providing a callable
 object to run.  For example, you can write this::
 
   with self.assertRaises(KeyError):
-      raise ValueError
+      {}['foo']
 
 (Implemented by Antoine Pitrou; :issue:`4444`.)
 
 .. rev 78774
 
 Module- and class-level setup and teardown fixtures are now supported.
-Modules can contain :func:`setUpModule` and :func:`tearDownModule`
-functions.  Classes can have :meth:`setUpClass` and
-:meth:`tearDownClass` methods that must be defined as class methods
-(using ``@classmethod`` or the equivalent).  These functions and
+Modules can contain :func:`~unittest.setUpModule` and :func:`~unittest.tearDownModule`
+functions.  Classes can have :meth:`~unittest.TestCase.setUpClass` and
+:meth:`~unittest.TestCase.tearDownClass` methods that must be defined as class methods
+(using ``@classmethod`` or equivalent).  These functions and
 methods are invoked when the test runner switches to a test case in a
 different module or class.
 
-The methods :meth:`addCleanup` and :meth:`doCleanups` were added.
-:meth:`addCleanup` allows you to add cleanup functions that
-will be called unconditionally (after :meth:`setUp` if
-:meth:`setUp` fails, otherwise after :meth:`tearDown`). This allows
+The methods :meth:`~unittest.TestCase.addCleanup` and
+:meth:`~unittest.TestCase.doCleanups` were added.
+:meth:`~unittest.TestCase.addCleanup` allows you to add cleanup functions that
+will be called unconditionally (after :meth:`~unittest.TestCase.setUp` if
+:meth:`~unittest.TestCase.setUp` fails, otherwise after :meth:`~unittest.TestCase.tearDown`). This allows
 for much simpler resource allocation and deallocation during tests
 (:issue:`5679`).
 
@@ -1141,65 +1160,69 @@ tests.  Many of these methods were written by Google engineers
 for use in their test suites; Gregory P. Smith, Michael Foord, and
 GvR worked on merging them into Python's version of :mod:`unittest`.
 
-* :meth:`assertIsNone` and :meth:`assertIsNotNone` take one
+* :meth:`~unittest.TestCase.assertIsNone` and :meth:`~unittest.TestCase.assertIsNotNone` take one
   expression and verify that the result is or is not ``None``.
 
-* :meth:`assertIs` and :meth:`assertIsNot` take two values and check
-  whether the two values evaluate to the same object or not.
+* :meth:`~unittest.TestCase.assertIs` and :meth:`~unittest.TestCase.assertIsNot`
+  take two values and check whether the two values evaluate to the same object or not.
   (Added by Michael Foord; :issue:`2578`.)
 
-* :meth:`assertIsInstance` and :meth:`assertNotIsInstance` check whether
+* :meth:`~unittest.TestCase.assertIsInstance` and
+  :meth:`~unittest.TestCase.assertNotIsInstance` check whether
   the resulting object is an instance of a particular class, or of
   one of a tuple of classes.  (Added by Georg Brandl; :issue:`7031`.)
 
-* :meth:`assertGreater`, :meth:`assertGreaterEqual`,
-  :meth:`assertLess`, and :meth:`assertLessEqual` compare
+* :meth:`~unittest.TestCase.assertGreater`, :meth:`~unittest.TestCase.assertGreaterEqual`,
+  :meth:`~unittest.TestCase.assertLess`, and :meth:`~unittest.TestCase.assertLessEqual` compare
   two quantities.
 
-* :meth:`assertMultiLineEqual` compares two strings, and if they're
+* :meth:`~unittest.TestCase.assertMultiLineEqual` compares two strings, and if they're
   not equal, displays a helpful comparison that highlights the
   differences in the two strings.  This comparison is now used by
-  default when Unicode strings are compared with :meth:`assertEqual`.)
+  default when Unicode strings are compared with :meth:`~unittest.TestCase.assertEqual`.
 
-* :meth:`assertRegexpMatches` checks whether its first argument is a
+* :meth:`~unittest.TestCase.assertRegexpMatches` checks whether its first argument is a
   string matching a regular expression provided as its second argument.
 
-* :meth:`assertRaisesRegexp` checks whether a particular exception
+  .. XXX add assertNotRegexpMatches see issue 8038
+
+* :meth:`~unittest.TestCase.assertRaisesRegexp` checks whether a particular exception
   is raised, and then also checks that the string representation of
   the exception matches the provided regular expression.
 
-* :meth:`assertIn` and :meth:`assertNotIn` tests whether
-  *first* is or is not in  *second*.
+* :meth:`~unittest.TestCase.assertIn` and :meth:`~unittest.TestCase.assertNotIn`
+  tests whether *first* is or is not in  *second*.
 
-* :meth:`assertItemsEqual` tests whether two provided sequences
+* :meth:`~unittest.TestCase.assertItemsEqual` tests whether two provided sequences
   contain the same elements.
 
-* :meth:`assertSetEqual` compares whether two sets are equal, and
+* :meth:`~unittest.TestCase.assertSetEqual` compares whether two sets are equal, and
   only reports the differences between the sets in case of error.
 
-* Similarly, :meth:`assertListEqual` and :meth:`assertTupleEqual`
+* Similarly, :meth:`~unittest.TestCase.assertListEqual` and :meth:`~unittest.TestCase.assertTupleEqual`
   compare the specified types and explain any differences without necessarily
   printing their full values; these methods are now used by default
-  when comparing lists and tuples using :meth:`assertEqual`.
-  More generally, :meth:`assertSequenceEqual` compares two sequences
+  when comparing lists and tuples using :meth:`~unittest.TestCase.assertEqual`.
+  More generally, :meth:`~unittest.TestCase.assertSequenceEqual` compares two sequences
   and can optionally check whether both sequences are of a
   particular type.
 
-* :meth:`assertDictEqual` compares two dictionaries and reports the
+* :meth:`~unittest.TestCase.assertDictEqual` compares two dictionaries and reports the
   differences; it's now used by default when you compare two dictionaries
-  using :meth:`assertEqual`.  :meth:`assertDictContainsSubset` checks whether
+  using :meth:`~unittest.TestCase.assertEqual`.  :meth:`~unittest.TestCase.assertDictContainsSubset` checks whether
   all of the key/value pairs in *first* are found in *second*.
 
-* :meth:`assertAlmostEqual` and :meth:`assertNotAlmostEqual` test
+* :meth:`~unittest.TestCase.assertAlmostEqual` and :meth:`~unittest.TestCase.assertNotAlmostEqual` test
   whether *first* and *second* are approximately equal by computing
   their difference, rounding the result to an optionally-specified number
   of *places* (the default is 7), and comparing to zero.
 
-* :meth:`loadTestsFromName` properly honors the ``suiteClass`` attribute of
-  the :class:`TestLoader`. (Fixed by Mark Roddy; :issue:`6866`.)
+* :meth:`~unittest.TestLoader.loadTestsFromName` properly honors the
+  :attr:`~unittest.TestLoader.suiteClass` attribute of
+  the :class:`~unittest.TestLoader`. (Fixed by Mark Roddy; :issue:`6866`.)
 
-* A new hook lets you extend the :meth:`assertEqual` method to handle
-  new data types.  The :meth:`addTypeEqualityFunc` method takes a type
+* A new hook lets you extend the :meth:`~unittest.TestCase.assertEqual` method to handle
+  new data types.  The :meth:`~unittest.TestCase.addTypeEqualityFunc` method takes a type
   object and a function. The function will be used when both of the
   objects being compared are of the specified type.  This function
   should compare the two objects and raise an exception if they don't
@@ -1208,7 +1231,7 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
   sequence comparison methods do.
 
 :func:`unittest.main` now takes an optional ``exit`` argument.  If
-false, :func:`main` doesn't call :func:`sys.exit`, allowing it to be
+False, :func:`~unittest.main` doesn't call :func:`sys.exit`, allowing it to be
 used from the interactive interpreter. (Contributed by J. Pablo
 Fernández; :issue:`3379`.)
 
@@ -1217,8 +1240,10 @@ test execution stop immediately when a test fails instead of
 continuing to execute further tests.  (Suggested by Cliff Dyer and
 implemented by Michael Foord; :issue:`8074`.)
 
-:class:`TestResult` has new :meth:`startTestRun` and
-:meth:`stopTestRun` methods that are called immediately before
+.. XXX document the other new switches
+
+:class:`~unittest.TestResult` has new :meth:`~unittest.TestResult.startTestRun` and
+:meth:`~unittest.TestResult.stopTestRun` methods that are called immediately before
 and after a test run.  (Contributed by Robert Collins; :issue:`5728`.)
 
 With all these changes, the :file:`unittest.py` was becoming awkwardly
@@ -1238,7 +1263,7 @@ of the logic underlying Python's :keyword:`import` statement.
 to users who wish to write new importers that can participate in the
 import process.  Python 2.7 doesn't contain the complete
 :mod:`importlib` package, but instead has a tiny subset that contains
-a single function, :func:`import_module`.
+a single function, :func:`~importlib.import_module`.
 
 ``import_module(name, package=None)`` imports a module.  *name* is
 a string containing the module or package's name.  It's possible to do
@@ -1246,7 +1271,7 @@ relative imports by providing a string that begins with a ``.``
 character, such as ``..utils.errors``.  For relative imports, the
 *package* argument must be provided and is the name of the package that
 will be used as the anchor for
-the relative import.  :func:`import_module` both inserts the imported
+the relative import.  :func:`~importlib.import_module` both inserts the imported
 module into ``sys.modules`` and returns the module object.
 
 Here are some examples::
