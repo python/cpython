@@ -1,9 +1,9 @@
 #!@EXENAME@
 
-import sys
-import os
 import getopt
-from distutils import sysconfig
+import os
+import sys
+import sysconfig
 
 valid_opts = ['prefix', 'exec-prefix', 'includes', 'libs', 'cflags',
               'ldflags', 'help']
@@ -31,14 +31,14 @@ if '--help' in opt_flags:
 
 for opt in opt_flags:
     if opt == '--prefix':
-        print(sysconfig.PREFIX)
+        print(sysconfig.get_config_var('prefix'))
 
     elif opt == '--exec-prefix':
-        print(sysconfig.EXEC_PREFIX)
+        print(sysconfig.get_config_var('exec_prefix'))
 
     elif opt in ('--includes', '--cflags'):
-        flags = ['-I' + sysconfig.get_python_inc(),
-                 '-I' + sysconfig.get_python_inc(plat_specific=True)]
+        flags = ['-I' + sysconfig.get_path('include'),
+                 '-I' + sysconfig.get_path('platinclude')]
         if opt == '--cflags':
             flags.extend(getvar('CFLAGS').split())
         print(' '.join(flags))
