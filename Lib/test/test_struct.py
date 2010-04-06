@@ -2,6 +2,7 @@ import array
 import unittest
 import struct
 import warnings
+import inspect
 warnings.filterwarnings("ignore", "struct integer overflow masking is deprecated",
                         DeprecationWarning)
 
@@ -105,6 +106,29 @@ class StructTest(unittest.TestCase):
         s = struct.pack('ii', 1, 2)
         self.assertRaises(struct.error, struct.unpack, 'iii', s)
         self.assertRaises(struct.error, struct.unpack, 'i', s)
+
+    def test_warnings_stacklevel(self):
+        # Python versions between 2.6 and 2.6.5 were producing
+        # warning messages at the wrong stacklevel.
+        def inner(fn, *args):
+            return inspect.currentframe().f_lineno, fn(*args)
+
+        def check_warning_stacklevel(fn, *args):
+            with warnings.catch_warnings(record=True) as w:
+                # "always" to make sure __warningregistry__ isn't affected
+                warnings.simplefilter("always")
+                lineno, result = inner(fn, *args)
+            for warn in w:
+                self.assertEqual(warn.lineno, lineno)
+
+        # out of range warnings
+        check_warning_stacklevel(struct.pack, '<L', -1)
+        check_warning_stacklevel(struct.pack, 'L', -1)
+        check_warning_stacklevel(struct.pack, '<h', 65536)
+        check_warning_stacklevel(struct.pack, '<l', 2**100)
+
+        # float warnings
+        check_warning_stacklevel(struct.pack, 'L', 3.1)
 
     def test_transitiveness(self):
         c = 'a'

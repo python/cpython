@@ -160,7 +160,7 @@ get_long(PyObject *v, long *p)
 			PyObject *o;
 			int res;
 			PyErr_Clear();
-			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
+			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 1) < 0)
 				return -1;
 			o = PyNumber_Int(v);
 			if (o == NULL)
@@ -269,7 +269,7 @@ get_wrapped_long(PyObject *v, long *p)
 				PyObject *o;
 				int res;
 				PyErr_Clear();
-				if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
+				if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 1) < 0)
 					return -1;
 				o = PyNumber_Int(v);
 				if (o == NULL)
@@ -279,7 +279,7 @@ get_wrapped_long(PyObject *v, long *p)
 				return res;
 			}
 #endif
-			if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0)
+			if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 1) < 0)
 				return -1;
 			wrapped = PyNumber_And(v, pylong_ulong_mask);
 			if (wrapped == NULL)
@@ -308,7 +308,7 @@ get_wrapped_ulong(PyObject *v, unsigned long *p)
 			PyObject *o;
 			int res;
 			PyErr_Clear();
-			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
+			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 1) < 0)
 				return -1;
 			o = PyNumber_Int(v);
 			if (o == NULL)
@@ -321,7 +321,7 @@ get_wrapped_ulong(PyObject *v, unsigned long *p)
 		wrapped = PyNumber_And(v, pylong_ulong_mask);
 		if (wrapped == NULL)
 			return -1;
-		if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0) {
+		if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 1) < 0) {
 			Py_DECREF(wrapped);
 			return -1;
 		}
@@ -417,7 +417,7 @@ _range_error(const formatdef *f, int is_unsigned)
 		if (msg == NULL)
 			return -1;
 		rval = PyErr_WarnEx(PyExc_DeprecationWarning,
-				    PyString_AS_STRING(msg), 2);
+				    PyString_AS_STRING(msg), 1);
 		Py_DECREF(msg);
 		if (rval == 0)
 			return 0;
