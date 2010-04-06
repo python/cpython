@@ -1849,16 +1849,6 @@ skipitem(const char **p_format, va_list *p_va, int flags)
 				(void) va_arg(*p_va, PyTypeObject*);
 				(void) va_arg(*p_va, PyObject **);
 			}
-#if 0
-/* I don't know what this is for */
-			else if (*format == '?') {
-				inquiry pred = va_arg(*p_va, inquiry);
-				format++;
-				if ((*pred)(arg)) {
-					(void) va_arg(*p_va, PyObject **);
-				}
-			}
-#endif
 			else if (*format == '&') {
 				typedef int (*converter)(PyObject *, void *);
 				(void) va_arg(*p_va, converter);
