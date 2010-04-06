@@ -669,10 +669,10 @@ correspond to Unix system calls applicable to sockets.
 .. method:: socket.recv_into(buffer[, nbytes[, flags]])
 
    Receive up to *nbytes* bytes from the socket, storing the data into a buffer
-   rather than creating a new string.     If *nbytes* is not specified (or 0),
-   receive up to the size available in the given buffer. See the Unix manual page
-   :manpage:`recv(2)` for the meaning of the optional argument *flags*; it defaults
-   to zero.
+   rather than creating a new string.  If *nbytes* is not specified (or 0),
+   receive up to the size available in the given buffer.  Returns the number of
+   bytes received.  See the Unix manual page :manpage:`recv(2)` for the meaning
+   of the optional argument *flags*; it defaults to zero.
 
    .. versionadded:: 2.5
 
