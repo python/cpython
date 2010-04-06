@@ -21,6 +21,13 @@ class SelectTestCase(unittest.TestCase):
         self.assertRaises(TypeError, select.select, [self.Almost()], [], [])
         self.assertRaises(TypeError, select.select, [], [], [], "not a number")
 
+    def test_returned_list_identity(self):
+        # See issue #8329
+        r, w, x = select.select([], [], [], 1)
+        self.assertIsNot(r, w)
+        self.assertIsNot(r, x)
+        self.assertIsNot(w, x)
+
     def test_select(self):
         cmd = 'for i in 0 1 2 3 4 5 6 7 8 9; do echo testing...; sleep 1; done'
         p = os.popen(cmd, 'r')
