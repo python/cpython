@@ -464,7 +464,7 @@ class Thread(_Verbose):
         if not self.__initialized:
             raise RuntimeError("thread.__init__() not called")
         if self.__started.is_set():
-            raise RuntimeError("thread already started")
+            raise RuntimeError("threads can only be started once")
         if __debug__:
             self._note("%s.start(): starting thread", self)
         with _active_limbo_lock:
