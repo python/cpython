@@ -352,6 +352,8 @@ Miscellaneous options
 
       :pep:`230` -- Warning framework
 
+      :envvar:`PYTHONWARNINGS`
+
 
 .. cmdoption:: -x
 
@@ -546,6 +548,12 @@ These environment variables influence Python's behavior.
    If this environment variable is set, ``sys.argv[0]`` will be set to its
    value instead of the value got through the C runtime.  Only works on
    Mac OS X.
+
+.. envvar:: PYTHONWARNINGS
+
+   This is the equivalent to the :option:`-W` option. If set to a comma
+   separated string, it is equivalent to specifying :option:`-W` multiple
+   times.
 
 
 Debug-mode variables
