@@ -381,9 +381,9 @@ Constants
    are some exceptions to this rule, for example ``pow(float('nan'), 0.0)`` or
    ``hypot(float('nan'), float('inf'))``.
 
-   Note that Python makes no effort to distinguish signaling nans from
-   quiet nans, and behavior for signaling nans remains unspecified.
-   Typical behavior is to treat all nans as though they were quiet.
+   Note that Python makes no effort to distinguish signaling NaNs from
+   quiet NaNs, and behavior for signaling NaNs remains unspecified.
+   Typical behavior is to treat all NaNs as though they were quiet.
 
    .. versionchanged:: 2.6
       Behavior in special cases now aims to follow C99 Annex F.  In earlier
