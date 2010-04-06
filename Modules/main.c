@@ -83,6 +83,7 @@ static char *usage_3 = "\
          can be supplied multiple times to increase verbosity\n\
 -V     : print the Python version number and exit (also --version)\n\
 -W arg : warning control; arg is action:message:category:module:lineno\n\
+         also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 ";
 static char *usage_4 = "\
@@ -419,6 +420,16 @@ Py_Main(int argc, char **argv)
 	if (!Py_NoUserSiteDirectory &&
 	    (p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0')
 		Py_NoUserSiteDirectory = 1;
+
+	if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0')
+	{
+		char* warning = strtok(p, ",");
+		while (warning != NULL)
+		{
+			PySys_AddWarnOption(warning);
+			warning = strtok(NULL, ",");
+		}
+	}
 
 	if (command == NULL && module == NULL && _PyOS_optind < argc &&
 	    strcmp(argv[_PyOS_optind], "-") != 0)
