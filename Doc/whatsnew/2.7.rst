@@ -207,7 +207,7 @@ mini-language used by the string :meth:`format` method.  When
 formatting a floating-point number, simply include a comma between the
 width and the precision::
 
-   >>> '{:20,.2}'.format(f)
+   >>> '{:20,.2f}'.format(18446744073709551616.0)
    '18,446,744,073,709,551,616.00'
 
 This mechanism is not adaptable at all; commas are always used as the
