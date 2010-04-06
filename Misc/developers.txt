@@ -20,7 +20,10 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
-- Brian Curtin was given commit access on March 24 by MvL.
+- Jean-Paul Calderone was given commit access on April 6 2010 by
+  GFB, at suggestion of Michael Foord and others.
+
+- Brian Curtin was given commit access on March 24 2010 by MvL.
 
 - Florent Xicluna was given commit access on February 25 2010 by
   MvL, based on Antoine Pitrou's recommendation.
