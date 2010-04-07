@@ -645,7 +645,7 @@ class PyLocalsTests(DebuggerTests):
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
 def test_main():
-    run_unittest(PrettyPrintTests,
+    run_unittest(#PrettyPrintTests,
                  #PyListTests,
                  #StackNavigationTests,
                  #PyBtTests,
