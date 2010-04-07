@@ -246,7 +246,7 @@ With the logger object configured, the following methods create log messages:
   methods listed above, but this is how to log at custom log levels.
 
 :func:`getLogger` returns a reference to a logger instance with the specified
-if it it is provided, or ``root`` if not.  The names are period-separated
+if it is provided, or ``root`` if not.  The names are period-separated
 hierarchical structures.  Multiple calls to :func:`getLogger` with the same name
 will return a reference to the same logger object.  Loggers that are further
 down in the hierarchical list are children of loggers higher up in the list.
@@ -291,7 +291,7 @@ custom handlers) are the following configuration methods:
 
 Application code should not directly instantiate and use instances of
 :class:`Handler`.  Instead, the :class:`Handler` class is a base class that
-defines the interface that all Handlers should have and establishes some
+defines the interface that all handlers should have and establishes some
 default behavior that child classes can use (or override).
 
 
