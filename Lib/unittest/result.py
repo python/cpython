@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 
-from cStringIO import StringIO
+from StringIO import StringIO
 
 from . import util
 from functools import wraps
@@ -46,8 +46,8 @@ class TestResult(object):
         self.unexpectedSuccesses = []
         self.shouldStop = False
         self.buffer = False
-        self._stdout_buffer = StringIO()
-        self._stderr_buffer = StringIO()
+        self._stdout_buffer = None
+        self._stderr_buffer = None
         self._original_stdout = sys.stdout
         self._original_stderr = sys.stderr
         self._mirrorOutput = False
@@ -60,6 +60,9 @@ class TestResult(object):
         self.testsRun += 1
         self._mirrorOutput = False
         if self.buffer:
+            if self._stderr_buffer is None:
+                self._stderr_buffer = StringIO()
+                self._stdout_buffer = StringIO()
             sys.stdout = self._stdout_buffer
             sys.stderr = self._stderr_buffer
 
