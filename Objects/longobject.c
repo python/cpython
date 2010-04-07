@@ -2255,7 +2255,7 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
 		while (x_size < shift_digits)
 			x_digits[x_size++] = 0;
 		rem = v_lshift(x_digits + x_size, a->ob_digit, a_size,
-			       shift_bits);
+			       (int)shift_bits);
 		x_size += a_size;
 		x_digits[x_size++] = rem;
 	}
@@ -2263,7 +2263,7 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
 		shift_digits = (a_bits - DBL_MANT_DIG - 2) / PyLong_SHIFT;
 		shift_bits = (a_bits - DBL_MANT_DIG - 2) % PyLong_SHIFT;
 		rem = v_rshift(x_digits, a->ob_digit + shift_digits,
-			       a_size - shift_digits, shift_bits);
+			       a_size - shift_digits, (int)shift_bits);
 		x_size = a_size - shift_digits;
 		/* For correct rounding below, we need the least significant
 		   bit of x to be 'sticky' for this shift: if any of the bits
@@ -2325,7 +2325,7 @@ PyLong_AsDouble(PyObject *v)
 				"long int too large to convert to float");
 		return -1.0;
 	}
-	return ldexp(x, exponent);
+	return ldexp(x, (int)exponent);
 }
 
 /* Methods */
@@ -3310,9 +3310,9 @@ long_true_divide(PyObject *v, PyObject *w)
 
 	/* Check whether ldexp result will overflow a double. */
 	if (shift + x_bits >= DBL_MAX_EXP &&
-	    (shift + x_bits > DBL_MAX_EXP || dx == ldexp(1.0, x_bits)))
+	    (shift + x_bits > DBL_MAX_EXP || dx == ldexp(1.0, (int)x_bits)))
 		goto overflow;
-	result = ldexp(dx, shift);
+	result = ldexp(dx, (int)shift);
 
   success:
 	Py_DECREF(a);
@@ -4148,7 +4148,7 @@ long_bit_length(PyLongObject *v)
 	Py_DECREF(result);
 	result = y;
 
-	x = (PyLongObject *)PyLong_FromLong(msd_bits);
+	x = (PyLongObject *)PyLong_FromLong((long)msd_bits);
 	if (x == NULL)
 		goto error;
 	y = (PyLongObject *)long_add(result, x);
