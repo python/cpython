@@ -1333,7 +1333,7 @@ PyLong_FromSize_t(size_t ival)
 	int ndigits = 0;
 
 	if (ival < PyLong_BASE)
-		return PyLong_FromLong(ival);
+		return PyLong_FromLong((long)ival);
 	/* Count the number of Python digits. */
 	t = ival;
 	while (t) {
@@ -4053,7 +4053,7 @@ long_bit_length(PyLongObject *v)
 	Py_DECREF(result);
 	result = y;
 
-	x = (PyLongObject *)PyLong_FromLong(msd_bits);
+	x = (PyLongObject *)PyLong_FromLong((long)msd_bits);
 	if (x == NULL)
 		goto error;
 	y = (PyLongObject *)long_add(result, x);
