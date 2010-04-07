@@ -417,6 +417,7 @@ Py_Main(int argc, wchar_t **argv)
 				   "not enough memory to copy PYTHONWARNINGS");
 			mbstowcs(warning, buf, len);
 			PySys_AddWarnOption(warning);
+			free(warning);
 		}
 	}
 
