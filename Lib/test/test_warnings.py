@@ -4,6 +4,7 @@ import os
 from io import StringIO
 import sys
 import unittest
+import subprocess
 from test import support
 
 from test import warning_tests
@@ -685,6 +686,42 @@ class PyCatchWarningTests(CatchWarningTests):
     module = py_warnings
 
 
+class EnvironmentVariableTests(BaseTest):
+
+    def test_single_warning(self):
+        newenv = os.environ.copy()
+        newenv["PYTHONWARNINGS"] = "ignore::DeprecationWarning"
+        p = subprocess.Popen([sys.executable,
+                "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
+                stdout=subprocess.PIPE, env=newenv)
+        self.assertEqual(p.stdout.read(), b"['ignore::DeprecationWarning']")
+
+    def test_comma_separated_warnings(self):
+        newenv = os.environ.copy()
+        newenv["PYTHONWARNINGS"] = ("ignore::DeprecationWarning,"
+                                    "ignore::UnicodeWarning")
+        p = subprocess.Popen([sys.executable,
+                "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
+                stdout=subprocess.PIPE, env=newenv)
+        self.assertEqual(p.stdout.read(),
+                b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
+
+    def test_envvar_and_command_line(self):
+        newenv = os.environ.copy()
+        newenv["PYTHONWARNINGS"] = "ignore::DeprecationWarning"
+        p = subprocess.Popen([sys.executable, "-W" "ignore::UnicodeWarning",
+                "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
+                stdout=subprocess.PIPE, env=newenv)
+        self.assertEqual(p.stdout.read(),
+                b"['ignore::UnicodeWarning', 'ignore::DeprecationWarning']")
+
+class CEnvironmentVariableTests(EnvironmentVariableTests):
+    module = c_warnings
+
+class PyEnvironmentVariableTests(EnvironmentVariableTests):
+    module = py_warnings
+
+
 def test_main():
     py_warnings.onceregistry.clear()
     c_warnings.onceregistry.clear()
@@ -696,6 +733,8 @@ def test_main():
                                 _WarningsTests,
                                 CWarningsDisplayTests, PyWarningsDisplayTests,
                                 CCatchWarningTests, PyCatchWarningTests,
+                                CEnvironmentVariableTests,
+                                PyEnvironmentVariableTests
                              )
 
 

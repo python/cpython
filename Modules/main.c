@@ -82,6 +82,7 @@ static char *usage_3 = "\
          can be supplied multiple times to increase verbosity\n\
 -V     : print the Python version number and exit (also --version)\n\
 -W arg : warning control; arg is action:message:category:module:lineno\n\
+         also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 ";
 static char *usage_4 = "\
@@ -400,6 +401,24 @@ Py_Main(int argc, wchar_t **argv)
 	if (!Py_NoUserSiteDirectory &&
 	    (p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0')
 		Py_NoUserSiteDirectory = 1;
+
+	if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0') {
+		char *buf;
+		wchar_t *warning;
+		size_t len;
+
+		for (buf = strtok(p, ",");
+		     buf != NULL;
+		     buf = strtok(NULL, ",")) {
+			len = strlen(buf);
+			warning = (wchar_t *)malloc((len + 1) * sizeof(wchar_t));
+			if (warning == NULL)
+				Py_FatalError(
+				   "not enough memory to copy PYTHONWARNINGS");
+			mbstowcs(warning, buf, len);
+			PySys_AddWarnOption(warning);
+		}
+	}
 
 	if (command == NULL && module == NULL && _PyOS_optind < argc &&
 	    wcscmp(argv[_PyOS_optind], L"-") != 0)

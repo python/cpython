@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7301: Add environment variable $PYTHONWARNINGS.
+
 - Issue #8329: Don't return the same lists from select.select when no fds are
   changed.
 
