@@ -1,6 +1,6 @@
 import sys
 import textwrap
-from cStringIO import StringIO, OutputType
+from StringIO import StringIO
 from test import test_support
 
 import unittest
@@ -24,6 +24,8 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(len(result.failures), 0)
         self.assertEqual(result.testsRun, 0)
         self.assertEqual(result.shouldStop, False)
+        self.assertIsNone(result._stdout_buffer)
+        self.assertIsNone(result._stderr_buffer)
 
 
     # "This method can be called to signal that the set of tests being
@@ -400,8 +402,8 @@ class TestOutputBuffering(unittest.TestCase):
 
         self.assertIsNot(real_out, sys.stdout)
         self.assertIsNot(real_err, sys.stderr)
-        self.assertIsInstance(sys.stdout, OutputType)
-        self.assertIsInstance(sys.stderr, OutputType)
+        self.assertIsInstance(sys.stdout, StringIO)
+        self.assertIsInstance(sys.stderr, StringIO)
         self.assertIsNot(sys.stdout, sys.stderr)
 
         out_stream = sys.stdout
