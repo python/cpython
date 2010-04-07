@@ -243,6 +243,9 @@ Build
 
 - Issue #7705: Fix linking on FreeBSD.
 
+- Make sure that the FreeBSD build of the included libffi uses the proper
+  assembly file.
+
 C-API
 -----
 
