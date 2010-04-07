@@ -61,10 +61,16 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_ulong, 42)
 
     def test_longlong(self):
+        # test some 64-bit values, positive and negative
+        self.check_type(c_longlong, 5948291757245277467)
+        self.check_type(c_longlong, -5229388909784190580)
         self.check_type(c_longlong, 42)
         self.check_type(c_longlong, -42)
 
     def test_ulonglong(self):
+        # test some 64-bit values, with and without msb set.
+        self.check_type(c_ulonglong, 10955412242170339782)
+        self.check_type(c_ulonglong, 3665885499841167458)
         self.check_type(c_ulonglong, 42)
 
     def test_float(self):
