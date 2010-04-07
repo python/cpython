@@ -6,7 +6,7 @@ ffi_platforms = {
     'MIPS_IRIX': ['src/mips/ffi.c', 'src/mips/o32.S', 'src/mips/n32.S'],
     'MIPS_LINUX': ['src/mips/ffi.c', 'src/mips/o32.S'],
     'X86': ['src/x86/ffi.c', 'src/x86/sysv.S'],
-    'X86_FREEBSD': ['src/x86/ffi.c', 'src/x86/sysv.S'],
+    'X86_FREEBSD': ['src/x86/ffi.c', 'src/x86/freebsd.S'],
     'X86_WIN32': ['src/x86/ffi.c', 'src/x86/win32.S'],
     'SPARC': ['src/sparc/ffi.c', 'src/sparc/v8.S', 'src/sparc/v9.S'],
     'ALPHA': ['src/alpha/ffi.c', 'src/alpha/osf.S'],
