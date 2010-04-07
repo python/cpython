@@ -194,6 +194,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #8314: Fix unsigned long long bug in libffi on Sparc v8.
+
 - Issue #1039, #8154: Fix os.execlp() crash with missing 2nd argument.
 
 - Issue #8156: bsddb module updated to version 4.8.4.
