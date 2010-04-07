@@ -394,6 +394,9 @@ the \fB\-u\fP option.
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-v\fP option. If set to an integer, it is equivalent to
 specifying \fB\-v\fP multiple times. 
+.IP PYTHONWARNINGS
+If this is set to a comma-separated string it is equivalent to
+specifying the \fB\-W\fP option for each separate value.
 .SH AUTHOR
 The Python Software Foundation: http://www.python.org/psf
 .SH INTERNET RESOURCES
