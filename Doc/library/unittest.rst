@@ -794,7 +794,7 @@ Test cases
 
 
    .. method:: assertAlmostEqual(first, second[, places[, msg[, delta]]])
-               failUnlessAlmostEqual(first, second[, places[, msg]])
+               failUnlessAlmostEqual(first, second[, places[, msg[, delta]]])
 
       Test that *first* and *second* are approximately equal by computing the
       difference, rounding to the given number of decimal *places* (default 7),
@@ -819,7 +819,7 @@ Test cases
 
 
    .. method:: assertNotAlmostEqual(first, second[, places[, msg[, delta]]])
-               failIfAlmostEqual(first, second[, places[, msg]])
+               failIfAlmostEqual(first, second[, places[, msg[, delta]]])
 
       Test that *first* and *second* are not approximately equal by computing
       the difference, rounding to the given number of decimal *places* (default
@@ -1654,7 +1654,7 @@ Loading and running tests
 
       ``_makeResult()`` instantiates the class or callable passed in the
       ``TextTestRunner`` constructor as the ``resultclass`` argument. It
-      defaults to :class::`TextTestResult` if no ``resultclass`` is provided.
+      defaults to :class:`TextTestResult` if no ``resultclass`` is provided.
       The result class is instantiated with the following arguments::
 
             stream, descriptions, verbosity
