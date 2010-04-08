@@ -1112,9 +1112,9 @@ class TreeviewTest(unittest.TestCase):
         self.assertRaises(Tkinter.TclError, self.tv.tag_configure,
             'test', sky='blue')
         self.tv.tag_configure('test', foreground='blue')
-        self.assertEqual(self.tv.tag_configure('test', 'foreground'),
+        self.assertEqual(str(self.tv.tag_configure('test', 'foreground')),
             'blue')
-        self.assertEqual(self.tv.tag_configure('test', foreground=None),
+        self.assertEqual(str(self.tv.tag_configure('test', foreground=None)),
             'blue')
         self.assertTrue(isinstance(self.tv.tag_configure('test'), dict))
 
