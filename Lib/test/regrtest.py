@@ -147,7 +147,7 @@ example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
 """
 
-import cStringIO
+import StringIO
 import getopt
 import json
 import os
@@ -838,7 +838,7 @@ def runtest_inner(test, verbose, quiet,
     if verbose:
         capture_stdout = None
     else:
-        capture_stdout = cStringIO.StringIO()
+        capture_stdout = StringIO.StringIO()
 
     test_time = 0.0
     refleak = False  # True if the test leaked references.
