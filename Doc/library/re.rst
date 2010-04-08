@@ -871,6 +871,9 @@ Match Objects
          >>> m.group(1)                        # Returns only the last match.
          'c3'
 
+
+   .. method:: MatchObject.groups(default=None)
+
       Return a tuple containing all the subgroups of the match, from 1 up to however
       many groups are in the pattern.  The *default* argument is used for groups that
       did not participate in the match; it defaults to ``None``.  (Incompatibility
