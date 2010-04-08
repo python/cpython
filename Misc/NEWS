@@ -58,6 +58,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8204: Fix test_ttk notebook test by forcing focus.
+
 - Issue #8344: Fix test_ttk bug on FreeBSD.
 
 - Issue #8321: Give access to OpenSSL version numbers from the `ssl` module,
