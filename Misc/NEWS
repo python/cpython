@@ -58,6 +58,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8348: Fix test ftp url in test_urllib2net.
+
 - Issue #8204: Fix test_ttk notebook test by forcing focus.
 
 - Issue #8344: Fix test_ttk bug on FreeBSD.
