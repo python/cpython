@@ -704,15 +704,19 @@ class NotebookTest(unittest.TestCase):
         self.nb.select(0)
 
         support.simulate_mouse_click(self.nb, 5, 5)
+        self.nb.focus_force()
         self.nb.event_generate('<Control-Tab>')
         self.assertEqual(self.nb.select(), str(self.child2))
+        self.nb.focus_force()
         self.nb.event_generate('<Shift-Control-Tab>')
         self.assertEqual(self.nb.select(), str(self.child1))
+        self.nb.focus_force()
         self.nb.event_generate('<Shift-Control-Tab>')
         self.assertEqual(self.nb.select(), str(self.child2))
 
         self.nb.tab(self.child1, text='a', underline=0)
         self.nb.enable_traversal()
+        self.nb.focus_force()
         self.nb.event_generate('<Alt-a>')
         self.assertEqual(self.nb.select(), str(self.child1))
 
