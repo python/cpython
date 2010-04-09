@@ -368,7 +368,9 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 	self->ssl = SSL_new(self->ctx); /* New ssl struct */
 	PySSL_END_ALLOW_THREADS
 	SSL_set_fd(self->ssl, Sock->sock_fd);	/* Set the socket for SSL */
+#ifdef SSL_MODE_AUTO_RETRY
 	SSL_set_mode(self->ssl, SSL_MODE_AUTO_RETRY);
+#endif
 
 	/* If the socket is in non-blocking mode or timeout mode, set the BIO
 	 * to non-blocking mode (blocking is the default)
