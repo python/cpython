@@ -1347,7 +1347,7 @@ Read up to len bytes from the SSL socket.");
 
 static PyObject *PySSL_SSLshutdown(PySSLObject *self)
 {
-	int err, ssl_err, sockstate;
+	int err;
 
 	/* Guard against closed socket */
 	if (self->Socket->sock_fd < 0) {
@@ -1356,42 +1356,13 @@ static PyObject *PySSL_SSLshutdown(PySSLObject *self)
 		return NULL;
 	}
 
-	while (1) {
-		PySSL_BEGIN_ALLOW_THREADS
+	PySSL_BEGIN_ALLOW_THREADS
+	err = SSL_shutdown(self->ssl);
+	if (err == 0) {
+		/* we need to call it again to finish the shutdown */
 		err = SSL_shutdown(self->ssl);
-		if (err == 0) {
-			/* we need to call it again to finish the shutdown */
-			err = SSL_shutdown(self->ssl);
-		}
-		PySSL_END_ALLOW_THREADS
-		if (err >= 0)
-			break;
-		/* Possibly retry shutdown until timeout or failure */
-		ssl_err = SSL_get_error(self->ssl, err);
-		if (ssl_err == SSL_ERROR_WANT_READ)
-			sockstate = check_socket_and_wait_for_timeout(self->Socket, 0);
-		else if (ssl_err == SSL_ERROR_WANT_WRITE)
-			sockstate = check_socket_and_wait_for_timeout(self->Socket, 1);
-		else
-			break;
-		if (sockstate == SOCKET_HAS_TIMED_OUT) {
-			if (ssl_err == SSL_ERROR_WANT_READ)
-				PyErr_SetString(PySSLErrorObject,
-		                                "The read operation timed out");
-			else
-				PyErr_SetString(PySSLErrorObject,
-		                                "The write operation timed out");
-			return NULL;
-		}
-		else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
-			PyErr_SetString(PySSLErrorObject,
-	                                "Underlying socket too large for select().");
-			return NULL;
-		}
-		else if (sockstate != SOCKET_OPERATION_OK)
-			/* Retain the SSL error code */
-			break;
 	}
+	PySSL_END_ALLOW_THREADS
 
 	if (err < 0)
 		return PySSL_SetError(self, err, __FILE__, __LINE__);

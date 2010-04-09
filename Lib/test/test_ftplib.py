@@ -29,7 +29,6 @@ NLST_DATA = 'foo\r\nbar\r\n'
 
 
 class DummyDTPHandler(asynchat.async_chat):
-    dtp_conn_closed = False
 
     def __init__(self, conn, baseclass):
         asynchat.async_chat.__init__(self, conn)
@@ -40,13 +39,8 @@ class DummyDTPHandler(asynchat.async_chat):
         self.baseclass.last_received_data += self.recv(1024)
 
     def handle_close(self):
-        # XXX: this method can be called many times in a row for a single
-        # connection, including in clear-text (non-TLS) mode.
-        # (behaviour witnessed with test_data_connection)
-        if not self.dtp_conn_closed:
-            self.baseclass.push('226 transfer complete')
-            self.close()
-            self.dtp_conn_closed = True
+        self.baseclass.push('226 transfer complete')
+        self.close()
 
 
 class DummyFTPHandler(asynchat.async_chat):
@@ -259,7 +253,6 @@ if ssl is not None:
         """An asyncore.dispatcher subclass supporting TLS/SSL."""
 
         _ssl_accepting = False
-        _ssl_closing = False
 
         def secure_connection(self):
             self.socket = ssl.wrap_socket(self.socket, suppress_ragged_eofs=False,
@@ -284,36 +277,15 @@ if ssl is not None:
             else:
                 self._ssl_accepting = False
 
-        def _do_ssl_shutdown(self):
-            self._ssl_closing = True
-            try:
-                self.socket = self.socket.unwrap()
-            except ssl.SSLError, err:
-                if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
-                                   ssl.SSL_ERROR_WANT_WRITE):
-                    return
-            except socket.error, err:
-                # Any "socket error" corresponds to a SSL_ERROR_SYSCALL return
-                # from OpenSSL's SSL_shutdown(), corresponding to a
-                # closed socket condition. See also:
-                # http://www.mail-archive.com/openssl-users@openssl.org/msg60710.html
-                pass
-            self._ssl_closing = False
-            super(SSLConnection, self).close()
-
         def handle_read_event(self):
             if self._ssl_accepting:
                 self._do_ssl_handshake()
-            elif self._ssl_closing:
-                self._do_ssl_shutdown()
             else:
                 super(SSLConnection, self).handle_read_event()
 
         def handle_write_event(self):
             if self._ssl_accepting:
                 self._do_ssl_handshake()
-            elif self._ssl_closing:
-                self._do_ssl_shutdown()
             else:
                 super(SSLConnection, self).handle_write_event()
 
@@ -343,9 +315,12 @@ if ssl is not None:
             raise
 
         def close(self):
-            if (isinstance(self.socket, ssl.SSLSocket) and
-                self.socket._sslobj is not None):
-                self._do_ssl_shutdown()
+            try:
+                if isinstance(self.socket, ssl.SSLSocket):
+                    if self.socket._sslobj is not None:
+                        self.socket.unwrap()
+            finally:
+                super(SSLConnection, self).close()
 
 
     class DummyTLS_DTPHandler(SSLConnection, DummyDTPHandler):
@@ -622,21 +597,21 @@ class TestTLS_FTPClass(TestCase):
         sock = self.client.transfercmd('list')
         self.assertNotIsInstance(sock, ssl.SSLSocket)
         sock.close()
-        self.assertEqual(self.client.voidresp(), "226 transfer complete")
+        self.client.voidresp()
 
         # secured, after PROT P
         self.client.prot_p()
         sock = self.client.transfercmd('list')
         self.assertIsInstance(sock, ssl.SSLSocket)
         sock.close()
-        self.assertEqual(self.client.voidresp(), "226 transfer complete")
+        self.client.voidresp()
 
         # PROT C is issued, the connection must be in cleartext again
         self.client.prot_c()
         sock = self.client.transfercmd('list')
         self.assertNotIsInstance(sock, ssl.SSLSocket)
         sock.close()
-        self.assertEqual(self.client.voidresp(), "226 transfer complete")
+        self.client.voidresp()
 
     def test_login(self):
         # login() is supposed to implicitly secure the control connection
