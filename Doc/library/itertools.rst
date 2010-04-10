@@ -709,7 +709,7 @@ which incur interpreter overhead.
        pools = [tuple(pool) for pool in args] * repeat
        return tuple(random.choice(pool) for pool in pools)
 
-   def random_permuation(iterable, r=None):
+   def random_permutation(iterable, r=None):
        "Random selection from itertools.permutations(iterable, r)"
        pool = tuple(iterable)
        r = len(pool) if r is None else r
@@ -718,12 +718,16 @@ which incur interpreter overhead.
    def random_combination(iterable, r):
        "Random selection from itertools.combinations(iterable, r)"
        pool = tuple(iterable)
-       return tuple(sorted(random.sample(pool, r), key=pool.index))
+       n = len(pool)
+       indices = sorted(random.sample(range(n), r))
+       return tuple(pool[i] for i in indices)
 
    def random_combination_with_replacement(iterable, r):
        "Random selection from itertools.combinations_with_replacement(iterable, r)"
        pool = tuple(iterable)
-       return tuple(sorted(map(random.choice, repeat(pool, r)), key=pool.index))
+       n = len(pool)
+       indices = sorted(random.randrange(n) for i in range(r))
+       return tuple(pool[i] for i in indices)
 
 Note, many of the above recipes can be optimized by replacing global lookups
 with local variables defined as default values.  For example, the
