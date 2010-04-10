@@ -13,7 +13,6 @@ import os
 import gc
 import signal
 import array
-import copy
 import socket
 import random
 import logging
@@ -67,10 +66,20 @@ WIN32 = (sys.platform == "win32")
 #
 
 try:
-    from ctypes import Structure, Value, copy, c_int, c_double
+    from ctypes import Structure, c_int, c_double
 except ImportError:
     Structure = object
     c_int = c_double = None
+
+try:
+    from ctypes import Value
+except ImportError:
+    Value = None
+
+try:
+    from ctypes import copy as ctypes_copy
+except ImportError:
+    ctypes_copy = None
 
 #
 # Creates a wrapper for a function which records the time it takes to finish
@@ -1596,7 +1605,7 @@ class _TestSharedCTypes(BaseTestCase):
         for i in range(len(arr)):
             arr[i] *= 2
 
-    @unittest.skipIf(c_int is None, "requires _ctypes")
+    @unittest.skipIf(Value is None, "requires ctypes.Value")
     def test_sharedctypes(self, lock=False):
         x = Value('i', 7, lock=lock)
         y = Value(c_double, 1.0/3.0, lock=lock)
@@ -1617,13 +1626,14 @@ class _TestSharedCTypes(BaseTestCase):
             self.assertAlmostEqual(arr[i], i*2)
         self.assertEqual(string.value, latin('hellohello'))
 
+    @unittest.skipIf(Value is None, "requires ctypes.Value")
     def test_synchronize(self):
         self.test_sharedctypes(lock=True)
 
-    @unittest.skipIf(c_int is None, "requires _ctypes")
+    @unittest.skipIf(ctypes_copy is None, "requires ctypes.copy")
     def test_copy(self):
         foo = _Foo(2, 5.0)
-        bar = copy(foo)
+        bar = ctypes_copy(foo)
         foo.x = 0
         foo.y = 0
         self.assertEqual(bar.x, 2)
@@ -2025,8 +2035,14 @@ def test_main(run=None):
 
     loadTestsFromTestCase = unittest.defaultTestLoader.loadTestsFromTestCase
     suite = unittest.TestSuite(loadTestsFromTestCase(tc) for tc in testcases)
+    # (ncoghlan): Whether or not sys.exc_clear is executed by the threading
+    # module during these tests is at least platform dependent and possibly
+    # non-deterministic on any given platform. So we don't find if the listed
+    # warnings aren't actually raised.
     with test_support.check_py3k_warnings(
-            (".+__(get|set)slice__ has been removed", DeprecationWarning)):
+            (".+__(get|set)slice__ has been removed", DeprecationWarning),
+            (r"sys.exc_clear\(\) not supported", DeprecationWarning),
+            quiet=True):
         run(suite)
 
     ThreadsMixin.pool.terminate()
