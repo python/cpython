@@ -784,7 +784,7 @@ which incur interpreter overhead.
        pools = map(tuple, args) * kwds.get('repeat', 1)
        return tuple(random.choice(pool) for pool in pools)
 
-   def random_permuation(iterable, r=None):
+   def random_permutation(iterable, r=None):
        "Random selection from itertools.permutations(iterable, r)"
        pool = tuple(iterable)
        r = len(pool) if r is None else r
@@ -793,12 +793,16 @@ which incur interpreter overhead.
    def random_combination(iterable, r):
        "Random selection from itertools.combinations(iterable, r)"
        pool = tuple(iterable)
-       return tuple(sorted(random.sample(pool, r), key=pool.index))
+       n = len(pool)
+       indices = sorted(random.sample(xrange(n), r))
+       return tuple(pool[i] for i in indices)
 
    def random_combination_with_replacement(iterable, r):
        "Random selection from itertools.combinations_with_replacement(iterable, r)"
        pool = tuple(iterable)
-       return tuple(sorted(imap(random.choice, [pool]*r), key=pool.index))
+       n = len(pool)
+       indices = sorted(random.randrange(n) for i in xrange(r))
+       return tuple(pool[i] for i in indices)
 
 Note, many of the above recipes can be optimized by replacing global lookups
 with local variables defined as default values.  For example, the
