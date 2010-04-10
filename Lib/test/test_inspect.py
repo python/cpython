@@ -435,130 +435,94 @@ class TestClassesAndFunctions(unittest.TestCase):
             exec 'def fakeSublistOfOne((foo)): return 1'
             self.assertArgSpecEquals(fakeSublistOfOne, ['foo'])
 
+
+    def _classify_test(self, newstyle):
+        """Helper for testing that classify_class_attrs finds a bunch of
+        different kinds of attributes on a given class.
+        """
+        if newstyle:
+            base = object
+        else:
+            class base:
+                pass
+
+        class A(base):
+            def s(): pass
+            s = staticmethod(s)
+
+            def c(cls): pass
+            c = classmethod(c)
+
+            def getp(self): pass
+            p = property(getp)
+
+            def m(self): pass
+
+            def m1(self): pass
+
+            datablob = '1'
+
+        attrs = attrs_wo_objs(A)
+        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
+        self.assertIn(('c', 'class method', A), attrs, 'missing class method')
+        self.assertIn(('p', 'property', A), attrs, 'missing property')
+        self.assertIn(('m', 'method', A), attrs, 'missing plain method')
+        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
+        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
+
+        class B(A):
+            def m(self): pass
+
+        attrs = attrs_wo_objs(B)
+        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
+        self.assertIn(('c', 'class method', A), attrs, 'missing class method')
+        self.assertIn(('p', 'property', A), attrs, 'missing property')
+        self.assertIn(('m', 'method', B), attrs, 'missing plain method')
+        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
+        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
+
+
+        class C(A):
+            def m(self): pass
+            def c(self): pass
+
+        attrs = attrs_wo_objs(C)
+        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
+        self.assertIn(('c', 'method', C), attrs, 'missing plain method')
+        self.assertIn(('p', 'property', A), attrs, 'missing property')
+        self.assertIn(('m', 'method', C), attrs, 'missing plain method')
+        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
+        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
+
+        class D(B, C):
+            def m1(self): pass
+
+        attrs = attrs_wo_objs(D)
+        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
+        if newstyle:
+            self.assertIn(('c', 'method', C), attrs, 'missing plain method')
+        else:
+            self.assertIn(('c', 'class method', A), attrs, 'missing class method')
+        self.assertIn(('p', 'property', A), attrs, 'missing property')
+        self.assertIn(('m', 'method', B), attrs, 'missing plain method')
+        self.assertIn(('m1', 'method', D), attrs, 'missing plain method')
+        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
+
+
     def test_classify_oldstyle(self):
-        class A:
-            def s(): pass
-            s = staticmethod(s)
-
-            def c(cls): pass
-            c = classmethod(c)
-
-            def getp(self): pass
-            p = property(getp)
-
-            def m(self): pass
-
-            def m1(self): pass
-
-            datablob = '1'
-
-        attrs = attrs_wo_objs(A)
-        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
-        self.assertIn(('c', 'class method', A), attrs, 'missing class method')
-        self.assertIn(('p', 'property', A), attrs, 'missing property')
-        self.assertIn(('m', 'method', A), attrs, 'missing plain method')
-        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
-        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
-
-        class B(A):
-            def m(self): pass
-
-        attrs = attrs_wo_objs(B)
-        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
-        self.assertIn(('c', 'class method', A), attrs, 'missing class method')
-        self.assertIn(('p', 'property', A), attrs, 'missing property')
-        self.assertIn(('m', 'method', B), attrs, 'missing plain method')
-        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
-        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
+        """classify_class_attrs finds static methods, class methods,
+        properties, normal methods, and data attributes on an old-style
+        class.
+        """
+        self._classify_test(False)
 
 
-        class C(A):
-            def m(self): pass
-            def c(self): pass
-
-        attrs = attrs_wo_objs(C)
-        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
-        self.assertIn(('c', 'method', C), attrs, 'missing plain method')
-        self.assertIn(('p', 'property', A), attrs, 'missing property')
-        self.assertIn(('m', 'method', C), attrs, 'missing plain method')
-        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
-        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
-
-        class D(B, C):
-            def m1(self): pass
-
-        attrs = attrs_wo_objs(D)
-        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
-        self.assertIn(('c', 'class method', A), attrs, 'missing class method')
-        self.assertIn(('p', 'property', A), attrs, 'missing property')
-        self.assertIn(('m', 'method', B), attrs, 'missing plain method')
-        self.assertIn(('m1', 'method', D), attrs, 'missing plain method')
-        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
-
-    # Repeat all that, but w/ new-style classes.
     def test_classify_newstyle(self):
-        class A(object):
-
-            def s(): pass
-            s = staticmethod(s)
-
-            def c(cls): pass
-            c = classmethod(c)
-
-            def getp(self): pass
-            p = property(getp)
-
-            def m(self): pass
-
-            def m1(self): pass
-
-            datablob = '1'
-
-        attrs = attrs_wo_objs(A)
-        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
-        self.assertIn(('c', 'class method', A), attrs, 'missing class method')
-        self.assertIn(('p', 'property', A), attrs, 'missing property')
-        self.assertIn(('m', 'method', A), attrs, 'missing plain method')
-        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
-        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
-
-        class B(A):
-
-            def m(self): pass
-
-        attrs = attrs_wo_objs(B)
-        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
-        self.assertIn(('c', 'class method', A), attrs, 'missing class method')
-        self.assertIn(('p', 'property', A), attrs, 'missing property')
-        self.assertIn(('m', 'method', B), attrs, 'missing plain method')
-        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
-        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
+        """Just like test_classify_oldstyle, but for a new-style class.
+        """
+        self._classify_test(True)
 
 
-        class C(A):
-
-            def m(self): pass
-            def c(self): pass
-
-        attrs = attrs_wo_objs(C)
-        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
-        self.assertIn(('c', 'method', C), attrs, 'missing plain method')
-        self.assertIn(('p', 'property', A), attrs, 'missing property')
-        self.assertIn(('m', 'method', C), attrs, 'missing plain method')
-        self.assertIn(('m1', 'method', A), attrs, 'missing plain method')
-        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
-
-        class D(B, C):
-
-            def m1(self): pass
-
-        attrs = attrs_wo_objs(D)
-        self.assertIn(('s', 'static method', A), attrs, 'missing static method')
-        self.assertIn(('c', 'method', C), attrs, 'missing plain method')
-        self.assertIn(('p', 'property', A), attrs, 'missing property')
-        self.assertIn(('m', 'method', B), attrs, 'missing plain method')
-        self.assertIn(('m1', 'method', D), attrs, 'missing plain method')
-        self.assertIn(('datablob', 'data', A), attrs, 'missing data')
 
 class TestGetcallargsFunctions(unittest.TestCase):
 
