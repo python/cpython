@@ -67,8 +67,9 @@ def total_ordering(cls):
                    ('__lt__', lambda self, other: not self >= other)]
     }
     roots = set(dir(cls)) & set(convert)
-    assert roots, 'must define at least one ordering operation: < > <= >='
-    root = max(roots)       # prefer __lt __ to __le__ to __gt__ to __ge__
+    if not roots:
+        raise ValueError('must define at least one ordering operation: < > <= >=')
+    root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
     for opname, opfunc in convert[root]:
         if opname not in roots:
             opfunc.__name__ = opname
