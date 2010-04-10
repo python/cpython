@@ -421,14 +421,19 @@ Py_Main(int argc, char **argv)
 	    (p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0')
 		Py_NoUserSiteDirectory = 1;
 
-	if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0')
-	{
-		char* warning = strtok(p, ",");
-		while (warning != NULL)
-		{
+	if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0') {
+		char *buf, *warning;
+
+		buf = (char *)malloc(strlen(p) + 1);
+		if (buf == NULL)
+			Py_FatalError(
+			   "not enough memory to copy PYTHONWARNINGS");
+		strcpy(buf, p);
+		for (warning = strtok(buf, ",");
+		     warning != NULL;
+		     warning = strtok(NULL, ","))
 			PySys_AddWarnOption(warning);
-			warning = strtok(NULL, ",");
-		}
+		free(buf);
 	}
 
 	if (command == NULL && module == NULL && _PyOS_optind < argc &&
