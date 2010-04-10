@@ -2394,47 +2394,6 @@ class MiscIOTest(unittest.TestCase):
         # baseline "io" module.
         self._check_abc_inheritance(io)
 
-    # Issue #5380: reading all available bytes from a pipe or a PTY when
-    # the other end has been closed.
-
-    def check_pipe_func(self, pipe_func, buffered):
-        master_fd, slave_fd = pipe_func()
-        # Simulate a subprocess writing some data to the
-        # slave end of the pipe, and then exiting.
-        data = b'TEST DATA'
-        try:
-            os.write(slave_fd, data)
-        finally:
-            os.close(slave_fd)
-        with self.open(master_fd, "rb", buffering=-1 if buffered else 0) as f:
-            # Request more data than available
-            gotdata = f.read(len(data) + 1)
-            self.assertEqual(gotdata, data)
-            # Trying to read again returns an empty string
-            self.assertEqual(b'', f.read())
-            self.assertEqual(b'', f.read(1))
-
-    def test_pipe_read_buffered(self):
-        if not hasattr(os, 'pipe'):
-            self.skipTest("os.pipe not available")
-        self.check_pipe_func(os.pipe, True)
-
-    def test_pipe_read_raw(self):
-        if not hasattr(os, 'pipe'):
-            self.skipTest("os.pipe not available")
-        self.check_pipe_func(os.pipe, False)
-
-    def test_openpty_read_buffered(self):
-        if not hasattr(os, 'openpty'):
-            self.skipTest("os.openpty not available")
-        self.check_pipe_func(os.openpty, True)
-
-    def test_openpty_read_raw(self):
-        if not hasattr(os, 'openpty'):
-            self.skipTest("os.openpty not available")
-        self.check_pipe_func(os.openpty, False)
-
-
 class CMiscIOTest(MiscIOTest):
     io = io
 

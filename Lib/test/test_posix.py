@@ -280,29 +280,11 @@ class PosixTester(unittest.TestCase):
         if hasattr(posix, 'strerror'):
             self.assertTrue(posix.strerror(0))
 
-    def check_pipe_func(self, pipe_func):
-        master_fd, slave_fd = pipe_func()
-        try:
-            # Simulate a subprocess writing some data to the
-            # slave end of the pipe, and then exiting.
-            data = b'TEST DATA'
-            try:
-                os.write(slave_fd, data)
-            finally:
-                os.close(slave_fd)
-            # Request more data than available
-            gotdata = os.read(master_fd, len(data) + 1)
-            self.assertEqual(gotdata, data)
-        finally:
-            os.close(master_fd)
-
     def test_pipe(self):
         if hasattr(posix, 'pipe'):
-            self.check_pipe_func(posix.pipe)
-
-    def test_openpty(self):
-        if hasattr(posix, 'openpty'):
-            self.check_pipe_func(posix.openpty)
+            reader, writer = posix.pipe()
+            os.close(reader)
+            os.close(writer)
 
     def test_tempnam(self):
         if hasattr(posix, 'tempnam'):
