@@ -464,6 +464,34 @@ fileio_seekable(fileio *self)
 	return PyBool_FromLong((long) self->seekable);
 }
 
+static Py_ssize_t
+internal_read(int fd, void *buf, size_t count)
+{
+	Py_ssize_t n;
+
+	Py_BEGIN_ALLOW_THREADS
+	errno = 0;
+	n = read(fd, buf, count);
+#ifdef EIO
+	/* Issue #5380: when reading past the end of a pipe created by
+	   openpty(), EIO can be set.  Make it an EOF instead, so that
+	   the normal technique of testing for an empty string can be used.
+	 */
+	if (n == -1 && errno == EIO) {
+		if (isatty(fd)) {
+			n = 0;
+			errno = 0;
+		}
+		else {
+			/* isatty() set errno, restore its value */
+			errno = EIO;
+		}
+	}
+#endif
+	Py_END_ALLOW_THREADS
+	return n;
+}
+
 static PyObject *
 fileio_readinto(fileio *self, PyObject *args)
 {
@@ -478,12 +506,9 @@ fileio_readinto(fileio *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "w*", &pbuf))
 		return NULL;
 
-	if (_PyVerify_fd(self->fd)) {
-		Py_BEGIN_ALLOW_THREADS
-		errno = 0;
-		n = read(self->fd, pbuf.buf, pbuf.len);
-		Py_END_ALLOW_THREADS
-	} else
+	if (_PyVerify_fd(self->fd))
+		n = internal_read(self->fd, pbuf.buf, pbuf.len);
+	else
 		n = -1;
 	PyBuffer_Release(&pbuf);
 	if (n < 0) {
@@ -560,12 +585,9 @@ fileio_readall(fileio *self)
 				break;
 			}
 		}
-		Py_BEGIN_ALLOW_THREADS
-		errno = 0;
-		n = read(self->fd,
-			 PyBytes_AS_STRING(result) + total,
-			 newsize - total);
-		Py_END_ALLOW_THREADS
+		n = internal_read(self->fd,
+				  PyBytes_AS_STRING(result) + total,
+				  newsize - total);
 		if (n == 0)
 			break;
 		if (n < 0) {
@@ -617,12 +639,9 @@ fileio_read(fileio *self, PyObject *args)
 		return NULL;
 	ptr = PyBytes_AS_STRING(bytes);
 
-	if (_PyVerify_fd(self->fd)) {
-		Py_BEGIN_ALLOW_THREADS
-		errno = 0;
-		n = read(self->fd, ptr, size);
-		Py_END_ALLOW_THREADS
-	} else
+	if (_PyVerify_fd(self->fd))
+		n = internal_read(self->fd, ptr, size);
+	else
 		n = -1;
 
 	if (n < 0) {
