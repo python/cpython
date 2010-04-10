@@ -2037,7 +2037,7 @@ def test_main(run=None):
     suite = unittest.TestSuite(loadTestsFromTestCase(tc) for tc in testcases)
     # (ncoghlan): Whether or not sys.exc_clear is executed by the threading
     # module during these tests is at least platform dependent and possibly
-    # non-deterministic on any given platform. So we don't find if the listed
+    # non-deterministic on any given platform. So we don't mind if the listed
     # warnings aren't actually raised.
     with test_support.check_py3k_warnings(
             (".+__(get|set)slice__ has been removed", DeprecationWarning),
