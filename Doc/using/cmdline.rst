@@ -343,7 +343,7 @@ Miscellaneous options
    the remaining fields.  Empty fields match all values; trailing empty fields
    may be omitted.  The *message* field matches the start of the warning message
    printed; this match is case-insensitive.  The *category* field matches the
-   warning category.  This must be a class name; the match test whether the
+   warning category.  This must be a class name; the match tests whether the
    actual warning category of the message is a subclass of the specified warning
    category.  The full class name must be given.  The *module* field matches the
    (fully-qualified) module name; this match is case-sensitive.  The *line*
@@ -554,7 +554,7 @@ These environment variables influence Python's behavior.
 
 .. envvar:: PYTHONWARNINGS
 
-   This is the equivalent to the :option:`-W` option. If set to a comma
+   This is equivalent to the :option:`-W` option. If set to a comma
    separated string, it is equivalent to specifying :option:`-W` multiple
    times.
 
