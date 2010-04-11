@@ -21,7 +21,7 @@ except OSError:
 gdb_version_number = re.search(b"^GNU gdb [^\d]*(\d+)\.", gdb_version)
 if int(gdb_version_number.group(1)) < 7:
     raise unittest.SkipTest("gdb versions before 7.0 didn't support python embedding"
-                            " Saw:\n" + gdb_version)
+                            " Saw:\n" + gdb_version.decode('ascii', 'replace'))
 
 # Verify that "gdb" was built with the embedded python support enabled:
 cmd = "--eval-command=python import sys; print sys.version_info"
