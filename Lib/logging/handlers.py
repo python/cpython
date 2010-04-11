@@ -633,7 +633,8 @@ class SysLogHandler(logging.Handler):
     LOG_NEWS      = 7       #  network news subsystem
     LOG_UUCP      = 8       #  UUCP subsystem
     LOG_CRON      = 9       #  clock daemon
-    LOG_AUTHPRIV  = 10  #  security/authorization messages (private)
+    LOG_AUTHPRIV  = 10      #  security/authorization messages (private)
+    LOG_FTP       = 11      #  FTP daemon
 
     #  other codes through 15 reserved for system use
     LOG_LOCAL0    = 16      #  reserved for local use
@@ -665,6 +666,7 @@ class SysLogHandler(logging.Handler):
         "authpriv": LOG_AUTHPRIV,
         "cron":     LOG_CRON,
         "daemon":   LOG_DAEMON,
+        "ftp":      LOG_FTP,
         "kern":     LOG_KERN,
         "lpr":      LOG_LPR,
         "mail":     LOG_MAIL,

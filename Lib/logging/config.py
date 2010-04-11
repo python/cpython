@@ -98,6 +98,9 @@ def _resolve(name):
 def _strip_spaces(alist):
     return map(lambda x: x.strip(), alist)
 
+def _encoded(s):
+    return s if isinstance(s, str) else s.encode('utf-8')
+
 def _create_formatters(cp):
     """Create and return formatters"""
     flist = cp.get("formatters", "keys")
@@ -208,7 +211,7 @@ def _install_loggers(cp, handlers, disable_existing_loggers):
     #avoid disabling child loggers of explicitly
     #named loggers. With a sorted list it is easier
     #to find the child loggers.
-    existing.sort()
+    existing.sort(key=_encoded)
     #We'll keep the list of existing loggers
     #which are children of named loggers here...
     child_loggers = []
@@ -579,7 +582,7 @@ class DictConfigurator(BaseConfigurator):
                 #avoid disabling child loggers of explicitly
                 #named loggers. With a sorted list it is easier
                 #to find the child loggers.
-                existing.sort()
+                existing.sort(key=_encoded)
                 #We'll keep the list of existing loggers
                 #which are children of named loggers here...
                 child_loggers = []
