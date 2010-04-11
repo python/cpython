@@ -4,8 +4,8 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python beta 2?
-============================
+What's New in Python 2.7 beta 2?
+================================
 
 *Release date: XXXX-XX-XX*
 
@@ -14,6 +14,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #8374: Update the internal alias table in the :mod:`locale` module
+  to cover recent locale changes and additions.
 
 
 What's New in Python 2.7 beta 1?
@@ -69,15 +72,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #8374: Update the internal alias table in the :mod:`locale` module
-  to cover recent locale changes and additions.
-
-- Issue #8348: Fix test ftp url in test_urllib2net.
-
-- Issue #8204: Fix test_ttk notebook test by forcing focus.
-
-- Issue #8344: Fix test_ttk bug on FreeBSD.
 
 - Issue #8321: Give access to OpenSSL version numbers from the `ssl` module,
   using the new attributes `ssl.OPENSSL_VERSION`, `ssl.OPENSSL_VERSION_INFO`
@@ -281,6 +275,12 @@ C-API
 
 Tests
 -----
+
+- Issue #8348: Fix test ftp url in test_urllib2net.
+
+- Issue #8204: Fix test_ttk notebook test by forcing focus.
+
+- Issue #8344: Fix test_ttk bug on FreeBSD.
 
 - Issue #8193: Fix test_zlib failure with zlib 1.2.4.
 
