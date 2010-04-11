@@ -16,6 +16,9 @@ faqwiz		FAQ Wizard.
 
 freeze		Create a stand-alone executable from a Python program.
 
+gdb             Python code to be run inside gdb, to make it easier to
+                debug Python itself (by David Malcolm).
+
 i18n		Tools for internationalization. pygettext.py 
 		parses Python source code and generates .pot files,
 		and msgfmt.py generates a binary message catalog 
