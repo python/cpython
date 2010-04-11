@@ -237,7 +237,7 @@ object, see :ref:`tarinfo-objects` for details.
 A :class:`TarFile` object can be used as a context manager in a :keyword:`with`
 statement. It will automatically be closed when the block is completed. Please
 note that in the event of an exception an archive opened for writing will not
-be finalized, only the internally used file object will be closed. See the
+be finalized; only the internally used file object will be closed. See the
 :ref:`tar-examples` section for a use case.
 
 .. versionadded:: 2.7
