@@ -1114,58 +1114,6 @@ XXX write this.
 .. whole new modules get described in subsections here
 
 
-Distutils Enhancements
----------------------------------
-
-XXX all of this work has been moved to Distutils2
-XXX Not sure what we should say here
-
-Distutils is being more actively developed, thanks to Tarek Ziadé
-who has taken over maintenance of the package, so there are a number
-of fixes and improvements.
-
-A new :file:`setup.py` subcommand, ``check``, will check that the
-arguments being passed to the :func:`setup` function are complete
-and correct (:issue:`5732`).
-
-Byte-compilation by the ``install_lib``  subcommand is now only done
-if the ``sys.dont_write_bytecode`` setting allows it (:issue:`7071`).
-
-:func:`distutils.sdist.add_defaults` now uses
-*package_dir* and *data_files* to create the MANIFEST file.
-:mod:`distutils.sysconfig` now reads the :envvar:`AR` and
-:envvar:`ARFLAGS` environment variables.
-
-.. ARFLAGS done in #5941
-
-It is no longer mandatory to store clear-text passwords in the
-:file:`.pypirc` file when registering and uploading packages to PyPI. As long
-as the username is present in that file, the :mod:`distutils` package will
-prompt for the password if not present.  (Added by Tarek Ziadé,
-based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
-
-A Distutils setup can now specify that a C extension is optional by
-setting the *optional* option setting to true.  If this optional is
-supplied, failure to build the extension will not abort the build
-process, but instead simply not install the failing extension.
-(Contributed by Georg Brandl; :issue:`5583`.)
-
-The :class:`distutils.dist.DistributionMetadata` class'
-:meth:`read_pkg_file` method will read the contents of a package's
-:file:`PKG-INFO` metadata file.  For an example of its use, see
-:ref:`reading-metadata`.
-(Contributed by Tarek Ziadé; :issue:`7457`.)
-
-:file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
-to skip reading the :file:`~/.pydistutils.cfg` file.  (Suggested by
-by Michael Hoffman, and implemented by Paul Winkler; :issue:`1180`.)
-
-When creating a tar-format archive, the ``sdist`` subcommand now
-allows specifying the user id and group that will own the files in the
-archives using the :option:`--owner` and :option:`--group` switches
-(:issue:`6516`).
-
-
 Unit Testing Enhancements
 ---------------------------------
 
