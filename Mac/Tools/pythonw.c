@@ -78,7 +78,7 @@ static char* get_python_path(void)
 		end --;
 	}
 	end++;
-	if (end[1] == '.') {
+	if (*end == '.') {
 		end++;
 	}
 	strcpy(end, "Resources/Python.app/Contents/MacOS/" PYTHONFRAMEWORK);
@@ -161,7 +161,7 @@ main(int argc, char **argv) {
 		setup_spawnattr(&spawnattr);		
 		posix_spawn(NULL, exec_path, NULL,
 			&spawnattr, argv, environ);
-		err(1, "posix_spawn: %s", argv[0]);
+		err(1, "posix_spawn: %s", exec_path);
 	}
 #endif
 	execve(exec_path, argv, environ);

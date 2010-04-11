@@ -915,36 +915,7 @@ yes)
 	        if test "$UNIVERSAL_ARCHS" = "32-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
 		   ARCH_RUN_32BIT=""
-		   LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
-
-                   # You have to use different flags on various versions of
-		   # OSX to extract PPC code from an universal binary, basically
-                   # '-arch ppc' on OSX 10.4 and '-arch ppc7400' on anything                   
-                   # newer. 
-                   # Because '-arch pp7400' works on OSX 10.5 or higher this
-                   # test is only present in the '32-bit' branch, all other
-                   # branches require OSX 10.5 to compile.
-
-		   AC_MSG_CHECKING(lipo flag for extracting ppc code)
-		   FN="test.$$"
-		   cat >${FN}.c <<-EOF
-		        int main() { return 0; }
-EOF
-		   ${CC} ${CFLAGS} -arch ppc -arch i386 -o ${FN} ${FN}.c -isysroot ${UNIVERSALSDK}
-		   if test $? != 0 ; then
-			   rm ${FN} ${FN}.c
-			   AC_MSG_RESULT([failed, assumee -extract ppc7400])
-		   else
-			   lipo "${FN}" -extract ppc7400 -output "${FN}.out" 2>/dev/null
-			   if test $? != 0 ; then
-			       LIPO_32BIT_FLAGS="-extract ppc -extract i386"
-			       AC_MSG_RESULT("'-extract ppc'")
-			   else
-			       AC_MSG_RESULT("'-extract ppc7400'")
-			   fi
-			   rm -f ${FN} ${FN}.c ${FN}.out
-		   fi
-
+		   LIPO_32BIT_FLAGS=""
 	         elif test "$UNIVERSAL_ARCHS" = "64-bit" ; then
 		   UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
 		   LIPO_32BIT_FLAGS=""
