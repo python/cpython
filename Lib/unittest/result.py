@@ -1,5 +1,8 @@
 """Test result object"""
 
+import os
+import io
+import sys
 import traceback
 
 from . import util
@@ -14,6 +17,10 @@ def failfast(method):
             self.stop()
         return method(self, *args, **kw)
     return inner
+
+STDOUT_LINE = '\nStdout:\n%s'
+STDERR_LINE = '\nStderr:\n%s'
+
 
 class TestResult(object):
     """Holder for test result information.
@@ -37,6 +44,12 @@ class TestResult(object):
         self.expectedFailures = []
         self.unexpectedSuccesses = []
         self.shouldStop = False
+        self.buffer = False
+        self._stdout_buffer = None
+        self._stderr_buffer = None
+        self._original_stdout = sys.stdout
+        self._original_stderr = sys.stderr
+        self._mirrorOutput = False
 
     def printErrors(self):
         "Called by TestRunner after test run"
@@ -44,6 +57,13 @@ class TestResult(object):
     def startTest(self, test):
         "Called when the given test is about to be run"
         self.testsRun += 1
+        self._mirrorOutput = False
+        if self.buffer:
+            if self._stderr_buffer is None:
+                self._stderr_buffer = io.StringIO()
+                self._stdout_buffer = io.StringIO()
+            sys.stdout = self._stdout_buffer
+            sys.stderr = self._stderr_buffer
 
     def startTestRun(self):
         """Called once before any tests are executed.
@@ -53,6 +73,26 @@ class TestResult(object):
 
     def stopTest(self, test):
         """Called when the given test has been run"""
+        if self.buffer:
+            if self._mirrorOutput:
+                output = sys.stdout.getvalue()
+                error = sys.stderr.getvalue()
+                if output:
+                    if not output.endswith('\n'):
+                        output += '\n'
+                    self._original_stdout.write(STDOUT_LINE % output)
+                if error:
+                    if not error.endswith('\n'):
+                        error += '\n'
+                    self._original_stderr.write(STDERR_LINE % error)
+
+            sys.stdout = self._original_stdout
+            sys.stderr = self._original_stderr
+            self._stdout_buffer.seek(0)
+            self._stdout_buffer.truncate()
+            self._stderr_buffer.seek(0)
+            self._stderr_buffer.truncate()
+        self._mirrorOutput = False
 
     def stopTestRun(self):
         """Called once after all tests are executed.
@@ -66,12 +106,14 @@ class TestResult(object):
         returned by sys.exc_info().
         """
         self.errors.append((test, self._exc_info_to_string(err, test)))
+        self._mirrorOutput = True
 
     @failfast
     def addFailure(self, test, err):
         """Called when an error has occurred. 'err' is a tuple of values as
         returned by sys.exc_info()."""
         self.failures.append((test, self._exc_info_to_string(err, test)))
+        self._mirrorOutput = True
 
     def addSuccess(self, test):
         "Called when a test has completed successfully"
@@ -105,11 +147,29 @@ class TestResult(object):
         # Skip test runner traceback levels
         while tb and self._is_relevant_tb_level(tb):
             tb = tb.tb_next
+
         if exctype is test.failureException:
             # Skip assert*() traceback levels
             length = self._count_relevant_tb_levels(tb)
-            return ''.join(traceback.format_exception(exctype, value, tb, length))
-        return ''.join(traceback.format_exception(exctype, value, tb))
+            msgLines = traceback.format_exception(exctype, value, tb, length)
+        else:
+            chain = exctype is not None
+            msgLines = traceback.format_exception(exctype, value, tb,
+                                                  chain=chain)
+
+        if self.buffer:
+            output = sys.stdout.getvalue()
+            error = sys.stderr.getvalue()
+            if output:
+                if not output.endswith('\n'):
+                    output += '\n'
+                msgLines.append(STDOUT_LINE % output)
+            if error:
+                if not error.endswith('\n'):
+                    error += '\n'
+                msgLines.append(STDERR_LINE % error)
+        return ''.join(msgLines)
+
 
     def _is_relevant_tb_level(self, tb):
         return '__unittest' in tb.tb_frame.f_globals

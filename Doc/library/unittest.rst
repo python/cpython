@@ -74,6 +74,11 @@ need to derive from a specific class.
    Module :mod:`doctest`
       Another test-support module with a very different flavor.
 
+   `unittest2: A backport of new unittest features for Python 2.4-2.6 <http://pypi.python.org/pypi/unittest2>`_
+      Many new features were added to unittest in Python 2.7, including test
+      discovery. unittest2 allows you to use these features with earlier
+      versions of Python.
+
    `Simple Smalltalk Testing: With Patterns <http://www.XProgramming.com/testfram.htm>`_
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
@@ -82,41 +87,13 @@ need to derive from a specific class.
       Third-party unittest frameworks with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
-   `python-mock <http://python-mock.sourceforge.net/>`_ and `minimock <http://blog.ianbicking.org/minimock.html>`_
-      Tools for creating mock test objects (objects simulating external
-      resources).
+   `The Python Testing Tools Taxonomy <http://pycheesecake.org/wiki/PythonTestingToolsTaxonomy>`_
+      An extensive list of Python testing tools including functional testing
+      frameworks and mock object libraries.
 
-
-.. _unittest-command-line-interface:
-
-Command Line Interface
-----------------------
-
-The unittest module can be used from the command line to run tests from
-modules, classes or even individual test methods::
-
-   python -m unittest test_module1 test_module2
-   python -m unittest test_module.TestClass
-   python -m unittest test_module.TestClass.test_method
-
-You can pass in a list with any combination of module names, and fully
-qualified class or method names.
-
-You can run tests with more detail (higher verbosity) by passing in the -v flag::
-
-   python -m unittest -v test_module
-
-For a list of all the command line options::
-
-   python -m unittest -h
-
-.. versionchanged:: 3.2
-   In earlier versions it was only possible to run individual test methods and
-   not modules or classes.
-
-The command line can also be used for test discovery, for running all of the
-tests in a project or just a subset.
-
+   `Testing in Python Mailing List <http://lists.idyll.org/listinfo/testing-in-python>`_
+      A special-interest-group for discussion of testing, and testing tools,
+      in Python.
 
 .. _unittest-test-discovery:
 
@@ -242,6 +219,100 @@ following output::
 The above examples show the most commonly used :mod:`unittest` features which
 are sufficient to meet many everyday testing needs.  The remainder of the
 documentation explores the full feature set from first principles.
+
+
+.. _unittest-command-line-interface:
+
+Command Line Interface
+----------------------
+
+The unittest module can be used from the command line to run tests from
+modules, classes or even individual test methods::
+
+   python -m unittest test_module1 test_module2
+   python -m unittest test_module.TestClass
+   python -m unittest test_module.TestClass.test_method
+
+You can pass in a list with any combination of module names, and fully
+qualified class or method names.
+
+You can run tests with more detail (higher verbosity) by passing in the -v flag::
+
+   python -m unittest -v test_module
+
+For a list of all the command line options::
+
+   python -m unittest -h
+
+..  versionchanged:: 3.2
+   In earlier versions it was only possible to run individual test methods and
+   not modules or classes.
+
+
+failfast, catch and buffer command line options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+unittest supports three command options.
+
+* -f / --failfast
+
+  Stop the test run on the first error or failure.
+
+* -c / --catch
+
+  Control-c during the test run waits for the current test to end and then
+  reports all the results so far. A second control-c raises the normal
+  ``KeyboardInterrupt`` exception.
+
+  See `Signal Handling`_ for the functions that provide this functionality.
+
+* -b / --buffer
+
+  The standard out and standard error streams are buffered during the test
+  run. Output during a passing test is discarded. Output is echoed normally
+  on test fail or error and is added to the failure messages.
+
+..  versionadded:: 2.7
+   The command line options ``-c``, ``-b`` and ``-f`` where added.
+
+The command line can also be used for test discovery, for running all of the
+tests in a project or just a subset.
+
+
+.. _unittest-test-discovery:
+
+Test Discovery
+--------------
+
+.. versionadded:: 2.7
+
+Unittest supports simple test discovery. For a project's tests to be
+compatible with test discovery they must all be importable from the top level
+directory of the project (in other words, they must all be in Python packages).
+
+Test discovery is implemented in :meth:`TestLoader.discover`, but can also be
+used from the command line. The basic command line usage is::
+
+   cd project_directory
+   python -m unittest discover
+
+The ``discover`` sub-command has the following options:
+
+   -v, --verbose    Verbose output
+   -s directory     Directory to start discovery ('.' default)
+   -p pattern       Pattern to match test files ('test*.py' default)
+   -t directory     Top level directory of project (default to
+                    start directory)
+
+The -s, -p, & -t options can be passsed in as positional arguments. The
+following two command lines are equivalent::
+
+   python -m unittest discover -s project_directory -p '*_test.py'
+   python -m unittest discover project_directory '*_test.py'
+
+Test modules and packages can customize test loading and discovery by through
+the `load_tests protocol`_.
+
 
 .. _organizing-tests:
 
@@ -580,6 +651,9 @@ The following decorators implement test skipping and expected failures:
    Mark the test as an expected failure.  If the test fails when run, the test
    is not counted as a failure.
 
+Skipped tests will not have :meth:`setUp` or :meth:`tearDown` run around them.
+Skipped classes will not have :meth:`setUpClass` or :meth:`tearDownClass` run.
+
 
 .. _unittest-contents:
 
@@ -643,6 +717,36 @@ Test cases
       method will be considered an error rather than a test failure.  This
       method will only be called if the :meth:`setUp` succeeds, regardless of
       the outcome of the test method. The default implementation does nothing.
+
+
+   .. method:: setUpClass()
+
+      A class method called before tests in an individual class run.
+      ``setUpClass`` is called with the class as the only argument
+      and must be decorated as a :func:`classmethod`::
+
+        @classmethod
+        def setUpClass(cls):
+            ...
+
+      See `Class and Module Fixtures`_ for more details.
+
+      .. versionadded:: 3.2
+
+
+   .. method:: tearDownClass()
+
+      A class method called after tests in an individual class have run.
+      ``tearDownClass`` is called with the class as the only argument
+      and must be decorated as a :meth:`classmethod`::
+
+        @classmethod
+        def tearDownClass(cls):
+            ...
+
+      See `Class and Module Fixtures`_ for more details.
+
+      .. versionadded:: 3.2
 
 
    .. method:: run(result=None)
@@ -727,8 +831,8 @@ Test cases
          :meth:`failIfEqual`; use :meth:`assertNotEqual`.
 
 
-   .. method:: assertAlmostEqual(first, second, *, places=7, msg=None)
-               failUnlessAlmostEqual(first, second, *, places=7, msg=None)
+   .. method:: assertAlmostEqual(first, second, *, places=7, msg=None, delta=None)
+               failUnlessAlmostEqual(first, second, *, places=7, msg=None, delta=None)
 
       Test that *first* and *second* are approximately equal by computing the
       difference, rounding to the given number of decimal *places* (default 7),
@@ -741,13 +845,14 @@ Test cases
 
       .. versionchanged:: 3.2
          Objects that compare equal are automatically almost equal.
+         Added the ``delta`` keyword argument.
 
       .. deprecated:: 3.1
          :meth:`failUnlessAlmostEqual`; use :meth:`assertAlmostEqual`.
 
 
-   .. method:: assertNotAlmostEqual(first, second, *, places=7, msg=None)
-               failIfAlmostEqual(first, second, *, places=7, msg=None)
+   .. method:: assertNotAlmostEqual(first, second, *, places=7, msg=None, delta=None)
+               failIfAlmostEqual(first, second, *, places=7, msg=None, delta=None)
 
       Test that *first* and *second* are not approximately equal by computing
       the difference, rounding to the given number of decimal *places* (default
@@ -758,8 +863,14 @@ Test cases
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
 
+      If *delta* is supplied instead of *places* then the the difference
+      between *first* and *second* must be more than *delta*.
+
+      Supplying both *delta* and *places* raises a ``TypeError``.
+
       .. versionchanged:: 3.2
          Objects that compare equal automatically fail.
+         Added the ``delta`` keyword argument.
 
       .. deprecated:: 3.1
          :meth:`failIfAlmostEqual`; use :meth:`assertNotAlmostEqual`.
@@ -800,6 +911,16 @@ Test cases
       suitable for use by :func:`re.search`.
 
       .. versionadded:: 3.1
+
+
+   .. method:: assertNotRegexpMatches(text, regexp, msg=None)
+
+      Verifies that a *regexp* search does not match *text*.  Fails with an error
+      message including the pattern and the *text*.  *regexp* may be
+      a regular expression object or a string containing a regular expression
+      suitable for use by :func:`re.search`.
+
+      .. versionadded:: 2.7
 
 
    .. method:: assertIn(first, second, msg=None)
@@ -1342,6 +1463,8 @@ a
       ``load_tests`` does not need to pass this argument in to
       ``loader.discover()``.
 
+      *start_dir* can be a dotted module name as well as a directory.
+
       .. versionadded:: 3.2
 
 
@@ -1433,6 +1556,24 @@ a
       The total number of tests run so far.
 
 
+   .. attribute:: buffer
+
+      If set to true, ``sys.stdout`` and ``sys.stderr`` will be buffered in between
+      :meth:`startTest` and :meth:`stopTest` being called. Collected output will
+      only be echoed onto the real ``sys.stdout`` and ``sys.stderr`` if the test
+      fails or errors. Any output is also attached to the failure / error message.
+
+      .. versionadded:: 2.7
+
+
+   .. attribute:: failfast
+
+      If set to true :meth:`stop` will be called on the first failure or error,
+      halting the test run.
+
+      .. versionadded:: 2.7
+
+
    .. method:: wasSuccessful()
 
       Return :const:`True` if all tests run so far have passed, otherwise returns
@@ -1461,17 +1602,10 @@ a
 
       Called when the test case *test* is about to be run.
 
-      The default implementation simply increments the instance's :attr:`testsRun`
-      counter.
-
-
    .. method:: stopTest(test)
 
       Called after the test case *test* has been executed, regardless of the
       outcome.
-
-      The default implementation does nothing.
-
 
    .. method:: startTestRun(test)
 
@@ -1572,12 +1706,12 @@ a
 
       ``_makeResult()`` instantiates the class or callable passed in the
       ``TextTestRunner`` constructor as the ``resultclass`` argument. It
-      defaults to :class::`TextTestResult` if no ``resultclass`` is provided.
+      defaults to :class:`TextTestResult` if no ``resultclass`` is provided.
       The result class is instantiated with the following arguments::
 
         stream, descriptions, verbosity
 
-.. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, testLoader=unittest.loader.defaultTestLoader, exit=True, verbosity=1)
+.. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, testLoader=unittest.loader.defaultTestLoader, exit=True, verbosity=1, failfast=None, catchbreak=None, buffer=None)
 
    A command-line program that runs a set of tests; this is primarily for making
    test modules conveniently executable.  The simplest use for this function is to
@@ -1603,11 +1737,15 @@ a
       >>> from unittest import main
       >>> main(module='test_module', exit=False)
 
+   The ``failfast``, ``catchbreak`` and ``buffer`` parameters have the same
+   effect as the `failfast, catch and buffer command line options`_.
+
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
    This stores the result of the tests run as the ``result`` attribute.
 
    .. versionchanged:: 3.2
-      The ``exit`` and ``verbosity`` parameters were added.
+      The ``exit``, ``verbosity``, ``failfast``, ``catchbreak`` and ``buffer``
+      parameters were added.
 
 
 load_tests Protocol
@@ -1677,3 +1815,113 @@ continue (and potentially modify) test discovery. A 'do nothing'
         package_tests = loader.discover(start_dir=this_dir, pattern=pattern)
         standard_tests.addTests(package_tests)
         return standard_tests
+
+
+Class and Module Fixtures
+-------------------------
+
+Class and module level fixtures are implemented in :class:`TestSuite`. When
+the test suite encounters a test from a new class then :meth:`tearDownClass`
+from the previous class (if there is one) is called, followed by
+:meth:`setUpClass` from the new class.
+
+Similarly if a test is from a different module from the previous test then
+``tearDownModule`` from the previous module is run, followed by
+``setUpModule`` from the new module.
+
+After all the tests have run the final ``tearDownClass`` and
+``tearDownModule`` are run.
+
+Note that shared fixtures do not play well with [potential] features like test
+parallelization and they break test isolation. They should be used with care.
+
+The default ordering of tests created by the unittest test loaders is to group
+all tests from the same modules and classes together. This will lead to
+``setUpClass`` / ``setUpModule`` (etc) being called exactly once per class and
+module. If you randomize the order, so that tests from different modules and
+classes are adjacent to each other, then these shared fixture functions may be
+called multiple times in a single test run.
+
+Shared fixtures are not intended to work with suites with non-standard
+ordering. A ``BaseTestSuite`` still exists for frameworks that don't want to
+support shared fixtures.
+
+If there are any exceptions raised during one of the shared fixture functions
+the test is reported as an error. Because there is no corresponding test
+instance an ``_ErrorHolder`` object (that has the same interface as a
+:class:`TestCase`) is created to represent the error. If you are just using
+the standard unittest test runner then this detail doesn't matter, but if you
+are a framework author it may be relevant.
+
+
+setUpClass and tearDownClass
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These must be implemented as class methods::
+
+    import unittest
+
+    class Test(unittest.TestCase):
+        @classmethod
+        def setUpClass(cls):
+            cls._connection = createExpensiveConnectionObject()
+
+        @classmethod
+        def tearDownClass(cls):
+            cls._connection.destroy()
+
+If you want the ``setUpClass`` and ``tearDownClass`` on base classes called
+then you must call up to them yourself. The implementations in
+:class:`TestCase` are empty.
+
+If an exception is raised during a ``setUpClass`` then the tests in the class
+are not run and the ``tearDownClass`` is not run. Skipped classes will not
+have ``setUpClass`` or ``tearDownClass`` run.
+
+
+setUpModule and tearDownModule
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These should be implemented as functions::
+
+    def setUpModule():
+        createConnection()
+
+    def tearDownModule():
+        closeConnection()
+
+If an exception is raised in a ``setUpModule`` then none of the tests in the
+module will be run and the ``tearDownModule`` will not be run.
+
+
+Signal Handling
+---------------
+
+The -c / --catch command line option to unittest, along with the ``catchbreak``
+parameter to :func:`unittest.main()`, provide more friendly handling of
+control-c during a test run. With catch break behavior enabled control-c will
+allow the currently running test to complete, and the test run will then end
+and report all the results so far. A second control-c will raise a
+``KeyboardInterrupt`` in the usual way.
+
+There are a few utility functions for framework authors to enable this
+functionality within test frameworks.
+
+.. function:: installHandler()
+
+   Install the control-c handler. When a :const:`signal.SIGINT` is received
+   (usually in response to the user pressing control-c) all registered results
+   have :meth:`~TestResult.stop` called.
+
+.. function:: registerResult(result)
+
+   Register a :class:`TestResult` object for control-c handling. Registering a
+   result stores a weak reference to it, so it doesn't prevent the result from
+   being garbage collected.
+
+.. function:: removeResult(result)
+
+   Remove a registered result. Once a result has been removed then
+   :meth:`~TestResult.stop` will no longer be called on that result object in
+   response to a control-c.
+

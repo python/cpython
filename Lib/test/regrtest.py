@@ -880,6 +880,10 @@ def runtest_inner(test, verbose, quiet,
                   testdir=None, huntrleaks=False, debug=False):
     support.unload(test)
     testdir = findtestdir(testdir)
+    if verbose:
+        capture_stdout = None
+    else:
+        capture_stdout = io.StringIO()
 
     test_time = 0.0
     refleak = False  # True if the test leaked references.
