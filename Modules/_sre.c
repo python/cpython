@@ -3903,12 +3903,9 @@ PyMODINIT_FUNC PyInit__sre(void)
     PyObject* d;
     PyObject* x;
 
-    /* Initialize object types */
-    if (PyType_Ready(&Pattern_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&Match_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&Scanner_Type) < 0)
+    /* Patch object types */
+    if (PyType_Ready(&Pattern_Type) || PyType_Ready(&Match_Type) ||
+        PyType_Ready(&Scanner_Type))
         return NULL;
 
     m = PyModule_Create(&sremodule);

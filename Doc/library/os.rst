@@ -437,6 +437,10 @@ process will then be assigned 3, 4, 5, and so forth.  The name "file descriptor"
 is slightly deceptive; on Unix platforms, sockets and pipes are also referenced
 by file descriptors.
 
+The :meth:`~file.fileno` method can be used to obtain the file descriptor
+associated with a file object when required.  Note that using the file
+descriptor directly will bypass the file object methods, ignoring aspects such
+as internal buffering of data.
 
 .. function:: close(fd)
 

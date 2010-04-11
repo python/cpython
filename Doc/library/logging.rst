@@ -2012,6 +2012,84 @@ supports sending logging messages to a remote or local Unix syslog.
       or integers - if strings are passed, internal mapping dictionaries are
       used to convert them to integers.
 
+      **Priorities**
+
+      +--------------------------+---------------+
+      | Name (string)            | Symbolic value|
+      +==========================+===============+
+      | ``alert``                | LOG_ALERT     |
+      +--------------------------+---------------+
+      | ``crit`` or ``critical`` | LOG_CRIT      |
+      +--------------------------+---------------+
+      | ``debug``                | LOG_DEBUG     |
+      +--------------------------+---------------+
+      | ``emerg`` or ``panic``   | LOG_EMERG     |
+      +--------------------------+---------------+
+      | ``err`` or ``error``     | LOG_ERR       |
+      +--------------------------+---------------+
+      | ``info``                 | LOG_INFO      |
+      +--------------------------+---------------+
+      | ``notice``               | LOG_NOTICE    |
+      +--------------------------+---------------+
+      | ``warn`` or ``warning``  | LOG_WARNING   |
+      +--------------------------+---------------+
+
+      **Facilities**
+
+      +---------------+---------------+
+      | Name (string) | Symbolic value|
+      +===============+===============+
+      | ``auth``      | LOG_AUTH      |
+      +---------------+---------------+
+      | ``authpriv``  | LOG_AUTHPRIV  |
+      +---------------+---------------+
+      | ``cron``      | LOG_CRON      |
+      +---------------+---------------+
+      | ``daemon``    | LOG_DAEMON    |
+      +---------------+---------------+
+      | ``ftp``       | LOG_FTP       |
+      +---------------+---------------+
+      | ``kern``      | LOG_KERN      |
+      +---------------+---------------+
+      | ``lpr``       | LOG_LPR       |
+      +---------------+---------------+
+      | ``mail``      | LOG_MAIL      |
+      +---------------+---------------+
+      | ``news``      | LOG_NEWS      |
+      +---------------+---------------+
+      | ``syslog``    | LOG_SYSLOG    |
+      +---------------+---------------+
+      | ``user``      | LOG_USER      |
+      +---------------+---------------+
+      | ``uucp``      | LOG_UUCP      |
+      +---------------+---------------+
+      | ``local0``    | LOG_LOCAL0    |
+      +---------------+---------------+
+      | ``local1``    | LOG_LOCAL1    |
+      +---------------+---------------+
+      | ``local2``    | LOG_LOCAL2    |
+      +---------------+---------------+
+      | ``local3``    | LOG_LOCAL3    |
+      +---------------+---------------+
+      | ``local4``    | LOG_LOCAL4    |
+      +---------------+---------------+
+      | ``local5``    | LOG_LOCAL5    |
+      +---------------+---------------+
+      | ``local6``    | LOG_LOCAL6    |
+      +---------------+---------------+
+      | ``local7``    | LOG_LOCAL7    |
+      +---------------+---------------+
+
+   .. method:: mapPriority(levelname)
+
+      Maps a logging level name to a syslog priority name.
+      You may need to override this if you are using custom levels, or
+      if the default algorithm is not suitable for your needs. The
+      default algorithm maps ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR`` and
+      ``CRITICAL`` to the equivalent syslog names, and all other level
+      names to "warning".
+
+.. _nt-eventlog-handler:
 
 NTEventLogHandler
 ^^^^^^^^^^^^^^^^^

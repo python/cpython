@@ -212,6 +212,8 @@ Glossary
       performs garbage collection via reference counting and a cyclic garbage
       collector that is able to detect and break reference cycles.
 
+      .. index:: single: generator
+
    generator
       A function which returns an iterator.  It looks like a normal function
       except that values are returned to the caller using a :keyword:`yield`
@@ -225,7 +227,7 @@ Glossary
       .. index:: single: generator expression
 
    generator expression
-      An expression that returns a generator.  It looks like a normal expression
+      An expression that returns an iterator.  It looks like a normal expression
       followed by a :keyword:`for` expression defining a loop variable, range,
       and an optional :keyword:`if` expression.  The combined expression
       generates values for an enclosing function::

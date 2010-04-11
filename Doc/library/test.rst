@@ -221,15 +221,15 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: TESTFN
 
-   Set to the name that a temporary file could use. Any temporary file that is
-   created should be closed and unlinked (removed).
+   Set to a name that is safe to use as the name of a temporary file.  Any
+   temporary file that is created should be closed and unlinked (removed).
 
 The :mod:`test.support` module defines the following functions:
 
 
 .. function:: forget(module_name)
 
-   Remove the module named *module_name* from ``sys.modules`` and deletes any
+   Remove the module named *module_name* from ``sys.modules`` and delete any
    byte-compiled files of the module.
 
 
@@ -272,49 +272,55 @@ The :mod:`test.support` module defines the following functions:
    This will run all tests defined in the named module.
 
 
-.. function:: check_warnings(*filters, quiet=None)
+.. function:: check_warnings(*filters, quiet=True)
 
-   A convenience wrapper for ``warnings.catch_warnings()`` that makes
-   it easier to test that a warning was correctly raised with a single
-   assertion. It is approximately equivalent to calling
-   ``warnings.catch_warnings(record=True)``.
+   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
+   easier to test that a warning was correctly raised.  It is approximately
+   equivalent to calling ``warnings.catch_warnings(record=True)`` with
+   :meth:`warnings.simplefilter` set to ``always`` and with the option to
+   automatically validate the results that are recorded.
 
-   It accepts 2-tuples ``("message regexp", WarningCategory)`` as positional
-   arguments. If there's some ``*filters`` defined, or if the optional keyword
-   argument ``quiet`` is :const:`False`, it checks if the warnings are
-   effective. If some filter did not catch any warning, the test fails. If some
-   warnings are not caught, the test fails, too. To disable these checks, set
-   argument ``quiet`` to :const:`True`.
+   ``check_warnings`` accepts 2-tuples of the form ``("message regexp",
+   WarningCategory)`` as positional arguments. If one or more *filters* are
+   provided, or if the optional keyword argument *quiet* is :const:`False`,
+   it checks to make sure the warnings are as expected:  each specified filter
+   must match at least one of the warnings raised by the enclosed code or the
+   test fails, and if any warnings are raised that do not match any of the
+   specified filters the test fails.  To disable the first of these checks,
+   set *quiet* to :const:`True`.
 
-   Without argument, it defaults to::
+   If no arguments are specified, it defaults to::
 
       check_warnings(("", Warning), quiet=True)
 
-   Additionally, on entry to the context manager, a :class:`WarningRecorder`
-   instance is returned. The underlying warnings list is available via the
-   recorder object's :attr:`warnings` attribute, while the attributes of the
-   last raised warning are also accessible directly on the object. If no
-   warning has been raised, then the latter attributes will all be
-   :const:`None`.
+   In this case all warnings are caught and no errors are raised.
 
-   A :meth:`reset` method is also provided on the recorder object. This
-   method simply clears the warnings list.
+   On entry to the context manager, a :class:`WarningRecorder` instance is
+   returned. The underlying warnings list from
+   :func:`~warnings.catch_warnings` is available via the recorder object's
+   :attr:`warnings` attribute.  As a convenience, the attributes of the object
+   representing the most recent warning can also be accessed directly through
+   the recorder object (see example below).  If no warning has been raised,
+   then any of the attributes that would otherwise be expected on an object
+   representing a warning will return :const:`None`.
 
-   The context manager may be used like this::
+   The recorder object also has a :meth:`reset` method, which clears the
+   warnings list.
 
-      import warnings
-
-      with check_warnings(quiet=False):
-          exec('assert(False, "Hey!")')
-          warnings.warn(UserWarning("Hide me!"))
+   The context manager is designed to be used like this::
 
       with check_warnings(("assertion is always true", SyntaxWarning),
                           ("", UserWarning)):
           exec('assert(False, "Hey!")')
           warnings.warn(UserWarning("Hide me!"))
 
+   In this case if either warning was not raised, or some other warning was
+   raised, :func:`check_warnings` would raise an error.
+
+   When a test needs to look more deeply into the warnings, rather than
+   just checking whether or not they occurred, code like this can be used::
+
       with check_warnings(quiet=True) as w:
-          warnings.simplefilter("always")
           warnings.warn("foo")
           assert str(w.args[0]) == "foo"
           warnings.warn("bar")
@@ -324,8 +330,12 @@ The :mod:`test.support` module defines the following functions:
           w.reset()
           assert len(w.warnings) == 0
 
+
+   Here all warnings will be caught, and the test code tests the captured
+   warnings directly.
+
    .. versionchanged:: 3.2
-      New optional attributes ``*filters`` and ``quiet``.
+      New optional arguments *filters* and *quiet*.
 
 
 .. function:: captured_stdout()

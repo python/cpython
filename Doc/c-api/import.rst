@@ -115,11 +115,20 @@ Importing Modules
    such modules have no way to know that the module object is an unknown (and
    probably damaged with respect to the module author's intents) state.
 
+   The module's :attr:`__file__` attribute will be set to the code object's
+   :cmember:`co_filename`.
+
    This function will reload the module if it was already imported.  See
    :cfunc:`PyImport_ReloadModule` for the intended way to reload a module.
 
    If *name* points to a dotted name of the form ``package.module``, any package
    structures not already created will still not be created.
+
+
+.. cfunction:: PyObject* PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
+
+   Like :cfunc:`PyImport_ExecCodeModule`, but the :attr:`__file__` attribute of
+   the module object is set to *pathname* if it is non-``NULL``.
 
 
 .. cfunction:: long PyImport_GetMagicNumber()
