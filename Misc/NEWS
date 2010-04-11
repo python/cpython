@@ -70,6 +70,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8374: Update the internal alias table in the :mod:`locale` module
+  to cover recent locale changes and additions.
+
 - Issue #8348: Fix test ftp url in test_urllib2net.
 
 - Issue #8204: Fix test_ttk notebook test by forcing focus.
