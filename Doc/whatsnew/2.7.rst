@@ -58,8 +58,9 @@ release of 2.7 is currently scheduled for June 2010; the detailed
 schedule is described in :pep:`373`.
 
 Python 2.7 is planned to be the last major release in the 2.x series.
-Though more major releases have not been absolutely ruled out, it's
-likely that the 2.7 release will have an extended period of
+Though more major releases have not been absolutely ruled out, the
+Python maintainers are planning to focus more on Python 3.x.  Despite
+that, it's likely that the 2.7 release will have a longer period of
 maintenance compared to earlier 2.x versions.
 
 .. Compare with previous release in 2 - 3 sentences here.
@@ -496,6 +497,10 @@ Some smaller changes made to the core Python language are:
   Python3-warning mode, Python 2.7 will now warn about this odd usage.
   (Noted by James Lingard; :issue:`7362`.)
 
+* It's now possible to create weak references to old-style class
+  objects.  New-style classes were always weak-referenceable.  (Fixed
+  by Antoine Pitrou; :issue:`8268`.)
+
 * When a module object is garbage-collected, the module's dictionary is
   now only cleared if no one else is holding a reference to the
   dictionary (:issue:`7140`).
@@ -684,11 +689,15 @@ changes, or look through the Subversion logs for all the details.
      >>> c['z']
      0
 
-  There are two additional :class:`~collections.Counter` methods:
-  :meth:`~collections.Counter.most_common` returns the N most common elements
-  and their counts, and :meth:`~collections.Counter.elements`
-  returns an iterator over the contained element, repeating each element
-  as many times as its count::
+  There are three additional :class:`~collections.Counter` methods:
+  :meth:`~collections.Counter.most_common` returns the N most common
+  elements and their counts.  :meth:`~collections.Counter.elements`
+  returns an iterator over the contained elements, repeating each
+  element as many times as its count.
+  :meth:`~collections.Counter.subtract` takes an iterable and
+  subtracts one for each element instead of adding; if the argument is
+  a dictionary or another :class:`Counter`, the counts are
+  subtracted. ::
 
     >>> c.most_common(5)
     [(' ', 6), ('e', 5), ('s', 3), ('a', 2), ('i', 2)]
@@ -697,10 +706,15 @@ changes, or look through the Subversion logs for all the details.
        'e', 'e', 'e', 'e', 'e', 'g', 'f', 'i', 'i',
        'h', 'h', 'm', 'l', 'l', 'o', 'n', 'p', 's',
        's', 's', 'r', 't', 't', 'x'
-
-  .. maybe it's better to use list(c.elements()) here
+    >>> c['e']
+    5
+    >>> c.subtract('very heavy on the letter e')
+    >>> c['e']    # Count is now lower
+    -1
 
   Contributed by Raymond Hettinger; :issue:`1696199`.
+
+  .. revision 79660
 
   The new :class:`~collections.OrderedDict` class is described in the earlier
   section :ref:`pep-0372`.
@@ -757,18 +771,21 @@ changes, or look through the Subversion logs for all the details.
   :meth:`~decimal.Context.canonical` and :meth:`~decimal.Context.is_canonical`
   methods.  (Patch by Juan José Conti; :issue:`7633`.)
 
-  The constructor for :class:`~decimal.Decimal` now accepts non-European
-  Unicode characters, such as Arabic-Indic digits.  (Contributed by
-  Mark Dickinson; :issue:`6595`.)
+  The constructor for :class:`~decimal.Decimal` now accepts
+  floating-point numbers (added by Raymond Hettinger; :issue:`8257`)
+  and non-European Unicode characters such as Arabic-Indic digits
+  (contributed by Mark Dickinson; :issue:`6595`).
 
   When using :class:`~decimal.Decimal` instances with a string's
   :meth:`~str.format` method, the default alignment was previously
   left-alignment.  This has been changed to right-alignment, which seems
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
-* The :class:`~fractions.Fraction` class now accepts two rational numbers
-  as arguments to its constructor.
-  (Implemented by Mark Dickinson; :issue:`5812`.)
+* The :class:`~fractions.Fraction` class now accepts a single float or
+  :class:`~decimal.Decimal` instance, or two rational numbers, as
+  arguments to its constructor.  (Implemented by Mark Dickinson;
+  rationals added in :issue:`5812`, and float/decimal in
+  :issue:`8294`.)
 
   An oversight was fixed, making the :class:`Fraction` match the other
   numeric types; ordering comparisons (``<``, ``<=``, ``>``, ``>=``) between
@@ -975,13 +992,17 @@ changes, or look through the Subversion logs for all the details.
   Victor Stinner; :issue:`3137`.)
 
 * The :mod:`socket` module's :class:`~ssl.SSL` objects now support the
-  buffer API, which fixed a test suite failure.  (Fixed by Antoine
-  Pitrou; :issue:`7133`.)  The version of OpenSSL being used is
-  now available as the module attributes
-  :attr:`OPENSSL_VERSION` (a string),
+  buffer API, which fixed a test suite failure (fix by Antoine Pitrou;
+  :issue:`7133`).  :class:`SSL` objects also now automatically set
+  OpenSSL's :cmacro:`SSL_MODE_AUTO_RETRY`, which will prevent an error
+  code being returned from :meth:`recv` operations that trigger an SSL
+  renegotiation (fix by Antoine Pitrou; :issue:`8222`).
+
+  The version of OpenSSL being used is now available as the module
+  attributes :attr:`OPENSSL_VERSION` (a string),
   :attr:`OPENSSL_VERSION_INFO` (a 5-tuple), and
-  :attr:`OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine Pitrou;
-  :issue:`8321`.)
+  :attr:`OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
+  Pitrou; :issue:`8321`.)
 
   The :func:`~socket.create_connection` function
   gained a *source_address* parameter, a ``(host, port)`` 2-tuple
@@ -1011,7 +1032,10 @@ changes, or look through the Subversion logs for all the details.
   errors when a value is too large for a particular integer format
   code (one of ``bBhHiIlLqQ``); it now always raises a
   :exc:`struct.error` exception.  (Changed by Mark Dickinson;
-  :issue:`1523`.)
+  :issue:`1523`.)  The :func:`~struct.pack` function will also
+  attempt to use :meth:`__index__` to convert and pack non-integers
+  before trying the :meth:`__int__` method or reporting an error.
+  (Changed by Mark Dickinson; :issue:`8300`.)
 
 * New function: the :mod:`subprocess` module's
   :func:`~subprocess.check_output` runs a command with a specified set of arguments
@@ -1346,6 +1370,18 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
+* The latest release of the GNU Debugger, GDB 7, can be `scripted
+  using Python
+  <http://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
+  When you begin debugging an executable program P, GDB will look for
+  a file named ``P-gdb.py`` and automatically read it.  Dave Malcolm
+  contributed a :file:`python-gdb.py` that adds a number of useful
+  commands when debugging Python itself.  For example, there are
+  ``py-up`` and ``py-down`` that go up or down one Python stack frame,
+  which usually corresponds to several C stack frames.  ``py-print``
+  prints the value of a Python variable, and ``py-bt`` prints the
+  Python stack trace.  (Added as a result of :issue:`8032`.)
+
 * If you use the :file:`.gdbinit` file provided with Python,
   the "pyo" macro in the 2.7 version now works correctly when the thread being
   debugged doesn't hold the GIL; the macro now acquires it before printing.
@@ -1458,6 +1494,10 @@ Changes to Python's build process and to the C API include:
   preprocessor definition.  No code currently uses this definition,
   but it's available if anyone wishes to use it.
   (Added by Mark Dickinson; :issue:`2937`.)
+
+  :program:`configure` also now sets a :envvar:`LDCXXSHARED` Makefile
+  variable for supporting C++ linking.  (Contributed by Arfrever
+  Frehtes Taifersar Arahesis; :issue:`1222585`.)
 
 * The build process now creates the necessary files for pkg-config
   support.  (Contributed by Clinton Roy; :issue:`3585`.)
