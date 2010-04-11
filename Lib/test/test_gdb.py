@@ -28,7 +28,7 @@ cmd = "--eval-command=python import sys; print sys.version_info"
 p = subprocess.Popen(["gdb", "--batch", cmd],
                      stdout=subprocess.PIPE)
 gdbpy_version, _ = p.communicate()
-if gdbpy_version == '':
+if gdbpy_version == b'':
     raise unittest.SkipTest("gdb not built with embedded python support")
 
 
