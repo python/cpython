@@ -524,12 +524,8 @@ class Test_TestLoader(unittest.TestCase):
         # We're going to try to load this module as a side-effect, so it
         # better not be loaded before we try.
         #
-        # Why pick audioop? Google shows it isn't used very often, so there's
-        # a good chance that it won't be imported when this test is run
-        module_name = 'audioop'
-
-        if module_name in sys.modules:
-            del sys.modules[module_name]
+        module_name = 'unittest.test.dummy'
+        sys.modules.pop(module_name, None)
 
         loader = unittest.TestLoader()
         try:
@@ -538,7 +534,7 @@ class Test_TestLoader(unittest.TestCase):
             self.assertIsInstance(suite, loader.suiteClass)
             self.assertEqual(list(suite), [])
 
-            # audioop should now be loaded, thanks to loadTestsFromName()
+            # module should now be loaded, thanks to loadTestsFromName()
             self.assertIn(module_name, sys.modules)
         finally:
             if module_name in sys.modules:
@@ -911,12 +907,8 @@ class Test_TestLoader(unittest.TestCase):
         # We're going to try to load this module as a side-effect, so it
         # better not be loaded before we try.
         #
-        # Why pick audioop? Google shows it isn't used very often, so there's
-        # a good chance that it won't be imported when this test is run
-        module_name = 'audioop'
-
-        if module_name in sys.modules:
-            del sys.modules[module_name]
+        module_name = 'unittest.test.dummy'
+        sys.modules.pop(module_name, None)
 
         loader = unittest.TestLoader()
         try:
@@ -925,7 +917,7 @@ class Test_TestLoader(unittest.TestCase):
             self.assertIsInstance(suite, loader.suiteClass)
             self.assertEqual(list(suite), [unittest.TestSuite()])
 
-            # audioop should now be loaded, thanks to loadTestsFromName()
+            # module should now be loaded, thanks to loadTestsFromName()
             self.assertIn(module_name, sys.modules)
         finally:
             if module_name in sys.modules:

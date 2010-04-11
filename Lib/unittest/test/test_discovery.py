@@ -128,6 +128,7 @@ class TestDiscovery(unittest.TestCase):
         loader = unittest.TestLoader()
 
         original_isfile = os.path.isfile
+        original_isdir = os.path.isdir
         def restore_isfile():
             os.path.isfile = original_isfile
 
@@ -147,6 +148,12 @@ class TestDiscovery(unittest.TestCase):
         self.assertIn(full_path, sys.path)
 
         os.path.isfile = lambda path: True
+        os.path.isdir = lambda path: True
+
+        def restore_isdir():
+            os.path.isdir = original_isdir
+        self.addCleanup(restore_isdir)
+
         _find_tests_args = []
         def _find_tests(start_dir, pattern):
             _find_tests_args.append((start_dir, pattern))
@@ -156,8 +163,8 @@ class TestDiscovery(unittest.TestCase):
 
         suite = loader.discover('/foo/bar/baz', 'pattern', '/foo/bar')
 
-        top_level_dir = os.path.abspath(os.path.normpath('/foo/bar'))
-        start_dir = os.path.abspath(os.path.normpath('/foo/bar/baz'))
+        top_level_dir = os.path.abspath('/foo/bar')
+        start_dir = os.path.abspath('/foo/bar/baz')
         self.assertEqual(suite, "['tests']")
         self.assertEqual(loader._top_level_dir, top_level_dir)
         self.assertEqual(_find_tests_args, [(start_dir, 'pattern')])

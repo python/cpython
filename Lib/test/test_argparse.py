@@ -12,6 +12,8 @@ import argparse
 from io import StringIO
 
 from test import support
+class StdIOBuffer(StringIO):
+    pass
 
 class TestCase(unittest.TestCase):
 
@@ -23,6 +25,7 @@ class TestCase(unittest.TestCase):
             print(obj1)
             print(obj2)
         super(TestCase, self).assertEqual(obj1, obj2)
+
 
 
 class TempDirMixin(object):
@@ -81,15 +84,15 @@ def stderr_to_parser_error(parse_args, *args, **kwargs):
     # if this is being called recursively and stderr or stdout is already being
     # redirected, simply call the function and let the enclosing function
     # catch the exception
-    if isinstance(sys.stderr, StringIO) or isinstance(sys.stdout, StringIO):
+    if isinstance(sys.stderr, StdIOBuffer) or isinstance(sys.stdout, StdIOBuffer):
         return parse_args(*args, **kwargs)
 
     # if this is not being called recursively, redirect stderr and
     # use it as the ArgumentParserError message
     old_stdout = sys.stdout
     old_stderr = sys.stderr
-    sys.stdout = StringIO()
-    sys.stderr = StringIO()
+    sys.stdout = StdIOBuffer()
+    sys.stderr = StdIOBuffer()
     try:
         try:
             result = parse_args(*args, **kwargs)
@@ -2634,7 +2637,7 @@ class TestHelpFormattingMetaclass(type):
                 parser = self._get_parser(tester)
                 print_ = getattr(parser, 'print_%s' % self.func_suffix)
                 old_stream = getattr(sys, self.std_name)
-                setattr(sys, self.std_name, StringIO())
+                setattr(sys, self.std_name, StdIOBuffer())
                 try:
                     print_()
                     parser_text = getattr(sys, self.std_name).getvalue()
@@ -2645,7 +2648,7 @@ class TestHelpFormattingMetaclass(type):
             def test_print_file(self, tester):
                 parser = self._get_parser(tester)
                 print_ = getattr(parser, 'print_%s' % self.func_suffix)
-                sfile = StringIO()
+                sfile = StdIOBuffer()
                 print_(sfile)
                 parser_text = sfile.getvalue()
                 self._test(tester, parser_text)
