@@ -17,6 +17,7 @@ import unittest
 import importlib
 import collections
 import re
+import time
 
 __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "verbose", "use_resources", "max_memuse", "record_original_stdout",
@@ -750,6 +751,8 @@ def gc_collect():
     objects to disappear.
     """
     gc.collect()
+    if is_jython:
+        time.sleep(0.1)
     gc.collect()
     gc.collect()
 
@@ -1064,7 +1067,6 @@ def threading_setup():
 
 def threading_cleanup(nb_threads):
     import _thread
-    import time
 
     _MAX_COUNT = 10
     for count in range(_MAX_COUNT):
