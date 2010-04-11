@@ -403,22 +403,27 @@ Py_Main(int argc, wchar_t **argv)
 		Py_NoUserSiteDirectory = 1;
 
 	if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0') {
-		char *buf;
-		wchar_t *warning;
-		size_t len;
+		char *buf, *warning;
 
-		for (buf = strtok(p, ",");
-		     buf != NULL;
-		     buf = strtok(NULL, ",")) {
-			len = strlen(buf);
-			warning = (wchar_t *)malloc((len + 1) * sizeof(wchar_t));
-			if (warning == NULL)
+		buf = (char *)malloc(strlen(p) + 1);
+		if (buf == NULL)
+			Py_FatalError(
+			   "not enough memory to copy PYTHONWARNINGS");
+		strcpy(buf, p);
+		for (warning = strtok(buf, ",");
+		     warning != NULL;
+		     warning = strtok(NULL, ",")) {
+			wchar_t *wide_warning;
+			size_t len = strlen(buf);
+			wide_warning = (wchar_t *)malloc((len + 1) * sizeof(wchar_t));
+			if (wide_warning == NULL)
 				Py_FatalError(
 				   "not enough memory to copy PYTHONWARNINGS");
-			mbstowcs(warning, buf, len);
-			PySys_AddWarnOption(warning);
-			free(warning);
+			mbstowcs(wide_warning, warning, len);
+			PySys_AddWarnOption(wide_warning);
+			free(wide_warning);
 		}
+		free(buf);
 	}
 
 	if (command == NULL && module == NULL && _PyOS_optind < argc &&

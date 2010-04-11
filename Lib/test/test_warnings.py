@@ -694,7 +694,8 @@ class EnvironmentVariableTests(BaseTest):
         p = subprocess.Popen([sys.executable,
                 "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
                 stdout=subprocess.PIPE, env=newenv)
-        self.assertEqual(p.stdout.read(), b"['ignore::DeprecationWarning']")
+        self.assertEqual(p.communicate()[0], b"['ignore::DeprecationWarning']")
+        self.assertEqual(p.wait(), 0)
 
     def test_comma_separated_warnings(self):
         newenv = os.environ.copy()
@@ -703,8 +704,9 @@ class EnvironmentVariableTests(BaseTest):
         p = subprocess.Popen([sys.executable,
                 "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
                 stdout=subprocess.PIPE, env=newenv)
-        self.assertEqual(p.stdout.read(),
+        self.assertEqual(p.communicate()[0],
                 b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
+        self.assertEqual(p.wait(), 0)
 
     def test_envvar_and_command_line(self):
         newenv = os.environ.copy()
@@ -712,8 +714,9 @@ class EnvironmentVariableTests(BaseTest):
         p = subprocess.Popen([sys.executable, "-W" "ignore::UnicodeWarning",
                 "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
                 stdout=subprocess.PIPE, env=newenv)
-        self.assertEqual(p.stdout.read(),
+        self.assertEqual(p.communicate()[0],
                 b"['ignore::UnicodeWarning', 'ignore::DeprecationWarning']")
+        self.assertEqual(p.wait(), 0)
 
 class CEnvironmentVariableTests(EnvironmentVariableTests):
     module = c_warnings
