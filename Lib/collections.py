@@ -453,12 +453,11 @@ class Counter(dict):
 
         '''
         if iterable is not None:
+            self_get = self.get
             if isinstance(iterable, Mapping):
-                self_get = self.get
                 for elem, count in iterable.items():
                     self[elem] = self_get(elem, 0) - count
             else:
-                self_get = self.get
                 for elem in iterable:
                     self[elem] = self_get(elem, 0) - 1
         if kwds:
