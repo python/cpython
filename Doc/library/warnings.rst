@@ -180,7 +180,10 @@ the warning using the :class:`catch_warnings` context manager::
 While within the context manager all warnings will simply be ignored. This
 allows you to use known-deprecated code without having to see the warning while
 not suppressing the warning for other code that might not be aware of its use
-of deprecated code.
+of deprecated code.  Note: this can only be guaranteed in a single-threaded
+application. If two or more threads use the :class:`catch_warnings` context
+manager at the same time, the behavior is undefined.
+
 
 
 .. _warning-testing:
@@ -218,7 +221,9 @@ Once the context manager exits, the warnings filter is restored to its state
 when the context was entered. This prevents tests from changing the warnings
 filter in unexpected ways between tests and leading to indeterminate test
 results. The :func:`showwarning` function in the module is also restored to
-its original value.
+its original value.  Note: this can only be guaranteed in a single-threaded
+application. If two or more threads use the :class:`catch_warnings` context
+manager at the same time, the behavior is undefined.
 
 When testing multiple operations that raise the same kind of warning, it
 is important to test them in a manner that confirms each operation is raising
@@ -337,3 +342,11 @@ Available Context Managers
     module returned when you import :mod:`warnings` whose filter will be
     protected. This argument exists primarily for testing the :mod:`warnings`
     module itself.
+
+    .. note::
+
+        The :class:`catch_warnings` manager works by replacing and
+        then later restoring the module's
+        :func:`showwarning` function and internal list of filter
+        specifications.  This means the context manager is modifying
+        global state and therefore is not thread-safe.

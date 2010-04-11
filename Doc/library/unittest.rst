@@ -661,6 +661,8 @@ Test cases
       Calling this during the a test method or :meth:`setUp` skips the current
       test.  See :ref:`unittest-skipping` for more information.
 
+      .. versionadded:: 2.7
+
 
    .. method:: debug()
 

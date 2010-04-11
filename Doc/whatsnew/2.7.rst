@@ -10,6 +10,7 @@
 
 .. Big jobs: argparse, ElementTree 1.3, pep 391, 3106, sysconfig
 ..  unittest test discovery
+..  hyperlink all the methods & functions.
 
 .. $Id$
    Rules for maintenance:
@@ -238,9 +239,32 @@ module, but it's easier to use.
 PEP 389: The argparse Module for Parsing Command Lines
 ======================================================
 
-XXX write this section.
+The :mod:`argparse` module for parsing command-line arguments was
+added, intended as a more powerful replacement for the
+:mod:`optparse` module.
+
+This means Python now supports three different modules for parsing
+command-line arguments: :mod:`getopt`, :mod:`optparse`, and
+:mod:`argparse`.  The :mod:`getopt` module closely resembles the C
+:cfunc:`getopt` function, so it remains useful if you're writing a
+Python prototype that will eventually be rewritten in C.
+:mod:`optparse` becomes redundant, but there are no plans to remove it
+because there are many scripts still using it, and there's no
+automated way to update these scripts.  (Making the :mod:`argparse`
+API consistent with :mod:`optparse`'s interface was discussed but
+rejected as too messy and difficult.)
+
+To summarize, if you're writing a new script and don't need to worry
+about compatibility with earlier versions of Python, use
+:mod:`argparse` instead of :mod:`optparse`.
+
+XXX need an example
 
 .. seealso::
+
+   `argparse module documentation <http://docs.python.org/dev/library/argparse.html>`__
+
+   `Upgrading optparse code to use argparse <http://docs.python.org/dev/library/argparse.html#upgrading-optparse-code>`__
 
    :pep:`389` - argparse - New Command Line Parsing Module
      PEP written and implemented by Steven Bethard.
@@ -478,6 +502,29 @@ Some smaller changes made to the core Python language are:
 
 .. ======================================================================
 
+.. _new-27-interpreter:
+
+Interpreter Changes
+-------------------------------
+
+A new environment variable, :envvar:`PYTHONWARNINGS`,
+allows controlling warnings.  It should be set to a string
+containing warning settings, equivalent to those
+used with the :option:`-W` switch, separated by commas.
+(Contributed by Brian Curtin; :issue:`7301`.)
+
+For example, the following setting will print warnings every time
+they occur, but turn warnings from the :mod:`Cookie` module into an
+error.  (The exact syntax for setting an environment variable varies
+across operating systems and shells, so it may be different for you.)
+
+::
+
+  export PYTHONWARNINGS=all,error:::Cookie:0
+
+
+.. ======================================================================
+
 
 Optimizations
 -------------
@@ -671,10 +718,13 @@ changes, or look through the Subversion logs for all the details.
 
   (Added by Raymond Hettinger; :issue:`1818`.)
 
-  The :class:`~collections.deque` data type now exposes its maximum length as the
-  read-only :attr:`~collections.deque.maxlen` attribute, and has a
-  :meth:`~collections.deque.reverse` method that reverses the elements of the deque in-place.
-  (Added by Raymond Hettinger.)
+  The :class:`~collections.deque` data type now has a
+  :meth:`~collections.deque.count` method that returns the number of
+  contained elements equal to the supplied argument *x*, and a
+  :meth:`~collections.deque.reverse` method that reverses the elements
+  of the deque in-place.  :class:`deque` also exposes its maximum
+  length as the read-only :attr:`~collections.deque.maxlen` attribute.
+  (Both features added by Raymond Hettinger.)
 
 * The :mod:`copy` module's :func:`~copy.deepcopy` function will now
   correctly copy bound instance methods.  (Implemented by
@@ -720,6 +770,12 @@ changes, or look through the Subversion logs for all the details.
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
 
+  An oversight was fixed, making the :class:`Fraction` match the other
+  numeric types; ordering comparisons (``<``, ``<=``, ``>``, ``>=``) between
+  fractions and complex numbers now raise a :exc:`TypeError`.
+
+  .. revision 79455
+
 * New class: a new :class:`~ftplib.FTP_TLS` class in
   the :mod:`ftplib` module provides secure FTP
   connections using TLS encapsulation of authentication as well as
@@ -729,6 +785,21 @@ changes, or look through the Subversion logs for all the details.
   The :meth:`~ftplib.FTP.storbinary` method for binary uploads can now restart
   uploads thanks to an added *rest* parameter (patch by Pablo Mouzo;
   :issue:`6845`.)
+
+* New class decorator: :func:`total_ordering` in the :mod:`functools`
+  module takes a class that defines an :meth:`__eq__` method and one of
+  :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, or :meth:`__ge__`,
+  and generates the missing comparison methods.  Since the
+  :meth:`__cmp__` method is being deprecated in Python 3.x,
+  this decorator makes it easier to define ordered classes.
+  (Added by Raymond Hettinger; :issue:`5479`.)
+
+  New function: :func:`cmp_to_key` will take an old-style comparison
+  function that expects two arguments and return a new callable that
+  can be used as the *key* parameter to functions such as
+  :func:`sorted`, :func:`min` and :func:`max`, etc.  The primary
+  intended use is to help with making code compatible with Python 3.x.
+  (Added by Raymond Hettinger.)
 
 * New function: the :mod:`gc` module's :func:`~gc.is_tracked` returns
   true if a given instance is tracked by the garbage collector, false
@@ -905,7 +976,12 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`socket` module's :class:`~ssl.SSL` objects now support the
   buffer API, which fixed a test suite failure.  (Fixed by Antoine
-  Pitrou; :issue:`7133`.)
+  Pitrou; :issue:`7133`.)  The version of OpenSSL being used is
+  now available as the module attributes
+  :attr:`OPENSSL_VERSION` (a string),
+  :attr:`OPENSSL_VERSION_INFO` (a 5-tuple), and
+  :attr:`OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine Pitrou;
+  :issue:`8321`.)
 
   The :func:`~socket.create_connection` function
   gained a *source_address* parameter, a ``(host, port)`` 2-tuple
@@ -1055,58 +1131,6 @@ XXX write this.
 
 .. ======================================================================
 .. whole new modules get described in subsections here
-
-
-Distutils Enhancements
----------------------------------
-
-XXX all of this work has been moved to Distutils2
-XXX Not sure what we should say here
-
-Distutils is being more actively developed, thanks to Tarek Ziadé
-who has taken over maintenance of the package, so there are a number
-of fixes and improvements.
-
-A new :file:`setup.py` subcommand, ``check``, will check that the
-arguments being passed to the :func:`setup` function are complete
-and correct (:issue:`5732`).
-
-Byte-compilation by the ``install_lib``  subcommand is now only done
-if the ``sys.dont_write_bytecode`` setting allows it (:issue:`7071`).
-
-:func:`distutils.sdist.add_defaults` now uses
-*package_dir* and *data_files* to create the MANIFEST file.
-:mod:`distutils.sysconfig` now reads the :envvar:`AR` and
-:envvar:`ARFLAGS` environment variables.
-
-.. ARFLAGS done in #5941
-
-It is no longer mandatory to store clear-text passwords in the
-:file:`.pypirc` file when registering and uploading packages to PyPI. As long
-as the username is present in that file, the :mod:`distutils` package will
-prompt for the password if not present.  (Added by Tarek Ziadé,
-based on an initial contribution by Nathan Van Gheem; :issue:`4394`.)
-
-A Distutils setup can now specify that a C extension is optional by
-setting the *optional* option setting to true.  If this optional is
-supplied, failure to build the extension will not abort the build
-process, but instead simply not install the failing extension.
-(Contributed by Georg Brandl; :issue:`5583`.)
-
-The :class:`distutils.dist.DistributionMetadata` class'
-:meth:`read_pkg_file` method will read the contents of a package's
-:file:`PKG-INFO` metadata file.  For an example of its use, see
-:ref:`reading-metadata`.
-(Contributed by Tarek Ziadé; :issue:`7457`.)
-
-:file:`setup.py` files will now accept a :option:`--no-user-cfg` switch
-to skip reading the :file:`~/.pydistutils.cfg` file.  (Suggested by
-by Michael Hoffman, and implemented by Paul Winkler; :issue:`1180`.)
-
-When creating a tar-format archive, the ``sdist`` subcommand now
-allows specifying the user id and group that will own the files in the
-archives using the :option:`--owner` and :option:`--group` switches
-(:issue:`6516`).
 
 
 Unit Testing Enhancements
