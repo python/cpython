@@ -1788,7 +1788,7 @@ changes, or look through the Subversion logs for all the details.
   were applied.  (Maintained by Josiah Carlson; see :issue:`1736190` for
   one patch.)
 
-* The :mod:`bsddb` module also has a new maintainer, Jesús Cea, and the package
+* The :mod:`bsddb` module also has a new maintainer, Jesús Cea Avion, and the package
   is now available as a standalone package.  The web page for the package is
   `www.jcea.es/programacion/pybsddb.htm
   <http://www.jcea.es/programacion/pybsddb.htm>`__.
