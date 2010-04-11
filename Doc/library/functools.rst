@@ -42,7 +42,7 @@ The :mod:`functools` module defines the following functions:
 .. function:: total_ordering(cls)
 
    Given a class defining one or more rich comparison ordering methods, this
-   class decorator supplies the rest.  This simplies the effort involved
+   class decorator supplies the rest.  This simplifies the effort involved
    in specifying all of the possible rich comparison operations:
 
    The class must define one of :meth:`__lt__`, :meth:`__le__`,
