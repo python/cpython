@@ -422,6 +422,12 @@ class TestTotalOrdering(unittest.TestCase):
         self.assert_(A(2) <= A(2))
         self.assert_(A(2) >= A(2))
 
+    def test_no_operations_defined(self):
+        with self.assertRaises(ValueError):
+            @functools.total_ordering
+            class A:
+                pass
+
 def test_main(verbose=None):
     test_classes = (
         TestPartial,
