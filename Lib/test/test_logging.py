@@ -68,6 +68,12 @@ class BaseTest(unittest.TestCase):
         finally:
             logging._releaseLock()
 
+        # Set two unused loggers: one non-ASCII and one Unicode.
+        # This is to test correct operation when sorting existing
+        # loggers in the configuration code. See issue 8201.
+        logging.getLogger("\xab\xd7\xbb")
+        logging.getLogger("\u013f\u00d6\u0047")
+
         self.root_logger = logging.getLogger("")
         self.original_logging_level = self.root_logger.getEffectiveLevel()
 
@@ -1731,6 +1737,23 @@ class ManagerTest(BaseTest):
         self.assertEqual(logged, ['should appear in logged'])
 
 
+class ChildLoggerTest(BaseTest):
+    def test_child_loggers(self):
+        r = logging.getLogger()
+        l1 = logging.getLogger('abc')
+        l2 = logging.getLogger('def.ghi')
+        c1 = r.getChild('xyz')
+        c2 = r.getChild('uvw.xyz')
+        self.assertTrue(c1 is logging.getLogger('xyz'))
+        self.assertTrue(c2 is logging.getLogger('uvw.xyz'))
+        c1 = l1.getChild('def')
+        c2 = c1.getChild('ghi')
+        c3 = l1.getChild('def.ghi')
+        self.assertTrue(c1 is logging.getLogger('abc.def'))
+        self.assertTrue(c2 is logging.getLogger('abc.def.ghi'))
+        self.assertTrue(c2 is c3)
+
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
@@ -1739,7 +1762,8 @@ def test_main():
     run_unittest(BuiltinLevelsTest, BasicFilterTest,
                  CustomLevelsAndFiltersTest, MemoryHandlerTest,
                  ConfigFileTest, SocketHandlerTest, MemoryTest,
-                 EncodingTest, WarningsTest, ConfigDictTest, ManagerTest)
+                 EncodingTest, WarningsTest, ConfigDictTest, ManagerTest,
+                 ChildLoggerTest)
 
 if __name__ == "__main__":
     test_main()
