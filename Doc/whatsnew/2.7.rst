@@ -10,6 +10,7 @@
 
 .. Big jobs: argparse, ElementTree 1.3, pep 391, 3106, sysconfig
 ..  unittest test discovery
+..  hyperlink all the methods & functions.
 
 .. $Id$
    Rules for maintenance:
@@ -717,10 +718,13 @@ changes, or look through the Subversion logs for all the details.
 
   (Added by Raymond Hettinger; :issue:`1818`.)
 
-  The :class:`~collections.deque` data type now exposes its maximum length as the
-  read-only :attr:`~collections.deque.maxlen` attribute, and has a
-  :meth:`~collections.deque.reverse` method that reverses the elements of the deque in-place.
-  (Added by Raymond Hettinger.)
+  The :class:`~collections.deque` data type now has a
+  :meth:`~collections.deque.count` method that returns the number of
+  contained elements equal to the supplied argument *x*, and a
+  :meth:`~collections.deque.reverse` method that reverses the elements
+  of the deque in-place.  :class:`deque` also exposes its maximum
+  length as the read-only :attr:`~collections.deque.maxlen` attribute.
+  (Both features added by Raymond Hettinger.)
 
 * The :mod:`copy` module's :func:`~copy.deepcopy` function will now
   correctly copy bound instance methods.  (Implemented by
@@ -781,6 +785,21 @@ changes, or look through the Subversion logs for all the details.
   The :meth:`~ftplib.FTP.storbinary` method for binary uploads can now restart
   uploads thanks to an added *rest* parameter (patch by Pablo Mouzo;
   :issue:`6845`.)
+
+* New class decorator: :func:`total_ordering` in the :mod:`functools`
+  module takes a class that defines an :meth:`__eq__` method and one of
+  :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, or :meth:`__ge__`,
+  and generates the missing comparison methods.  Since the
+  :meth:`__cmp__` method is being deprecated in Python 3.x,
+  this decorator makes it easier to define ordered classes.
+  (Added by Raymond Hettinger; :issue:`5479`.)
+
+  New function: :func:`cmp_to_key` will take an old-style comparison
+  function that expects two arguments and return a new callable that
+  can be used as the *key* parameter to functions such as
+  :func:`sorted`, :func:`min` and :func:`max`, etc.  The primary
+  intended use is to help with making code compatible with Python 3.x.
+  (Added by Raymond Hettinger.)
 
 * New function: the :mod:`gc` module's :func:`~gc.is_tracked` returns
   true if a given instance is tracked by the garbage collector, false
