@@ -312,6 +312,9 @@ C-API
 Library
 -------
 
+- Issue #8374: Update the internal alias table in the :mod:`locale` module
+  to cover recent locale changes and additions.
+
 - Issue #8321: Give access to OpenSSL version numbers from the `ssl` module,
   using the new attributes `ssl.OPENSSL_VERSION`, `ssl.OPENSSL_VERSION_INFO`
   and `ssl.OPENSSL_VERSION_NUMBER`.

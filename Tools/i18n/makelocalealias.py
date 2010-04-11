@@ -9,7 +9,7 @@
 import locale
 
 # Location of the alias file
-LOCALE_ALIAS = '/usr/lib/X11/locale/locale.alias'
+LOCALE_ALIAS = '/usr/share/X11/locale/locale.alias'
 
 def parse(filename):
 
