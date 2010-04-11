@@ -238,9 +238,32 @@ module, but it's easier to use.
 PEP 389: The argparse Module for Parsing Command Lines
 ======================================================
 
-XXX write this section.
+The :mod:`argparse` module for parsing command-line arguments was
+added, intended as a more powerful replacement for the
+:mod:`optparse` module.
+
+This means Python now supports three different modules for parsing
+command-line arguments: :mod:`getopt`, :mod:`optparse`, and
+:mod:`argparse`.  The :mod:`getopt` module closely resembles the C
+:cfunc:`getopt` function, so it remains useful if you're writing a
+Python prototype that will eventually be rewritten in C.
+:mod:`optparse` becomes redundant, but there are no plans to remove it
+because there are many scripts still using it, and there's no
+automated way to update these scripts.  (Making the :mod:`argparse`
+API consistent with :mod:`optparse`'s interface was discussed but
+rejected as too messy and difficult.)
+
+To summarize, if you're writing a new script and don't need to worry
+about compatibility with earlier versions of Python, use
+:mod:`argparse` instead of :mod:`optparse`.
+
+XXX need an example
 
 .. seealso::
+
+   `argparse module documentation <http://docs.python.org/dev/library/argparse.html>`__
+
+   `Upgrading optparse code to use argparse <http://docs.python.org/dev/library/argparse.html#upgrading-optparse-code>`__
 
    :pep:`389` - argparse - New Command Line Parsing Module
      PEP written and implemented by Steven Bethard.
@@ -475,6 +498,29 @@ Some smaller changes made to the core Python language are:
 * When a module object is garbage-collected, the module's dictionary is
   now only cleared if no one else is holding a reference to the
   dictionary (:issue:`7140`).
+
+.. ======================================================================
+
+.. _new-27-interpreter:
+
+Interpreter Changes
+-------------------------------
+
+A new environment variable, :envvar:`PYTHONWARNINGS`,
+allows controlling warnings.  It should be set to a string
+containing warning settings, equivalent to those
+used with the :option:`-W` switch, separated by commas.
+(Contributed by Brian Curtin; :issue:`7301`.)
+
+For example, the following setting will print warnings every time
+they occur, but turn warnings from the :mod:`Cookie` module into an
+error.  (The exact syntax for setting an environment variable varies
+across operating systems and shells, so it may be different for you.)
+
+::
+
+  export PYTHONWARNINGS=all,error:::Cookie:0
+
 
 .. ======================================================================
 
@@ -720,6 +766,12 @@ changes, or look through the Subversion logs for all the details.
   as arguments to its constructor.
   (Implemented by Mark Dickinson; :issue:`5812`.)
 
+  An oversight was fixed, making the :class:`Fraction` match the other
+  numeric types; ordering comparisons (``<``, ``<=``, ``>``, ``>=``) between
+  fractions and complex numbers now raise a :exc:`TypeError`.
+
+  .. revision 79455
+
 * New class: a new :class:`~ftplib.FTP_TLS` class in
   the :mod:`ftplib` module provides secure FTP
   connections using TLS encapsulation of authentication as well as
@@ -905,7 +957,12 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`socket` module's :class:`~ssl.SSL` objects now support the
   buffer API, which fixed a test suite failure.  (Fixed by Antoine
-  Pitrou; :issue:`7133`.)
+  Pitrou; :issue:`7133`.)  The version of OpenSSL being used is
+  now available as the module attributes
+  :attr:`OPENSSL_VERSION` (a string),
+  :attr:`OPENSSL_VERSION_INFO` (a 5-tuple), and
+  :attr:`OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine Pitrou;
+  :issue:`8321`.)
 
   The :func:`~socket.create_connection` function
   gained a *source_address* parameter, a ``(host, port)`` 2-tuple
