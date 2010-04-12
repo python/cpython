@@ -63,6 +63,8 @@ class TempdirManager(object):
         super().tearDown()
         while self.tempdirs:
             d = self.tempdirs.pop()
+            if not os.path.exists(d):
+                continue
             shutil.rmtree(d, os.name in ('nt', 'cygwin'))
 
     def mkdtemp(self):
