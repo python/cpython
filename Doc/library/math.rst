@@ -297,9 +297,9 @@ Constants
    :exc:`ValueError` for invalid operations like ``sqrt(-1.0)`` or ``log(0.0)``
    (where C99 Annex F recommends signaling invalid operation or divide-by-zero),
    and :exc:`OverflowError` for results that overflow (for example,
-   ``exp(1000.0)``).  A *NaN* will not be returned from any of the functions
-   above unless one or more of the input arguments was a *NaN*; in that case,
-   most functions will return a *NaN*, but (again following C99 Annex F) there
+   ``exp(1000.0)``).  A NaN will not be returned from any of the functions
+   above unless one or more of the input arguments was a NaN; in that case,
+   most functions will return a NaN, but (again following C99 Annex F) there
    are some exceptions to this rule, for example ``pow(float('nan'), 0.0)`` or
    ``hypot(float('nan'), float('inf'))``.
 
