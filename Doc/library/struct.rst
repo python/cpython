@@ -9,18 +9,31 @@
    triple: packing; binary; data
 
 This module performs conversions between Python values and C structs represented
-as Python :class:`bytes` objects.  It uses :dfn:`format strings` (explained
-below) as compact descriptions of the lay-out of the C structs and the
-intended conversion to/from Python values.  This can be used in handling
-binary data stored in files or from network connections, among other sources.
+as Python :class:`bytes` objects.  This can be used in handling binary data
+stored in files or from network connections, among other sources.  It uses
+:ref:`struct-format-strings` as compact descriptions of the layout of the C
+structs and the intended conversion to/from Python values.
+
+.. note::
+
+   By default, the result of packing a given C struct includes pad bytes in
+   order to maintain proper alignment for the C types involved; similarly,
+   alignment is taken into account when unpacking.  This behavior is chosen so
+   that the bytes of a packed struct correspond exactly to the layout in memory
+   of the corresponding C struct.  To omit pad bytes, use `standard` size and
+   alignment instead of `native` size and alignment: see :ref:`struct-alignment`
+   for details.
+
+Functions and Exceptions
+------------------------
 
 The module defines the following exception and functions:
 
 
 .. exception:: error
 
-   Exception raised on various occasions; argument is a string describing what is
-   wrong.
+   Exception raised on various occasions; argument is a string describing what
+   is wrong.
 
 
 .. function:: pack(fmt, v1, v2, ...)
@@ -32,25 +45,25 @@ The module defines the following exception and functions:
 
 .. function:: pack_into(fmt, buffer, offset, v1, v2, ...)
 
-   Pack the values ``v1, v2, ...`` according to the given format, write the packed
-   bytes into the writable *buffer* starting at *offset*. Note that the offset is
-   a required argument.
+   Pack the values ``v1, v2, ...`` according to the given format, write the
+   packed bytes into the writable *buffer* starting at *offset*. Note that the
+   offset is a required argument.
 
 
 .. function:: unpack(fmt, bytes)
 
    Unpack the bytes (presumably packed by ``pack(fmt, ...)``) according to the
-   given format.  The result is a tuple even if it contains exactly one item.  The
-   bytes must contain exactly the amount of data required by the format
+   given format.  The result is a tuple even if it contains exactly one item.
+   The bytes must contain exactly the amount of data required by the format
    (``len(bytes)`` must equal ``calcsize(fmt)``).
 
 
 .. function:: unpack_from(fmt, buffer, offset=0)
 
    Unpack the *buffer* according to the given format. The result is a tuple even
-   if it contains exactly one item. The *buffer* must contain at least the amount
-   of data required by the format (``len(buffer[offset:])`` must be at least
-   ``calcsize(fmt)``).
+   if it contains exactly one item. The *buffer* must contain at least the
+   amount of data required by the format (``len(buffer[offset:])`` must be at
+   least ``calcsize(fmt)``).
 
 
 .. function:: calcsize(fmt)
@@ -58,49 +71,62 @@ The module defines the following exception and functions:
    Return the size of the struct (and hence of the bytes) corresponding to the
    given format.
 
+.. _struct-format-strings:
+
+Format Strings
+--------------
+
+Format strings are the mechanism used to specify the expected layout when
+packing and unpacking data.  They are built up from format characters, which
+specify the type of data being packed/unpacked.  In addition, there are
+special characters for controlling the byte order, size, and alignment.
+
+Format Characters
+^^^^^^^^^^^^^^^^^
+
 Format characters have the following meaning; the conversion between C and
 Python values should be obvious given their types:
 
-+--------+-------------------------+--------------------+-------+
-| Format | C Type                  | Python             | Notes |
-+========+=========================+====================+=======+
-| ``x``  | pad byte                | no value           |       |
-+--------+-------------------------+--------------------+-------+
-| ``c``  | :ctype:`char`           | bytes of length 1  |       |
-+--------+-------------------------+--------------------+-------+
-| ``b``  | :ctype:`signed char`    | integer            | \(1)  |
-+--------+-------------------------+--------------------+-------+
-| ``B``  | :ctype:`unsigned char`  | integer            |       |
-+--------+-------------------------+--------------------+-------+
-| ``?``  | :ctype:`_Bool`          | bool               | \(2)  |
-+--------+-------------------------+--------------------+-------+
-| ``h``  | :ctype:`short`          | integer            |       |
-+--------+-------------------------+--------------------+-------+
-| ``H``  | :ctype:`unsigned short` | integer            |       |
-+--------+-------------------------+--------------------+-------+
-| ``i``  | :ctype:`int`            | integer            |       |
-+--------+-------------------------+--------------------+-------+
-| ``I``  | :ctype:`unsigned int`   | integer            |       |
-+--------+-------------------------+--------------------+-------+
-| ``l``  | :ctype:`long`           | integer            |       |
-+--------+-------------------------+--------------------+-------+
-| ``L``  | :ctype:`unsigned long`  | integer            |       |
-+--------+-------------------------+--------------------+-------+
-| ``q``  | :ctype:`long long`      | integer            | \(3)  |
-+--------+-------------------------+--------------------+-------+
-| ``Q``  | :ctype:`unsigned long   | integer            | \(3)  |
-|        | long`                   |                    |       |
-+--------+-------------------------+--------------------+-------+
-| ``f``  | :ctype:`float`          | float              |       |
-+--------+-------------------------+--------------------+-------+
-| ``d``  | :ctype:`double`         | float              |       |
-+--------+-------------------------+--------------------+-------+
-| ``s``  | :ctype:`char[]`         | bytes              | \(1)  |
-+--------+-------------------------+--------------------+-------+
-| ``p``  | :ctype:`char[]`         | bytes              | \(1)  |
-+--------+-------------------------+--------------------+-------+
-| ``P``  | :ctype:`void \*`        | integer            |       |
-+--------+-------------------------+--------------------+-------+
++--------+-------------------------+--------------------+------------+
+| Format | C Type                  | Python             | Notes      |
++========+=========================+====================+============+
+| ``x``  | pad byte                | no value           |            |
++--------+-------------------------+--------------------+------------+
+| ``c``  | :ctype:`char`           | bytes of length 1  |            |
++--------+-------------------------+--------------------+------------+
+| ``b``  | :ctype:`signed char`    | integer            | \(1),\(4)  |
++--------+-------------------------+--------------------+------------+
+| ``B``  | :ctype:`unsigned char`  | integer            | \(4)       |
++--------+-------------------------+--------------------+------------+
+| ``?``  | :ctype:`_Bool`          | bool               | \(2)       |
++--------+-------------------------+--------------------+------------+
+| ``h``  | :ctype:`short`          | integer            | \(4)       |
++--------+-------------------------+--------------------+------------+
+| ``H``  | :ctype:`unsigned short` | integer            | \(4)       |
++--------+-------------------------+--------------------+------------+
+| ``i``  | :ctype:`int`            | integer            | \(4)       |
++--------+-------------------------+--------------------+------------+
+| ``I``  | :ctype:`unsigned int`   | integer            | \(4)       |
++--------+-------------------------+--------------------+------------+
+| ``l``  | :ctype:`long`           | integer            | \(4)       |
++--------+-------------------------+--------------------+------------+
+| ``L``  | :ctype:`unsigned long`  | integer            | \(4)       |
++--------+-------------------------+--------------------+------------+
+| ``q``  | :ctype:`long long`      | integer            | \(3), \(4) |
++--------+-------------------------+--------------------+------------+
+| ``Q``  | :ctype:`unsigned long   | integer            | \(3), \(4) |
+|        | long`                   |                    |            |
++--------+-------------------------+--------------------+------------+
+| ``f``  | :ctype:`float`          | float              |            |
++--------+-------------------------+--------------------+------------+
+| ``d``  | :ctype:`double`         | float              |            |
++--------+-------------------------+--------------------+------------+
+| ``s``  | :ctype:`char[]`         | bytes              | \(1)       |
++--------+-------------------------+--------------------+------------+
+| ``p``  | :ctype:`char[]`         | bytes              | \(1)       |
++--------+-------------------------+--------------------+------------+
+| ``P``  | :ctype:`void \*`        | integer            |            |
++--------+-------------------------+--------------------+------------+
 
 Notes:
 
@@ -169,7 +195,13 @@ For the ``'?'`` format character, the return value is either :const:`True` or
 Either 0 or 1 in the native or standard bool representation will be packed, and
 any non-zero value will be True when unpacking.
 
-By default, C numbers are represented in the machine's native format and byte
+
+.. _struct-alignment:
+
+Byte Order, Size, and Alignment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, C types are represented in the machine's native format and byte
 order, and properly aligned by skipping pad bytes if necessary (according to the
 rules used by the C compiler).
 
@@ -223,8 +255,29 @@ order character ``'='`` chooses to use little- or big-endian ordering based on
 the host system. The struct module does not interpret this as native ordering,
 so the ``'P'`` format is not available.
 
-Examples (all using native byte order, size and alignment, on a big-endian
-machine)::
+Notes:
+
+(1) Padding is only automatically added between successive structure members.
+    No padding is added at the beginning or the end of the encoded struct.
+
+(2) No padding is added when using non-native size and alignment, e.g.
+    with '<', '>', '=', and '!'.
+
+(3) To align the end of a structure to the alignment requirement of a
+    particular type, end the format with the code for that type with a repeat
+    count of zero.  See :ref:`struct-examples`.
+
+
+.. _struct-examples:
+
+Examples
+^^^^^^^^
+
+.. note::
+   All examples assume a native byte order, size, and alignment with a
+   big-endian machine.
+
+A basic example of packing/unpacking three integers::
 
    >>> from struct import *
    >>> pack('hhl', 1, 2, 3)
@@ -233,13 +286,6 @@ machine)::
    (1, 2, 3)
    >>> calcsize('hhl')
    8
-
-Hint: to align the end of a structure to the alignment requirement of a
-particular type, end the format with the code for that type with a repeat count
-of zero.  For example, the format ``'llh0l'`` specifies two pad bytes at the
-end, assuming longs are aligned on 4-byte boundaries.  This only works when
-native size and alignment are in effect; standard size and alignment does not
-enforce any alignment.
 
 Unpacked fields can be named by assigning them to variables or by wrapping
 the result in a named tuple::
@@ -252,6 +298,28 @@ the result in a named tuple::
     >>> Student._make(unpack('<10sHHb', record))
     Student(name=b'raymond   ', serialnum=4658, school=264, gradelevel=8)
 
+The ordering of format characters may have an impact on size since the padding
+needed to satisfy alignment requirements is different::
+
+    >>> pack('ci', '*', 0x12131415)
+    b'*\x00\x00\x00\x12\x13\x14\x15'
+    >>> pack('ic', 0x12131415, '*')
+    b'\x12\x13\x14\x15*'
+    >>> calcsize('ci')
+    8
+    >>> calcsize('ic')
+    5
+
+The following format ``'llh0l'`` specifies two pad bytes at the end, assuming
+longs are aligned on 4-byte boundaries::
+
+    >>> pack('llh0l', 1, 2, 3)
+    b'\x00\x00\x00\x01\x00\x00\x00\x02\x00\x03\x00\x00'
+
+This only works when native size and alignment are in effect; standard size and
+alignment does not enforce any alignment.
+
+
 .. seealso::
 
    Module :mod:`array`
@@ -263,18 +331,18 @@ the result in a named tuple::
 
 .. _struct-objects:
 
-Struct Objects
---------------
+Objects
+-------
 
 The :mod:`struct` module also defines the following type:
 
 
 .. class:: Struct(format)
 
-   Return a new Struct object which writes and reads binary data according to the
-   format string *format*.  Creating a Struct object once and calling its methods
-   is more efficient than calling the :mod:`struct` functions with the same format
-   since the format string only needs to be compiled once.
+   Return a new Struct object which writes and reads binary data according to
+   the format string *format*.  Creating a Struct object once and calling its
+   methods is more efficient than calling the :mod:`struct` functions with the
+   same format since the format string only needs to be compiled once.
 
 
    Compiled Struct objects support the following methods and attributes:
