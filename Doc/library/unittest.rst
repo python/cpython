@@ -998,7 +998,7 @@ Test cases
 
    .. method:: doCleanups()
 
-      This method is called uncoditionally after :meth:`tearDown`, or
+      This method is called unconditionally after :meth:`tearDown`, or
       after :meth:`setUp` if :meth:`setUp` raises an exception.
 
       It is responsible for calling all the cleanup functions added by
