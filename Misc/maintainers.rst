@@ -113,7 +113,7 @@ heapq               rhettinger
 hmac
 html
 http
-idlelib             kurt.kaiser
+idlelib             kbk
 imaplib
 imghdr
 imp
