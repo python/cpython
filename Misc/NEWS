@@ -312,6 +312,9 @@ C-API
 Library
 -------
 
+- Issue #8375: test_distutils now checks if the temporary directory are still
+  present before it cleans them.
+
 - Issue #8374: Update the internal alias table in the :mod:`locale` module
   to cover recent locale changes and additions.
 
