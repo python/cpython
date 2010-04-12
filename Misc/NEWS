@@ -312,6 +312,10 @@ C-API
 Library
 -------
 
+- Issue #7472: Fixed typo in email.encoders module; messages using ISO-2022
+  character sets will now consistently use a Content-Transfer-Encoding of
+  7bit rather than sometimes being marked as 8bit.
+
 - Issue #8375: test_distutils now checks if the temporary directory are still
   present before it cleans them.
 
