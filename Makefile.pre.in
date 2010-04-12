@@ -712,8 +712,8 @@ testall:	all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		$(TESTPYTHON) $(srcdir)/Lib/compileall.py
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
-		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
+		-$(TESTPYTHON) $(TESTPROG) -uall $(TESTOPTS)
+		$(TESTPYTHON) $(TESTPROG) -uall $(TESTOPTS)
 
 #  Run the unitests for both architectures in a Universal build on OSX
 #  Must be run on an Intel box.
@@ -723,9 +723,9 @@ testuniversal:	all platform
 			exit 1 ;\
 		fi
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
-		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
-		$(RUNSHARED) /usr/libexec/oah/translate ./$(BUILDPYTHON) -E -tt $(TESTPROG) $(TESTOPTS) -uall
+		-$(TESTPYTHON) $(TESTPROG) -uall $(TESTOPTS)
+		$(TESTPYTHON) $(TESTPROG) -uall $(TESTOPTS)
+		$(RUNSHARED) /usr/libexec/oah/translate ./$(BUILDPYTHON) -E -tt $(TESTPROG) -uall $(TESTOPTS)
 
 
 # Like testall, but with a single pass only
@@ -734,7 +734,7 @@ buildbottest:	all platform
 		-@if which pybuildbot.identify >/dev/null 2>&1; then \
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 		fi
-		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall -rwW
+		$(TESTPYTHON) $(TESTPROG) -uall -rwW $(TESTOPTS)
 
 QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_multibytecodec test_urllib2_localnet test_itertools \
