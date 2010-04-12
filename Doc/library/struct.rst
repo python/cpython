@@ -17,9 +17,13 @@ structs and the intended conversion to/from Python values.
 
 .. note::
 
-   The string representation of a given C struct includes padding where
-   necessary by default.  This is the same behavior as provided by most
-   C compilers.  The padding may be disabled if desired.
+   By default, the result of packing a given C struct includes pad bytes in
+   order to maintain proper alignment for the C types involved; similarly,
+   alignment is taken into account when unpacking.  This behavior is chosen so
+   that the bytes of a packed struct correspond exactly to the layout in memory
+   of the corresponding C struct.  To omit pad bytes, use `standard` size and
+   alignment instead of `native` size and alignment: see :ref:`struct-alignment`
+   for details.
 
 Functions and Exceptions
 ------------------------
@@ -202,10 +206,13 @@ For the ``'?'`` format character, the return value is either :const:`True` or
 Either 0 or 1 in the native or standard bool representation will be packed, and
 any non-zero value will be True when unpacking.
 
+
+.. _struct-alignment:
+
 Byte Order, Size, and Alignment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, C numbers are represented in the machine's native format and byte
+By default, C types are represented in the machine's native format and byte
 order, and properly aligned by skipping pad bytes if necessary (according to the
 rules used by the C compiler).
 
@@ -262,9 +269,9 @@ so the ``'P'`` format is not available.
 Notes:
 
 (1) Padding is only automatically added between successive structure members.
-    Never at the beginning of the string encoding and never at the end.
+    No padding is added at the beginning or the end of the encoded struct.
 
-(2) Padding is disabled when using non-native size and alignment, e.g.
+(2) No padding is added when using non-native size and alignment, e.g.
     with '<', '>', '=', and '!'.
 
 (3) To align the end of a structure to the alignment requirement of a
