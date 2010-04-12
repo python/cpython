@@ -312,6 +312,10 @@ C-API
 Library
 -------
 
+- Issue #7585: difflib context and unified diffs now place a tab between
+  filename and date, conforming to the 'standards' they were originally
+  designed to follow.  This improves compatibility with patch tools.
+
 - Issue #7472: Fixed typo in email.encoders module; messages using ISO-2022
   character sets will now consistently use a Content-Transfer-Encoding of
   7bit rather than sometimes being marked as 8bit.

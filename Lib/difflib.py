@@ -1160,18 +1160,18 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
 
     The unidiff format normally has a header for filenames and modification
     times.  Any or all of these may be specified using strings for
-    'fromfile', 'tofile', 'fromfiledate', and 'tofiledate'.  The modification
-    times are normally expressed in the format returned by time.ctime().
+    'fromfile', 'tofile', 'fromfiledate', and 'tofiledate'.
+    The modification times are normally expressed in the ISO 8601 format.
 
     Example:
 
     >>> for line in unified_diff('one two three four'.split(),
     ...             'zero one tree four'.split(), 'Original', 'Current',
-    ...             'Sat Jan 26 23:30:50 1991', 'Fri Jun 06 10:20:52 2003',
+    ...             '2005-01-26 23:30:50', '2010-04-02 10:20:52',
     ...             lineterm=''):
-    ...     print(line)
-    --- Original Sat Jan 26 23:30:50 1991
-    +++ Current Fri Jun 06 10:20:52 2003
+    ...     print(line)                 # doctest: +NORMALIZE_WHITESPACE
+    --- Original        2005-01-26 23:30:50
+    +++ Current         2010-04-02 10:20:52
     @@ -1,4 +1,4 @@
     +zero
      one
@@ -1184,8 +1184,10 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     started = False
     for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
         if not started:
-            yield '--- %s %s%s' % (fromfile, fromfiledate, lineterm)
-            yield '+++ %s %s%s' % (tofile, tofiledate, lineterm)
+            fromdate = '\t%s' % fromfiledate if fromfiledate else ''
+            todate = '\t%s' % tofiledate if tofiledate else ''
+            yield '--- %s%s%s' % (fromfile, fromdate, lineterm)
+            yield '+++ %s%s%s' % (tofile, todate, lineterm)
             started = True
         i1, i2, j1, j2 = group[0][1], group[-1][2], group[0][3], group[-1][4]
         yield "@@ -%d,%d +%d,%d @@%s" % (i1+1, i2-i1, j1+1, j2-j1, lineterm)
@@ -1223,17 +1225,16 @@ def context_diff(a, b, fromfile='', tofile='',
     The context diff format normally has a header for filenames and
     modification times.  Any or all of these may be specified using
     strings for 'fromfile', 'tofile', 'fromfiledate', and 'tofiledate'.
-    The modification times are normally expressed in the format returned
-    by time.ctime().  If not specified, the strings default to blanks.
+    The modification times are normally expressed in the ISO 8601 format.
+    If not specified, the strings default to blanks.
 
     Example:
 
     >>> print(''.join(context_diff('one\ntwo\nthree\nfour\n'.splitlines(1),
-    ...       'zero\none\ntree\nfour\n'.splitlines(1), 'Original', 'Current',
-    ...       'Sat Jan 26 23:30:50 1991', 'Fri Jun 06 10:22:46 2003')),
+    ...       'zero\none\ntree\nfour\n'.splitlines(1), 'Original', 'Current')),
     ...       end="")
-    *** Original Sat Jan 26 23:30:50 1991
-    --- Current Fri Jun 06 10:22:46 2003
+    *** Original
+    --- Current
     ***************
     *** 1,4 ****
       one
@@ -1251,8 +1252,10 @@ def context_diff(a, b, fromfile='', tofile='',
     prefixmap = {'insert':'+ ', 'delete':'- ', 'replace':'! ', 'equal':'  '}
     for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
         if not started:
-            yield '*** %s %s%s' % (fromfile, fromfiledate, lineterm)
-            yield '--- %s %s%s' % (tofile, tofiledate, lineterm)
+            fromdate = '\t%s' % fromfiledate if fromfiledate else ''
+            todate = '\t%s' % tofiledate if tofiledate else ''
+            yield '*** %s%s%s' % (fromfile, fromdate, lineterm)
+            yield '--- %s%s%s' % (tofile, todate, lineterm)
             started = True
 
         yield '***************%s' % (lineterm,)
