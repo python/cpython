@@ -226,7 +226,9 @@ class PrettyPrintTests(DebuggerTests):
             # This will only work on wide-unicode builds:
             self.assertGdbRepr(unichr(0x1D121))
         except ValueError, e:
-            if e.message != 'unichr() arg not in range(0x10000) (narrow Python build)':
+            # We're probably on a narrow-unicode build; if we're seeing a
+            # different problem, then re-raise it:
+            if e.args != ('unichr() arg not in range(0x10000) (narrow Python build)',):
                 raise e
 
     def test_sets(self):
@@ -321,7 +323,7 @@ print foo''')
         self.assertTrue(m,
                         msg='Unexpected new-style class rendering %r' % gdb_repr)
 
-    def assertSane(self, source, corruption, exp_type='unknown'):
+    def assertSane(self, source, corruption, expvalue=None, exptype=None):
         '''Run Python under gdb, corrupting variables in the inferior process
         immediately before taking a backtrace.
 
@@ -335,10 +337,24 @@ print foo''')
         gdb_repr, gdb_output = \
             self.get_gdb_repr(source,
                               cmds_after_breakpoint=cmds_after_breakpoint)
-        self.assertTrue(re.match('<%s at remote 0x[0-9a-f]+>' % exp_type,
-                                 gdb_repr),
-                        'Unexpected gdb representation: %r\n%s' % \
-                            (gdb_repr, gdb_output))
+
+        if expvalue:
+            if gdb_repr == repr(expvalue):
+                # gdb managed to print the value in spite of the corruption;
+                # this is good (see http://bugs.python.org/issue8330)
+                return
+
+        if exptype:
+            pattern = '<' + exptype + ' at remote 0x[0-9a-f]+>'
+        else:
+            # Match anything for the type name; 0xDEADBEEF could point to
+            # something arbitrary (see  http://bugs.python.org/issue8330)
+            pattern = '<.* at remote 0x[0-9a-f]+>'
+
+        m = re.match(pattern, gdb_repr)
+        if not m:
+            self.fail('Unexpected gdb representation: %r\n%s' % \
+                          (gdb_repr, gdb_output))
 
     def test_NULL_ptr(self):
         'Ensure that a NULL PyObject* is handled gracefully'
@@ -358,18 +374,20 @@ print foo''')
     def test_corrupt_ob_type(self):
         'Ensure that a PyObject* with a corrupt ob_type is handled gracefully'
         self.assertSane('print 42',
-                        'set op->ob_type=0xDEADBEEF')
+                        'set op->ob_type=0xDEADBEEF',
+                        expvalue=42)
 
     def test_corrupt_tp_flags(self):
         'Ensure that a PyObject* with a type with corrupt tp_flags is handled'
         self.assertSane('print 42',
                         'set op->ob_type->tp_flags=0x0',
-                        exp_type='int')
+                        expvalue=42)
 
     def test_corrupt_tp_name(self):
         'Ensure that a PyObject* with a type with corrupt tp_name is handled'
         self.assertSane('print 42',
-                        'set op->ob_type->tp_name=0xDEADBEEF')
+                        'set op->ob_type->tp_name=0xDEADBEEF',
+                        expvalue=42)
 
     def test_NULL_instance_dict(self):
         'Ensure that a PyInstanceObject with with a NULL in_dict is handled'
@@ -380,7 +398,7 @@ foo = Foo()
 foo.an_int = 42
 print foo''',
                         'set ((PyInstanceObject*)op)->in_dict = 0',
-                        exp_type='Foo')
+                        exptype='Foo')
 
     def test_builtins_help(self):
         'Ensure that the new-style class _Helper in site.py can be handled'
