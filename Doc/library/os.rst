@@ -1491,7 +1491,14 @@ written in Python, such as a mail server's external command delivery program.
 
    Send signal *sig* to the process *pid*.  Constants for the specific signals
    available on the host platform are defined in the :mod:`signal` module.
-   Availability: Unix.
+
+   Windows: The :data:`signal.CTRL_C_EVENT` and
+   :data:`signal.CTRL_BREAK_EVENT` signals are special signals which can
+   only be sent to console processes which share a common console window,
+   e.g., some subprocesses. Any other value for *sig* will cause the process
+   to be unconditionally killed by the TerminateProcess API, and the exit code
+   will be set to *sig*. The Windows version of :func:`kill` additionally takes
+   process handles to be killed.
 
 
 .. function:: killpg(pgid, sig)
