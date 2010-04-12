@@ -663,12 +663,12 @@ class PyLocalsTests(DebuggerTests):
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
 def test_main():
-    run_unittest(#PrettyPrintTests,
-                 #PyListTests,
-                 #StackNavigationTests,
-                 #PyBtTests,
-                 #PyPrintTests,
-                 #PyLocalsTests
+    run_unittest(PrettyPrintTests,
+                 PyListTests,
+                 StackNavigationTests,
+                 PyBtTests,
+                 PyPrintTests,
+                 PyLocalsTests
                  )
 
 if __name__ == "__main__":
