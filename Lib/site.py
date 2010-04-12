@@ -325,8 +325,10 @@ def setBEGINLIBPATH():
 
 
 def setquit():
-    """Define new built-ins 'quit' and 'exit'.
-    These are simply strings that display a hint on how to exit.
+    """Define new builtins 'quit' and 'exit'.
+
+    These are objects which make the interpreter exit when called.
+    The repr of each object contains a hint at how it works.
 
     """
     if os.sep == ':':
@@ -433,7 +435,7 @@ def setcopyright():
 
 
 class _Helper(object):
-    """Define the built-in 'help'.
+    """Define the builtin 'help'.
     This is a wrapper around pydoc.help (with a twist).
 
     """
