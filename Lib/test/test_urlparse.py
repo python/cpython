@@ -142,7 +142,7 @@ class UrlParseTestCase(unittest.TestCase):
                          (base, relurl, expected))
 
     def test_unparse_parse(self):
-        for u in ['Python', './Python', 'x-newscheme://foo.com/stuff']:
+        for u in ['Python', './Python','x-newscheme://foo.com/stuff','x://y','x:/y','x:/','/',]:
             self.assertEqual(urllib.parse.urlunsplit(urllib.parse.urlsplit(u)), u)
             self.assertEqual(urllib.parse.urlunparse(urllib.parse.urlparse(u)), u)
 
