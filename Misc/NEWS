@@ -15,6 +15,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7472: Fixed typo in email.encoders module; messages using ISO-2022
+  character sets will now consistently use a Content-Transfer-Encoding of
+  7bit rather than sometimes being marked as 8bit.
+
 - Issue #8330: Fix expected output in test_gdb.
 
 - Issue #8374: Update the internal alias table in the :mod:`locale` module
