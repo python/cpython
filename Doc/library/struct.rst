@@ -10,7 +10,8 @@
    triple: packing; binary; data
 
 This module performs conversions between Python values and C structs represented
-as Python strings.  This can be used in handling binary data stored in files or from network connections, among other sources.  It uses
+as Python strings.  This can be used in handling binary data stored in files or
+from network connections, among other sources.  It uses
 :ref:`struct-format-strings` as compact descriptions of the layout of the C
 structs and the intended conversion to/from Python values.
 
@@ -28,8 +29,8 @@ The module defines the following exception and functions:
 
 .. exception:: error
 
-   Exception raised on various occasions; argument is a string describing what is
-   wrong.
+   Exception raised on various occasions; argument is a string describing what
+   is wrong.
 
 
 .. function:: pack(fmt, v1, v2, ...)
@@ -41,9 +42,9 @@ The module defines the following exception and functions:
 
 .. function:: pack_into(fmt, buffer, offset, v1, v2, ...)
 
-   Pack the values ``v1, v2, ...`` according to the given format, write the packed
-   bytes into the writable *buffer* starting at *offset*. Note that the offset is
-   a required argument.
+   Pack the values ``v1, v2, ...`` according to the given format, write the
+   packed bytes into the writable *buffer* starting at *offset*. Note that the
+   offset is a required argument.
 
    .. versionadded:: 2.5
 
@@ -51,17 +52,17 @@ The module defines the following exception and functions:
 .. function:: unpack(fmt, string)
 
    Unpack the string (presumably packed by ``pack(fmt, ...)``) according to the
-   given format.  The result is a tuple even if it contains exactly one item.  The
-   string must contain exactly the amount of data required by the format
+   given format.  The result is a tuple even if it contains exactly one item.
+   The string must contain exactly the amount of data required by the format
    (``len(string)`` must equal ``calcsize(fmt)``).
 
 
 .. function:: unpack_from(fmt, buffer[,offset=0])
 
    Unpack the *buffer* according to the given format. The result is a tuple even
-   if it contains exactly one item. The *buffer* must contain at least the amount
-   of data required by the format (``len(buffer[offset:])`` must be at least
-   ``calcsize(fmt)``).
+   if it contains exactly one item. The *buffer* must contain at least the
+   amount of data required by the format (``len(buffer[offset:])`` must be at
+   least ``calcsize(fmt)``).
 
    .. versionadded:: 2.5
 
@@ -313,7 +314,8 @@ needed to satisfy alignment requirements is different::
     >>> calcsize('ic')
     5
 
-The following format ``'llh0l'`` specifies two pad bytes at the end, assuming longs are aligned on 4-byte boundaries::
+The following format ``'llh0l'`` specifies two pad bytes at the end, assuming
+longs are aligned on 4-byte boundaries::
 
     >>> pack('llh0l', 1, 2, 3)
     '\x00\x00\x00\x01\x00\x00\x00\x02\x00\x03\x00\x00'
@@ -341,10 +343,10 @@ The :mod:`struct` module also defines the following type:
 
 .. class:: Struct(format)
 
-   Return a new Struct object which writes and reads binary data according to the
-   format string *format*.  Creating a Struct object once and calling its methods
-   is more efficient than calling the :mod:`struct` functions with the same format
-   since the format string only needs to be compiled once.
+   Return a new Struct object which writes and reads binary data according to
+   the format string *format*.  Creating a Struct object once and calling its
+   methods is more efficient than calling the :mod:`struct` functions with the
+   same format since the format string only needs to be compiled once.
 
    .. versionadded:: 2.5
 
