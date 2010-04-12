@@ -191,11 +191,9 @@ class PlaySoundTest(unittest.TestCase):
                 pass
             winsound.PlaySound(None, winsound.SND_PURGE)
         else:
-            self.assertRaises(
-                RuntimeError,
-                winsound.PlaySound,
-                None, winsound.SND_PURGE
-            )
+            # Issue 8367: PlaySound(None, winsound.SND_PURGE)
+            # does not raise on systems without a sound card.
+            pass
 
 
 def _get_cscript_path():
