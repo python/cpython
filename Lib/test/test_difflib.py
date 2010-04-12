@@ -159,10 +159,32 @@ class TestSFpatches(unittest.TestCase):
         difflib.SequenceMatcher(None, old, new).get_opcodes()
 
 
+class TestOutputFormat(unittest.TestCase):
+    def test_tab_delimiter(self):
+        args = ['one', 'two', 'Original', 'Current',
+            '2005-01-26 23:30:50', '2010-04-02 10:20:52']
+        ud = difflib.unified_diff(*args, lineterm='')
+        self.assertEqual(list(ud)[0:2], [
+                           "--- Original\t2005-01-26 23:30:50",
+                           "+++ Current\t2010-04-02 10:20:52"])
+        cd = difflib.context_diff(*args, lineterm='')
+        self.assertEqual(list(cd)[0:2], [
+                           "*** Original\t2005-01-26 23:30:50",
+                           "--- Current\t2010-04-02 10:20:52"])
+
+    def test_no_trailing_tab_on_empty_filedate(self):
+        args = ['one', 'two', 'Original', 'Current']
+        ud = difflib.unified_diff(*args, lineterm='')
+        self.assertEqual(list(ud)[0:2], ["--- Original", "+++ Current"])
+
+        cd = difflib.context_diff(*args, lineterm='')
+        self.assertEqual(list(cd)[0:2], ["*** Original", "--- Current"])
+
+
 def test_main():
     difflib.HtmlDiff._default_prefix = 0
     Doctests = doctest.DocTestSuite(difflib)
-    run_unittest(TestSFpatches, TestSFbugs, Doctests)
+    run_unittest(TestSFpatches, TestSFbugs, TestOutputFormat, Doctests)
 
 if __name__ == '__main__':
     test_main()
