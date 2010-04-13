@@ -469,7 +469,7 @@ def read_unicodestring4(f):
         raise ValueError("unicodestring4 byte count < 0: %d" % n)
     data = f.read(n)
     if len(data) == n:
-        return str(data, 'utf-8')
+        return str(data, 'utf-8', 'surrogatepass')
     raise ValueError("expected %d bytes in a unicodestring4, but only %d "
                      "remain" % (n, len(data)))
 
