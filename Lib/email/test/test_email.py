@@ -351,6 +351,14 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(msg.get_param('name', unquote=False),
                          '"Jim&amp;&amp;Jill"')
 
+    def test_get_param_with_quotes(self):
+        msg = email.message_from_string(
+            'Content-Type: foo; bar*0="baz\\"foobar"; bar*1="\\"baz"')
+        self.assertEqual(msg.get_param('bar'), 'baz"foobar"baz')
+        msg = email.message_from_string(
+            "Content-Type: foo; bar*0=\"baz\\\"foobar\"; bar*1=\"\\\"baz\"")
+        self.assertEqual(msg.get_param('bar'), 'baz"foobar"baz')
+
     def test_has_key(self):
         msg = email.message_from_string('Header: exists')
         self.assertTrue(msg.has_key('header'))
