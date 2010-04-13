@@ -323,16 +323,16 @@ becomes ``f(*args)``.
 
 This chart summarizes the binding and its two most useful variants:
 
-      +-----------------+--------------+----------------------+------------------+
-      | Transformation  |              | Called from an       | Called from a    |
-      |                 |              | Object               | Class            |
-      +=================+==============+======================+==================+
-      |                 | function     | f(obj, \*args)       | f(\*args)        |
-      +                 +--------------+----------------------+------------------+
-      | Descriptor      | staticmethod | f(\*args)            | f(\*args)        |
-      +                 +--------------+----------------------+------------------+
-      |                 | classmethod  | f(type(obj), \*args) | f(klass, \*args) |
-      +-----------------+--------------+----------------------+------------------+
+      +-----------------+----------------------+------------------+
+      | Transformation  | Called from an       | Called from a    |
+      |                 | Object               | Class            |
+      +=================+======================+==================+
+      | function        | f(obj, \*args)       | f(\*args)        |
+      +-----------------+----------------------+------------------+
+      | staticmethod    | f(\*args)            | f(\*args)        |
+      +-----------------+----------------------+------------------+
+      | classmethod     | f(type(obj), \*args) | f(klass, \*args) |
+      +-----------------+----------------------+------------------+
 
 Static methods return the underlying function without changes.  Calling either
 ``c.f`` or ``C.f`` is the equivalent of a direct lookup into
