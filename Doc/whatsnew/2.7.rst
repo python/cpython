@@ -854,6 +854,25 @@ changes, or look through the Subversion logs for all the details.
 * The :mod:`imaplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1655`.)
 
+* New function: the :mod:`inspect` module's :func:`~inspect.getcallargs`
+  takes a callable and its positional and keyword arguments,
+  and figures out which of the callable's parameters will receive each argument,
+  returning a dictionary mapping argument names to their values.  For example::
+
+    >>> from inspect import getcallargs
+    >>> def f(a, b=1, *pos, **named):
+    ...     pass
+    >>> getcallargs(f, 1, 2, 3)
+    {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
+    >>> getcallargs(f, a=2, x=4)
+    {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
+    >>> getcallargs(f)
+    Traceback (most recent call last):
+    ...
+    TypeError: f() takes at least 1 argument (0 given)
+
+  Contributed by George Sakkis; :issue:`3135`.
+
 * Updated module: The :mod:`io` library has been upgraded to the version shipped with
   Python 3.1.  For 3.1, the I/O library was entirely rewritten in C
   and is 2 to 20 times faster depending on the task being performed.  The
@@ -1478,9 +1497,10 @@ Changes to Python's build process and to the C API include:
   building the :mod:`pyexpat` module to use the system Expat library.
   (Contributed by Arfrever Frehtes Taifersar Arahesis; :issue:`7609`.)
 
-* New configure option: Compiling Python with the
+* New configure option: compiling Python with the
   :option:`--with-valgrind` option will now disable the pymalloc
-  allocator, which is difficult for the Valgrind to analyze correctly.
+  allocator, which is difficult for the Valgrind memory-error detector
+  to analyze correctly.
   Valgrind will therefore be better at detecting memory leaks and
   overruns. (Contributed by James Henstridge; :issue:`2422`.)
 
