@@ -6,9 +6,9 @@ support.requires('audio')
 import time
 import os
 import subprocess
-import winreg
 
 winsound = support.import_module('winsound')
+import winreg
 
 def has_sound(sound):
     """Find out if a particular event is configured with a default sound"""
