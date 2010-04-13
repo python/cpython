@@ -13,7 +13,7 @@ import winreg
 def has_sound(sound):
     """Find out if a particular event is configured with a default sound"""
     try:
-        key = winreg.OpenKeyEx(_winreg.HKEY_CURRENT_USER,
+        key = winreg.OpenKeyEx(winreg.HKEY_CURRENT_USER,
                 "AppEvents\Schemes\Apps\.Default\{0}\.Default".format(sound))
         value = winreg.EnumValue(key, 0)[1]
         if value is not "":
