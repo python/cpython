@@ -499,7 +499,7 @@ class _Pickler:
 
     def save_str(self, obj, pack=struct.pack):
         if self.bin:
-            encoded = obj.encode('utf-8')
+            encoded = obj.encode('utf-8', 'surrogatepass')
             n = len(encoded)
             self.write(BINUNICODE + pack("<i", n) + encoded)
         else:
@@ -966,7 +966,7 @@ class _Unpickler:
 
     def load_binunicode(self):
         len = mloads(b'i' + self.read(4))
-        self.append(str(self.read(len), 'utf-8'))
+        self.append(str(self.read(len), 'utf-8', 'surrogatepass'))
     dispatch[BINUNICODE[0]] = load_binunicode
 
     def load_short_binstring(self):

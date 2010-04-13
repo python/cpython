@@ -28,6 +28,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8383: pickle and pickletools use surrogatepass error handler when
+  encoding unicode as utf8 to support lone surrogates and stay compatible with
+  Python 2.x and 3.0
+
 - Issue #8179: Fix macpath.realpath() on a non-existing path.
 
 - Issue #8139: ossaudiodev didn't initialize its types properly, therefore
