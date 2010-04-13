@@ -83,6 +83,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5277: Fix quote counting when parsing RFC 2231 encoded parameters.
+
 - Issue #8321: Give access to OpenSSL version numbers from the `ssl` module,
   using the new attributes `ssl.OPENSSL_VERSION`, `ssl.OPENSSL_VERSION_INFO`
   and `ssl.OPENSSL_VERSION_NUMBER`.
