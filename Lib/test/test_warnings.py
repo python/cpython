@@ -718,6 +718,19 @@ class EnvironmentVariableTests(BaseTest):
                 b"['ignore::UnicodeWarning', 'ignore::DeprecationWarning']")
         self.assertEqual(p.wait(), 0)
 
+    @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
+                         'requires non-ascii filesystemencoding')
+    def test_nonascii(self):
+        newenv = os.environ.copy()
+        newenv["PYTHONWARNINGS"] = "ignore:DeprecaciónWarning"
+        newenv["PYTHONIOENCODING"] = "utf-8"
+        p = subprocess.Popen([sys.executable,
+                "-c", "import sys; sys.stdout.write(str(sys.warnoptions))"],
+                stdout=subprocess.PIPE, env=newenv)
+        self.assertEqual(p.communicate()[0],
+                "['ignore:DeprecaciónWarning']".encode('utf-8'))
+        self.assertEqual(p.wait(), 0)
+
 class CEnvironmentVariableTests(EnvironmentVariableTests):
     module = c_warnings
 

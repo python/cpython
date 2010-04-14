@@ -14,8 +14,8 @@ wmain(int argc, wchar_t **argv)
 	return Py_Main(argc, argv);
 }
 #else
-static wchar_t*
-char2wchar(char* arg)
+wchar_t*
+_Py_char2wchar(char* arg)
 {
 	wchar_t *res;
 #ifdef HAVE_BROKEN_MBSTOWCS
@@ -143,7 +143,7 @@ main(int argc, char **argv)
 	oldloc = strdup(setlocale(LC_ALL, NULL));
 	setlocale(LC_ALL, "");
 	for (i = 0; i < argc; i++) {
-		argv_copy2[i] = argv_copy[i] = char2wchar(argv[i]);
+		argv_copy2[i] = argv_copy[i] = _Py_char2wchar(argv[i]);
 		if (!argv_copy[i])
 			return 1;
 	}
