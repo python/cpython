@@ -312,6 +312,8 @@ C-API
 Library
 -------
 
+- Issue #5277: Fix quote counting when parsing RFC 2231 encoded parameters.
+
 - Issue #7316: the acquire() method of lock objects in the :mod:`threading`
   module now takes an optional timeout argument in seconds.  Timeout support
   relies on the system threading library, so as to avoid a semi-busy wait
