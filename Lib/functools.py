@@ -51,7 +51,7 @@ def wraps(wrapped,
                    assigned=assigned, updated=updated)
 
 def total_ordering(cls):
-    'Class decorator that fills-in missing ordering methods'
+    """Class decorator that fills in missing ordering methods"""
     convert = {
         '__lt__': [('__gt__', lambda self, other: other < self),
                    ('__le__', lambda self, other: not other < self),
@@ -78,7 +78,7 @@ def total_ordering(cls):
     return cls
 
 def cmp_to_key(mycmp):
-    'Convert a cmp= function into a key= function'
+    """Convert a cmp= function into a key= function"""
     class K(object):
         def __init__(self, obj, *args):
             self.obj = obj
