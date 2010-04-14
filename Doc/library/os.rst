@@ -662,7 +662,8 @@ as internal buffering of data.
 
    For a description of the flag and mode values, see the C run-time documentation;
    flag constants (like :const:`O_RDONLY` and :const:`O_WRONLY`) are defined in
-   this module too (see :ref:`open-constants`).
+   this module too (see :ref:`open-constants`).  In particular, on Windows adding
+   :const:`O_BINARY` is needed to open files in binary mode.
 
    .. note::
 
