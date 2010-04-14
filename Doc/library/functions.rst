@@ -1448,8 +1448,8 @@ available.  They are listed here in alphabetical order.
       programming.
 
    This function is invoked by the :keyword:`import` statement.  It can be
-   replaced (by importing the :mod:`builtins` module and assigning to
-   ``builtins.__import__``) in order to change semantics of the
+   replaced (by importing the :mod:`__builtin__` module and assigning to
+   ``__builtin__.__import__``) in order to change semantics of the
    :keyword:`import` statement, but nowadays it is usually simpler to use import
    hooks (see :pep:`302`).  Direct use of :func:`__import__` is rare, except in
    cases where you want to import a module whose name is only known at runtime.
