@@ -255,11 +255,69 @@ automated way to update these scripts.  (Making the :mod:`argparse`
 API consistent with :mod:`optparse`'s interface was discussed but
 rejected as too messy and difficult.)
 
-To summarize, if you're writing a new script and don't need to worry
+In short, if you're writing a new script and don't need to worry
 about compatibility with earlier versions of Python, use
 :mod:`argparse` instead of :mod:`optparse`.
 
-XXX need an example
+Here's an example::
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Command-line example.')
+
+    # Add optional switches
+    parser.add_argument('-v', action='store_true', dest='is_verbose',
+                        help='produce verbose output')
+    parser.add_argument('-o', action='store', dest='output',
+                        metavar='FILE',
+                        help='direct output to FILE instead of stdout')
+    parser.add_argument('-C', action='store', type=int, dest='context',
+                        metavar='NUM', default=0,
+                        help='display NUM lines of added context')
+
+    # Allow any number of additional arguments.
+    parser.add_argument(nargs='*', action='store', dest='inputs',
+                        help='input filenames (default is stdin)')
+
+    args = parser.parse_args()
+    print args.__dict__
+
+Unless you override it, :option:`-h` and :option:`--help` switches
+are automatically added, and produce neatly formatted output::
+
+    -> ./python.exe argparse-example.py --help
+    usage: parse.py [-h] [-v] [-o FILE] [-C NUM]
+
+    Command-line example.
+
+    positional arguments:
+      inputs      input filenames (default is stdin)
+
+    optional arguments:
+      -h, --help  show this help message and exit
+      -v          produce verbose output
+      -o FILE     direct output to FILE instead of stdout
+      -C NUM      display NUM lines of added context
+
+Similarly to :mod:`optparse`, the command-line switches and arguments
+are returned as an object with attributes named by the *dest* parameters::
+
+    -> ./python.exe argparse-example.py -v
+    {'output': None, 'is_verbose': True, 'context': 0, 'inputs': []}
+
+    -> ./python.exe argparse-example.py -v -o /tmp/output -C 4 file1 file2
+    {'output': '/tmp/output', 'is_verbose': True, 'context': 4,
+     'inputs': ['file1', 'file2']}
+
+:mod:`argparse` has much fancier validation than :mod:`optparse`; you
+can specify an exact number of arguments as an integer, 0 or more
+arguments by passing ``'*'``, 1 or more by passing ``'+'``, or an
+optional argument with ``'?'``.  A top-level parser can contain
+sub-parsers, so you can define subcommands that have different sets of
+switches, as in ``svn commit``, ``svn checkout``, etc.  You can
+specify an argument type as :class:`~argparse.FileType`, which will
+automatically open files for you and understands that ``'-'`` means
+standard input or output.
 
 .. seealso::
 
