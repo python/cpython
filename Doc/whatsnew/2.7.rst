@@ -182,14 +182,21 @@ remains O(1).
 ..     :meth:`~collections.namedtuple._asdict()` (see below)
 
 The standard library now supports use of ordered dictionaries in several
-modules.  The :mod:`ConfigParser` module uses them by default.  This lets
-configuration files be read, modified, and then written back in their original
-order.  The :meth:`~collections.somenamedtuple._asdict()` method for
-:func:`collections.namedtuple` now returns an ordered dictionary with the
-values appearing in the same order as the underlying tuple indices.
-The :mod:`json` module is being built-out with an *object_pairs_hook* to allow
-OrderedDicts to be built by the decoder.
-Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_.
+modules.
+
+* The :mod:`ConfigParser` module uses them by default, letting
+  configuration files be read, modified, and then written back in their original
+  order.
+
+* The :meth:`~collections.somenamedtuple._asdict()` method for
+  :func:`collections.namedtuple` now returns an ordered dictionary with the
+  values appearing in the same order as the underlying tuple indices.
+
+* The :mod:`json` module's :class:`~json.JSONDecoder` class
+  constructor was extended with an *object_pairs_hook* parameter to
+  allow :class:`OrderedDict` instances to be built by the decoder.
+  Support was also added for third-party tools like
+  `PyYAML <http://pyyaml.org/>`_.
 
 .. seealso::
 
@@ -286,7 +293,7 @@ Unless you override it, :option:`-h` and :option:`--help` switches
 are automatically added, and produce neatly formatted output::
 
     -> ./python.exe argparse-example.py --help
-    usage: parse.py [-h] [-v] [-o FILE] [-C NUM]
+    usage: argparse-example.py [-h] [-v] [-o FILE] [-C NUM] [inputs [inputs ...]]
 
     Command-line example.
 
@@ -859,6 +866,13 @@ changes, or look through the Subversion logs for all the details.
   :meth:`~str.format` method, the default alignment was previously
   left-alignment.  This has been changed to right-alignment, which seems
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
+
+* The :mod:`difflib` module now produces output that is more
+  compatible with modern :command:`diff`/:command:`patch` tools thanks
+  to two changes: 1) the header giving the filename now uses a tab
+  character instead of spaces as a separator, and 2) the date format
+  used is now ISO-8601 style, ``2005-01-26 23:30:50``.  (Fixed by
+  Anatoly Techtonik; :issue:`7585`.)
 
 * The :class:`~fractions.Fraction` class now accepts a single float or
   :class:`~decimal.Decimal` instance, or two rational numbers, as
@@ -1621,6 +1635,13 @@ Port-Specific Changes: Windows
   the native thread-local storage functions are now used.
   (Contributed by Kristjan Valur Jonsson; :issue:`3582`.)
 
+* The :func:`os.kill` function now works on Windows.  The signal value
+  can be the constants :const:`CTRL_C_EVENT`,
+  :const:`CTRL_BREAK_EVENT`, or any integer.  The Control-C and
+  Control-Break keystroke events can be sent to subprocesses; any
+  other value will use the :cfunc:`TerminateProcess` API.
+  (Contributed by Miki Tebeka; :issue:`1220212`.)
+
 * The :func:`os.listdir` function now correctly fails
   for an empty path.  (Fixed by Hirokazu Yamamoto; :issue:`5913`.)
 
@@ -1730,5 +1751,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Ryan Lovett, Hugh Secker-Walker.
+article: Ryan Lovett, R. David Murray, Hugh Secker-Walker.
 
