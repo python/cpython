@@ -312,6 +312,11 @@ C-API
 Library
 -------
 
+- Issue #7316: the acquire() method of lock objects in the :mod:`threading`
+  module now takes an optional timeout argument in seconds.  Timeout support
+  relies on the system threading library, so as to avoid a semi-busy wait
+  loop.
+
 - Issue #8383: pickle and pickletools use surrogatepass error handler when
   encoding unicode as utf8 to support lone surrogates and stay compatible with
   Python 2.x and 3.0

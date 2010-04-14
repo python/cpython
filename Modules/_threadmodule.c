@@ -40,18 +40,47 @@ lock_dealloc(lockobject *self)
 }
 
 static PyObject *
-lock_PyThread_acquire_lock(lockobject *self, PyObject *args)
+lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
 {
-	int i = 1;
+	char *kwlist[] = {"blocking", "timeout", NULL};
+	int blocking = 1;
+	double timeout = -1;
+	PY_TIMEOUT_T microseconds;
+	int r;
 
-	if (!PyArg_ParseTuple(args, "|i:acquire", &i))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|id:acquire", kwlist,
+					 &blocking, &timeout))
 		return NULL;
 
+	if (!blocking && timeout != -1) {
+		PyErr_SetString(PyExc_ValueError, "can't specify a timeout "
+				"for a non-blocking call");
+		return NULL;
+	}
+	if (timeout < 0 && timeout != -1) {
+		PyErr_SetString(PyExc_ValueError, "timeout value must be "
+				"strictly positive");
+		return NULL;
+	}
+	if (!blocking)
+		microseconds = 0;
+	else if (timeout == -1)
+		microseconds = -1;
+	else {
+		timeout *= 1e6;
+		if (timeout >= (double) PY_TIMEOUT_MAX) {
+			PyErr_SetString(PyExc_OverflowError,
+					"timeout value is too large");
+			return NULL;
+		}
+		microseconds = (PY_TIMEOUT_T) timeout;
+	}
+	
 	Py_BEGIN_ALLOW_THREADS
-	i = PyThread_acquire_lock(self->lock_lock, i);
+	r = PyThread_acquire_lock_timed(self->lock_lock, microseconds);
 	Py_END_ALLOW_THREADS
 
-	return PyBool_FromLong((long)i);
+	return PyBool_FromLong(r);
 }
 
 PyDoc_STRVAR(acquire_doc,
@@ -106,9 +135,9 @@ Return whether the lock is in the locked state.");
 
 static PyMethodDef lock_methods[] = {
 	{"acquire_lock", (PyCFunction)lock_PyThread_acquire_lock, 
-	 METH_VARARGS, acquire_doc},
+	 METH_VARARGS | METH_KEYWORDS, acquire_doc},
 	{"acquire",      (PyCFunction)lock_PyThread_acquire_lock, 
-	 METH_VARARGS, acquire_doc},
+	 METH_VARARGS | METH_KEYWORDS, acquire_doc},
 	{"release_lock", (PyCFunction)lock_PyThread_release_lock, 
 	 METH_NOARGS, release_doc},
 	{"release",      (PyCFunction)lock_PyThread_release_lock, 
@@ -118,7 +147,7 @@ static PyMethodDef lock_methods[] = {
 	{"locked",       (PyCFunction)lock_locked_lock,  
 	 METH_NOARGS, locked_doc},
 	{"__enter__",    (PyCFunction)lock_PyThread_acquire_lock,
-	 METH_VARARGS, acquire_doc},
+	 METH_VARARGS | METH_KEYWORDS, acquire_doc},
 	{"__exit__",    (PyCFunction)lock_PyThread_release_lock,
 	 METH_VARARGS, release_doc},
 	{NULL,           NULL}		/* sentinel */
@@ -183,15 +212,41 @@ rlock_dealloc(rlockobject *self)
 static PyObject *
 rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 {
-	char *kwlist[] = {"blocking", NULL};
+	char *kwlist[] = {"blocking", "timeout", NULL};
 	int blocking = 1;
+	double timeout = -1;
+	PY_TIMEOUT_T microseconds;
 	long tid;
 	int r = 1;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i:acquire", kwlist,
-				         &blocking))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|id:acquire", kwlist,
+					 &blocking, &timeout))
 		return NULL;
 
+	if (!blocking && timeout != -1) {
+		PyErr_SetString(PyExc_ValueError, "can't specify a timeout "
+				"for a non-blocking call");
+		return NULL;
+	}
+	if (timeout < 0 && timeout != -1) {
+		PyErr_SetString(PyExc_ValueError, "timeout value must be "
+				"strictly positive");
+		return NULL;
+	}
+	if (!blocking)
+		microseconds = 0;
+	else if (timeout == -1)
+		microseconds = -1;
+	else {
+		timeout *= 1e6;
+		if (timeout >= (double) PY_TIMEOUT_MAX) {
+			PyErr_SetString(PyExc_OverflowError,
+					"timeout value is too large");
+			return NULL;
+		}
+		microseconds = (PY_TIMEOUT_T) timeout;
+	}
+	
 	tid = PyThread_get_thread_ident();
 	if (self->rlock_count > 0 && tid == self->rlock_owner) {
 		unsigned long count = self->rlock_count + 1;
@@ -206,11 +261,11 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 
 	if (self->rlock_count > 0 ||
 	    !PyThread_acquire_lock(self->rlock_lock, 0)) {
-		if (!blocking) {
+		if (microseconds == 0) {
 			Py_RETURN_FALSE;
 		}
 		Py_BEGIN_ALLOW_THREADS
-		r = PyThread_acquire_lock(self->rlock_lock, blocking);
+		r = PyThread_acquire_lock_timed(self->rlock_lock, microseconds);
 		Py_END_ALLOW_THREADS
 	}
 	if (r) {
@@ -1005,7 +1060,7 @@ static struct PyModuleDef threadmodule = {
 PyMODINIT_FUNC
 PyInit__thread(void)
 {
-	PyObject *m, *d;
+	PyObject *m, *d, *timeout_max;
 	
 	/* Initialize types: */
 	if (PyType_Ready(&localtype) < 0)
@@ -1018,6 +1073,12 @@ PyInit__thread(void)
 	/* Create the module and add the functions */
 	m = PyModule_Create(&threadmodule);
 	if (m == NULL)
+		return NULL;
+
+	timeout_max = PyFloat_FromDouble(PY_TIMEOUT_MAX / 1000000);
+	if (!timeout_max)
+		return NULL;
+	if (PyModule_AddObject(m, "TIMEOUT_MAX", timeout_max) < 0)
 		return NULL;
 
 	/* Add a symbolic constant */

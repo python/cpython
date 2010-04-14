@@ -34,13 +34,13 @@ DeleteNonRecursiveMutex(PNRMUTEX mutex)
 }
 
 DWORD
-EnterNonRecursiveMutex(PNRMUTEX mutex, BOOL wait)
+EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
 {
 	/* Assume that the thread waits successfully */
 	DWORD ret ;
 
 	/* InterlockedIncrement(&mutex->owned) == 0 means that no thread currently owns the mutex */
-	if (!wait)
+	if (milliseconds == 0)
 	{
 		if (InterlockedCompareExchange(&mutex->owned, 0, -1) != -1)
 			return WAIT_TIMEOUT ;
@@ -49,7 +49,7 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, BOOL wait)
 	else
 		ret = InterlockedIncrement(&mutex->owned) ?
 			/* Some thread owns the mutex, let's wait... */
-			WaitForSingleObject(mutex->hevent, INFINITE) : WAIT_OBJECT_0 ;
+			WaitForSingleObject(mutex->hevent, milliseconds) : WAIT_OBJECT_0 ;
 
 	mutex->thread_id = GetCurrentThreadId() ; /* We own it */
 	return ret ;
@@ -239,17 +239,36 @@ PyThread_free_lock(PyThread_type_lock aLock)
  * if the lock has already been acquired by this thread!
  */
 int
-PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
+PyThread_acquire_lock_timed(PyThread_type_lock aLock, PY_TIMEOUT_T microseconds)
 {
 	int success ;
+	PY_TIMEOUT_T milliseconds;
 
-	dprintf(("%ld: PyThread_acquire_lock(%p, %d) called\n", PyThread_get_thread_ident(),aLock, waitflag));
+	if (microseconds >= 0) {
+		milliseconds = microseconds / 1000;
+		if (microseconds % 1000 > 0)
+			++milliseconds;
+		if ((DWORD) milliseconds != milliseconds)
+			Py_FatalError("Timeout too large for a DWORD, "
+				       "please check PY_TIMEOUT_MAX");
+	}
+	else
+		milliseconds = INFINITE;
 
-	success = aLock && EnterNonRecursiveMutex((PNRMUTEX) aLock, (waitflag ? INFINITE : 0)) == WAIT_OBJECT_0 ;
+	dprintf(("%ld: PyThread_acquire_lock_timed(%p, %lld) called\n",
+		 PyThread_get_thread_ident(), aLock, microseconds));
 
-	dprintf(("%ld: PyThread_acquire_lock(%p, %d) -> %d\n", PyThread_get_thread_ident(),aLock, waitflag, success));
+	success = aLock && EnterNonRecursiveMutex((PNRMUTEX) aLock, (DWORD) milliseconds) == WAIT_OBJECT_0 ;
+
+	dprintf(("%ld: PyThread_acquire_lock(%p, %lld) -> %d\n",
+		 PyThread_get_thread_ident(), aLock, microseconds, success));
 
 	return success;
+}
+int
+PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
+{
+	return PyThread_acquire_lock_timed(aLock, waitflag ? -1 : 0);
 }
 
 void

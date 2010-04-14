@@ -4,7 +4,7 @@ Various tests for synchronization primitives.
 
 import sys
 import time
-from _thread import start_new_thread, get_ident
+from _thread import start_new_thread, get_ident, TIMEOUT_MAX
 import threading
 import unittest
 
@@ -61,6 +61,14 @@ class BaseTestCase(unittest.TestCase):
     def tearDown(self):
         support.threading_cleanup(*self._threads)
         support.reap_children()
+
+    def assertTimeout(self, actual, expected):
+        # The waiting and/or time.time() can be imprecise, which
+        # is why comparing to the expected value would sometimes fail
+        # (especially under Windows).
+        self.assertGreaterEqual(actual, expected * 0.6)
+        # Test nothing insane happened
+        self.assertLess(actual, expected * 10.0)
 
 
 class BaseLockTests(BaseTestCase):
@@ -142,6 +150,32 @@ class BaseLockTests(BaseTestCase):
         # be recycled.
         Bunch(f, 15).wait_for_finished()
         self.assertEqual(n, len(threading.enumerate()))
+
+    def test_timeout(self):
+        lock = self.locktype()
+        # Can't set timeout if not blocking
+        self.assertRaises(ValueError, lock.acquire, 0, 1)
+        # Invalid timeout values
+        self.assertRaises(ValueError, lock.acquire, timeout=-100)
+        self.assertRaises(OverflowError, lock.acquire, timeout=1e100)
+        self.assertRaises(OverflowError, lock.acquire, timeout=TIMEOUT_MAX + 1)
+        # TIMEOUT_MAX is ok
+        lock.acquire(timeout=TIMEOUT_MAX)
+        lock.release()
+        t1 = time.time()
+        self.assertTrue(lock.acquire(timeout=5))
+        t2 = time.time()
+        # Just a sanity test that it didn't actually wait for the timeout.
+        self.assertLess(t2 - t1, 5)
+        results = []
+        def f():
+            t1 = time.time()
+            results.append(lock.acquire(timeout=0.5))
+            t2 = time.time()
+            results.append(t2 - t1)
+        Bunch(f, 1).wait_for_finished()
+        self.assertFalse(results[0])
+        self.assertTimeout(results[1], 0.5)
 
 
 class LockTests(BaseLockTests):
@@ -284,14 +318,14 @@ class EventTests(BaseTestCase):
         def f():
             results1.append(evt.wait(0.0))
             t1 = time.time()
-            r = evt.wait(0.2)
+            r = evt.wait(0.5)
             t2 = time.time()
             results2.append((r, t2 - t1))
         Bunch(f, N).wait_for_finished()
         self.assertEqual(results1, [False] * N)
         for r, dt in results2:
             self.assertFalse(r)
-            self.assertTrue(dt >= 0.2, dt)
+            self.assertTimeout(dt, 0.5)
         # The event is set
         results1 = []
         results2 = []
@@ -397,14 +431,14 @@ class ConditionTests(BaseTestCase):
         def f():
             cond.acquire()
             t1 = time.time()
-            cond.wait(0.2)
+            cond.wait(0.5)
             t2 = time.time()
             cond.release()
             results.append(t2 - t1)
         Bunch(f, N).wait_for_finished()
         self.assertEqual(len(results), 5)
         for dt in results:
-            self.assertTrue(dt >= 0.2, dt)
+            self.assertTimeout(dt, 0.5)
 
 
 class BaseSemaphoreTests(BaseTestCase):
