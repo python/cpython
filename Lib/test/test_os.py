@@ -679,6 +679,7 @@ class Win32KillTests(unittest.TestCase):
         # Send a subprocess a signal (or in some cases, just an int to be
         # the return value)
         proc = subprocess.Popen(*args)
+        time.sleep(0.5)
         os.kill(proc.pid, sig)
         self.assertEqual(proc.wait(), sig)
 
