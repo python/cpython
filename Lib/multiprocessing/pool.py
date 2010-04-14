@@ -440,10 +440,10 @@ class Pool(object):
                     p.terminate()
 
         debug('joining task handler')
-        task_handler.join(1e100)
+        task_handler.join()
 
         debug('joining result handler')
-        result_handler.join(1e100)
+        task_handler.join()
 
         if pool and hasattr(pool[0], 'terminate'):
             debug('joining pool workers')

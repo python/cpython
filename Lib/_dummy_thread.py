@@ -17,6 +17,10 @@ __all__ = ['error', 'start_new_thread', 'exit', 'get_ident', 'allocate_lock',
            'interrupt_main', 'LockType']
 
 import traceback as _traceback
+import time
+
+# A dummy value
+TIMEOUT_MAX = 2**31
 
 class error(Exception):
     """Dummy implementation of _thread.error."""
@@ -92,7 +96,7 @@ class LockType(object):
     def __init__(self):
         self.locked_status = False
 
-    def acquire(self, waitflag=None):
+    def acquire(self, waitflag=None, timeout=-1):
         """Dummy implementation of acquire().
 
         For blocking calls, self.locked_status is automatically set to
@@ -111,6 +115,8 @@ class LockType(object):
                 self.locked_status = True
                 return True
             else:
+                if timeout > 0:
+                    time.sleep(timeout)
                 return False
 
     __enter__ = acquire
