@@ -331,7 +331,28 @@ standard input or output.
 PEP 391: Dictionary-Based Configuration For Logging
 ====================================================
 
-XXX write this section.
+.. not documented in library reference yet.
+
+The :mod:`logging` module is very flexible; an application can define
+a tree of logging subsystems, and each logger in this tree can filter
+out certain messages, format them differently, and direct messages to
+a varying number of handlers.
+
+All this flexibility can require a lot of configuration.  You can
+write Python statements to create objects and set their properties,
+but a complex set-up would require verbose but boring code.
+:mod:`logging` also supports a :func:`~logging.config.fileConfig`
+function that parses a file, but the file format doesn't support
+configuring filters, and it's messier to generate programmatically.
+
+Python 2.7 adds a :func:`~logging.config.dictConfig` function that
+uses a dictionary, and there are many ways to produce a dictionary
+from different sources.  You can construct one with code, of course.
+Python's standard library now includes a JSON parser, so you could
+parse a file containing JSON, or you could use a YAML parsing library
+if one is installed.
+
+XXX describe an example.
 
 Two smaller enhancements to the logging module are:
 
