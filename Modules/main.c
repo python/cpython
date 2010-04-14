@@ -439,7 +439,7 @@ Py_Main(int argc, wchar_t **argv)
 		for (p = strtok(buf, ","); p != NULL; p = strtok(NULL, ",")) {
 			if ((warning = _Py_char2wchar(p)) != NULL) {
 				PySys_AddWarnOption(warning);
-				free(warning);
+				PyMem_Free(warning);
 			}
 		}
 		setlocale(LC_ALL, oldloc);
