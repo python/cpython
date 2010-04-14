@@ -266,6 +266,9 @@ Py_Main(int argc, wchar_t **argv)
 	wchar_t *module = NULL;
 	FILE *fp = stdin;
 	char *p;
+#ifdef MS_WINDOWS
+	wchar_t *wp;
+#endif
 	int skipfirstline = 0;
 	int stdin_is_interactive = 0;
 	int help = 0;
@@ -402,29 +405,48 @@ Py_Main(int argc, wchar_t **argv)
 	    (p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0')
 		Py_NoUserSiteDirectory = 1;
 
-	if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0') {
-		char *buf, *warning;
+#ifdef MS_WINDOWS
+	if (!Py_IgnoreEnvironmentFlag && (wp = _wgetenv(L"PYTHONWARNINGS")) &&
+	    *wp != L'\0') {
+		wchar_t *buf, *warning;
 
+		buf = (wchar_t *)malloc((wcslen(wp) + 1) * sizeof(wchar_t));
+		if (buf == NULL)
+			Py_FatalError(
+			   "not enough memory to copy PYTHONWARNINGS");
+		wcscpy(buf, wp);
+		for (warning = wcstok(buf, L",");
+		     warning != NULL;
+		     warning = wcstok(NULL, L",")) {
+			PySys_AddWarnOption(warning);
+		}
+		free(buf);
+	}
+#else
+	if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0') {
+		char *buf, *oldloc;
+		wchar_t *warning;
+
+		/* settle for strtok here as there's no one standard
+		   C89 wcstok */
 		buf = (char *)malloc(strlen(p) + 1);
 		if (buf == NULL)
 			Py_FatalError(
 			   "not enough memory to copy PYTHONWARNINGS");
 		strcpy(buf, p);
-		for (warning = strtok(buf, ",");
-		     warning != NULL;
-		     warning = strtok(NULL, ",")) {
-			wchar_t *wide_warning;
-			size_t len = strlen(buf);
-			wide_warning = (wchar_t *)malloc((len + 1) * sizeof(wchar_t));
-			if (wide_warning == NULL)
-				Py_FatalError(
-				   "not enough memory to copy PYTHONWARNINGS");
-			mbstowcs(wide_warning, warning, len);
-			PySys_AddWarnOption(wide_warning);
-			free(wide_warning);
+		oldloc = strdup(setlocale(LC_ALL, NULL));
+		setlocale(LC_ALL, "");
+		for (p = strtok(buf, ","); p != NULL; p = strtok(NULL, ",")) {
+			if ((warning = _Py_char2wchar(p)) != NULL) {
+				PySys_AddWarnOption(warning);
+				free(warning);
+			}
 		}
+		setlocale(LC_ALL, oldloc);
+		free(oldloc);
 		free(buf);
 	}
+#endif
 
 	if (command == NULL && module == NULL && _PyOS_optind < argc &&
 	    wcscmp(argv[_PyOS_optind], L"-") != 0)
