@@ -1791,8 +1791,8 @@ ABCs.
 
 Note that these methods are looked up on the type (metaclass) of a class.  They
 cannot be defined as class methods in the actual class.  This is consistent with
-the lookup of special methods that called on instances, only that in this case
-the instance is itself a class.
+the lookup of special methods that are called on instances, only that in this
+case the instance is itself a class.
 
 .. seealso::
 
