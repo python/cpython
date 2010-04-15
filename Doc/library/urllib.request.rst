@@ -1073,23 +1073,39 @@ Examples
 --------
 
 This example gets the python.org main page and displays the first 100 bytes of
-it::
+it.::
 
    >>> import urllib.request
    >>> f = urllib.request.urlopen('http://www.python.org/')
    >>> print(f.read(100))
+   b'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+   <?xml-stylesheet href="./css/ht2html'
+
+Note that in Python 3, urlopen returns a bytes object by default. In many
+circumstances, you might expect the output of urlopen to be a string. This
+might be a carried over expectation from Python 2, where urlopen returned
+string or it might even the common usecase. In those cases, you should
+explicitly decode the bytes to string.
+
+In the examples below, we have chosen *utf-8* encoding for demonstration, you
+might choose the encoding which is suitable for the webpage you are
+requesting::
+
+   >>> import urllib.request
+   >>> f = urllib.request.urlopen('http://www.python.org/')
+   >>> print(f.read(100).decode('utf-8')
    <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
    <?xml-stylesheet href="./css/ht2html
 
-Here we are sending a data-stream to the stdin of a CGI and reading the data it
-returns to us. Note that this example will only work when the Python
-installation supports SSL. ::
+In the following example, we are sending a data-stream to the stdin of a CGI
+and reading the data it returns to us. Note that this example will only work
+when the Python installation supports SSL. ::
 
    >>> import urllib.request
    >>> req = urllib.request.Request(url='https://localhost/cgi-bin/test.cgi',
    ...                       data='This data is passed to stdin of the CGI')
    >>> f = urllib.request.urlopen(req)
-   >>> print(f.read())
+   >>> print(f.read().decode('utf-8'))
    Got Data: "This data is passed to stdin of the CGI"
 
 The code for the sample CGI used in the above example is::
@@ -1161,7 +1177,7 @@ containing parameters::
    >>> import urllib.parse
    >>> params = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
    >>> f = urllib.request.urlopen("http://www.musi-cal.com/cgi-bin/query?%s" % params)
-   >>> print(f.read())
+   >>> print(f.read().decode('utf-8'))
 
 The following example uses the ``POST`` method instead::
 
@@ -1169,7 +1185,7 @@ The following example uses the ``POST`` method instead::
    >>> import urllib.parse
    >>> params = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
    >>> f = urllib.request.urlopen("http://www.musi-cal.com/cgi-bin/query", params)
-   >>> print(f.read())
+   >>> print(f.read().decode('utf-8'))
 
 The following example uses an explicitly specified HTTP proxy, overriding
 environment settings::
@@ -1178,14 +1194,14 @@ environment settings::
    >>> proxies = {'http': 'http://proxy.example.com:8080/'}
    >>> opener = urllib.request.FancyURLopener(proxies)
    >>> f = opener.open("http://www.python.org")
-   >>> f.read()
+   >>> f.read().decode('utf-8')
 
 The following example uses no proxies at all, overriding environment settings::
 
    >>> import urllib.request
    >>> opener = urllib.request.FancyURLopener({})
    >>> f = opener.open("http://www.python.org/")
-   >>> f.read()
+   >>> f.read().decode('utf-8')
 
 
 :mod:`urllib.request` Restrictions
