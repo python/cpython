@@ -8,7 +8,7 @@
 
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
-.. Big jobs: argparse, ElementTree 1.3, pep 391, 3106, sysconfig
+.. Big jobs: ElementTree 1.3, pep 391, sysconfig
 ..  unittest test discovery
 ..  hyperlink all the methods & functions.
 
@@ -383,7 +383,48 @@ Two smaller enhancements to the logging module are:
 PEP 3106: Dictionary Views
 ====================================================
 
-XXX write this section.
+The dictionary methods :meth:`keys`, :meth:`values`, and :meth:`items`
+are different in Python 3.x.  They return an object called a :dfn:`view`
+instead of a fully materialized list.
+
+.. Views can be iterated over, but they also behave like sets.  XXX not working.
+
+It's not possible to change the return values of :meth:`keys`,
+:meth:`values`, and :meth:`items` in Python 2.7 because too much code
+would break.  Instead the 3.x versions were added under the new names
+of :meth:`viewkeys`, :meth:`viewvalues`, and :meth:`viewitems`.
+
+::
+
+    >>> d = dict((i*10, chr(65+i)) for i in range(26))
+    >>> d
+    {0: 'A', 130: 'N', 10: 'B', 140: 'O', 20: ..., 250: 'Z'}
+    >>> d.viewkeys()
+    dict_keys([0, 130, 10, 140, 20, 150, 30, ..., 250])
+
+The view keeps track of the dictionary and its contents change as the
+dictionary is modified::
+
+    >>> vk = d.viewkeys()
+    >>> vk
+    dict_keys([0, 130, 10, ..., 250])
+    >>> d[260] = '&'
+    >>> vk
+    dict_keys([0, 130, 260, 10, ..., 250])
+
+However, note that you can't add or remove keys while you're iterating
+over the view::
+
+    >>> for k in vk:
+    ...     d[k*2] = k
+    ...
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    RuntimeError: dictionary changed size during iteration
+
+You can use the view methods in Python 2.x code, and the 2to3
+converter will change them to the standard :meth:`keys`,
+:meth:`values`, and :meth:`items` methods.
 
 .. seealso::
 
@@ -1692,6 +1733,11 @@ Other Changes and Fixes
   (Added by Antoine Pitrou, :issue:`6152`.)  This can also be used
   with a new :option:`-F` switch that runs selected tests in a loop
   until they fail.  (Added by Antoine Pitrou; :issue:`7312`.)
+
+* When executed as a script, the :file:`py_compile.py` module now
+  accepts ``'-'`` as an argument, which will read standard input for
+  the list of filenames to be compiled.  (Contributed by Piotr
+  Ożarowski; :issue:`8233`.)
 
 .. ======================================================================
 
