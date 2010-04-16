@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2987: RFC2732 support for urlparse (IPv6 addresses). Patch by Tony
+  Locke and Hans Ulrich Niedermann.
+
 - Issue #5277: Fix quote counting when parsing RFC 2231 encoded parameters.
 
 - Issue #8383: pickle and pickletools use surrogatepass error handler when
