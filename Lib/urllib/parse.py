@@ -69,26 +69,22 @@ class ResultMixin(object):
 
     @property
     def hostname(self):
-        netloc = self.netloc.split('@')[-1]
-        if '[' in netloc and ']' in netloc:
-            return netloc.split(']')[0][1:].lower()
-        elif '[' in netloc or ']' in netloc:
-            raise ValueError("Invalid IPv6 hostname")
-        elif ':' in netloc:
-            return netloc.split(':')[0].lower()
-        elif netloc == '':
-            return None
-        else:
-            return netloc.lower()
+        netloc = self.netloc
+        if "@" in netloc:
+            netloc = netloc.rsplit("@", 1)[1]
+        if ":" in netloc:
+            netloc = netloc.split(":", 1)[0]
+        return netloc.lower() or None
 
     @property
     def port(self):
-        netloc = self.netloc.split('@')[-1].split(']')[-1]
-        if ':' in netloc:
-            port = netloc.split(':')[1]
+        netloc = self.netloc
+        if "@" in netloc:
+            netloc = netloc.rsplit("@", 1)[1]
+        if ":" in netloc:
+            port = netloc.split(":", 1)[1]
             return int(port, 10)
-        else:
-            return None
+        return None
 
 from collections import namedtuple
 
@@ -133,10 +129,6 @@ def _splitparams(url):
 
 def _splitnetloc(url, start=0):
     delim = len(url)   # position of end of domain part of url, default is end
-    if '[' in url:     # check for invalid IPv6 URL
-        if not ']' in url: raise ValueError("Invalid IPv6 URL")
-    elif ']' in url:
-        if not '[' in url: raise ValueError("Invalid IPv6 URL")
     for c in '/?#':    # look for delimiters; the order is NOT important
         wdelim = url.find(c, start)        # find first of this delim
         if wdelim >= 0:                    # if found

@@ -239,43 +239,9 @@ class UrlParseTestCase(unittest.TestCase):
         #self.checkJoin(RFC2396_BASE, '?y', 'http://a/b/c/?y')
         #self.checkJoin(RFC2396_BASE, ';x', 'http://a/b/c/;x')
 
-
     def test_RFC3986(self):
         self.checkJoin(RFC3986_BASE, '?y','http://a/b/c/d;p?y')
         self.checkJoin(RFC2396_BASE, ';x', 'http://a/b/c/;x')
-
-    def test_RFC2732(self):
-        for url, hostname, port in [
-            ('http://Test.python.org:5432/foo/', 'test.python.org', 5432),
-            ('http://12.34.56.78:5432/foo/', '12.34.56.78', 5432),
-            ('http://[::1]:5432/foo/', '::1', 5432),
-            ('http://[dead:beef::1]:5432/foo/', 'dead:beef::1', 5432),
-            ('http://[dead:beef::]:5432/foo/', 'dead:beef::', 5432),
-            ('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]:5432/foo/',
-             'dead:beef:cafe:5417:affe:8fa3:deaf:feed', 5432),
-            ('http://[::12.34.56.78]:5432/foo/', '::12.34.56.78', 5432),
-            ('http://[::ffff:12.34.56.78]:5432/foo/',
-             '::ffff:12.34.56.78', 5432),
-            ('http://Test.python.org/foo/', 'test.python.org', None),
-            ('http://12.34.56.78/foo/', '12.34.56.78', None),
-            ('http://[::1]/foo/', '::1', None),
-            ('http://[dead:beef::1]/foo/', 'dead:beef::1', None),
-            ('http://[dead:beef::]/foo/', 'dead:beef::', None),
-            ('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/',
-             'dead:beef:cafe:5417:affe:8fa3:deaf:feed', None),
-            ('http://[::12.34.56.78]/foo/', '::12.34.56.78', None),
-            ('http://[::ffff:12.34.56.78]/foo/',
-             '::ffff:12.34.56.78', None),
-            ]:
-            urlparsed = urllib.parse.urlparse(url)
-            self.assertEqual((urlparsed.hostname, urlparsed.port) , (hostname, port))
-
-        for invalid_url in [
-                'http://::12.34.56.78]/',
-                'http://[::1/foo/',
-                'http://[::ffff:12.34.56.78']:
-            self.assertRaises(ValueError, lambda : urllib.parse.urlparse(invalid_url).hostname)
-            self.assertRaises(ValueError, lambda : urllib.parse.urlparse(invalid_url))
 
     def test_urldefrag(self):
         for url, defrag, frag in [
