@@ -927,6 +927,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #8314: Fix unsigned long long bug in libffi on Sparc v8.
+
 - Issue #8300: When passing a non-integer argument to struct.pack with any
   integer format code, struct.pack first attempts to convert the non-integer
   using its __index__ method.  If that method is non-existent or raises
