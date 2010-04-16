@@ -21,6 +21,7 @@ TAGS
 .gdb_history
 Doc/tools/sphinx
 Doc/tools/jinja
+Doc/tools/jinja2
 Doc/tools/pygments
 Doc/tools/docutils
 Misc/python.pc

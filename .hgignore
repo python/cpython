@@ -22,6 +22,7 @@ Lib/plat-mac/errors.rsrc.df.rsrc
 Doc/tools/sphinx/
 Doc/tools/docutils/
 Doc/tools/jinja/
+Doc/tools/jinja2/
 Doc/tools/pygments/
 Misc/python.pc
 Modules/Setup$
