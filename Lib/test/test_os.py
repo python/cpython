@@ -589,6 +589,15 @@ class URandomTests(unittest.TestCase):
 
 class ExecTests(unittest.TestCase):
     def test_execvpe_with_bad_program(self):
+        try:
+            # 'linuxthreads-0.10' or 'NPTL 2.10.2'
+            pthread = os.confstr("CS_GNU_LIBPTHREAD_VERSION")
+            linuxthreads = pthread.startswith("linuxthreads")
+        except ValueError:
+            linuxthreads = False
+        if linuxthreads:
+            raise unittest.SkipTest(
+                "avoid linuxthreads bug: see issue #4970")
         self.assertRaises(OSError, os.execvpe, 'no such app-', ['no such app-'], None)
 
     def test_execvpe_with_bad_arglist(self):
