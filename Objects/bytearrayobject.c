@@ -834,8 +834,7 @@ bytes_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     if (count == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
             return -1;
-        else
-            PyErr_Clear();
+        PyErr_Clear();
     }
     else if (count < 0) {
         PyErr_SetString(PyExc_ValueError, "negative count");
