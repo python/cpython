@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7606: XML-RPC traceback stored in X-traceback is now encoded to ASCII
+  using backslashreplace error handler
+
 - Issue #5277: Fix quote counting when parsing RFC 2231 encoded parameters.
 
 - Issue #8383: pickle and pickletools use surrogatepass error handler when
