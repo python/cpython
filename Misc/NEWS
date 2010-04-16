@@ -184,6 +184,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8412: os.system() now accepts bytes, bytearray and str with
+  surrogates.
+
 - Issue #4282: Fix the main function of the profile module for a non-ASCII
   script, open the file in binary mode and not in text mode with the default
   (utf8) encoding.
