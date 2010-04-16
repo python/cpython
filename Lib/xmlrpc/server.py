@@ -499,7 +499,9 @@ class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
             if hasattr(self.server, '_send_traceback_header') and \
                     self.server._send_traceback_header:
                 self.send_header("X-exception", str(e))
-                self.send_header("X-traceback", traceback.format_exc())
+                trace = traceback.format_exc()
+                trace = str(trace.encode('ASCII', 'backslashreplace'), 'ASCII')
+                self.send_header("X-traceback", trace)
 
             self.send_header("Content-length", "0")
             self.end_headers()
