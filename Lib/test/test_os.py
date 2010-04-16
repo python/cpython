@@ -10,6 +10,17 @@ import sys
 import shutil
 from test import support
 
+# Detect whether we're on a Linux system that uses the (now outdated
+# and unmaintained) linuxthreads threading library.  There's an issue
+# when combining linuxthreads with a failed execv call: see
+# http://bugs.python.org/issue4970.
+if (hasattr(os, "confstr_names") and
+    "CS_GNU_LIBPTHREAD_VERSION" in os.confstr_names):
+    libpthread = os.confstr("CS_GNU_LIBPTHREAD_VERSION")
+    USING_LINUXTHREADS= libpthread.startswith("linuxthreads")
+else:
+    USING_LINUXTHREADS= False
+
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
     def setUp(self):
@@ -566,8 +577,11 @@ class URandomTests(unittest.TestCase):
             pass
 
 class ExecTests(unittest.TestCase):
+    @unittest.skipIf(USING_LINUXTHREADS,
+                     "avoid triggering a linuxthreads bug: see issue #4970")
     def test_execvpe_with_bad_program(self):
-        self.assertRaises(OSError, os.execvpe, 'no such app-', ['no such app-'], None)
+        self.assertRaises(OSError, os.execvpe, 'no such app-',
+                          ['no such app-'], None)
 
     def test_execvpe_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execvpe, 'notepad', [], None)
