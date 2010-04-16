@@ -312,6 +312,9 @@ C-API
 Library
 -------
 
+- Issue #8412: os.system() now accepts bytes, bytearray and str with
+  surrogates.
+
 - Issue #2987: RFC2732 support for urlparse (IPv6 addresses). Patch by Tony
   Locke and Hans Ulrich Niedermann.
 
