@@ -68,7 +68,7 @@ class BaseBytesTest(unittest.TestCase):
     def test_from_ssize(self):
         self.assertEqual(self.type2test(0), b'')
         self.assertEqual(self.type2test(1), b'\x00')
-        self.assertEqual(self.test2test(5), b'\x00\x00\x00\x00\x00')
+        self.assertEqual(self.type2test(5), b'\x00\x00\x00\x00\x00')
         self.assertRaises(ValueError, self.type2test, -1)
 
         self.assertEqual(self.type2test('0', 'ascii'), b'0')
