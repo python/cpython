@@ -162,8 +162,15 @@ class CmdLineTest(unittest.TestCase):
             path1 = "ABCDE" * 100
             path2 = "FGHIJ" * 100
             env['PYTHONPATH'] = path1 + os.pathsep + path2
-            p = _spawn_python_with_env('-S', '-c',
-                                       'import sys; print(sys.path)')
+
+            code = """
+import sys
+path = ":".join(sys.path)
+path = path.encode("ascii", "backslashreplace")
+sys.stdout.buffer.write(path)"""
+            code = code.strip().splitlines()
+            code = '; '.join(code)
+            p = _spawn_python_with_env('-S', '-c', code)
             stdout, _ = p.communicate()
             self.assertIn(path1.encode('ascii'), stdout)
             self.assertIn(path2.encode('ascii'), stdout)
