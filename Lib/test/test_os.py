@@ -17,7 +17,8 @@ from test import support
 # and unmaintained) linuxthreads threading library.  There's an issue
 # when combining linuxthreads with a failed execv call: see
 # http://bugs.python.org/issue4970.
-if "CS_GNU_LIBPTHREAD_VERSION" in os.confstr_names:
+if (hasattr(os, "confstr_names") and
+    "CS_GNU_LIBPTHREAD_VERSION" in os.confstr_names):
     libpthread = os.confstr("CS_GNU_LIBPTHREAD_VERSION")
     USING_LINUXTHREADS= libpthread.startswith("linuxthreads")
 else:
