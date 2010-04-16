@@ -2814,18 +2814,23 @@ posix_system(PyObject *self, PyObject *args)
 	wchar_t *command;
 	if (!PyArg_ParseTuple(args, "u:system", &command))
 		return NULL;
-#else
-	char *command;
-	if (!PyArg_ParseTuple(args, "s:system", &command))
-		return NULL;
-#endif
+
 	Py_BEGIN_ALLOW_THREADS
-#ifdef MS_WINDOWS
 	sts = _wsystem(command);
-#else
-	sts = system(command);
-#endif
 	Py_END_ALLOW_THREADS
+#else
+	PyObject *command_obj;
+	char *command;
+	if (!PyArg_ParseTuple(args, "O&:system",
+	                      PyUnicode_FSConverter, &command_obj))
+		return NULL;
+
+	command = bytes2str(command_obj, 1);
+	Py_BEGIN_ALLOW_THREADS
+	sts = system(command);
+	Py_END_ALLOW_THREADS
+	release_bytes(command_obj);
+#endif
 	return PyLong_FromLong(sts);
 }
 #endif
