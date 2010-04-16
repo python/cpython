@@ -64,17 +64,17 @@ class BaseBytesTest(unittest.TestCase):
         b = self.type2test([Indexable(), Indexable(1), Indexable(254),
                             Indexable(255)])
         self.assertEqual(list(b), [0, 1, 254, 255])
-        self.assertRaises(ValueError, bytearray, [Indexable(-1)])
-        self.assertRaises(ValueError, bytearray, [Indexable(256)])
+        self.assertRaises(ValueError, self.type2test, [Indexable(-1)])
+        self.assertRaises(ValueError, self.type2test, [Indexable(256)])
 
     def test_from_ssize(self):
-        self.assertEqual(bytearray(0), b'')
-        self.assertEqual(bytearray(1), b'\x00')
-        self.assertEqual(bytearray(5), b'\x00\x00\x00\x00\x00')
-        self.assertRaises(ValueError, bytearray, -1)
+        self.assertEqual(self.type2test(0), b'')
+        self.assertEqual(self.type2test(1), b'\x00')
+        self.assertEqual(self.type2test(5), b'\x00\x00\x00\x00\x00')
+        self.assertRaises(ValueError, self.type2test, -1)
 
-        self.assertEqual(bytearray('0', 'ascii'), b'0')
-        self.assertEqual(bytearray(b'0'), b'0')
+        self.assertEqual(self.type2test('0', 'ascii'), b'0')
+        self.assertEqual(self.type2test(b'0'), b'0')
 
     def test_constructor_type_errors(self):
         self.assertRaises(TypeError, self.type2test, 0.0)
