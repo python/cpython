@@ -99,7 +99,7 @@ fnmatch
 formatter
 fpectl
 fractions           mark.dickinson, rhettinger
-ftplib
+ftplib              giampaolo.rodola
 functools
 gc                  pitrou
 getopt
@@ -289,7 +289,7 @@ time and dates      lemburg
 testing             michael.foord, pitrou
 threads
 tracker
-unicode             lemburg, ezio.melotti
+unicode             lemburg, ezio.melotti, haypo
 version control
 windows
 ==================  ===========
