@@ -1,21 +1,19 @@
 Maintainers Index
 =================
 
-This document cross references Python Modules (first table) and platforms
-(second table) with the Tracker user names of people who are experts
-and/or resources for that module or platform.  This list is intended
-to be used by issue submitters, issue triage people, and other issue
-participants to find people to add to the nosy list or to contact
-directly by email for help and decisions on feature requests and bug
-fixes.  People on this list may be asked to render final judgement on a
-feature or bug.  If no active maintainer is listed for a given module,
-then questionable changes should go to python-dev, while any other issues
-can and should be decided by any committer.
+This document has tables that list Python Modules, Tools, Platforms and
+Interest Areas and names for each item that indicate a maintainer or an
+expert in the field.  This list is intended to be used by issue submitters,
+issue triage people, and other issue participants to find people to add to
+the nosy list or to contact directly by email for help and decisions on
+feature requests and bug fixes.  People on this list may be asked to render
+final judgement on a feature or bug.  If no active maintainer is listed for
+a given module, then questionable changes should go to python-dev, while
+any other issues can and should be decided by any committer.
 
-The last part of this document is a third table, listing broader topic
-areas in which various people have expertise.  These people can also
-be contacted for help, opinions, and decisions when issues involve
-their areas.
+The Platform and Interest Area tables list broader fields in which various
+people have expertise.  These people can also be contacted for help,
+opinions, and decisions when issues involve their areas.
 
 If a listed maintainer does not respond to requests for comment for an
 extended period (three weeks or more), they should be marked as inactive
@@ -85,7 +83,7 @@ curses              andrew.kuchling
 datetime
 dbm
 decimal             facundobatista, rhettinger, mark.dickinson
-difflib
+difflib             tim_one
 dis
 distutils           tarek
 doctest             tim_one (inactive)
@@ -100,8 +98,8 @@ fileinput
 fnmatch
 formatter
 fpectl
-fractions           mark.dickinson
-ftplib
+fractions           mark.dickinson, rhettinger
+ftplib              giampaolo.rodola
 functools
 gc                  pitrou
 getopt
@@ -115,7 +113,7 @@ heapq               rhettinger
 hmac
 html
 http
-idlelib
+idlelib             kbk
 imaplib
 imghdr
 imp
@@ -133,7 +131,7 @@ macpath
 mailbox             andrew.kuchling
 mailcap
 marshal
-math                mark.dickinson
+math                mark.dickinson, rhettinger
 mimetypes
 mmap
 modulefinder        theller, jvr
@@ -166,7 +164,7 @@ py_compile
 pybench             lemburg, pitrou
 pyclbr
 pydoc
-queue
+queue               rhettinger
 quopri
 random              rhettinger
 re                  effbot (inactive), pitrou
@@ -199,6 +197,7 @@ sunau
 symbol
 symtable            benjamin.peterson
 sys
+sysconfig           tarek
 syslog
 tabnanny            tim_one
 tarfile             lars.gustaebel
@@ -208,7 +207,7 @@ termios
 test
 textwrap
 threading
-time                brett.cannon
+time
 timeit
 tkinter             gpolo
 token               georg.brandl
@@ -290,7 +289,7 @@ time and dates      lemburg
 testing             michael.foord, pitrou
 threads
 tracker
-unicode             lemburg
+unicode             lemburg, ezio.melotti, haypo
 version control
 windows
 ==================  ===========
