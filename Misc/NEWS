@@ -312,6 +312,9 @@ C-API
 Library
 -------
 
+- Issue #2987: RFC2732 support for urlparse (IPv6 addresses). Patch by Tony
+  Locke and Hans Ulrich Niedermann.
+
 - Issue #5277: Fix quote counting when parsing RFC 2231 encoded parameters.
 
 - Issue #7316: the acquire() method of lock objects in the :mod:`threading`
