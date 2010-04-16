@@ -177,6 +177,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     int p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite;
     int errpipe_read, errpipe_write, close_fds, restore_signals;
     int call_setsid;
+    PyObject *cwd_obj, *cwd_obj2;
     const char *cwd;
     pid_t pid;
     int need_to_reenable_gc = 0;
@@ -184,8 +185,9 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     Py_ssize_t arg_num;
 
     if (!PyArg_ParseTuple(
-            args, "OOOzOiiiiiiiiiiO:fork_exec",
-            &process_args, &executable_list, &py_close_fds, &cwd, &env_list,
+            args, "OOOOOiiiiiiiiiiO:fork_exec",
+            &process_args, &executable_list, &py_close_fds,
+            &cwd_obj, &env_list,
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
             &restore_signals, &call_setsid, &preexec_fn))
@@ -263,13 +265,25 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         preexec_fn_args_tuple = PyTuple_New(0);
         if (!preexec_fn_args_tuple)
             goto cleanup;
-	_PyImport_AcquireLock();
+        _PyImport_AcquireLock();
+    }
+
+    if (cwd_obj != Py_None) {
+        if (PyUnicode_FSConverter(cwd_obj, &cwd_obj2) == 0)
+            goto cleanup;
+        if (PyBytes_Check(cwd_obj2))
+            cwd = PyBytes_AS_STRING(cwd_obj2);
+        else
+            cwd = PyByteArray_AS_STRING(cwd_obj2);
+    } else {
+        cwd = NULL;
+        cwd_obj2 = NULL;
     }
 
     pid = fork();
     if (pid == 0) {
         /* Child process */
-        /* 
+        /*
          * Code from here to _exit() must only use async-signal-safe functions,
          * listed at `man 7 signal` or
          * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
@@ -291,6 +305,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         _exit(255);
         return NULL;  /* Dead code to avoid a potential compiler warning. */
     }
+    Py_XDECREF(cwd_obj2);
+
     if (pid == -1) {
         /* Capture the errno exception before errno can be clobbered. */
         PyErr_SetFromErrno(PyExc_OSError);
