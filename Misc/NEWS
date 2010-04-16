@@ -15,6 +15,9 @@ Core and Builtins
 - Issue #8014: Setting a T_UINT or T_PYSSIZET attribute of an object with
   PyMemberDefs could produce an internal error;  raise TypeError instead.
 
+- Issue #8417: Raise an OverflowError when an integer larger than sys.maxsize is
+  passed to bytes or bytearray.
+
 - Issue #8329: Don't return the same lists from select.select when no fds are
   changed.
 

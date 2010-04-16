@@ -2949,15 +2949,17 @@ PyBytes_FromObject(PyObject *x)
 	}
 
 	/* Is it an int? */
-	size = PyNumber_AsSsize_t(x, PyExc_ValueError);
+	size = PyNumber_AsSsize_t(x, PyExc_OverflowError);
 	if (size == -1 && PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_OverflowError))
+			return NULL;
 		PyErr_Clear();
 	}
+	else if (size < 0) {
+		PyErr_SetString(PyExc_ValueError, "negative count");
+		return NULL;
+	}
 	else {
-		if (size < 0) {
-			PyErr_SetString(PyExc_ValueError, "negative count");
-			return NULL;
-		}
 		new = PyBytes_FromStringAndSize(NULL, size);
 		if (new == NULL) {
 			return NULL;
