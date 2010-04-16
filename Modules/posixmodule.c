@@ -5986,6 +5986,12 @@ static struct constdef posix_constants_confstr[] = {
 #ifdef _CS_ARCHITECTURE
     {"CS_ARCHITECTURE",	_CS_ARCHITECTURE},
 #endif
+#ifdef _CS_GNU_LIBC_VERSION
+    {"CS_GNU_LIBC_VERSION",	_CS_GNU_LIBC_VERSION},
+#endif
+#ifdef _CS_GNU_LIBPTHREAD_VERSION
+    {"CS_GNU_LIBPTHREAD_VERSION",	_CS_GNU_LIBPTHREAD_VERSION},
+#endif
 #ifdef _CS_HOSTNAME
     {"CS_HOSTNAME",	_CS_HOSTNAME},
 #endif
@@ -6126,12 +6132,6 @@ static struct constdef posix_constants_confstr[] = {
 #endif
 #ifdef _MIPS_CS_VENDOR
     {"MIPS_CS_VENDOR",	_MIPS_CS_VENDOR},
-#endif
-#ifdef _CS_GNU_LIBC_VERSION
-    {"CS_GNU_LIBC_VERSION",	_CS_GNU_LIBC_VERSION},
-#endif
-#ifdef _CS_GNU_LIBPTHREAD_VERSION
-    {"CS_GNU_LIBPTHREAD_VERSION",	_CS_GNU_LIBPTHREAD_VERSION},
 #endif
 };
 
