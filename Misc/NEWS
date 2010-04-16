@@ -315,6 +315,9 @@ C-API
 Library
 -------
 
+- Issue #8393: subprocess accepts bytes, bytearray and str with surrogates for
+  the current working directory.
+
 - Issue #7606: XML-RPC traceback stored in X-traceback is now encoded to ASCII
   using backslashreplace error handler
 
