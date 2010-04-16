@@ -73,6 +73,7 @@ class BaseBytesTest(unittest.TestCase):
 
         self.assertEqual(self.type2test('0', 'ascii'), b'0')
         self.assertEqual(self.type2test(b'0'), b'0')
+        self.assertRaises(OverflowError, self.type2test, sys.maxsize + 1)
 
     def test_constructor_type_errors(self):
         self.assertRaises(TypeError, self.type2test, 0.0)
