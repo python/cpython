@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8417: Raise an OverflowError when an integer larger than sys.maxsize is
+  passed to bytes or bytearray.
+
 - Issue #7301: Add environment variable $PYTHONWARNINGS.
 
 - Issue #8329: Don't return the same lists from select.select when no fds are
