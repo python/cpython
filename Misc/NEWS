@@ -312,6 +312,9 @@ C-API
 Library
 -------
 
+- Issue #7606: XML-RPC traceback stored in X-traceback is now encoded to ASCII
+  using backslashreplace error handler
+
 - Issue #8412: os.system() now accepts bytes, bytearray and str with
   surrogates.
 
