@@ -50,7 +50,7 @@ Functions, Constants, and Exceptions
    is a subtype of :exc:`socket.error`, which in turn is a subtype of
    :exc:`IOError`.
 
-.. function:: wrap_socket (sock, keyfile=None, certfile=None, server_side=False, cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None, do_handshake_on_connect=True, suppress_ragged_eofs=True)
+.. function:: wrap_socket (sock, keyfile=None, certfile=None, server_side=False, cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None, do_handshake_on_connect=True, suppress_ragged_eofs=True, ciphers=None)
 
    Takes an instance ``sock`` of :class:`socket.socket`, and returns an instance
    of :class:`ssl.SSLSocket`, a subtype of :class:`socket.socket`, which wraps
@@ -113,14 +113,23 @@ Functions, Constants, and Exceptions
        ========================  =========  =========  ==========  =========
         *client* / **server**    **SSLv2**  **SSLv3**  **SSLv23**  **TLSv1**
        ------------------------  ---------  ---------  ----------  ---------
-        *SSLv2*                    yes        no         yes*        no
+        *SSLv2*                    yes        no         yes         no
         *SSLv3*                    yes        yes        yes         no
         *SSLv23*                   yes        no         yes         no
         *TLSv1*                    no         no         yes         yes
        ========================  =========  =========  ==========  =========
 
-   In some older versions of OpenSSL (for instance, 0.9.7l on OS X 10.4), an
-   SSLv2 client could not connect to an SSLv23 server.
+   .. note::
+
+      This information varies depending on the version of OpenSSL.
+      For instance, in some older versions of OpenSSL (such as 0.9.7l on
+      OS X 10.4), an SSLv2 client could not connect to an SSLv23 server.
+      Conversely, starting from 1.0.0, an SSLv23 client will actually
+      try the SSLv3 protocol unless you explicitly enable SSLv2 ciphers.
+
+   The parameter ``ciphers`` sets the available ciphers for this SSL object.
+   It should be a string in the `OpenSSL cipher list format
+   <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`_.
 
    The parameter ``do_handshake_on_connect`` specifies whether to do the SSL
    handshake automatically after doing a :meth:`socket.connect`, or whether the
@@ -134,6 +143,9 @@ Functions, Constants, and Exceptions
    of the connection.  If specified as :const:`True` (the default), it returns a
    normal EOF in response to unexpected EOF errors raised from the underlying
    socket; if :const:`False`, it will raise the exceptions back to the caller.
+
+   .. versionchanged:: 2.7
+      New optional argument *ciphers*.
 
 .. function:: RAND_status()
 

@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8322: Add a *ciphers* argument to SSL sockets, so as to change the
+  available cipher list.  Helps fix test_ssl with OpenSSL 1.0.0.
+
 - Issue #2987: RFC2732 support for urlparse (IPv6 addresses). Patch by Tony
   Locke and Hans Ulrich Niedermann.
 

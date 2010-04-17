@@ -137,6 +137,23 @@ class BasicTests(unittest.TestCase):
         self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
                         (s, t))
 
+    def test_ciphers(self):
+        if not test_support.is_resource_enabled('network'):
+            return
+        remote = ("svn.python.org", 443)
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_NONE, ciphers="ALL")
+        s.connect(remote)
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_NONE, ciphers="DEFAULT")
+        s.connect(remote)
+        # Error checking occurs when connecting, because the SSL context
+        # isn't created before.
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_NONE, ciphers="^$:,;?*'dorothyx")
+        with self.assertRaisesRegexp(ssl.SSLError, "No cipher can be selected"):
+            s.connect(remote)
+
 
 class NetworkedTests(unittest.TestCase):
 
@@ -259,7 +276,8 @@ else:
                                                    certfile=self.server.certificate,
                                                    ssl_version=self.server.protocol,
                                                    ca_certs=self.server.cacerts,
-                                                   cert_reqs=self.server.certreqs)
+                                                   cert_reqs=self.server.certreqs,
+                                                   ciphers=self.server.ciphers)
                 except:
                     if self.server.chatty:
                         handle_error("\n server:  bad connection attempt from " +
@@ -350,7 +368,7 @@ else:
         def __init__(self, certificate, ssl_version=None,
                      certreqs=None, cacerts=None, expect_bad_connects=False,
                      chatty=True, connectionchatty=False, starttls_server=False,
-                     wrap_accepting_socket=False):
+                     wrap_accepting_socket=False, ciphers=None):
 
             if ssl_version is None:
                 ssl_version = ssl.PROTOCOL_TLSv1
@@ -360,6 +378,7 @@ else:
             self.protocol = ssl_version
             self.certreqs = certreqs
             self.cacerts = cacerts
+            self.ciphers = ciphers
             self.expect_bad_connects = expect_bad_connects
             self.chatty = chatty
             self.connectionchatty = connectionchatty
@@ -371,7 +390,8 @@ else:
                                             certfile=self.certificate,
                                             cert_reqs = self.certreqs,
                                             ca_certs = self.cacerts,
-                                            ssl_version = self.protocol)
+                                            ssl_version = self.protocol,
+                                            ciphers = self.ciphers)
                 if test_support.verbose and self.chatty:
                     sys.stdout.write(' server:  wrapped server socket as %s\n' % str(self.sock))
             self.port = test_support.bind_port(self.sock)
@@ -657,13 +677,14 @@ else:
 
     def serverParamsTest (certfile, protocol, certreqs, cacertsfile,
                           client_certfile, client_protocol=None, indata="FOO\n",
-                          chatty=True, connectionchatty=False,
+                          ciphers=None, chatty=True, connectionchatty=False,
                           wrap_accepting_socket=False):
 
         server = ThreadedEchoServer(certfile,
                                     certreqs=certreqs,
                                     ssl_version=protocol,
                                     cacerts=cacertsfile,
+                                    ciphers=ciphers,
                                     chatty=chatty,
                                     connectionchatty=connectionchatty,
                                     wrap_accepting_socket=wrap_accepting_socket)
@@ -679,6 +700,7 @@ else:
                 s = ssl.wrap_socket(socket.socket(),
                                     certfile=client_certfile,
                                     ca_certs=cacertsfile,
+                                    ciphers=ciphers,
                                     cert_reqs=certreqs,
                                     ssl_version=client_protocol)
                 s.connect((HOST, server.port))
@@ -732,8 +754,12 @@ else:
                               ssl.get_protocol_name(server_protocol),
                               certtype))
         try:
+            # NOTE: we must enable "ALL" ciphers, otherwise an SSLv23 client
+            # will send an SSLv3 hello (rather than SSLv2) starting from
+            # OpenSSL 1.0.0 (see issue #8322).
             serverParamsTest(CERTFILE, server_protocol, certsreqs,
-                             CERTFILE, CERTFILE, client_protocol, chatty=False)
+                             CERTFILE, CERTFILE, client_protocol,
+                             ciphers="ALL", chatty=False)
         except test_support.TestFailed:
             if expectedToWork:
                 raise
