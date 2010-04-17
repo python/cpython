@@ -290,8 +290,11 @@ class _Semaphore(_Verbose):
         self._cond = Condition(Lock())
         self._value = value
 
-    def acquire(self, blocking=True):
+    def acquire(self, blocking=True, timeout=None):
+        if not blocking and timeout is not None:
+            raise ValueError("can't specify timeout for non-blocking acquire")
         rc = False
+        endtime = None
         self._cond.acquire()
         while self._value == 0:
             if not blocking:
@@ -299,7 +302,14 @@ class _Semaphore(_Verbose):
             if __debug__:
                 self._note("%s.acquire(%s): blocked waiting, value=%s",
                            self, blocking, self._value)
-            self._cond.wait()
+            if timeout is not None:
+                if endtime is None:
+                    endtime = _time() + timeout
+                else:
+                    timeout = endtime - _time()
+                    if timeout <= 0:
+                        break
+            self._cond.wait(timeout)
         else:
             self._value = self._value - 1
             if __debug__:
