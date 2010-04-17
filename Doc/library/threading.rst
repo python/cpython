@@ -596,7 +596,7 @@ waiting until some other thread calls :meth:`release`.
    defaults to ``1``. If the *value* given is less than 0, :exc:`ValueError` is
    raised.
 
-   .. method:: acquire(blocking=True)
+   .. method:: acquire(blocking=True, timeout=None)
 
       Acquire a semaphore.
 
@@ -607,14 +607,18 @@ waiting until some other thread calls :meth:`release`.
       interlocking so that if multiple :meth:`acquire` calls are blocked,
       :meth:`release` will wake exactly one of them up.  The implementation may
       pick one at random, so the order in which blocked threads are awakened
-      should not be relied on.  There is no return value in this case.
-
-      When invoked with *blocking* set to true, do the same thing as when called
-      without arguments, and return true.
+      should not be relied on.  Returns true (or blocks indefinitely).
 
       When invoked with *blocking* set to false, do not block.  If a call
-      without an argument would block, return false immediately; otherwise, do
-      the same thing as when called without arguments, and return true.
+      without an argument would block, return false immediately; otherwise,
+      do the same thing as when called without arguments, and return true.
+
+      When invoked with a *timeout* other than None, it will block for at
+      most *timeout* seconds.  If acquire does not complete successfully in
+      that interval, return false.  Return true otherwise.
+
+      .. versionchanged:: 3.2
+         The *timeout* parameter is new.
 
    .. method:: release()
 

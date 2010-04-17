@@ -521,6 +521,19 @@ class BaseSemaphoreTests(BaseTestCase):
         # ordered.
         self.assertEqual(sorted(results), [False] * 7 + [True] *  3 )
 
+    def test_acquire_timeout(self):
+        sem = self.semtype(2)
+        self.assertRaises(ValueError, sem.acquire, False, timeout=1.0)
+        self.assertTrue(sem.acquire(timeout=0.005))
+        self.assertTrue(sem.acquire(timeout=0.005))
+        self.assertFalse(sem.acquire(timeout=0.005))
+        sem.release()
+        self.assertTrue(sem.acquire(timeout=0.005))
+        t = time.time()
+        self.assertFalse(sem.acquire(timeout=0.5))
+        dt = time.time() - t
+        self.assertTimeout(dt, 0.5)
+
     def test_default_value(self):
         # The default initial value is 1.
         sem = self.semtype()
