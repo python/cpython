@@ -120,11 +120,17 @@
 #include "pystrcmp.h"
 #include "dtoa.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* _Py_Mangle is defined in compile.c */
 PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 
 /* _Py_char2wchar lives in python.c */
 PyAPI_FUNC(wchar_t *) _Py_char2wchar(char *);
+#ifdef __cplusplus
+}
+#endif
 
 /* Convert a possibly signed character to a nonnegative int */
 /* XXX This assumes characters are 8 bits wide */
