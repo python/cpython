@@ -259,7 +259,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 	       enum py_ssl_server_or_client socket_type,
 	       enum py_ssl_cert_requirements certreq,
 	       enum py_ssl_version proto_version,
-	       char *cacerts_file)
+	       char *cacerts_file, char *ciphers)
 {
 	PySSLObject *self;
 	char *errstr = NULL;
@@ -307,6 +307,14 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 	if (self->ctx == NULL) {
 		errstr = ERRSTR("Invalid SSL protocol variant specified.");
 		goto fail;
+	}
+
+	if (ciphers != NULL) {
+		ret = SSL_CTX_set_cipher_list(self->ctx, ciphers);
+		if (ret == 0) {
+			errstr = ERRSTR("No cipher can be selected.");
+			goto fail;
+		}
 	}
 
 	if (certreq != PY_SSL_CERT_NONE) {
@@ -408,14 +416,15 @@ PySSL_sslwrap(PyObject *self, PyObject *args)
 	char *key_file = NULL;
 	char *cert_file = NULL;
 	char *cacerts_file = NULL;
+	char *ciphers = NULL;
 
-	if (!PyArg_ParseTuple(args, "O!i|zziiz:sslwrap",
+	if (!PyArg_ParseTuple(args, "O!i|zziizz:sslwrap",
 			      PySocketModule.Sock_Type,
 			      &Sock,
 			      &server_side,
 			      &key_file, &cert_file,
 			      &verification_mode, &protocol,
-			      &cacerts_file))
+			      &cacerts_file, &ciphers))
 		return NULL;
 
 	/*
@@ -428,12 +437,13 @@ PySSL_sslwrap(PyObject *self, PyObject *args)
 
 	return (PyObject *) newPySSLObject(Sock, key_file, cert_file,
 					   server_side, verification_mode,
-					   protocol, cacerts_file);
+					   protocol, cacerts_file,
+					   ciphers);
 }
 
 PyDoc_STRVAR(ssl_doc,
 "sslwrap(socket, server_side, [keyfile, certfile, certs_mode, protocol,\n"
-"                              cacertsfile]) -> sslobject");
+"                              cacertsfile, ciphers]) -> sslobject");
 
 /* SSL object methods */
 
