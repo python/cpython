@@ -54,6 +54,7 @@ def ismodule(object):
     """Return true if the object is a module.
 
     Module objects provide these attributes:
+        __cached__      pathname to byte compiled file
         __doc__         documentation string
         __file__        filename (missing for built-in modules)"""
     return isinstance(object, types.ModuleType)

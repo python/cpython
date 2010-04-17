@@ -43,6 +43,15 @@ typedef unsigned short mode_t;
    The current working scheme is to increment the previous value by
    10.
 
+   Starting with the adoption of PEP 3147 in Python 3.2, every bump in magic
+   number also includes a new "magic tag", i.e. a human readable string used
+   to represent the magic number in __pycache__ directories.  When you change
+   the magic number, you must also set a new unique magic tag.  Generally this
+   can be named after the Python major version of the magic number bump, but
+   it can really be anything, as long as it's different than anything else
+   that's come before.  The tags are included in the following table, starting
+   with Python 3.2a0.
+
    Known values:
        Python 1.5:   20121
        Python 1.5.1: 20121
@@ -91,11 +100,18 @@ typedef unsigned short mode_t;
        Python 3.1a0: 3151 (optimize conditional branches:
 			   introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE)
        Python 3.2a0: 3160 (add SETUP_WITH)
+		     tag: cpython-32
 */
 
+/* If you change MAGIC, you must change TAG and you must insert the old value
+   into _PyMagicNumberTags below.
+*/
 #define MAGIC (3160 | ((long)'\r'<<16) | ((long)'\n'<<24))
-/* Magic word as global */
+#define TAG "cpython-32"
+#define CACHEDIR "__pycache__"
+/* Current magic word and string tag as globals. */
 static long pyc_magic = MAGIC;
+static const char *pyc_tag = TAG;
 
 /* See _PyImport_FixupExtension() below */
 static PyObject *extensions = NULL;
@@ -517,7 +533,7 @@ PyImport_Cleanup(void)
 }
 
 
-/* Helper for pythonrun.c -- return magic number */
+/* Helper for pythonrun.c -- return magic number and tag. */
 
 long
 PyImport_GetMagicNumber(void)
@@ -525,6 +541,12 @@ PyImport_GetMagicNumber(void)
 	return pyc_magic;
 }
 
+
+const char *
+PyImport_GetMagicTag(void)
+{
+	return pyc_tag;
+}
 
 /* Magic for extension modules (built-in as well as dynamically
    loaded).  To prevent initializing an extension module more than
@@ -671,7 +693,10 @@ remove_module(const char *name)
 			      "sys.modules failed");
 }
 
-static PyObject * get_sourcefile(const char *file);
+static PyObject * get_sourcefile(char *file);
+static char *make_source_pathname(char *pathname, char *buf);
+static char *make_compiled_pathname(char *pathname, char *buf, size_t buflen,
+				    int debug);
 
 /* Execute a code object in a module and return the module object
  * WITH INCREMENTED REFERENCE COUNT.  If an error occurs, name is
@@ -679,15 +704,27 @@ static PyObject * get_sourcefile(const char *file);
  * in sys.modules.  The caller may wish to restore the original
  * module object (if any) in this case; PyImport_ReloadModule is an
  * example.
+ *
+ * Note that PyImport_ExecCodeModuleWithPathnames() is the preferred, richer
+ * interface.  The other two exist primarily for backward compatibility.
  */
 PyObject *
 PyImport_ExecCodeModule(char *name, PyObject *co)
 {
-	return PyImport_ExecCodeModuleEx(name, co, (char *)NULL);
+	return PyImport_ExecCodeModuleWithPathnames(
+		name, co, (char *)NULL, (char *)NULL);
 }
 
 PyObject *
 PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
+{
+	return PyImport_ExecCodeModuleWithPathnames(
+		name, co, pathname, (char *)NULL);
+}
+
+PyObject *
+PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname,
+				     char *cpathname)
 {
 	PyObject *modules = PyImport_GetModuleDict();
 	PyObject *m, *d, *v;
@@ -718,6 +755,20 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 		PyErr_Clear(); /* Not important enough to report */
 	Py_DECREF(v);
 
+	/* Remember the pyc path name as the __cached__ attribute. */
+	if (cpathname == NULL) {
+		v = Py_None;
+		Py_INCREF(v);
+	}
+	else if ((v = PyUnicode_FromString(cpathname)) == NULL) {
+		PyErr_Clear(); /* Not important enough to report */
+		v = Py_None;
+		Py_INCREF(v);
+	}
+	if (PyDict_SetItemString(d, "__cached__", v) != 0)
+		PyErr_Clear(); /* Not important enough to report */
+	Py_DECREF(v);
+
 	v = PyEval_EvalCode((PyCodeObject *)co, d, d);
 	if (v == NULL)
 		goto error;
@@ -740,31 +791,188 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 }
 
 
+/* Like strrchr(string, '/') but searches for the rightmost of either SEP
+   or ALTSEP, if the latter is defined.
+*/
+static char *
+rightmost_sep(char *s)
+{
+	char *found, c;
+	for (found = NULL; (c = *s); s++) {
+		if (c == SEP
+#ifdef ALTSEP
+		    || c == ALTSEP
+#endif
+		    )
+		{
+			found = s;
+		}
+	}
+	return found;
+}
+
+
 /* Given a pathname for a Python source file, fill a buffer with the
    pathname for the corresponding compiled file.  Return the pathname
    for the compiled file, or NULL if there's no space in the buffer.
    Doesn't set an exception. */
 
 static char *
-make_compiled_pathname(char *pathname, char *buf, size_t buflen)
+make_compiled_pathname(char *pathname, char *buf, size_t buflen, int debug)
 {
+	/* foo.py -> __pycache__/foo.<tag>.pyc */
 	size_t len = strlen(pathname);
-	if (len+2 > buflen)
+	size_t i, save;
+	char *pos;
+	int sep = SEP;
+
+	/* Sanity check that the buffer has roughly enough space to hold what
+	   will eventually be the full path to the compiled file.  The 5 extra
+	   bytes include the slash afer __pycache__, the two extra dots, the
+	   extra trailing character ('c' or 'o') and null.  This isn't exact
+	   because the contents of the buffer can affect how many actual
+	   characters of the string get into the buffer.  We'll do a final
+	   sanity check before writing the extension to ensure we do not
+	   overflow the buffer.
+	*/
+	if (len + strlen(CACHEDIR) + strlen(pyc_tag) + 5 > buflen)
 		return NULL;
 
-#ifdef MS_WINDOWS
-	/* Treat .pyw as if it were .py.  The case of ".pyw" must match
-	   that used in _PyImport_StandardFiletab. */
-	if (len >= 4 && strcmp(&pathname[len-4], ".pyw") == 0)
-		--len;	/* pretend 'w' isn't there */
-#endif
-	memcpy(buf, pathname, len);
-	buf[len] = Py_OptimizeFlag ? 'o' : 'c';
-	buf[len+1] = '\0';
+	/* Find the last path separator and copy everything from the start of
+	   the source string up to and including the separator.
+	*/
+	if ((pos = rightmost_sep(pathname)) == NULL) {
+		i = 0;
+	}
+	else {
+		sep = *pos;
+		i = pos - pathname + 1;
+		strncpy(buf, pathname, i);
+	}
 
+	save = i;
+	buf[i++] = '\0';
+	/* Add __pycache__/ */
+	strcat(buf, CACHEDIR);
+	i += strlen(CACHEDIR) - 1;
+	buf[i++] = sep;
+	buf[i++] = '\0';
+	/* Add the base filename, but remove the .py or .pyw extension, since
+	   the tag name must go before the extension.
+	*/
+	strcat(buf, pathname + save);
+	if ((pos = strrchr(buf, '.')) != NULL)
+		*++pos = '\0';
+	strcat(buf, pyc_tag);
+	/* The length test above assumes that we're only adding one character
+	   to the end of what would normally be the extension.  What if there
+	   is no extension, or the string ends in '.' or '.p', and otherwise
+	   fills the buffer?  By appending 4 more characters onto the string
+	   here, we could overrun the buffer.
+
+	   As a simple example, let's say buflen=32 and the input string is
+	   'xxx.py'.  strlen() would be 6 and the test above would yield:
+
+	   (6 + 11 + 10 + 5 == 32) > 32
+
+	   which is false and so the name mangling would continue.  This would
+	   be fine because we'd end up with this string in buf:
+
+	   __pycache__/xxx.cpython-32.pyc\0
+
+	   strlen(of that) == 30 + the nul fits inside a 32 character buffer.
+	   We can even handle an input string of say 'xxxxx' above because
+	   that's (5 + 11 + 10 + 5 == 31) > 32 which is also false.  Name
+	   mangling that yields:
+
+	   __pycache__/xxxxxcpython-32.pyc\0
+
+	   which is 32 characters including the nul, and thus fits in the
+	   buffer. However, an input string of 'xxxxxx' would yield a result
+	   string of:
+
+	   __pycache__/xxxxxxcpython-32.pyc\0
+
+	   which is 33 characters long (including the nul), thus overflowing
+	   the buffer, even though the first test would fail, i.e.: the input
+	   string is also 6 characters long, so 32 > 32 is false.
+
+	   The reason the first test fails but we still overflow the buffer is
+	   that the test above only expects to add one extra character to be
+	   added to the extension, and here we're adding three (pyc).  We
+	   don't add the first dot, so that reclaims one of expected
+	   positions, leaving us overflowing by 1 byte (3 extra - 1 reclaimed
+	   dot - 1 expected extra == 1 overflowed).
+
+	   The best we can do is ensure that we still have enough room in the
+	   target buffer before we write the extension.  Because it's always
+	   only the extension that can cause the overflow, and never the other
+	   path bytes we've written, it's sufficient to just do one more test
+	   here.  Still, the assertion that follows can't hurt.
+	*/
+#if 0
+	printf("strlen(buf): %d; buflen: %d\n", (int)strlen(buf), (int)buflen);
+#endif
+	if (strlen(buf) + 5 > buflen)
+		return NULL;
+	strcat(buf, debug ? ".pyc" : ".pyo");
+	assert(strlen(buf) < buflen);
 	return buf;
 }
 
+
+/* Given a pathname to a Python byte compiled file, return the path to the
+   source file, if the path matches the PEP 3147 format.  This does not check
+   for any file existence, however, if the pyc file name does not match PEP
+   3147 style, NULL is returned.  buf must be at least as big as pathname;
+   the resulting path will always be shorter. */
+   
+static char *
+make_source_pathname(char *pathname, char *buf)
+{
+	/* __pycache__/foo.<tag>.pyc -> foo.py */
+	size_t i, j;
+	char *left, *right, *dot0, *dot1, sep;
+
+	/* Look back two slashes from the end.  In between these two slashes
+	   must be the string __pycache__ or this is not a PEP 3147 style
+	   path.  It's possible for there to be only one slash.
+	*/
+	if ((right = rightmost_sep(pathname)) == NULL)
+		return NULL;
+	sep = *right;
+	*right = '\0';
+	left = rightmost_sep(pathname);
+	*right = sep;
+	if (left == NULL)
+		left = pathname;
+	else
+		left++;
+	if (right-left != strlen(CACHEDIR) ||
+	    strncmp(left, CACHEDIR, right-left) != 0)
+		return NULL;
+
+	/* Now verify that the path component to the right of the last slash
+	   has two dots in it.
+	*/
+	if ((dot0 = strchr(right + 1, '.')) == NULL)
+		return NULL;
+	if ((dot1 = strchr(dot0 + 1, '.')) == NULL)
+		return NULL;
+	/* Too many dots? */
+	if (strchr(dot1 + 1, '.') != NULL)
+		return NULL;
+
+	/* This is a PEP 3147 path.  Start by copying everything from the
+	   start of pathname up to and including the leftmost slash.  Then
+	   copy the file's basename, removing the magic tag and adding a .py
+	   suffix.
+	*/
+	strncpy(buf, pathname, (i=left-pathname));
+	strncpy(buf+i, right+1, (j=dot0-right));
+	strcpy(buf+i+j, "py");
+	return buf;
+}
 
 /* Given a pathname for a Python source file, its time of last
    modification, and a pathname for a compiled file, check whether the
@@ -846,7 +1054,8 @@ load_compiled_module(char *name, char *cpathname, FILE *fp)
 	if (Py_VerboseFlag)
 		PySys_WriteStderr("import %s # precompiled from %s\n",
 			name, cpathname);
-	m = PyImport_ExecCodeModuleEx(name, (PyObject *)co, cpathname);
+	m = PyImport_ExecCodeModuleWithPathnames(
+		name, (PyObject *)co, cpathname, cpathname);
 	Py_DECREF(co);
 
 	return m;
@@ -919,12 +1128,41 @@ static void
 write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
 {
 	FILE *fp;
+	char *dirpath;
 	time_t mtime = srcstat->st_mtime;
 #ifdef MS_WINDOWS   /* since Windows uses different permissions  */
 	mode_t mode = srcstat->st_mode & ~S_IEXEC;
+	mode_t dirmode = srcstat->st_mode | S_IEXEC; /* XXX Is this correct
+							for Windows?
+							2010-04-07 BAW */
 #else
 	mode_t mode = srcstat->st_mode & ~S_IXUSR & ~S_IXGRP & ~S_IXOTH;
+	mode_t dirmode = (srcstat->st_mode |
+                          S_IXUSR | S_IXGRP | S_IXOTH |
+                          S_IWUSR | S_IWGRP | S_IWOTH);
 #endif
+	int saved;
+
+	/* Ensure that the __pycache__ directory exists. */
+	dirpath = rightmost_sep(cpathname);
+	if (dirpath == NULL) {
+		if (Py_VerboseFlag)
+			PySys_WriteStderr(
+				"# no %s path found %s\n",
+				CACHEDIR, cpathname);
+		return;
+	}
+	saved = *dirpath;
+	*dirpath = '\0';
+	/* XXX call os.mkdir() or maybe CreateDirectoryA() on Windows? */
+	if (mkdir(cpathname, dirmode) < 0 && errno != EEXIST) {
+		*dirpath = saved;
+		if (Py_VerboseFlag)
+			PySys_WriteStderr(
+				"# cannot create cache dir %s\n", cpathname);
+		return;
+	}
+	*dirpath = saved;
 
 	fp = open_exclusive(cpathname, mode);
 	if (fp == NULL) {
@@ -1032,8 +1270,8 @@ load_source_module(char *name, char *pathname, FILE *fp)
 		return NULL;
 	}
 #endif
-	cpathname = make_compiled_pathname(pathname, buf,
-					   (size_t)MAXPATHLEN + 1);
+	cpathname = make_compiled_pathname(
+		pathname, buf, (size_t)MAXPATHLEN + 1, !Py_OptimizeFlag);
 	if (cpathname != NULL &&
 	    (fpc = check_compiled_module(pathname, st.st_mtime, cpathname))) {
 		co = read_compiled_module(cpathname, fpc);
@@ -1060,7 +1298,8 @@ load_source_module(char *name, char *pathname, FILE *fp)
 				write_compiled_module(co, cpathname, &st);
 		}
 	}
-	m = PyImport_ExecCodeModuleEx(name, (PyObject *)co, pathname);
+	m = PyImport_ExecCodeModuleWithPathnames(
+		name, (PyObject *)co, pathname, cpathname);
 	Py_DECREF(co);
 
 	return m;
@@ -1070,7 +1309,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
  * Returns the path to the py file if available, else the given path
  */
 static PyObject *
-get_sourcefile(const char *file)
+get_sourcefile(char *file)
 {
 	char py[MAXPATHLEN + 1];
 	Py_ssize_t len;
@@ -1087,8 +1326,15 @@ get_sourcefile(const char *file)
 		return PyUnicode_DecodeFSDefault(file);
 	}
 
-	strncpy(py, file, len-1);
-	py[len-1] = '\0';
+	/* Start by trying to turn PEP 3147 path into source path.  If that
+	 * fails, just chop off the trailing character, i.e. legacy pyc path
+	 * to py.
+	 */
+	if (make_source_pathname(file, py) == NULL) {
+		strncpy(py, file, len-1);
+		py[len-1] = '\0';
+	}
+
 	if (stat(py, &statbuf) == 0 &&
 		S_ISREG(statbuf.st_mode)) {
 		u = PyUnicode_DecodeFSDefault(py);
@@ -2813,16 +3059,28 @@ PyImport_Import(PyObject *module_name)
 */
 
 static PyObject *
-imp_get_magic(PyObject *self, PyObject *noargs)
+imp_make_magic(long magic)
 {
 	char buf[4];
 
-	buf[0] = (char) ((pyc_magic >>  0) & 0xff);
-	buf[1] = (char) ((pyc_magic >>  8) & 0xff);
-	buf[2] = (char) ((pyc_magic >> 16) & 0xff);
-	buf[3] = (char) ((pyc_magic >> 24) & 0xff);
+	buf[0] = (char) ((magic >>  0) & 0xff);
+	buf[1] = (char) ((magic >>  8) & 0xff);
+	buf[2] = (char) ((magic >> 16) & 0xff);
+	buf[3] = (char) ((magic >> 24) & 0xff);
 
 	return PyBytes_FromStringAndSize(buf, 4);
+};	
+
+static PyObject *
+imp_get_magic(PyObject *self, PyObject *noargs)
+{
+	return imp_make_magic(pyc_magic);
+}
+
+static PyObject *
+imp_get_tag(PyObject *self, PyObject *noargs)
+{
+	return PyUnicode_FromString(pyc_tag);
 }
 
 static PyObject *
@@ -3190,6 +3448,75 @@ PyDoc_STRVAR(doc_reload,
 \n\
 Reload the module.  The module must have been successfully imported before.");
 
+static PyObject *
+imp_cache_from_source(PyObject *self, PyObject *args, PyObject *kws)
+{
+	static char *kwlist[] = {"path", "debug_override", NULL};
+
+	char buf[MAXPATHLEN+1];
+	char *pathname, *cpathname;
+	PyObject *debug_override = Py_None;
+	int debug = !Py_OptimizeFlag;
+
+	if (!PyArg_ParseTupleAndKeywords(
+		    args, kws, "es|O", kwlist,
+		    Py_FileSystemDefaultEncoding, &pathname, &debug_override))
+		return NULL;
+
+	if (debug_override != Py_None)
+		if ((debug = PyObject_IsTrue(debug_override)) < 0)
+			return NULL;
+
+	cpathname = make_compiled_pathname(pathname, buf, MAXPATHLEN+1, debug);
+	PyMem_Free(pathname);
+
+	if (cpathname == NULL) {
+		PyErr_Format(PyExc_SystemError, "path buffer too short");
+		return NULL;
+	}
+	return PyUnicode_FromString(buf);
+}
+
+PyDoc_STRVAR(doc_cache_from_source,
+"Given the path to a .py file, return the path to its .pyc/.pyo file.\n\
+\n\
+The .py file does not need to exist; this simply returns the path to the\n\
+.pyc/.pyo file calculated as if the .py file were imported.  The extension\n\
+will be .pyc unless __debug__ is not defined, then it will be .pyo.\n\
+\n\
+If debug_override is not None, then it must be a boolean and is taken as\n\
+the value of __debug__ instead.");
+
+static PyObject *
+imp_source_from_cache(PyObject *self, PyObject *args, PyObject *kws)
+{
+	static char *kwlist[] = {"path", NULL};
+
+	char *pathname;
+	char buf[MAXPATHLEN+1];
+
+	if (!PyArg_ParseTupleAndKeywords(
+		    args, kws, "es", kwlist,
+		    Py_FileSystemDefaultEncoding, &pathname))
+		return NULL;
+
+	if (make_source_pathname(pathname, buf) == NULL) {
+		PyErr_Format(PyExc_ValueError, "Not a PEP 3147 pyc path: %s",
+			     pathname);
+		PyMem_Free(pathname);
+		return NULL;
+	}
+	PyMem_Free(pathname);
+	return PyUnicode_FromString(buf);
+}
+
+PyDoc_STRVAR(doc_source_from_cache,
+"Given the path to a .pyc./.pyo file, return the path to its .py file.\n\
+\n\
+The .pyc/.pyo file does not need to exist; this simply returns the path to\n\
+the .py file calculated to correspond to the .pyc/.pyo file.  If path\n\
+does not conform to PEP 3147 format, ValueError will be raised.");
+
 /* Doc strings */
 
 PyDoc_STRVAR(doc_imp,
@@ -3211,6 +3538,10 @@ The module name must include the full package name, if any.");
 PyDoc_STRVAR(doc_get_magic,
 "get_magic() -> string\n\
 Return the magic number for .pyc or .pyo files.");
+
+PyDoc_STRVAR(doc_get_tag,
+"get_tag() -> string\n\
+Return the magic tag for .pyc or .pyo files.");
 
 PyDoc_STRVAR(doc_get_suffixes,
 "get_suffixes() -> [(suffix, mode, type), ...]\n\
@@ -3242,6 +3573,7 @@ On platforms without threads, this function does nothing.");
 static PyMethodDef imp_methods[] = {
 	{"find_module",	 imp_find_module,  METH_VARARGS, doc_find_module},
 	{"get_magic",	 imp_get_magic,	   METH_NOARGS,  doc_get_magic},
+	{"get_tag",	 imp_get_tag,	   METH_NOARGS,  doc_get_tag},
 	{"get_suffixes", imp_get_suffixes, METH_NOARGS,  doc_get_suffixes},
 	{"load_module",	 imp_load_module,  METH_VARARGS, doc_load_module},
 	{"new_module",	 imp_new_module,   METH_VARARGS, doc_new_module},
@@ -3249,6 +3581,10 @@ static PyMethodDef imp_methods[] = {
 	{"acquire_lock", imp_acquire_lock, METH_NOARGS,  doc_acquire_lock},
 	{"release_lock", imp_release_lock, METH_NOARGS,  doc_release_lock},
 	{"reload",       imp_reload,       METH_O,       doc_reload},
+	{"cache_from_source", (PyCFunction)imp_cache_from_source,
+	 METH_VARARGS | METH_KEYWORDS, doc_cache_from_source},
+	{"source_from_cache", (PyCFunction)imp_source_from_cache,
+	 METH_VARARGS | METH_KEYWORDS, doc_source_from_cache},
 	/* The rest are obsolete */
 	{"get_frozen_object",	imp_get_frozen_object,	METH_VARARGS},
 	{"is_frozen_package",   imp_is_frozen_package,  METH_VARARGS},
@@ -3436,7 +3772,6 @@ PyInit_imp(void)
   failure:
 	Py_XDECREF(m);
 	return NULL;
-
 }
 
 

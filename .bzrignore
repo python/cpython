@@ -33,3 +33,4 @@ Parser/pgen
 Lib/test/data/*
 Lib/lib2to3/Grammar*.pickle
 Lib/lib2to3/PatternGrammar*.pickle
+__pycache__

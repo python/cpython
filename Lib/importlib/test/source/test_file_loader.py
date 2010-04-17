@@ -127,7 +127,7 @@ class BadBytecodeTest(unittest.TestCase):
         except KeyError:
             pass
         py_compile.compile(mapping[name])
-        bytecode_path = source_util.bytecode_path(mapping[name])
+        bytecode_path = imp.cache_from_source(mapping[name])
         with open(bytecode_path, 'rb') as file:
             bc = file.read()
         new_bc = manipulator(bc)
@@ -226,7 +226,7 @@ class BadBytecodeTest(unittest.TestCase):
         zeros = b'\x00\x00\x00\x00'
         with source_util.create_modules('_temp') as mapping:
             py_compile.compile(mapping['_temp'])
-            bytecode_path = source_util.bytecode_path(mapping['_temp'])
+            bytecode_path = imp.cache_from_source(mapping['_temp'])
             with open(bytecode_path, 'r+b') as bytecode_file:
                 bytecode_file.seek(4)
                 bytecode_file.write(zeros)
@@ -242,9 +242,10 @@ class BadBytecodeTest(unittest.TestCase):
     def test_bad_marshal(self):
         # Bad marshal data should raise a ValueError.
         with source_util.create_modules('_temp') as mapping:
-            bytecode_path = source_util.bytecode_path(mapping['_temp'])
+            bytecode_path = imp.cache_from_source(mapping['_temp'])
             source_mtime = os.path.getmtime(mapping['_temp'])
             source_timestamp = importlib._w_long(source_mtime)
+            source_util.ensure_bytecode_path(bytecode_path)
             with open(bytecode_path, 'wb') as bytecode_file:
                 bytecode_file.write(imp.get_magic())
                 bytecode_file.write(source_timestamp)
@@ -260,7 +261,7 @@ class BadBytecodeTest(unittest.TestCase):
         with source_util.create_modules('_temp') as mapping:
             # Create bytecode that will need to be re-created.
             py_compile.compile(mapping['_temp'])
-            bytecode_path = source_util.bytecode_path(mapping['_temp'])
+            bytecode_path = imp.cache_from_source(mapping['_temp'])
             with open(bytecode_path, 'r+b') as bytecode_file:
                 bytecode_file.seek(0)
                 bytecode_file.write(b'\x00\x00\x00\x00')

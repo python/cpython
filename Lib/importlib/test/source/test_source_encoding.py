@@ -33,7 +33,7 @@ class EncodingTest(unittest.TestCase):
 
     def run_test(self, source):
         with source_util.create_modules(self.module_name) as mapping:
-            with open(mapping[self.module_name], 'wb')as file:
+            with open(mapping[self.module_name], 'wb') as file:
                 file.write(source)
             loader = _bootstrap._PyPycFileLoader(self.module_name,
                                        mapping[self.module_name], False)

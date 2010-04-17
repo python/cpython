@@ -1,12 +1,14 @@
-# Tests command line execution of scripts
+# tests command line execution of scripts
 
 import unittest
 import os
 import os.path
+import py_compile
+
 import test.support
-from test.script_helper import (run_python,
-                                temp_dir, make_script, compile_script,
-                                make_pkg, make_zip_script, make_zip_pkg)
+from test.script_helper import (
+    make_pkg, make_script, make_zip_pkg, make_zip_script, run_python,
+    temp_dir)
 
 verbose = test.support.verbose
 
@@ -28,6 +30,7 @@ assertEqual(result, ['Top level assignment', 'Lower level reference'])
 # Check population of magic variables
 assertEqual(__name__, '__main__')
 print('__file__==%r' % __file__)
+assertEqual(__cached__, None)
 print('__package__==%r' % __package__)
 # Check the sys module
 import sys
@@ -101,9 +104,10 @@ class CmdLineTest(unittest.TestCase):
     def test_script_compiled(self):
         with temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'script')
-            compiled_name = compile_script(script_name)
+            compiled_name = py_compile.compile(script_name, doraise=True)
             os.remove(script_name)
-            self._check_script(compiled_name, compiled_name, compiled_name, None)
+            self._check_script(compiled_name, compiled_name,
+                               compiled_name, None)
 
     def test_directory(self):
         with temp_dir() as script_dir:
@@ -113,9 +117,10 @@ class CmdLineTest(unittest.TestCase):
     def test_directory_compiled(self):
         with temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = compile_script(script_name)
+            compiled_name = py_compile.compile(script_name, doraise=True)
             os.remove(script_name)
-            self._check_script(script_dir, compiled_name, script_dir, '')
+            pyc_file = test.support.make_legacy_pyc(script_name)
+            self._check_script(script_dir, pyc_file, script_dir, '')
 
     def test_directory_error(self):
         with temp_dir() as script_dir:
@@ -131,7 +136,7 @@ class CmdLineTest(unittest.TestCase):
     def test_zipfile_compiled(self):
         with temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = compile_script(script_name)
+            compiled_name = py_compile.compile(script_name, doraise=True)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, '')
 
@@ -176,11 +181,12 @@ class CmdLineTest(unittest.TestCase):
             pkg_dir = os.path.join(script_dir, 'test_pkg')
             make_pkg(pkg_dir)
             script_name = _make_test_script(pkg_dir, '__main__')
-            compiled_name = compile_script(script_name)
+            compiled_name = py_compile.compile(script_name, doraise=True)
             os.remove(script_name)
+            pyc_file = test.support.make_legacy_pyc(script_name)
             launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
-            self._check_script(launch_name, compiled_name,
-                               compiled_name, 'test_pkg')
+            self._check_script(launch_name, pyc_file,
+                               pyc_file, 'test_pkg')
 
     def test_package_error(self):
         with temp_dir() as script_dir:

@@ -1,4 +1,5 @@
 import builtins
+import errno
 import imp
 import marshal
 import os
@@ -8,8 +9,11 @@ import shutil
 import stat
 import sys
 import unittest
-from test.support import (unlink, TESTFN, unload, run_unittest, is_jython,
-                          check_warnings, EnvironmentVarGuard, swap_attr, swap_item)
+
+from test.support import (
+    EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
+    make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
+    unlink, unload)
 
 
 def remove_files(name):
@@ -19,12 +23,18 @@ def remove_files(name):
               name + ".pyw",
               name + "$py.class"):
         unlink(f)
+    try:
+        shutil.rmtree('__pycache__')
+    except OSError as error:
+        if error.errno != errno.ENOENT:
+            raise
 
 
 class ImportTests(unittest.TestCase):
 
     def tearDown(self):
         unload(TESTFN)
+
     setUp = tearDown
 
     def test_case_sensitivity(self):
@@ -53,8 +63,8 @@ class ImportTests(unittest.TestCase):
                 pyc = TESTFN + ".pyc"
 
             with open(source, "w") as f:
-                print("# This tests Python's ability to import a", ext, "file.",
-                      file=f)
+                print("# This tests Python's ability to import a",
+                      ext, "file.", file=f)
                 a = random.randrange(1000)
                 b = random.randrange(1000)
                 print("a =", a, file=f)
@@ -73,10 +83,10 @@ class ImportTests(unittest.TestCase):
                 self.assertEqual(mod.b, b,
                     "module loaded (%s) but contents invalid" % mod)
             finally:
+                forget(TESTFN)
                 unlink(source)
                 unlink(pyc)
                 unlink(pyo)
-                unload(TESTFN)
 
         sys.path.insert(0, os.curdir)
         try:
@@ -87,32 +97,31 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
 
-    @unittest.skipUnless(os.name == 'posix', "test meaningful only on posix systems")
+    @unittest.skipUnless(os.name == 'posix',
+                         "test meaningful only on posix systems")
     def test_execute_bit_not_copied(self):
         # Issue 6070: under posix .pyc files got their execute bit set if
         # the .py file had the execute bit set, but they aren't executable.
-        oldmask = os.umask(0o022)
-        sys.path.insert(0, os.curdir)
-        try:
-            fname = TESTFN + os.extsep + "py"
-            f = open(fname, 'w').close()
-            os.chmod(fname, (stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
-                             stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
-            __import__(TESTFN)
-            fn = fname + 'c'
-            if not os.path.exists(fn):
-                fn = fname + 'o'
+        with temp_umask(0o022):
+            sys.path.insert(0, os.curdir)
+            try:
+                fname = TESTFN + os.extsep + "py"
+                f = open(fname, 'w').close()
+                os.chmod(fname, (stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |
+                                 stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
+                __import__(TESTFN)
+                fn = imp.cache_from_source(fname)
                 if not os.path.exists(fn):
                     self.fail("__import__ did not result in creation of "
                               "either a .pyc or .pyo file")
-            s = os.stat(fn)
-            self.assertEqual(stat.S_IMODE(s.st_mode),
-                             stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
-        finally:
-            os.umask(oldmask)
-            remove_files(TESTFN)
-            unload(TESTFN)
-            del sys.path[0]
+                    s = os.stat(fn)
+                    self.assertEqual(
+                        stat.S_IMODE(s.st_mode),
+                        stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+            finally:
+                del sys.path[0]
+                remove_files(TESTFN)
+                unload(TESTFN)
 
     def test_imp_module(self):
         # Verify that the imp module can correctly load and find .py files
@@ -144,10 +153,12 @@ class ImportTests(unittest.TestCase):
                 f.write('"",\n')
             f.write(']')
 
-        # Compile & remove .py file, we only need .pyc (or .pyo).
+        # Compile & remove .py file, we only need .pyc (or .pyo), but that
+        # must be relocated to the PEP 3147 bytecode-only location.
         with open(filename, 'r') as f:
             py_compile.compile(filename)
         unlink(filename)
+        make_legacy_pyc(filename)
 
         # Need to be able to load from current dir.
         sys.path.append('')
@@ -247,8 +258,9 @@ class ImportTests(unittest.TestCase):
             self.assertTrue(mod.__file__.endswith('.py'))
             os.remove(source)
             del sys.modules[TESTFN]
+            make_legacy_pyc(source)
             mod = __import__(TESTFN)
-            ext = mod.__file__[-4:]
+            base, ext = os.path.splitext(mod.__file__)
             self.assertIn(ext, ('.pyc', '.pyo'))
         finally:
             del sys.path[0]
@@ -298,7 +310,7 @@ func_filename = func.__code__.co_filename
 """
     dir_name = os.path.abspath(TESTFN)
     file_name = os.path.join(dir_name, module_name) + os.extsep + "py"
-    compiled_name = file_name + ("c" if __debug__ else "o")
+    compiled_name = imp.cache_from_source(file_name)
 
     def setUp(self):
         self.sys_path = sys.path[:]
@@ -346,8 +358,9 @@ func_filename = func.__code__.co_filename
         target = "another_module.py"
         py_compile.compile(self.file_name, dfile=target)
         os.remove(self.file_name)
+        pyc_file = make_legacy_pyc(self.file_name)
         mod = self.import_module()
-        self.assertEqual(mod.module_filename, self.compiled_name)
+        self.assertEqual(mod.module_filename, pyc_file)
         self.assertEqual(mod.code_filename, target)
         self.assertEqual(mod.func_filename, target)
 
@@ -476,9 +489,142 @@ class OverridingImportBuiltinTests(unittest.TestCase):
             self.assertEqual(foo(), os)
 
 
+class PycacheTests(unittest.TestCase):
+    # Test the various PEP 3147 related behaviors.
+
+    tag = imp.get_tag()
+
+    def _clean(self):
+        forget(TESTFN)
+        rmtree('__pycache__')
+        unlink(self.source)
+
+    def setUp(self):
+        self.source = TESTFN + '.py'
+        self._clean()
+        with open(self.source, 'w') as fp:
+            print('# This is a test file written by test_import.py', file=fp)
+        sys.path.insert(0, os.curdir)
+
+    def tearDown(self):
+        assert sys.path[0] == os.curdir, 'Unexpected sys.path[0]'
+        del sys.path[0]
+        self._clean()
+
+    def test_import_pyc_path(self):
+        self.assertFalse(os.path.exists('__pycache__'))
+        __import__(TESTFN)
+        self.assertTrue(os.path.exists('__pycache__'))
+        self.assertTrue(os.path.exists(os.path.join(
+            '__pycache__', '{}.{}.pyc'.format(TESTFN, self.tag))))
+
+    @unittest.skipUnless(os.name == 'posix',
+                         "test meaningful only on posix systems")
+    def test_unwritable_directory(self):
+        # When the umask causes the new __pycache__ directory to be
+        # unwritable, the import still succeeds but no .pyc file is written.
+        with temp_umask(0o222):
+            __import__(TESTFN)
+        self.assertTrue(os.path.exists('__pycache__'))
+        self.assertFalse(os.path.exists(os.path.join(
+            '__pycache__', '{}.{}.pyc'.format(TESTFN, self.tag))))
+
+    def test_missing_source(self):
+        # With PEP 3147 cache layout, removing the source but leaving the pyc
+        # file does not satisfy the import.
+        __import__(TESTFN)
+        pyc_file = imp.cache_from_source(self.source)
+        self.assertTrue(os.path.exists(pyc_file))
+        os.remove(self.source)
+        forget(TESTFN)
+        self.assertRaises(ImportError, __import__, TESTFN)
+
+    def test_missing_source_legacy(self):
+        # Like test_missing_source() except that for backward compatibility,
+        # when the pyc file lives where the py file would have been (and named
+        # without the tag), it is importable.  The __file__ of the imported
+        # module is the pyc location.
+        __import__(TESTFN)
+        # pyc_file gets removed in _clean() via tearDown().
+        pyc_file = make_legacy_pyc(self.source)
+        os.remove(self.source)
+        unload(TESTFN)
+        m = __import__(TESTFN)
+        self.assertEqual(m.__file__,
+                         os.path.join(os.curdir, os.path.relpath(pyc_file)))
+
+    def test___cached__(self):
+        # Modules now also have an __cached__ that points to the pyc file.
+        m = __import__(TESTFN)
+        pyc_file = imp.cache_from_source(TESTFN + '.py')
+        self.assertEqual(m.__cached__, os.path.join(os.curdir, pyc_file))
+
+    def test___cached___legacy_pyc(self):
+        # Like test___cached__() except that for backward compatibility,
+        # when the pyc file lives where the py file would have been (and named
+        # without the tag), it is importable.  The __cached__ of the imported
+        # module is the pyc location.
+        __import__(TESTFN)
+        # pyc_file gets removed in _clean() via tearDown().
+        pyc_file = make_legacy_pyc(self.source)
+        os.remove(self.source)
+        unload(TESTFN)
+        m = __import__(TESTFN)
+        self.assertEqual(m.__cached__,
+                         os.path.join(os.curdir, os.path.relpath(pyc_file)))
+
+    def test_package___cached__(self):
+        # Like test___cached__ but for packages.
+        def cleanup():
+            shutil.rmtree('pep3147')
+        os.mkdir('pep3147')
+        self.addCleanup(cleanup)
+        # Touch the __init__.py
+        with open(os.path.join('pep3147', '__init__.py'), 'w'):
+            pass
+        with open(os.path.join('pep3147', 'foo.py'), 'w'):
+            pass
+        unload('pep3147.foo')
+        unload('pep3147')
+        m = __import__('pep3147.foo')
+        init_pyc = imp.cache_from_source(
+            os.path.join('pep3147', '__init__.py'))
+        self.assertEqual(m.__cached__, os.path.join(os.curdir, init_pyc))
+        foo_pyc = imp.cache_from_source(os.path.join('pep3147', 'foo.py'))
+        self.assertEqual(sys.modules['pep3147.foo'].__cached__,
+                         os.path.join(os.curdir, foo_pyc))
+
+    def test_package___cached___from_pyc(self):
+        # Like test___cached__ but ensuring __cached__ when imported from a
+        # PEP 3147 pyc file.
+        def cleanup():
+            shutil.rmtree('pep3147')
+        os.mkdir('pep3147')
+        self.addCleanup(cleanup)
+        unload('pep3147.foo')
+        unload('pep3147')
+        # Touch the __init__.py
+        with open(os.path.join('pep3147', '__init__.py'), 'w'):
+            pass
+        with open(os.path.join('pep3147', 'foo.py'), 'w'):
+            pass
+        m = __import__('pep3147.foo')
+        unload('pep3147.foo')
+        unload('pep3147')
+        m = __import__('pep3147.foo')
+        init_pyc = imp.cache_from_source(
+            os.path.join('pep3147', '__init__.py'))
+        self.assertEqual(m.__cached__, os.path.join(os.curdir, init_pyc))
+        foo_pyc = imp.cache_from_source(os.path.join('pep3147', 'foo.py'))
+        self.assertEqual(sys.modules['pep3147.foo'].__cached__,
+                         os.path.join(os.curdir, foo_pyc))
+
+
 def test_main(verbose=None):
-    run_unittest(ImportTests, PycRewritingTests, PathsTests, RelativeImportTests,
+    run_unittest(ImportTests, PycacheTests,
+                 PycRewritingTests, PathsTests, RelativeImportTests,
                  OverridingImportBuiltinTests)
+
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.

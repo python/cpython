@@ -8,9 +8,12 @@ extern "C" {
 #endif
 
 PyAPI_FUNC(long) PyImport_GetMagicNumber(void);
+PyAPI_FUNC(const char *) PyImport_GetMagicTag(void);
 PyAPI_FUNC(PyObject *) PyImport_ExecCodeModule(char *name, PyObject *co);
 PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleEx(
 	char *name, PyObject *co, char *pathname);
+PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleWithPathnames(
+	char *name, PyObject *co, char *pathname, char *cpathname);
 PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
 PyAPI_FUNC(PyObject *) PyImport_AddModule(const char *name);
 PyAPI_FUNC(PyObject *) PyImport_ImportModule(const char *name);

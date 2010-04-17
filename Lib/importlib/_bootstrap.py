@@ -488,6 +488,16 @@ class _PyPycFileLoader(PyPycLoader, _PyFileLoader):
 
     """Load a module from a source or bytecode file."""
 
+    def _find_path(self, ext_type):
+        """Return PEP 3147 path if ext_type is PY_COMPILED, otherwise
+        super()._find_path() is called."""
+        if ext_type == imp.PY_COMPILED:
+            # We don't really care what the extension on self._base_path is,
+            # as long as it has exactly one dot.
+            bytecode_path = imp.cache_from_source(self._base_path + '.py')
+            return (bytecode_path if _path_exists(bytecode_path) else None)
+        return super()._find_path(ext_type)
+
     @_check_name
     def source_mtime(self, name):
         """Return the modification time of the source for the specified
@@ -515,7 +525,16 @@ class _PyPycFileLoader(PyPycLoader, _PyFileLoader):
         """
         bytecode_path = self.bytecode_path(name)
         if not bytecode_path:
-            bytecode_path = self._base_path + _suffix_list(imp.PY_COMPILED)[0]
+            source_path = self.source_path(name)
+            bytecode_path = imp.cache_from_source(source_path)
+            # Ensure that the __pycache__ directory exists.  We can't use
+            # os.path.dirname() here.
+            dirname, sep, basename = bytecode_path.rpartition(path_sep)
+            try:
+                _os.mkdir(dirname)
+            except OSError as error:
+                if error.errno != errno.EEXIST:
+                    raise
         try:
             # Assuming bytes.
             with _closing(_io.FileIO(bytecode_path, 'w')) as bytecode_file:

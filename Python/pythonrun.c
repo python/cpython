@@ -1155,6 +1155,8 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 			Py_DECREF(f);
 			return -1;
 		}
+		if (PyDict_SetItemString(d, "__cached__", Py_None) < 0)
+			return -1;
 		set_file_name = 1;
 		Py_DECREF(f);
 	}

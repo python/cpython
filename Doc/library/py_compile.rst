@@ -26,12 +26,16 @@ byte-code cache files in the directory containing the source code.
 
    Compile a source file to byte-code and write out the byte-code cache  file.  The
    source code is loaded from the file name *file*.  The  byte-code is written to
-   *cfile*, which defaults to *file* ``+`` ``'c'`` (``'o'`` if optimization is
-   enabled in the current interpreter).  If *dfile* is specified, it is used as the
+   *cfile*, which defaults to the :PEP:`3147` path, ending in ``.pyc``
+   (``'.pyo`` if optimization is enabled in the current interpreter).  For
+   example, if *file* is ``/foo/bar/baz.py`` *cfile* will default to
+   ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.  If *dfile* is specified, it is used as the
    name of the source file in error messages instead of *file*.  If *doraise* is
    true, a :exc:`PyCompileError` is raised when an error is encountered while
    compiling *file*. If *doraise* is false (the default), an error string is
-   written to ``sys.stderr``, but no exception is raised.
+   written to ``sys.stderr``, but no exception is raised.  This function
+   returns the path to byte-compiled file, i.e. whatever *cfile* value was
+   used.
 
 
 .. function:: main(args=None)

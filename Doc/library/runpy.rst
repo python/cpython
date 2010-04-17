@@ -32,7 +32,8 @@ The :mod:`runpy` module provides two functions:
    below are defined in the supplied dictionary, those definitions are
    overridden by :func:`run_module`.
 
-   The special global variables ``__name__``, ``__file__``, ``__loader__``
+   The special global variables ``__name__``, ``__file__``, ``__cached__``,
+   ``__loader__``
    and ``__package__`` are set in the globals dictionary before the module
    code is executed (Note that this is a minimal set of variables - other
    variables may be set implicitly as an interpreter implementation detail).
@@ -44,6 +45,8 @@ The :mod:`runpy` module provides two functions:
    ``__file__`` is set to the name provided by the module loader. If the
    loader does not make filename information available, this variable is set
    to :const:`None`.
+
+    ``__cached__`` will be set to ``None``.
 
    ``__loader__`` is set to the PEP 302 module loader used to retrieve the
    code for the module (This loader may be a wrapper around the standard

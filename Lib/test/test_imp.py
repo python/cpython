@@ -1,6 +1,7 @@
 import imp
 import os
 import os.path
+import shutil
 import sys
 import unittest
 from test import support
@@ -139,7 +140,8 @@ class ImportTests(unittest.TestCase):
             mod = imp.load_source(temp_mod_name, temp_mod_name + '.py')
             self.assertEqual(mod.a, 1)
 
-            mod = imp.load_compiled(temp_mod_name, temp_mod_name + '.pyc')
+            mod = imp.load_compiled(
+                temp_mod_name, imp.cache_from_source(temp_mod_name + '.py'))
             self.assertEqual(mod.a, 1)
 
             if not os.path.exists(test_package_name):
@@ -184,11 +186,132 @@ class ReloadTests(unittest.TestCase):
             imp.reload(marshal)
 
 
+class PEP3147Tests(unittest.TestCase):
+    """Tests of PEP 3147."""
+
+    tag = imp.get_tag()
+
+    def test_cache_from_source(self):
+        # Given the path to a .py file, return the path to its PEP 3147
+        # defined .pyc file (i.e. under __pycache__).
+        self.assertEqual(
+            imp.cache_from_source('/foo/bar/baz/qux.py', True),
+            '/foo/bar/baz/__pycache__/qux.{}.pyc'.format(self.tag))
+
+    def test_cache_from_source_optimized(self):
+        # Given the path to a .py file, return the path to its PEP 3147
+        # defined .pyo file (i.e. under __pycache__).
+        self.assertEqual(
+            imp.cache_from_source('/foo/bar/baz/qux.py', False),
+            '/foo/bar/baz/__pycache__/qux.{}.pyo'.format(self.tag))
+
+    def test_cache_from_source_cwd(self):
+        self.assertEqual(imp.cache_from_source('foo.py', True),
+                         os.sep.join(('__pycache__',
+                                      'foo.{}.pyc'.format(self.tag))))
+
+    def test_cache_from_source_override(self):
+        # When debug_override is not None, it can be any true-ish or false-ish
+        # value.
+        self.assertEqual(
+            imp.cache_from_source('/foo/bar/baz.py', []),
+            '/foo/bar/__pycache__/baz.{}.pyo'.format(self.tag))
+        self.assertEqual(
+            imp.cache_from_source('/foo/bar/baz.py', [17]),
+            '/foo/bar/__pycache__/baz.{}.pyc'.format(self.tag))
+        # However if the bool-ishness can't be determined, the exception
+        # propagates.
+        class Bearish:
+            def __bool__(self): raise RuntimeError
+        self.assertRaises(
+            RuntimeError,
+            imp.cache_from_source, '/foo/bar/baz.py', Bearish())
+
+    @unittest.skipIf(os.altsep is None,
+                     'test meaningful only where os.altsep is defined')
+    def test_altsep_cache_from_source(self):
+        # Windows path and PEP 3147.
+        self.assertEqual(
+            imp.cache_from_source('\\foo\\bar\\baz\\qux.py', True),
+            '\\foo\\bar\\baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
+
+    @unittest.skipIf(os.altsep is None,
+                     'test meaningful only where os.altsep is defined')
+    def test_altsep_and_sep_cache_from_source(self):
+        # Windows path and PEP 3147 where altsep is right of sep.
+        self.assertEqual(
+            imp.cache_from_source('\\foo\\bar/baz\\qux.py', True),
+            '\\foo\\bar/baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
+
+    @unittest.skipIf(os.altsep is None,
+                     'test meaningful only where os.altsep is defined')
+    def test_sep_altsep_and_sep_cache_from_source(self):
+        # Windows path and PEP 3147 where sep is right of altsep.
+        self.assertEqual(
+            imp.cache_from_source('\\foo\\bar\\baz/qux.py', True),
+            '\\foo\\bar\\baz/__pycache__/qux.{}.pyc'.format(self.tag))
+
+    def test_source_from_cache(self):
+        # Given the path to a PEP 3147 defined .pyc file, return the path to
+        # its source.  This tests the good path.
+        self.assertEqual(imp.source_from_cache(
+            '/foo/bar/baz/__pycache__/qux.{}.pyc'.format(self.tag)),
+            '/foo/bar/baz/qux.py')
+
+    def test_source_from_cache_bad_path(self):
+        # When the path to a pyc file is not in PEP 3147 format, a ValueError
+        # is raised.
+        self.assertRaises(
+            ValueError, imp.source_from_cache, '/foo/bar/bazqux.pyc')
+
+    def test_source_from_cache_no_slash(self):
+        # No slashes at all in path -> ValueError
+        self.assertRaises(
+            ValueError, imp.source_from_cache, 'foo.cpython-32.pyc')
+
+    def test_source_from_cache_too_few_dots(self):
+        # Too few dots in final path component -> ValueError
+        self.assertRaises(
+            ValueError, imp.source_from_cache, '__pycache__/foo.pyc')
+
+    def test_source_from_cache_too_many_dots(self):
+        # Too many dots in final path component -> ValueError
+        self.assertRaises(
+            ValueError, imp.source_from_cache,
+            '__pycache__/foo.cpython-32.foo.pyc')
+
+    def test_source_from_cache_no__pycache__(self):
+        # Another problem with the path -> ValueError
+        self.assertRaises(
+            ValueError, imp.source_from_cache,
+            '/foo/bar/foo.cpython-32.foo.pyc')
+
+    def test_package___file__(self):
+        # Test that a package's __file__ points to the right source directory.
+        os.mkdir('pep3147')
+        sys.path.insert(0, os.curdir)
+        def cleanup():
+            if sys.path[0] == os.curdir:
+                del sys.path[0]
+            shutil.rmtree('pep3147')
+        self.addCleanup(cleanup)
+        # Touch the __init__.py file.
+        with open('pep3147/__init__.py', 'w'):
+            pass
+        m = __import__('pep3147')
+        # Ensure we load the pyc file.
+        support.forget('pep3147')
+        m = __import__('pep3147')
+        self.assertEqual(m.__file__,
+                         os.sep.join(('.', 'pep3147', '__init__.py')))
+
+
 def test_main():
     tests = [
         ImportTests,
+        PEP3147Tests,
         ReloadTests,
-    ]
+        ]
     try:
         import _thread
     except ImportError:

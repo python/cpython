@@ -1,5 +1,6 @@
 from .. import util
 import contextlib
+import errno
 import functools
 import imp
 import os
@@ -26,14 +27,16 @@ def writes_bytecode_files(fxn):
     return wrapper
 
 
-def bytecode_path(source_path):
-    for suffix, _, type_ in imp.get_suffixes():
-        if type_ == imp.PY_COMPILED:
-            bc_suffix = suffix
-            break
-    else:
-        raise ValueError("no bytecode suffix is defined")
-    return os.path.splitext(source_path)[0] + bc_suffix
+def ensure_bytecode_path(bytecode_path):
+    """Ensure that the __pycache__ directory for PEP 3147 pyc file exists.
+
+    :param bytecode_path: File system path to PEP 3147 pyc file.
+    """
+    try:
+        os.mkdir(os.path.dirname(bytecode_path))
+    except OSError as error:
+        if error.errno != errno.EEXIST:
+            raise
 
 
 @contextlib.contextmanager

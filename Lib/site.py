@@ -74,15 +74,19 @@ def makepath(*paths):
     return dir, os.path.normcase(dir)
 
 
-def abs__file__():
-    """Set all module' __file__ attribute to an absolute path"""
+def abs_paths():
+    """Set all module __file__ and __cached__ attributes to an absolute path"""
     for m in set(sys.modules.values()):
         if hasattr(m, '__loader__'):
             continue   # don't mess with a PEP 302-supplied __file__
         try:
             m.__file__ = os.path.abspath(m.__file__)
         except AttributeError:
-            continue
+            pass
+        try:
+            m.__cached__ = os.path.abspath(m.__cached__)
+        except AttributeError:
+            pass
 
 
 def removeduppaths():
@@ -518,7 +522,7 @@ def execusercustomize():
 def main():
     global ENABLE_USER_SITE
 
-    abs__file__()
+    abs_paths()
     known_paths = removeduppaths()
     if (os.name == "posix" and sys.path and
         os.path.basename(sys.path[-1]) == "Modules"):

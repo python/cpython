@@ -204,8 +204,41 @@ This module provides an interface to the mechanisms used to implement the
    function does nothing.
 
 
-The following constants with integer values, defined in this module, are used to
-indicate the search result of :func:`find_module`.
+The following functions and data provide conveniences for handling :pep:`3147`
+byte-compiled file paths.
+
+.. versionadded:: 3.2
+
+.. function:: cache_from_source(path, debug_override=None)
+
+   Return the PEP 3147 path to the byte-compiled file associated with the
+   source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
+   value would be ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.
+   The ``cpython-32`` string comes from the current magic tag (see
+   :func:`get_tag`).  The returned path will end in ``.pyc`` when
+   ``__debug__`` is True or ``.pyo`` for an optimized Python
+   (i.e. ``__debug__`` is False).  By passing in True or False for
+   *debug_override* you can override the system's value for ``__debug__`` for
+   extension selection.
+
+   *path* need not exist.
+
+.. function:: source_from_cache(path)
+
+   Given the *path* to a PEP 3147 file name, return the associated source code
+   file path.  For example, if *path* is
+   ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
+   ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
+   to PEP 3147 format, a ``ValueError`` is raised.
+
+.. function:: get_tag()
+
+   Return the PEP 3147 magic tag string matching this version of Python's
+   magic number, as returned by :func:`get_magic`.
+
+
+The following constants with integer values, defined in this module, are used
+to indicate the search result of :func:`find_module`.
 
 
 .. data:: PY_SOURCE
