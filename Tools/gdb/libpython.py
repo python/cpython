@@ -1097,6 +1097,11 @@ def register (obj):
 register (gdb.current_objfile ())
 
 
+
+# Unfortunately, the exact API exposed by the gdb module varies somewhat
+# from build to build
+# See http://bugs.python.org/issue8279?#msg102276
+
 class Frame(object):
     '''
     Wrapper for gdb.Frame, adding various methods
@@ -1119,7 +1124,16 @@ class Frame(object):
             return None
 
     def select(self):
+        '''If supported, select this frame and return True; return False if unsupported
+
+        Not all builds have a gdb.Frame.select method; seems to be present on Fedora 12
+        onwards, but absent on Ubuntu buildbot'''
+        if not hasattr(self._gdbframe, 'select'):
+            print ('Unable to select frame: '
+                   'this build of gdb does not expose a gdb.Frame.select method')
+            return False
         self._gdbframe.select()
+        return True
 
     def get_index(self):
         '''Calculate index of frame, starting at 0 for the newest frame within
@@ -1133,8 +1147,9 @@ class Frame(object):
         return index
 
     def is_evalframeex(self):
+        '''Is this a PyEval_EvalFrameEx frame?'''
         if self._gdbframe.function():
-            if self._gdbframe.function().name == 'PyEval_EvalFrameEx':
+            if self._gdbframe.name() == 'PyEval_EvalFrameEx':
                 '''
                 I believe we also need to filter on the inline
                 struct frame_id.inline_depth, only regarding frames with
@@ -1271,8 +1286,8 @@ def move_in_stack(move_up):
 
         if iter_frame.is_evalframeex():
             # Result:
-            iter_frame.select()
-            iter_frame.print_summary()
+            if iter_frame.select():
+                iter_frame.print_summary()
             return
 
         frame = iter_frame
