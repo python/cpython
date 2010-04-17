@@ -94,7 +94,7 @@ class SSLSocket(socket):
                  ssl_version=PROTOCOL_SSLv23, ca_certs=None,
                  do_handshake_on_connect=True,
                  family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None,
-                 suppress_ragged_eofs=True):
+                 suppress_ragged_eofs=True, ciphers=None):
 
         if sock is not None:
             socket.__init__(self,
@@ -123,7 +123,8 @@ class SSLSocket(socket):
             try:
                 self._sslobj = _ssl.sslwrap(self, server_side,
                                             keyfile, certfile,
-                                            cert_reqs, ssl_version, ca_certs)
+                                            cert_reqs, ssl_version, ca_certs,
+                                            ciphers)
                 if do_handshake_on_connect:
                     timeout = self.gettimeout()
                     if timeout == 0.0:
@@ -140,6 +141,7 @@ class SSLSocket(socket):
         self.cert_reqs = cert_reqs
         self.ssl_version = ssl_version
         self.ca_certs = ca_certs
+        self.ciphers = ciphers
         self.do_handshake_on_connect = do_handshake_on_connect
         self.suppress_ragged_eofs = suppress_ragged_eofs
 
@@ -325,7 +327,7 @@ class SSLSocket(socket):
         socket.connect(self, addr)
         self._sslobj = _ssl.sslwrap(self, False, self.keyfile, self.certfile,
                                     self.cert_reqs, self.ssl_version,
-                                    self.ca_certs)
+                                    self.ca_certs, self.ciphers)
         try:
             if self.do_handshake_on_connect:
                 self.do_handshake()
@@ -345,6 +347,7 @@ class SSLSocket(socket):
                           cert_reqs=self.cert_reqs,
                           ssl_version=self.ssl_version,
                           ca_certs=self.ca_certs,
+                          ciphers=self.ciphers,
                           do_handshake_on_connect=
                               self.do_handshake_on_connect),
                 addr)
@@ -358,13 +361,14 @@ def wrap_socket(sock, keyfile=None, certfile=None,
                 server_side=False, cert_reqs=CERT_NONE,
                 ssl_version=PROTOCOL_SSLv23, ca_certs=None,
                 do_handshake_on_connect=True,
-                suppress_ragged_eofs=True):
+                suppress_ragged_eofs=True, ciphers=None):
 
     return SSLSocket(sock=sock, keyfile=keyfile, certfile=certfile,
                      server_side=server_side, cert_reqs=cert_reqs,
                      ssl_version=ssl_version, ca_certs=ca_certs,
                      do_handshake_on_connect=do_handshake_on_connect,
-                     suppress_ragged_eofs=suppress_ragged_eofs)
+                     suppress_ragged_eofs=suppress_ragged_eofs,
+                     ciphers=ciphers)
 
 # some utility functions
 

@@ -315,6 +315,9 @@ C-API
 Library
 -------
 
+- Issue #8322: Add a *ciphers* argument to SSL sockets, so as to change the
+  available cipher list.  Helps fix test_ssl with OpenSSL 1.0.0.
+
 - Issue #8393: subprocess accepts bytes, bytearray and str with surrogates for
   the current working directory.
 
