@@ -19,8 +19,7 @@ from test import pydoc_mod
 if hasattr(pydoc_mod, "__loader__"):
     del pydoc_mod.__loader__
 
-expected_text_pattern = \
-"""
+expected_text_pattern = """
 NAME
     test.pydoc_mod - This is a test module for test_pydoc
 
@@ -87,8 +86,7 @@ CREDITS
     Nobody
 """.strip()
 
-expected_html_pattern = \
-"""
+expected_html_pattern = """
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="heading">
 <tr bgcolor="#7799ee">
 <td valign=bottom>&nbsp;<br>
@@ -186,7 +184,7 @@ war</tt></dd></dl>
 \x20\x20\x20\x20
 <tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%%">Nobody</td></tr></table>
-""".strip()
+""".strip() # ' <- emacs turd
 
 
 # output pattern for missing module
@@ -287,7 +285,8 @@ class PyDocDocTest(unittest.TestCase):
             ('i_am_not_here', 'i_am_not_here'),
             ('test.i_am_not_here_either', 'i_am_not_here_either'),
             ('test.i_am_not_here.neither_am_i', 'i_am_not_here.neither_am_i'),
-            ('i_am_not_here.{}'.format(modname), 'i_am_not_here.{}'.format(modname)),
+            ('i_am_not_here.{}'.format(modname),
+             'i_am_not_here.{}'.format(modname)),
             ('test.{}'.format(modname), modname),
             )
 
@@ -304,9 +303,8 @@ class PyDocDocTest(unittest.TestCase):
             fullmodname = os.path.join(TESTFN, modname)
             sourcefn = fullmodname + os.extsep + "py"
             for importstring, expectedinmsg in testpairs:
-                f = open(sourcefn, 'w')
-                f.write("import {}\n".format(importstring))
-                f.close()
+                with open(sourcefn, 'w') as f:
+                    f.write("import {}\n".format(importstring))
                 try:
                     result = run_pydoc(modname).decode("ascii")
                 finally:

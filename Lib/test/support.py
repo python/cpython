@@ -17,22 +17,25 @@ import unittest
 import importlib
 import collections
 import re
+import imp
 import time
 
-__all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
-           "verbose", "use_resources", "max_memuse", "record_original_stdout",
-           "get_original_stdout", "unload", "unlink", "rmtree", "forget",
-           "is_resource_enabled", "requires", "find_unused_port", "bind_port",
-           "fcmp", "is_jython", "TESTFN", "HOST", "FUZZ", "SAVEDCWD", "temp_cwd",
-           "findfile", "sortdict", "check_syntax_error", "open_urlresource",
-           "check_warnings", "CleanImport", "EnvironmentVarGuard",
-           "TransientResource", "captured_output", "captured_stdout",
-           "time_out", "socket_peer_reset", "ioerror_peer_reset",
-           "run_with_locale",
-           "set_memlimit", "bigmemtest", "bigaddrspacetest", "BasicTestRunner",
-           "run_unittest", "run_doctest", "threading_setup", "threading_cleanup",
-           "reap_children", "cpython_only", "check_impl_detail", "get_attribute",
-           "swap_item", "swap_attr"]
+__all__ = [
+    "Error", "TestFailed", "ResourceDenied", "import_module",
+    "verbose", "use_resources", "max_memuse", "record_original_stdout",
+    "get_original_stdout", "unload", "unlink", "rmtree", "forget",
+    "is_resource_enabled", "requires", "find_unused_port", "bind_port",
+    "fcmp", "is_jython", "TESTFN", "HOST", "FUZZ", "SAVEDCWD", "temp_cwd",
+    "findfile", "sortdict", "check_syntax_error", "open_urlresource",
+    "check_warnings", "CleanImport", "EnvironmentVarGuard",
+    "TransientResource", "captured_output", "captured_stdout",
+    "time_out", "socket_peer_reset", "ioerror_peer_reset",
+    "run_with_locale", 'temp_umask',
+    "set_memlimit", "bigmemtest", "bigaddrspacetest", "BasicTestRunner",
+    "run_unittest", "run_doctest", "threading_setup", "threading_cleanup",
+    "reap_children", "cpython_only", "check_impl_detail", "get_attribute",
+    "swap_item", "swap_attr",
+    ]
 
 
 class Error(Exception):
@@ -177,27 +180,50 @@ def unload(name):
 def unlink(filename):
     try:
         os.unlink(filename)
-    except OSError:
-        pass
+    except OSError as error:
+        # The filename need not exist.
+        if error.errno != errno.ENOENT:
+            raise
 
 def rmtree(path):
     try:
         shutil.rmtree(path)
-    except OSError as e:
+    except OSError as error:
         # Unix returns ENOENT, Windows returns ESRCH.
-        if e.errno not in (errno.ENOENT, errno.ESRCH):
+        if error.errno not in (errno.ENOENT, errno.ESRCH):
             raise
 
+def make_legacy_pyc(source):
+    """Move a PEP 3147 pyc/pyo file to its legacy pyc/pyo location.
+
+    The choice of .pyc or .pyo extension is done based on the __debug__ flag
+    value.
+
+    :param source: The file system path to the source file.  The source file
+        does not need to exist, however the PEP 3147 pyc file must exist.
+    :return: The file system path to the legacy pyc file.
+    """
+    pyc_file = imp.cache_from_source(source)
+    up_one = os.path.dirname(os.path.abspath(source))
+    legacy_pyc = os.path.join(up_one, source + ('c' if __debug__ else 'o'))
+    os.rename(pyc_file, legacy_pyc)
+    return legacy_pyc
+
 def forget(modname):
-    '''"Forget" a module was ever imported by removing it from sys.modules and
-    deleting any .pyc and .pyo files.'''
+    """'Forget' a module was ever imported.
+
+    This removes the module from sys.modules and deletes any PEP 3147 or
+    legacy .pyc and .pyo files.
+    """
     unload(modname)
     for dirname in sys.path:
-        unlink(os.path.join(dirname, modname + '.pyc'))
-        # Deleting the .pyo file cannot be within the 'try' for the .pyc since
-        # the chance exists that there is no .pyc (and thus the 'try' statement
-        # is exited) but there is a .pyo file.
-        unlink(os.path.join(dirname, modname + '.pyo'))
+        source = os.path.join(dirname, modname + '.py')
+        # It doesn't matter if they exist or not, unlink all possible
+        # combinations of PEP 3147 and legacy pyc and pyo files.
+        unlink(source + 'c')
+        unlink(source + 'o')
+        unlink(imp.cache_from_source(source, debug_override=True))
+        unlink(imp.cache_from_source(source, debug_override=False))
 
 def is_resource_enabled(resource):
     """Test whether a resource is enabled.  Known resources are set by
@@ -208,7 +234,9 @@ def requires(resource, msg=None):
     """Raise ResourceDenied if the specified resource is not available.
 
     If the caller's module is __main__ then automatically return True.  The
-    possibility of False being returned occurs when regrtest.py is executing."""
+    possibility of False being returned occurs when regrtest.py is
+    executing.
+    """
     # see if the caller's module is __main__ - if so, treat as if
     # the resource was set
     if sys._getframe(1).f_globals.get("__name__") == "__main__":
@@ -403,6 +431,16 @@ def temp_cwd(name='tempcwd', quiet=False):
         os.chdir(saved_dir)
         if is_temporary:
             rmtree(name)
+
+
+@contextlib.contextmanager
+def temp_umask(umask):
+    """Context manager that temporarily sets the process umask."""
+    oldmask = os.umask(umask)
+    try:
+        yield
+    finally:
+        os.umask(oldmask)
 
 
 def findfile(file, here=__file__, subdir=None):

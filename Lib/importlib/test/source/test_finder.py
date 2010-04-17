@@ -1,7 +1,9 @@
 from importlib import _bootstrap
 from .. import abc
 from . import util as source_util
+from test.support import make_legacy_pyc
 import os
+import errno
 import py_compile
 import unittest
 import warnings
@@ -52,6 +54,14 @@ class FinderTests(abc.FinderTests):
             if unlink:
                 for name in unlink:
                     os.unlink(mapping[name])
+                    try:
+                        make_legacy_pyc(mapping[name])
+                    except OSError as error:
+                        # Some tests do not set compile_=True so the source
+                        # module will not get compiled and there will be no
+                        # PEP 3147 pyc file to rename.
+                        if error.errno != errno.ENOENT:
+                            raise
             loader = self.import_(mapping['.root'], test)
             self.assertTrue(hasattr(loader, 'load_module'))
             return loader
@@ -60,7 +70,8 @@ class FinderTests(abc.FinderTests):
         # [top-level source]
         self.run_test('top_level')
         # [top-level bc]
-        self.run_test('top_level', compile_={'top_level'}, unlink={'top_level'})
+        self.run_test('top_level', compile_={'top_level'},
+                      unlink={'top_level'})
         # [top-level both]
         self.run_test('top_level', compile_={'top_level'})
 

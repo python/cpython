@@ -11,7 +11,7 @@ class FrozenTests(unittest.TestCase):
         except ImportError as x:
             self.fail("import __hello__ failed:" + str(x))
         self.assertEqual(__hello__.initialized, True)
-        self.assertEqual(len(dir(__hello__)), 6, dir(__hello__))
+        self.assertEqual(len(dir(__hello__)), 7, dir(__hello__))
 
         try:
             import __phello__
@@ -19,9 +19,9 @@ class FrozenTests(unittest.TestCase):
             self.fail("import __phello__ failed:" + str(x))
         self.assertEqual(__phello__.initialized, True)
         if not "__phello__.spam" in sys.modules:
-            self.assertEqual(len(dir(__phello__)), 7, dir(__phello__))
-        else:
             self.assertEqual(len(dir(__phello__)), 8, dir(__phello__))
+        else:
+            self.assertEqual(len(dir(__phello__)), 9, dir(__phello__))
         self.assertEquals(__phello__.__path__, [__phello__.__name__])
 
         try:
@@ -29,8 +29,8 @@ class FrozenTests(unittest.TestCase):
         except ImportError as x:
             self.fail("import __phello__.spam failed:" + str(x))
         self.assertEqual(__phello__.spam.initialized, True)
-        self.assertEqual(len(dir(__phello__.spam)), 6)
-        self.assertEqual(len(dir(__phello__)), 8)
+        self.assertEqual(len(dir(__phello__.spam)), 7)
+        self.assertEqual(len(dir(__phello__)), 9)
 
         try:
             import __phello__.foo

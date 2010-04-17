@@ -13,7 +13,12 @@ import unittest
 
 
 def test_main():
-    start_dir = os.path.dirname(__file__)
+    if '__pycache__' in __file__:
+        parts = __file__.split(os.path.sep)
+        start_dir = sep.join(parts[:-2])
+    else:
+        start_dir = os.path.dirname(__file__)
+    # XXX 2010-03-18 barry: Fix __file__
     top_dir = os.path.dirname(os.path.dirname(start_dir))
     test_loader = unittest.TestLoader()
     if '--builtin' in sys.argv:

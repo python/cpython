@@ -258,19 +258,38 @@ class ImportSideEffectTests(unittest.TestCase):
         """Restore sys.path"""
         sys.path[:] = self.sys_path
 
-    def test_abs__file__(self):
-        # Make sure all imported modules have their __file__ attribute
-        # as an absolute path.
-        # Handled by abs__file__()
-        site.abs__file__()
-        for module in (sys, os, builtins):
-            try:
-                self.assertTrue(os.path.isabs(module.__file__), repr(module))
-            except AttributeError:
-                continue
-        # We could try everything in sys.modules; however, when regrtest.py
-        # runs something like test_frozen before test_site, then we will
-        # be testing things loaded *after* test_site did path normalization
+    def test_abs_paths(self):
+        # Make sure all imported modules have their __file__ and __cached__
+        # attributes as absolute paths.  Arranging to put the Lib directory on
+        # PYTHONPATH would cause the os module to have a relative path for
+        # __file__ if abs_paths() does not get run.  sys and builtins (the
+        # only other modules imported before site.py runs) do not have
+        # __file__ or __cached__ because they are built-in.
+        parent = os.path.relpath(os.path.dirname(os.__file__))
+        env = os.environ.copy()
+        env['PYTHONPATH'] = parent
+        command = 'import os; print(os.__file__, os.__cached__)'
+        # First, prove that with -S (no 'import site'), the paths are
+        # relative.
+        proc = subprocess.Popen([sys.executable, '-S', '-c', command],
+                                env=env,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        self.assertEqual(proc.returncode, 0)
+        os__file__, os__cached__ = stdout.split()
+        self.assertFalse(os.path.isabs(os__file__))
+        self.assertFalse(os.path.isabs(os__cached__))
+        # Now, with 'import site', it works.
+        proc = subprocess.Popen([sys.executable, '-c', command],
+                                env=env,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        self.assertEqual(proc.returncode, 0)
+        os__file__, os__cached__ = stdout.split()
+        self.assertTrue(os.path.isabs(os__file__))
+        self.assertTrue(os.path.isabs(os__cached__))
 
     def test_no_duplicate_paths(self):
         # No duplicate paths should exist in sys.path

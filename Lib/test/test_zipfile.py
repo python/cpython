@@ -6,6 +6,7 @@ except ImportError:
 
 import io
 import os
+import imp
 import time
 import shutil
 import struct
@@ -587,7 +588,13 @@ class PyZipFileTests(unittest.TestCase):
         with zipfile.PyZipFile(TemporaryFile(), "w") as zipfp:
             fn = __file__
             if fn.endswith('.pyc') or fn.endswith('.pyo'):
-                fn = fn[:-1]
+                path_split = fn.split(os.sep)
+                if os.altsep is not None:
+                    path_split.extend(fn.split(os.altsep))
+                if '__pycache__' in path_split:
+                    fn = imp.source_from_cache(fn)
+                else:
+                    fn = fn[:-1]
 
             zipfp.writepy(fn)
 

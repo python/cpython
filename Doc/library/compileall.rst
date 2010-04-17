@@ -17,9 +17,11 @@ line.  If no arguments are given, the invocation is equivalent to ``-l
 sys.path``.  Printing lists of the files compiled can be disabled with the
 :option:`-q` flag.  In addition, the :option:`-x` option takes a regular
 expression argument.  All files that match the expression will be skipped.
+The :option:`-b` flag may be given to write legacy ``.pyc`` file path names,
+otherwise :pep:`3147` style byte-compiled path names are written.
 
 
-.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=False)
+.. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=False, legacy=False)
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
    files along the way.  The *maxlevels* parameter is used to limit the depth of
@@ -34,12 +36,16 @@ expression argument.  All files that match the expression will be skipped.
    If *quiet* is true, nothing is printed to the standard output in normal
    operation.
 
+   If *legacy* is true, old-style ``.pyc`` file path names are written,
+   otherwise (the default), :pep:`3147` style path names are written.
 
-.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False)
+
+.. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, legacy=False)
 
    Byte-compile all the :file:`.py` files found along ``sys.path``. If
    *skip_curdir* is true (the default), the current directory is not included in
-   the search.  The *maxlevels* and *force* parameters default to ``0`` and are
+   the search.  The *maxlevels* parameter defaults to ``0``, and the *force*
+   and *legacy* parameters default to ``False``. All are
    passed to the :func:`compile_dir` function.
 
 To force a recompile of all the :file:`.py` files in the :file:`Lib/`

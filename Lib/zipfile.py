@@ -3,10 +3,17 @@ Read and write ZIP files.
 
 XXX references to utf-8 need further investigation.
 """
-import struct, os, time, sys, shutil
-import binascii, io, stat
 import io
+import os
 import re
+import imp
+import sys
+import time
+import stat
+import shutil
+import struct
+import binascii
+
 
 try:
     import zlib # We may need its compression method
@@ -1303,22 +1310,42 @@ class PyZipFile(ZipFile):
         file_py  = pathname + ".py"
         file_pyc = pathname + ".pyc"
         file_pyo = pathname + ".pyo"
-        if os.path.isfile(file_pyo) and \
-                            os.stat(file_pyo).st_mtime >= os.stat(file_py).st_mtime:
-            fname = file_pyo    # Use .pyo file
-        elif not os.path.isfile(file_pyc) or \
-             os.stat(file_pyc).st_mtime < os.stat(file_py).st_mtime:
+        pycache_pyc = imp.cache_from_source(file_py, True)
+        pycache_pyo = imp.cache_from_source(file_py, False)
+        if (os.path.isfile(file_pyo) and
+            os.stat(file_pyo).st_mtime >= os.stat(file_py).st_mtime):
+            # Use .pyo file.
+            arcname = fname = file_pyo
+        elif (os.path.isfile(file_pyc) and
+              os.stat(file_pyc).st_mtime >= os.stat(file_py).st_mtime):
+            # Use .pyc file.
+            arcname = fname = file_pyc
+        elif (os.path.isfile(pycache_pyc) and
+              os.stat(pycache_pyc).st_mtime >= os.stat(file_py).st_mtime):
+            # Use the __pycache__/*.pyc file, but write it to the legacy pyc
+            # file name in the archive.
+            fname = pycache_pyc
+            arcname = file_pyc
+        elif (os.path.isfile(pycache_pyo) and
+              os.stat(pycache_pyo).st_mtime >= os.stat(file_py).st_mtime):
+            # Use the __pycache__/*.pyo file, but write it to the legacy pyo
+            # file name in the archive.
+            fname = pycache_pyo
+            arcname = file_pyo
+        else:
+            # Compile py into PEP 3147 pyc file.
             import py_compile
             if self.debug:
                 print("Compiling", file_py)
             try:
-                py_compile.compile(file_py, file_pyc, None, True)
-            except py_compile.PyCompileError as err:
+                py_compile.compile(file_py, doraise=True)
+            except py_compile.PyCompileError as error:
                 print(err.msg)
-            fname = file_pyc
-        else:
-            fname = file_pyc
-        archivename = os.path.split(fname)[1]
+                fname = file_py
+            else:
+                fname = (pycache_pyc if __debug__ else pycache_pyo)
+                arcname = (file_pyc if __debug__ else file_pyo)
+        archivename = os.path.split(arcname)[1]
         if basename:
             archivename = "%s/%s" % (basename, archivename)
         return (fname, archivename)

@@ -4,6 +4,7 @@ This module has intimate knowledge of the format of .pyc files.
 """
 
 import builtins
+import errno
 import imp
 import marshal
 import os
@@ -37,16 +38,18 @@ class PyCompileError(Exception):
                     can be accesses as class variable 'file'
 
         msg:        string message to be written as error message
-                    If no value is given, a default exception message will be given,
-                    consistent with 'standard' py_compile output.
-                    message (or default) can be accesses as class variable 'msg'
+                    If no value is given, a default exception message will be
+                    given, consistent with 'standard' py_compile output.
+                    message (or default) can be accesses as class variable
+                    'msg'
 
     """
 
     def __init__(self, exc_type, exc_value, file, msg=''):
         exc_type_name = exc_type.__name__
         if exc_type is SyntaxError:
-            tbtext = ''.join(traceback.format_exception_only(exc_type, exc_value))
+            tbtext = ''.join(traceback.format_exception_only(
+                exc_type, exc_value))
             errmsg = tbtext.replace('File "<string>"', 'File "%s"' % file)
         else:
             errmsg = "Sorry: %s: %s" % (exc_type_name,exc_value)
@@ -64,7 +67,7 @@ class PyCompileError(Exception):
 
 def wr_long(f, x):
     """Internal; write a 32-bit int to a file in little-endian order."""
-    f.write(bytes([x        & 0xff,
+    f.write(bytes([x         & 0xff,
                    (x >> 8)  & 0xff,
                    (x >> 16) & 0xff,
                    (x >> 24) & 0xff]))
@@ -72,20 +75,18 @@ def wr_long(f, x):
 def compile(file, cfile=None, dfile=None, doraise=False):
     """Byte-compile one Python source file to Python bytecode.
 
-    Arguments:
-
-    file:    source filename
-    cfile:   target filename; defaults to source with 'c' or 'o' appended
-             ('c' normally, 'o' in optimizing mode, giving .pyc or .pyo)
-    dfile:   purported filename; defaults to source (this is the filename
-             that will show up in error messages)
-    doraise: flag indicating whether or not an exception should be
-             raised when a compile error is found. If an exception
-             occurs and this flag is set to False, a string
-             indicating the nature of the exception will be printed,
-             and the function will return to the caller. If an
-             exception occurs and this flag is set to True, a
-             PyCompileError exception will be raised.
+    :param file: The source file name.
+    :param cfile: The target byte compiled file name.  When not given, this
+        defaults to the PEP 3147 location.
+    :param dfile: Purported file name, i.e. the file name that shows up in
+        error messages.  Defaults to the source file name.
+    :param doraise: Flag indicating whether or not an exception should be
+        raised when a compile error is found.  If an exception occurs and this
+        flag is set to False, a string indicating the nature of the exception
+        will be printed, and the function will return to the caller. If an
+        exception occurs and this flag is set to True, a PyCompileError
+        exception will be raised.
+    :return: Path to the resulting byte compiled file.
 
     Note that it isn't necessary to byte-compile Python modules for
     execution efficiency -- Python itself byte-compiles a module when
@@ -102,7 +103,6 @@ def compile(file, cfile=None, dfile=None, doraise=False):
     See compileall.py for a script/module that uses this module to
     byte-compile all installed files (or all files in selected
     directories).
-
     """
     with open(file, "rb") as f:
         encoding = tokenize.detect_encoding(f.readline)[0]
@@ -122,7 +122,12 @@ def compile(file, cfile=None, dfile=None, doraise=False):
             sys.stderr.write(py_exc.msg + '\n')
             return
     if cfile is None:
-        cfile = file + (__debug__ and 'c' or 'o')
+        cfile = imp.cache_from_source(file)
+        try:
+            os.mkdir(os.path.dirname(cfile))
+        except OSError as error:
+            if error.errno != errno.EEXIST:
+                raise
     with open(cfile, 'wb') as fc:
         fc.write(b'\0\0\0\0')
         wr_long(fc, timestamp)
@@ -130,6 +135,7 @@ def compile(file, cfile=None, dfile=None, doraise=False):
         fc.flush()
         fc.seek(0, 0)
         fc.write(MAGIC)
+    return cfile
 
 def main(args=None):
     """Compile several source files.

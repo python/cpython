@@ -5,9 +5,10 @@ import os.path
 import sys
 import re
 import tempfile
-from test.support import verbose, run_unittest, forget
-from test.script_helper import (temp_dir, make_script, compile_script,
-                                make_pkg, make_zip_script, make_zip_pkg)
+import py_compile
+from test.support import forget, make_legacy_pyc, run_unittest, verbose
+from test.script_helper import (
+    make_pkg, make_script, make_zip_pkg, make_zip_script, temp_dir)
 
 
 from runpy import _run_code, _run_module_code, run_module, run_path
@@ -45,6 +46,7 @@ class RunModuleCodeTest(unittest.TestCase):
         self.assertEqual(d["result"], self.expected_result)
         self.assertIs(d["__name__"], None)
         self.assertIs(d["__file__"], None)
+        self.assertIs(d["__cached__"], None)
         self.assertIs(d["__loader__"], None)
         self.assertIs(d["__package__"], None)
         self.assertIs(d["run_argv0"], saved_argv0)
@@ -73,6 +75,7 @@ class RunModuleCodeTest(unittest.TestCase):
         self.assertTrue(d2["run_name_in_sys_modules"])
         self.assertTrue(d2["module_in_sys_modules"])
         self.assertIs(d2["__file__"], file)
+        self.assertIs(d2["__cached__"], None)
         self.assertIs(d2["run_argv0"], file)
         self.assertIs(d2["__loader__"], loader)
         self.assertIs(d2["__package__"], package)
@@ -170,6 +173,7 @@ class RunModuleTest(unittest.TestCase):
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
+            make_legacy_pyc(mod_fname)
             if verbose: print("Running from compiled:", mod_name)
             d2 = run_module(mod_name) # Read from bytecode
             self.assertIn("x", d2)
@@ -192,6 +196,7 @@ class RunModuleTest(unittest.TestCase):
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
+            make_legacy_pyc(mod_fname)
             if verbose: print("Running from compiled:", pkg_name)
             d2 = run_module(pkg_name) # Read from bytecode
             self.assertIn("x", d2)
@@ -246,6 +251,7 @@ from ..uncle.cousin import nephew
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
+            make_legacy_pyc(mod_fname)
             if verbose: print("Running from compiled:", mod_name)
             d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
             self.assertIn("__package__", d2)
@@ -313,6 +319,7 @@ argv0 = sys.argv[0]
         result = run_path(script_name)
         self.assertEqual(result["__name__"], expected_name)
         self.assertEqual(result["__file__"], expected_file)
+        self.assertEqual(result["__cached__"], None)
         self.assertIn("argv0", result)
         self.assertEqual(result["argv0"], expected_argv0)
         self.assertEqual(result["__package__"], expected_package)
@@ -332,7 +339,7 @@ argv0 = sys.argv[0]
         with temp_dir() as script_dir:
             mod_name = 'script'
             script_name = self._make_test_script(script_dir, mod_name)
-            compiled_name = compile_script(script_name)
+            compiled_name = py_compile.compile(script_name, doraise=True)
             os.remove(script_name)
             self._check_script(compiled_name, "<run_path>", compiled_name,
                                compiled_name, None)
@@ -348,9 +355,10 @@ argv0 = sys.argv[0]
         with temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
-            compiled_name = compile_script(script_name)
+            compiled_name = py_compile.compile(script_name, doraise=True)
             os.remove(script_name)
-            self._check_script(script_dir, "<run_path>", compiled_name,
+            legacy_pyc = make_legacy_pyc(script_name)
+            self._check_script(script_dir, "<run_path>", legacy_pyc,
                                script_dir, '')
 
     def test_directory_error(self):
@@ -371,8 +379,9 @@ argv0 = sys.argv[0]
         with temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
-            compiled_name = compile_script(script_name)
-            zip_name, fname = make_zip_script(script_dir, 'test_zip', compiled_name)
+            compiled_name = py_compile.compile(script_name, doraise=True)
+            zip_name, fname = make_zip_script(script_dir, 'test_zip',
+                                              compiled_name)
             self._check_script(zip_name, "<run_path>", fname, zip_name, '')
 
     def test_zipfile_error(self):
