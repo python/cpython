@@ -121,6 +121,23 @@ class BasicTests(unittest.TestCase):
         self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
                         (s, t))
 
+    def test_ciphers(self):
+        if not support.is_resource_enabled('network'):
+            return
+        remote = ("svn.python.org", 443)
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_NONE, ciphers="ALL")
+        s.connect(remote)
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_NONE, ciphers="DEFAULT")
+        s.connect(remote)
+        # Error checking occurs when connecting, because the SSL context
+        # isn't created before.
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_NONE, ciphers="^$:,;?*'dorothyx")
+        with self.assertRaisesRegexp(ssl.SSLError, "No cipher can be selected"):
+            s.connect(remote)
+
 
 class NetworkedTests(unittest.TestCase):
 
@@ -234,7 +251,8 @@ else:
                                                    certfile=self.server.certificate,
                                                    ssl_version=self.server.protocol,
                                                    ca_certs=self.server.cacerts,
-                                                   cert_reqs=self.server.certreqs)
+                                                   cert_reqs=self.server.certreqs,
+                                                   ciphers=self.server.ciphers)
                 except:
                     if self.server.chatty:
                         handle_error("\n server:  bad connection attempt from " + repr(self.addr) + ":\n")
@@ -333,7 +351,8 @@ else:
 
         def __init__(self, certificate, ssl_version=None,
                      certreqs=None, cacerts=None, expect_bad_connects=False,
-                     chatty=True, connectionchatty=False, starttls_server=False):
+                     chatty=True, connectionchatty=False, starttls_server=False,
+                     ciphers=None):
             if ssl_version is None:
                 ssl_version = ssl.PROTOCOL_TLSv1
             if certreqs is None:
@@ -342,6 +361,7 @@ else:
             self.protocol = ssl_version
             self.certreqs = certreqs
             self.cacerts = cacerts
+            self.ciphers = ciphers
             self.expect_bad_connects = expect_bad_connects
             self.chatty = chatty
             self.connectionchatty = connectionchatty
@@ -648,12 +668,13 @@ else:
     def serverParamsTest (certfile, protocol, certreqs, cacertsfile,
                           client_certfile, client_protocol=None,
                           indata="FOO\n",
-                          chatty=False, connectionchatty=False):
+                          ciphers=None, chatty=False, connectionchatty=False):
 
         server = ThreadedEchoServer(certfile,
                                     certreqs=certreqs,
                                     ssl_version=protocol,
                                     cacerts=cacertsfile,
+                                    ciphers=ciphers,
                                     chatty=chatty,
                                     connectionchatty=False)
         flag = threading.Event()
@@ -669,6 +690,7 @@ else:
                                 certfile=client_certfile,
                                 ca_certs=cacertsfile,
                                 cert_reqs=certreqs,
+                                ciphers=ciphers,
                                 ssl_version=client_protocol)
             s.connect((HOST, server.port))
         except ssl.SSLError as x:
@@ -723,8 +745,12 @@ else:
                               ssl.get_protocol_name(server_protocol),
                               certtype))
         try:
+            # NOTE: we must enable "ALL" ciphers, otherwise an SSLv23 client
+            # will send an SSLv3 hello (rather than SSLv2) starting from
+            # OpenSSL 1.0.0 (see issue #8322).
             serverParamsTest(CERTFILE, server_protocol, certsreqs,
                              CERTFILE, CERTFILE, client_protocol,
+                             ciphers="ALL",
                              chatty=False, connectionchatty=False)
         except support.TestFailed:
             if expectedToWork:
