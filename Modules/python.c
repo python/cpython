@@ -57,7 +57,7 @@ _Py_char2wchar(char* arg)
 	/* Overallocate; as multi-byte characters are in the argument, the
 	   actual output could use less memory. */
 	argsize = strlen(arg) + 1;
-	res = PyMem_Malloc(argsize*sizeof(wchar_t));
+	res = (wchar_t*)PyMem_Malloc(argsize*sizeof(wchar_t));
 	if (!res) goto oom;
 	in = (unsigned char*)arg;
 	out = res;
