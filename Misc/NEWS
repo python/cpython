@@ -316,7 +316,7 @@ Library
 -------
 
 - Issue #850728: Add a *timeout* parameter to the `acquire()` method of
-  `threading.Semaphore` objects.  Patch by Torsten Landschoff.
+  `threading.Semaphore` objects.  Original patch by Torsten Landschoff.
 
 - Issue #8322: Add a *ciphers* argument to SSL sockets, so as to change the
   available cipher list.  Helps fix test_ssl with OpenSSL 1.0.0.
