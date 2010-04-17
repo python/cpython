@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8279: Fix test_gdb failures.
+
 - Issue #8322: Add a *ciphers* argument to SSL sockets, so as to change the
   available cipher list.  Helps fix test_ssl with OpenSSL 1.0.0.
 

@@ -9,7 +9,7 @@ import subprocess
 import sys
 import unittest
 
-from test.test_support import run_unittest
+from test.test_support import run_unittest, findfile
 
 try:
     gdb_version, _ = subprocess.Popen(["gdb", "--version"],
@@ -143,6 +143,9 @@ class DebuggerTests(unittest.TestCase):
         m = re.match(pattern, actual, re.DOTALL)
         self.assert_(m,
                      msg='%r did not match %r' % (actual, pattern))
+
+    def get_sample_script(self):
+        return findfile('gdb_sample.py')
 
 class PrettyPrintTests(DebuggerTests):
     def test_getting_backtrace(self):
@@ -531,133 +534,127 @@ class PyListTests(DebuggerTests):
 
     def test_basic_command(self):
         'Verify that the "py-list" command works'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-list'])
 
-        self.assertListing('''
-   5
-   6    def bar(a, b, c):
-   7        baz(a, b, c)
-   8
-   9    def baz(*args):
- >10        print(42)
-  11
-  12    foo(1, 2, 3)
-''',
-                      bt)
+        self.assertListing('   5    \n'
+                           '   6    def bar(a, b, c):\n'
+                           '   7        baz(a, b, c)\n'
+                           '   8    \n'
+                           '   9    def baz(*args):\n'
+                           ' >10        print(42)\n'
+                           '  11    \n'
+                           '  12    foo(1, 2, 3)\n',
+                           bt)
 
     def test_one_abs_arg(self):
         'Verify the "py-list" command with one absolute argument'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-list 9'])
 
-        self.assertListing('''
-   9    def baz(*args):
- >10        print(42)
-  11
-  12    foo(1, 2, 3)
-''',
-                      bt)
+        self.assertListing('   9    def baz(*args):\n'
+                           ' >10        print(42)\n'
+                           '  11    \n'
+                           '  12    foo(1, 2, 3)\n',
+                           bt)
 
     def test_two_abs_args(self):
         'Verify the "py-list" command with two absolute arguments'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-list 1,3'])
 
-        self.assertListing('''
-   1    # Sample script for use by test_gdb.py
-   2
-   3    def foo(a, b, c):
-''',
-                      bt)
+        self.assertListing('   1    # Sample script for use by test_gdb.py\n'
+                           '   2    \n'
+                           '   3    def foo(a, b, c):\n',
+                           bt)
 
 class StackNavigationTests(DebuggerTests):
     def test_pyup_command(self):
         'Verify that the "py-up" command works'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
 $''')
 
     def test_down_at_bottom(self):
         'Verify handling of "py-down" at the bottom of the stack'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-down'])
         self.assertEndsWith(bt,
                             'Unable to find a newer python frame\n')
 
     def test_up_at_top(self):
         'Verify handling of "py-up" at the top of the stack'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up'] * 4)
         self.assertEndsWith(bt,
                             'Unable to find an older python frame\n')
 
     def test_up_then_down(self):
         'Verify "py-up" followed by "py-down"'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-down'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
     print\(42\)
 $''')
 
 class PyBtTests(DebuggerTests):
     def test_basic_command(self):
         'Verify that the "py-bt" command works'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-bt'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
     bar\(a, b, c\)
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 12, in <module> \(\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
 foo\(1, 2, 3\)
 ''')
 
 class PyPrintTests(DebuggerTests):
     def test_basic_command(self):
         'Verify that the "py-print" command works'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-print args'])
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'args' = \(1, 2, 3\)\n.*")
 
     def test_print_after_up(self):
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-print c', 'py-print b', 'py-print a'])
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'c' = 3\nlocal 'b' = 2\nlocal 'a' = 1\n.*")
 
     def test_printing_global(self):
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-print __name__'])
         self.assertMultilineMatches(bt,
                                     r".*\nglobal '__name__' = '__main__'\n.*")
 
     def test_printing_builtin(self):
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-print len'])
         self.assertMultilineMatches(bt,
                                     r".*\nbuiltin 'len' = <built-in function len>\n.*")
 
 class PyLocalsTests(DebuggerTests):
     def test_basic_command(self):
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-locals'])
         self.assertMultilineMatches(bt,
                                     r".*\nargs = \(1, 2, 3\)\n.*")
 
     def test_locals_after_up(self):
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-locals'])
         self.assertMultilineMatches(bt,
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
