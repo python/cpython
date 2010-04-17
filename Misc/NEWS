@@ -294,6 +294,9 @@ C-API
 Tests
 -----
 
+- Issue #3864: Skip three test_signal tests on freebsd6 because they fail
+  if any thread was previously started, most likely due to a platform bug.
+
 - Issue #8348: Fix test ftp url in test_urllib2net.
 
 - Issue #8204: Fix test_ttk notebook test by forcing focus.
