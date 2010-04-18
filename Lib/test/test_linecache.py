@@ -86,31 +86,28 @@ class LineCacheTests(unittest.TestCase):
             source_name = support.TESTFN + '.py'
             with open(source_name, 'w') as source:
                 source.write(SOURCE_1)
-                source.close()
-                getline(source_name, 1)
+            getline(source_name, 1)
 
-                # Keep a copy of the old contents
-                source_list = []
-                source = open(source_name)
+            # Keep a copy of the old contents
+            source_list = []
+            with open(source_name) as source:
                 for index, line in enumerate(source):
                     self.assertEquals(line, getline(source_name, index + 1))
                     source_list.append(line)
-                source.close()
 
-                source = open(source_name, 'w')
+            with open(source_name, 'w') as source:
                 source.write(SOURCE_2)
-                source.close()
 
-                # Try to update a bogus cache entry
-                linecache.checkcache('dummy')
+            # Try to update a bogus cache entry
+            linecache.checkcache('dummy')
 
-                # Check that the cache matches the old contents
-                for index, line in enumerate(source_list):
-                    self.assertEquals(line, getline(source_name, index + 1))
+            # Check that the cache matches the old contents
+            for index, line in enumerate(source_list):
+                self.assertEquals(line, getline(source_name, index + 1))
 
-                # Update the cache and check whether it matches the new source file
-                linecache.checkcache(source_name)
-                source = open(source_name)
+            # Update the cache and check whether it matches the new source file
+            linecache.checkcache(source_name)
+            with open(source_name) as source:
                 for index, line in enumerate(source):
                     self.assertEquals(line, getline(source_name, index + 1))
                     source_list.append(line)
