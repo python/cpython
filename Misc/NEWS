@@ -315,6 +315,9 @@ C-API
 Library
 -------
 
+- Issue #3817: ftplib.FTP.abort() method now considers 225 a valid response
+  code as stated in RFC-959 at chapter 5.4.
+
 - Issue #8394: _ctypes.dlopen() accepts bytes, bytearray and str with
   surrogates.
 
