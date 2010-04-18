@@ -315,6 +315,9 @@ C-API
 Library
 -------
 
+- Issue #8394: _ctypes.dlopen() accepts bytes, bytearray and str with
+  surrogates.
+
 - Issue #850728: Add a *timeout* parameter to the `acquire()` method of
   `threading.Semaphore` objects.  Original patch by Torsten Landschoff.
 
