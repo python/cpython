@@ -512,6 +512,16 @@ extern int fdatasync(int);
 #ifdef __FreeBSD__
 #include <osreldate.h>
 #if __FreeBSD_version > 500039
+# define _PY_PORT_CTYPE_UTF8_ISSUE
+#endif
+#endif
+
+
+#if defined(__APPLE__)
+# define _PY_PORT_CTYPE_UTF8_ISSUE
+#endif
+
+#ifdef _PY_PORT_CTYPE_UTF8_ISSUE
 #include <ctype.h>
 #include <wctype.h>
 #undef isalnum
@@ -528,7 +538,6 @@ extern int fdatasync(int);
 #define tolower(c) towlower(btowc(c))
 #undef toupper
 #define toupper(c) towupper(btowc(c))
-#endif
 #endif
 
 

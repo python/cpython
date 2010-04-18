@@ -28,6 +28,8 @@ Core and Builtins
 - Issue #7820: The parser tokenizer restores all bytes in the right if
   the BOM check fails.
 
+- Issue #7072: isspace(0xa0) is true on Mac OS X
+
 Library
 -------
 
