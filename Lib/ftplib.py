@@ -235,7 +235,7 @@ class FTP:
         if self.debugging > 1: print '*put urgent*', self.sanitize(line)
         self.sock.sendall(line, MSG_OOB)
         resp = self.getmultiline()
-        if resp[:3] not in ('426', '226'):
+        if resp[:3] not in ('426', '225', '226'):
             raise error_proto, resp
 
     def sendcmd(self, cmd):
