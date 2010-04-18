@@ -1052,11 +1052,12 @@ yes)
 		 fi
 
 
-		BASECFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${BASECFLAGS}"
-		tgt=`sw_vers -productVersion | sed 's/\(10\.[[0-9]]*\).*/\1/'`
-		if test "${UNIVERSALSDK}" != "/" -a "${tgt}" '>' '10.4' ; then
-			CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
-			CPPFLAGS="-isysroot ${UNIVERSALSDK}"
+		CFLAGS="${UNIVERSAL_ARCH_FLAGS} ${CFLAGS}"
+		if test "${UNIVERSALSDK}" != "/" 
+		then
+			CPPFLAGS="-isysroot ${UNIVERSALSDK} ${CPPFLAGS}"
+			LDFLAGS="-isysroot ${UNIVERSALSDK} ${LDFLAGS}"
+			CFLAGS="-isysroot ${UNIVERSALSDK} ${CFLAGS}"
 		fi
 
 	    fi
