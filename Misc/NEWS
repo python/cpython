@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8394: _ctypes.dlopen() accepts bytes, bytearray and str with
+  surrogates.
+
 - Issue #7606: XML-RPC traceback stored in X-traceback is now encoded to ASCII
   using backslashreplace error handler
 
