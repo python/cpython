@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3817: ftplib.FTP.abort() method now considers 225 a valid response
+  code as stated in RFC-959 at chapter 5.4.
+
 - Issue #8279: Fix test_gdb failures.
 
 - Issue #8322: Add a *ciphers* argument to SSL sockets, so as to change the
