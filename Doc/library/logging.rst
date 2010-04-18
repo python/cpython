@@ -2028,8 +2028,8 @@ supports sending logging messages to a remote or local Unix syslog.
       The symbolic ``LOG_`` values are defined in :class:`SysLogHandler` and
       mirror the values defined in the ``sys/syslog.h`` header file.
 
-      +------------------------------------------+
-      | Priorities                               |
+      **Priorities**
+
       +--------------------------+---------------+
       | Name (string)            | Symbolic value|
       +==========================+===============+
@@ -2050,8 +2050,8 @@ supports sending logging messages to a remote or local Unix syslog.
       | ``warn`` or ``warning``  | LOG_WARNING   |
       +--------------------------+---------------+
 
-      +-------------------------------+
-      | Facilities                    |
+      **Facilities**
+
       +---------------+---------------+
       | Name (string) | Symbolic value|
       +===============+===============+
