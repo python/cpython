@@ -113,7 +113,7 @@ __copyright__ = """
 
 __version__ = '1.0.7'
 
-import sys, string, os, re, subprocess
+import sys, string, os, re
 
 ### Globals & Constants
 
@@ -966,6 +966,7 @@ def _syscmd_file(target,default=''):
     if sys.platform in ('dos','win32','win16','os2'):
         # XXX Others too ?
         return default
+    import subprocess
     target = _follow_symlinks(target)
     try:
         proc = subprocess.Popen(
