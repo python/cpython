@@ -198,6 +198,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7154: urllib.request can now detect the proxy settings on OSX 10.6
+  (as long as the user didn't specify 'automatic proxy configuration').
+
 - Issue #8412: os.system() now accepts bytes, bytearray and str with
   surrogates.
 
