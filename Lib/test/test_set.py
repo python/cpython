@@ -49,6 +49,7 @@ class TestJointOps(unittest.TestCase):
 
     def test_new_or_init(self):
         self.assertRaises(TypeError, self.thetype, [], 2)
+        self.assertRaises(TypeError, set().__init__, a=1)
 
     def test_uniquification(self):
         actual = sorted(self.s)
