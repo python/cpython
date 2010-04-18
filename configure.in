@@ -908,6 +908,20 @@ yes)
 	Darwin*)
 	    # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
 	    # used to be here, but non-Apple gcc doesn't accept them.
+            if test "${CC}" = gcc
+	    then
+		AC_MSG_CHECKING(which compiler should be used)
+		case "${UNIVERSALSDK}" in
+		*/MacOSX10.4u.sdk)
+			# Build using 10.4 SDK, force usage of gcc when the 
+			# compiler is gcc, otherwise the user will get very
+			# confusing error messages when building on OSX 10.6
+			CC=gcc-4.0
+			CPP=cpp-4.0
+			;;
+		esac
+		AC_MSG_RESULT($CC)
+	    fi
 
 
 	    if test "${enable_universalsdk}"; then
@@ -942,10 +956,12 @@ yes)
 		 fi
 
 
-		BASECFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${BASECFLAGS}"
-		tgt=`sw_vers -productVersion | sed 's/\(10\.[[0-9]]*\).*/\1/'`
-		if test "${UNIVERSALSDK}" != "/" -a "${tgt}" '>' '10.4' ; then
-			CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
+		CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
+		if test "${UNIVERSALSDK}" != "/"
+		then
+			CFLAGS="-isysroot ${UNIVERSALSDK} ${CFLAGS}"
+			LDFLAGS="-isysroot ${UNIVERSALSDK} ${LDFLAGS}"
+			CPPFLAGSFLAGS="-isysroot ${UNIVERSALSDK} ${CPPFLAGS}"
 		fi
 	    fi
 
