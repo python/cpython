@@ -12,9 +12,6 @@ What's New in Python 2.6.6 alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #3817: ftplib.FTP.abort() method now considers 225 a valid response
-  code as stated in RFC-959 at chapter 5.4.
-
 - Issue #8417: Raise an OverflowError when an integer larger than sys.maxsize is
   passed to bytearray.
 
@@ -33,6 +30,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #3817: ftplib.FTP.abort() method now considers 225 a valid response
+  code as stated in RFC-959 at chapter 5.4.
 
 - Issue #5277: Fix quote counting when parsing RFC 2231 encoded parameters.
 
