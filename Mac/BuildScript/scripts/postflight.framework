@@ -16,16 +16,6 @@ FWK="/Library/Frameworks/Python.framework/Versions/@PYVER@"
     -x badsyntax -x site-packages \
     "${FWK}/lib/python${PYVER}"
 
-"${FWK}/bin/python@PYVER@" -Wi \
-    "${FWK}/lib/python${PYVER}/compileall.py" \
-    -x badsyntax -x site-packages \
-    "${FWK}/Mac/Tools"
-
-"${FWK}/bin/python@PYVER@" -Wi -O \
-    "${FWK}/lib/python${PYVER}/compileall.py" \
-    -x badsyntax -x site-packages \
-    "${FWK}/Mac/Tools"
-
 chgrp -R admin "${FWK}"
 chmod -R g+w "${FWK}"
 
