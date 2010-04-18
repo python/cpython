@@ -601,10 +601,8 @@ set_repr(PySetObject *so)
 
 	listrepr = PyObject_Repr(keys);
 	Py_DECREF(keys);
-	if (listrepr == NULL) {
-		Py_DECREF(keys);
+	if (listrepr == NULL)
 		goto done;
-	}
 	newsize = PyUnicode_GET_SIZE(listrepr);
 	result = PyUnicode_FromUnicode(NULL, newsize);
 	if (result) {
