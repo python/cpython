@@ -10,7 +10,13 @@ enUS_locale = None
 def get_enUS_locale():
     global enUS_locale
     if sys.platform == 'darwin':
-        raise TestSkipped("Locale support on MacOSX is minimal")
+        import os
+        tlocs = ("en_US.UTF-8", "en_US.ISO8859-1", "en_US")
+        if int(os.uname()[2].split('.')[0]) < 10:
+            # The locale test work fine on OSX 10.6, I (ronaldoussoren)
+            # haven't had time yet to verify if tests work on OSX 10.5
+            # (10.4 is known to be bad)
+            raise SkipTest("Locale support on MacOSX is minimal")
     if sys.platform.startswith("win"):
         tlocs = ("En", "English")
     else:
