@@ -111,7 +111,7 @@ __copyright__ = """
 
 __version__ = '1.0.7'
 
-import sys, os, re
+import sys, os, re, subprocess
 
 ### Globals & Constants
 
@@ -942,13 +942,20 @@ def _syscmd_file(target,default=''):
     if sys.platform in ('dos','win32','win16','os2'):
         # XXX Others too ?
         return default
-    target = _follow_symlinks(target).replace('"', '\\"')
+    target = _follow_symlinks(target)
     try:
-        f = os.popen('file "%s" 2> %s' % (target, DEV_NULL))
+        proc = subprocess.Popen(
+            ['file', target],
+            stdout=subprocess.PIPE,
+            stderr=open(DEV_NULL, 'wb'))
     except (AttributeError,os.error):
         return default
-    output = f.read().strip()
-    rc = f.close()
+    stdout, stderr = proc.communicate()
+    stdout = stdout.rstrip(b'\n\r')
+    # get output from "filename: output"
+    output = stdout.split(b': ', 1)[-1]
+    output = output.decode('ASCII')
+    rc = proc.wait()
     if not output or rc:
         return default
     else:
@@ -963,8 +970,6 @@ _default_architecture = {
     'win16': ('','Windows'),
     'dos': ('','MSDOS'),
 }
-
-_architecture_split = re.compile(r'[\s,]').split
 
 def architecture(executable=sys.executable,bits='',linkage=''):
 
@@ -1000,11 +1005,11 @@ def architecture(executable=sys.executable,bits='',linkage=''):
 
     # Get data from the 'file' system command
     if executable:
-        output = _syscmd_file(executable, '')
+        fileout = _syscmd_file(executable, '')
     else:
-        output = ''
+        fileout = ''
 
-    if not output and \
+    if not fileout and \
        executable == sys.executable:
         # "file" command did not return anything; we'll try to provide
         # some sensible defaults then...
@@ -1015,9 +1020,6 @@ def architecture(executable=sys.executable,bits='',linkage=''):
             if l:
                 linkage = l
         return bits,linkage
-
-    # Split the output into a list of strings omitting the filename
-    fileout = _architecture_split(output)[1:]
 
     if 'executable' not in fileout:
         # Format not supported
