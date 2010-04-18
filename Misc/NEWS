@@ -318,6 +318,9 @@ C-API
 Library
 -------
 
+- Issue #7154: urllib.request can now detect the proxy settings on OSX 10.6
+  (as long as the user didn't specify 'automatic proxy configuration').
+
 - Issue #3817: ftplib.FTP.abort() method now considers 225 a valid response
   code as stated in RFC-959 at chapter 5.4.
 

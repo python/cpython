@@ -1238,6 +1238,12 @@ class PyBuildExt(build_ext):
                        Extension('_gestalt', ['_gestalt.c'],
                        extra_link_args=['-framework', 'Carbon'])
                        )
+            exts.append(
+                       Extension('_scproxy', ['_scproxy.c'],
+                       extra_link_args=[
+                           '-framework', 'SystemConfiguration',
+                           '-framework', 'CoreFoundation',
+                        ]))
 
         self.extensions.extend(exts)
 

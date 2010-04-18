@@ -2140,44 +2140,82 @@ def proxy_bypass_environment(host):
 
 
 if sys.platform == 'darwin':
-    def getproxies_internetconfig():
+    from _scproxy import _get_proxy_settings, _get_proxies
+
+    def proxy_bypass_macosx_sysconf(host):
+        """
+        Return True iff this host shouldn't be accessed using a proxy
+
+        This function uses the MacOSX framework SystemConfiguration
+        to fetch the proxy information.
+        """
+        import re
+        import socket
+        from fnmatch import fnmatch
+
+        hostonly, port = splitport(host)
+
+        def ip2num(ipAddr):
+            parts = ipAddr.split('.')
+            parts = map(int, parts)
+            if len(parts) != 4:
+                parts = (parts + [0, 0, 0, 0])[:4]
+            return (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]
+
+        proxy_settings = _get_proxy_settings()
+
+        # Check for simple host names:
+        if '.' not in host:
+            if proxy_settings['exclude_simple']:
+                return True
+
+        hostIP = None
+
+        for value in proxy_settings.get('exceptions', ()):
+            # Items in the list are strings like these: *.local, 169.254/16
+            if not value: continue
+
+            m = re.match(r"(\d+(?:\.\d+)*)(/\d+)?", value)
+            if m is not None:
+                if hostIP is None:
+                    try:
+                        hostIP = socket.gethostbyname(hostonly)
+                        hostIP = ip2num(hostIP)
+                    except socket.error:
+                        continue
+
+                base = ip2num(m.group(1))
+                mask = int(m.group(2)[1:])
+                mask = 32 - mask
+
+                if (hostIP >> mask) == (base >> mask):
+                    return True
+
+            elif fnmatch(host, value):
+                return True
+
+        return False
+
+
+    def getproxies_macosx_sysconf():
         """Return a dictionary of scheme -> proxy server URL mappings.
 
-        By convention the mac uses Internet Config to store
-        proxies.  An HTTP proxy, for instance, is stored under
-        the HttpProxy key.
-
+        This function uses the MacOSX framework SystemConfiguration
+        to fetch the proxy information.
         """
-        try:
-            import ic
-        except ImportError:
-            return {}
+        return _get_proxies()
 
-        try:
-            config = ic.IC()
-        except ic.error:
-            return {}
-        proxies = {}
-        # HTTP:
-        if 'UseHTTPProxy' in config and config['UseHTTPProxy']:
-            try:
-                value = config['HTTPProxyHost']
-            except ic.error:
-                pass
-            else:
-                proxies['http'] = 'http://%s' % value
-        # FTP: XXX To be done.
-        # Gopher: XXX To be done.
-        return proxies
+
 
     def proxy_bypass(host):
         if getproxies_environment():
             return proxy_bypass_environment(host)
         else:
-            return 0
+            return proxy_bypass_macosx_sysconf(host)
 
     def getproxies():
-        return getproxies_environment() or getproxies_internetconfig()
+        return getproxies_environment() or getproxies_macosx_sysconf()
+
 
 elif os.name == 'nt':
     def getproxies_registry():
