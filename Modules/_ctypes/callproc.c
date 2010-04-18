@@ -1371,7 +1371,8 @@ copy_com_pointer(PyObject *self, PyObject *args)
 
 static PyObject *py_dl_open(PyObject *self, PyObject *args)
 {
-	char *name;
+	PyObject *name, *name2;
+	char *name_str;
 	void * handle;
 #ifdef RTLD_LOCAL	
 	int mode = RTLD_NOW | RTLD_LOCAL;
@@ -1379,10 +1380,22 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
 	/* cygwin doesn't define RTLD_LOCAL */
 	int mode = RTLD_NOW;
 #endif
-	if (!PyArg_ParseTuple(args, "z|i:dlopen", &name, &mode))
+	if (!PyArg_ParseTuple(args, "O|i:dlopen", &name, &mode))
 		return NULL;
 	mode |= RTLD_NOW;
-	handle = ctypes_dlopen(name, mode);
+	if (name != Py_None) {
+		if (PyUnicode_FSConverter(name, &name2) == 0)
+			return NULL;
+		if (PyBytes_Check(name2))
+			name_str = PyBytes_AS_STRING(name2);
+		else
+			name_str = PyByteArray_AS_STRING(name2);
+	} else {
+		name_str = NULL;
+		name2 = NULL;
+	}
+	handle = ctypes_dlopen(name_str, mode);
+	Py_XDECREF(name2);
 	if (!handle) {
 		char *errmsg = ctypes_dlerror();
 		if (!errmsg)
