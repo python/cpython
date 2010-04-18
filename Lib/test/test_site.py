@@ -268,26 +268,31 @@ class ImportSideEffectTests(unittest.TestCase):
         parent = os.path.relpath(os.path.dirname(os.__file__))
         env = os.environ.copy()
         env['PYTHONPATH'] = parent
-        command = 'import os; print(os.__file__, os.__cached__)'
+        code = ('import os, sys',
+            # use ASCII to avoid locale issues with non-ASCII directories
+            'os_file = os.__file__.encode("ascii", "backslashreplace")',
+            r'sys.stdout.buffer.write(os_file + b"\n")',
+            'os_cached = os.__cached__.encode("ascii", "backslashreplace")',
+            r'sys.stdout.buffer.write(os_cached + b"\n")')
+        command = '\n'.join(code)
         # First, prove that with -S (no 'import site'), the paths are
         # relative.
         proc = subprocess.Popen([sys.executable, '-S', '-c', command],
                                 env=env,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+                                stdout=subprocess.PIPE)
         stdout, stderr = proc.communicate()
+
         self.assertEqual(proc.returncode, 0)
-        os__file__, os__cached__ = stdout.split()
+        os__file__, os__cached__ = stdout.splitlines()[:2]
         self.assertFalse(os.path.isabs(os__file__))
         self.assertFalse(os.path.isabs(os__cached__))
         # Now, with 'import site', it works.
         proc = subprocess.Popen([sys.executable, '-c', command],
                                 env=env,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+                                stdout=subprocess.PIPE)
         stdout, stderr = proc.communicate()
         self.assertEqual(proc.returncode, 0)
-        os__file__, os__cached__ = stdout.split()
+        os__file__, os__cached__ = stdout.splitlines()[:2]
         self.assertTrue(os.path.isabs(os__file__))
         self.assertTrue(os.path.isabs(os__cached__))
 
