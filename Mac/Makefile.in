@@ -150,12 +150,14 @@ pythonw: $(srcdir)/Tools/pythonw.c Makefile
 		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)"'
 
 pythonw-32: $(srcdir)/Tools/pythonw.c Makefile
-	$(CC) $(subst -arch x86_64,,$(subst -arch ppc64,,$(LDFLAGS))) -o $@ @UNIVERSAL_ARCH32_FLAGS@ $(srcdir)/Tools/pythonw.c \
-		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-32"'
+	$(CC) $(LDFLAGS) -o pythonw-tmp.o $(srcdir)/Tools/pythonw.c \
+		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-32"' ;\
+	lipo  @LIPO_32BIT_FLAGS@ -output $@  pythonw-tmp.o ; rm pythonw-tmp.o
 
 pythonw-64: $(srcdir)/Tools/pythonw.c Makefile
-	$(CC) $(subst -arch i386,,$(subst -arch ppc,,$(LDFLAGS))) -o $@ @UNIVERSAL_ARCH64_FLAGS@ $(srcdir)/Tools/pythonw.c \
-		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-64"'
+	$(CC) $(LDFLAGS) -o pythonw-tmp.o $(srcdir)/Tools/pythonw.c \
+		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/$(PYTHONFRAMEWORK)-64"' ;\
+	lipo  @LIPO_64BIT_FLAGS@ -output $@  pythonw-tmp.o ; rm pythonw-tmp.o
 
 install_PythonLauncher:
 	cd PythonLauncher && make install DESTDIR=$(DESTDIR)
