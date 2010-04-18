@@ -6,6 +6,7 @@ import unittest
 from test import support
 import os
 import genericpath
+import sys
 
 
 def safe_rmdir(dirname):
@@ -284,6 +285,9 @@ class CommonTest(GenericTest):
                 for path in ('', 'fuu', 'f\xf9\xf9', '/fuu', 'U:\\'):
                     self.assertIsInstance(abspath(path), str)
 
+    @unittest.skipIf(sys.platform == 'darwin',
+        "Mac OS X deny the creation of a directory with an invalid utf8 name")
+    def test_nonascii_abspath(self):
         # Test non-ASCII, non-UTF8 bytes in the path.
         with support.temp_cwd(b'\xe7w\xf0'):
             self.test_abspath()
