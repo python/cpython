@@ -109,6 +109,8 @@ It defines the following constants and functions:
    :meth:`Lock.acquire`. Specifiying a timeout greater than this value will
    raise an :exc:`OverflowError`.
 
+   .. versionadded:: 3.2
+
 
 Lock objects have the following methods:
 
@@ -131,6 +133,9 @@ Lock objects have the following methods:
 
    The return value is ``True`` if the lock is acquired successfully,
    ``False`` if not.
+
+   .. versionchanged:: 3.2
+      The *timeout* parameter is new.
 
 .. method:: lock.release()
 
