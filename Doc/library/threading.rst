@@ -164,6 +164,7 @@ This module also defines the following constant:
    Specifiying a timeout greater than this value will raise an
    :exc:`OverflowError`.
 
+   .. versionadded:: 3.2
 
 Detailed interfaces for the objects are documented below.
 
@@ -382,6 +383,8 @@ All methods are executed atomically.
    The return value is ``True`` if the lock is acquired successfully,
    ``False`` if not (for example if the *timeout* expired).
 
+   .. versionchanged:: 3.2
+      The *timeout* parameter is new.
 
 .. method:: Lock.release()
 
@@ -438,6 +441,9 @@ pair) resets the lock to unlocked and allows another thread blocked in
    value, block for at most the number of seconds specified by *timeout*
    and as long as the lock cannot be acquired.  Return true if the lock has
    been acquired, false if the timeout has elapsed.
+
+   .. versionchanged:: 3.2
+      The *timeout* parameter is new.
 
 
 .. method:: RLock.release()
