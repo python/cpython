@@ -318,6 +318,8 @@ C-API
 Library
 -------
 
+- Issue #8463: added missing reference to bztar in shutil's documentation.
+
 - Issue #7154: urllib.request can now detect the proxy settings on OSX 10.6
   (as long as the user didn't specify 'automatic proxy configuration').
 
