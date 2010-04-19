@@ -95,8 +95,9 @@ class PlaySoundTest(unittest.TestCase):
             "none", winsound.SND_ASYNC | winsound.SND_MEMORY
         )
 
-    @unittest.skipUnless(has_sound("SystemAsterisk"), "No default SystemAsterisk")
     def test_alias_asterisk(self):
+        if not has_sound("SystemAsterisk"):
+            raise test_support.TestSkipped("No default SystemAsterisk")
         if _have_soundcard():
             winsound.PlaySound('SystemAsterisk', winsound.SND_ALIAS)
         else:
@@ -106,8 +107,9 @@ class PlaySoundTest(unittest.TestCase):
                 'SystemAsterisk', winsound.SND_ALIAS
             )
 
-    @unittest.skipUnless(has_sound("SystemExclamation"), "No default SystemExclamation")
     def test_alias_exclamation(self):
+        if not has_sound("SystemExclamation"):
+            raise test_support.TestSkipped("No default SystemExclamation")
         if _have_soundcard():
             winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
         else:
@@ -117,8 +119,9 @@ class PlaySoundTest(unittest.TestCase):
                 'SystemExclamation', winsound.SND_ALIAS
             )
 
-    @unittest.skipUnless(has_sound("SystemExit"), "No default SystemExit")
     def test_alias_exit(self):
+        if not has_sound("SystemExit"):
+            raise test_support.TestSkipped("No default SystemExit")
         if _have_soundcard():
             winsound.PlaySound('SystemExit', winsound.SND_ALIAS)
         else:
@@ -128,8 +131,9 @@ class PlaySoundTest(unittest.TestCase):
                 'SystemExit', winsound.SND_ALIAS
             )
 
-    @unittest.skipUnless(has_sound("SystemHand"), "No default SystemHand")
     def test_alias_hand(self):
+        if not has_sound("SystemHand"):
+            raise test_support.TestSkipped("No default SystemHand")
         if _have_soundcard():
             winsound.PlaySound('SystemHand', winsound.SND_ALIAS)
         else:
@@ -139,8 +143,9 @@ class PlaySoundTest(unittest.TestCase):
                 'SystemHand', winsound.SND_ALIAS
             )
 
-    @unittest.skipUnless(has_sound("SystemQuestion"), "No default SystemQuestion")
     def test_alias_question(self):
+        if not has_sound("SystemQuestion"):
+            raise test_support.TestSkipped("No default SystemQuestion")
         if _have_soundcard():
             winsound.PlaySound('SystemQuestion', winsound.SND_ALIAS)
         else:
