@@ -20,6 +20,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8463: added missing reference to bztar in shutil's documentation.
+
 - Issue #8438: Remove reference to the missing "surrogateescape" encoding
   error handler from the new IO library.
 

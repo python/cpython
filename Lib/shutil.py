@@ -525,7 +525,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
 
     'base_name' is the name of the file to create, minus any format-specific
     extension; 'format' is the archive format: one of "zip", "tar", "ztar",
-    or "gztar".
+    "bztar" or "gztar".
 
     'root_dir' is a directory that will be the root directory of the
     archive; ie. we typically chdir into 'root_dir' before creating the
