@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8438: Remove reference to the missing "surrogateescape" encoding
+  error handler from the new IO library.
+
 - Issue #3817: ftplib.FTP.abort() method now considers 225 a valid response
   code as stated in RFC-959 at chapter 5.4.
 
