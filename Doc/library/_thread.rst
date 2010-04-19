@@ -176,12 +176,10 @@ In addition to these methods, lock objects can also be used via the
 * It is not possible to interrupt the :meth:`acquire` method on a lock --- the
   :exc:`KeyboardInterrupt` exception will happen after the lock has been acquired.
 
-  .. index:: pair: threads; IRIX
-
 * When the main thread exits, it is system defined whether the other threads
-  survive.  On SGI IRIX using the native thread implementation, they survive.  On
-  most other systems, they are killed without executing :keyword:`try` ...
-  :keyword:`finally` clauses or executing object destructors.
+  survive.  On most systems, they are killed without executing
+  :keyword:`try` ... :keyword:`finally` clauses or executing object
+  destructors.
 
 * When the main thread exits, it does not do any of its usual cleanup (except
   that :keyword:`try` ... :keyword:`finally` clauses are honored), and the
