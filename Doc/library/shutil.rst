@@ -87,7 +87,7 @@ Directory and files operations
    match one of the glob-style *patterns* provided.  See the example below.
 
 
-.. function:: copytree(src, dst, symlinks=False, ignore=None)
+.. function:: copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2)
 
    Recursively copy an entire directory tree rooted at *src*.  The destination
    directory, named by *dst*, must not already exist; it will be created as well
@@ -111,9 +111,14 @@ Directory and files operations
 
    If exception(s) occur, an :exc:`Error` is raised with a list of reasons.
 
-   The source code for this should be considered an example rather than the
-   ultimate tool.
+   If *copy_function* is given, it must be a callable that will be used
+   to copy each file. It will be called with the source path and the
+   destination path as arguments. By default, :func:`copy2` is used, but any
+   function that supports the same signature (like :func:`copy`) can be used.
 
+   .. versionchanged:: 3.2
+      Added the *copy_function* argument to be able to provide a custom copy
+      function.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 

@@ -147,8 +147,8 @@ def ignore_patterns(*patterns):
         return set(ignored_names)
     return _ignore_patterns
 
-def copytree(src, dst, symlinks=False, ignore=None):
-    """Recursively copy a directory tree using copy2().
+def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2):
+    """Recursively copy a directory tree.
 
     The destination directory must not already exist.
     If exception(s) occur, an Error is raised with a list of reasons.
@@ -170,7 +170,10 @@ def copytree(src, dst, symlinks=False, ignore=None):
     list of names relative to the `src` directory that should
     not be copied.
 
-    XXX Consider this example code rather than the ultimate tool.
+    The optional copy_function argument is a callable that will be used
+    to copy each file. It will be called with the source path and the
+    destination path as arguments. By default, copy2() is used, but any
+    function that supports the same signature (like copy()) can be used.
 
     """
     names = os.listdir(src)
@@ -191,10 +194,10 @@ def copytree(src, dst, symlinks=False, ignore=None):
                 linkto = os.readlink(srcname)
                 os.symlink(linkto, dstname)
             elif os.path.isdir(srcname):
-                copytree(srcname, dstname, symlinks, ignore)
+                copytree(srcname, dstname, symlinks, ignore, copy_function)
             else:
                 # Will raise a SpecialFileError for unsupported file types
-                copy2(srcname, dstname)
+                copy_function(srcname, dstname)
         # catch the Error from the recursive copytree so that we can
         # continue with other files
         except Error as err:
