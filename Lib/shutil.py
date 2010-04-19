@@ -53,7 +53,7 @@ def copyfileobj(fsrc, fdst, length=16*1024):
 
 def _samefile(src, dst):
     # Macintosh, Unix.
-    if hasattr(os.path,'samefile'):
+    if hasattr(os.path, 'samefile'):
         try:
             return os.path.samefile(src, dst)
         except OSError:
@@ -66,7 +66,7 @@ def _samefile(src, dst):
 def copyfile(src, dst):
     """Copy data from src to dst"""
     if _samefile(src, dst):
-        raise Error, "`%s` and `%s` are the same file" % (src, dst)
+        raise Error("`%s` and `%s` are the same file" % (src, dst))
 
     fsrc = None
     fdst = None
@@ -109,7 +109,8 @@ def copystat(src, dst):
         try:
             os.chflags(dst, st.st_flags)
         except OSError, why:
-            if not hasattr(errno, 'EOPNOTSUPP') or why.errno != errno.EOPNOTSUPP:
+            if (not hasattr(errno, 'EOPNOTSUPP') or
+                why.errno != errno.EOPNOTSUPP):
                 raise
 
 def copy(src, dst):
