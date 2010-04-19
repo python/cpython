@@ -19,11 +19,12 @@ def python_exit_code(*args):
         return subprocess.call(cmd_line, stdout=devnull,
                                 stderr=subprocess.STDOUT)
 
-def spawn_python(*args):
+def spawn_python(*args, **kwargs):
     cmd_line = [sys.executable, '-E']
     cmd_line.extend(args)
     return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            **kwargs)
 
 def kill_python(p):
     p.stdin.close()
@@ -35,11 +36,11 @@ def kill_python(p):
     subprocess._cleanup()
     return data
 
-def run_python(*args):
+def run_python(*args, **kwargs):
     if __debug__:
-        p = spawn_python(*args)
+        p = spawn_python(*args, **kwargs)
     else:
-        p = spawn_python('-O', *args)
+        p = spawn_python('-O', *args, **kwargs)
     stdout_data = kill_python(p)
     return p.wait(), stdout_data
 
