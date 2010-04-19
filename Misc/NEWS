@@ -318,6 +318,9 @@ C-API
 Library
 -------
 
+- Issue #1540112: Now allowing the choice of a copy function in 
+  shutil.copytree.
+
 - Issue #4814: timeout parameter is now applied also for connections resulting
   from PORT/EPRT commands.
 
