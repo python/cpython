@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4814: timeout parameter is now applied also for connections resulting
+  from PORT/EPRT commands.
+
 - Issue #3817: ftplib.FTP.abort() method now considers 225 a valid response
   code as stated in RFC-959 at chapter 5.4.
 
