@@ -97,7 +97,6 @@ class PlaySoundTest(unittest.TestCase):
 
     def test_alias_asterisk(self):
         if not has_sound("SystemAsterisk"):
-            print "No default SystemAsterisk"
             return
         if _have_soundcard():
             winsound.PlaySound('SystemAsterisk', winsound.SND_ALIAS)
@@ -110,7 +109,6 @@ class PlaySoundTest(unittest.TestCase):
 
     def test_alias_exclamation(self):
         if not has_sound("SystemExclamation"):
-            print "No default SystemExclamation"
             return
         if _have_soundcard():
             winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
@@ -123,7 +121,6 @@ class PlaySoundTest(unittest.TestCase):
 
     def test_alias_exit(self):
         if not has_sound("SystemExit"):
-            print "No default SystemExit"
             return
         if _have_soundcard():
             winsound.PlaySound('SystemExit', winsound.SND_ALIAS)
@@ -136,7 +133,6 @@ class PlaySoundTest(unittest.TestCase):
 
     def test_alias_hand(self):
         if not has_sound("SystemHand"):
-            print "No default SystemHand"
             return
         if _have_soundcard():
             winsound.PlaySound('SystemHand', winsound.SND_ALIAS)
@@ -149,7 +145,6 @@ class PlaySoundTest(unittest.TestCase):
 
     def test_alias_question(self):
         if not has_sound("SystemQuestion"):
-            print "No default SystemQuestion"
             return
         if _have_soundcard():
             winsound.PlaySound('SystemQuestion', winsound.SND_ALIAS)
