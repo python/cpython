@@ -221,7 +221,7 @@ Archives operations
 
    *base_name* is the name of the file to create, including the path, minus
    any format-specific extension. *format* is the archive format: one of
-   "zip", "tar", "ztar", or "gztar".
+   "zip", "tar", "ztar", "bztar" or "gztar".
 
    *root_dir* is a directory that will be the root directory of the
    archive; ie. we typically chdir into *root_dir* before creating the
