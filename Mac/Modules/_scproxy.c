@@ -64,13 +64,18 @@ get_proxy_settings(PyObject* mod __attribute__((__unused__)))
 	result = PyDict_New();
 	if (result == NULL) goto error;
 
-	aNum = CFDictionaryGetValue(proxyDict, 
+	if (&kSCPropNetProxiesExcludeSimpleHostnames != NULL) {
+		aNum = CFDictionaryGetValue(proxyDict, 
 			kSCPropNetProxiesExcludeSimpleHostnames);
-	if (aNum == NULL) {
-		v = PyBool_FromLong(0);
-	} else {
-		v = PyBool_FromLong(cfnum_to_int32(aNum));
+		if (aNum == NULL) {
+			v = PyBool_FromLong(1);
+		} else {
+			v = PyBool_FromLong(cfnum_to_int32(aNum));
+		}
+	}  else {
+		v = PyBool_FromLong(1);
 	}
+
 	if (v == NULL) goto error;
 
 	r = PyDict_SetItemString(result, "exclude_simple", v);
