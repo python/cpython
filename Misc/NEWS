@@ -318,6 +318,8 @@ C-API
 Library
 -------
 
+- Issue #8437: Fix test_gdb failures, patch written by Dave Malcolm
+
 - Issue #6547: Added the ignore_dangling_symlinks option to shutil.copytree.
 
 - Issue #1540112: Now allowing the choice of a copy function in 

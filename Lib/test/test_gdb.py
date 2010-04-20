@@ -31,6 +31,19 @@ gdbpy_version, _ = p.communicate()
 if gdbpy_version == b'':
     raise unittest.SkipTest("gdb not built with embedded python support")
 
+def gdb_has_frame_select():
+    # Does this build of gdb have gdb.Frame.select ?
+    cmd = "--eval-command=python print(dir(gdb.Frame))"
+    p = subprocess.Popen(["gdb", "--batch", cmd],
+                         stdout=subprocess.PIPE)
+    stdout, _ = p.communicate()
+    m = re.match(br'.*\[(.*)\].*', stdout)
+    if not m:
+        raise unittest.SkipTest("Unable to parse output from gdb.Frame.select test")
+    gdb_frame_dir = m.group(1).split(b', ')
+    return b"'select'" in gdb_frame_dir
+
+HAS_PYUP_PYDOWN = gdb_has_frame_select()
 
 class DebuggerTests(unittest.TestCase):
 
@@ -554,6 +567,7 @@ class PyListTests(DebuggerTests):
                       bt)
 
 class StackNavigationTests(DebuggerTests):
+    @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_pyup_command(self):
         'Verify that the "py-up" command works'
         bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
@@ -564,6 +578,7 @@ class StackNavigationTests(DebuggerTests):
     baz\(a, b, c\)
 $''')
 
+    @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_down_at_bottom(self):
         'Verify handling of "py-down" at the bottom of the stack'
         bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
@@ -571,6 +586,7 @@ $''')
         self.assertEndsWith(bt,
                             'Unable to find a newer python frame\n')
 
+    @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_up_at_top(self):
         'Verify handling of "py-up" at the top of the stack'
         bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
@@ -578,6 +594,7 @@ $''')
         self.assertEndsWith(bt,
                             'Unable to find an older python frame\n')
 
+    @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_up_then_down(self):
         'Verify "py-up" followed by "py-down"'
         bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
@@ -613,6 +630,7 @@ class PyPrintTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'args' = \(1, 2, 3\)\n.*")
 
+    @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_print_after_up(self):
         bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
                                   cmds_after_breakpoint=['py-up', 'py-print c', 'py-print b', 'py-print a'])
@@ -638,6 +656,7 @@ class PyLocalsTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\nargs = \(1, 2, 3\)\n.*")
 
+    @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_locals_after_up(self):
         bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
                                   cmds_after_breakpoint=['py-up', 'py-locals'])
