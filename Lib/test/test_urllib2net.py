@@ -9,6 +9,9 @@ import socket
 import sys
 import urllib.error
 import urllib.request
+import sys
+
+TIMEOUT = 60  # seconds
 
 
 def _retry_thrice(func, exc, *args, **kwargs):
@@ -166,20 +169,29 @@ class OtherNetworkTests(unittest.TestCase):
                 req = expected_err = None
             debug(url)
             try:
-                f = urlopen(url, req)
+                f = urlopen(url, req, TIMEOUT)
             except EnvironmentError as err:
                 debug(err)
                 if expected_err:
                     msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
                            (expected_err, url, req, type(err), err))
                     self.assertTrue(isinstance(err, expected_err), msg)
+            except urllib.error.URLError as err:
+                if isinstance(err[0], socket.timeout):
+                    print("<timeout: %s>" % url, file=sys.stderr)
+                    continue
+                else:
+                    raise
             else:
-                with support.time_out, \
-                     support.socket_peer_reset, \
-                     support.ioerror_peer_reset:
-                    buf = f.read()
+                try:
+                    with support.time_out, \
+                         support.socket_peer_reset, \
+                         support.ioerror_peer_reset:
+                        buf = f.read()
+                        debug("read %d bytes" % len(buf))
+                except socket.timeout:
+                    print("<timeout: %s>" % url, file=sys.stderr)
                 f.close()
-                debug("read %d bytes" % len(buf))
             debug("******** next url coming up...")
             time.sleep(0.1)
 
