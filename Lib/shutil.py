@@ -162,7 +162,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     an Error exception at the end of the copy process.
 
     You can set the optional ignore_dangling_symlinks flag to true if you
-    want to silent this exception.
+    want to silence this exception.
 
 
     The optional ignore argument is a callable. If given, it
