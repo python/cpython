@@ -87,7 +87,7 @@ Directory and files operations
    match one of the glob-style *patterns* provided.  See the example below.
 
 
-.. function:: copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2)
+.. function:: copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2, ignore_dangling_symlinks=False)
 
    Recursively copy an entire directory tree rooted at *src*.  The destination
    directory, named by *dst*, must not already exist; it will be created as well
@@ -126,7 +126,7 @@ Directory and files operations
       Added the *copy_function* argument to be able to provide a custom copy
       function.
 
-    .. versionchanged:: 3.2
+   .. versionchanged:: 3.2
       Added the *ignore_dangling_symlinks* argument to silent dangling symlinks
       errors when *symlinks* is false.
 
@@ -233,18 +233,18 @@ Archives operations
 
 .. function:: make_archive(base_name, format, [root_dir, [base_dir, [verbose, [dry_run, [owner, [group, [logger]]]]]]])
 
-   Create an archive file (eg. zip or tar) and returns its name.
+   Create an archive file (e.g. zip or tar) and returns its name.
 
    *base_name* is the name of the file to create, including the path, minus
    any format-specific extension. *format* is the archive format: one of
    "zip", "tar", "ztar", "bztar" or "gztar".
 
    *root_dir* is a directory that will be the root directory of the
-   archive; ie. we typically chdir into *root_dir* before creating the
+   archive; i.e. we typically chdir into *root_dir* before creating the
    archive.
 
    *base_dir* is the directory where we start archiving from;
-   ie. *base_dir* will be the common prefix of all files and
+   i.e. *base_dir* will be the common prefix of all files and
    directories in the archive.
 
    *root_dir* and *base_dir* both default to the current directory.
