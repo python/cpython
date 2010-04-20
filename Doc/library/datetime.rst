@@ -220,8 +220,20 @@ Supported operations:
 |                                | In general, *t1* \* i == *t1* \* (i-1) + *t1* |
 |                                | is true. (1)                                  |
 +--------------------------------+-----------------------------------------------+
-| ``t1 = t2 // i``               | The floor is computed and the remainder (if   |
-|                                | any) is thrown away. (3)                      |
+| ``f = t2 / t3``                | Division (3) of *t2* by *t3*.  Returns a      |
+|                                | :class:`float` object.                        |
++--------------------------------+-----------------------------------------------+
+| ``t1 = t2 // i`` or            | The floor is computed and the remainder (if   |
+| ``t1 = t2 // t3``              | any) is thrown away.  In the second case, an  |
+|                                | integer is returned (3)                       |
++--------------------------------+-----------------------------------------------+
+| ``t1 = t2 % t3``               | The remainder is computed as a                |
+|                                | :class:`timedelta` object. (3)                |
++--------------------------------+-----------------------------------------------+
+| ``q, r = divmod(t1, t2)``      | Computes the quotient and the remainder:      |
+|                                | ``q = t1 // t2`` (3) and ``r = t1 % t2``.     |
+|                                | q is an integer and r is a :class:`timedelta` |
+|                                | object.                                       |
 +--------------------------------+-----------------------------------------------+
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
 |                                | same value. (2)                               |
@@ -251,6 +263,12 @@ Notes:
 In addition to the operations listed above :class:`timedelta` objects support
 certain additions and subtractions with :class:`date` and :class:`datetime`
 objects (see below).
+
+.. versionadded:: 3.2
+   Floor division and true division of a :class:`timedelta` object by
+   another :class:`timedelta` object are now supported, as are
+   remainder operations and the :func:`divmod` function.
+
 
 Comparisons of :class:`timedelta` objects are supported with the
 :class:`timedelta` object representing the smaller duration considered to be the
