@@ -99,6 +99,12 @@ Directory and files operations
    symbolic links in the new tree; if false or omitted, the contents of the
    linked files are copied to the new tree.
 
+   When *symlinks* is false, if the file pointed by the symlink doesn't
+   exist, a exception will be added in the list of errors raised in
+   a :exc:`Error` exception at the end of the copy process.
+   You can set the optional *ignore_dangling_symlinks* flag to true if you
+   want to silent this exception.
+
    If *ignore* is given, it must be a callable that will receive as its
    arguments the directory being visited by :func:`copytree`, and a list of its
    contents, as returned by :func:`os.listdir`.  Since :func:`copytree` is
@@ -119,6 +125,11 @@ Directory and files operations
    .. versionchanged:: 3.2
       Added the *copy_function* argument to be able to provide a custom copy
       function.
+
+    .. versionchanged:: 3.2
+      Added the *ignore_dangling_symlinks* argument to silent dangling symlinks
+      errors when *symlinks* is false.
+
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
