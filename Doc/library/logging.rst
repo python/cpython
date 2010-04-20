@@ -2497,7 +2497,7 @@ methods of :class:`Logger`, i.e. :meth:`debug`, :meth:`info`, :meth:`warning`,
 methods have the same signatures as their counterparts in :class:`Logger`, so
 you can use the two types of instances interchangeably.
 
-.. versionchanged:: 2.7
+.. versionchanged:: 3.2
 
 The :meth:`isEnabledFor` method was added to :class:`LoggerAdapter`. This method
 delegates to the underlying logger.
