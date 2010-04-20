@@ -8,7 +8,7 @@
 
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
-.. Big jobs: argparse, ElementTree 1.3, pep 391, 3106, sysconfig
+.. Big jobs: ElementTree 1.3, pep 391, sysconfig
 ..  unittest test discovery
 ..  hyperlink all the methods & functions.
 
@@ -58,8 +58,9 @@ release of 2.7 is currently scheduled for June 2010; the detailed
 schedule is described in :pep:`373`.
 
 Python 2.7 is planned to be the last major release in the 2.x series.
-Though more major releases have not been absolutely ruled out, it's
-likely that the 2.7 release will have an extended period of
+Though more major releases have not been absolutely ruled out, the
+Python maintainers are planning to focus more on Python 3.x.  Despite
+that, it's likely that the 2.7 release will have a longer period of
 maintenance compared to earlier 2.x versions.
 
 .. Compare with previous release in 2 - 3 sentences here.
@@ -181,14 +182,21 @@ remains O(1).
 ..     :meth:`~collections.namedtuple._asdict()` (see below)
 
 The standard library now supports use of ordered dictionaries in several
-modules.  The :mod:`configparser` module uses them by default.  This lets
-configuration files be read, modified, and then written back in their original
-order.  The :meth:`~collections.somenamedtuple._asdict()` method for
-:func:`collections.namedtuple` now returns an ordered dictionary with the
-values appearing in the same order as the underlying tuple indices.
-The :mod:`json` module is being built-out with an *object_pairs_hook* to allow
-OrderedDicts to be built by the decoder.
-Support was also added for third-party tools like `PyYAML <http://pyyaml.org/>`_.
+modules.
+
+* The :mod:`ConfigParser` module uses them by default, letting
+  configuration files be read, modified, and then written back in their original
+  order.
+
+* The :meth:`~collections.somenamedtuple._asdict()` method for
+  :func:`collections.namedtuple` now returns an ordered dictionary with the
+  values appearing in the same order as the underlying tuple indices.
+
+* The :mod:`json` module's :class:`~json.JSONDecoder` class
+  constructor was extended with an *object_pairs_hook* parameter to
+  allow :class:`OrderedDict` instances to be built by the decoder.
+  Support was also added for third-party tools like
+  `PyYAML <http://pyyaml.org/>`_.
 
 .. seealso::
 
@@ -254,11 +262,69 @@ automated way to update these scripts.  (Making the :mod:`argparse`
 API consistent with :mod:`optparse`'s interface was discussed but
 rejected as too messy and difficult.)
 
-To summarize, if you're writing a new script and don't need to worry
+In short, if you're writing a new script and don't need to worry
 about compatibility with earlier versions of Python, use
 :mod:`argparse` instead of :mod:`optparse`.
 
-XXX need an example
+Here's an example::
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Command-line example.')
+
+    # Add optional switches
+    parser.add_argument('-v', action='store_true', dest='is_verbose',
+                        help='produce verbose output')
+    parser.add_argument('-o', action='store', dest='output',
+                        metavar='FILE',
+                        help='direct output to FILE instead of stdout')
+    parser.add_argument('-C', action='store', type=int, dest='context',
+                        metavar='NUM', default=0,
+                        help='display NUM lines of added context')
+
+    # Allow any number of additional arguments.
+    parser.add_argument(nargs='*', action='store', dest='inputs',
+                        help='input filenames (default is stdin)')
+
+    args = parser.parse_args()
+    print args.__dict__
+
+Unless you override it, :option:`-h` and :option:`--help` switches
+are automatically added, and produce neatly formatted output::
+
+    -> ./python.exe argparse-example.py --help
+    usage: argparse-example.py [-h] [-v] [-o FILE] [-C NUM] [inputs [inputs ...]]
+
+    Command-line example.
+
+    positional arguments:
+      inputs      input filenames (default is stdin)
+
+    optional arguments:
+      -h, --help  show this help message and exit
+      -v          produce verbose output
+      -o FILE     direct output to FILE instead of stdout
+      -C NUM      display NUM lines of added context
+
+Similarly to :mod:`optparse`, the command-line switches and arguments
+are returned as an object with attributes named by the *dest* parameters::
+
+    -> ./python.exe argparse-example.py -v
+    {'output': None, 'is_verbose': True, 'context': 0, 'inputs': []}
+
+    -> ./python.exe argparse-example.py -v -o /tmp/output -C 4 file1 file2
+    {'output': '/tmp/output', 'is_verbose': True, 'context': 4,
+     'inputs': ['file1', 'file2']}
+
+:mod:`argparse` has much fancier validation than :mod:`optparse`; you
+can specify an exact number of arguments as an integer, 0 or more
+arguments by passing ``'*'``, 1 or more by passing ``'+'``, or an
+optional argument with ``'?'``.  A top-level parser can contain
+sub-parsers, so you can define subcommands that have different sets of
+switches, as in ``svn commit``, ``svn checkout``, etc.  You can
+specify an argument type as :class:`~argparse.FileType`, which will
+automatically open files for you and understands that ``'-'`` means
+standard input or output.
 
 .. seealso::
 
@@ -272,7 +338,28 @@ XXX need an example
 PEP 391: Dictionary-Based Configuration For Logging
 ====================================================
 
-XXX write this section.
+.. not documented in library reference yet.
+
+The :mod:`logging` module is very flexible; an application can define
+a tree of logging subsystems, and each logger in this tree can filter
+out certain messages, format them differently, and direct messages to
+a varying number of handlers.
+
+All this flexibility can require a lot of configuration.  You can
+write Python statements to create objects and set their properties,
+but a complex set-up would require verbose but boring code.
+:mod:`logging` also supports a :func:`~logging.config.fileConfig`
+function that parses a file, but the file format doesn't support
+configuring filters, and it's messier to generate programmatically.
+
+Python 2.7 adds a :func:`~logging.config.dictConfig` function that
+uses a dictionary, and there are many ways to produce a dictionary
+from different sources.  You can construct one with code, of course.
+Python's standard library now includes a JSON parser, so you could
+parse a file containing JSON, or you could use a YAML parsing library
+if one is installed.
+
+XXX describe an example.
 
 Two smaller enhancements to the logging module are:
 
@@ -296,7 +383,48 @@ Two smaller enhancements to the logging module are:
 PEP 3106: Dictionary Views
 ====================================================
 
-XXX write this section.
+The dictionary methods :meth:`keys`, :meth:`values`, and :meth:`items`
+are different in Python 3.x.  They return an object called a :dfn:`view`
+instead of a fully materialized list.
+
+.. Views can be iterated over, but they also behave like sets.  XXX not working.
+
+It's not possible to change the return values of :meth:`keys`,
+:meth:`values`, and :meth:`items` in Python 2.7 because too much code
+would break.  Instead the 3.x versions were added under the new names
+of :meth:`viewkeys`, :meth:`viewvalues`, and :meth:`viewitems`.
+
+::
+
+    >>> d = dict((i*10, chr(65+i)) for i in range(26))
+    >>> d
+    {0: 'A', 130: 'N', 10: 'B', 140: 'O', 20: ..., 250: 'Z'}
+    >>> d.viewkeys()
+    dict_keys([0, 130, 10, 140, 20, 150, 30, ..., 250])
+
+The view keeps track of the dictionary and its contents change as the
+dictionary is modified::
+
+    >>> vk = d.viewkeys()
+    >>> vk
+    dict_keys([0, 130, 10, ..., 250])
+    >>> d[260] = '&'
+    >>> vk
+    dict_keys([0, 130, 260, 10, ..., 250])
+
+However, note that you can't add or remove keys while you're iterating
+over the view::
+
+    >>> for k in vk:
+    ...     d[k*2] = k
+    ...
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    RuntimeError: dictionary changed size during iteration
+
+You can use the view methods in Python 2.x code, and the 2to3
+converter will change them to the standard :meth:`keys`,
+:meth:`values`, and :meth:`items` methods.
 
 .. seealso::
 
@@ -496,6 +624,10 @@ Some smaller changes made to the core Python language are:
   Python3-warning mode, Python 2.7 will now warn about this odd usage.
   (Noted by James Lingard; :issue:`7362`.)
 
+* It's now possible to create weak references to old-style class
+  objects.  New-style classes were always weak-referenceable.  (Fixed
+  by Antoine Pitrou; :issue:`8268`.)
+
 * When a module object is garbage-collected, the module's dictionary is
   now only cleared if no one else is holding a reference to the
   dictionary (:issue:`7140`).
@@ -684,11 +816,15 @@ changes, or look through the Subversion logs for all the details.
      >>> c['z']
      0
 
-  There are two additional :class:`~collections.Counter` methods:
-  :meth:`~collections.Counter.most_common` returns the N most common elements
-  and their counts, and :meth:`~collections.Counter.elements`
-  returns an iterator over the contained element, repeating each element
-  as many times as its count::
+  There are three additional :class:`~collections.Counter` methods:
+  :meth:`~collections.Counter.most_common` returns the N most common
+  elements and their counts.  :meth:`~collections.Counter.elements`
+  returns an iterator over the contained elements, repeating each
+  element as many times as its count.
+  :meth:`~collections.Counter.subtract` takes an iterable and
+  subtracts one for each element instead of adding; if the argument is
+  a dictionary or another :class:`Counter`, the counts are
+  subtracted. ::
 
     >>> c.most_common(5)
     [(' ', 6), ('e', 5), ('s', 3), ('a', 2), ('i', 2)]
@@ -697,10 +833,15 @@ changes, or look through the Subversion logs for all the details.
        'e', 'e', 'e', 'e', 'e', 'g', 'f', 'i', 'i',
        'h', 'h', 'm', 'l', 'l', 'o', 'n', 'p', 's',
        's', 's', 'r', 't', 't', 'x'
-
-  .. maybe it's better to use list(c.elements()) here
+    >>> c['e']
+    5
+    >>> c.subtract('very heavy on the letter e')
+    >>> c['e']    # Count is now lower
+    -1
 
   Contributed by Raymond Hettinger; :issue:`1696199`.
+
+  .. revision 79660
 
   The new :class:`~collections.OrderedDict` class is described in the earlier
   section :ref:`pep-0372`.
@@ -757,18 +898,28 @@ changes, or look through the Subversion logs for all the details.
   :meth:`~decimal.Context.canonical` and :meth:`~decimal.Context.is_canonical`
   methods.  (Patch by Juan José Conti; :issue:`7633`.)
 
-  The constructor for :class:`~decimal.Decimal` now accepts non-European
-  Unicode characters, such as Arabic-Indic digits.  (Contributed by
-  Mark Dickinson; :issue:`6595`.)
+  The constructor for :class:`~decimal.Decimal` now accepts
+  floating-point numbers (added by Raymond Hettinger; :issue:`8257`)
+  and non-European Unicode characters such as Arabic-Indic digits
+  (contributed by Mark Dickinson; :issue:`6595`).
 
   When using :class:`~decimal.Decimal` instances with a string's
   :meth:`~str.format` method, the default alignment was previously
   left-alignment.  This has been changed to right-alignment, which seems
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
-* The :class:`~fractions.Fraction` class now accepts two rational numbers
-  as arguments to its constructor.
-  (Implemented by Mark Dickinson; :issue:`5812`.)
+* The :mod:`difflib` module now produces output that is more
+  compatible with modern :command:`diff`/:command:`patch` tools thanks
+  to two changes: 1) the header giving the filename now uses a tab
+  character instead of spaces as a separator, and 2) the date format
+  used is now ISO-8601 style, ``2005-01-26 23:30:50``.  (Fixed by
+  Anatoly Techtonik; :issue:`7585`.)
+
+* The :class:`~fractions.Fraction` class now accepts a single float or
+  :class:`~decimal.Decimal` instance, or two rational numbers, as
+  arguments to its constructor.  (Implemented by Mark Dickinson;
+  rationals added in :issue:`5812`, and float/decimal in
+  :issue:`8294`.)
 
   An oversight was fixed, making the :class:`Fraction` match the other
   numeric types; ordering comparisons (``<``, ``<=``, ``>``, ``>=``) between
@@ -836,6 +987,25 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`imaplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1655`.)
+
+* New function: the :mod:`inspect` module's :func:`~inspect.getcallargs`
+  takes a callable and its positional and keyword arguments,
+  and figures out which of the callable's parameters will receive each argument,
+  returning a dictionary mapping argument names to their values.  For example::
+
+    >>> from inspect import getcallargs
+    >>> def f(a, b=1, *pos, **named):
+    ...     pass
+    >>> getcallargs(f, 1, 2, 3)
+    {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
+    >>> getcallargs(f, a=2, x=4)
+    {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
+    >>> getcallargs(f)
+    Traceback (most recent call last):
+    ...
+    TypeError: f() takes at least 1 argument (0 given)
+
+  Contributed by George Sakkis; :issue:`3135`.
 
 * Updated module: The :mod:`io` library has been upgraded to the version shipped with
   Python 3.1.  For 3.1, the I/O library was entirely rewritten in C
@@ -975,13 +1145,17 @@ changes, or look through the Subversion logs for all the details.
   Victor Stinner; :issue:`3137`.)
 
 * The :mod:`socket` module's :class:`~ssl.SSL` objects now support the
-  buffer API, which fixed a test suite failure.  (Fixed by Antoine
-  Pitrou; :issue:`7133`.)  The version of OpenSSL being used is
-  now available as the module attributes
-  :attr:`OPENSSL_VERSION` (a string),
+  buffer API, which fixed a test suite failure (fix by Antoine Pitrou;
+  :issue:`7133`).  :class:`SSL` objects also now automatically set
+  OpenSSL's :cmacro:`SSL_MODE_AUTO_RETRY`, which will prevent an error
+  code being returned from :meth:`recv` operations that trigger an SSL
+  renegotiation (fix by Antoine Pitrou; :issue:`8222`).
+
+  The version of OpenSSL being used is now available as the module
+  attributes :attr:`OPENSSL_VERSION` (a string),
   :attr:`OPENSSL_VERSION_INFO` (a 5-tuple), and
-  :attr:`OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine Pitrou;
-  :issue:`8321`.)
+  :attr:`OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
+  Pitrou; :issue:`8321`.)
 
   The :func:`~socket.create_connection` function
   gained a *source_address* parameter, a ``(host, port)`` 2-tuple
@@ -1011,7 +1185,10 @@ changes, or look through the Subversion logs for all the details.
   errors when a value is too large for a particular integer format
   code (one of ``bBhHiIlLqQ``); it now always raises a
   :exc:`struct.error` exception.  (Changed by Mark Dickinson;
-  :issue:`1523`.)
+  :issue:`1523`.)  The :func:`~struct.pack` function will also
+  attempt to use :meth:`__index__` to convert and pack non-integers
+  before trying the :meth:`__int__` method or reporting an error.
+  (Changed by Mark Dickinson; :issue:`8300`.)
 
 * New function: the :mod:`subprocess` module's
   :func:`~subprocess.check_output` runs a command with a specified set of arguments
@@ -1346,6 +1523,18 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
+* The latest release of the GNU Debugger, GDB 7, can be `scripted
+  using Python
+  <http://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
+  When you begin debugging an executable program P, GDB will look for
+  a file named ``P-gdb.py`` and automatically read it.  Dave Malcolm
+  contributed a :file:`python-gdb.py` that adds a number of useful
+  commands when debugging Python itself.  For example, there are
+  ``py-up`` and ``py-down`` that go up or down one Python stack frame,
+  which usually corresponds to several C stack frames.  ``py-print``
+  prints the value of a Python variable, and ``py-bt`` prints the
+  Python stack trace.  (Added as a result of :issue:`8032`.)
+
 * If you use the :file:`.gdbinit` file provided with Python,
   the "pyo" macro in the 2.7 version now works correctly when the thread being
   debugged doesn't hold the GIL; the macro now acquires it before printing.
@@ -1442,9 +1631,10 @@ Changes to Python's build process and to the C API include:
   building the :mod:`pyexpat` module to use the system Expat library.
   (Contributed by Arfrever Frehtes Taifersar Arahesis; :issue:`7609`.)
 
-* New configure option: Compiling Python with the
+* New configure option: compiling Python with the
   :option:`--with-valgrind` option will now disable the pymalloc
-  allocator, which is difficult for the Valgrind to analyze correctly.
+  allocator, which is difficult for the Valgrind memory-error detector
+  to analyze correctly.
   Valgrind will therefore be better at detecting memory leaks and
   overruns. (Contributed by James Henstridge; :issue:`2422`.)
 
@@ -1458,6 +1648,10 @@ Changes to Python's build process and to the C API include:
   preprocessor definition.  No code currently uses this definition,
   but it's available if anyone wishes to use it.
   (Added by Mark Dickinson; :issue:`2937`.)
+
+  :program:`configure` also now sets a :envvar:`LDCXXSHARED` Makefile
+  variable for supporting C++ linking.  (Contributed by Arfrever
+  Frehtes Taifersar Arahesis; :issue:`1222585`.)
 
 * The build process now creates the necessary files for pkg-config
   support.  (Contributed by Clinton Roy; :issue:`3585`.)
@@ -1481,6 +1675,13 @@ Port-Specific Changes: Windows
 * The new :cfunc:`_beginthreadex` API is used to start threads, and
   the native thread-local storage functions are now used.
   (Contributed by Kristjan Valur Jonsson; :issue:`3582`.)
+
+* The :func:`os.kill` function now works on Windows.  The signal value
+  can be the constants :const:`CTRL_C_EVENT`,
+  :const:`CTRL_BREAK_EVENT`, or any integer.  The Control-C and
+  Control-Break keystroke events can be sent to subprocesses; any
+  other value will use the :cfunc:`TerminateProcess` API.
+  (Contributed by Miki Tebeka; :issue:`1220212`.)
 
 * The :func:`os.listdir` function now correctly fails
   for an empty path.  (Fixed by Hirokazu Yamamoto; :issue:`5913`.)
@@ -1532,6 +1733,11 @@ Other Changes and Fixes
   (Added by Antoine Pitrou, :issue:`6152`.)  This can also be used
   with a new :option:`-F` switch that runs selected tests in a loop
   until they fail.  (Added by Antoine Pitrou; :issue:`7312`.)
+
+* When executed as a script, the :file:`py_compile.py` module now
+  accepts ``'-'`` as an argument, which will read standard input for
+  the list of filenames to be compiled.  (Contributed by Piotr
+  Ożarowski; :issue:`8233`.)
 
 .. ======================================================================
 
@@ -1591,5 +1797,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Ryan Lovett, Hugh Secker-Walker.
+article: Ryan Lovett, R. David Murray, Hugh Secker-Walker.
 
