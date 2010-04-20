@@ -453,36 +453,6 @@ class TestShutil(unittest.TestCase):
         tarball = base_name + '.tar'
         self.assertTrue(os.path.exists(tarball))
 
-    @unittest.skipUnless(find_executable('compress'),
-                         'The compress program is required')
-    def test_compress_deprecated(self):
-        tmpdir, tmpdir2, base_name =  self._create_files()
-
-        # using compress and testing the PendingDeprecationWarning
-        old_dir = os.getcwd()
-        os.chdir(tmpdir)
-        try:
-            with captured_stdout() as s, check_warnings(quiet=False) as w:
-                _make_tarball(base_name, 'dist', compress='compress')
-        finally:
-            os.chdir(old_dir)
-        tarball = base_name + '.tar.Z'
-        self.assertTrue(os.path.exists(tarball))
-        self.assertEqual(len(w.warnings), 1)
-
-        # same test with dry_run
-        os.remove(tarball)
-        old_dir = os.getcwd()
-        os.chdir(tmpdir)
-        try:
-            with captured_stdout() as s, check_warnings(quiet=False) as w:
-                _make_tarball(base_name, 'dist', compress='compress',
-                              dry_run=True)
-        finally:
-            os.chdir(old_dir)
-        self.assertFalse(os.path.exists(tarball))
-        self.assertEqual(len(w.warnings), 1)
-
     @unittest.skipUnless(zlib, "Requires zlib")
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
     def test_make_zipfile(self):
