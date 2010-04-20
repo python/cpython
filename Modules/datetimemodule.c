@@ -1914,10 +1914,9 @@ delta_remainder(PyObject *left, PyObject *right)
 		return NULL;
 
 	remainder = microseconds_to_delta(pyus_remainder);
-	if (remainder == NULL) {
-		Py_DECREF(divmod);
+	Py_DECREF(pyus_remainder);
+	if (remainder == NULL)
 		return NULL;
-	}
 
 	return remainder;
 }
