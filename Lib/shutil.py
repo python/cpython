@@ -147,7 +147,8 @@ def ignore_patterns(*patterns):
         return set(ignored_names)
     return _ignore_patterns
 
-def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2):
+def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
+             ignore_dangling_symlinks=False):
     """Recursively copy a directory tree.
 
     The destination directory must not already exist.
@@ -156,7 +157,13 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2):
     If the optional symlinks flag is true, symbolic links in the
     source tree result in symbolic links in the destination tree; if
     it is false, the contents of the files pointed to by symbolic
-    links are copied.
+    links are copied. If the file pointed by the symlink doesn't
+    exist, an exception will be added in the list of errors raised in
+    an Error exception at the end of the copy process.
+
+    You can set the optional ignore_dangling_symlinks flag to true if you
+    want to silent this exception.
+
 
     The optional ignore argument is a callable. If given, it
     is called with the `src` parameter, which is the directory
@@ -190,9 +197,16 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2):
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
         try:
-            if symlinks and os.path.islink(srcname):
+            if os.path.islink(srcname):
                 linkto = os.readlink(srcname)
-                os.symlink(linkto, dstname)
+                if symlinks:
+                    os.symlink(linkto, dstname)
+                else:
+                    # ignore dangling symlink if the flag is on
+                    if not os.path.exists(linkto) and ignore_dangling_symlinks:
+                        continue
+                    # otherwise let the copy occurs. copy2 will raise an error
+                    copy_function(srcname, dstname)
             elif os.path.isdir(srcname):
                 copytree(srcname, dstname, symlinks, ignore, copy_function)
             else:
