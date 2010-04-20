@@ -160,7 +160,7 @@ def main(args=None):
         for filename in args:
             try:
                 compile(filename, doraise=True)
-            except PyCompileError as err:
+            except PyCompileError as error:
                 # return value to indicate at least one failure
                 rv = 1
                 sys.stderr.write(error.msg)
