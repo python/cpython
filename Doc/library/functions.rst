@@ -399,7 +399,7 @@ available.  They are listed here in alphabetical order.
    iterable if function(item)]`` if function is not ``None`` and ``[item for item
    in iterable if item]`` if function is ``None``.
 
-   See :func:`itertools.filterfalse` for the complementary function that returns
+   See :func:`itertools.ifilterfalse` for the complementary function that returns
    elements of *iterable* for which *function* returns false.
 
 
