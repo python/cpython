@@ -198,7 +198,7 @@ symbol
 symtable            benjamin.peterson
 sys
 sysconfig           tarek
-syslog
+syslog              jafo
 tabnanny            tim_one
 tarfile             lars.gustaebel
 telnetlib
