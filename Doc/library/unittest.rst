@@ -272,7 +272,7 @@ unittest supports three command options.
   run. Output during a passing test is discarded. Output is echoed normally
   on test fail or error and is added to the failure messages.
 
-..  versionadded:: 2.7
+.. versionadded:: 3.2
    The command line options ``-c``, ``-b`` and ``-f`` where added.
 
 The command line can also be used for test discovery, for running all of the
@@ -284,7 +284,7 @@ tests in a project or just a subset.
 Test Discovery
 --------------
 
-.. versionadded:: 2.7
+.. versionadded:: 3.2
 
 Unittest supports simple test discovery. For a project's tests to be
 compatible with test discovery they must all be importable from the top level
@@ -765,7 +765,7 @@ Test cases
       Calling this during the a test method or :meth:`setUp` skips the current
       test.  See :ref:`unittest-skipping` for more information.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.1
 
 
    .. method:: debug()
@@ -920,7 +920,7 @@ Test cases
       a regular expression object or a string containing a regular expression
       suitable for use by :func:`re.search`.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: assertIn(first, second, msg=None)
@@ -1563,7 +1563,7 @@ a
       only be echoed onto the real ``sys.stdout`` and ``sys.stderr`` if the test
       fails or errors. Any output is also attached to the failure / error message.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. attribute:: failfast
@@ -1571,7 +1571,7 @@ a
       If set to true :meth:`stop` will be called on the first failure or error,
       halting the test run.
 
-      .. versionadded:: 2.7
+      .. versionadded:: 3.2
 
 
    .. method:: wasSuccessful()
