@@ -961,7 +961,7 @@ yes)
 		then
 			CFLAGS="-isysroot ${UNIVERSALSDK} ${CFLAGS}"
 			LDFLAGS="-isysroot ${UNIVERSALSDK} ${LDFLAGS}"
-			CPPFLAGSFLAGS="-isysroot ${UNIVERSALSDK} ${CPPFLAGS}"
+			CPPFLAGS="-isysroot ${UNIVERSALSDK} ${CPPFLAGS}"
 		fi
 	    fi
 
