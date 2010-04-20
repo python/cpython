@@ -7,6 +7,9 @@ from test.test_urllib2 import sanepathname2url
 import socket
 import urllib2
 import os
+import sys
+
+TIMEOUT = 60  # seconds
 
 
 def _retry_thrice(func, exc, *args, **kwargs):
@@ -167,18 +170,27 @@ class OtherNetworkTests(unittest.TestCase):
                 req = expected_err = None
             debug(url)
             try:
-                f = urlopen(url, req)
+                f = urlopen(url, req, TIMEOUT)
             except EnvironmentError, err:
                 debug(err)
                 if expected_err:
                     msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
                            (expected_err, url, req, type(err), err))
                     self.assertIsInstance(err, expected_err, msg)
+            except urllib2.URLError as err:
+                if isinstance(err[0], socket.timeout):
+                    print >>sys.stderr, "<timeout: %s>" % url
+                    continue
+                else:
+                    raise
             else:
-                with test_support.transient_internet():
-                    buf = f.read()
+                try:
+                    with test_support.transient_internet():
+                        buf = f.read()
+                        debug("read %d bytes" % len(buf))
+                except socket.timeout:
+                    print >>sys.stderr, "<timeout: %s>" % url
                 f.close()
-                debug("read %d bytes" % len(buf))
             debug("******** next url coming up...")
             time.sleep(0.1)
 
