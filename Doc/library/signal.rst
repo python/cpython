@@ -78,15 +78,17 @@ The variables defined in the :mod:`signal` module are:
 .. data:: CTRL_C_EVENT
 
    The signal corresponding to the CTRL+C keystroke event.
-
    Availability: Windows.
+
+   .. versionadded:: 2.7
 
 
 .. data:: CTRL_BREAK_EVENT
 
    The signal corresponding to the CTRL+BREAK keystroke event.
-
    Availability: Windows.
+
+   .. versionadded:: 2.7
 
 
 .. data:: NSIG
