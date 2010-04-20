@@ -85,6 +85,17 @@ New, Improved, and Deprecated Modules
   (Contributed by Georg Brandl and Mattias Brändström;
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
 
+* The :func:`shutil.copytree` function has two new options
+
+  * ignore_dangling_symlinks: when symlinks=false (meaning that the function
+    copy the file pointed by the symlink, not the symlink itself)
+    this option will silent the error thrown if the file doesn't exists.
+
+  * copy_function: a callable that will be used to copy files.
+    :func:`shutil.copy2` is used by default.
+
+  (Contributed by Tarek Ziade)
+
 Multi-threading
 ===============
 
