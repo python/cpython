@@ -1735,6 +1735,8 @@ written in Python, such as a mail server's external command delivery program.
    will be set to *sig*. The Windows version of :func:`kill` additionally takes
    process handles to be killed.
 
+   .. versionadded:: 2.7 Windows support
+
 
 .. function:: killpg(pgid, sig)
 
