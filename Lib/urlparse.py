@@ -90,8 +90,6 @@ class ResultMixin(object):
         netloc = self.netloc.split('@')[-1]
         if '[' in netloc and ']' in netloc:
             return netloc.split(']')[0][1:].lower()
-        elif '[' in netloc or ']' in netloc:
-            raise ValueError("Invalid IPv6 hostname")
         elif ':' in netloc:
             return netloc.split(':')[0].lower()
         elif netloc == '':
@@ -151,10 +149,6 @@ def _splitparams(url):
 
 def _splitnetloc(url, start=0):
     delim = len(url)   # position of end of domain part of url, default is end
-    if '[' in url:     # check for invalid IPv6 URL
-        if not ']' in url: raise ValueError("Invalid IPv6 URL")
-    elif ']' in url:
-        if not '[' in url: raise ValueError("Invalid IPv6 URL")
     for c in '/?#':    # look for delimiters; the order is NOT important
         wdelim = url.find(c, start)        # find first of this delim
         if wdelim >= 0:                    # if found
@@ -182,6 +176,10 @@ def urlsplit(url, scheme='', allow_fragments=True):
             url = url[i+1:]
             if url[:2] == '//':
                 netloc, url = _splitnetloc(url, 2)
+                if '[' in netloc :
+                    if not ']' in netloc: raise ValueError("Invalid IPv6 URL")
+                if ']' in netloc:
+                    if not '[' in netloc: raise ValueError("Invalid IPv6 URL")
             if allow_fragments and '#' in url:
                 url, fragment = url.split('#', 1)
             if '?' in url:
@@ -197,6 +195,10 @@ def urlsplit(url, scheme='', allow_fragments=True):
 
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
+        if '[' in netloc:
+            if not ']' in netloc: raise ValueError("Invalid IPv6 URL")
+        if ']' in netloc:
+            if not '[' in netloc: raise ValueError("Invalid IPv6 URL")
     if allow_fragments and scheme in uses_fragment and '#' in url:
         url, fragment = url.split('#', 1)
     if scheme in uses_query and '?' in url:
