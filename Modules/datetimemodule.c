@@ -1927,7 +1927,8 @@ delta_divmod(PyObject *left, PyObject *right)
 	PyObject *pyus_left;
 	PyObject *pyus_right;
 	PyObject *divmod;
-	PyObject *microseconds, *delta;
+	PyObject *delta;
+	PyObject *result;
 
 	if (!PyDelta_Check(left) || !PyDelta_Check(right)) {
 		Py_INCREF(Py_NotImplemented);
@@ -1950,14 +1951,16 @@ delta_divmod(PyObject *left, PyObject *right)
 	if (divmod == NULL)
 		return NULL;
 
-	microseconds = PyTuple_GetItem(divmod, 1);
-	delta = microseconds_to_delta(microseconds);
+	assert(PyTuple_Size(divmod) == 2);
+	delta = microseconds_to_delta(PyTuple_GET_ITEM(divmod, 1));
 	if (delta == NULL) {
 		Py_DECREF(divmod);
 		return NULL;
 	}
-	PyTuple_SetItem(divmod, 1, delta);
-	return divmod;
+	result = PyTuple_Pack(2, PyTuple_GET_ITEM(divmod, 0), delta);
+	Py_DECREF(delta);
+	Py_DECREF(divmod);
+	return result;
 }
 
 /* Fold in the value of the tag ("seconds", "weeks", etc) component of a
