@@ -355,31 +355,28 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     """Create a (possibly compressed) tar file from all the files under
     'base_dir'.
 
-    'compress' must be "gzip" (the default), "compress", "bzip2", or None.
-    (compress will be deprecated in Python 3.2)
+    'compress' must be "gzip" (the default), "bzip2", or None.
 
     'owner' and 'group' can be used to define an owner and a group for the
     archive that is being built. If not provided, the current owner and group
     will be used.
 
     The output tar file will be named 'base_dir' +  ".tar", possibly plus
-    the appropriate compression extension (".gz", ".bz2" or ".Z").
+    the appropriate compression extension (".gz", or ".bz2").
 
     Returns the output filename.
     """
-    tar_compression = {'gzip': 'gz', 'bzip2': 'bz2', None: '', 'compress': ''}
-    compress_ext = {'gzip': '.gz', 'bzip2': '.bz2', 'compress': '.Z'}
+    tar_compression = {'gzip': 'gz', 'bzip2': 'bz2', None: ''}
+    compress_ext = {'gzip': '.gz', 'bzip2': '.bz2'}
 
     # flags for compression program, each element of list will be an argument
     if compress is not None and compress not in compress_ext.keys():
-        raise ValueError("bad value for 'compress': must be None, 'gzip', "
-                         "'bzip2' or 'compress'")
+        raise ValueError("bad value for 'compress': must be None, 'gzip', or "
+                         "'bzip2'")
 
-    archive_name = base_name + '.tar'
-    if compress != 'compress':
-        archive_name += compress_ext.get(compress, '')
-
+    archive_name = base_name + '.tar' + compress_ext.get(compress, '')
     archive_dir = os.path.dirname(archive_name)
+
     if not os.path.exists(archive_dir):
         logger.info("creating %s" % archive_dir)
         if not dry_run:
@@ -410,20 +407,6 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
             tar.add(base_dir, filter=_set_uid_gid)
         finally:
             tar.close()
-
-    # compression using `compress`
-    # XXX this block will be removed in Python 3.2
-    if compress == 'compress':
-        warn("'compress' will be deprecated.", PendingDeprecationWarning)
-        # the option varies depending on the platform
-        compressed_name = archive_name + compress_ext[compress]
-        if sys.platform == 'win32':
-            cmd = [compress, archive_name, compressed_name]
-        else:
-            cmd = [compress, '-f', archive_name]
-        from distutils.spawn import spawn
-        spawn(cmd, dry_run=dry_run)
-        return compressed_name
 
     return archive_name
 
@@ -494,8 +477,6 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
 _ARCHIVE_FORMATS = {
     'gztar': (_make_tarball, [('compress', 'gzip')], "gzip'ed tar-file"),
     'bztar': (_make_tarball, [('compress', 'bzip2')], "bzip2'ed tar-file"),
-    'ztar':  (_make_tarball, [('compress', 'compress')],
-                "compressed tar file"),
     'tar':   (_make_tarball, [('compress', None)], "uncompressed tar file"),
     'zip':   (_make_zipfile, [],"ZIP file")
     }
@@ -539,8 +520,8 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     """Create an archive file (eg. zip or tar).
 
     'base_name' is the name of the file to create, minus any format-specific
-    extension; 'format' is the archive format: one of "zip", "tar", "ztar",
-    "bztar" or "gztar".
+    extension; 'format' is the archive format: one of "zip", "tar", "bztar"
+    or "gztar".
 
     'root_dir' is a directory that will be the root directory of the
     archive; ie. we typically chdir into 'root_dir' before creating the
