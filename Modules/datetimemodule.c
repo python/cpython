@@ -1666,6 +1666,52 @@ divide_timedelta_int(PyDateTime_Delta *delta, PyObject *intobj)
 }
 
 static PyObject *
+divide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
+{
+	PyObject *pyus_left;
+	PyObject *pyus_right;
+	PyObject *result;
+
+	pyus_left = delta_to_microseconds(left);
+	if (pyus_left == NULL)
+		return NULL;
+
+	pyus_right = delta_to_microseconds(right);
+	if (pyus_right == NULL)	{
+		Py_DECREF(pyus_left);
+		return NULL;
+	}
+
+	result = PyNumber_FloorDivide(pyus_left, pyus_right);
+	Py_DECREF(pyus_left);
+	Py_DECREF(pyus_right);
+	return result;
+}
+
+static PyObject *
+truedivide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
+{
+	PyObject *pyus_left;
+	PyObject *pyus_right;
+	PyObject *result;
+
+	pyus_left = delta_to_microseconds(left);
+	if (pyus_left == NULL)
+		return NULL;
+
+	pyus_right = delta_to_microseconds(right);
+	if (pyus_right == NULL)	{
+		Py_DECREF(pyus_left);
+		return NULL;
+	}
+
+	result = PyNumber_TrueDivide(pyus_left, pyus_right);
+	Py_DECREF(pyus_left);
+	Py_DECREF(pyus_right);
+	return result;
+}
+
+static PyObject *
 delta_add(PyObject *left, PyObject *right)
 {
 	PyObject *result = Py_NotImplemented;
@@ -1810,11 +1856,109 @@ delta_divide(PyObject *left, PyObject *right)
 			result = divide_timedelta_int(
 					(PyDateTime_Delta *)left,
 					right);
+		else if (PyDelta_Check(right))
+			result = divide_timedelta_timedelta(
+					(PyDateTime_Delta *)left,
+					(PyDateTime_Delta *)right);
 	}
 
 	if (result == Py_NotImplemented)
 		Py_INCREF(result);
 	return result;
+}
+
+static PyObject *
+delta_truedivide(PyObject *left, PyObject *right)
+{
+	PyObject *result = Py_NotImplemented;
+
+	if (PyDelta_Check(left)) {
+		if (PyDelta_Check(right))
+			result = truedivide_timedelta_timedelta(
+					(PyDateTime_Delta *)left,
+					(PyDateTime_Delta *)right);
+	}
+
+	if (result == Py_NotImplemented)
+		Py_INCREF(result);
+	return result;
+}
+
+static PyObject *
+delta_remainder(PyObject *left, PyObject *right)
+{
+	PyObject *pyus_left;
+	PyObject *pyus_right;
+	PyObject *pyus_remainder;
+	PyObject *remainder;
+
+	if (!PyDelta_Check(left) || !PyDelta_Check(right)) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+
+	pyus_left = delta_to_microseconds((PyDateTime_Delta *)left);
+	if (pyus_left == NULL)
+		return NULL;
+
+	pyus_right = delta_to_microseconds((PyDateTime_Delta *)right);
+	if (pyus_right == NULL) {
+		Py_DECREF(pyus_left);
+		return NULL;
+	}
+
+	pyus_remainder = PyNumber_Remainder(pyus_left, pyus_right);
+	Py_DECREF(pyus_left);
+	Py_DECREF(pyus_right);
+	if (pyus_remainder == NULL)
+		return NULL;
+
+	remainder = microseconds_to_delta(pyus_remainder);
+	if (remainder == NULL) {
+		Py_DECREF(divmod);
+		return NULL;
+	}
+
+	return remainder;
+}
+
+static PyObject *
+delta_divmod(PyObject *left, PyObject *right)
+{
+	PyObject *pyus_left;
+	PyObject *pyus_right;
+	PyObject *divmod;
+	PyObject *microseconds, *delta;
+
+	if (!PyDelta_Check(left) || !PyDelta_Check(right)) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+
+	pyus_left = delta_to_microseconds((PyDateTime_Delta *)left);
+	if (pyus_left == NULL)
+		return NULL;
+
+	pyus_right = delta_to_microseconds((PyDateTime_Delta *)right);
+	if (pyus_right == NULL) {
+		Py_DECREF(pyus_left);
+		return NULL;
+	}
+
+	divmod = PyNumber_Divmod(pyus_left, pyus_right);
+	Py_DECREF(pyus_left);
+	Py_DECREF(pyus_right);
+	if (divmod == NULL)
+		return NULL;
+
+	microseconds = PyTuple_GetItem(divmod, 1);
+	delta = microseconds_to_delta(microseconds);
+	if (delta == NULL) {
+		Py_DECREF(divmod);
+		return NULL;
+	}
+	PyTuple_SetItem(divmod, 1, delta);
+	return divmod;
 }
 
 /* Fold in the value of the tag ("seconds", "weeks", etc) component of a
@@ -2108,8 +2252,8 @@ static PyNumberMethods delta_as_number = {
 	delta_add,				/* nb_add */
 	delta_subtract,				/* nb_subtract */
 	delta_multiply,				/* nb_multiply */
-	0,					/* nb_remainder */
-	0,					/* nb_divmod */
+	delta_remainder,			/* nb_remainder */
+	delta_divmod,				/* nb_divmod */
 	0,					/* nb_power */
 	(unaryfunc)delta_negative,		/* nb_negative */
 	(unaryfunc)delta_positive,		/* nb_positive */
@@ -2135,7 +2279,7 @@ static PyNumberMethods delta_as_number = {
 	0,					/*nb_inplace_xor*/
 	0,					/*nb_inplace_or*/
 	delta_divide,				/* nb_floor_divide */
-	0,					/* nb_true_divide */
+	delta_truedivide,			/* nb_true_divide */
 	0,					/* nb_inplace_floor_divide */
 	0,					/* nb_inplace_true_divide */
 };

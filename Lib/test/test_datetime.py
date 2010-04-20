@@ -7,7 +7,7 @@ import os
 import pickle
 import unittest
 
-from operator import lt, le, gt, ge, eq, ne
+from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 
@@ -468,6 +468,58 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t3.microseconds, t4.microseconds)
         self.assertEqual(str(t3), str(t4))
         self.assertEqual(t4.as_hours(), -1)
+
+    def test_division(self):
+        t = timedelta(hours=1, minutes=24, seconds=19)
+        second = timedelta(seconds=1)
+        self.assertEqual(t / second, 5059.0)
+        self.assertEqual(t // second, 5059)
+
+        t = timedelta(minutes=2, seconds=30)
+        minute = timedelta(minutes=1)
+        self.assertEqual(t / minute, 2.5)
+        self.assertEqual(t // minute, 2)
+
+        zerotd = timedelta(0)
+        self.assertRaises(ZeroDivisionError, truediv, t, zerotd)
+        self.assertRaises(ZeroDivisionError, floordiv, t, zerotd)
+
+        self.assertRaises(TypeError, truediv, t, 2)
+        # note: floor division of a timedelta by an integer *is*
+        # currently permitted.
+
+    def test_remainder(self):
+        t = timedelta(minutes=2, seconds=30)
+        minute = timedelta(minutes=1)
+        r = t % minute
+        self.assertEqual(r, timedelta(seconds=30))
+
+        t = timedelta(minutes=-2, seconds=30)
+        r = t %  minute
+        self.assertEqual(r, timedelta(seconds=30))
+
+        zerotd = timedelta(0)
+        self.assertRaises(ZeroDivisionError, mod, t, zerotd)
+
+        self.assertRaises(TypeError, mod, t, 10)
+
+    def test_divmod(self):
+        t = timedelta(minutes=2, seconds=30)
+        minute = timedelta(minutes=1)
+        q, r = divmod(t, minute)
+        self.assertEqual(q, 2)
+        self.assertEqual(r, timedelta(seconds=30))
+
+        t = timedelta(minutes=-2, seconds=30)
+        q, r = divmod(t, minute)
+        self.assertEqual(q, -2)
+        self.assertEqual(r, timedelta(seconds=30))
+
+        zerotd = timedelta(0)
+        self.assertRaises(ZeroDivisionError, divmod, t, zerotd)
+
+        self.assertRaises(TypeError, divmod, t, 10)
+
 
 #############################################################################
 # date tests
