@@ -141,7 +141,7 @@ Functions, Constants, and Exceptions
    normal EOF in response to unexpected EOF errors raised from the underlying
    socket; if :const:`False`, it will raise the exceptions back to the caller.
 
-   .. versionchanged:: 2.7
+   .. versionchanged:: 3.2
       New optional argument *ciphers*.
 
 .. function:: RAND_status()
