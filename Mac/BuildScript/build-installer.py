@@ -430,6 +430,9 @@ def checkEnvironment():
                                                     ev, os.environ[ev])
                 del os.environ[ev]
 
+    os.environ['PATH'] = '/bin:/sbin:/usr/bin:/usr/sbin'
+    print "Setting default PATH: %s"%(os.environ['PATH'])
+
 
 def parseOptions(args=None):
     """
