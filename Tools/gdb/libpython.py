@@ -1133,18 +1133,17 @@ class Frame(object):
         return index
 
     def is_evalframeex(self):
-        if self._gdbframe.function():
-            if self._gdbframe.function().name == 'PyEval_EvalFrameEx':
-                '''
-                I believe we also need to filter on the inline
-                struct frame_id.inline_depth, only regarding frames with
-                an inline depth of 0 as actually being this function
+        if self._gdbframe.name() == 'PyEval_EvalFrameEx':
+            '''
+            I believe we also need to filter on the inline
+            struct frame_id.inline_depth, only regarding frames with
+            an inline depth of 0 as actually being this function
 
-                So we reject those with type gdb.INLINE_FRAME
-                '''
-                if self._gdbframe.type() == gdb.NORMAL_FRAME:
-                    # We have a PyEval_EvalFrameEx frame:
-                    return True
+            So we reject those with type gdb.INLINE_FRAME
+            '''
+            if self._gdbframe.type() == gdb.NORMAL_FRAME:
+                # We have a PyEval_EvalFrameEx frame:
+                return True
 
         return False
 
@@ -1294,8 +1293,6 @@ class PyUp(gdb.Command):
     def invoke(self, args, from_tty):
         move_in_stack(move_up=True)
 
-PyUp()
-
 class PyDown(gdb.Command):
     'Select and print the python stack frame called by this one (if any)'
     def __init__(self):
@@ -1308,7 +1305,10 @@ class PyDown(gdb.Command):
     def invoke(self, args, from_tty):
         move_in_stack(move_up=False)
 
-PyDown()
+# Not all builds of gdb have gdb.Frame.select
+if hasattr(gdb.Frame, 'select'):
+    PyUp()
+    PyDown()
 
 class PyBacktrace(gdb.Command):
     'Display the current python frame and all the frames within its call stack (if any)'
