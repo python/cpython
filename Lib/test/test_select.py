@@ -20,6 +20,10 @@ class SelectTestCase(unittest.TestCase):
         self.assertRaises(TypeError, select.select, [], [], [], "not a number")
 
     def test_returned_list_identity(self):
+        if sys.platform[:3] in ('win', 'mac', 'os2'):
+            if test_support.verbose:
+                print "can't easily test on this system"
+            return
         # See issue #8329
         r, w, x = select.select([], [], [], 1)
         self.assertFalse(r is w)
