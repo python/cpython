@@ -187,7 +187,7 @@ socket
 socketserver
 spwd
 sqlite3             ghaering
-ssl                 janssen
+ssl                 janssen, pitrou
 stat
 string
 stringprep
