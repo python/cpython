@@ -60,7 +60,7 @@ class DebuggerTests(unittest.TestCase):
         return out.decode('iso-8859-1'), err.decode('iso-8859-1')
 
     def get_stack_trace(self, source=None, script=None,
-                        breakpoint='PyObject_Print',
+                        breakpoint='textiowrapper_write',
                         cmds_after_breakpoint=None,
                         import_site=False):
         '''
@@ -78,7 +78,7 @@ class DebuggerTests(unittest.TestCase):
         # error, which typically happens python is dynamically linked (the
         # breakpoints of interest are to be found in the shared library)
         # When this happens, we still get:
-        #   Function "PyObject_Print" not defined.
+        #   Function "textiowrapper_write" not defined.
         # emitted to stderr each time, alas.
 
         # Initially I had "--eval-command=continue" here, but removed it to
@@ -130,18 +130,18 @@ class DebuggerTests(unittest.TestCase):
                      import_site=False):
         # Given an input python source representation of data,
         # run "python -c'print DATA'" under gdb with a breakpoint on
-        # PyObject_Print and scrape out gdb's representation of the "op"
+        # textiowrapper_write and scrape out gdb's representation of the "op"
         # parameter, and verify that the gdb displays the same string
         #
         # For a nested structure, the first time we hit the breakpoint will
         # give us the top-level structure
-        gdb_output = self.get_stack_trace(source, breakpoint='PyObject_Print',
+        gdb_output = self.get_stack_trace(source, breakpoint='textiowrapper_write',
                                           cmds_after_breakpoint=cmds_after_breakpoint,
                                           import_site=import_site)
         # gdb can insert additional '\n' and space characters in various places
         # in its output, depending on the width of the terminal it's connected
         # to (using its "wrap_here" function)
-        m = re.match('.*#0\s+PyObject_Print\s+\(\s*op\=\s*(.*?),\s+fp=.*\).*',
+        m = re.match('.*#0\s+textiowrapper_write\s+\(\s*op\=\s*(.*?),\s+fp=.*\).*',
                      gdb_output, re.DOTALL)
         if not m:
             self.fail('Unexpected gdb output: %r\n%s' % (gdb_output, gdb_output))
@@ -163,7 +163,7 @@ class DebuggerTests(unittest.TestCase):
 class PrettyPrintTests(DebuggerTests):
     def test_getting_backtrace(self):
         gdb_output = self.get_stack_trace('print(42)')
-        self.assertTrue('PyObject_Print' in gdb_output)
+        self.assertTrue('textiowrapper_write' in gdb_output)
 
     def assertGdbRepr(self, val, cmds_after_breakpoint=None):
         # Ensure that gdb's rendering of the value in a debugged process
@@ -533,7 +533,7 @@ def foo(a, b, c):
 
 foo(3, 4, 5)
 print foo.__code__''',
-                                          breakpoint='PyObject_Print',
+                                          breakpoint='textiowrapper_write',
                                           cmds_after_breakpoint=['print (PyFrameObject*)(((PyCodeObject*)op)->co_zombieframe)']
                                           )
         self.assertTrue(re.match(r'.*\s+\$1 =\s+Frame 0x[0-9a-f]+, for file <string>, line 3, in foo \(\)\s+.*',

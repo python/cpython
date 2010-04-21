@@ -19,7 +19,7 @@ giving file/line information and the state of local variables
 In particular, given a gdb.Value corresponding to a PyObject* in the inferior
 process, we can generate a "proxy value" within the gdb process.  For example,
 given a PyObject* in the inferior process that is in fact a PyListObject*
-holding three PyObject* that turn out to be PyStringObject* instances, we can
+holding three PyObject* that turn out to be PyBytesObject* instances, we can
 generate a proxy value within the gdb process that is a list of strings:
   ["foo", "bar", "baz"]
 
@@ -108,7 +108,7 @@ class TruncatedStringIO(object):
 class PyObjectPtr(object):
     """
     Class wrapping a gdb.Value that's a either a (PyObject*) within the
-    inferior process, or some subclass pointer e.g. (PyStringObject*)
+    inferior process, or some subclass pointer e.g. (PyBytesObject*)
 
     There will be a subclass for every refined PyObject type that we care
     about.
@@ -319,7 +319,7 @@ class PyObjectPtr(object):
         if tp_flags & Py_TPFLAGS_TUPLE_SUBCLASS:
             return PyTupleObjectPtr
         if tp_flags & Py_TPFLAGS_STRING_SUBCLASS:
-            return PyStringObjectPtr
+            return PyBytesObjectPtr
         if tp_flags & Py_TPFLAGS_UNICODE_SUBCLASS:
             return PyUnicodeObjectPtr
         if tp_flags & Py_TPFLAGS_DICT_SUBCLASS:
@@ -958,8 +958,8 @@ class PySetObjectPtr(PyObjectPtr):
         out.write('])')
 
 
-class PyStringObjectPtr(PyObjectPtr):
-    _typename = 'PyStringObject'
+class PyBytesObjectPtr(PyObjectPtr):
+    _typename = 'PyBytesObject'
 
     def __str__(self):
         field_ob_size = self.field('ob_size')
