@@ -20,6 +20,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8484: Load all ciphers and digest algorithms when initializing
+  the _ssl extension, such that verification of some SSL certificates
+  doesn't fail because of an "unknown algorithm".
+
 - Issue #8437: Fix test_gdb failures, patch written by Dave Malcolm
 
 - Issue #4814: timeout parameter is now applied also for connections resulting
