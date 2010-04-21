@@ -1096,6 +1096,9 @@ Documentation
 Tests
 -----
 
+- Issue #3864: Skip three test_signal tests on freebsd6 because they fail
+  if any thread was previously started, most likely due to a platform bug.
+
 - Issue #8193: Fix test_zlib failure with zlib 1.2.4.
 
 - Issue #8248: Add some tests for the bool type.  Patch by Gregory Nofi.
