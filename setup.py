@@ -1808,7 +1808,7 @@ class PyBuildExt(build_ext):
             inc_dirs.append('/usr/include/ffi')
 
         ffi_inc = [sysconfig.get_config_var("LIBFFI_INCLUDEDIR")]
-        if not ffi_inc:
+        if not ffi_inc or ffi_inc[0] == '':
             ffi_inc = find_file('ffi.h', [], inc_dirs)
         if ffi_inc is not None:
             ffi_h = ffi_inc[0] + '/ffi.h'
