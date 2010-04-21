@@ -139,6 +139,10 @@ class InterProcessSignalTests(unittest.TestCase):
             self.fail("pause returned of its own accord, and the signal"
                       " didn't arrive after another second.")
 
+    # Issue 3864, unknown if this affects earlier versions of freebsd also
+    @unittest.skipIf(sys.platform=='freebsd6',
+        'inter process signals not reliable (do not mix well with threading) '
+        'on freebsd6')
     def test_main(self):
         # This function spawns a child process to insulate the main
         # test-running process from all the signals. It then
@@ -355,6 +359,9 @@ class ItimerTest(unittest.TestCase):
 
         self.assertEqual(self.hndl_called, True)
 
+    # Issue 3864, unknown if this affects earlier versions of freebsd also
+    @unittest.skipIf(sys.platform=='freebsd6',
+        'itimer not reliable (does not mix well with threading) on freebsd6')
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
         signal.signal(signal.SIGVTALRM, self.sig_vtalrm)
@@ -376,6 +383,9 @@ class ItimerTest(unittest.TestCase):
         # and the handler should have been called
         self.assertEquals(self.hndl_called, True)
 
+    # Issue 3864, unknown if this affects earlier versions of freebsd also
+    @unittest.skipIf(sys.platform=='freebsd6',
+        'itimer not reliable (does not mix well with threading) on freebsd6')
     def test_itimer_prof(self):
         self.itimer = signal.ITIMER_PROF
         signal.signal(signal.SIGPROF, self.sig_prof)
