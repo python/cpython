@@ -755,6 +755,17 @@ ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
 
 
 @contextlib.contextmanager
+def transient_internet():
+    """Return a context manager that raises ResourceDenied when various issues
+    with the Internet connection manifest themselves as exceptions."""
+    time_out = TransientResource(IOError, errno=errno.ETIMEDOUT)
+    socket_peer_reset = TransientResource(socket.error, errno=errno.ECONNRESET)
+    ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
+    with time_out, socket_peer_reset, ioerror_peer_reset:
+        yield
+
+
+@contextlib.contextmanager
 def captured_output(stream_name):
     """Run the 'with' statement body using a StringIO object in place of a
     specific attribute on the sys module.

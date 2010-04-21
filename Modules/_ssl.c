@@ -1669,13 +1669,14 @@ PyInit__ssl(void)
 
 	/* Init OpenSSL */
 	SSL_load_error_strings();
+	SSL_library_init();
 #ifdef WITH_THREAD
 	/* note that this will start threading if not already started */
 	if (!_setup_ssl_threads()) {
 		return NULL;
 	}
 #endif
-	SSLeay_add_ssl_algorithms();
+	OpenSSL_add_all_algorithms();
 
 	/* Add symbols to module dict */
 	PySSLErrorObject = PyErr_NewException("ssl.SSLError",

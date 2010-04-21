@@ -318,6 +318,10 @@ C-API
 Library
 -------
 
+- Issue #8484: Load all ciphers and digest algorithms when initializing
+  the _ssl extension, such that verification of some SSL certificates
+  doesn't fail because of an "unknown algorithm".
+
 - Issue #6547: Added the ignore_dangling_symlinks option to shutil.copytree.
 
 - Issue #1540112: Now allowing the choice of a copy function in 
