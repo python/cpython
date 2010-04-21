@@ -9,7 +9,6 @@ import sys
 import stat
 from os.path import abspath
 import fnmatch
-from warnings import warn
 import collections
 import errno
 
@@ -393,7 +392,7 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
 
     return archive_name
 
-def _call_external_zip(directory, verbose=False):
+def _call_external_zip(base_dir, zip_filename, verbose=False, dry_run=False):
     # XXX see if we want to keep an external call here
     if verbose:
         zipoptions = "-r"
@@ -437,7 +436,7 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
         zipfile = None
 
     if zipfile is None:
-        _call_external_zip(base_dir, verbose)
+        _call_external_zip(base_dir, zip_filename, verbose, dry_run)
     else:
         if logger is not None:
             logger.info("creating '%s' and adding '%s' to it",
