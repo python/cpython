@@ -61,20 +61,76 @@ This module offers the following functions:
    :exc:`WindowsError` exception is  raised.
 
 
+.. function:: CreateKeyEx(key, sub_key, res=0, sam=KEY_ALL_ACCESS)
+
+   Creates or opens the specified key, returning a :dfn:`handle object`
+
+   *key* is an already open key, or one of the predefined :const:`HKEY_\*`
+   constants.
+
+   *sub_key* is a string that names the key this method opens or creates.
+
+   *res* is a reserved integer, and must be zero. The default is zero.
+
+   *sam* is an integer that specifies an access mask that describes the desired
+   security access for the key. Default is :const:`KEY_ALL_ACCESS`
+
+   If *key* is one of the predefined keys, *sub_key* may  be ``None``. In that
+   case, the handle returned is the same key handle  passed in to the function.
+
+   If the key already exists, this function opens the existing key.
+
+   The return value is the handle of the opened key. If the function fails, a
+   :exc:`WindowsError` exception is raised.
+
+.. versionadded:: 3.2
+
+
 .. function:: DeleteKey(key, sub_key)
 
    Deletes the specified key.
 
-   *key* is an already open key, or any one of the predefined  :const:`HKEY_\*`
+   *key* is an already open key, or any one of the predefined :const:`HKEY_\*`
    constants.
 
-   *sub_key* is a string that must be a subkey of the key  identified by the *key*
-   parameter.  This value must not be  ``None``, and the key may not have subkeys.
+   *sub_key* is a string that must be a subkey of the key identified by the *key*
+   parameter.  This value must not be ``None``, and the key may not have subkeys.
 
    *This method can not delete keys with subkeys.*
 
    If the method succeeds, the entire key, including all of its values, is removed.
    If the method fails, a :exc:`WindowsError`  exception is raised.
+
+
+.. function:: DeleteKeyEx(key, sub_key, sam=KEY_WOW64_64KEY, res=0)
+
+   Deletes the specified key.
+
+   .. note::
+      The :func:`DeleteKeyEx` function is implemented with the RegDeleteKeyEx
+      Windows API function, which is specific to 64-bit versions of Windows.
+      See http://msdn.microsoft.com/en-us/library/ms724847%28VS.85%29.aspx
+
+   *key* is an already open key, or any one of the predefined :const:`HKEY_\*`
+   constants.
+
+   *sub_key* is a string that must be a subkey of the key identified by the
+   *key* parameter. This value must not be ``None``, and the key may not have
+   subkeys.
+
+   *res* is a reserved integer, and must be zero. The default is zero.
+
+   *sam* is an integer that specifies an access mask that describes the
+   desired security access for the key. Default is :const:`KEY_WOW64_64KEY`
+
+   *This method can not delete keys with subkeys.*
+
+   If the method succeeds, the entire key, including all of its values, is
+   removed. If the method fails, a :exc:`WindowsError` exception is raised.
+
+   On unsupported Windows versions, :exc:`NotImplementedError` is raised.
+
+.. versionadded:: 3.2
 
 
 .. function:: DeleteValue(key, value)
@@ -372,6 +428,48 @@ This module offers the following functions:
    Value lengths are limited by available memory. Long values (more than 2048
    bytes) should be stored as files with the filenames stored in the configuration
    registry.  This helps the registry perform efficiently.
+
+
+.. function:: DisableReflectionKey(key)
+
+   Disables registry reflection for 32-bit processes running on a 64-bit
+   Operating System.
+
+   *key* is an already open key, or one of the predefined :const:`HKEY_\*`
+   constants.
+
+   Will generally raise :exc:`NotImplemented` if executed on a 32-bit
+   Operating System.
+
+   If the key is not on the reflection list, the function succeeds but has no
+   effect. Disabling reflection for a key does not affect reflection of any
+   subkeys.
+
+
+.. function:: EnableReflectionKey(key)
+
+   Restores registry reflection for the specified disabled key.
+
+   *key* is an already open key, or one of the predefined :const:`HKEY_\*`
+   constants.
+
+   Will generally raise :exc:`NotImplemented` if executed on a 32-bit
+   Operating System.
+
+   Restoring reflection for a key does not affect reflection of any subkeys.
+
+
+.. function:: QueryReflectionKey(key)
+
+   Determines the reflection state for the specified key.
+
+   *key* is an already open key, or one of the predefined :const:`HKEY_\*`
+   constants.
+
+   Returns ``True`` if reflection is disabled.
+
+   Will generally raise :exc:`NotImplemented` if executed on a 32-bit
+   Operating System.
 
 
 .. _handle-object:
