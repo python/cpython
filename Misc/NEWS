@@ -318,7 +318,7 @@ C-API
 Library
 -------
 
-- Issue #8437: Fix test_gdb failures, patch written by Dave Malcolm
+- Issues #8279, #8330, #8437: Fix test_gdb failures, patch written by Dave Malcolm
 
 - Issue #6547: Added the ignore_dangling_symlinks option to shutil.copytree.
 

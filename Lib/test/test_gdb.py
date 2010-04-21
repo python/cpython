@@ -9,7 +9,7 @@ import subprocess
 import sys
 import unittest
 
-from test.support import run_unittest
+from test.support import run_unittest, findfile
 
 try:
     gdb_version, _ = subprocess.Popen(["gdb", "--version"],
@@ -57,7 +57,7 @@ class DebuggerTests(unittest.TestCase):
         out, err = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             ).communicate()
-        return out, err
+        return out.decode('iso-8859-1'), err.decode('iso-8859-1')
 
     def get_stack_trace(self, source=None, script=None,
                         breakpoint='PyObject_Print',
@@ -157,15 +157,18 @@ class DebuggerTests(unittest.TestCase):
         self.assert_(m,
                      msg='%r did not match %r' % (actual, pattern))
 
+    def get_sample_script(self):
+        return findfile('gdb_sample.py')
+
 class PrettyPrintTests(DebuggerTests):
     def test_getting_backtrace(self):
-        gdb_output = self.get_stack_trace('print 42')
+        gdb_output = self.get_stack_trace('print(42)')
         self.assertTrue('PyObject_Print' in gdb_output)
 
     def assertGdbRepr(self, val, cmds_after_breakpoint=None):
         # Ensure that gdb's rendering of the value in a debugged process
         # matches repr(value) in this process:
-        gdb_repr, gdb_output = self.get_gdb_repr('print ' + repr(val),
+        gdb_repr, gdb_output = self.get_gdb_repr('print(' + repr(val) + ')',
                                                  cmds_after_breakpoint)
         self.assertEquals(gdb_repr, repr(val), gdb_output)
 
@@ -237,9 +240,11 @@ class PrettyPrintTests(DebuggerTests):
         # UTF-16: 0xD834 0xDD21
         try:
             # This will only work on wide-unicode builds:
-            self.assertGdbRepr(chr(0x1D121))
+            self.assertGdbRepr(unichr(0x1D121))
         except ValueError as e:
-            if e.message != 'chr() arg not in range(0x10000) (narrow Python build)':
+            # We're probably on a narrow-unicode build; if we're seeing a
+            # different problem, then re-raise it:
+            if e.args != ('unichr() arg not in range(0x10000) (narrow Python build)',):
                 raise e
 
     def test_sets(self):
@@ -252,7 +257,7 @@ class PrettyPrintTests(DebuggerTests):
         # which happens on deletion:
         gdb_repr, gdb_output = self.get_gdb_repr('''s = set(['a','b'])
 s.pop()
-print s''')
+print(s)''')
         self.assertEquals(gdb_repr, "set(['b'])")
 
     def test_frozensets(self):
@@ -267,7 +272,7 @@ print s''')
 try:
     raise RuntimeError("I am an error")
 except RuntimeError, e:
-    print e
+    print(e)
 ''')
         self.assertEquals(gdb_repr,
                           "exceptions.RuntimeError('I am an error',)")
@@ -278,7 +283,7 @@ except RuntimeError, e:
 try:
     a = 1 / 0
 except ZeroDivisionError, e:
-    print e
+    print(e)
 ''')
         self.assertEquals(gdb_repr,
                           "exceptions.ZeroDivisionError('integer division or modulo by zero',)")
@@ -290,7 +295,7 @@ class Foo:
     pass
 foo = Foo()
 foo.an_int = 42
-print foo''')
+print(foo)''')
         m = re.match(r'<Foo\(an_int=42\) at remote 0x[0-9a-f]+>', gdb_repr)
         self.assertTrue(m,
                         msg='Unexpected classic-class rendering %r' % gdb_repr)
@@ -302,7 +307,7 @@ class Foo(object):
     pass
 foo = Foo()
 foo.an_int = 42
-print foo''')
+print(foo)''')
         m = re.match(r'<Foo\(an_int=42\) at remote 0x[0-9a-f]+>', gdb_repr)
         self.assertTrue(m,
                         msg='Unexpected new-style class rendering %r' % gdb_repr)
@@ -315,7 +320,7 @@ class Foo(list):
 foo = Foo()
 foo += [1, 2, 3]
 foo.an_int = 42
-print foo''')
+print(foo)''')
         m = re.match(r'<Foo\(an_int=42\) at remote 0x[0-9a-f]+>', gdb_repr)
         self.assertTrue(m,
                         msg='Unexpected new-style class rendering %r' % gdb_repr)
@@ -329,12 +334,12 @@ class Foo(tuple):
     pass
 foo = Foo((1, 2, 3))
 foo.an_int = 42
-print foo''')
+print(foo)''')
         m = re.match(r'<Foo\(an_int=42\) at remote 0x[0-9a-f]+>', gdb_repr)
         self.assertTrue(m,
                         msg='Unexpected new-style class rendering %r' % gdb_repr)
 
-    def assertSane(self, source, corruption, exp_type='unknown'):
+    def assertSane(self, source, corruption, expvalue=None, exptype=None):
         '''Run Python under gdb, corrupting variables in the inferior process
         immediately before taking a backtrace.
 
@@ -348,15 +353,29 @@ print foo''')
         gdb_repr, gdb_output = \
             self.get_gdb_repr(source,
                               cmds_after_breakpoint=cmds_after_breakpoint)
-        self.assertTrue(re.match('<%s at remote 0x[0-9a-f]+>' % exp_type,
-                                 gdb_repr),
-                        'Unexpected gdb representation: %r\n%s' % \
-                            (gdb_repr, gdb_output))
+
+        if expvalue:
+            if gdb_repr == repr(expvalue):
+                # gdb managed to print the value in spite of the corruption;
+                # this is good (see http://bugs.python.org/issue8330)
+                return
+
+        if exptype:
+            pattern = '<' + exptype + ' at remote 0x[0-9a-f]+>'
+        else:
+            # Match anything for the type name; 0xDEADBEEF could point to
+            # something arbitrary (see  http://bugs.python.org/issue8330)
+            pattern = '<.* at remote 0x[0-9a-f]+>'
+
+        m = re.match(pattern, gdb_repr)
+        if not m:
+            self.fail('Unexpected gdb representation: %r\n%s' % \
+                          (gdb_repr, gdb_output))
 
     def test_NULL_ptr(self):
         'Ensure that a NULL PyObject* is handled gracefully'
         gdb_repr, gdb_output = (
-            self.get_gdb_repr('print 42',
+            self.get_gdb_repr('print(42)',
                               cmds_after_breakpoint=['set variable op=0',
                                                      'backtrace'])
             )
@@ -365,24 +384,26 @@ print foo''')
 
     def test_NULL_ob_type(self):
         'Ensure that a PyObject* with NULL ob_type is handled gracefully'
-        self.assertSane('print 42',
+        self.assertSane('print(42)',
                         'set op->ob_type=0')
 
     def test_corrupt_ob_type(self):
         'Ensure that a PyObject* with a corrupt ob_type is handled gracefully'
-        self.assertSane('print 42',
-                        'set op->ob_type=0xDEADBEEF')
+        self.assertSane('print(42)',
+                        'set op->ob_type=0xDEADBEEF',
+                        expvalue=42)
 
     def test_corrupt_tp_flags(self):
         'Ensure that a PyObject* with a type with corrupt tp_flags is handled'
-        self.assertSane('print 42',
+        self.assertSane('print(42)',
                         'set op->ob_type->tp_flags=0x0',
-                        exp_type='int')
+                        expvalue=42)
 
     def test_corrupt_tp_name(self):
         'Ensure that a PyObject* with a type with corrupt tp_name is handled'
-        self.assertSane('print 42',
-                        'set op->ob_type->tp_name=0xDEADBEEF')
+        self.assertSane('print(42)',
+                        'set op->ob_type->tp_name=0xDEADBEEF',
+                        expvalue=42)
 
     def test_NULL_instance_dict(self):
         'Ensure that a PyInstanceObject with with a NULL in_dict is handled'
@@ -391,16 +412,16 @@ class Foo:
     pass
 foo = Foo()
 foo.an_int = 42
-print foo''',
+print(foo)''',
                         'set ((PyInstanceObject*)op)->in_dict = 0',
-                        exp_type='Foo')
+                        exptype='Foo')
 
     def test_builtins_help(self):
         'Ensure that the new-style class _Helper in site.py can be handled'
         # (this was the issue causing tracebacks in
         #  http://bugs.python.org/issue8032#msg100537 )
 
-        gdb_repr, gdb_output = self.get_gdb_repr('print __builtins__.help', import_site=True)
+        gdb_repr, gdb_output = self.get_gdb_repr('print(__builtins__.help)', import_site=True)
         m = re.match(r'<_Helper at remote 0x[0-9a-f]+>', gdb_repr)
         self.assertTrue(m,
                         msg='Unexpected rendering %r' % gdb_repr)
@@ -409,12 +430,12 @@ print foo''',
         '''Ensure that a reference loop involving a list doesn't lead proxyval
         into an infinite loop:'''
         gdb_repr, gdb_output = \
-            self.get_gdb_repr("a = [3, 4, 5] ; a.append(a) ; print a")
+            self.get_gdb_repr("a = [3, 4, 5] ; a.append(a) ; print(a)")
 
         self.assertEquals(gdb_repr, '[3, 4, 5, [...]]')
 
         gdb_repr, gdb_output = \
-            self.get_gdb_repr("a = [3, 4, 5] ; b = [a] ; a.append(b) ; print a")
+            self.get_gdb_repr("a = [3, 4, 5] ; b = [a] ; a.append(b) ; print(a)")
 
         self.assertEquals(gdb_repr, '[3, 4, 5, [[...]]]')
 
@@ -422,7 +443,7 @@ print foo''',
         '''Ensure that a reference loop involving a dict doesn't lead proxyval
         into an infinite loop:'''
         gdb_repr, gdb_output = \
-            self.get_gdb_repr("a = {} ; b = {'bar':a} ; a['foo'] = b ; print a")
+            self.get_gdb_repr("a = {} ; b = {'bar':a} ; a['foo'] = b ; print(a)")
 
         self.assertEquals(gdb_repr, "{'foo': {'bar': {...}}}")
 
@@ -433,7 +454,7 @@ class Foo:
     pass
 foo = Foo()
 foo.an_attr = foo
-print foo''')
+print(foo)''')
         self.assertTrue(re.match('<Foo\(an_attr=<\.\.\.>\) at remote 0x[0-9a-f]+>',
                                  gdb_repr),
                         'Unexpected gdb representation: %r\n%s' % \
@@ -446,7 +467,7 @@ class Foo(object):
     pass
 foo = Foo()
 foo.an_attr = foo
-print foo''')
+print(foo)''')
         self.assertTrue(re.match('<Foo\(an_attr=<\.\.\.>\) at remote 0x[0-9a-f]+>',
                                  gdb_repr),
                         'Unexpected gdb representation: %r\n%s' % \
@@ -460,7 +481,7 @@ a = Foo()
 b = Foo()
 a.an_attr = b
 b.an_attr = a
-print a''')
+print(a)''')
         self.assertTrue(re.match('<Foo\(an_attr=<Foo\(an_attr=<\.\.\.>\) at remote 0x[0-9a-f]+>\) at remote 0x[0-9a-f]+>',
                                  gdb_repr),
                         'Unexpected gdb representation: %r\n%s' % \
@@ -468,7 +489,7 @@ print a''')
 
     def test_truncation(self):
         'Verify that very long output is truncated'
-        gdb_repr, gdb_output = self.get_gdb_repr('print range(1000)')
+        gdb_repr, gdb_output = self.get_gdb_repr('print(range(1000))')
         self.assertEquals(gdb_repr,
                           "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "
                           "14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, "
@@ -495,11 +516,11 @@ print a''')
                           1024 + len('...(truncated)'))
 
     def test_builtin_function(self):
-        gdb_repr, gdb_output = self.get_gdb_repr('print len')
+        gdb_repr, gdb_output = self.get_gdb_repr('print(len)')
         self.assertEquals(gdb_repr, '<built-in function len>')
 
     def test_builtin_method(self):
-        gdb_repr, gdb_output = self.get_gdb_repr('import sys; print sys.stdout.readlines')
+        gdb_repr, gdb_output = self.get_gdb_repr('import sys; print(sys.stdout.readlines)')
         self.assertTrue(re.match('<built-in method readlines of file object at remote 0x[0-9a-f]+>',
                                  gdb_repr),
                         'Unexpected gdb representation: %r\n%s' % \
@@ -526,62 +547,56 @@ class PyListTests(DebuggerTests):
 
     def test_basic_command(self):
         'Verify that the "py-list" command works'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-list'])
 
-        self.assertListing('''
-   5
-   6    def bar(a, b, c):
-   7        baz(a, b, c)
-   8
-   9    def baz(*args):
- >10        print(42)
-  11
-  12    foo(1, 2, 3)
-''',
-                      bt)
+        self.assertListing('   5    \n'
+                           '   6    def bar(a, b, c):\n'
+                           '   7        baz(a, b, c)\n'
+                           '   8    \n'
+                           '   9    def baz(*args):\n'
+                           ' >10        print(42)\n'
+                           '  11    \n'
+                           '  12    foo(1, 2, 3)\n',
+                           bt)
 
     def test_one_abs_arg(self):
         'Verify the "py-list" command with one absolute argument'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-list 9'])
 
-        self.assertListing('''
-   9    def baz(*args):
- >10        print(42)
-  11
-  12    foo(1, 2, 3)
-''',
-                      bt)
+        self.assertListing('   9    def baz(*args):\n'
+                           ' >10        print(42)\n'
+                           '  11    \n'
+                           '  12    foo(1, 2, 3)\n',
+                           bt)
 
     def test_two_abs_args(self):
         'Verify the "py-list" command with two absolute arguments'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-list 1,3'])
 
-        self.assertListing('''
-   1    # Sample script for use by test_gdb.py
-   2
-   3    def foo(a, b, c):
-''',
-                      bt)
+        self.assertListing('   1    # Sample script for use by test_gdb.py\n'
+                           '   2    \n'
+                           '   3    def foo(a, b, c):\n',
+                           bt)
 
 class StackNavigationTests(DebuggerTests):
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_pyup_command(self):
         'Verify that the "py-up" command works'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
 $''')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_down_at_bottom(self):
         'Verify handling of "py-down" at the bottom of the stack'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-down'])
         self.assertEndsWith(bt,
                             'Unable to find a newer python frame\n')
@@ -589,7 +604,7 @@ $''')
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_up_at_top(self):
         'Verify handling of "py-up" at the top of the stack'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up'] * 4)
         self.assertEndsWith(bt,
                             'Unable to find an older python frame\n')
@@ -597,79 +612,79 @@ $''')
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_up_then_down(self):
         'Verify "py-up" followed by "py-down"'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-down'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
     print\(42\)
 $''')
 
 class PyBtTests(DebuggerTests):
     def test_basic_command(self):
         'Verify that the "py-bt" command works'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-bt'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
     bar\(a, b, c\)
-#[0-9]+ Frame 0x[0-9a-f]+, for file Lib/test/test_gdb_sample.py, line 12, in <module> \(\)
+#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
 foo\(1, 2, 3\)
 ''')
 
 class PyPrintTests(DebuggerTests):
     def test_basic_command(self):
         'Verify that the "py-print" command works'
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-print args'])
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'args' = \(1, 2, 3\)\n.*")
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_print_after_up(self):
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-print c', 'py-print b', 'py-print a'])
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'c' = 3\nlocal 'b' = 2\nlocal 'a' = 1\n.*")
 
     def test_printing_global(self):
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-print __name__'])
         self.assertMultilineMatches(bt,
                                     r".*\nglobal '__name__' = '__main__'\n.*")
 
     def test_printing_builtin(self):
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-print len'])
         self.assertMultilineMatches(bt,
                                     r".*\nbuiltin 'len' = <built-in function len>\n.*")
 
 class PyLocalsTests(DebuggerTests):
     def test_basic_command(self):
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-locals'])
         self.assertMultilineMatches(bt,
                                     r".*\nargs = \(1, 2, 3\)\n.*")
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_locals_after_up(self):
-        bt = self.get_stack_trace(script='Lib/test/test_gdb_sample.py',
+        bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-locals'])
         self.assertMultilineMatches(bt,
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
 def test_main():
-    run_unittest(#PrettyPrintTests,
-                 #PyListTests,
-                 #StackNavigationTests,
-                 #PyBtTests,
-                 #PyPrintTests,
-                 #PyLocalsTests
+    run_unittest(PrettyPrintTests,
+                 PyListTests,
+                 StackNavigationTests,
+                 PyBtTests,
+                 PyPrintTests,
+                 PyLocalsTests
                  )
 
 if __name__ == "__main__":
