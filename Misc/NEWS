@@ -1022,6 +1022,8 @@ Extension Modules
 - Issue #7999: os.setreuid() and os.setregid() would refuse to accept a -1
   parameter on some platforms such as OS X.
 
+- Build the ossaudio extension on GNU/kFreeBSD.
+
 Build
 -----
 
