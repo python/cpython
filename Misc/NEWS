@@ -58,6 +58,11 @@ Library
 - Issue #8374: Update the internal alias table in the :mod:`locale` module
   to cover recent locale changes and additions.
 
+Extension Modules
+-----------------
+
+- Build the ossaudio extension on GNU/kFreeBSD.
+
 
 What's New in Python 2.7 beta 1?
 ================================
