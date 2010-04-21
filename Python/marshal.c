@@ -1078,23 +1078,13 @@ getfilesize(FILE *fp)
 PyObject *
 PyMarshal_ReadLastObjectFromFile(FILE *fp)
 {
-/* 75% of 2.1's .pyc files can exploit SMALL_FILE_LIMIT.
- * REASONABLE_FILE_LIMIT is by defn something big enough for Tkinter.pyc.
- */
-#define SMALL_FILE_LIMIT (1L << 14)
+/* REASONABLE_FILE_LIMIT is by defn something big enough for Tkinter.pyc. */
 #define REASONABLE_FILE_LIMIT (1L << 18)
 #ifdef HAVE_FSTAT
 	off_t filesize;
-#endif
-#ifdef HAVE_FSTAT
 	filesize = getfilesize(fp);
-	if (filesize > 0) {
-		char buf[SMALL_FILE_LIMIT];
-		char* pBuf = NULL;
-		if (filesize <= SMALL_FILE_LIMIT)
-			pBuf = buf;
-		else if (filesize <= REASONABLE_FILE_LIMIT)
-			pBuf = (char *)PyMem_MALLOC(filesize);
+	if (filesize > 0 && filesize <= REASONABLE_FILE_LIMIT) {
+		char* pBuf = (char *)PyMem_MALLOC(filesize);
 		if (pBuf != NULL) {
 			PyObject* v;
 			size_t n;
@@ -1102,8 +1092,7 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
 			   is smaller than REASONABLE_FILE_LIMIT */
 			n = fread(pBuf, 1, (int)filesize, fp);
 			v = PyMarshal_ReadObjectFromString(pBuf, n);
-			if (pBuf != buf)
-				PyMem_FREE(pBuf);
+			PyMem_FREE(pBuf);
 			return v;
 		}
 
@@ -1114,7 +1103,6 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
 	 */
 	return PyMarshal_ReadObjectFromFile(fp);
 
-#undef SMALL_FILE_LIMIT
 #undef REASONABLE_FILE_LIMIT
 }
 
