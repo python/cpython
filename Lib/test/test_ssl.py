@@ -190,6 +190,26 @@ class NetworkedTests(unittest.TestCase):
         if test_support.verbose:
             sys.stdout.write("\nVerified certificate for svn.python.org:443 is\n%s\n" % pem)
 
+    def test_algorithms(self):
+        # Issue #8484: all algorithms should be available when verifying a
+        # certificate.
+        # NOTE: https://sha256.tbs-internet.com is another possible test host
+        remote = ("sha2.hboeck.de", 443)
+        sha256_cert = os.path.join(os.path.dirname(__file__), "sha256.pem")
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_REQUIRED,
+                            ca_certs=sha256_cert,)
+        with test_support.transient_internet():
+            try:
+                s.connect(remote)
+                if test_support.verbose:
+                    sys.stdout.write("\nCipher with %r is %r\n" %
+                                     (remote, s.cipher()))
+                    sys.stdout.write("Certificate is:\n%s\n" %
+                                     pprint.pformat(s.getpeercert()))
+            finally:
+                s.close()
+
 
 try:
     import threading
