@@ -271,10 +271,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     if (cwd_obj != Py_None) {
         if (PyUnicode_FSConverter(cwd_obj, &cwd_obj2) == 0)
             goto cleanup;
-        if (PyBytes_Check(cwd_obj2))
-            cwd = PyBytes_AS_STRING(cwd_obj2);
-        else
-            cwd = PyByteArray_AS_STRING(cwd_obj2);
+        cwd = PyBytes_AsString(cwd_obj2);
     } else {
         cwd = NULL;
         cwd_obj2 = NULL;

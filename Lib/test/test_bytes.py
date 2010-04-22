@@ -815,13 +815,6 @@ class ByteArrayTest(BaseBytesTest):
         self.assertRaises(BufferError, delslice)
         self.assertEquals(b, orig)
 
-    def test_empty_bytearray(self):
-        # Issue #7561: operations on empty bytearrays could crash in many
-        # situations, due to a fragile implementation of the
-        # PyByteArray_AS_STRING() C macro.
-        self.assertRaises(ValueError, int, bytearray(b''))
-        self.assertRaises((ValueError, OSError), os.mkdir, bytearray(b''))
-
 
 class AssortedBytesTest(unittest.TestCase):
     #

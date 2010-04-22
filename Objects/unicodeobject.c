@@ -1624,7 +1624,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
         Py_DECREF(*(PyObject**)addr);
         return 1;
     }
-    if (PyBytes_Check(arg) || PyByteArray_Check(arg)) {
+    if (PyBytes_Check(arg)) {
         output = arg;
         Py_INCREF(output);
     }

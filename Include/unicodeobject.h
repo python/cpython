@@ -1238,8 +1238,8 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
 /* --- File system encoding ---------------------------------------------- */
 
 /* ParseTuple converter which converts a Unicode object into the file
-   system encoding, using the PEP 383 error handler; bytes objects are
-   output as-is. */
+   system encoding as a bytes object, using the PEP 383 error handler; bytes
+   objects are output as-is. */
 
 PyAPI_FUNC(int) PyUnicode_FSConverter(PyObject*, void*);
 

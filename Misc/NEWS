@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8485: PyUnicode_FSConverter() doesn't accept bytearray object anymore,
+  you have to convert your bytearray filenames to bytes
+
 - Issue #7332: Remove the 16KB stack-based buffer in
   PyMarshal_ReadLastObjectFromFile, which doesn't bring any noticeable
   benefit compared to the dynamic memory allocation fallback.  Patch by

@@ -151,4 +151,6 @@ Porting to Python 3.2
 This section lists previously described changes and other bugfixes
 that may require changes to your code:
 
+* bytearray objects cannot be used anymore as filenames: convert them to bytes
+
 * Stub
