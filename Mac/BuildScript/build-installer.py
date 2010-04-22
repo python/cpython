@@ -722,7 +722,7 @@ def buildPythonDocs():
     curDir = os.getcwd()
     os.chdir(buildDir)
     runCommand('make update')
-    runCommand('make html')
+    runCommand("make html PYTHON='%s'" % os.path.abspath(sys.executable))
     os.chdir(curDir)
     if not os.path.exists(docdir):
         os.mkdir(docdir)
