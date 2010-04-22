@@ -164,7 +164,7 @@ def lookup(caps, MIMEtype, key=None):
     if MIMEtype in caps:
         entries = entries + caps[MIMEtype]
     if key is not None:
-        entries = filter(lambda e, key=key: key in e, entries)
+        entries = [e for e in entries if key in e]
     return entries
 
 def subst(field, MIMEtype, filename, plist=[]):
