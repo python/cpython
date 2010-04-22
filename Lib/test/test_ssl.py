@@ -241,6 +241,9 @@ class NetworkedTests(unittest.TestCase):
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_REQUIRED,
                             ca_certs=sha256_cert,)
+        if test_support.verbose:
+            sys.stdout.write("\nOpenSSL version is %r / %r" %
+                (ssl.OPENSSL_VERSION, ssl.OPENSSL_VERSION_INFO))
         with test_support.transient_internet():
             try:
                 s.connect(remote)
