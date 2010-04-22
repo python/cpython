@@ -85,16 +85,17 @@ New, Improved, and Deprecated Modules
   (Contributed by Georg Brandl and Mattias Brändström;
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
 
-* The :func:`shutil.copytree` function has two new options
+* The :func:`shutil.copytree` function has two new options:
 
-  * ignore_dangling_symlinks: when symlinks=false (meaning that the function
-    copy the file pointed by the symlink, not the symlink itself)
-    this option will silence the error thrown if the file doesn't exists.
+  * *ignore_dangling_symlinks*: when ``symlinks=False`` (meaning that the
+    function copies the file pointed to by the symlink, not the symlink
+    itself) this option will silence the error thrown if the file doesn't
+    exist.
 
-  * copy_function: a callable that will be used to copy files.
+  * *copy_function*: a callable that will be used to copy files.
     :func:`shutil.copy2` is used by default.
 
-  (Contributed by Tarek Ziade)
+  (Contributed by Tarek Ziade.)
 
 Multi-threading
 ===============
@@ -114,7 +115,7 @@ Multi-threading
   (however, "priority requests" as exposed in this message have not been
   kept for inclusion).
 
-  (Contributed by Antoine Pitrou)
+  (Contributed by Antoine Pitrou.)
 
 * Recursive locks (created with the :func:`threading.RLock` API) now benefit
   from a C implementation which makes them as fast as regular locks, and
