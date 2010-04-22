@@ -159,6 +159,12 @@ static PyObject *unicode_encode_call_errorhandler(const char *errors,
        const Py_UNICODE *unicode, Py_ssize_t size, PyObject **exceptionObject,
        Py_ssize_t startpos, Py_ssize_t endpos, Py_ssize_t *newpos);
 
+static void raise_encode_exception(PyObject **exceptionObject,
+                                   const char *encoding,
+                                   const Py_UNICODE *unicode, Py_ssize_t size,
+                                   Py_ssize_t startpos, Py_ssize_t endpos,
+                                   const char *reason);
+
 /* Same for linebreaks */
 static unsigned char ascii_linebreak[] = {
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -2461,61 +2467,88 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
             /* Encode Latin-1 */
             *p++ = (char)(0xc0 | (ch >> 6));
             *p++ = (char)(0x80 | (ch & 0x3f));
-        }
-        else {
-            /* Encode UCS2 Unicode ordinals */
-            if (ch < 0x10000) {
+        } else if (0xD800 <= ch && ch <= 0xDFFF) {
 #ifndef Py_UNICODE_WIDE
-                /* Special case: check for high surrogate */
-                if (0xD800 <= ch && ch <= 0xDBFF && i != size) {
-                    Py_UCS4 ch2 = s[i];
-                    /* Check for low surrogate and combine the two to
-                       form a UCS4 value */
-                    if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
-                        ch = ((ch - 0xD800) << 10 | (ch2 - 0xDC00)) + 0x10000;
-                        i++;
-                        goto encodeUCS4;
-                    }
-                    /* Fall through: handles isolated high surrogates */
-                }
-#endif
-                if (ch >= 0xd800 && ch <= 0xdfff) {
-                    Py_ssize_t newpos;
-                    PyObject *rep;
-                    char *prep;
-                    int k;
-                    rep = unicode_encode_call_errorhandler
-                        (errors, &errorHandler, "utf-8", "surrogates not allowed", 
-                         s, size, &exc, i-1, i, &newpos);
-                    if (!rep)
-                        goto error;
-                    /* Implementation limitations: only support error handler that return
-                       bytes, and only support up to four replacement bytes. */
-                    if (!PyBytes_Check(rep)) {
-                        PyErr_SetString(PyExc_TypeError, "error handler should have returned bytes");
-                        Py_DECREF(rep);
-                        goto error;
-                    }
-                    if (PyBytes_Size(rep) > 4) {
-                        PyErr_SetString(PyExc_TypeError, "error handler returned too many bytes");
-                        Py_DECREF(rep);
-                        goto error;
-                    }
-                    prep = PyBytes_AsString(rep);
-                    for(k = PyBytes_Size(rep); k > 0; k--)
-                        *p++ = *prep++;
-                    Py_DECREF(rep);
-                    continue;
-                    
-                }
-                *p++ = (char)(0xe0 | (ch >> 12));
+            /* Special case: check for high and low surrogate */
+            if (ch <= 0xDBFF && i != size && 0xDC00 <= s[i] && s[i] <= 0xDFFF) {
+                Py_UCS4 ch2 = s[i];
+                /* Combine the two surrogates to form a UCS4 value */
+                ch = ((ch - 0xD800) << 10 | (ch2 - 0xDC00)) + 0x10000;
+                i++;
+
+                /* Encode UCS4 Unicode ordinals */
+                *p++ = (char)(0xf0 | (ch >> 18));
+                *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
                 *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
                 *p++ = (char)(0x80 | (ch & 0x3f));
-                continue;
-            }
-#ifndef Py_UNICODE_WIDE
-          encodeUCS4:
+
 #endif
+            } else {
+                Py_ssize_t newpos;
+                PyObject *rep;
+                Py_ssize_t repsize, k;
+                rep = unicode_encode_call_errorhandler
+                    (errors, &errorHandler, "utf-8", "surrogates not allowed",
+                     s, size, &exc, i-1, i, &newpos);
+                if (!rep)
+                    goto error;
+
+                if (PyBytes_Check(rep))
+                    repsize = PyBytes_GET_SIZE(rep);
+                else
+                    repsize = PyUnicode_GET_SIZE(rep);
+
+                if (repsize > 4) {
+                    Py_ssize_t offset;
+
+                    if (result == NULL)
+                        offset = p - stackbuf;
+                    else
+                        offset = p - PyBytes_AS_STRING(result);
+
+                    if (nallocated > PY_SSIZE_T_MAX - repsize + 4) {
+                        /* integer overflow */
+                        PyErr_NoMemory();
+                        goto error;
+                    }
+                    nallocated += repsize - 4;
+                    if (result != NULL) {
+                        if (_PyBytes_Resize(&result, nallocated) < 0)
+                            goto error;
+                    } else {
+                        result = PyBytes_FromStringAndSize(NULL, nallocated);
+                        if (result == NULL)
+                            goto error;
+                        Py_MEMCPY(PyBytes_AS_STRING(result), stackbuf, offset);
+                    }
+                    p = PyBytes_AS_STRING(result) + offset;
+                }
+
+                if (PyBytes_Check(rep)) {
+                    char *prep = PyBytes_AS_STRING(rep);
+                    for(k = repsize; k > 0; k--)
+                        *p++ = *prep++;
+                } else /* rep is unicode */ {
+                    Py_UNICODE *prep = PyUnicode_AS_UNICODE(rep);
+                    Py_UNICODE c;
+
+                    for(k=0; k<repsize; k++) {
+                        c = prep[k];
+                        if (0x80 <= c) {
+                            raise_encode_exception(&exc, "utf-8", s, size,
+                                                   i-1, i, "surrogates not allowed");
+                            goto error;
+                        }
+                        *p++ = (char)prep[k];
+                    }
+                }
+                Py_DECREF(rep);
+            }
+        } else if (ch < 0x10000) {
+            *p++ = (char)(0xe0 | (ch >> 12));
+            *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+            *p++ = (char)(0x80 | (ch & 0x3f));
+        } else /* ch >= 0x10000 */ {
             /* Encode UCS4 Unicode ordinals */
             *p++ = (char)(0xf0 | (ch >> 18));
             *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));

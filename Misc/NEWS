@@ -12,6 +12,9 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #8092: Fix PyUnicode_EncodeUTF8() to support error handler producing
+  unicode string (eg. backslashreplace)
+
 - Issue #8014: Setting a T_UINT or T_PYSSIZET attribute of an object with
   PyMemberDefs could produce an internal error;  raise TypeError instead.
 
