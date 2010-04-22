@@ -1072,30 +1072,37 @@ HTTPErrorProcessor Objects
 Examples
 --------
 
-This example gets the python.org main page and displays the first 100 bytes of
+This example gets the python.org main page and displays the first 300 bytes of
 it.::
 
    >>> import urllib.request
    >>> f = urllib.request.urlopen('http://www.python.org/')
-   >>> print(f.read(100))
-   b'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-   <?xml-stylesheet href="./css/ht2html'
+   >>> print(f.read(300))
+   b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n\n\n<html
+   xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">\n\n<head>\n
+   <meta http-equiv="content-type" content="text/html; charset=utf-8" />\n
+   <title>Python Programming '
 
-Note that in Python 3, urlopen returns a bytes object by default. In many
-circumstances, you might expect the output of urlopen to be a string. This
-might be a carried over expectation from Python 2, where urlopen returned
-string or it might even the common usecase. In those cases, you should
-explicitly decode the bytes to string.
+Note that urlopen returns a bytes object.  This is because there is no way
+for urlopen to automatically determine the encoding of the byte stream
+it receives from the http server. In general, a program will decode
+the returned bytes object to string once it determines or guesses
+the appropriate encoding.
 
-In the examples below, we have chosen *utf-8* encoding for demonstration, you
-might choose the encoding which is suitable for the webpage you are
-requesting::
+The following W3C document, http://www.w3.org/International/O-charset  , lists
+the various ways in which a (X)HTML or a XML document could have specified its
+encoding information.
+
+As python.org website uses *utf-8* encoding as specified in it's meta tag, we
+will use same for decoding the bytes object. ::
 
    >>> import urllib.request
    >>> f = urllib.request.urlopen('http://www.python.org/')
-   >>> print(f.read(100).decode('utf-8')
-   <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-   <?xml-stylesheet href="./css/ht2html
+   >>> print(fp.read(100).decode('utf-8'))
+   <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtm
+
 
 In the following example, we are sending a data-stream to the stdin of a CGI
 and reading the data it returns to us. Note that this example will only work
