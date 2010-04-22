@@ -176,10 +176,9 @@ def urlsplit(url, scheme='', allow_fragments=True):
             url = url[i+1:]
             if url[:2] == '//':
                 netloc, url = _splitnetloc(url, 2)
-                if '[' in netloc :
-                    if not ']' in netloc: raise ValueError("Invalid IPv6 URL")
-                if ']' in netloc:
-                    if not '[' in netloc: raise ValueError("Invalid IPv6 URL")
+                if (('[' in netloc and ']' not in netloc) or
+                        (']' in netloc and '[' not in netloc)):
+                    raise ValueError("Invalid IPv6 URL")
             if allow_fragments and '#' in url:
                 url, fragment = url.split('#', 1)
             if '?' in url:
@@ -195,10 +194,9 @@ def urlsplit(url, scheme='', allow_fragments=True):
 
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
-        if '[' in netloc:
-            if not ']' in netloc: raise ValueError("Invalid IPv6 URL")
-        if ']' in netloc:
-            if not '[' in netloc: raise ValueError("Invalid IPv6 URL")
+        if (('[' in netloc and ']' not in netloc) or
+                (']' in netloc and '[' not in netloc)):
+            raise ValueError("Invalid IPv6 URL")
     if allow_fragments and scheme in uses_fragment and '#' in url:
         url, fragment = url.split('#', 1)
     if scheme in uses_query and '?' in url:

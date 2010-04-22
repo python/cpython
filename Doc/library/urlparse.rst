@@ -101,6 +101,10 @@ The :mod:`urlparse` module defines the following functions:
    .. versionchanged:: 2.5
       Added attributes to return value.
 
+   .. versionchanged:: 2.7
+      Added IPv6 URL parsing capabilities.
+
+
 .. function:: parse_qs(qs[, keep_blank_values[, strict_parsing]])
 
    Parse a query string given as a string argument (data of type
@@ -254,7 +258,7 @@ The :mod:`urlparse` module defines the following functions:
    :rfc:`3986` - Uniform Resource Identifiers
       This is the current standard (STD66). Any changes to urlparse module
       should conform to this. Certain deviations could be observed, which are
-      mostly due backward compatiblity purposes and for certain to de-facto
+      mostly due backward compatiblity purposes and for certain de-facto
       parsing requirements as commonly observed in major browsers.
 
    :rfc:`2732` - Format for Literal IPv6 Addresses in URL's.
