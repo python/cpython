@@ -1,14 +1,32 @@
 .. _reporting-bugs:
 
-************************
-Reporting Bugs in Python
-************************
+**************
+Reporting Bugs
+**************
 
 Python is a mature programming language which has established a reputation for
 stability.  In order to maintain this reputation, the developers would like to
 know of any deficiencies you find in Python.
 
-Bug reports should be submitted via the Python Bug Tracker
+
+Documentation bugs
+==================
+
+If you find a bug in this documentation or would like to propose an improvement,
+please send an e-mail to docs@python.org describing the bug and where you found
+it.  If you have a suggestion how to fix it, include that as well.
+
+docs@python.org is a mailing list run by volunteers; your request will be
+noticed, even if it takes a while to be processed.
+
+Of course, if you want a more persistent record of your issue, you can use the
+issue tracker for documentation bugs as well.
+
+
+Using the Python issue tracker
+==============================
+
+Bug reports for Python itself should be submitted via the Python Bug Tracker
 (http://bugs.python.org/).  The bug tracker offers a Web form which allows
 pertinent information to be entered and submitted to the developers.
 
@@ -18,9 +36,6 @@ developers time, is that you learn what has been done to fix it; it may be that
 the problem has already been fixed for the next release, or additional
 information is needed (in which case you are welcome to provide it if you can!).
 To do this, search the bug database using the search box on the top of the page.
-
-In the case of documentation bugs, look at the most recent development docs at
-http://docs.python.org/dev to see if the bug has been fixed.
 
 If the problem you're reporting is not already in the bug tracker, go back to
 the Python Bug Tracker and log in.  If you don't already have a tracker account,
