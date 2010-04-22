@@ -541,11 +541,6 @@ class TestEncoders(unittest.TestCase):
 
     def test_default_cte(self):
         eq = self.assertEqual
-        msg = MIMEText('hello world')
-        eq(msg['content-transfer-encoding'], '7bit')
-
-    def test_default_cte(self):
-        eq = self.assertEqual
         # With no explicit _charset its us-ascii, and all are 7-bit
         msg = MIMEText('hello world')
         eq(msg['content-transfer-encoding'], '7bit')
