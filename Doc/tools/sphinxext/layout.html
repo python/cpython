@@ -16,6 +16,18 @@
     <a href="http://www.python.org/psf/donations/">Please donate.</a>
     <br />
     Last updated on {{ last_updated|e }}.
+    <a href="{{ pathto('bugs') }}">Found a bug</a>?
+    <br />
     Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> {{ sphinx_version|e }}.
     </div>
+{% endblock %}
+{% block sidebarsourcelink %}
+{%- if show_source and has_source and sourcename %}
+<h3>{{ _('This Page') }}</h3>
+<ul class="this-page-menu">
+  <li><a href="{{ pathto('bugs') }}">Report a Bug</a></li>
+  <li><a href="{{ pathto('_sources/' + sourcename, true)|e }}"
+         rel="nofollow">Show Source</a></li>
+</ul>
+{%- endif %}
 {% endblock %}
