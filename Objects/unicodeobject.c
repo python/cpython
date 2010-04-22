@@ -2562,9 +2562,8 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
                 *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
                 *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
                 *p++ = (char)(0x80 | (ch & 0x3f));
-
-#endif
             } else {
+#endif
                 Py_ssize_t newpos;
                 PyObject *rep;
                 Py_ssize_t repsize, k;
@@ -2624,7 +2623,9 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
                     }
                 }
                 Py_DECREF(rep);
+#ifndef Py_UNICODE_WIDE
             }
+#endif
         } else if (ch < 0x10000) {
             *p++ = (char)(0xe0 | (ch >> 12));
             *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
