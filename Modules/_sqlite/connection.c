@@ -1374,7 +1374,9 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     PyObject* uppercase_name = 0;
     PyObject* name;
     PyObject* retval;
-    char* chk;
+    Py_UNICODE* chk;
+    Py_ssize_t i, len;
+    char *uppercase_name_str;
     int rc;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
@@ -1390,18 +1392,23 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    chk = _PyUnicode_AsString(uppercase_name);
-    while (*chk) {
+    len = PyUnicode_GET_SIZE(uppercase_name);
+    chk = PyUnicode_AS_UNICODE(uppercase_name);
+    for (i=0; i<len; i++, chk++) {
         if ((*chk >= '0' && *chk <= '9')
          || (*chk >= 'A' && *chk <= 'Z')
          || (*chk == '_'))
         {
-            chk++;
+            continue;
         } else {
             PyErr_SetString(pysqlite_ProgrammingError, "invalid character in collation name");
             goto finally;
         }
     }
+
+    uppercase_name_str = _PyUnicode_AsString(uppercase_name);
+    if (!uppercase_name_str)
+        goto finally;
 
     if (callable != Py_None && !PyCallable_Check(callable)) {
         PyErr_SetString(PyExc_TypeError, "parameter must be callable");
@@ -1417,7 +1424,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     }
 
     rc = sqlite3_create_collation(self->db,
-                                  _PyUnicode_AsString(uppercase_name),
+                                  uppercase_name_str,
                                   SQLITE_UTF8,
                                   (callable != Py_None) ? callable : NULL,
                                   (callable != Py_None) ? pysqlite_collation_callback : NULL);
