@@ -164,7 +164,7 @@ def lookup(caps, MIMEtype, key=None):
     if MIMEtype in caps:
         entries = entries + caps[MIMEtype]
     if key is not None:
-        entries = filter(lambda e, key=key: key in e, entries)
+        entries = [e for e in entries if key in e]
     return entries
 
 def subst(field, MIMEtype, filename, plist=[]):
@@ -239,14 +239,12 @@ def show(caps):
     if not caps: caps = getcaps()
     print("Mailcap entries:")
     print()
-    ckeys = caps.keys()
-    ckeys.sort()
+    ckeys = sorted(caps)
     for type in ckeys:
         print(type)
         entries = caps[type]
         for e in entries:
-            keys = e.keys()
-            keys.sort()
+            keys = sorted(e)
             for k in keys:
                 print("  %-15s" % k, e[k])
             print()
