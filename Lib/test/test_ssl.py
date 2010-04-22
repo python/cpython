@@ -221,6 +221,9 @@ class NetworkedTests(unittest.TestCase):
     def test_algorithms(self):
         # Issue #8484: all algorithms should be available when verifying a
         # certificate.
+        # SHA256 was added in OpenSSL 0.9.8
+        if ssl.OPENSSL_VERSION_INFO < (0, 9, 8, 0, 15):
+            self.skipTest("SHA256 not available on %r" % ssl.OPENSSL_VERSION)
         # NOTE: https://sha256.tbs-internet.com is another possible test host
         remote = ("sha2.hboeck.de", 443)
         sha256_cert = os.path.join(os.path.dirname(__file__), "sha256.pem")
