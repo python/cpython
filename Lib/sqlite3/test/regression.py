@@ -183,6 +183,13 @@ class RegressionTests(unittest.TestCase):
         """
         self.assertRaises(sqlite.Warning, self.con, 1)
 
+    def CheckCollation(self):
+        def collation_cb(a, b):
+            return 1
+        self.assertRaises(sqlite.ProgrammingError, self.con.create_collation,
+            # Lone surrogate cannot be encoded to the default encoding (utf8)
+            "\uDC80", collation_cb)
+
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
     return unittest.TestSuite((regression_suite,))
