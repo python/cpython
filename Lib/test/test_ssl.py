@@ -176,7 +176,7 @@ class NetworkedTests(unittest.TestCase):
         if support.verbose:
             sys.stdout.write("\nVerified certificate for svn.python.org:443 is\n%s\n" % pem)
 
-    # Test disabled: OPENSSL_VERSION* not available in Python 2.6
+    # Test disabled: OPENSSL_VERSION* not available in Python 3.1
     def test_algorithms(self):
         if support.verbose:
             sys.stdout.write("test_algorithms disabled, "
