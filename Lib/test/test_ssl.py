@@ -235,15 +235,15 @@ class NetworkedTests(unittest.TestCase):
     def test_algorithms(self):
         # Issue #8484: all algorithms should be available when verifying a
         # certificate.
+        # SHA256 was added in OpenSSL 0.9.8
+        if ssl.OPENSSL_VERSION_INFO < (0, 9, 8, 0, 15):
+            self.skipTest("SHA256 not available on %r" % ssl.OPENSSL_VERSION)
         # NOTE: https://sha256.tbs-internet.com is another possible test host
         remote = ("sha2.hboeck.de", 443)
         sha256_cert = os.path.join(os.path.dirname(__file__), "sha256.pem")
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_REQUIRED,
                             ca_certs=sha256_cert,)
-        if test_support.verbose:
-            sys.stdout.write("\nOpenSSL version is %r / %r" %
-                (ssl.OPENSSL_VERSION, ssl.OPENSSL_VERSION_INFO))
         with test_support.transient_internet():
             try:
                 s.connect(remote)
