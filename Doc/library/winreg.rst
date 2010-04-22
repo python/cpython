@@ -83,7 +83,7 @@ This module offers the following functions:
    The return value is the handle of the opened key. If the function fails, a
    :exc:`WindowsError` exception is raised.
 
-.. versionadded:: 3.2
+   .. versionadded:: 3.2
 
 
 .. function:: DeleteKey(key, sub_key)
@@ -130,7 +130,7 @@ This module offers the following functions:
 
    On unsupported Windows versions, :exc:`NotImplementedError` is raised.
 
-.. versionadded:: 3.2
+   .. versionadded:: 3.2
 
 
 .. function:: DeleteValue(key, value)
