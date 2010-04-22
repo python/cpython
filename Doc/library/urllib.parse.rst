@@ -326,17 +326,29 @@ The :mod:`urllib.parse` module defines the following functions:
 
 .. seealso::
 
-   :rfc:`1738` - Uniform Resource Locators (URL)
-      This specifies the formal syntax and semantics of absolute URLs.
+   :rfc:`3986` - Uniform Resource Identifiers
+      This is the current standard (STD66). Any changes to urlparse module
+      should conform to this. Certain deviations could be observed, which are
+      mostly due backward compatiblity purposes and for certain to de-facto
+      parsing requirements as commonly observed in major browsers.
+
+   :rfc:`2732` - Format for Literal IPv6 Addresses in URL's.
+      This specifies the parsing requirements of IPv6 URLs.
+
+   :rfc:`2396` - Uniform Resource Identifiers (URI): Generic Syntax
+      Document describing the generic syntactic requirements for both Uniform Resource
+      Names (URNs) and Uniform Resource Locators (URLs).
+
+   :rfc:`2368` - The mailto URL scheme.
+      Parsing requirements for mailto url schemes.
 
    :rfc:`1808` - Relative Uniform Resource Locators
       This Request For Comments includes the rules for joining an absolute and a
       relative URL, including a fair number of "Abnormal Examples" which govern the
       treatment of border cases.
 
-   :rfc:`2396` - Uniform Resource Identifiers (URI): Generic Syntax
-      Document describing the generic syntactic requirements for both Uniform Resource
-      Names (URNs) and Uniform Resource Locators (URLs).
+   :rfc:`1738` - Uniform Resource Locators (URL)
+      This specifies the formal syntax and semantics of absolute URLs.
 
 
 .. _urlparse-result-object:
