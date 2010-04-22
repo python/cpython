@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8195: Fix a crash in sqlite Connection.create_collation() if the
+  collation name contains a surrogate character.
+
 - Issue #8484: Load all ciphers and digest algorithms when initializing
   the _ssl extension, such that verification of some SSL certificates
   doesn't fail because of an "unknown algorithm".
