@@ -1029,6 +1029,9 @@ Extension Modules
 
 - Build the ossaudio extension on GNU/kFreeBSD.
 
+- Issue #7347: winreg: Add CreateKeyEx and DeleteKeyEx, as well as fix a
+  bug in the return value of QueryReflectionKey.
+
 Build
 -----
 
@@ -1211,9 +1214,6 @@ Tests
 
 - Removed importlib's custom test discovery code and switched to
     unittest.TestLoader.discover().
-
-- Issue #7347: winreg: Add CreateKeyEx and DeleteKeyEx, as well as fix a
-  bug in the return value of QueryReflectionKey.
 
 Tools/Demos
 -----------
