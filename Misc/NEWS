@@ -326,6 +326,9 @@ C-API
 Library
 -------
 
+- Issue #8496: make mailcap.lookup() always return a list, rather than an
+  iterator.  Patch by Gregory Nofi.
+
 - Issue #8195: Fix a crash in sqlite Connection.create_collation() if the
   collation name contains a surrogate character.
 
