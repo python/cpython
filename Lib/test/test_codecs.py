@@ -571,6 +571,16 @@ class UTF8Test(ReadTest):
     def test_lone_surrogates(self):
         self.assertRaises(UnicodeEncodeError, "\ud800".encode, "utf-8")
         self.assertRaises(UnicodeDecodeError, b"\xed\xa0\x80".decode, "utf-8")
+        self.assertEqual("[\uDC80]".encode("utf-8", "backslashreplace"),
+                         b'[\\udc80]')
+        self.assertEqual("[\uDC80]".encode("utf-8", "xmlcharrefreplace"),
+                         b'[&#56448;]')
+        self.assertEqual("[\uDC80]".encode("utf-8", "surrogateescape"),
+                         b'[\x80]')
+        self.assertEqual("[\uDC80]".encode("utf-8", "ignore"),
+                         b'[]')
+        self.assertEqual("[\uDC80]".encode("utf-8", "replace"),
+                         b'[?]')
 
     def test_surrogatepass_handler(self):
         self.assertEquals("abc\ud800def".encode("utf-8", "surrogatepass"),
