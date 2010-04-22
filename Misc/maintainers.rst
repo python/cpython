@@ -88,7 +88,7 @@ dis
 distutils           tarek
 doctest             tim_one (inactive)
 dummy_threading     brett.cannon
-email               barry
+email               barry, r.david.murray
 encodings           lemburg, loewis
 errno
 exceptions
@@ -187,7 +187,7 @@ socket
 socketserver
 spwd
 sqlite3             ghaering
-ssl                 janssen
+ssl                 janssen, pitrou
 stat
 string
 stringprep
@@ -251,12 +251,13 @@ Platform            Maintainers
 AIX
 Cygwin              jlt63
 FreeBSD
+HP-UX
 Linux
 Mac                 ronaldoussoren
 NetBSD1
 OS2/EMX             aimacintyre
 Solaris
-HP-UX
+Windows
 ==================  ===========
 
 
@@ -291,5 +292,4 @@ threads
 tracker
 unicode             lemburg, ezio.melotti, haypo
 version control
-windows
 ==================  ===========
