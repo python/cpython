@@ -88,6 +88,9 @@ The :mod:`urllib.parse` module defines the following functions:
    See section :ref:`urlparse-result-object` for more information on the result
    object.
 
+   .. versionchanged:: 3.2
+      Added IPv6 URL parsing capabilities.
+
 
 .. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False)
 
@@ -329,7 +332,7 @@ The :mod:`urllib.parse` module defines the following functions:
    :rfc:`3986` - Uniform Resource Identifiers
       This is the current standard (STD66). Any changes to urlparse module
       should conform to this. Certain deviations could be observed, which are
-      mostly due backward compatiblity purposes and for certain to de-facto
+      mostly due backward compatiblity purposes and for certain de-facto
       parsing requirements as commonly observed in major browsers.
 
    :rfc:`2732` - Format for Literal IPv6 Addresses in URL's.

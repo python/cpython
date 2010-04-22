@@ -273,10 +273,10 @@ class UrlParseTestCase(unittest.TestCase):
         for invalid_url in [
                 'http://::12.34.56.78]/',
                 'http://[::1/foo/',
+                'ftp://[::1/foo/bad]/bad',
                 'http://[::1/foo/bad]/bad',
                 'http://[::ffff:12.34.56.78']:
-            self.assertRaises(ValueError, lambda : urllib.parse.urlparse(invalid_url).hostname)
-            self.assertRaises(ValueError, lambda : urllib.parse.urlparse(invalid_url))
+            self.assertRaises(ValueError, urllib.parse.urlparse, invalid_url)
 
     def test_urldefrag(self):
         for url, defrag, frag in [
