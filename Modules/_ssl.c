@@ -9,6 +9,9 @@
    directly.
 
    XXX should partial writes be enabled, SSL_MODE_ENABLE_PARTIAL_WRITE?
+
+   XXX integrate several "shutdown modes" as suggested in
+       http://bugs.python.org/issue8108#msg102867 ?
 */
 
 #include "Python.h"
@@ -115,6 +118,7 @@ typedef struct {
 	X509*		peer_cert;
 	char		server[X509_NAME_MAXLEN];
 	char		issuer[X509_NAME_MAXLEN];
+	int		shutdown_seen_zero;
 
 } PySSLObject;
 
@@ -1357,7 +1361,8 @@ Read up to len bytes from the SSL socket.");
 
 static PyObject *PySSL_SSLshutdown(PySSLObject *self)
 {
-	int err;
+	int err, ssl_err, sockstate, nonblocking;
+	int zeros = 0;
 
 	/* Guard against closed socket */
 	if (self->Socket->sock_fd < 0) {
@@ -1366,13 +1371,65 @@ static PyObject *PySSL_SSLshutdown(PySSLObject *self)
 		return NULL;
 	}
 
-	PySSL_BEGIN_ALLOW_THREADS
-	err = SSL_shutdown(self->ssl);
-	if (err == 0) {
-		/* we need to call it again to finish the shutdown */
+        /* Just in case the blocking state of the socket has been changed */
+	nonblocking = (self->Socket->sock_timeout >= 0.0);
+	BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
+	BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
+
+	while (1) {
+		PySSL_BEGIN_ALLOW_THREADS
+		/* Disable read-ahead so that unwrap can work correctly.
+		 * Otherwise OpenSSL might read in too much data,
+		 * eating clear text data that happens to be
+		 * transmitted after the SSL shutdown.
+		 * Should be safe to call repeatedly everytime this
+		 * function is used and the shutdown_seen_zero != 0
+		 * condition is met.
+		 */
+		if (self->shutdown_seen_zero)
+			SSL_set_read_ahead(self->ssl, 0);
 		err = SSL_shutdown(self->ssl);
+		PySSL_END_ALLOW_THREADS
+		/* If err == 1, a secure shutdown with SSL_shutdown() is complete */
+		if (err > 0)
+			break;
+		if (err == 0) {
+			/* Don't loop endlessly; instead preserve legacy
+			   behaviour of trying SSL_shutdown() only twice.
+			   This looks necessary for OpenSSL < 0.9.8m */
+			if (++zeros > 1)
+				break;
+			/* Shutdown was sent, now try receiving */
+			self->shutdown_seen_zero = 1;
+			continue;
+		}
+
+		/* Possibly retry shutdown until timeout or failure */
+		ssl_err = SSL_get_error(self->ssl, err);
+		if (ssl_err == SSL_ERROR_WANT_READ)
+			sockstate = check_socket_and_wait_for_timeout(self->Socket, 0);
+		else if (ssl_err == SSL_ERROR_WANT_WRITE)
+			sockstate = check_socket_and_wait_for_timeout(self->Socket, 1);
+		else
+			break;
+		if (sockstate == SOCKET_HAS_TIMED_OUT) {
+			if (ssl_err == SSL_ERROR_WANT_READ)
+				PyErr_SetString(PySSLErrorObject,
+		                                "The read operation timed out");
+			else
+				PyErr_SetString(PySSLErrorObject,
+		                                "The write operation timed out");
+			return NULL;
+		}
+		else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
+			PyErr_SetString(PySSLErrorObject,
+	                                "Underlying socket too large for select().");
+			return NULL;
+		}
+		else if (sockstate != SOCKET_OPERATION_OK)
+			/* Retain the SSL error code */
+			break;
 	}
-	PySSL_END_ALLOW_THREADS
 
 	if (err < 0)
 		return PySSL_SetError(self, err, __FILE__, __LINE__);
