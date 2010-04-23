@@ -1142,8 +1142,8 @@ Tests
 - Issue #8108: test_ftplib's non-blocking SSL server now has proper handling
   of SSL shutdowns.
 
-- Issues #8279, #8330, #8437, #8480: Fix test_gdb failures, patch written by
-  Dave Malcolm
+- Issues #8279, #8330, #8437, #8480, #8495: Fix test_gdb failures, patch
+  written by Dave Malcolm
 
 - Issue #3864: Skip three test_signal tests on freebsd6 because they fail
   if any thread was previously started, most likely due to a platform bug.
