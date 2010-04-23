@@ -103,7 +103,8 @@ Directory and files operations
    exist, a exception will be added in the list of errors raised in
    a :exc:`Error` exception at the end of the copy process.
    You can set the optional *ignore_dangling_symlinks* flag to true if you
-   want to silence this exception.
+   want to silence this exception. Notice that this option has no effect
+   on platforms that don't support :func:`os.symlink`.
 
    If *ignore* is given, it must be a callable that will receive as its
    arguments the directory being visited by :func:`copytree`, and a list of its
