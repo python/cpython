@@ -263,35 +263,36 @@ class TestShutil(unittest.TestCase):
             shutil.rmtree(src_dir)
             shutil.rmtree(os.path.dirname(dst_dir))
 
-    if hasattr(os, "symlink"):
-        def test_dont_copy_file_onto_link_to_itself(self):
-            # bug 851123.
-            os.mkdir(TESTFN)
-            src = os.path.join(TESTFN, 'cheese')
-            dst = os.path.join(TESTFN, 'shop')
+    @unittest.skipUnless(hasattr(os, 'symlink'), 'requires os.symlink')
+    def test_dont_copy_file_onto_link_to_itself(self):
+        # bug 851123.
+        os.mkdir(TESTFN)
+        src = os.path.join(TESTFN, 'cheese')
+        dst = os.path.join(TESTFN, 'shop')
+        try:
+            f = open(src, 'w')
+            f.write('cheddar')
+            f.close()
+
+            os.link(src, dst)
+            self.assertRaises(shutil.Error, shutil.copyfile, src, dst)
+            self.assertEqual(open(src,'r').read(), 'cheddar')
+            os.remove(dst)
+
+            # Using `src` here would mean we end up with a symlink pointing
+            # to TESTFN/TESTFN/cheese, while it should point at
+            # TESTFN/cheese.
+            os.symlink('cheese', dst)
+            self.assertRaises(shutil.Error, shutil.copyfile, src, dst)
+            self.assertEqual(open(src,'r').read(), 'cheddar')
+            os.remove(dst)
+        finally:
             try:
-                f = open(src, 'w')
-                f.write('cheddar')
-                f.close()
+                shutil.rmtree(TESTFN)
+            except OSError:
+                pass
 
-                os.link(src, dst)
-                self.assertRaises(shutil.Error, shutil.copyfile, src, dst)
-                self.assertEqual(open(src,'r').read(), 'cheddar')
-                os.remove(dst)
-
-                # Using `src` here would mean we end up with a symlink pointing
-                # to TESTFN/TESTFN/cheese, while it should point at
-                # TESTFN/cheese.
-                os.symlink('cheese', dst)
-                self.assertRaises(shutil.Error, shutil.copyfile, src, dst)
-                self.assertEqual(open(src,'r').read(), 'cheddar')
-                os.remove(dst)
-            finally:
-                try:
-                    shutil.rmtree(TESTFN)
-                except OSError:
-                    pass
-
+        @unittest.skipUnless(hasattr(os, 'symlink'), 'requires os.symlink')
         def test_rmtree_on_symlink(self):
             # bug 1669.
             os.mkdir(TESTFN)
@@ -304,37 +305,38 @@ class TestShutil(unittest.TestCase):
             finally:
                 shutil.rmtree(TESTFN, ignore_errors=True)
 
-    if hasattr(os, "mkfifo"):
-        # Issue #3002: copyfile and copytree block indefinitely on named pipes
-        def test_copyfile_named_pipe(self):
-            os.mkfifo(TESTFN)
-            try:
-                self.assertRaises(shutil.SpecialFileError,
-                                  shutil.copyfile, TESTFN, TESTFN2)
-                self.assertRaises(shutil.SpecialFileError,
-                                  shutil.copyfile, __file__, TESTFN)
-            finally:
-                os.remove(TESTFN)
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'requires os.mkfifo')
+    # Issue #3002: copyfile and copytree block indefinitely on named pipes
+    def test_copyfile_named_pipe(self):
+        os.mkfifo(TESTFN)
+        try:
+            self.assertRaises(shutil.SpecialFileError,
+                                shutil.copyfile, TESTFN, TESTFN2)
+            self.assertRaises(shutil.SpecialFileError,
+                                shutil.copyfile, __file__, TESTFN)
+        finally:
+            os.remove(TESTFN)
 
-        def test_copytree_named_pipe(self):
-            os.mkdir(TESTFN)
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'requires os.mkfifo')
+    def test_copytree_named_pipe(self):
+        os.mkdir(TESTFN)
+        try:
+            subdir = os.path.join(TESTFN, "subdir")
+            os.mkdir(subdir)
+            pipe = os.path.join(subdir, "mypipe")
+            os.mkfifo(pipe)
             try:
-                subdir = os.path.join(TESTFN, "subdir")
-                os.mkdir(subdir)
-                pipe = os.path.join(subdir, "mypipe")
-                os.mkfifo(pipe)
-                try:
-                    shutil.copytree(TESTFN, TESTFN2)
-                except shutil.Error as e:
-                    errors = e.args[0]
-                    self.assertEqual(len(errors), 1)
-                    src, dst, error_msg = errors[0]
-                    self.assertEqual("`%s` is a named pipe" % pipe, error_msg)
-                else:
-                    self.fail("shutil.Error should have been raised")
-            finally:
-                shutil.rmtree(TESTFN, ignore_errors=True)
-                shutil.rmtree(TESTFN2, ignore_errors=True)
+                shutil.copytree(TESTFN, TESTFN2)
+            except shutil.Error as e:
+                errors = e.args[0]
+                self.assertEqual(len(errors), 1)
+                src, dst, error_msg = errors[0]
+                self.assertEqual("`%s` is a named pipe" % pipe, error_msg)
+            else:
+                self.fail("shutil.Error should have been raised")
+        finally:
+            shutil.rmtree(TESTFN, ignore_errors=True)
+            shutil.rmtree(TESTFN2, ignore_errors=True)
 
     def test_copytree_special_func(self):
 
@@ -351,6 +353,7 @@ class TestShutil(unittest.TestCase):
         shutil.copytree(src_dir, dst_dir, copy_function=_copy)
         self.assertEquals(len(copied), 2)
 
+    @unittest.skipUnless(hasattr(os, 'symlink'), 'requires os.symlink')
     def test_copytree_dangling_symlinks(self):
 
         # a dangling symlink raises an error at the end
