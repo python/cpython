@@ -320,7 +320,9 @@ class SSLSocket(socket):
         from the socket module."""
 
         self._makefile_refs += 1
-        return _fileobject(self, mode, bufsize)
+        # close=True so as to decrement the reference count when done with
+        # the file-like object.
+        return _fileobject(self, mode, bufsize, close=True)
 
 
 
