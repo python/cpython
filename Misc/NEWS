@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7943: Fix circular reference created when instantiating an SSL
+  socket.  Initial patch by Péter Szabó.
+
 - Issue #8451: Syslog module now uses basename(sys.argv[0]) instead of
   the string "python" as the *ident*.  openlog() arguments are all optional
   and keywords.
