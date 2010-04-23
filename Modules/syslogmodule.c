@@ -26,6 +26,11 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 Revision history:
 
+2010/04/20 (Sean Reifschneider)
+  - Use basename(sys.argv[0]) for the default "ident".
+  - Arguments to openlog() are now keyword args and are all optional.
+  - syslog() calls openlog() if it hasn't already been called.
+
 1998/04/28 (Sean Reifschneider)
   - When facility not specified to syslog() method, use default from openlog()
     (This is how it was claimed to work in the documentation)
@@ -45,6 +50,7 @@ Revision history:
 /* syslog module */
 
 #include "Python.h"
+#include "osdefs.h"
 
 #include <syslog.h>
 
@@ -52,26 +58,80 @@ Revision history:
 static PyObject *S_ident_o = NULL;			/*  identifier, held by openlog()  */
 
 
+static PyObject *
+syslog_get_argv(void)
+{
+	/* Figure out what to use for as the program "ident" for openlog().
+	 * This swallows exceptions and continues rather than failing out,
+	 * because the syslog module can still be used because openlog(3)
+	 * is optional.
+	 */
+
+	Py_ssize_t argv_len;
+	PyObject *scriptobj;
+	char *atslash;
+	PyObject *argv = PySys_GetObject("argv");
+
+	if (argv == NULL) {
+		return(NULL);
+	}
+
+	argv_len = PyList_Size(argv);
+	if (argv_len == -1) {
+		PyErr_Clear();
+		return(NULL);
+	}
+	if (argv_len == 0) {
+		return(NULL);
+	}
+
+	scriptobj = PyList_GetItem(argv, 0);
+	if (!PyString_Check(scriptobj)) {
+		return(NULL);
+	}
+	if (PyString_GET_SIZE(scriptobj) == 0) {
+		return(NULL);
+	}
+
+	atslash = strrchr(PyString_AsString(scriptobj), SEP);
+	if (atslash) {
+		return(PyString_FromString(atslash + 1));
+	} else {
+		Py_INCREF(scriptobj);
+		return(scriptobj);
+	}
+
+	return(NULL);
+}
+
+
 static PyObject * 
-syslog_openlog(PyObject * self, PyObject * args)
+syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
 {
 	long logopt = 0;
 	long facility = LOG_USER;
-	PyObject *new_S_ident_o;
+	PyObject *new_S_ident_o = NULL;
+	static char *keywords[] = {"ident", "logoption", "facility", 0};
 
-	if (!PyArg_ParseTuple(args,
-			      "S|ll;ident string [, logoption [, facility]]",
-			      &new_S_ident_o, &logopt, &facility))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds,
+			      "|Sll:openlog", keywords, &new_S_ident_o, &logopt, &facility))
 		return NULL;
 
-	/* This is needed because openlog() does NOT make a copy
-	 * and syslog() later uses it.. cannot trash it.
-	 */
+	if (new_S_ident_o) { Py_INCREF(new_S_ident_o); }
+
+	/*  get either sys.argv[0] or use "python" otherwise  */
+	if (!new_S_ident_o) {
+		new_S_ident_o = syslog_get_argv();
+		}
+
 	Py_XDECREF(S_ident_o);
 	S_ident_o = new_S_ident_o;
-	Py_INCREF(S_ident_o);
 
-	openlog(PyString_AsString(S_ident_o), logopt, facility);
+	/* At this point, S_ident_o should be INCREF()ed.  openlog(3) does not
+	 * make a copy, and syslog(3) later uses it.  We can't garbagecollect it
+	 */
+
+	openlog(S_ident_o ? PyString_AsString(S_ident_o) : NULL, logopt, facility);
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -90,6 +150,21 @@ syslog_syslog(PyObject * self, PyObject * args)
 		if (!PyArg_ParseTuple(args, "s;[priority,] message string",
 				      &message))
 			return NULL;
+	}
+
+	/*  call openlog if no current identifier  */
+	if (!S_ident_o) {
+		PyObject *openargs;
+
+		/* Continue even if PyTuple_New fails, because openlog(3) is optional.
+		 * So, we can still do loggin in the unlikely event things are so hosed
+		 * that we can't do this tuple.
+		 */
+		if ((openargs = PyTuple_New(0))) {
+			PyObject *openlog_ret = syslog_openlog(self, openargs, NULL);
+			Py_XDECREF(openlog_ret);
+			Py_DECREF(openargs);
+		}
 	}
 
 	Py_BEGIN_ALLOW_THREADS;
@@ -145,7 +220,7 @@ syslog_log_upto(PyObject *self, PyObject *args)
 /* List of functions defined in the module */
 
 static PyMethodDef syslog_methods[] = {
-	{"openlog",	syslog_openlog,		METH_VARARGS},
+	{"openlog",	(PyCFunction) syslog_openlog,		METH_VARARGS | METH_KEYWORDS},
 	{"closelog",	syslog_closelog,	METH_NOARGS},
 	{"syslog",	syslog_syslog,		METH_VARARGS},
 	{"setlogmask",	syslog_setlogmask,	METH_VARARGS},
