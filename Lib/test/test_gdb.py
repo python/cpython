@@ -59,7 +59,7 @@ class DebuggerTests(unittest.TestCase):
         out, err = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             ).communicate()
-        return out.decode('utf-8'), err.decode('utf-8')
+        return out.decode('utf-8', 'replace'), err.decode('utf-8', 'replace')
 
     def get_stack_trace(self, source=None, script=None,
                         breakpoint=BREAKPOINT_FN,
