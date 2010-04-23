@@ -1763,6 +1763,45 @@ PySys_SetArgv(int argc, wchar_t **argv)
 	Py_DECREF(av);
 }
 
+/* Reimplementation of PyFile_WriteString() no calling indirectly
+   PyErr_CheckSignals(): avoid the call to PyObject_Str(). */
+
+static int
+sys_pyfile_write(const char *text, PyObject *file)
+{
+	PyObject *unicode = NULL, *writer = NULL, *args = NULL, *result = NULL;
+	int err;
+
+	unicode = PyUnicode_FromString(text);
+	if (unicode == NULL)
+		goto error;
+
+	writer = PyObject_GetAttrString(file, "write");
+	if (writer == NULL)
+		goto error;
+
+	args = PyTuple_Pack(1, unicode);
+	if (args == NULL)
+		goto error;
+
+	result = PyEval_CallObject(writer, args);
+	if (result == NULL) {
+		goto error;
+	} else {
+		err = 0;
+		goto finally;
+	}
+
+error:
+	err = -1;
+finally:
+	Py_XDECREF(unicode);
+	Py_XDECREF(writer);
+	Py_XDECREF(args);
+	Py_XDECREF(result);
+	return err;
+}
+
 
 /* APIs to write to sys.stdout or sys.stderr using a printf-like interface.
    Adapted from code submitted by Just van Rossum.
@@ -1773,6 +1812,10 @@ PySys_SetArgv(int argc, wchar_t **argv)
       The first function writes to sys.stdout; the second to sys.stderr.  When
       there is a problem, they write to the real (C level) stdout or stderr;
       no exceptions are raised.
+
+      PyErr_CheckSignals() is not called to avoid the execution of the Python
+      signal handlers: they may raise a new exception whereas mywrite() ignores
+      all exceptions.
 
       Both take a printf-style format string as their first argument followed
       by a variable length argument list determined by the format string.
@@ -1799,13 +1842,13 @@ mywrite(char *name, FILE *fp, const char *format, va_list va)
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	file = PySys_GetObject(name);
 	written = PyOS_vsnprintf(buffer, sizeof(buffer), format, va);
-	if (PyFile_WriteString(buffer, file) != 0) {
+	if (sys_pyfile_write(buffer, file) != 0) {
 		PyErr_Clear();
 		fputs(buffer, fp);
 	}
 	if (written < 0 || (size_t)written >= sizeof(buffer)) {
 		const char *truncated = "... truncated";
-		if (PyFile_WriteString(truncated, file) != 0) {
+		if (sys_pyfile_write(truncated, file) != 0) {
 			PyErr_Clear();
 			fputs(truncated, fp);
 		}
