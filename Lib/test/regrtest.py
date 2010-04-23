@@ -211,6 +211,8 @@ RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
                   'decimal', 'compiler', 'subprocess', 'urlfetch', 'gui',
                   'xpickle')
 
+TEMPDIR = os.path.abspath(tempfile.gettempdir())
+
 
 def usage(code, msg=''):
     print __doc__
@@ -381,7 +383,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             found_garbage = []
 
     if single:
-        filename = 'pynexttest'
+        filename = os.path.join(TEMPDIR, 'pynexttest')
         try:
             fp = open(filename, 'r')
             next_test = fp.read().strip()
@@ -413,7 +415,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         args = []
 
     # For a partial run, we do not need to clutter the output.
-    if verbose or not (quiet or tests or args):
+    if verbose or not (quiet or single or tests or args):
         # Print basic platform information
         print "==", platform.python_implementation(), \
                     " ".join(sys.version.split())
@@ -1519,18 +1521,17 @@ if __name__ == '__main__':
     # to keep the test files in a subfolder.  It eases the cleanup of leftover
     # files using command "make distclean".
     if sysconfig.is_python_build():
-        parent_dir = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
-        if not os.path.exists(parent_dir):
-            os.mkdir(parent_dir)
-    else:
-        parent_dir = os.path.abspath(tempfile.gettempdir())
+        TEMPDIR = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
+        TEMPDIR = os.path.abspath(TEMPDIR)
+        if not os.path.exists(TEMPDIR):
+            os.mkdir(TEMPDIR)
 
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
     TESTCWD = 'test_python_{}'.format(os.getpid())
 
-    TESTCWD = os.path.join(parent_dir, TESTCWD)
+    TESTCWD = os.path.join(TEMPDIR, TESTCWD)
 
     # Run the tests in a context manager that temporary changes the CWD to a
     # temporary and writable directory. If it's not possible to create or
