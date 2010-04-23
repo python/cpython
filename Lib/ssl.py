@@ -75,7 +75,7 @@ from _ssl import \
      SSL_ERROR_EOF, \
      SSL_ERROR_INVALID_ERROR_CODE
 
-from socket import socket, _fileobject, error as socket_error
+from socket import socket, _fileobject, _delegate_methods, error as socket_error
 from socket import getnameinfo as _getnameinfo
 import base64        # for DER-to-PEM translation
 
@@ -91,13 +91,14 @@ class SSLSocket(socket):
                  do_handshake_on_connect=True,
                  suppress_ragged_eofs=True, ciphers=None):
         socket.__init__(self, _sock=sock._sock)
-        # the initializer for socket trashes the methods (tsk, tsk), so...
-        self.send = lambda data, flags=0: SSLSocket.send(self, data, flags)
-        self.sendto = lambda data, addr, flags=0: SSLSocket.sendto(self, data, addr, flags)
-        self.recv = lambda buflen=1024, flags=0: SSLSocket.recv(self, buflen, flags)
-        self.recvfrom = lambda addr, buflen=1024, flags=0: SSLSocket.recvfrom(self, addr, buflen, flags)
-        self.recv_into = lambda buffer, nbytes=None, flags=0: SSLSocket.recv_into(self, buffer, nbytes, flags)
-        self.recvfrom_into = lambda buffer, nbytes=None, flags=0: SSLSocket.recvfrom_into(self, buffer, nbytes, flags)
+        # The initializer for socket overrides the methods send(), recv(), etc.
+        # in the instancce, which we don't need -- but we want to provide the
+        # methods defined in SSLSocket.
+        for attr in _delegate_methods:
+            try:
+                delattr(self, attr)
+            except AttributeError:
+                pass
 
         if certfile and not keyfile:
             keyfile = certfile
