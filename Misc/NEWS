@@ -40,6 +40,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #8108: Fix the unwrap() method of SSL objects when the socket has
+  a non-infinite timeout.  Also make that method friendlier with applications
+  wanting to continue using the socket in clear-text mode, by disabling
+  OpenSSL's internal readahead.  Thanks to Darryl Miles for guidance.
+
 - Issue #8468: bz2.BZ2File() accepts str with surrogates and bytes filenames
 
 - Issue #8496: make mailcap.lookup() always return a list, rather than an
