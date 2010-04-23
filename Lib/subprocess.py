@@ -1090,7 +1090,10 @@ class Popen(object):
                         fs_encoding = sys.getfilesystemencoding()
                         def fs_encode(s):
                             """Encode s for use in the env, fs or cmdline."""
-                            return s.encode(fs_encoding, 'surrogateescape')
+                            if isinstance(s, bytes):
+                                return s
+                            else:
+                                return s.encode(fs_encoding, 'surrogateescape')
 
                         # We must avoid complex work that could involve
                         # malloc or free in the child process to avoid

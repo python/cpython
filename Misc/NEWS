@@ -333,6 +333,9 @@ C-API
 Library
 -------
 
+- Issue #8391: os.execvpe() and os.getenv() supports unicode with surrogates
+  and bytes strings for environment keys and values
+
 - Issue #8467: Pure Python implementation of subprocess encodes the error
   message using surrogatepass error handler to support surrogates in the
   message
