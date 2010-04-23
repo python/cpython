@@ -11,6 +11,7 @@ import pprint
 import urllib.parse, urllib.request
 import traceback
 import asyncore
+import weakref
 
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
@@ -137,6 +138,16 @@ class BasicTests(unittest.TestCase):
                             cert_reqs=ssl.CERT_NONE, ciphers="^$:,;?*'dorothyx")
         with self.assertRaisesRegexp(ssl.SSLError, "No cipher can be selected"):
             s.connect(remote)
+
+    @support.cpython_only
+    def test_refcycle(self):
+        # Issue #7943: an SSL object doesn't create reference cycles with
+        # itself.
+        s = socket.socket(socket.AF_INET)
+        ss = ssl.wrap_socket(s)
+        wr = weakref.ref(ss)
+        del ss
+        self.assertEqual(wr(), None)
 
 
 class NetworkedTests(unittest.TestCase):
