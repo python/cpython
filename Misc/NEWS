@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8124: PySys_WriteStdout() and PySys_WriteStderr() don't execute
+  indirectly Python signal handlers anymore because mywrite() ignores
+  exceptions (KeyboardInterrupt)
+
 - Issue #8092: Fix PyUnicode_EncodeUTF8() to support error handler producing
   unicode string (eg. backslashreplace)
 
