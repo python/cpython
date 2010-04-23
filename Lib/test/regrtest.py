@@ -181,14 +181,6 @@ for module in sys.modules.itervalues():
         module.__file__ = os.path.abspath(module.__file__)
 
 
-# Ignore ImportWarnings that only occur in the source tree,
-# (because of modules with the same name as source-directories in Modules/)
-for mod in ("ctypes", "gzip", "zipfile", "tarfile", "encodings.zlib_codec",
-            "test.test_zipimport", "test.test_zlib", "test.test_zipfile",
-            "test.test_codecs", "test.string_tests"):
-    warnings.filterwarnings(module=".*%s$" % (mod,),
-                            action="ignore", category=ImportWarning)
-
 # MacOSX (a.k.a. Darwin) has a default stack size that is too small
 # for deeply recursive regular expressions.  We see this as crashes in
 # the Python test suite when running test_re.py and test_sre.py.  The
