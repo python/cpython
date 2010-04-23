@@ -1204,8 +1204,9 @@ class Popen(object):
                                         errno = 0
                                     message = '%s:%x:%s' % (exc_type.__name__,
                                                             errno, exc_value)
-                                    os.write(errpipe_write, message.encode())
-                                except:
+                                    message = message.encode(errors="surrogatepass")
+                                    os.write(errpipe_write, message)
+                                except Exception:
                                     # We MUST not allow anything odd happening
                                     # above to prevent us from exiting below.
                                     pass
@@ -1255,7 +1256,7 @@ class Popen(object):
                 for fd in (p2cwrite, c2pread, errread):
                     if fd != -1:
                         os.close(fd)
-                err_msg = err_msg.decode()
+                err_msg = err_msg.decode(errors="surrogatepass")
                 if issubclass(child_exception_type, OSError) and hex_errno:
                     errno = int(hex_errno, 16)
                     if errno != 0:

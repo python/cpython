@@ -333,6 +333,10 @@ C-API
 Library
 -------
 
+- Issue #8467: Pure Python implementation of subprocess encodes the error
+  message using surrogatepass error handler to support surrogates in the
+  message
+
 - Issue #8468: bz2.BZ2File() accepts str with surrogates and bytes filenames
 
 - Issue #8451: Syslog module now uses basename(sys.argv[0]) instead of

@@ -782,6 +782,25 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertStderrEqual(stderr, b'')
         self.assertEqual(p.wait(), -signal.SIGTERM)
 
+    def test_surrogates(self):
+        def prepare():
+            raise ValueError("surrogate:\uDCff")
+
+        try:
+            subprocess.call(
+                [sys.executable, "-c", "pass"],
+                preexec_fn=prepare)
+        except ValueError as err:
+            # Pure Python implementations keeps the message
+            self.assertIsNone(subprocess._posixsubprocess)
+            self.assertEqual(str(err), "surrogate:\uDCff")
+        except RuntimeError as err:
+            # _posixsubprocess uses a default message
+            self.assertIsNotNone(subprocess._posixsubprocess)
+            self.assertEqual(str(err), "Exception occurred in preexec_fn.")
+        else:
+            self.fail("Expected ValueError or RuntimeError")
+
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
 class Win32ProcessTestCase(BaseTestCase):
