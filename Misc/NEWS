@@ -329,6 +329,8 @@ C-API
 Library
 -------
 
+- Issue #8468: bz2.BZ2File() accepts str with surrogates and bytes filenames
+
 - Issue #8451: Syslog module now uses basename(sys.argv[0]) instead of
   the string "python" as the *ident*.  openlog() arguments are all optional
   and keywords.
