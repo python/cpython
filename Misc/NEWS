@@ -329,6 +329,10 @@ C-API
 Library
 -------
 
+- Issue #8451: Syslog module now uses basename(sys.argv[0]) instead of
+  the string "python" as the *ident*.  openlog() arguments are all optional
+  and keywords.
+
 - Issue #8108: Fix the unwrap() method of SSL objects when the socket has
   a non-infinite timeout.  Also make that method friendlier with applications
   wanting to continue using the socket in clear-text mode, by disabling
