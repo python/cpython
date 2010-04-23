@@ -119,7 +119,7 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
 
 	if (new_S_ident_o) { Py_INCREF(new_S_ident_o); }
 
-	/*  get either sys.argv[0] or use "python" otherwise  */
+	/*  get sys.argv[0] or NULL if we can't for some reason  */
 	if (!new_S_ident_o) {
 		new_S_ident_o = syslog_get_argv();
 		}
@@ -129,6 +129,7 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
 
 	/* At this point, S_ident_o should be INCREF()ed.  openlog(3) does not
 	 * make a copy, and syslog(3) later uses it.  We can't garbagecollect it
+	 * If NULL, just let openlog figure it out (probably using C argv[0]).
 	 */
 
 	openlog(S_ident_o ? PyString_AsString(S_ident_o) : NULL, logopt, facility);
