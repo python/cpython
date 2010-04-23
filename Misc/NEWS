@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5238: Calling makefile() on an SSL object would prevent the
+  underlying socket from being closed until all objects get truely destroyed.
+
 - Issue #7943: Fix circular reference created when instantiating an SSL
   socket.  Initial patch by Péter Szabó.
 

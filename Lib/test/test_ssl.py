@@ -9,7 +9,9 @@ import select
 import errno
 import subprocess
 import time
+import gc
 import os
+import errno
 import pprint
 import urllib, urlparse
 import shutil
@@ -122,6 +124,26 @@ class BasicTests(unittest.TestCase):
         wr = weakref.ref(ss)
         del ss
         self.assertEqual(wr(), None)
+
+    def test_makefile_close(self):
+        # Issue #5238: creating a file-like object with makefile() shouldn't
+        # leak the underlying file descriptor.
+        ss = ssl.wrap_socket(socket.socket(socket.AF_INET))
+        fd = ss.fileno()
+        f = ss.makefile()
+        f.close()
+        # The fd is still open
+        os.read(fd, 0)
+        # Closing the SSL socket should close the fd too
+        ss.close()
+        gc.collect()
+        try:
+            os.read(fd, 0)
+        except OSError, e:
+            self.assertEqual(e.errno, errno.EBADF)
+        else:
+            self.fail("OSError wasn't raised")
+
 
 class NetworkedTests(unittest.TestCase):
 
