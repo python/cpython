@@ -36,6 +36,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8468: bz2.BZ2File() accepts str with surrogates and bytes filenames
+
 - Issue #8496: make mailcap.lookup() always return a list, rather than an
   iterator.  Patch by Gregory Nofi.
 

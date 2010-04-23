@@ -1162,6 +1162,7 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 {
 	static char *kwlist[] = {"filename", "mode", "buffering",
 				 "compresslevel", 0};
+	PyObject *name_obj = NULL;
 	char *name;
 	char *mode = "r";
 	int buffering = -1;
@@ -1171,14 +1172,20 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 
 	self->size = -1;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|sii:BZ2File",
-					 kwlist, &name, &mode, &buffering,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|sii:BZ2File",
+					 kwlist, PyUnicode_FSConverter, &name_obj,
+					 &mode, &buffering,
 					 &compresslevel))
 		return -1;
 
+	if (PyBytes_Check(name_obj))
+		name = PyBytes_AsString(name_obj);
+	else
+		name = PyByteArray_AsString(name_obj);
 	if (compresslevel < 1 || compresslevel > 9) {
 		PyErr_SetString(PyExc_ValueError,
 				"compresslevel must be between 1 and 9");
+		Py_DECREF(name_obj);
 		return -1;
 	}
 
@@ -1202,6 +1209,7 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 		if (error) {
 			PyErr_Format(PyExc_ValueError,
 				     "invalid mode char %c", *mode);
+			Py_DECREF(name_obj);
 			return -1;
 		}
 		mode++;
@@ -1216,6 +1224,7 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 	mode = (mode_char == 'r') ? "rb" : "wb";
 
 	self->rawfp = fopen(name, mode);
+	Py_DECREF(name_obj);
 	if (self->rawfp == NULL) {
 		PyErr_SetFromErrno(PyExc_IOError);
 		return -1;
