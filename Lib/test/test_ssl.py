@@ -14,6 +14,7 @@ import pprint
 import urllib, urlparse
 import shutil
 import traceback
+import weakref
 
 from BaseHTTPServer import HTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
@@ -112,6 +113,15 @@ class BasicTests(unittest.TestCase):
         d2 = ssl.PEM_cert_to_DER_cert(p2)
         if (d1 != d2):
             raise test_support.TestFailed("PEM-to-DER or DER-to-PEM translation failed")
+
+    def test_refcycle(self):
+        # Issue #7943: an SSL object doesn't create reference cycles with
+        # itself.
+        s = socket.socket(socket.AF_INET)
+        ss = ssl.wrap_socket(s)
+        wr = weakref.ref(ss)
+        del ss
+        self.assertEqual(wr(), None)
 
 class NetworkedTests(unittest.TestCase):
 
