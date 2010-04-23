@@ -807,9 +807,11 @@ class POSIXProcessTestCase(BaseTestCase):
 
             # test str with surrogates
             script = "import os; print(repr(os.getenv(%s)))" % repr(key)
+            env = os.environ.copy()
+            env[key] = value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
-                env={key: value})
+                env=env)
             stdout = stdout.rstrip(b'\n\r')
             self.assertEquals(stdout, value_repr)
 
@@ -817,9 +819,11 @@ class POSIXProcessTestCase(BaseTestCase):
             key = key.encode("ascii", "surrogateescape")
             value = value.encode("ascii", "surrogateescape")
             script = "import os; print(repr(os.getenv(%s)))" % repr(key)
+            env = os.environ.copy()
+            env[key] = value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
-                env={key: value})
+                env=env)
             stdout = stdout.rstrip(b'\n\r')
             self.assertEquals(stdout, value_repr)
 
