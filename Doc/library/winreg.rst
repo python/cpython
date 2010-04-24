@@ -61,7 +61,7 @@ This module offers the following functions:
    :exc:`WindowsError` exception is  raised.
 
 
-.. function:: CreateKeyEx(key, sub_key, res=0, sam=KEY_ALL_ACCESS)
+.. function:: CreateKeyEx(key, sub_key[, res[, sam]])
 
    Creates or opens the specified key, returning a :dfn:`handle object`
 
@@ -102,7 +102,7 @@ This module offers the following functions:
    If the method fails, a :exc:`WindowsError`  exception is raised.
 
 
-.. function:: DeleteKeyEx(key, sub_key, sam=KEY_WOW64_64KEY, res=0)
+.. function:: DeleteKeyEx(key, sub_key[, sam[, res]])
 
    Deletes the specified key.
 
@@ -239,7 +239,7 @@ This module offers the following functions:
    :const:`HKEY_LOCAL_MACHINE` tree. This may or may not be true.
 
 
-.. function:: OpenKey(key, sub_key, res=0, sam=KEY_READ)
+.. function:: OpenKey(key, sub_key[, res[, sam]])
 
    Opens the specified key, returning a :dfn:`handle object`
 
