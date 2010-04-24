@@ -158,6 +158,13 @@ static PyTypeObject sp_handle_type = {
 /* -------------------------------------------------------------------- */
 /* windows API functions */
 
+PyDoc_STRVAR(GetStdHandle_doc,
+"GetStdHandle(handle) -> integer\n\
+\n\
+Return a handle to the specified standard device\n\
+(STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE).\n\
+The integer associated with the handle object is returned.");
+
 static PyObject *
 sp_GetStdHandle(PyObject* self, PyObject* args)
 {
@@ -183,6 +190,11 @@ sp_GetStdHandle(PyObject* self, PyObject* args)
 	return HANDLE_TO_PYNUM(handle);
 }
 
+PyDoc_STRVAR(GetCurrentProcess_doc,
+"GetCurrentProcess() -> handle\n\
+\n\
+Return a handle object for the current process.");
+
 static PyObject *
 sp_GetCurrentProcess(PyObject* self, PyObject* args)
 {
@@ -191,6 +203,17 @@ sp_GetCurrentProcess(PyObject* self, PyObject* args)
 
 	return sp_handle_new(GetCurrentProcess());
 }
+
+PyDoc_STRVAR(DuplicateHandle_doc,
+"DuplicateHandle(source_proc_handle, source_handle,\n\
+                 target_proc_handle, target_handle, access,\n\
+                 inherit[, options]) -> handle\n\
+\n\
+Return a duplicate handle object.\n\
+\n\
+The duplicate handle refers to the same object as the original\n\
+handle. Therefore, any changes to the object are reflected\n\
+through both handles.");
 
 static PyObject *
 sp_DuplicateHandle(PyObject* self, PyObject* args)
@@ -233,6 +256,14 @@ sp_DuplicateHandle(PyObject* self, PyObject* args)
 
 	return sp_handle_new(target_handle);
 }
+
+PyDoc_STRVAR(CreatePipe_doc,
+"CreatePipe(pipe_attrs, size) -> (read_handle, write_handle)\n\
+\n\
+Create an anonymous pipe, and return handles to the read and\n\
+write ends of the pipe.\n\
+\n\
+pipe_attrs is ignored internally and can be None.");
 
 static PyObject *
 sp_CreatePipe(PyObject* self, PyObject* args)
@@ -369,6 +400,18 @@ getenvironment(PyObject* environment)
 	return NULL;
 }
 
+PyDoc_STRVAR(CreateProcess_doc,
+"CreateProcess(app_name, cmd_line, proc_attrs, thread_attrs,\n\
+               inherit, flags, env_mapping, curdir,\n\
+               startup_info) -> (proc_handle, thread_handle,\n\
+                                 pid, tid)\n\
+\n\
+Create a new process and its primary thread. The return\n\
+value is a tuple of the process handle, thread handle,\n\
+process ID, and thread ID.\n\
+\n\
+proc_attrs and thread_attrs are ignored internally and can be None.");
+
 static PyObject *
 sp_CreateProcess(PyObject* self, PyObject* args)
 {
@@ -445,6 +488,11 @@ sp_CreateProcess(PyObject* self, PyObject* args)
 			     pi.dwThreadId);
 }
 
+PyDoc_STRVAR(TerminateProcess_doc,
+"TerminateProcess(handle, exit_code) -> None\n\
+\n\
+Terminate the specified process and all of its threads.");
+
 static PyObject *
 sp_TerminateProcess(PyObject* self, PyObject* args)
 {
@@ -465,6 +513,11 @@ sp_TerminateProcess(PyObject* self, PyObject* args)
 	return Py_None;
 }
 
+PyDoc_STRVAR(GetExitCodeProcess_doc,
+"GetExitCodeProcess(handle) -> Exit code\n\
+\n\
+Return the termination status of the specified process.");
+
 static PyObject *
 sp_GetExitCodeProcess(PyObject* self, PyObject* args)
 {
@@ -482,6 +535,13 @@ sp_GetExitCodeProcess(PyObject* self, PyObject* args)
 
 	return PyLong_FromLong(exit_code);
 }
+
+PyDoc_STRVAR(WaitForSingleObject_doc,
+"WaitForSingleObject(handle, timeout) -> result\n\
+\n\
+Wait until the specified object is in the signaled state or\n\
+the time-out interval elapses. The timeout value is specified\n\
+in milliseconds.");
 
 static PyObject *
 sp_WaitForSingleObject(PyObject* self, PyObject* args)
@@ -505,6 +565,11 @@ sp_WaitForSingleObject(PyObject* self, PyObject* args)
 	return PyLong_FromLong((int) result);
 }
 
+PyDoc_STRVAR(GetVersion_doc,
+"GetVersion() -> version\n\
+\n\
+Return the version number of the current operating system.");
+
 static PyObject *
 sp_GetVersion(PyObject* self, PyObject* args)
 {
@@ -513,6 +578,18 @@ sp_GetVersion(PyObject* self, PyObject* args)
 
 	return PyLong_FromLong((int) GetVersion());
 }
+
+PyDoc_STRVAR(GetModuleFileName_doc,
+"GetModuleFileName(module) -> path\n\
+\n\
+Return the fully-qualified path for the file that contains\n\
+the specified module. The module must have been loaded by the\n\
+current process.\n\
+\n\
+The module parameter should be a handle to the loaded module\n\
+whose path is being requested. If this parameter is 0, \n\
+GetModuleFileName retrieves the path of the executable file\n\
+of the current process.");
 
 static PyObject *
 sp_GetModuleFileName(PyObject* self, PyObject* args)
@@ -535,16 +612,22 @@ sp_GetModuleFileName(PyObject* self, PyObject* args)
 }
 
 static PyMethodDef sp_functions[] = {
-	{"GetStdHandle",	sp_GetStdHandle,	METH_VARARGS},
-	{"GetCurrentProcess",	sp_GetCurrentProcess,	METH_VARARGS},
-	{"DuplicateHandle",	sp_DuplicateHandle,	METH_VARARGS},
-	{"CreatePipe",		sp_CreatePipe,		METH_VARARGS},
-	{"CreateProcess",	sp_CreateProcess,	METH_VARARGS},
-	{"TerminateProcess",	sp_TerminateProcess,	METH_VARARGS},
-	{"GetExitCodeProcess",	sp_GetExitCodeProcess,	METH_VARARGS},
-	{"WaitForSingleObject",	sp_WaitForSingleObject, METH_VARARGS},
-	{"GetVersion",		sp_GetVersion,		METH_VARARGS},
-	{"GetModuleFileName",	sp_GetModuleFileName,	METH_VARARGS},
+	{"GetStdHandle", sp_GetStdHandle, METH_VARARGS, GetStdHandle_doc},
+	{"GetCurrentProcess", sp_GetCurrentProcess,	METH_VARARGS, 
+						  GetCurrentProcess_doc},
+	{"DuplicateHandle",	sp_DuplicateHandle,	METH_VARARGS, 
+						DuplicateHandle_doc},
+	{"CreatePipe", sp_CreatePipe, METH_VARARGS, CreatePipe_doc},
+	{"CreateProcess", sp_CreateProcess, METH_VARARGS, CreateProcess_doc},
+	{"TerminateProcess", sp_TerminateProcess, METH_VARARGS,
+						 TerminateProcess_doc},
+	{"GetExitCodeProcess", sp_GetExitCodeProcess, METH_VARARGS,
+						   GetExitCodeProcess_doc},
+	{"WaitForSingleObject", sp_WaitForSingleObject, METH_VARARGS,
+							WaitForSingleObject_doc},
+	{"GetVersion", sp_GetVersion, METH_VARARGS, GetVersion_doc},
+	{"GetModuleFileName", sp_GetModuleFileName, METH_VARARGS,
+						  GetModuleFileName_doc},
 	{NULL, NULL}
 };
 
