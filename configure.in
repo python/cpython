@@ -88,7 +88,7 @@ CONFIG_ARGS="$ac_configure_args"
 
 AC_MSG_CHECKING([for --enable-universalsdk])
 AC_ARG_ENABLE(universalsdk,
-	AC_HELP_STRING(--enable-universalsdk@<:@=SDKDIR@:>@, Build against Mac OS X 10.4u SDK (ppc/i386)),
+	AC_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@], [Build against Mac OS X 10.4u SDK (ppc/i386)]),
 [
 	case $enableval in
 	yes)
@@ -131,7 +131,7 @@ UNIVERSAL_ARCHS="32-bit"
 AC_SUBST(LIPO_32BIT_FLAGS)
 AC_MSG_CHECKING(for --with-universal-archs)
 AC_ARG_WITH(universal-archs,
-    AC_HELP_STRING(--with-universal-archs=ARCH, select architectures for universal build ("32-bit", "64-bit", "3-way", "intel" or "all")),
+    AC_HELP_STRING([--with-universal-archs=ARCH], [select architectures for universal build ("32-bit", "64-bit", "3-way", "intel" or "all")]),
 [
 	AC_MSG_RESULT($withval)
 	UNIVERSAL_ARCHS="$withval"
@@ -143,8 +143,8 @@ AC_ARG_WITH(universal-archs,
 
 
 AC_ARG_WITH(framework-name,
-              AC_HELP_STRING(--with-framework-name=FRAMEWORK, 
-                             specify an alternate name of the framework built with --enable-framework),
+              AC_HELP_STRING([--with-framework-name=FRAMEWORK],
+                             [specify an alternate name of the framework built with --enable-framework]),
 [
     PYTHONFRAMEWORK=${withval}
     PYTHONFRAMEWORKDIR=${withval}.framework
@@ -156,7 +156,7 @@ AC_ARG_WITH(framework-name,
 ])
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_ENABLE(framework,
-              AC_HELP_STRING(--enable-framework@<:@=INSTALLDIR@:>@, Build (MacOSX|Darwin) framework),
+              AC_HELP_STRING([--enable-framework@<:@=INSTALLDIR@:>@], [Build (MacOSX|Darwin) framework]),
 [
 	case $enableval in
 	yes) 
@@ -230,8 +230,8 @@ AC_SUBST(FRAMEWORKALTINSTALLLAST)
 AC_SUBST(FRAMEWORKUNIXTOOLSPREFIX)
 
 ##AC_ARG_WITH(dyld,
-##            AC_HELP_STRING(--with-dyld,
-##                           Use (OpenStep|Rhapsody) dynamic linker))
+##            AC_HELP_STRING([--with-dyld],
+##                           [Use (OpenStep|Rhapsody) dynamic linker]))
 ##
 # Set name for machine-dependent library files
 AC_SUBST(MACHDEP)
@@ -417,7 +417,7 @@ AC_MSG_RESULT($ac_sys_machine)
 # on that fiddles with OPT and BASECFLAGS?
 AC_MSG_CHECKING(for --without-gcc)
 AC_ARG_WITH(gcc,
-            AC_HELP_STRING(--without-gcc,never use gcc),
+            AC_HELP_STRING([--without-gcc], [never use gcc]),
 [
 	case $withval in
 	no)	CC=${CC:-cc}
@@ -514,7 +514,7 @@ esac
 AC_EXEEXT
 AC_MSG_CHECKING(for --with-suffix)
 AC_ARG_WITH(suffix,
-            AC_HELP_STRING(--with-suffix=.exe, set executable suffix),
+            AC_HELP_STRING([--with-suffix=.exe], [set executable suffix]),
 [
 	case $withval in
 	no)	EXEEXT=;;
@@ -642,7 +642,7 @@ AC_MSG_RESULT($GNULD)
 
 AC_MSG_CHECKING(for --enable-shared)
 AC_ARG_ENABLE(shared,
-              AC_HELP_STRING(--enable-shared, disable/enable building shared python library))
+              AC_HELP_STRING([--enable-shared], [disable/enable building shared python library]))
 
 if test -z "$enable_shared"
 then 
@@ -657,7 +657,7 @@ AC_MSG_RESULT($enable_shared)
 
 AC_MSG_CHECKING(for --enable-profiling)
 AC_ARG_ENABLE(profiling,
-              AC_HELP_STRING(--enable-profiling, enable C-level code profiling),
+              AC_HELP_STRING([--enable-profiling], [enable C-level code profiling]),
 [ac_save_cc="$CC"
  CC="$CC -pg"
  AC_TRY_RUN([int main() { return 0; }],
@@ -793,7 +793,7 @@ fi
 # Check for --with-pydebug
 AC_MSG_CHECKING(for --with-pydebug)
 AC_ARG_WITH(pydebug, 
-            AC_HELP_STRING(--with-pydebug, build with Py_DEBUG defined),
+            AC_HELP_STRING([--with-pydebug], [build with Py_DEBUG defined]),
 [
 if test "$withval" != no
 then 
@@ -1351,7 +1351,7 @@ AC_TRY_COMPILE([
 #define _LARGEFILE_SOURCE 1
 #define _FILE_OFFSET_BITS 64
 #include <sys/resource.h>
-],struct rlimit foo;,sol_lfs_bug=no,sol_lfs_bug=yes)
+],[struct rlimit foo;],sol_lfs_bug=no,sol_lfs_bug=yes)
 AC_MSG_RESULT($sol_lfs_bug)
 if test "$sol_lfs_bug" = "yes"; then
   use_lfs=no
@@ -1385,7 +1385,7 @@ AC_TYPE_UINT64_T
 AC_TYPE_INT32_T
 AC_TYPE_INT64_T
 AC_CHECK_TYPE(ssize_t,
-  AC_DEFINE(HAVE_SSIZE_T, 1, Define if your compiler provides ssize_t),,)
+  AC_DEFINE(HAVE_SSIZE_T, 1, [Define if your compiler provides ssize_t]),,)
 
 # Sizes of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
@@ -1936,7 +1936,7 @@ AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
-            AC_HELP_STRING(--with-libs='lib1 ...', link against additional libs),
+            AC_HELP_STRING([--with-libs='lib1 ...'], [link against additional libs]),
 [
 AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
@@ -1948,14 +1948,14 @@ AC_PATH_TOOL([PKG_CONFIG], [pkg-config])
 # Check for use of the system expat library
 AC_MSG_CHECKING(for --with-system-expat)
 AC_ARG_WITH(system_expat,
-            AC_HELP_STRING(--with-system-expat, build pyexpat module using an installed expat library))
+            AC_HELP_STRING([--with-system-expat], [build pyexpat module using an installed expat library]))
 
 AC_MSG_RESULT($with_system_expat)
 
 # Check for use of the system libffi library
 AC_MSG_CHECKING(for --with-system-ffi)
 AC_ARG_WITH(system_ffi,
-            AC_HELP_STRING(--with-system-ffi, build _ctypes module using an installed ffi library))
+            AC_HELP_STRING([--with-system-ffi], [build _ctypes module using an installed ffi library]))
 
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
@@ -1989,7 +1989,7 @@ AC_SUBST(USE_SIGNAL_MODULE)
 AC_SUBST(SIGNAL_OBJS)
 AC_MSG_CHECKING(for --with-signal-module)
 AC_ARG_WITH(signal-module,
-            AC_HELP_STRING(--with-signal-module, disable/enable signal module))
+            AC_HELP_STRING([--with-signal-module], [disable/enable signal module]))
 
 if test -z "$with_signal_module"
 then with_signal_module="yes"
@@ -2011,7 +2011,7 @@ USE_THREAD_MODULE=""
 AC_MSG_CHECKING(for --with-dec-threads)
 AC_SUBST(LDLAST)
 AC_ARG_WITH(dec-threads,
-            AC_HELP_STRING(--with-dec-threads, use DEC Alpha/OSF1 thread-safe libraries),
+            AC_HELP_STRING([--with-dec-threads], [use DEC Alpha/OSF1 thread-safe libraries]),
 [
 AC_MSG_RESULT($withval)
 LDLAST=-threads
@@ -2031,12 +2031,12 @@ AH_TEMPLATE(WITH_THREAD,
 AC_MSG_CHECKING(for --with-threads)
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(threads,
-            AC_HELP_STRING(--with(out)-threads@<:@=DIRECTORY@:>@, disable/enable thread support))
+            AC_HELP_STRING([--with(out)-threads@<:@=DIRECTORY@:>@], [disable/enable thread support]))
 
 # --with-thread is deprecated, but check for it anyway
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(thread,
-            AC_HELP_STRING(--with(out)-thread@<:@=DIRECTORY@:>@, deprecated; use --with(out)-threads),
+            AC_HELP_STRING([--with(out)-thread@<:@=DIRECTORY@:>@], [deprecated; use --with(out)-threads]),
             [with_threads=$with_thread])
 
 if test -z "$with_threads"
@@ -2184,13 +2184,13 @@ if test "$posix_threads" = "yes"; then
       # Bug 662787: Using semaphores causes unexplicable hangs on Solaris 8.
       case  $ac_sys_system/$ac_sys_release in
   SunOS/5.6) AC_DEFINE(HAVE_PTHREAD_DESTRUCTOR, 1,
-                       Defined for Solaris 2.6 bug in pthread header.)
+                       [Defined for Solaris 2.6 bug in pthread header.])
 		       ;;
       SunOS/5.8) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
-		       Define if the Posix semaphores do not work on your system)
+		       [Define if the Posix semaphores do not work on your system])
 		       ;;
       AIX/5) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
-		       Define if the Posix semaphores do not work on your system)
+		       [Define if the Posix semaphores do not work on your system])
 		       ;;
       esac
 
@@ -2394,8 +2394,8 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 fi
 
 AC_MSG_CHECKING(for OSX 10.5 SDK or later)
-AC_TRY_COMPILE([#include <Carbon/Carbon.h>], FSIORefNum fRef = 0,
-  AC_DEFINE(HAVE_OSX105_SDK, 1, Define if compiling using MacOS X 10.5 SDK or later.)
+AC_TRY_COMPILE([#include <Carbon/Carbon.h>], [FSIORefNum fRef = 0],
+  AC_DEFINE(HAVE_OSX105_SDK, 1, [Define if compiling using MacOS X 10.5 SDK or later.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -2403,7 +2403,7 @@ AC_TRY_COMPILE([#include <Carbon/Carbon.h>], FSIORefNum fRef = 0,
 # Check for --with-doc-strings
 AC_MSG_CHECKING(for --with-doc-strings)
 AC_ARG_WITH(doc-strings,
-            AC_HELP_STRING(--with(out)-doc-strings, disable/enable documentation strings))
+            AC_HELP_STRING([--with(out)-doc-strings], [disable/enable documentation strings]))
 
 if test -z "$with_doc_strings"
 then with_doc_strings="yes"
@@ -2418,7 +2418,7 @@ AC_MSG_RESULT($with_doc_strings)
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-tsc)
 AC_ARG_WITH(tsc,
-[  --with(out)-tsc         enable/disable timestamp counter profile], [
+	    AC_HELP_STRING([--with(out)-tsc],[enable/disable timestamp counter profile]),[
 if test "$withval" != no
 then 
   AC_DEFINE(WITH_TSC, 1, 
@@ -2431,7 +2431,7 @@ fi],
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-pymalloc)
 AC_ARG_WITH(pymalloc,
-            AC_HELP_STRING(--with(out)-pymalloc, disable/enable specialized mallocs))
+            AC_HELP_STRING([--with(out)-pymalloc], [disable/enable specialized mallocs]))
 
 if test -z "$with_pymalloc"
 then with_pymalloc="yes"
@@ -2459,7 +2459,7 @@ fi
 # Check for --with-wctype-functions
 AC_MSG_CHECKING(for --with-wctype-functions)
 AC_ARG_WITH(wctype-functions, 
-            AC_HELP_STRING(--with-wctype-functions, use wctype.h functions),
+            AC_HELP_STRING([--with-wctype-functions], [use wctype.h functions]),
 [
 if test "$withval" != no
 then 
@@ -2543,44 +2543,44 @@ AC_CHECK_FUNCS(alarm setitimer getitimer bind_textdomain_codeset chown \
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
 AC_MSG_CHECKING(for chroot)
-AC_TRY_COMPILE([#include <unistd.h>], void *x=chroot,
-  AC_DEFINE(HAVE_CHROOT, 1, Define if you have the 'chroot' function.)
+AC_TRY_COMPILE([#include <unistd.h>], [void *x=chroot],
+  AC_DEFINE(HAVE_CHROOT, 1, [Define if you have the 'chroot' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
 AC_MSG_CHECKING(for link)
-AC_TRY_COMPILE([#include <unistd.h>], void *x=link,
-  AC_DEFINE(HAVE_LINK, 1, Define if you have the 'link' function.)
+AC_TRY_COMPILE([#include <unistd.h>], [void *x=link],
+  AC_DEFINE(HAVE_LINK, 1, [Define if you have the 'link' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
 AC_MSG_CHECKING(for symlink)
-AC_TRY_COMPILE([#include <unistd.h>], void *x=symlink,
-  AC_DEFINE(HAVE_SYMLINK, 1, Define if you have the 'symlink' function.)
+AC_TRY_COMPILE([#include <unistd.h>], [void *x=symlink],
+  AC_DEFINE(HAVE_SYMLINK, 1, [Define if you have the 'symlink' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
 AC_MSG_CHECKING(for fchdir)
-AC_TRY_COMPILE([#include <unistd.h>], void *x=fchdir,
-  AC_DEFINE(HAVE_FCHDIR, 1, Define if you have the 'fchdir' function.)
+AC_TRY_COMPILE([#include <unistd.h>], [void *x=fchdir],
+  AC_DEFINE(HAVE_FCHDIR, 1, [Define if you have the 'fchdir' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
 AC_MSG_CHECKING(for fsync)
-AC_TRY_COMPILE([#include <unistd.h>], void *x=fsync,
-  AC_DEFINE(HAVE_FSYNC, 1, Define if you have the 'fsync' function.)
+AC_TRY_COMPILE([#include <unistd.h>], [void *x=fsync],
+  AC_DEFINE(HAVE_FSYNC, 1, [Define if you have the 'fsync' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
 AC_MSG_CHECKING(for fdatasync)
-AC_TRY_COMPILE([#include <unistd.h>], void *x=fdatasync,
-  AC_DEFINE(HAVE_FDATASYNC, 1, Define if you have the 'fdatasync' function.)
+AC_TRY_COMPILE([#include <unistd.h>], [void *x=fdatasync],
+  AC_DEFINE(HAVE_FDATASYNC, 1, [Define if you have the 'fdatasync' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
 AC_MSG_CHECKING(for epoll)
-AC_TRY_COMPILE([#include <sys/epoll.h>], void *x=epoll_create,
-  AC_DEFINE(HAVE_EPOLL, 1, Define if you have the 'epoll' functions.)
+AC_TRY_COMPILE([#include <sys/epoll.h>], [void *x=epoll_create],
+  AC_DEFINE(HAVE_EPOLL, 1, [Define if you have the 'epoll' functions.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -2588,8 +2588,8 @@ AC_MSG_CHECKING(for kqueue)
 AC_TRY_COMPILE([
 #include <sys/types.h>
 #include <sys/event.h>
-    ], int x=kqueue(),
-  AC_DEFINE(HAVE_KQUEUE, 1, Define if you have the 'kqueue' functions.)
+    ], [int x=kqueue()],
+  AC_DEFINE(HAVE_KQUEUE, 1, [Define if you have the 'kqueue' functions.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -2603,8 +2603,8 @@ AC_MSG_CHECKING(for ctermid_r)
 AC_TRY_COMPILE([
 #include "confdefs.h" 
 #include <stdio.h>
-], void* p = ctermid_r,
-  AC_DEFINE(HAVE_CTERMID_R, 1, Define if you have the 'ctermid_r' function.)
+], [void* p = ctermid_r],
+  AC_DEFINE(HAVE_CTERMID_R, 1, [Define if you have the 'ctermid_r' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -2613,8 +2613,8 @@ AC_MSG_CHECKING(for flock)
 AC_TRY_COMPILE([
 #include "confdefs.h" 
 #include <sys/file.h>
-], void* p = flock,
-  AC_DEFINE(HAVE_FLOCK, 1, Define if you have the 'flock' function.)
+], [void* p = flock],
+  AC_DEFINE(HAVE_FLOCK, 1, [Define if you have the 'flock' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -2623,8 +2623,8 @@ AC_MSG_CHECKING(for getpagesize)
 AC_TRY_COMPILE([
 #include "confdefs.h" 
 #include <unistd.h>
-], void* p = getpagesize,
-  AC_DEFINE(HAVE_GETPAGESIZE, 1, Define if you have the 'getpagesize' function.)
+], [void* p = getpagesize],
+  AC_DEFINE(HAVE_GETPAGESIZE, 1, [Define if you have the 'getpagesize' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -2658,7 +2658,7 @@ if test "$ac_cv_have_chflags" = cross ; then
   AC_CHECK_FUNC([chflags], [ac_cv_have_chflags="yes"], [ac_cv_have_chflags="no"])
 fi
 if test "$ac_cv_have_chflags" = yes ; then
-  AC_DEFINE(HAVE_CHFLAGS, 1, Define to 1 if you have the `chflags' function.)
+  AC_DEFINE(HAVE_CHFLAGS, 1, [Define to 1 if you have the `chflags' function.])
 fi
 
 AC_CACHE_CHECK([for lchflags], [ac_cv_have_lchflags], [dnl
@@ -2679,7 +2679,7 @@ if test "$ac_cv_have_lchflags" = cross ; then
   AC_CHECK_FUNC([lchflags], [ac_cv_have_lchflags="yes"], [ac_cv_have_lchflags="no"])
 fi
 if test "$ac_cv_have_lchflags" = yes ; then
-  AC_DEFINE(HAVE_LCHFLAGS, 1, Define to 1 if you have the `lchflags' function.)
+  AC_DEFINE(HAVE_LCHFLAGS, 1, [Define to 1 if you have the `lchflags' function.])
 fi
 
 dnl Check if system zlib has *Copy() functions
@@ -2702,7 +2702,7 @@ Darwin/*)
 	;;
 esac
 
-AC_CHECK_LIB(z, inflateCopy, AC_DEFINE(HAVE_ZLIB_COPY, 1, Define if the zlib library has inflateCopy))
+AC_CHECK_LIB(z, inflateCopy, AC_DEFINE(HAVE_ZLIB_COPY, 1, [Define if the zlib library has inflateCopy]))
 
 case $ac_sys_system/$ac_sys_release in
 Darwin/*) 
@@ -2715,8 +2715,8 @@ AC_MSG_CHECKING(for hstrerror)
 AC_TRY_LINK([
 #include "confdefs.h" 
 #include <netdb.h>
-], void* p = hstrerror; hstrerror(0),
-  AC_DEFINE(HAVE_HSTRERROR, 1, Define if you have the 'hstrerror' function.)
+], [void* p = hstrerror; hstrerror(0)],
+  AC_DEFINE(HAVE_HSTRERROR, 1, [Define if you have the 'hstrerror' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -2728,8 +2728,8 @@ AC_TRY_LINK([
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-], void* p = inet_aton;inet_aton(0,0),
-  AC_DEFINE(HAVE_INET_ATON, 1, Define if you have the 'inet_aton' function.)
+], [void* p = inet_aton;inet_aton(0,0)],
+  AC_DEFINE(HAVE_INET_ATON, 1, [Define if you have the 'inet_aton' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -2741,8 +2741,8 @@ AC_TRY_COMPILE([
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-], void* p = inet_pton,
-  AC_DEFINE(HAVE_INET_PTON, 1, Define if you have the 'inet_pton' function.)
+], [void* p = inet_pton],
+  AC_DEFINE(HAVE_INET_PTON, 1, [Define if you have the 'inet_pton' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -2756,8 +2756,8 @@ AC_TRY_COMPILE([
 #include <grp.h>
 #endif
 ], 
-void* p = setgroups,
-  AC_DEFINE(HAVE_SETGROUPS, 1, Define if you have the 'setgroups' function.)
+[void* p = setgroups],
+  AC_DEFINE(HAVE_SETGROUPS, 1, [Define if you have the 'setgroups' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -3059,8 +3059,8 @@ AC_MSG_CHECKING(for socketpair)
 AC_TRY_COMPILE([
 #include <sys/types.h>
 #include <sys/socket.h>
-], void *x=socketpair,
-  AC_DEFINE(HAVE_SOCKETPAIR, 1, Define if you have the 'socketpair' function.)
+], [void *x=socketpair],
+  AC_DEFINE(HAVE_SOCKETPAIR, 1, [Define if you have the 'socketpair' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -3174,7 +3174,7 @@ AC_CHECK_FUNC(__fpu_control,
 # Check for --with-fpectl
 AC_MSG_CHECKING(for --with-fpectl)
 AC_ARG_WITH(fpectl,
-            AC_HELP_STRING(--with-fpectl, enable SIGFPE catching),
+            AC_HELP_STRING([--with-fpectl], [enable SIGFPE catching]),
 [
 if test "$withval" != no
 then 
@@ -3193,7 +3193,7 @@ Darwin) ;;
 esac
 AC_MSG_CHECKING(for --with-libm=STRING)
 AC_ARG_WITH(libm,
-            AC_HELP_STRING(--with-libm=STRING, math library),
+            AC_HELP_STRING([--with-libm=STRING], [math library]),
 [
 if test "$withval" = no
 then LIBM=
@@ -3209,7 +3209,7 @@ fi],
 AC_SUBST(LIBC)
 AC_MSG_CHECKING(for --with-libc=STRING)
 AC_ARG_WITH(libc,
-            AC_HELP_STRING(--with-libc=STRING, C library),
+            AC_HELP_STRING([--with-libc=STRING], [C library]),
 [
 if test "$withval" = no
 then LIBC=
@@ -3539,7 +3539,7 @@ fi
 
 AC_MSG_CHECKING(what type to use for str)
 AC_ARG_WITH(wide-unicode, 
-            AC_HELP_STRING(--with-wide-unicode, Use 4-byte Unicode characters (default is 2 bytes)),
+            AC_HELP_STRING([--with-wide-unicode], [Use 4-byte Unicode characters (default is 2 bytes)]),
 [
 if test "$withval" != no
 then unicode_size="4"
@@ -3911,22 +3911,22 @@ then
 fi
 
 AC_MSG_CHECKING(for is_term_resized)
-AC_TRY_COMPILE([#include <curses.h>], void *x=is_term_resized,
-  AC_DEFINE(HAVE_CURSES_IS_TERM_RESIZED, 1, Define if you have the 'is_term_resized' function.)
+AC_TRY_COMPILE([#include <curses.h>], [void *x=is_term_resized],
+  AC_DEFINE(HAVE_CURSES_IS_TERM_RESIZED, 1, [Define if you have the 'is_term_resized' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
 
 AC_MSG_CHECKING(for resize_term)
-AC_TRY_COMPILE([#include <curses.h>], void *x=resize_term,
-  AC_DEFINE(HAVE_CURSES_RESIZE_TERM, 1, Define if you have the 'resize_term' function.)
+AC_TRY_COMPILE([#include <curses.h>], [void *x=resize_term],
+  AC_DEFINE(HAVE_CURSES_RESIZE_TERM, 1, [Define if you have the 'resize_term' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
 
 AC_MSG_CHECKING(for resizeterm)
-AC_TRY_COMPILE([#include <curses.h>], void *x=resizeterm,
-  AC_DEFINE(HAVE_CURSES_RESIZETERM, 1, Define if you have the 'resizeterm' function.)
+AC_TRY_COMPILE([#include <curses.h>], [void *x=resizeterm],
+  AC_DEFINE(HAVE_CURSES_RESIZETERM, 1, [Define if you have the 'resizeterm' function.])
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
@@ -4052,7 +4052,7 @@ fi
 
 AC_CHECK_TYPE(socklen_t,,
   AC_DEFINE(socklen_t,int,
-            Define to `int' if <sys/socket.h> does not define.),[
+            [Define to `int' if <sys/socket.h> does not define.]),[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -4086,8 +4086,8 @@ fi
 # Check for --with-computed-gotos
 AC_MSG_CHECKING(for --with-computed-gotos)
 AC_ARG_WITH(computed-gotos,
-            AC_HELP_STRING(--with-computed-gotos,
-                           Use computed gotos / threaded dispatch in evaluation loop (not available on all compilers)),
+            AC_HELP_STRING([--with-computed-gotos],
+                           [Use computed gotos / threaded dispatch in evaluation loop (not available on all compilers)]),
 [
 if test "$withval" != no
 then 
