@@ -25,6 +25,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7507: Quote "!" in pipes.quote(); it is special to some shells.
+
 - Issue #5238: Calling makefile() on an SSL object would prevent the
   underlying socket from being closed until all objects get truely destroyed.
 
