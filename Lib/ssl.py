@@ -113,12 +113,7 @@ class SSLSocket(socket):
                                         keyfile, certfile,
                                         cert_reqs, ssl_version, ca_certs)
             if do_handshake_on_connect:
-                timeout = self.gettimeout()
-                try:
-                    self.settimeout(None)
-                    self.do_handshake()
-                finally:
-                    self.settimeout(timeout)
+                self.do_handshake()
         self.keyfile = keyfile
         self.certfile = certfile
         self.cert_reqs = cert_reqs

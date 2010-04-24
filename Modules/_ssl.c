@@ -445,7 +445,12 @@ static PyObject *PySSL_SSLdo_handshake(PySSLObject *self)
 {
 	int ret;
 	int err;
-	int sockstate;
+	int sockstate, nonblocking;
+
+	/* just in case the blocking state of the socket has been changed */
+	nonblocking = (self->Socket->sock_timeout >= 0.0);
+	BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
+	BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
 
 	/* Actually negotiate SSL connection */
 	/* XXX If SSL_do_handshake() returns 0, it's also a failure. */
