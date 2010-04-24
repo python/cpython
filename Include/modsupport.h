@@ -27,6 +27,7 @@ PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...) Py_FORMAT_PARSETUPLE(PyArg_ParseTuple, 2, 3);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
                                                   const char *, char **, ...);
+PyAPI_FUNC(int) PyArg_ValidateKeywordArguments(PyObject *);
 PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize_t, ...);
 PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
