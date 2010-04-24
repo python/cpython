@@ -339,6 +339,12 @@ C-API
 Library
 -------
 
+- Issue #5103: SSL handshake would ignore the socket timeout and block
+  indefinitely if the other end didn't respond.
+
+- The do_handshake() method of SSL objects now adjusts the blocking mode of
+  the SSL structure if necessary (as other methods already do).
+
 - Issue #8391: os.execvpe() and os.getenv() supports unicode with surrogates
   and bytes strings for environment keys and values
 
