@@ -1123,6 +1123,8 @@ Build
 
 - Issue #8509: Fix quoting in help strings and code snippets in configure.in.
 
+- Issue #8510: Update to autoconf2.65.
+
 
 Documentation
 ------------
