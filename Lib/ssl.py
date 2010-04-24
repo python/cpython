@@ -102,6 +102,7 @@ class SSLSocket(socket):
                             type=sock.type,
                             proto=sock.proto,
                             fileno=_dup(sock.fileno()))
+            self.settimeout(sock.gettimeout())
             sock.close()
         elif fileno is not None:
             socket.__init__(self, fileno=fileno)
