@@ -33,6 +33,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #5103: SSL handshake would ignore the socket timeout and block
+  indefinitely if the other end didn't respond.
+
+- The do_handshake() method of SSL objects now adjusts the blocking mode of
+  the SSL structure if necessary (as other methods already do).
+
 - Issue #5238: Calling makefile() on an SSL object would prevent the
   underlying socket from being closed until all objects get truely destroyed.
 
