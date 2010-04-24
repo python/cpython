@@ -91,6 +91,11 @@ Tests
 - Issue #8108: test_ftplib's non-blocking SSL server now has proper handling
   of SSL shutdowns.
 
+Build
+-----
+
+- Issue #8509: Fix quoting in help strings and code snippets in configure.in.
+
 
 What's New in Python 2.7 beta 1?
 ================================
