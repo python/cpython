@@ -193,7 +193,7 @@ This module offers the following functions:
    :const:`HKEY_LOCAL_MACHINE` tree. This may or may not be true.
 
 
-.. function:: OpenKey(key, sub_key, res=0, sam=KEY_READ)
+.. function:: OpenKey(key, sub_key[, res[, sam]])
 
    Opens the specified key, returning a :ref:`handle object <handle-object>`.
 
