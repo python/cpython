@@ -366,6 +366,13 @@ and the following format units are left untouched.
    va_list rather than a variable number of arguments.
 
 
+.. cfunction:: int PyArg_ValidateKeywordArguments(PyObject *)
+
+   Ensure that the keys in the keywords argument dictionary are strings.  This
+   is only needed if :cfunc:`PyArg_ParseTupleAndKeywords` is not used, since the
+   latter already does this check.
+
+
 .. XXX deprecated, will be removed
 .. cfunction:: int PyArg_Parse(PyObject *args, const char *format, ...)
 

@@ -1607,6 +1607,21 @@ _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
 	return retval;
 }
 
+int
+PyArg_ValidateKeywordArguments(PyObject *kwargs)
+{
+	if (!PyDict_CheckExact(kwargs)) {
+		PyErr_BadInternalCall();
+		return 0;
+	}
+	if (!_PyDict_HasOnlyStringKeys(kwargs)) {
+		PyErr_SetString(PyExc_TypeError,
+				"keyword arguments must be strings");
+		return 0;
+	}
+	return 1;
+}
+
 #define IS_END_OF_FORMAT(c) (c == '\0' || c == ';' || c == ':')
 
 static int

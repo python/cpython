@@ -7,6 +7,12 @@ import gc, weakref
 
 class DictTest(unittest.TestCase):
 
+    def test_invalid_keyword_arguments(self):
+        with self.assertRaises(TypeError):
+            dict(**{1 : 2})
+        with self.assertRaises(TypeError):
+            {}.update(**{1 : 2})
+
     def test_constructor(self):
         # calling built-in types without argument must return empty
         self.assertEqual(dict(), {})
