@@ -1121,6 +1121,9 @@ Build
 
 - python-config now supports multiple options on the same command line.
 
+- Issue #8509: Fix quoting in help strings and code snippets in configure.in.
+
+
 Documentation
 ------------
 
