@@ -110,6 +110,15 @@ class BasicTests(unittest.TestCase):
         del ss
         self.assertEqual(wr(), None)
 
+    def test_timeout(self):
+        # Issue #8524: when creating an SSL socket, the timeout of the
+        # original socket should be retained.
+        for timeout in (None, 0.0, 5.0):
+            s = socket.socket(socket.AF_INET)
+            s.settimeout(timeout)
+            ss = ssl.wrap_socket(s)
+            self.assertEqual(timeout, ss.gettimeout())
+
 
 class NetworkedTests(unittest.TestCase):
 
@@ -1262,17 +1271,15 @@ else:
             started.wait()
 
             try:
-                if 0:
-                    # Disabled until #8524 finds a solution
-                    try:
-                        c = socket.socket(socket.AF_INET)
-                        c.settimeout(1.0)
-                        c.connect((host, port))
-                        # Will attempt handshake and time out
-                        self.assertRaisesRegexp(ssl.SSLError, "timed out",
-                                                ssl.wrap_socket, c)
-                    finally:
-                        c.close()
+                try:
+                    c = socket.socket(socket.AF_INET)
+                    c.settimeout(0.2)
+                    c.connect((host, port))
+                    # Will attempt handshake and time out
+                    self.assertRaisesRegexp(ssl.SSLError, "timed out",
+                                            ssl.wrap_socket, c)
+                finally:
+                    c.close()
                 try:
                     c = socket.socket(socket.AF_INET)
                     c = ssl.wrap_socket(c)
