@@ -494,7 +494,8 @@ else:
                     asyncore.dispatcher_with_send.__init__(self, conn)
                     self.socket = ssl.wrap_socket(conn, server_side=True,
                                                   certfile=certfile,
-                                                  do_handshake_on_connect=True)
+                                                  do_handshake_on_connect=False)
+                    self._ssl_accepting = True
 
                 def readable(self):
                     if isinstance(self.socket, ssl.SSLSocket):
@@ -502,9 +503,28 @@ else:
                             self.handle_read_event()
                     return True
 
+                def _do_ssl_handshake(self):
+                    try:
+                        self.socket.do_handshake()
+                    except ssl.SSLError, err:
+                        if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
+                                           ssl.SSL_ERROR_WANT_WRITE):
+                            return
+                        elif err.args[0] == ssl.SSL_ERROR_EOF:
+                            return self.handle_close()
+                        raise
+                    except socket.error, err:
+                        if err.args[0] == errno.ECONNABORTED:
+                            return self.handle_close()
+                    else:
+                        self._ssl_accepting = False
+
                 def handle_read(self):
-                    data = self.recv(1024)
-                    self.send(data.lower())
+                    if self._ssl_accepting:
+                        self._do_ssl_handshake()
+                    else:
+                        data = self.recv(1024)
+                        self.send(data.lower())
 
                 def handle_close(self):
                     self.close()
@@ -1270,6 +1290,53 @@ else:
             finally:
                 server.stop()
                 server.join()
+
+        def test_handshake_timeout(self):
+            # Issue #5103: SSL handshake must respect the socket timeout
+            server = socket.socket(socket.AF_INET)
+            host = "127.0.0.1"
+            port = test_support.bind_port(server)
+            started = threading.Event()
+            finish = False
+
+            def serve():
+                server.listen(5)
+                started.set()
+                conns = []
+                while not finish:
+                    r, w, e = select.select([server], [], [], 0.1)
+                    if server in r:
+                        # Let the socket hang around rather than having
+                        # it closed by garbage collection.
+                        conns.append(server.accept()[0])
+
+            t = threading.Thread(target=serve)
+            t.start()
+            started.wait()
+
+            try:
+                try:
+                    c = socket.socket(socket.AF_INET)
+                    c.settimeout(0.2)
+                    c.connect((host, port))
+                    # Will attempt handshake and time out
+                    self.assertRaisesRegexp(ssl.SSLError, "timed out",
+                                            ssl.wrap_socket, c)
+                finally:
+                    c.close()
+                try:
+                    c = socket.socket(socket.AF_INET)
+                    c.settimeout(0.2)
+                    c = ssl.wrap_socket(c)
+                    # Will attempt handshake and time out
+                    self.assertRaisesRegexp(ssl.SSLError, "timed out",
+                                            c.connect, (host, port))
+                finally:
+                    c.close()
+            finally:
+                finish = True
+                t.join()
+                server.close()
 
 
 def test_main(verbose=False):

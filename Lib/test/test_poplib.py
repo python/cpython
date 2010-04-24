@@ -10,6 +10,7 @@ import asynchat
 import socket
 import os
 import time
+import errno
 
 from unittest import TestCase
 from test import test_support
@@ -231,10 +232,36 @@ if hasattr(poplib, 'POP3_SSL'):
         def __init__(self, conn):
             asynchat.async_chat.__init__(self, conn)
             self.socket = ssl.wrap_socket(self.socket, certfile=CERTFILE,
-                                          server_side=True)
+                                          server_side=True,
+                                          do_handshake_on_connect=False)
+            # Must try handshake before calling push()
+            self._ssl_accepting = True
+            self._do_ssl_handshake()
             self.set_terminator("\r\n")
             self.in_buffer = []
             self.push('+OK dummy pop3 server ready.')
+
+        def _do_ssl_handshake(self):
+            try:
+                self.socket.do_handshake()
+            except ssl.SSLError, err:
+                if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
+                                   ssl.SSL_ERROR_WANT_WRITE):
+                    return
+                elif err.args[0] == ssl.SSL_ERROR_EOF:
+                    return self.handle_close()
+                raise
+            except socket.error, err:
+                if err.args[0] == errno.ECONNABORTED:
+                    return self.handle_close()
+            else:
+                self._ssl_accepting = False
+
+        def handle_read(self):
+            if self._ssl_accepting:
+                self._do_ssl_handshake()
+            else:
+                DummyPOP3Handler.handle_read(self)
 
     class TestPOP3_SSLClass(TestPOP3Class):
         # repeat previous tests by using poplib.POP3_SSL
