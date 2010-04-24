@@ -339,6 +339,10 @@ C-API
 Library
 -------
 
+- Issue #8524: When creating an SSL socket, the timeout value of the
+  original socket wasn't retained (instead, a socket with a positive timeout
+  would be turned into a non-blocking SSL socket).
+
 - Issue #5103: SSL handshake would ignore the socket timeout and block
   indefinitely if the other end didn't respond.
 
