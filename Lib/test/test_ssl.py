@@ -167,22 +167,6 @@ class BasicTests(unittest.TestCase):
         del ss
         self.assertEqual(wr(), None)
 
-    def test_makefile_close(self):
-        # Issue #5238: creating a file-like object with makefile() shouldn't
-        # leak the underlying file descriptor.
-        ss = ssl.wrap_socket(socket.socket(socket.AF_INET))
-        fd = ss.fileno()
-        f = ss.makefile()
-        f.close()
-        # The fd is still open
-        os.read(fd, 0)
-        # Closing the SSL socket should close the fd too
-        ss.close()
-        gc.collect()
-        with self.assertRaises(OSError) as e:
-            os.read(fd, 0)
-        self.assertEqual(e.exception.errno, errno.EBADF)
-
 
 class NetworkedTests(unittest.TestCase):
 
@@ -216,6 +200,24 @@ class NetworkedTests(unittest.TestCase):
         finally:
             s.close()
 
+    @unittest.skipIf(os.name == "nt", "Can't use a socket as a file under Windows")
+    def test_makefile_close(self):
+        # Issue #5238: creating a file-like object with makefile() shouldn't
+        # delay closing the underlying "real socket" (here tested with its
+        # file descriptor, hence skipping the test under Windows).
+        ss = ssl.wrap_socket(socket.socket(socket.AF_INET))
+        ss.connect(("svn.python.org", 443))
+        fd = ss.fileno()
+        f = ss.makefile()
+        f.close()
+        # The fd is still open
+        os.read(fd, 0)
+        # Closing the SSL socket should close the fd too
+        ss.close()
+        gc.collect()
+        with self.assertRaises(OSError) as e:
+            os.read(fd, 0)
+        self.assertEqual(e.exception.errno, errno.EBADF)
 
     def testNonBlockingHandshake(self):
         s = socket.socket(socket.AF_INET)
