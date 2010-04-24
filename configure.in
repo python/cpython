@@ -1,7 +1,6 @@
 dnl ***********************************************
 dnl * Please run autoreconf to test your changes! *
 dnl ***********************************************
-dnl NOTE: autoconf 2.64 doesn't seem to work (use 2.61).
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 3.2)
@@ -13,7 +12,7 @@ m4_define([version_required],
        [],
        [m4_fatal([Autoconf version $1 is required for Python], 63)])
 ])
-version_required(2.61)
+version_required(2.65)
 
 AC_REVISION($Revision$)
 AC_INIT(python, PYTHON_VERSION, http://bugs.python.org/)
@@ -553,10 +552,6 @@ hp*|HP*)
     case $CC in
     cc|*/cc) CC="$CC -Ae";;
     esac;;
-SunOS*)
-    # Some functions have a prototype only with that define, e.g. confstr
-    AC_DEFINE(__EXTENSIONS__, 1, [Defined on Solaris to see additional function prototypes.])
-    ;;
 esac
 
 

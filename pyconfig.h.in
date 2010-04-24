@@ -5,6 +5,9 @@
 #define Py_PYCONFIG_H
 
 
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
 /* Define for AIX if your compiler is a genuine IBM xlC/xlC_r and you want
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
@@ -675,25 +678,25 @@
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H
 
-/* Define to 1 if `st_birthtime' is member of `struct stat'. */
+/* Define to 1 if `st_birthtime' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BIRTHTIME
 
-/* Define to 1 if `st_blksize' is member of `struct stat'. */
+/* Define to 1 if `st_blksize' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
 
-/* Define to 1 if `st_blocks' is member of `struct stat'. */
+/* Define to 1 if `st_blocks' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLOCKS
 
-/* Define to 1 if `st_flags' is member of `struct stat'. */
+/* Define to 1 if `st_flags' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_FLAGS
 
-/* Define to 1 if `st_gen' is member of `struct stat'. */
+/* Define to 1 if `st_gen' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_GEN
 
-/* Define to 1 if `st_rdev' is member of `struct stat'. */
+/* Define to 1 if `st_rdev' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_RDEV
 
-/* Define to 1 if `tm_zone' is member of `struct tm'. */
+/* Define to 1 if `tm_zone' is a member of `struct tm'. */
 #undef HAVE_STRUCT_TM_TM_ZONE
 
 /* Define to 1 if your `struct stat' has `st_blocks'. Deprecated, use
@@ -922,6 +925,9 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
@@ -1034,6 +1040,28 @@
 /* Define if you want to use computed gotos in ceval.c. */
 #undef USE_COMPUTED_GOTOS
 
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+/* Enable threading extensions on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# undef _TANDEM_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
+
+
 /* Define if a va_list is an array of some kind */
 #undef VA_LIST_IS_ARRAY
 
@@ -1074,19 +1102,20 @@
 /* Define if you want pymalloc to be disabled when running under valgrind */
 #undef WITH_VALGRIND
 
-/* Define to 1 if your processor stores words with the most significant byte
-   first (like Motorola and SPARC, unlike Intel and VAX). */
-#undef WORDS_BIGENDIAN
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
 
 /* Define if arithmetic is subject to x87-style double rounding issue */
 #undef X87_DOUBLE_ROUNDING
-
-/* Define to 1 if on AIX 3.
-   System headers sometimes define this.
-   We just want to avoid a redefinition error message.  */
-#ifndef _ALL_SOURCE
-# undef _ALL_SOURCE
-#endif
 
 /* Define on OpenBSD to activate all library features */
 #undef _BSD_SOURCE
@@ -1106,14 +1135,24 @@
 /* This must be defined on some systems to enable large file support. */
 #undef _LARGEFILE_SOURCE
 
+/* Define to 1 if on MINIX. */
+#undef _MINIX
+
 /* Define on NetBSD to activate all library features */
 #undef _NETBSD_SOURCE
 
 /* Define _OSF_SOURCE to get the makedev macro. */
 #undef _OSF_SOURCE
 
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+#undef _POSIX_1_SOURCE
+
 /* Define to activate features from IEEE Stds 1003.1-2001 */
 #undef _POSIX_C_SOURCE
+
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+#undef _POSIX_SOURCE
 
 /* Define if you have POSIX threads, and your system does not define that. */
 #undef _POSIX_THREADS
@@ -1122,12 +1161,12 @@
 #undef _REENTRANT
 
 /* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
-   <pthread.h>, or <semaphore.h> is not used. If the typedef was allowed, the
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
 #undef _UINT32_T
 
 /* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
-   <pthread.h>, or <semaphore.h> is not used. If the typedef was allowed, the
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
 #undef _UINT64_T
 
@@ -1144,9 +1183,6 @@
 #ifndef __CHAR_UNSIGNED__
 # undef __CHAR_UNSIGNED__
 #endif
-
-/* Defined on Solaris to see additional function prototypes. */
-#undef __EXTENSIONS__
 
 /* Define to 'long' if <time.h> doesn't define. */
 #undef clock_t
