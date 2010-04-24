@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- The do_handshake() method of SSL objects now adjusts the blocking mode of
+  the SSL structure if necessary (as other methods already do).
+
 - Issue #7507: Quote "!" in pipes.quote(); it is special to some shells.
 
 - Issue #5238: Calling makefile() on an SSL object would prevent the
