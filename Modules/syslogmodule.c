@@ -56,6 +56,7 @@ Revision history:
 
 /*  only one instance, only one syslog, so globals should be ok  */
 static PyObject *S_ident_o = NULL;			/*  identifier, held by openlog()  */
+static char S_log_open = 0;
 
 
 static PyObject *
@@ -135,6 +136,7 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
 	 */
  
 	openlog(S_ident_o ? _PyUnicode_AsString(S_ident_o) : NULL, logopt, facility);
+	S_log_open = 1;
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -160,8 +162,8 @@ syslog_syslog(PyObject * self, PyObject * args)
 	if (message == NULL)
 		return NULL;
 
-	/*  call openlog if no current identifier  */
-	if (!S_ident_o) {
+	/*  if log is not opened, open it now  */
+	if (!S_log_open) {
 		PyObject *openargs;
 
 		/* Continue even if PyTuple_New fails, because openlog(3) is optional.
@@ -184,9 +186,12 @@ syslog_syslog(PyObject * self, PyObject * args)
 static PyObject * 
 syslog_closelog(PyObject *self, PyObject *unused)
 {
-	closelog();
-	Py_XDECREF(S_ident_o);
-	S_ident_o = NULL;
+	if (S_log_open) {
+		closelog();
+		Py_XDECREF(S_ident_o);
+		S_ident_o = NULL;
+		S_log_open = 0;
+	}
 	Py_INCREF(Py_None);
 	return Py_None;
 }
