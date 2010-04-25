@@ -1700,7 +1700,7 @@ Upgrading optparse code
 Originally, the argparse module had attempted to maintain compatibility with
 optparse.  However, optparse was difficult to extend transparently, particularly
 with the changes required to support the new ``nargs=`` specifiers and better
-usage messges.  When most everything in optparse had either been copy-pasted
+usage messages.  When most everything in optparse had either been copy-pasted
 over or monkey-patched, it no longer seemed practical to try to maintain the
 backwards compatibility.
 
