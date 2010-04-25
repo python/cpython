@@ -1855,8 +1855,17 @@ allow the currently running test to complete, and the test run will then end
 and report all the results so far. A second control-c will raise a
 ``KeyboardInterrupt`` in the usual way.
 
-There are a few utility functions for framework authors to enable this
-functionality within test frameworks.
+The control-c handling signal handler attempts to remain compatible with code or
+tests that install their own :const:`signal.SIGINT` handler. If the ``unittest``
+handler is called but *isn't* the installed :const:`signal.SIGINT` handler,
+i.e. it has been replaced by the system under test and delegated to, then it
+calls the default handler. This will normally be the expected behavior by code
+that replaces an installed handler and delegates to it. For individual tests
+that need ``unittest`` control-c handling disabled the :func:`removeHandler`
+decorator can be used.
+
+There are a few utility functions for framework authors to enable control-c
+handling functionality within test frameworks.
 
 .. function:: installHandler()
 
@@ -1870,9 +1879,23 @@ functionality within test frameworks.
    result stores a weak reference to it, so it doesn't prevent the result from
    being garbage collected.
 
+   Registering a :class:`TestResult` object has no side-effects if control-c
+   handling is not enabled, so test frameworks can unconditionally register
+   all results they create independently of whether or not handling is enabled.
+
 .. function:: removeResult(result)
 
    Remove a registered result. Once a result has been removed then
    :meth:`~TestResult.stop` will no longer be called on that result object in
    response to a control-c.
+
+.. function:: removeHandler(function=None)
+
+   When called without arguments this function removes the control-c handler
+   if it has been installed. This function can also be used as a test decorator
+   to temporarily remove the handler whilst the test is being executed::
+
+      @unittest.removeHandler
+      def test_signal_handling(self):
+          ...
 

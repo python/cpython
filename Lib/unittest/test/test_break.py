@@ -229,3 +229,24 @@ class TestBreak(unittest.TestCase):
         self.assertEqual(p.result, result)
 
         self.assertNotEqual(signal.getsignal(signal.SIGINT), default_handler)
+
+    def testRemoveHandler(self):
+        default_handler = signal.getsignal(signal.SIGINT)
+        unittest.installHandler()
+        unittest.removeHandler()
+        self.assertEqual(signal.getsignal(signal.SIGINT), default_handler)
+
+        # check that calling removeHandler multiple times has no ill-effect
+        unittest.removeHandler()
+        self.assertEqual(signal.getsignal(signal.SIGINT), default_handler)
+
+    def testRemoveHandlerAsDecorator(self):
+        default_handler = signal.getsignal(signal.SIGINT)
+        unittest.installHandler()
+
+        @unittest.removeHandler
+        def test():
+            self.assertEqual(signal.getsignal(signal.SIGINT), default_handler)
+
+        test()
+        self.assertNotEqual(signal.getsignal(signal.SIGINT), default_handler)
