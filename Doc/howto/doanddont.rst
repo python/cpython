@@ -232,11 +232,8 @@ file would not be closed when an exception is raised until the handler finishes,
 and perhaps not at all in non-C implementations (e.g., Jython). ::
 
    def get_status(file):
-       fp = open(file)
-       try:
+       with open(file) as fp:
            return fp.readline()
-       finally:
-           fp.close()
 
 
 Using the Batteries
