@@ -3212,6 +3212,86 @@ posix_execv(PyObject *self, PyObject *args)
 	return posix_error();
 }
 
+static char**
+parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
+{
+	char **envlist;
+	Py_ssize_t i, pos, envc;
+	PyObject *keys=NULL, *vals=NULL;
+	PyObject *key, *val, *key2, *val2;
+	char *p, *k, *v;
+	size_t len;
+
+	i = PyMapping_Size(env);
+	if (i < 0)
+		return NULL;
+	envlist = PyMem_NEW(char *, i + 1);
+	if (envlist == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+	envc = 0;
+	keys = PyMapping_Keys(env);
+	vals = PyMapping_Values(env);
+	if (!keys || !vals)
+		goto error;
+	if (!PyList_Check(keys) || !PyList_Check(vals)) {
+		PyErr_Format(PyExc_TypeError,
+			"env.keys() or env.values() is not a list");
+		goto error;
+	}
+
+	for (pos = 0; pos < i; pos++) {
+		key = PyList_GetItem(keys, pos);
+		val = PyList_GetItem(vals, pos);
+		if (!key || !val)
+			goto error;
+
+		if (PyUnicode_FSConverter(key, &key2) == 0)
+			goto error;
+		if (PyUnicode_FSConverter(val, &val2) == 0) {
+			Py_DECREF(key2);
+			goto error;
+		}
+
+#if defined(PYOS_OS2)
+		/* Omit Pseudo-Env Vars that Would Confuse Programs if Passed On */
+		if (stricmp(k, "BEGINLIBPATH") != 0 && stricmp(k, "ENDLIBPATH") != 0) {
+#endif
+		k = PyBytes_AsString(key2);
+		v = PyBytes_AsString(val2);
+		len = PyBytes_GET_SIZE(key2) + PyBytes_GET_SIZE(val2) + 2;
+
+		p = PyMem_NEW(char, len);
+		if (p == NULL) {
+			PyErr_NoMemory();
+			Py_DECREF(key2);
+			Py_DECREF(val2);
+			goto error;
+		}
+		PyOS_snprintf(p, len, "%s=%s", k, v);
+		envlist[envc++] = p;
+		Py_DECREF(key2);
+		Py_DECREF(val2);
+#if defined(PYOS_OS2)
+		}
+#endif
+	}
+	Py_DECREF(vals);
+	Py_DECREF(keys);
+
+	envlist[envc] = 0;
+	*envc_ptr = envc;
+	return envlist;
+
+error:
+	Py_XDECREF(keys);
+	Py_XDECREF(vals);
+	while (--envc >= 0)
+		PyMem_DEL(envlist[envc]);
+	PyMem_DEL(envlist);
+	return NULL;
+}
 
 PyDoc_STRVAR(posix_execve__doc__,
 "execve(path, args, env)\n\n\
@@ -3229,8 +3309,7 @@ posix_execve(PyObject *self, PyObject *args)
 	PyObject *argv, *env;
 	char **argvlist;
 	char **envlist;
-	PyObject *key, *val, *keys=NULL, *vals=NULL;
-	Py_ssize_t i, pos, argc, envc;
+	Py_ssize_t i, argc, envc;
 	PyObject *(*getitem)(PyObject *, Py_ssize_t);
 	Py_ssize_t lastarg = 0;
 
@@ -3278,63 +3357,9 @@ posix_execve(PyObject *self, PyObject *args)
 	lastarg = argc;
 	argvlist[argc] = NULL;
 
-	i = PyMapping_Size(env);
-	if (i < 0)
+	envlist = parse_envlist(env, &envc);
+	if (envlist == NULL)
 		goto fail_1;
-	envlist = PyMem_NEW(char *, i + 1);
-	if (envlist == NULL) {
-		PyErr_NoMemory();
-		goto fail_1;
-	}
-	envc = 0;
-	keys = PyMapping_Keys(env);
-	vals = PyMapping_Values(env);
-	if (!keys || !vals)
-		goto fail_2;
-	if (!PyList_Check(keys) || !PyList_Check(vals)) {
-		PyErr_SetString(PyExc_TypeError,
-			"execve(): env.keys() or env.values() is not a list");
-		goto fail_2;
-	}
-
-	for (pos = 0; pos < i; pos++) {
-		char *p, *k, *v;
-		size_t len;
-
-		key = PyList_GetItem(keys, pos);
-		val = PyList_GetItem(vals, pos);
-		if (!key || !val)
-			goto fail_2;
-
-		if (!PyArg_Parse(
-			    key,
-			    "s;execve() arg 3 contains a non-string key",
-			    &k) ||
-		    !PyArg_Parse(
-			    val,
-			    "s;execve() arg 3 contains a non-string value",
-			    &v))
-		{
-			goto fail_2;
-		}
-
-#if defined(PYOS_OS2)
-        /* Omit Pseudo-Env Vars that Would Confuse Programs if Passed On */
-        if (stricmp(k, "BEGINLIBPATH") != 0 && stricmp(k, "ENDLIBPATH") != 0) {
-#endif
-		len = PyUnicode_GetSize(key) + PyUnicode_GetSize(val) + 2;
-		p = PyMem_NEW(char, len);
-		if (p == NULL) {
-			PyErr_NoMemory();
-			goto fail_2;
-		}
-		PyOS_snprintf(p, len, "%s=%s", k, v);
-		envlist[envc++] = p;
-#if defined(PYOS_OS2)
-    }
-#endif
-	}
-	envlist[envc] = 0;
 
 	execve(path, argvlist, envlist);
 
@@ -3342,14 +3367,11 @@ posix_execve(PyObject *self, PyObject *args)
 
 	(void) posix_error();
 
-  fail_2:
 	while (--envc >= 0)
 		PyMem_DEL(envlist[envc]);
 	PyMem_DEL(envlist);
   fail_1:
 	free_string_array(argvlist, lastarg);
-	Py_XDECREF(vals);
-	Py_XDECREF(keys);
   fail_0:
 	release_bytes(opath);
 	return NULL;
@@ -3463,8 +3485,8 @@ posix_spawnve(PyObject *self, PyObject *args)
 	PyObject *argv, *env;
 	char **argvlist;
 	char **envlist;
-	PyObject *key, *val, *keys=NULL, *vals=NULL, *res=NULL;
-	int mode, pos, envc;
+	PyObject *res = NULL;
+	int mode, envc;
 	Py_ssize_t argc, i;
 	Py_intptr_t spawnval;
 	PyObject *(*getitem)(PyObject *, Py_ssize_t);
@@ -3514,55 +3536,9 @@ posix_spawnve(PyObject *self, PyObject *args)
 	lastarg = argc;
 	argvlist[argc] = NULL;
 
-	i = PyMapping_Size(env);
-	if (i < 0)
+	envlist = parse_envlist(env, &envc);
+	if (envlist == NULL)
 		goto fail_1;
-	envlist = PyMem_NEW(char *, i + 1);
-	if (envlist == NULL) {
-		PyErr_NoMemory();
-		goto fail_1;
-	}
-	envc = 0;
-	keys = PyMapping_Keys(env);
-	vals = PyMapping_Values(env);
-	if (!keys || !vals)
-		goto fail_2;
-	if (!PyList_Check(keys) || !PyList_Check(vals)) {
-		PyErr_SetString(PyExc_TypeError,
-			"spawnve(): env.keys() or env.values() is not a list");
-		goto fail_2;
-	}
-
-	for (pos = 0; pos < i; pos++) {
-		char *p, *k, *v;
-		size_t len;
-
-		key = PyList_GetItem(keys, pos);
-		val = PyList_GetItem(vals, pos);
-		if (!key || !val)
-			goto fail_2;
-
-		if (!PyArg_Parse(
-			    key,
-			    "s;spawnve() arg 3 contains a non-string key",
-			    &k) ||
-		    !PyArg_Parse(
-			    val,
-			    "s;spawnve() arg 3 contains a non-string value",
-			    &v))
-		{
-			goto fail_2;
-		}
-		len = PyUnicode_GetSize(key) + PyUnicode_GetSize(val) + 2;
-		p = PyMem_NEW(char, len);
-		if (p == NULL) {
-			PyErr_NoMemory();
-			goto fail_2;
-		}
-		PyOS_snprintf(p, len, "%s=%s", k, v);
-		envlist[envc++] = p;
-	}
-	envlist[envc] = 0;
 
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 	Py_BEGIN_ALLOW_THREADS
@@ -3586,14 +3562,11 @@ posix_spawnve(PyObject *self, PyObject *args)
 		res = Py_BuildValue("L", (PY_LONG_LONG) spawnval);
 #endif
 
-  fail_2:
 	while (--envc >= 0)
 		PyMem_DEL(envlist[envc]);
 	PyMem_DEL(envlist);
   fail_1:
 	free_string_array(argvlist, lastarg);
-	Py_XDECREF(vals);
-	Py_XDECREF(keys);
   fail_0:
 	release_bytes(opath);
 	return res;
@@ -3698,8 +3671,8 @@ posix_spawnvpe(PyObject *self, PyObject *args)
 	PyObject *argv, *env;
 	char **argvlist;
 	char **envlist;
-	PyObject *key, *val, *keys=NULL, *vals=NULL, *res=NULL;
-	int mode, i, pos, argc, envc;
+	PyObject *res=NULL;
+	int mode, i, argc, envc;
 	Py_intptr_t spawnval;
 	PyObject *(*getitem)(PyObject *, Py_ssize_t);
 	int lastarg = 0;
@@ -3748,55 +3721,9 @@ posix_spawnvpe(PyObject *self, PyObject *args)
 	lastarg = argc;
 	argvlist[argc] = NULL;
 
-	i = PyMapping_Size(env);
-	if (i < 0)
+	envlist = parse_envlist(env, &envc);
+	if (envlist == NULL)
 		goto fail_1;
-	envlist = PyMem_NEW(char *, i + 1);
-	if (envlist == NULL) {
-		PyErr_NoMemory();
-		goto fail_1;
-	}
-	envc = 0;
-	keys = PyMapping_Keys(env);
-	vals = PyMapping_Values(env);
-	if (!keys || !vals)
-		goto fail_2;
-	if (!PyList_Check(keys) || !PyList_Check(vals)) {
-		PyErr_SetString(PyExc_TypeError,
-			"spawnvpe(): env.keys() or env.values() is not a list");
-		goto fail_2;
-	}
-
-	for (pos = 0; pos < i; pos++) {
-		char *p, *k, *v;
-		size_t len;
-
-		key = PyList_GetItem(keys, pos);
-		val = PyList_GetItem(vals, pos);
-		if (!key || !val)
-			goto fail_2;
-
-		if (!PyArg_Parse(
-			    key,
-			    "s;spawnvpe() arg 3 contains a non-string key",
-			    &k) ||
-		    !PyArg_Parse(
-			    val,
-			    "s;spawnvpe() arg 3 contains a non-string value",
-			    &v))
-		{
-			goto fail_2;
-		}
-		len = PyUnicode_GetSize(key) + PyUnicode_GetSize(val) + 2;
-		p = PyMem_NEW(char, len);
-		if (p == NULL) {
-			PyErr_NoMemory();
-			goto fail_2;
-		}
-		PyOS_snprintf(p, len, "%s=%s", k, v);
-		envlist[envc++] = p;
-	}
-	envlist[envc] = 0;
 
 	Py_BEGIN_ALLOW_THREADS
 #if defined(PYCC_GCC)
@@ -3811,14 +3738,11 @@ posix_spawnvpe(PyObject *self, PyObject *args)
 	else
 		res = Py_BuildValue("l", (long) spawnval);
 
-  fail_2:
 	while (--envc >= 0)
 		PyMem_DEL(envlist[envc]);
 	PyMem_DEL(envlist);
   fail_1:
 	free_string_array(argvlist, lastarg);
-	Py_XDECREF(vals);
-	Py_XDECREF(keys);
   fail_0:
 	release_bytes(opath);
 	return res;

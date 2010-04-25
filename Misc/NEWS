@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8391: os.execvpe() and os.getenv() supports unicode with surrogates
+  and bytes strings for environment keys and values, and use
+  sys.getfilesystemencoding() instead of sys.getdefautltencoding()
+
 - Issue #2302: Fix a race condition in SocketServer.BaseServer.shutdown,
   where the method could block indefinitely if called just before the
   event loop started running.  This also fixes the occasional freezes

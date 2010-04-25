@@ -443,6 +443,8 @@ environ = _Environ(environ, _keymap, _putenv, _unsetenv)
 def getenv(key, default=None):
     """Get an environment variable, return None if it doesn't exist.
     The optional second argument can specify an alternate default."""
+    if isinstance(key, bytes):
+        key = key.decode(sys.getfilesystemencoding(), "surrogateescape")
     return environ.get(key, default)
 __all__.append("getenv")
 
