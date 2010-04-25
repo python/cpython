@@ -372,6 +372,8 @@ and the following format units are left untouched.
    is only needed if :cfunc:`PyArg_ParseTupleAndKeywords` is not used, since the
    latter already does this check.
 
+   .. versionadded:: 3.2
+
 
 .. XXX deprecated, will be removed
 .. cfunction:: int PyArg_Parse(PyObject *args, const char *format, ...)
