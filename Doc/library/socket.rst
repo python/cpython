@@ -714,7 +714,7 @@ correspond to Unix system calls applicable to sockets.
    blocking mode.  In non-blocking mode, if a :meth:`recv` call doesn't find any
    data, or if a :meth:`send` call can't immediately dispose of the data, a
    :exc:`error` exception is raised; in blocking mode, the calls block until they
-   can proceed. ``s.setblocking(0)`` is equivalent to ``s.settimeout(0)``;
+   can proceed. ``s.setblocking(0)`` is equivalent to ``s.settimeout(0.0)``;
    ``s.setblocking(1)`` is equivalent to ``s.settimeout(None)``.
 
 
