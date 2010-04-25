@@ -20,8 +20,8 @@ to ensure that the handles are closed correctly, even if the programmer neglects
 to explicitly close them.
 
 This module exposes a very low-level interface to the Windows registry; it is
-expected that in the future a new ``winreg`` module will be created offering a
-higher-level interface to the registry API.
+expected that in the future a new module will be created offering a higher-level
+interface to the registry API.
 
 This module offers the following functions:
 
