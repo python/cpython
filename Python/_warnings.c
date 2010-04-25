@@ -280,7 +280,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
         PyFile_WriteString("\n", f_stderr);
     }
     else
-        _Py_DisplaySourceLine(f_stderr, PyString_AS_STRING(filename), 
+        _Py_DisplaySourceLine(f_stderr, PyString_AS_STRING(filename),
                               lineno, 2);
     PyErr_Clear();
 }
@@ -294,7 +294,7 @@ warn_explicit(PyObject *category, PyObject *message,
     PyObject *item = Py_None;
     const char *action;
     int rc;
-    
+
     if (registry && !PyDict_Check(registry) && (registry != Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'registry' must be a dict");
         return NULL;
@@ -839,8 +839,9 @@ create_filter(PyObject *category, const char *action)
 static PyObject *
 init_filters(void)
 {
-    /* Don't silence DeprecationWarning if -3 was used. */
-    PyObject *filters = PyList_New(Py_Py3kWarningFlag ? 3 : 4);
+    /* Don't silence DeprecationWarning if -3 or -Q were used. */
+    PyObject *filters = PyList_New(Py_Py3kWarningFlag ||
+                                    Py_DivisionWarningFlag ? 3 : 4);
     unsigned int pos = 0;  /* Post-incremented in each use. */
     unsigned int x;
     const char *bytes_action;
@@ -848,7 +849,8 @@ init_filters(void)
     if (filters == NULL)
         return NULL;
 
-    if (!Py_Py3kWarningFlag) {
+    /* If guard changes, make sure to update 'filters' initialization above. */
+    if (!Py_Py3kWarningFlag && !Py_DivisionWarningFlag) {
         PyList_SET_ITEM(filters, pos++,
                         create_filter(PyExc_DeprecationWarning, "ignore"));
     }
