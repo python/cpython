@@ -198,7 +198,7 @@ class BaseServer:
         self.server_address = server_address
         self.RequestHandlerClass = RequestHandlerClass
         self.__is_shut_down = threading.Event()
-        self.__serving = False
+        self.__shutdown_request = False
 
     def server_activate(self):
         """Called by constructor to activate the server.
@@ -215,17 +215,19 @@ class BaseServer:
         self.timeout. If you need to do periodic tasks, do them in
         another thread.
         """
-        self.__serving = True
         self.__is_shut_down.clear()
-        while self.__serving:
-            # XXX: Consider using another file descriptor or
-            # connecting to the socket to wake this up instead of
-            # polling. Polling reduces our responsiveness to a
-            # shutdown request and wastes cpu at all other times.
-            r, w, e = select.select([self], [], [], poll_interval)
-            if r:
-                self._handle_request_noblock()
-        self.__is_shut_down.set()
+        try:
+            while not self.__shutdown_request:
+                # XXX: Consider using another file descriptor or
+                # connecting to the socket to wake this up instead of
+                # polling. Polling reduces our responsiveness to a
+                # shutdown request and wastes cpu at all other times.
+                r, w, e = select.select([self], [], [], poll_interval)
+                if self in r:
+                    self._handle_request_noblock()
+        finally:
+            self.__shutdown_request = False
+            self.__is_shut_down.set()
 
     def shutdown(self):
         """Stops the serve_forever loop.
@@ -234,7 +236,7 @@ class BaseServer:
         serve_forever() is running in another thread, or it will
         deadlock.
         """
-        self.__serving = False
+        self.__shutdown_request = True
         self.__is_shut_down.wait()
 
     # The distinction between handling, getting, processing and
