@@ -1140,8 +1140,8 @@ recheck:
 
 # Rebuild the configure script from configure.in; also rebuild pyconfig.h.in
 autoconf:
-	(cd $(srcdir); autoconf)
-	(cd $(srcdir); autoheader)
+	(cd $(srcdir); autoconf -Wall)
+	(cd $(srcdir); autoheader -Wall)
 
 # Create a tags file for vi
 tags::
