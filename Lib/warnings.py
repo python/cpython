@@ -384,7 +384,8 @@ except ImportError:
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
     silence = [ImportWarning, PendingDeprecationWarning]
-    if not sys.py3kwarning:  # Don't silence DeprecationWarning if -3 was used.
+    # Don't silence DeprecationWarning if -3 or -Q was used.
+    if not sys.py3kwarning and not sys.flags.division_warning:
         silence.append(DeprecationWarning)
     for cls in silence:
         simplefilter("ignore", category=cls)

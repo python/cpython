@@ -12,6 +12,8 @@ What's New in Python 2.7 beta 2?
 Core and Builtins
 -----------------
 
+- Issue #7319: When -Q is used, do not silence DeprecationWarning.
+
 - Issue #7332: Remove the 16KB stack-based buffer in
   PyMarshal_ReadLastObjectFromFile, which doesn't bring any noticeable
   benefit compared to the dynamic memory allocation fallback.  Patch by
