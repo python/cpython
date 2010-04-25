@@ -1,4 +1,3 @@
-
 :mod:`socket` --- Low-level networking interface
 ================================================
 
@@ -91,8 +90,9 @@ All errors raise exceptions.  The normal exceptions for invalid argument types
 and out-of-memory conditions can be raised; errors related to socket or address
 semantics raise the error :exc:`socket.error`.
 
-Non-blocking mode is supported through :meth:`setblocking`.  A generalization of
-this based on timeouts is supported through :meth:`settimeout`.
+Non-blocking mode is supported through :meth:`~socket.setblocking`.  A
+generalization of this based on timeouts is supported through
+:meth:`~socket.settimeout`.
 
 The module :mod:`socket` exports the following constants and functions:
 
@@ -604,7 +604,9 @@ correspond to Unix system calls applicable to sockets.
    :platform: Windows
 
    The :meth:`ioctl` method is a limited interface to the WSAIoctl system
-   interface. Please refer to the MSDN documentation for more information.
+   interface.  Please refer to the `Win32 documentation
+   <http://msdn.microsoft.com/en-us/library/ms741621%28VS.85%29.aspx>`_ for more
+   information.
 
    On other platforms, the generic :func:`fcntl.fcntl` and :func:`fcntl.ioctl`
    functions may be used; they accept a socket object as their first argument.
@@ -744,21 +746,21 @@ the system returns an error (such as connection timed out).  In
 non-blocking mode, operations fail (with an error that is unfortunately
 system-dependent) if they cannot be completed immediately.  In timeout mode,
 operations fail if they cannot be completed within the timeout specified for the
-socket or if the system returns an error.  The :meth:`setblocking` method is simply
-a shorthand for certain :meth:`settimeout` calls.
+socket or if the system returns an error.  The :meth:`~socket.setblocking`
+method is simply a shorthand for certain :meth:`~socket.settimeout` calls.
 
 Timeout mode internally sets the socket in non-blocking mode.  The blocking and
 timeout modes are shared between file descriptors and socket objects that refer
 to the same network endpoint.  A consequence of this is that file objects
-returned by the :meth:`makefile` method must only be used when the socket is in
-blocking mode; in timeout or non-blocking mode file operations that cannot be
-completed immediately will fail.
+returned by the :meth:`~socket.makefile` method must only be used when the
+socket is in blocking mode; in timeout or non-blocking mode file operations
+that cannot be completed immediately will fail.
 
-Note that the :meth:`connect` operation is subject to the timeout setting, and
-in general it is recommended to call :meth:`settimeout` before calling
-:meth:`connect` or pass a timeout parameter to :meth:`create_connection`.
-The system network stack may return a connection timeout error
-of its own regardless of any Python socket timeout setting.
+Note that the :meth:`~socket.connect` operation is subject to the timeout
+setting, and in general it is recommended to call :meth:`~socket.settimeout`
+before calling :meth:`~socket.connect` or pass a timeout parameter to
+:meth:`create_connection`.  The system network stack may return a connection
+timeout error of its own regardless of any Python socket timeout setting.
 
 
 .. method:: socket.setsockopt(level, optname, value)
@@ -780,8 +782,8 @@ of its own regardless of any Python socket timeout setting.
    are disallowed.  If *how* is :const:`SHUT_RDWR`, further sends and receives are
    disallowed.
 
-Note that there are no methods :meth:`read` or :meth:`write`; use :meth:`recv`
-and :meth:`send` without *flags* argument instead.
+Note that there are no methods :meth:`read` or :meth:`write`; use
+:meth:`~socket.recv` and :meth:`~socket.send` without *flags* argument instead.
 
 Socket objects also have these (read-only) attributes that correspond to the
 values given to the :class:`socket` constructor.
@@ -816,11 +818,12 @@ Example
 Here are four minimal example programs using the TCP/IP protocol: a server that
 echoes all data that it receives back (servicing only one client), and a client
 using it.  Note that a server must perform the sequence :func:`socket`,
-:meth:`bind`, :meth:`listen`, :meth:`accept` (possibly repeating the
-:meth:`accept` to service more than one client), while a client only needs the
-sequence :func:`socket`, :meth:`connect`.  Also note that the server does not
-:meth:`send`/:meth:`recv` on the  socket it is listening on but on the new
-socket returned by :meth:`accept`.
+:meth:`~socket.bind`, :meth:`~socket.listen`, :meth:`~socket.accept` (possibly
+repeating the :meth:`~socket.accept` to service more than one client), while a
+client only needs the sequence :func:`socket`, :meth:`~socket.connect`.  Also
+note that the server does not :meth:`~socket.send`/:meth:`~socket.recv` on the
+socket it is listening on but on the new socket returned by
+:meth:`~socket.accept`.
 
 The first two examples support IPv4 only. ::
 
