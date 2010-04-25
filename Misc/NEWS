@@ -25,6 +25,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #2302: Fix a race condition in SocketServer.BaseServer.shutdown,
+  where the method could block indefinitely if called just before the
+  event loop started running.  This also fixes the occasional freezes
+  witnessed in test_httpservers.
+
 - Issue #5103: SSL handshake would ignore the socket timeout and block
   indefinitely if the other end didn't respond.
 
