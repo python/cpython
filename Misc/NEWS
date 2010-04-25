@@ -40,6 +40,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #2302: Fix a race condition in SocketServer.BaseServer.shutdown,
+  where the method could block indefinitely if called just before the
+  event loop started running.  This also fixes the occasional freezes
+  witnessed in test_httpservers.
+
 - Issue #8524: When creating an SSL socket, the timeout value of the
   original socket wasn't retained (instead, a socket with a positive timeout
   would be turned into a non-blocking SSL socket).

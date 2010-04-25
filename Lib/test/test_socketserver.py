@@ -243,6 +243,30 @@ class SocketServerTest(unittest.TestCase):
     #                             socketserver.DatagramRequestHandler,
     #                             self.dgram_examine)
 
+    def test_shutdown(self):
+        # Issue #2302: shutdown() should always succeed in making an
+        # other thread leave serve_forever().
+        class MyServer(socketserver.TCPServer):
+            pass
+
+        class MyHandler(socketserver.StreamRequestHandler):
+            pass
+
+        threads = []
+        for i in range(20):
+            s = MyServer((HOST, 0), MyHandler)
+            t = threading.Thread(
+                name='MyServer serving',
+                target=s.serve_forever,
+                kwargs={'poll_interval':0.01})
+            t.daemon = True  # In case this function raises.
+            threads.append((t, s))
+        for t, s in threads:
+            t.start()
+            s.shutdown()
+        for t, s in threads:
+            t.join()
+
 
 def test_main():
     if imp.lock_held():
