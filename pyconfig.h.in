@@ -958,7 +958,7 @@
 /* Define as the size of the unicode type. */
 #undef Py_UNICODE_SIZE
 
-/* Define as the return type of signal handlers (`int' or `void'). */
+/* assume C89 semantics that RETSIGTYPE is always void */
 #undef RETSIGTYPE
 
 /* Define if setpgrp() must be called as setpgrp(0, 0). */
