@@ -87,7 +87,7 @@ CONFIG_ARGS="$ac_configure_args"
 
 AC_MSG_CHECKING([for --enable-universalsdk])
 AC_ARG_ENABLE(universalsdk,
-	AC_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@], [Build against Mac OS X 10.4u SDK (ppc/i386)]),
+	AS_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@], [Build against Mac OS X 10.4u SDK (ppc/i386)]),
 [
 	case $enableval in
 	yes)
@@ -130,7 +130,7 @@ UNIVERSAL_ARCHS="32-bit"
 AC_SUBST(LIPO_32BIT_FLAGS)
 AC_MSG_CHECKING(for --with-universal-archs)
 AC_ARG_WITH(universal-archs,
-    AC_HELP_STRING([--with-universal-archs=ARCH], [select architectures for universal build ("32-bit", "64-bit", "3-way", "intel" or "all")]),
+    AS_HELP_STRING([--with-universal-archs=ARCH], [select architectures for universal build ("32-bit", "64-bit", "3-way", "intel" or "all")]),
 [
 	AC_MSG_RESULT($withval)
 	UNIVERSAL_ARCHS="$withval"
@@ -142,7 +142,7 @@ AC_ARG_WITH(universal-archs,
 
 
 AC_ARG_WITH(framework-name,
-              AC_HELP_STRING([--with-framework-name=FRAMEWORK],
+              AS_HELP_STRING([--with-framework-name=FRAMEWORK],
                              [specify an alternate name of the framework built with --enable-framework]),
 [
     PYTHONFRAMEWORK=${withval}
@@ -155,7 +155,7 @@ AC_ARG_WITH(framework-name,
 ])
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_ENABLE(framework,
-              AC_HELP_STRING([--enable-framework@<:@=INSTALLDIR@:>@], [Build (MacOSX|Darwin) framework]),
+              AS_HELP_STRING([--enable-framework@<:@=INSTALLDIR@:>@], [Build (MacOSX|Darwin) framework]),
 [
 	case $enableval in
 	yes) 
@@ -229,7 +229,7 @@ AC_SUBST(FRAMEWORKALTINSTALLLAST)
 AC_SUBST(FRAMEWORKUNIXTOOLSPREFIX)
 
 ##AC_ARG_WITH(dyld,
-##            AC_HELP_STRING([--with-dyld],
+##            AS_HELP_STRING([--with-dyld],
 ##                           [Use (OpenStep|Rhapsody) dynamic linker]))
 ##
 # Set name for machine-dependent library files
@@ -416,7 +416,7 @@ AC_MSG_RESULT($ac_sys_machine)
 # on that fiddles with OPT and BASECFLAGS?
 AC_MSG_CHECKING(for --without-gcc)
 AC_ARG_WITH(gcc,
-            AC_HELP_STRING([--without-gcc], [never use gcc]),
+            AS_HELP_STRING([--without-gcc], [never use gcc]),
 [
 	case $withval in
 	no)	CC=${CC:-cc}
@@ -448,7 +448,7 @@ AC_SUBST(CXX)
 AC_SUBST(MAINCC)
 AC_MSG_CHECKING(for --with-cxx-main=<compiler>)
 AC_ARG_WITH(cxx_main,
-            AC_HELP_STRING([--with-cxx-main=<compiler>],
+            AS_HELP_STRING([--with-cxx-main=<compiler>],
                            [compile main() and link python executable with C++ compiler]),
 [
 	
@@ -513,7 +513,7 @@ esac
 AC_EXEEXT
 AC_MSG_CHECKING(for --with-suffix)
 AC_ARG_WITH(suffix,
-            AC_HELP_STRING([--with-suffix=.exe], [set executable suffix]),
+            AS_HELP_STRING([--with-suffix=.exe], [set executable suffix]),
 [
 	case $withval in
 	no)	EXEEXT=;;
@@ -637,7 +637,7 @@ AC_MSG_RESULT($GNULD)
 
 AC_MSG_CHECKING(for --enable-shared)
 AC_ARG_ENABLE(shared,
-              AC_HELP_STRING([--enable-shared], [disable/enable building shared python library]))
+              AS_HELP_STRING([--enable-shared], [disable/enable building shared python library]))
 
 if test -z "$enable_shared"
 then 
@@ -652,7 +652,7 @@ AC_MSG_RESULT($enable_shared)
 
 AC_MSG_CHECKING(for --enable-profiling)
 AC_ARG_ENABLE(profiling,
-              AC_HELP_STRING([--enable-profiling], [enable C-level code profiling]),
+              AS_HELP_STRING([--enable-profiling], [enable C-level code profiling]),
 [ac_save_cc="$CC"
  CC="$CC -pg"
  AC_TRY_RUN([int main() { return 0; }],
@@ -788,7 +788,7 @@ fi
 # Check for --with-pydebug
 AC_MSG_CHECKING(for --with-pydebug)
 AC_ARG_WITH(pydebug, 
-            AC_HELP_STRING([--with-pydebug], [build with Py_DEBUG defined]),
+            AS_HELP_STRING([--with-pydebug], [build with Py_DEBUG defined]),
 [
 if test "$withval" != no
 then 
@@ -1931,7 +1931,7 @@ AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
-            AC_HELP_STRING([--with-libs='lib1 ...'], [link against additional libs]),
+            AS_HELP_STRING([--with-libs='lib1 ...'], [link against additional libs]),
 [
 AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
@@ -1943,14 +1943,14 @@ AC_PATH_TOOL([PKG_CONFIG], [pkg-config])
 # Check for use of the system expat library
 AC_MSG_CHECKING(for --with-system-expat)
 AC_ARG_WITH(system_expat,
-            AC_HELP_STRING([--with-system-expat], [build pyexpat module using an installed expat library]))
+            AS_HELP_STRING([--with-system-expat], [build pyexpat module using an installed expat library]))
 
 AC_MSG_RESULT($with_system_expat)
 
 # Check for use of the system libffi library
 AC_MSG_CHECKING(for --with-system-ffi)
 AC_ARG_WITH(system_ffi,
-            AC_HELP_STRING([--with-system-ffi], [build _ctypes module using an installed ffi library]))
+            AS_HELP_STRING([--with-system-ffi], [build _ctypes module using an installed ffi library]))
 
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
@@ -1964,7 +1964,7 @@ AC_MSG_RESULT($with_system_ffi)
 # Check for --with-dbmliborder
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
-            AC_HELP_STRING([--with-dbmliborder=db1:db2:...], [order to check db backends for dbm. Valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
+            AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [order to check db backends for dbm. Valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
 [
 if test x$with_dbmliborder = xyes
 then
@@ -1984,7 +1984,7 @@ AC_SUBST(USE_SIGNAL_MODULE)
 AC_SUBST(SIGNAL_OBJS)
 AC_MSG_CHECKING(for --with-signal-module)
 AC_ARG_WITH(signal-module,
-            AC_HELP_STRING([--with-signal-module], [disable/enable signal module]))
+            AS_HELP_STRING([--with-signal-module], [disable/enable signal module]))
 
 if test -z "$with_signal_module"
 then with_signal_module="yes"
@@ -2006,7 +2006,7 @@ USE_THREAD_MODULE=""
 AC_MSG_CHECKING(for --with-dec-threads)
 AC_SUBST(LDLAST)
 AC_ARG_WITH(dec-threads,
-            AC_HELP_STRING([--with-dec-threads], [use DEC Alpha/OSF1 thread-safe libraries]),
+            AS_HELP_STRING([--with-dec-threads], [use DEC Alpha/OSF1 thread-safe libraries]),
 [
 AC_MSG_RESULT($withval)
 LDLAST=-threads
@@ -2026,12 +2026,12 @@ AH_TEMPLATE(WITH_THREAD,
 AC_MSG_CHECKING(for --with-threads)
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(threads,
-            AC_HELP_STRING([--with(out)-threads@<:@=DIRECTORY@:>@], [disable/enable thread support]))
+            AS_HELP_STRING([--with(out)-threads@<:@=DIRECTORY@:>@], [disable/enable thread support]))
 
 # --with-thread is deprecated, but check for it anyway
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(thread,
-            AC_HELP_STRING([--with(out)-thread@<:@=DIRECTORY@:>@], [deprecated; use --with(out)-threads]),
+            AS_HELP_STRING([--with(out)-thread@<:@=DIRECTORY@:>@], [deprecated; use --with(out)-threads]),
             [with_threads=$with_thread])
 
 if test -z "$with_threads"
@@ -2398,7 +2398,7 @@ AC_TRY_COMPILE([#include <Carbon/Carbon.h>], [FSIORefNum fRef = 0],
 # Check for --with-doc-strings
 AC_MSG_CHECKING(for --with-doc-strings)
 AC_ARG_WITH(doc-strings,
-            AC_HELP_STRING([--with(out)-doc-strings], [disable/enable documentation strings]))
+            AS_HELP_STRING([--with(out)-doc-strings], [disable/enable documentation strings]))
 
 if test -z "$with_doc_strings"
 then with_doc_strings="yes"
@@ -2413,7 +2413,7 @@ AC_MSG_RESULT($with_doc_strings)
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-tsc)
 AC_ARG_WITH(tsc,
-	    AC_HELP_STRING([--with(out)-tsc],[enable/disable timestamp counter profile]),[
+	    AS_HELP_STRING([--with(out)-tsc],[enable/disable timestamp counter profile]),[
 if test "$withval" != no
 then 
   AC_DEFINE(WITH_TSC, 1, 
@@ -2426,7 +2426,7 @@ fi],
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-pymalloc)
 AC_ARG_WITH(pymalloc,
-            AC_HELP_STRING([--with(out)-pymalloc], [disable/enable specialized mallocs]))
+            AS_HELP_STRING([--with(out)-pymalloc], [disable/enable specialized mallocs]))
 
 if test -z "$with_pymalloc"
 then with_pymalloc="yes"
@@ -2441,7 +2441,7 @@ AC_MSG_RESULT($with_pymalloc)
 # Check for Valgrind support
 AC_MSG_CHECKING([for --with-valgrind])
 AC_ARG_WITH([valgrind],
-  AC_HELP_STRING([--with-valgrind], [Enable Valgrind support]),,
+  AS_HELP_STRING([--with-valgrind], [Enable Valgrind support]),,
   with_valgrind=no)
 AC_MSG_RESULT([$with_valgrind])
 if test "$with_valgrind" != no; then
@@ -2454,7 +2454,7 @@ fi
 # Check for --with-wctype-functions
 AC_MSG_CHECKING(for --with-wctype-functions)
 AC_ARG_WITH(wctype-functions, 
-            AC_HELP_STRING([--with-wctype-functions], [use wctype.h functions]),
+            AS_HELP_STRING([--with-wctype-functions], [use wctype.h functions]),
 [
 if test "$withval" != no
 then 
@@ -3169,7 +3169,7 @@ AC_CHECK_FUNC(__fpu_control,
 # Check for --with-fpectl
 AC_MSG_CHECKING(for --with-fpectl)
 AC_ARG_WITH(fpectl,
-            AC_HELP_STRING([--with-fpectl], [enable SIGFPE catching]),
+            AS_HELP_STRING([--with-fpectl], [enable SIGFPE catching]),
 [
 if test "$withval" != no
 then 
@@ -3188,7 +3188,7 @@ Darwin) ;;
 esac
 AC_MSG_CHECKING(for --with-libm=STRING)
 AC_ARG_WITH(libm,
-            AC_HELP_STRING([--with-libm=STRING], [math library]),
+            AS_HELP_STRING([--with-libm=STRING], [math library]),
 [
 if test "$withval" = no
 then LIBM=
@@ -3204,7 +3204,7 @@ fi],
 AC_SUBST(LIBC)
 AC_MSG_CHECKING(for --with-libc=STRING)
 AC_ARG_WITH(libc,
-            AC_HELP_STRING([--with-libc=STRING], [C library]),
+            AS_HELP_STRING([--with-libc=STRING], [C library]),
 [
 if test "$withval" = no
 then LIBC=
@@ -3469,7 +3469,7 @@ fi
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])
 AC_ARG_ENABLE(big-digits,
-AC_HELP_STRING([--enable-big-digits@<:@=BITS@:>@],[use big digits for Python longs [[BITS=30]]]),
+AS_HELP_STRING([--enable-big-digits@<:@=BITS@:>@],[use big digits for Python longs [[BITS=30]]]),
 [case $enable_big_digits in
 yes)
   enable_big_digits=30 ;;
@@ -3534,7 +3534,7 @@ fi
 
 AC_MSG_CHECKING(what type to use for str)
 AC_ARG_WITH(wide-unicode, 
-            AC_HELP_STRING([--with-wide-unicode], [Use 4-byte Unicode characters (default is 2 bytes)]),
+            AS_HELP_STRING([--with-wide-unicode], [Use 4-byte Unicode characters (default is 2 bytes)]),
 [
 if test "$withval" != no
 then unicode_size="4"
@@ -4081,7 +4081,7 @@ fi
 # Check for --with-computed-gotos
 AC_MSG_CHECKING(for --with-computed-gotos)
 AC_ARG_WITH(computed-gotos,
-            AC_HELP_STRING([--with-computed-gotos],
+            AS_HELP_STRING([--with-computed-gotos],
                            [Use computed gotos / threaded dispatch in evaluation loop (not available on all compilers)]),
 [
 if test "$withval" != no
