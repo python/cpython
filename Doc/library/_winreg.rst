@@ -554,7 +554,7 @@ integer handle, and also disconnect the Windows handle from the handle object.
    :keyword:`with` statement::
 
       with OpenKey(HKEY_LOCAL_MACHINE, "foo") as key:
-          # ... work with key ...
+          ...  # work with key
 
    will automatically close *key* when control leaves the :keyword:`with` block.
 
