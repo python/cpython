@@ -500,7 +500,7 @@ fi
 
 
 # checks for UNIX variants that set C preprocessor variables
-AC_AIX
+AC_USE_SYSTEM_EXTENSIONS
 
 # Check for unsupported systems
 case $ac_sys_system/$ac_sys_release in
