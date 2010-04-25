@@ -34,14 +34,14 @@ class TestServerThread(threading.Thread):
         threading.Thread.__init__(self)
         self.request_handler = request_handler
         self.test_object = test_object
-        self.test_object.lock.acquire()
 
     def run(self):
         self.server = HTTPServer(('', 0), self.request_handler)
         self.test_object.PORT = self.server.socket.getsockname()[1]
-        self.test_object.lock.release()
+        self.test_object.server_started.set()
+        self.test_object = None
         try:
-            self.server.serve_forever()
+            self.server.serve_forever(0.05)
         finally:
             self.server.server_close()
 
@@ -53,13 +53,12 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self._threads = support.threading_setup()
         os.environ = support.EnvironmentVarGuard()
-        self.lock = threading.Lock()
+        self.server_started = threading.Event()
         self.thread = TestServerThread(self, self.request_handler)
         self.thread.start()
-        self.lock.acquire()
+        self.server_started.wait()
 
     def tearDown(self):
-        self.lock.release()
         self.thread.stop()
         os.environ.__exit__()
         support.threading_cleanup(*self._threads)
