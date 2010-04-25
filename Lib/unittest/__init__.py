@@ -48,7 +48,7 @@ __all__ = ['TestResult', 'TestCase', 'TestSuite',
            'TextTestRunner', 'TestLoader', 'FunctionTestCase', 'main',
            'defaultTestLoader', 'SkipTest', 'skip', 'skipIf', 'skipUnless',
            'expectedFailure', 'TextTestResult', 'installHandler',
-           'registerResult', 'removeResult']
+           'registerResult', 'removeResult', 'removeHandler']
 
 # Expose obsolete functions for backwards compatibility
 __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
@@ -63,7 +63,7 @@ from .loader import (TestLoader, defaultTestLoader, makeSuite, getTestCaseNames,
                      findTestCases)
 from .main import TestProgram, main
 from .runner import TextTestRunner, TextTestResult
-from .signals import installHandler, registerResult, removeResult
+from .signals import installHandler, registerResult, removeResult, removeHandler
 
 # deprecated
 _TextTestResult = TextTestResult
