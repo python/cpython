@@ -6784,10 +6784,7 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
             return ((int)id[i] < (int)str[i]) ? -1 : 1;
     /* This check keeps Python strings that end in '\0' from comparing equal
      to C strings identical up to that point. */
-    if (PyUnicode_GET_SIZE(uni) != i)
-        /* We'll say the Python string is longer. */
-        return 1;
-    if (id[i])
+    if (PyUnicode_GET_SIZE(uni) != i || id[i])
         return 1; /* uni is longer */
     if (str[i])
         return -1; /* str is longer */
