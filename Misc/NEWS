@@ -123,6 +123,8 @@ Build
 Tests
 -----
 
+- Issue #8531: Skip test_ascii_formatd if ctypes module is missing
+
 - Issue #3864: Skip three test_signal tests on freebsd6 because they fail
   if any thread was previously started, most likely due to a platform bug.
 

@@ -3,7 +3,9 @@
 # Test that it works, and test that it's deprecated.
 
 import unittest
-from test.support import check_warnings, run_unittest, cpython_only
+from test.support import check_warnings, run_unittest, cpython_only, import_module
+
+import_module('ctypes')
 
 class FormatDeprecationTests(unittest.TestCase):
 
