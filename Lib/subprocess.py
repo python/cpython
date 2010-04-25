@@ -413,6 +413,7 @@ class CalledProcessError(Exception):
 
 
 if mswindows:
+    from _subprocess import CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP
     import threading
     import msvcrt
     import _subprocess
@@ -441,7 +442,6 @@ __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call",
            "check_output", "CalledProcessError"]
 
 if mswindows:
-    from _subprocess import CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP
     __all__.extend(["CREATE_NEW_CONSOLE", "CREATE_NEW_PROCESS_GROUP"])
 try:
     MAXFD = os.sysconf("SC_OPEN_MAX")
@@ -699,12 +699,12 @@ class Popen(object):
         return data
 
 
-    def __del__(self, _maxint=sys.maxint):
+    def __del__(self, sys=sys):
         if not self._child_created:
             # We didn't get to successfully create a child process.
             return
         # In case the child hasn't been waited on, check if it's done.
-        self._internal_poll(_deadstate=_maxint)
+        self._internal_poll(_deadstate=sys.maxint)
         if self.returncode is None and _active is not None:
             # Child is still running, keep us alive until we can wait on it.
             _active.append(self)
@@ -907,20 +907,13 @@ class Popen(object):
                 errwrite.Close()
 
 
-        def _internal_poll(self, _deadstate=None,
-                _WaitForSingleObject=WaitForSingleObject,
-                _WAIT_OBJECT_0=WAIT_OBJECT_0,
-                _GetExitCodeProcess=GetExitCodeProcess):
+        def _internal_poll(self, _deadstate=None):
             """Check if child process has terminated.  Returns returncode
-            attribute.
-
-            This method is called by __del__, so it can only refer to objects
-            in its local scope.
-
-            """
+            attribute."""
             if self.returncode is None:
-                if _WaitForSingleObject(self._handle, 0) == _WAIT_OBJECT_0:
-                    self.returncode = _GetExitCodeProcess(self._handle)
+                if(_subprocess.WaitForSingleObject(self._handle, 0) ==
+                   _subprocess.WAIT_OBJECT_0):
+                    self.returncode = _subprocess.GetExitCodeProcess(self._handle)
             return self.returncode
 
 
@@ -1201,37 +1194,25 @@ class Popen(object):
                 raise child_exception
 
 
-        def _handle_exitstatus(self, sts, _WIFSIGNALED=os.WIFSIGNALED,
-                _WTERMSIG=os.WTERMSIG, _WIFEXITED=os.WIFEXITED,
-                _WEXITSTATUS=os.WEXITSTATUS):
-            """
-
-            This method is called (indirectly) by __del__, so it cannot
-            refer to anything outside of its local scope."""
-            if _WIFSIGNALED(sts):
-                self.returncode = -_WTERMSIG(sts)
-            elif _WIFEXITED(sts):
-                self.returncode = _WEXITSTATUS(sts)
+        def _handle_exitstatus(self, sts):
+            if os.WIFSIGNALED(sts):
+                self.returncode = -os.WTERMSIG(sts)
+            elif os.WIFEXITED(sts):
+                self.returncode = os.WEXITSTATUS(sts)
             else:
                 # Should never happen
                 raise RuntimeError("Unknown child exit status!")
 
 
-        def _internal_poll(self, _deadstate=None, _waitpid=os.waitpid,
-                _WNOHANG=os.WNOHANG, _os_error=os.error):
+        def _internal_poll(self, _deadstate=None):
             """Check if child process has terminated.  Returns returncode
-            attribute.
-
-            This method is called by __del__, so it cannot reference anything
-            outside of the local scope (nor can any methods it calls).
-
-            """
+            attribute."""
             if self.returncode is None:
                 try:
-                    pid, sts = _waitpid(self.pid, _WNOHANG)
+                    pid, sts = os.waitpid(self.pid, os.WNOHANG)
                     if pid == self.pid:
                         self._handle_exitstatus(sts)
-                except _os_error:
+                except os.error:
                     if _deadstate is not None:
                         self.returncode = _deadstate
             return self.returncode
