@@ -28,7 +28,7 @@ This module offers the following functions:
 
 .. function:: CloseKey(hkey)
 
-   Closes a previously opened registry key. The hkey argument specifies a
+   Closes a previously opened registry key.  The *hkey* argument specifies a
    previously opened key.
 
    Note that if *hkey* is not closed using this method (or via
@@ -457,13 +457,13 @@ This module offers the following functions:
 .. function:: DisableReflectionKey(key)
 
    Disables registry reflection for 32-bit processes running on a 64-bit
-   Operating System.
+   operating system.
 
    *key* is an already open key, or one of the predefined :const:`HKEY_\*`
    constants.
 
    Will generally raise :exc:`NotImplemented` if executed on a 32-bit
-   Operating System.
+   operating system.
 
    If the key is not on the reflection list, the function succeeds but has no
    effect. Disabling reflection for a key does not affect reflection of any
@@ -478,7 +478,7 @@ This module offers the following functions:
    constants.
 
    Will generally raise :exc:`NotImplemented` if executed on a 32-bit
-   Operating System.
+   operating system.
 
    Restoring reflection for a key does not affect reflection of any subkeys.
 
@@ -493,7 +493,7 @@ This module offers the following functions:
    Returns ``True`` if reflection is disabled.
 
    Will generally raise :exc:`NotImplemented` if executed on a 32-bit
-   Operating System.
+   operating system.
 
 
 .. _handle-object:
