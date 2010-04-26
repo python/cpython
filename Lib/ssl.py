@@ -82,7 +82,6 @@ from socket import socket, AF_INET, SOCK_STREAM
 import base64        # for DER-to-PEM translation
 import traceback
 import errno
-import time
 
 class SSLSocket(socket):
 
