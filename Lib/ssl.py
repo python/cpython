@@ -75,8 +75,10 @@ from _ssl import \
      SSL_ERROR_INVALID_ERROR_CODE
 
 from socket import socket, _fileobject, _delegate_methods
+from socket import error as socket_error
 from socket import getnameinfo as _getnameinfo
 import base64        # for DER-to-PEM translation
+import errno
 
 class SSLSocket(socket):
 
@@ -104,7 +106,9 @@ class SSLSocket(socket):
         # see if it's connected
         try:
             socket.getpeername(self)
-        except:
+        except socket_error, e:
+            if e.errno != errno.ENOTCONN:
+                raise
             # no, no connection yet
             self._sslobj = None
         else:
