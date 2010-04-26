@@ -82,6 +82,7 @@ from socket import socket, AF_INET, SOCK_STREAM
 import base64        # for DER-to-PEM translation
 import traceback
 import errno
+import time
 
 class SSLSocket(socket):
 
@@ -96,6 +97,7 @@ class SSLSocket(socket):
                  family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None,
                  suppress_ragged_eofs=True):
 
+        connected = False
         if sock is not None:
             socket.__init__(self,
                             family=sock.family,
@@ -103,26 +105,27 @@ class SSLSocket(socket):
                             proto=sock.proto,
                             fileno=_dup(sock.fileno()))
             self.settimeout(sock.gettimeout())
+            # see if it's connected
+            try:
+                sock.getpeername()
+            except socket_error as e:
+                if e.errno != errno.ENOTCONN:
+                    raise
+            else:
+                connected = True
             sock.close()
         elif fileno is not None:
             socket.__init__(self, fileno=fileno)
         else:
             socket.__init__(self, family=family, type=type, proto=proto)
 
-        self._closed = False
-
         if certfile and not keyfile:
             keyfile = certfile
-        # see if it's connected
-        try:
-            socket.getpeername(self)
-        except socket_error as e:
-            if e.errno != errno.ENOTCONN:
-                raise
-            # no, no connection yet
-            self._sslobj = None
-        else:
-            # yes, create the SSL object
+
+        self._closed = False
+        self._sslobj = None
+        if connected:
+            # create the SSL object
             try:
                 self._sslobj = _ssl.sslwrap(self, server_side,
                                             keyfile, certfile,
