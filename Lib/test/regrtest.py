@@ -1,12 +1,23 @@
 #! /usr/bin/env python3
 
-"""Regression test.
+"""
+Usage:
 
-This will find all modules whose name is "test_*" in the test
-directory, and run them.  Various command line options provide
-additional facilities.
+python -m test.regrtest [options] [test_name1 [test_name2 ...]]
+python path/to/Lib/test/regrtest.py [options] [test_name1 [test_name2 ...]]
 
-Command line options:
+
+If no arguments or options are provided, finds all files matching
+the pattern "test_*" in the Lib/test subdirectory and runs
+them in alphabetical order (but see -M and -u, below, for exceptions).
+
+For more rigorous testing, it is useful to use the following
+command line:
+
+python -E -tt -Wd -3 -m test.regrtest [options] [test_name1 ...]
+
+
+Options:
 
 -h/--help       -- print this text and exit
 
@@ -16,15 +27,15 @@ Verbosity
 -w/--verbose2   -- re-run failed tests in verbose mode
 -W/--verbose3   -- re-run failed tests in verbose mode immediately
 -d/--debug      -- print traceback for failed tests
--q/--quiet      -- don't print anything except if a test fails
+-q/--quiet      -- no output unless one or more tests fail
 -S/--slow       -- print the slowest 10 tests
 
 Selecting tests
 
--r/--random     -- randomize test execution order
+-r/--random     -- randomize test execution order (see below)
 -f/--fromfile   -- read names of tests to run from a file (see below)
 -x/--exclude    -- arguments are tests to *exclude*
--s/--single     -- run only a single test (see below)
+-s/--single     -- single step through a set of tests (see below)
 -u/--use RES1,RES2,...
                 -- specify which special resource intensive tests to run
 -M/--memlimit LIMIT
@@ -38,36 +49,32 @@ Special runs
                 -- search for reference leaks (needs debug build, v. slow)
 -j/--multiprocess PROCESSES
                 -- run PROCESSES processes at once
--T/--coverage   -- turn on code coverage using the trace module
+-T/--coverage   -- turn on code coverage tracing using the trace module
 -D/--coverdir DIRECTORY
                 -- Directory where coverage files are put
 -N/--nocoverdir -- Put coverage files alongside modules
 -t/--threshold THRESHOLD
                 -- call gc.set_threshold(THRESHOLD)
 -n/--nowindows  -- suppress error message boxes on Windows
--F/--forever    -- run the selected tests in a loop, until an error happens
+-F/--forever    -- run the specified tests in a loop, until an error happens
 
-If non-option arguments are present, they are names for tests to run,
-unless -x is given, in which case they are names for tests not to run.
-If no test names are given, all tests are run.
+
+Additional Option Details:
 
 -r randomizes test execution order. You can use --randseed=int to provide a
 int seed value for the randomizer; this is useful for reproducing troublesome
 test orders.
 
--T turns on code coverage tracing with the trace module.
-
--D specifies the directory where coverage files are put.
-
--N Put coverage files alongside modules.
-
--s means to run only a single test and exit.  This is useful when
-doing memory analysis on the Python interpreter (which tend to consume
-too many resources to run the full regression test non-stop).  The
-file /tmp/pynexttest is read to find the next test to run.  If this
-file is missing, the first test_*.py file in testdir or on the command
-line is used.  (actually tempfile.gettempdir() is used instead of
-/tmp).
+-s On the first invocation of regrtest using -s, the first test file found
+or the first test file given on the command line is run, and the name of
+the next test is recorded in a file named pynexttest.  If run from the
+Python build directory, pynexttest is located in the 'build' subdirectory,
+otherwise it is located in tempfile.gettempdir().  On subsequent runs,
+the test in pynexttest is run, and the next test is written to pynexttest.
+When the last test has been run, pynexttest is deleted.  In this way it
+is possible to single step through the test files.  This is useful when
+doing memory analysis on the Python interpreter, which process tends to
+consume too many resources to run the full regression test non-stop.
 
 -S is used to continue running tests after an aborted run.  It will
 maintain the order a standard run (ie, this assumes -r is not used).
