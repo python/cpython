@@ -1888,6 +1888,8 @@ handling functionality within test frameworks.
    (usually in response to the user pressing control-c) all registered results
    have :meth:`~TestResult.stop` called.
 
+   .. versionadded:: 3.2
+
 .. function:: registerResult(result)
 
    Register a :class:`TestResult` object for control-c handling. Registering a
@@ -1898,11 +1900,15 @@ handling functionality within test frameworks.
    handling is not enabled, so test frameworks can unconditionally register
    all results they create independently of whether or not handling is enabled.
 
+   .. versionadded:: 3.2
+
 .. function:: removeResult(result)
 
    Remove a registered result. Once a result has been removed then
    :meth:`~TestResult.stop` will no longer be called on that result object in
    response to a control-c.
+
+   .. versionadded:: 3.2
 
 .. function:: removeHandler(function=None)
 
@@ -1913,4 +1919,6 @@ handling functionality within test frameworks.
       @unittest.removeHandler
       def test_signal_handling(self):
           ...
+
+   .. versionadded:: 3.2
 
