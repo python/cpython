@@ -150,6 +150,24 @@ class CommandLineTests(unittest.TestCase):
         expected.sort()
         self.assertEqual(sorted(os.listdir(self.pkgdir)), expected)
 
+    def test_multiple_runs(self):
+        # Bug 8527 reported that multiple calls produced empty
+        # __pycache__/__pycache__ directories.
+        retcode = subprocess.call(
+            (sys.executable, '-m', 'compileall', '-q', self.pkgdir))
+        self.assertEqual(retcode, 0)
+        # Verify the __pycache__ directory contents.
+        cachedir = os.path.join(self.pkgdir, '__pycache__')
+        self.assertTrue(os.path.exists(cachedir))
+        cachecachedir = os.path.join(cachedir, '__pycache__')
+        self.assertFalse(os.path.exists(cachecachedir))
+        # Call compileall again.
+        retcode = subprocess.call(
+            (sys.executable, '-m', 'compileall', '-q', self.pkgdir))
+        self.assertEqual(retcode, 0)
+        self.assertTrue(os.path.exists(cachedir))
+        self.assertFalse(os.path.exists(cachecachedir))
+
 
 def test_main():
     support.run_unittest(
