@@ -220,22 +220,30 @@ def format_string(f, val, grouping=False):
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 
-    if isinstance(val, tuple):
-        new_val = list(val)
+    if operator.isMappingType(val):
+        new_val = []
+        for perc in percents:
+            if perc.group()[-1]=='%':
+                new_val.append('%')
+            else:
+                new_val.append(format(perc.group(), val, grouping))
+    else:
+        if not isinstance(val, tuple):
+            val = (val,)
+        new_val = []
         i = 0
         for perc in percents:
-            starcount = perc.group('modifiers').count('*')
-            new_val[i] = format(perc.group(), new_val[i], grouping, False, *new_val[i+1:i+1+starcount])
-            del new_val[i+1:i+1+starcount]
-            i += (1 + starcount)
-        val = tuple(new_val)
-    elif operator.isMappingType(val):
-        for perc in percents:
-            key = perc.group("key")
-            val[key] = format(perc.group(), val[key], grouping)
-    else:
-        # val is a single value
-        val = format(percents[0].group(), val, grouping)
+            if perc.group()[-1]=='%':
+                new_val.append('%')
+            else:
+                starcount = perc.group('modifiers').count('*')
+                new_val.append(_format(perc.group(),
+                                      val[i],
+                                      grouping,
+                                      False,
+                                      *val[i+1:i+1+starcount]))
+                i += (1 + starcount)
+    val = tuple(new_val)
 
     return new_f % val
 
