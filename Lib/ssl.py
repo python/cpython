@@ -82,6 +82,7 @@ from socket import dup as _dup
 from socket import socket, AF_INET, SOCK_STREAM
 import base64        # for DER-to-PEM translation
 import traceback
+import errno
 
 class SSLSocket(socket):
 
@@ -116,7 +117,9 @@ class SSLSocket(socket):
         # see if it's connected
         try:
             socket.getpeername(self)
-        except socket_error:
+        except socket_error as e:
+            if e.errno != errno.ENOTCONN:
+                raise
             # no, no connection yet
             self._sslobj = None
         else:
