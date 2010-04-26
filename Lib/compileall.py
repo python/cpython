@@ -45,6 +45,8 @@ def compile_dir(dir, maxlevels=10, ddir=None,
     names.sort()
     success = 1
     for name in names:
+        if name == '__pycache__':
+            continue
         fullname = os.path.join(dir, name)
         if ddir is not None:
             dfile = os.path.join(ddir, name)
