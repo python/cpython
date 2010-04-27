@@ -130,6 +130,9 @@ import sys
 import time
 import traceback
 import warnings
+# keep a reference to the ascii module to workaround #7140 bug
+# (see issue #7027)
+import encodings.ascii
 
 # I see no other way to suppress these warnings;
 # putting them in test_grammar.py has no effect:
