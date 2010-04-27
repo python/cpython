@@ -15,8 +15,7 @@ except ImportError:
     from dummy_thread import allocate_lock as Lock
 
 import io
-from io import __all__
-from io import SEEK_SET, SEEK_CUR, SEEK_END
+from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END)
 
 __metaclass__ = type
 
