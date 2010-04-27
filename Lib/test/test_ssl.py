@@ -551,9 +551,9 @@ else:
             self.flag = None
             self.active = False
             self.RootedHTTPRequestHandler.root = os.path.split(CERTFILE)[0]
-            self.port = support.find_unused_port()
             self.server = self.HTTPSServer(
-                (HOST, self.port), self.RootedHTTPRequestHandler, certfile)
+                (HOST, 0), self.RootedHTTPRequestHandler, certfile)
+            self.port = self.server.server_port
             threading.Thread.__init__(self)
             self.daemon = True
 
@@ -634,12 +634,11 @@ else:
                 def handle_error(self):
                     raise
 
-            def __init__(self, port, certfile):
-                self.port = port
+            def __init__(self, certfile):
                 self.certfile = certfile
-                asyncore.dispatcher.__init__(self)
-                self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.bind(('', port))
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.port = support.bind_port(sock, '')
+                asyncore.dispatcher.__init__(self, sock)
                 self.listen(5)
 
             def handle_accept(self):
@@ -654,8 +653,8 @@ else:
         def __init__(self, certfile):
             self.flag = None
             self.active = False
-            self.port = support.find_unused_port()
-            self.server = self.EchoServer(self.port, certfile)
+            self.server = self.EchoServer(certfile)
+            self.port = self.server.port
             threading.Thread.__init__(self)
             self.daemon = True
 
@@ -881,38 +880,39 @@ else:
 
             listener_ready = threading.Event()
             listener_gone = threading.Event()
-            port = support.find_unused_port()
+            s = socket.socket()
+            port = support.bind_port(s, HOST)
 
-            # `listener` runs in a thread.  It opens a socket listening on
-            # PORT, and sits in an accept() until the main thread connects.
-            # Then it rudely closes the socket, and sets Event `listener_gone`
-            # to let the main thread know the socket is gone.
+            # `listener` runs in a thread.  It sits in an accept() until
+            # the main thread connects.  Then it rudely closes the socket,
+            # and sets Event `listener_gone` to let the main thread know
+            # the socket is gone.
             def listener():
-                s = socket.socket()
-                s.bind((HOST, port))
                 s.listen(5)
                 listener_ready.set()
                 s.accept()
-                s = None # reclaim the socket object, which also closes it
+                s.close()
                 listener_gone.set()
 
             def connector():
                 listener_ready.wait()
-                s = socket.socket()
-                s.connect((HOST, port))
+                c = socket.socket()
+                c.connect((HOST, port))
                 listener_gone.wait()
                 try:
-                    ssl_sock = ssl.wrap_socket(s)
+                    ssl_sock = ssl.wrap_socket(c)
                 except IOError:
                     pass
                 else:
-                    raise support.TestFailed(
+                    raise test_support.TestFailed(
                           'connecting to closed SSL socket should have failed')
 
             t = threading.Thread(target=listener)
             t.start()
-            connector()
-            t.join()
+            try:
+                connector()
+            finally:
+                t.join()
 
         def testProtocolSSL2(self):
             if support.verbose:
