@@ -5,7 +5,6 @@ import time
 import unittest
 import xmlrpclib
 import SimpleXMLRPCServer
-import threading
 import mimetools
 import httplib
 import socket
@@ -13,6 +12,11 @@ import StringIO
 import os
 import re
 from test import test_support
+
+try:
+    import threading
+except ImportError:
+    threading = None
 
 try:
     unicode
@@ -410,10 +414,12 @@ def is_unavailable_exception(e):
 
     return False
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class BaseServerTestCase(unittest.TestCase):
     requestHandler = None
     request_count = 1
     threadFunc = staticmethod(http_server)
+
     def setUp(self):
         # enable traceback reporting
         SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = True
@@ -692,6 +698,9 @@ class GzipServerTestCase(BaseServerTestCase):
                 connection.putheader("Content-Encoding", "gzip")
             return xmlrpclib.Transport.send_content(self, connection, body)
 
+    def setUp(self):
+        BaseServerTestCase.setUp(self)
+
     def test_gzip_request(self):
         t = self.Transport()
         t.encode_threshold = None
@@ -728,13 +737,23 @@ class GzipServerTestCase(BaseServerTestCase):
 
 #Test special attributes of the ServerProxy object
 class ServerProxyTestCase(unittest.TestCase):
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        if threading:
+            self.url = URL
+        else:
+            # Without threading, http_server() and http_multi_server() will not
+            # be executed and URL is still equal to None. 'http://' is a just
+            # enough to choose the scheme (HTTP)
+            self.url = 'http://'
+
     def test_close(self):
-        p = xmlrpclib.ServerProxy(URL)
+        p = xmlrpclib.ServerProxy(self.url)
         self.assertEqual(p('close')(), None)
 
     def test_transport(self):
         t = xmlrpclib.Transport()
-        p = xmlrpclib.ServerProxy(URL, transport=t)
+        p = xmlrpclib.ServerProxy(self.url, transport=t)
         self.assertEqual(p('transport'), t)
 
 # This is a contrived way to make a failure occur on the server side
@@ -747,6 +766,7 @@ class FailingMessageClass(mimetools.Message):
         return mimetools.Message.__getitem__(self, key)
 
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class FailingServerTestCase(unittest.TestCase):
     def setUp(self):
         self.evt = threading.Event()
