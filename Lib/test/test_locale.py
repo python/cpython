@@ -236,6 +236,25 @@ class TestFormatPatternArg(unittest.TestCase):
         self.assertRaises(ValueError, locale.format, " %f", 'foo')
         self.assertRaises(ValueError, locale.format, "%fg", 'foo')
         self.assertRaises(ValueError, locale.format, "%^g", 'foo')
+        self.assertRaises(ValueError, locale.format, "%f%%", 'foo')
+
+
+class TestLocaleFormatString(unittest.TestCase):
+    """General tests on locale.format_string"""
+
+    def test_percent_escape(self):
+        self.assertEqual(locale.format_string('%f%%', 1.0), '%f%%' % 1.0)
+        self.assertEqual(locale.format_string('%d %f%%d', (1, 1.0)),
+            '%d %f%%d' % (1, 1.0))
+        self.assertEqual(locale.format_string('%(foo)s %%d', {'foo': 'bar'}),
+            ('%(foo)s %%d' % {'foo': 'bar'}))
+
+    def test_mapping(self):
+        self.assertEqual(locale.format_string('%(foo)s bing.', {'foo': 'bar'}),
+            ('%(foo)s bing.' % {'foo': 'bar'}))
+        self.assertEqual(locale.format_string('%(foo)s', {'foo': 'bar'}),
+            ('%(foo)s' % {'foo': 'bar'}))
+
 
 
 class TestNumberFormatting(BaseLocalizedTest, EnUSNumberFormatting):
@@ -377,6 +396,7 @@ def test_main():
     tests = [
         TestMiscellaneous,
         TestFormatPatternArg,
+        TestLocaleFormatString,
         TestEnUSNumberFormatting,
         TestCNumberFormatting,
         TestFrFRNumberFormatting,
