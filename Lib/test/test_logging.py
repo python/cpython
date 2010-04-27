@@ -41,11 +41,13 @@ import tempfile
 from test.test_support import captured_stdout, run_with_locale, run_unittest,\
      find_unused_port
 import textwrap
-import threading
 import unittest
 import warnings
 import weakref
-
+try:
+    import threading
+except ImportError:
+    threading = None
 
 class BaseTest(unittest.TestCase):
 
@@ -765,6 +767,7 @@ class LogRecordSocketReceiver(ThreadingTCPServer):
         self.server_close()
 
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class SocketHandlerTest(BaseTest):
 
     """Test for SocketHandler objects."""
@@ -1659,6 +1662,7 @@ class ConfigDictTest(BaseTest):
     def test_config13_failure(self):
         self.assertRaises(StandardError, self.apply_config, self.config13)
 
+    @unittest.skipUnless(threading, 'listen() needs threading to work')
     def setup_via_listener(self, text):
         port = find_unused_port()
         t = logging.config.listen(port)

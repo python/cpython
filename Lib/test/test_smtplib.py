@@ -1,7 +1,6 @@
 import asyncore
 import email.utils
 import socket
-import threading
 import smtpd
 import smtplib
 import StringIO
@@ -9,8 +8,13 @@ import sys
 import time
 import select
 
-from unittest import TestCase
+import unittest
 from test import test_support
+
+try:
+    import threading
+except ImportError:
+    threading = None
 
 HOST = test_support.HOST
 
@@ -36,7 +40,8 @@ def server(evt, buf, serv):
         serv.close()
         evt.set()
 
-class GeneralTests(TestCase):
+@unittest.skipUnless(threading, 'Threading required for this test.')
+class GeneralTests(unittest.TestCase):
 
     def setUp(self):
         self._threads = test_support.threading_setup()
@@ -138,7 +143,8 @@ MSG_END = '------------ END MESSAGE ------------\n'
 # test server times out, causing the test to fail.
 
 # Test behavior of smtpd.DebuggingServer
-class DebuggingServerTests(TestCase):
+@unittest.skipUnless(threading, 'Threading required for this test.')
+class DebuggingServerTests(unittest.TestCase):
 
     def setUp(self):
         # temporarily replace sys.stdout to capture DebuggingServer output
@@ -233,7 +239,7 @@ class DebuggingServerTests(TestCase):
         self.assertEqual(self.output.getvalue(), mexpect)
 
 
-class NonConnectingTests(TestCase):
+class NonConnectingTests(unittest.TestCase):
 
     def testNotConnected(self):
         # Test various operations on an unconnected SMTP object that
@@ -254,7 +260,8 @@ class NonConnectingTests(TestCase):
 
 
 # test response of client to a non-successful HELO message
-class BadHELOServerTests(TestCase):
+@unittest.skipUnless(threading, 'Threading required for this test.')
+class BadHELOServerTests(unittest.TestCase):
 
     def setUp(self):
         self.old_stdout = sys.stdout
@@ -378,7 +385,8 @@ class SimSMTPServer(smtpd.SMTPServer):
 
 # Test various SMTP & ESMTP commands/behaviors that require a simulated server
 # (i.e., something with more features than DebuggingServer)
-class SMTPSimTests(TestCase):
+@unittest.skipUnless(threading, 'Threading required for this test.')
+class SMTPSimTests(unittest.TestCase):
 
     def setUp(self):
         self._threads = test_support.threading_setup()

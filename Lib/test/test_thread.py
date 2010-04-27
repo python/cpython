@@ -2,7 +2,7 @@ import os
 import unittest
 import random
 from test import test_support
-import thread
+thread = test_support.import_module('thread')
 import time
 import sys
 import weakref

@@ -2,7 +2,7 @@ from DocXMLRPCServer import DocXMLRPCServer
 import httplib
 import sys
 from test import test_support
-import threading
+threading = test_support.import_module('threading')
 import time
 import socket
 import unittest

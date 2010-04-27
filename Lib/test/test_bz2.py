@@ -7,7 +7,11 @@ from cStringIO import StringIO
 import os
 import subprocess
 import sys
-import threading
+
+try:
+    import threading
+except ImportError:
+    threading = None
 
 bz2 = import_module('bz2')
 from bz2 import BZ2File, BZ2Compressor, BZ2Decompressor
@@ -307,6 +311,7 @@ class BZ2FileTest(BaseTest):
         else:
             self.fail("1 // 0 didn't raise an exception")
 
+    @unittest.skipUnless(threading, 'Threading required for this test.')
     def testThreading(self):
         # Using a BZ2File from several threads doesn't deadlock (issue #7205).
         data = "1" * 2**20

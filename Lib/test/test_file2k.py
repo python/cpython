@@ -3,9 +3,12 @@ import os
 import unittest
 import itertools
 import time
-import threading
 from array import array
 from weakref import proxy
+try:
+    import threading
+except ImportError:
+    threading = None
 
 from test import test_support
 from test.test_support import TESTFN, run_unittest
@@ -411,6 +414,7 @@ class FileSubclassTests(unittest.TestCase):
         self.assertTrue(f.subclass_closed)
 
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class FileThreadingTests(unittest.TestCase):
     # These tests check the ability to call various methods of file objects
     # (including close()) concurrently without crashing the Python interpreter.

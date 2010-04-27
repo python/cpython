@@ -6,7 +6,6 @@ from test import test_support
 import errno
 import socket
 import select
-import thread, threading
 import time
 import traceback
 import Queue
@@ -15,6 +14,13 @@ import os
 import array
 from weakref import proxy
 import signal
+
+try:
+    import thread
+    import threading
+except ImportError:
+    thread = None
+    threading = None
 
 HOST = test_support.HOST
 MSG = 'Michael Gilfix was here\n'
@@ -550,6 +556,7 @@ class GeneralModuleTests(unittest.TestCase):
         s.ioctl(socket.SIO_KEEPALIVE_VALS, (1, 100, 100))
 
 
+@unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicTCPTest(SocketConnectedTest):
 
     def __init__(self, methodName='runTest'):
@@ -630,6 +637,7 @@ class BasicTCPTest(SocketConnectedTest):
         self.serv_conn.send(MSG)
         self.serv_conn.shutdown(2)
 
+@unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicUDPTest(ThreadedUDPSocketTest):
 
     def __init__(self, methodName='runTest'):
@@ -658,6 +666,7 @@ class BasicUDPTest(ThreadedUDPSocketTest):
     def _testRecvFromNegative(self):
         self.cli.sendto(MSG, 0, (HOST, self.port))
 
+@unittest.skipUnless(thread, 'Threading required for this test.')
 class TCPCloserTest(ThreadedTCPSocketTest):
 
     def testClose(self):
@@ -673,6 +682,7 @@ class TCPCloserTest(ThreadedTCPSocketTest):
         self.cli.connect((HOST, self.port))
         time.sleep(1.0)
 
+@unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicSocketPairTest(SocketPairTest):
 
     def __init__(self, methodName='runTest'):
@@ -692,6 +702,7 @@ class BasicSocketPairTest(SocketPairTest):
         msg = self.cli.recv(1024)
         self.assertEqual(msg, MSG)
 
+@unittest.skipUnless(thread, 'Threading required for this test.')
 class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def __init__(self, methodName='runTest'):
@@ -760,6 +771,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         time.sleep(0.1)
         self.cli.send(MSG)
 
+@unittest.skipUnless(thread, 'Threading required for this test.')
 class FileObjectClassTestCase(SocketConnectedTest):
 
     bufsize = -1 # Use default buffer size
@@ -989,6 +1001,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
             lambda: socket.create_connection((HOST, port))
         )
 
+@unittest.skipUnless(thread, 'Threading required for this test.')
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
@@ -1051,6 +1064,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         self.cli = socket.create_connection((HOST, self.port), 30)
         self.assertEqual(self.cli.gettimeout(), 30)
 
+@unittest.skipUnless(thread, 'Threading required for this test.')
 class NetworkConnectionBehaviourTest(SocketTCPTest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
@@ -1220,6 +1234,7 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
         self.assertRaises(socket.error, s.bind, address)
 
 
+@unittest.skipUnless(thread, 'Threading required for this test.')
 class BufferIOTest(SocketConnectedTest):
     """
     Test the buffer versions of socket.recv() and socket.send().

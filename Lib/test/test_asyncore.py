@@ -3,13 +3,17 @@ import unittest
 import select
 import os
 import socket
-import threading
 import sys
 import time
 
 from test import test_support
 from test.test_support import TESTFN, run_unittest, unlink
 from StringIO import StringIO
+
+try:
+    import threading
+except ImportError:
+    threading = None
 
 HOST = test_support.HOST
 
@@ -319,6 +323,7 @@ class DispatcherWithSendTests(unittest.TestCase):
     def tearDown(self):
         asyncore.close_all()
 
+    @unittest.skipUnless(threading, 'Threading required for this test.')
     @test_support.reap_threads
     def test_send(self):
         evt = threading.Event()
