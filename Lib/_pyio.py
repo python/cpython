@@ -9,7 +9,7 @@ import os
 import abc
 import codecs
 import warnings
-# Import _thread instead of threading to reduce startup cost
+# Import thread instead of threading to reduce startup cost
 try:
     from thread import allocate_lock as Lock
 except ImportError:
