@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8549: Fix compiling the _ssl extension under AIX.  Patch by
+  Sridhar Ratnakumar.
+
 - Issue #8391: os.execvpe() and os.getenv() supports unicode with surrogates
   and bytes strings for environment keys and values, and use
   sys.getfilesystemencoding() instead of sys.getdefautltencoding()
