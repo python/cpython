@@ -34,7 +34,11 @@ def handle_error(prefix):
     if test_support.verbose:
         sys.stdout.write(prefix + exc_format)
 
+
+class BasicTests(unittest.TestCase):
+
     def testSimpleSSLwrap(self):
+        # A crude test for the legacy API
         try:
             ssl.sslwrap_simple(socket.socket(socket.AF_INET))
         except IOError, e:
@@ -49,8 +53,6 @@ def handle_error(prefix):
                 pass
             else:
                 raise
-
-class BasicTests(unittest.TestCase):
 
     def testSSLconnect(self):
         if not test_support.is_resource_enabled('network'):
@@ -458,7 +460,7 @@ else:
             threading.Thread.start(self)
 
         def run (self):
-            self.sock.settimeout(0.5)
+            self.sock.settimeout(0.05)
             self.sock.listen(5)
             self.active = True
             if self.flag:
@@ -605,49 +607,6 @@ else:
                                           certfile=self.certfile)
                 return sslconn, addr
 
-            # The methods overridden below this are mainly so that we
-            # can run it in a thread and be able to stop it from another
-            # You probably wouldn't need them in other uses.
-
-            def server_activate(self):
-                # We want to run this in a thread for testing purposes,
-                # so we override this to set timeout, so that we get
-                # a chance to stop the server
-                self.socket.settimeout(0.5)
-                HTTPServer.server_activate(self)
-
-            def serve_forever(self):
-                # We want this to run in a thread, so we use a slightly
-                # modified version of "forever".
-                self.active = True
-                while 1:
-                    try:
-                        # We need to lock while handling the request.
-                        # Another thread can close the socket after self.active
-                        # has been checked and before the request is handled.
-                        # This causes an exception when using the closed socket.
-                        with self.active_lock:
-                            if not self.active:
-                                break
-                            self.handle_request()
-                    except socket.timeout:
-                        pass
-                    except KeyboardInterrupt:
-                        self.server_close()
-                        return
-                    except:
-                        sys.stdout.write(''.join(traceback.format_exception(*sys.exc_info())))
-                        break
-                    time.sleep(0.1)
-
-            def server_close(self):
-                # Again, we want this to run in a thread, so we need to override
-                # close to clear the "active" flag, so that serve_forever() will
-                # terminate.
-                with self.active_lock:
-                    HTTPServer.server_close(self)
-                    self.active = False
-
         class RootedHTTPRequestHandler(SimpleHTTPRequestHandler):
 
             # need to override translate_path to get a known root,
@@ -713,12 +672,12 @@ else:
             self.active = True
             if self.flag:
                 self.flag.set()
-            self.server.serve_forever()
+            self.server.serve_forever(0.05)
             self.active = False
 
         def stop (self):
             self.active = False
-            self.server.server_close()
+            self.server.shutdown()
 
 
     def badCertTest (certfile):
