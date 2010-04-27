@@ -7,6 +7,7 @@ Original by Michael Schneider
 
 import cmd
 import sys
+from test import test_support
 
 class samplecmdclass(cmd.Cmd):
     """
@@ -168,11 +169,11 @@ class samplecmdclass(cmd.Cmd):
         return True
 
 def test_main(verbose=None):
-    from test import test_support, test_cmd
+    from test import test_cmd
     test_support.run_doctest(test_cmd, verbose)
 
 def test_coverage(coverdir):
-    import trace
+    trace = test_support.import_module('trace')
     tracer=trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,],
                         trace=0, count=1)
     tracer.run('reload(cmd);test_main()')
