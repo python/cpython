@@ -847,10 +847,10 @@ functions based on regular expressions.
 
 .. method:: str.find(sub[, start[, end]])
 
-   Return the lowest index in the string where substring *sub* is found, such that
-   *sub* is contained in the range [*start*, *end*].  Optional arguments *start*
-   and *end* are interpreted as in slice notation.  Return ``-1`` if *sub* is not
-   found.
+   Return the lowest index in the string where substring *sub* is found, such
+   that *sub* is contained in the slice ``s[start:end]``.  Optional arguments
+   *start* and *end* are interpreted as in slice notation.  Return ``-1`` if
+   *sub* is not found.
 
 
 .. method:: str.format(*args, **kwargs)
@@ -1017,9 +1017,9 @@ functions based on regular expressions.
 
 .. method:: str.rfind(sub[, start[, end]])
 
-   Return the highest index in the string where substring *sub* is found, such that
-   *sub* is contained within s[start,end].  Optional arguments *start* and *end*
-   are interpreted as in slice notation.  Return ``-1`` on failure.
+   Return the highest index in the string where substring *sub* is found, such
+   that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
+   and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
 
 
 .. method:: str.rindex(sub[, start[, end]])
