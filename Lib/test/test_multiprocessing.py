@@ -5,7 +5,6 @@
 #
 
 import unittest
-import threading
 import Queue
 import time
 import sys
@@ -18,9 +17,11 @@ import random
 import logging
 from test import test_support
 from StringIO import StringIO
-
-
 _multiprocessing = test_support.import_module('_multiprocessing')
+# import threading after _multiprocessing to raise a more revelant error
+# message: "No module named _multiprocessing". _multiprocessing is not compiled
+# without thread support.
+import threading
 
 # Work around broken sem_open implementations
 test_support.import_module('multiprocessing.synchronize')
