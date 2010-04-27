@@ -40,7 +40,7 @@ class BlockingIOError(IOError):
         self.characters_written = characters_written
 
 
-def open(file, mode="r", buffering=None,
+def open(file, mode="r", buffering=-1,
          encoding=None, errors=None,
          newline=None, closefd=True):
 
@@ -155,7 +155,7 @@ def open(file, mode="r", buffering=None,
         raise TypeError("invalid file: %r" % file)
     if not isinstance(mode, basestring):
         raise TypeError("invalid mode: %r" % mode)
-    if buffering is not None and not isinstance(buffering, (int, long)):
+    if not isinstance(buffering, (int, long)):
         raise TypeError("invalid buffering: %r" % buffering)
     if encoding is not None and not isinstance(encoding, basestring):
         raise TypeError("invalid encoding: %r" % encoding)
@@ -192,8 +192,6 @@ def open(file, mode="r", buffering=None,
                  (appending and "a" or "") +
                  (updating and "+" or ""),
                  closefd)
-    if buffering is None:
-        buffering = -1
     line_buffering = False
     if buffering == 1 or buffering < 0 and raw.isatty():
         buffering = -1
