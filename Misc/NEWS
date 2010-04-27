@@ -109,6 +109,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #7449: Fix many tests to support Python compiled without thread support
+
 - Issue #8108: test_ftplib's non-blocking SSL server now has proper handling
   of SSL shutdowns.
 
