@@ -361,7 +361,7 @@ def DER_cert_to_PEM_cert(der_cert_bytes):
         # preferred because older API gets line-length wrong
         f = base64.standard_b64encode(der_cert_bytes)
         return (PEM_HEADER + '\n' +
-                textwrap.fill(f, 64) +
+                textwrap.fill(f, 64) + '\n' +
                 PEM_FOOTER + '\n')
     else:
         return (PEM_HEADER + '\n' +
