@@ -643,6 +643,9 @@ else:
             except ssl.SSLError as x:
                 if support.verbose:
                     sys.stdout.write("\nSSLError is %s\n" % x.args[1])
+            except socket.error as x:
+                if test_support.verbose:
+                    sys.stdout.write("\nsocket.error is %s\n" % x[1])
             else:
                 self.fail("Use of invalid cert should have failed!")
         finally:
