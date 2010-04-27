@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8549: Fix compiling the _ssl extension under AIX.  Patch by
+  Sridhar Ratnakumar.
+
 - Issue #2302: Fix a race condition in SocketServer.BaseServer.shutdown,
   where the method could block indefinitely if called just before the
   event loop started running.  This also fixes the occasional freezes
