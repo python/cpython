@@ -478,7 +478,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         tests = iter(selected)
 
     if use_mp:
-        from threading import Thread
+        try:
+            from threading import Thread
+        except ImportError:
+            print "Multiprocess option requires thread support"
+            sys.exit(2)
         from Queue import Queue
         from subprocess import Popen, PIPE
         debug_output_pat = re.compile(r"\[\d+ refs\]$")
