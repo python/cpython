@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8546: Reject None given as the buffering argument to _pyio.open.
+
 - Issue #8549: Fix compiling the _ssl extension under AIX.  Patch by
   Sridhar Ratnakumar.
 

@@ -61,7 +61,7 @@ Module Interface
    classes.  :func:`.open` uses the file's blksize (as obtained by
    :func:`os.stat`) if possible.
 
-.. function:: open(file, mode='r', buffering=None, encoding=None, errors=None, newline=None, closefd=True)
+.. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True)
 
    Open *file* and return a corresponding stream.  If the file cannot be opened,
    an :exc:`IOError` is raised.
