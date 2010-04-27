@@ -659,9 +659,9 @@ else:
             self.flag = None
             self.active = False
             self.RootedHTTPRequestHandler.root = os.path.split(CERTFILE)[0]
-            self.port = test_support.find_unused_port()
             self.server = self.HTTPSServer(
-                (HOST, self.port), self.RootedHTTPRequestHandler, certfile)
+                (HOST, 0), self.RootedHTTPRequestHandler, certfile)
+            self.port = self.server.server_port
             threading.Thread.__init__(self)
             self.daemon = True
 
@@ -807,28 +807,28 @@ else:
 
             listener_ready = threading.Event()
             listener_gone = threading.Event()
-            port = test_support.find_unused_port()
 
-            # `listener` runs in a thread.  It opens a socket listening on
-            # PORT, and sits in an accept() until the main thread connects.
-            # Then it rudely closes the socket, and sets Event `listener_gone`
-            # to let the main thread know the socket is gone.
+            s = socket.socket()
+            port = test_support.bind_port(s, HOST)
+
+            # `listener` runs in a thread.  It sits in an accept() until
+            # the main thread connects.  Then it rudely closes the socket,
+            # and sets Event `listener_gone` to let the main thread know
+            # the socket is gone.
             def listener():
-                s = socket.socket()
-                s.bind((HOST, port))
                 s.listen(5)
                 listener_ready.set()
                 s.accept()
-                s = None # reclaim the socket object, which also closes it
+                s.close()
                 listener_gone.set()
 
             def connector():
                 listener_ready.wait()
-                s = socket.socket()
-                s.connect((HOST, port))
+                c = socket.socket()
+                c.connect((HOST, port))
                 listener_gone.wait()
                 try:
-                    ssl_sock = ssl.wrap_socket(s)
+                    ssl_sock = ssl.wrap_socket(c)
                 except IOError:
                     pass
                 else:
@@ -837,8 +837,10 @@ else:
 
             t = threading.Thread(target=listener)
             t.start()
-            connector()
-            t.join()
+            try:
+                connector()
+            finally:
+                t.join()
 
         def testEcho (self):
 
@@ -1316,10 +1318,6 @@ def test_main(verbose=False):
     if (not os.path.exists(CERTFILE) or
         not os.path.exists(SVN_PYTHON_ORG_ROOT_CERT)):
         raise test_support.TestFailed("Can't read certificate files!")
-
-    TESTPORT = test_support.find_unused_port()
-    if not TESTPORT:
-        raise test_support.TestFailed("Can't find open port to test servers on!")
 
     tests = [BasicTests]
 
