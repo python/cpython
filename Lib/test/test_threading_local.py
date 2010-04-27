@@ -1,7 +1,7 @@
 import unittest
 from doctest import DocTestSuite
 from test import test_support
-import threading
+threading = test_support.import_module('threading')
 import weakref
 import gc
 

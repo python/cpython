@@ -9,12 +9,15 @@ import select
 import signal
 import socket
 import tempfile
-import threading
 import unittest
 import SocketServer
 
 import test.test_support
 from test.test_support import reap_children, reap_threads, verbose
+try:
+    import threading
+except ImportError:
+    threading = None
 
 test.test_support.requires("network")
 
@@ -119,6 +122,7 @@ class SocketServerTest(unittest.TestCase):
         self.assertEquals(server.server_address, server.socket.getsockname())
         return server
 
+    @unittest.skipUnless(threading, 'Threading required for this test.')
     @reap_threads
     def run_server(self, svrcls, hdlrbase, testfunc):
         server = self.make_server(self.pickaddr(svrcls.address_family),

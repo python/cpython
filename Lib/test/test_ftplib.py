@@ -4,7 +4,6 @@
 # environment
 
 import ftplib
-import threading
 import asyncore
 import asynchat
 import socket
@@ -19,6 +18,7 @@ except ImportError:
 from unittest import TestCase
 from test import test_support
 from test.test_support import HOST
+threading = test_support.import_module('threading')
 
 
 # the dummy data returned by server over the data channel when

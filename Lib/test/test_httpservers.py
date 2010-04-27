@@ -16,10 +16,10 @@ import shutil
 import urllib
 import httplib
 import tempfile
-import threading
 
 import unittest
 from test import test_support
+threading = test_support.import_module('threading')
 
 
 class NoLogRequestHandler:

@@ -1,11 +1,11 @@
 import socket
-import threading
 import telnetlib
 import time
 import Queue
 
 from unittest import TestCase
 from test import test_support
+threading = test_support.import_module('threading')
 
 HOST = test_support.HOST
 EOF_sigil = object()

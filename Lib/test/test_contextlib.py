@@ -3,9 +3,12 @@
 import sys
 import tempfile
 import unittest
-import threading
 from contextlib import *  # Tests __all__
 from test import test_support
+try:
+    import threading
+except ImportError:
+    threading = None
 
 
 class ContextManagerTestCase(unittest.TestCase):
@@ -264,6 +267,7 @@ class FileContextTestCase(unittest.TestCase):
         finally:
             test_support.unlink(tfn)
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class LockContextTestCase(unittest.TestCase):
 
     def boilerPlate(self, lock, locked):

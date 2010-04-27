@@ -26,7 +26,6 @@ import os
 import sys
 import time
 import array
-import threading
 import random
 import unittest
 import weakref
@@ -38,6 +37,10 @@ from test import test_support as support
 import codecs
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
+try:
+    import threading
+except ImportError:
+    threading = None
 
 __metaclass__ = type
 bytes = support.py3k_bytes
@@ -749,6 +752,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 
         self.assertEquals(b"abcdefg", bufio.read())
 
+    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_threads(self):
         try:
             # Write out many bytes with exactly the same number of 0's,
@@ -996,6 +1000,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         with self.open(support.TESTFN, "rb", buffering=0) as f:
             self.assertEqual(f.read(), b"abc")
 
+    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_threads(self):
         try:
             # Write out many bytes from many threads and test they were
@@ -2090,7 +2095,7 @@ class TextIOWrapperTest(unittest.TestCase):
         with self.open(support.TESTFN, "w", errors="replace") as f:
             self.assertEqual(f.errors, "replace")
 
-
+    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_threads_write(self):
         # Issue6750: concurrent writes could duplicate data
         event = threading.Event()
