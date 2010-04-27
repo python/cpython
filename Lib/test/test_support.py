@@ -18,6 +18,10 @@ import importlib
 import UserDict
 import re
 import time
+try:
+    import thread
+except ImportError:
+    thread = None
 
 __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "verbose", "use_resources", "max_memuse", "record_original_stdout",
@@ -44,7 +48,7 @@ class ResourceDenied(unittest.SkipTest):
     """Test skipped because it requested a disallowed resource.
 
     This is raised when a test calls requires() for a resource that
-    has not be enabled.  It is used to distinguish between expected
+    has not been enabled.  It is used to distinguish between expected
     and unexpected skips.
     """
 
@@ -1078,11 +1082,14 @@ def run_doctest(module, verbosity=None):
 # at the end of a test run.
 
 def threading_setup():
-    import thread
-    return thread._count(),
+    if thread:
+        return thread._count(),
+    else:
+        return 1,
 
 def threading_cleanup(nb_threads):
-    import thread
+    if not thread:
+        return
 
     _MAX_COUNT = 10
     for count in range(_MAX_COUNT):
@@ -1093,6 +1100,13 @@ def threading_cleanup(nb_threads):
     # XXX print a warning in case of failure?
 
 def reap_threads(func):
+    """Use this function when threads are being used.  This will
+    ensure that the threads are cleaned up even when the test fails.
+    If threading is unavailable this function does nothing.
+    """
+    if not thread:
+        return func
+
     @functools.wraps(func)
     def decorator(*args):
         key = threading_setup()
