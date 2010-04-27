@@ -2468,8 +2468,9 @@ def test_main():
         # Check the doctest cases defined here:
         test_support.run_doctest(test_doctest, verbosity=True)
 
-import trace, sys
+import sys
 def test_coverage(coverdir):
+    trace = test_support.import_module('trace')
     tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,],
                          trace=0, count=1)
     tracer.run('reload(doctest); test_main()')
