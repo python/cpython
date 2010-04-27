@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8549: Fix compiling the _ssl extension under AIX.  Patch by
+  Sridhar Ratnakumar.
+
 - Issue #6656: fix locale.format_string to handle escaped percents
   and mappings.
 

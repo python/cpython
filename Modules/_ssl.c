@@ -65,7 +65,7 @@ enum py_ssl_version {
 	PY_SSL_VERSION_SSL2,
 	PY_SSL_VERSION_SSL3,
 	PY_SSL_VERSION_SSL23,
-	PY_SSL_VERSION_TLS1,
+	PY_SSL_VERSION_TLS1
 };
 
 /* Include symbols from _socket module */
