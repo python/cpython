@@ -6,10 +6,14 @@ import sys
 import time
 import random
 import unittest
-import threading
 from test import test_support
+try:
+    import threading
+except ImportError:
+    threading = None
 import _testcapi
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class TestPendingCalls(unittest.TestCase):
 
     def pendingcalls_submit(self, l, n):
@@ -47,7 +51,6 @@ class TestPendingCalls(unittest.TestCase):
             print "(%i)"%(len(l),)
 
     def test_pendingcalls_threaded(self):
-
         #do every callback on a separate thread
         n = 32 #total callbacks
         threads = []
@@ -123,17 +126,10 @@ def test_main():
             raise test_support.TestFailed, \
                   "Couldn't find main thread correctly in the list"
 
-    try:
-        _testcapi._test_thread_state
-        have_thread_state = True
-    except AttributeError:
-        have_thread_state = False
-
-    if have_thread_state:
+    if threading:
         import thread
         import time
         TestThreadState()
-        import threading
         t=threading.Thread(target=TestThreadState)
         t.start()
         t.join()
