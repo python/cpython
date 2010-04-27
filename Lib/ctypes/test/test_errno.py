@@ -7,11 +7,11 @@ try:
 except ImportError:
     threading = None
 
-libc_name = find_library("c")
-
 class Test(unittest.TestCase):
-    @unittest.skipUnless(libc_name, 'Unable to find the C library')
     def test_open(self):
+        libc_name = find_library("c")
+        if libc_name is None:
+            raise unittest.SkipTest("Unable to find C library")
         libc = CDLL(libc_name, use_errno=True)
         if os.name == "nt":
             libc_open = libc._open
@@ -26,29 +26,25 @@ class Test(unittest.TestCase):
         self.assertEqual(set_errno(32), errno.ENOENT)
         self.assertEqual(get_errno(), 32)
 
-    @unittest.skipUnless(libc_name, 'Unable to find the C library')
-    @unittest.skipUnless(threading, 'This test requires threading.')
-    def test_open_thread(self):
-        self.assertEqual(set_errno(32), errno.ENOENT)
+        if threading:
+            def _worker():
+                set_errno(0)
 
-        def _worker():
+                libc = CDLL(libc_name, use_errno=False)
+                if os.name == "nt":
+                    libc_open = libc._open
+                else:
+                    libc_open = libc.open
+                libc_open.argtypes = c_char_p, c_int
+                self.assertEqual(libc_open("", 0), -1)
+                self.assertEqual(get_errno(), 0)
+
+            t = threading.Thread(target=_worker)
+            t.start()
+            t.join()
+
+            self.assertEqual(get_errno(), 32)
             set_errno(0)
-
-            libc = CDLL(libc_name, use_errno=False)
-            if os.name == "nt":
-                libc_open = libc._open
-            else:
-                libc_open = libc.open
-            libc_open.argtypes = c_char_p, c_int
-            self.assertEqual(libc_open("", 0), -1)
-            self.assertEqual(get_errno(), 0)
-
-        t = threading.Thread(target=_worker)
-        t.start()
-        t.join()
-
-        self.assertEqual(get_errno(), 32)
-        set_errno(0)
 
     @unittest.skipUnless(os.name == "nt", 'Test specific to Windows')
     def test_GetLastError(self):
