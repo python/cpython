@@ -684,6 +684,9 @@ else:
             except ssl.SSLError, x:
                 if test_support.verbose:
                     sys.stdout.write("\nSSLError is %s\n" % x[1])
+            except socket.error, x:
+                if test_support.verbose:
+                    sys.stdout.write("\nsocket.error is %s\n" % x[1])
             else:
                 self.fail("Use of invalid cert should have failed!")
         finally:
@@ -902,7 +905,7 @@ else:
                 sys.stdout.write("\n")
             try:
                 tryProtocolCombo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv2, True)
-            except (SSLError, socket.error), x:
+            except (ssl.SSLError, socket.error), x:
                 # this fails on some older versions of OpenSSL (0.9.7l, for instance)
                 if test_support.verbose:
                     sys.stdout.write(
