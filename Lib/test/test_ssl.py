@@ -116,6 +116,10 @@ class BasicTests(unittest.TestCase):
         p2 = ssl.DER_cert_to_PEM_cert(d1)
         d2 = ssl.PEM_cert_to_DER_cert(p2)
         self.assertEqual(d1, d2)
+        if not p2.startswith(ssl.PEM_HEADER + '\n'):
+            self.fail("DER-to-PEM didn't include correct header:\n%r\n" % p2)
+        if not p2.endswith('\n' + ssl.PEM_FOOTER + '\n'):
+            self.fail("DER-to-PEM didn't include correct footer:\n%r\n" % p2)
 
     def test_refcycle(self):
         # Issue #7943: an SSL object doesn't create reference cycles with
