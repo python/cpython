@@ -119,6 +119,9 @@ Build
 Tests
 -----
 
+- Issue #7027: regrtest.py keeps a reference to the encodings.ascii module as a
+  workaround to #7140 bug
+
 - Issue #3864: Skip three test_signal tests on freebsd6 because they fail
   if any thread was previously started, most likely due to a platform bug.
 
