@@ -13,8 +13,7 @@ except ImportError:
     from _dummy_thread import allocate_lock as Lock
 
 import io
-from io import __all__
-from io import SEEK_SET, SEEK_CUR, SEEK_END
+from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END)
 
 # open() uses st_blksize whenever we can
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
@@ -226,7 +225,7 @@ class DocDescriptor:
     """
     def __get__(self, obj, typ):
         return (
-            "open(file, mode='r', buffering=None, encoding=None, "
+            "open(file, mode='r', buffering=-1, encoding=None, "
                  "errors=None, newline=None, closefd=True)\n\n" +
             open.__doc__)
 
