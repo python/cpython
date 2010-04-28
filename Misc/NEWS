@@ -116,6 +116,8 @@ Library
 Build
 -----
 
+- Issue #3928: os.mknod() now available in Solaris, also.
+
 - Issue #6716: Quote -x arguments of compileall in MSI installer.
   Exclude 2to3 tests from compileall.
 
