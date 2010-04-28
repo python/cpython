@@ -324,6 +324,8 @@ Extension Modules
   http://www.jcea.es/programacion/pybsddb.htm#bsddb3-4.8.4.
   This update drops support for Berkeley DB 4.0, and adds support for 4.8.
 
+- Issue #3928: os.mknod() now available in Solaris, also.
+
 - Issue #8142: Update libffi to the 3.0.9 release.
 
 - Issue #8300: When passing a non-integer argument to struct.pack with any
