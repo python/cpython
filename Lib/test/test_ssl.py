@@ -342,14 +342,14 @@ else:
                             self.close()
                             return
                         elif (self.server.starttls_server and
-                              stripped == 'STARTTLS'):
+                              stripped == b'STARTTLS'):
                             if support.verbose and self.server.connectionchatty:
                                 sys.stdout.write(" server: read STARTTLS from client, sending OK...\n")
                             self.write(b"OK\n")
                             if not self.wrap_conn():
                                 return
                         elif (self.server.starttls_server and self.sslconn
-                              and stripped == 'ENDTLS'):
+                              and stripped == b'ENDTLS'):
                             if support.verbose and self.server.connectionchatty:
                                 sys.stdout.write(" server: read ENDTLS from client, sending OK...\n")
                             self.write(b"OK\n")
