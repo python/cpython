@@ -865,6 +865,77 @@ detail:
     >>> doctest.DocTestRunner(verbose=False).run(test)
     TestResults(failed=0, attempted=1)
 
+IGNORE_EXCEPTION_DETAIL also ignores difference in exception formatting
+between Python versions. For example, in Python 3.x, the module path of
+the exception is in the output, but this will fail under Python 2:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> from httplib import HTTPException
+    ...     >>> raise HTTPException('message')
+    ...     Traceback (most recent call last):
+    ...     httplib.HTTPException: message
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File ..., line 4, in f
+    Failed example:
+        raise HTTPException('message')
+    Expected:
+        Traceback (most recent call last):
+        httplib.HTTPException: message
+    Got:
+        Traceback (most recent call last):
+        ...
+        HTTPException: message
+    TestResults(failed=1, attempted=2)
+
+But in Python 2 the module path is not included, an therefore a test must look
+like the following test to succeed in Python 2. But that test will fail under
+Python 3.
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> from httplib import HTTPException
+    ...     >>> raise HTTPException('message')
+    ...     Traceback (most recent call last):
+    ...     HTTPException: message
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    TestResults(failed=0, attempted=2)
+
+However, with IGNORE_EXCEPTION_DETAIL, the module name of the exception
+(if any) will be ignored:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> from httplib import HTTPException
+    ...     >>> raise HTTPException('message') #doctest: +IGNORE_EXCEPTION_DETAIL
+    ...     Traceback (most recent call last):
+    ...     HTTPException: message
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    TestResults(failed=0, attempted=2)
+
+The module path will be completely ignored, so two different module paths will
+still pass if IGNORE_EXCEPTION_DETAIL is given. This is intentional, so it can
+be used when exceptions have changed module.
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> from httplib import HTTPException
+    ...     >>> raise HTTPException('message') #doctest: +IGNORE_EXCEPTION_DETAIL
+    ...     Traceback (most recent call last):
+    ...     foo.bar.HTTPException: message
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    TestResults(failed=0, attempted=2)
+
 But IGNORE_EXCEPTION_DETAIL does not allow a mismatch in the exception type:
 
     >>> def f(x):
