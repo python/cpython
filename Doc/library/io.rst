@@ -319,7 +319,9 @@ I/O Base Classes
    .. method:: truncate(size=None)
 
       Truncate the file to at most *size* bytes.  *size* defaults to the current
-      file position, as returned by :meth:`tell`.
+      file position, as returned by :meth:`tell`.  Note that the current file
+      position isn't changed; if you want to change it to the new end of
+      file, you have to :meth:`seek()` explicitly.
 
    .. method:: writable()
 
@@ -526,11 +528,6 @@ In many situations, buffered I/O streams will provide higher performance
    .. method:: read1()
 
       In :class:`BytesIO`, this is the same as :meth:`read`.
-
-   .. method:: truncate([size])
-
-      Truncate the buffer to at most *size* bytes.  *size* defaults to the
-      current stream position, as returned by :meth:`tell`.
 
 
 .. class:: BufferedReader(raw, buffer_size=DEFAULT_BUFFER_SIZE)
