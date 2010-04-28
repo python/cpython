@@ -1098,6 +1098,8 @@ Extension Modules
 Build
 -----
 
+- Issue #3928: os.mknod() now available in Solaris, also.
+
 - Issue #3326: Build Python without -fno-strict-aliasing when the gcc does not
   give false warnings.
 

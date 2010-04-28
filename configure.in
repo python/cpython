@@ -1314,8 +1314,16 @@ AC_MSG_RESULT($was_it_defined)
 
 # Check whether using makedev requires defining _OSF_SOURCE
 AC_MSG_CHECKING(for makedev)
-AC_LINK_IFELSE([
-  AC_LANG_PROGRAM([[#include <sys/types.h> ]], [[ makedev(0, 0) ]])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#if defined(MAJOR_IN_MKDEV)
+#include <sys/mkdev.h>
+#elif defined(MAJOR_IN_SYSMACROS)
+#include <sys/sysmacros.h>
+#else
+#include <sys/types.h>
+#endif
+]], [[
+  makedev(0, 0) ]])
 ],[ac_cv_has_makedev=yes],[ac_cv_has_makedev=no])
 if test "$ac_cv_has_makedev" = "no"; then
     # we didn't link, try if _OSF_SOURCE will allow us to link
