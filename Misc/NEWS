@@ -114,6 +114,8 @@ Library
 Build
 -----
 
+- Issue #3928: os.mknod() now available in Solaris, also.
+
 - Issue #8175: --with-universal-archs=all works correctly on OSX 10.5
 
 - Issue #6716: Quote -x arguments of compileall in MSI installer.
