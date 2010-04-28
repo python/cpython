@@ -224,6 +224,23 @@ class BasicTest(TestCase):
             finally:
                 resp.close()
 
+    def test_chunked_head(self):
+        chunked_start = (
+            'HTTP/1.1 200 OK\r\n'
+            'Transfer-Encoding: chunked\r\n\r\n'
+            'a\r\n'
+            'hello world\r\n'
+            '1\r\n'
+            'd\r\n'
+        )
+        sock = FakeSocket(chunked_start + '0\r\n')
+        resp = client.HTTPResponse(sock, method="HEAD")
+        resp.begin()
+        self.assertEquals(resp.read(), b'')
+        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.reason, 'OK')
+        resp.close()
+
     def test_negative_content_length(self):
         sock = FakeSocket(
             'HTTP/1.1 200 OK\r\nContent-Length: -1\r\n\r\nHello\r\n')
