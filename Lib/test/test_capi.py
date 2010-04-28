@@ -6,8 +6,11 @@ import sys
 import time
 import random
 import unittest
-import threading
 from test import support
+try:
+    import threading
+except ImportError:
+    threading = None
 import _testcapi
 
 
@@ -33,6 +36,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(AttributeError, setattr, inst.testfunction, "attribute", "test")
 
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class TestPendingCalls(unittest.TestCase):
 
     def pendingcalls_submit(self, l, n):
@@ -148,17 +152,10 @@ def test_main():
             raise support.TestFailed(
                         "Couldn't find main thread correctly in the list")
 
-    try:
-        _testcapi._test_thread_state
-        have_thread_state = True
-    except AttributeError:
-        have_thread_state = False
-
-    if have_thread_state:
+    if threading:
         import _thread
         import time
         TestThreadState()
-        import threading
         t = threading.Thread(target=TestThreadState)
         t.start()
         t.join()

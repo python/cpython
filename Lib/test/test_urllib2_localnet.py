@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import email
-import threading
 import urllib.parse
 import urllib.request
 import http.server
 import unittest
 import hashlib
 from test import support
+threading = support.import_module('threading')
 
 # Loopback http server infrastructure
 

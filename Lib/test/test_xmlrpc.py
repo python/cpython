@@ -5,7 +5,6 @@ import time
 import unittest
 import xmlrpc.client as xmlrpclib
 import xmlrpc.server
-import threading
 import http.client
 import socket
 import os
@@ -13,6 +12,11 @@ import re
 import io
 import contextlib
 from test import support
+
+try:
+    import threading
+except ImportError:
+    threading = None
 
 alist = [{'astring': 'foo@bar.baz.spam',
           'afloat': 7283.43,
@@ -399,10 +403,12 @@ def make_request_and_skipIf(condition, reason):
         return make_request_and_skip
     return decorator
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class BaseServerTestCase(unittest.TestCase):
     requestHandler = None
     request_count = 1
     threadFunc = staticmethod(http_server)
+
     def setUp(self):
         # enable traceback reporting
         xmlrpc.server.SimpleXMLRPCServer._send_traceback_header = True
@@ -678,6 +684,9 @@ class GzipServerTestCase(BaseServerTestCase):
                 connection.putheader("Content-Encoding", "gzip")
             return xmlrpclib.Transport.send_content(self, connection, body)
 
+    def setUp(self):
+        BaseServerTestCase.setUp(self)
+
     def test_gzip_request(self):
         t = self.Transport()
         t.encode_threshold = None
@@ -714,13 +723,23 @@ class GzipServerTestCase(BaseServerTestCase):
 
 #Test special attributes of the ServerProxy object
 class ServerProxyTestCase(unittest.TestCase):
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        if threading:
+            self.url = URL
+        else:
+            # Without threading, http_server() and http_multi_server() will not
+            # be executed and URL is still equal to None. 'http://' is a just
+            # enough to choose the scheme (HTTP)
+            self.url = 'http://'
+
     def test_close(self):
-        p = xmlrpclib.ServerProxy(URL)
+        p = xmlrpclib.ServerProxy(self.url)
         self.assertEqual(p('close')(), None)
 
     def test_transport(self):
         t = xmlrpclib.Transport()
-        p = xmlrpclib.ServerProxy(URL, transport=t)
+        p = xmlrpclib.ServerProxy(self.url, transport=t)
         self.assertEqual(p('transport'), t)
 
 # This is a contrived way to make a failure occur on the server side
@@ -733,6 +752,7 @@ class FailingMessageClass(http.client.HTTPMessage):
         return super().get(key, failobj)
 
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class FailingServerTestCase(unittest.TestCase):
     def setUp(self):
         self.evt = threading.Event()

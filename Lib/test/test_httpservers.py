@@ -15,10 +15,10 @@ import shutil
 import urllib.parse
 import http.client
 import tempfile
-import threading
 
 import unittest
 from test import support
+threading = support.import_module('threading')
 
 class NoLogRequestHandler:
     def log_message(self, *args):

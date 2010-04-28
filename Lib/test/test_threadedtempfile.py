@@ -16,11 +16,10 @@ provoking a 2.0 failure under Linux.
 NUM_THREADS = 20
 FILES_PER_THREAD = 50
 
-import _thread as thread # If this fails, we can't test this module
-import threading
 import tempfile
 
-from test.support import threading_setup, threading_cleanup, run_unittest
+from test.support import threading_setup, threading_cleanup, run_unittest, import_module
+threading = import_module('threading')
 import unittest
 import io
 from traceback import print_exc

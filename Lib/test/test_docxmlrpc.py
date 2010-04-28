@@ -2,7 +2,7 @@ from xmlrpc.server import DocXMLRPCServer
 import http.client
 import sys
 from test import support
-import threading
+threading = support.import_module('threading')
 import time
 import socket
 import unittest

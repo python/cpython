@@ -11,6 +11,10 @@ import operator
 # strings to intern in test_intern()
 numruns = 0
 
+try:
+    import threading
+except ImportError:
+    threading = None
 
 class SysModuleTest(unittest.TestCase):
 
@@ -158,6 +162,7 @@ class SysModuleTest(unittest.TestCase):
                 sys.setcheckinterval(n)
                 self.assertEquals(sys.getcheckinterval(), n)
 
+    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_switchinterval(self):
         self.assertRaises(TypeError, sys.setswitchinterval)
         self.assertRaises(TypeError, sys.setswitchinterval, "a")

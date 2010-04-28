@@ -5,8 +5,8 @@ from test.support import verbose
 import random
 import re
 import sys
-import threading
-import _thread
+_thread = test.support.import_module('_thread')
+threading = test.support.import_module('threading')
 import time
 import unittest
 import weakref

@@ -2341,8 +2341,10 @@ def test_main():
     from test import test_doctest
     support.run_doctest(test_doctest, verbosity=True)
 
-import trace, sys, re, io
+import sys, re, io
+
 def test_coverage(coverdir):
+    trace = support.import_module('trace')
     tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,],
                          trace=0, count=1)
     tracer.run('test_main()')

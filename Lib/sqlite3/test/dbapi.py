@@ -22,8 +22,11 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import unittest
-import threading
 import sqlite3 as sqlite
+try:
+    import threading
+except ImportError:
+    threading = None
 
 class ModuleTests(unittest.TestCase):
     def CheckAPILevel(self):
@@ -460,6 +463,7 @@ class CursorTests(unittest.TestCase):
         except TypeError:
             pass
 
+@unittest.skipUnless(threading, 'This test requires threading.')
 class ThreadTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
