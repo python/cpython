@@ -118,6 +118,8 @@ source.
 
    .. versionchanged:: 2.7
       Supply the package name to run a ``__main__`` submodule.
+      sys.argv[0] is now set to ``"-m"`` while searching for the module
+      (it was previously incorrectly set to ``"-c"``)
 
 
 .. describe:: -
