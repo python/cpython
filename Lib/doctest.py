@@ -1282,9 +1282,9 @@ class DocTestRunner:
 
                 # Another chance if they didn't care about the detail.
                 elif self.optionflags & IGNORE_EXCEPTION_DETAIL:
-                    m1 = re.match(r'[^:]*:', example.exc_msg)
-                    m2 = re.match(r'[^:]*:', exc_msg)
-                    if m1 and m2 and check(m1.group(0), m2.group(0),
+                    m1 = re.match(r'(?:[^:]*\.)?([^:]*:)', example.exc_msg)
+                    m2 = re.match(r'(?:[^:]*\.)?([^:]*:)', exc_msg)
+                    if m1 and m2 and check(m1.group(1), m2.group(1),
                                            self.optionflags):
                         outcome = SUCCESS
 

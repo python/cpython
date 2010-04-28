@@ -338,7 +338,7 @@ The fine print:
   blank line, put ``<BLANKLINE>`` in your doctest example each place a blank line
   is expected.
 
-  .. versionchanged:: 2.4
+  .. versionadded:: 2.4
      ``<BLANKLINE>`` was added; there was no way to use expected output containing
      empty lines in previous versions.
 
@@ -438,6 +438,9 @@ multi-line detail::
 The last three lines (starting with :exc:`ValueError`) are compared against the
 exception's type and detail, and the rest are ignored.
 
+.. versionchanged:: 2.4
+   Previous versions were unable to handle multi-line exception details.
+
 Best practice is to omit the traceback stack, unless it adds significant
 documentation value to the example.  So the last example is probably better as::
 
@@ -469,8 +472,9 @@ Some details you should read once, but won't need to remember:
   with an alphanumeric is taken to be the start of the exception detail.  Of
   course this does the right thing for genuine tracebacks.
 
-* When the :const:`IGNORE_EXCEPTION_DETAIL` doctest option is is specified,
-  everything following the leftmost colon is ignored.
+* When the :const:`IGNORE_EXCEPTION_DETAIL` doctest option is specified,
+  everything following the leftmost colon and any module information in the
+  exception name is ignored.
 
 * The interactive shell omits the traceback header line for some
   :exc:`SyntaxError`\ s.  But doctest uses the traceback header line to
@@ -497,10 +501,6 @@ Some details you should read once, but won't need to remember:
          1 1
          ^
      SyntaxError: invalid syntax
-
-.. versionchanged:: 2.4
-   The ability to handle a multi-line exception detail, and the
-   :const:`IGNORE_EXCEPTION_DETAIL` doctest option, were added.
 
 
 .. _doctest-options:
@@ -564,20 +564,38 @@ doctest decides whether actual output matches an example's expected output:
    exception raised is ``ValueError: 3*14``, but will fail, e.g., if
    :exc:`TypeError` is raised.
 
-   Note that a similar effect can be obtained using :const:`ELLIPSIS`, and
-   :const:`IGNORE_EXCEPTION_DETAIL` may go away when Python releases prior to 2.4
-   become uninteresting.  Until then, :const:`IGNORE_EXCEPTION_DETAIL` is the only
-   clear way to write a doctest that doesn't care about the exception detail yet
-   continues to pass under Python releases prior to 2.4 (doctest directives appear
-   to be comments to them).  For example, ::
+   It will also ignore the module name used in Python 3 doctest reports. Hence
+   both these variations will work regardless of whether the test is run under
+   Python 2.7 or Python 3.2 (or later versions):
+
+      >>> raise ValueError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
+      Traceback (most recent call last):
+      ValueError: message
+
+      >>> raise ValueError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
+      Traceback (most recent call last):
+      builtin.ValueError: message
+
+   Note that :const:`ELLIPSIS` can also be used to ignore the
+   details of the exception message, but such a test may still fail based
+   on whether or not the module details are printed as part of the
+   exception name. Using :const:`IGNORE_EXCEPTION_DETAIL` and the details
+   from Python 2.3 is also the only clear way to write a doctest that doesn't
+   care about the exception detail yet continues to pass under Python 2.3 or
+   earlier (those releases do not support doctest directives and ignore them
+   as irrelevant comments). For example, ::
 
       >>> (1, 2)[3] = 'moo' #doctest: +IGNORE_EXCEPTION_DETAIL
       Traceback (most recent call last):
         File "<stdin>", line 1, in ?
       TypeError: object doesn't support item assignment
 
-   passes under Python 2.4 and Python 2.3.  The detail changed in 2.4, to say "does
-   not" instead of "doesn't".
+   passes under Python 2.3 and later Python versions, even though the detail
+   changed in Python 2.4 to say "does not" instead of "doesn't".
+
+   .. versionchanged:: 2.7
+      :const:`IGNORE_EXCEPTION_DETAIL` now also ignores any information
+      relating to the module containing the exception under test
 
 
 .. data:: SKIP
@@ -589,6 +607,8 @@ doctest decides whether actual output matches an example's expected output:
    depend on resources which would be unavailable to the test driver.
 
    The SKIP flag can also be used for temporarily "commenting out" examples.
+
+.. versionadded:: 2.5
 
 
 .. data:: COMPARISON_FLAGS
@@ -692,17 +712,13 @@ usually the only meaningful choice.  However, option flags can also be passed to
 functions that run doctests, establishing different defaults.  In such cases,
 disabling an option via ``-`` in a directive can be useful.
 
-.. versionchanged:: 2.4
-   Constants :const:`DONT_ACCEPT_BLANKLINE`, :const:`NORMALIZE_WHITESPACE`,
+.. versionadded:: 2.4
+   Doctest directives and the associated constants
+   :const:`DONT_ACCEPT_BLANKLINE`, :const:`NORMALIZE_WHITESPACE`,
    :const:`ELLIPSIS`, :const:`IGNORE_EXCEPTION_DETAIL`, :const:`REPORT_UDIFF`,
    :const:`REPORT_CDIFF`, :const:`REPORT_NDIFF`,
    :const:`REPORT_ONLY_FIRST_FAILURE`, :const:`COMPARISON_FLAGS` and
-   :const:`REPORTING_FLAGS` were added; by default ``<BLANKLINE>`` in expected
-   output matches an empty line in actual output; and doctest directives were
-   added.
-
-.. versionchanged:: 2.5
-   Constant :const:`SKIP` was added.
+   :const:`REPORTING_FLAGS` were added.
 
 There's also a way to register new option flag names, although this isn't useful
 unless you intend to extend :mod:`doctest` internals via subclassing:
