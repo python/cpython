@@ -288,11 +288,73 @@ Archives operations
    .. versionadded:: 3.2
 
 
-.. function::  unregister_archive_format(name)
+.. function:: unregister_archive_format(name)
 
    Remove the archive format *name* from the list of supported formats.
 
    .. versionadded:: 3.2
+
+
+.. function:: unpack_archive(filename[, extract_dir[, format]])
+
+   Unpack an archive. *filename* is the full path of the archive.
+
+   *extract_dir* is the name of the target directory where the archive is
+   unpacked. If not provided, the current working directory is used.
+
+   *format* is the archive format: one of "zip", "tar", or "gztar". Or any
+   other format registered with :func:`register_unpack_format`. If not
+   provided, :func:`unpack_archive` will use the archive file name extension
+   and see if an unpacker was registered for that extension. In case none is
+   found, a :exc:`ValueError` is raised.
+
+   .. versionadded:: 3.2
+
+
+.. function:: register_unpack_format(name, extensions, function[, extra_args[,description]])
+
+   Registers an unpack format. *name* is the name of the format and
+   *extensions* is a list of extensions corresponding to the format, like
+   ``.zip`` for Zip files.
+
+   *function* is the callable that will be used to unpack archives. The
+   callable will receive the path of the archive, followed by the directory
+   the archive must be extracted to.
+
+   When provided, *extra_args* is a sequence of ``(name, value)`` tuples that
+   will be passed as keywords arguments to the callable.
+
+   *description* can be provided to describe the format, and will be returned
+   by the :func:`get_unpack_formats` function.
+
+   .. versionadded:: 3.2
+
+
+.. function:: unregister_unpack_format(name)
+
+   Unregister an unpack format. *name* is the name of the format.
+
+   .. versionadded:: 3.2
+
+
+.. function:: get_unpack_formats()
+
+   Return a list of all registered formats for unpacking.
+   Each element of the returned sequence is a tuple
+   ``(name, extensions, description)``.
+
+   By default :mod:`shutil` provides these formats:
+
+   - *gztar*: gzip'ed tar-file
+   - *bztar*: bzip2'ed tar-file
+   - *tar*: uncompressed tar file
+   - *zip*: ZIP file
+
+   You can register new formats or provide your own unpacker for any existing
+   formats, by using :func:`register_unpack_format`.
+
+   .. versionadded:: 3.2
+
 
 
 Archiving example

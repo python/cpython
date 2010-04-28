@@ -13,7 +13,9 @@ from os.path import splitdrive
 from distutils.spawn import find_executable, spawn
 from shutil import (_make_tarball, _make_zipfile, make_archive,
                     register_archive_format, unregister_archive_format,
-                    get_archive_formats, Error)
+                    get_archive_formats, Error, unpack_archive,
+                    register_unpack_format, RegistryError,
+                    unregister_unpack_format, get_unpack_formats)
 import tarfile
 import warnings
 
@@ -538,6 +540,7 @@ class TestShutil(unittest.TestCase):
                            owner='kjhkjhkjg', group='oihohoh')
         self.assertTrue(os.path.exists(res))
 
+
     @unittest.skipUnless(zlib, "Requires zlib")
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
     def test_tarfile_root_owner(self):
@@ -594,6 +597,58 @@ class TestShutil(unittest.TestCase):
         unregister_archive_format('xxx')
         formats = [name for name, params in get_archive_formats()]
         self.assertNotIn('xxx', formats)
+
+    def _compare_dirs(self, dir1, dir2):
+        # check that dir1 and dir2 are equivalent,
+        # return the diff
+        diff = []
+        for root, dirs, files in os.walk(dir1):
+            for file_ in files:
+                path = os.path.join(root, file_)
+                target_path = os.path.join(dir2, os.path.split(path)[-1])
+                if not os.path.exists(target_path):
+                    diff.append(file_)
+        return diff
+
+    @unittest.skipUnless(zlib, "Requires zlib")
+    def test_unpack_archive(self):
+
+        for format in ('tar', 'gztar', 'bztar', 'zip'):
+            tmpdir = self.mkdtemp()
+            base_dir, root_dir, base_name =  self._create_files()
+            tmpdir2 = self.mkdtemp()
+            filename = make_archive(base_name, format, root_dir, base_dir)
+
+            # let's try to unpack it now
+            unpack_archive(filename, tmpdir2)
+            diff = self._compare_dirs(tmpdir, tmpdir2)
+            self.assertEquals(diff, [])
+
+    def test_unpack_registery(self):
+
+        formats = get_unpack_formats()
+
+        def _boo(filename, extract_dir, extra):
+            self.assertEquals(extra, 1)
+            self.assertEquals(filename, 'stuff.boo')
+            self.assertEquals(extract_dir, 'xx')
+
+        register_unpack_format('Boo', ['.boo', '.b2'], _boo, [('extra', 1)])
+        unpack_archive('stuff.boo', 'xx')
+
+        # trying to register a .boo unpacker again
+        self.assertRaises(RegistryError, register_unpack_format, 'Boo2',
+                          ['.boo'], _boo)
+
+        # should work now
+        unregister_unpack_format('Boo')
+        register_unpack_format('Boo2', ['.boo'], _boo)
+        self.assertIn(('Boo2', ['.boo'], ''), get_unpack_formats())
+        self.assertNotIn(('Boo', ['.boo'], ''), get_unpack_formats())
+
+        # let's leave a clean state
+        unregister_unpack_format('Boo2')
+        self.assertEquals(get_unpack_formats(), formats)
 
 
 class TestMove(unittest.TestCase):
