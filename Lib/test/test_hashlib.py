@@ -311,10 +311,9 @@ class HashLibTestCase(unittest.TestCase):
         m = hashlib.md5(b'x' * gil_minsize)
         self.assertEquals(m.hexdigest(), 'cfb767f225d58469c5de3632a8803958')
 
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
     def test_threaded_hashing(self):
-        if not threading:
-            raise unittest.SkipTest('No threading module.')
-
         # Updating the same hash object from several threads at once
         # using data chunk sizes containing the same byte sequences.
         #
@@ -349,7 +348,6 @@ class HashLibTestCase(unittest.TestCase):
 
         self.assertEqual(expected_hash, hasher.hexdigest())
 
-@support.reap_threads
 def test_main():
     support.run_unittest(HashLibTestCase)
 

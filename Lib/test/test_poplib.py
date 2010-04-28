@@ -4,7 +4,6 @@
 # a real test suite
 
 import poplib
-import threading
 import asyncore
 import asynchat
 import socket
@@ -14,6 +13,7 @@ import errno
 
 from unittest import TestCase
 from test import support as test_support
+threading = test_support.import_module('threading')
 
 HOST = test_support.HOST
 PORT = 0

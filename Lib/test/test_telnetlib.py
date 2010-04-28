@@ -1,12 +1,12 @@
 import socket
 import select
-import threading
 import telnetlib
 import time
 import contextlib
 
 from unittest import TestCase
 from test import support
+threading = support.import_module('threading')
 
 HOST = support.HOST
 

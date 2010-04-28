@@ -1183,6 +1183,9 @@ Documentation
 Tests
 -----
 
+- Issue #7449: Fix many tests to support Python compiled without thread
+  support. Patches written by Jerry Seutter.
+
 - Issue #8108: test_ftplib's non-blocking SSL server now has proper handling
   of SSL shutdowns.
 

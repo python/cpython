@@ -19,6 +19,10 @@ import collections
 import re
 import imp
 import time
+try:
+    import _thread
+except ImportError:
+    _thread = None
 
 __all__ = [
     "Error", "TestFailed", "ResourceDenied", "import_module",
@@ -1111,12 +1115,14 @@ def modules_cleanup(oldmodules):
 # at the end of a test run.
 
 def threading_setup():
-    import _thread
-    return _thread._count(),
+    if _thread:
+        return _thread._count(),
+    else:
+        return 1,
 
 def threading_cleanup(nb_threads):
-    import _thread
-
+    if not _thread:
+        return
     _MAX_COUNT = 10
     for count in range(_MAX_COUNT):
         n = _thread._count()
@@ -1126,6 +1132,13 @@ def threading_cleanup(nb_threads):
     # XXX print a warning in case of failure?
 
 def reap_threads(func):
+    """Use this function when threads are being used.  This will
+    ensure that the threads are cleaned up even when the test fails.
+    If threading is unavailable this function does nothing.
+    """
+    if not _thread:
+        return func
+
     @functools.wraps(func)
     def decorator(*args):
         key = threading_setup()

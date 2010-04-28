@@ -7,11 +7,14 @@ from io import BytesIO
 import os
 import subprocess
 import sys
-import threading
+
+try:
+    import threading
+except ImportError:
+    threading = None
 
 # Skip tests if the bz2 module doesn't exist.
 bz2 = support.import_module('bz2')
-
 from bz2 import BZ2File, BZ2Compressor, BZ2Decompressor
 
 has_cmdline_bunzip2 = sys.platform not in ("win32", "os2emx")
@@ -283,6 +286,7 @@ class BZ2FileTest(BaseTest):
         else:
             self.fail("1/0 didn't raise an exception")
 
+    @unittest.skipUnless(threading, 'Threading required for this test.')
     def testThreading(self):
         # Using a BZ2File from several threads doesn't deadlock (issue #7205).
         data = b"1" * 2**20
