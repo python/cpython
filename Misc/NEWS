@@ -339,6 +339,8 @@ C-API
 Library
 -------
 
+- Issue #8295: Added shutil.unpack_archive.
+
 - Issue #6312: Fixed http HEAD request when the transfer encoding is chunked.
   It should correctly return an empty response now.
 
