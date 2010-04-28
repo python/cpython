@@ -29,7 +29,8 @@ Library
 
 - Issue #7490: to facilitate sharing of doctests between 2.x and 3.x test
   suites, the IGNORE_EXCEPTION_DETAIL directive now also ignores the module
-  location of the raised exception.
+  location of the raised exception. Based on initial patch by Lennart
+  Regebro.
 
 - Issue #8086: In :func:`ssl.DER_cert_to_PEM_cert()`, fix missing newline
   before the certificate footer.  Patch by Kyle VanderBeek.
