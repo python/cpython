@@ -514,6 +514,9 @@ class HTTPResponse:
         if self.fp is None:
             return ''
 
+        if self._method == 'HEAD':
+            return ''
+
         if self.chunked:
             return self._read_chunked(amt)
 
