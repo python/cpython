@@ -580,16 +580,14 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 			}
 	}
 	if (badchar) {
-		char buf[500];
 		/* Need to add 1 to the line number, since this line
 		   has not been counted, yet.  */
-		sprintf(buf,
+		PyErr_Format(PyExc_SyntaxError,
 			"Non-UTF-8 code starting with '\\x%.2x' "
 			"in file %.200s on line %i, "
 			"but no encoding declared; "
 			"see http://python.org/dev/peps/pep-0263/ for details",
 			badchar, tok->filename, tok->lineno + 1);
-		PyErr_SetString(PyExc_SyntaxError, buf);
 		return error_ret(tok);
 	}
 #endif
