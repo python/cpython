@@ -703,6 +703,24 @@ class StreamWriteTest(WriteTestBase):
         self.assert_(data.count("\0") == tarfile.RECORDSIZE,
                          "incorrect zero padding")
 
+    def test_file_mode(self):
+        # Test for issue #8464: Create files with correct
+        # permissions.
+        if sys.platform == "win32" or not hasattr(os, "umask"):
+            return
+
+        if os.path.exists(tmpname):
+            os.remove(tmpname)
+
+        original_umask = os.umask(0022)
+        try:
+            tar = tarfile.open(tmpname, self.mode)
+            tar.close()
+            mode = os.stat(tmpname).st_mode & 0777
+            self.assertEqual(mode, 0644, "wrong file permissions")
+        finally:
+            os.umask(original_umask)
+
 
 class GNUWriteTest(unittest.TestCase):
     # This testcase checks for correct creation of GNU Longname
