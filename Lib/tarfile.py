@@ -359,7 +359,7 @@ class _LowLevelFile:
         }[mode]
         if hasattr(os, "O_BINARY"):
             mode |= os.O_BINARY
-        self.fd = os.open(name, mode)
+        self.fd = os.open(name, mode, 0o666)
 
     def close(self):
         os.close(self.fd)
