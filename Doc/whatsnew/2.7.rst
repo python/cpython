@@ -12,6 +12,8 @@
 ..  unittest test discovery
 ..  hyperlink all the methods & functions.
 
+.. T_STRING_INPLACE not described in main docs
+
 .. $Id$
    Rules for maintenance:
 
@@ -654,6 +656,11 @@ across operating systems and shells, so it may be different for you.)
 
   export PYTHONWARNINGS=all,error:::Cookie:0
 
+When running a module using the interpreter's :option:`-m` switch,
+``sys.argv[0]`` will now be set to the string ``'-m'`` while the
+module is being imported.  This will let modules determine when
+they're being executed using :option:`-m`.  (Suggested by Michael
+Foord; implemented by Nick Coghlan; :issue:`8202`.)
 
 .. ======================================================================
 
@@ -909,11 +916,14 @@ changes, or look through the Subversion logs for all the details.
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
 * The :mod:`difflib` module now produces output that is more
-  compatible with modern :command:`diff`/:command:`patch` tools thanks
-  to two changes: 1) the header giving the filename now uses a tab
-  character instead of spaces as a separator, and 2) the date format
-  used is now ISO-8601 style, ``2005-01-26 23:30:50``.  (Fixed by
-  Anatoly Techtonik; :issue:`7585`.)
+  compatible with modern :command:`diff`/:command:`patch` tools
+  through one small change, using a tab character instead of spaces as
+  a separator in the header giving the filename.  (Fixed by Anatoly
+  Techtonik; :issue:`7585`.)
+
+* The :mod:`doctest` module's :const:`IGNORE_EXCEPTION_DETAIL` flag
+  will now ignore the name of the module containing the exception
+  being tested.  (Patch by Lennart Regebro; :issue:`7490`.)
 
 * The :class:`~fractions.Fraction` class now accepts a single float or
   :class:`~decimal.Decimal` instance, or two rational numbers, as
@@ -1151,6 +1161,11 @@ changes, or look through the Subversion logs for all the details.
   code being returned from :meth:`recv` operations that trigger an SSL
   renegotiation (fix by Antoine Pitrou; :issue:`8222`).
 
+  Another changes makes the extension load all of OpenSSL's ciphers
+  and digest algorithms.  Some SSL certificates couldn't be verified,
+  reporting an 'unknown algorithm' error.  (Reported by Beda Kosata, and
+  fixed by Antoine Pitrou; :issue:`8484`.)
+
   The version of OpenSSL being used is now available as the module
   attributes :attr:`OPENSSL_VERSION` (a string),
   :attr:`OPENSSL_VERSION_INFO` (a 5-tuple), and
@@ -1215,6 +1230,10 @@ changes, or look through the Subversion logs for all the details.
   returns true for variables that are explicitly declared to be global,
   false for ones that are implicitly global.
   (Contributed by Jeremy Hylton.)
+
+* The :mod:`syslog` module will now use the value of ``sys.argv[0]`` as the
+  identifier instead of the previous default value of ``'python'``.
+  (Changed by Sean Reifschneider; :issue:`8451`.)
 
 * The ``sys.version_info`` value is now a named tuple, with attributes
   named :attr:`major`, :attr:`minor`, :attr:`micro`,
@@ -1623,6 +1642,12 @@ Changes to Python's build process and to the C API include:
   being raised when an interpreter shuts down.
   (Patch by Adam Olsen; :issue:`1722344`.)
 
+* When using the :ctype:`PyMemberDef` structure to define attributes
+  of a type, Python will no longer let you try to delete or set a
+  :const:`T_STRING_INPLACE` attribute.
+
+  .. rev 79644
+
 * Global symbols defined by the :mod:`ctypes` module are now prefixed
   with ``Py``, or with ``_ctypes``.  (Implemented by Thomas
   Heller; :issue:`3102`.)
@@ -1671,6 +1696,14 @@ Port-Specific Changes: Windows
   :data:`VC_ASSEMBLY_PUBLICKEYTOKEN`,
   and :data:`LIBRARIES_ASSEMBLY_NAME_PREFIX`.
   (Contributed by David Cournapeau; :issue:`4365`.)
+
+* The :mod:`_winreg` module for accessing the registry now implements
+  the :func:`CreateKeyEx` and :func:`DeleteKeyEx` functions, extended
+  versions of previously-supported functions that take several extra
+  arguments.  The :func:`DisableReflectionKey`,
+  :func:`EnableReflectionKey`, and :func:`QueryReflectionKey` were also
+  tested and documented.
+  (Implemented by Brian Curtin: :issue:`7347`.)
 
 * The new :cfunc:`_beginthreadex` API is used to start threads, and
   the native thread-local storage functions are now used.
@@ -1747,14 +1780,8 @@ Porting to Python 2.7
 This section lists previously described changes and other bugfixes
 that may require changes to your code:
 
-* When using :class:`Decimal` instances with a string's
-  :meth:`format` method, the default alignment was previously
-  left-alignment.  This has been changed to right-alignment, which might
-  change the output of your programs.
-  (Changed by Mark Dickinson; :issue:`6857`.)
-
-  Another :meth:`format`-related change: the default precision used
-  for floating-point and complex numbers was changed from 6 decimal
+* The string :meth:`format` method changed the default precision used
+  for floating-point and complex numbers from 6 decimal
   places to 12, which matches the precision used by :func:`str`.
   (Changed by Eric Smith; :issue:`5920`.)
 
@@ -1768,13 +1795,24 @@ that may require changes to your code:
   nothing when a negative length is requested, as other file-like
   objects do.  (:issue:`7348`).
 
+
 In the standard library:
+
+* When using :class:`Decimal` instances with a string's
+  :meth:`format` method, the default alignment was previously
+  left-alignment.  This has been changed to right-alignment, which might
+  change the output of your programs.
+  (Changed by Mark Dickinson; :issue:`6857`.)
 
 * The ElementTree library, :mod:`xml.etree`, no longer escapes
   ampersands and angle brackets when outputting an XML processing
   instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
   or comment (which looks like `<!-- comment -->`).
   (Patch by Neil Muller; :issue:`2746`.)
+
+* The :mod:`syslog` module will now use the value of ``sys.argv[0]`` as the
+  identifier instead of the previous default value of ``'python'``.
+  (Changed by Sean Reifschneider; :issue:`8451`.)
 
 For C extensions:
 
