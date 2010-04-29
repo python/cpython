@@ -1326,6 +1326,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 			char *straddr;
 
 			addr = (struct sockaddr_l2 *)addr_ret;
+			memset(addr, 0, sizeof(struct sockaddr_l2));
 			_BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
 			if (!PyArg_ParseTuple(args, "si", &straddr,
 					      &_BT_L2_MEMB(addr, psm))) {
