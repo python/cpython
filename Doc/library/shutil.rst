@@ -238,7 +238,7 @@ Archives operations
 
    *base_name* is the name of the file to create, including the path, minus
    any format-specific extension. *format* is the archive format: one of
-   "zip", "tar", "bztar" or "gztar".
+   "zip", "tar", "bztar" (if the :mod:`bz2` module is available) or "gztar".
 
    *root_dir* is a directory that will be the root directory of the
    archive; i.e. we typically chdir into *root_dir* before creating the
@@ -264,7 +264,7 @@ Archives operations
    By default :mod:`shutil` provides these formats:
 
    - *gztar*: gzip'ed tar-file
-   - *bztar*: bzip2'ed tar-file
+   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available.)
    - *tar*: uncompressed tar file
    - *zip*: ZIP file
 
@@ -346,7 +346,7 @@ Archives operations
    By default :mod:`shutil` provides these formats:
 
    - *gztar*: gzip'ed tar-file
-   - *bztar*: bzip2'ed tar-file
+   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available.)
    - *tar*: uncompressed tar file
    - *zip*: ZIP file
 
