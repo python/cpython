@@ -22,6 +22,12 @@ import warnings
 from test import support
 from test.support import TESTFN, check_warnings, captured_stdout
 
+try:
+    import bz2
+    BZ2_SUPPORTED = True
+except ImportError:
+    BZ2_SUPPORTED = False
+
 TESTFN2 = TESTFN + "2"
 
 try:
@@ -612,8 +618,11 @@ class TestShutil(unittest.TestCase):
 
     @unittest.skipUnless(zlib, "Requires zlib")
     def test_unpack_archive(self):
+        formats = ['tar', 'gztar', 'zip']
+        if BZ2_SUPPORTED:
+            formats.append('bztar')
 
-        for format in ('tar', 'gztar', 'bztar', 'zip'):
+        for format in formats:
             tmpdir = self.mkdtemp()
             base_dir, root_dir, base_name =  self._create_files()
             tmpdir2 = self.mkdtemp()
