@@ -73,7 +73,7 @@ PyPy
    and a Just in Time compiler. One of the goals of the project is to encourage
    experimentation with the language itself by making it easier to modify the
    interpreter (since it is written in Python).  Additional information is
-   available on `the PyPy project's home page <http://codespeak.net/pypy/>`_.
+   available on `the PyPy project's home page <http://pypy.org/>`_.
 
 Each of these implementations varies in some way from the language as documented
 in this manual, or introduces specific information beyond what's covered in the
