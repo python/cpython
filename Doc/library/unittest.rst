@@ -223,26 +223,26 @@ failfast, catch and buffer command line options
 
 unittest supports three command options.
 
-* -f / --failfast
+* :option:`-b` / :option:`--buffer`
 
-  Stop the test run on the first error or failure.
-
-* -c / --catch
-
-  Control-c during the test run waits for the current test to end and then
-  reports all the results so far. A second control-c raises the normal
-  ``KeyboardInterrupt`` exception.
-
-  See `Signal Handling`_ for the functions that provide this functionality.
-
-* -b / --buffer
-
-  The standard out and standard error streams are buffered during the test
+  The standard output and standard error streams are buffered during the test
   run. Output during a passing test is discarded. Output is echoed normally
   on test fail or error and is added to the failure messages.
 
+* :option:`-c` / :option:`--catch`
+
+  Control-C during the test run waits for the current test to end and then
+  reports all the results so far. A second control-C raises the normal
+  :exc:`KeyboardInterrupt` exception.
+
+  See `Signal Handling`_ for the functions that provide this functionality.
+
+* :option:`-f` / :option:`--failfast`
+
+  Stop the test run on the first error or failure.
+
 ..  versionadded:: 2.7
-   The command line options ``-c``, ``-b`` and ``-f`` where added.
+   The command line options ``-c``, ``-b`` and ``-f`` were added.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -807,7 +807,7 @@ Test cases
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
 
-      If *delta* is supplied instead of *places* then the the difference
+      If *delta* is supplied instead of *places* then the difference
       between *first* and *second* must be less than *delta*.
 
       Supplying both *delta* and *places* raises a ``TypeError``.
@@ -832,7 +832,7 @@ Test cases
       compare equal, the test will fail with the explanation given by *msg*, or
       :const:`None`.
 
-      If *delta* is supplied instead of *places* then the the difference
+      If *delta* is supplied instead of *places* then the difference
       between *first* and *second* must be more than *delta*.
 
       Supplying both *delta* and *places* raises a ``TypeError``.
@@ -1848,12 +1848,12 @@ module will be run and the ``tearDownModule`` will not be run.
 Signal Handling
 ---------------
 
-The -c / --catch command line option to unittest, along with the ``catchbreak``
+The :option:`-c`/:option:`--catch` command line option to unittest, along with the ``catchbreak``
 parameter to :func:`unittest.main()`, provide more friendly handling of
-control-c during a test run. With catch break behavior enabled control-c will
+control-C during a test run. With catch break behavior enabled control-C will
 allow the currently running test to complete, and the test run will then end
 and report all the results so far. A second control-c will raise a
-``KeyboardInterrupt`` in the usual way.
+:exc:`KeyboardInterrupt` in the usual way.
 
 The control-c handling signal handler attempts to remain compatible with code or
 tests that install their own :const:`signal.SIGINT` handler. If the ``unittest``
