@@ -91,13 +91,14 @@ def compile_file(fullname, ddir=None, force=0, rx=None, quiet=False,
         else:
             cfile = imp.cache_from_source(fullname)
             cache_dir = os.path.dirname(cfile)
-            try:
-                os.mkdir(cache_dir)
-            except OSError as error:
-                if error.errno != errno.EEXIST:
-                    raise
         head, tail = name[:-3], name[-3:]
         if tail == '.py':
+            if not legacy:
+                try:
+                    os.mkdir(cache_dir)
+                except OSError as error:
+                    if error.errno != errno.EEXIST:
+                        raise
             if not force:
                 try:
                     mtime = int(os.stat(fullname).st_mtime)
