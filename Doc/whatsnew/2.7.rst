@@ -1332,12 +1332,16 @@ XXX write this.
 Unit Testing Enhancements
 ---------------------------------
 
-The :mod:`unittest` module was enhanced in several ways.
+The :mod:`unittest` module was greatly enhanced; many
+new features were added.  Most of these features were implemented
+by Michael Foord, unless otherwise noted.
+
 The progress messages now shows 'x' for expected failures
 and 'u' for unexpected successes when run in verbose mode.
 (Contributed by Benjamin Peterson.)
-Test cases can raise the :exc:`~unittest.SkipTest` exception to skip a test.
-(:issue:`1034053`.)
+
+Test cases can raise the :exc:`~unittest.SkipTest` exception to skip a
+test.  (:issue:`1034053`.)
 
 .. XXX describe test discovery (Contributed by Michael Foord; :issue:`6001`.)
 
@@ -1401,10 +1405,10 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
   differences in the two strings.  This comparison is now used by
   default when Unicode strings are compared with :meth:`~unittest.TestCase.assertEqual`.
 
-* :meth:`~unittest.TestCase.assertRegexpMatches` checks whether its first argument is a
-  string matching a regular expression provided as its second argument.
-
-  .. XXX add assertNotRegexpMatches see issue 8038
+* :meth:`~unittest.TestCase.assertRegexpMatches` and
+  :meth:`~unittest.TestCase.assertNotRegexpMatches` checks whether the
+  first argument is a string matching or not matching the regular
+  expression provided as the second argument (:issue:`8038`).
 
 * :meth:`~unittest.TestCase.assertRaisesRegexp` checks whether a particular exception
   is raised, and then also checks that the string representation of
@@ -1433,9 +1437,10 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
   all of the key/value pairs in *first* are found in *second*.
 
 * :meth:`~unittest.TestCase.assertAlmostEqual` and :meth:`~unittest.TestCase.assertNotAlmostEqual` test
-  whether *first* and *second* are approximately equal by computing
-  their difference, rounding the result to an optionally-specified number
-  of *places* (the default is 7), and comparing to zero.
+  whether *first* and *second* are approximately equal.  This method
+  can either round their difference to an optionally-specified number
+  of *places* (the default is 7) and compare it to zero, or require
+  the difference to be smaller than a supplied *delta* value.
 
 * :meth:`~unittest.TestLoader.loadTestsFromName` properly honors the
   :attr:`~unittest.TestLoader.suiteClass` attribute of
@@ -1455,12 +1460,31 @@ False, :func:`~unittest.main` doesn't call :func:`sys.exit`, allowing it to be
 used from the interactive interpreter. (Contributed by J. Pablo
 Fernández; :issue:`3379`.)
 
-A new command-line switch, :option:`-f` or :option:`--failfast`, makes
-test execution stop immediately when a test fails instead of
-continuing to execute further tests.  (Suggested by Cliff Dyer and
-implemented by Michael Foord; :issue:`8074`.)
+The :func:`main` function now supports some new options:
 
-.. XXX document the other new switches
+* :option:`-b` or :option:`--buffer` will buffer the standard output
+  and standard error streams during each test.  If the test passes,
+  any resulting output will be discard; on failure, the buffered
+  output will be displayed.
+
+* :option:`-c` or :option:`--catch` will cause the control-C interrupt
+  to be handled more gracefully.  Instead of interrupting the test
+  process immediately, the currently running test will be completed
+  and then the resulting partial results will be reported.  If you're
+  impatient, a second press of control-C will cause an immediate
+  interruption.
+
+  This control-C handler tries to avoid interfering when the code
+  being tested or the tests being run have defined a signal handler of
+  their own, by noticing that a signal handler was already set and
+  calling it.  If this doesn't work for you, there's a
+  :func:`removeHandler` decorator that can be used to mark tests that
+  should have the control-C handling disabled.
+
+* :option:`-f` or :option:`--failfast` makes
+  test execution stop immediately when a test fails instead of
+  continuing to execute further tests.  (Suggested by Cliff Dyer and
+  implemented by Michael Foord; :issue:`8074`.)
 
 :class:`~unittest.TestResult` has new :meth:`~unittest.TestResult.startTestRun` and
 :meth:`~unittest.TestResult.stopTestRun` methods that are called immediately before
@@ -1469,7 +1493,7 @@ and after a test run.  (Contributed by Robert Collins; :issue:`5728`.)
 With all these changes, the :file:`unittest.py` was becoming awkwardly
 large, so the module was turned into a package and the code split into
 several files (by Benjamin Peterson).  This doesn't affect how the
-module is imported.
+module is imported or used.
 
 
 .. _importlib-section:
