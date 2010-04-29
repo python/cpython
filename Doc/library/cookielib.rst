@@ -121,7 +121,7 @@ The following classes are provided:
       HTTP cookie classes, principally useful for server-side code.  The
       :mod:`cookielib` and :mod:`Cookie` modules do not depend on each other.
 
-   http://wwwsearch.sf.net/ClientCookie/
+   http://wwwsearch.sourceforge.net/mechanize/
       Extensions to this module, including a class for reading Microsoft Internet
       Explorer cookies on Windows.
 
@@ -313,8 +313,7 @@ FileCookieJar subclasses and co-operation with web browsers
 The following :class:`CookieJar` subclasses are provided for reading and writing
 .  Further :class:`CookieJar` subclasses, including one that reads Microsoft
 Internet Explorer cookies, are available at
-http://wwwsearch.sf.net/ClientCookie/.
-
+http://wwwsearch.sourceforge.net/mechanize/ .
 
 .. class:: MozillaCookieJar(filename, delayload=None, policy=None)
 
