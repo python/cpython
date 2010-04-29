@@ -80,12 +80,6 @@ connection requests.
    :exc:`NotImplementedError` exception.
 
 
-.. method:: async_chat._collect_incoming_data(data)
-
-   Sample implementation of a data collection rutine to be used in conjunction
-   with :meth:`_get_data` in a user-specified :meth:`found_terminator`.
-
-
 .. method:: async_chat.discard_buffers()
 
    In emergencies this method will discard any data held in the input and/or
@@ -100,49 +94,17 @@ connection requests.
    should be available via an instance attribute.
 
 
-.. method:: async_chat._get_data()
-
-   Will return and clear the data received with the sample
-   :meth:`_collect_incoming_data` implementation.
-
-
 .. method:: async_chat.get_terminator()
 
    Returns the current terminator for the channel.
 
 
-.. method:: async_chat.handle_close()
-
-   Called when the channel is closed. The default method silently closes the
-   channel's socket.
-
-
-.. method:: async_chat.handle_read()
-
-   Called when a read event fires on the channel's socket in the asynchronous
-   loop.  The default method checks for the termination condition established
-   by :meth:`set_terminator`, which can be either the appearance of a
-   particular string in the input stream or the receipt of a particular number
-   of characters.  When the terminator is found, :meth:`handle_read` calls the
-   :meth:`found_terminator` method after calling :meth:`collect_incoming_data`
-   with any data preceding the terminating condition.
-
-
-.. method:: async_chat.handle_write()
-
-   Called when the application may write data to the channel.   The default
-   method calls the :meth:`initiate_send` method, which in turn will call
-   :meth:`refill_buffer` to collect data from the producer fifo associated
-   with the channel.
-
-
 .. method:: async_chat.push(data)
 
-   Creates a :class:`simple_producer` object (*see below*) containing the data
-   and pushes it on to the channel's ``producer_fifo`` to ensure its
-   transmission.  This is all you need to do to have the channel write the
-   data out to the network, although it is possible to use your own producers
-   in more complex schemes to implement encryption and chunking, for example.
+   Pushes data on to the channel's fifo to ensure its transmission.
+   This is all you need to do to have the channel write the data out to the
+   network, although it is possible to use your own producers in more complex
+   schemes to implement encryption and chunking, for example.
 
 
 .. method:: async_chat.push_with_producer(producer)
@@ -151,20 +113,6 @@ connection requests.
    the channel.  When all currently-pushed producers have been exhausted the
    channel will consume this producer's data by calling its :meth:`more`
    method and send the data to the remote endpoint.
-
-
-.. method:: async_chat.readable()
-
-   Should return ``True`` for the channel to be included in the set of
-   channels tested by the :cfunc:`select` loop for readability.
-
-
-.. method:: async_chat.refill_buffer()
-
-   Refills the output buffer by calling the :meth:`more` method of the
-   producer at the head of the fifo.  If it is exhausted then the producer is
-   popped off the fifo and the next producer is activated.  If the current
-   producer is, or becomes, ``None`` then the channel is closed.
 
 
 .. method:: async_chat.set_terminator(term)
@@ -191,36 +139,16 @@ connection requests.
    by the channel after :meth:`found_terminator` is called.
 
 
-.. method:: async_chat.writable()
-
-   Should return ``True`` as long as items remain on the producer fifo, or the
-   channel is connected and the channel's output buffer is non-empty.
-
-
-asynchat - Auxiliary Classes and Functions
+asynchat - Auxiliary Classes
 ------------------------------------------
-
-
-.. class:: simple_producer(data, buffer_size=512)
-
-   A :class:`simple_producer` takes a chunk of data and an optional buffer
-   size.  Repeated calls to its :meth:`more` method yield successive chunks of
-   the data no larger than *buffer_size*.
-
-
-   .. method:: more()
-
-      Produces the next chunk of information from the producer, or returns the
-      empty string.
-
 
 .. class:: fifo(list=None)
 
-   Each channel maintains a :class:`fifo` holding data which has been pushed
-   by the application but not yet popped for writing to the channel.  A
-   :class:`fifo` is a list used to hold data and/or producers until they are
-   required.  If the *list* argument is provided then it should contain
-   producers or data items to be written to the channel.
+   A :class:`fifo` holding data which has been pushed by the application but
+   not yet popped for writing to the channel.  A :class:`fifo` is a list used
+   to hold data and/or producers until they are required.  If the *list*
+   argument is provided then it should contain producers or data items to be
+   written to the channel.
 
 
    .. method:: is_empty()
@@ -243,15 +171,6 @@ asynchat - Auxiliary Classes and Functions
 
       If the fifo is not empty, returns ``True, first()``, deleting the popped
       item.  Returns ``False, None`` for an empty fifo.
-
-The :mod:`asynchat` module also defines one utility function, which may be of
-use in network and textual analysis operations.
-
-
-.. function:: find_prefix_at_end(haystack, needle)
-
-   Returns ``True`` if string *haystack* ends with any non-empty prefix of
-   string *needle*.
 
 
 .. _asynchat-example:
