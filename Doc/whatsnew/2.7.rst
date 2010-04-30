@@ -545,6 +545,16 @@ Some smaller changes made to the core Python language are:
   so it will now produce 'INF' and 'NAN'.
   (Contributed by Eric Smith; :issue:`3382`.)
 
+  A low-level change: the :meth:`object.__format__` method now triggers
+  a :exc:`PendingDeprecationWarning` if it's passed a format string,
+  because the :meth:`__format__` method for :class:`object` converts
+  the object to a string representation and formats that.  The method
+  used to silently apply the format string to the string
+  representation, but that could hide mistakes in Python code.  If
+  you're supplying formatting information such as an alignment or
+  precision, presumably you're expecting the formatting to be applied
+  in some object-specific way.  (Fixed by Eric Smith; :issue:`7994`.)
+
 * The :func:`int` and :func:`long` types gained a ``bit_length``
   method that returns the number of bits necessary to represent
   its argument in binary::
