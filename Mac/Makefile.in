@@ -24,7 +24,7 @@ export MACOSX_DEPLOYMENT_TARGET
 
 # These are normally glimpsed from the previous set
 bindir=$(prefix)/bin
-PYTHONAPPSDIR=/Applications/$(PYTHONFRAMEWORK) $(VERSION)
+PYTHONAPPSDIR=@FRAMEWORKINSTALLAPPSPREFIX@/$(PYTHONFRAMEWORK) $(VERSION)
 APPINSTALLDIR=$(prefix)/Resources/Python.app
 
 # Variables for installing the "normal" unix binaries
