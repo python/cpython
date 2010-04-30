@@ -134,6 +134,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #8576: Remove use of find_unused_port() in test_smtplib and
+  test_multiprocessing.  Patch by Paul Moore.
+
 - Issue #7449: Fix many tests to support Python compiled without thread
   support. Patches written by Jerry Seutter.
 
