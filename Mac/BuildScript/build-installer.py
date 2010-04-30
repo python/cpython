@@ -1111,13 +1111,14 @@ def setIcon(filePath, icnsPath):
     Set the custom icon for the specified file or directory.
     """
 
-    toolPath = os.path.join(os.path.dirname(__file__), "seticon.app/Contents/MacOS/seticon")
-    dirPath = os.path.dirname(__file__)
+    dirPath = os.path.normpath(os.path.dirname(__file__))
+    toolPath = os.path.join(dirPath, "seticon.app/Contents/MacOS/seticon")
     if not os.path.exists(toolPath) or os.stat(toolPath).st_mtime < os.stat(dirPath + '/seticon.m').st_mtime:
         # NOTE: The tool is created inside an .app bundle, otherwise it won't work due
         # to connections to the window server.
-        if not os.path.exists('seticon.app/Contents/MacOS'):
-            os.makedirs('seticon.app/Contents/MacOS')
+        appPath = os.path.join(dirPath, "seticon.app/Contents/MacOS")
+        if not os.path.exists(appPath):
+            os.makedirs(appPath)
         runCommand("cc -o %s %s/seticon.m -framework Cocoa"%(
             shellQuote(toolPath), shellQuote(dirPath)))
 
