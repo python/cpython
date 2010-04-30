@@ -658,9 +658,10 @@ across operating systems and shells, so it may be different for you.)
 
 When running a module using the interpreter's :option:`-m` switch,
 ``sys.argv[0]`` will now be set to the string ``'-m'`` while the
-module is being imported.  This will let modules determine when
-they're being executed using :option:`-m`.  (Suggested by Michael
-Foord; implemented by Nick Coghlan; :issue:`8202`.)
+module is being located, while executing the :file:`__init__.py` files
+for any parent packages of the module to be executed.
+(Suggested by Michael Foord; implemented by Nick Coghlan;
+:issue:`8202`.)
 
 .. ======================================================================
 
@@ -915,6 +916,12 @@ changes, or look through the Subversion logs for all the details.
   left-alignment.  This has been changed to right-alignment, which seems
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
+  Comparisons involving a signaling NaN value (or ``sNAN``) now signal
+  :const:`InvalidOperation` instead of silently returning a true or
+  false value depending on the comparison operator.  Quiet NaN values
+  (or ``NaN``) are now hashable.  (Fixed by Mark Dickinson;
+  :issue:`7279`.)
+
 * The :mod:`difflib` module now produces output that is more
   compatible with modern :command:`diff`/:command:`patch` tools
   through one small change, using a tab character instead of spaces as
@@ -1154,25 +1161,7 @@ changes, or look through the Subversion logs for all the details.
   catch and swallow the :exc:`KeyboardInterrupt` exception.  (Fixed by
   Victor Stinner; :issue:`3137`.)
 
-* The :mod:`socket` module's :class:`~ssl.SSL` objects now support the
-  buffer API, which fixed a test suite failure (fix by Antoine Pitrou;
-  :issue:`7133`).  :class:`SSL` objects also now automatically set
-  OpenSSL's :cmacro:`SSL_MODE_AUTO_RETRY`, which will prevent an error
-  code being returned from :meth:`recv` operations that trigger an SSL
-  renegotiation (fix by Antoine Pitrou; :issue:`8222`).
-
-  Another changes makes the extension load all of OpenSSL's ciphers
-  and digest algorithms.  Some SSL certificates couldn't be verified,
-  reporting an 'unknown algorithm' error.  (Reported by Beda Kosata, and
-  fixed by Antoine Pitrou; :issue:`8484`.)
-
-  The version of OpenSSL being used is now available as the module
-  attributes :attr:`OPENSSL_VERSION` (a string),
-  :attr:`OPENSSL_VERSION_INFO` (a 5-tuple), and
-  :attr:`OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
-  Pitrou; :issue:`8321`.)
-
-  The :func:`~socket.create_connection` function
+* The :func:`~socket.create_connection` function
   gained a *source_address* parameter, a ``(host, port)`` 2-tuple
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
@@ -1195,6 +1184,30 @@ changes, or look through the Subversion logs for all the details.
   Call the ``enable_load_extension(True)`` method to enable extensions,
   and then call :meth:`~sqlite3.Connection.load_extension` to load a particular shared library.
   (Updated by Gerhard Häring.)
+
+* The :mod:`ssl` module's :class:`~ssl.SSL` objects now support the
+  buffer API, which fixed a test suite failure (fix by Antoine Pitrou;
+  :issue:`7133`) and automatically set
+  OpenSSL's :cmacro:`SSL_MODE_AUTO_RETRY`, which will prevent an error
+  code being returned from :meth:`recv` operations that trigger an SSL
+  renegotiation (fix by Antoine Pitrou; :issue:`8222`).
+
+  The :func:`wrap_socket` constructor function now takes a
+  *ciphers* argument that's a string listing the encryption algorithms
+  to be allowed; the format of the string is described
+  `in the OpenSSL documentation <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`__.  (Added by Antoine Pitrou; :issue:`8322`.)
+
+  Another change makes the extension load all of OpenSSL's ciphers and
+  digest algorithms so that they're all available.  Some SSL
+  certificates couldn't be verified, reporting an 'unknown algorithm'
+  error.  (Reported by Beda Kosata, and fixed by Antoine Pitrou;
+  :issue:`8484`.)
+
+  The version of OpenSSL being used is now available as the module
+  attributes :attr:`OPENSSL_VERSION` (a string),
+  :attr:`OPENSSL_VERSION_INFO` (a 5-tuple), and
+  :attr:`OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
+  Pitrou; :issue:`8321`.)
 
 * The :mod:`struct` module will no longer silently ignore overflow
   errors when a value is too large for a particular integer format
@@ -1281,6 +1294,13 @@ changes, or look through the Subversion logs for all the details.
   and has been updated to version 5.2.0 (updated by
   Florent Xicluna; :issue:`8024`).
 
+* The :mod:`urlparse` module now supports IPv6 literal addresses as defined by
+  :rfc:`2732` (contributed by Senthil Kumaran; :issue:`2987`). ::
+
+    >>> urlparse.urlparse('http://[1080::8:800:200C:417A]/foo')
+    ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',
+                path='/foo', params='', query='', fragment='')
+
 * The :class:`~UserDict.UserDict` class is now a new-style class.  (Changed by
   Benjamin Peterson.)
 
@@ -1336,14 +1356,50 @@ The :mod:`unittest` module was greatly enhanced; many
 new features were added.  Most of these features were implemented
 by Michael Foord, unless otherwise noted.
 
+When used from the command line, the module can automatically discover
+tests.  It's not as fancy as `py.test <http://pytest.org>`__ or
+`nose <http://code.google.com/p/python-nose/>`__, but provides a simple way
+to run tests kept within a set of package directories.  For example,
+the following command will search the :file:`test/` subdirectory for
+any importable test files named ``test*.py``::
+
+   python -m unittest discover -s test
+
+Consult the :mod:`unittest` module documentation for more details.
+(Developed in :issue:`6001`.)
+
+The :func:`main` function supports some other new options:
+
+* :option:`-b` or :option:`--buffer` will buffer the standard output
+  and standard error streams during each test.  If the test passes,
+  any resulting output will be discard; on failure, the buffered
+  output will be displayed.
+
+* :option:`-c` or :option:`--catch` will cause the control-C interrupt
+  to be handled more gracefully.  Instead of interrupting the test
+  process immediately, the currently running test will be completed
+  and then the resulting partial results will be reported.  If you're
+  impatient, a second press of control-C will cause an immediate
+  interruption.
+
+  This control-C handler tries to avoid interfering when the code
+  being tested or the tests being run have defined a signal handler of
+  their own, by noticing that a signal handler was already set and
+  calling it.  If this doesn't work for you, there's a
+  :func:`removeHandler` decorator that can be used to mark tests that
+  should have the control-C handling disabled.
+
+* :option:`-f` or :option:`--failfast` makes
+  test execution stop immediately when a test fails instead of
+  continuing to execute further tests.  (Suggested by Cliff Dyer and
+  implemented by Michael Foord; :issue:`8074`.)
+
 The progress messages now shows 'x' for expected failures
 and 'u' for unexpected successes when run in verbose mode.
 (Contributed by Benjamin Peterson.)
 
 Test cases can raise the :exc:`~unittest.SkipTest` exception to skip a
 test.  (:issue:`1034053`.)
-
-.. XXX describe test discovery (Contributed by Michael Foord; :issue:`6001`.)
 
 The error messages for :meth:`~unittest.TestCase.assertEqual`,
 :meth:`~unittest.TestCase.assertTrue`, and :meth:`~unittest.TestCase.assertFalse`
@@ -1459,32 +1515,6 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 False, :func:`~unittest.main` doesn't call :func:`sys.exit`, allowing it to be
 used from the interactive interpreter. (Contributed by J. Pablo
 Fernández; :issue:`3379`.)
-
-The :func:`main` function now supports some new options:
-
-* :option:`-b` or :option:`--buffer` will buffer the standard output
-  and standard error streams during each test.  If the test passes,
-  any resulting output will be discard; on failure, the buffered
-  output will be displayed.
-
-* :option:`-c` or :option:`--catch` will cause the control-C interrupt
-  to be handled more gracefully.  Instead of interrupting the test
-  process immediately, the currently running test will be completed
-  and then the resulting partial results will be reported.  If you're
-  impatient, a second press of control-C will cause an immediate
-  interruption.
-
-  This control-C handler tries to avoid interfering when the code
-  being tested or the tests being run have defined a signal handler of
-  their own, by noticing that a signal handler was already set and
-  calling it.  If this doesn't work for you, there's a
-  :func:`removeHandler` decorator that can be used to mark tests that
-  should have the control-C handling disabled.
-
-* :option:`-f` or :option:`--failfast` makes
-  test execution stop immediately when a test fails instead of
-  continuing to execute further tests.  (Suggested by Cliff Dyer and
-  implemented by Michael Foord; :issue:`8074`.)
 
 :class:`~unittest.TestResult` has new :meth:`~unittest.TestResult.startTestRun` and
 :meth:`~unittest.TestResult.stopTestRun` methods that are called immediately before
@@ -1828,6 +1858,12 @@ In the standard library:
   change the output of your programs.
   (Changed by Mark Dickinson; :issue:`6857`.)
 
+  Comparisons involving a signaling NaN value (or ``sNAN``) now signal
+  :const:`InvalidOperation` instead of silently returning a true or
+  false value depending on the comparison operator.  Quiet NaN values
+  (or ``NaN``) are now hashable.  (Fixed by Mark Dickinson;
+  :issue:`7279`.)
+
 * The ElementTree library, :mod:`xml.etree`, no longer escapes
   ampersands and angle brackets when outputting an XML processing
   instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
@@ -1859,5 +1895,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Ryan Lovett, R. David Murray, Hugh Secker-Walker.
+article: Nick Coghlan, Ryan Lovett, R. David Murray, Hugh Secker-Walker.
 
