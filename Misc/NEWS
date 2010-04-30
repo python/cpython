@@ -137,6 +137,9 @@ Build
 Tests
 -----
 
+- Issue #8576: Remove use of find_unused_port() in test_smtplib and
+  test_multiprocessing.  Patch by Paul Moore.
+
 - Issue #8531: Skip test_ascii_formatd if ctypes module is missing
 
 - Issue #3864: Skip three test_signal tests on freebsd6 because they fail
