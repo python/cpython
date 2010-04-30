@@ -273,7 +273,7 @@ The ``discover`` sub-command has the following options:
    -t directory     Top level directory of project (default to
                     start directory)
 
-The -s, -p, & -t options can be passsed in as positional arguments. The
+The -s, -p, & -t options can be passed in as positional arguments. The
 following two command lines are equivalent::
 
    python -m unittest discover -s project_directory -p '*_test.py'
