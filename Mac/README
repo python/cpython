@@ -205,6 +205,26 @@ Because of the way the script locates the files it needs you have to run it
 from within the BuildScript directory. The script accepts a number of 
 command-line arguments, run it with --help for more information.
 
+
+Uninstalling a framework install, including the binary installer
+================================================================
+
+Uninstalling a framework can be done by manually removing all bits that got installed,
+that's true for both installations from source and installations using the binary installer.
+Sadly enough OSX does not have a central uninstaller.
+
+The main bit of a framework install is the framework itself, installed in
+``/Library/Frameworks/Python.framework``. This can contain multiple versions
+of Python, if you want to remove just one version you have to remove the
+version-specific subdirectory: ``/Library/Frameworks/Python.framework/Versions/X.Y``.
+If you do that, ensure that ``/Library/Frameworks/Python.framework/Versions/Current``
+is a symlink that points to an installed version of Python.
+
+A framework install also installs some applications in ``/Applications/Python X.Y``,
+
+And lastly a framework installation installs files in ``/usr/local/bin``, all of
+them symbolic links to files in ``/Library/Frameworks/Python.framework/Versions/X.Y/bin``.
+
 Odds and ends
 =============
 
@@ -215,4 +235,4 @@ macresource module and the Mac/OSX/Makefile cater for this, and create
 files.
 
 	Jack Jansen, Jack.Jansen@cwi.nl, 15-Jul-2004.
-	Ronald Oussoren, RonaldOussoren@mac.com, 26-May-2006
+	Ronald Oussoren, RonaldOussoren@mac.com, 30-April-2010
