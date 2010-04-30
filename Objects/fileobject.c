@@ -41,7 +41,7 @@ PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding,
 	if (stream == NULL)
 		return NULL;
 	if (name != NULL) {
-		nameobj = PyUnicode_FromString(name);
+		nameobj = PyUnicode_DecodeFSDefault(name);
 		if (nameobj == NULL)
 			PyErr_Clear();
 		else {

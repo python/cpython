@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- PyFile_FromFd() uses PyUnicode_DecodeFSDefault() instead of
+  PyUnicode_FromString() to support surrogates in the filename and use the
+  right encoding
+
 - PyUnicode_DecodeFSDefaultAndSize() uses surrogateescape error handler
 
 - Issue #8419: Prevent the dict constructor from accepting non-string keyword
