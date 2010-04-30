@@ -144,8 +144,10 @@ class DebuggingServerTests(TestCase):
 
         self.serv_evt = threading.Event()
         self.client_evt = threading.Event()
-        self.port = test_support.find_unused_port()
-        self.serv = smtpd.DebuggingServer((HOST, self.port), ('nowhere', -1))
+        # Pick a random unused port by passing 0 for the port number
+        self.serv = smtpd.DebuggingServer((HOST, 0), ('nowhere', -1))
+        # Keep a note of what port was assigned
+        self.port = self.serv.socket.getsockname()[1]
         serv_args = (self.serv, self.serv_evt, self.client_evt)
         threading.Thread(target=debugging_server, args=serv_args).start()
 
@@ -371,8 +373,10 @@ class SMTPSimTests(TestCase):
     def setUp(self):
         self.serv_evt = threading.Event()
         self.client_evt = threading.Event()
-        self.port = test_support.find_unused_port()
-        self.serv = SimSMTPServer((HOST, self.port), ('nowhere', -1))
+        # Pick a random unused port by passing 0 for the port number
+        self.serv = SimSMTPServer((HOST, 0), ('nowhere', -1))
+        # Keep a note of what port was assigned
+        self.port = self.serv.socket.getsockname()[1]
         serv_args = (self.serv, self.serv_evt, self.client_evt)
         threading.Thread(target=debugging_server, args=serv_args).start()
 
