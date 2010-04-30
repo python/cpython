@@ -1600,19 +1600,19 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
     if (Py_FileSystemDefaultEncoding) {
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
         if (strcmp(Py_FileSystemDefaultEncoding, "mbcs") == 0) {
-            return PyUnicode_DecodeMBCS(s, size, "replace");
+            return PyUnicode_DecodeMBCS(s, size, "surrogateescape");
         }
 #elif defined(__APPLE__)
         if (strcmp(Py_FileSystemDefaultEncoding, "utf-8") == 0) {
-            return PyUnicode_DecodeUTF8(s, size, "replace");
+            return PyUnicode_DecodeUTF8(s, size, "surrogateescape");
         }
 #endif
         return PyUnicode_Decode(s, size,
                                 Py_FileSystemDefaultEncoding,
-                                "replace");
+                                "surrogateescape");
     }
     else {
-        return PyUnicode_DecodeUTF8(s, size, "replace");
+        return PyUnicode_DecodeUTF8(s, size, "surrogateescape");
     }
 }
 
