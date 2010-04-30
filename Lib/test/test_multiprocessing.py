@@ -1256,9 +1256,9 @@ class _TestManagerRestart(BaseTestCase):
 
     def test_rapid_restart(self):
         authkey = os.urandom(32)
-        port = test.support.find_unused_port()
         manager = QueueManager(
-            address=('localhost', port), authkey=authkey, serializer=SERIALIZER)
+            address=('localhost', 0), authkey=authkey, serializer=SERIALIZER)
+        addr = manager.get_server().address
         manager.start()
 
         p = self.Process(target=self._putter, args=(manager.address, authkey))
@@ -1268,7 +1268,7 @@ class _TestManagerRestart(BaseTestCase):
         del queue
         manager.shutdown()
         manager = QueueManager(
-            address=('localhost', port), authkey=authkey, serializer=SERIALIZER)
+            address=addr, authkey=authkey, serializer=SERIALIZER)
         manager.start()
         manager.shutdown()
 
