@@ -190,18 +190,55 @@ AC_ARG_ENABLE(framework,
 		enable_framework=
 		;;
 	*)
-		PYTHONFRAMEWORKPREFIX=$enableval
+		PYTHONFRAMEWORKPREFIX="${enableval}"
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
 		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
 		FRAMEWORKALTINSTALLFIRST="frameworkinstallstructure bininstall maninstall"
 		FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
 		FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
+		FRAMEWORKINSTALLAPPSPREFIX="/Applications"
 
 		if test "x${prefix}" = "xNONE" ; then
 			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+
 		else
 			FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
 		fi
+
+		case "${enableval}" in
+		/System*)
+			FRAMEWORKINSTALLAPPSPREFIX="/Applications"
+			if test "${prefix}" = "NONE" ; then
+				# See below
+				FRAMEWORKUNIXTOOLSPREFIX="/usr"
+			fi
+			;;
+
+		/Library*)
+			FRAMEWORKINSTALLAPPSPREFIX="/Applications"
+			;;
+
+		*/Library/Frameworks)
+			MDIR="`dirname "${enableval}"`"
+			MDIR="`dirname "${MDIR}"`"
+			FRAMEWORKINSTALLAPPSPREFIX="${MDIR}/Applications"
+
+			if test "${prefix}" = "NONE"; then
+				# User hasn't specified the 
+				# --prefix option, but wants to install
+				# the framework in a non-default location,
+				# ensure that the compatibility links get
+				# installed relative to that prefix as well
+				# instead of in /usr/local.
+				FRAMEWORKUNIXTOOLSPREFIX="${MDIR}"
+			fi
+			;;
+
+		*)
+			FRAMEWORKINSTALLAPPSPREFIX="/Applications"
+			;;
+		esac
+
 		prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
 
 		# Add files for Mac specific code to the list of output
@@ -239,6 +276,7 @@ AC_SUBST(FRAMEWORKINSTALLLAST)
 AC_SUBST(FRAMEWORKALTINSTALLFIRST)
 AC_SUBST(FRAMEWORKALTINSTALLLAST)
 AC_SUBST(FRAMEWORKUNIXTOOLSPREFIX)
+AC_SUBST(FRAMEWORKINSTALLAPPSPREFIX)
 
 ##AC_ARG_WITH(dyld,
 ##            AC_HELP_STRING(--with-dyld,
