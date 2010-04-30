@@ -121,13 +121,16 @@ Functions, Constants, and Exceptions
 
    .. note::
 
-      This information varies depending on the version of OpenSSL.
-      For instance, in some older versions of OpenSSL (such as 0.9.7l on
-      OS X 10.4), an SSLv2 client could not connect to an SSLv23 server.
-      Conversely, starting from 1.0.0, an SSLv23 client will actually
-      try the SSLv3 protocol unless you explicitly enable SSLv2 ciphers.
+      Which connections succeed will vary depending on the version of
+      OpenSSL.  For instance, in some older versions of OpenSSL (such
+      as 0.9.7l on OS X 10.4), an SSLv2 client could not connect to an
+      SSLv23 server.  Another example: beginning with OpenSSL 1.0.0,
+      an SSLv23 client will not actually attempt SSLv2 connections
+      unless you explicitly enable SSLv2 ciphers; for example, you
+      might specify ``"ALL"`` or ``"SSLv2"`` as the *ciphers* parameter
+      to enable them.
 
-   The parameter ``ciphers`` sets the available ciphers for this SSL object.
+   The *ciphers* parameter sets the available ciphers for this SSL object.
    It should be a string in the `OpenSSL cipher list format
    <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`_.
 
