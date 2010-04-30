@@ -31,6 +31,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8577: distutils.sysconfig.get_python_inc() now makes a difference 
+  between the build dir and the source dir when looking for "python.h" or
+  "Include".
+
 - Issue #8464: tarfile no longer creates files with execute permissions set
   when mode="w|" is used.
 
