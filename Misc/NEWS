@@ -140,6 +140,9 @@ Build
 Tests
 -----
 
+- Issue #8576: Remove use of find_unused_port() in test_smtplib and
+  test_multiprocessing.  Patch by Paul Moore.
+
 - Issue #7027: regrtest.py keeps a reference to the encodings.ascii module as a
   workaround to #7140 bug
 
