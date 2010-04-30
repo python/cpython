@@ -71,15 +71,19 @@ def get_python_inc(plat_specific=0, prefix=None):
     """
     if prefix is None:
         prefix = plat_specific and EXEC_PREFIX or PREFIX
+
     if os.name == "posix":
         if python_build:
-            base = os.path.dirname(os.path.abspath(sys.executable))
+            buildir = os.path.dirname(sys.executable)
             if plat_specific:
-                inc_dir = base
+                # python.h is located in the buildir
+                inc_dir = buildir
             else:
-                inc_dir = os.path.join(base, "Include")
-                if not os.path.exists(inc_dir):
-                    inc_dir = os.path.join(os.path.dirname(base), "Include")
+                # the source dir is relative to the buildir
+                srcdir = os.path.abspath(os.path.join(buildir,
+                                         get_config_var('srcdir')))
+                # Include is located in the srcdir
+                inc_dir = os.path.join(srcdir, "Include")
             return inc_dir
         return os.path.join(prefix, "include", "python" + get_python_version())
     elif os.name == "nt":
