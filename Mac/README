@@ -5,12 +5,23 @@ MacOSX Notes
 This document provides a quick overview of some Mac OS X specific features in
 the Python distribution.
 
-* ``--enable-framework``
+* ``--enable-framework[=DIR]``
 
   If this argument is specified the build will create a Python.framework rather
   than a traditional Unix install. See the section
   _`Building and using a framework-based Python on Mac OS X` for more 
   information on frameworks.
+
+  If the optional directory argument is specified the framework it installed
+  into that directory. This can be used to install a python framework into
+  your home directory::
+
+     $ configure --enable-framework=/Users/ronald/Library/Frameworks
+     $ make && make install
+
+  This will install the framework itself in ``/Users/ronald/Library/Frameworks``,
+  the applications in a subdirectory of ``/Users/ronald/Applications`` and the
+  command-line tools in ``/Users/ronald/bin``.
 
 * ``--with-framework-name=NAME``
 

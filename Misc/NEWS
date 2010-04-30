@@ -1109,6 +1109,9 @@ Extension Modules
 Build
 -----
 
+- Issue #3646: It is now easily possible to install a Python framework into
+  your home directory on MacOSX, see Mac/README for more information.
+
 - Issue #3928: os.mknod() now available in Solaris, also.
 
 - Issue #3326: Build Python without -fno-strict-aliasing when the gcc does not
