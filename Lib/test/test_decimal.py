@@ -40,7 +40,7 @@ except ImportError:
     threading = None
 
 # Useful Test Constant
-Signals = getcontext().flags.keys()
+Signals = tuple(getcontext().flags.keys())
 
 # Tests are built around these assumed context defaults.
 # test_main() restores the original context.
