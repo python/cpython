@@ -482,7 +482,7 @@ it's a mutable object.
 
    :pep:`3137` - Immutable Bytes and Mutable Buffer
      PEP written by Guido van Rossum.
-     Implemented by Travis Oliphant.
+     Implemented by Travis Oliphant, Antoine Pitrou and others.
      Backported to 2.7 by Antoine Pitrou; :issue:`2396`.
 
 
