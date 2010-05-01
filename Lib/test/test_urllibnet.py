@@ -8,6 +8,7 @@ import urllib.request
 import sys
 import os
 import email.message
+import time
 
 
 def _open_with_retry(func, host, *args, **kwargs):
@@ -180,6 +181,16 @@ class urlretrieveNetworkTests(unittest.TestCase):
         self.assertTrue(isinstance(header, email.message.Message),
                      "header is not an instance of email.message.Message")
 
+    def test_data_header(self):
+        logo = "http://www.python.org/community/logos/python-logo-master-v3-TM.png"
+        file_location, fileheaders = self.urlretrieve(logo)
+        os.unlink(file_location)
+        datevalue = fileheaders.get('Date')
+        dateformat = '%a, %d %b %Y %H:%M:%S GMT'
+        try:
+            time.strptime(datevalue, dateformat)
+        except ValueError:
+            self.fail('Date value not in %r format', dateformat)
 
 
 def test_main():
