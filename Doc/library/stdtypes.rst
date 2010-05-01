@@ -2590,7 +2590,7 @@ is generally interpreted as simple bytes.
         File "<stdin>", line 1, in <module>
       ValueError: cannot modify size of memoryview object
 
-   Notice how the size of the memoryview object can not be changed.
+   Notice how the size of the memoryview object cannot be changed.
 
 
    :class:`memoryview` has two methods:
