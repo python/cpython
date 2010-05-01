@@ -7,6 +7,8 @@ import socket
 import urllib
 import sys
 import os
+import time
+
 mimetools = test_support.import_module("mimetools", deprecated=True)
 
 
@@ -177,6 +179,17 @@ class urlretrieveNetworkTests(unittest.TestCase):
         os.unlink(file_location)
         self.assertIsInstance(header, mimetools.Message,
                               "header is not an instance of mimetools.Message")
+
+    def test_data_header(self):
+        logo = "http://www.python.org/community/logos/python-logo-master-v3-TM.png"
+        file_location, fileheaders = self.urlretrieve(logo)
+        os.unlink(file_location)
+        datevalue = fileheaders.getheader('Date')
+        dateformat = '%a, %d %b %Y %H:%M:%S GMT'
+        try:
+            time.strptime(datevalue, dateformat)
+        except ValueError:
+            self.fail('Date value not in %r format', dateformat)
 
 
 

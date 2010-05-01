@@ -588,7 +588,7 @@ class URLopener:
         else:
             encoding = ''
         msg = []
-        msg.append('Date: %s'%time.strftime('%a, %d %b %Y %T GMT',
+        msg.append('Date: %s'%time.strftime('%a, %d %b %Y %H:%M:%S GMT',
                                             time.gmtime(time.time())))
         msg.append('Content-type: %s' % type)
         if encoding == 'base64':
