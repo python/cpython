@@ -8,7 +8,7 @@
 
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
-.. Big jobs: ElementTree 1.3, pep 391, sysconfig
+.. Big jobs: ElementTree 1.3, pep 391, sysconfig, memoryview
 ..  unittest test discovery
 ..  hyperlink all the methods & functions.
 
@@ -615,6 +615,10 @@ Some smaller changes made to the core Python language are:
   (Contributed by Amaury Forgeot d'Arc, after a suggestion by
   George Sakkis; :issue:`5982`.)
 
+* When a restricted set of attributes were set using ``__slots__``,
+  deleting an unset attribute would not raise :exc:`AttributeError`
+  as you would expect.  Fixed by Benjamin Peterson; :issue:`7604`.)
+
 * A new encoding named "cp720", used primarily for Arabic text, is now
   supported.  (Contributed by Alexander Belchenko and Amaury Forgeot
   d'Arc; :issue:`1616979`.)
@@ -1012,6 +1016,13 @@ changes, or look through the Subversion logs for all the details.
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
 
+* The :mod:`ihooks` module now supports relative imports.  Note that
+  :mod:`ihooks` is an older module used to support customizing imports,
+  superseded by the :mod:`imputil` module added in Python 2.0.
+  (Relative import support added by Neil Schemenauer.)
+
+  .. revision 75423
+
 * The :mod:`imaplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1655`.)
 
@@ -1313,6 +1324,12 @@ changes, or look through the Subversion logs for all the details.
 
 * The :class:`~UserDict.UserDict` class is now a new-style class.  (Changed by
   Benjamin Peterson.)
+
+* New class: the :class:`~weakref.WeakSet` class in the :mod:`weakref`
+  module is a set that only holds weak references to its elements; elements
+  will be removed once there are no references pointing to them.
+  (Originally implemented in Python 3.x by Raymond Hettinger, and backported
+  to 2.7 by Michael Foord.)
 
 * The ElementTree library, :mod:`xml.etree`, no longer escapes
   ampersands and angle brackets when outputting an XML processing
@@ -1677,6 +1694,11 @@ Changes to Python's build process and to the C API include:
 
   .. XXX these macros don't seem to be described in the c-api docs.
 
+* Removed function: :cmacro:`PyEval_CallObject` is now only available
+  as a macro.  A function version was being kept around to preserve
+  ABI linking compatibility, but that was in 1997; it can certainly be
+  deleted.  (Removed by Antoine Pitrou; :issue:`8276`.)
+
 * New format codes: the :cfunc:`PyFormat_FromString`,
   :cfunc:`PyFormat_FromStringV`, and :cfunc:`PyErr_Format` now
   accepts ``%lld`` and ``%llu`` format codes for displaying values of
@@ -1855,10 +1877,9 @@ that may require changes to your code:
   affects new-style classes (derived from :class:`object`) and C extension
   types.  (:issue:`6101`.)
 
-* The :meth:`readline` method of :class:`StringIO` objects now does
-  nothing when a negative length is requested, as other file-like
-  objects do.  (:issue:`7348`).
-
+* When a restricted set of attributes were set using ``__slots__``,
+  deleting an unset attribute would not raise :exc:`AttributeError`
+  as you would expect.  Fixed by Benjamin Peterson; :issue:`7604`.)
 
 In the standard library:
 
@@ -1879,6 +1900,10 @@ In the standard library:
   instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
   or comment (which looks like `<!-- comment -->`).
   (Patch by Neil Muller; :issue:`2746`.)
+
+* The :meth:`readline` method of :class:`StringIO` objects now does
+  nothing when a negative length is requested, as other file-like
+  objects do.  (:issue:`7348`).
 
 * The :mod:`syslog` module will now use the value of ``sys.argv[0]`` as the
   identifier instead of the previous default value of ``'python'``.
