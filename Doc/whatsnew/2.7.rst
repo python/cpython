@@ -8,7 +8,7 @@
 
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
-.. Big jobs: ElementTree 1.3, pep 391, sysconfig, memoryview
+.. Big jobs: ElementTree 1.3, pep 391, sysconfig
 ..  unittest test discovery
 ..  hyperlink all the methods & functions.
 
@@ -433,6 +433,58 @@ converter will change them to the standard :meth:`keys`,
    :pep:`3106` - Revamping dict.keys(), .values() and .items()
      PEP written by Guido van Rossum.
      Backported to 2.7 by Alexandre Vassalotti; :issue:`1967`.
+
+
+PEP 3137: The memoryview Object
+====================================================
+
+The :class:`memoryview` object provides a view of another object's
+memory content that matches the :class:`bytes` type's interface.
+
+    >>> import string
+    >>> m = memoryview(string.letters)
+    >>> m
+    <memory at 0x37f850>
+    >>> len(m)           # Returns length of underlying object
+    52
+    >>> m[0], m[25], m[26]   # Indexing returns one byte
+    ('a', 'z', 'A')
+    >>> m2 = m[0:26]         # Slicing returns another memoryview
+    >>> m2
+    <memory at 0x37f080>
+
+The content of the view can be converted to a string of bytes or to
+a list of integers:
+
+    >>> m2.tobytes()
+    'abcdefghijklmnopqrstuvwxyz'
+    >>> m2.tolist()
+    [97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122]
+    >>>
+
+:class:`memoryview` objects allow modifying the underlying object if
+it's a mutable object.
+
+    >>> m2[0] = 75
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: cannot modify read-only memory
+    >>> b = bytearray(string.letters)  # Creating a mutable object
+    >>> b
+    bytearray(b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+    >>> mb = memoryview(b)
+    >>> mb[0] = '*'         # Assign to view, changing the bytearray.
+    >>> b[0:5]              # The bytearray has been changed.
+    bytearray(b'*bcde')
+    >>>
+
+.. seealso::
+
+   :pep:`3137` - Immutable Bytes and Mutable Buffer
+     PEP written by Guido van Rossum.
+     Implemented by Travis Oliphant.
+     Backported to 2.7 by Antoine Pitrou; :issue:`2396`.
+
 
 
 Other Language Changes
