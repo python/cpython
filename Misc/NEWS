@@ -345,6 +345,9 @@ C-API
 Library
 -------
 
+- Issue #4687: Fix accuracy of garbage collection runtimes displayed with
+  gc.DEBUG_STATS.
+
 - Issue #7192: webbrowser.get("firefox") now wors on Mac OS X, as does
   webbrowser.get("safari").
 

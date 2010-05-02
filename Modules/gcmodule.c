@@ -804,13 +804,13 @@ collect(int generation)
 	}
 
 	if (debug & DEBUG_STATS) {
-		t1 = get_time();
 		PySys_WriteStderr("gc: collecting generation %d...\n",
 				  generation);
 		PySys_WriteStderr("gc: objects in each generation:");
 		for (i = 0; i < NUM_GENERATIONS; i++)
 			PySys_WriteStderr(" %" PY_FORMAT_SIZE_T "d",
 					  gc_list_size(GEN_HEAD(i)));
+		t1 = get_time();
 		PySys_WriteStderr("\n");
 	}
 
