@@ -1771,7 +1771,7 @@ then
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
-			LDSHARED="$CC -shared ${LDFLAGS}"
+			LDSHARED='$(CC) -shared ${LDFLAGS}'
 		else
 			LDSHARED="ld -Bshareable ${LDFLAGS}"
 		fi;;
