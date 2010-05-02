@@ -1,4 +1,4 @@
-" Auto-generated Vim syntax file for Python (trunk: r60376M).
+" Auto-generated Vim syntax file for Python (trunk: r80490).
 "
 " To use: copy or symlink to ~/.vim/syntax/python.vim
 
@@ -63,31 +63,32 @@ endif
 
 if exists("python_highlight_builtins")
   syn keyword pythonBuiltin    Ellipsis False None NotImplemented True __debug__
-  syn keyword pythonBuiltin    __import__ abs all any apply basestring bool
-  syn keyword pythonBuiltin    buffer bytes callable chr classmethod cmp coerce
-  syn keyword pythonBuiltin    compile complex copyright credits delattr dict
-  syn keyword pythonBuiltin    dir divmod enumerate eval execfile exit file
-  syn keyword pythonBuiltin    filter float frozenset getattr globals hasattr
-  syn keyword pythonBuiltin    hash help hex id input int intern isinstance
-  syn keyword pythonBuiltin    issubclass iter len license list locals long map
-  syn keyword pythonBuiltin    max min object oct open ord pow property quit
-  syn keyword pythonBuiltin    range raw_input reduce reload repr reversed round
-  syn keyword pythonBuiltin    set setattr slice sorted staticmethod str sum
-  syn keyword pythonBuiltin    super trunc tuple type unichr unicode vars xrange
-  syn keyword pythonBuiltin    zip
+  syn keyword pythonBuiltin    __import__ abs all any apply basestring bin bool
+  syn keyword pythonBuiltin    buffer bytearray bytes callable chr classmethod
+  syn keyword pythonBuiltin    cmp coerce compile complex copyright credits
+  syn keyword pythonBuiltin    delattr dict dir divmod enumerate eval execfile
+  syn keyword pythonBuiltin    exit file filter float format frozenset getattr
+  syn keyword pythonBuiltin    globals hasattr hash help hex id input int intern
+  syn keyword pythonBuiltin    isinstance issubclass iter len license list
+  syn keyword pythonBuiltin    locals long map max memoryview min next object
+  syn keyword pythonBuiltin    oct open ord pow print property quit range
+  syn keyword pythonBuiltin    raw_input reduce reload repr reversed round set
+  syn keyword pythonBuiltin    setattr slice sorted staticmethod str sum super
+  syn keyword pythonBuiltin    tuple type unichr unicode vars xrange zip
 
 endif
 
 
 if exists("python_highlight_exceptions")
   syn keyword pythonException    ArithmeticError AssertionError AttributeError
-  syn keyword pythonException    BaseException DeprecationWarning EOFError
-  syn keyword pythonException    EnvironmentError Exception FloatingPointError
-  syn keyword pythonException    FutureWarning GeneratorExit IOError ImportError
-  syn keyword pythonException    ImportWarning IndentationError IndexError
-  syn keyword pythonException    KeyError KeyboardInterrupt LookupError
-  syn keyword pythonException    MemoryError NameError NotImplementedError
-  syn keyword pythonException    OSError OverflowError PendingDeprecationWarning
+  syn keyword pythonException    BaseException BufferError BytesWarning
+  syn keyword pythonException    DeprecationWarning EOFError EnvironmentError
+  syn keyword pythonException    Exception FloatingPointError FutureWarning
+  syn keyword pythonException    GeneratorExit IOError ImportError ImportWarning
+  syn keyword pythonException    IndentationError IndexError KeyError
+  syn keyword pythonException    KeyboardInterrupt LookupError MemoryError
+  syn keyword pythonException    NameError NotImplementedError OSError
+  syn keyword pythonException    OverflowError PendingDeprecationWarning
   syn keyword pythonException    ReferenceError RuntimeError RuntimeWarning
   syn keyword pythonException    StandardError StopIteration SyntaxError
   syn keyword pythonException    SyntaxWarning SystemError SystemExit TabError
