@@ -345,6 +345,9 @@ C-API
 Library
 -------
 
+- Issue #7192: webbrowser.get("firefox") now wors on Mac OS X, as does
+  webbrowser.get("safari").
+
 - Issue #8464: tarfile no longer creates files with execute permissions set
   when mode="w|" is used.
 
