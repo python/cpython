@@ -599,9 +599,35 @@ if sys.platform == 'darwin':
             rc = osapipe.close()
             return not rc
 
+    class MacOSXOSAScript(BaseBrowser):
+        def __init__(self, name):
+            self._name = name
+
+        def open(self, url, new=0, autoraise=True):
+            if self._name == 'default':
+                script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
+            else:
+                script = '''
+                   tell application "%s"
+                       activate
+                       open location "%s"
+                   end
+                   '''%(self._name, url.replace('"', '%22'))
+
+            osapipe = os.popen("osascript", "w")
+            if osapipe is None:
+                return False
+
+            osapipe.write(script)
+            rc = osapipe.close()
+            return not rc
+
+
     # Don't clear _tryorder or _browsers since OS X can use above Unix support
     # (but we prefer using the OS X specific stuff)
-    register("MacOSX", None, MacOSX('default'), -1)
+    register("MacOSX", None, MacOSXOSAScript('default'), -1)
+    register("safari", None, MacOSXOSAScript('safari'), -1)
+    register("firefox", None, MacOSXOSAScript('firefox'), -1)
 
 
 #

@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7192: webbrowser.get("firefox") now wors on Mac OS X, as does
+  webbrowser.get("safari").
+
 - Issue #8577: distutils.sysconfig.get_python_inc() now makes a difference 
   between the build dir and the source dir when looking for "python.h" or
   "Include".
