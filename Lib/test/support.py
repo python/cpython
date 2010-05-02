@@ -1020,7 +1020,7 @@ def check_impl_detail(**guards):
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
     if verbose:
-        runner = unittest.TextTestRunner(sys.stderr, verbosity=2)
+        runner = unittest.TextTestRunner(sys.stdout, verbosity=2)
     else:
         runner = BasicTestRunner()
 

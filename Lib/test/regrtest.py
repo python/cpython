@@ -376,6 +376,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif o in ('-j', '--multiprocess'):
             use_mp = int(a)
         elif o == '--slaveargs':
+            replace_stdout()
             args, kwargs = json.loads(a)
             try:
                 result = runtest(*args, **kwargs)
@@ -513,6 +514,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         tests = test_forever()
     else:
         tests = iter(selected)
+
+    replace_stdout()
 
     if use_mp:
         try:
@@ -727,6 +730,14 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
             tests.append(modname)
     return stdtests + sorted(tests)
 
+def replace_stdout():
+    """Set stdout encoder error handler to backslashreplace (as stderr error
+    handler) to avoid UnicodeEncodeError when printing a traceback"""
+    stdout = sys.stdout
+    sys.stdout = open(stdout.fileno(), 'w',
+        encoding=stdout.encoding,
+        errors="backslashreplace")
+
 def runtest(test, verbose, quiet,
             testdir=None, huntrleaks=False, debug=False, use_resources=None):
     """Run a single test.
@@ -939,8 +950,8 @@ def runtest_inner(test, verbose, quiet,
         print("test", test, "crashed --", str(type) + ":", value)
         sys.stdout.flush()
         if verbose or debug:
-            traceback.print_exc(file=sys.stderr)
-            sys.stderr.flush()
+            traceback.print_exc(file=sys.stdout)
+            sys.stdout.flush()
         return FAILED, test_time
     else:
         if refleak:

@@ -1201,8 +1201,8 @@ Documentation
 Tests
 -----
 
-- Issue #8533: Write tracebacks and failed tests to sys.stderr instead of
-  sys.stdout to avoid UnicodeEncodeError (use backslashreplace error handler)
+- Issue #8533: regrtest uses backslashreplace error handler for stdout to avoid
+  UnicodeEncodeError (write non-ASCII character to stdout using ASCII encoding)
 
 - Issue #8576: Remove use of find_unused_port() in test_smtplib and
   test_multiprocessing.  Patch by Paul Moore.
