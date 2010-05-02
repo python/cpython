@@ -178,7 +178,7 @@ PyInt_AsLong(register PyObject *op)
 		{
 			Py_DECREF(io);
 			PyErr_SetString(PyExc_TypeError,
-					"nb_int should return int object");
+				    "__int__ method should return an integer");
 			return -1;
 		}
 	}
@@ -236,7 +236,7 @@ PyInt_AsSsize_t(register PyObject *op)
 		{
 			Py_DECREF(io);
 			PyErr_SetString(PyExc_TypeError,
-					"nb_int should return int object");
+				    "__int__ method should return an integer");
 			return -1;
 		}
 	}
@@ -281,7 +281,7 @@ PyInt_AsUnsignedLongMask(register PyObject *op)
 		{
 			Py_DECREF(io);
 			PyErr_SetString(PyExc_TypeError,
-					"nb_int should return int object");
+				    "__int__ method should return an integer");
 			return (unsigned long)-1;
 		}
 	}
@@ -326,7 +326,7 @@ PyInt_AsUnsignedLongLongMask(register PyObject *op)
 		{
 			Py_DECREF(io);
 			PyErr_SetString(PyExc_TypeError,
-					"nb_int should return int object");
+				    "__int__ method should return an integer");
 			return (unsigned PY_LONG_LONG)-1;
 		}
 	}
