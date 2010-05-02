@@ -4,6 +4,7 @@ import textwrap
 
 from test import support
 
+import traceback
 import unittest
 
 
@@ -361,6 +362,15 @@ class Test_OldTestResult(unittest.TestCase):
         runner.run(Test('testFoo'))
 
 
+class MockTraceback(object):
+    @staticmethod
+    def format_exception(*_):
+        return ['A traceback']
+
+def restore_traceback():
+    unittest.result.traceback = traceback
+
+
 class TestOutputBuffering(unittest.TestCase):
 
     def setUp(self):
@@ -441,6 +451,9 @@ class TestOutputBuffering(unittest.TestCase):
         return result
 
     def testBufferOutputAddErrorOrFailure(self):
+        unittest.result.traceback = MockTraceback
+        self.addCleanup(restore_traceback)
+
         for message_attr, add_attr, include_error in [
             ('errors', 'addError', True),
             ('failures', 'addFailure', False),
@@ -476,7 +489,8 @@ class TestOutputBuffering(unittest.TestCase):
                 Stderr:
                 bar
             """)
-            expectedFullMessage = 'NoneType\n%s%s' % (expectedOutMessage, expectedErrMessage)
+
+            expectedFullMessage = 'A traceback%s%s' % (expectedOutMessage, expectedErrMessage)
 
             self.assertIs(test, self)
             self.assertEqual(result._original_stdout.getvalue(), expectedOutMessage)

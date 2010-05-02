@@ -153,9 +153,7 @@ class TestResult(object):
             length = self._count_relevant_tb_levels(tb)
             msgLines = traceback.format_exception(exctype, value, tb, length)
         else:
-            chain = exctype is not None
-            msgLines = traceback.format_exception(exctype, value, tb,
-                                                  chain=chain)
+            msgLines = traceback.format_exception(exctype, value, tb)
 
         if self.buffer:
             output = sys.stdout.getvalue()
