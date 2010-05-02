@@ -1198,6 +1198,9 @@ Documentation
 Tests
 -----
 
+- Issue #8533: Write tracebacks and failed tests to sys.stderr instead of
+  sys.stdout to avoid UnicodeEncodeError (use backslashreplace error handler)
+
 - Issue #8576: Remove use of find_unused_port() in test_smtplib and
   test_multiprocessing.  Patch by Paul Moore.
 
