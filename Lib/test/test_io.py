@@ -541,6 +541,20 @@ class IOTest(unittest.TestCase):
         with self.open(zero, "r") as f:
             self.assertRaises(OverflowError, f.read)
 
+    def test_flush_error_on_close(self):
+        f = self.open(support.TESTFN, "wb", buffering=0)
+        def bad_flush():
+            raise IOError()
+        f.flush = bad_flush
+        self.assertRaises(IOError, f.close) # exception not swallowed
+
+    def test_multi_close(self):
+        f = self.open(support.TESTFN, "wb", buffering=0)
+        f.close()
+        f.close()
+        f.close()
+        self.assertRaises(ValueError, f.flush)
+
 class CIOTest(IOTest):
     pass
 
@@ -641,6 +655,22 @@ class CommonBufferedTests:
         self.assertEqual(repr(b), "<%s name=u'dummy'>" % clsname)
         raw.name = b"dummy"
         self.assertEqual(repr(b), "<%s name='dummy'>" % clsname)
+
+    def test_flush_error_on_close(self):
+        raw = self.MockRawIO()
+        def bad_flush():
+            raise IOError()
+        raw.flush = bad_flush
+        b = self.tp(raw)
+        self.assertRaises(IOError, b.close) # exception not swallowed
+
+    def test_multi_close(self):
+        raw = self.MockRawIO()
+        b = self.tp(raw)
+        b.close()
+        b.close()
+        b.close()
+        self.assertRaises(ValueError, b.flush)
 
 
 class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
@@ -2116,6 +2146,20 @@ class TextIOWrapperTest(unittest.TestCase):
             content = f.read()
             for n in range(20):
                 self.assertEquals(content.count("Thread%03d\n" % n), 1)
+
+    def test_flush_error_on_close(self):
+        txt = self.TextIOWrapper(self.BytesIO(self.testdata), encoding="ascii")
+        def bad_flush():
+            raise IOError()
+        txt.flush = bad_flush
+        self.assertRaises(IOError, txt.close) # exception not swallowed
+
+    def test_multi_close(self):
+        txt = self.TextIOWrapper(self.BytesIO(self.testdata), encoding="ascii")
+        txt.close()
+        txt.close()
+        txt.close()
+        self.assertRaises(ValueError, txt.flush)
 
 class CTextIOWrapperTest(TextIOWrapperTest):
 

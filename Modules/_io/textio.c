@@ -2405,16 +2405,30 @@ static PyObject *
 textiowrapper_close(textio *self, PyObject *args)
 {
     PyObject *res;
+    int r;
     CHECK_INITIALIZED(self);
-    res = PyObject_CallMethod((PyObject *)self, "flush", NULL);
-    if (res == NULL) {
-        /* If flush() fails, just give up */
-        PyErr_Clear();
-    }
-    else
-        Py_DECREF(res);
 
-    return PyObject_CallMethod(self->buffer, "close", NULL);
+    res = textiowrapper_closed_get(self, NULL);
+    if (res == NULL)
+        return NULL;
+    r = PyObject_IsTrue(res);
+    Py_DECREF(res);
+    if (r < 0)
+        return NULL;
+    
+    if (r > 0) {
+        Py_RETURN_NONE; /* stream already closed */
+    }
+    else {
+        res = PyObject_CallMethod((PyObject *)self, "flush", NULL);
+        if (res == NULL) {
+            return NULL;
+        }
+        else
+            Py_DECREF(res);
+
+        return PyObject_CallMethod(self->buffer, "close", NULL);
+    }
 }
 
 static PyObject *

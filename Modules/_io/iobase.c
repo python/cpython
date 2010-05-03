@@ -183,11 +183,7 @@ iobase_close(PyObject *self, PyObject *args)
     res = PyObject_CallMethodObjArgs(self, _PyIO_str_flush, NULL);
     PyObject_SetAttrString(self, "__IOBase_closed", Py_True);
     if (res == NULL) {
-        /* If flush() fails, just give up */
-        if (PyErr_ExceptionMatches(PyExc_IOError))
-            PyErr_Clear();
-        else
-            return NULL;
+        return NULL;
     }
     Py_XDECREF(res);
     Py_RETURN_NONE;
