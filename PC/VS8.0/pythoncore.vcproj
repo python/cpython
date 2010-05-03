@@ -707,6 +707,10 @@
 				>
 			</File>			
 			<File
+				RelativePath="..\..\Include\dynamic_annotations.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Include\enumobject.h"
 				>
 			</File>
@@ -1652,6 +1656,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Python\compile.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Python\dynamic_annotations.c"
 				>
 			</File>
 			<File

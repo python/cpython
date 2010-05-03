@@ -734,7 +734,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	   Let's just hope that no exception occurs then...  This must be
 	   _PyThreadState_Current and not PyThreadState_GET() because in debug
 	   mode, the latter complains if tstate is NULL. */
-	tstate = _PyThreadState_Current;
+	tstate = (PyThreadState*)_Py_atomic_load_relaxed(
+		&_PyThreadState_Current);
 	if (tstate != NULL && tstate->curexc_type != NULL) {
 		/* preserve the existing exception */
 		PyObject *err_type, *err_value, *err_tb;

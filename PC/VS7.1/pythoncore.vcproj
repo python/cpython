@@ -508,6 +508,9 @@
 			RelativePath="..\..\PC\config.c">
 		</File>
 		<File
+			RelativePath="..\..\Python\dynamic_annotations.c">
+		</File>
+		<File
 			RelativePath="..\..\Modules\datetimemodule.c">
 		</File>
 		<File

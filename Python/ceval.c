@@ -216,23 +216,46 @@ PyEval_GetCallStats(PyObject *self)
 #endif
 
 
+/* This can set eval_breaker to 0 even though gil_drop_request became
+   1.  We believe this is all right because the eval loop will release
+   the GIL eventually anyway. */
 #define COMPUTE_EVAL_BREAKER() \
-	(eval_breaker = gil_drop_request | pendingcalls_to_do | pending_async_exc)
+	_Py_atomic_store_relaxed( \
+		&eval_breaker, \
+		_Py_atomic_load_relaxed(&gil_drop_request) | \
+		_Py_atomic_load_relaxed(&pendingcalls_to_do) | \
+		pending_async_exc)
 
 #define SET_GIL_DROP_REQUEST() \
-	do { gil_drop_request = 1; eval_breaker = 1; } while (0)
+	do { \
+		_Py_atomic_store_relaxed(&gil_drop_request, 1); \
+		_Py_atomic_store_relaxed(&eval_breaker, 1); \
+	} while (0)
 
 #define RESET_GIL_DROP_REQUEST() \
-	do { gil_drop_request = 0; COMPUTE_EVAL_BREAKER(); } while (0)
+	do { \
+		_Py_atomic_store_relaxed(&gil_drop_request, 0); \
+		COMPUTE_EVAL_BREAKER(); \
+	} while (0)
 
+/* Pending calls are only modified under pending_lock */
 #define SIGNAL_PENDING_CALLS() \
-	do { pendingcalls_to_do = 1; eval_breaker = 1; } while (0)
+	do { \
+		_Py_atomic_store_relaxed(&pendingcalls_to_do, 1); \
+		_Py_atomic_store_relaxed(&eval_breaker, 1); \
+	} while (0)
 
 #define UNSIGNAL_PENDING_CALLS() \
-	do { pendingcalls_to_do = 0; COMPUTE_EVAL_BREAKER(); } while (0)
+	do { \
+		_Py_atomic_store_relaxed(&pendingcalls_to_do, 0); \
+		COMPUTE_EVAL_BREAKER(); \
+	} while (0)
 
 #define SIGNAL_ASYNC_EXC() \
-	do { pending_async_exc = 1; eval_breaker = 1; } while (0)
+	do { \
+		pending_async_exc = 1; \
+		_Py_atomic_store_relaxed(&eval_breaker, 1); \
+	} while (0)
 
 #define UNSIGNAL_ASYNC_EXC() \
 	do { pending_async_exc = 0; COMPUTE_EVAL_BREAKER(); } while (0)
@@ -249,13 +272,14 @@ static PyThread_type_lock pending_lock = 0; /* for pending calls */
 static long main_thread = 0;
 /* This single variable consolidates all requests to break out of the fast path
    in the eval loop. */
-static volatile int eval_breaker = 0;
-/* Request for droppping the GIL */
-static volatile int gil_drop_request = 0;
-/* Request for running pending calls */
-static volatile int pendingcalls_to_do = 0; 
-/* Request for looking at the `async_exc` field of the current thread state */
-static volatile int pending_async_exc = 0;
+static _Py_atomic_int eval_breaker = {0};
+/* Request for dropping the GIL */
+static _Py_atomic_int gil_drop_request = {0};
+/* Request for running pending calls. */
+static _Py_atomic_int pendingcalls_to_do = {0};
+/* Request for looking at the `async_exc` field of the current thread state.
+   Guarded by the GIL. */
+static int pending_async_exc = 0;
 
 #include "ceval_gil.h"
 
@@ -293,7 +317,8 @@ PyEval_ReleaseLock(void)
 	   We therefore avoid PyThreadState_GET() which dumps a fatal error
 	   in debug mode.
 	*/
-	drop_gil(_PyThreadState_Current);
+	drop_gil((PyThreadState*)_Py_atomic_load_relaxed(
+		&_PyThreadState_Current));
 }
 
 void
@@ -360,8 +385,8 @@ PyEval_ReInitThreads(void)
 }
 
 #else
-static int eval_breaker = 0;
-static int gil_drop_request = 0;
+static _Py_atomic_int eval_breaker = {0};
+static _Py_atomic_int gil_drop_request = {0};
 static int pending_async_exc = 0;
 #endif /* WITH_THREAD */
 
@@ -1217,7 +1242,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		   async I/O handler); see Py_AddPendingCall() and
 		   Py_MakePendingCalls() above. */
 
-		if (eval_breaker) {
+		if (_Py_atomic_load_relaxed(&eval_breaker)) {
 			if (*next_instr == SETUP_FINALLY) {
 				/* Make the last opcode before
 				   a try: finally: block uninterruptable. */
@@ -1227,13 +1252,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #ifdef WITH_TSC
 			ticked = 1;
 #endif
-			if (pendingcalls_to_do) {
+			if (_Py_atomic_load_relaxed(&pendingcalls_to_do)) {
 				if (Py_MakePendingCalls() < 0) {
 					why = WHY_EXCEPTION;
 					goto on_error;
 				}
 			}
-			if (gil_drop_request) {
+			if (_Py_atomic_load_relaxed(&gil_drop_request)) {
 #ifdef WITH_THREAD
 				/* Give another thread a chance */
 				if (PyThreadState_Swap(NULL) != tstate)
