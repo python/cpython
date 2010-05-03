@@ -31,6 +31,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8576: logging updated to remove usage of find_unused_port().
+
 - Issue #4687: Fix accuracy of garbage collection runtimes displayed with
   gc.DEBUG_STATS.
 

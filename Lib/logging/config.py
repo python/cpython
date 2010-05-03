@@ -873,6 +873,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
         def run(self):
             server = self.rcvr(port=self.port, handler=self.hdlr,
                                ready=self.ready)
+            if self.port == 0:
+                self.port = server.server_address[1]
             self.ready.set()
             global _listener
             logging._acquireLock()

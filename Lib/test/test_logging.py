@@ -38,8 +38,7 @@ from SocketServer import ThreadingTCPServer, StreamRequestHandler
 import struct
 import sys
 import tempfile
-from test.test_support import captured_stdout, run_with_locale, run_unittest,\
-     find_unused_port
+from test.test_support import captured_stdout, run_with_locale, run_unittest
 import textwrap
 import unittest
 import warnings
@@ -1664,10 +1663,12 @@ class ConfigDictTest(BaseTest):
 
     @unittest.skipUnless(threading, 'listen() needs threading to work')
     def setup_via_listener(self, text):
-        port = find_unused_port()
-        t = logging.config.listen(port)
+        # Ask for a randomly assigned port (by using port 0)
+        t = logging.config.listen(0)
         t.start()
         t.ready.wait()
+        # Now get the port allocated
+        port = t.port
         t.ready.clear()
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
