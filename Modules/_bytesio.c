@@ -163,6 +163,7 @@ PyDoc_STRVAR(flush_doc,
 static PyObject *
 bytesio_flush(BytesIOObject *self)
 {
+    CHECK_CLOSED(self);
     Py_RETURN_NONE;
 }
 
