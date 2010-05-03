@@ -313,6 +313,20 @@ class IOTest(unittest.TestCase):
             file = io.open(f.fileno(), "r", closefd=False)
             self.assertEqual(file.buffer.raw.closefd, False)
 
+    def test_flush_error_on_close(self):
+        f = io.open(test_support.TESTFN, "wb", buffering=0)
+        def bad_flush():
+            raise IOError()
+        f.flush = bad_flush
+        self.assertRaises(IOError, f.close) # exception not swallowed
+
+    def test_multi_close(self):
+        f = io.open(test_support.TESTFN, "wb", buffering=0)
+        f.close()
+        f.close()
+        f.close()
+        self.assertRaises(ValueError, f.flush)
+
 
 class MemorySeekTestMixin:
 
@@ -564,6 +578,22 @@ class BufferedWriterTest(unittest.TestCase):
                     "the following exceptions were caught: %r" % errors)
         finally:
             test_support.unlink(test_support.TESTFN)
+
+    def test_flush_error_on_close(self):
+        raw = MockRawIO()
+        def bad_flush():
+            raise IOError()
+        raw.flush = bad_flush
+        b = io.BufferedWriter(raw)
+        self.assertRaises(IOError, b.close) # exception not swallowed
+
+    def test_multi_close(self):
+        raw = MockRawIO()
+        b = io.BufferedWriter(raw)
+        b.close()
+        b.close()
+        b.close()
+        self.assertRaises(ValueError, b.flush)
 
 
 class BufferedRWPairTest(unittest.TestCase):
@@ -1294,6 +1324,20 @@ class TextIOWrapperTest(unittest.TestCase):
         decoder = codecs.getincrementaldecoder("utf-8")()
         decoder = io.IncrementalNewlineDecoder(decoder, translate=True)
         self.check_newline_decoder_utf8(decoder)
+
+    def test_flush_error_on_close(self):
+        txt = io.TextIOWrapper(io.BytesIO(self.testdata), encoding="ascii")
+        def bad_flush():
+            raise IOError()
+        txt.flush = bad_flush
+        self.assertRaises(IOError, txt.close) # exception not swallowed
+
+    def test_multi_close(self):
+        txt = io.TextIOWrapper(io.BytesIO(self.testdata), encoding="ascii")
+        txt.close()
+        txt.close()
+        txt.close()
+        self.assertRaises(ValueError, txt.flush)
 
 
 # XXX Tests for open()
