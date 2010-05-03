@@ -1686,7 +1686,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     if (PyUnicode_Check(string)) {
         /* unicode strings doesn't always support the buffer interface */
         ptr = (void*) PyUnicode_AS_DATA(string);
-        bytes = PyUnicode_GET_DATA_SIZE(string);
+        /* bytes = PyUnicode_GET_DATA_SIZE(string); */
         size = PyUnicode_GET_SIZE(string);
         charsize = sizeof(Py_UNICODE);
 
@@ -2967,13 +2967,13 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                    <INFO> <1=skip> <2=flags> <3=min> <4=max>;
                    If SRE_INFO_PREFIX or SRE_INFO_CHARSET is in the flags,
                    more follows. */
-                SRE_CODE flags, min, max, i;
+                SRE_CODE flags, i;
                 SRE_CODE *newcode;
                 GET_SKIP;
                 newcode = code+skip-1;
                 GET_ARG; flags = arg;
-                GET_ARG; min = arg;
-                GET_ARG; max = arg;
+                GET_ARG; /* min */
+                GET_ARG; /* max */
                 /* Check that only valid flags are present */
                 if ((flags & ~(SRE_INFO_PREFIX |
                                SRE_INFO_LITERAL |
@@ -2989,9 +2989,9 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     FAIL;
                 /* Validate the prefix */
                 if (flags & SRE_INFO_PREFIX) {
-                    SRE_CODE prefix_len, prefix_skip;
+                    SRE_CODE prefix_len;
                     GET_ARG; prefix_len = arg;
-                    GET_ARG; prefix_skip = arg;
+                    GET_ARG; /* prefix skip */
                     /* Here comes the prefix string */
                     if (code+prefix_len < code || code+prefix_len > newcode)
                         FAIL;
