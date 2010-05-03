@@ -204,6 +204,9 @@ Core and Builtins
   libraries are: Mach C threads, SunOS LWP, GNU pth, Irix threads. Support code
   will be entirely removed in 3.3.
 
+- Support for OSF* has been disabled. If nobody stands up, support will be
+  removed in 3.3. See http://bugs.python.org/issue8606 .
+
 - Peephole constant folding had missed UNARY_POSITIVE.
 
 - Issue #1722344: threading._shutdown() is now called in Py_Finalize(), which
