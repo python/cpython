@@ -40,6 +40,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7865: The close() method of :mod:`io` objects should not swallow
+  exceptions raised by the implicit flush().  Also ensure that calling
+  close() several times is supported.  Patch by Pascal Chambon.
+
 - Issue #4687: Fix accuracy of garbage collection runtimes displayed with
   gc.DEBUG_STATS.
 

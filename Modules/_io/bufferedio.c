@@ -438,11 +438,7 @@ buffered_close(buffered *self, PyObject *args)
     res = PyObject_CallMethodObjArgs((PyObject *)self, _PyIO_str_flush, NULL);
     ENTER_BUFFERED(self)
     if (res == NULL) {
-        /* If flush() fails, just give up */
-        if (PyErr_ExceptionMatches(PyExc_IOError))
-            PyErr_Clear();
-        else
-            goto end;
+        goto end;
     }
     Py_XDECREF(res);
 
