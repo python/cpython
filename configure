@@ -13554,6 +13554,12 @@ fi
 
 
 
+case $ac_sys_system in
+  OSF*) as_fn_error "OSF* systems are deprecated unless somebody volunteers. Check http://bugs.python.org/issue8606" "$LINENO" 5 ;;
+esac
+
+
+
 for h in `(cd $srcdir;echo Python/thread_*.h)`
 do
   THREADHEADERS="$THREADHEADERS \$(srcdir)/$h"
