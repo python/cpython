@@ -2515,6 +2515,7 @@ if test "$with_valgrind" != no; then
       [AC_DEFINE([WITH_VALGRIND], 1, [Define if you want pymalloc to be disabled when running under valgrind])],
       [AC_MSG_ERROR([Valgrind support requested but headers not available])]
     )
+    OPT="-DDYNAMIC_ANNOTATIONS_ENABLED=1 $OPT"
 fi
 
 # Check for --with-wctype-functions

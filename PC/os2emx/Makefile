@@ -332,6 +332,7 @@ SRC.PYTHON=	$(addprefix $(TOP), \
 		Python/ceval.c \
 		Python/compile.c \
 		Python/codecs.c \
+		Python/dynamic_annotations.c \
 		Python/errors.c \
 		Python/frozen.c \
 		Python/frozenmain.c \

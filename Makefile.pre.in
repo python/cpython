@@ -238,6 +238,7 @@ PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/tokenizer.o
 
 PGOBJS=		\
 		Objects/obmalloc.o \
+		Python/dynamic_annotations.o \
 		Python/mysnprintf.o \
 		Python/pyctype.o \
 		Parser/tokenizer_pgen.o \
@@ -283,6 +284,7 @@ PYTHON_OBJS=	\
 		Python/ceval.o \
 		Python/compile.o \
 		Python/codecs.o \
+		Python/dynamic_annotations.o \
 		Python/errors.o \
 		Python/frozen.o \
 		Python/frozenmain.o \
@@ -644,6 +646,7 @@ PYTHON_HEADERS= \
 		Include/descrobject.h \
 		Include/dictobject.h \
 		Include/dtoa.h \
+		Include/dynamic_annotations.h \
 		Include/enumobject.h \
 		Include/errcode.h \
 		Include/eval.h \
@@ -674,6 +677,7 @@ PYTHON_HEADERS= \
 		Include/pgen.h \
 		Include/pgenheaders.h \
 		Include/pyarena.h \
+		Include/pyatomic.h \
 		Include/pycapsule.h \
 		Include/pyctype.h \
 		Include/pydebug.h \

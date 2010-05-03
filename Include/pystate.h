@@ -131,12 +131,15 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject *);
 
 /* Variable and macro for in-line access to current thread state */
 
-PyAPI_DATA(PyThreadState *) _PyThreadState_Current;
+/* Assuming the current thread holds the GIL, this is the
+   PyThreadState for the current thread. */
+PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
 
 #ifdef Py_DEBUG
 #define PyThreadState_GET() PyThreadState_Get()
 #else
-#define PyThreadState_GET() (_PyThreadState_Current)
+#define PyThreadState_GET() \
+    ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
 #endif
 
 typedef

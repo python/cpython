@@ -207,14 +207,14 @@ do { \
 #endif /* _POSIX_THREADS, NT_THREADS */
 
 
-/* Whether the GIL is already taken (-1 if uninitialized). This is volatile
+/* Whether the GIL is already taken (-1 if uninitialized). This is atomic
    because it can be read without any lock taken in ceval.c. */
-static volatile int gil_locked = -1;
+static _Py_atomic_int gil_locked = {-1};
 /* Number of GIL switches since the beginning. */
 static unsigned long gil_switch_number = 0;
-/* Last thread holding / having held the GIL. This helps us know whether
-   anyone else was scheduled after we dropped the GIL. */
-static PyThreadState *gil_last_holder = NULL;
+/* Last PyThreadState holding / having held the GIL. This helps us know
+   whether anyone else was scheduled after we dropped the GIL. */
+static _Py_atomic_address gil_last_holder = {NULL};
 
 /* This condition variable allows one or several threads to wait until
    the GIL is released. In addition, the mutex also protects the above
@@ -232,7 +232,7 @@ static MUTEX_T switch_mutex;
 
 static int gil_created(void)
 {
-    return gil_locked >= 0;
+    return _Py_atomic_load_explicit(&gil_locked, _Py_memory_order_acquire) >= 0;
 }
 
 static void create_gil(void)
@@ -245,33 +245,37 @@ static void create_gil(void)
 #ifdef FORCE_SWITCHING
     COND_INIT(switch_cond);
 #endif
-    gil_locked = 0;
-    gil_last_holder = NULL;
+    _Py_atomic_store_relaxed(&gil_last_holder, NULL);
+    _Py_ANNOTATE_RWLOCK_CREATE(&gil_locked);
+    _Py_atomic_store_explicit(&gil_locked, 0, _Py_memory_order_release);
 }
 
 static void recreate_gil(void)
 {
+    _Py_ANNOTATE_RWLOCK_DESTROY(&gil_locked);
     create_gil();
 }
 
 static void drop_gil(PyThreadState *tstate)
 {
     /* NOTE: tstate is allowed to be NULL. */
-    if (!gil_locked)
+    if (!_Py_atomic_load_relaxed(&gil_locked))
         Py_FatalError("drop_gil: GIL is not locked");
-    if (tstate != NULL && tstate != gil_last_holder)
+    if (tstate != NULL &&
+        tstate != _Py_atomic_load_relaxed(&gil_last_holder))
         Py_FatalError("drop_gil: wrong thread state");
 
     MUTEX_LOCK(gil_mutex);
-    gil_locked = 0;
+    _Py_ANNOTATE_RWLOCK_RELEASED(&gil_locked, /*is_write=*/1);
+    _Py_atomic_store_relaxed(&gil_locked, 0);
     COND_SIGNAL(gil_cond);
     MUTEX_UNLOCK(gil_mutex);
     
 #ifdef FORCE_SWITCHING
-    if (gil_drop_request && tstate != NULL) {
+    if (_Py_atomic_load_relaxed(&gil_drop_request) && tstate != NULL) {
         MUTEX_LOCK(switch_mutex);
         /* Not switched yet => wait */
-        if (gil_last_holder == tstate) {
+        if (_Py_atomic_load_relaxed(&gil_last_holder) == tstate) {
 	    RESET_GIL_DROP_REQUEST();
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
@@ -294,11 +298,11 @@ static void take_gil(PyThreadState *tstate)
     err = errno;
     MUTEX_LOCK(gil_mutex);
 
-    if (!gil_locked)
+    if (!_Py_atomic_load_relaxed(&gil_locked))
         goto _ready;
     
     COND_RESET(gil_cond);
-    while (gil_locked) {
+    while (_Py_atomic_load_relaxed(&gil_locked)) {
         int timed_out = 0;
         unsigned long saved_switchnum;
 
@@ -306,7 +310,9 @@ static void take_gil(PyThreadState *tstate)
         COND_TIMED_WAIT(gil_cond, gil_mutex, INTERVAL, timed_out);
         /* If we timed out and no switch occurred in the meantime, it is time
            to ask the GIL-holding thread to drop it. */
-        if (timed_out && gil_locked && gil_switch_number == saved_switchnum) {
+        if (timed_out &&
+            _Py_atomic_load_relaxed(&gil_locked) &&
+            gil_switch_number == saved_switchnum) {
             SET_GIL_DROP_REQUEST();
         }
     }
@@ -316,17 +322,19 @@ _ready:
     MUTEX_LOCK(switch_mutex);
 #endif
     /* We now hold the GIL */
-    gil_locked = 1;
+    _Py_atomic_store_relaxed(&gil_locked, 1);
+    _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil_locked, /*is_write=*/1);
 
-    if (tstate != gil_last_holder) {
-        gil_last_holder = tstate;
+    if (tstate != _Py_atomic_load_relaxed(&gil_last_holder)) {
+        _Py_atomic_store_relaxed(&gil_last_holder, tstate);
         ++gil_switch_number;
     }
+
 #ifdef FORCE_SWITCHING
     COND_SIGNAL(switch_cond);
     MUTEX_UNLOCK(switch_mutex);
 #endif
-    if (gil_drop_request) {
+    if (_Py_atomic_load_relaxed(&gil_drop_request)) {
         RESET_GIL_DROP_REQUEST();
     }
     if (tstate->async_exc != NULL) {

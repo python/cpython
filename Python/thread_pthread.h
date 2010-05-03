@@ -397,6 +397,12 @@ PyThread_allocate_lock(void)
 		status = pthread_mutex_init(&lock->mut,
 					    pthread_mutexattr_default);
 		CHECK_STATUS("pthread_mutex_init");
+                /* Mark the pthread mutex underlying a Python mutex as
+                   pure happens-before.  We can't simply mark the
+                   Python-level mutex as a mutex because it can be
+                   acquired and released in different threads, which
+                   will cause errors. */
+		_Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX(&lock->mut);
 
 		status = pthread_cond_init(&lock->lock_released,
 					   pthread_condattr_default);
