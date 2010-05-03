@@ -270,11 +270,12 @@ bsddb_subscript(bsddbobject *dp, PyObject *key)
 {
 	int status;
 	DBT krec, drec;
-	char *data,buf[4096];
+	char *data = NULL;
+	char buf[4096];
 	int size;
 	PyObject *result;
 	recno_t recno;
-	
+
 	if (dp->di_type == DB_RECNO) {
 		if (!PyArg_Parse(key, "i", &recno)) {
 			PyErr_SetString(PyExc_TypeError,
@@ -503,7 +504,8 @@ bsddb_set_location(bsddbobject *dp, PyObject *key)
 {
 	int status;
 	DBT krec, drec;
-	char *data,buf[4096];
+	char *data = NULL;
+	char buf[4096];
 	int size;
 	PyObject *result;
 	recno_t recno;
@@ -635,7 +637,7 @@ bsddb_sync(bsddbobject *dp)
 		PyErr_SetFromErrno(BsddbError);
 		return NULL;
 	}
-	return PyInt_FromLong(status = 0);
+	return PyInt_FromLong(0);
 }
 static PyMethodDef bsddb_methods[] = {
 	{"close",		(PyCFunction)bsddb_close, METH_NOARGS},
