@@ -104,9 +104,7 @@ The available exception and functions in this module are:
    value should be between 8 and 15 for the most recent versions of the zlib
    library, larger values resulting in better compression at the expense of greater
    memory usage.  The default value is 15.  When *wbits* is negative, the standard
-   :program:`gzip` header is suppressed; this is an undocumented feature of the
-   zlib library, used for compatibility with :program:`unzip`'s compression file
-   format.
+   :program:`gzip` header is suppressed.
 
    *bufsize* is the initial size of the buffer used to hold decompressed data.  If
    more space is required, the buffer size will be increased as needed, so you
