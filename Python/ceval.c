@@ -868,7 +868,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 #define DISPATCH() \
 	{ \
-		if (!eval_breaker) { \
+            if (!_Py_atomic_load_relaxed(&eval_breaker)) {      \
 			FAST_DISPATCH(); \
 		} \
 		continue; \
