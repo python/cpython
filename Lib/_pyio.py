@@ -322,6 +322,7 @@ class IOBase(metaclass=abc.ABCMeta):
 
         This is not implemented for read-only and non-blocking streams.
         """
+        self._checkClosed()
         # XXX Should this return the number of bytes written???
 
     __closed = False
@@ -332,10 +333,7 @@ class IOBase(metaclass=abc.ABCMeta):
         This method has no effect if the file is already closed.
         """
         if not self.__closed:
-            try:
-                self.flush()
-            except IOError:
-                pass  # If flush() fails, just give up
+            self.flush()
             self.__closed = True
 
     def __del__(self) -> None:
@@ -702,14 +700,13 @@ class _BufferedIOMixin(BufferedIOBase):
     ### Flush and close ###
 
     def flush(self):
+        if self.closed:
+            raise ValueError("flush of closed file")
         self.raw.flush()
 
     def close(self):
-        if not self.closed and self.raw is not None:
-            try:
-                self.flush()
-            except IOError:
-                pass  # If flush() fails, just give up
+        if self.raw is not None and not self.closed:
+            self.flush()
             self.raw.close()
 
     def detach(self):
@@ -1521,11 +1518,8 @@ class TextIOWrapper(TextIOBase):
         self._telling = self._seekable
 
     def close(self):
-        if self.buffer is not None:
-            try:
-                self.flush()
-            except IOError:
-                pass  # If flush() fails, just give up
+        if self.buffer is not None and not self.closed:
+            self.flush()
             self.buffer.close()
 
     @property
