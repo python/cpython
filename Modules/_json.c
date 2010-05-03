@@ -439,7 +439,7 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict, Py_s
     PyObject *rval;
     Py_ssize_t len = PyString_GET_SIZE(pystr);
     Py_ssize_t begin = end - 1;
-    Py_ssize_t next = begin;
+    Py_ssize_t next;
     int has_unicode = 0;
     char *buf = PyString_AS_STRING(pystr);
     PyObject *chunks = PyList_New(0);
@@ -644,7 +644,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     PyObject *rval;
     Py_ssize_t len = PyUnicode_GET_SIZE(pystr);
     Py_ssize_t begin = end - 1;
-    Py_ssize_t next = begin;
+    Py_ssize_t next;
     const Py_UNICODE *buf = PyUnicode_AS_UNICODE(pystr);
     PyObject *chunks = PyList_New(0);
     if (chunks == NULL) {
@@ -2178,8 +2178,9 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
     }
     if (s->indent != Py_None) {
         /* TODO: DOES NOT RUN */
-        indent_level -= 1;
         /*
+            indent_level -= 1;
+
             yield '\n' + (' ' * (_indent * _current_indent_level))
         */
     }
@@ -2268,8 +2269,9 @@ encoder_listencode_list(PyEncoderObject *s, PyObject *rval, PyObject *seq, Py_ss
     }
     if (s->indent != Py_None) {
         /* TODO: DOES NOT RUN */
-        indent_level -= 1;
         /*
+            indent_level -= 1;
+
             yield '\n' + (' ' * (_indent * _current_indent_level))
         */
     }
