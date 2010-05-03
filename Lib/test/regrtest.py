@@ -411,6 +411,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     support.verbose = verbose      # Tell tests to be moderately quiet
     support.use_resources = use_resources
     save_modules = sys.modules.keys()
+    replace_stdout()
     for test in tests:
         if not quiet:
             print(test)
@@ -555,6 +556,14 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
                 tests.append(modname)
     tests.sort()
     return stdtests + tests
+
+def replace_stdout():
+    """Set stdout encoder error handler to backslashreplace (as stderr error
+    handler) to avoid UnicodeEncodeError when printing a traceback"""
+    stdout = sys.stdout
+    sys.stdout = open(stdout.fileno(), 'w',
+        encoding=stdout.encoding,
+        errors="backslashreplace")
 
 def runtest(test, generate, verbose, quiet, test_times,
             testdir=None, huntrleaks=False, debug=False):
