@@ -286,7 +286,7 @@ static int stepsizeTable[89] = {
         5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
         15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
 };
-    
+
 #define CHARP(cp, i) ((signed char *)(cp+i))
 #define SHORTP(cp, i) ((short *)(cp+i))
 #define LONGP(cp, i) ((Py_Int32 *)(cp+i))
@@ -485,7 +485,7 @@ audioop_findfit(PyObject *self, PyObject *args)
         }
         len1 >>= 1;
         len2 >>= 1;
-    
+
         if ( len1 < len2 ) {
                 PyErr_SetString(AudioopError, "First sample should be longer");
                 return 0;
@@ -498,9 +498,8 @@ audioop_findfit(PyObject *self, PyObject *args)
 
         best_result = result;
         best_j = 0;
-        j = 0;
 
-        for ( j=1; j<=len1-len2; j++) {
+        for (j=1; j<=len1-len2; j++) {
                 aj_m1 = (double)cp1[j-1];
                 aj_lm1 = (double)cp1[j+len2-1];
 
@@ -514,11 +513,11 @@ audioop_findfit(PyObject *self, PyObject *args)
                         best_result = result;
                         best_j = j;
                 }
-        
+
         }
 
         factor = _sum2(cp1+best_j, cp2, len2) / sum_ri_2;
-    
+
         return Py_BuildValue("(if)", best_j, factor);
 }
 
@@ -566,7 +565,7 @@ audioop_findmax(PyObject *self, PyObject *args)
         double aj_m1, aj_lm1;
         double result, best_result;
 
-        if ( !PyArg_ParseTuple(args, "s#i:findmax", 
+        if ( !PyArg_ParseTuple(args, "s#i:findmax",
 			       (char**)&cp1, &len1, &len2) )
                 return 0;
         if ( len1 & 1 ) {
@@ -574,7 +573,7 @@ audioop_findmax(PyObject *self, PyObject *args)
                 return 0;
         }
         len1 >>= 1;
-    
+
         if ( len2 < 0 || len1 < len2 ) {
                 PyErr_SetString(AudioopError, "Input sample should be longer");
                 return 0;
@@ -584,9 +583,8 @@ audioop_findmax(PyObject *self, PyObject *args)
 
         best_result = result;
         best_j = 0;
-        j = 0;
 
-        for ( j=1; j<=len1-len2; j++) {
+        for (j=1; j<=len1-len2; j++) {
                 aj_m1 = (double)cp1[j-1];
                 aj_lm1 = (double)cp1[j+len2-1];
 
@@ -596,7 +594,7 @@ audioop_findmax(PyObject *self, PyObject *args)
                         best_result = result;
                         best_j = j;
                 }
-        
+
         }
 
         return PyInt_FromLong(best_j);
@@ -628,7 +626,7 @@ audioop_avgpp(PyObject *self, PyObject *args)
         else if ( size == 2 ) val = (int)*SHORTP(cp, size);
         else if ( size == 4 ) val = (int)*LONGP(cp, size);
         prevdiff = val - prevval;
-    
+
         for ( i=size; i<len; i+= size) {
                 if ( size == 1 )      val = (int)*CHARP(cp, i);
                 else if ( size == 2 ) val = (int)*SHORTP(cp, i);
@@ -650,7 +648,7 @@ audioop_avgpp(PyObject *self, PyObject *args)
                 }
                 prevval = val;
                 if ( diff != 0 )
-                        prevdiff = diff;        
+                        prevdiff = diff;
         }
         if ( nextreme == 0 )
                 val = 0;
@@ -750,7 +748,7 @@ audioop_mul(PyObject *self, PyObject *args)
 
         if ( !PyArg_ParseTuple(args, "s#id:mul", &cp, &len, &size, &factor ) )
                 return 0;
-    
+
         if ( size == 1 ) maxval = (double) 0x7f;
         else if ( size == 2 ) maxval = (double) 0x7fff;
         else if ( size == 4 ) maxval = (double) 0x7fffffff;
@@ -758,13 +756,13 @@ audioop_mul(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         rv = PyString_FromStringAndSize(NULL, len);
         if ( rv == 0 )
                 return 0;
         ncp = (signed char *)PyString_AsString(rv);
-    
-    
+
+
         for ( i=0; i < len; i += size ) {
                 if ( size == 1 )      val = (int)*CHARP(cp, i);
                 else if ( size == 2 ) val = (int)*SHORTP(cp, i);
@@ -792,7 +790,7 @@ audioop_tomono(PyObject *self, PyObject *args)
         if ( !PyArg_ParseTuple(args, "s#idd:tomono",
 	                       &cp, &len, &size, &fac1, &fac2 ) )
                 return 0;
-    
+
         if ( size == 1 ) maxval = (double) 0x7f;
         else if ( size == 2 ) maxval = (double) 0x7fff;
         else if ( size == 4 ) maxval = (double) 0x7fffffff;
@@ -800,13 +798,13 @@ audioop_tomono(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         rv = PyString_FromStringAndSize(NULL, len/2);
         if ( rv == 0 )
                 return 0;
         ncp = (signed char *)PyString_AsString(rv);
-    
-    
+
+
         for ( i=0; i < len; i += size*2 ) {
                 if ( size == 1 )      val1 = (int)*CHARP(cp, i);
                 else if ( size == 2 ) val1 = (int)*SHORTP(cp, i);
@@ -837,7 +835,7 @@ audioop_tostereo(PyObject *self, PyObject *args)
         if ( !PyArg_ParseTuple(args, "s#idd:tostereo",
 	                       &cp, &len, &size, &fac1, &fac2 ) )
                 return 0;
-    
+
         if ( size == 1 ) maxval = (double) 0x7f;
         else if ( size == 2 ) maxval = (double) 0x7fff;
         else if ( size == 4 ) maxval = (double) 0x7fffffff;
@@ -845,7 +843,7 @@ audioop_tostereo(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         new_len = len*2;
         if (new_len < 0) {
                 PyErr_SetString(PyExc_MemoryError,
@@ -857,8 +855,8 @@ audioop_tostereo(PyObject *self, PyObject *args)
         if ( rv == 0 )
                 return 0;
         ncp = (signed char *)PyString_AsString(rv);
-    
-    
+
+
         for ( i=0; i < len; i += size ) {
                 if ( size == 1 )      val = (int)*CHARP(cp, i);
                 else if ( size == 2 ) val = (int)*SHORTP(cp, i);
@@ -901,7 +899,7 @@ audioop_add(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Lengths should be the same");
                 return 0;
         }
-    
+
         if ( size == 1 ) maxval = 0x7f;
         else if ( size == 2 ) maxval = 0x7fff;
         else if ( size == 4 ) maxval = 0x7fffffff;
@@ -919,7 +917,7 @@ audioop_add(PyObject *self, PyObject *args)
                 if ( size == 1 )      val1 = (int)*CHARP(cp1, i);
                 else if ( size == 2 ) val1 = (int)*SHORTP(cp1, i);
                 else if ( size == 4 ) val1 = (int)*LONGP(cp1, i);
-        
+
                 if ( size == 1 )      val2 = (int)*CHARP(cp2, i);
                 else if ( size == 2 ) val2 = (int)*SHORTP(cp2, i);
                 else if ( size == 4 ) val2 = (int)*LONGP(cp2, i);
@@ -955,18 +953,18 @@ audioop_bias(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         rv = PyString_FromStringAndSize(NULL, len);
         if ( rv == 0 )
                 return 0;
         ncp = (signed char *)PyString_AsString(rv);
-    
-    
+
+
         for ( i=0; i < len; i += size ) {
                 if ( size == 1 )      val = (int)*CHARP(cp, i);
                 else if ( size == 2 ) val = (int)*SHORTP(cp, i);
                 else if ( size == 4 ) val = (int)*LONGP(cp, i);
-        
+
                 if ( size == 1 )      *CHARP(ncp, i) = (signed char)(val+bias);
                 else if ( size == 2 ) *SHORTP(ncp, i) = (short)(val+bias);
                 else if ( size == 4 ) *LONGP(ncp, i) = (Py_Int32)(val+bias);
@@ -991,19 +989,19 @@ audioop_reverse(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         rv = PyString_FromStringAndSize(NULL, len);
         if ( rv == 0 )
                 return 0;
         ncp = (unsigned char *)PyString_AsString(rv);
-    
+
         for ( i=0; i < len; i += size ) {
                 if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
                 else if ( size == 2 ) val = (int)*SHORTP(cp, i);
                 else if ( size == 4 ) val = ((int)*LONGP(cp, i)) >> 16;
 
                 j = len - i - size;
-        
+
                 if ( size == 1 )      *CHARP(ncp, j) = (signed char)(val >> 8);
                 else if ( size == 2 ) *SHORTP(ncp, j) = (short)(val);
                 else if ( size == 4 ) *LONGP(ncp, j) = (Py_Int32)(val<<16);
@@ -1029,7 +1027,7 @@ audioop_lin2lin(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         new_len = (len/size)*size2;
         if (new_len < 0) {
                 PyErr_SetString(PyExc_MemoryError,
@@ -1040,7 +1038,7 @@ audioop_lin2lin(PyObject *self, PyObject *args)
         if ( rv == 0 )
                 return 0;
         ncp = (unsigned char *)PyString_AsString(rv);
-    
+
         for ( i=0, j=0; i < len; i += size, j += size2 ) {
                 if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
                 else if ( size == 2 ) val = (int)*SHORTP(cp, i);
@@ -1147,7 +1145,7 @@ audioop_ratecv(PyObject *self, PyObject *args)
                 }
                 for (chan = 0; chan < nchannels; chan++) {
                         if (!PyArg_ParseTuple(PyTuple_GetItem(samps, chan),
-                                              "ii:ratecv", &prev_i[chan], 
+                                              "ii:ratecv", &prev_i[chan],
 					                   &cur_i[chan]))
                                 goto exit;
                 }
@@ -1274,12 +1272,12 @@ audioop_lin2ulaw(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         rv = PyString_FromStringAndSize(NULL, len/size);
         if ( rv == 0 )
                 return 0;
         ncp = (unsigned char *)PyString_AsString(rv);
-    
+
         for ( i=0; i < len; i += size ) {
                 if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
                 else if ( size == 2 ) val = (int)*SHORTP(cp, i);
@@ -1308,7 +1306,7 @@ audioop_ulaw2lin(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         new_len = len*size;
         if (new_len < 0) {
                 PyErr_SetString(PyExc_MemoryError,
@@ -1319,11 +1317,11 @@ audioop_ulaw2lin(PyObject *self, PyObject *args)
         if ( rv == 0 )
                 return 0;
         ncp = (signed char *)PyString_AsString(rv);
-    
+
         for ( i=0; i < new_len; i += size ) {
                 cval = *cp++;
                 val = st_ulaw2linear16(cval);
-        
+
                 if ( size == 1 )      *CHARP(ncp, i) = (signed char)(val >> 8);
                 else if ( size == 2 ) *SHORTP(ncp, i) = (short)(val);
                 else if ( size == 4 ) *LONGP(ncp, i) = (Py_Int32)(val<<16);
@@ -1348,12 +1346,12 @@ audioop_lin2alaw(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         rv = PyString_FromStringAndSize(NULL, len/size);
         if ( rv == 0 )
                 return 0;
         ncp = (unsigned char *)PyString_AsString(rv);
-    
+
         for ( i=0; i < len; i += size ) {
                 if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
                 else if ( size == 2 ) val = (int)*SHORTP(cp, i);
@@ -1382,7 +1380,7 @@ audioop_alaw2lin(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         new_len = len*size;
         if (new_len < 0) {
                 PyErr_SetString(PyExc_MemoryError,
@@ -1393,11 +1391,11 @@ audioop_alaw2lin(PyObject *self, PyObject *args)
         if ( rv == 0 )
                 return 0;
         ncp = (signed char *)PyString_AsString(rv);
-    
+
         for ( i=0; i < new_len; i += size ) {
                 cval = *cp++;
                 val = st_alaw2linear16(cval);
-        
+
                 if ( size == 1 )      *CHARP(ncp, i) = (signed char)(val >> 8);
                 else if ( size == 2 ) *SHORTP(ncp, i) = (short)(val);
                 else if ( size == 4 ) *LONGP(ncp, i) = (Py_Int32)(val<<16);
@@ -1418,13 +1416,13 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
         if ( !PyArg_ParseTuple(args, "s#iO:lin2adpcm",
                                &cp, &len, &size, &state) )
                 return 0;
-    
+
 
         if ( size != 1 && size != 2 && size != 4) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         str = PyString_FromStringAndSize(NULL, len/(size*2));
         if ( str == 0 )
                 return 0;
@@ -1434,7 +1432,6 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
         if ( state == Py_None ) {
                 /* First time, it seems. Set defaults */
                 valpred = 0;
-                step = 7;
                 index = 0;
         } else if ( !PyArg_ParseTuple(state, "ii", &valpred, &index) )
                 return 0;
@@ -1463,7 +1460,7 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
                 */
                 delta = 0;
                 vpdiff = (step >> 3);
-        
+
                 if ( diff >= step ) {
                         delta = 4;
                         diff -= step;
@@ -1495,7 +1492,7 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
 
                 /* Step 5 - Assemble value, update index and step values */
                 delta |= sign;
-        
+
                 index += indexTable[delta];
                 if ( index < 0 ) index = 0;
                 if ( index > 88 ) index = 88;
@@ -1531,16 +1528,15 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
                 return 0;
         }
-    
+
         /* Decode state, should have (value, step) */
         if ( state == Py_None ) {
                 /* First time, it seems. Set defaults */
                 valpred = 0;
-                step = 7;
                 index = 0;
         } else if ( !PyArg_ParseTuple(state, "ii", &valpred, &index) )
                 return 0;
-    
+
         new_len = len*size*2;
         if (new_len < 0) {
                 PyErr_SetString(PyExc_MemoryError,
@@ -1554,7 +1550,7 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
 
         step = stepsizeTable[index];
         bufferstep = 0;
-    
+
         for ( i=0; i < new_len; i += size ) {
                 /* Step 1 - get the delta value and compute next index */
                 if ( bufferstep ) {
