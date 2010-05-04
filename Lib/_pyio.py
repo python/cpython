@@ -1438,17 +1438,12 @@ class TextIOWrapper(TextIOBase):
             raise ValueError("illegal newline value: %r" % (newline,))
         if encoding is None:
             try:
-                encoding = os.device_encoding(buffer.fileno())
-            except (AttributeError, UnsupportedOperation):
-                pass
-            if encoding is None:
-                try:
-                    import locale
-                except ImportError:
-                    # Importing locale may fail if Python is being built
-                    encoding = "ascii"
-                else:
-                    encoding = locale.getpreferredencoding()
+                import locale
+            except ImportError:
+                # Importing locale may fail if Python is being built
+                encoding = "ascii"
+            else:
+                encoding = locale.getpreferredencoding()
 
         if not isinstance(encoding, basestring):
             raise ValueError("invalid encoding: %r" % encoding)
