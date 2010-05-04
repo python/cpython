@@ -1833,11 +1833,13 @@ PyNumber_ToBase(PyObject *n, int base)
 int
 PySequence_Check(PyObject *s)
 {
-	if (s && PyInstance_Check(s))
+	if (s == NULL)
+		return 0;
+	if (PyInstance_Check(s))
 		return PyObject_HasAttrString(s, "__getitem__");
 	if (PyDict_Check(s))
 		return 0;
-	return s != NULL && s->ob_type->tp_as_sequence &&
+	return  s->ob_type->tp_as_sequence &&
 		s->ob_type->tp_as_sequence->sq_item != NULL;
 }
 
