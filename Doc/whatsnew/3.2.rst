@@ -123,6 +123,11 @@ Multi-threading
 
   (Contributed by Antoine Pitrou; :issue:`3001`.)
 
+* Regular and recursive locks now accept an optional *timeout* argument
+  to their ``acquire`` method. (Contributed by Antoine Pitrou; :issue:`7316`)
+  Similarly, :meth:`threading.Semaphore.acquire` also gains a *timeout*
+  argument. (Contributed by Torsten Landschoff; :issue:`850728`.)
+
 
 Optimizations
 =============
