@@ -348,6 +348,12 @@ C-API
 Library
 -------
 
+- Issue #8567: Fix precedence of signals in Decimal module: when a
+  Decimal operation raises multiple signals and more than one of those
+  signals is trapped, the specification determines the order in which
+  the signals should be handled.  In many cases this order wasn't
+  being followed, leading to the wrong Python exception being raised.
+
 - Issue #7865: The close() method of :mod:`io` objects should not swallow
   exceptions raised by the implicit flush().  Also ensure that calling
   close() several times is supported.  Patch by Pascal Chambon.
