@@ -186,7 +186,7 @@ def unlink(filename):
         os.unlink(filename)
     except OSError as error:
         # The filename need not exist.
-        if error.errno != errno.ENOENT:
+        if error.errno not in (errno.ENOENT, errno.ENOTDIR):
             raise
 
 def rmtree(path):
@@ -375,6 +375,7 @@ else:
 # Disambiguate TESTFN for parallel testing, while letting it remain a valid
 # module name.
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
+
 
 # Assuming sys.getfilesystemencoding()!=sys.getdefaultencoding()
 # TESTFN_UNICODE is a filename that can be encoded using the
