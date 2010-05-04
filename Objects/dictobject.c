@@ -3000,13 +3000,14 @@ static PyNumberMethods dictviews_as_number = {
 	0,				/*nb_add*/
 	(binaryfunc)dictviews_sub,	/*nb_subtract*/
 	0,				/*nb_multiply*/
+	0,				/*nb_divide*/
 	0,				/*nb_remainder*/
 	0,				/*nb_divmod*/
 	0,				/*nb_power*/
 	0,				/*nb_negative*/
 	0,				/*nb_positive*/
 	0,				/*nb_absolute*/
-	0,				/*nb_bool*/
+	0,				/*nb_nonzero*/
 	0,				/*nb_invert*/
 	0,				/*nb_lshift*/
 	0,				/*nb_rshift*/
@@ -3040,7 +3041,8 @@ PyTypeObject PyDictKeys_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_CHECKTYPES,		/* tp_flags */
  	0,					/* tp_doc */
  	(traverseproc)dictview_traverse,	/* tp_traverse */
  	0,					/* tp_clear */
@@ -3124,7 +3126,8 @@ PyTypeObject PyDictItems_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_CHECKTYPES,		/* tp_flags */
  	0,					/* tp_doc */
  	(traverseproc)dictview_traverse,	/* tp_traverse */
  	0,					/* tp_clear */
