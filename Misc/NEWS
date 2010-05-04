@@ -159,6 +159,10 @@ Extension Modules
 
 - Build the ossaudio extension on GNU/kFreeBSD.
 
+- On Windows, ctypes does no longer check the stack before and after
+  calling a foreign function.  This allows to use the unmodified
+  libffi library.
+
 Tests
 -----
 
