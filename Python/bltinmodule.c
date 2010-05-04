@@ -1784,7 +1784,7 @@ get_range_long_argument(PyObject *arg, const char *name)
 /* An extension of builtin_range() that handles the case when PyLong
  * arguments are given. */
 static PyObject *
-handle_range_longs(PyObject *self, PyObject *args) 
+handle_range_longs(PyObject *self, PyObject *args)
 {
 	PyObject *ilow = NULL;
 	PyObject *ihigh = NULL;
