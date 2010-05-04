@@ -42,6 +42,12 @@ except ImportError:
 # Useful Test Constant
 Signals = tuple(getcontext().flags.keys())
 
+# Signals ordered with respect to precedence: when an operation
+# produces multiple signals, signals occurring later in the list
+# should be handled before those occurring earlier in the list.
+OrderedSignals = (Clamped, Rounded, Inexact, Subnormal,
+                  Underflow, Overflow, DivisionByZero, InvalidOperation)
+
 # Tests are built around these assumed context defaults.
 # test_main() restores the original context.
 def init():
@@ -352,6 +358,25 @@ class DecimalTest(unittest.TestCase):
                 else:
                     self.fail("Did not raise %s in %s" % (error, s))
                 self.context.traps[error] = 0
+
+            # as above, but add traps cumulatively, to check precedence
+            ordered_errors = [e for e in OrderedSignals if e in theirexceptions]
+            for error in ordered_errors:
+                self.context.traps[error] = 1
+                try:
+                    funct(*vals)
+                except error:
+                    pass
+                except Signals, e:
+                    self.fail("Raised %s in %s; expected %s" %
+                              (type(e), s, error))
+                else:
+                    self.fail("Did not raise %s in %s" % (error, s))
+            # reset traps
+            for error in ordered_errors:
+                self.context.traps[error] = 0
+
+
         if DEBUG:
             print "--", self.context
         try:
