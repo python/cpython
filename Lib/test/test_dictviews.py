@@ -85,6 +85,67 @@ class DictSetTest(unittest.TestCase):
         self.assertTrue(r == "dict_values(['ABC', 10])" or
                         r == "dict_values([10, 'ABC'])")
 
+    def test_keys_set_operations(self):
+        d1 = {'a': 1, 'b': 2}
+        d2 = {'b': 3, 'c': 2}
+        d3 = {'d': 4, 'e': 5}
+        self.assertEqual(d1.viewkeys() & d1.viewkeys(), {'a', 'b'})
+        self.assertEqual(d1.viewkeys() & d2.viewkeys(), {'b'})
+        self.assertEqual(d1.viewkeys() & d3.viewkeys(), set())
+        self.assertEqual(d1.viewkeys() & set(d1.viewkeys()), {'a', 'b'})
+        self.assertEqual(d1.viewkeys() & set(d2.viewkeys()), {'b'})
+        self.assertEqual(d1.viewkeys() & set(d3.viewkeys()), set())
+
+        self.assertEqual(d1.viewkeys() | d1.viewkeys(), {'a', 'b'})
+        self.assertEqual(d1.viewkeys() | d2.viewkeys(), {'a', 'b', 'c'})
+        self.assertEqual(d1.viewkeys() | d3.viewkeys(), {'a', 'b', 'd', 'e'})
+        self.assertEqual(d1.viewkeys() | set(d1.viewkeys()), {'a', 'b'})
+        self.assertEqual(d1.viewkeys() | set(d2.viewkeys()), {'a', 'b', 'c'})
+        self.assertEqual(d1.viewkeys() | set(d3.viewkeys()),
+                         {'a', 'b', 'd', 'e'})
+
+        self.assertEqual(d1.viewkeys() ^ d1.viewkeys(), set())
+        self.assertEqual(d1.viewkeys() ^ d2.viewkeys(), {'a', 'c'})
+        self.assertEqual(d1.viewkeys() ^ d3.viewkeys(), {'a', 'b', 'd', 'e'})
+        self.assertEqual(d1.viewkeys() ^ set(d1.viewkeys()), set())
+        self.assertEqual(d1.viewkeys() ^ set(d2.viewkeys()), {'a', 'c'})
+        self.assertEqual(d1.viewkeys() ^ set(d3.viewkeys()),
+                         {'a', 'b', 'd', 'e'})
+
+    def test_items_set_operations(self):
+        d1 = {'a': 1, 'b': 2}
+        d2 = {'a': 2, 'b': 2}
+        d3 = {'d': 4, 'e': 5}
+        self.assertEqual(
+            d1.viewitems() & d1.viewitems(), {('a', 1), ('b', 2)})
+        self.assertEqual(d1.viewitems() & d2.viewitems(), {('b', 2)})
+        self.assertEqual(d1.viewitems() & d3.viewitems(), set())
+        self.assertEqual(d1.viewitems() & set(d1.viewitems()),
+                         {('a', 1), ('b', 2)})
+        self.assertEqual(d1.viewitems() & set(d2.viewitems()), {('b', 2)})
+        self.assertEqual(d1.viewitems() & set(d3.viewitems()), set())
+
+        self.assertEqual(d1.viewitems() | d1.viewitems(),
+                         {('a', 1), ('b', 2)})
+        self.assertEqual(d1.viewitems() | d2.viewitems(),
+                         {('a', 1), ('a', 2), ('b', 2)})
+        self.assertEqual(d1.viewitems() | d3.viewitems(),
+                         {('a', 1), ('b', 2), ('d', 4), ('e', 5)})
+        self.assertEqual(d1.viewitems() | set(d1.viewitems()),
+                         {('a', 1), ('b', 2)})
+        self.assertEqual(d1.viewitems() | set(d2.viewitems()),
+                         {('a', 1), ('a', 2), ('b', 2)})
+        self.assertEqual(d1.viewitems() | set(d3.viewitems()),
+                         {('a', 1), ('b', 2), ('d', 4), ('e', 5)})
+
+        self.assertEqual(d1.viewitems() ^ d1.viewitems(), set())
+        self.assertEqual(d1.viewitems() ^ d2.viewitems(),
+                         {('a', 1), ('a', 2)})
+        self.assertEqual(d1.viewitems() ^ d3.viewitems(),
+                         {('a', 1), ('b', 2), ('d', 4), ('e', 5)})
+
+
+
 
 def test_main():
     test_support.run_unittest(DictSetTest)
