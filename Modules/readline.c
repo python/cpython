@@ -23,7 +23,7 @@
 #ifdef SAVE_LOCALE
 #  define RESTORE_LOCALE(sl) { setlocale(LC_CTYPE, sl); free(sl); }
 #else
-#  define RESTORE_LOCALE(sl) 
+#  define RESTORE_LOCALE(sl)
 #endif
 
 /* GNU readline definitions */
@@ -48,13 +48,13 @@ extern char **completion_matches(char *, CPFunction *);
 #ifdef __APPLE__
 /*
  * It is possible to link the readline module to the readline
- * emulation library of editline/libedit. 
- * 
+ * emulation library of editline/libedit.
+ *
  * On OSX this emulation library is not 100% API compatible
  * with the "real" readline and cannot be detected at compile-time,
  * hence we use a runtime check to detect if we're using libedit
  *
- * Currently there is one know API incompatibility: 
+ * Currently there is one know API incompatibility:
  * - 'get_history' has a 1-based index with GNU readline, and a 0-based
  *   index with libedit's emulation.
  * - Note that replace_history and remove_history use a 0-based index
@@ -378,7 +378,7 @@ py_remove_history(PyObject *self, PyObject *args)
 	}
 	/* free memory allocated for the history entry */
 	if (entry->line)
-		free(entry->line);
+		free((void *)entry->line);
 	if (entry->data)
 		free(entry->data);
 	free(entry);
@@ -415,7 +415,7 @@ py_replace_history(PyObject *self, PyObject *args)
 	}
 	/* free memory allocated for the old history entry */
 	if (old_entry->line)
-	    free(old_entry->line);
+	    free((void *)old_entry->line);
 	if (old_entry->data)
 	    free(old_entry->data);
 	free(old_entry);
@@ -515,7 +515,7 @@ get_history_item(PyObject *self, PyObject *args)
 
 		/*
 		 * Apple's readline emulation crashes when
-		 * the index is out of range, therefore 
+		 * the index is out of range, therefore
 		 * test for that and fail gracefully.
 		 */
 		if (idx < 0 || idx >= hist_st->length) {
@@ -682,7 +682,7 @@ on_hook(PyObject *func)
 			result = 0;
 		else {
 			result = PyInt_AsLong(r);
-			if (result == -1 && PyErr_Occurred()) 
+			if (result == -1 && PyErr_Occurred())
 				goto error;
 		}
 		Py_DECREF(r);
@@ -740,7 +740,7 @@ on_completion_display_matches_hook(char **matches,
 				  "sOi", matches[0], m, max_length);
 
 	Py_DECREF(m); m=NULL;
-	
+
 	if (r == NULL ||
 	    (r != Py_None && PyInt_AsLong(r) == -1 && PyErr_Occurred())) {
 		goto error;
@@ -767,7 +767,7 @@ on_completion(const char *text, int state)
 	char *result = NULL;
 	if (completer != NULL) {
 		PyObject *r;
-#ifdef WITH_THREAD	      
+#ifdef WITH_THREAD
 		PyGILState_STATE gilstate = PyGILState_Ensure();
 #endif
 		rl_attempted_completion_over = 1;
@@ -789,7 +789,7 @@ on_completion(const char *text, int state)
 		PyErr_Clear();
 		Py_XDECREF(r);
 	  done:
-#ifdef WITH_THREAD	      
+#ifdef WITH_THREAD
 		PyGILState_Release(gilstate);
 #endif
 		return result;
@@ -893,7 +893,7 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 
 	rl_callback_handler_install (prompt, rlhandler);
 	FD_ZERO(&selectset);
-	
+
 	completed_input_string = not_done_reading;
 
 	while (completed_input_string == not_done_reading) {
@@ -902,10 +902,10 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 		while (!has_input)
 		{	struct timeval timeout = {0, 100000}; /* 0.1 seconds */
 
-			/* [Bug #1552726] Only limit the pause if an input hook has been 
+			/* [Bug #1552726] Only limit the pause if an input hook has been
 			   defined.  */
 		 	struct timeval *timeoutp = NULL;
-			if (PyOS_InputHook) 
+			if (PyOS_InputHook)
 				timeoutp = &timeout;
 			FD_SET(fileno(rl_instream), &selectset);
 			/* select resets selectset if no input was available */
@@ -924,7 +924,7 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 #endif
 			s = PyErr_CheckSignals();
 #ifdef WITH_THREAD
-			PyEval_SaveThread();	
+			PyEval_SaveThread();
 #endif
 			if (s < 0) {
 				rl_free_line_state();
@@ -959,7 +959,7 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 {
 	PyOS_sighandler_t old_inthandler;
 	char *p;
-    
+
 	*signal = 0;
 
 	old_inthandler = PyOS_setsig(SIGINT, onintr);
@@ -1004,7 +1004,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 	}
 
 	p = readline_until_enter_or_signal(prompt, &signal);
-	
+
 	/* we got an interrupt signal */
 	if (signal) {
 		RESTORE_LOCALE(saved_locale)
@@ -1023,17 +1023,17 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 	/* we have a valid line */
 	n = strlen(p);
 	if (n > 0) {
-		char *line;
+		const char *line;
 		HISTORY_STATE *state = history_get_history_state();
 		if (state->length > 0)
 #ifdef __APPLE__
 			if (using_libedit_emulation) {
-				/* 
+				/*
 				 * Libedit's emulation uses 0-based indexes,
 				 * the real readline uses 1-based indexes.
 				 */
 				line = history_get(state->length - 1)->line;
-			} else 
+			} else
 #endif /* __APPLE__ */
 			line = history_get(state->length)->line;
 		else
@@ -1083,7 +1083,7 @@ initreadline(void)
 		using_libedit_emulation = 1;
 	}
 
-	if (using_libedit_emulation) 
+	if (using_libedit_emulation)
 		m = Py_InitModule4("readline", readline_methods, doc_module_le,
 			   (PyObject *)NULL, PYTHON_API_VERSION);
 	else
