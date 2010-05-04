@@ -583,10 +583,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\_ctypes\libffi\src\closures.c"
-				>
-			</File>
-			<File
 				RelativePath="..\Modules\_ctypes\libffi\src\x86\ffi.c"
 				>
 				<FileConfiguration
