@@ -1746,14 +1746,53 @@ get_len_of_range_longs(PyObject *lo, PyObject *hi, PyObject *step)
 	return -1;
 }
 
+/* Helper function for handle_range_longs.  If arg is int or long
+   object, returns it with incremented reference count.  If arg is
+   float, raises type error. As a last resort, creates a new int by
+   calling arg type's nb_int method if it is defined.  Returns NULL
+   and sets exception on error.
+
+   Returns a new reference to an int object. */
+static PyObject *
+get_range_long_argument(PyObject *arg, const char *name)
+{
+	PyObject *v;
+	PyNumberMethods *nb;
+	if (PyInt_Check(arg) || PyLong_Check(arg)) {
+		Py_INCREF(arg);
+		return arg;
+	}
+	if (PyFloat_Check(arg) ||
+	    (nb = Py_TYPE(arg)->tp_as_number) == NULL ||
+	    nb->nb_int == NULL) {
+		PyErr_Format(PyExc_TypeError,
+			     "range() integer %s argument expected, got %s.",
+			     name, arg->ob_type->tp_name);
+		return NULL;
+	}
+	v = nb->nb_int(arg);
+	if (v == NULL)
+		return NULL;
+	if (PyInt_Check(v) || PyLong_Check(v))
+		return v;
+	Py_DECREF(v);
+	PyErr_SetString(PyExc_TypeError,
+			"__int__ should return int object");
+	return NULL;
+}
+
 /* An extension of builtin_range() that handles the case when PyLong
  * arguments are given. */
 static PyObject *
-handle_range_longs(PyObject *self, PyObject *args)
+handle_range_longs(PyObject *self, PyObject *args) 
 {
-	PyObject *ilow;
+	PyObject *ilow = NULL;
 	PyObject *ihigh = NULL;
 	PyObject *istep = NULL;
+
+	PyObject *low = NULL;
+	PyObject *high = NULL;
+	PyObject *step = NULL;
 
 	PyObject *curnum = NULL;
 	PyObject *v = NULL;
@@ -1773,7 +1812,7 @@ handle_range_longs(PyObject *self, PyObject *args)
 
 	/* Figure out which way we were called, supply defaults, and be
 	 * sure to incref everything so that the decrefs at the end
-	 * are correct.
+	 * are correct. NB: ilow, ihigh and istep are borrowed references.
 	 */
 	assert(ilow != NULL);
 	if (ihigh == NULL) {
@@ -1781,47 +1820,35 @@ handle_range_longs(PyObject *self, PyObject *args)
 		ihigh = ilow;
 		ilow = NULL;
 	}
+
+	/* convert ihigh if necessary */
 	assert(ihigh != NULL);
-	Py_INCREF(ihigh);
+	high = get_range_long_argument(ihigh, "end");
+	if (high == NULL)
+		goto Fail;
 
 	/* ihigh correct now; do ilow */
-	if (ilow == NULL)
-		ilow = zero;
-	Py_INCREF(ilow);
-
-	/* ilow and ihigh correct now; do istep */
-	if (istep == NULL) {
-		istep = PyLong_FromLong(1L);
-		if (istep == NULL)
-			goto Fail;
+	if (ilow == NULL) {
+		Py_INCREF(zero);
+		low = zero;
 	}
 	else {
-		Py_INCREF(istep);
+		low = get_range_long_argument(ilow, "start");
+		if (low == NULL)
+			goto Fail;
 	}
 
-	if (!PyInt_Check(ilow) && !PyLong_Check(ilow)) {
-		PyErr_Format(PyExc_TypeError,
-			     "range() integer start argument expected, got %s.",
-			     ilow->ob_type->tp_name);
+	/* ilow and ihigh correct now; do istep */
+	if (istep == NULL)
+		step = PyLong_FromLong(1);
+	else
+		step = get_range_long_argument(istep, "step");
+	if (step == NULL)
 		goto Fail;
-	}
 
-	if (!PyInt_Check(ihigh) && !PyLong_Check(ihigh)) {
-		PyErr_Format(PyExc_TypeError,
-			     "range() integer end argument expected, got %s.",
-			     ihigh->ob_type->tp_name);
+	if (PyObject_Cmp(step, zero, &cmp_result) == -1)
 		goto Fail;
-	}
 
-	if (!PyInt_Check(istep) && !PyLong_Check(istep)) {
-		PyErr_Format(PyExc_TypeError,
-			     "range() integer step argument expected, got %s.",
-			     istep->ob_type->tp_name);
-		goto Fail;
-	}
-
-	if (PyObject_Cmp(istep, zero, &cmp_result) == -1)
-		goto Fail;
 	if (cmp_result == 0) {
 		PyErr_SetString(PyExc_ValueError,
 				"range() step argument must not be zero");
@@ -1829,13 +1856,13 @@ handle_range_longs(PyObject *self, PyObject *args)
 	}
 
 	if (cmp_result > 0)
-		bign = get_len_of_range_longs(ilow, ihigh, istep);
+		bign = get_len_of_range_longs(low, high, step);
 	else {
-		PyObject *neg_istep = PyNumber_Negative(istep);
-		if (neg_istep == NULL)
+		PyObject *neg_step = PyNumber_Negative(step);
+		if (neg_step == NULL)
 			goto Fail;
-		bign = get_len_of_range_longs(ihigh, ilow, neg_istep);
-		Py_DECREF(neg_istep);
+		bign = get_len_of_range_longs(high, low, neg_step);
+		Py_DECREF(neg_step);
 	}
 
 	n = (Py_ssize_t)bign;
@@ -1849,7 +1876,7 @@ handle_range_longs(PyObject *self, PyObject *args)
 	if (v == NULL)
 		goto Fail;
 
-	curnum = ilow;
+	curnum = low;
 	Py_INCREF(curnum);
 
 	for (i = 0; i < n; i++) {
@@ -1860,24 +1887,24 @@ handle_range_longs(PyObject *self, PyObject *args)
 
 		PyList_SET_ITEM(v, i, w);
 
-		tmp_num = PyNumber_Add(curnum, istep);
+		tmp_num = PyNumber_Add(curnum, step);
 		if (tmp_num == NULL)
 			goto Fail;
 
 		Py_DECREF(curnum);
 		curnum = tmp_num;
 	}
-	Py_DECREF(ilow);
-	Py_DECREF(ihigh);
-	Py_DECREF(istep);
+	Py_DECREF(low);
+	Py_DECREF(high);
+	Py_DECREF(step);
 	Py_DECREF(zero);
 	Py_DECREF(curnum);
 	return v;
 
   Fail:
-	Py_DECREF(ilow);
-	Py_DECREF(ihigh);
-	Py_XDECREF(istep);
+	Py_XDECREF(low);
+	Py_XDECREF(high);
+	Py_XDECREF(step);
 	Py_DECREF(zero);
 	Py_XDECREF(curnum);
 	Py_XDECREF(v);

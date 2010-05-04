@@ -1080,6 +1080,56 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(OverflowError, range, -sys.maxint, sys.maxint)
         self.assertRaises(OverflowError, range, 0, 2*sys.maxint)
 
+        bignum = 2*sys.maxint
+        smallnum = 42
+        # Old-style user-defined class with __int__ method
+        class I0:
+            def __init__(self, n):
+                self.n = int(n)
+            def __int__(self):
+                return self.n
+        self.assertEqual(range(I0(bignum), I0(bignum + 1)), [bignum])
+        self.assertEqual(range(I0(smallnum), I0(smallnum + 1)), [smallnum])
+
+        # New-style user-defined class with __int__ method
+        class I1(object):
+            def __init__(self, n):
+                self.n = int(n)
+            def __int__(self):
+                return self.n
+        self.assertEqual(range(I1(bignum), I1(bignum + 1)), [bignum])
+        self.assertEqual(range(I1(smallnum), I1(smallnum + 1)), [smallnum])
+
+        # New-style user-defined class with failing __int__ method
+        class IX(object):
+            def __int__(self):
+                raise RuntimeError
+        self.assertRaises(RuntimeError, range, IX())
+
+        # New-style user-defined class with invalid __int__ method
+        class IN(object):
+            def __int__(self):
+                return "not a number"
+        self.assertRaises(TypeError, range, IN())
+
+        # Exercise various combinations of bad arguments, to check
+        # refcounting logic
+        self.assertRaises(TypeError, range, 0.0)
+
+        self.assertRaises(TypeError, range, 0, 0.0)
+        self.assertRaises(TypeError, range, 0.0, 0)
+        self.assertRaises(TypeError, range, 0.0, 0.0)
+
+        self.assertRaises(TypeError, range, 0, 0, 1.0)
+        self.assertRaises(TypeError, range, 0, 0.0, 1)
+        self.assertRaises(TypeError, range, 0, 0.0, 1.0)
+        self.assertRaises(TypeError, range, 0.0, 0, 1)
+        self.assertRaises(TypeError, range, 0.0, 0, 1.0)
+        self.assertRaises(TypeError, range, 0.0, 0.0, 1)
+        self.assertRaises(TypeError, range, 0.0, 0.0, 1.0)
+
+
+
     def test_input_and_raw_input(self):
         self.write_testfile()
         fp = open(TESTFN, 'r')
