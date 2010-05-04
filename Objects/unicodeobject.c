@@ -4346,7 +4346,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
         if (!result)
             return NULL;
         for (i = 0; i < 256; i++) {
-            key = value = NULL;
+            value = NULL;
             key = PyInt_FromLong(decode[i]);
             value = PyInt_FromLong(i);
             if (!key || !value)
@@ -5846,7 +5846,7 @@ PyObject *replace(PyUnicodeObject *self,
         }
     } else {
 
-        Py_ssize_t n, i, j, e;
+        Py_ssize_t n, i, j;
         Py_ssize_t product, new_size, delta;
         Py_UNICODE *p;
 
@@ -5878,7 +5878,6 @@ PyObject *replace(PyUnicodeObject *self,
             return NULL;
         i = 0;
         p = u->str;
-        e = self->length - str1->length;
         if (str1->length > 0) {
             while (n-- > 0) {
                 /* look for next match */
