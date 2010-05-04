@@ -864,7 +864,7 @@ whichmodule(PyObject *global, PyObject *global_name)
 		*global_name_attr = 0, *name = 0;
 
 	module = PyObject_GetAttrString(global, "__module__");
-	if (module) 
+	if (module)
 		return module;
 	if (PyErr_ExceptionMatches(PyExc_AttributeError))
 		PyErr_Clear();
@@ -903,7 +903,6 @@ whichmodule(PyObject *global, PyObject *global_name)
 	   like this rule. jlf
 	*/
 	if (!j) {
-		j=1;
 		name=__main___str;
 	}
 
@@ -1234,9 +1233,6 @@ save_string(Picklerobject *self, PyObject *args, int doput)
 	else {
 		int i;
 		char c_str[5];
-
-		if ((size = PyString_Size(args)) < 0)
-			return -1;
 
 		if (size < 256) {
 			c_str[0] = SHORT_BINSTRING;
