@@ -967,6 +967,16 @@ changes, or look through the Subversion logs for all the details.
   ``Decimal('0.1000000000000000055511151231257827021181583404541015625')``.
   (Implemented by Raymond Hettinger; :issue:`4796`.)
 
+  Comparing instances of :class:`Decimal` with floating-point
+  numbers now produces sensible results based on the numeric values
+  of the operands.  Previously such comparisons would fall back to
+  Python's default rules for comparing objects, which produced arbitrary
+  results based on their type.  Note that you still cannot combine
+  :class:`Decimal` and floating-point in other operations such as addition,
+  since you should be explicitly choosing how to convert between float and
+  :class:`Decimal`.
+  (Fixed by Mark Dickinson; :issue:`2531`.)
+
   Most of the methods of the :class:`~decimal.Context` class now accept integers
   as well as :class:`~decimal.Decimal` instances; the only exceptions are the
   :meth:`~decimal.Context.canonical` and :meth:`~decimal.Context.is_canonical`
@@ -1367,7 +1377,28 @@ changes, or look through the Subversion logs for all the details.
   and has been updated to version 5.2.0 (updated by
   Florent Xicluna; :issue:`8024`).
 
-* The :mod:`urlparse` module now supports IPv6 literal addresses as defined by
+* The :mod:`urlparse` module's :func:`~urlparse.urlsplit` now handles
+  unknown URL schemes in a fashion compliant with :rfc:`3986`: if the
+  URL is of the form ``"<something>://..."``, the text before the
+  ``://`` is treated as the scheme, even if it's a made-up scheme that
+  the module doesn't know about.  This change may break code that
+  worked around the old behaviour.  For example, Python 2.6.4 or 2.5
+  will return the following:
+
+    >>> import urlparse
+    >>> urlparse.urlsplit('invented://host/filename?query')
+    ('invented', '', '//host/filename?query', '', '')
+
+  Python 2.7 (and Python 2.6.5) will return:
+
+    >>> import urlparse
+    >>> urlparse.urlsplit('invented://host/filename?query')
+    ('invented', 'host', '/filename?query', '', '')
+
+  (Python 2.7 actually produces slightly different output, since it
+  returns a named tuple instead of a standard tuple.)
+
+  The :mod:`urlparse` module also supports IPv6 literal addresses as defined by
   :rfc:`2732` (contributed by Senthil Kumaran; :issue:`2987`). ::
 
     >>> urlparse.urlparse('http://[1080::8:800:200C:417A]/foo')
@@ -1871,6 +1902,13 @@ Port-Specific Changes: Mac OS X
   installation and a user-installed copy of the same version.
   (Changed by Ronald Oussoren; :issue:`4865`.)
 
+Port-Specific Changes: FreeBSD
+-----------------------------------
+
+* FreeBSD 7.1's :const:`SO_SETFIB` constant, used with
+  :func:`~socket.getsockopt`/:func:`~socket.setsockopt` to select an
+  alternate routing table, is now available in the :mod:`socket`
+  module.  (Added by Kyle VanderBeek; :issue:`8235`.)
 
 Other Changes and Fixes
 =======================
@@ -1960,6 +1998,27 @@ In the standard library:
 * The :mod:`syslog` module will now use the value of ``sys.argv[0]`` as the
   identifier instead of the previous default value of ``'python'``.
   (Changed by Sean Reifschneider; :issue:`8451`.)
+
+* The :mod:`urlparse` module's :func:`~urlparse.urlsplit` now handles
+  unknown URL schemes in a fashion compliant with :rfc:`3986`: if the
+  URL is of the form ``"<something>://..."``, the text before the
+  ``://`` is treated as the scheme, even if it's a made-up scheme that
+  the module doesn't know about.  This change may break code that
+  worked around the old behaviour.  For example, Python 2.6.4 or 2.5
+  will return the following:
+
+    >>> import urlparse
+    >>> urlparse.urlsplit('invented://host/filename?query')
+    ('invented', '', '//host/filename?query', '', '')
+
+  Python 2.7 (and Python 2.6.5) will return:
+
+    >>> import urlparse
+    >>> urlparse.urlsplit('invented://host/filename?query')
+    ('invented', 'host', '/filename?query', '', '')
+
+  (Python 2.7 actually produces slightly different output, since it
+  returns a named tuple instead of a standard tuple.)
 
 For C extensions:
 
