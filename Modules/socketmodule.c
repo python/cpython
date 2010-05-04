@@ -3424,7 +3424,6 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 		return NULL;
 	af = sa->sa_family;
 	ap = NULL;
-	al = 0;
 	switch (af) {
 	case AF_INET:
 		ap = (char *)&((struct sockaddr_in *)sa)->sin_addr;
