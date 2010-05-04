@@ -1520,7 +1520,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
 		goto Done;
 	Py_DECREF(x1);
 	Py_DECREF(x2);
-	x1 = x2 = NULL;
+	x2 = NULL;
 
 	/* x3 has days+seconds in seconds */
 	x1 = PyNumber_Multiply(x3, us_per_second);	/* us */
@@ -3952,7 +3952,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
 			else
 				good_timetuple = 0;
 			/* follow that up with a little dose of microseconds */
-			if (PyInt_Check(frac))
+			if (good_timetuple && PyInt_Check(frac))
 				ia[6] = PyInt_AsLong(frac);
 			else
 				good_timetuple = 0;
