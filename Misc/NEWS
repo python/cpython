@@ -141,6 +141,8 @@ Library
 Extension Modules
 -----------------
 
+- Use Clang 2.7's static analyzer to find places to clean up some code.
+
 - Build the ossaudio extension on GNU/kFreeBSD.
 
 Tests
