@@ -993,7 +993,7 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *f)
         else {
             bytes_read = readinst(buf, BUF_SIZE, readmethod);
             if (bytes_read < 0) {
-                Py_DECREF(readmethod);
+                Py_XDECREF(readmethod);
                 return NULL;
             }
         }
