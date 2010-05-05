@@ -2697,7 +2697,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			    Py_DECREF(*pfunc);
 			    *pfunc = self;
 			    na++;
-			    n++;
 		    } else
 			    Py_INCREF(func);
 		    sp = stack_pointer;
