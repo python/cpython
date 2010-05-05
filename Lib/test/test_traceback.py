@@ -159,6 +159,15 @@ def test():
         err = traceback.format_exception_only(None, None)
         self.assertEqual(err, ['None\n'])
 
+    def test_unicode(self):
+        err = AssertionError('\xff')
+        lines = traceback.format_exception_only(type(err), err)
+        self.assertEqual(lines, ['AssertionError: \xff\n'])
+
+        err = AssertionError(u'\xe9')
+        lines = traceback.format_exception_only(type(err), err)
+        self.assertEqual(lines, ['AssertionError: \\xe9\n'])
+
 
 class TracebackFormatTests(unittest.TestCase):
 
