@@ -19,7 +19,7 @@
 #include <fcntl.h>
 #endif
 #ifdef __cplusplus
-extern "C" { 
+extern "C" {
 #endif
 
 #ifdef MS_WINDOWS
@@ -826,7 +826,7 @@ parse_source_module(const char *pathname, FILE *fp)
 
 	flags.cf_flags = 0;
 
-	mod = PyParser_ASTFromFile(fp, pathname, Py_file_input, 0, 0, &flags, 
+	mod = PyParser_ASTFromFile(fp, pathname, Py_file_input, 0, 0, &flags,
 				   NULL, arena);
 	if (mod) {
 		co = PyAST_Compile(mod, pathname, NULL, arena);
@@ -884,7 +884,7 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
 	mode_t mode = srcstat->st_mode & ~S_IEXEC;
 #else
 	mode_t mode = srcstat->st_mode & ~S_IXUSR & ~S_IXGRP & ~S_IXOTH;
-#endif 
+#endif
 
 	fp = open_exclusive(cpathname, mode);
 	if (fp == NULL) {
@@ -972,7 +972,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
 	char *cpathname;
 	PyCodeObject *co;
 	PyObject *m;
-	
+
 	if (fstat(fileno(fp), &st) != 0) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "unable to get file status from '%s'",
@@ -1406,7 +1406,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			else {
 				char warnstr[MAXPATHLEN+80];
 				sprintf(warnstr, "Not importing directory "
-					"'%.*s': missing __init__.py", 
+					"'%.*s': missing __init__.py",
 					MAXPATHLEN, buf);
 				if (PyErr_Warn(PyExc_ImportWarning,
 					       warnstr)) {
@@ -1427,7 +1427,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			else {
 				char warnstr[MAXPATHLEN+80];
 				sprintf(warnstr, "Not importing directory "
-					"'%.*s': missing __init__.py", 
+					"'%.*s': missing __init__.py",
 					MAXPATHLEN, buf);
 				if (PyErr_Warn(PyExc_ImportWarning,
 					       warnstr)) {
@@ -2266,7 +2266,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 		modname = PyDict_GetItem(globals, namestr);
 		if (modname == NULL || !PyString_Check(modname))
 			return Py_None;
-	
+
 		modpath = PyDict_GetItem(globals, pathstr);
 		if (modpath != NULL) {
 			/* __path__ is set, so modname is already the package name */
@@ -2621,7 +2621,7 @@ PyImport_ReloadModule(PyObject *m)
 	struct filedescr *fdp;
 	FILE *fp = NULL;
 	PyObject *newm;
-    
+
 	if (modules_reloading == NULL) {
 		Py_FatalError("PyImport_ReloadModule: "
 			      "no modules_reloading dictionary!");
