@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4265: shutil.copyfile() was leaking file descriptors when disk fills.
+  Patch by Tres Seaver.
+
 - Issue #8621: uuid.uuid4() returned the same sequence of values in the
   parent and any children created using ``os.fork`` on MacOS X 10.6.
 
