@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <string.h>
+
 #include "pyconfig.h"
 
 /* comp.sources.misc strtod(), as posted in comp.lang.tcl,
@@ -14,7 +17,7 @@
     Defines: double strtod (char *str, char**ptr)
 */
 
-/*  This is an implementation of the strtod() function described in the 
+/*  This is an implementation of the strtod() function described in the
     System V manuals, with a different name to avoid linker problems.
     All that str2dbl() does itself is check that the argument is well-formed
     and is in range.  It leaves the work of conversion to atof(), which is
@@ -29,7 +32,7 @@
     of strtod(), and if we give this one away maybe someone will look for
     mistakes in it and fix them for us (:-).
 */
-    
+
 /*  The following constants are machine-specific.  MD{MIN,MAX}EXPT are
     integers and MD{MIN,MAX}FRAC are strings such that
 	0.${MDMAXFRAC}e${MDMAXEXPT} is the largest representable double,
@@ -74,10 +77,10 @@ double strtod(char *str, char **ptr)
 	sign = 1;
 	if (*sp == '-') sign -= 2, sp++;
 	dotseen = 0, scale = 0;
-	dp = buffer;	
+	dp = buffer;
 	*dp++ = '0'; *dp++ = '.';
 	buforg = dp, buflim = buffer+48;
-	for (save = sp; c = *sp; sp++)
+	for (save = sp; (c = *sp); sp++)
 	    if (c == '.') {
 		if (dotseen) break;
 		dotseen++;
@@ -106,7 +109,7 @@ double strtod(char *str, char **ptr)
 	    errno = EDOM;		/* what should this be? */
 	    return ZERO;
 	}
-	
+
 	while (dp > buforg && dp[-1] == '0') --dp;
 	if (dp == buforg) *dp++ = '0';
 	*dp = '\0';
@@ -128,7 +131,7 @@ double strtod(char *str, char **ptr)
 	    if ((unsigned)(c-'0') > (unsigned)('9'-'0')) break;
 	    while (c == '0') c = *sp++;
 	    for (; (unsigned)(c-'0') <= (unsigned)('9'-'0'); c = *sp++)
-		expt = expt*10 + c-'0';	    
+		expt = expt*10 + c-'0';
 	    if (esign < 0) expt = -expt;
 	    save = sp-1;
 	} while (0);
