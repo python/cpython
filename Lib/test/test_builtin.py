@@ -1070,8 +1070,8 @@ class BuiltinTest(unittest.TestCase):
             __hash__ = None # Invalid cmp makes this unhashable
         self.assertRaises(RuntimeError, range, a, a + 1, badzero(1))
 
-        # Reject floats when it would require PyLongs to represent.
-        # (smaller floats still accepted, but deprecated)
+        # Reject floats.
+        self.assertRaises(TypeError, range, 1., 1., 1.)
         self.assertRaises(TypeError, range, 1e100, 1e101, 1e101)
 
         self.assertRaises(TypeError, range, 0, "spam")
