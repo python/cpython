@@ -1118,8 +1118,8 @@ class UstarUnicodeTest(unittest.TestCase):
         if self.format != tarfile.PAX_FORMAT:
             tar = tarfile.open(tmpname, encoding="ascii")
             t = tar.getmember("foo")
-            self.assertEqual(t.uname, "\ufffd\ufffd\ufffd")
-            self.assertEqual(t.gname, "\ufffd\ufffd\ufffd")
+            self.assertEqual(t.uname, "\udce4\udcf6\udcfc")
+            self.assertEqual(t.gname, "\udce4\udcf6\udcfc")
 
 
 class GNUUnicodeTest(UstarUnicodeTest):

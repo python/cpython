@@ -218,7 +218,7 @@ be finalized; only the internally used file object will be closed. See the
 .. versionadded:: 3.2
    Added support for the context manager protocol.
 
-.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors=None, pax_headers=None, debug=0, errorlevel=0)
+.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors='surrogateescape', pax_headers=None, debug=0, errorlevel=0)
 
    All following arguments are optional and can be accessed as instance attributes
    as well.
@@ -266,6 +266,9 @@ be finalized; only the internally used file object will be closed. See the
    used for reading or writing the archive and how conversion errors are going
    to be handled. The default settings will work for most users.
    See section :ref:`tar-unicode` for in-depth information.
+
+   .. versionchanged:: 3.2
+      Use ``'surrogateescape'`` as the default for the *errors* argument.
 
    The *pax_headers* argument is an optional dictionary of strings which
    will be added as a pax global header if *format* is :const:`PAX_FORMAT`.
@@ -449,10 +452,13 @@ It does *not* contain the file's data itself.
    a :class:`TarInfo` object.
 
 
-.. method:: TarInfo.tobuf(format=DEFAULT_FORMAT, encoding=ENCODING, errors='strict')
+.. method:: TarInfo.tobuf(format=DEFAULT_FORMAT, encoding=ENCODING, errors='surrogateescape')
 
    Create a string buffer from a :class:`TarInfo` object. For information on the
    arguments see the constructor of the :class:`TarFile` class.
+
+   .. versionchanged:: 3.2
+      Use ``'surrogateescape'`` as the default for the *errors* argument.
 
 
 A ``TarInfo`` object has the following public data attributes:
@@ -701,11 +707,10 @@ metadata must be either decoded or encoded. If *encoding* is not set
 appropriately, this conversion may fail.
 
 The *errors* argument defines how characters are treated that cannot be
-converted. Possible values are listed in section :ref:`codec-base-classes`. In
-read mode the default scheme is ``'replace'``. This avoids unexpected
-:exc:`UnicodeError` exceptions and guarantees that an archive can always be
-read. In write mode the default value for *errors* is ``'strict'``.  This
-ensures that name information is not altered unnoticed.
+converted. Possible values are listed in section :ref:`codec-base-classes`.
+The default scheme is ``'surrogateescape'`` which Python also uses for its
+file system calls, see :ref:`os-filenames`.
 
 In case of writing :const:`PAX_FORMAT` archives, *encoding* is ignored because
-non-ASCII metadata is stored using *UTF-8*.
+non-ASCII metadata is stored using *UTF-8*. Storing surrogate characters is not
+possible and will raise a :exc:`UnicodeEncodeError`.
