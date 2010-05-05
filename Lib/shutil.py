@@ -96,15 +96,9 @@ def copyfile(src, dst):
             # XXX What about other special files? (sockets, devices...)
             if stat.S_ISFIFO(st.st_mode):
                 raise SpecialFileError("`%s` is a named pipe" % fn)
-    try:
-        fsrc = open(src, 'rb')
-        fdst = open(dst, 'wb')
-        copyfileobj(fsrc, fdst)
-    finally:
-        if fdst:
-            fdst.close()
-        if fsrc:
-            fsrc.close()
+    with open(src, 'rb') as fsrc:
+        with open(dst, 'wb') as fdst:
+            copyfileobj(fsrc, fdst)
 
 def copymode(src, dst):
     """Copy mode bits from src to dst"""
