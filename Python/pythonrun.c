@@ -138,7 +138,7 @@ Py_InitializeEx(int install_sigs)
 	PyThreadState *tstate;
 	PyObject *bimod, *sysmod;
 	char *p;
-	char *icodeset = NULL; /* On Windows, input codeset may theoretically 
+	char *icodeset = NULL; /* On Windows, input codeset may theoretically
 			          differ from output codeset. */
 	char *codeset = NULL;
 	char *errors = NULL;
@@ -237,7 +237,7 @@ Py_InitializeEx(int install_sigs)
 
 	if (install_sigs)
 		initsigs(); /* Signal handling stuff, including initintr() */
-		
+
 	/* Initialize warnings. */
 	_PyWarnings_Init();
 	if (PySys_HasWarnOptions()) {
@@ -339,7 +339,7 @@ Py_InitializeEx(int install_sigs)
 		sys_isatty = PyObject_CallMethod(sys_stream, "isatty", "");
 		if (!sys_isatty)
 			PyErr_Clear();
-		if ((overridden || 
+		if ((overridden ||
 		     (sys_isatty && PyObject_IsTrue(sys_isatty))) &&
 		   PyFile_Check(sys_stream)) {
 			if (!PyFile_SetEncodingAndErrors(sys_stream, codeset, errors))
@@ -351,7 +351,7 @@ Py_InitializeEx(int install_sigs)
 		sys_isatty = PyObject_CallMethod(sys_stream, "isatty", "");
 		if (!sys_isatty)
 			PyErr_Clear();
-		if((overridden || 
+		if((overridden ||
 		    (sys_isatty && PyObject_IsTrue(sys_isatty))) &&
 		   PyFile_Check(sys_stream)) {
 			if (!PyFile_SetEncodingAndErrors(sys_stream, codeset, errors))
@@ -701,7 +701,7 @@ initmain(void)
 		if (bimod == NULL ||
 		    PyDict_SetItemString(d, "__builtins__", bimod) != 0)
 			Py_FatalError("can't add __builtins__ to __main__");
-		Py_DECREF(bimod);
+		Py_XDECREF(bimod);
 	}
 }
 
@@ -1297,7 +1297,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
 	PyArena *arena = PyArena_New();
 	if (arena == NULL)
 		return NULL;
-	
+
 	mod = PyParser_ASTFromString(str, "<string>", start, flags, arena);
 	if (mod != NULL)
 		ret = run_mod(mod, "<string>", globals, locals, flags, arena);
@@ -1314,7 +1314,7 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 	PyArena *arena = PyArena_New();
 	if (arena == NULL)
 		return NULL;
-	
+
 	mod = PyParser_ASTFromFile(fp, filename, start, 0, 0,
 				   flags, NULL, arena);
 	if (closeit)
@@ -1804,7 +1804,7 @@ PyOS_CheckStack(void)
 		alloca(PYOS_STACK_MARGIN * sizeof(void*));
 		return 0;
 	} __except (GetExceptionCode() == STATUS_STACK_OVERFLOW ?
-		        EXCEPTION_EXECUTE_HANDLER : 
+		        EXCEPTION_EXECUTE_HANDLER :
 		        EXCEPTION_CONTINUE_SEARCH) {
 		int errcode = _resetstkoflw();
 		if (errcode == 0)
