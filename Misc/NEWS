@@ -12,6 +12,8 @@ What's New in Python 2.7 beta 2?
 Core and Builtins
 -----------------
 
+- Run Clang 2.7's static analyzer for Objects/ and Python/ .
+
 - Issue #1533: fix inconsistency in range function argument
   processing: any non-float non-integer argument is now converted to
   an integer (if possible) using its __int__ method.  Previously, only
