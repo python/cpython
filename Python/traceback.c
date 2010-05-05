@@ -161,7 +161,6 @@ _Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno, int indent)
 					strcpy(namebuf+len, tail);
 					xfp = fopen(namebuf, "r" PY_STDIOTEXTMODE);
 					if (xfp != NULL) {
-						filename = namebuf;
 						break;
 					}
 				}
