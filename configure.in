@@ -942,7 +942,7 @@ then
 	    if test "$Py_DEBUG" = 'true' ; then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
-		OPT="-g -Wall $STRICT_PROTO"
+		OPT="-g -O0 -Wall $STRICT_PROTO"
 	    else
 		OPT="-g $WRAP -O3 -Wall $STRICT_PROTO"
 	    fi

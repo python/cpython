@@ -191,6 +191,11 @@ Tests
 Build
 -----
 
+- Issue #8625: Turn off optimization in --with-pydebug builds with gcc.
+  (Optimization was unintentionally turned on in gcc --with-pydebug builds in
+  2.7 beta1 as a result of the issue #1628484 fix, combined with autoconf's
+  strange choice of default CFLAGS produced by AC_PROG_CC for gcc.)
+
 - Issue #8509: Fix quoting in help strings and code snippets in configure.in.
 
 - Issue #3646: It is now easily possible to install a Python framework into
