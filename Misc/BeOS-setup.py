@@ -356,7 +356,7 @@ class PyBuildExt(build_ext):
                                    libraries = dblib) )
 
         # Unix-only modules
-        if platform not in ['mac', 'win32']:
+        if platform == 'win32':
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface

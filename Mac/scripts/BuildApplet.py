@@ -112,9 +112,6 @@ def buildapplet():
                 usage()
             elif opt in ('-d', '--destroot'):
                 destroot = arg
-        # On OS9 always be verbose
-        if sys.platform == 'mac' and not verbose:
-            verbose = 'default'
         # Loop over all files to be processed
         for filename in args:
             cr, tp = MacOS.GetCreatorAndType(filename)

@@ -97,11 +97,6 @@ def help():
     print "Documentation for the profile module can be found "
     print "in the Python Library Reference, section 'The Python Profiler'."
 
-if os.name == "mac":
-    import MacOS
-    def _get_time_mac(timer=MacOS.GetTicks):
-        return timer() / 60.0
-
 if hasattr(os, "times"):
     def _get_time_times(timer=os.times):
         t = timer()
@@ -178,10 +173,6 @@ class Profile:
                 self.timer = resgetrusage
                 self.dispatcher = self.trace_dispatch
                 self.get_time = _get_time_resource
-            elif os.name == 'mac':
-                self.timer = MacOS.GetTicks
-                self.dispatcher = self.trace_dispatch_mac
-                self.get_time = _get_time_mac
             elif hasattr(time, 'clock'):
                 self.timer = self.get_time = time.clock
                 self.dispatcher = self.trace_dispatch_i

@@ -88,11 +88,6 @@ def get_python_inc(plat_specific=0, prefix=None):
         return os.path.join(prefix, "include", "python" + get_python_version())
     elif os.name == "nt":
         return os.path.join(prefix, "include")
-    elif os.name == "mac":
-        if plat_specific:
-            return os.path.join(prefix, "Mac", "Include")
-        else:
-            return os.path.join(prefix, "Include")
     elif os.name == "os2":
         return os.path.join(prefix, "Include")
     else:
@@ -132,18 +127,6 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
         else:
             if get_python_version() < "2.2":
                 return prefix
-            else:
-                return os.path.join(prefix, "Lib", "site-packages")
-
-    elif os.name == "mac":
-        if plat_specific:
-            if standard_lib:
-                return os.path.join(prefix, "Lib", "lib-dynload")
-            else:
-                return os.path.join(prefix, "Lib", "site-packages")
-        else:
-            if standard_lib:
-                return os.path.join(prefix, "Lib")
             else:
                 return os.path.join(prefix, "Lib", "site-packages")
 

@@ -23,13 +23,12 @@ class FrozenTests(unittest.TestCase):
             except ImportError, x:
                 self.fail("import __phello__.spam failed:" + str(x))
 
-            if sys.platform != "mac":  # On the Mac this import does succeed.
-                try:
-                    import __phello__.foo
-                except ImportError:
-                    pass
-                else:
-                    self.fail("import __phello__.foo should have failed")
+            try:
+                import __phello__.foo
+            except ImportError:
+                pass
+            else:
+                self.fail("import __phello__.foo should have failed")
 
         self.assertEquals(stdout.getvalue(),
                           'Hello world...\nHello world...\nHello world...\n')

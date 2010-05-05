@@ -23,9 +23,7 @@ has_spawnl = hasattr(os, 'spawnl')
 
 # TEST_FILES may need to be tweaked for systems depending on the maximum
 # number of files that can be opened at one time (see ulimit -n)
-if sys.platform == 'mac':
-    TEST_FILES = 32
-elif sys.platform in ('openbsd3', 'openbsd4'):
+if sys.platform in ('openbsd3', 'openbsd4'):
     TEST_FILES = 48
 else:
     TEST_FILES = 100
@@ -257,7 +255,7 @@ class test__mkstemp_inner(TC):
         file = self.do_create()
         mode = stat.S_IMODE(os.stat(file.name).st_mode)
         expected = 0600
-        if sys.platform in ('win32', 'os2emx', 'mac'):
+        if sys.platform in ('win32', 'os2emx'):
             # There's no distinction among 'user', 'group' and 'world';
             # replicate the 'user' bits.
             user = expected >> 6
@@ -476,7 +474,7 @@ class test_mkdtemp(TC):
             mode = stat.S_IMODE(os.stat(dir).st_mode)
             mode &= 0777 # Mask off sticky bits inherited from /tmp
             expected = 0700
-            if sys.platform in ('win32', 'os2emx', 'mac'):
+            if sys.platform in ('win32', 'os2emx'):
                 # There's no distinction among 'user', 'group' and 'world';
                 # replicate the 'user' bits.
                 user = expected >> 6

@@ -462,16 +462,6 @@ def _os_bootstrap():
     elif 'os2' in names:
         sep = '\\'
         from os2 import stat
-    elif 'mac' in names:
-        from mac import stat
-        def join(a, b):
-            if a == '':
-                return b
-            if ':' not in a:
-                a = ':' + a
-            if a[-1:] != ':':
-                a = a + ':'
-            return a + b
     else:
         raise ImportError, 'no os specific module found'
 
