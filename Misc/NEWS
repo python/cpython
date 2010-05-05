@@ -54,8 +54,8 @@ Core and Builtins
 
 - Raise a TypeError when trying to delete a T_STRING_INPLACE struct member.
 
-- Issue #8211: Save/restore CFLAGS around AC_PROG_CC in configure.in, compiler
-  optimizations are disabled when --with-pydebug is used.
+- Issue #8211: Save/restore CFLAGS around AC_PROG_CC in configure.in, in
+  case it is set.
 
 - Issue #8226: sys.setfilesystemencoding() raises a LookupError if the encoding
   is unknown
