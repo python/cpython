@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8621: uuid.uuid4() returned the same sequence of values in the
+  parent and any children created using ``os.fork`` on MacOS X 10.6.
+
 - Issue #8313: traceback.format_exception_only() encodes unicode message to
   ASCII with backslashreplace error handler if str(value) failed
 
