@@ -38,7 +38,7 @@ PyType_ClearCache(void)
 {
 	Py_ssize_t i;
 	unsigned int cur_version_tag = next_version_tag - 1;
-	
+
 	for (i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
 		method_cache[i].version = 0;
 		Py_CLEAR(method_cache[i].name);
@@ -971,7 +971,7 @@ subtype_dealloc(PyObject *self)
 
 	/*  Clear slots up to the nearest base with a different tp_dealloc */
 	base = type;
-	while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
+	while (base->tp_dealloc == subtype_dealloc) {
 		if (Py_SIZE(base))
 			clear_slots(base, self);
 		base = base->tp_base;
