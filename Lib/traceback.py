@@ -212,8 +212,14 @@ def _format_final_exc_line(etype, value):
 def _some_str(value):
     try:
         return str(value)
-    except:
-        return '<unprintable %s object>' % type(value).__name__
+    except Exception:
+        pass
+    try:
+        value = unicode(value)
+        return value.encode("ascii", "backslashreplace")
+    except Exception:
+        pass
+    return '<unprintable %s object>' % type(value).__name__
 
 
 def print_exc(limit=None, file=None):
