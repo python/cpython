@@ -1145,6 +1145,12 @@ Extension Modules
 Build
 -----
 
+- Issue #8625: Turn off optimization in --with-pydebug builds with
+  gcc.  (Optimization was unintentionally turned on in gcc
+  --with-pydebug builds as a result of the issue #1628484 fix,
+  combined with autoconf's strange choice of default CFLAGS produced
+  by AC_PROG_CC for gcc.)
+
 - Issue #3646: It is now easily possible to install a Python framework into
   your home directory on MacOSX, see Mac/README for more information.
 
