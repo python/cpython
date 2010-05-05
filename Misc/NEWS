@@ -348,6 +348,8 @@ C-API
 Library
 -------
 
+- Issue #7755: Use an unencumbered audio file for tests.
+
 - Issue #8621: uuid.uuid4() returned the same sequence of values in the
   parent and any children created using ``os.fork`` on MacOS X 10.6.
 
