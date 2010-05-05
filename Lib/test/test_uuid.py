@@ -461,7 +461,7 @@ class TestUUID(TestCase):
             os.close(fds[0])
             value = uuid.uuid4()
             os.write(fds[1], value.hex)
-            sys.exit(0)
+            os._exit(0)
 
         else:
             os.close(fds[1])
