@@ -7,7 +7,7 @@
 #ifndef PyTuple_MAXSAVESIZE
 #define PyTuple_MAXSAVESIZE	20  /* Largest tuple to save on free list */
 #endif
-#ifndef PyTuple_MAXFREELIST 
+#ifndef PyTuple_MAXFREELIST
 #define PyTuple_MAXFREELIST  2000  /* Maximum number of tuples of each size to save */
 #endif
 
@@ -86,7 +86,6 @@ PyTuple_New(register Py_ssize_t size)
 		{
 			return PyErr_NoMemory();
 		}
-		nbytes += sizeof(PyTupleObject) - sizeof(PyObject *);
 
 		op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
 		if (op == NULL)
