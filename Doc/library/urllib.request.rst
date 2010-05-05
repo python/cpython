@@ -143,7 +143,7 @@ The :mod:`urllib.request` module defines the following functions:
       class AppURLopener(urllib.request.FancyURLopener):
           version = "App/1.7"
 
-      urllib._urlopener = AppURLopener()
+      urllib.request._urlopener = AppURLopener()
 
 
 .. function:: urlcleanup()
