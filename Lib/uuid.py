@@ -427,6 +427,19 @@ try:
         if hasattr(lib, 'uuid_generate_time'):
             _uuid_generate_time = lib.uuid_generate_time
 
+    # The uuid_generate_* functions are broken on MacOS X 10.6, as noted
+    # in issue #8621 the function generates the same sequence of values
+    # in the parent process and all children created using fork (unless
+    # those children use exec as well).
+    #
+    # Assume that the uuid_generate functions are broken from 10.6 onward,
+    # the test can be adjusted when a later version is fixed.
+    import sys
+    if sys.platform == 'darwin':
+        import os
+        if int(os.uname()[2].split('.')[0]) >= 10:
+            _uuid_generate_random = _uuid_generate_time = None
+
     # On Windows prior to 2000, UuidCreate gives a UUID containing the
     # hardware address.  On Windows 2000 and later, UuidCreate makes a
     # random UUID and UuidCreateSequential gives a UUID containing the

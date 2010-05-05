@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8621: uuid.uuid4() returned the same sequence of values in the
+  parent and any children created using ``os.fork`` on MacOS X 10.6.
+
 - Issue #8567: Fix precedence of signals in Decimal module: when a
   Decimal operation raises multiple signals and more than one of those
   signals is trapped, the specification determines the order in which
