@@ -1209,34 +1209,6 @@ _expectations = {
         test_kqueue
         test_ossaudiodev
         """,
-   'mac':
-        """
-        test_atexit
-        test_bz2
-        test_crypt
-        test_curses
-        test_dbm
-        test_fcntl
-        test_fork1
-        test_epoll
-        test_grp
-        test_ioctl
-        test_largefile
-        test_locale
-        test_kqueue
-        test_mmap
-        test_openpty
-        test_ossaudiodev
-        test_poll
-        test_popen
-        test_posix
-        test_pty
-        test_pwd
-        test_resource
-        test_signal
-        test_sundry
-        test_tarfile
-        """,
     'unixware7':
         """
         test_epoll

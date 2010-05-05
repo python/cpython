@@ -298,9 +298,6 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual(strp_output.tm_isdst, 0)
         strp_output = _strptime._strptime_time("GMT", "%Z")
         self.assertEqual(strp_output.tm_isdst, 0)
-        if sys.platform == "mac":
-            # Timezones don't really work on MacOS9
-            return
         time_tuple = time.localtime()
         strf_output = time.strftime("%Z")  #UTC does not have a timezone
         strp_output = _strptime._strptime_time(strf_output, "%Z")
@@ -317,8 +314,6 @@ class StrptimeTests(unittest.TestCase):
     def test_bad_timezone(self):
         # Explicitly test possibility of bad timezone;
         # when time.tzname[0] == time.tzname[1] and time.daylight
-        if sys.platform == "mac":
-            return #MacOS9 has severely broken timezone support.
         tz_name = time.tzname[0]
         if tz_name.upper() in ("UTC", "GMT"):
             return
