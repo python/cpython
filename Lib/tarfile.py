@@ -978,7 +978,7 @@ class TarInfo(object):
 
         return info
 
-    def tobuf(self, format=DEFAULT_FORMAT, encoding=ENCODING, errors="strict"):
+    def tobuf(self, format=DEFAULT_FORMAT, encoding=ENCODING, errors="surrogateescape"):
         """Return a tar header as a string of 512 byte blocks.
         """
         info = self.get_info()
@@ -1490,7 +1490,7 @@ class TarFile(object):
 
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
             tarinfo=None, dereference=None, ignore_zeros=None, encoding=None,
-            errors=None, pax_headers=None, debug=None, errorlevel=None):
+            errors="surrogateescape", pax_headers=None, debug=None, errorlevel=None):
         """Open an (uncompressed) tar archive `name'. `mode' is either 'r' to
            read from an existing archive, 'a' to append data to an existing
            file or 'w' to create a new file overwriting an existing one. `mode'
@@ -1531,13 +1531,7 @@ class TarFile(object):
             self.ignore_zeros = ignore_zeros
         if encoding is not None:
             self.encoding = encoding
-
-        if errors is not None:
-            self.errors = errors
-        elif mode == "r":
-            self.errors = "replace"
-        else:
-            self.errors = "strict"
+        self.errors = errors
 
         if pax_headers is not None and self.format == PAX_FORMAT:
             self.pax_headers = pax_headers
