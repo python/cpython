@@ -51,8 +51,6 @@ def copyfile(src, dst):
     if _samefile(src, dst):
         raise Error("`%s` and `%s` are the same file" % (src, dst))
 
-    fsrc = None
-    fdst = None
     for fn in [src, dst]:
         try:
             st = os.stat(fn)
