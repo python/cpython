@@ -320,8 +320,7 @@ class ClassWithFailingRepr:
 
 def test_main():
     run_unittest(ReprTests)
-    if os.name != 'mac':
-        run_unittest(LongReprTest)
+    run_unittest(LongReprTest)
 
 
 if __name__ == "__main__":

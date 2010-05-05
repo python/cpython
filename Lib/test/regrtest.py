@@ -1156,41 +1156,6 @@ _expectations = {
         test_kqueue
         test_ossaudiodev
         """,
-   'mac':
-        """
-        test_atexit
-        test_bsddb
-        test_bsddb185
-        test_bsddb3
-        test_bz2
-        test_commands
-        test_crypt
-        test_curses
-        test_dbm
-        test_dl
-        test_fcntl
-        test_fork1
-        test_epoll
-        test_grp
-        test_ioctl
-        test_largefile
-        test_locale
-        test_kqueue
-        test_mmap
-        test_openpty
-        test_ossaudiodev
-        test_poll
-        test_popen
-        test_popen2
-        test_posix
-        test_pty
-        test_pwd
-        test_resource
-        test_signal
-        test_sundry
-        test_tarfile
-        test_timing
-        """,
     'unixware7':
         """
         test_bsddb
@@ -1477,7 +1442,7 @@ class _ExpectedSkips:
             if sys.maxint == 9223372036854775807L:
                 self.expected.add('test_imageop')
 
-            if not sys.platform in ("mac", "darwin"):
+            if sys.platform != "darwin":
                 MAC_ONLY = ["test_macos", "test_macostools", "test_aepack",
                             "test_plistlib", "test_scriptpackages",
                             "test_applesingle"]

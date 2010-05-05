@@ -47,7 +47,7 @@ Notes on the availability of these functions:
 .. data:: name
 
    The name of the operating system dependent module imported.  The following
-   names have currently been registered: ``'posix'``, ``'nt'``, ``'mac'``,
+   names have currently been registered: ``'posix'``, ``'nt'``,
    ``'os2'``, ``'ce'``, ``'java'``, ``'riscos'``.
 
 

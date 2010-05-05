@@ -64,12 +64,6 @@ from Tkinter import *
 import tktools
 import webchecker
 
-# Override some for a weaker platform
-if sys.platform == 'mac':
-    webchecker.DEFROOT = "http://grail.cnri.reston.va.us/"
-    webchecker.MAXPAGE = 50000
-    webchecker.verbose = 4
-
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 't:m:qva')

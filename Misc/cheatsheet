@@ -1390,7 +1390,7 @@ platform.py)
 
                                Some os variables
      Variable                                 Meaning
-name                name of O/S-specific module (e.g. "posix", "mac", "nt")
+name                name of O/S-specific module (e.g. "posix", "nt")
 path                O/S-specific module for path manipulations.
                     On Unix, os.path.split() <=> posixpath.split()
 curdir              string used to represent current directory ('.')

@@ -721,16 +721,13 @@ def AskFileForSave(
     if issubclass(tpwanted, Carbon.File.FSSpec):
         return tpwanted(rr.selection[0])
     if issubclass(tpwanted, (str, unicode)):
-        if sys.platform == 'mac':
-            fullpath = rr.selection[0].as_pathname()
-        else:
-            # This is gross, and probably incorrect too
-            vrefnum, dirid, name = rr.selection[0].as_tuple()
-            pardir_fss = Carbon.File.FSSpec((vrefnum, dirid, ''))
-            pardir_fsr = Carbon.File.FSRef(pardir_fss)
-            pardir_path = pardir_fsr.FSRefMakePath()  # This is utf-8
-            name_utf8 = unicode(name, 'macroman').encode('utf8')
-            fullpath = os.path.join(pardir_path, name_utf8)
+        # This is gross, and probably incorrect too
+        vrefnum, dirid, name = rr.selection[0].as_tuple()
+        pardir_fss = Carbon.File.FSSpec((vrefnum, dirid, ''))
+        pardir_fsr = Carbon.File.FSRef(pardir_fss)
+        pardir_path = pardir_fsr.FSRefMakePath()  # This is utf-8
+        name_utf8 = unicode(name, 'macroman').encode('utf8')
+        fullpath = os.path.join(pardir_path, name_utf8)
         if issubclass(tpwanted, unicode):
             return unicode(fullpath, 'utf8')
         return tpwanted(fullpath)

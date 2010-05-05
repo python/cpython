@@ -127,7 +127,7 @@ class PyBuildExt(build_ext):
         # Platform-dependent module source and include directories
         incdirlist = []
         platform = self.get_platform()
-        if platform in ('darwin', 'mac') and ("--disable-toolbox-glue" not in
+        if platform == 'darwin' and ("--disable-toolbox-glue" not in
             sysconfig.get_config_var("CONFIG_ARGS")):
             # Mac OS X also includes some mac-specific modules
             macmoddir = os.path.join(srcdir, 'Mac/Modules')
@@ -160,22 +160,21 @@ class PyBuildExt(build_ext):
             if ext.name in sys.builtin_module_names:
                 self.extensions.remove(ext)
 
-        if platform != 'mac':
-            # Parse Modules/Setup and Modules/Setup.local to figure out which
-            # modules are turned on in the file.
-            remove_modules = []
-            for filename in ('Modules/Setup', 'Modules/Setup.local'):
-                input = text_file.TextFile(filename, join_lines=1)
-                while 1:
-                    line = input.readline()
-                    if not line: break
-                    line = line.split()
-                    remove_modules.append(line[0])
-                input.close()
+        # Parse Modules/Setup and Modules/Setup.local to figure out which
+        # modules are turned on in the file.
+        remove_modules = []
+        for filename in ('Modules/Setup', 'Modules/Setup.local'):
+            input = text_file.TextFile(filename, join_lines=1)
+            while 1:
+                line = input.readline()
+                if not line: break
+                line = line.split()
+                remove_modules.append(line[0])
+            input.close()
 
-            for ext in self.extensions[:]:
-                if ext.name in remove_modules:
-                    self.extensions.remove(ext)
+        for ext in self.extensions[:]:
+            if ext.name in remove_modules:
+                self.extensions.remove(ext)
 
         # When you run "make CC=altcc" or something similar, you really want
         # those environment variables passed into the setup.py phase.  Here's
@@ -397,7 +396,7 @@ class PyBuildExt(build_ext):
 
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
-        if platform in ['darwin', 'beos', 'mac']:
+        if platform in ['darwin', 'beos']:
             math_libs = []
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
@@ -485,19 +484,16 @@ class PyBuildExt(build_ext):
 
         # fcntl(2) and ioctl(2)
         exts.append( Extension('fcntl', ['fcntlmodule.c']) )
-        if platform not in ['mac']:
-            # pwd(3)
-            exts.append( Extension('pwd', ['pwdmodule.c']) )
-            # grp(3)
-            exts.append( Extension('grp', ['grpmodule.c']) )
-            # spwd, shadow passwords
-            if (config_h_vars.get('HAVE_GETSPNAM', False) or
-                    config_h_vars.get('HAVE_GETSPENT', False)):
-                exts.append( Extension('spwd', ['spwdmodule.c']) )
-            else:
-                missing.append('spwd')
+        # pwd(3)
+        exts.append( Extension('pwd', ['pwdmodule.c']) )
+        # grp(3)
+        exts.append( Extension('grp', ['grpmodule.c']) )
+        # spwd, shadow passwords
+        if (config_h_vars.get('HAVE_GETSPNAM', False) or
+                config_h_vars.get('HAVE_GETSPENT', False)):
+            exts.append( Extension('spwd', ['spwdmodule.c']) )
         else:
-            missing.extend(['pwd', 'grp', 'spwd'])
+            missing.append('spwd')
 
         # select(2); not on ancient System V
         exts.append( Extension('select', ['selectmodule.c']) )
@@ -510,17 +506,14 @@ class PyBuildExt(build_ext):
         exts.append( Extension('cPickle', ['cPickle.c']) )
 
         # Memory-mapped files (also works on Win32).
-        if platform not in ['atheos', 'mac']:
+        if platform not in ['atheos']:
             exts.append( Extension('mmap', ['mmapmodule.c']) )
         else:
             missing.append('mmap')
 
         # Lance Ellinghaus's syslog module
-        if platform not in ['mac']:
-            # syslog daemon interface
-            exts.append( Extension('syslog', ['syslogmodule.c']) )
-        else:
-            missing.append('syslog')
+        # syslog daemon interface
+        exts.append( Extension('syslog', ['syslogmodule.c']) )
 
         # George Neville-Neil's timing module:
         # Deprecated in PEP 4 http://www.python.org/peps/pep-0004.html
@@ -592,16 +585,13 @@ class PyBuildExt(build_ext):
         else:
             missing.append('readline')
 
-        if platform not in ['mac']:
-            # crypt module.
+        # crypt module.
 
-            if self.compiler.find_library_file(lib_dirs, 'crypt'):
-                libs = ['crypt']
-            else:
-                libs = []
-            exts.append( Extension('crypt', ['cryptmodule.c'], libraries=libs) )
+        if self.compiler.find_library_file(lib_dirs, 'crypt'):
+            libs = ['crypt']
         else:
-            missing.append('crypt')
+            libs = []
+        exts.append( Extension('crypt', ['cryptmodule.c'], libraries=libs) )
 
         # CSV files
         exts.append( Extension('_csv', ['_csv.c']) )
@@ -1093,7 +1083,7 @@ class PyBuildExt(build_ext):
             missing.append('gdbm')
 
         # Unix-only modules
-        if platform not in ['mac', 'win32']:
+        if platform not in ['win32']:
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface
