@@ -29,11 +29,11 @@ The numeric tower
 
    .. attribute:: real
 
-      Abstract. Retrieves the :class:`Real` component of this number.
+      Abstract. Retrieves the real component of this number.
 
    .. attribute:: imag
 
-      Abstract. Retrieves the :class:`Real` component of this number.
+      Abstract. Retrieves the imaginary component of this number.
 
    .. method:: conjugate()
 
