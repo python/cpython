@@ -348,6 +348,9 @@ C-API
 Library
 -------
 
+- Issue #4265: shutil.copyfile() was leaking file descriptors when disk fills.
+  Patch by Tres Seaver.
+
 - Issue #8390: tarfile uses surrogateespace as the default error handler
   (instead of replace in read mode or strict in write mode)
 
