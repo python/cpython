@@ -1465,9 +1465,7 @@ class TIPCThreadableTest (unittest.TestCase, ThreadableTest):
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
-             TestExceptions, BufferIOTest, BasicTCPTest2]
-    if sys.platform != 'mac':
-        tests.extend([ BasicUDPTest, UDPTimeoutTest ])
+             TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest, UDPTimeoutTest ]
 
     tests.extend([
         NonBlockingTCPTests,

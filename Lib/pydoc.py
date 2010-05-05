@@ -2024,7 +2024,7 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font>'''
 
     class DocServer(http.server.HTTPServer):
         def __init__(self, port, callback):
-            host = (sys.platform == 'mac') and '127.0.0.1' or 'localhost'
+            host = 'localhost'
             self.address = ('', port)
             self.url = 'http://%s:%d/' % (host, port)
             self.callback = callback
@@ -2141,10 +2141,6 @@ def gui():
             except ImportError: # pre-webbrowser.py compatibility
                 if sys.platform == 'win32':
                     os.system('start "%s"' % url)
-                elif sys.platform == 'mac':
-                    try: import ic
-                    except ImportError: pass
-                    else: ic.launchurl(url)
                 else:
                     rc = os.system('netscape -remote "openURL(%s)" &' % url)
                     if rc: os.system('netscape "%s" &' % url)

@@ -1147,10 +1147,6 @@ def uname():
             if not version:
                 version = vendor
 
-        elif os.name == 'mac':
-            release,(version,stage,nonrel),machine = mac_ver()
-            system = 'MacOS'
-
     # System specific extensions
     if system == 'OpenVMS':
         # OpenVMS seems to have release and version mixed up

@@ -65,20 +65,6 @@ INSTALL_SCHEMES = {
         'scripts': '$userbase/Scripts',
         'data'   : '$userbase',
         },
-    'mac': {
-        'purelib': '$base/Lib/site-packages',
-        'platlib': '$base/Lib/site-packages',
-        'headers': '$base/Include/$dist_name',
-        'scripts': '$base/Scripts',
-        'data'   : '$base',
-        },
-    'mac_user': {
-        'purelib': '$usersite',
-        'platlib': '$usersite',
-        'headers': '$userbase/$py_version_short/include/$dist_name',
-        'scripts': '$userbase/bin',
-        'data'   : '$userbase',
-        },
     'os2': {
         'purelib': '$base/Lib/site-packages',
         'platlib': '$base/Lib/site-packages',

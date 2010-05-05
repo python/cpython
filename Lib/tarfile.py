@@ -50,13 +50,6 @@ import struct
 import copy
 import re
 
-if sys.platform == 'mac':
-    # This module needs work for MacOS9, especially in the area of pathname
-    # handling. In many places it is assumed a simple substitution of / by the
-    # local os.path.sep is good enough to convert pathnames, but this does not
-    # work with the mac rooted:path:name versus :nonrooted:path:name syntax
-    raise ImportError("tarfile does not work for platform==mac")
-
 try:
     import grp, pwd
 except ImportError:
