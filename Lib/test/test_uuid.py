@@ -446,6 +446,34 @@ class TestUUID(TestCase):
             equal(u, uuid.UUID(v))
             equal(str(u), v)
 
+    def testIssue8621(self):
+        import os
+        import sys
+        if os.name != 'posix':
+            return
+
+        # On at least some versions of OSX uuid.uuid4 generates
+        # the same sequence of UUIDs in the parent and any
+        # children started using fork.
+        fds = os.pipe()
+        pid = os.fork()
+        if pid == 0:
+            os.close(fds[0])
+            value = uuid.uuid4()
+            os.write(fds[1], value.hex)
+            os._exit(0)
+
+        else:
+            os.close(fds[1])
+            parent_value = uuid.uuid4().hex
+            os.waitpid(pid, 0)
+            child_value = os.read(fds[0], 100)
+
+            self.assertNotEqual(parent_value, child_value)
+
+
+
+
 
 def test_main():
     test_support.run_unittest(TestUUID)
