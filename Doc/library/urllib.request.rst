@@ -133,10 +133,10 @@ The :mod:`urllib.request` module defines the following functions:
    of the :class:`FancyURLopener` class and use it to perform their requested
    actions.  To override this functionality, programmers can create a subclass of
    :class:`URLopener` or :class:`FancyURLopener`, then assign an instance of that
-   class to the ``urllib._urlopener`` variable before calling the desired function.
-   For example, applications may want to specify a different
-   :mailheader:`User-Agent` header than :class:`URLopener` defines.  This can be
-   accomplished with the following code::
+   class to the ``urllib.request._urlopener`` variable before calling the
+   desired function.  For example, applications may want to specify a different
+   :mailheader:`User-Agent` header than :class:`URLopener` defines.
+   This can be accomplished with the following code::
 
       import urllib.request
 
