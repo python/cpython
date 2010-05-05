@@ -1,5 +1,5 @@
 /*
- * Definition of a `Connection` type.  
+ * Definition of a `Connection` type.
  * Used by `socket_connection.c` and `pipe_connection.c`.
  *
  * connection.h
@@ -42,7 +42,7 @@ connection_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	static char *kwlist[] = {"handle", "readable", "writable", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, F_HANDLE "|ii", kwlist, 
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, F_HANDLE "|ii", kwlist,
 					 &handle, &readable, &writable))
 		return NULL;
 
@@ -53,7 +53,7 @@ connection_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 
 	if (!readable && !writable) {
-		PyErr_SetString(PyExc_ValueError, 
+		PyErr_SetString(PyExc_ValueError,
 				"either readable or writable must be true");
 		return NULL;
 	}
@@ -120,10 +120,10 @@ connection_sendbytes(ConnectionObject *self, PyObject *args)
 	} else {
 		if (size < 0) {
 			PyErr_SetString(PyExc_ValueError, "size is negative");
-			return NULL;		
+			return NULL;
 		}
 		if (offset + size > length) {
-			PyErr_SetString(PyExc_ValueError, 
+			PyErr_SetString(PyExc_ValueError,
 					"buffer length < offset + size");
 			return NULL;
 		}
@@ -142,7 +142,7 @@ connection_sendbytes(ConnectionObject *self, PyObject *args)
 }
 
 static PyObject *
-connection_recvbytes(ConnectionObject *self, PyObject *args) 
+connection_recvbytes(ConnectionObject *self, PyObject *args)
 {
 	char *freeme = NULL;
 	Py_ssize_t res, maxlength = PY_SSIZE_T_MAX;
@@ -152,15 +152,15 @@ connection_recvbytes(ConnectionObject *self, PyObject *args)
 		return NULL;
 
 	CHECK_READABLE(self);
-	
+
 	if (maxlength < 0) {
 		PyErr_SetString(PyExc_ValueError, "maxlength < 0");
 		return NULL;
 	}
-	
-	res = conn_recv_string(self, self->buffer, CONNECTION_BUFFER_SIZE, 
+
+	res = conn_recv_string(self, self->buffer, CONNECTION_BUFFER_SIZE,
 			       &freeme, maxlength);
-	
+
 	if (res < 0) {
 		if (res == MP_BAD_MESSAGE_LENGTH) {
 			if ((self->flags & WRITABLE) == 0) {
@@ -173,7 +173,7 @@ connection_recvbytes(ConnectionObject *self, PyObject *args)
 			}
 		}
 		mp_SetError(PyExc_IOError, res);
-	} else {    
+	} else {
 		if (freeme == NULL) {
 			result = PyString_FromStringAndSize(self->buffer, res);
 		} else {
@@ -181,12 +181,12 @@ connection_recvbytes(ConnectionObject *self, PyObject *args)
 			PyMem_Free(freeme);
 		}
 	}
-	
+
 	return result;
 }
 
 static PyObject *
-connection_recvbytes_into(ConnectionObject *self, PyObject *args) 
+connection_recvbytes_into(ConnectionObject *self, PyObject *args)
 {
 	char *freeme = NULL, *buffer = NULL;
 	Py_ssize_t res, length, offset = 0;
@@ -194,8 +194,8 @@ connection_recvbytes_into(ConnectionObject *self, PyObject *args)
 	Py_buffer pbuf;
 
 	CHECK_READABLE(self);
-	
-	if (!PyArg_ParseTuple(args, "w*|" F_PY_SSIZE_T, 
+
+	if (!PyArg_ParseTuple(args, "w*|" F_PY_SSIZE_T,
 			      &pbuf, &offset))
 		return NULL;
 
@@ -205,14 +205,14 @@ connection_recvbytes_into(ConnectionObject *self, PyObject *args)
 	if (offset < 0) {
 		PyErr_SetString(PyExc_ValueError, "negative offset");
 		goto _error;
-	}   
+	}
 
 	if (offset > length) {
 		PyErr_SetString(PyExc_ValueError, "offset too large");
 		goto _error;
 	}
 
-	res = conn_recv_string(self, buffer+offset, length-offset, 
+	res = conn_recv_string(self, buffer+offset, length-offset,
 			       &freeme, PY_SSIZE_T_MAX);
 
 	if (res < 0) {
@@ -231,8 +231,8 @@ connection_recvbytes_into(ConnectionObject *self, PyObject *args)
 		if (freeme == NULL) {
 			result = PyInt_FromSsize_t(res);
 		} else {
-			result = PyObject_CallFunction(BufferTooShort, 
-						       F_RBUFFER "#", 
+			result = PyObject_CallFunction(BufferTooShort,
+						       F_RBUFFER "#",
 						       freeme, res);
 			PyMem_Free(freeme);
 			if (result) {
@@ -266,7 +266,7 @@ connection_send_obj(ConnectionObject *self, PyObject *obj)
 
 	CHECK_WRITABLE(self);
 
-	pickled_string = PyObject_CallFunctionObjArgs(pickle_dumps, obj, 
+	pickled_string = PyObject_CallFunctionObjArgs(pickle_dumps, obj,
 						      pickle_protocol, NULL);
 	if (!pickled_string)
 		goto failure;
@@ -298,7 +298,7 @@ connection_recv_obj(ConnectionObject *self)
 
 	CHECK_READABLE(self);
 
-	res = conn_recv_string(self, self->buffer, CONNECTION_BUFFER_SIZE, 
+	res = conn_recv_string(self, self->buffer, CONNECTION_BUFFER_SIZE,
 			       &freeme, PY_SSIZE_T_MAX);
 
 	if (res < 0) {
@@ -313,7 +313,7 @@ connection_recv_obj(ConnectionObject *self)
 			}
 		}
 		mp_SetError(PyExc_IOError, res);
-	} else {    
+	} else {
 		if (freeme == NULL) {
 			temp = PyString_FromStringAndSize(self->buffer, res);
 		} else {
@@ -323,7 +323,7 @@ connection_recv_obj(ConnectionObject *self)
 	}
 
 	if (temp)
-		result = PyObject_CallFunctionObjArgs(pickle_loads, 
+		result = PyObject_CallFunctionObjArgs(pickle_loads,
 						      temp, NULL);
 	Py_XDECREF(temp);
 	return result;
@@ -400,7 +400,7 @@ connection_repr(ConnectionObject *self)
 	static char *conn_type[] = {"read-only", "write-only", "read-write"};
 
 	assert(self->flags >= 1 && self->flags <= 3);
-	return FROM_FORMAT("<%s %s, handle %zd>", 
+	return FROM_FORMAT("<%s %s, handle %zd>",
 			   conn_type[self->flags - 1],
 			   CONNECTION_NAME, (Py_ssize_t)self->handle);
 }
@@ -432,20 +432,20 @@ connection_writable(ConnectionObject *self, void *closure)
  */
 
 static PyMethodDef connection_methods[] = {
-	{"send_bytes", (PyCFunction)connection_sendbytes, METH_VARARGS, 
+	{"send_bytes", (PyCFunction)connection_sendbytes, METH_VARARGS,
 	 "send the byte data from a readable buffer-like object"},
-	{"recv_bytes", (PyCFunction)connection_recvbytes, METH_VARARGS, 
+	{"recv_bytes", (PyCFunction)connection_recvbytes, METH_VARARGS,
 	 "receive byte data as a string"},
 	{"recv_bytes_into",(PyCFunction)connection_recvbytes_into,METH_VARARGS,
 	 "receive byte data into a writeable buffer-like object\n"
 	 "returns the number of bytes read"},
 
-	{"send", (PyCFunction)connection_send_obj, METH_O, 
+	{"send", (PyCFunction)connection_send_obj, METH_O,
 	 "send a (picklable) object"},
-	{"recv", (PyCFunction)connection_recv_obj, METH_NOARGS, 
+	{"recv", (PyCFunction)connection_recv_obj, METH_NOARGS,
 	 "receive a (picklable) object"},
 
-	{"poll", (PyCFunction)connection_poll, METH_VARARGS, 
+	{"poll", (PyCFunction)connection_poll, METH_VARARGS,
 	 "whether there is any input available to be read"},
 	{"fileno", (PyCFunction)connection_fileno, METH_NOARGS,
 	 "file descriptor or handle of the connection"},
@@ -456,11 +456,11 @@ static PyMethodDef connection_methods[] = {
 };
 
 static PyGetSetDef connection_getset[] = {
-	{"closed", (getter)connection_closed, NULL, 
+	{"closed", (getter)connection_closed, NULL,
 	 "True if the connection is closed", NULL},
-	{"readable", (getter)connection_readable, NULL, 
+	{"readable", (getter)connection_readable, NULL,
 	 "True if the connection is readable", NULL},
-	{"writable", (getter)connection_writable, NULL, 
+	{"writable", (getter)connection_writable, NULL,
 	 "True if the connection is writable", NULL},
 	{NULL}
 };
@@ -494,7 +494,7 @@ PyTypeObject CONNECTION_TYPE = {
 	/* tp_getattro       */ 0,
 	/* tp_setattro       */ 0,
 	/* tp_as_buffer      */ 0,
-	/* tp_flags          */ Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | 
+	/* tp_flags          */ Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
 				Py_TPFLAGS_HAVE_WEAKREFS,
 	/* tp_doc            */ connection_doc,
 	/* tp_traverse       */ 0,

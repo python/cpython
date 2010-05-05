@@ -26,7 +26,7 @@ win32_CloseHandle(PyObject *self, PyObject *args)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	success = CloseHandle(hObject); 
+	success = CloseHandle(hObject);
 	Py_END_ALLOW_THREADS
 
 	if (!success)
@@ -42,7 +42,7 @@ win32_ConnectNamedPipe(PyObject *self, PyObject *args)
 	LPOVERLAPPED lpOverlapped;
 	BOOL success;
 
-	if (!PyArg_ParseTuple(args, F_HANDLE F_POINTER, 
+	if (!PyArg_ParseTuple(args, F_HANDLE F_POINTER,
 			      &hNamedPipe, &lpOverlapped))
 		return NULL;
 
@@ -68,17 +68,17 @@ win32_CreateFile(PyObject *self, PyObject *args)
 	HANDLE hTemplateFile;
 	HANDLE handle;
 
-	if (!PyArg_ParseTuple(args, "s" F_DWORD F_DWORD F_POINTER 
+	if (!PyArg_ParseTuple(args, "s" F_DWORD F_DWORD F_POINTER
 			      F_DWORD F_DWORD F_HANDLE,
-			      &lpFileName, &dwDesiredAccess, &dwShareMode, 
-			      &lpSecurityAttributes, &dwCreationDisposition, 
+			      &lpFileName, &dwDesiredAccess, &dwShareMode,
+			      &lpSecurityAttributes, &dwCreationDisposition,
 			      &dwFlagsAndAttributes, &hTemplateFile))
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	handle = CreateFile(lpFileName, dwDesiredAccess, 
-			    dwShareMode, lpSecurityAttributes, 
-			    dwCreationDisposition, 
+	handle = CreateFile(lpFileName, dwDesiredAccess,
+			    dwShareMode, lpSecurityAttributes,
+			    dwCreationDisposition,
 			    dwFlagsAndAttributes, hTemplateFile);
 	Py_END_ALLOW_THREADS
 
@@ -101,17 +101,17 @@ win32_CreateNamedPipe(PyObject *self, PyObject *args)
 	LPSECURITY_ATTRIBUTES lpSecurityAttributes;
 	HANDLE handle;
 
-	if (!PyArg_ParseTuple(args, "s" F_DWORD F_DWORD F_DWORD 
+	if (!PyArg_ParseTuple(args, "s" F_DWORD F_DWORD F_DWORD
 			      F_DWORD F_DWORD F_DWORD F_POINTER,
-			      &lpName, &dwOpenMode, &dwPipeMode, 
-			      &nMaxInstances, &nOutBufferSize, 
+			      &lpName, &dwOpenMode, &dwPipeMode,
+			      &nMaxInstances, &nOutBufferSize,
 			      &nInBufferSize, &nDefaultTimeOut,
 			      &lpSecurityAttributes))
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	handle = CreateNamedPipe(lpName, dwOpenMode, dwPipeMode, 
-				 nMaxInstances, nOutBufferSize, 
+	handle = CreateNamedPipe(lpName, dwOpenMode, dwPipeMode,
+				 nMaxInstances, nOutBufferSize,
 				 nInBufferSize, nDefaultTimeOut,
 				 lpSecurityAttributes);
 	Py_END_ALLOW_THREADS
@@ -155,11 +155,11 @@ win32_OpenProcess(PyObject *self, PyObject *args)
 	DWORD dwProcessId;
 	HANDLE handle;
 
-	if (!PyArg_ParseTuple(args, F_DWORD "i" F_DWORD, 
+	if (!PyArg_ParseTuple(args, F_DWORD "i" F_DWORD,
 			      &dwDesiredAccess, &bInheritHandle, &dwProcessId))
 		return NULL;
 
-	handle = OpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);    
+	handle = OpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);
 	if (handle == NULL)
 		return PyErr_SetFromWindowsErr(0);
 
@@ -174,7 +174,7 @@ win32_SetNamedPipeHandleState(PyObject *self, PyObject *args)
 	DWORD dwArgs[3], *pArgs[3] = {NULL, NULL, NULL};
 	int i;
 
-	if (!PyArg_ParseTuple(args, F_HANDLE "OOO", 
+	if (!PyArg_ParseTuple(args, F_HANDLE "OOO",
 			      &hNamedPipe, &oArgs[0], &oArgs[1], &oArgs[2]))
 		return NULL;
 
