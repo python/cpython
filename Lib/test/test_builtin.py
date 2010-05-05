@@ -942,8 +942,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(RuntimeError, range, a, a + 1, badzero(1))
         """
 
-        # Reject floats when it would require PyLongs to represent.
-        # (smaller floats still accepted, but deprecated)
+        # Reject floats.
+        self.assertRaises(TypeError, range, 1., 1., 1.)
         self.assertRaises(TypeError, range, 1e100, 1e101, 1e101)
 
         self.assertRaises(TypeError, range, 0, "spam")
@@ -953,6 +953,46 @@ class BuiltinTest(unittest.TestCase):
         #NEAL self.assertRaises(OverflowError, range, 0, 2*sys.maxsize)
 
         self.assertRaises(OverflowError, len, range(0, sys.maxsize**10))
+
+        bignum = 2*sys.maxsize
+        smallnum = 42
+
+        # User-defined class with an __index__ method
+        class I:
+            def __init__(self, n):
+                self.n = int(n)
+            def __index__(self):
+                return self.n
+        self.assertEqual(list(range(I(bignum), I(bignum + 1))), [bignum])
+        self.assertEqual(list(range(I(smallnum), I(smallnum + 1))), [smallnum])
+
+        # User-defined class with a failing __index__ method
+        class IX:
+            def __index__(self):
+                raise RuntimeError
+        self.assertRaises(RuntimeError, range, IX())
+
+        # User-defined class with an invalid __index__ method
+        class IN:
+            def __index__(self):
+                return "not a number"
+
+        self.assertRaises(TypeError, range, IN())
+        # Exercise various combinations of bad arguments, to check
+        # refcounting logic
+        self.assertRaises(TypeError, range, 0.0)
+
+        self.assertRaises(TypeError, range, 0, 0.0)
+        self.assertRaises(TypeError, range, 0.0, 0)
+        self.assertRaises(TypeError, range, 0.0, 0.0)
+
+        self.assertRaises(TypeError, range, 0, 0, 1.0)
+        self.assertRaises(TypeError, range, 0, 0.0, 1)
+        self.assertRaises(TypeError, range, 0, 0.0, 1.0)
+        self.assertRaises(TypeError, range, 0.0, 0, 1)
+        self.assertRaises(TypeError, range, 0.0, 0, 1.0)
+        self.assertRaises(TypeError, range, 0.0, 0.0, 1)
+        self.assertRaises(TypeError, range, 0.0, 0.0, 1.0)
 
     def test_input(self):
         self.write_testfile()
