@@ -84,8 +84,6 @@ def copyfile(src, dst):
     if _samefile(src, dst):
         raise Error("`%s` and `%s` are the same file" % (src, dst))
 
-    fsrc = None
-    fdst = None
     for fn in [src, dst]:
         try:
             st = os.stat(fn)
@@ -96,6 +94,7 @@ def copyfile(src, dst):
             # XXX What about other special files? (sockets, devices...)
             if stat.S_ISFIFO(st.st_mode):
                 raise SpecialFileError("`%s` is a named pipe" % fn)
+
     with open(src, 'rb') as fsrc:
         with open(dst, 'wb') as fdst:
             copyfileobj(fsrc, fdst)
