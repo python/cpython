@@ -5,6 +5,7 @@ import os
 import socket
 import sys
 import time
+import warnings
 
 from test import support
 from test.support import TESTFN, run_unittest, unlink
@@ -306,6 +307,22 @@ class DispatcherTests(unittest.TestCase):
                     'warning: unhandled accept event']
         self.assertEquals(lines, expected)
 
+    def test_issue_8594(self):
+        # XXX - this test is supposed to be removed in next major Python
+        # version
+        d = asyncore.dispatcher(socket.socket())
+        # make sure the error message no longer refers to the socket
+        # object but the dispatcher instance instead
+        self.assertRaisesRegexp(AttributeError, 'dispatcher instance',
+                                getattr, d, 'foo')
+        # cheap inheritance with the underlying socket is supposed
+        # to still work but a DeprecationWarning is expected
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            family = d.family
+            self.assertEqual(family, socket.AF_INET)
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
 
 class dispatcherwithsend_noread(asyncore.dispatcher_with_send):
