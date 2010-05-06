@@ -601,12 +601,19 @@ def win32_ver(release='',version='',csd='',ptype=''):
             VER_PLATFORM_WIN32_WINDOWS = 1
             VER_PLATFORM_WIN32_NT = 2
             VER_NT_WORKSTATION = 1
+            VER_NT_SERVER = 3
+            REG_SZ = 1
 
     # Find out the registry key and some general version infos
-    maj,min,buildno,plat,csd = GetVersionEx()
+    winver = GetVersionEx()
+    maj,min,buildno,plat,csd = winver
     version = '%i.%i.%i' % (maj,min,buildno & 0xFFFF)
-    if csd[:13] == 'Service Pack ':
-        csd = 'SP' + csd[13:]
+    if hasattr(winver, "service_pack"):
+        if winver.service_pack != "":
+            csd = 'SP%s' % winver.service_pack_major
+    else:
+        if csd[:13] == 'Service Pack ':
+            csd = 'SP' + csd[13:]
 
     if plat == VER_PLATFORM_WIN32_WINDOWS:
         regkey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion'
@@ -637,23 +644,33 @@ def win32_ver(release='',version='',csd='',ptype=''):
             else:
                 release = 'post2003'
         elif maj == 6:
-            if min == 0:
-                # Per http://msdn2.microsoft.com/en-us/library/ms724429.aspx
+            if hasattr(winver, "product_type"):
+                product_type = winver.product_type
+            else:
+                product_type = VER_NT_WORKSTATION
+                # Without an OSVERSIONINFOEX capable sys.getwindowsversion(),
+                # or help from the registry, we cannot properly identify
+                # non-workstation versions.
                 try:
-                    productType = GetVersionEx(1)[8]
-                except TypeError:
-                    # sys.getwindowsversion() doesn't take any arguments, so
-                    # we cannot detect 2008 Server that way.
-                    # XXX Add some other means of detecting 2008 Server ?!
+                    key = RegOpenKeyEx(HKEY_LOCAL_MACHINE, regkey)
+                    name, type = RegQueryValueEx(key, "ProductName")
+                    # Discard any type that isn't REG_SZ
+                    if type == REG_SZ and name.find("Server") != -1:
+                        product_type = VER_NT_SERVER
+                except WindowsError:
+                    # Use default of VER_NT_WORKSTATION
+                    pass
+
+            if min == 0:
+                if product_type == VER_NT_WORKSTATION:
                     release = 'Vista'
                 else:
-                    if productType == VER_NT_WORKSTATION:
-                        release = 'Vista'
-                    else:
-                        release = '2008Server'
-            #elif min == 1:
-            #    # Windows 7 release candidate uses version 6.1.7100
-            #    release = '7RC'
+                    release = '2008Server'
+            elif min == 1:
+                if product_type == VER_NT_WORKSTATION:
+                    release = '7'
+                else:
+                    release = '2008ServerR2'
             else:
                 release = 'post2008Server'
 
