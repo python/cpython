@@ -374,6 +374,9 @@ class SimSMTPChannel(smtpd.SMTPChannel):
         else:
             self.push('550 No access for you!')
 
+    def handle_error(self):
+        raise
+
 
 class SimSMTPServer(smtpd.SMTPServer):
 
@@ -391,6 +394,9 @@ class SimSMTPServer(smtpd.SMTPServer):
 
     def add_feature(self, feature):
         self._extra_features.append(feature)
+
+    def handle_error(self):
+        raise
 
 
 # Test various SMTP & ESMTP commands/behaviors that require a simulated server
