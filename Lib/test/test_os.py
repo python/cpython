@@ -452,7 +452,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         except UnicodeEncodeError:
             msg = "U+20AC character is not encodable to %s" % (
                 sys.getfilesystemencoding(),)
-            self.skip(msg)
+            self.skipTest(msg)
         os.environ['unicode'] = value
         self.assertEquals(os.environ['unicode'], value)
         self.assertEquals(os.environb[b'unicode'], value_bytes)
