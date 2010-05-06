@@ -61,10 +61,12 @@ except NameError:
     socket_map = {}
 
 def _strerror(err):
-    res = os.strerror(err)
-    if res == 'Unknown error':
-        res = errorcode[err]
-    return res
+    try:
+        return strerror(err)
+    except (ValueError, OverflowError):
+        if err in errorcode:
+            return errorcode[err]
+        return "Unknown error %s" %err
 
 class ExitNow(Exception):
     pass
@@ -391,7 +393,11 @@ class dispatcher:
     # cheap inheritance, used to pass all other attribute
     # references to the underlying socket object.
     def __getattr__(self, attr):
-        return getattr(self.socket, attr)
+        try:
+            return getattr(self.socket, attr)
+        except AttributeError:
+            raise AttributeError("%s instance has no attribute '%s'"
+                                 %(self.__class__.__name__, attr))
 
     # log and log_info may be overridden to provide more sophisticated
     # logging and warning methods. In general, log is for 'hit' logging
