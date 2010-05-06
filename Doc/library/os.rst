@@ -141,6 +141,8 @@ process and user.
 
    Availability: Unix.
 
+   .. versionadded:: 3.2
+
 
 .. function:: chdir(path)
               fchdir(fd)
