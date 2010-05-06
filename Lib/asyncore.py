@@ -50,6 +50,7 @@ import select
 import socket
 import sys
 import time
+import warnings
 
 import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
@@ -61,10 +62,12 @@ except NameError:
     socket_map = {}
 
 def _strerror(err):
-    res = os.strerror(err)
-    if res == 'Unknown error':
-        res = errorcode[err]
-    return res
+    try:
+        return strerror(err)
+    except (ValueError, OverflowError):
+        if err in errorcode:
+            return errorcode[err]
+        return "Unknown error %s" %err
 
 class ExitNow(Exception):
     pass
@@ -265,6 +268,8 @@ class dispatcher:
                 status.append(repr(self.addr))
         return '<%s at %#x>' % (' '.join(status), id(self))
 
+    __str__ = __repr__
+
     def add_channel(self, map=None):
         #self.log_info('adding channel %s' % self)
         if map is None:
@@ -396,7 +401,15 @@ class dispatcher:
     # cheap inheritance, used to pass all other attribute
     # references to the underlying socket object.
     def __getattr__(self, attr):
-        return getattr(self.socket, attr)
+        try:
+            retattr = getattr(self.socket, attr)
+        except AttributeError:
+            raise AttributeError("%s instance has no attribute '%s'"
+                                 %(self.__class__.__name__, attr))
+        else:
+            warnings.warn("cheap inheritance is deprecated", DeprecationWarning,
+                          stacklevel=2)
+            return retattr
 
     # log and log_info may be overridden to provide more sophisticated
     # logging and warning methods. In general, log is for 'hit' logging

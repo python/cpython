@@ -41,6 +41,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #8573: asyncore _strerror() function might throw ValueError.
+
+- Issue #8483: asyncore.dispatcher's __getattr__ method produced confusing 
+  error messages when accessing undefined class attributes because of the cheap 
+  inheritance with the underlying socket object. 
+  The cheap inheritance has been deprecated.
+
 - Issue #4265: shutil.copyfile() was leaking file descriptors when disk fills.
   Patch by Tres Seaver.
 
