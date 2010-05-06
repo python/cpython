@@ -302,6 +302,18 @@ class DispatcherTests(unittest.TestCase):
                     'warning: unhandled accept event']
         self.assertEquals(lines, expected)
 
+    def test_issue_8594(self):
+        d = asyncore.dispatcher(socket.socket())
+        # make sure the error message no longer refers to the socket
+        # object but the dispatcher instance instead
+        try:
+            d.foo
+        except AttributeError as err:
+            self.assertTrue('dispatcher instance' in str(err))
+        else:
+            self.fail("exception not raised")
+        # test cheap inheritance with the underlying socket
+        self.assertEqual(d.family, socket.AF_INET)
 
 
 class dispatcherwithsend_noread(asyncore.dispatcher_with_send):
