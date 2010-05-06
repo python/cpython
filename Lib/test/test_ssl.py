@@ -659,7 +659,7 @@ else:
                 if support.verbose:
                     sys.stdout.write("\nsocket.error is %s\n" % x[1])
             else:
-                self.fail("Use of invalid cert should have failed!")
+                raise AssertionError("Use of invalid cert should have failed!")
         finally:
             server.stop()
             server.join()
@@ -704,7 +704,7 @@ else:
                     if support.verbose:
                         sys.stdout.write(" client:  read %r\n" % outdata)
                 if outdata != indata.lower():
-                    self.fail(
+                    raise AssertionError(
                         "bad data <<%r>> (%d) received; expected <<%r>> (%d)\n"
                         % (outdata[:20], len(outdata),
                            indata[:20].lower(), len(indata)))
@@ -752,7 +752,7 @@ else:
                 raise
         else:
             if not expect_success:
-                self.fail(
+                raise AssertionError(
                     "Client protocol %s succeeded with server protocol %s!"
                     % (ssl.get_protocol_name(client_protocol),
                        ssl.get_protocol_name(server_protocol)))
