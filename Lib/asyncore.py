@@ -407,8 +407,9 @@ class dispatcher:
             raise AttributeError("%s instance has no attribute '%s'"
                                  %(self.__class__.__name__, attr))
         else:
-            warnings.warn("cheap inheritance is deprecated", DeprecationWarning,
-                          stacklevel=2)
+            msg = "%(me)s.%(attr)s is deprecated; use %(me)s.socket.%(attr)s " \
+                  "instead" % {'me' : self.__class__.__name__, 'attr' : attr}
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
             return retattr
 
     # log and log_info may be overridden to provide more sophisticated
