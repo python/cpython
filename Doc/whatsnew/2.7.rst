@@ -8,10 +8,11 @@
 
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
-.. Big jobs: ElementTree 1.3, pep 391
+.. Big jobs: pep 391
 ..  hyperlink all the methods & functions.
 
 .. T_STRING_INPLACE not described in main docs
+.. XXX "Format String Syntax" in string.rst could use many more examples.
 
 .. $Id$
    Rules for maintenance:
@@ -238,8 +239,6 @@ separator and the grouping is always into three-digit groups.  The
 comma-formatting mechanism isn't as general as the :mod:`locale`
 module, but it's easier to use.
 
-.. XXX "Format String Syntax" in string.rst could use many more examples.
-
 .. seealso::
 
    :pep:`378` - Format Specifier for Thousands Separator
@@ -366,7 +365,7 @@ Two smaller enhancements to the logging module are:
 
 .. rev79293
 
-* :class:`Logger` instances gained a :meth:`getChild` that retrieves a
+* :class:`Logger` instances gained a :meth:`getChild` method that retrieves a
   descendant logger using a relative path.  For example,
   once you retrieve a logger by doing ``log = getLogger('app')``,
   calling ``log.getChild('network.listen')`` is equivalent to
@@ -388,8 +387,6 @@ The dictionary methods :meth:`keys`, :meth:`values`, and :meth:`items`
 are different in Python 3.x.  They return an object called a :dfn:`view`
 instead of a fully materialized list.
 
-.. Views can be iterated over, but they also behave like sets.  XXX not working.
-
 It's not possible to change the return values of :meth:`keys`,
 :meth:`values`, and :meth:`items` in Python 2.7 because too much code
 would break.  Instead the 3.x versions were added under the new names
@@ -402,6 +399,16 @@ of :meth:`viewkeys`, :meth:`viewvalues`, and :meth:`viewitems`.
     {0: 'A', 130: 'N', 10: 'B', 140: 'O', 20: ..., 250: 'Z'}
     >>> d.viewkeys()
     dict_keys([0, 130, 10, 140, 20, 150, 30, ..., 250])
+
+Views can be iterated over, but they also behave like sets.  The ``&``
+operator performs intersection, and ``|`` performs a union::
+
+    >>> d1 = dict((i*10, chr(65+i)) for i in range(26))
+    >>> d2 = dict((i**.5, i) for i in range(1000))
+    >>> d1.viewkeys() & d2.viewkeys()
+    set([0.0, 10.0, 20.0, 30.0])
+    >>> d1.viewkeys() | range(0, 30)
+    set([0, 1, 130, 3, 4, 5, 6, ..., 120, 250])
 
 The view keeps track of the dictionary and its contents change as the
 dictionary is modified::
@@ -940,6 +947,11 @@ changes, or look through the Subversion logs for all the details.
   length as the read-only :attr:`~collections.deque.maxlen` attribute.
   (Both features added by Raymond Hettinger.)
 
+* Deprecated function: :func:`contextlib.nested`, which allows
+  handling more than one context manager with a single :keyword:`with`
+  statement, has been deprecated, because :keyword:`with` supports
+  multiple context managers syntactically now.
+
 * The :mod:`copy` module's :func:`~copy.deepcopy` function will now
   correctly copy bound instance methods.  (Implemented by
   Robert Collins; :issue:`1515`.)
@@ -1437,9 +1449,9 @@ changes, or look through the Subversion logs for all the details.
   management protocol, so you can write ``with zipfile.ZipFile(...) as f: ...``.
   (Contributed by Brian Curtin; :issue:`5511`.)
 
-  :mod:`zipfile` now supports archiving empty directories and
+  :mod:`zipfile` now also supports archiving empty directories and
   extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
-  Reading files out of an archive is now faster, and interleaving
+  Reading files out of an archive is faster, and interleaving
   :meth:`~zipfile.ZipFile.read` and :meth:`~zipfile.ZipFile.readline` now works correctly.
   (Contributed by Nir Aides; :issue:`7610`.)
 
@@ -1451,6 +1463,47 @@ changes, or look through the Subversion logs for all the details.
   that lets you override the default compression method specified in the
   :class:`~zipfile.ZipFile` constructor.  (Contributed by Ronald Oussoren;
   :issue:`6003`.)
+
+
+.. ======================================================================
+.. whole new modules get described in subsections here
+
+
+.. _importlib-section:
+
+New module: importlib
+------------------------------
+
+Python 3.1 includes the :mod:`importlib` package, a re-implementation
+of the logic underlying Python's :keyword:`import` statement.
+:mod:`importlib` is useful for implementors of Python interpreters and
+to users who wish to write new importers that can participate in the
+import process.  Python 2.7 doesn't contain the complete
+:mod:`importlib` package, but instead has a tiny subset that contains
+a single function, :func:`~importlib.import_module`.
+
+``import_module(name, package=None)`` imports a module.  *name* is
+a string containing the module or package's name.  It's possible to do
+relative imports by providing a string that begins with a ``.``
+character, such as ``..utils.errors``.  For relative imports, the
+*package* argument must be provided and is the name of the package that
+will be used as the anchor for
+the relative import.  :func:`~importlib.import_module` both inserts the imported
+module into ``sys.modules`` and returns the module object.
+
+Here are some examples::
+
+    >>> from importlib import import_module
+    >>> anydbm = import_module('anydbm')  # Standard absolute import
+    >>> anydbm
+    <module 'anydbm' from '/p/python/Lib/anydbm.py'>
+    >>> # Relative import
+    >>> sysconfig = import_module('..sysconfig', 'distutils.command')
+    >>> sysconfig
+    <module 'distutils.sysconfig' from '/p/python/Lib/distutils/sysconfig.pyc'>
+
+:mod:`importlib` was implemented by Brett Cannon and introduced in
+Python 3.1.
 
 
 New module: sysconfig
@@ -1482,14 +1535,25 @@ The Distutils package and :mod:`sysconfig` are now maintained and
 renamed by Tarek Ziadé.
 
 
-Updated module: ElementTree 1.3
----------------------------------
+ttk: Themed Widgets for Tk
+--------------------------
 
-XXX write this.
+Tcl/Tk 8.5 includes a set of themed widgets that re-implement basic Tk
+widgets but have a more customizable appearance and can therefore more
+closely resemble the native platform's widgets.  This widget
+set was originally called Tile, but was renamed to Ttk (for "themed Tk")
+on being added to Tcl/Tck release 8.5.
 
-.. ======================================================================
-.. whole new modules get described in subsections here
+XXX write a brief discussion and an example here.
 
+The :mod:`ttk` module was written by Guilherme Polo and added in
+:issue:`2983`.  An alternate version called ``Tile.py``, written by
+Martin Franklin and maintained by Kevin Walzer, was proposed for
+inclusion in :issue:`2618`, but the authors argued that Guilherme
+Polo's work was more comprehensive.
+
+
+.. _unittest-section:
 
 Unit Testing Enhancements
 ---------------------------------
@@ -1668,67 +1732,91 @@ several files (by Benjamin Peterson).  This doesn't affect how the
 module is imported or used.
 
 
-.. _importlib-section:
+.. _elementtree-section:
 
-importlib: Importing Modules
-------------------------------
+Updated module: ElementTree 1.3
+---------------------------------
 
-Python 3.1 includes the :mod:`importlib` package, a re-implementation
-of the logic underlying Python's :keyword:`import` statement.
-:mod:`importlib` is useful for implementors of Python interpreters and
-to users who wish to write new importers that can participate in the
-import process.  Python 2.7 doesn't contain the complete
-:mod:`importlib` package, but instead has a tiny subset that contains
-a single function, :func:`~importlib.import_module`.
+The version of the ElementTree library included with Python was updated to
+version 1.3.  Some of the new features in ElementTree 1.3 are:
 
-``import_module(name, package=None)`` imports a module.  *name* is
-a string containing the module or package's name.  It's possible to do
-relative imports by providing a string that begins with a ``.``
-character, such as ``..utils.errors``.  For relative imports, the
-*package* argument must be provided and is the name of the package that
-will be used as the anchor for
-the relative import.  :func:`~importlib.import_module` both inserts the imported
-module into ``sys.modules`` and returns the module object.
+* The various parsing functions now take a *parser* keyword argument
+  that can be used to provide an :class:`XMLParser` instance that will
+  be used.  This makes it possible to override the file's internal encoding:
 
-Here are some examples::
+    p = ET.XMLParser(encoding='utf-8')
+    t = ET.XML("""<root/>""", parser=p)
 
-    >>> from importlib import import_module
-    >>> anydbm = import_module('anydbm')  # Standard absolute import
-    >>> anydbm
-    <module 'anydbm' from '/p/python/Lib/anydbm.py'>
-    >>> # Relative import
-    >>> sysconfig = import_module('..sysconfig', 'distutils.command')
-    >>> sysconfig
-    <module 'distutils.sysconfig' from '/p/python/Lib/distutils/sysconfig.pyc'>
+  Errors in parsing XML now raise a :exc:`ParseError` exception.
+  Instances of :exc:`ParseError` have a :attr:`position` attribute
+  containing a (*line*, *column*) tuple giving the location of the problem.
 
-:mod:`importlib` was implemented by Brett Cannon and introduced in
-Python 3.1.
+* ElementTree's code for converting trees to a string has been
+  significantly reworked, making it roughly twice as fast in many
+  cases.  The :class:`ElementTree` :meth:`write` and :class:`Element`
+  :meth:`write` methods now have a *method* parameter that can be
+  "xml" (the default), "html", or "text".  HTML mode will output empty
+  elements as ``<empty></empty>`` instead of ``<empty/>``, and text
+  mode will skip over elements and only output the text chunks.  If
+  you set the :attr:`tag` attribute of an element to ``None`` but
+  leaves its children in place, the element will be omitted when the
+  tree is written out, so you don't need to do more extensive rearrangement
+  to remove a single element.
 
+  Namespace aspects have also been improved.  All the ``xmlns:<whatever>``
+  declarations are now put on the root element and not scattered throughout
+  the resulting output.  You can set the default namespace for a tree
+  by setting the :attr:`default_namespace` attribute and can
+  register new prefixes with :meth:`regsiter_namespace`.  In XML mode,
+  you can use the true/false *xml_declaration* parameter to suppress the
+  XML declaration.
 
-ttk: Themed Widgets for Tk
---------------------------
+* New :class:`Element` method: :meth:`extend` appends the items from a
+  sequence to the element's children.  Elements themselves behave like
+  sequences, so it's easy to move children from one element to
+  another::
 
-Tcl/Tk 8.5 includes a set of themed widgets that re-implement basic Tk
-widgets but have a more customizable appearance and can therefore more
-closely resemble the native platform's widgets.  This widget
-set was originally called Tile, but was renamed to Ttk (for "themed Tk")
-on being added to Tcl/Tck release 8.5.
+    from xml.etree import ElementTree as ET
 
-XXX write a brief discussion and an example here.
+    t = ET.XML("""<list>
+      <item>1</item> <item>2</item>  <item>3</item>
+    </list>""")
+    new = ET.XML('<root/>')
+    new.extend(t)
 
-The :mod:`ttk` module was written by Guilherme Polo and added in
-:issue:`2983`.  An alternate version called ``Tile.py``, written by
-Martin Franklin and maintained by Kevin Walzer, was proposed for
-inclusion in :issue:`2618`, but the authors argued that Guilherme
-Polo's work was more comprehensive.
+    # Outputs <root><item>1</item>...</root>
+    print ET.tostring(new)
 
+* New :class:`Element` method: :meth:`iter` yields the children of the
+  element as a generator.  It's also possible to write ``for child in
+  elem: ...`` to loop over an element's children.  The existing method
+  :meth:`getiterator` is now deprecated.  :meth:`getchildren` is
+  another similar method that constructs and returns a list of
+  children; it's also deprecated.
 
-Deprecations and Removals
-=========================
+* New :class:`Element` method: :meth:`itertext` yields all chunks of
+  text that are descendants of the element.  For example::
 
-* :func:`contextlib.nested`, which allows handling more than one context manager
-  with one :keyword:`with` statement, has been deprecated; :keyword:`with`
-  supports multiple context managers syntactically now.
+    t = ET.XML("""<list>
+      <item>1</item> <item>2</item>  <item>3</item>
+    </list>""")
+
+    # Outputs ['\n  ', '1', ' ', '2', '  ', '3', '\n']
+    print list(t.itertext())
+
+* Deprecated: using an element as a Boolean (i.e., ``if elem: ...``)
+  would return true if the element had any children, or false if
+  there were no children.  This behaviour will eventually change or be removed
+  because it's confusing (``None`` is false, but so is a childless element?),
+  so it will now trigger a :exc:`FutureWarning`.  In your code,
+  you should be explicit: write ``len(elem) != 0`` if you're interested in
+  the number of children, or ``elem is not None``  Instead,
+
+Fredrik Lundh develops ElementTree and produced the 1.3 version;
+you can read his article describing 1.3 at
+http://effbot.org/zone/elementtree-13-intro.htm.
+Florent Xicluna updated the version included with
+Python, after discussions on python-dev and in :issue:`6472`.)
 
 .. ======================================================================
 
@@ -1987,6 +2075,11 @@ Porting to Python 2.7
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code:
+
+* The :func:`range` function processes its arguments more
+  consistently; it will now call :meth:`__int__` on non-float,
+  non-integer arguments that are supplied to it.  (Fixed by Alexander
+  Belopolsky; :issue:`1533`.)
 
 * The string :meth:`format` method changed the default precision used
   for floating-point and complex numbers from 6 decimal
