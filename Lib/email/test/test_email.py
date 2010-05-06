@@ -526,6 +526,13 @@ class TestEncoders(unittest.TestCase):
         msg = MIMEText('hello \xf8 world', _charset='iso-8859-1')
         eq(msg['content-transfer-encoding'], 'quoted-printable')
 
+    def test_encode7or8bit(self):
+        # Make sure a charset whose input character set is 8bit but
+        # whose output character set is 7bit gets a transfer-encoding
+        # of 7bit.
+        eq = self.assertEqual
+        msg = MIMEText('\xca\xb8', _charset='euc-jp')
+        eq(msg['content-transfer-encoding'], '7bit')
 
 
 # Test long header wrapping
