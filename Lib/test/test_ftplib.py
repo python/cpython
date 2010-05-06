@@ -48,6 +48,9 @@ class DummyDTPHandler(asynchat.async_chat):
             self.close()
             self.dtp_conn_closed = True
 
+    def handle_error(self):
+        raise
+
 
 class DummyFTPHandler(asynchat.async_chat):
 
