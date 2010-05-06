@@ -1564,12 +1564,15 @@ Polo's work was more comprehensive.
 
 .. _unittest-section:
 
-Unit Testing Enhancements
+Updated module: unittest
 ---------------------------------
 
 The :mod:`unittest` module was greatly enhanced; many
 new features were added.  Most of these features were implemented
-by Michael Foord, unless otherwise noted.
+by Michael Foord, unless otherwise noted.  The enhanced version of
+the module is downloadable separately for use with Python versions 2.4 to 2.6,
+packaged as the :mod:`unittest2` package, from
+http://pypi.python.org/pypi/unittest2.
 
 When used from the command line, the module can automatically discover
 tests.  It's not as fancy as `py.test <http://pytest.org>`__ or
