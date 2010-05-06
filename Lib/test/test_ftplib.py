@@ -50,6 +50,9 @@ class DummyDTPHandler(asynchat.async_chat):
     def push(self, what):
         super(DummyDTPHandler, self).push(what.encode('ascii'))
 
+    def handle_error(self):
+        raise
+
 
 class DummyFTPHandler(asynchat.async_chat):
 
