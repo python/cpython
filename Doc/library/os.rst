@@ -279,7 +279,10 @@ process and user.
 
    Return the value of the environment variable *key* if it exists, or
    *default* if it doesn't. *key*, *default* and the result are bytes.
+
    Availability: most flavors of Unix.
+
+   .. versionadded:: 3.2
 
 
 .. function:: putenv(key, value)
