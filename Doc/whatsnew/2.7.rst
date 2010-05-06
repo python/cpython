@@ -8,8 +8,7 @@
 
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
-.. Big jobs: ElementTree 1.3, pep 391, sysconfig
-..  unittest test discovery
+.. Big jobs: ElementTree 1.3, pep 391
 ..  hyperlink all the methods & functions.
 
 .. T_STRING_INPLACE not described in main docs
@@ -1217,6 +1216,20 @@ changes, or look through the Subversion logs for all the details.
   now accept an optional *flags* argument, for consistency with the
   other functions in the module.  (Added by Gregory P. Smith.)
 
+* New function: :func:`~runpy.run_path` in the :mod:`runpy` module
+  will execute the code at a provided *path* argument.  *path* can be
+  the path of a Python source file (:file:`example.py`), a compiled
+  bytecode file (:file:`example.pyc`), a directory
+  (:file:`./package/'), or a zip archive (:file:`example.zip`).  If a
+  directory or zip path is provided, it will be added to the front of
+  ``sys.path`` and the module :mod:`__main__` will be imported.  It's
+  expected that the directory or zip contains a :file:`__main__.py`;
+  if it doesn't, some other :file:`__main__.py` might be imported from
+  a location later in ``sys.path``.  This makes some of the machinery
+  of :mod:`runpy` available to scripts that want to mimic the behaviour
+  of Python's :option:`-m` switch. (Added by Nick Coghlan;
+  :issue:`6816`.)
+
 * New function: in the :mod:`shutil` module, :func:`~shutil.make_archive`
   takes a filename, archive type (zip or tar-format), and a directory
   path, and creates an archive containing the directory's contents.
@@ -1443,12 +1456,31 @@ changes, or look through the Subversion logs for all the details.
 New module: sysconfig
 ---------------------------------
 
-XXX A new :mod:`sysconfig` module has been extracted from
-:mod:`distutils` and put in the standard library.
+The :mod:`sysconfig` module has been pulled out of the Distutils
+package, becoming a new top-level module in its own right.
+:mod:`sysconfig` provides functions for getting information about
+Python's build process: compiler switches, installation paths, the
+platform name, and whether Python is running from its source
+directory.
 
-The :mod:`sysconfig` module provides access to Python's configuration
-information like the list of installation paths and the configuration
-variables relevant for the current platform. (contributed by Tarek)
+Some of the functions in the module are:
+
+* :func:`~sysconfig.get_config_var` returns variables from Python's
+  Makefile and the :file:`pyconfig.h` file.
+* :func:`~sysconfig.get_config_vars` returns a dictionary containing
+  all of the configuration variables.
+* :func:`~sysconfig.getpath` returns the configured path for
+  a particular type of module: the standard library,
+  site-specific modules, platform-specific modules, etc.
+* :func:`~sysconfig.is_python_build` returns true if you're running a
+  binary from a Python source tree, and false otherwise.
+
+Consult the :mod:`sysconfig` documentation for more details and for
+a complete list of functions.
+
+The Distutils package and :mod:`sysconfig` are now maintained and
+renamed by Tarek Ziadé.
+
 
 Updated module: ElementTree 1.3
 ---------------------------------
