@@ -164,6 +164,9 @@ Build
 Tests
 -----
 
+- Issue #8629: Disable some test_ssl tests, since they give different
+  results with OpenSSL 1.0.0 and higher.
+
 - Issue #8576: Remove use of find_unused_port() in test_smtplib and
   test_multiprocessing.  Patch by Paul Moore.
 
