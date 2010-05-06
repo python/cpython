@@ -40,6 +40,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #8573: asyncore _strerror() function might throw ValueError.
+
+- Issue #8483: asyncore.dispatcher's __getattr__ method produced confusing 
+  error messages when accessing undefined class attributes because of the cheap 
+  inheritance with the underlying socket object.
+
 - Issue #7472: Fixed typo in email.encoders module; messages using ISO-2022
   character sets will now consistently use a Content-Transfer-Encoding of
   7bit rather than sometimes being marked as 8bit.
