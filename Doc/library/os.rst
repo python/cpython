@@ -107,6 +107,10 @@ process and user.
    to modify the environment as well as query the environment.  :func:`putenv` will
    be called automatically when the mapping is modified.
 
+   On Unix, keys and values use :func:`sys.getfilesystemencoding` and
+   ``'surrogateescape'`` error handler. Use :data:`environb` if you would like
+   to use a different encoding.
+
    .. note::
 
       Calling :func:`putenv` directly does not change ``os.environ``, so it's better
@@ -126,6 +130,16 @@ process and user.
    this mapping to unset environment variables. :func:`unsetenv` will be called
    automatically when an item is deleted from ``os.environ``, and when
    one of the :meth:`pop` or :meth:`clear` methods is called.
+
+
+.. data:: environb
+
+   Bytes version of :data:`environ`: a mapping object representing the
+   environment as byte strings. :data:`environ` and :data:`environb` are
+   synchronized (modify :data:`environb` updates :data:`environ`, and vice
+   versa).
+
+   Availability: Unix.
 
 
 .. function:: chdir(path)
@@ -251,7 +265,19 @@ process and user.
 .. function:: getenv(key, default=None)
 
    Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't.  Availability: most flavors of Unix, Windows.
+   *default* if it doesn't. *key*, *default* and the result are str.
+   Availability: most flavors of Unix, Windows.
+
+   On Unix, keys and values are decoded with :func:`sys.getfilesystemencoding`
+   and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
+   would like to use a different encoding.
+
+
+.. function:: getenvb(key, default=None)
+
+   Return the value of the environment variable *key* if it exists, or
+   *default* if it doesn't. *key*, *default* and the result are bytes.
+   Availability: most flavors of Unix.
 
 
 .. function:: putenv(key, value)

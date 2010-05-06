@@ -348,6 +348,12 @@ C-API
 Library
 -------
 
+- Issue #8603: Create a bytes version of os.environ for Unix: create
+  os.environb mapping and os.getenvb() function, os.unsetenv() encodes str
+  argument to the file system encoding with the surrogateescape error handler
+  (instead of utf8/strict) and accepts bytes, and posix.environ keys and values
+  are bytes.
+
 - Issue #8573: asyncore _strerror() function might throw ValueError.
 
 - Issue #8483: asyncore.dispatcher's __getattr__ method produced confusing 
