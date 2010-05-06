@@ -2478,6 +2478,7 @@ _PyFloat_Pack8(double x, unsigned char *p, int le)
 
 		/* Eighth byte */
 		*p = flo & 0xFF;
+		/* p += incr; Unneeded (for now) */
 
 		/* Done */
 		return 0;
