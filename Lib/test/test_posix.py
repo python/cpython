@@ -299,9 +299,13 @@ class PosixTester(unittest.TestCase):
                 posix.lchflags(support.TESTFN, st.st_flags)
 
     def test_environ(self):
+        if os.name == "nt":
+            item_type = str
+        else:
+            item_type = bytes
         for k, v in posix.environ.items():
-            self.assertEqual(type(k), str)
-            self.assertEqual(type(v), str)
+            self.assertEqual(type(k), item_type)
+            self.assertEqual(type(v), item_type)
 
     def test_getcwd_long_pathnames(self):
         if hasattr(posix, 'getcwd'):
