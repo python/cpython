@@ -16,9 +16,9 @@ relevant for the current platform.
 Configuration variables
 -----------------------
 
-A Python distribution contains a :file:`Makefile` file and a :file:`python.h`
-that are necessary to build the Python binary itself, but also any C extension
-created in a third party project and compiled using :mod:`distutils`.
+A Python distribution contains a :file:`Makefile` and a :file:`pyconfig.h`
+header file that are necessary to build both the Python binary itself and
+third-party C extensions compiled using :mod:`distutils`.
 
 :mod:`sysconfig` puts all variables found in these files in a dictionary that
 can be accessed using :func:`get_config_vars` or :func:`get_config_var`.
