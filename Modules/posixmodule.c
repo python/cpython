@@ -498,14 +498,12 @@ convertenviron(void)
         char *p = strchr(*e, '=');
         if (p == NULL)
             continue;
-        k = PyUnicode_Decode(*e, (int)(p-*e),
-                             Py_FileSystemDefaultEncoding, "surrogateescape");
+        k = PyBytes_FromStringAndSize(*e, (int)(p-*e));
         if (k == NULL) {
             PyErr_Clear();
             continue;
         }
-        v = PyUnicode_Decode(p+1, strlen(p+1),
-                             Py_FileSystemDefaultEncoding, "surrogateescape");
+        v = PyBytes_FromStringAndSize(p+1, strlen(p+1));
         if (v == NULL) {
             PyErr_Clear();
             Py_DECREF(k);
@@ -5301,7 +5299,7 @@ posix_putenv(PyObject *self, PyObject *args)
     char *s1, *s2;
     char *newenv;
 #endif
-    PyObject *newstr;
+    PyObject *newstr = NULL;
     size_t len;
 
 #ifdef MS_WINDOWS
@@ -5324,15 +5322,19 @@ posix_putenv(PyObject *self, PyObject *args)
         APIRET rc;
 
         rc = DosSetExtLIBPATH(s2, BEGIN_LIBPATH);
-        if (rc != NO_ERROR)
-            return os2_error(rc);
+        if (rc != NO_ERROR) {
+            os2_error(rc);
+            goto error;
+        }
 
     } else if (stricmp(s1, "ENDLIBPATH") == 0) {
         APIRET rc;
 
         rc = DosSetExtLIBPATH(s2, END_LIBPATH);
-        if (rc != NO_ERROR)
-            return os2_error(rc);
+        if (rc != NO_ERROR) {
+            os2_error(rc);
+            goto error;
+        }
     } else {
 #endif
     /* XXX This can leak memory -- not easy to fix :-( */
@@ -5342,36 +5344,40 @@ posix_putenv(PyObject *self, PyObject *args)
     len = wcslen(s1) + wcslen(s2) + 2;
     newstr = PyUnicode_FromUnicode(NULL, (int)len - 1);
 #else
-    len = strlen(s1) + strlen(s2) + 2;
+    len = PyBytes_GET_SIZE(os1) + PyBytes_GET_SIZE(os2) + 2;
     newstr = PyBytes_FromStringAndSize(NULL, (int)len - 1);
 #endif
-    if (newstr == NULL)
-        return PyErr_NoMemory();
+    if (newstr == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
 #ifdef MS_WINDOWS
     newenv = PyUnicode_AsUnicode(newstr);
     _snwprintf(newenv, len, L"%s=%s", s1, s2);
     if (_wputenv(newenv)) {
-        Py_DECREF(newstr);
         posix_error();
-        return NULL;
+        goto error;
     }
 #else
     newenv = PyBytes_AS_STRING(newstr);
     PyOS_snprintf(newenv, len, "%s=%s", s1, s2);
     if (putenv(newenv)) {
-        Py_DECREF(newstr);
-        Py_DECREF(os1);
-        Py_DECREF(os2);
         posix_error();
-        return NULL;
+        goto error;
     }
 #endif
+
     /* Install the first arg and newstr in posix_putenv_garbage;
      * this will cause previous value to be collected.  This has to
      * happen after the real putenv() call because the old value
      * was still accessible until then. */
     if (PyDict_SetItem(posix_putenv_garbage,
-                       PyTuple_GET_ITEM(args, 0), newstr)) {
+#ifdef MS_WINDOWS
+                       PyTuple_GET_ITEM(args, 0),
+#else
+                       os1,
+#endif
+                       newstr)) {
         /* really not much we can do; just leak */
         PyErr_Clear();
     }
@@ -5382,12 +5388,20 @@ posix_putenv(PyObject *self, PyObject *args)
 #if defined(PYOS_OS2)
     }
 #endif
+
 #ifndef MS_WINDOWS
     Py_DECREF(os1);
     Py_DECREF(os2);
 #endif
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
+
+error:
+#ifndef MS_WINDOWS
+    Py_DECREF(os1);
+    Py_DECREF(os2);
+#endif
+    Py_XDECREF(newstr);
+    return NULL;
 }
 #endif /* putenv */
 
@@ -5399,10 +5413,20 @@ Delete an environment variable.");
 static PyObject *
 posix_unsetenv(PyObject *self, PyObject *args)
 {
+#ifdef MS_WINDOWS
     char *s1;
 
     if (!PyArg_ParseTuple(args, "s:unsetenv", &s1))
         return NULL;
+#else
+    PyObject *os1;
+    char *s1;
+
+    if (!PyArg_ParseTuple(args, "O&:unsetenv",
+                          PyUnicode_FSConverter, &os1))
+        return NULL;
+    s1 = PyBytes_AsString(os1);
+#endif
 
     unsetenv(s1);
 
@@ -5412,13 +5436,20 @@ posix_unsetenv(PyObject *self, PyObject *args)
      * old value was still accessible until then.
      */
     if (PyDict_DelItem(posix_putenv_garbage,
-                       PyTuple_GET_ITEM(args, 0))) {
+#ifdef MS_WINDOWS
+                       PyTuple_GET_ITEM(args, 0)
+#else
+                       os1
+#endif
+                       )) {
         /* really not much we can do; just leak */
         PyErr_Clear();
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+#ifndef MS_WINDOWS
+    Py_DECREF(os1);
+#endif
+    Py_RETURN_NONE;
 }
 #endif /* unsetenv */
 

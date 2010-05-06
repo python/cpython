@@ -369,12 +369,15 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     def setUp(self):
         self.__save = dict(os.environ)
+        self.__saveb = dict(os.environb)
         for key, value in self._reference().items():
             os.environ[key] = value
 
     def tearDown(self):
         os.environ.clear()
         os.environ.update(self.__save)
+        os.environb.clear()
+        os.environb.update(self.__saveb)
 
     def _reference(self):
         return {"KEY1":"VALUE1", "KEY2":"VALUE2", "KEY3":"VALUE3"}
@@ -439,6 +442,24 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         # Supplied PATH environment variable
         self.assertSequenceEqual(test_path, os.get_exec_path(test_env))
 
+    @unittest.skipIf(sys.platform == "win32", "POSIX specific test")
+    def test_environb(self):
+        # os.environ -> os.environb
+        value = 'euro\u20ac'
+        try:
+            value_bytes = value.encode(sys.getfilesystemencoding(), 'surrogateescape')
+        except UnicodeEncodeError:
+            raise unittest.SkipTest("U+20AC character is not encodable to %s" % sys.getfilesystemencoding())
+        os.environ['unicode'] = value
+        self.assertEquals(os.environ['unicode'], value)
+        self.assertEquals(os.environb[b'unicode'], value_bytes)
+
+        # os.environb -> os.environ
+        value = b'\xff'
+        os.environb[b'bytes'] = value
+        self.assertEquals(os.environb[b'bytes'], value)
+        value_str = value.decode(sys.getfilesystemencoding(), 'surrogateescape')
+        self.assertEquals(os.environ['bytes'], value_str)
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""

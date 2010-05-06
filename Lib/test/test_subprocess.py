@@ -803,8 +803,6 @@ class POSIXProcessTestCase(BaseTestCase):
 
     def test_undecodable_env(self):
         for key, value in (('test', 'abc\uDCFF'), ('test\uDCFF', '42')):
-            value_repr = repr(value).encode("ascii")
-
             # test str with surrogates
             script = "import os; print(repr(os.getenv(%s)))" % repr(key)
             env = os.environ.copy()
@@ -813,19 +811,19 @@ class POSIXProcessTestCase(BaseTestCase):
                 [sys.executable, "-c", script],
                 env=env)
             stdout = stdout.rstrip(b'\n\r')
-            self.assertEquals(stdout, value_repr)
+            self.assertEquals(stdout.decode('ascii'), repr(value))
 
             # test bytes
             key = key.encode("ascii", "surrogateescape")
             value = value.encode("ascii", "surrogateescape")
-            script = "import os; print(repr(os.getenv(%s)))" % repr(key)
+            script = "import os; print(repr(os.getenvb(%s)))" % repr(key)
             env = os.environ.copy()
             env[key] = value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
             stdout = stdout.rstrip(b'\n\r')
-            self.assertEquals(stdout, value_repr)
+            self.assertEquals(stdout.decode('ascii'), repr(value))
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

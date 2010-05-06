@@ -387,29 +387,33 @@ def get_exec_path(env=None):
 from _abcoll import MutableMapping  # Can't use collections (bootstrap)
 
 class _Environ(MutableMapping):
-    def __init__(self, environ, keymap, putenv, unsetenv):
-        self.keymap = keymap
+    def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue, putenv, unsetenv):
+        self.encodekey = encodekey
+        self.decodekey = decodekey
+        self.encodevalue = encodevalue
+        self.decodevalue = decodevalue
         self.putenv = putenv
         self.unsetenv = unsetenv
-        self.data = data = {}
-        for key, value in environ.items():
-            data[keymap(key)] = str(value)
+        self.data = data
 
     def __getitem__(self, key):
-        return self.data[self.keymap(key)]
+        value = self.data[self.encodekey(key)]
+        return self.decodevalue(value)
 
     def __setitem__(self, key, value):
-        value = str(value)
+        key = self.encodekey(key)
+        value = self.encodevalue(value)
         self.putenv(key, value)
-        self.data[self.keymap(key)] = value
+        self.data[key] = value
 
     def __delitem__(self, key):
+        key = self.encodekey(key)
         self.unsetenv(key)
-        del self.data[self.keymap(key)]
+        del self.data[key]
 
     def __iter__(self):
         for key in self.data:
-            yield key
+            yield self.decodekey(key)
 
     def __len__(self):
         return len(self.data)
@@ -439,21 +443,66 @@ except NameError:
 else:
     __all__.append("unsetenv")
 
-if name in ('os2', 'nt'): # Where Env Var Names Must Be UPPERCASE
-    _keymap = lambda key: str(key.upper())
-else:  # Where Env Var Names Can Be Mixed Case
-    _keymap = lambda key: str(key)
+def _createenviron():
+    if name in ('os2', 'nt'):
+        # Where Env Var Names Must Be UPPERCASE
+        def check_str(value):
+            if not isinstance(value, str):
+                raise TypeError("str expected, not %s" % type(value).__name__)
+            return value
+        encode = check_str
+        decode = str
+        def encodekey(key):
+            return encode(key).upper()
+        data = {}
+        for key, value in environ.items():
+            data[encodekey(key)] = value
+    else:
+        # Where Env Var Names Can Be Mixed Case
+        def encode(value):
+            if not isinstance(value, str):
+                raise TypeError("str expected, not %s" % type(value).__name__)
+            return value.encode(sys.getfilesystemencoding(), 'surrogateescape')
+        def decode(value):
+            return value.decode(sys.getfilesystemencoding(), 'surrogateescape')
+        encodekey = encode
+        data = environ
+    return _Environ(data,
+        encodekey, decode,
+        encode, decode,
+        _putenv, _unsetenv)
 
-environ = _Environ(environ, _keymap, _putenv, _unsetenv)
+# unicode environ
+environ = _createenviron()
+del _createenviron
 
 
 def getenv(key, default=None):
     """Get an environment variable, return None if it doesn't exist.
-    The optional second argument can specify an alternate default."""
-    if isinstance(key, bytes):
-        key = key.decode(sys.getfilesystemencoding(), "surrogateescape")
+    The optional second argument can specify an alternate default.
+    key, default and the result are str."""
     return environ.get(key, default)
 __all__.append("getenv")
+
+if name not in ('os2', 'nt'):
+    def _check_bytes(value):
+        if not isinstance(value, bytes):
+            raise TypeError("bytes expected, not %s" % type(value).__name__)
+        return value
+
+    # bytes environ
+    environb = _Environ(environ.data,
+        _check_bytes, bytes,
+        _check_bytes, bytes,
+        _putenv, _unsetenv)
+    del _check_bytes
+
+    def getenvb(key, default=None):
+        """Get an environment variable, return None if it doesn't exist.
+        The optional second argument can specify an alternate default.
+        key, default and the result are bytes."""
+        return environb.get(key, default)
+    __all__.append("getenvb")
 
 def _exists(name):
     return name in globals()
