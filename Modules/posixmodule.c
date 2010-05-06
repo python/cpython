@@ -612,10 +612,10 @@ os2_formatmsg(char *msgbuf, int msglen, char *reason)
     msgbuf[msglen] = '\0'; /* OS/2 Doesn't Guarantee a Terminator */
 
     if (strlen(msgbuf) > 0) { /* If Non-Empty Msg, Trim CRLF */
-    char *lastc = &msgbuf[ strlen(msgbuf)-1 ];
+        char *lastc = &msgbuf[ strlen(msgbuf)-1 ];
 
-    while (lastc > msgbuf && isspace(Py_CHARMASK(*lastc)))
-        *lastc-- = '\0'; /* Trim Trailing Whitespace (CRLF) */
+        while (lastc > msgbuf && isspace(Py_CHARMASK(*lastc)))
+            *lastc-- = '\0'; /* Trim Trailing Whitespace (CRLF) */
     }
 
     /* Add Optional Reason Text */
@@ -8181,14 +8181,14 @@ posix_sysconf(PyObject *self, PyObject *args)
     int name;
 
     if (PyArg_ParseTuple(args, "O&:sysconf", conv_sysconf_confname, &name)) {
-    int value;
+        int value;
 
-    errno = 0;
-    value = sysconf(name);
-    if (value == -1 && errno != 0)
-        posix_error();
-    else
-        result = PyInt_FromLong(value);
+        errno = 0;
+        value = sysconf(name);
+        if (value == -1 && errno != 0)
+            posix_error();
+        else
+            result = PyInt_FromLong(value);
     }
     return result;
 }
