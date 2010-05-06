@@ -84,7 +84,7 @@ This module offers the following functions:
    *sam* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_ALL_ACCESS`.  See the
    `Win32 documentation
-   <http://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`_ for
+   <http://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__ for
    other allowed values.
 
 
@@ -136,7 +136,7 @@ This module offers the following functions:
    *sam* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_WOW64_64KEY`.  See the
    `Win32 documentation
-   <http://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`_ for
+   <http://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__ for
    other allowed values.
 
 
@@ -252,7 +252,7 @@ This module offers the following functions:
    A call to :func:`LoadKey` fails if the calling process does not have the
    :const:`SE_RESTORE_PRIVILEGE` privilege.  Note that privileges are different
    from permissions -- see the `Win32 documentation
-   <http://msdn.microsoft.com/en-us/library/ms724889%28v=VS.85%29.aspx>`_ for
+   <http://msdn.microsoft.com/en-us/library/ms724889%28v=VS.85%29.aspx>`__ for
    more details.
 
    If *key* is a handle returned by :func:`ConnectRegistry`, then the path
@@ -273,7 +273,7 @@ This module offers the following functions:
    *sam* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_READ`.  See the `Win32
    documentation
-   <http://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`_ for
+   <http://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__ for
    other allowed values.
 
    The result is a new handle to the specified key.
