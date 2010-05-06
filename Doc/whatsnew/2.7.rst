@@ -9,6 +9,9 @@
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
 .. Big jobs: pep 391
+.. Initial section: development plans for 2.x in future
+.. Initial section: changes in deprecation warning behaviour
+
 ..  hyperlink all the methods & functions.
 
 .. T_STRING_INPLACE not described in main docs
@@ -56,7 +59,7 @@
    when researching a change.
 
 This article explains the new features in Python 2.7.  The final
-release of 2.7 is currently scheduled for June 2010; the detailed
+release of 2.7 is currently scheduled for July 2010; the detailed
 schedule is described in :pep:`373`.
 
 Python 2.7 is planned to be the last major release in the 2.x series.
@@ -80,7 +83,7 @@ for migrating to the 3.x series.
 
 A partial list of 3.1 features that were backported to 2.7:
 
-* A version of the :mod:`io` library, rewritten in C for performance.
+* A new version of the :mod:`io` library, rewritten in C for performance.
 * The ordered-dictionary type described in :ref:`pep-0372`.
 * The new format specifier described in :ref:`pep-0378`.
 * The :class:`memoryview` object.
@@ -1176,6 +1179,12 @@ changes, or look through the Subversion logs for all the details.
   with any object literal that decodes to a list of pairs.
   (Contributed by Raymond Hettinger; :issue:`5381`.)
 
+* The :mod:`mailbox` module's :class:`Maildir` class now records the
+  timestamp on the directories it reads, and only re-reads them if the
+  modification time has subsequently changed.  This improves
+  performance by avoiding unneeded directory scans.  (Fixed by
+  A.M. Kuchling and Antoine Pitrou; :issue:`1607951`, :issue:`6896`.)
+
 * New functions: the :mod:`math` module gained
   :func:`~math.erf` and :func:`~math.erfc` for the error function and the complementary error function,
   :func:`~math.expm1` which computes ``e**x - 1`` with more precision than
@@ -1238,9 +1247,9 @@ changes, or look through the Subversion logs for all the details.
   expected that the directory or zip contains a :file:`__main__.py`;
   if it doesn't, some other :file:`__main__.py` might be imported from
   a location later in ``sys.path``.  This makes some of the machinery
-  of :mod:`runpy` available to scripts that want to mimic the behaviour
-  of Python's :option:`-m` switch. (Added by Nick Coghlan;
-  :issue:`6816`.)
+  of :mod:`runpy` available to scripts that want to mimic the way
+  Python's :option:`-m` processes an explicit path name.
+  (Added by Nick Coghlan; :issue:`6816`.)
 
 * New function: in the :mod:`shutil` module, :func:`~shutil.make_archive`
   takes a filename, archive type (zip or tar-format), and a directory
@@ -2091,6 +2100,12 @@ that may require changes to your code:
   type, and cannot be directly attached to the object's instance.  This
   affects new-style classes (derived from :class:`object`) and C extension
   types.  (:issue:`6101`.)
+
+* Due to a bug in Python 2.6, the *exc_value* parameter to
+  :meth:`__exit__` methods was often the string representation of the
+  exception, not an instance.  This was fixed in 2.7, so *exc_value*
+  will be an instance as expected.  (Fixed by Florent Xicluna;
+  :issue:`7853`.)
 
 * When a restricted set of attributes were set using ``__slots__``,
   deleting an unset attribute would not raise :exc:`AttributeError`
