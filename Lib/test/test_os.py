@@ -449,7 +449,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         try:
             value_bytes = value.encode(sys.getfilesystemencoding(), 'surrogateescape')
         except UnicodeEncodeError:
-            raise unittest.SkipTest("U+20AC character is not encodable to %s" % sys.getfilesystemencoding())
+            raise self.skip("U+20AC character is not encodable to %s" % sys.getfilesystemencoding())
         os.environ['unicode'] = value
         self.assertEquals(os.environ['unicode'], value)
         self.assertEquals(os.environb[b'unicode'], value_bytes)
