@@ -231,7 +231,9 @@ write files see :func:`open`, and for accessing the filesystem see the
    Return a relative filepath to *path* either from the current directory or from
    an optional *start* point.
 
-   *start* defaults to :attr:`os.curdir`. Availability:  Windows, Unix.
+   *start* defaults to :attr:`os.curdir`.
+
+   Availability:  Windows, Unix.
 
    .. versionadded:: 2.6
 
@@ -240,12 +242,15 @@ write files see :func:`open`, and for accessing the filesystem see the
 
    Return ``True`` if both pathname arguments refer to the same file or directory
    (as indicated by device number and i-node number). Raise an exception if a
-   :func:`os.stat` call on either pathname fails. Availability: Unix.
+   :func:`os.stat` call on either pathname fails.
+
+   Availability: Unix.
 
 
 .. function:: sameopenfile(fp1, fp2)
 
    Return ``True`` if the file descriptors *fp1* and *fp2* refer to the same file.
+
    Availability: Unix.
 
 
@@ -254,7 +259,9 @@ write files see :func:`open`, and for accessing the filesystem see the
    Return ``True`` if the stat tuples *stat1* and *stat2* refer to the same file.
    These structures may have been returned by :func:`fstat`, :func:`lstat`, or
    :func:`stat`.  This function implements the underlying comparison used by
-   :func:`samefile` and :func:`sameopenfile`. Availability: Unix.
+   :func:`samefile` and :func:`sameopenfile`.
+
+   Availability: Unix.
 
 
 .. function:: split(path)
@@ -296,7 +303,9 @@ write files see :func:`open`, and for accessing the filesystem see the
    Split the pathname *path* into a pair ``(unc, rest)`` so that *unc* is the UNC
    mount point (such as ``r'\\host\mount'``), if present, and *rest* the rest of
    the path (such as  ``r'\path\file.ext'``).  For paths containing drive letters,
-   *unc* will always be the empty string. Availability:  Windows.
+   *unc* will always be the empty string.
+
+   Availability:  Windows.
 
 
 .. function:: walk(path, visit, arg)
