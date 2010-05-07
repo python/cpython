@@ -2,6 +2,8 @@
 Main program for 2to3.
 """
 
+from __future__ import with_statement
+
 import sys
 import os
 import difflib
@@ -62,8 +64,14 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
             if self.show_diffs:
                 diff_lines = diff_texts(old, new, filename)
                 try:
-                    for line in diff_lines:
-                        print line
+                    if self.output_lock is not None:
+                        with self.output_lock:
+                            for line in diff_lines:
+                                print line
+                            sys.stdout.flush()
+                    else:
+                        for line in diff_lines:
+                            print line
                 except UnicodeEncodeError:
                     warn("couldn't encode %s's diff for your terminal" %
                          (filename,))
@@ -95,7 +103,7 @@ def main(fixer_pkg, args=None):
     parser.add_option("-x", "--nofix", action="append", default=[],
                       help="Prevent a fixer from being run.")
     parser.add_option("-l", "--list-fixes", action="store_true",
-                      help="List available transformations (fixes/fix_*.py)")
+                      help="List available transformations")
     parser.add_option("-p", "--print-function", action="store_true",
                       help="Modify the grammar so that print() is a function")
     parser.add_option("-v", "--verbose", action="store_true",

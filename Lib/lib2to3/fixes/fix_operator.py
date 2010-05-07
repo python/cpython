@@ -14,10 +14,10 @@ class FixOperator(fixer_base.BaseFix):
     func = "'(' func=any ')'"
     PATTERN = """
               power< module='operator'
-                trailer< '.' {methods} > trailer< {func} > >
+                trailer< '.' %(methods)s > trailer< %(func)s > >
               |
-              power< {methods} trailer< {func} > >
-              """.format(methods=methods, func=func)
+              power< %(methods)s trailer< %(func)s > >
+              """ % dict(methods=methods, func=func)
 
     def transform(self, node, results):
         method = results["method"][0]
