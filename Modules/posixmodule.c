@@ -2031,7 +2031,7 @@ posix_getcwd(int use_bytes)
         return posix_error();
     if (use_bytes)
         return PyBytes_FromStringAndSize(buf, strlen(buf));
-    return PyUnicode_Decode(buf, strlen(buf), Py_FileSystemDefaultEncoding,"surrogateescape");
+    return PyUnicode_DecodeFSDefault(buf);
 }
 
 PyDoc_STRVAR(posix_getcwd__doc__,
