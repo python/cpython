@@ -340,16 +340,20 @@ code_dealloc(PyCodeObject *co)
 static PyObject *
 code_repr(PyCodeObject *co)
 {
-	int lineno = -1;
-	char *filename = "???";
-
+	int lineno;
 	if (co->co_firstlineno != 0)
 		lineno = co->co_firstlineno;
-	if (co->co_filename && PyUnicode_Check(co->co_filename))
-		filename = _PyUnicode_AsString(co->co_filename);
-	return PyUnicode_FromFormat(
-	                "<code object %.100U at %p, file \"%.300s\", line %d>",
-	                co->co_name, co, filename, lineno);
+	else
+		lineno = -1;
+	if (co->co_filename && PyUnicode_Check(co->co_filename)) {
+		return PyUnicode_FromFormat(
+			"<code object %.100U at %p, file \"%.300U\", line %d>",
+			co->co_name, co, co->co_filename, lineno);
+	} else {
+		return PyUnicode_FromFormat(
+			"<code object %.100U at %p, file ???, line %d>",
+			co->co_name, co, lineno);
+	}
 }
 
 static PyObject *
