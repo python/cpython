@@ -158,6 +158,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_AsWideChar PyUnicodeUCS2_AsWideChar
 # define PyUnicode_ClearFreeList PyUnicodeUCS2_ClearFreelist
 # define PyUnicode_Compare PyUnicodeUCS2_Compare
+# define PyUnicode_CompareWithASCII PyUnicodeUCS2_CompareASCII
 # define PyUnicode_Concat PyUnicodeUCS2_Concat
 # define PyUnicode_Append PyUnicodeUCS2_Append
 # define PyUnicode_AppendAndDel PyUnicodeUCS2_AppendAndDel
@@ -257,6 +258,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_AsWideChar PyUnicodeUCS4_AsWideChar
 # define PyUnicode_ClearFreeList PyUnicodeUCS4_ClearFreelist
 # define PyUnicode_Compare PyUnicodeUCS4_Compare
+# define PyUnicode_CompareWithASCII PyUnicodeUCS4_CompareWithASCII
 # define PyUnicode_Concat PyUnicodeUCS4_Concat
 # define PyUnicode_Append PyUnicodeUCS4_Append
 # define PyUnicode_AppendAndDel PyUnicodeUCS4_AppendAndDel
