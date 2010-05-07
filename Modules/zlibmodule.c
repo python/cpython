@@ -396,7 +396,8 @@ PyDoc_STRVAR(comp_compress__doc__,
 static PyObject *
 PyZlib_objcompress(compobject *self, PyObject *args)
 {
-    int err, inplen, length = DEFAULTALLOC;
+    int err, inplen;
+    Py_ssize_t length = DEFAULTALLOC;
     PyObject *RetVal;
     Py_buffer pinput;
     Byte *input;
@@ -477,8 +478,8 @@ PyDoc_STRVAR(decomp_decompress__doc__,
 static PyObject *
 PyZlib_objdecompress(compobject *self, PyObject *args)
 {
-    int err, inplen, old_length, length = DEFAULTALLOC;
-    int max_length = 0;
+    int err, inplen, max_length = 0;
+    Py_ssize_t old_length, length = DEFAULTALLOC;
     PyObject *RetVal;
     Py_buffer pinput;
     Byte *input;
