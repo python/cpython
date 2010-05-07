@@ -6,7 +6,7 @@ import urllib.parse
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
-RFC3986_BASE = "http://a/b/c/d;p?q"
+RFC3986_BASE = 'http://a/b/c/d;p?q'
 
 # A list of test cases.  Each test case is a a two-tuple that contains
 # a string with the query and a dictionary with the expected result.
@@ -193,8 +193,6 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_RFC2396(self):
         # cases from RFC 2396
-
-
         self.checkJoin(RFC2396_BASE, 'g:h', 'g:h')
         self.checkJoin(RFC2396_BASE, 'g', 'http://a/b/c/g')
         self.checkJoin(RFC2396_BASE, './g', 'http://a/b/c/g')
@@ -235,13 +233,59 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC2396_BASE, 'g#s/./x', 'http://a/b/c/g#s/./x')
         self.checkJoin(RFC2396_BASE, 'g#s/../x', 'http://a/b/c/g#s/../x')
 
-        #The following scenarios have been updated in RFC3986
-        #self.checkJoin(RFC2396_BASE, '?y', 'http://a/b/c/?y')
-        #self.checkJoin(RFC2396_BASE, ';x', 'http://a/b/c/;x')
-
     def test_RFC3986(self):
+        # Test cases from RFC3986
         self.checkJoin(RFC3986_BASE, '?y','http://a/b/c/d;p?y')
         self.checkJoin(RFC2396_BASE, ';x', 'http://a/b/c/;x')
+        self.checkJoin(RFC3986_BASE, 'g:h','g:h')
+        self.checkJoin(RFC3986_BASE, 'g','http://a/b/c/g')
+        self.checkJoin(RFC3986_BASE, './g','http://a/b/c/g')
+        self.checkJoin(RFC3986_BASE, 'g/','http://a/b/c/g/')
+        self.checkJoin(RFC3986_BASE, '/g','http://a/g')
+        self.checkJoin(RFC3986_BASE, '//g','http://g')
+        self.checkJoin(RFC3986_BASE, '?y','http://a/b/c/d;p?y')
+        self.checkJoin(RFC3986_BASE, 'g?y','http://a/b/c/g?y')
+        self.checkJoin(RFC3986_BASE, '#s','http://a/b/c/d;p?q#s')
+        self.checkJoin(RFC3986_BASE, 'g#s','http://a/b/c/g#s')
+        self.checkJoin(RFC3986_BASE, 'g?y#s','http://a/b/c/g?y#s')
+        self.checkJoin(RFC3986_BASE, ';x','http://a/b/c/;x')
+        self.checkJoin(RFC3986_BASE, 'g;x','http://a/b/c/g;x')
+        self.checkJoin(RFC3986_BASE, 'g;x?y#s','http://a/b/c/g;x?y#s')
+        self.checkJoin(RFC3986_BASE, '','http://a/b/c/d;p?q')
+        self.checkJoin(RFC3986_BASE, '.','http://a/b/c/')
+        self.checkJoin(RFC3986_BASE, './','http://a/b/c/')
+        self.checkJoin(RFC3986_BASE, '..','http://a/b/')
+        self.checkJoin(RFC3986_BASE, '../','http://a/b/')
+        self.checkJoin(RFC3986_BASE, '../g','http://a/b/g')
+        self.checkJoin(RFC3986_BASE, '../..','http://a/')
+        self.checkJoin(RFC3986_BASE, '../../','http://a/')
+        self.checkJoin(RFC3986_BASE, '../../g','http://a/g')
+
+        #Abnormal Examples
+        # The 'abnormal scenarios' are incompatible with RFC2986 parsing
+        # Tests are here for reference.
+
+        #self.checkJoin(RFC3986_BASE, '../../../g','http://a/g')
+        #self.checkJoin(RFC3986_BASE, '../../../../g','http://a/g')
+        #self.checkJoin(RFC3986_BASE, '/./g','http://a/g')
+        #self.checkJoin(RFC3986_BASE, '/../g','http://a/g')
+
+        self.checkJoin(RFC3986_BASE, 'g.','http://a/b/c/g.')
+        self.checkJoin(RFC3986_BASE, '.g','http://a/b/c/.g')
+        self.checkJoin(RFC3986_BASE, 'g..','http://a/b/c/g..')
+        self.checkJoin(RFC3986_BASE, '..g','http://a/b/c/..g')
+        self.checkJoin(RFC3986_BASE, './../g','http://a/b/g')
+        self.checkJoin(RFC3986_BASE, './g/.','http://a/b/c/g/')
+        self.checkJoin(RFC3986_BASE, 'g/./h','http://a/b/c/g/h')
+        self.checkJoin(RFC3986_BASE, 'g/../h','http://a/b/c/h')
+        self.checkJoin(RFC3986_BASE, 'g;x=1/./y','http://a/b/c/g;x=1/y')
+        self.checkJoin(RFC3986_BASE, 'g;x=1/../y','http://a/b/c/y')
+        self.checkJoin(RFC3986_BASE, 'g?y/./x','http://a/b/c/g?y/./x')
+        self.checkJoin(RFC3986_BASE, 'g?y/../x','http://a/b/c/g?y/../x')
+        self.checkJoin(RFC3986_BASE, 'g#s/./x','http://a/b/c/g#s/./x')
+        self.checkJoin(RFC3986_BASE, 'g#s/../x','http://a/b/c/g#s/../x')
+        #self.checkJoin(RFC3986_BASE, 'http:g','http:g') # strict parser
+        self.checkJoin(RFC3986_BASE, 'http:g','http://a/b/c/g') #relaxed parser
 
     def test_urldefrag(self):
         for url, defrag, frag in [
