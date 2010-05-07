@@ -49,9 +49,7 @@ static void
 sets(PyObject *v, int i, const char* val)
 {
   if (val) {
-	  PyObject *o = PyUnicode_DecodeFSDefault(val, strlen(val),
-					 Py_FileSystemDefaultEncoding,
-					 "surrogateescape");
+	  PyObject *o = PyUnicode_DecodeFSDefault(val);
 	  PyStructSequence_SET_ITEM(v, i, o);
   }
   else {
