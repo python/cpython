@@ -101,7 +101,7 @@ class BaseCompressTestCase(object):
         # Generate 10MB worth of random, and expand it by repeating it.
         # The assumption is that zlib's memory is not big enough to exploit
         # such spread out redundancy.
-        data = b''.join([random.getrandbits(8 * _1M).to_bytes(_1M, 'little')
+        data = b''.join([binascii.a2b_hex(fmt % random.getrandbits(8 * _1M))
                         for i in range(10)])
         data = data * (size // len(data) + 1)
         try:
