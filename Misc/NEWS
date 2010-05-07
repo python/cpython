@@ -41,6 +41,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8571: Fix an internal error when compressing or decompressing a
+  chunk larger than 1GB with the zlib module's compressor and decompressor
+  objects.
+
 - Issue #8573: asyncore _strerror() function might throw ValueError.
 
 - Issue #8483: asyncore.dispatcher's __getattr__ method produced confusing 
