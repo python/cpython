@@ -178,7 +178,10 @@ class TestLoader(object):
 
         if not top_level_dir in sys.path:
             # all test modules must be importable from the top level directory
-            sys.path.append(top_level_dir)
+            # should we *unconditionally* put the start directory in first
+            # in sys.path to minimise likelihood of conflicts between installed
+            # modules and development versions?
+            sys.path.insert(0, top_level_dir)
         self._top_level_dir = top_level_dir
 
         is_not_importable = False
@@ -251,6 +254,16 @@ class TestLoader(object):
                     except:
                         yield _make_failed_import_test(name, self.suiteClass)
                     else:
+                        mod_file = os.path.abspath(getattr(module, '__file__', full_path))
+                        realpath = os.path.splitext(mod_file)[0]
+                        fullpath_noext = os.path.splitext(full_path)[0]
+                        if realpath.lower() != fullpath_noext.lower():
+                            module_dir = os.path.dirname(realpath)
+                            mod_name = os.path.splitext(os.path.basename(full_path))[0]
+                            expected_dir = os.path.dirname(full_path)
+                            msg = ("%r module incorrectly imported from %r. Expected %r. "
+                                   "Is this module globally installed?")
+                            raise ImportError(msg % (mod_name, module_dir, expected_dir))
                         yield self.loadTestsFromModule(module)
             elif os.path.isdir(full_path):
                 if not os.path.isfile(os.path.join(full_path, '__init__.py')):
