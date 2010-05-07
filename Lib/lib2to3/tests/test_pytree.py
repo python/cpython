@@ -9,6 +9,9 @@ more helpful than printing of (the first line of) the docstring,
 especially when debugging a test.
 """
 
+from __future__ import with_statement
+
+import sys
 import warnings
 
 # Testing imports
@@ -28,20 +31,22 @@ class TestNodes(support.TestCase):
 
     """Unit tests for nodes (Base, Leaf, Node)."""
 
-    def test_deprecated_prefix_methods(self):
-        l = pytree.Leaf(100, "foo")
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            self.assertEqual(l.get_prefix(), "")
-            l.set_prefix("hi")
-        self.assertEqual(l.prefix, "hi")
-        self.assertEqual(len(w), 2)
-        for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
-        self.assertEqual(str(w[0].message), "get_prefix() is deprecated; " \
-                             "use the prefix property")
-        self.assertEqual(str(w[1].message), "set_prefix() is deprecated; " \
-                             "use the prefix property")
+    if sys.version_info >= (2,6):
+        # warnings.catch_warnings is new in 2.6.
+        def test_deprecated_prefix_methods(self):
+            l = pytree.Leaf(100, "foo")
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always", DeprecationWarning)
+                self.assertEqual(l.get_prefix(), "")
+                l.set_prefix("hi")
+            self.assertEqual(l.prefix, "hi")
+            self.assertEqual(len(w), 2)
+            for warning in w:
+                self.assertTrue(warning.category is DeprecationWarning)
+            self.assertEqual(str(w[0].message), "get_prefix() is deprecated; " \
+                                 "use the prefix property")
+            self.assertEqual(str(w[1].message), "set_prefix() is deprecated; " \
+                                 "use the prefix property")
 
     def test_instantiate_base(self):
         if __debug__:

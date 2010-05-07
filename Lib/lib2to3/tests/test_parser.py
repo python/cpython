@@ -6,13 +6,14 @@ parts of the grammar we've changed, we also make sure we can parse the
 test_grammar.py files from both Python 2 and Python 3.
 """
 
+from __future__ import with_statement
+
 # Testing imports
 from . import support
 from .support import driver, test_dir
 
 # Python imports
 import os
-import io
 import sys
 
 # Local imports
@@ -156,8 +157,9 @@ class TestParserIdempotency(support.TestCase):
                 encoding = tokenize.detect_encoding(fp.readline)[0]
             self.assertTrue(encoding is not None,
                             "can't detect encoding for %s" % filepath)
-            with io.open(filepath, "r", encoding=encoding) as fp:
+            with open(filepath, "r") as fp:
                 source = fp.read()
+                source = source.decode(encoding)
             tree = driver.parse_string(source)
             new = unicode(tree)
             if diff(filepath, new, encoding):
@@ -203,9 +205,9 @@ class TestLiterals(GrammarTest):
 
 
 def diff(fn, result, encoding):
-    f = io.open("@", "w", encoding=encoding)
+    f = open("@", "w")
     try:
-        f.write(result)
+        f.write(result.encode(encoding))
     finally:
         f.close()
     try:

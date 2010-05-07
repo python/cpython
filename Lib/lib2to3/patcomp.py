@@ -57,7 +57,7 @@ class PatternCompiler(object):
         tokens = tokenize_wrapper(input)
         try:
             root = self.driver.parse_tokens(tokens, debug=debug)
-        except parse.ParseError as e:
+        except parse.ParseError, e:
             raise PatternSyntaxError(str(e))
         return self.compile_node(root)
 
