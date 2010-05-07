@@ -1351,17 +1351,19 @@ changes, or look through the Subversion logs for all the details.
   and then call :meth:`~sqlite3.Connection.load_extension` to load a particular shared library.
   (Updated by Gerhard Häring.)
 
-* The :mod:`ssl` module's :class:`~ssl.SSL` objects now support the
+* The :mod:`ssl` module's :class:`ssl.SSLSocket` objects now support the
   buffer API, which fixed a test suite failure (fix by Antoine Pitrou;
   :issue:`7133`) and automatically set
   OpenSSL's :cmacro:`SSL_MODE_AUTO_RETRY`, which will prevent an error
   code being returned from :meth:`recv` operations that trigger an SSL
   renegotiation (fix by Antoine Pitrou; :issue:`8222`).
 
-  The :func:`wrap_socket` constructor function now takes a
+  The :func:`ssl.wrap_socket` constructor function now takes a
   *ciphers* argument that's a string listing the encryption algorithms
   to be allowed; the format of the string is described
-  `in the OpenSSL documentation <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`__.  (Added by Antoine Pitrou; :issue:`8322`.)
+  `in the OpenSSL documentation
+  <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`__.
+  (Added by Antoine Pitrou; :issue:`8322`.)
 
   Another change makes the extension load all of OpenSSL's ciphers and
   digest algorithms so that they're all available.  Some SSL
@@ -1370,9 +1372,9 @@ changes, or look through the Subversion logs for all the details.
   :issue:`8484`.)
 
   The version of OpenSSL being used is now available as the module
-  attributes :attr:`OPENSSL_VERSION` (a string),
-  :attr:`OPENSSL_VERSION_INFO` (a 5-tuple), and
-  :attr:`OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
+  attributes :data:`ssl.OPENSSL_VERSION` (a string),
+  :data:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
+  :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
   Pitrou; :issue:`8321`.)
 
 * The :mod:`struct` module will no longer silently ignore overflow
