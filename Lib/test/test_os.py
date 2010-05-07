@@ -369,15 +369,17 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     def setUp(self):
         self.__save = dict(os.environ)
-        self.__saveb = dict(os.environb)
+        if os.name not in ('os2', 'nt'):
+            self.__saveb = dict(os.environb)
         for key, value in self._reference().items():
             os.environ[key] = value
 
     def tearDown(self):
         os.environ.clear()
         os.environ.update(self.__save)
-        os.environb.clear()
-        os.environb.update(self.__saveb)
+        if os.name not in ('os2', 'nt'):
+            os.environb.clear()
+            os.environb.update(self.__saveb)
 
     def _reference(self):
         return {"KEY1":"VALUE1", "KEY2":"VALUE2", "KEY3":"VALUE3"}
