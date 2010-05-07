@@ -8,9 +8,7 @@
 
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
-.. Big jobs: pep 391
-.. Initial section: development plans for 2.x in future
-.. Initial section: changes in deprecation warning behaviour
+.. Big jobs: pep 391, PyCapsule
 
 ..  hyperlink all the methods & functions.
 
@@ -62,16 +60,41 @@ This article explains the new features in Python 2.7.  The final
 release of 2.7 is currently scheduled for July 2010; the detailed
 schedule is described in :pep:`373`.
 
-Python 2.7 is planned to be the last major release in the 2.x series.
-Though more major releases have not been absolutely ruled out, the
-Python maintainers are planning to focus more on Python 3.x.  Despite
-that, it's likely that the 2.7 release will have a longer period of
-maintenance compared to earlier 2.x versions.
-
 .. Compare with previous release in 2 - 3 sentences here.
    add hyperlink when the documentation becomes available online.
 
 .. _whatsnew27-python31:
+
+The Future for Python 2.x
+=========================
+
+Python 2.7 is intended to be the last major release in the 2.x series.
+Though more major releases have not been absolutely ruled out, the
+Python maintainers are planning to focus their efforts on Python 3.x.
+
+This means that 2.7 will remain in place for a long time, running
+production systems that have not been ported to Python 3.x.
+Two consequences of the long-term significance of 2.7 are:
+
+* It's very likely the 2.7 release will have a longer period of
+  maintenance compared to earlier 2.x versions.  Python 2.7 will
+  continue to be maintained while the transition to 3.x is in
+  progress, and that transition will itself be lengthy.  Most 2.x
+  versions are maintained for about 4 years, from the first to the
+  last bugfix release; patchlevel releases for Python 2.7 will
+  probably be made for at least 6 years.
+
+* Because 2.7 will be running production applications, a policy
+  decision was made to silence warnings only of interest to developers
+  by default.  Silencing :exc:`DeprecationWarning` and its descendants
+  prevents users from seeing warnings triggered by an application.
+  (Carried out in :issue:`7319`.)
+
+  You can re-enable display of :exc:`DeprecationWarning` messages by
+  running Python with the :option:`-Wdefault` (short form:
+  :option:`-Wd`) switch, or you can add
+  ``warnings.simplefilter('default')`` to your code.
+
 
 Python 3.1 Features
 =======================
@@ -180,11 +203,6 @@ doubly-linked list of keys, appending new keys to the list as they're inserted.
 A secondary dictionary maps keys to their corresponding list node, so
 deletion doesn't have to traverse the entire linked list and therefore
 remains O(1).
-
-.. XXX check O(1)-ness with Raymond
-..     Also check if the 'somenamedtuple' in the collection module should
-..     be replaced/removed in order to use
-..     :meth:`~collections.namedtuple._asdict()` (see below)
 
 The standard library now supports use of ordered dictionaries in several
 modules.
@@ -364,9 +382,16 @@ if one is installed.
 
 XXX describe an example.
 
-Two smaller enhancements to the logging module are:
+Three smaller enhancements to the :mod:`logging` module, all
+implemented by Vinay Sajip, are:
 
 .. rev79293
+
+* The :class:`~logging.handlers.SysLogHandler` class now supports
+  syslogging over TCP.  The constructor has a *socktype* parameter
+  giving the type of socket to use, either :const:`socket.SOCK_DGRAM`
+  for UDP or :const:`socket.SOCK_STREAM` for TCP.  The default
+  protocol remains UDP.
 
 * :class:`Logger` instances gained a :meth:`getChild` method that retrieves a
   descendant logger using a relative path.  For example,
@@ -949,6 +974,30 @@ changes, or look through the Subversion logs for all the details.
   of the deque in-place.  :class:`deque` also exposes its maximum
   length as the read-only :attr:`~collections.deque.maxlen` attribute.
   (Both features added by Raymond Hettinger.)
+
+* Constructors for the parsing classes in the :mod:`ConfigParser` module now
+  take a *allow_no_value* parameter, defaulting to false; if true,
+  options without values will be allowed.  For example::
+
+    >>> import ConfigParser, StringIO
+    >>> sample_config = """
+    ... [mysqld]
+    ... user = mysql
+    ... pid-file = /var/run/mysqld/mysqld.pid
+    ... skip-bdb
+    ... """
+    >>> config = ConfigParser.RawConfigParser(allow_no_value=True)
+    >>> config.readfp(StringIO.StringIO(sample_config))
+    >>> config.get('mysqld', 'user')
+    'mysql'
+    >>> print config.get('mysqld', 'skip-bdb')
+    None
+    >>> print config.get('mysqld', 'unknown')
+    Traceback (most recent call last):
+      ...
+    ConfigParser.NoOptionError: No option 'unknown' in section: 'mysqld'
+
+  (Contributed by Mats Kindahl; :issue:`7005`.)
 
 * Deprecated function: :func:`contextlib.nested`, which allows
   handling more than one context manager with a single :keyword:`with`
