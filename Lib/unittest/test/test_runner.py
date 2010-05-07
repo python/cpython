@@ -115,6 +115,52 @@ class TestCleanUp(unittest.TestCase):
 class Test_TextTestRunner(unittest.TestCase):
     """Tests for TextTestRunner."""
 
+    def test_init(self):
+        runner = unittest.TextTestRunner()
+        self.assertFalse(runner.failfast)
+        self.assertFalse(runner.buffer)
+        self.assertEqual(runner.verbosity, 1)
+        self.assertTrue(runner.descriptions)
+        self.assertEqual(runner.resultclass, unittest.TextTestResult)
+
+
+    def testBufferAndFailfast(self):
+        class Test(unittest.TestCase):
+            def testFoo(self):
+                pass
+        result = unittest.TestResult()
+        runner = unittest.TextTestRunner(stream=StringIO(), failfast=True,
+                                           buffer=True)
+        # Use our result object
+        runner._makeResult = lambda: result
+        runner.run(Test('testFoo'))
+
+        self.assertTrue(result.failfast)
+        self.assertTrue(result.buffer)
+
+    def testRunnerRegistersResult(self):
+        class Test(unittest.TestCase):
+            def testFoo(self):
+                pass
+        originalRegisterResult = unittest.runner.registerResult
+        def cleanup():
+            unittest.runner.registerResult = originalRegisterResult
+        self.addCleanup(cleanup)
+
+        result = unittest.TestResult()
+        runner = unittest.TextTestRunner(stream=StringIO())
+        # Use our result object
+        runner._makeResult = lambda: result
+
+        self.wasRegistered = 0
+        def fakeRegisterResult(thisResult):
+            self.wasRegistered += 1
+            self.assertEqual(thisResult, result)
+        unittest.runner.registerResult = fakeRegisterResult
+
+        runner.run(unittest.TestSuite())
+        self.assertEqual(self.wasRegistered, 1)
+
     def test_works_with_result_without_startTestRun_stopTestRun(self):
         class OldTextResult(ResultWithNoStartTestRunStopTestRun):
             separator2 = ''
