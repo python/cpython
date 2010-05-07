@@ -294,6 +294,45 @@ class TestDiscovery(unittest.TestCase):
         self.assertTrue(program.failfast)
         self.assertTrue(program.catchbreak)
 
+    def test_detect_module_clash(self):
+        class Module(object):
+            __file__ = 'bar/foo.py'
+        sys.modules['foo'] = Module
+        full_path = os.path.abspath('foo')
+        original_listdir = os.listdir
+        original_isfile = os.path.isfile
+        original_isdir = os.path.isdir
+
+        def cleanup():
+            os.listdir = original_listdir
+            os.path.isfile = original_isfile
+            os.path.isdir = original_isdir
+            del sys.modules['foo']
+            if full_path in sys.path:
+                sys.path.remove(full_path)
+        self.addCleanup(cleanup)
+
+        def listdir(_):
+            return ['foo.py']
+        def isfile(_):
+            return True
+        def isdir(_):
+            return True
+        os.listdir = listdir
+        os.path.isfile = isfile
+        os.path.isdir = isdir
+
+        loader = unittest.TestLoader()
+
+        mod_dir = os.path.abspath('bar')
+        expected_dir = os.path.abspath('foo')
+        msg = (r"^'foo' module incorrectly imported from %r\. Expected %r\. "
+                "Is this module globally installed\?$") % (mod_dir, expected_dir)
+        self.assertRaisesRegexp(
+            ImportError, msg, loader.discover,
+            start_dir='foo', pattern='foo.py'
+        )
+        self.assertEqual(sys.path[0], full_path)
 
 if __name__ == '__main__':
     unittest.main()
