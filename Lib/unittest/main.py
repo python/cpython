@@ -70,10 +70,10 @@ class TestProgram(object):
     # defaults for testing
     failfast = catchbreak = buffer = None
 
-    def __init__(self, module='__main__', defaultTest=None,
-                 argv=None, testRunner=None,
-                 testLoader=loader.defaultTestLoader, exit=True,
-                 verbosity=1, failfast=None, catchbreak=None, buffer=None):
+    def __init__(self, module='__main__', defaultTest=None, argv=None,
+                    testRunner=None, testLoader=loader.defaultTestLoader,
+                    exit=True, verbosity=1, failfast=None, catchbreak=None,
+                    buffer=None):
         if isinstance(module, str):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
