@@ -348,6 +348,10 @@ C-API
 Library
 -------
 
+- Issue #8571: Fix an internal error when compressing or decompressing a
+  chunk larger than 1GB with the zlib module's compressor and decompressor
+  objects.
+
 - Issue #8603: Support bytes environmental variables on Unix: Add os.environb
   mapping and os.getenvb() function. os.unsetenv() encodes str argument to the
   file system encoding with the surrogateescape error handler (instead of
