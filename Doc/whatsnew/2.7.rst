@@ -69,8 +69,8 @@ The Future for Python 2.x
 =========================
 
 Python 2.7 is intended to be the last major release in the 2.x series.
-Though more major releases have not been absolutely ruled out, the
-Python maintainers are planning to focus their efforts on Python 3.x.
+The Python maintainers are planning to focus their future efforts on
+the Python 3.x series.
 
 This means that 2.7 will remain in place for a long time, running
 production systems that have not been ported to Python 3.x.
@@ -78,17 +78,27 @@ Two consequences of the long-term significance of 2.7 are:
 
 * It's very likely the 2.7 release will have a longer period of
   maintenance compared to earlier 2.x versions.  Python 2.7 will
-  continue to be maintained while the transition to 3.x is in
-  progress, and that transition will itself be lengthy.  Most 2.x
-  versions are maintained for about 4 years, from the first to the
-  last bugfix release; patchlevel releases for Python 2.7 will
-  probably be made for at least 6 years.
+  continue to be maintained while the transition to 3.x continues.
+  Maintenance releases for Python 2.7 will probably be made for 5
+  years.
 
-* Because 2.7 will be running production applications, a policy
-  decision was made to silence warnings only of interest to developers
-  by default.  Silencing :exc:`DeprecationWarning` and its descendants
-  prevents users from seeing warnings triggered by an application.
-  (Carried out in :issue:`7319`.)
+* A policy decision was made to silence warnings only of interest to
+  developers by default.  :exc:`DeprecationWarning` and its
+  descendants are now ignored unless otherwise requested, preventing
+  users from seeing warnings triggered by an application.  (Carried
+  out in :issue:`7319`.)
+
+  In previous releases, :exc:`DeprecationWarning` messages were
+  enabled by default, providing Python developers with a clear
+  indication of where their code may break in a future major version
+  of Python.
+
+  However, there are increasingly many users of Python-based
+  applications who are not directly involved in the development of
+  those applications.  :exc:`DeprecationWarning` messages are
+  irrelevant to such users, making them worry about an application
+  that's actually working correctly and burdening the developers of
+  these applications with responding to these concerns.
 
   You can re-enable display of :exc:`DeprecationWarning` messages by
   running Python with the :option:`-Wdefault` (short form:
