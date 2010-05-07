@@ -3,7 +3,7 @@
 import platform
 import test.test_support, unittest
 from test.test_support import fcmp, have_unicode, TESTFN, unlink, \
-                              run_unittest, run_with_locale
+    run_unittest, run_with_locale, check_warnings
 from operator import neg
 
 import sys, warnings, cStringIO, random, fractions, UserDict
@@ -1074,12 +1074,64 @@ class BuiltinTest(unittest.TestCase):
         # Reject floats when it would require PyLongs to represent.
         # (smaller floats still accepted, but deprecated)
         self.assertRaises(TypeError, range, 1e100, 1e101, 1e101)
+        with check_warnings() as w:
+            warnings.simplefilter("always")
+            self.assertEqual(range(1.0), [0])
+            self.assertEqual(w.category, DeprecationWarning)
 
         self.assertRaises(TypeError, range, 0, "spam")
         self.assertRaises(TypeError, range, 0, 42, "spam")
 
         self.assertRaises(OverflowError, range, -sys.maxint, sys.maxint)
         self.assertRaises(OverflowError, range, 0, 2*sys.maxint)
+
+        bignum = 2*sys.maxint
+        smallnum = 42
+        # Old-style user-defined class with __int__ method
+        class I0:
+            def __init__(self, n):
+                self.n = int(n)
+            def __int__(self):
+                return self.n
+        self.assertEqual(range(I0(bignum), I0(bignum + 1)), [bignum])
+        self.assertEqual(range(I0(smallnum), I0(smallnum + 1)), [smallnum])
+
+        # New-style user-defined class with __int__ method
+        class I1(object):
+            def __init__(self, n):
+                self.n = int(n)
+            def __int__(self):
+                return self.n
+        self.assertEqual(range(I1(bignum), I1(bignum + 1)), [bignum])
+        self.assertEqual(range(I1(smallnum), I1(smallnum + 1)), [smallnum])
+
+        # New-style user-defined class with failing __int__ method
+        class IX(object):
+            def __int__(self):
+                raise RuntimeError
+        self.assertRaises(RuntimeError, range, IX())
+
+        # New-style user-defined class with invalid __int__ method
+        class IN(object):
+            def __int__(self):
+                return "not a number"
+        self.assertRaises(TypeError, range, IN())
+
+        # Exercise various combinations of bad arguments, to check
+        # refcounting logic
+        self.assertRaises(TypeError, range, 1e100)
+
+        self.assertRaises(TypeError, range, 0, 1e100)
+        self.assertRaises(TypeError, range, 1e100, 0)
+        self.assertRaises(TypeError, range, 1e100, 1e100)
+
+        self.assertRaises(TypeError, range, 0, 0, 1e100)
+        self.assertRaises(TypeError, range, 0, 1e100, 1)
+        self.assertRaises(TypeError, range, 0, 1e100, 1e100)
+        self.assertRaises(TypeError, range, 1e100, 0, 1)
+        self.assertRaises(TypeError, range, 1e100, 0, 1e100)
+        self.assertRaises(TypeError, range, 1e100, 1e100, 1)
+        self.assertRaises(TypeError, range, 1e100, 1e100, 1e100)
 
     def test_input_and_raw_input(self):
         self.write_testfile()
