@@ -1346,7 +1346,7 @@ changes, or look through the Subversion logs for all the details.
   will execute the code at a provided *path* argument.  *path* can be
   the path of a Python source file (:file:`example.py`), a compiled
   bytecode file (:file:`example.pyc`), a directory
-  (:file:`./package/'), or a zip archive (:file:`example.zip`).  If a
+  (:file:`./package/`), or a zip archive (:file:`example.zip`).  If a
   directory or zip path is provided, it will be added to the front of
   ``sys.path`` and the module :mod:`__main__` will be imported.  It's
   expected that the directory or zip contains a :file:`__main__.py`;
@@ -2132,7 +2132,7 @@ Capsules
 Python 3.1 adds a new C datatype, :ctype:`PyCapsule`, for providing a
 C API to an extension module.  A capsule is essentially the holder for
 a C ``void *`` pointer, and is bound to a module attribute; for
-example, the :mod:`socket` module's API is exposed as ``socket.CAPI`,
+example, the :mod:`socket` module's API is exposed as ``socket.CAPI``,
 and :mod:`unicodedata` calls it ``ucnhash_CAPI``.  Other extensions
 can import the module, access its dictionary to get the capsule
 object, and then get the ``void *`` pointer, which will usually point
