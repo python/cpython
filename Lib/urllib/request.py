@@ -1216,7 +1216,8 @@ class FileHandler(BaseHandler):
                 host, port = splitport(host)
             if not host or \
                 (not port and _safe_gethostbyname(host) in self.get_names()):
-                return addinfourl(open(localfile, 'rb'), headers, 'file:'+file)
+                return addinfourl(open(localfile, 'rb'), headers, 'file://'+
+                        host + file)
         except OSError as msg:
             # users shouldn't expect OSErrors coming from urlopen()
             raise URLError(msg)
