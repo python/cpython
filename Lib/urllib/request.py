@@ -1202,13 +1202,13 @@ class FileHandler(BaseHandler):
         import email.utils
         import mimetypes
         host = req.host
-        file = req.selector
-        localfile = url2pathname(file)
+        filename = req.selector
+        localfile = url2pathname(filename)
         try:
             stats = os.stat(localfile)
             size = stats.st_size
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-            mtype = mimetypes.guess_type(file)[0]
+            mtype = mimetypes.guess_type(filename)[0]
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
@@ -1216,8 +1216,11 @@ class FileHandler(BaseHandler):
                 host, port = splitport(host)
             if not host or \
                 (not port and _safe_gethostbyname(host) in self.get_names()):
-                return addinfourl(open(localfile, 'rb'), headers, 'file://'+
-                        host + file)
+                if host:
+                    origurl = 'file://' + host + filename
+                else:
+                    origurl = 'file://' + filename
+                return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as msg:
             # users shouldn't expect OSErrors coming from urlopen()
             raise URLError(msg)
