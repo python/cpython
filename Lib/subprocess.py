@@ -1079,32 +1079,24 @@ class Popen(object):
                     self._set_cloexec_flag(errpipe_write)
 
                     if _posixsubprocess:
-                        fs_encoding = sys.getfilesystemencoding()
-                        def fs_encode(s):
-                            """Encode s for use in the env, fs or cmdline."""
-                            if isinstance(s, bytes):
-                                return s
-                            else:
-                                return s.encode(fs_encoding, 'surrogateescape')
-
                         # We must avoid complex work that could involve
                         # malloc or free in the child process to avoid
                         # potential deadlocks, thus we do all this here.
                         # and pass it to fork_exec()
 
                         if env:
-                            env_list = [fs_encode(k) + b'=' + fs_encode(v)
+                            env_list = [os.fsencode(k) + b'=' + os.fsencode(v)
                                         for k, v in env.items()]
                         else:
                             env_list = None  # Use execv instead of execve.
                         if os.path.dirname(executable):
-                            executable_list = (fs_encode(executable),)
+                            executable_list = (os.fsencode(executable),)
                         else:
                             # This matches the behavior of os._execvpe().
                             path_list = os.get_exec_path(env)
                             executable_list = (os.path.join(dir, executable)
                                                for dir in path_list)
-                            executable_list = tuple(fs_encode(exe)
+                            executable_list = tuple(os.fsencode(exe)
                                                     for exe in executable_list)
                         self.pid = _posixsubprocess.fork_exec(
                                 args, executable_list,

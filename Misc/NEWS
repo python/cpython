@@ -351,6 +351,9 @@ C-API
 Library
 -------
 
+- Issue #8514: Add os.fsencode() function (Unix only): encode a string to bytes
+  for use in the file system, environment variables or the command line.
+
 - Issue #8571: Fix an internal error when compressing or decompressing a
   chunk larger than 1GB with the zlib module's compressor and decompressor
   objects.

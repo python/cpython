@@ -155,6 +155,17 @@ process and user.
    These functions are described in :ref:`os-file-dir`.
 
 
+.. function:: fsencode(value)
+
+   Encode *value* to bytes for use in the file system, environment variables or
+   the command line. Uses :func:`sys.getfilesystemencoding` and
+   ``'surrogateescape'`` error handler for strings and returns bytes unchanged.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.2
+
+
 .. function:: get_exec_path(env=None)
 
    Returns the list of directories that will be searched for a named
