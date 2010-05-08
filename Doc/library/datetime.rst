@@ -287,7 +287,10 @@ Instance methods:
 .. method:: timedelta.total_seconds()
 
    Return the total number of seconds contained in the duration. Equivalent to
-   ``td.microseconds / 1000000 + td.seconds + td.days * 24 * 3600``.
+   ``td / timedelta(seconds=1)``.
+
+   Note that for very large time intervals (greater than 270 years on
+   most platforms) this method will lose microsecond accuracy.
 
    .. versionadded:: 3.2
 

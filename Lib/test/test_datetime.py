@@ -264,6 +264,11 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         for total_seconds in [123456.789012, -123456.789012, 0.123456, 0, 1e6]:
             td = timedelta(seconds=total_seconds)
             self.assertEqual(td.total_seconds(), total_seconds)
+        # Issue8644: Test that td.total_seconds() has the same
+        # accuracy as td / timedelta(seconds=1).
+        for ms in [-1, -2, -123]:
+            td = timedelta(microseconds=ms)
+            self.assertEqual(td.total_seconds(), td / timedelta(seconds=1))
 
     def test_carries(self):
         t1 = timedelta(days=100,
