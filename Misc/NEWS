@@ -218,9 +218,6 @@ Build
 - Issue #3646: It is now easily possible to install a Python framework into
   your home directory on MacOSX, see Mac/README for more information.
 
-- Issue #7724: Building now full honors an MacOSX SDK when specified, which
-  makes it possible do a working build with the OSX 10.4 SDK on MacOSX 10.6.
-
 - Issue #8510: Update to autoconf2.65.
 
 Misc

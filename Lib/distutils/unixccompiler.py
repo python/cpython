@@ -15,7 +15,7 @@ the "typical" Unix-style command-line C compiler:
 
 __revision__ = "$Id$"
 
-import os, sys, re
+import os, sys
 from types import StringType, NoneType
 
 from distutils import sysconfig
@@ -305,29 +305,10 @@ class UnixCCompiler(CCompiler):
         dylib_f = self.library_filename(lib, lib_type='dylib')
         static_f = self.library_filename(lib, lib_type='static')
 
-        if sys.platform == 'darwin':
-            # On OSX users can specify an alternate SDK using
-            # '-isysroot', calculate the SDK root if it is specified
-            # (and use it further on)
-            cflags = sysconfig.get_config_var('CFLAGS')
-            m = re.search(r'-isysroot\s+(\S+)', cflags)
-            if m is None:
-                sysroot = '/'
-            else:
-                sysroot = m.group(1)
-
-
-
         for dir in dirs:
             shared = os.path.join(dir, shared_f)
             dylib = os.path.join(dir, dylib_f)
             static = os.path.join(dir, static_f)
-
-            if sys.platform == 'darwin' and (dir.startswith('/System/') or dir.startswith('/usr/')):
-                shared = os.path.join(sysroot, dir[1:], shared_f)
-                dylib = os.path.join(sysroot, dir[1:], dylib_f)
-                static = os.path.join(sysroot, dir[1:], static_f)
-
             # We're second-guessing the linker here, with not much hard
             # data to go on: GCC seems to prefer the shared library, so I'm
             # assuming that *all* Unix C compilers do.  And of course I'm
