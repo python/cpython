@@ -633,6 +633,55 @@ class ExecTests(unittest.TestCase):
     def test_execvpe_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execvpe, 'notepad', [], None)
 
+    class _stub_out_for_execvpe_test(object):
+        """
+        Stubs out execv, execve and get_exec_path functions when
+        used as context manager.  Records exec calls.  The mock execv
+        and execve functions always raise an exception as they would
+        normally never return.
+        """
+        def __init__(self):
+            # A list of tuples containing (function name, first arg, args)
+            # of calls to execv or execve that have been made.
+            self.calls = []
+        def _mock_execv(self, name, *args):
+            self.calls.append(('execv', name, args))
+            raise RuntimeError("execv called")
+
+        def _mock_execve(self, name, *args):
+            self.calls.append(('execve', name, args))
+            raise OSError(errno.ENOTDIR, "execve called")
+
+        def _mock_get_exec_path(self, env=None):
+            return ['/p', '/pp']
+
+        def __enter__(self):
+            self.orig_execv = os.execv
+            self.orig_execve = os.execve
+            self.orig_get_exec_path = os.get_exec_path
+            os.execv = self._mock_execv
+            os.execve = self._mock_execve
+            os.get_exec_path = self._mock_get_exec_path
+
+        def __exit__(self, type, value, tb):
+            os.execv = self.orig_execv
+            os.execve = self.orig_execve
+            os.get_exec_path = self.orig_get_exec_path
+
+    @unittest.skipUnless(hasattr(os, '_execvpe'),
+                         "No internal os._execvpe function to test.")
+    def test_internal_execvpe(self):
+        exec_stubbed = self._stub_out_for_execvpe_test()
+        with exec_stubbed:
+            self.assertRaises(RuntimeError, os._execvpe, '/f', ['-a'])
+            self.assertEqual([('execv', '/f', (['-a'],))], exec_stubbed.calls)
+            exec_stubbed.calls = []
+            self.assertRaises(OSError, os._execvpe, 'f', ['-a'],
+                              env={'spam': 'beans'})
+            self.assertEqual([('execve', '/p/f', (['-a'], {'spam': 'beans'})),
+                              ('execve', '/pp/f', (['-a'], {'spam': 'beans'}))],
+                             exec_stubbed.calls)
+
 class Win32ErrorTests(unittest.TestCase):
     def test_rename(self):
         self.assertRaises(WindowsError, os.rename, support.TESTFN, support.TESTFN+".bak")
