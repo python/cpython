@@ -290,6 +290,15 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         suite = unittest.TestSuite()
         self.assertRaises(TypeError, suite.addTests, "foo")
 
+    def test_function_in_suite(self):
+        def f(_):
+            pass
+        suite = unittest.TestSuite()
+        suite.addTest(f)
+
+        # when the bug is fixed this line will not crash
+        suite.run(unittest.TestResult())
+
 
 if __name__ == '__main__':
     unittest.main()
