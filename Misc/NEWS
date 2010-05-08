@@ -1105,6 +1105,11 @@ Library
 Extension Modules
 -----------------
 
+- Issue #8644: The accuracy of td.total_seconds() has been improved (by
+  calculating with integer arithmetic instead of float arithmetic internally):
+  the result is now always correctly rounded, and is equivalent to td /
+  timedelta(seconds=1).
+
 - Issue #2706: Allow division of a timedelta by another timedelta:
   timedelta / timedelta, timedelta % timedelta, timedelta // timedelta
   and divmod(timedelta, timedelta) are all supported.
