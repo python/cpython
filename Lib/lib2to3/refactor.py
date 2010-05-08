@@ -8,6 +8,8 @@ recursively descend down directories.  Imported as a module, this
 provides infrastructure to write your own refactoring tool.
 """
 
+from __future__ import with_statement
+
 __author__ = "Guido van Rossum <guido@python.org>"
 
 
@@ -122,13 +124,14 @@ else:
     _to_system_newlines = _identity
 
 
-def _detect_future_print(source):
+def _detect_future_features(source):
     have_docstring = False
     gen = tokenize.generate_tokens(io.StringIO(source).readline)
     def advance():
         tok = next(gen)
         return tok[0], tok[1]
     ignore = frozenset((token.NEWLINE, tokenize.NL, token.COMMENT))
+    features = set()
     try:
         while True:
             tp, value = advance()
@@ -140,26 +143,25 @@ def _detect_future_print(source):
                 have_docstring = True
             elif tp == token.NAME and value == "from":
                 tp, value = advance()
-                if tp != token.NAME and value != "__future__":
+                if tp != token.NAME or value != "__future__":
                     break
                 tp, value = advance()
-                if tp != token.NAME and value != "import":
+                if tp != token.NAME or value != "import":
                     break
                 tp, value = advance()
                 if tp == token.OP and value == "(":
                     tp, value = advance()
                 while tp == token.NAME:
-                    if value == "print_function":
-                        return True
+                    features.add(value)
                     tp, value = advance()
-                    if tp != token.OP and value != ",":
+                    if tp != token.OP or value != ",":
                         break
                     tp, value = advance()
             else:
                 break
     except StopIteration:
         pass
-    return False
+    return frozenset(features)
 
 
 class FixerError(Exception):
@@ -341,7 +343,8 @@ class RefactoringTool(object):
             An AST corresponding to the refactored input stream; None if
             there were errors during the parse.
         """
-        if _detect_future_print(data):
+        features = _detect_future_features(data)
+        if "print_function" in features:
             self.driver.grammar = pygram.python_grammar_no_print_statement
         try:
             tree = self.driver.parse_string(data)
@@ -351,6 +354,7 @@ class RefactoringTool(object):
             return
         finally:
             self.driver.grammar = self.grammar
+        tree.future_features = features
         self.log_debug("Refactoring %s", name)
         self.refactor_tree(tree, name)
         return tree
@@ -605,6 +609,7 @@ class MultiprocessRefactoringTool(RefactoringTool):
     def __init__(self, *args, **kwargs):
         super(MultiprocessRefactoringTool, self).__init__(*args, **kwargs)
         self.queue = None
+        self.output_lock = None
 
     def refactor(self, items, write=False, doctests_only=False,
                  num_processes=1):
@@ -618,6 +623,7 @@ class MultiprocessRefactoringTool(RefactoringTool):
         if self.queue is not None:
             raise RuntimeError("already doing multiple processes")
         self.queue = multiprocessing.JoinableQueue()
+        self.output_lock = multiprocessing.Lock()
         processes = [multiprocessing.Process(target=self._child)
                      for i in range(num_processes)]
         try:

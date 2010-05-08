@@ -154,7 +154,7 @@ def map_to_index(param_list, prefix=[], d=None):
     if d is None:
         d = {}
     for i, obj in enumerate(param_list):
-        trailer = [Subscript(Number(i))]
+        trailer = [Subscript(Number(str(i)))]
         if isinstance(obj, list):
             map_to_index(obj, trailer, d=d)
         else:
