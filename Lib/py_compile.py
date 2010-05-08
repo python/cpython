@@ -123,11 +123,11 @@ def compile(file, cfile=None, dfile=None, doraise=False):
             return
     if cfile is None:
         cfile = imp.cache_from_source(file)
-        try:
-            os.mkdir(os.path.dirname(cfile))
-        except OSError as error:
-            if error.errno != errno.EEXIST:
-                raise
+    try:
+        os.makedirs(os.path.dirname(cfile))
+    except OSError as error:
+        if error.errno != errno.EEXIST:
+            raise
     with open(cfile, 'wb') as fc:
         fc.write(b'\0\0\0\0')
         wr_long(fc, timestamp)
