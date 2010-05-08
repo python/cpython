@@ -1896,7 +1896,7 @@ static void
 err_input(perrdetail *err)
 {
 	PyObject *v, *w, *errtype, *errtext;
-	PyObject* u = NULL;
+	PyObject *msg_obj = NULL;
 	char *msg = NULL;
 	errtype = PyExc_SyntaxError;
 	switch (err->error) {
@@ -1952,14 +1952,9 @@ err_input(perrdetail *err)
 	case E_DECODE: {
 		PyObject *type, *value, *tb;
 		PyErr_Fetch(&type, &value, &tb);
-		if (value != NULL) {
-			u = PyObject_Str(value);
-			if (u != NULL) {
-				msg = _PyUnicode_AsString(u);
-			}
-		}
-		if (msg == NULL)
-			msg = "unknown decode error";
+		msg = "unknown decode error";
+		if (value != NULL)
+			msg_obj = PyObject_Str(value);
 		Py_XDECREF(type);
 		Py_XDECREF(value);
 		Py_XDECREF(tb);
@@ -1988,14 +1983,18 @@ err_input(perrdetail *err)
 	}
 	v = Py_BuildValue("(ziiN)", err->filename,
 			  err->lineno, err->offset, errtext);
-	w = NULL;
-	if (v != NULL)
-		w = Py_BuildValue("(sO)", msg, v);
-	Py_XDECREF(u);
+	if (v != NULL) {
+		if (msg_obj)
+			w = Py_BuildValue("(OO)", msg_obj, v);
+		else
+			w = Py_BuildValue("(sO)", msg, v);
+	} else
+		w = NULL;
 	Py_XDECREF(v);
 	PyErr_SetObject(errtype, w);
 	Py_XDECREF(w);
 cleanup:
+	Py_XDECREF(msg_obj);
 	if (err->text != NULL) {
 		PyObject_FREE(err->text);
 		err->text = NULL;
