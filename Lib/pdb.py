@@ -13,6 +13,7 @@ import os
 import re
 import pprint
 import traceback
+import signal
 
 
 class Restart(Exception):
@@ -72,6 +73,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             import readline
         except ImportError:
             pass
+        self.allow_kbdint = False
+        signal.signal(signal.SIGINT, self.sigint_handler)
 
         # Read $HOME/.pdbrc and ./.pdbrc
         self.rcLines = []
@@ -103,6 +106,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                                        # a command list
         self.commands_bnum = None # The breakpoint number for which we are
                                   # defining a list
+
+    def sigint_handler(self, signum, frame):
+        if self.allow_kbdint:
+            raise KeyboardInterrupt()
+        print >>self.stdout, "\nProgram interrupted. (Use 'cont' to resume)."
+        self.set_step()
+        self.set_trace(frame)
 
     def reset(self):
         bdb.Bdb.reset(self)
@@ -176,7 +186,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if not self.commands_silent[currentbp]:
                 self.print_stack_entry(self.stack[self.curindex])
             if self.commands_doprompt[currentbp]:
-                self.cmdloop()
+                self._cmdloop()
             self.forget()
             return
         return 1
@@ -199,11 +209,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.interaction(frame, exc_traceback)
 
     # General interaction function
+    def _cmdloop(self):
+        while 1:
+            try:
+                # keyboard interrupts allow for an easy way to interrupt
+                # the current command
+                self.allow_kbdint = True
+                self.cmdloop()
+                self.allow_kbdint = False
+                break
+            except KeyboardInterrupt:
+                print >>self.stdout, '--KeyboardInterrupt--'
 
     def interaction(self, frame, traceback):
         self.setup(frame, traceback)
         self.print_stack_entry(self.stack[self.curindex])
-        self.cmdloop()
+        self._cmdloop()
         self.forget()
 
     def displayhook(self, obj):
@@ -329,9 +350,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         prompt_back = self.prompt
         self.prompt = '(com) '
         self.commands_defining = True
-        self.cmdloop()
-        self.commands_defining = False
-        self.prompt = prompt_back
+        try:
+            self.cmdloop()
+        except (KeyboardInterrupt, IOError):
+            # It appears that that when pdb is reading input from a pipe
+            # we may get IOErrors, rather than KeyboardInterrupt.
+            # Now discard all the commands entered so far (essentially undo
+            # any effect of this "commands"  cmd)
+            self.commands.pop(bnum)
+            self.commands_doprompt.pop(bnum)
+            self.commands_silent.pop(bnum)
+            # this will get caught by the _cmdloop and pdb will reenter
+            # the main command loop
+            raise KeyboardInterrupt()
+        finally:
+            self.commands_defining = False
+            self.prompt = prompt_back
 
     def do_break(self, arg, temporary = 0):
         # break [ ([filename:]lineno | function) [, "condition"] ]
