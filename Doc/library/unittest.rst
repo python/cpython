@@ -280,6 +280,27 @@ are equivalent::
    python -m unittest discover -s project_directory -p '*_test.py'
    python -m unittest discover project_directory '*_test.py'
 
+As well as being a path it is possible to pass a package name, for example
+``myproject.subpackage.test``, as the start directory. The package name you
+supply will then be imported and its location on the filesystem will be used
+as the start directory.
+
+.. caution::
+
+    Test discovery loads tests by importing them. Once test discovery has
+    found all the test files from the start directory you specify it turns the
+    paths into package names to import. For example `foo/bar/baz.py` will be
+    imported as ``foo.bar.baz``.
+
+    If you have a package installed globally and attempt test discovery on
+    a different copy of the package then the import *could* happen from the
+    wrong place. If this happens test discovery will warn you and exit.
+
+    If you supply the start directory as a package name rather than a
+    path to a directory then discover assumes that whichever location it
+    imports from is the location you intended, so you will not get the
+    warning.
+
 Test modules and packages can customize test loading and discovery by through
 the `load_tests protocol`_.
 
