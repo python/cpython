@@ -73,6 +73,15 @@ _INSTALL_SCHEMES = {
         'scripts': '{userbase}/bin',
         'data'   : '{userbase}',
         },
+    'osx_framework_user': {
+        'stdlib': '{userbase}/lib/python',
+        'platstdlib': '{userbase}/lib/python',
+        'purelib': '{userbase}/lib/python/site-packages',
+        'platlib': '{userbase}/lib/python/site-packages',
+        'include': '{userbase}/include',
+        'scripts': '{userbase}/bin',
+        'data'   : '{userbase}',
+        },
     }
 
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
@@ -156,6 +165,12 @@ def _getuserbase():
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
         return env_base if env_base else joinuser(base, "Python")
+
+    if sys.platform == "darwin":
+        framework = get_config_var("PYTHONFRAMEWORK")
+        if framework:
+            return joinuser("~", "Library", framework, "%d.%d"%(
+                sys.version_info[:2]))
 
     return env_base if env_base else joinuser("~", ".local")
 
@@ -400,13 +415,17 @@ def get_config_vars(*args):
         _CONFIG_VARS['py_version_nodot'] = _PY_VERSION[0] + _PY_VERSION[2]
         _CONFIG_VARS['base'] = _PREFIX
         _CONFIG_VARS['platbase'] = _EXEC_PREFIX
-        _CONFIG_VARS['userbase'] = _getuserbase()
         _CONFIG_VARS['projectbase'] = _PROJECT_BASE
 
         if os.name in ('nt', 'os2'):
             _init_non_posix(_CONFIG_VARS)
         if os.name == 'posix':
             _init_posix(_CONFIG_VARS)
+        # Setting 'userbase' is done below the call to the
+        # init function to enable using 'get_config_var' in
+        # the init-function.
+        _CONFIG_VARS['userbase'] = _getuserbase()
+
         if 'srcdir' not in _CONFIG_VARS:
             _CONFIG_VARS['srcdir'] = _PROJECT_BASE
 
