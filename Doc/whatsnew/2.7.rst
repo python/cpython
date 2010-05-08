@@ -8,7 +8,7 @@
 
 .. Fix accents on Kristjan Valur Jonsson, Fuerstenau
 
-.. Big jobs: pep 391, PyCapsule
+.. Big jobs: pep 391 example
 
 ..  hyperlink all the methods & functions.
 
@@ -125,6 +125,7 @@ A partial list of 3.1 features that were backported to 2.7:
   results more correctly.  And :func:`repr` of a floating-point
   number *x* returns a result that's guaranteed to round back to the
   same number when converted back to a string.
+* The :ctype:`PyCapsule` type, used to provide a C API for an extension module.
 * The :cfunc:`PyLong_AsLongAndOverflow` C API function.
 
 One porting change: the :option:`-3` switch now automatically
@@ -1348,11 +1349,26 @@ changes, or look through the Subversion logs for all the details.
   Antoine Pitrou; :issue:`8104`.)
 
 * The :mod:`SocketServer` module's :class:`~SocketServer.TCPServer` class now
-  has a :attr:`~SocketServer.TCPServer.disable_nagle_algorithm` class attribute.
-  The default value is False; if overridden to be True,
+  supports socket timeouts and disabling the Nagle algorithm.
+  The :attr:`~SocketServer.TCPServer.disable_nagle_algorithm` class attribute
+  defaults to False; if overridden to be True,
   new request connections will have the TCP_NODELAY option set to
   prevent buffering many small sends into a single TCP packet.
-  (Contributed by Kristjan Valur Jonsson; :issue:`6192`.)
+  The :attr:`~SocketServer.TCPServer.timeout` class attribute can hold
+  a timeout in seconds that will be applied to the request socket; if
+  no request is received within that time, :meth:`handle_timeout`
+  will be called and :meth:`handle_request` will return.
+  (Contributed by Kristjan Valur Jonsson; :issue:`6192` and :issue:`6267`.)
+
+* The XML-RPC client and server, provided by the :mod:`xmlrpclib` and
+  :mod:`SimpleXMLRPCServer` modules, have improved performance by
+  supporting HTTP/1.1 keep-alive and by optionally using gzip encoding
+  to compress the XML being exchanged.  The gzip compression is
+  controlled by the :attr:`encode_threshold` attribute of
+  :class:`SimpleXMLRPCRequestHandler`, which contains a size in bytes;
+  responses larger than this will be compressed.
+  (Contributed by Kristjan Valur Jonsson; :issue:`6267`.)
+
 
 * Updated module: the :mod:`sqlite3` module has been updated to
   version 2.6.0 of the `pysqlite package <http://code.google.com/p/pysqlite/>`__. Version 2.6.0 includes a number of bugfixes, and adds
@@ -1514,6 +1530,15 @@ changes, or look through the Subversion logs for all the details.
   instruction (which looks like ``<?xml-stylesheet href="#style1"?>``)
   or comment (which looks like ``<!-- comment -->``).
   (Patch by Neil Muller; :issue:`2746`.)
+
+* The XML-RPC client and server, provided by the :mod:`xmlrpclib` and
+  :mod:`SimpleXMLRPCServer` modules, have improved performance by
+  supporting HTTP/1.1 keep-alive and by optionally using gzip encoding
+  to compress the XML being exchanged.  The gzip compression is
+  controlled by the :attr:`encode_threshold` attribute of
+  :class:`SimpleXMLRPCRequestHandler`, which contains a size in bytes;
+  responses larger than this will be compressed.
+  (Contributed by Kristjan Valur Jonsson; :issue:`6267`.)
 
 * The :mod:`zipfile` module's :class:`~zipfile.ZipFile` now supports the context
   management protocol, so you can write ``with zipfile.ZipFile(...) as f: ...``.
@@ -2045,6 +2070,52 @@ Changes to Python's build process and to the C API include:
 
 * The build process now supports Subversion 1.7.  (Contributed by
   Arfrever Frehtes Taifersar Arahesis; :issue:`6094`.)
+
+
+.. _whatsnew27-capsules:
+
+Capsules
+-------------------
+
+Python 3.1 adds a new C datatype, :ctype:`PyCapsule`, for providing a
+C API to an extension module.  A capsule is essentially the holder for
+a C ``void *`` pointer, and is bound to a module attribute; for
+example, the :mod:`socket` module's API is exposed as ``socket.CAPI`,
+and :mod:`unicodedata` calls it ``ucnhash_CAPI``.  Other extensions
+can import the module, access its dictionary to get the capsule
+object, and then get the ``void *`` pointer, which will usually point
+to an array of pointers to the various API functions.
+
+There is an existing data type that already does this,
+:ctype:`PyCObject`, but it doesn't provide type safety.  Evil code
+written in pure Python could cause a segmentation fault by taking a
+:ctype:`PyCObject` from module A and somehow substituting it for the
+:ctype:`PyCObject` in module B.   Capsules know their own name,
+and getting the pointer requires providing the name::
+
+   void *vtable;
+
+   if (!PyCapsule_IsValid(capsule, "mymodule.CAPI") {
+           PyErr_SetString(PyExc_ValueError, "argument type invalid");
+           return NULL;
+   }
+
+   vtable = PyCapsule_GetPointer(capsule, "mymodule.CAPI");
+
+You are assured that ``vtable`` points to whatever you're expecting.
+If a different capsule was passed in, :cfunc:`PyCapsule_IsValid` would
+detect the mismatched name and return false.  Refer to
+:ref:`using-capsules` for more information on using these objects.
+
+Python 2.7 now uses capsules internally to provide various
+extension-module APIs, but the :cfunc:`PyCObject_AsVoidPtr` was
+modified to handle capsules, preserving compile-time compatibility
+with the :ctype:`CObject` interface.  Use of
+:cfunc:`PyCObject_AsVoidPtr` will signal a
+:exc:`PendingDeprecationWarning`, which is silent by default.
+
+Implemented in Python 3.1 and backported to 2.7 by Larry Hastings;
+discussed in :issue:`5630`.
 
 
 .. ======================================================================
