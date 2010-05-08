@@ -389,7 +389,54 @@ Python's standard library now includes a JSON parser, so you could
 parse a file containing JSON, or you could use a YAML parsing library
 if one is installed.
 
-XXX describe an example.
+The following example configures two loggers, the root logger and a
+logger named "network".   Messages sent to the root logger will be
+sent to the system log using the syslog protocol, and messages
+to the "network" logger will be written to a :file:`network.log` file
+that will be rotated once the log reaches 1Mb.
+
+::
+
+    import logging
+    import logging.config
+
+    configdict = {
+     'version': 1,    # Must be 1 at present
+     'formatters': {
+         'standard': {
+             'format': '%(asctime)s %(name)-15s %(levelname)-8s %(message)s'}},
+
+     'handlers': {'netlog': {'backupCount': 10,
+                             'class': 'logging.handlers.RotatingFileHandler',
+                             'filename': '/logs/network.log',
+                             'formatter': 'standard',
+                             'level': 'INFO',
+                             'maxBytes': 1024*1024},
+                  'syslog': {'class': 'logging.handlers.SysLogHandler',
+                             'formatter': 'standard',
+                             'level': 'ERROR'}},
+
+     # Specify all the subordinate loggers
+     'loggers': {
+                 'network': {
+                             'handlers': ['netlog']
+                 }
+     },
+     # Specify properties of the root logger
+     'root': {
+              'handlers': ['syslog']
+     },
+    }
+
+    # Set up configuration
+    logging.config.dictConfig(configdict)
+
+    # As an example, log two error messages
+    logger = logging.getLogger('/')
+    logger.error('Database not found')
+
+    netlogger = logging.getLogger('network')
+    netlogger.error('Connection failed')
 
 Three smaller enhancements to the :mod:`logging` module, all
 implemented by Vinay Sajip, are:
@@ -1624,8 +1671,10 @@ Some of the functions in the module are:
 Consult the :mod:`sysconfig` documentation for more details and for
 a complete list of functions.
 
-The Distutils package and :mod:`sysconfig` are now maintained and
-renamed by Tarek Ziadé.
+The Distutils package and :mod:`sysconfig` are now maintained by Tarek
+Ziadé, who has also started a Distutils2 package (source repository at
+http://hg.python.org/distutils2/) for developing a next-generation
+version of Distutils.
 
 
 ttk: Themed Widgets for Tk
@@ -1637,7 +1686,12 @@ closely resemble the native platform's widgets.  This widget
 set was originally called Tile, but was renamed to Ttk (for "themed Tk")
 on being added to Tcl/Tck release 8.5.
 
-XXX write a brief discussion and an example here.
+To learn more, read the :mod:`ttk` module documentation.  You may also
+wish to read Tcl/Tk manual page describing the
+Ttk theme engine, available at
+http://www.tcl.tk/man/tcl8.5/TkCmd/ttk_intro.htm. Some
+screenshots of the Python/Ttk code in use are at
+http://code.google.com/p/python-ttk/wiki/Screenshots.
 
 The :mod:`ttk` module was written by Guilherme Polo and added in
 :issue:`2983`.  An alternate version called ``Tile.py``, written by
