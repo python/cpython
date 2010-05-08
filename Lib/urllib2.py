@@ -1291,7 +1291,7 @@ class FileHandler(BaseHandler):
             if not host or \
                 (not port and socket.gethostbyname(host) in self.get_names()):
                 return addinfourl(open(localfile, 'rb'),
-                                  headers, 'file:'+file)
+                                  headers, 'file://'+ host + file)
         except OSError, msg:
             # urllib2 users shouldn't expect OSErrors coming from urlopen()
             raise URLError(msg)
