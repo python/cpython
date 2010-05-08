@@ -17,6 +17,13 @@ class FixXrange(fixer_base.BaseFix):
               rest=any* >
               """
 
+    def start_tree(self, tree, filename):
+        super(FixXrange, self).start_tree(tree, filename)
+        self.transformed_xranges = set()
+
+    def finish_tree(self, tree, filename):
+        self.transformed_xranges = None
+
     def transform(self, node, results):
         name = results["name"]
         if name.value == "xrange":
@@ -29,9 +36,12 @@ class FixXrange(fixer_base.BaseFix):
     def transform_xrange(self, node, results):
         name = results["name"]
         name.replace(Name("range", prefix=name.prefix))
+        # This prevents the new range call from being wrapped in a list later.
+        self.transformed_xranges.add(id(node))
 
     def transform_range(self, node, results):
-        if not self.in_special_context(node):
+        if (id(node) not in self.transformed_xranges and
+            not self.in_special_context(node)):
             range_call = Call(Name("range"), [results["args"].clone()])
             # Encase the range call in list().
             list_call = Call(Name("list"), [range_call],
