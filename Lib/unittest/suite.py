@@ -116,7 +116,12 @@ class TestSuite(BaseTestSuite):
         if getattr(currentClass, "__unittest_skip__", False):
             return
 
-        currentClass._classSetupFailed = False
+        try:
+            currentClass._classSetupFailed = False
+        except TypeError:
+            # test may actually be a function
+            # so its class will be a builtin-type
+            pass
 
         setUpClass = getattr(currentClass, 'setUpClass', None)
         if setUpClass is not None:
