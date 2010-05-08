@@ -903,9 +903,9 @@ Test cases
    .. method:: assertNotRegexpMatches(text, regexp, msg=None)
 
       Verifies that a *regexp* search does not match *text*.  Fails with an error
-      message including the pattern and the *text*.  *regexp* may be
-      a regular expression object or a string containing a regular expression
-      suitable for use by :func:`re.search`.
+      message including the pattern and the part of *text* that matches.  *regexp*
+      may be a regular expression object or a string containing a regular
+      expression suitable for use by :func:`re.search`.
 
       .. versionadded:: 3.2
 

@@ -993,6 +993,7 @@ class TestCase(object):
             callable_obj(*args, **kwargs)
 
     def assertRegexpMatches(self, text, expected_regexp, msg=None):
+        """Fail the test unless the text matches the regular expression."""
         if isinstance(expected_regexp, (str, bytes)):
             expected_regexp = re.compile(expected_regexp)
         if not expected_regexp.search(text):
@@ -1001,6 +1002,7 @@ class TestCase(object):
             raise self.failureException(msg)
 
     def assertNotRegexpMatches(self, text, unexpected_regexp, msg=None):
+        """Fail the test if the text matches the regular expression."""
         if isinstance(unexpected_regexp, (str, bytes)):
             unexpected_regexp = re.compile(unexpected_regexp)
         match = unexpected_regexp.search(text)
