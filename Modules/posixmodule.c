@@ -559,9 +559,13 @@ posix_error_with_unicode_filename(Py_UNICODE* name)
 static PyObject *
 posix_error_with_allocated_filename(PyObject* name)
 {
-    PyObject *rc = PyErr_SetFromErrnoWithFilename(PyExc_OSError,
-                                                  PyBytes_AsString(name));
+    PyObject *name_str, *rc;
+    name_str = PyUnicode_DecodeFSDefaultAndSize(PyBytes_AsString(name),
+                                                PyBytes_GET_SIZE(name));
     Py_DECREF(name);
+    rc = PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError,
+                                              name_str);
+    Py_XDECREF(name_str);
     return rc;
 }
 
