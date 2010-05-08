@@ -205,26 +205,31 @@ class TestReversed(unittest.TestCase):
         self.assertEqual(rc, sys.getrefcount(r))
 
 
-class TestStart(EnumerateTestCase):
+class EnumerateStartTestCase(EnumerateTestCase):
 
-    enum = lambda i: enumerate(i, start=11)
-    seq, res = 'abc', [(1, 'a'), (2, 'b'), (3, 'c')]
+    def test_basicfunction(self):
+        e = self.enum(self.seq)
+        self.assertEqual(iter(e), e)
+        self.assertEqual(list(self.enum(self.seq)), self.res)
 
 
-class TestLongStart(EnumerateTestCase):
+class TestStart(EnumerateStartTestCase):
 
-    enum = lambda i: enumerate(i, start=sys.maxint+1)
+    enum = lambda self, i: enumerate(i, start=11)
+    seq, res = 'abc', [(11, 'a'), (12, 'b'), (13, 'c')]
+
+
+class TestLongStart(EnumerateStartTestCase):
+
+    enum = lambda self, i: enumerate(i, start=sys.maxint+1)
     seq, res = 'abc', [(sys.maxint+1,'a'), (sys.maxint+2,'b'),
                        (sys.maxint+3,'c')]
 
 
 def test_main(verbose=None):
-    testclasses = (EnumerateTestCase, SubclassTestCase, TestEmpty, TestBig,
-                   TestReversed)
-    test_support.run_unittest(*testclasses)
+    test_support.run_unittest(__name__)
 
     # verify reference counting
-    import sys
     if verbose and hasattr(sys, "gettotalrefcount"):
         counts = [None] * 5
         for i in xrange(len(counts)):
