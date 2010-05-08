@@ -235,8 +235,8 @@ class TestSysConfig(unittest.TestCase):
         self.assertTrue(os.path.isfile(config_h), config_h)
 
     def test_get_scheme_names(self):
-        wanted = ('nt', 'nt_user', 'os2', 'os2_home', 'posix_home',
-                  'posix_prefix', 'posix_user')
+        wanted = ('nt', 'nt_user', 'os2', 'os2_home', 'osx_frameworkuser',
+                  'posix_home', 'posix_prefix', 'posix_user')
         self.assertEquals(get_scheme_names(), wanted)
 
     def test_symlink(self):
