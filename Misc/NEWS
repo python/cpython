@@ -215,6 +215,8 @@ Build
 - Issue #7724: Building now full honors an MacOSX SDK when specified, which
   makes it possible do a working build with the OSX 10.4 SDK on MacOSX 10.6.
 
+- Issue #8510: Update to autoconf2.65.
+
 Misc
 ----
 
