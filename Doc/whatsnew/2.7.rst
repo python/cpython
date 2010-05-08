@@ -6,8 +6,6 @@
 :Release: |release|
 :Date: |today|
 
-.. Fix accents on Kristjan Valur Jonsson, Fuerstenau
-
 .. Big jobs: pep 391 example
 
 ..  hyperlink all the methods & functions.
@@ -911,7 +909,7 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`bz2` module's :class:`~bz2.BZ2File` now supports the context
   management protocol, so you can write ``with bz2.BZ2File(...) as f: ...``.
-  (Contributed by Hagen Fuerstenau; :issue:`3860`.)
+  (Contributed by Hagen Fürstenau; :issue:`3860`.)
 
 * New class: the :class:`~collections.Counter` class in the :mod:`collections`
   module is useful for tallying data.  :class:`~collections.Counter` instances
@@ -1125,7 +1123,7 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`gzip` module's :class:`~gzip.GzipFile` now supports the context
   management protocol, so you can write ``with gzip.GzipFile(...) as f: ...``
-  (contributed by Hagen Fuerstenau; :issue:`3860`), and it now implements
+  (contributed by Hagen Fürstenau; :issue:`3860`), and it now implements
   the :class:`io.BufferedIOBase` ABC, so you can wrap it with
   :class:`io.BufferedReader` for faster processing
   (contributed by Nir Aides; :issue:`7471`).
@@ -1145,7 +1143,7 @@ changes, or look through the Subversion logs for all the details.
 
 * The default :class:`~httplib.HTTPResponse` class used by the :mod:`httplib` module now
   supports buffering, resulting in much faster reading of HTTP responses.
-  (Contributed by Kristjan Valur Jonsson; :issue:`4879`.)
+  (Contributed by Kristján Valur Jónsson; :issue:`4879`.)
 
   The :class:`~httplib.HTTPConnection` and :class:`~httplib.HTTPSConnection` classes
   now support a *source_address* parameter, a ``(host, port)`` 2-tuple
@@ -1358,7 +1356,7 @@ changes, or look through the Subversion logs for all the details.
   a timeout in seconds that will be applied to the request socket; if
   no request is received within that time, :meth:`handle_timeout`
   will be called and :meth:`handle_request` will return.
-  (Contributed by Kristjan Valur Jonsson; :issue:`6192` and :issue:`6267`.)
+  (Contributed by Kristján Valur Jónsson; :issue:`6192` and :issue:`6267`.)
 
 * The XML-RPC client and server, provided by the :mod:`xmlrpclib` and
   :mod:`SimpleXMLRPCServer` modules, have improved performance by
@@ -1367,7 +1365,7 @@ changes, or look through the Subversion logs for all the details.
   controlled by the :attr:`encode_threshold` attribute of
   :class:`SimpleXMLRPCRequestHandler`, which contains a size in bytes;
   responses larger than this will be compressed.
-  (Contributed by Kristjan Valur Jonsson; :issue:`6267`.)
+  (Contributed by Kristján Valur Jónsson; :issue:`6267`.)
 
 
 * Updated module: the :mod:`sqlite3` module has been updated to
@@ -1538,7 +1536,7 @@ changes, or look through the Subversion logs for all the details.
   controlled by the :attr:`encode_threshold` attribute of
   :class:`SimpleXMLRPCRequestHandler`, which contains a size in bytes;
   responses larger than this will be compressed.
-  (Contributed by Kristjan Valur Jonsson; :issue:`6267`.)
+  (Contributed by Kristján Valur Jónsson; :issue:`6267`.)
 
 * The :mod:`zipfile` module's :class:`~zipfile.ZipFile` now supports the context
   management protocol, so you can write ``with zipfile.ZipFile(...) as f: ...``.
@@ -1944,7 +1942,7 @@ Changes to Python's build process and to the C API include:
 * :cfunc:`Py_AddPendingCall` is now thread-safe, letting any
   worker thread submit notifications to the main Python thread.  This
   is particularly useful for asynchronous IO operations.
-  (Contributed by Kristjan Valur Jonsson; :issue:`4293`.)
+  (Contributed by Kristján Valur Jónsson; :issue:`4293`.)
 
 * New function: :cfunc:`PyCode_NewEmpty` creates an empty code object;
   only the filename, function name, and first line number are required.
@@ -2140,7 +2138,7 @@ Port-Specific Changes: Windows
 
 * The new :cfunc:`_beginthreadex` API is used to start threads, and
   the native thread-local storage functions are now used.
-  (Contributed by Kristjan Valur Jonsson; :issue:`3582`.)
+  (Contributed by Kristján Valur Jónsson; :issue:`3582`.)
 
 * The :func:`os.kill` function now works on Windows.  The signal value
   can be the constants :const:`CTRL_C_EVENT`,
