@@ -1867,6 +1867,10 @@ PyOS_sighandler_t
 PyOS_setsig(int sig, PyOS_sighandler_t handler)
 {
 #ifdef HAVE_SIGACTION
+	/* Some code in Modules/signalmodule.c depends on sigaction() being
+	 * used here if HAVE_SIGACTION is defined.  Fix that if this code
+	 * changes to invalidate that assumption.
+	 */
 	struct sigaction context, ocontext;
 	context.sa_handler = handler;
 	sigemptyset(&context.sa_mask);
