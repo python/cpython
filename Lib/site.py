@@ -243,6 +243,13 @@ def getusersitepackages():
 
     from sysconfig import get_path
     import os
+
+    if sys.platform == 'darwin':
+        from sysconfig import get_config_var
+        if get_config_var('PYTHONFRAMEWORK'):
+            USER_SITE = get_path('purelib', 'osx_framework_user')
+            return USER_SITE
+
     USER_SITE = get_path('purelib', '%s_user' % os.name)
     return USER_SITE
 
@@ -289,13 +296,11 @@ def getsitepackages():
         if sys.platform == "darwin":
             # for framework builds *only* we add the standard Apple
             # locations.
-            if 'Python.framework' in prefix:
+            from sysconfig import get_config_var
+            framework = get_config_var("PYTHONFRAMEWORK")
+            if framework and "/%s.framework/"%(framework,) in prefix:
                 sitepackages.append(
-                    os.path.expanduser(
-                        os.path.join("~", "Library", "Python",
-                                     sys.version[:3], "site-packages")))
-                sitepackages.append(
-                        os.path.join("/Library", "Python",
+                        os.path.join("/Library", framework,
                             sys.version[:3], "site-packages"))
     return sitepackages
 
