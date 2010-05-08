@@ -351,6 +351,9 @@ C-API
 Library
 -------
 
+- Issue #8664: In py_compile, create __pycache__ when the compiled path is
+  given.
+
 - Issue #8514: Add os.fsencode() function (Unix only): encode a string to bytes
   for use in the file system, environment variables or the command line.
 
