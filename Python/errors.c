@@ -446,7 +446,7 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 PyObject *
 PyErr_SetFromErrnoWithFilename(PyObject *exc, const char *filename)
 {
-	PyObject *name = filename ? PyUnicode_FromString(filename) : NULL;
+	PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
 	PyObject *result = PyErr_SetFromErrnoWithFilenameObject(exc, name);
 	Py_XDECREF(name);
 	return result;
