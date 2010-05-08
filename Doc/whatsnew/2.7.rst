@@ -6,12 +6,10 @@
 :Release: |release|
 :Date: |today|
 
-.. Big jobs: pep 391 example
-
 ..  hyperlink all the methods & functions.
 
 .. T_STRING_INPLACE not described in main docs
-.. XXX "Format String Syntax" in string.rst could use many more examples.
+.. "Format String Syntax" in string.rst could use many more examples.
 
 .. $Id$
    Rules for maintenance:
@@ -58,8 +56,27 @@ This article explains the new features in Python 2.7.  The final
 release of 2.7 is currently scheduled for July 2010; the detailed
 schedule is described in :pep:`373`.
 
-.. Compare with previous release in 2 - 3 sentences here.
-   add hyperlink when the documentation becomes available online.
+Python 2.7 is planned to be the last of the 2.x releases, so we worked
+on making it a good release for the long term.  To help with porting
+to Python 3, several new features from the Python 3.x series have been
+included in 2.7.
+
+Numeric handling has been improved in many ways, both for
+floating-point numbers and for the :class:`Decimal` class.  There are
+some useful additions to the standard library, such as a greatly
+enhanced :mod:`unittest` module, the :mod:`argparse` module for
+parsing command-line options, convenient ordered-dictionary and
+:class:`Counter` classes in the :mod:`collections` module, and many
+other improvements.
+
+This article doesn't attempt to provide a complete specification of
+the new features, but instead provides a convenient overview.  For
+full details, you should refer to the documentation for Python 2.7 at
+http://docs.python.org. If you want to understand the rationale for
+the design and implementation, refer to the PEP for a particular new
+feature or the issue on http://bugs.python.org in which a change was
+discussed.  Whenever possible, "What's New in Python" links to the
+bug/patch item for each change.
 
 .. _whatsnew27-python31:
 
@@ -76,15 +93,16 @@ Two consequences of the long-term significance of 2.7 are:
 
 * It's very likely the 2.7 release will have a longer period of
   maintenance compared to earlier 2.x versions.  Python 2.7 will
-  continue to be maintained while the transition to 3.x continues.
-  Maintenance releases for Python 2.7 will probably be made for 5
-  years.
+  continue to be maintained while the transition to 3.x continues, and
+  the developers are planning to support Python 2.7 with bug-fix
+  releases beyond the typical two years.
 
 * A policy decision was made to silence warnings only of interest to
   developers by default.  :exc:`DeprecationWarning` and its
   descendants are now ignored unless otherwise requested, preventing
-  users from seeing warnings triggered by an application.  (Carried
-  out in :issue:`7319`.)
+  users from seeing warnings triggered by an application.  This change
+  was also made in the branch that will become Python 3.2. (Discussed
+  on stdlib-sig and carried out in :issue:`7319`.)
 
   In previous releases, :exc:`DeprecationWarning` messages were
   enabled by default, providing Python developers with a clear
@@ -100,8 +118,10 @@ Two consequences of the long-term significance of 2.7 are:
 
   You can re-enable display of :exc:`DeprecationWarning` messages by
   running Python with the :option:`-Wdefault` (short form:
-  :option:`-Wd`) switch, or you can add
-  ``warnings.simplefilter('default')`` to your code.
+  :option:`-Wd`) switch, or by setting the :envvar:`PYTHONWARNINGS`
+  environment variable to ``"default"`` or ``"d"``) before running
+  Python.  Python code can also re-enable them
+  by calling ``warnings.simplefilter('default')``.
 
 
 Python 3.1 Features
@@ -114,6 +134,9 @@ for migrating to the 3.x series.
 
 A partial list of 3.1 features that were backported to 2.7:
 
+* The syntax for set literals (``{1,2,3}`` is a mutable set).
+* Dictionary and set comprehensions (``{ i: i*2 for i in range(3)}``).
+* Multiple context managers in
 * A new version of the :mod:`io` library, rewritten in C for performance.
 * The ordered-dictionary type described in :ref:`pep-0372`.
 * The new format specifier described in :ref:`pep-0378`.
@@ -602,9 +625,9 @@ Some smaller changes made to the core Python language are:
   3.x, generalizing list/generator comprehensions to use
   the literal syntax for sets and dictionaries.
 
-    >>> {x:x*x for x in range(6)}
+    >>> {x: x*x for x in range(6)}
     {0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25}
-    >>> {'a'*x for x in range(6)}
+    >>> {('a'*x) for x in range(6)}
     set(['', 'a', 'aa', 'aaa', 'aaaa', 'aaaaa'])
 
   Backported by Alexandre Vassalotti; :issue:`2333`.
@@ -2368,5 +2391,6 @@ Acknowledgements
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Nick Coghlan, Ryan Lovett, R. David Murray, Hugh Secker-Walker.
+article: Nick Coghlan, Philip Jenvey, Ryan Lovett, R. David Murray,
+Hugh Secker-Walker.
 
