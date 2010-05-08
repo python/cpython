@@ -2354,10 +2354,7 @@ long_compare(PyLongObject *a, PyLongObject *b)
 	Py_ssize_t sign;
 
 	if (Py_SIZE(a) != Py_SIZE(b)) {
-		if (ABS(Py_SIZE(a)) == 0 && ABS(Py_SIZE(b)) == 0)
-			sign = 0;
-		else
-			sign = Py_SIZE(a) - Py_SIZE(b);
+		sign = Py_SIZE(a) - Py_SIZE(b);
 	}
 	else {
 		Py_ssize_t i = ABS(Py_SIZE(a));
@@ -3606,7 +3603,7 @@ long_abs(PyLongObject *v)
 static int
 long_nonzero(PyLongObject *v)
 {
-	return ABS(Py_SIZE(v)) != 0;
+	return Py_SIZE(v) != 0;
 }
 
 static PyObject *
