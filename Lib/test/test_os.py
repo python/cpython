@@ -653,7 +653,7 @@ class ExecTests(unittest.TestCase):
             raise OSError(errno.ENOTDIR, "execve called")
 
         def _mock_get_exec_path(self, env=None):
-            return ['/p', '/pp']
+            return [os.sep+'p', os.sep+'pp']
 
         def __enter__(self):
             self.orig_execv = os.execv
@@ -673,13 +673,16 @@ class ExecTests(unittest.TestCase):
     def test_internal_execvpe(self):
         exec_stubbed = self._stub_out_for_execvpe_test()
         with exec_stubbed:
-            self.assertRaises(RuntimeError, os._execvpe, '/f', ['-a'])
-            self.assertEqual([('execv', '/f', (['-a'],))], exec_stubbed.calls)
+            self.assertRaises(RuntimeError, os._execvpe, os.sep+'f', ['-a'])
+            self.assertEqual([('execv', os.sep+'f', (['-a'],))],
+                             exec_stubbed.calls)
             exec_stubbed.calls = []
             self.assertRaises(OSError, os._execvpe, 'f', ['-a'],
                               env={'spam': 'beans'})
-            self.assertEqual([('execve', '/p/f', (['-a'], {'spam': 'beans'})),
-                              ('execve', '/pp/f', (['-a'], {'spam': 'beans'}))],
+            self.assertEqual([('execve', os.sep+'p'+os.sep+'f',
+                               (['-a'], {'spam': 'beans'})),
+                              ('execve', os.sep+'pp'+os.sep+'f',
+                               (['-a'], {'spam': 'beans'}))],
                              exec_stubbed.calls)
 
 class Win32ErrorTests(unittest.TestCase):
