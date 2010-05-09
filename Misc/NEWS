@@ -200,6 +200,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #8644: Improved accuracy of timedelta.total_seconds().
+
 - Use Clang 2.7's static analyzer to find places to clean up some code.
 
 - Build the ossaudio extension on GNU/kFreeBSD.

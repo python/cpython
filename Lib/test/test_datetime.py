@@ -2,7 +2,7 @@
 
 See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
-
+from __future__ import division
 import os
 import pickle
 import cPickle
@@ -269,6 +269,13 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         for total_seconds in [123456.789012, -123456.789012, 0.123456, 0, 1e6]:
             td = timedelta(seconds=total_seconds)
             self.assertEqual(td.total_seconds(), total_seconds)
+        # Issue8644: Test that td.total_seconds() has the same
+        # accuracy as td / timedelta(seconds=1).
+        for ms in [-1, -2, -123]:
+            td = timedelta(microseconds=ms)
+            self.assertEqual(td.total_seconds(),
+                             ((24*3600*td.days + td.seconds)*10**6
+                              + td.microseconds)/10**6)
 
     def test_carries(self):
         t1 = timedelta(days=100,
