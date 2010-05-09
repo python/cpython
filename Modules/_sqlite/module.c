@@ -64,7 +64,7 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|diOiOi", kwlist,
                                      &database, &timeout, &detect_types, &isolation_level, &check_same_thread, &factory, &cached_statements))
     {
-        return NULL; 
+        return NULL;
     }
 
     if (factory == NULL) {
@@ -93,7 +93,7 @@ static PyObject* module_complete(PyObject* self, PyObject* args, PyObject*
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist, &statement))
     {
-        return NULL; 
+        return NULL;
     }
 
     if (sqlite3_complete(statement)) {
@@ -122,7 +122,7 @@ static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyOb
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i", kwlist, &do_enable))
     {
-        return NULL; 
+        return NULL;
     }
 
     rc = sqlite3_enable_shared_cache(do_enable);
@@ -302,15 +302,15 @@ static IntConstantPair _int_constants[] = {
 
 
 static struct PyModuleDef _sqlite3module = {
-	PyModuleDef_HEAD_INIT,
-	"_sqlite3",
-	NULL,
-	-1,
-	module_methods,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+        PyModuleDef_HEAD_INIT,
+        "_sqlite3",
+        NULL,
+        -1,
+        module_methods,
+        NULL,
+        NULL,
+        NULL,
+        NULL
 };
 
 PyMODINIT_FUNC PyInit__sqlite3(void)
@@ -329,7 +329,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         (pysqlite_statement_setup_types() < 0) ||
         (pysqlite_prepare_protocol_setup_types() < 0)
        ) {
-	Py_DECREF(module);
+        Py_DECREF(module);
         return NULL;
     }
 
@@ -448,7 +448,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     /* Original comment from _bsddb.c in the Python core. This is also still
      * needed nowadays for Python 2.3/2.4.
-     * 
+     *
      * PyEval_InitThreads is called here due to a quirk in python 1.5
      * - 2.2.1 (at least) according to Russell Williamson <merel@wt.net>:
      * The global interpreter lock is not initialized until the first
@@ -467,8 +467,8 @@ error:
     if (PyErr_Occurred())
     {
         PyErr_SetString(PyExc_ImportError, MODULE_NAME ": init failed");
-	Py_DECREF(module);
-	module = NULL;
+        Py_DECREF(module);
+        module = NULL;
     }
     return module;
 }

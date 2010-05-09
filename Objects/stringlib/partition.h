@@ -18,23 +18,23 @@ stringlib_partition(
 
     if (sep_len == 0) {
         PyErr_SetString(PyExc_ValueError, "empty separator");
-	return NULL;
+        return NULL;
     }
 
     out = PyTuple_New(3);
     if (!out)
-	return NULL;
+        return NULL;
 
     pos = fastsearch(str, str_len, sep, sep_len, FAST_SEARCH);
 
     if (pos < 0) {
-	Py_INCREF(str_obj);
-	PyTuple_SET_ITEM(out, 0, (PyObject*) str_obj);
-	Py_INCREF(STRINGLIB_EMPTY);
-	PyTuple_SET_ITEM(out, 1, (PyObject*) STRINGLIB_EMPTY);
-	Py_INCREF(STRINGLIB_EMPTY);
-	PyTuple_SET_ITEM(out, 2, (PyObject*) STRINGLIB_EMPTY);
-	return out;
+        Py_INCREF(str_obj);
+        PyTuple_SET_ITEM(out, 0, (PyObject*) str_obj);
+        Py_INCREF(STRINGLIB_EMPTY);
+        PyTuple_SET_ITEM(out, 1, (PyObject*) STRINGLIB_EMPTY);
+        Py_INCREF(STRINGLIB_EMPTY);
+        PyTuple_SET_ITEM(out, 2, (PyObject*) STRINGLIB_EMPTY);
+        return out;
     }
 
     PyTuple_SET_ITEM(out, 0, STRINGLIB_NEW(str, pos));
@@ -44,8 +44,8 @@ stringlib_partition(
     PyTuple_SET_ITEM(out, 2, STRINGLIB_NEW(str + pos, str_len - pos));
 
     if (PyErr_Occurred()) {
-	Py_DECREF(out);
-	return NULL;
+        Py_DECREF(out);
+        return NULL;
     }
 
     return out;
@@ -62,29 +62,29 @@ stringlib_rpartition(
 
     if (sep_len == 0) {
         PyErr_SetString(PyExc_ValueError, "empty separator");
-	return NULL;
+        return NULL;
     }
 
     out = PyTuple_New(3);
     if (!out)
-	return NULL;
+        return NULL;
 
     /* XXX - create reversefastsearch helper! */
         pos = -1;
-	for (j = str_len - sep_len; j >= 0; --j)
+        for (j = str_len - sep_len; j >= 0; --j)
             if (STRINGLIB_CMP(str+j, sep, sep_len) == 0) {
                 pos = j;
                 break;
             }
 
     if (pos < 0) {
-	Py_INCREF(STRINGLIB_EMPTY);
-	PyTuple_SET_ITEM(out, 0, (PyObject*) STRINGLIB_EMPTY);
-	Py_INCREF(STRINGLIB_EMPTY);
-	PyTuple_SET_ITEM(out, 1, (PyObject*) STRINGLIB_EMPTY);
-	Py_INCREF(str_obj);        
-	PyTuple_SET_ITEM(out, 2, (PyObject*) str_obj);
-	return out;
+        Py_INCREF(STRINGLIB_EMPTY);
+        PyTuple_SET_ITEM(out, 0, (PyObject*) STRINGLIB_EMPTY);
+        Py_INCREF(STRINGLIB_EMPTY);
+        PyTuple_SET_ITEM(out, 1, (PyObject*) STRINGLIB_EMPTY);
+        Py_INCREF(str_obj);
+        PyTuple_SET_ITEM(out, 2, (PyObject*) str_obj);
+        return out;
     }
 
     PyTuple_SET_ITEM(out, 0, STRINGLIB_NEW(str, pos));
@@ -94,8 +94,8 @@ stringlib_rpartition(
     PyTuple_SET_ITEM(out, 2, STRINGLIB_NEW(str + pos, str_len - pos));
 
     if (PyErr_Occurred()) {
-	Py_DECREF(out);
-	return NULL;
+        Py_DECREF(out);
+        return NULL;
     }
 
     return out;

@@ -4,10 +4,10 @@ The Netherlands.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Stichting Mathematisch
 Centrum or CWI not be used in advertising or publicity pertaining to
 distribution of the software without specific, written prior permission.
@@ -34,9 +34,9 @@ convert_to_OSType(PyObject *v, OSType *pr)
 {
     uint32_t tmp;
     if (!PyUnicode_Check(v) || PyUnicode_GetSize(v) != 4) {
-        PyErr_SetString(PyExc_TypeError,
-			"OSType arg must be string of 4 chars");
-        return 0;
+    PyErr_SetString(PyExc_TypeError,
+                    "OSType arg must be string of 4 chars");
+    return 0;
     }
     memcpy((char *)&tmp, _PyUnicode_AsString(v), 4);
     *pr = (OSType)ntohl(tmp);
@@ -50,12 +50,12 @@ gestalt_gestalt(PyObject *self, PyObject *args)
     OSType selector;
     SInt32 response;
     if (!PyArg_ParseTuple(args, "O&", convert_to_OSType, &selector))
-            return NULL;
+        return NULL;
     iErr = Gestalt(selector, &response);
     if (iErr != 0) {
-        PyErr_SetString(PyExc_OSError,
-                        "non-zero exit code!");
-        return NULL;
+    PyErr_SetString(PyExc_OSError,
+                    "non-zero exit code!");
+    return NULL;
     }
     return PyLong_FromLong(response);
 }
@@ -66,19 +66,19 @@ static struct PyMethodDef gestalt_methods[] = {
 };
 
 static struct PyModuleDef gestaltmodule = {
-	PyModuleDef_HEAD_INIT,
-	"_gestalt",
-	NULL,
-	-1,
-	gestalt_methods,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+    PyModuleDef_HEAD_INIT,
+    "_gestalt",
+    NULL,
+    -1,
+    gestalt_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC
 PyInit__gestalt(void)
 {
-	return PyModule_Create(&gestaltmodule);
+    return PyModule_Create(&gestaltmodule);
 }

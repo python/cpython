@@ -19,20 +19,20 @@
 
    Return value (rv):
 
-	When 0 <= rv < size, the output conversion was unexceptional, and
-	rv characters were written to str (excluding a trailing \0 byte at
-	str[rv]).
+    When 0 <= rv < size, the output conversion was unexceptional, and
+    rv characters were written to str (excluding a trailing \0 byte at
+    str[rv]).
 
-	When rv >= size, output conversion was truncated, and a buffer of
-	size rv+1 would have been needed to avoid truncation.  str[size-1]
-	is \0 in this case.
+    When rv >= size, output conversion was truncated, and a buffer of
+    size rv+1 would have been needed to avoid truncation.  str[size-1]
+    is \0 in this case.
 
-	When rv < 0, "something bad happened".  str[size-1] is \0 in this
-	case too, but the rest of str is unreliable.  It could be that
-	an error in format codes was detected by libc, or on platforms
-	with a non-C99 vsnprintf simply that the buffer wasn't big enough
-	to avoid truncation, or on platforms without any vsnprintf that
-	PyMem_Malloc couldn't obtain space for a temp buffer.
+    When rv < 0, "something bad happened".  str[size-1] is \0 in this
+    case too, but the rest of str is unreliable.  It could be that
+    an error in format codes was detected by libc, or on platforms
+    with a non-C99 vsnprintf simply that the buffer wasn't big enough
+    to avoid truncation, or on platforms without any vsnprintf that
+    PyMem_Malloc couldn't obtain space for a temp buffer.
 
    CAUTION:  Unlike C99, str != NULL and size > 0 are required.
 */
@@ -40,65 +40,65 @@
 int
 PyOS_snprintf(char *str, size_t size, const  char  *format, ...)
 {
-	int rc;
-	va_list va;
+    int rc;
+    va_list va;
 
-	va_start(va, format);
-	rc = PyOS_vsnprintf(str, size, format, va);
-	va_end(va);
-	return rc;
+    va_start(va, format);
+    rc = PyOS_vsnprintf(str, size, format, va);
+    va_end(va);
+    return rc;
 }
 
 int
 PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
 {
-	int len;  /* # bytes written, excluding \0 */
+    int len;  /* # bytes written, excluding \0 */
 #ifdef HAVE_SNPRINTF
 #define _PyOS_vsnprintf_EXTRA_SPACE 1
 #else
 #define _PyOS_vsnprintf_EXTRA_SPACE 512
-	char *buffer;
+    char *buffer;
 #endif
-	assert(str != NULL);
-	assert(size > 0);
-	assert(format != NULL);
-	/* We take a size_t as input but return an int.  Sanity check
-	 * our input so that it won't cause an overflow in the
-         * vsnprintf return value or the buffer malloc size.  */
-	if (size > INT_MAX - _PyOS_vsnprintf_EXTRA_SPACE) {
-		len = -666;
-		goto Done;
-	}
+    assert(str != NULL);
+    assert(size > 0);
+    assert(format != NULL);
+    /* We take a size_t as input but return an int.  Sanity check
+     * our input so that it won't cause an overflow in the
+     * vsnprintf return value or the buffer malloc size.  */
+    if (size > INT_MAX - _PyOS_vsnprintf_EXTRA_SPACE) {
+        len = -666;
+        goto Done;
+    }
 
 #ifdef HAVE_SNPRINTF
-	len = vsnprintf(str, size, format, va);
+    len = vsnprintf(str, size, format, va);
 #else
-	/* Emulate it. */
-	buffer = PyMem_MALLOC(size + _PyOS_vsnprintf_EXTRA_SPACE);
-	if (buffer == NULL) {
-		len = -666;
-		goto Done;
-	}
+    /* Emulate it. */
+    buffer = PyMem_MALLOC(size + _PyOS_vsnprintf_EXTRA_SPACE);
+    if (buffer == NULL) {
+        len = -666;
+        goto Done;
+    }
 
-	len = vsprintf(buffer, format, va);
-	if (len < 0)
-		/* ignore the error */;
+    len = vsprintf(buffer, format, va);
+    if (len < 0)
+        /* ignore the error */;
 
-	else if ((size_t)len >= size + _PyOS_vsnprintf_EXTRA_SPACE)
-		Py_FatalError("Buffer overflow in PyOS_snprintf/PyOS_vsnprintf");
+    else if ((size_t)len >= size + _PyOS_vsnprintf_EXTRA_SPACE)
+        Py_FatalError("Buffer overflow in PyOS_snprintf/PyOS_vsnprintf");
 
-	else {
-		const size_t to_copy = (size_t)len < size ?
-					(size_t)len : size - 1;
-		assert(to_copy < size);
-		memcpy(str, buffer, to_copy);
-		str[to_copy] = '\0';
-	}
-	PyMem_FREE(buffer);
+    else {
+        const size_t to_copy = (size_t)len < size ?
+                                (size_t)len : size - 1;
+        assert(to_copy < size);
+        memcpy(str, buffer, to_copy);
+        str[to_copy] = '\0';
+    }
+    PyMem_FREE(buffer);
 #endif
 Done:
-	if (size > 0)
-		str[size-1] = '\0';
-	return len;
+    if (size > 0)
+        str[size-1] = '\0';
+    return len;
 #undef _PyOS_vsnprintf_EXTRA_SPACE
 }

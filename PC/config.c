@@ -71,87 +71,87 @@ extern PyObject* PyInit_imp(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
-        {"array", PyInit_array},
-	{"_ast", PyInit__ast},
+    {"array", PyInit_array},
+    {"_ast", PyInit__ast},
 #ifdef MS_WINDOWS
 #ifndef MS_WINI64
-        {"audioop", PyInit_audioop},
+    {"audioop", PyInit_audioop},
 #endif
 #endif
-        {"binascii", PyInit_binascii},
-        {"cmath", PyInit_cmath},
-        {"errno", PyInit_errno},
-        {"gc", PyInit_gc},
-        {"math", PyInit_math},
-        {"nt", PyInit_nt}, /* Use the NT os functions, not posix */
-        {"operator", PyInit_operator},
-        {"signal", PyInit_signal},
-        {"_md5", PyInit__md5},
-        {"_sha1", PyInit__sha1},
-        {"_sha256", PyInit__sha256},
-        {"_sha512", PyInit__sha512},
-        {"time", PyInit_time},
+    {"binascii", PyInit_binascii},
+    {"cmath", PyInit_cmath},
+    {"errno", PyInit_errno},
+    {"gc", PyInit_gc},
+    {"math", PyInit_math},
+    {"nt", PyInit_nt}, /* Use the NT os functions, not posix */
+    {"operator", PyInit_operator},
+    {"signal", PyInit_signal},
+    {"_md5", PyInit__md5},
+    {"_sha1", PyInit__sha1},
+    {"_sha256", PyInit__sha256},
+    {"_sha512", PyInit__sha512},
+    {"time", PyInit_time},
 #ifdef WITH_THREAD
-        {"_thread", PyInit__thread},
+    {"_thread", PyInit__thread},
 #endif
 #ifdef WIN32
-        {"msvcrt", PyInit_msvcrt},
-        {"_locale", PyInit__locale},
+    {"msvcrt", PyInit_msvcrt},
+    {"_locale", PyInit__locale},
 #endif
-	/* XXX Should _subprocess go in a WIN32 block?  not WIN64? */
-	{"_subprocess", PyInit__subprocess},
+    /* XXX Should _subprocess go in a WIN32 block?  not WIN64? */
+    {"_subprocess", PyInit__subprocess},
 
-        {"_codecs", PyInit__codecs},
-	{"_weakref", PyInit__weakref},
-	{"_random", PyInit__random},
-        {"_bisect", PyInit__bisect},
-        {"_heapq", PyInit__heapq},
-	{"_lsprof", PyInit__lsprof},
-	{"itertools", PyInit_itertools},
-        {"_collections", PyInit__collections},
-	{"_symtable", PyInit__symtable},
-	{"mmap", PyInit_mmap},
-	{"_csv", PyInit__csv},
-	{"_sre", PyInit__sre},
-	{"parser", PyInit_parser},
-	{"winreg", PyInit_winreg},
-	{"_struct", PyInit__struct},
-	{"datetime", PyInit_datetime},
-	{"_functools", PyInit__functools},
-	{"_json", PyInit__json},
+    {"_codecs", PyInit__codecs},
+    {"_weakref", PyInit__weakref},
+    {"_random", PyInit__random},
+    {"_bisect", PyInit__bisect},
+    {"_heapq", PyInit__heapq},
+    {"_lsprof", PyInit__lsprof},
+    {"itertools", PyInit_itertools},
+    {"_collections", PyInit__collections},
+    {"_symtable", PyInit__symtable},
+    {"mmap", PyInit_mmap},
+    {"_csv", PyInit__csv},
+    {"_sre", PyInit__sre},
+    {"parser", PyInit_parser},
+    {"winreg", PyInit_winreg},
+    {"_struct", PyInit__struct},
+    {"datetime", PyInit_datetime},
+    {"_functools", PyInit__functools},
+    {"_json", PyInit__json},
 
-	{"xxsubtype", PyInit_xxsubtype},
-	{"zipimport", PyInit_zipimport},
-	{"zlib", PyInit_zlib},
-	
-	/* CJK codecs */
-	{"_multibytecodec", PyInit__multibytecodec},
-	{"_codecs_cn", PyInit__codecs_cn},
-	{"_codecs_hk", PyInit__codecs_hk},
-	{"_codecs_iso2022", PyInit__codecs_iso2022},
-	{"_codecs_jp", PyInit__codecs_jp},
-	{"_codecs_kr", PyInit__codecs_kr},
-	{"_codecs_tw", PyInit__codecs_tw},
+    {"xxsubtype", PyInit_xxsubtype},
+    {"zipimport", PyInit_zipimport},
+    {"zlib", PyInit_zlib},
+
+    /* CJK codecs */
+    {"_multibytecodec", PyInit__multibytecodec},
+    {"_codecs_cn", PyInit__codecs_cn},
+    {"_codecs_hk", PyInit__codecs_hk},
+    {"_codecs_iso2022", PyInit__codecs_iso2022},
+    {"_codecs_jp", PyInit__codecs_jp},
+    {"_codecs_kr", PyInit__codecs_kr},
+    {"_codecs_tw", PyInit__codecs_tw},
 
 /* tools/freeze/makeconfig.py marker for additional "_inittab" entries */
 /* -- ADDMODULE MARKER 2 -- */
 
-        /* This module "lives in" with marshal.c */
-        {"marshal", PyMarshal_Init},
+    /* This module "lives in" with marshal.c */
+    {"marshal", PyMarshal_Init},
 
-        /* This lives it with import.c */
-        {"imp", PyInit_imp},
+    /* This lives it with import.c */
+    {"imp", PyInit_imp},
 
-        /* These entries are here for sys.builtin_module_names */
-        {"__main__", NULL},
-        {"builtins", NULL},
-        {"sys", NULL},
-        {"_warnings", _PyWarnings_Init},
+    /* These entries are here for sys.builtin_module_names */
+    {"__main__", NULL},
+    {"builtins", NULL},
+    {"sys", NULL},
+    {"_warnings", _PyWarnings_Init},
 
-        {"_io", PyInit__io},
-        {"_pickle", PyInit__pickle},
-        {"atexit", PyInit_atexit},
+    {"_io", PyInit__io},
+    {"_pickle", PyInit__pickle},
+    {"atexit", PyInit_atexit},
 
-        /* Sentinel */
-        {0, 0}
+    /* Sentinel */
+    {0, 0}
 };

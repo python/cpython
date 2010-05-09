@@ -15,7 +15,7 @@
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #  include <winsock2.h>
-#  include <process.h>		     /* getpid() */
+#  include <process.h>               /* getpid() */
 #  ifdef Py_DEBUG
 #    include <crtdbg.h>
 #  endif
@@ -45,15 +45,15 @@
  * Issue 3110 - Solaris does not define SEM_VALUE_MAX
  */
 #ifndef SEM_VALUE_MAX
-	#if defined(HAVE_SYSCONF) && defined(_SC_SEM_VALUE_MAX)
-		# define SEM_VALUE_MAX sysconf(_SC_SEM_VALUE_MAX)
-	#elif defined(_SEM_VALUE_MAX)
-		# define SEM_VALUE_MAX _SEM_VALUE_MAX
-	#elif defined(_POSIX_SEM_VALUE_MAX)
-		# define SEM_VALUE_MAX _POSIX_SEM_VALUE_MAX
-	#else
-		# define SEM_VALUE_MAX INT_MAX
-	#endif
+    #if defined(HAVE_SYSCONF) && defined(_SC_SEM_VALUE_MAX)
+        # define SEM_VALUE_MAX sysconf(_SC_SEM_VALUE_MAX)
+    #elif defined(_SEM_VALUE_MAX)
+        # define SEM_VALUE_MAX _SEM_VALUE_MAX
+    #elif defined(_POSIX_SEM_VALUE_MAX)
+        # define SEM_VALUE_MAX _POSIX_SEM_VALUE_MAX
+    #else
+        # define SEM_VALUE_MAX INT_MAX
+    #endif
 #endif
 
 
@@ -162,11 +162,11 @@ extern HANDLE sigint_event;
 #define CONNECTION_BUFFER_SIZE 1024
 
 typedef struct {
-	PyObject_HEAD
-	HANDLE handle;
-	int flags;
-	PyObject *weakreflist;
-	char buffer[CONNECTION_BUFFER_SIZE];
+    PyObject_HEAD
+    HANDLE handle;
+    int flags;
+    PyObject *weakreflist;
+    char buffer[CONNECTION_BUFFER_SIZE];
 } ConnectionObject;
 
 /*

@@ -31,22 +31,22 @@
 const char *
 Py_GetBuildInfo(void)
 {
-	static char buildinfo[50];
-	const char *revision = Py_SubversionRevision();
-	const char *sep = *revision ? ":" : "";
-	const char *branch = Py_SubversionShortBranch();
-	PyOS_snprintf(buildinfo, sizeof(buildinfo),
-		      "%s%s%s, %.20s, %.9s", branch, sep, revision, 
-		      DATE, TIME);
-	return buildinfo;
+    static char buildinfo[50];
+    const char *revision = Py_SubversionRevision();
+    const char *sep = *revision ? ":" : "";
+    const char *branch = Py_SubversionShortBranch();
+    PyOS_snprintf(buildinfo, sizeof(buildinfo),
+                  "%s%s%s, %.20s, %.9s", branch, sep, revision,
+                  DATE, TIME);
+    return buildinfo;
 }
 
 const char *
 _Py_svnversion(void)
 {
-	/* the following string can be modified by subwcrev.exe */
-	static const char svnversion[] = SVNVERSION;
-	if (svnversion[0] != '$')
-		return svnversion; /* it was interpolated, or passed on command line */
-	return "Unversioned directory";
+    /* the following string can be modified by subwcrev.exe */
+    static const char svnversion[] = SVNVERSION;
+    if (svnversion[0] != '$')
+        return svnversion; /* it was interpolated, or passed on command line */
+    return "Unversioned directory";
 }

@@ -17,7 +17,7 @@
 # include <ws2tcpip.h>
 /* VC6 is shipped with old platform headers, and does not have MSTcpIP.h
  * Separate SDKs have all the functions we want, but older ones don't have
- * any version information. 
+ * any version information.
  * I use SIO_GET_MULTICAST_FILTER to detect a decent SDK.
  */
 # ifdef SIO_GET_MULTICAST_FILTER
@@ -76,44 +76,44 @@ extern "C" {
 #endif
 
 /* Python module and C API name */
-#define PySocket_MODULE_NAME	"_socket"
-#define PySocket_CAPI_NAME	"CAPI"
-#define PySocket_CAPSULE_NAME	PySocket_MODULE_NAME "." PySocket_CAPI_NAME
+#define PySocket_MODULE_NAME    "_socket"
+#define PySocket_CAPI_NAME      "CAPI"
+#define PySocket_CAPSULE_NAME   PySocket_MODULE_NAME "." PySocket_CAPI_NAME
 
 /* Abstract the socket file descriptor type */
 #ifdef MS_WINDOWS
 typedef SOCKET SOCKET_T;
-#	ifdef MS_WIN64
-#		define SIZEOF_SOCKET_T 8
-#	else
-#		define SIZEOF_SOCKET_T 4
-#	endif
+#       ifdef MS_WIN64
+#               define SIZEOF_SOCKET_T 8
+#       else
+#               define SIZEOF_SOCKET_T 4
+#       endif
 #else
 typedef int SOCKET_T;
-#	define SIZEOF_SOCKET_T SIZEOF_INT
+#       define SIZEOF_SOCKET_T SIZEOF_INT
 #endif
 
 /* Socket address */
 typedef union sock_addr {
-	struct sockaddr_in in;
+    struct sockaddr_in in;
 #ifdef AF_UNIX
-	struct sockaddr_un un;
+    struct sockaddr_un un;
 #endif
 #ifdef AF_NETLINK
-	struct sockaddr_nl nl;
+    struct sockaddr_nl nl;
 #endif
 #ifdef ENABLE_IPV6
-	struct sockaddr_in6 in6;
-	struct sockaddr_storage storage;
+    struct sockaddr_in6 in6;
+    struct sockaddr_storage storage;
 #endif
 #ifdef HAVE_BLUETOOTH_BLUETOOTH_H
-	struct sockaddr_l2 bt_l2;
-	struct sockaddr_rc bt_rc;
-	struct sockaddr_sco bt_sco;
-	struct sockaddr_hci bt_hci;
+    struct sockaddr_l2 bt_l2;
+    struct sockaddr_rc bt_rc;
+    struct sockaddr_sco bt_sco;
+    struct sockaddr_hci bt_hci;
 #endif
 #ifdef HAVE_NETPACKET_PACKET_H
-	struct sockaddr_ll ll;
+    struct sockaddr_ll ll;
 #endif
 } sock_addr_t;
 
@@ -122,16 +122,16 @@ typedef union sock_addr {
    arguments properly. */
 
 typedef struct {
-	PyObject_HEAD
-	SOCKET_T sock_fd;	/* Socket file descriptor */
-	int sock_family;	/* Address family, e.g., AF_INET */
-	int sock_type;		/* Socket type, e.g., SOCK_STREAM */
-	int sock_proto;		/* Protocol type, usually 0 */
-	PyObject *(*errorhandler)(void); /* Error handler; checks
-					    errno, returns NULL and
-					    sets a Python exception */
-	double sock_timeout;		 /* Operation timeout in seconds;
-					    0.0 means non-blocking */
+    PyObject_HEAD
+    SOCKET_T sock_fd;           /* Socket file descriptor */
+    int sock_family;            /* Address family, e.g., AF_INET */
+    int sock_type;              /* Socket type, e.g., SOCK_STREAM */
+    int sock_proto;             /* Protocol type, usually 0 */
+    PyObject *(*errorhandler)(void); /* Error handler; checks
+                                        errno, returns NULL and
+                                        sets a Python exception */
+    double sock_timeout;                 /* Operation timeout in seconds;
+                                        0.0 means non-blocking */
 } PySocketSockObject;
 
 /* --- C API ----------------------------------------------------*/
@@ -139,7 +139,7 @@ typedef struct {
 /* Short explanation of what this C API export mechanism does
    and how it works:
 
-    The _ssl module needs access to the type object defined in 
+    The _ssl module needs access to the type object defined in
     the _socket module. Since cross-DLL linking introduces a lot of
     problems on many platforms, the "trick" is to wrap the
     C API of a module in a struct which then gets exported to
@@ -161,24 +161,24 @@ typedef struct {
 
     Load _socket module and its C API; this sets up the global
     PySocketModule:
-    
-	if (PySocketModule_ImportModuleAndAPI())
-	    return;
+
+    if (PySocketModule_ImportModuleAndAPI())
+        return;
 
 
     Now use the C API as if it were defined in the using
     module:
 
-        if (!PyArg_ParseTuple(args, "O!|zz:ssl",
+    if (!PyArg_ParseTuple(args, "O!|zz:ssl",
 
-			      PySocketModule.Sock_Type,
+                          PySocketModule.Sock_Type,
 
-			      (PyObject*)&Sock,
-			      &key_file, &cert_file))
-	    return NULL;
+                          (PyObject*)&Sock,
+                          &key_file, &cert_file))
+        return NULL;
 
     Support could easily be extended to export more C APIs/symbols
-    this way. Currently, only the type object is exported, 
+    this way. Currently, only the type object is exported,
     other candidates would be socket constructors and socket
     access functions.
 
@@ -186,8 +186,8 @@ typedef struct {
 
 /* C API for usage by other Python modules */
 typedef struct {
-	PyTypeObject *Sock_Type;
-        PyObject *error;
+    PyTypeObject *Sock_Type;
+    PyObject *error;
 } PySocketModule_APIObject;
 
 #define PySocketModule_ImportModuleAndAPI() PyCapsule_Import(PySocket_CAPSULE_NAME, 1)

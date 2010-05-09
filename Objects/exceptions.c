@@ -270,7 +270,7 @@ BaseException_set_context(PyObject *self, PyObject *arg) {
     } else {
         /* PyException_SetContext steals this reference */
         Py_INCREF(arg);
-    } 
+    }
     PyException_SetContext(self, arg);
     return 0;
 }
@@ -296,7 +296,7 @@ BaseException_set_cause(PyObject *self, PyObject *arg) {
     } else {
         /* PyException_SetCause steals this reference */
         Py_INCREF(arg);
-    } 
+    }
     PyException_SetCause(self, arg);
     return 0;
 }
@@ -379,7 +379,7 @@ static PyTypeObject _PyExc_BaseException = {
     PyObject_GenericSetAttr,    /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
-    	Py_TPFLAGS_BASE_EXC_SUBCLASS,  /*tp_flags*/
+        Py_TPFLAGS_BASE_EXC_SUBCLASS,  /*tp_flags*/
     PyDoc_STR("Common base class for all exceptions"), /* tp_doc */
     (traverseproc)BaseException_traverse, /* tp_traverse */
     (inquiry)BaseException_clear, /* tp_clear */
@@ -990,7 +990,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
        lineno here */
 
     if (self->filename && PyUnicode_Check(self->filename)) {
-	    filename = _PyUnicode_AsString(self->filename);
+            filename = _PyUnicode_AsString(self->filename);
     }
     have_lineno = (self->lineno != NULL) && PyLong_CheckExact(self->lineno);
 
@@ -1001,7 +1001,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
         return PyUnicode_FromFormat("%S (%s, line %ld)",
                    self->msg ? self->msg : Py_None,
                    my_basename(filename),
-		   PyLong_AsLongAndOverflow(self->lineno, &overflow));
+                   PyLong_AsLongAndOverflow(self->lineno, &overflow));
     else if (filename)
         return PyUnicode_FromFormat("%S (%s)",
                    self->msg ? self->msg : Py_None,
@@ -1997,25 +1997,25 @@ _PyExc_Init(void)
 
     PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RuntimeError, NULL, NULL);
     if (!PyExc_RecursionErrorInst)
-	Py_FatalError("Cannot pre-allocate RuntimeError instance for "
-			"recursion errors");
+        Py_FatalError("Cannot pre-allocate RuntimeError instance for "
+                        "recursion errors");
     else {
-	PyBaseExceptionObject *err_inst =
-	    (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
-	PyObject *args_tuple;
-	PyObject *exc_message;
-	exc_message = PyUnicode_FromString("maximum recursion depth exceeded");
-	if (!exc_message)
-	    Py_FatalError("cannot allocate argument for RuntimeError "
-			    "pre-allocation");
-	args_tuple = PyTuple_Pack(1, exc_message);
-	if (!args_tuple)
-	    Py_FatalError("cannot allocate tuple for RuntimeError "
-			    "pre-allocation");
-	Py_DECREF(exc_message);
-	if (BaseException_init(err_inst, args_tuple, NULL))
-	    Py_FatalError("init of pre-allocated RuntimeError failed");
-	Py_DECREF(args_tuple);
+        PyBaseExceptionObject *err_inst =
+            (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
+        PyObject *args_tuple;
+        PyObject *exc_message;
+        exc_message = PyUnicode_FromString("maximum recursion depth exceeded");
+        if (!exc_message)
+            Py_FatalError("cannot allocate argument for RuntimeError "
+                            "pre-allocation");
+        args_tuple = PyTuple_Pack(1, exc_message);
+        if (!args_tuple)
+            Py_FatalError("cannot allocate tuple for RuntimeError "
+                            "pre-allocation");
+        Py_DECREF(exc_message);
+        if (BaseException_init(err_inst, args_tuple, NULL))
+            Py_FatalError("init of pre-allocated RuntimeError failed");
+        Py_DECREF(args_tuple);
     }
 
     Py_DECREF(bltinmod);
