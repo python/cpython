@@ -938,7 +938,8 @@ class Win32KillTests(unittest.TestCase):
 
 
 class MiscTests(unittest.TestCase):
-    @unittest.skipIf(sys.platform == "win32", "POSIX specific test")
+
+    @unittest.skipIf(os.name == "nt", "POSIX specific test")
     def test_fsencode(self):
         self.assertEquals(os.fsencode(b'ab\xff'), b'ab\xff')
         self.assertEquals(os.fsencode('ab\uDCFF'), b'ab\xff')
