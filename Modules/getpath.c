@@ -216,7 +216,7 @@ joinpath(char *buffer, char *stuff)
             buffer[n++] = SEP;
     }
     if (n > MAXPATHLEN)
-    	Py_FatalError("buffer overflow in getpath.c's joinpath()");
+        Py_FatalError("buffer overflow in getpath.c's joinpath()");
     k = strlen(stuff);
     if (n + k > MAXPATHLEN)
         k = MAXPATHLEN - n;
@@ -393,13 +393,13 @@ calculate_path(void)
 #endif
 #endif
 
-	/* If there is no slash in the argv0 path, then we have to
-	 * assume python is on the user's $PATH, since there's no
-	 * other way to find a directory to start the search from.  If
-	 * $PATH isn't exported, you lose.
-	 */
-	if (strchr(prog, SEP))
-		strncpy(progpath, prog, MAXPATHLEN);
+        /* If there is no slash in the argv0 path, then we have to
+         * assume python is on the user's $PATH, since there's no
+         * other way to find a directory to start the search from.  If
+         * $PATH isn't exported, you lose.
+         */
+        if (strchr(prog, SEP))
+                strncpy(progpath, prog, MAXPATHLEN);
 #ifdef __APPLE__
      /* On Mac OS X, if a script uses an interpreter of the form
       * "#!/opt/python2.3/bin/python", the kernel only passes "python"
@@ -414,44 +414,44 @@ calculate_path(void)
      else if(0 == _NSGetExecutablePath(progpath, &nsexeclength) && progpath[0] == SEP)
        ;
 #endif /* __APPLE__ */
-	else if (path) {
-		while (1) {
-			char *delim = strchr(path, DELIM);
+        else if (path) {
+                while (1) {
+                        char *delim = strchr(path, DELIM);
 
-			if (delim) {
-				size_t len = delim - path;
-				if (len > MAXPATHLEN)
-					len = MAXPATHLEN;
-				strncpy(progpath, path, len);
-				*(progpath + len) = '\0';
-			}
-			else
-				strncpy(progpath, path, MAXPATHLEN);
+                        if (delim) {
+                                size_t len = delim - path;
+                                if (len > MAXPATHLEN)
+                                        len = MAXPATHLEN;
+                                strncpy(progpath, path, len);
+                                *(progpath + len) = '\0';
+                        }
+                        else
+                                strncpy(progpath, path, MAXPATHLEN);
 
-			joinpath(progpath, prog);
-			if (isxfile(progpath))
-				break;
+                        joinpath(progpath, prog);
+                        if (isxfile(progpath))
+                                break;
 
-			if (!delim) {
-				progpath[0] = '\0';
-				break;
-			}
-			path = delim + 1;
-		}
-	}
-	else
-		progpath[0] = '\0';
-	if (progpath[0] != SEP && progpath[0] != '\0')
-		absolutize(progpath);
-	strncpy(argv0_path, progpath, MAXPATHLEN);
-	argv0_path[MAXPATHLEN] = '\0';
+                        if (!delim) {
+                                progpath[0] = '\0';
+                                break;
+                        }
+                        path = delim + 1;
+                }
+        }
+        else
+                progpath[0] = '\0';
+        if (progpath[0] != SEP && progpath[0] != '\0')
+                absolutize(progpath);
+        strncpy(argv0_path, progpath, MAXPATHLEN);
+        argv0_path[MAXPATHLEN] = '\0';
 
 #ifdef WITH_NEXT_FRAMEWORK
-	/* On Mac OS X we have a special case if we're running from a framework.
-	** This is because the python home should be set relative to the library,
-	** which is in the framework, not relative to the executable, which may
-	** be outside of the framework. Except when we're in the build directory...
-	*/
+        /* On Mac OS X we have a special case if we're running from a framework.
+        ** This is because the python home should be set relative to the library,
+        ** which is in the framework, not relative to the executable, which may
+        ** be outside of the framework. Except when we're in the build directory...
+        */
     pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
     /* Use dylib functions to find out where the framework was loaded from */
     buf = (char *)NSLibraryNameForModule(pythonModule);
@@ -525,7 +525,7 @@ calculate_path(void)
     else
         strncpy(zip_path, PREFIX, MAXPATHLEN);
     joinpath(zip_path, "lib/python00.zip");
-    bufsz = strlen(zip_path);	/* Replace "00" with version */
+    bufsz = strlen(zip_path);   /* Replace "00" with version */
     zip_path[bufsz - 6] = VERSION[0];
     zip_path[bufsz - 5] = VERSION[2];
 
@@ -633,10 +633,10 @@ calculate_path(void)
     if (pfound > 0) {
         reduce(prefix);
         reduce(prefix);
-	/* The prefix is the root directory, but reduce() chopped
-	 * off the "/". */
-	if (!prefix[0])
-		strcpy(prefix, separator);
+        /* The prefix is the root directory, but reduce() chopped
+         * off the "/". */
+        if (!prefix[0])
+                strcpy(prefix, separator);
     }
     else
         strncpy(prefix, PREFIX, MAXPATHLEN);
@@ -645,8 +645,8 @@ calculate_path(void)
         reduce(exec_prefix);
         reduce(exec_prefix);
         reduce(exec_prefix);
-	if (!exec_prefix[0])
-		strcpy(exec_prefix, separator);
+        if (!exec_prefix[0])
+                strcpy(exec_prefix, separator);
     }
     else
         strncpy(exec_prefix, EXEC_PREFIX, MAXPATHLEN);

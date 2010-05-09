@@ -24,7 +24,7 @@ from future_builtins import hex, oct\n");
 static PyObject *
 builtin_hex(PyObject *self, PyObject *v)
 {
-	return PyNumber_ToBase(v, 16);
+    return PyNumber_ToBase(v, 16);
 }
 
 PyDoc_STRVAR(hex_doc,
@@ -36,7 +36,7 @@ Return the hexadecimal representation of an integer or long integer.");
 static PyObject *
 builtin_oct(PyObject *self, PyObject *v)
 {
-	return PyNumber_ToBase(v, 8);
+    return PyNumber_ToBase(v, 8);
 }
 
 PyDoc_STRVAR(oct_doc,
@@ -48,7 +48,7 @@ Return the octal representation of an integer or long integer.");
 static PyObject *
 builtin_ascii(PyObject *self, PyObject *v)
 {
-	return PyObject_Repr(v);
+    return PyObject_Repr(v);
 }
 
 PyDoc_STRVAR(ascii_doc,
@@ -61,10 +61,10 @@ will have such characters backslash-escaped.");
 /* List of functions exported by this module */
 
 static PyMethodDef module_functions[] = {
- 	{"hex",		builtin_hex,        METH_O, hex_doc},
- 	{"oct",		builtin_oct,        METH_O, oct_doc},
-	{"ascii",	builtin_ascii,      METH_O, ascii_doc},
-	{NULL,		NULL}	/* Sentinel */
+    {"hex",             builtin_hex,        METH_O, hex_doc},
+    {"oct",             builtin_oct,        METH_O, oct_doc},
+    {"ascii",           builtin_ascii,      METH_O, ascii_doc},
+    {NULL,              NULL}   /* Sentinel */
 };
 
 
@@ -73,25 +73,25 @@ static PyMethodDef module_functions[] = {
 PyMODINIT_FUNC
 initfuture_builtins(void)
 {
-	PyObject *m, *itertools, *iter_func;
-	char *it_funcs[] = {"imap", "ifilter", "izip", NULL};
-	char **cur_func;
+    PyObject *m, *itertools, *iter_func;
+    char *it_funcs[] = {"imap", "ifilter", "izip", NULL};
+    char **cur_func;
 
-	m = Py_InitModule3("future_builtins", module_functions, module_doc);
-	if (m == NULL)
-		return;
+    m = Py_InitModule3("future_builtins", module_functions, module_doc);
+    if (m == NULL)
+        return;
 
-	itertools = PyImport_ImportModuleNoBlock("itertools");
-	if (itertools == NULL)
-		return;
+    itertools = PyImport_ImportModuleNoBlock("itertools");
+    if (itertools == NULL)
+        return;
 
-	/* If anything in the following loop fails, we fall through. */
-	for (cur_func = it_funcs; *cur_func; ++cur_func){
-		iter_func = PyObject_GetAttrString(itertools, *cur_func);
-		if (iter_func == NULL ||
-		    PyModule_AddObject(m, *cur_func+1, iter_func) < 0)
-			break;
-	}
-	Py_DECREF(itertools);
-	/* any other initialization needed */
+    /* If anything in the following loop fails, we fall through. */
+    for (cur_func = it_funcs; *cur_func; ++cur_func){
+        iter_func = PyObject_GetAttrString(itertools, *cur_func);
+        if (iter_func == NULL ||
+            PyModule_AddObject(m, *cur_func+1, iter_func) < 0)
+            break;
+    }
+    Py_DECREF(itertools);
+    /* any other initialization needed */
 }
