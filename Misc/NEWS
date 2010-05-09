@@ -4,8 +4,8 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python Release Candidate 1?
-=========================================
+What's New in Python 2.7 Release Candidate 1?
+=============================================
 
 *Release date: XXXX-XX-XX*
 
@@ -53,8 +53,6 @@ Core and Builtins
 - Issue #8084: PEP 370 now conforms to system conventions for framework
   builds on MacOS X. That is, "python setup.py install --user" will install
   into "~/Library/Python/2.7" instead of "~/.local".
-
-
 
 Library
 -------
