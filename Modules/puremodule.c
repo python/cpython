@@ -58,107 +58,107 @@ typedef int (*PrintfishFunc)(const char*, ...);
 typedef int (*StringIntArgFunc)(const char*, int);
 
 
-
+
 static PyObject*
 call_voidarg_function(VoidArgFunc func, PyObject *self, PyObject *args)
 {
-	int status;
+    int status;
 
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
+    if (!PyArg_ParseTuple(args, ""))
+        return NULL;
 
-	status = func();
-	return Py_BuildValue("i", status);
+    status = func();
+    return Py_BuildValue("i", status);
 }
 
 static PyObject*
 call_stringarg_function(StringArgFunc func, PyObject *self, PyObject *args)
 {
-	int status;
-	char* stringarg;
+    int status;
+    char* stringarg;
 
-	if (!PyArg_ParseTuple(args, "s", &stringarg))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "s", &stringarg))
+        return NULL;
 
-	status = func(stringarg);
-	return Py_BuildValue("i", status);
+    status = func(stringarg);
+    return Py_BuildValue("i", status);
 }
 
 static PyObject*
 call_stringorint_function(StringArgFunc func, PyObject *self, PyObject *args)
 {
-	int status;
-	int intarg;
-	char* stringarg;
+    int status;
+    int intarg;
+    char* stringarg;
 
-        /* according to the quantify.h file, the argument to
-         * quantify_*_recording_system_call can be an integer or a string,
-	 * but the functions are prototyped as taking a single char*
-	 * argument. Yikes!
+    /* according to the quantify.h file, the argument to
+     * quantify_*_recording_system_call can be an integer or a string,
+     * but the functions are prototyped as taking a single char*
+     * argument. Yikes!
+     */
+    if (PyArg_ParseTuple(args, "i", &intarg))
+        /* func is prototyped as int(*)(char*)
+         * better shut up the compiler
          */
-	if (PyArg_ParseTuple(args, "i", &intarg))
-		/* func is prototyped as int(*)(char*)
-		 * better shut up the compiler
-		 */
-		status = func((char*)intarg);
+        status = func((char*)intarg);
 
-	else {
-		PyErr_Clear();
-		if (!PyArg_ParseTuple(args, "s", &stringarg))
-			return NULL;
-		else
-			status = func(stringarg);
-	}
-	return Py_BuildValue("i", status);
+    else {
+        PyErr_Clear();
+        if (!PyArg_ParseTuple(args, "s", &stringarg))
+            return NULL;
+        else
+            status = func(stringarg);
+    }
+    return Py_BuildValue("i", status);
 }
 
 static PyObject*
 call_printfish_function(PrintfishFunc func, PyObject *self, PyObject *args)
 {
-	/* we support the printf() style vararg functions by requiring the
-         * formatting be done in Python.  At the C level we pass just a string
-         * to the printf() style function.
-         */
-	int status;
-	char* argstring;
+    /* we support the printf() style vararg functions by requiring the
+     * formatting be done in Python.  At the C level we pass just a string
+     * to the printf() style function.
+     */
+    int status;
+    char* argstring;
 
-	if (!PyArg_ParseTuple(args, "s", &argstring))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "s", &argstring))
+        return NULL;
 
-	status = func("%s", argstring);
-	return Py_BuildValue("i", status);
+    status = func("%s", argstring);
+    return Py_BuildValue("i", status);
 }
 
 static PyObject*
 call_intasaddr_function(StringArgFunc func, PyObject *self, PyObject *args)
 {
-	long memrep;
-	int id;
+    long memrep;
+    int id;
 
-	if (!PyArg_ParseTuple(args, "l", &memrep))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "l", &memrep))
+        return NULL;
 
-	id = func((char*)memrep);
-	return Py_BuildValue("i", id);
+    id = func((char*)memrep);
+    return Py_BuildValue("i", id);
 }
 
 static PyObject*
 call_stringandint_function(StringIntArgFunc func, PyObject *self,
-			   PyObject *args)
+                           PyObject *args)
 {
-	long srcrep;
-	int size;
-	int status;
+    long srcrep;
+    int size;
+    int status;
 
-	if (!PyArg_ParseTuple(args, "li", &srcrep, &size))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "li", &srcrep, &size))
+        return NULL;
 
-	status = func((char*)srcrep, size);
-	return Py_BuildValue("i", status);
+    status = func((char*)srcrep, size);
+    return Py_BuildValue("i", status);
 }
 
 
-
+
 /* functions common to all products
  *
  * N.B. These printf() style functions are a bit of a kludge.  Since the
@@ -174,26 +174,26 @@ call_stringandint_function(StringIntArgFunc func, PyObject *self,
 static PyObject*
 pure_pure_logfile_printf(PyObject* self, PyObject* args)
 {
-	return call_printfish_function(pure_logfile_printf, self, args);
+    return call_printfish_function(pure_logfile_printf, self, args);
 }
 
 static PyObject*
 pure_pure_printf(PyObject* self, PyObject* args)
 {
-	return call_printfish_function(pure_printf, self, args);
+    return call_printfish_function(pure_printf, self, args);
 }
 
 static PyObject*
 pure_pure_printf_with_banner(PyObject* self, PyObject* args)
 {
-	return call_printfish_function(pure_printf_with_banner, self, args);
+    return call_printfish_function(pure_printf_with_banner, self, args);
 }
 
 
 #endif /* COMMON_PURE_FUNCTIONS */
 
 
-
+
 /* Purify functions
  *
  * N.B. There are some interfaces described in the purify.h file that are
@@ -235,97 +235,97 @@ pure_pure_printf_with_banner(PyObject* self, PyObject* args)
 static PyObject*
 pure_purify_all_inuse(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_all_inuse, self, args);
+    return call_voidarg_function(purify_all_inuse, self, args);
 }
 static PyObject*
 pure_purify_all_leaks(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_all_leaks, self, args);
+    return call_voidarg_function(purify_all_leaks, self, args);
 }
 static PyObject*
 pure_purify_new_inuse(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_new_inuse, self, args);
+    return call_voidarg_function(purify_new_inuse, self, args);
 }
 static PyObject*
 pure_purify_new_leaks(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_new_leaks, self, args);
+    return call_voidarg_function(purify_new_leaks, self, args);
 }
 static PyObject*
 pure_purify_clear_inuse(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_clear_inuse, self, args);
+    return call_voidarg_function(purify_clear_inuse, self, args);
 }
 static PyObject*
 pure_purify_clear_leaks(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_clear_leaks, self, args);
+    return call_voidarg_function(purify_clear_leaks, self, args);
 }
 static PyObject*
 pure_purify_all_fds_inuse(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_all_fds_inuse, self, args);
+    return call_voidarg_function(purify_all_fds_inuse, self, args);
 }
 static PyObject*
 pure_purify_new_fds_inuse(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_new_fds_inuse, self, args);
+    return call_voidarg_function(purify_new_fds_inuse, self, args);
 }
 static PyObject*
 pure_purify_printf_with_call_chain(PyObject *self, PyObject *args)
 {
-	return call_printfish_function(purify_printf_with_call_chain,
-				       self, args);
+    return call_printfish_function(purify_printf_with_call_chain,
+                                   self, args);
 }
 static PyObject*
 pure_purify_set_pool_id(PyObject *self, PyObject *args)
 {
-	long memrep;
-	int id;
+    long memrep;
+    int id;
 
-	if (!PyArg_ParseTuple(args, "li:purify_set_pool_id", &memrep, &id))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "li:purify_set_pool_id", &memrep, &id))
+        return NULL;
 
-	purify_set_pool_id((char*)memrep, id);
-	Py_INCREF(Py_None);
-	return Py_None;
+    purify_set_pool_id((char*)memrep, id);
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 static PyObject*
 pure_purify_get_pool_id(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_get_pool_id, self, args);
+    return call_intasaddr_function(purify_get_pool_id, self, args);
 }
 static PyObject*
 pure_purify_set_user_data(PyObject *self, PyObject *args)
 {
-	long memrep;
-	long datarep;
+    long memrep;
+    long datarep;
 
-	if (!PyArg_ParseTuple(args, "ll:purify_set_user_data", &memrep, &datarep))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "ll:purify_set_user_data", &memrep, &datarep))
+        return NULL;
 
-	purify_set_user_data((char*)memrep, (void*)datarep);
-	Py_INCREF(Py_None);
-	return Py_None;
+    purify_set_user_data((char*)memrep, (void*)datarep);
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 static PyObject*
 pure_purify_get_user_data(PyObject *self, PyObject *args)
 {
-        /* can't use call_intasaddr_function() since purify_get_user_data()
-         * returns a void*
-         */
-	long memrep;
-	void* data;
+    /* can't use call_intasaddr_function() since purify_get_user_data()
+     * returns a void*
+     */
+    long memrep;
+    void* data;
 
-	if (!PyArg_ParseTuple(args, "l:purify_get_user_data", &memrep))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "l:purify_get_user_data", &memrep))
+        return NULL;
 
-	data = purify_get_user_data((char*)memrep);
-	return Py_BuildValue("l", (long)data);
+    data = purify_get_user_data((char*)memrep);
+    return Py_BuildValue("l", (long)data);
 }
 
-
+
 /* this global variable is shared by both mapping functions:
  * pure_purify_map_pool() and pure_purify_map_pool_id().  Since they cache
  * this variable it should be safe in the face of recursion or cross
@@ -341,303 +341,303 @@ static PyObject* MapCallable = NULL;
 static void
 map_pool_callback(char* mem, int user_size, void *user_aux_data)
 {
-	long memrep = (long)mem;
-	long user_aux_data_rep = (long)user_aux_data;
-	PyObject* result;
-	PyObject* memobj = Py_BuildValue("lil", memrep, user_size,
-					 user_aux_data_rep);
+    long memrep = (long)mem;
+    long user_aux_data_rep = (long)user_aux_data;
+    PyObject* result;
+    PyObject* memobj = Py_BuildValue("lil", memrep, user_size,
+                                     user_aux_data_rep);
 
-	if (memobj == NULL)
-		return;
+    if (memobj == NULL)
+        return;
 
-	result = PyEval_CallObject(MapCallable, memobj);
-	Py_DECREF(result);
-	Py_DECREF(memobj);
+    result = PyEval_CallObject(MapCallable, memobj);
+    Py_DECREF(result);
+    Py_DECREF(memobj);
 }
 
 static PyObject*
 pure_purify_map_pool(PyObject *self, PyObject *args)
 {
-        /* cache global variable in case of recursion */
-	PyObject* saved_callable = MapCallable;
-	PyObject* arg_callable;
-	int id;
+    /* cache global variable in case of recursion */
+    PyObject* saved_callable = MapCallable;
+    PyObject* arg_callable;
+    int id;
 
-	if (!PyArg_ParseTuple(args, "iO:purify_map_pool", &id, &arg_callable))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "iO:purify_map_pool", &id, &arg_callable))
+        return NULL;
 
-	if (!PyCallable_Check(arg_callable)) {
-		PyErr_SetString(PyExc_TypeError,
-				"Second argument must be callable");
-		return NULL;
-	}
-	MapCallable = arg_callable;
-	purify_map_pool(id, map_pool_callback);
-	MapCallable = saved_callable;
+    if (!PyCallable_Check(arg_callable)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Second argument must be callable");
+        return NULL;
+    }
+    MapCallable = arg_callable;
+    purify_map_pool(id, map_pool_callback);
+    MapCallable = saved_callable;
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static void
 PurifyMapPoolIdCallback(int id)
 {
-	PyObject* result;
-	PyObject* intobj = Py_BuildValue("i", id);
+    PyObject* result;
+    PyObject* intobj = Py_BuildValue("i", id);
 
-	if (intobj == NULL)
-		return;
+    if (intobj == NULL)
+        return;
 
-	result = PyEval_CallObject(MapCallable, intobj);
-	Py_DECREF(result);
-	Py_DECREF(intobj);
+    result = PyEval_CallObject(MapCallable, intobj);
+    Py_DECREF(result);
+    Py_DECREF(intobj);
 }
 
 static PyObject*
 pure_purify_map_pool_id(PyObject *self, PyObject *args)
 {
-        /* cache global variable in case of recursion */
-	PyObject* saved_callable = MapCallable;
-	PyObject* arg_callable;
+    /* cache global variable in case of recursion */
+    PyObject* saved_callable = MapCallable;
+    PyObject* arg_callable;
 
-	if (!PyArg_ParseTuple(args, "O:purify_map_pool_id", &arg_callable))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "O:purify_map_pool_id", &arg_callable))
+        return NULL;
 
-	if (!PyCallable_Check(arg_callable)) {
-		PyErr_SetString(PyExc_TypeError, "Argument must be callable.");
-		return NULL;
-	}
+    if (!PyCallable_Check(arg_callable)) {
+        PyErr_SetString(PyExc_TypeError, "Argument must be callable.");
+        return NULL;
+    }
 
-	MapCallable = arg_callable;
-	purify_map_pool_id(PurifyMapPoolIdCallback);
-	MapCallable = saved_callable;
+    MapCallable = arg_callable;
+    purify_map_pool_id(PurifyMapPoolIdCallback);
+    MapCallable = saved_callable;
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 
-
+
 static PyObject*
 pure_purify_new_messages(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_new_messages, self, args);
+    return call_voidarg_function(purify_new_messages, self, args);
 }
 static PyObject*
 pure_purify_all_messages(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_all_messages, self, args);
+    return call_voidarg_function(purify_all_messages, self, args);
 }
 static PyObject*
 pure_purify_clear_messages(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_clear_messages, self, args);
+    return call_voidarg_function(purify_clear_messages, self, args);
 }
 static PyObject*
 pure_purify_clear_new_messages(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_clear_new_messages, self, args);
+    return call_voidarg_function(purify_clear_new_messages, self, args);
 }
 static PyObject*
 pure_purify_start_batch(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_start_batch, self, args);
+    return call_voidarg_function(purify_start_batch, self, args);
 }
 static PyObject*
 pure_purify_start_batch_show_first(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_start_batch_show_first,
-				     self, args);
+    return call_voidarg_function(purify_start_batch_show_first,
+                                 self, args);
 }
 static PyObject*
 pure_purify_stop_batch(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_stop_batch, self, args);
+    return call_voidarg_function(purify_stop_batch, self, args);
 }
 static PyObject*
 pure_purify_name_thread(PyObject *self, PyObject *args)
 {
-        /* can't strictly use call_stringarg_function since
-         * purify_name_thread takes a const char*, not a char*
-         */
-	int status;
-	char* stringarg;
+    /* can't strictly use call_stringarg_function since
+     * purify_name_thread takes a const char*, not a char*
+     */
+    int status;
+    char* stringarg;
 
-	if (!PyArg_ParseTuple(args, "s:purify_name_thread", &stringarg))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "s:purify_name_thread", &stringarg))
+        return NULL;
 
-	status = purify_name_thread(stringarg);
-	return Py_BuildValue("i", status);
+    status = purify_name_thread(stringarg);
+    return Py_BuildValue("i", status);
 }
 static PyObject*
 pure_purify_watch(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch, self, args);
+    return call_intasaddr_function(purify_watch, self, args);
 }
 static PyObject*
 pure_purify_watch_1(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_1, self, args);
+    return call_intasaddr_function(purify_watch_1, self, args);
 }
 static PyObject*
 pure_purify_watch_2(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_2, self, args);
+    return call_intasaddr_function(purify_watch_2, self, args);
 }
 static PyObject*
 pure_purify_watch_4(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_4, self, args);
+    return call_intasaddr_function(purify_watch_4, self, args);
 }
 static PyObject*
 pure_purify_watch_8(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_8, self, args);
+    return call_intasaddr_function(purify_watch_8, self, args);
 }
 static PyObject*
 pure_purify_watch_w_1(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_w_1, self, args);
+    return call_intasaddr_function(purify_watch_w_1, self, args);
 }
 static PyObject*
 pure_purify_watch_w_2(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_w_2, self, args);
+    return call_intasaddr_function(purify_watch_w_2, self, args);
 }
 static PyObject*
 pure_purify_watch_w_4(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_w_4, self, args);
+    return call_intasaddr_function(purify_watch_w_4, self, args);
 }
 static PyObject*
 pure_purify_watch_w_8(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_w_8, self, args);
+    return call_intasaddr_function(purify_watch_w_8, self, args);
 }
 static PyObject*
 pure_purify_watch_r_1(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_r_1, self, args);
+    return call_intasaddr_function(purify_watch_r_1, self, args);
 }
 static PyObject*
 pure_purify_watch_r_2(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_r_2, self, args);
+    return call_intasaddr_function(purify_watch_r_2, self, args);
 }
 static PyObject*
 pure_purify_watch_r_4(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_r_4, self, args);
+    return call_intasaddr_function(purify_watch_r_4, self, args);
 }
 static PyObject*
 pure_purify_watch_r_8(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_r_8, self, args);
+    return call_intasaddr_function(purify_watch_r_8, self, args);
 }
 static PyObject*
 pure_purify_watch_rw_1(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_rw_1, self, args);
+    return call_intasaddr_function(purify_watch_rw_1, self, args);
 }
 static PyObject*
 pure_purify_watch_rw_2(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_rw_2, self, args);
+    return call_intasaddr_function(purify_watch_rw_2, self, args);
 }
 static PyObject*
 pure_purify_watch_rw_4(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_rw_4, self, args);
+    return call_intasaddr_function(purify_watch_rw_4, self, args);
 }
 static PyObject*
 pure_purify_watch_rw_8(PyObject *self, PyObject *args)
 {
-	return call_intasaddr_function(purify_watch_rw_8, self, args);
+    return call_intasaddr_function(purify_watch_rw_8, self, args);
 }
 
 static PyObject*
 pure_purify_watch_n(PyObject *self, PyObject *args)
 {
-	long addrrep;
-	unsigned int size;
-	char* type;
-	int status;
+    long addrrep;
+    unsigned int size;
+    char* type;
+    int status;
 
-	if (!PyArg_ParseTuple(args, "lis:purify_watch_n", &addrrep, &size, &type))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "lis:purify_watch_n", &addrrep, &size, &type))
+        return NULL;
 
-	status = purify_watch_n((char*)addrrep, size, type);
-	return Py_BuildValue("i", status);
+    status = purify_watch_n((char*)addrrep, size, type);
+    return Py_BuildValue("i", status);
 }
 
 static PyObject*
 pure_purify_watch_info(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_watch_info, self, args);
+    return call_voidarg_function(purify_watch_info, self, args);
 }
 
 static PyObject*
 pure_purify_watch_remove(PyObject *self, PyObject *args)
 {
-	int watchno;
-	int status;
+    int watchno;
+    int status;
 
-	if (!PyArg_ParseTuple(args, "i:purify_watch_remove", &watchno))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "i:purify_watch_remove", &watchno))
+        return NULL;
 
-	status = purify_watch_remove(watchno);
-	return Py_BuildValue("i", status);
+    status = purify_watch_remove(watchno);
+    return Py_BuildValue("i", status);
 }
 
 static PyObject*
 pure_purify_watch_remove_all(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_watch_remove_all, self, args);
+    return call_voidarg_function(purify_watch_remove_all, self, args);
 }
 static PyObject*
 pure_purify_describe(PyObject *self, PyObject *args)
 {
-	long addrrep;
-	char* rtn;
+    long addrrep;
+    char* rtn;
 
-	if (!PyArg_ParseTuple(args, "l:purify_describe", &addrrep))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "l:purify_describe", &addrrep))
+        return NULL;
 
-	rtn = purify_describe((char*)addrrep);
-	return Py_BuildValue("l", (long)rtn);
+    rtn = purify_describe((char*)addrrep);
+    return Py_BuildValue("l", (long)rtn);
 }
 
 static PyObject*
 pure_purify_what_colors(PyObject *self, PyObject *args)
 {
-	long addrrep;
-	unsigned int size;
-	int status;
-    
-	if (!PyArg_ParseTuple(args, "li:purify_what_colors", &addrrep, &size))
-		return NULL;
+    long addrrep;
+    unsigned int size;
+    int status;
 
-	status = purify_what_colors((char*)addrrep, size);
-	return Py_BuildValue("i", status);
+    if (!PyArg_ParseTuple(args, "li:purify_what_colors", &addrrep, &size))
+        return NULL;
+
+    status = purify_what_colors((char*)addrrep, size);
+    return Py_BuildValue("i", status);
 }
 
 static PyObject*
 pure_purify_is_running(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(purify_is_running, self, args);
+    return call_voidarg_function(purify_is_running, self, args);
 }
 
 static PyObject*
 pure_purify_assert_is_readable(PyObject *self, PyObject *args)
 {
-	return call_stringandint_function(purify_assert_is_readable,
-					  self, args);
+    return call_stringandint_function(purify_assert_is_readable,
+                                      self, args);
 }
 static PyObject*
 pure_purify_assert_is_writable(PyObject *self, PyObject *args)
 {
-	return call_stringandint_function(purify_assert_is_writable,
-					  self, args);
+    return call_stringandint_function(purify_assert_is_writable,
+                                      self, args);
 }
 
 #if HAS_PURIFY_EXIT
@@ -649,22 +649,22 @@ pure_purify_assert_is_writable(PyObject *self, PyObject *args)
 static PyObject*
 pure_purify_exit(PyObject *self, PyObject *args)
 {
-	int status;
+    int status;
 
-	if (!PyArg_ParseTuple(args, "i:purify_exit", &status))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "i:purify_exit", &status))
+        return NULL;
 
-        /* purify_exit doesn't always act like exit(). See the manual */
-	purify_exit(status);
-	Py_INCREF(Py_None);
-	return Py_None;
+    /* purify_exit doesn't always act like exit(). See the manual */
+    purify_exit(status);
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 #endif /* HAS_PURIFY_EXIT */
 
 #endif /* PURIFY_H */
 
 
-
+
 /* Quantify functions
  *
  * N.B. Some of these functions are only described in the quantify.h file,
@@ -680,144 +680,144 @@ pure_purify_exit(PyObject *self, PyObject *args)
 static PyObject*
 pure_quantify_is_running(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_is_running, self, args);
+    return call_voidarg_function(quantify_is_running, self, args);
 }
 static PyObject*
 pure_quantify_help(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_help, self, args);
+    return call_voidarg_function(quantify_help, self, args);
 }
 static PyObject*
 pure_quantify_print_recording_state(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_print_recording_state,
-				     self, args);
+    return call_voidarg_function(quantify_print_recording_state,
+                                 self, args);
 }
 static PyObject*
 pure_quantify_start_recording_data(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_start_recording_data,
-				     self, args);
+    return call_voidarg_function(quantify_start_recording_data,
+                                 self, args);
 }
 static PyObject*
 pure_quantify_stop_recording_data(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_stop_recording_data, self, args);
+    return call_voidarg_function(quantify_stop_recording_data, self, args);
 }
 static PyObject*
 pure_quantify_is_recording_data(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_is_recording_data, self, args);
+    return call_voidarg_function(quantify_is_recording_data, self, args);
 }
 static PyObject*
 pure_quantify_start_recording_system_calls(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_start_recording_system_calls,
-				     self, args);
+    return call_voidarg_function(quantify_start_recording_system_calls,
+                                 self, args);
 }
 static PyObject*
 pure_quantify_stop_recording_system_calls(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_stop_recording_system_calls,
-				     self, args);
+    return call_voidarg_function(quantify_stop_recording_system_calls,
+                                 self, args);
 }
 static PyObject*
 pure_quantify_is_recording_system_calls(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_is_recording_system_calls,
-				     self, args);
+    return call_voidarg_function(quantify_is_recording_system_calls,
+                                 self, args);
 }
 static PyObject*
 pure_quantify_start_recording_system_call(PyObject *self, PyObject *args)
 {
-	return call_stringorint_function(quantify_start_recording_system_call,
-					   self, args);
+    return call_stringorint_function(quantify_start_recording_system_call,
+                                       self, args);
 }
 static PyObject*
 pure_quantify_stop_recording_system_call(PyObject *self, PyObject *args)
 {
-	return call_stringorint_function(quantify_stop_recording_system_call,
-					 self, args);
+    return call_stringorint_function(quantify_stop_recording_system_call,
+                                     self, args);
 }
 static PyObject*
 pure_quantify_is_recording_system_call(PyObject *self, PyObject *args)
 {
-	return call_stringorint_function(quantify_is_recording_system_call,
-					 self, args);
+    return call_stringorint_function(quantify_is_recording_system_call,
+                                     self, args);
 }
 static PyObject*
 pure_quantify_start_recording_dynamic_library_data(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(
-		quantify_start_recording_dynamic_library_data,
-		self, args);
+    return call_voidarg_function(
+        quantify_start_recording_dynamic_library_data,
+        self, args);
 }
 static PyObject*
 pure_quantify_stop_recording_dynamic_library_data(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(
-		quantify_stop_recording_dynamic_library_data,
-		self, args);
+    return call_voidarg_function(
+        quantify_stop_recording_dynamic_library_data,
+        self, args);
 }
 static PyObject*
 pure_quantify_is_recording_dynamic_library_data(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(
-		quantify_is_recording_dynamic_library_data,
-		self, args);
+    return call_voidarg_function(
+        quantify_is_recording_dynamic_library_data,
+        self, args);
 }
 static PyObject*
 pure_quantify_start_recording_register_window_traps(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(
-		quantify_start_recording_register_window_traps,
-		self, args);
+    return call_voidarg_function(
+        quantify_start_recording_register_window_traps,
+        self, args);
 }
 static PyObject*
 pure_quantify_stop_recording_register_window_traps(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(
-		quantify_stop_recording_register_window_traps,
-		self, args);
+    return call_voidarg_function(
+        quantify_stop_recording_register_window_traps,
+        self, args);
 }
 static PyObject*
 pure_quantify_is_recording_register_window_traps(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(
-		quantify_is_recording_register_window_traps,
-		self, args);
+    return call_voidarg_function(
+        quantify_is_recording_register_window_traps,
+        self, args);
 }
 static PyObject*
 pure_quantify_disable_recording_data(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_disable_recording_data,
-				     self, args);
+    return call_voidarg_function(quantify_disable_recording_data,
+                                 self, args);
 }
 static PyObject*
 pure_quantify_clear_data(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_clear_data, self, args);
+    return call_voidarg_function(quantify_clear_data, self, args);
 }
 static PyObject*
 pure_quantify_save_data(PyObject *self, PyObject *args)
 {
-	return call_voidarg_function(quantify_save_data, self, args);
+    return call_voidarg_function(quantify_save_data, self, args);
 }
 static PyObject*
 pure_quantify_save_data_to_file(PyObject *self, PyObject *args)
 {
-	return call_stringarg_function(quantify_save_data_to_file, self, args);
+    return call_stringarg_function(quantify_save_data_to_file, self, args);
 }
 static PyObject*
 pure_quantify_add_annotation(PyObject *self, PyObject *args)
 {
-	return call_stringarg_function(quantify_add_annotation, self, args);
+    return call_stringarg_function(quantify_add_annotation, self, args);
 }
 
 #endif /* QUANTIFY_H */
 
 
-
+
 /* external interface
  */
 static struct PyMethodDef
@@ -927,66 +927,66 @@ pure_methods[] = {
     {"quantify_save_data_to_file", pure_quantify_save_data_to_file, METH_VARARGS},
     {"quantify_add_annotation",    pure_quantify_add_annotation,    METH_VARARGS},
 #endif /* QUANTIFY_H */
-    {NULL,  NULL}			     /* sentinel */
+    {NULL,  NULL}                            /* sentinel */
 };
 
 
-
+
 static void
 ins(d, name, val)
-	PyObject *d;
-	char* name;
-	long val;
+    PyObject *d;
+    char* name;
+    long val;
 {
-	PyObject *v = PyInt_FromLong(val);
-	if (v) {
-		(void)PyDict_SetItemString(d, name, v);
-		Py_DECREF(v);
-	}
+    PyObject *v = PyInt_FromLong(val);
+    if (v) {
+        (void)PyDict_SetItemString(d, name, v);
+        Py_DECREF(v);
+    }
 }
 
 
 void
 initpure()
 {
-	PyObject *m, *d;
+    PyObject *m, *d;
 
-	if (PyErr_WarnPy3k("the pure module has been removed in "
-	                   "Python 3.0", 2) < 0)
-	    return;	
+    if (PyErr_WarnPy3k("the pure module has been removed in "
+                       "Python 3.0", 2) < 0)
+        return;
 
-	m = Py_InitModule("pure", pure_methods);
-	if (m == NULL)
-    		return;
-	d = PyModule_GetDict(m);
+    m = Py_InitModule("pure", pure_methods);
+    if (m == NULL)
+        return;
+    d = PyModule_GetDict(m);
 
-        /* this is bogus because we should be able to find this information
-         * out from the header files.  Pure's current versions don't
-         * include this information!
-         */
+    /* this is bogus because we should be able to find this information
+     * out from the header files.  Pure's current versions don't
+     * include this information!
+     */
 #ifdef PURE_PURIFY_VERSION
-	ins(d, "PURIFY_VERSION", PURE_PURIFY_VERSION);
+    ins(d, "PURIFY_VERSION", PURE_PURIFY_VERSION);
 #else
-	PyDict_SetItemString(d, "PURIFY_VERSION", Py_None);
+    PyDict_SetItemString(d, "PURIFY_VERSION", Py_None);
 #endif
 
-        /* these aren't terribly useful because purify_exit() isn't
-         * exported correctly.  See the note at the top of the file.
-         */
+    /* these aren't terribly useful because purify_exit() isn't
+     * exported correctly.  See the note at the top of the file.
+     */
 #ifdef PURIFY_EXIT_ERRORS
-	ins(d, "PURIFY_EXIT_ERRORS", PURIFY_EXIT_ERRORS);
+    ins(d, "PURIFY_EXIT_ERRORS", PURIFY_EXIT_ERRORS);
 #endif
 #ifdef PURIFY_EXIT_LEAKS
-	ins(d, "PURIFY_EXIT_LEAKS",  PURIFY_EXIT_LEAKS);
+    ins(d, "PURIFY_EXIT_LEAKS",  PURIFY_EXIT_LEAKS);
 #endif
 #ifdef PURIFY_EXIT_PLEAKS
-	ins(d, "PURIFY_EXIT_PLEAKS", PURIFY_EXIT_PLEAKS);
+    ins(d, "PURIFY_EXIT_PLEAKS", PURIFY_EXIT_PLEAKS);
 #endif
 
 
 #ifdef PURE_QUANTIFY_VERSION
-	ins(d, "QUANTIFY_VERSION", PURE_QUANTIFY_VERSION);
+    ins(d, "QUANTIFY_VERSION", PURE_QUANTIFY_VERSION);
 #else
-	PyDict_SetItemString(d, "QUANTIFY_VERSION", Py_None);
+    PyDict_SetItemString(d, "QUANTIFY_VERSION", Py_None);
 #endif
 }

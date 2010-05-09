@@ -49,25 +49,25 @@ extern void initswi(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
-	{"riscos", initriscos},
+    {"riscos", initriscos},
 
 /* -- ADDMODULE MARKER 2 -- */
 
-	/* This module "lives in" with marshal.c */
-	{"marshal", PyMarshal_Init},
+    /* This module "lives in" with marshal.c */
+    {"marshal", PyMarshal_Init},
 
-	/* This lives it with import.c */
-	{"imp", initimp},
+    /* This lives it with import.c */
+    {"imp", initimp},
 
-	/* These entries are here for sys.builtin_module_names */
-	{"__main__", NULL},
-	{"__builtin__", NULL},
-	{"sys", NULL},
-	{"exceptions", NULL},
+    /* These entries are here for sys.builtin_module_names */
+    {"__main__", NULL},
+    {"__builtin__", NULL},
+    {"sys", NULL},
+    {"exceptions", NULL},
 
-	/* This lives in gcmodule.c */
-	{"gc", initgc},
+    /* This lives in gcmodule.c */
+    {"gc", initgc},
 
-	/* Sentinel */
-	{0, 0}
+    /* Sentinel */
+    {0, 0}
 };

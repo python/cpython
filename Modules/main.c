@@ -106,119 +106,119 @@ PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n\
 static int
 usage(int exitcode, char* program)
 {
-	FILE *f = exitcode ? stderr : stdout;
+    FILE *f = exitcode ? stderr : stdout;
 
-	fprintf(f, usage_line, program);
-	if (exitcode)
-		fprintf(f, "Try `python -h' for more information.\n");
-	else {
-		fputs(usage_1, f);
-		fputs(usage_2, f);
-		fputs(usage_3, f);
-		fprintf(f, usage_4, DELIM);
-		fprintf(f, usage_5, DELIM, PYTHONHOMEHELP);
-	}
+    fprintf(f, usage_line, program);
+    if (exitcode)
+        fprintf(f, "Try `python -h' for more information.\n");
+    else {
+        fputs(usage_1, f);
+        fputs(usage_2, f);
+        fputs(usage_3, f);
+        fprintf(f, usage_4, DELIM);
+        fprintf(f, usage_5, DELIM, PYTHONHOMEHELP);
+    }
 #if defined(__VMS)
-	if (exitcode == 0) {
-		/* suppress 'error' message */
-		return 1;
-	}
-	else {
-		/* STS$M_INHIB_MSG + SS$_ABORT */
-		return 0x1000002c;
-	}
+    if (exitcode == 0) {
+        /* suppress 'error' message */
+        return 1;
+    }
+    else {
+        /* STS$M_INHIB_MSG + SS$_ABORT */
+        return 0x1000002c;
+    }
 #else
-	return exitcode;
+    return exitcode;
 #endif
-	/*NOTREACHED*/
+    /*NOTREACHED*/
 }
 
 static void RunStartupFile(PyCompilerFlags *cf)
 {
-	char *startup = Py_GETENV("PYTHONSTARTUP");
-	if (startup != NULL && startup[0] != '\0') {
-		FILE *fp = fopen(startup, "r");
-		if (fp != NULL) {
-			(void) PyRun_SimpleFileExFlags(fp, startup, 0, cf);
-			PyErr_Clear();
-			fclose(fp);
-               } else {
-			int save_errno;
-			save_errno = errno;
-			PySys_WriteStderr("Could not open PYTHONSTARTUP\n");
-			errno = save_errno;
-			PyErr_SetFromErrnoWithFilename(PyExc_IOError,
-						       startup);
-			PyErr_Print();
-			PyErr_Clear();
-		}
-	}
+    char *startup = Py_GETENV("PYTHONSTARTUP");
+    if (startup != NULL && startup[0] != '\0') {
+        FILE *fp = fopen(startup, "r");
+        if (fp != NULL) {
+            (void) PyRun_SimpleFileExFlags(fp, startup, 0, cf);
+            PyErr_Clear();
+            fclose(fp);
+           } else {
+                    int save_errno;
+                    save_errno = errno;
+                    PySys_WriteStderr("Could not open PYTHONSTARTUP\n");
+                    errno = save_errno;
+                    PyErr_SetFromErrnoWithFilename(PyExc_IOError,
+                                                   startup);
+                    PyErr_Print();
+                    PyErr_Clear();
+        }
+    }
 }
 
 
 static int RunModule(char *module, int set_argv0)
 {
-	PyObject *runpy, *runmodule, *runargs, *result;
-	runpy = PyImport_ImportModule("runpy");
-	if (runpy == NULL) {
-		fprintf(stderr, "Could not import runpy module\n");
-		return -1;
-	}
-	runmodule = PyObject_GetAttrString(runpy, "_run_module_as_main");
-	if (runmodule == NULL) {
-		fprintf(stderr, "Could not access runpy._run_module_as_main\n");
-		Py_DECREF(runpy);
-		return -1;
-	}
-	runargs = Py_BuildValue("(si)", module, set_argv0);
-	if (runargs == NULL) {
-		fprintf(stderr,
-			"Could not create arguments for runpy._run_module_as_main\n");
-		Py_DECREF(runpy);
-		Py_DECREF(runmodule);
-		return -1;
-	}
-	result = PyObject_Call(runmodule, runargs, NULL);
-	if (result == NULL) {
-		PyErr_Print();
-	}
-	Py_DECREF(runpy);
-	Py_DECREF(runmodule);
-	Py_DECREF(runargs);
-	if (result == NULL) {
-		return -1;
-	}
-	Py_DECREF(result);
-	return 0;
+    PyObject *runpy, *runmodule, *runargs, *result;
+    runpy = PyImport_ImportModule("runpy");
+    if (runpy == NULL) {
+        fprintf(stderr, "Could not import runpy module\n");
+        return -1;
+    }
+    runmodule = PyObject_GetAttrString(runpy, "_run_module_as_main");
+    if (runmodule == NULL) {
+        fprintf(stderr, "Could not access runpy._run_module_as_main\n");
+        Py_DECREF(runpy);
+        return -1;
+    }
+    runargs = Py_BuildValue("(si)", module, set_argv0);
+    if (runargs == NULL) {
+        fprintf(stderr,
+            "Could not create arguments for runpy._run_module_as_main\n");
+        Py_DECREF(runpy);
+        Py_DECREF(runmodule);
+        return -1;
+    }
+    result = PyObject_Call(runmodule, runargs, NULL);
+    if (result == NULL) {
+        PyErr_Print();
+    }
+    Py_DECREF(runpy);
+    Py_DECREF(runmodule);
+    Py_DECREF(runargs);
+    if (result == NULL) {
+        return -1;
+    }
+    Py_DECREF(result);
+    return 0;
 }
 
 static int RunMainFromImporter(char *filename)
 {
-	PyObject *argv0 = NULL, *importer = NULL;
+    PyObject *argv0 = NULL, *importer = NULL;
 
-	if ((argv0 = PyString_FromString(filename)) && 
-	    (importer = PyImport_GetImporter(argv0)) &&
-	    (importer->ob_type != &PyNullImporter_Type))
-	{
-		 /* argv0 is usable as an import source, so
-			put it in sys.path[0] and import __main__ */
-		PyObject *sys_path = NULL;
-		if ((sys_path = PySys_GetObject("path")) &&
-		    !PyList_SetItem(sys_path, 0, argv0))
-		{
-			Py_INCREF(argv0);
-			Py_DECREF(importer);
-			sys_path = NULL;
-			return RunModule("__main__", 0) != 0;
-		}
-	}
-	Py_XDECREF(argv0);
-	Py_XDECREF(importer);
-	if (PyErr_Occurred()) {
-		PyErr_Print();
-		return 1;
-	}
-	return -1;
+    if ((argv0 = PyString_FromString(filename)) &&
+        (importer = PyImport_GetImporter(argv0)) &&
+        (importer->ob_type != &PyNullImporter_Type))
+    {
+             /* argv0 is usable as an import source, so
+                    put it in sys.path[0] and import __main__ */
+        PyObject *sys_path = NULL;
+        if ((sys_path = PySys_GetObject("path")) &&
+            !PyList_SetItem(sys_path, 0, argv0))
+        {
+            Py_INCREF(argv0);
+            Py_DECREF(importer);
+            sys_path = NULL;
+            return RunModule("__main__", 0) != 0;
+        }
+    }
+    Py_XDECREF(argv0);
+    Py_XDECREF(importer);
+    if (PyErr_Occurred()) {
+        PyErr_Print();
+        return 1;
+    }
+    return -1;
 }
 
 
@@ -227,398 +227,398 @@ static int RunMainFromImporter(char *filename)
 int
 Py_Main(int argc, char **argv)
 {
-	int c;
-	int sts;
-	char *command = NULL;
-	char *filename = NULL;
-	char *module = NULL;
-	FILE *fp = stdin;
-	char *p;
-	int unbuffered = 0;
-	int skipfirstline = 0;
-	int stdin_is_interactive = 0;
-	int help = 0;
-	int version = 0;
-	int saw_unbuffered_flag = 0;
-	PyCompilerFlags cf;
+    int c;
+    int sts;
+    char *command = NULL;
+    char *filename = NULL;
+    char *module = NULL;
+    FILE *fp = stdin;
+    char *p;
+    int unbuffered = 0;
+    int skipfirstline = 0;
+    int stdin_is_interactive = 0;
+    int help = 0;
+    int version = 0;
+    int saw_unbuffered_flag = 0;
+    PyCompilerFlags cf;
 
-	cf.cf_flags = 0;
+    cf.cf_flags = 0;
 
-	orig_argc = argc;	/* For Py_GetArgcArgv() */
-	orig_argv = argv;
-
-#ifdef RISCOS
-	Py_RISCOSWimpFlag = 0;
-#endif
-
-	PySys_ResetWarnOptions();
-
-	while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
-		if (c == 'c') {
-			/* -c is the last option; following arguments
-			   that look like options are left for the
-			   command to interpret. */
-			command = (char *)malloc(strlen(_PyOS_optarg) + 2);
-			if (command == NULL)
-				Py_FatalError(
-				   "not enough memory to copy -c argument");
-			strcpy(command, _PyOS_optarg);
-			strcat(command, "\n");
-			break;
-		}
-
-		if (c == 'm') {
-			/* -m is the last option; following arguments
-			   that look like options are left for the
-			   module to interpret. */
-			module = (char *)malloc(strlen(_PyOS_optarg) + 2);
-			if (module == NULL)
-				Py_FatalError(
-				   "not enough memory to copy -m argument");
-			strcpy(module, _PyOS_optarg);
-			break;
-		}
-
-		switch (c) {
-		case 'b':
-			Py_BytesWarningFlag++;
-			break;
-
-		case 'd':
-			Py_DebugFlag++;
-			break;
-
-		case '3':
-			Py_Py3kWarningFlag++;
-			if (!Py_DivisionWarningFlag)
-				Py_DivisionWarningFlag = 1;
-			break;
-
-		case 'Q':
-			if (strcmp(_PyOS_optarg, "old") == 0) {
-				Py_DivisionWarningFlag = 0;
-				break;
-			}
-			if (strcmp(_PyOS_optarg, "warn") == 0) {
-				Py_DivisionWarningFlag = 1;
-				break;
-			}
-			if (strcmp(_PyOS_optarg, "warnall") == 0) {
-				Py_DivisionWarningFlag = 2;
-				break;
-			}
-			if (strcmp(_PyOS_optarg, "new") == 0) {
-				/* This only affects __main__ */
-				cf.cf_flags |= CO_FUTURE_DIVISION;
-				/* And this tells the eval loop to treat
-				   BINARY_DIVIDE as BINARY_TRUE_DIVIDE */
-				_Py_QnewFlag = 1;
-				break;
-			}
-			fprintf(stderr,
-				"-Q option should be `-Qold', "
-				"`-Qwarn', `-Qwarnall', or `-Qnew' only\n");
-			return usage(2, argv[0]);
-			/* NOTREACHED */
-
-		case 'i':
-			Py_InspectFlag++;
-			Py_InteractiveFlag++;
-			break;
-
-		/* case 'J': reserved for Jython */
-
-		case 'O':
-			Py_OptimizeFlag++;
-			break;
-
-		case 'B':
-			Py_DontWriteBytecodeFlag++;
-			break;
-
-		case 's':
-			Py_NoUserSiteDirectory++;
-			break;
-
-		case 'S':
-			Py_NoSiteFlag++;
-			break;
-
-		case 'E':
-			Py_IgnoreEnvironmentFlag++;
-			break;
-
-		case 't':
-			Py_TabcheckFlag++;
-			break;
-
-		case 'u':
-			unbuffered++;
-			saw_unbuffered_flag = 1;
-			break;
-
-		case 'v':
-			Py_VerboseFlag++;
-			break;
+    orig_argc = argc;           /* For Py_GetArgcArgv() */
+    orig_argv = argv;
 
 #ifdef RISCOS
-		case 'w':
-			Py_RISCOSWimpFlag = 1;
-			break;
+    Py_RISCOSWimpFlag = 0;
 #endif
 
-		case 'x':
-			skipfirstline = 1;
-			break;
+    PySys_ResetWarnOptions();
 
-		/* case 'X': reserved for implementation-specific arguments */
+    while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
+        if (c == 'c') {
+            /* -c is the last option; following arguments
+               that look like options are left for the
+               command to interpret. */
+            command = (char *)malloc(strlen(_PyOS_optarg) + 2);
+            if (command == NULL)
+                Py_FatalError(
+                   "not enough memory to copy -c argument");
+            strcpy(command, _PyOS_optarg);
+            strcat(command, "\n");
+            break;
+        }
 
-		case 'U':
-			Py_UnicodeFlag++;
-			break;
-		case 'h':
-		case '?':
-			help++;
-			break;
-		case 'V':
-			version++;
-			break;
+        if (c == 'm') {
+            /* -m is the last option; following arguments
+               that look like options are left for the
+               module to interpret. */
+            module = (char *)malloc(strlen(_PyOS_optarg) + 2);
+            if (module == NULL)
+                Py_FatalError(
+                   "not enough memory to copy -m argument");
+            strcpy(module, _PyOS_optarg);
+            break;
+        }
 
-		case 'W':
-			PySys_AddWarnOption(_PyOS_optarg);
-			break;
+        switch (c) {
+        case 'b':
+            Py_BytesWarningFlag++;
+            break;
 
-		/* This space reserved for other options */
+        case 'd':
+            Py_DebugFlag++;
+            break;
 
-		default:
-			return usage(2, argv[0]);
-			/*NOTREACHED*/
+        case '3':
+            Py_Py3kWarningFlag++;
+            if (!Py_DivisionWarningFlag)
+                Py_DivisionWarningFlag = 1;
+            break;
 
-		}
-	}
+        case 'Q':
+            if (strcmp(_PyOS_optarg, "old") == 0) {
+                Py_DivisionWarningFlag = 0;
+                break;
+            }
+            if (strcmp(_PyOS_optarg, "warn") == 0) {
+                Py_DivisionWarningFlag = 1;
+                break;
+            }
+            if (strcmp(_PyOS_optarg, "warnall") == 0) {
+                Py_DivisionWarningFlag = 2;
+                break;
+            }
+            if (strcmp(_PyOS_optarg, "new") == 0) {
+                /* This only affects __main__ */
+                cf.cf_flags |= CO_FUTURE_DIVISION;
+                /* And this tells the eval loop to treat
+                   BINARY_DIVIDE as BINARY_TRUE_DIVIDE */
+                _Py_QnewFlag = 1;
+                break;
+            }
+            fprintf(stderr,
+                "-Q option should be `-Qold', "
+                "`-Qwarn', `-Qwarnall', or `-Qnew' only\n");
+            return usage(2, argv[0]);
+            /* NOTREACHED */
 
-	if (help)
-		return usage(0, argv[0]);
+        case 'i':
+            Py_InspectFlag++;
+            Py_InteractiveFlag++;
+            break;
 
-	if (version) {
-		fprintf(stderr, "Python %s\n", PY_VERSION);
-		return 0;
-	}
+        /* case 'J': reserved for Jython */
 
-	if (!Py_InspectFlag &&
-	    (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
-		Py_InspectFlag = 1;
-	if (!saw_unbuffered_flag &&
-	    (p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0')
-		unbuffered = 1;
+        case 'O':
+            Py_OptimizeFlag++;
+            break;
 
-	if (!Py_NoUserSiteDirectory &&
-	    (p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0')
-		Py_NoUserSiteDirectory = 1;
+        case 'B':
+            Py_DontWriteBytecodeFlag++;
+            break;
 
-	if (command == NULL && module == NULL && _PyOS_optind < argc &&
-	    strcmp(argv[_PyOS_optind], "-") != 0)
-	{
+        case 's':
+            Py_NoUserSiteDirectory++;
+            break;
+
+        case 'S':
+            Py_NoSiteFlag++;
+            break;
+
+        case 'E':
+            Py_IgnoreEnvironmentFlag++;
+            break;
+
+        case 't':
+            Py_TabcheckFlag++;
+            break;
+
+        case 'u':
+            unbuffered++;
+            saw_unbuffered_flag = 1;
+            break;
+
+        case 'v':
+            Py_VerboseFlag++;
+            break;
+
+#ifdef RISCOS
+        case 'w':
+            Py_RISCOSWimpFlag = 1;
+            break;
+#endif
+
+        case 'x':
+            skipfirstline = 1;
+            break;
+
+        /* case 'X': reserved for implementation-specific arguments */
+
+        case 'U':
+            Py_UnicodeFlag++;
+            break;
+        case 'h':
+        case '?':
+            help++;
+            break;
+        case 'V':
+            version++;
+            break;
+
+        case 'W':
+            PySys_AddWarnOption(_PyOS_optarg);
+            break;
+
+        /* This space reserved for other options */
+
+        default:
+            return usage(2, argv[0]);
+            /*NOTREACHED*/
+
+        }
+    }
+
+    if (help)
+        return usage(0, argv[0]);
+
+    if (version) {
+        fprintf(stderr, "Python %s\n", PY_VERSION);
+        return 0;
+    }
+
+    if (!Py_InspectFlag &&
+        (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
+        Py_InspectFlag = 1;
+    if (!saw_unbuffered_flag &&
+        (p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0')
+        unbuffered = 1;
+
+    if (!Py_NoUserSiteDirectory &&
+        (p = Py_GETENV("PYTHONNOUSERSITE")) && *p != '\0')
+        Py_NoUserSiteDirectory = 1;
+
+    if (command == NULL && module == NULL && _PyOS_optind < argc &&
+        strcmp(argv[_PyOS_optind], "-") != 0)
+    {
 #ifdef __VMS
-		filename = decc$translate_vms(argv[_PyOS_optind]);
-		if (filename == (char *)0 || filename == (char *)-1)
-			filename = argv[_PyOS_optind];
+        filename = decc$translate_vms(argv[_PyOS_optind]);
+        if (filename == (char *)0 || filename == (char *)-1)
+            filename = argv[_PyOS_optind];
 
 #else
-		filename = argv[_PyOS_optind];
+        filename = argv[_PyOS_optind];
 #endif
-	}
+    }
 
-	stdin_is_interactive = Py_FdIsInteractive(stdin, (char *)0);
+    stdin_is_interactive = Py_FdIsInteractive(stdin, (char *)0);
 
-	if (unbuffered) {
+    if (unbuffered) {
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
-		_setmode(fileno(stdin), O_BINARY);
-		_setmode(fileno(stdout), O_BINARY);
+        _setmode(fileno(stdin), O_BINARY);
+        _setmode(fileno(stdout), O_BINARY);
 #endif
 #ifdef HAVE_SETVBUF
-		setvbuf(stdin,  (char *)NULL, _IONBF, BUFSIZ);
-		setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
-		setvbuf(stderr, (char *)NULL, _IONBF, BUFSIZ);
+        setvbuf(stdin,  (char *)NULL, _IONBF, BUFSIZ);
+        setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
+        setvbuf(stderr, (char *)NULL, _IONBF, BUFSIZ);
 #else /* !HAVE_SETVBUF */
-		setbuf(stdin,  (char *)NULL);
-		setbuf(stdout, (char *)NULL);
-		setbuf(stderr, (char *)NULL);
+        setbuf(stdin,  (char *)NULL);
+        setbuf(stdout, (char *)NULL);
+        setbuf(stderr, (char *)NULL);
 #endif /* !HAVE_SETVBUF */
-	}
-	else if (Py_InteractiveFlag) {
+    }
+    else if (Py_InteractiveFlag) {
 #ifdef MS_WINDOWS
-		/* Doesn't have to have line-buffered -- use unbuffered */
-		/* Any set[v]buf(stdin, ...) screws up Tkinter :-( */
-		setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
+        /* Doesn't have to have line-buffered -- use unbuffered */
+        /* Any set[v]buf(stdin, ...) screws up Tkinter :-( */
+        setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
 #else /* !MS_WINDOWS */
 #ifdef HAVE_SETVBUF
-		setvbuf(stdin,  (char *)NULL, _IOLBF, BUFSIZ);
-		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
+        setvbuf(stdin,  (char *)NULL, _IOLBF, BUFSIZ);
+        setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
 #endif /* HAVE_SETVBUF */
 #endif /* !MS_WINDOWS */
-		/* Leave stderr alone - it should be unbuffered anyway. */
-  	}
+        /* Leave stderr alone - it should be unbuffered anyway. */
+    }
 #ifdef __VMS
-	else {
-		setvbuf (stdout, (char *)NULL, _IOLBF, BUFSIZ);
-	}
+    else {
+        setvbuf (stdout, (char *)NULL, _IOLBF, BUFSIZ);
+    }
 #endif /* __VMS */
 
 #ifdef __APPLE__
-	/* On MacOS X, when the Python interpreter is embedded in an
-	   application bundle, it gets executed by a bootstrapping script
-	   that does os.execve() with an argv[0] that's different from the
-	   actual Python executable. This is needed to keep the Finder happy,
-	   or rather, to work around Apple's overly strict requirements of
-	   the process name. However, we still need a usable sys.executable,
-	   so the actual executable path is passed in an environment variable.
-	   See Lib/plat-mac/bundlebuiler.py for details about the bootstrap
-	   script. */
-	if ((p = Py_GETENV("PYTHONEXECUTABLE")) && *p != '\0')
-		Py_SetProgramName(p);
-	else
-		Py_SetProgramName(argv[0]);
+    /* On MacOS X, when the Python interpreter is embedded in an
+       application bundle, it gets executed by a bootstrapping script
+       that does os.execve() with an argv[0] that's different from the
+       actual Python executable. This is needed to keep the Finder happy,
+       or rather, to work around Apple's overly strict requirements of
+       the process name. However, we still need a usable sys.executable,
+       so the actual executable path is passed in an environment variable.
+       See Lib/plat-mac/bundlebuiler.py for details about the bootstrap
+       script. */
+    if ((p = Py_GETENV("PYTHONEXECUTABLE")) && *p != '\0')
+        Py_SetProgramName(p);
+    else
+        Py_SetProgramName(argv[0]);
 #else
-	Py_SetProgramName(argv[0]);
+    Py_SetProgramName(argv[0]);
 #endif
-	Py_Initialize();
+    Py_Initialize();
 
-	if (Py_VerboseFlag ||
-	    (command == NULL && filename == NULL && module == NULL && stdin_is_interactive)) {
-		fprintf(stderr, "Python %s on %s\n",
-			Py_GetVersion(), Py_GetPlatform());
- 		if (!Py_NoSiteFlag)
- 			fprintf(stderr, "%s\n", COPYRIGHT);
-	}
+    if (Py_VerboseFlag ||
+        (command == NULL && filename == NULL && module == NULL && stdin_is_interactive)) {
+        fprintf(stderr, "Python %s on %s\n",
+            Py_GetVersion(), Py_GetPlatform());
+        if (!Py_NoSiteFlag)
+            fprintf(stderr, "%s\n", COPYRIGHT);
+    }
 
-	if (command != NULL) {
-		/* Backup _PyOS_optind and force sys.argv[0] = '-c' */
-		_PyOS_optind--;
-		argv[_PyOS_optind] = "-c";
-	}
+    if (command != NULL) {
+        /* Backup _PyOS_optind and force sys.argv[0] = '-c' */
+        _PyOS_optind--;
+        argv[_PyOS_optind] = "-c";
+    }
 
-	if (module != NULL) {
-		/* Backup _PyOS_optind and force sys.argv[0] = '-c'
-		   so that PySys_SetArgv correctly sets sys.path[0] to ''*/
-		_PyOS_optind--;
-		argv[_PyOS_optind] = "-c";
-	}
+    if (module != NULL) {
+        /* Backup _PyOS_optind and force sys.argv[0] = '-c'
+           so that PySys_SetArgv correctly sets sys.path[0] to ''*/
+        _PyOS_optind--;
+        argv[_PyOS_optind] = "-c";
+    }
 
-	PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);
+    PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);
 
-	if ((Py_InspectFlag || (command == NULL && filename == NULL && module == NULL)) &&
-	    isatty(fileno(stdin))) {
-		PyObject *v;
-		v = PyImport_ImportModule("readline");
-		if (v == NULL)
-			PyErr_Clear();
-		else
-			Py_DECREF(v);
-	}
+    if ((Py_InspectFlag || (command == NULL && filename == NULL && module == NULL)) &&
+        isatty(fileno(stdin))) {
+        PyObject *v;
+        v = PyImport_ImportModule("readline");
+        if (v == NULL)
+            PyErr_Clear();
+        else
+            Py_DECREF(v);
+    }
 
-	if (command) {
-		sts = PyRun_SimpleStringFlags(command, &cf) != 0;
-		free(command);
-	} else if (module) {
-		sts = RunModule(module, 1);
-		free(module);
-	}
-	else {
+    if (command) {
+        sts = PyRun_SimpleStringFlags(command, &cf) != 0;
+        free(command);
+    } else if (module) {
+        sts = RunModule(module, 1);
+        free(module);
+    }
+    else {
 
-		if (filename == NULL && stdin_is_interactive) {
-			Py_InspectFlag = 0; /* do exit on SystemExit */
-			RunStartupFile(&cf);
-		}
-		/* XXX */
+        if (filename == NULL && stdin_is_interactive) {
+            Py_InspectFlag = 0; /* do exit on SystemExit */
+            RunStartupFile(&cf);
+        }
+        /* XXX */
 
-		sts = -1;	/* keep track of whether we've already run __main__ */
+        sts = -1;               /* keep track of whether we've already run __main__ */
 
-		if (filename != NULL) {
-			sts = RunMainFromImporter(filename);
-		}
+        if (filename != NULL) {
+            sts = RunMainFromImporter(filename);
+        }
 
-		if (sts==-1 && filename!=NULL) {
-			if ((fp = fopen(filename, "r")) == NULL) {
-				fprintf(stderr, "%s: can't open file '%s': [Errno %d] %s\n",
-					argv[0], filename, errno, strerror(errno));
+        if (sts==-1 && filename!=NULL) {
+            if ((fp = fopen(filename, "r")) == NULL) {
+                fprintf(stderr, "%s: can't open file '%s': [Errno %d] %s\n",
+                    argv[0], filename, errno, strerror(errno));
 
-				return 2;
-			}
-			else if (skipfirstline) {
-				int ch;
-				/* Push back first newline so line numbers
-				   remain the same */
-				while ((ch = getc(fp)) != EOF) {
-					if (ch == '\n') {
-						(void)ungetc(ch, fp);
-						break;
-					}
-				}
-			}
-			{
-				/* XXX: does this work on Win/Win64? (see posix_fstat) */
-				struct stat sb;
-				if (fstat(fileno(fp), &sb) == 0 &&
-				    S_ISDIR(sb.st_mode)) {
-					fprintf(stderr, "%s: '%s' is a directory, cannot continue\n", argv[0], filename);
-					fclose(fp);
-					return 1;
-				}
-			}
-		}
+                return 2;
+            }
+            else if (skipfirstline) {
+                int ch;
+                /* Push back first newline so line numbers
+                   remain the same */
+                while ((ch = getc(fp)) != EOF) {
+                    if (ch == '\n') {
+                        (void)ungetc(ch, fp);
+                        break;
+                    }
+                }
+            }
+            {
+                /* XXX: does this work on Win/Win64? (see posix_fstat) */
+                struct stat sb;
+                if (fstat(fileno(fp), &sb) == 0 &&
+                    S_ISDIR(sb.st_mode)) {
+                    fprintf(stderr, "%s: '%s' is a directory, cannot continue\n", argv[0], filename);
+                    fclose(fp);
+                    return 1;
+                }
+            }
+        }
 
-		if (sts==-1) {
-			/* call pending calls like signal handlers (SIGINT) */
-			if (Py_MakePendingCalls() == -1) {
-				PyErr_Print();
-				sts = 1;
-			} else {
-				sts = PyRun_AnyFileExFlags(
-					fp,
-					filename == NULL ? "<stdin>" : filename,
-					filename != NULL, &cf) != 0;
-			}
-		}
-		
-	}
+        if (sts==-1) {
+            /* call pending calls like signal handlers (SIGINT) */
+            if (Py_MakePendingCalls() == -1) {
+                PyErr_Print();
+                sts = 1;
+            } else {
+                sts = PyRun_AnyFileExFlags(
+                    fp,
+                    filename == NULL ? "<stdin>" : filename,
+                    filename != NULL, &cf) != 0;
+            }
+        }
 
-	/* Check this environment variable at the end, to give programs the
-	 * opportunity to set it from Python.
-	 */
-	if (!Py_InspectFlag &&
-	    (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
-	{
-		Py_InspectFlag = 1;
-	}
+    }
 
-	if (Py_InspectFlag && stdin_is_interactive &&
-	    (filename != NULL || command != NULL || module != NULL)) {
-		Py_InspectFlag = 0;
-		/* XXX */
-		sts = PyRun_AnyFileFlags(stdin, "<stdin>", &cf) != 0;
-	}
+    /* Check this environment variable at the end, to give programs the
+     * opportunity to set it from Python.
+     */
+    if (!Py_InspectFlag &&
+        (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
+    {
+        Py_InspectFlag = 1;
+    }
 
-	Py_Finalize();
+    if (Py_InspectFlag && stdin_is_interactive &&
+        (filename != NULL || command != NULL || module != NULL)) {
+        Py_InspectFlag = 0;
+        /* XXX */
+        sts = PyRun_AnyFileFlags(stdin, "<stdin>", &cf) != 0;
+    }
+
+    Py_Finalize();
 #ifdef RISCOS
-	if (Py_RISCOSWimpFlag)
-                fprintf(stderr, "\x0cq\x0c"); /* make frontend quit */
+    if (Py_RISCOSWimpFlag)
+        fprintf(stderr, "\x0cq\x0c"); /* make frontend quit */
 #endif
 
 #ifdef __INSURE__
-	/* Insure++ is a memory analysis tool that aids in discovering
-	 * memory leaks and other memory problems.  On Python exit, the
-	 * interned string dictionary is flagged as being in use at exit
-	 * (which it is).  Under normal circumstances, this is fine because
-	 * the memory will be automatically reclaimed by the system.  Under
-	 * memory debugging, it's a huge source of useless noise, so we
-	 * trade off slower shutdown for less distraction in the memory
-	 * reports.  -baw
-	 */
-	_Py_ReleaseInternedStrings();
+    /* Insure++ is a memory analysis tool that aids in discovering
+     * memory leaks and other memory problems.  On Python exit, the
+     * interned string dictionary is flagged as being in use at exit
+     * (which it is).  Under normal circumstances, this is fine because
+     * the memory will be automatically reclaimed by the system.  Under
+     * memory debugging, it's a huge source of useless noise, so we
+     * trade off slower shutdown for less distraction in the memory
+     * reports.  -baw
+     */
+    _Py_ReleaseInternedStrings();
 #endif /* __INSURE__ */
 
-	return sts;
+    return sts;
 }
 
 /* this is gonna seem *real weird*, but if you put some other code between
@@ -631,8 +631,8 @@ Py_Main(int argc, char **argv)
 void
 Py_GetArgcArgv(int *argc, char ***argv)
 {
-	*argc = orig_argc;
-	*argv = orig_argv;
+    *argc = orig_argc;
+    *argv = orig_argv;
 }
 
 #ifdef __cplusplus

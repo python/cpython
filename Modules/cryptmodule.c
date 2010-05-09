@@ -14,17 +14,17 @@
 
 static PyObject *crypt_crypt(PyObject *self, PyObject *args)
 {
-	char *word, *salt; 
+    char *word, *salt;
 #ifndef __VMS
-	extern char * crypt(const char *, const char *);
+    extern char * crypt(const char *, const char *);
 #endif
 
-	if (!PyArg_ParseTuple(args, "ss:crypt", &word, &salt)) {
-		return NULL;
-	}
-	/* On some platforms (AtheOS) crypt returns NULL for an invalid
-	   salt. Return None in that case. XXX Maybe raise an exception?  */
-	return Py_BuildValue("s", crypt(word, salt));
+    if (!PyArg_ParseTuple(args, "ss:crypt", &word, &salt)) {
+        return NULL;
+    }
+    /* On some platforms (AtheOS) crypt returns NULL for an invalid
+       salt. Return None in that case. XXX Maybe raise an exception?  */
+    return Py_BuildValue("s", crypt(word, salt));
 
 }
 
@@ -38,12 +38,12 @@ the same alphabet as the salt.");
 
 
 static PyMethodDef crypt_methods[] = {
-	{"crypt",	crypt_crypt, METH_VARARGS, crypt_crypt__doc__},
-	{NULL,		NULL}		/* sentinel */
+    {"crypt",           crypt_crypt, METH_VARARGS, crypt_crypt__doc__},
+    {NULL,              NULL}           /* sentinel */
 };
 
 PyMODINIT_FUNC
 initcrypt(void)
 {
-	Py_InitModule("crypt", crypt_methods);
+    Py_InitModule("crypt", crypt_methods);
 }

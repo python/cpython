@@ -21,10 +21,10 @@
 
 typedef __int64 hs_time;
 #define GETTIMEOFDAY(P_HS_TIME) \
-	{ LARGE_INTEGER _temp; \
-	  QueryPerformanceCounter(&_temp); \
-	  *(P_HS_TIME) = _temp.QuadPart; }
-	  
+        { LARGE_INTEGER _temp; \
+          QueryPerformanceCounter(&_temp); \
+          *(P_HS_TIME) = _temp.QuadPart; }
+
 
 #else
 #ifndef HAVE_GETTIMEOFDAY
@@ -284,7 +284,7 @@ unpack_packed_int(LogReaderObject *self, int *pvalue, int discard)
 
     do {
         /* read byte */
-	if ((c = fgetc(self->logfp)) == EOF)
+        if ((c = fgetc(self->logfp)) == EOF)
             return ERR_EOF;
         accum |= ((c & 0x7F) >> discard) << bits;
         bits += (7 - discard);
@@ -308,19 +308,19 @@ unpack_string(LogReaderObject *self, PyObject **pvalue)
     int err;
     int ch;
     char *buf;
-    
+
     if ((err = unpack_packed_int(self, &len, 0)))
         return err;
 
     buf = (char *)malloc(len);
     if (!buf) {
-	PyErr_NoMemory();
-	return ERR_EXCEPTION;
+        PyErr_NoMemory();
+        return ERR_EXCEPTION;
     }
 
     for (i=0; i < len; i++) {
         ch = fgetc(self->logfp);
-	buf[i] = ch;
+        buf[i] = ch;
         if (ch == EOF) {
             free(buf);
             return ERR_EOF;
@@ -459,16 +459,16 @@ restart:
             err = ERR_EOF;
         else {
             self->linetimings = c ? 1 : 0;
-	    goto restart;
-	}
+            goto restart;
+        }
         break;
     case WHAT_FRAME_TIMES:
         if ((c = fgetc(self->logfp)) == EOF)
             err = ERR_EOF;
         else {
             self->frametimings = c ? 1 : 0;
-	    goto restart;
-	}
+            goto restart;
+        }
         break;
     default:
         err = ERR_BAD_RECTYPE;
@@ -876,7 +876,7 @@ tracer_callback(ProfilerObject *self, PyFrameObject *frame, int what,
     case PyTrace_LINE:  /* we only get these events if we asked for them */
         if (self->linetimings)
             return pack_lineno_tdelta(self, frame->f_lineno,
-				      get_tdelta(self));
+                                      get_tdelta(self));
         else
             return pack_lineno(self, frame->f_lineno);
 
@@ -1221,39 +1221,39 @@ PyDoc_STRVAR(profiler_object__doc__,
 
 static PyTypeObject ProfilerType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_hotshot.ProfilerType",		/* tp_name		*/
-    (int) sizeof(ProfilerObject),	/* tp_basicsize		*/
-    0,					/* tp_itemsize		*/
-    (destructor)profiler_dealloc,	/* tp_dealloc		*/
-    0,					/* tp_print		*/
-    0,					/* tp_getattr		*/
-    0,					/* tp_setattr		*/
-    0,					/* tp_compare		*/
-    0,					/* tp_repr		*/
-    0,					/* tp_as_number		*/
-    0,					/* tp_as_sequence	*/
-    0,					/* tp_as_mapping	*/
-    0,					/* tp_hash		*/
-    0,					/* tp_call		*/
-    0,					/* tp_str		*/
-    PyObject_GenericGetAttr,		/* tp_getattro		*/
-    0,					/* tp_setattro		*/
-    0,					/* tp_as_buffer		*/
-    Py_TPFLAGS_DEFAULT,			/* tp_flags		*/
-    profiler_object__doc__,		/* tp_doc		*/
-    0,					/* tp_traverse		*/
-    0,					/* tp_clear		*/
-    0,					/* tp_richcompare	*/
-    0,					/* tp_weaklistoffset	*/
-    0,					/* tp_iter		*/
-    0,					/* tp_iternext		*/
-    profiler_methods,			/* tp_methods		*/
-    profiler_members,			/* tp_members		*/
-    profiler_getsets,			/* tp_getset		*/
-    0,					/* tp_base		*/
-    0,					/* tp_dict		*/
-    0,					/* tp_descr_get		*/
-    0,					/* tp_descr_set		*/
+    "_hotshot.ProfilerType",            /* tp_name              */
+    (int) sizeof(ProfilerObject),       /* tp_basicsize         */
+    0,                                  /* tp_itemsize          */
+    (destructor)profiler_dealloc,       /* tp_dealloc           */
+    0,                                  /* tp_print             */
+    0,                                  /* tp_getattr           */
+    0,                                  /* tp_setattr           */
+    0,                                  /* tp_compare           */
+    0,                                  /* tp_repr              */
+    0,                                  /* tp_as_number         */
+    0,                                  /* tp_as_sequence       */
+    0,                                  /* tp_as_mapping        */
+    0,                                  /* tp_hash              */
+    0,                                  /* tp_call              */
+    0,                                  /* tp_str               */
+    PyObject_GenericGetAttr,            /* tp_getattro          */
+    0,                                  /* tp_setattro          */
+    0,                                  /* tp_as_buffer         */
+    Py_TPFLAGS_DEFAULT,                 /* tp_flags             */
+    profiler_object__doc__,             /* tp_doc               */
+    0,                                  /* tp_traverse          */
+    0,                                  /* tp_clear             */
+    0,                                  /* tp_richcompare       */
+    0,                                  /* tp_weaklistoffset    */
+    0,                                  /* tp_iter              */
+    0,                                  /* tp_iternext          */
+    profiler_methods,                   /* tp_methods           */
+    profiler_members,                   /* tp_members           */
+    profiler_getsets,                   /* tp_getset            */
+    0,                                  /* tp_base              */
+    0,                                  /* tp_dict              */
+    0,                                  /* tp_descr_get         */
+    0,                                  /* tp_descr_set         */
 };
 
 
@@ -1277,16 +1277,16 @@ PyDoc_STRVAR(logreader__doc__,
 Create a log-reader for the timing information file.");
 
 static PySequenceMethods logreader_as_sequence = {
-    0,					/* sq_length */
-    0,					/* sq_concat */
-    0,					/* sq_repeat */
-    (ssizeargfunc)logreader_sq_item,	/* sq_item */
-    0,					/* sq_slice */
-    0,					/* sq_ass_item */
-    0,					/* sq_ass_slice */
-    0,					/* sq_contains */
-    0,					/* sq_inplace_concat */
-    0,					/* sq_inplace_repeat */
+    0,                                  /* sq_length */
+    0,                                  /* sq_concat */
+    0,                                  /* sq_repeat */
+    (ssizeargfunc)logreader_sq_item,    /* sq_item */
+    0,                                  /* sq_slice */
+    0,                                  /* sq_ass_item */
+    0,                                  /* sq_ass_slice */
+    0,                                  /* sq_contains */
+    0,                                  /* sq_inplace_concat */
+    0,                                  /* sq_inplace_repeat */
 };
 
 static PyObject *
@@ -1305,39 +1305,39 @@ static PyGetSetDef logreader_getsets[] = {
 
 static PyTypeObject LogReaderType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_hotshot.LogReaderType",		/* tp_name		*/
-    (int) sizeof(LogReaderObject),	/* tp_basicsize		*/
-    0,					/* tp_itemsize		*/
-    (destructor)logreader_dealloc,	/* tp_dealloc		*/
-    0,					/* tp_print		*/
-    0,					/* tp_getattr		*/
-    0,					/* tp_setattr		*/
-    0,					/* tp_compare		*/
-    0,					/* tp_repr		*/
-    0,					/* tp_as_number		*/
-    &logreader_as_sequence,		/* tp_as_sequence	*/
-    0,					/* tp_as_mapping	*/
-    0,					/* tp_hash		*/
-    0,					/* tp_call		*/
-    0,					/* tp_str		*/
-    PyObject_GenericGetAttr,		/* tp_getattro		*/
-    0,					/* tp_setattro		*/
-    0,					/* tp_as_buffer		*/
-    Py_TPFLAGS_DEFAULT,			/* tp_flags		*/
-    logreader__doc__,			/* tp_doc		*/
-    0,					/* tp_traverse		*/
-    0,					/* tp_clear		*/
-    0,					/* tp_richcompare	*/
-    0,					/* tp_weaklistoffset	*/
-    PyObject_SelfIter,			/* tp_iter		*/
-    (iternextfunc)logreader_tp_iternext,/* tp_iternext		*/
-    logreader_methods,			/* tp_methods		*/
-    logreader_members,			/* tp_members		*/
-    logreader_getsets,			/* tp_getset		*/
-    0,					/* tp_base		*/
-    0,					/* tp_dict		*/
-    0,					/* tp_descr_get		*/
-    0,					/* tp_descr_set		*/
+    "_hotshot.LogReaderType",           /* tp_name              */
+    (int) sizeof(LogReaderObject),      /* tp_basicsize         */
+    0,                                  /* tp_itemsize          */
+    (destructor)logreader_dealloc,      /* tp_dealloc           */
+    0,                                  /* tp_print             */
+    0,                                  /* tp_getattr           */
+    0,                                  /* tp_setattr           */
+    0,                                  /* tp_compare           */
+    0,                                  /* tp_repr              */
+    0,                                  /* tp_as_number         */
+    &logreader_as_sequence,             /* tp_as_sequence       */
+    0,                                  /* tp_as_mapping        */
+    0,                                  /* tp_hash              */
+    0,                                  /* tp_call              */
+    0,                                  /* tp_str               */
+    PyObject_GenericGetAttr,            /* tp_getattro          */
+    0,                                  /* tp_setattro          */
+    0,                                  /* tp_as_buffer         */
+    Py_TPFLAGS_DEFAULT,                 /* tp_flags             */
+    logreader__doc__,                   /* tp_doc               */
+    0,                                  /* tp_traverse          */
+    0,                                  /* tp_clear             */
+    0,                                  /* tp_richcompare       */
+    0,                                  /* tp_weaklistoffset    */
+    PyObject_SelfIter,                  /* tp_iter              */
+    (iternextfunc)logreader_tp_iternext,/* tp_iternext          */
+    logreader_methods,                  /* tp_methods           */
+    logreader_members,                  /* tp_members           */
+    logreader_getsets,                  /* tp_getset            */
+    0,                                  /* tp_base              */
+    0,                                  /* tp_dict              */
+    0,                                  /* tp_descr_get         */
+    0,                                  /* tp_descr_set         */
 };
 
 static PyObject *
@@ -1463,8 +1463,8 @@ write_header(ProfilerObject *self)
 
     temp = PySys_GetObject("path");
     if (temp == NULL || !PyList_Check(temp)) {
-	PyErr_SetString(PyExc_RuntimeError, "sys.path must be a list");
-    	return -1;
+        PyErr_SetString(PyExc_RuntimeError, "sys.path must be a list");
+        return -1;
     }
     len = PyList_GET_SIZE(temp);
     for (i = 0; i < len; ++i) {
@@ -1562,7 +1562,7 @@ hotshot_coverage(PyObject *unused, PyObject *args)
     return result;
 }
 
-PyDoc_VAR(resolution__doc__) = 
+PyDoc_VAR(resolution__doc__) =
 #ifdef MS_WINDOWS
 PyDoc_STR(
 "resolution() -> (performance-counter-ticks, update-frequency)\n"

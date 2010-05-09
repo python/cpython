@@ -78,14 +78,14 @@ sound_playsound(PyObject *s, PyObject *args)
     int ok;
 
     if(!PyArg_ParseTuple(args,"z#i:PlaySound",&sound,&length,&flags)) {
-        return NULL;
+    return NULL;
     }
 
     if(flags&SND_ASYNC && flags &SND_MEMORY) {
-	/* Sidestep reference counting headache; unfortunately this also
-	   prevent SND_LOOP from memory. */
-        PyErr_SetString(PyExc_RuntimeError,"Cannot play asynchronously from memory");
-        return NULL;
+    /* Sidestep reference counting headache; unfortunately this also
+       prevent SND_LOOP from memory. */
+    PyErr_SetString(PyExc_RuntimeError,"Cannot play asynchronously from memory");
+    return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -93,8 +93,8 @@ sound_playsound(PyObject *s, PyObject *args)
     Py_END_ALLOW_THREADS
     if(!ok)
     {
-        PyErr_SetString(PyExc_RuntimeError,"Failed to play sound");
-        return NULL;
+    PyErr_SetString(PyExc_RuntimeError,"Failed to play sound");
+    return NULL;
     }
 
     Py_INCREF(Py_None);
@@ -104,40 +104,40 @@ sound_playsound(PyObject *s, PyObject *args)
 static PyObject *
 sound_beep(PyObject *self, PyObject *args)
 {
-	int freq;
-	int dur;
-	BOOL ok;
+    int freq;
+    int dur;
+    BOOL ok;
 
-	if (!PyArg_ParseTuple(args, "ii:Beep", &freq,  &dur))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "ii:Beep", &freq,  &dur))
+        return NULL;
 
-	if (freq < 37 || freq > 32767) {
-		PyErr_SetString(PyExc_ValueError,
-				"frequency must be in 37 thru 32767");
-		return NULL;
-	}
+    if (freq < 37 || freq > 32767) {
+        PyErr_SetString(PyExc_ValueError,
+                        "frequency must be in 37 thru 32767");
+        return NULL;
+    }
 
-	Py_BEGIN_ALLOW_THREADS
-	ok = Beep(freq, dur);
-	Py_END_ALLOW_THREADS
-	if (!ok) {
-		PyErr_SetString(PyExc_RuntimeError,"Failed to beep");
-		return NULL;
-	}
+    Py_BEGIN_ALLOW_THREADS
+    ok = Beep(freq, dur);
+    Py_END_ALLOW_THREADS
+    if (!ok) {
+        PyErr_SetString(PyExc_RuntimeError,"Failed to beep");
+        return NULL;
+    }
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 sound_msgbeep(PyObject *self, PyObject *args)
 {
-	int x = MB_OK;
-	if (!PyArg_ParseTuple(args, "|i:MessageBeep", &x))
-		return NULL;
-	MessageBeep(x);
-	Py_INCREF(Py_None);
-	return Py_None;
+    int x = MB_OK;
+    if (!PyArg_ParseTuple(args, "|i:MessageBeep", &x))
+        return NULL;
+    MessageBeep(x);
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static struct PyMethodDef sound_methods[] =
@@ -155,7 +155,7 @@ add_define(PyObject *dict, const char *key, long value)
     PyObject *v=PyLong_FromLong(value);
     if(v&&k)
     {
-        PyDict_SetItem(dict,k,v);
+    PyDict_SetItem(dict,k,v);
     }
     Py_XDECREF(k);
     Py_XDECREF(v);
@@ -166,28 +166,28 @@ add_define(PyObject *dict, const char *key, long value)
 PyMODINIT_FUNC
 initwinsound(void)
 {
-	PyObject *dict;
-	PyObject *module = Py_InitModule3("winsound",
-					  sound_methods,
-					  sound_module_doc);
-	if (module == NULL)
-		return;
-	dict = PyModule_GetDict(module);
+    PyObject *dict;
+    PyObject *module = Py_InitModule3("winsound",
+                                      sound_methods,
+                                      sound_module_doc);
+    if (module == NULL)
+        return;
+    dict = PyModule_GetDict(module);
 
-	ADD_DEFINE(SND_ASYNC);
-	ADD_DEFINE(SND_NODEFAULT);
-	ADD_DEFINE(SND_NOSTOP);
-	ADD_DEFINE(SND_NOWAIT);
-	ADD_DEFINE(SND_ALIAS);
-	ADD_DEFINE(SND_FILENAME);
-	ADD_DEFINE(SND_MEMORY);
-	ADD_DEFINE(SND_PURGE);
-	ADD_DEFINE(SND_LOOP);
-	ADD_DEFINE(SND_APPLICATION);
+    ADD_DEFINE(SND_ASYNC);
+    ADD_DEFINE(SND_NODEFAULT);
+    ADD_DEFINE(SND_NOSTOP);
+    ADD_DEFINE(SND_NOWAIT);
+    ADD_DEFINE(SND_ALIAS);
+    ADD_DEFINE(SND_FILENAME);
+    ADD_DEFINE(SND_MEMORY);
+    ADD_DEFINE(SND_PURGE);
+    ADD_DEFINE(SND_LOOP);
+    ADD_DEFINE(SND_APPLICATION);
 
-	ADD_DEFINE(MB_OK);
-	ADD_DEFINE(MB_ICONASTERISK);
-	ADD_DEFINE(MB_ICONEXCLAMATION);
-	ADD_DEFINE(MB_ICONHAND);
-	ADD_DEFINE(MB_ICONQUESTION);
+    ADD_DEFINE(MB_OK);
+    ADD_DEFINE(MB_ICONASTERISK);
+    ADD_DEFINE(MB_ICONEXCLAMATION);
+    ADD_DEFINE(MB_ICONHAND);
+    ADD_DEFINE(MB_ICONQUESTION);
 }

@@ -22,7 +22,7 @@
 
 /* Endianness testing and definitions */
 #define TestEndianness(variable) {int i=1; variable=PCT_BIG_ENDIAN;\
-	if (*((char*)&i)==1) variable=PCT_LITTLE_ENDIAN;}
+        if (*((char*)&i)==1) variable=PCT_LITTLE_ENDIAN;}
 
 #define PCT_LITTLE_ENDIAN 1
 #define PCT_BIG_ENDIAN 0
@@ -32,7 +32,7 @@
 typedef unsigned char SHA_BYTE;
 
 #if SIZEOF_INT == 4
-typedef unsigned int SHA_INT32;	/* 32-bit integer */
+typedef unsigned int SHA_INT32; /* 32-bit integer */
 #else
 /* not defined. compilation will die. */
 #endif
@@ -46,11 +46,11 @@ typedef unsigned int SHA_INT32;	/* 32-bit integer */
 
 typedef struct {
     PyObject_HEAD
-    SHA_INT32 digest[8];		/* Message digest */
-    SHA_INT32 count_lo, count_hi;	/* 64-bit bit count */
-    SHA_BYTE data[SHA_BLOCKSIZE];	/* SHA data buffer */
+    SHA_INT32 digest[8];                /* Message digest */
+    SHA_INT32 count_lo, count_hi;       /* 64-bit bit count */
+    SHA_BYTE data[SHA_BLOCKSIZE];       /* SHA data buffer */
     int Endianness;
-    int local;				/* unprocessed amount in data */
+    int local;                          /* unprocessed amount in data */
     int digestsize;
 } SHAobject;
 
@@ -62,7 +62,7 @@ static void longReverse(SHA_INT32 *buffer, int byteCount, int Endianness)
     SHA_INT32 value;
 
     if ( Endianness == PCT_BIG_ENDIAN )
-	return;
+        return;
 
     byteCount /= sizeof(*buffer);
     while (byteCount--) {
@@ -114,7 +114,7 @@ static void SHAcopy(SHAobject *src, SHAobject *dest)
 ( ((((unsigned long)(x)&0xFFFFFFFFUL)>>(unsigned long)((y)&31)) | \
 ((unsigned long)(x)<<(unsigned long)(32-((y)&31)))) & 0xFFFFFFFFUL)
 #define Ch(x,y,z)       (z ^ (x & (y ^ z)))
-#define Maj(x,y,z)      (((x | y) & z) | (x & y)) 
+#define Maj(x,y,z)      (((x | y) & z) | (x & y))
 #define S(x, n)         ROR((x),(n))
 #define R(x, n)         (((x)&0xFFFFFFFFUL)>>(n))
 #define Sigma0(x)       (S(x, 2) ^ S(x, 13) ^ S(x, 22))
@@ -127,13 +127,13 @@ static void
 sha_transform(SHAobject *sha_info)
 {
     int i;
-	SHA_INT32 S[8], W[64], t0, t1;
+        SHA_INT32 S[8], W[64], t0, t1;
 
     memcpy(W, sha_info->data, sizeof(sha_info->data));
     longReverse(W, (int)sizeof(sha_info->data), sha_info->Endianness);
 
     for (i = 16; i < 64; ++i) {
-		W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
+                W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
     }
     for (i = 0; i < 8; ++i) {
         S[i] = sha_info->digest[i];
@@ -211,8 +211,8 @@ sha_transform(SHAobject *sha_info)
     RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],62,0xbef9a3f7);
     RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],63,0xc67178f2);
 
-#undef RND     
-    
+#undef RND
+
     /* feedback */
     for (i = 0; i < 8; i++) {
         sha_info->digest[i] = sha_info->digest[i] + S[i];
@@ -314,14 +314,14 @@ sha_final(unsigned char digest[SHA_DIGESTSIZE], SHAobject *sha_info)
     count = (int) ((lo_bit_count >> 3) & 0x3f);
     ((SHA_BYTE *) sha_info->data)[count++] = 0x80;
     if (count > SHA_BLOCKSIZE - 8) {
-	memset(((SHA_BYTE *) sha_info->data) + count, 0,
-	       SHA_BLOCKSIZE - count);
-	sha_transform(sha_info);
-	memset((SHA_BYTE *) sha_info->data, 0, SHA_BLOCKSIZE - 8);
+        memset(((SHA_BYTE *) sha_info->data) + count, 0,
+               SHA_BLOCKSIZE - count);
+        sha_transform(sha_info);
+        memset((SHA_BYTE *) sha_info->data, 0, SHA_BLOCKSIZE - 8);
     }
     else {
-	memset(((SHA_BYTE *) sha_info->data) + count, 0,
-	       SHA_BLOCKSIZE - 8 - count);
+        memset(((SHA_BYTE *) sha_info->data) + count, 0,
+               SHA_BLOCKSIZE - 8 - count);
     }
 
     /* GJS: note that we add the hi/lo in big-endian. sha_transform will
@@ -454,21 +454,21 @@ SHA256_hexdigest(SHAobject *self, PyObject *unused)
     /* Create a new string */
     retval = PyString_FromStringAndSize(NULL, self->digestsize * 2);
     if (!retval)
-	    return NULL;
+            return NULL;
     hex_digest = PyString_AsString(retval);
     if (!hex_digest) {
-	    Py_DECREF(retval);
-	    return NULL;
+            Py_DECREF(retval);
+            return NULL;
     }
 
     /* Make hex version of the digest */
     for(i=j=0; i<self->digestsize; i++) {
         char c;
         c = (digest[i] >> 4) & 0xf;
-	c = (c>9) ? c+'a'-10 : c + '0';
+        c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
         c = (digest[i] & 0xf);
-	c = (c>9) ? c+'a'-10 : c + '0';
+        c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
     }
     return retval;
@@ -493,11 +493,11 @@ SHA256_update(SHAobject *self, PyObject *args)
 }
 
 static PyMethodDef SHA_methods[] = {
-    {"copy",	  (PyCFunction)SHA256_copy,      METH_NOARGS,  SHA256_copy__doc__},
-    {"digest",	  (PyCFunction)SHA256_digest,    METH_NOARGS,  SHA256_digest__doc__},
+    {"copy",      (PyCFunction)SHA256_copy,      METH_NOARGS,  SHA256_copy__doc__},
+    {"digest",    (PyCFunction)SHA256_digest,    METH_NOARGS,  SHA256_digest__doc__},
     {"hexdigest", (PyCFunction)SHA256_hexdigest, METH_NOARGS,  SHA256_hexdigest__doc__},
-    {"update",	  (PyCFunction)SHA256_update,    METH_VARARGS, SHA256_update__doc__},
-    {NULL,	  NULL}		/* sentinel */
+    {"update",    (PyCFunction)SHA256_update,    METH_VARARGS, SHA256_update__doc__},
+    {NULL,        NULL}         /* sentinel */
 };
 
 static PyObject *
@@ -537,13 +537,13 @@ static PyMemberDef SHA_members[] = {
 
 static PyTypeObject SHA224type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_sha256.sha224",	/*tp_name*/
-    sizeof(SHAobject),	/*tp_size*/
-    0,			/*tp_itemsize*/
+    "_sha256.sha224",   /*tp_name*/
+    sizeof(SHAobject),  /*tp_size*/
+    0,                  /*tp_itemsize*/
     /* methods */
-    SHA_dealloc,	/*tp_dealloc*/
-    0,			/*tp_print*/
-    0,          	/*tp_getattr*/
+    SHA_dealloc,        /*tp_dealloc*/
+    0,                  /*tp_print*/
+    0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_compare*/
     0,                  /*tp_repr*/
@@ -559,25 +559,25 @@ static PyTypeObject SHA224type = {
     Py_TPFLAGS_DEFAULT, /*tp_flags*/
     0,                  /*tp_doc*/
     0,                  /*tp_traverse*/
-    0,			/*tp_clear*/
-    0,			/*tp_richcompare*/
-    0,			/*tp_weaklistoffset*/
-    0,			/*tp_iter*/
-    0,			/*tp_iternext*/
-    SHA_methods,	/* tp_methods */
-    SHA_members,	/* tp_members */
+    0,                  /*tp_clear*/
+    0,                  /*tp_richcompare*/
+    0,                  /*tp_weaklistoffset*/
+    0,                  /*tp_iter*/
+    0,                  /*tp_iternext*/
+    SHA_methods,        /* tp_methods */
+    SHA_members,        /* tp_members */
     SHA_getseters,      /* tp_getset */
 };
 
 static PyTypeObject SHA256type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_sha256.sha256",	/*tp_name*/
-    sizeof(SHAobject),	/*tp_size*/
-    0,			/*tp_itemsize*/
+    "_sha256.sha256",   /*tp_name*/
+    sizeof(SHAobject),  /*tp_size*/
+    0,                  /*tp_itemsize*/
     /* methods */
-    SHA_dealloc,	/*tp_dealloc*/
-    0,			/*tp_print*/
-    0,          	/*tp_getattr*/
+    SHA_dealloc,        /*tp_dealloc*/
+    0,                  /*tp_print*/
+    0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_compare*/
     0,                  /*tp_repr*/
@@ -593,13 +593,13 @@ static PyTypeObject SHA256type = {
     Py_TPFLAGS_DEFAULT, /*tp_flags*/
     0,                  /*tp_doc*/
     0,                  /*tp_traverse*/
-    0,			/*tp_clear*/
-    0,			/*tp_richcompare*/
-    0,			/*tp_weaklistoffset*/
-    0,			/*tp_iter*/
-    0,			/*tp_iternext*/
-    SHA_methods,	/* tp_methods */
-    SHA_members,	/* tp_members */
+    0,                  /*tp_clear*/
+    0,                  /*tp_richcompare*/
+    0,                  /*tp_weaklistoffset*/
+    0,                  /*tp_iter*/
+    0,                  /*tp_iternext*/
+    SHA_methods,        /* tp_methods */
+    SHA_members,        /* tp_members */
     SHA_getseters,      /* tp_getset */
 };
 
@@ -674,7 +674,7 @@ SHA224_new(PyObject *self, PyObject *args, PyObject *kwdict)
 static struct PyMethodDef SHA_functions[] = {
     {"sha256", (PyCFunction)SHA256_new, METH_VARARGS|METH_KEYWORDS, SHA256_new__doc__},
     {"sha224", (PyCFunction)SHA224_new, METH_VARARGS|METH_KEYWORDS, SHA224_new__doc__},
-    {NULL,	NULL}		 /* Sentinel */
+    {NULL,      NULL}            /* Sentinel */
 };
 
 
@@ -695,5 +695,5 @@ init_sha256(void)
         return;
     m = Py_InitModule("_sha256", SHA_functions);
     if (m == NULL)
-	return;
+        return;
 }
