@@ -1,6 +1,6 @@
 /*
-     ---------------------------------------------------------------------  
-    /                       Copyright (c) 1996.                           \ 
+     ---------------------------------------------------------------------
+    /                       Copyright (c) 1996.                           \
    |          The Regents of the University of California.                 |
    |                        All rights reserved.                           |
    |                                                                       |
@@ -32,12 +32,12 @@
    |   opinions  of authors expressed herein do not necessarily state or   |
    |   reflect those of the United States Government or  the  University   |
    |   of  California,  and shall not be used for advertising or product   |
-    \  endorsement purposes.                                              / 
-     ---------------------------------------------------------------------  
+    \  endorsement purposes.                                              /
+     ---------------------------------------------------------------------
 */
 
 /*
-		  Floating point exception control module.
+                  Floating point exception control module.
 
    This Python module provides bare-bones control over floating point
    units from several hardware manufacturers.  Specifically, it allows
@@ -95,8 +95,8 @@ static PyObject *turnon_sigfpe            (PyObject *self,PyObject *args);
 static PyObject *turnoff_sigfpe           (PyObject *self,PyObject *args);
 
 static PyMethodDef fpectl_methods[] = {
-    {"turnon_sigfpe",		 (PyCFunction) turnon_sigfpe,		 METH_VARARGS},
-    {"turnoff_sigfpe",		 (PyCFunction) turnoff_sigfpe, 	         METH_VARARGS},
+    {"turnon_sigfpe",            (PyCFunction) turnon_sigfpe,            METH_VARARGS},
+    {"turnoff_sigfpe",           (PyCFunction) turnoff_sigfpe,           METH_VARARGS},
     {0,0}
 };
 
@@ -121,19 +121,19 @@ static void fpe_reset(Sigfunc *handler)
      * My usage doesn't follow the man page exactly.  Maybe somebody
      * else can explain handle_sigfpes to me....
      * cc -c -I/usr/local/python/include fpectlmodule.c
-     * ld -shared -o fpectlmodule.so fpectlmodule.o -lfpe 
+     * ld -shared -o fpectlmodule.so fpectlmodule.o -lfpe
      */
 #include <sigfpe.h>
     typedef void user_routine (unsigned[5], int[2]);
     typedef void abort_routine (unsigned long);
     handle_sigfpes(_OFF, 0,
-		 (user_routine *)0,
-		 _TURN_OFF_HANDLER_ON_ERROR,
-		 NULL);
+                 (user_routine *)0,
+                 _TURN_OFF_HANDLER_ON_ERROR,
+                 NULL);
     handle_sigfpes(_ON, _EN_OVERFL | _EN_DIVZERO | _EN_INVALID,
-		 (user_routine *)0,
-		 _ABORT_ON_ERROR,
-		 NULL);
+                 (user_routine *)0,
+                 _ABORT_ON_ERROR,
+                 NULL);
     PyOS_setsig(SIGFPE, handler);
 
 /*-- SunOS and Solaris ----------------------------------------------------*/
@@ -194,16 +194,16 @@ static void fpe_reset(Sigfunc *handler)
 
 /*-- DEC ALPHA VMS --------------------------------------------------------*/
 #elif defined(__ALPHA) && defined(__VMS)
-	IEEE clrmsk;
-	IEEE setmsk;
-	clrmsk.ieee$q_flags =
-		IEEE$M_TRAP_ENABLE_UNF |  IEEE$M_TRAP_ENABLE_INE |
-		 IEEE$M_MAP_UMZ;
-	setmsk.ieee$q_flags =
-		IEEE$M_TRAP_ENABLE_INV | IEEE$M_TRAP_ENABLE_DZE |
-		IEEE$M_TRAP_ENABLE_OVF;
-	sys$ieee_set_fp_control(&clrmsk, &setmsk, 0);
-	PyOS_setsig(SIGFPE, handler);
+        IEEE clrmsk;
+        IEEE setmsk;
+        clrmsk.ieee$q_flags =
+                IEEE$M_TRAP_ENABLE_UNF |  IEEE$M_TRAP_ENABLE_INE |
+                 IEEE$M_MAP_UMZ;
+        setmsk.ieee$q_flags =
+                IEEE$M_TRAP_ENABLE_INV | IEEE$M_TRAP_ENABLE_DZE |
+                IEEE$M_TRAP_ENABLE_OVF;
+        sys$ieee_set_fp_control(&clrmsk, &setmsk, 0);
+        PyOS_setsig(SIGFPE, handler);
 
 /*-- HP IA64 VMS --------------------------------------------------------*/
 #elif defined(__ia64) && defined(__VMS)
@@ -262,13 +262,13 @@ static PyObject *turnoff_sigfpe(PyObject *self,PyObject *args)
     fpresetsticky(fpgetsticky());
     fpsetmask(0);
 #elif defined(__VMS)
-	IEEE clrmsk;
-	 clrmsk.ieee$q_flags =
-		IEEE$M_TRAP_ENABLE_UNF |  IEEE$M_TRAP_ENABLE_INE |
-		IEEE$M_MAP_UMZ | IEEE$M_TRAP_ENABLE_INV |
-		IEEE$M_TRAP_ENABLE_DZE | IEEE$M_TRAP_ENABLE_OVF |
-		IEEE$M_INHERIT;
-	sys$ieee_set_fp_control(&clrmsk, 0, 0);
+        IEEE clrmsk;
+         clrmsk.ieee$q_flags =
+                IEEE$M_TRAP_ENABLE_UNF |  IEEE$M_TRAP_ENABLE_INE |
+                IEEE$M_MAP_UMZ | IEEE$M_TRAP_ENABLE_INV |
+                IEEE$M_TRAP_ENABLE_DZE | IEEE$M_TRAP_ENABLE_OVF |
+                IEEE$M_INHERIT;
+        sys$ieee_set_fp_control(&clrmsk, 0, 0);
 #else
     fputs("Operation not implemented\n", stderr);
 #endif
@@ -291,11 +291,11 @@ PyMODINIT_FUNC initfpectl(void)
     PyObject *m, *d;
     m = Py_InitModule("fpectl", fpectl_methods);
     if (m == NULL)
-    	return;
+        return;
     d = PyModule_GetDict(m);
     fpe_error = PyErr_NewException("fpectl.error", NULL, NULL);
     if (fpe_error != NULL)
-	PyDict_SetItemString(d, "error", fpe_error);
+        PyDict_SetItemString(d, "error", fpe_error);
 }
 
 #ifdef __cplusplus

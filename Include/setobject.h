@@ -22,8 +22,8 @@ no meaning otherwise.
 #define PySet_MINSIZE 8
 
 typedef struct {
-	long hash;      /* cached hash code for the entry key */
-	PyObject *key;
+    long hash;      /* cached hash code for the entry key */
+    PyObject *key;
 } setentry;
 
 
@@ -33,27 +33,27 @@ This data structure is shared by set and frozenset objects.
 
 typedef struct _setobject PySetObject;
 struct _setobject {
-	PyObject_HEAD
+    PyObject_HEAD
 
-	Py_ssize_t fill;  /* # Active + # Dummy */
-	Py_ssize_t used;  /* # Active */
+    Py_ssize_t fill;  /* # Active + # Dummy */
+    Py_ssize_t used;  /* # Active */
 
-	/* The table contains mask + 1 slots, and that's a power of 2.
-	 * We store the mask instead of the size because the mask is more
-	 * frequently needed.
-	 */
-	Py_ssize_t mask;
+    /* The table contains mask + 1 slots, and that's a power of 2.
+     * We store the mask instead of the size because the mask is more
+     * frequently needed.
+     */
+    Py_ssize_t mask;
 
-	/* table points to smalltable for small tables, else to
-	 * additional malloc'ed memory.  table is never NULL!  This rule
-	 * saves repeated runtime null-tests.
-	 */
-	setentry *table;
-	setentry *(*lookup)(PySetObject *so, PyObject *key, long hash);
-	setentry smalltable[PySet_MINSIZE];
+    /* table points to smalltable for small tables, else to
+     * additional malloc'ed memory.  table is never NULL!  This rule
+     * saves repeated runtime null-tests.
+     */
+    setentry *table;
+    setentry *(*lookup)(PySetObject *so, PyObject *key, long hash);
+    setentry smalltable[PySet_MINSIZE];
 
-	long hash;		/* only used by frozenset objects */
-	PyObject *weakreflist;	/* List of weak references */
+    long hash;                  /* only used by frozenset objects */
+    PyObject *weakreflist;      /* List of weak references */
 };
 
 PyAPI_DATA(PyTypeObject) PySet_Type;
@@ -68,17 +68,17 @@ PyAPI_DATA(PyTypeObject) PyFrozenSet_Type;
 
 #define PyFrozenSet_CheckExact(ob) (Py_TYPE(ob) == &PyFrozenSet_Type)
 #define PyAnySet_CheckExact(ob) \
-	(Py_TYPE(ob) == &PySet_Type || Py_TYPE(ob) == &PyFrozenSet_Type)
+    (Py_TYPE(ob) == &PySet_Type || Py_TYPE(ob) == &PyFrozenSet_Type)
 #define PyAnySet_Check(ob) \
-	(Py_TYPE(ob) == &PySet_Type || Py_TYPE(ob) == &PyFrozenSet_Type || \
-	  PyType_IsSubtype(Py_TYPE(ob), &PySet_Type) || \
-	  PyType_IsSubtype(Py_TYPE(ob), &PyFrozenSet_Type))
+    (Py_TYPE(ob) == &PySet_Type || Py_TYPE(ob) == &PyFrozenSet_Type || \
+      PyType_IsSubtype(Py_TYPE(ob), &PySet_Type) || \
+      PyType_IsSubtype(Py_TYPE(ob), &PyFrozenSet_Type))
 #define PySet_Check(ob) \
-	(Py_TYPE(ob) == &PySet_Type || \
-	PyType_IsSubtype(Py_TYPE(ob), &PySet_Type))
+    (Py_TYPE(ob) == &PySet_Type || \
+    PyType_IsSubtype(Py_TYPE(ob), &PySet_Type))
 #define   PyFrozenSet_Check(ob) \
-	(Py_TYPE(ob) == &PyFrozenSet_Type || \
-	  PyType_IsSubtype(Py_TYPE(ob), &PyFrozenSet_Type))
+    (Py_TYPE(ob) == &PyFrozenSet_Type || \
+      PyType_IsSubtype(Py_TYPE(ob), &PyFrozenSet_Type))
 
 PyAPI_FUNC(PyObject *) PySet_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyFrozenSet_New(PyObject *);

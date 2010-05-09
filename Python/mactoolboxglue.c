@@ -4,10 +4,10 @@ The Netherlands.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Stichting Mathematisch
 Centrum or CWI not be used in advertising or publicity pertaining to
 distribution of the software without specific, written prior permission.
@@ -25,45 +25,45 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #include "pymactoolbox.h"
-#include <arpa/inet.h>	/* for ntohl, htonl */
+#include <arpa/inet.h>  /* for ntohl, htonl */
 
 
 /* Like strerror() but for Mac OS error numbers */
 char *
 PyMac_StrError(int err)
 {
-	static char buf[256];
-	PyObject *m;
-	PyObject *rv;
+    static char buf[256];
+    PyObject *m;
+    PyObject *rv;
 
-	m = PyImport_ImportModuleNoBlock("MacOS");
-	if (!m) {
-		if (Py_VerboseFlag)
-			PyErr_Print();
-		PyErr_Clear();
-		rv = NULL;
-	}
-	else {
-		rv = PyObject_CallMethod(m, "GetErrorString", "i", err);
-		if (!rv)
-			PyErr_Clear();
-	}
-	if (!rv) {
-		buf[0] = '\0';
-	}
-	else {
-		char *input = PyString_AsString(rv);
-		if (!input) {
-			PyErr_Clear();
-			buf[0] = '\0';
-		} else {
-			strncpy(buf, input, sizeof(buf) - 1);
-			buf[sizeof(buf) - 1] = '\0';
-		}
-		Py_DECREF(rv);
-	}
-	Py_XDECREF(m);
-	return buf;
+    m = PyImport_ImportModuleNoBlock("MacOS");
+    if (!m) {
+        if (Py_VerboseFlag)
+            PyErr_Print();
+        PyErr_Clear();
+        rv = NULL;
+    }
+    else {
+        rv = PyObject_CallMethod(m, "GetErrorString", "i", err);
+        if (!rv)
+            PyErr_Clear();
+    }
+    if (!rv) {
+        buf[0] = '\0';
+    }
+    else {
+        char *input = PyString_AsString(rv);
+        if (!input) {
+            PyErr_Clear();
+            buf[0] = '\0';
+        } else {
+            strncpy(buf, input, sizeof(buf) - 1);
+            buf[sizeof(buf) - 1] = '\0';
+        }
+        Py_DECREF(rv);
+    }
+    Py_XDECREF(m);
+    return buf;
 }
 
 /* Exception object shared by all Mac specific modules for Mac OS errors */
@@ -73,36 +73,36 @@ PyObject *PyMac_OSErrException;
 PyObject *
 PyMac_GetOSErrException(void)
 {
-	if (PyMac_OSErrException == NULL)
-		PyMac_OSErrException = PyErr_NewException("MacOS.Error", NULL, NULL);
-	return PyMac_OSErrException;
+    if (PyMac_OSErrException == NULL)
+        PyMac_OSErrException = PyErr_NewException("MacOS.Error", NULL, NULL);
+    return PyMac_OSErrException;
 }
 
 /* Set a MAC-specific error from errno, and return NULL; return None if no error */
-PyObject * 
+PyObject *
 PyErr_Mac(PyObject *eobj, int err)
 {
-	char *msg;
-	PyObject *v;
-	
-	if (err == 0 && !PyErr_Occurred()) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	if (err == -1 && PyErr_Occurred())
-		return NULL;
-	msg = PyMac_StrError(err);
-	v = Py_BuildValue("(is)", err, msg);
-	PyErr_SetObject(eobj, v);
-	Py_DECREF(v);
-	return NULL;
+    char *msg;
+    PyObject *v;
+
+    if (err == 0 && !PyErr_Occurred()) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    if (err == -1 && PyErr_Occurred())
+        return NULL;
+    msg = PyMac_StrError(err);
+    v = Py_BuildValue("(is)", err, msg);
+    PyErr_SetObject(eobj, v);
+    Py_DECREF(v);
+    return NULL;
 }
 
 /* Call PyErr_Mac with PyMac_OSErrException */
 PyObject *
 PyMac_Error(OSErr err)
 {
-	return PyErr_Mac(PyMac_GetOSErrException(), err);
+    return PyErr_Mac(PyMac_GetOSErrException(), err);
 }
 
 
@@ -110,49 +110,49 @@ PyMac_Error(OSErr err)
 OSErr
 PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
 {
-	PyObject *fs, *exc;
-	PyObject *rv = NULL;
-	char *input;
-	OSErr err = noErr;
+    PyObject *fs, *exc;
+    PyObject *rv = NULL;
+    char *input;
+    OSErr err = noErr;
 
-	*path = '\0';
+    *path = '\0';
 
-	fs = PyMac_BuildFSSpec(fss);
-	if (!fs)
-		goto error;
+    fs = PyMac_BuildFSSpec(fss);
+    if (!fs)
+        goto error;
 
-	rv = PyObject_CallMethod(fs, "as_pathname", "");
-	if (!rv)
-		goto error;
+    rv = PyObject_CallMethod(fs, "as_pathname", "");
+    if (!rv)
+        goto error;
 
-	input = PyString_AsString(rv);
-	if (!input)
-		goto error;
+    input = PyString_AsString(rv);
+    if (!input)
+        goto error;
 
-	strncpy(path, input, len - 1);
-	path[len - 1] = '\0';
+    strncpy(path, input, len - 1);
+    path[len - 1] = '\0';
 
-	Py_XDECREF(rv);
-	Py_XDECREF(fs);
-	return err;
+    Py_XDECREF(rv);
+    Py_XDECREF(fs);
+    return err;
 
   error:
-	exc = PyErr_Occurred();
-	if (exc  && PyErr_GivenExceptionMatches(exc,
-						PyMac_GetOSErrException())) {
-		PyObject *args = PyObject_GetAttrString(exc, "args");
-		if (args) {
-			char *ignore;
-			PyArg_ParseTuple(args, "is", &err, &ignore);
-			Py_XDECREF(args);
-		}
-	}
-	if (err == noErr)
-		err = -1;
-	PyErr_Clear();
-	Py_XDECREF(rv);
-	Py_XDECREF(fs);
-	return err;
+    exc = PyErr_Occurred();
+    if (exc  && PyErr_GivenExceptionMatches(exc,
+                                            PyMac_GetOSErrException())) {
+        PyObject *args = PyObject_GetAttrString(exc, "args");
+        if (args) {
+            char *ignore;
+            PyArg_ParseTuple(args, "is", &err, &ignore);
+            Py_XDECREF(args);
+        }
+    }
+    if (err == noErr)
+        err = -1;
+    PyErr_Clear();
+    Py_XDECREF(rv);
+    Py_XDECREF(fs);
+    return err;
 }
 #endif /* !__LP64__ */
 
@@ -160,30 +160,30 @@ PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
 int
 PyMac_GetOSType(PyObject *v, OSType *pr)
 {
-	uint32_t tmp;
-	if (!PyString_Check(v) || PyString_Size(v) != 4) {
-		PyErr_SetString(PyExc_TypeError,
-			"OSType arg must be string of 4 chars");
-		return 0;
-	}
-	memcpy((char *)&tmp, PyString_AsString(v), 4);
-	*pr = (OSType)ntohl(tmp);
-	return 1;
+    uint32_t tmp;
+    if (!PyString_Check(v) || PyString_Size(v) != 4) {
+        PyErr_SetString(PyExc_TypeError,
+            "OSType arg must be string of 4 chars");
+        return 0;
+    }
+    memcpy((char *)&tmp, PyString_AsString(v), 4);
+    *pr = (OSType)ntohl(tmp);
+    return 1;
 }
 
 /* Convert an OSType value to a 4-char string object */
 PyObject *
 PyMac_BuildOSType(OSType t)
 {
-	uint32_t tmp = htonl((uint32_t)t);
-	return PyString_FromStringAndSize((char *)&tmp, 4);
+    uint32_t tmp = htonl((uint32_t)t);
+    return PyString_FromStringAndSize((char *)&tmp, 4);
 }
 
 /* Convert an NumVersion value to a 4-element tuple */
 PyObject *
 PyMac_BuildNumVersion(NumVersion t)
 {
-	return Py_BuildValue("(hhhh)", t.majorRev, t.minorAndBugRev, t.stage, t.nonRelRev);
+    return Py_BuildValue("(hhhh)", t.majorRev, t.minorAndBugRev, t.stage, t.nonRelRev);
 }
 
 
@@ -191,36 +191,36 @@ PyMac_BuildNumVersion(NumVersion t)
 int
 PyMac_GetStr255(PyObject *v, Str255 pbuf)
 {
-	int len;
-	if (!PyString_Check(v) || (len = PyString_Size(v)) > 255) {
-		PyErr_SetString(PyExc_TypeError,
-			"Str255 arg must be string of at most 255 chars");
-		return 0;
-	}
-	pbuf[0] = len;
-	memcpy((char *)(pbuf+1), PyString_AsString(v), len);
-	return 1;
+    int len;
+    if (!PyString_Check(v) || (len = PyString_Size(v)) > 255) {
+        PyErr_SetString(PyExc_TypeError,
+            "Str255 arg must be string of at most 255 chars");
+        return 0;
+    }
+    pbuf[0] = len;
+    memcpy((char *)(pbuf+1), PyString_AsString(v), len);
+    return 1;
 }
 
 /* Convert a Str255 to a Python string object */
 PyObject *
 PyMac_BuildStr255(Str255 s)
 {
-	if ( s == NULL ) {
-		PyErr_SetString(PyExc_SystemError, "Str255 pointer is NULL");
-		return NULL;
-	}
-	return PyString_FromStringAndSize((char *)&s[1], (int)s[0]);
+    if ( s == NULL ) {
+        PyErr_SetString(PyExc_SystemError, "Str255 pointer is NULL");
+        return NULL;
+    }
+    return PyString_FromStringAndSize((char *)&s[1], (int)s[0]);
 }
 
 PyObject *
 PyMac_BuildOptStr255(Str255 s)
 {
-	if ( s == NULL ) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	return PyString_FromStringAndSize((char *)&s[1], (int)s[0]);
+    if ( s == NULL ) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    return PyString_FromStringAndSize((char *)&s[1], (int)s[0]);
 }
 
 
@@ -232,14 +232,14 @@ PyMac_BuildOptStr255(Str255 s)
 int
 PyMac_GetRect(PyObject *v, Rect *r)
 {
-	return PyArg_Parse(v, "(hhhh)", &r->left, &r->top, &r->right, &r->bottom);
+    return PyArg_Parse(v, "(hhhh)", &r->left, &r->top, &r->right, &r->bottom);
 }
 
 /* Convert a Rect to a Python object */
 PyObject *
 PyMac_BuildRect(Rect *r)
 {
-	return Py_BuildValue("(hhhh)", r->left, r->top, r->right, r->bottom);
+    return Py_BuildValue("(hhhh)", r->left, r->top, r->right, r->bottom);
 }
 
 
@@ -250,14 +250,14 @@ PyMac_BuildRect(Rect *r)
 int
 PyMac_GetPoint(PyObject *v, Point *p)
 {
-	return PyArg_Parse(v, "(hh)", &p->h, &p->v);
+    return PyArg_Parse(v, "(hh)", &p->h, &p->v);
 }
 
 /* Convert a Point to a Python object */
 PyObject *
 PyMac_BuildPoint(Point p)
 {
-	return Py_BuildValue("(hh)", p.h, p.v);
+    return Py_BuildValue("(hh)", p.h, p.v);
 }
 
 
@@ -266,73 +266,73 @@ PyMac_BuildPoint(Point p)
 int
 PyMac_GetEventRecord(PyObject *v, EventRecord *e)
 {
-	return PyArg_Parse(v, "(Hkk(hh)H)",
-	                   &e->what,
-	                   &e->message,
-	                   &e->when,
-	                   &e->where.h,
-	                   &e->where.v,                   
-	                   &e->modifiers);
+    return PyArg_Parse(v, "(Hkk(hh)H)",
+                       &e->what,
+                       &e->message,
+                       &e->when,
+                       &e->where.h,
+                       &e->where.v,
+                       &e->modifiers);
 }
 
 /* Convert a Rect to an EventRecord object */
 PyObject *
 PyMac_BuildEventRecord(EventRecord *e)
 {
-	return Py_BuildValue("(hll(hh)h)",
-	                     e->what,
-	                     e->message,
-	                     e->when,
-	                     e->where.h,
-	                     e->where.v,
-	                     e->modifiers);
+    return Py_BuildValue("(hll(hh)h)",
+                         e->what,
+                         e->message,
+                         e->when,
+                         e->where.h,
+                         e->where.v,
+                         e->modifiers);
 }
 
 /* Convert Python object to Fixed */
 int
 PyMac_GetFixed(PyObject *v, Fixed *f)
 {
-	double d;
-	
-	if( !PyArg_Parse(v, "d", &d))
-		return 0;
-	*f = (Fixed)(d * 0x10000);
-	return 1;
+    double d;
+
+    if( !PyArg_Parse(v, "d", &d))
+        return 0;
+    *f = (Fixed)(d * 0x10000);
+    return 1;
 }
 
 /* Convert a Fixed to a Python object */
 PyObject *
 PyMac_BuildFixed(Fixed f)
 {
-	double d;
-	
-	d = f;
-	d = d / 0x10000;
-	return Py_BuildValue("d", d);
+    double d;
+
+    d = f;
+    d = d / 0x10000;
+    return Py_BuildValue("d", d);
 }
 
 /* Convert wide to/from Python int or (hi, lo) tuple. XXXX Should use Python longs */
 int
 PyMac_Getwide(PyObject *v, wide *rv)
 {
-	if (PyInt_Check(v)) {
-		rv->hi = 0;
-		rv->lo = PyInt_AsLong(v);
-		if( rv->lo & 0x80000000 )
-			rv->hi = -1;
-		return 1;
-	}
-	return PyArg_Parse(v, "(kk)", &rv->hi, &rv->lo);
+    if (PyInt_Check(v)) {
+        rv->hi = 0;
+        rv->lo = PyInt_AsLong(v);
+        if( rv->lo & 0x80000000 )
+            rv->hi = -1;
+        return 1;
+    }
+    return PyArg_Parse(v, "(kk)", &rv->hi, &rv->lo);
 }
 
 
 PyObject *
 PyMac_Buildwide(wide *w)
 {
-	if ( (w->hi == 0 && (w->lo & 0x80000000) == 0) ||
-	     (w->hi == -1 && (w->lo & 0x80000000) ) )
-		return PyInt_FromLong(w->lo);
-	return Py_BuildValue("(ll)", w->hi, w->lo);
+    if ( (w->hi == 0 && (w->lo & 0x80000000) == 0) ||
+         (w->hi == -1 && (w->lo & 0x80000000) ) )
+        return PyInt_FromLong(w->lo);
+    return Py_BuildValue("(ll)", w->hi, w->lo);
 }
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
@@ -358,8 +358,8 @@ PyObject *routinename(object cobj) { \
     if (!PyMacGluePtr_##routinename) { \
        if (!PyImport_ImportModule(module)) return NULL; \
        if (!PyMacGluePtr_##routinename) { \
-           PyErr_SetString(PyExc_ImportError, "Module did not provide routine: " module ": " #routinename); \
-           return NULL; \
+       PyErr_SetString(PyExc_ImportError, "Module did not provide routine: " module ": " #routinename); \
+       return NULL; \
        } \
     } \
     return (*PyMacGluePtr_##routinename)(cobj); \
@@ -372,8 +372,8 @@ int routinename(PyObject *pyobj, object *cobj) { \
     if (!PyMacGluePtr_##routinename) { \
        if (!PyImport_ImportModule(module)) return 0; \
        if (!PyMacGluePtr_##routinename) { \
-           PyErr_SetString(PyExc_ImportError, "Module did not provide routine: " module ": " #routinename); \
-           return 0; \
+       PyErr_SetString(PyExc_ImportError, "Module did not provide routine: " module ": " #routinename); \
+       return 0; \
        } \
     } \
     return (*PyMacGluePtr_##routinename)(pyobj, cobj); \

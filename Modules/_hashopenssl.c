@@ -197,21 +197,21 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
     /* (not a problem because we hold the GIL by default) */
     retval = PyString_FromStringAndSize(NULL, digest_size * 2);
     if (!retval)
-	    return NULL;
+            return NULL;
     hex_digest = PyString_AsString(retval);
     if (!hex_digest) {
-	    Py_DECREF(retval);
-	    return NULL;
+            Py_DECREF(retval);
+            return NULL;
     }
 
     /* Make hex version of the digest */
     for(i=j=0; i<digest_size; i++) {
         char c;
         c = (digest[i] >> 4) & 0xf;
-	c = (c>9) ? c+'a'-10 : c + '0';
+        c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
         c = (digest[i] & 0xf);
-	c = (c>9) ? c+'a'-10 : c + '0';
+        c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
     }
     return retval;
@@ -253,11 +253,11 @@ EVP_update(EVPobject *self, PyObject *args)
 }
 
 static PyMethodDef EVP_methods[] = {
-    {"update",	  (PyCFunction)EVP_update,    METH_VARARGS, EVP_update__doc__},
-    {"digest",	  (PyCFunction)EVP_digest,    METH_NOARGS,  EVP_digest__doc__},
+    {"update",    (PyCFunction)EVP_update,    METH_VARARGS, EVP_update__doc__},
+    {"digest",    (PyCFunction)EVP_digest,    METH_NOARGS,  EVP_digest__doc__},
     {"hexdigest", (PyCFunction)EVP_hexdigest, METH_NOARGS,  EVP_hexdigest__doc__},
-    {"copy",	  (PyCFunction)EVP_copy,      METH_NOARGS,  EVP_copy__doc__},
-    {NULL,	  NULL}		/* sentinel */
+    {"copy",      (PyCFunction)EVP_copy,      METH_NOARGS,  EVP_copy__doc__},
+    {NULL,        NULL}         /* sentinel */
 };
 
 static PyObject *
@@ -326,14 +326,14 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
 
     if (!PyArg_Parse(name_obj, "s", &nameStr)) {
         PyErr_SetString(PyExc_TypeError, "name must be a string");
-	PyBuffer_Release(&view);
+        PyBuffer_Release(&view);
         return -1;
     }
 
     digest = EVP_get_digestbyname(nameStr);
     if (!digest) {
         PyErr_SetString(PyExc_ValueError, "unknown hash function");
-	PyBuffer_Release(&view);
+        PyBuffer_Release(&view);
         return -1;
     }
     EVP_DigestInit(&self->ctx, digest);
@@ -376,11 +376,11 @@ digest_size -- number of bytes in this hashes output\n");
 static PyTypeObject EVPtype = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_hashlib.HASH",    /*tp_name*/
-    sizeof(EVPobject),	/*tp_basicsize*/
-    0,			/*tp_itemsize*/
+    sizeof(EVPobject),  /*tp_basicsize*/
+    0,                  /*tp_itemsize*/
     /* methods */
-    (destructor)EVP_dealloc,	/*tp_dealloc*/
-    0,			/*tp_print*/
+    (destructor)EVP_dealloc,    /*tp_dealloc*/
+    0,                  /*tp_print*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_compare*/
@@ -397,13 +397,13 @@ static PyTypeObject EVPtype = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
     hashtype_doc,       /*tp_doc*/
     0,                  /*tp_traverse*/
-    0,			/*tp_clear*/
-    0,			/*tp_richcompare*/
-    0,			/*tp_weaklistoffset*/
-    0,			/*tp_iter*/
-    0,			/*tp_iternext*/
-    EVP_methods,	/* tp_methods */
-    EVP_members,	/* tp_members */
+    0,                  /*tp_clear*/
+    0,                  /*tp_richcompare*/
+    0,                  /*tp_weaklistoffset*/
+    0,                  /*tp_iter*/
+    0,                  /*tp_iternext*/
+    EVP_methods,        /* tp_methods */
+    EVP_members,        /* tp_members */
     EVP_getseters,      /* tp_getset */
 #if 1
     0,                  /* tp_base */
@@ -484,7 +484,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     digest = EVP_get_digestbyname(name);
 
     ret_obj = EVPnew(name_obj, digest, NULL, (unsigned char*)view.buf,
-		     view.len);
+                     view.len);
     PyBuffer_Release(&view);
 
     return ret_obj;
@@ -508,12 +508,12 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
             return NULL; \
         } \
      \
-	ret_obj = EVPnew( \
-		    CONST_ ## NAME ## _name_obj, \
-		    NULL, \
-		    CONST_new_ ## NAME ## _ctx_p, \
-		    (unsigned char*)view.buf, view.len); \
-	PyBuffer_Release(&view); \
+        ret_obj = EVPnew( \
+                    CONST_ ## NAME ## _name_obj, \
+                    NULL, \
+                    CONST_new_ ## NAME ## _ctx_p, \
+                    (unsigned char*)view.buf, view.len); \
+        PyBuffer_Release(&view); \
         return ret_obj; \
     }
 
@@ -554,7 +554,7 @@ static struct PyMethodDef EVP_functions[] = {
     CONSTRUCTOR_METH_DEF(sha384),
     CONSTRUCTOR_METH_DEF(sha512),
 #endif
-    {NULL,	NULL}		 /* Sentinel */
+    {NULL,      NULL}            /* Sentinel */
 };
 
 

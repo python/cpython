@@ -4,10 +4,10 @@ The Netherlands.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Stichting Mathematisch
 Centrum or CWI not be used in advertising or publicity pertaining to
 distribution of the software without specific, written prior permission.
@@ -32,24 +32,24 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 static PyObject *
 gestalt_gestalt(PyObject *self, PyObject *args)
 {
-	OSErr iErr;
-	OSType selector;
-	SInt32 response;
-	if (!PyArg_ParseTuple(args, "O&", PyMac_GetOSType, &selector))
-		return NULL;
-	iErr = Gestalt ( selector, &response );
-	if (iErr != 0) 
-		return PyMac_Error(iErr);
-	return PyInt_FromLong(response);
+    OSErr iErr;
+    OSType selector;
+    SInt32 response;
+    if (!PyArg_ParseTuple(args, "O&", PyMac_GetOSType, &selector))
+        return NULL;
+    iErr = Gestalt ( selector, &response );
+    if (iErr != 0)
+        return PyMac_Error(iErr);
+    return PyInt_FromLong(response);
 }
 
 static struct PyMethodDef gestalt_methods[] = {
-	{"gestalt", gestalt_gestalt, METH_VARARGS},
-	{NULL, NULL} /* Sentinel */
+    {"gestalt", gestalt_gestalt, METH_VARARGS},
+    {NULL, NULL} /* Sentinel */
 };
 
 void
 initgestalt(void)
 {
-	Py_InitModule("gestalt", gestalt_methods);
+    Py_InitModule("gestalt", gestalt_methods);
 }

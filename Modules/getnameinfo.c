@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -13,7 +13,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -53,162 +53,162 @@
 #define NO  0
 
 static struct gni_afd {
-	int a_af;
-	int a_addrlen;
-	int a_socklen;
-	int a_off;
+    int a_af;
+    int a_addrlen;
+    int a_socklen;
+    int a_off;
 } gni_afdl [] = {
 #ifdef ENABLE_IPV6
-	{PF_INET6, sizeof(struct in6_addr), sizeof(struct sockaddr_in6),
-		offsetof(struct sockaddr_in6, sin6_addr)},
+    {PF_INET6, sizeof(struct in6_addr), sizeof(struct sockaddr_in6),
+        offsetof(struct sockaddr_in6, sin6_addr)},
 #endif
-	{PF_INET, sizeof(struct in_addr), sizeof(struct sockaddr_in),
-		offsetof(struct sockaddr_in, sin_addr)},
-	{0, 0, 0},
+    {PF_INET, sizeof(struct in_addr), sizeof(struct sockaddr_in),
+        offsetof(struct sockaddr_in, sin_addr)},
+    {0, 0, 0},
 };
 
 struct gni_sockinet {
-	u_char	si_len;
-	u_char	si_family;
-	u_short	si_port;
+    u_char      si_len;
+    u_char      si_family;
+    u_short     si_port;
 };
 
-#define ENI_NOSOCKET 	0
-#define ENI_NOSERVNAME	1
-#define ENI_NOHOSTNAME	2
-#define ENI_MEMORY	3
-#define ENI_SYSTEM	4
-#define ENI_FAMILY	5
-#define ENI_SALEN	6
+#define ENI_NOSOCKET    0
+#define ENI_NOSERVNAME  1
+#define ENI_NOHOSTNAME  2
+#define ENI_MEMORY      3
+#define ENI_SYSTEM      4
+#define ENI_FAMILY      5
+#define ENI_SALEN       6
 
 /* forward declaration to make gcc happy */
 int getnameinfo Py_PROTO((const struct sockaddr *, size_t, char *, size_t,
-			  char *, size_t, int));
+                          char *, size_t, int));
 
 int
 getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
-	const struct sockaddr *sa;
-	size_t salen;
-	char *host;
-	size_t hostlen;
-	char *serv;
-	size_t servlen;
-	int flags;
+    const struct sockaddr *sa;
+    size_t salen;
+    char *host;
+    size_t hostlen;
+    char *serv;
+    size_t servlen;
+    int flags;
 {
-	struct gni_afd *gni_afd;
-	struct servent *sp;
-	struct hostent *hp;
-	u_short port;
-	int family, len, i;
-	char *addr, *p;
-	u_long v4a;
+    struct gni_afd *gni_afd;
+    struct servent *sp;
+    struct hostent *hp;
+    u_short port;
+    int family, len, i;
+    char *addr, *p;
+    u_long v4a;
 #ifdef ENABLE_IPV6
-	u_char pfx;
+    u_char pfx;
 #endif
-	int h_error;
-	char numserv[512];
-	char numaddr[512];
+    int h_error;
+    char numserv[512];
+    char numaddr[512];
 
-	if (sa == NULL)
-		return ENI_NOSOCKET;
+    if (sa == NULL)
+        return ENI_NOSOCKET;
 
 #ifdef HAVE_SOCKADDR_SA_LEN
-	len = sa->sa_len;
-	if (len != salen) return ENI_SALEN;
+    len = sa->sa_len;
+    if (len != salen) return ENI_SALEN;
 #else
-	len = salen;
+    len = salen;
 #endif
-	
-	family = sa->sa_family;
-	for (i = 0; gni_afdl[i].a_af; i++)
-		if (gni_afdl[i].a_af == family) {
-			gni_afd = &gni_afdl[i];
-			goto found;
-		}
-	return ENI_FAMILY;
-	
+
+    family = sa->sa_family;
+    for (i = 0; gni_afdl[i].a_af; i++)
+        if (gni_afdl[i].a_af == family) {
+            gni_afd = &gni_afdl[i];
+            goto found;
+        }
+    return ENI_FAMILY;
+
  found:
-	if (len != gni_afd->a_socklen) return ENI_SALEN;
-	
-	port = ((struct gni_sockinet *)sa)->si_port; /* network byte order */
-	addr = (char *)sa + gni_afd->a_off;
+    if (len != gni_afd->a_socklen) return ENI_SALEN;
 
-	if (serv == NULL || servlen == 0) {
-		/* what we should do? */
-	} else if (flags & NI_NUMERICSERV) {
-		sprintf(numserv, "%d", ntohs(port));
-		if (strlen(numserv) > servlen)
-			return ENI_MEMORY;
-		strcpy(serv, numserv);
-	} else {
-		sp = getservbyport(port, (flags & NI_DGRAM) ? "udp" : "tcp");
-		if (sp) {
-			if (strlen(sp->s_name) > servlen)
-				return ENI_MEMORY;
-			strcpy(serv, sp->s_name);
-		} else
-			return ENI_NOSERVNAME;
-	}
+    port = ((struct gni_sockinet *)sa)->si_port; /* network byte order */
+    addr = (char *)sa + gni_afd->a_off;
 
-	switch (sa->sa_family) {
-	case AF_INET:
-		v4a = ((struct sockaddr_in *)sa)->sin_addr.s_addr;
-		if (IN_MULTICAST(v4a) || IN_EXPERIMENTAL(v4a))
-			flags |= NI_NUMERICHOST;
-		v4a >>= IN_CLASSA_NSHIFT;
-		if (v4a == 0 || v4a == IN_LOOPBACKNET)
-			flags |= NI_NUMERICHOST;			
-		break;
+    if (serv == NULL || servlen == 0) {
+        /* what we should do? */
+    } else if (flags & NI_NUMERICSERV) {
+        sprintf(numserv, "%d", ntohs(port));
+        if (strlen(numserv) > servlen)
+            return ENI_MEMORY;
+        strcpy(serv, numserv);
+    } else {
+        sp = getservbyport(port, (flags & NI_DGRAM) ? "udp" : "tcp");
+        if (sp) {
+            if (strlen(sp->s_name) > servlen)
+                return ENI_MEMORY;
+            strcpy(serv, sp->s_name);
+        } else
+            return ENI_NOSERVNAME;
+    }
+
+    switch (sa->sa_family) {
+    case AF_INET:
+        v4a = ((struct sockaddr_in *)sa)->sin_addr.s_addr;
+        if (IN_MULTICAST(v4a) || IN_EXPERIMENTAL(v4a))
+            flags |= NI_NUMERICHOST;
+        v4a >>= IN_CLASSA_NSHIFT;
+        if (v4a == 0 || v4a == IN_LOOPBACKNET)
+            flags |= NI_NUMERICHOST;
+        break;
 #ifdef ENABLE_IPV6
-	case AF_INET6:
-		pfx = ((struct sockaddr_in6 *)sa)->sin6_addr.s6_addr8[0];
-		if (pfx == 0 || pfx == 0xfe || pfx == 0xff)
-			flags |= NI_NUMERICHOST;
-		break;
+    case AF_INET6:
+        pfx = ((struct sockaddr_in6 *)sa)->sin6_addr.s6_addr8[0];
+        if (pfx == 0 || pfx == 0xfe || pfx == 0xff)
+            flags |= NI_NUMERICHOST;
+        break;
 #endif
-	}
-	if (host == NULL || hostlen == 0) {
-		/* what should we do? */
-	} else if (flags & NI_NUMERICHOST) {
-		if (inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
-		    == NULL)
-			return ENI_SYSTEM;
-		if (strlen(numaddr) > hostlen)
-			return ENI_MEMORY;
-		strcpy(host, numaddr);
-	} else {
+    }
+    if (host == NULL || hostlen == 0) {
+        /* what should we do? */
+    } else if (flags & NI_NUMERICHOST) {
+        if (inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
+            == NULL)
+            return ENI_SYSTEM;
+        if (strlen(numaddr) > hostlen)
+            return ENI_MEMORY;
+        strcpy(host, numaddr);
+    } else {
 #ifdef ENABLE_IPV6
-		hp = getipnodebyaddr(addr, gni_afd->a_addrlen, gni_afd->a_af, &h_error);
+        hp = getipnodebyaddr(addr, gni_afd->a_addrlen, gni_afd->a_af, &h_error);
 #else
-		hp = gethostbyaddr(addr, gni_afd->a_addrlen, gni_afd->a_af);
-		h_error = h_errno;
+        hp = gethostbyaddr(addr, gni_afd->a_addrlen, gni_afd->a_af);
+        h_error = h_errno;
 #endif
 
-		if (hp) {
-			if (flags & NI_NOFQDN) {
-				p = strchr(hp->h_name, '.');
-				if (p) *p = '\0';
-			}
-			if (strlen(hp->h_name) > hostlen) {
+        if (hp) {
+            if (flags & NI_NOFQDN) {
+                p = strchr(hp->h_name, '.');
+                if (p) *p = '\0';
+            }
+            if (strlen(hp->h_name) > hostlen) {
 #ifdef ENABLE_IPV6
-				freehostent(hp);
+                freehostent(hp);
 #endif
-				return ENI_MEMORY;
-			}
-			strcpy(host, hp->h_name);
+                return ENI_MEMORY;
+            }
+            strcpy(host, hp->h_name);
 #ifdef ENABLE_IPV6
-			freehostent(hp);
+            freehostent(hp);
 #endif
-		} else {
-			if (flags & NI_NAMEREQD)
-				return ENI_NOHOSTNAME;
-			if (inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
-			    == NULL)
-				return ENI_NOHOSTNAME;
-			if (strlen(numaddr) > hostlen)
-				return ENI_MEMORY;
-			strcpy(host, numaddr);
-		}
-	}
-	return SUCCESS;
+        } else {
+            if (flags & NI_NAMEREQD)
+                return ENI_NOHOSTNAME;
+            if (inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
+                == NULL)
+                return ENI_NOHOSTNAME;
+            if (strlen(numaddr) > hostlen)
+                return ENI_MEMORY;
+            strcpy(host, numaddr);
+        }
+    }
+    return SUCCESS;
 }

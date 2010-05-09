@@ -9,27 +9,27 @@ typedef PyObject *(*getter)(PyObject *, void *);
 typedef int (*setter)(PyObject *, PyObject *, void *);
 
 typedef struct PyGetSetDef {
-	char *name;
-	getter get;
-	setter set;
-	char *doc;
-	void *closure;
+    char *name;
+    getter get;
+    setter set;
+    char *doc;
+    void *closure;
 } PyGetSetDef;
 
 typedef PyObject *(*wrapperfunc)(PyObject *self, PyObject *args,
-				 void *wrapped);
+                                 void *wrapped);
 
 typedef PyObject *(*wrapperfunc_kwds)(PyObject *self, PyObject *args,
-				      void *wrapped, PyObject *kwds);
+                                      void *wrapped, PyObject *kwds);
 
 struct wrapperbase {
-	char *name;
-	int offset;
-	void *function;
-	wrapperfunc wrapper;
-	char *doc;
-	int flags;
-	PyObject *name_strobj;
+    char *name;
+    int offset;
+    void *function;
+    wrapperfunc wrapper;
+    char *doc;
+    int flags;
+    PyObject *name_strobj;
 };
 
 /* Flags for above struct */
@@ -38,33 +38,33 @@ struct wrapperbase {
 /* Various kinds of descriptor objects */
 
 #define PyDescr_COMMON \
-	PyObject_HEAD \
-	PyTypeObject *d_type; \
-	PyObject *d_name
+    PyObject_HEAD \
+    PyTypeObject *d_type; \
+    PyObject *d_name
 
 typedef struct {
-	PyDescr_COMMON;
+    PyDescr_COMMON;
 } PyDescrObject;
 
 typedef struct {
-	PyDescr_COMMON;
-	PyMethodDef *d_method;
+    PyDescr_COMMON;
+    PyMethodDef *d_method;
 } PyMethodDescrObject;
 
 typedef struct {
-	PyDescr_COMMON;
-	struct PyMemberDef *d_member;
+    PyDescr_COMMON;
+    struct PyMemberDef *d_member;
 } PyMemberDescrObject;
 
 typedef struct {
-	PyDescr_COMMON;
-	PyGetSetDef *d_getset;
+    PyDescr_COMMON;
+    PyGetSetDef *d_getset;
 } PyGetSetDescrObject;
 
 typedef struct {
-	PyDescr_COMMON;
-	struct wrapperbase *d_base;
-	void *d_wrapped; /* This can be any function pointer */
+    PyDescr_COMMON;
+    struct wrapperbase *d_base;
+    void *d_wrapped; /* This can be any function pointer */
 } PyWrapperDescrObject;
 
 PyAPI_DATA(PyTypeObject) PyWrapperDescr_Type;
@@ -75,11 +75,11 @@ PyAPI_DATA(PyTypeObject) PyMemberDescr_Type;
 PyAPI_FUNC(PyObject *) PyDescr_NewMethod(PyTypeObject *, PyMethodDef *);
 PyAPI_FUNC(PyObject *) PyDescr_NewClassMethod(PyTypeObject *, PyMethodDef *);
 PyAPI_FUNC(PyObject *) PyDescr_NewMember(PyTypeObject *,
-					       struct PyMemberDef *);
+                                               struct PyMemberDef *);
 PyAPI_FUNC(PyObject *) PyDescr_NewGetSet(PyTypeObject *,
-					       struct PyGetSetDef *);
+                                               struct PyGetSetDef *);
 PyAPI_FUNC(PyObject *) PyDescr_NewWrapper(PyTypeObject *,
-						struct wrapperbase *, void *);
+                                                struct wrapperbase *, void *);
 #define PyDescr_IsData(d) (Py_TYPE(d)->tp_descr_set != NULL)
 
 PyAPI_FUNC(PyObject *) PyDictProxy_New(PyObject *);

@@ -14,8 +14,8 @@ PyDoc_STRVAR(strop_module__doc__,
    XXX are defined for all 8-bit characters! */
 
 #define WARN if (PyErr_Warn(PyExc_DeprecationWarning, \
-		       "strop functions are obsolete; use string methods")) \
-	     return NULL
+               "strop functions are obsolete; use string methods")) \
+         return NULL
 
 /* The lstrip(), rstrip() and strip() functions are implemented
    in do_strip(), which uses an additional parameter to indicate what
@@ -29,56 +29,56 @@ PyDoc_STRVAR(strop_module__doc__,
 static PyObject *
 split_whitespace(char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 {
-	Py_ssize_t i = 0, j;
-	int err;
-	Py_ssize_t countsplit = 0;
-	PyObject* item;
-	PyObject *list = PyList_New(0);
+    Py_ssize_t i = 0, j;
+    int err;
+    Py_ssize_t countsplit = 0;
+    PyObject* item;
+    PyObject *list = PyList_New(0);
 
-	if (list == NULL)
-		return NULL;
+    if (list == NULL)
+        return NULL;
 
-	while (i < len) {
-		while (i < len && isspace(Py_CHARMASK(s[i]))) {
-			i = i+1;
-		}
-		j = i;
-		while (i < len && !isspace(Py_CHARMASK(s[i]))) {
-			i = i+1;
-		}
-		if (j < i) {
-			item = PyString_FromStringAndSize(s+j, i-j);
-			if (item == NULL)
-				goto finally;
+    while (i < len) {
+        while (i < len && isspace(Py_CHARMASK(s[i]))) {
+            i = i+1;
+        }
+        j = i;
+        while (i < len && !isspace(Py_CHARMASK(s[i]))) {
+            i = i+1;
+        }
+        if (j < i) {
+            item = PyString_FromStringAndSize(s+j, i-j);
+            if (item == NULL)
+                goto finally;
 
-			err = PyList_Append(list, item);
-			Py_DECREF(item);
-			if (err < 0)
-				goto finally;
+            err = PyList_Append(list, item);
+            Py_DECREF(item);
+            if (err < 0)
+                goto finally;
 
-			countsplit++;
-			while (i < len && isspace(Py_CHARMASK(s[i]))) {
-				i = i+1;
-			}
-			if (maxsplit && (countsplit >= maxsplit) && i < len) {
-				item = PyString_FromStringAndSize(
-                                        s+i, len - i);
-				if (item == NULL)
-					goto finally;
+            countsplit++;
+            while (i < len && isspace(Py_CHARMASK(s[i]))) {
+                i = i+1;
+            }
+            if (maxsplit && (countsplit >= maxsplit) && i < len) {
+                item = PyString_FromStringAndSize(
+                    s+i, len - i);
+                if (item == NULL)
+                    goto finally;
 
-				err = PyList_Append(list, item);
-				Py_DECREF(item);
-				if (err < 0)
-					goto finally;
+                err = PyList_Append(list, item);
+                Py_DECREF(item);
+                if (err < 0)
+                    goto finally;
 
-				i = len;
-			}
-		}
-	}
-	return list;
+                i = len;
+            }
+        }
+    }
+    return list;
   finally:
-	Py_DECREF(list);
-	return NULL;
+    Py_DECREF(list);
+    return NULL;
 }
 
 
@@ -96,60 +96,60 @@ PyDoc_STRVAR(splitfields__doc__,
 static PyObject *
 strop_splitfields(PyObject *self, PyObject *args)
 {
-	Py_ssize_t len, n, i, j, err;
-	Py_ssize_t splitcount, maxsplit;
-	char *s, *sub;
-	PyObject *list, *item;
+    Py_ssize_t len, n, i, j, err;
+    Py_ssize_t splitcount, maxsplit;
+    char *s, *sub;
+    PyObject *list, *item;
 
-	WARN;
-	sub = NULL;
-	n = 0;
-	splitcount = 0;
-	maxsplit = 0;
-	if (!PyArg_ParseTuple(args, "t#|z#n:split", &s, &len, &sub, &n, &maxsplit))
-		return NULL;
-	if (sub == NULL)
-		return split_whitespace(s, len, maxsplit);
-	if (n == 0) {
-		PyErr_SetString(PyExc_ValueError, "empty separator");
-		return NULL;
-	}
+    WARN;
+    sub = NULL;
+    n = 0;
+    splitcount = 0;
+    maxsplit = 0;
+    if (!PyArg_ParseTuple(args, "t#|z#n:split", &s, &len, &sub, &n, &maxsplit))
+        return NULL;
+    if (sub == NULL)
+        return split_whitespace(s, len, maxsplit);
+    if (n == 0) {
+        PyErr_SetString(PyExc_ValueError, "empty separator");
+        return NULL;
+    }
 
-	list = PyList_New(0);
-	if (list == NULL)
-		return NULL;
+    list = PyList_New(0);
+    if (list == NULL)
+        return NULL;
 
-	i = j = 0;
-	while (i+n <= len) {
-		if (s[i] == sub[0] && (n == 1 || memcmp(s+i, sub, n) == 0)) {
-			item = PyString_FromStringAndSize(s+j, i-j);
-			if (item == NULL)
-				goto fail;
-			err = PyList_Append(list, item);
-			Py_DECREF(item);
-			if (err < 0)
-				goto fail;
-			i = j = i + n;
-			splitcount++;
-			if (maxsplit && (splitcount >= maxsplit))
-				break;
-		}
-		else
-			i++;
-	}
-	item = PyString_FromStringAndSize(s+j, len-j);
-	if (item == NULL)
-		goto fail;
-	err = PyList_Append(list, item);
-	Py_DECREF(item);
-	if (err < 0)
-		goto fail;
+    i = j = 0;
+    while (i+n <= len) {
+        if (s[i] == sub[0] && (n == 1 || memcmp(s+i, sub, n) == 0)) {
+            item = PyString_FromStringAndSize(s+j, i-j);
+            if (item == NULL)
+                goto fail;
+            err = PyList_Append(list, item);
+            Py_DECREF(item);
+            if (err < 0)
+                goto fail;
+            i = j = i + n;
+            splitcount++;
+            if (maxsplit && (splitcount >= maxsplit))
+                break;
+        }
+        else
+            i++;
+    }
+    item = PyString_FromStringAndSize(s+j, len-j);
+    if (item == NULL)
+        goto fail;
+    err = PyList_Append(list, item);
+    Py_DECREF(item);
+    if (err < 0)
+        goto fail;
 
-	return list;
+    return list;
 
  fail:
-	Py_DECREF(list);
-	return NULL;
+    Py_DECREF(list);
+    return NULL;
 }
 
 
@@ -166,128 +166,128 @@ PyDoc_STRVAR(joinfields__doc__,
 static PyObject *
 strop_joinfields(PyObject *self, PyObject *args)
 {
-	PyObject *seq;
-	char *sep = NULL;
-	Py_ssize_t seqlen, seplen = 0;
-	Py_ssize_t i, reslen = 0, slen = 0, sz = 100;
-	PyObject *res = NULL;
-	char* p = NULL;
-	ssizeargfunc getitemfunc;
+    PyObject *seq;
+    char *sep = NULL;
+    Py_ssize_t seqlen, seplen = 0;
+    Py_ssize_t i, reslen = 0, slen = 0, sz = 100;
+    PyObject *res = NULL;
+    char* p = NULL;
+    ssizeargfunc getitemfunc;
 
-	WARN;
-	if (!PyArg_ParseTuple(args, "O|t#:join", &seq, &sep, &seplen))
-		return NULL;
-	if (sep == NULL) {
-		sep = " ";
-		seplen = 1;
-	}
+    WARN;
+    if (!PyArg_ParseTuple(args, "O|t#:join", &seq, &sep, &seplen))
+        return NULL;
+    if (sep == NULL) {
+        sep = " ";
+        seplen = 1;
+    }
 
-	seqlen = PySequence_Size(seq);
-	if (seqlen < 0 && PyErr_Occurred())
-		return NULL;
+    seqlen = PySequence_Size(seq);
+    if (seqlen < 0 && PyErr_Occurred())
+        return NULL;
 
-	if (seqlen == 1) {
-		/* Optimization if there's only one item */
-		PyObject *item = PySequence_GetItem(seq, 0);
-		if (item && !PyString_Check(item)) {
-			PyErr_SetString(PyExc_TypeError,
-				 "first argument must be sequence of strings");
-			Py_DECREF(item);
-			return NULL;
-		}
-		return item;
-	}
+    if (seqlen == 1) {
+        /* Optimization if there's only one item */
+        PyObject *item = PySequence_GetItem(seq, 0);
+        if (item && !PyString_Check(item)) {
+            PyErr_SetString(PyExc_TypeError,
+                     "first argument must be sequence of strings");
+            Py_DECREF(item);
+            return NULL;
+        }
+        return item;
+    }
 
-	if (!(res = PyString_FromStringAndSize((char*)NULL, sz)))
-		return NULL;
-	p = PyString_AsString(res);
+    if (!(res = PyString_FromStringAndSize((char*)NULL, sz)))
+        return NULL;
+    p = PyString_AsString(res);
 
-	/* optimize for lists, since it's the most common case.  all others
-	 * (tuples and arbitrary sequences) just use the sequence abstract
-	 * interface.
-	 */
-	if (PyList_Check(seq)) {
-		for (i = 0; i < seqlen; i++) {
-			PyObject *item = PyList_GET_ITEM(seq, i);
-			if (!PyString_Check(item)) {
-				PyErr_SetString(PyExc_TypeError,
-				"first argument must be sequence of strings");
-				Py_DECREF(res);
-				return NULL;
-			}
-			slen = PyString_GET_SIZE(item);
-			if (slen > PY_SSIZE_T_MAX - reslen ||
-			    seplen > PY_SSIZE_T_MAX - reslen - seplen) {
-				PyErr_SetString(PyExc_OverflowError,
-						"input too long");
-				Py_DECREF(res);
-				return NULL;
-			}
-			while (reslen + slen + seplen >= sz) {
-				if (_PyString_Resize(&res, sz * 2) < 0)
-					return NULL;
-				sz *= 2;
-				p = PyString_AsString(res) + reslen;
-			}
-			if (i > 0) {
-				memcpy(p, sep, seplen);
-				p += seplen;
-				reslen += seplen;
-			}
-			memcpy(p, PyString_AS_STRING(item), slen);
-			p += slen;
-			reslen += slen;
-		}
-		_PyString_Resize(&res, reslen);
-		return res;
-	}
+    /* optimize for lists, since it's the most common case.  all others
+     * (tuples and arbitrary sequences) just use the sequence abstract
+     * interface.
+     */
+    if (PyList_Check(seq)) {
+        for (i = 0; i < seqlen; i++) {
+            PyObject *item = PyList_GET_ITEM(seq, i);
+            if (!PyString_Check(item)) {
+                PyErr_SetString(PyExc_TypeError,
+                "first argument must be sequence of strings");
+                Py_DECREF(res);
+                return NULL;
+            }
+            slen = PyString_GET_SIZE(item);
+            if (slen > PY_SSIZE_T_MAX - reslen ||
+                seplen > PY_SSIZE_T_MAX - reslen - seplen) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "input too long");
+                Py_DECREF(res);
+                return NULL;
+            }
+            while (reslen + slen + seplen >= sz) {
+                if (_PyString_Resize(&res, sz * 2) < 0)
+                    return NULL;
+                sz *= 2;
+                p = PyString_AsString(res) + reslen;
+            }
+            if (i > 0) {
+                memcpy(p, sep, seplen);
+                p += seplen;
+                reslen += seplen;
+            }
+            memcpy(p, PyString_AS_STRING(item), slen);
+            p += slen;
+            reslen += slen;
+        }
+        _PyString_Resize(&res, reslen);
+        return res;
+    }
 
-	if (seq->ob_type->tp_as_sequence == NULL ||
-		 (getitemfunc = seq->ob_type->tp_as_sequence->sq_item) == NULL)
-	{
-		PyErr_SetString(PyExc_TypeError,
-				"first argument must be a sequence");
-		return NULL;
-	}
-	/* This is now type safe */
-	for (i = 0; i < seqlen; i++) {
-		PyObject *item = getitemfunc(seq, i);
-		if (!item || !PyString_Check(item)) {
-			PyErr_SetString(PyExc_TypeError,
-				 "first argument must be sequence of strings");
-			Py_DECREF(res);
-			Py_XDECREF(item);
-			return NULL;
-		}
-		slen = PyString_GET_SIZE(item);
-		if (slen > PY_SSIZE_T_MAX - reslen ||
-		    seplen > PY_SSIZE_T_MAX - reslen - seplen) {
-			PyErr_SetString(PyExc_OverflowError,
-					"input too long");
-			Py_DECREF(res);
-			Py_XDECREF(item);
-			return NULL;
-		}
-		while (reslen + slen + seplen >= sz) {
-			if (_PyString_Resize(&res, sz * 2) < 0) {
-				Py_DECREF(item);
-				return NULL;
-			}
-			sz *= 2;
-			p = PyString_AsString(res) + reslen;
-		}
-		if (i > 0) {
-			memcpy(p, sep, seplen);
-			p += seplen;
-			reslen += seplen;
-		}
-		memcpy(p, PyString_AS_STRING(item), slen);
-		p += slen;
-		reslen += slen;
-		Py_DECREF(item);
-	}
-	_PyString_Resize(&res, reslen);
-	return res;
+    if (seq->ob_type->tp_as_sequence == NULL ||
+             (getitemfunc = seq->ob_type->tp_as_sequence->sq_item) == NULL)
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "first argument must be a sequence");
+        return NULL;
+    }
+    /* This is now type safe */
+    for (i = 0; i < seqlen; i++) {
+        PyObject *item = getitemfunc(seq, i);
+        if (!item || !PyString_Check(item)) {
+            PyErr_SetString(PyExc_TypeError,
+                     "first argument must be sequence of strings");
+            Py_DECREF(res);
+            Py_XDECREF(item);
+            return NULL;
+        }
+        slen = PyString_GET_SIZE(item);
+        if (slen > PY_SSIZE_T_MAX - reslen ||
+            seplen > PY_SSIZE_T_MAX - reslen - seplen) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "input too long");
+            Py_DECREF(res);
+            Py_XDECREF(item);
+            return NULL;
+        }
+        while (reslen + slen + seplen >= sz) {
+            if (_PyString_Resize(&res, sz * 2) < 0) {
+                Py_DECREF(item);
+                return NULL;
+            }
+            sz *= 2;
+            p = PyString_AsString(res) + reslen;
+        }
+        if (i > 0) {
+            memcpy(p, sep, seplen);
+            p += seplen;
+            reslen += seplen;
+        }
+        memcpy(p, PyString_AS_STRING(item), slen);
+        p += slen;
+        reslen += slen;
+        Py_DECREF(item);
+    }
+    _PyString_Resize(&res, reslen);
+    return res;
 }
 
 
@@ -303,34 +303,34 @@ PyDoc_STRVAR(find__doc__,
 static PyObject *
 strop_find(PyObject *self, PyObject *args)
 {
-	char *s, *sub;
-	Py_ssize_t len, n, i = 0, last = PY_SSIZE_T_MAX;
+    char *s, *sub;
+    Py_ssize_t len, n, i = 0, last = PY_SSIZE_T_MAX;
 
-	WARN;
-	if (!PyArg_ParseTuple(args, "t#t#|nn:find", &s, &len, &sub, &n, &i, &last))
-		return NULL;
+    WARN;
+    if (!PyArg_ParseTuple(args, "t#t#|nn:find", &s, &len, &sub, &n, &i, &last))
+        return NULL;
 
-	if (last > len)
-		last = len;
-	if (last < 0)
-		last += len;
-	if (last < 0)
-		last = 0;
-	if (i < 0)
-		i += len;
-	if (i < 0)
-		i = 0;
+    if (last > len)
+        last = len;
+    if (last < 0)
+        last += len;
+    if (last < 0)
+        last = 0;
+    if (i < 0)
+        i += len;
+    if (i < 0)
+        i = 0;
 
-	if (n == 0 && i <= last)
-		return PyInt_FromLong((long)i);
+    if (n == 0 && i <= last)
+        return PyInt_FromLong((long)i);
 
-	last -= n;
-	for (; i <= last; ++i)
-		if (s[i] == sub[0] &&
-		    (n == 1 || memcmp(&s[i+1], &sub[1], n-1) == 0))
-			return PyInt_FromLong((long)i);
+    last -= n;
+    for (; i <= last; ++i)
+        if (s[i] == sub[0] &&
+            (n == 1 || memcmp(&s[i+1], &sub[1], n-1) == 0))
+            return PyInt_FromLong((long)i);
 
-	return PyInt_FromLong(-1L);
+    return PyInt_FromLong(-1L);
 }
 
 
@@ -346,68 +346,68 @@ PyDoc_STRVAR(rfind__doc__,
 static PyObject *
 strop_rfind(PyObject *self, PyObject *args)
 {
-	char *s, *sub;
-	Py_ssize_t len, n, j;
-	Py_ssize_t i = 0, last = PY_SSIZE_T_MAX;
+    char *s, *sub;
+    Py_ssize_t len, n, j;
+    Py_ssize_t i = 0, last = PY_SSIZE_T_MAX;
 
-	WARN;
-	if (!PyArg_ParseTuple(args, "t#t#|nn:rfind", &s, &len, &sub, &n, &i, &last))
-		return NULL;
+    WARN;
+    if (!PyArg_ParseTuple(args, "t#t#|nn:rfind", &s, &len, &sub, &n, &i, &last))
+        return NULL;
 
-	if (last > len)
-		last = len;
-	if (last < 0)
-		last += len;
-	if (last < 0)
-		last = 0;
-	if (i < 0)
-		i += len;
-	if (i < 0)
-		i = 0;
+    if (last > len)
+        last = len;
+    if (last < 0)
+        last += len;
+    if (last < 0)
+        last = 0;
+    if (i < 0)
+        i += len;
+    if (i < 0)
+        i = 0;
 
-	if (n == 0 && i <= last)
-		return PyInt_FromLong((long)last);
+    if (n == 0 && i <= last)
+        return PyInt_FromLong((long)last);
 
-	for (j = last-n; j >= i; --j)
-		if (s[j] == sub[0] &&
-		    (n == 1 || memcmp(&s[j+1], &sub[1], n-1) == 0))
-			return PyInt_FromLong((long)j);
+    for (j = last-n; j >= i; --j)
+        if (s[j] == sub[0] &&
+            (n == 1 || memcmp(&s[j+1], &sub[1], n-1) == 0))
+            return PyInt_FromLong((long)j);
 
-	return PyInt_FromLong(-1L);
+    return PyInt_FromLong(-1L);
 }
 
 
 static PyObject *
 do_strip(PyObject *args, int striptype)
 {
-	char *s;
-	Py_ssize_t len, i, j;
+    char *s;
+    Py_ssize_t len, i, j;
 
 
-	if (PyString_AsStringAndSize(args, &s, &len))
-		return NULL;
+    if (PyString_AsStringAndSize(args, &s, &len))
+        return NULL;
 
-	i = 0;
-	if (striptype != RIGHTSTRIP) {
-		while (i < len && isspace(Py_CHARMASK(s[i]))) {
-			i++;
-		}
-	}
+    i = 0;
+    if (striptype != RIGHTSTRIP) {
+        while (i < len && isspace(Py_CHARMASK(s[i]))) {
+            i++;
+        }
+    }
 
-	j = len;
-	if (striptype != LEFTSTRIP) {
-		do {
-			j--;
-		} while (j >= i && isspace(Py_CHARMASK(s[j])));
-		j++;
-	}
+    j = len;
+    if (striptype != LEFTSTRIP) {
+        do {
+            j--;
+        } while (j >= i && isspace(Py_CHARMASK(s[j])));
+        j++;
+    }
 
-	if (i == 0 && j == len) {
-		Py_INCREF(args);
-		return args;
-	}
-	else
-		return PyString_FromStringAndSize(s+i, j-i);
+    if (i == 0 && j == len) {
+        Py_INCREF(args);
+        return args;
+    }
+    else
+        return PyString_FromStringAndSize(s+i, j-i);
 }
 
 
@@ -420,8 +420,8 @@ PyDoc_STRVAR(strip__doc__,
 static PyObject *
 strop_strip(PyObject *self, PyObject *args)
 {
-	WARN;
-	return do_strip(args, BOTHSTRIP);
+    WARN;
+    return do_strip(args, BOTHSTRIP);
 }
 
 
@@ -433,8 +433,8 @@ PyDoc_STRVAR(lstrip__doc__,
 static PyObject *
 strop_lstrip(PyObject *self, PyObject *args)
 {
-	WARN;
-	return do_strip(args, LEFTSTRIP);
+    WARN;
+    return do_strip(args, LEFTSTRIP);
 }
 
 
@@ -446,8 +446,8 @@ PyDoc_STRVAR(rstrip__doc__,
 static PyObject *
 strop_rstrip(PyObject *self, PyObject *args)
 {
-	WARN;
-	return do_strip(args, RIGHTSTRIP);
+    WARN;
+    return do_strip(args, RIGHTSTRIP);
 }
 
 
@@ -459,34 +459,34 @@ PyDoc_STRVAR(lower__doc__,
 static PyObject *
 strop_lower(PyObject *self, PyObject *args)
 {
-	char *s, *s_new;
-	Py_ssize_t i, n;
-	PyObject *newstr;
-	int changed;
+    char *s, *s_new;
+    Py_ssize_t i, n;
+    PyObject *newstr;
+    int changed;
 
-	WARN;
-	if (PyString_AsStringAndSize(args, &s, &n))
-		return NULL;
-	newstr = PyString_FromStringAndSize(NULL, n);
-	if (newstr == NULL)
-		return NULL;
-	s_new = PyString_AsString(newstr);
-	changed = 0;
-	for (i = 0; i < n; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (isupper(c)) {
-			changed = 1;
-			*s_new = tolower(c);
-		} else
-			*s_new = c;
-		s_new++;
-	}
-	if (!changed) {
-		Py_DECREF(newstr);
-		Py_INCREF(args);
-		return args;
-	}
-	return newstr;
+    WARN;
+    if (PyString_AsStringAndSize(args, &s, &n))
+        return NULL;
+    newstr = PyString_FromStringAndSize(NULL, n);
+    if (newstr == NULL)
+        return NULL;
+    s_new = PyString_AsString(newstr);
+    changed = 0;
+    for (i = 0; i < n; i++) {
+        int c = Py_CHARMASK(*s++);
+        if (isupper(c)) {
+            changed = 1;
+            *s_new = tolower(c);
+        } else
+            *s_new = c;
+        s_new++;
+    }
+    if (!changed) {
+        Py_DECREF(newstr);
+        Py_INCREF(args);
+        return args;
+    }
+    return newstr;
 }
 
 
@@ -498,34 +498,34 @@ PyDoc_STRVAR(upper__doc__,
 static PyObject *
 strop_upper(PyObject *self, PyObject *args)
 {
-	char *s, *s_new;
-	Py_ssize_t i, n;
-	PyObject *newstr;
-	int changed;
+    char *s, *s_new;
+    Py_ssize_t i, n;
+    PyObject *newstr;
+    int changed;
 
-	WARN;
-	if (PyString_AsStringAndSize(args, &s, &n))
-		return NULL;
-	newstr = PyString_FromStringAndSize(NULL, n);
-	if (newstr == NULL)
-		return NULL;
-	s_new = PyString_AsString(newstr);
-	changed = 0;
-	for (i = 0; i < n; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (islower(c)) {
-			changed = 1;
-			*s_new = toupper(c);
-		} else
-			*s_new = c;
-		s_new++;
-	}
-	if (!changed) {
-		Py_DECREF(newstr);
-		Py_INCREF(args);
-		return args;
-	}
-	return newstr;
+    WARN;
+    if (PyString_AsStringAndSize(args, &s, &n))
+        return NULL;
+    newstr = PyString_FromStringAndSize(NULL, n);
+    if (newstr == NULL)
+        return NULL;
+    s_new = PyString_AsString(newstr);
+    changed = 0;
+    for (i = 0; i < n; i++) {
+        int c = Py_CHARMASK(*s++);
+        if (islower(c)) {
+            changed = 1;
+            *s_new = toupper(c);
+        } else
+            *s_new = c;
+        s_new++;
+    }
+    if (!changed) {
+        Py_DECREF(newstr);
+        Py_INCREF(args);
+        return args;
+    }
+    return newstr;
 }
 
 
@@ -538,43 +538,43 @@ PyDoc_STRVAR(capitalize__doc__,
 static PyObject *
 strop_capitalize(PyObject *self, PyObject *args)
 {
-	char *s, *s_new;
-	Py_ssize_t i, n;
-	PyObject *newstr;
-	int changed;
+    char *s, *s_new;
+    Py_ssize_t i, n;
+    PyObject *newstr;
+    int changed;
 
-	WARN;
-	if (PyString_AsStringAndSize(args, &s, &n))
-		return NULL;
-	newstr = PyString_FromStringAndSize(NULL, n);
-	if (newstr == NULL)
-		return NULL;
-	s_new = PyString_AsString(newstr);
-	changed = 0;
-	if (0 < n) {
-		int c = Py_CHARMASK(*s++);
-		if (islower(c)) {
-			changed = 1;
-			*s_new = toupper(c);
-		} else
-			*s_new = c;
-		s_new++;
-	}
-	for (i = 1; i < n; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (isupper(c)) {
-			changed = 1;
-			*s_new = tolower(c);
-		} else
-			*s_new = c;
-		s_new++;
-	}
-	if (!changed) {
-		Py_DECREF(newstr);
-		Py_INCREF(args);
-		return args;
-	}
-	return newstr;
+    WARN;
+    if (PyString_AsStringAndSize(args, &s, &n))
+        return NULL;
+    newstr = PyString_FromStringAndSize(NULL, n);
+    if (newstr == NULL)
+        return NULL;
+    s_new = PyString_AsString(newstr);
+    changed = 0;
+    if (0 < n) {
+        int c = Py_CHARMASK(*s++);
+        if (islower(c)) {
+            changed = 1;
+            *s_new = toupper(c);
+        } else
+            *s_new = c;
+        s_new++;
+    }
+    for (i = 1; i < n; i++) {
+        int c = Py_CHARMASK(*s++);
+        if (isupper(c)) {
+            changed = 1;
+            *s_new = tolower(c);
+        } else
+            *s_new = c;
+        s_new++;
+    }
+    if (!changed) {
+        Py_DECREF(newstr);
+        Py_INCREF(args);
+        return args;
+    }
+    return newstr;
 }
 
 
@@ -589,75 +589,75 @@ PyDoc_STRVAR(expandtabs__doc__,
 static PyObject *
 strop_expandtabs(PyObject *self, PyObject *args)
 {
-	/* Original by Fredrik Lundh */
-	char* e;
-	char* p;
-	char* q;
-	Py_ssize_t i, j, old_j;
-	PyObject* out;
-	char* string;
-	Py_ssize_t stringlen;
-	int tabsize = 8;
+    /* Original by Fredrik Lundh */
+    char* e;
+    char* p;
+    char* q;
+    Py_ssize_t i, j, old_j;
+    PyObject* out;
+    char* string;
+    Py_ssize_t stringlen;
+    int tabsize = 8;
 
-	WARN;
-	/* Get arguments */
-	if (!PyArg_ParseTuple(args, "s#|i:expandtabs", &string, &stringlen, &tabsize))
-		return NULL;
-	if (tabsize < 1) {
-		PyErr_SetString(PyExc_ValueError,
-				"tabsize must be at least 1");
-		return NULL;
-	}
+    WARN;
+    /* Get arguments */
+    if (!PyArg_ParseTuple(args, "s#|i:expandtabs", &string, &stringlen, &tabsize))
+        return NULL;
+    if (tabsize < 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "tabsize must be at least 1");
+        return NULL;
+    }
 
-	/* First pass: determine size of output string */
-	i = j = old_j = 0; /* j: current column; i: total of previous lines */
-	e = string + stringlen;
-	for (p = string; p < e; p++) {
-		if (*p == '\t') {
-			j += tabsize - (j%tabsize);
-			if (old_j > j) {
-				PyErr_SetString(PyExc_OverflowError,
-						"new string is too long");
-				return NULL;
-			}
-			old_j = j;
-		} else {
-			j++;
-			if (*p == '\n') {
-				i += j;
-				j = 0;
-			}
-		}
-	}
+    /* First pass: determine size of output string */
+    i = j = old_j = 0; /* j: current column; i: total of previous lines */
+    e = string + stringlen;
+    for (p = string; p < e; p++) {
+        if (*p == '\t') {
+            j += tabsize - (j%tabsize);
+            if (old_j > j) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "new string is too long");
+                return NULL;
+            }
+            old_j = j;
+        } else {
+            j++;
+            if (*p == '\n') {
+                i += j;
+                j = 0;
+            }
+        }
+    }
 
-	if ((i + j) < 0) {
-		PyErr_SetString(PyExc_OverflowError, "new string is too long");
-		return NULL;
-	}
+    if ((i + j) < 0) {
+        PyErr_SetString(PyExc_OverflowError, "new string is too long");
+        return NULL;
+    }
 
-	/* Second pass: create output string and fill it */
-	out = PyString_FromStringAndSize(NULL, i+j);
-	if (out == NULL)
-		return NULL;
+    /* Second pass: create output string and fill it */
+    out = PyString_FromStringAndSize(NULL, i+j);
+    if (out == NULL)
+        return NULL;
 
-	i = 0;
-	q = PyString_AS_STRING(out);
+    i = 0;
+    q = PyString_AS_STRING(out);
 
-	for (p = string; p < e; p++) {
-		if (*p == '\t') {
-			j = tabsize - (i%tabsize);
-			i += j;
-			while (j-- > 0)
-				*q++ = ' ';
-		} else {
-			*q++ = *p;
-			i++;
-			if (*p == '\n')
-				i = 0;
-		}
-	}
+    for (p = string; p < e; p++) {
+        if (*p == '\t') {
+            j = tabsize - (i%tabsize);
+            i += j;
+            while (j-- > 0)
+                *q++ = ' ';
+        } else {
+            *q++ = *p;
+            i++;
+            if (*p == '\n')
+                i = 0;
+        }
+    }
 
-	return out;
+    return out;
 }
 
 
@@ -671,38 +671,38 @@ PyDoc_STRVAR(count__doc__,
 static PyObject *
 strop_count(PyObject *self, PyObject *args)
 {
-	char *s, *sub;
-	Py_ssize_t len, n;
-	Py_ssize_t i = 0, last = PY_SSIZE_T_MAX;
-	Py_ssize_t m, r;
+    char *s, *sub;
+    Py_ssize_t len, n;
+    Py_ssize_t i = 0, last = PY_SSIZE_T_MAX;
+    Py_ssize_t m, r;
 
-	WARN;
-	if (!PyArg_ParseTuple(args, "t#t#|nn:count", &s, &len, &sub, &n, &i, &last))
-		return NULL;
-	if (last > len)
-		last = len;
-	if (last < 0)
-		last += len;
-	if (last < 0)
-		last = 0;
-	if (i < 0)
-		i += len;
-	if (i < 0)
-		i = 0;
-	m = last + 1 - n;
-	if (n == 0)
-		return PyInt_FromLong((long) (m-i));
+    WARN;
+    if (!PyArg_ParseTuple(args, "t#t#|nn:count", &s, &len, &sub, &n, &i, &last))
+        return NULL;
+    if (last > len)
+        last = len;
+    if (last < 0)
+        last += len;
+    if (last < 0)
+        last = 0;
+    if (i < 0)
+        i += len;
+    if (i < 0)
+        i = 0;
+    m = last + 1 - n;
+    if (n == 0)
+        return PyInt_FromLong((long) (m-i));
 
-	r = 0;
-	while (i < m) {
-		if (!memcmp(s+i, sub, n)) {
-			r++;
-			i += n;
-		} else {
-			i++;
-		}
-	}
-	return PyInt_FromLong((long) r);
+    r = 0;
+    while (i < m) {
+        if (!memcmp(s+i, sub, n)) {
+            r++;
+            i += n;
+        } else {
+            i++;
+        }
+    }
+    return PyInt_FromLong((long) r);
 }
 
 
@@ -715,39 +715,39 @@ PyDoc_STRVAR(swapcase__doc__,
 static PyObject *
 strop_swapcase(PyObject *self, PyObject *args)
 {
-	char *s, *s_new;
-	Py_ssize_t i, n;
-	PyObject *newstr;
-	int changed;
+    char *s, *s_new;
+    Py_ssize_t i, n;
+    PyObject *newstr;
+    int changed;
 
-	WARN;
-	if (PyString_AsStringAndSize(args, &s, &n))
-		return NULL;
-	newstr = PyString_FromStringAndSize(NULL, n);
-	if (newstr == NULL)
-		return NULL;
-	s_new = PyString_AsString(newstr);
-	changed = 0;
-	for (i = 0; i < n; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (islower(c)) {
-			changed = 1;
-			*s_new = toupper(c);
-		}
-		else if (isupper(c)) {
-			changed = 1;
-			*s_new = tolower(c);
-		}
-		else
-			*s_new = c;
-		s_new++;
-	}
-	if (!changed) {
-		Py_DECREF(newstr);
-		Py_INCREF(args);
-		return args;
-	}
-	return newstr;
+    WARN;
+    if (PyString_AsStringAndSize(args, &s, &n))
+        return NULL;
+    newstr = PyString_FromStringAndSize(NULL, n);
+    if (newstr == NULL)
+        return NULL;
+    s_new = PyString_AsString(newstr);
+    changed = 0;
+    for (i = 0; i < n; i++) {
+        int c = Py_CHARMASK(*s++);
+        if (islower(c)) {
+            changed = 1;
+            *s_new = toupper(c);
+        }
+        else if (isupper(c)) {
+            changed = 1;
+            *s_new = tolower(c);
+        }
+        else
+            *s_new = c;
+        s_new++;
+    }
+    if (!changed) {
+        Py_DECREF(newstr);
+        Py_INCREF(args);
+        return args;
+    }
+    return newstr;
 }
 
 
@@ -764,45 +764,45 @@ PyDoc_STRVAR(atoi__doc__,
 static PyObject *
 strop_atoi(PyObject *self, PyObject *args)
 {
-	char *s, *end;
-	int base = 10;
-	long x;
-	char buffer[256]; /* For errors */
+    char *s, *end;
+    int base = 10;
+    long x;
+    char buffer[256]; /* For errors */
 
-	WARN;
-	if (!PyArg_ParseTuple(args, "s|i:atoi", &s, &base))
-		return NULL;
+    WARN;
+    if (!PyArg_ParseTuple(args, "s|i:atoi", &s, &base))
+        return NULL;
 
-	if ((base != 0 && base < 2) || base > 36) {
-		PyErr_SetString(PyExc_ValueError, "invalid base for atoi()");
-		return NULL;
-	}
+    if ((base != 0 && base < 2) || base > 36) {
+        PyErr_SetString(PyExc_ValueError, "invalid base for atoi()");
+        return NULL;
+    }
 
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	errno = 0;
-	if (base == 0 && s[0] == '0')
-		x = (long) PyOS_strtoul(s, &end, base);
-	else
-		x = PyOS_strtol(s, &end, base);
-	if (end == s || !isalnum(Py_CHARMASK(end[-1])))
-		goto bad;
-	while (*end && isspace(Py_CHARMASK(*end)))
-		end++;
-	if (*end != '\0') {
+    while (*s && isspace(Py_CHARMASK(*s)))
+        s++;
+    errno = 0;
+    if (base == 0 && s[0] == '0')
+        x = (long) PyOS_strtoul(s, &end, base);
+    else
+        x = PyOS_strtol(s, &end, base);
+    if (end == s || !isalnum(Py_CHARMASK(end[-1])))
+        goto bad;
+    while (*end && isspace(Py_CHARMASK(*end)))
+        end++;
+    if (*end != '\0') {
   bad:
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "invalid literal for atoi(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	else if (errno != 0) {
-		PyOS_snprintf(buffer, sizeof(buffer), 
-			      "atoi() literal too large: %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	return PyInt_FromLong(x);
+        PyOS_snprintf(buffer, sizeof(buffer),
+                      "invalid literal for atoi(): %.200s", s);
+        PyErr_SetString(PyExc_ValueError, buffer);
+        return NULL;
+    }
+    else if (errno != 0) {
+        PyOS_snprintf(buffer, sizeof(buffer),
+                      "atoi() literal too large: %.200s", s);
+        PyErr_SetString(PyExc_ValueError, buffer);
+        return NULL;
+    }
+    return PyInt_FromLong(x);
 }
 
 
@@ -820,41 +820,41 @@ PyDoc_STRVAR(atol__doc__,
 static PyObject *
 strop_atol(PyObject *self, PyObject *args)
 {
-	char *s, *end;
-	int base = 10;
-	PyObject *x;
-	char buffer[256]; /* For errors */
+    char *s, *end;
+    int base = 10;
+    PyObject *x;
+    char buffer[256]; /* For errors */
 
-	WARN;
-	if (!PyArg_ParseTuple(args, "s|i:atol", &s, &base))
-		return NULL;
+    WARN;
+    if (!PyArg_ParseTuple(args, "s|i:atol", &s, &base))
+        return NULL;
 
-	if ((base != 0 && base < 2) || base > 36) {
-		PyErr_SetString(PyExc_ValueError, "invalid base for atol()");
-		return NULL;
-	}
+    if ((base != 0 && base < 2) || base > 36) {
+        PyErr_SetString(PyExc_ValueError, "invalid base for atol()");
+        return NULL;
+    }
 
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for atol()");
-		return NULL;
-	}
-	x = PyLong_FromString(s, &end, base);
-	if (x == NULL)
-		return NULL;
-	if (base == 0 && (*end == 'l' || *end == 'L'))
-		end++;
-	while (*end && isspace(Py_CHARMASK(*end)))
-		end++;
-	if (*end != '\0') {
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "invalid literal for atol(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		Py_DECREF(x);
-		return NULL;
-	}
-	return x;
+    while (*s && isspace(Py_CHARMASK(*s)))
+        s++;
+    if (s[0] == '\0') {
+        PyErr_SetString(PyExc_ValueError, "empty string for atol()");
+        return NULL;
+    }
+    x = PyLong_FromString(s, &end, base);
+    if (x == NULL)
+        return NULL;
+    if (base == 0 && (*end == 'l' || *end == 'L'))
+        end++;
+    while (*end && isspace(Py_CHARMASK(*end)))
+        end++;
+    if (*end != '\0') {
+        PyOS_snprintf(buffer, sizeof(buffer),
+                      "invalid literal for atol(): %.200s", s);
+        PyErr_SetString(PyExc_ValueError, buffer);
+        Py_DECREF(x);
+        return NULL;
+    }
+    return x;
 }
 
 
@@ -866,34 +866,34 @@ PyDoc_STRVAR(atof__doc__,
 static PyObject *
 strop_atof(PyObject *self, PyObject *args)
 {
-	char *s, *end;
-	double x;
-	char buffer[256]; /* For errors */
+    char *s, *end;
+    double x;
+    char buffer[256]; /* For errors */
 
-	WARN;
-	if (!PyArg_ParseTuple(args, "s:atof", &s))
-		return NULL;
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for atof()");
-		return NULL;
-	}
+    WARN;
+    if (!PyArg_ParseTuple(args, "s:atof", &s))
+        return NULL;
+    while (*s && isspace(Py_CHARMASK(*s)))
+        s++;
+    if (s[0] == '\0') {
+        PyErr_SetString(PyExc_ValueError, "empty string for atof()");
+        return NULL;
+    }
 
-	PyFPE_START_PROTECT("strop_atof", return 0)
-	x = PyOS_string_to_double(s, &end, PyExc_OverflowError);
-	PyFPE_END_PROTECT(x)
-	if (x == -1 && PyErr_Occurred())
-		return NULL;
-	while (*end && isspace(Py_CHARMASK(*end)))
-		end++;
-	if (*end != '\0') {
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "invalid literal for atof(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	return PyFloat_FromDouble(x);
+    PyFPE_START_PROTECT("strop_atof", return 0)
+    x = PyOS_string_to_double(s, &end, PyExc_OverflowError);
+    PyFPE_END_PROTECT(x)
+    if (x == -1 && PyErr_Occurred())
+        return NULL;
+    while (*end && isspace(Py_CHARMASK(*end)))
+        end++;
+    if (*end != '\0') {
+        PyOS_snprintf(buffer, sizeof(buffer),
+                      "invalid literal for atof(): %.200s", s);
+        PyErr_SetString(PyExc_ValueError, buffer);
+        return NULL;
+    }
+    return PyFloat_FromDouble(x);
 }
 
 
@@ -907,29 +907,29 @@ PyDoc_STRVAR(maketrans__doc__,
 static PyObject *
 strop_maketrans(PyObject *self, PyObject *args)
 {
-	unsigned char *c, *from=NULL, *to=NULL;
-	Py_ssize_t i, fromlen=0, tolen=0;
-	PyObject *result;
+    unsigned char *c, *from=NULL, *to=NULL;
+    Py_ssize_t i, fromlen=0, tolen=0;
+    PyObject *result;
 
-	if (!PyArg_ParseTuple(args, "t#t#:maketrans", &from, &fromlen, &to, &tolen))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "t#t#:maketrans", &from, &fromlen, &to, &tolen))
+        return NULL;
 
-	if (fromlen != tolen) {
-		PyErr_SetString(PyExc_ValueError,
-				"maketrans arguments must have same length");
-		return NULL;
-	}
+    if (fromlen != tolen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "maketrans arguments must have same length");
+        return NULL;
+    }
 
-	result = PyString_FromStringAndSize((char *)NULL, 256);
-	if (result == NULL)
-		return NULL;
-	c = (unsigned char *) PyString_AS_STRING((PyStringObject *)result);
-	for (i = 0; i < 256; i++)
-		c[i]=(unsigned char)i;
-	for (i = 0; i < fromlen; i++)
-		c[from[i]]=to[i];
+    result = PyString_FromStringAndSize((char *)NULL, 256);
+    if (result == NULL)
+        return NULL;
+    c = (unsigned char *) PyString_AS_STRING((PyStringObject *)result);
+    for (i = 0; i < 256; i++)
+        c[i]=(unsigned char)i;
+    for (i = 0; i < fromlen; i++)
+        c[from[i]]=to[i];
 
-	return result;
+    return result;
 }
 
 
@@ -944,69 +944,69 @@ PyDoc_STRVAR(translate__doc__,
 static PyObject *
 strop_translate(PyObject *self, PyObject *args)
 {
-	register char *input, *table, *output;
-	Py_ssize_t i; 
-	int c, changed = 0;
-	PyObject *input_obj;
-	char *table1, *output_start, *del_table=NULL;
-	Py_ssize_t inlen, tablen, dellen = 0;
-	PyObject *result;
-	int trans_table[256];
+    register char *input, *table, *output;
+    Py_ssize_t i;
+    int c, changed = 0;
+    PyObject *input_obj;
+    char *table1, *output_start, *del_table=NULL;
+    Py_ssize_t inlen, tablen, dellen = 0;
+    PyObject *result;
+    int trans_table[256];
 
-	WARN;
-	if (!PyArg_ParseTuple(args, "St#|t#:translate", &input_obj,
-			      &table1, &tablen, &del_table, &dellen))
-		return NULL;
-	if (tablen != 256) {
-		PyErr_SetString(PyExc_ValueError,
-			      "translation table must be 256 characters long");
-		return NULL;
-	}
+    WARN;
+    if (!PyArg_ParseTuple(args, "St#|t#:translate", &input_obj,
+                          &table1, &tablen, &del_table, &dellen))
+        return NULL;
+    if (tablen != 256) {
+        PyErr_SetString(PyExc_ValueError,
+                      "translation table must be 256 characters long");
+        return NULL;
+    }
 
-	table = table1;
-	inlen = PyString_GET_SIZE(input_obj);
-	result = PyString_FromStringAndSize((char *)NULL, inlen);
-	if (result == NULL)
-		return NULL;
-	output_start = output = PyString_AsString(result);
-	input = PyString_AsString(input_obj);
+    table = table1;
+    inlen = PyString_GET_SIZE(input_obj);
+    result = PyString_FromStringAndSize((char *)NULL, inlen);
+    if (result == NULL)
+        return NULL;
+    output_start = output = PyString_AsString(result);
+    input = PyString_AsString(input_obj);
 
-	if (dellen == 0) {
-		/* If no deletions are required, use faster code */
-		for (i = inlen; --i >= 0; ) {
-			c = Py_CHARMASK(*input++);
-			if (Py_CHARMASK((*output++ = table[c])) != c)
-				changed = 1;
-		}
-		if (changed)
-			return result;
-		Py_DECREF(result);
-		Py_INCREF(input_obj);
-		return input_obj;
-	}
+    if (dellen == 0) {
+        /* If no deletions are required, use faster code */
+        for (i = inlen; --i >= 0; ) {
+            c = Py_CHARMASK(*input++);
+            if (Py_CHARMASK((*output++ = table[c])) != c)
+                changed = 1;
+        }
+        if (changed)
+            return result;
+        Py_DECREF(result);
+        Py_INCREF(input_obj);
+        return input_obj;
+    }
 
-	for (i = 0; i < 256; i++)
-		trans_table[i] = Py_CHARMASK(table[i]);
+    for (i = 0; i < 256; i++)
+        trans_table[i] = Py_CHARMASK(table[i]);
 
-	for (i = 0; i < dellen; i++)
-		trans_table[(int) Py_CHARMASK(del_table[i])] = -1;
+    for (i = 0; i < dellen; i++)
+        trans_table[(int) Py_CHARMASK(del_table[i])] = -1;
 
-	for (i = inlen; --i >= 0; ) {
-		c = Py_CHARMASK(*input++);
-		if (trans_table[c] != -1)
-			if (Py_CHARMASK(*output++ = (char)trans_table[c]) == c)
-				continue;
-		changed = 1;
-	}
-	if (!changed) {
-		Py_DECREF(result);
-		Py_INCREF(input_obj);
-		return input_obj;
-	}
-	/* Fix the size of the resulting string */
-	if (inlen > 0)
-		_PyString_Resize(&result, output - output_start);
-	return result;
+    for (i = inlen; --i >= 0; ) {
+        c = Py_CHARMASK(*input++);
+        if (trans_table[c] != -1)
+            if (Py_CHARMASK(*output++ = (char)trans_table[c]) == c)
+                continue;
+        changed = 1;
+    }
+    if (!changed) {
+        Py_DECREF(result);
+        Py_INCREF(input_obj);
+        return input_obj;
+    }
+    /* Fix the size of the resulting string */
+    if (inlen > 0)
+        _PyString_Resize(&result, output - output_start);
+    return result;
 }
 
 
@@ -1022,22 +1022,22 @@ strop_translate(PyObject *self, PyObject *args)
   found, or -1 if not found.  If len of PAT is greater than length of
   MEM, the function returns -1.
 */
-static Py_ssize_t 
+static Py_ssize_t
 mymemfind(const char *mem, Py_ssize_t len, const char *pat, Py_ssize_t pat_len)
 {
-	register Py_ssize_t ii;
+    register Py_ssize_t ii;
 
-	/* pattern can not occur in the last pat_len-1 chars */
-	len -= pat_len;
+    /* pattern can not occur in the last pat_len-1 chars */
+    len -= pat_len;
 
-	for (ii = 0; ii <= len; ii++) {
-		if (mem[ii] == pat[0] &&
-		    (pat_len == 1 ||
-		     memcmp(&mem[ii+1], &pat[1], pat_len-1) == 0)) {
-			return ii;
-		}
-	}
-	return -1;
+    for (ii = 0; ii <= len; ii++) {
+        if (mem[ii] == pat[0] &&
+            (pat_len == 1 ||
+             memcmp(&mem[ii+1], &pat[1], pat_len-1) == 0)) {
+            return ii;
+        }
+    }
+    return -1;
 }
 
 /*
@@ -1045,23 +1045,23 @@ mymemfind(const char *mem, Py_ssize_t len, const char *pat, Py_ssize_t pat_len)
 
    Return the number of distinct times PAT is found in MEM.
    meaning mem=1111 and pat==11 returns 2.
-           mem=11111 and pat==11 also return 2.
+       mem=11111 and pat==11 also return 2.
  */
-static Py_ssize_t 
+static Py_ssize_t
 mymemcnt(const char *mem, Py_ssize_t len, const char *pat, Py_ssize_t pat_len)
 {
-	register Py_ssize_t offset = 0;
-	Py_ssize_t nfound = 0;
+    register Py_ssize_t offset = 0;
+    Py_ssize_t nfound = 0;
 
-	while (len >= 0) {
-		offset = mymemfind(mem, len, pat, pat_len);
-		if (offset == -1)
-			break;
-		mem += offset + pat_len;
-		len -= offset + pat_len;
-		nfound++;
-	}
-	return nfound;
+    while (len >= 0) {
+        offset = mymemfind(mem, len, pat, pat_len);
+        if (offset == -1)
+            break;
+        mem += offset + pat_len;
+        len -= offset + pat_len;
+        nfound++;
+    }
+    return nfound;
 }
 
 /*
@@ -1084,69 +1084,69 @@ mymemcnt(const char *mem, Py_ssize_t len, const char *pat, Py_ssize_t pat_len)
        NULL if an error occurred.
 */
 static char *
-mymemreplace(const char *str, Py_ssize_t len,		/* input string */
-             const char *pat, Py_ssize_t pat_len,	/* pattern string to find */
-             const char *sub, Py_ssize_t sub_len,	/* substitution string */
-             Py_ssize_t count,				/* number of replacements */
-	     Py_ssize_t *out_len)
+mymemreplace(const char *str, Py_ssize_t len,           /* input string */
+         const char *pat, Py_ssize_t pat_len,           /* pattern string to find */
+         const char *sub, Py_ssize_t sub_len,           /* substitution string */
+         Py_ssize_t count,                              /* number of replacements */
+         Py_ssize_t *out_len)
 {
-	char *out_s;
-	char *new_s;
-	Py_ssize_t nfound, offset, new_len;
+    char *out_s;
+    char *new_s;
+    Py_ssize_t nfound, offset, new_len;
 
-	if (len == 0 || pat_len > len)
-		goto return_same;
+    if (len == 0 || pat_len > len)
+        goto return_same;
 
-	/* find length of output string */
-	nfound = mymemcnt(str, len, pat, pat_len);
-	if (count < 0)
-		count = PY_SSIZE_T_MAX;
-	else if (nfound > count)
-		nfound = count;
-	if (nfound == 0)
-		goto return_same;
+    /* find length of output string */
+    nfound = mymemcnt(str, len, pat, pat_len);
+    if (count < 0)
+        count = PY_SSIZE_T_MAX;
+    else if (nfound > count)
+        nfound = count;
+    if (nfound == 0)
+        goto return_same;
 
-	new_len = len + nfound*(sub_len - pat_len);
-	if (new_len == 0) {
-		/* Have to allocate something for the caller to free(). */
-		out_s = (char *)PyMem_MALLOC(1);
-		if (out_s == NULL)
-			return NULL;
-		out_s[0] = '\0';
-	}
-	else {
-		assert(new_len > 0);
-		new_s = (char *)PyMem_MALLOC(new_len);
-		if (new_s == NULL)
-			return NULL;
-		out_s = new_s;
+    new_len = len + nfound*(sub_len - pat_len);
+    if (new_len == 0) {
+        /* Have to allocate something for the caller to free(). */
+        out_s = (char *)PyMem_MALLOC(1);
+        if (out_s == NULL)
+            return NULL;
+        out_s[0] = '\0';
+    }
+    else {
+        assert(new_len > 0);
+        new_s = (char *)PyMem_MALLOC(new_len);
+        if (new_s == NULL)
+            return NULL;
+        out_s = new_s;
 
-		for (; count > 0 && len > 0; --count) {
-			/* find index of next instance of pattern */
-			offset = mymemfind(str, len, pat, pat_len);
-			if (offset == -1)
-				break;
+        for (; count > 0 && len > 0; --count) {
+            /* find index of next instance of pattern */
+            offset = mymemfind(str, len, pat, pat_len);
+            if (offset == -1)
+                break;
 
-			/* copy non matching part of input string */
-			memcpy(new_s, str, offset);
-			str += offset + pat_len;
-			len -= offset + pat_len;
+            /* copy non matching part of input string */
+            memcpy(new_s, str, offset);
+            str += offset + pat_len;
+            len -= offset + pat_len;
 
-			/* copy substitute into the output string */
-			new_s += offset;
-			memcpy(new_s, sub, sub_len);
-			new_s += sub_len;
-		}
-		/* copy any remaining values into output string */
-		if (len > 0)
-			memcpy(new_s, str, len);
-	}
-	*out_len = new_len;
-	return out_s;
+            /* copy substitute into the output string */
+            new_s += offset;
+            memcpy(new_s, sub, sub_len);
+            new_s += sub_len;
+        }
+        /* copy any remaining values into output string */
+        if (len > 0)
+            memcpy(new_s, str, len);
+    }
+    *out_len = new_len;
+    return out_s;
 
   return_same:
-	*out_len = -1;
-	return (char *)str; /* cast away const */
+    *out_len = -1;
+    return (char *)str; /* cast away const */
 }
 
 
@@ -1160,41 +1160,41 @@ PyDoc_STRVAR(replace__doc__,
 static PyObject *
 strop_replace(PyObject *self, PyObject *args)
 {
-	char *str, *pat,*sub,*new_s;
-	Py_ssize_t len,pat_len,sub_len,out_len;
-	Py_ssize_t count = -1;
-	PyObject *newstr;
+    char *str, *pat,*sub,*new_s;
+    Py_ssize_t len,pat_len,sub_len,out_len;
+    Py_ssize_t count = -1;
+    PyObject *newstr;
 
-	WARN;
-	if (!PyArg_ParseTuple(args, "t#t#t#|n:replace",
-			      &str, &len, &pat, &pat_len, &sub, &sub_len,
-			      &count))
-		return NULL;
-	if (pat_len <= 0) {
-		PyErr_SetString(PyExc_ValueError, "empty pattern string");
-		return NULL;
-	}
-	/* CAUTION:  strop treats a replace count of 0 as infinity, unlke
-	 * current (2.1) string.py and string methods.  Preserve this for
-	 * ... well, hard to say for what <wink>.
-	 */
-	if (count == 0)
-		count = -1;
-	new_s = mymemreplace(str,len,pat,pat_len,sub,sub_len,count,&out_len);
-	if (new_s == NULL) {
-		PyErr_NoMemory();
-		return NULL;
-	}
-	if (out_len == -1) {
-		/* we're returning another reference to the input string */
-		newstr = PyTuple_GetItem(args, 0);
-		Py_XINCREF(newstr);
-	}
-	else {
-		newstr = PyString_FromStringAndSize(new_s, out_len);
-		PyMem_FREE(new_s);
-	}
-	return newstr;
+    WARN;
+    if (!PyArg_ParseTuple(args, "t#t#t#|n:replace",
+                          &str, &len, &pat, &pat_len, &sub, &sub_len,
+                          &count))
+        return NULL;
+    if (pat_len <= 0) {
+        PyErr_SetString(PyExc_ValueError, "empty pattern string");
+        return NULL;
+    }
+    /* CAUTION:  strop treats a replace count of 0 as infinity, unlke
+     * current (2.1) string.py and string methods.  Preserve this for
+     * ... well, hard to say for what <wink>.
+     */
+    if (count == 0)
+        count = -1;
+    new_s = mymemreplace(str,len,pat,pat_len,sub,sub_len,count,&out_len);
+    if (new_s == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    if (out_len == -1) {
+        /* we're returning another reference to the input string */
+        newstr = PyTuple_GetItem(args, 0);
+        Py_XINCREF(newstr);
+    }
+    else {
+        newstr = PyString_FromStringAndSize(new_s, out_len);
+        PyMem_FREE(new_s);
+    }
+    return newstr;
 }
 
 
@@ -1202,69 +1202,69 @@ strop_replace(PyObject *self, PyObject *args)
 
 static PyMethodDef
 strop_methods[] = {
-	{"atof",	strop_atof,	   METH_VARARGS, atof__doc__},
-	{"atoi",	strop_atoi,	   METH_VARARGS, atoi__doc__},
-	{"atol",	strop_atol,	   METH_VARARGS, atol__doc__},
-	{"capitalize",	strop_capitalize,  METH_O,       capitalize__doc__},
-	{"count",	strop_count,	   METH_VARARGS, count__doc__},
-	{"expandtabs",	strop_expandtabs,  METH_VARARGS, expandtabs__doc__},
-	{"find",	strop_find,	   METH_VARARGS, find__doc__},
-	{"join",	strop_joinfields,  METH_VARARGS, joinfields__doc__},
-	{"joinfields",	strop_joinfields,  METH_VARARGS, joinfields__doc__},
-	{"lstrip",	strop_lstrip,	   METH_O,       lstrip__doc__},
-	{"lower",	strop_lower,	   METH_O,       lower__doc__},
-	{"maketrans",	strop_maketrans,   METH_VARARGS, maketrans__doc__},
-	{"replace",	strop_replace,	   METH_VARARGS, replace__doc__},
-	{"rfind",	strop_rfind,	   METH_VARARGS, rfind__doc__},
-	{"rstrip",	strop_rstrip,	   METH_O,       rstrip__doc__},
-	{"split",	strop_splitfields, METH_VARARGS, splitfields__doc__},
-	{"splitfields",	strop_splitfields, METH_VARARGS, splitfields__doc__},
-	{"strip",	strop_strip,	   METH_O,       strip__doc__},
-	{"swapcase",	strop_swapcase,    METH_O,       swapcase__doc__},
-	{"translate",	strop_translate,   METH_VARARGS, translate__doc__},
-	{"upper",	strop_upper,	   METH_O,       upper__doc__},
-	{NULL,		NULL}	/* sentinel */
+    {"atof",            strop_atof,        METH_VARARGS, atof__doc__},
+    {"atoi",            strop_atoi,        METH_VARARGS, atoi__doc__},
+    {"atol",            strop_atol,        METH_VARARGS, atol__doc__},
+    {"capitalize",      strop_capitalize,  METH_O,       capitalize__doc__},
+    {"count",           strop_count,       METH_VARARGS, count__doc__},
+    {"expandtabs",      strop_expandtabs,  METH_VARARGS, expandtabs__doc__},
+    {"find",            strop_find,        METH_VARARGS, find__doc__},
+    {"join",            strop_joinfields,  METH_VARARGS, joinfields__doc__},
+    {"joinfields",      strop_joinfields,  METH_VARARGS, joinfields__doc__},
+    {"lstrip",          strop_lstrip,      METH_O,       lstrip__doc__},
+    {"lower",           strop_lower,       METH_O,       lower__doc__},
+    {"maketrans",       strop_maketrans,   METH_VARARGS, maketrans__doc__},
+    {"replace",         strop_replace,     METH_VARARGS, replace__doc__},
+    {"rfind",           strop_rfind,       METH_VARARGS, rfind__doc__},
+    {"rstrip",          strop_rstrip,      METH_O,       rstrip__doc__},
+    {"split",           strop_splitfields, METH_VARARGS, splitfields__doc__},
+    {"splitfields",     strop_splitfields, METH_VARARGS, splitfields__doc__},
+    {"strip",           strop_strip,       METH_O,       strip__doc__},
+    {"swapcase",        strop_swapcase,    METH_O,       swapcase__doc__},
+    {"translate",       strop_translate,   METH_VARARGS, translate__doc__},
+    {"upper",           strop_upper,       METH_O,       upper__doc__},
+    {NULL,              NULL}   /* sentinel */
 };
 
 
 PyMODINIT_FUNC
 initstrop(void)
 {
-	PyObject *m, *s;
-	char buf[256];
-	int c, n;
-	m = Py_InitModule4("strop", strop_methods, strop_module__doc__,
-			   (PyObject*)NULL, PYTHON_API_VERSION);
-	if (m == NULL)
-		return;
+    PyObject *m, *s;
+    char buf[256];
+    int c, n;
+    m = Py_InitModule4("strop", strop_methods, strop_module__doc__,
+                       (PyObject*)NULL, PYTHON_API_VERSION);
+    if (m == NULL)
+        return;
 
-	/* Create 'whitespace' object */
-	n = 0;
-	for (c = 0; c < 256; c++) {
-		if (isspace(c))
-			buf[n++] = c;
-	}
-	s = PyString_FromStringAndSize(buf, n);
-	if (s)
-		PyModule_AddObject(m, "whitespace", s);
+    /* Create 'whitespace' object */
+    n = 0;
+    for (c = 0; c < 256; c++) {
+        if (isspace(c))
+            buf[n++] = c;
+    }
+    s = PyString_FromStringAndSize(buf, n);
+    if (s)
+        PyModule_AddObject(m, "whitespace", s);
 
-	/* Create 'lowercase' object */
-	n = 0;
-	for (c = 0; c < 256; c++) {
-		if (islower(c))
-			buf[n++] = c;
-	}
-	s = PyString_FromStringAndSize(buf, n);
-	if (s)
-		PyModule_AddObject(m, "lowercase", s);
+    /* Create 'lowercase' object */
+    n = 0;
+    for (c = 0; c < 256; c++) {
+        if (islower(c))
+            buf[n++] = c;
+    }
+    s = PyString_FromStringAndSize(buf, n);
+    if (s)
+        PyModule_AddObject(m, "lowercase", s);
 
-	/* Create 'uppercase' object */
-	n = 0;
-	for (c = 0; c < 256; c++) {
-		if (isupper(c))
-			buf[n++] = c;
-	}
-	s = PyString_FromStringAndSize(buf, n);
-	if (s)
-		PyModule_AddObject(m, "uppercase", s);
+    /* Create 'uppercase' object */
+    n = 0;
+    for (c = 0; c < 256; c++) {
+        if (isupper(c))
+            buf[n++] = c;
+    }
+    s = PyString_FromStringAndSize(buf, n);
+    if (s)
+        PyModule_AddObject(m, "uppercase", s);
 }

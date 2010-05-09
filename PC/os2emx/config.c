@@ -102,81 +102,81 @@ extern void initgc();
 
 struct _inittab _PyImport_Inittab[] = {
 
-	{"os2", initos2},
-	{"signal", initsignal},
+    {"os2", initos2},
+    {"signal", initsignal},
 #ifdef WITH_THREAD
-	{"thread", initthread},
+    {"thread", initthread},
 #endif
-	{"_codecs", init_codecs},
-	{"_csv", init_csv},
-	{"_locale", init_locale},
-	{"_random", init_random},
-	{"_sre", init_sre},
-	{"_symtable", init_symtable},
-	{"_weakref", init_weakref},
-	{"array", initarray},
-	{"binascii", initbinascii},
-	{"cPickle", initcPickle},
-	{"cStringIO", initcStringIO},
-	{"_collections", init_collections},
-	{"cmath", initcmath},
-	{"datetime", initdatetime},
-	{"dl", initdl},
-	{"errno", initerrno},
-	{"fcntl", initfcntl},
-	{"_fileio", init_fileio},
-	{"_functools", init_functools},
-	{"_heapq", init_heapq},
-	{"imageop", initimageop},
-	{"itertools", inititertools},
-	{"math", initmath},
-	{"_md5", init_md5},
-	{"operator", initoperator},
-	{"_sha", init_sha},
-	{"_sha256", init_sha256},
-	{"_sha512", init_sha512},
-	{"strop", initstrop},
-	{"_struct", init_struct},
-	{"termios", inittermios},
-	{"time", inittime},
-	{"timing", inittiming},
-	{"xxsubtype", initxxsubtype},
-	{"zipimport", initzipimport},
+    {"_codecs", init_codecs},
+    {"_csv", init_csv},
+    {"_locale", init_locale},
+    {"_random", init_random},
+    {"_sre", init_sre},
+    {"_symtable", init_symtable},
+    {"_weakref", init_weakref},
+    {"array", initarray},
+    {"binascii", initbinascii},
+    {"cPickle", initcPickle},
+    {"cStringIO", initcStringIO},
+    {"_collections", init_collections},
+    {"cmath", initcmath},
+    {"datetime", initdatetime},
+    {"dl", initdl},
+    {"errno", initerrno},
+    {"fcntl", initfcntl},
+    {"_fileio", init_fileio},
+    {"_functools", init_functools},
+    {"_heapq", init_heapq},
+    {"imageop", initimageop},
+    {"itertools", inititertools},
+    {"math", initmath},
+    {"_md5", init_md5},
+    {"operator", initoperator},
+    {"_sha", init_sha},
+    {"_sha256", init_sha256},
+    {"_sha512", init_sha512},
+    {"strop", initstrop},
+    {"_struct", init_struct},
+    {"termios", inittermios},
+    {"time", inittime},
+    {"timing", inittiming},
+    {"xxsubtype", initxxsubtype},
+    {"zipimport", initzipimport},
 #if !HAVE_DYNAMIC_LOADING
-	{"_curses", init_curses},
-	{"_curses_panel", init_curses_panel},
-	{"_hotshot", init_hotshot},
-	{"_testcapi", init_testcapi},
-	{"bsddb185", initbsddb185},
-	{"bz2", initbz2},
-	{"fpectl", initfpectl},
-	{"fpetest", initfpetest},
-	{"parser", initparser},
-	{"pwd", initpwd},
-	{"unicodedata", initunicodedata},
-	{"zlib", initzlib},
+    {"_curses", init_curses},
+    {"_curses_panel", init_curses_panel},
+    {"_hotshot", init_hotshot},
+    {"_testcapi", init_testcapi},
+    {"bsddb185", initbsddb185},
+    {"bz2", initbz2},
+    {"fpectl", initfpectl},
+    {"fpetest", initfpetest},
+    {"parser", initparser},
+    {"pwd", initpwd},
+    {"unicodedata", initunicodedata},
+    {"zlib", initzlib},
 #ifdef USE_SOCKET
-	{"_socket", init_socket},
-	{"select", initselect},
+    {"_socket", init_socket},
+    {"select", initselect},
 #endif
 #endif
 /* -- ADDMODULE MARKER 2 -- */
 
-	/* This module "lives in" with marshal.c */
-	{"marshal", PyMarshal_Init},
+    /* This module "lives in" with marshal.c */
+    {"marshal", PyMarshal_Init},
 
-	/* This lives it with import.c */
-	{"imp", initimp},
+    /* This lives it with import.c */
+    {"imp", initimp},
 
-	/* These entries are here for sys.builtin_module_names */
-	{"__main__", NULL},
-	{"__builtin__", NULL},
-	{"sys", NULL},
-	{"exceptions", NULL},
+    /* These entries are here for sys.builtin_module_names */
+    {"__main__", NULL},
+    {"__builtin__", NULL},
+    {"sys", NULL},
+    {"exceptions", NULL},
 
-	/* This lives in gcmodule.c */
-	{"gc", initgc},
+    /* This lives in gcmodule.c */
+    {"gc", initgc},
 
-	/* Sentinel */
-	{0, 0}
+    /* Sentinel */
+    {0, 0}
 };

@@ -22,7 +22,7 @@ static PyObject *PyCursesError;
 /* Utility Functions */
 
 /*
- * Check the return code from a curses function and return None 
+ * Check the return code from a curses function and return None
  * or raise an exception as appropriate.
  */
 
@@ -30,15 +30,15 @@ static PyObject *
 PyCursesCheckERR(int code, char *fname)
 {
     if (code != ERR) {
-	Py_INCREF(Py_None);
-	return Py_None;
+        Py_INCREF(Py_None);
+        return Py_None;
     } else {
-	if (fname == NULL) {
-	    PyErr_SetString(PyCursesError, catchall_ERR);
-	} else {
-	    PyErr_Format(PyCursesError, "%s() returned ERR", fname);
-	}
-	return NULL;
+        if (fname == NULL) {
+            PyErr_SetString(PyCursesError, catchall_ERR);
+        } else {
+            PyErr_Format(PyCursesError, "%s() returned ERR", fname);
+        }
+        return NULL;
     }
 }
 
@@ -51,12 +51,12 @@ PyCursesCheckERR(int code, char *fname)
 typedef struct {
     PyObject_HEAD
     PANEL *pan;
-    PyCursesWindowObject *wo;	/* for reference counts */
+    PyCursesWindowObject *wo;   /* for reference counts */
 } PyCursesPanelObject;
 
 PyTypeObject PyCursesPanel_Type;
 
-#define PyCursesPanel_Check(v)	 (Py_TYPE(v) == &PyCursesPanel_Type)
+#define PyCursesPanel_Check(v)   (Py_TYPE(v) == &PyCursesPanel_Type)
 
 /* Some helper functions. The problem is that there's always a window
    associated with a panel. To ensure that Python's GC doesn't pull
@@ -88,10 +88,10 @@ static int
 insert_lop(PyCursesPanelObject *po)
 {
     list_of_panels *new;
-    
+
     if ((new = (list_of_panels *)malloc(sizeof(list_of_panels))) == NULL) {
-	PyErr_NoMemory();
-	return -1;
+        PyErr_NoMemory();
+        return -1;
     }
     new->po = po;
     new->next = lop;
@@ -107,17 +107,17 @@ remove_lop(PyCursesPanelObject *po)
 
     temp = lop;
     if (temp->po == po) {
-	lop = temp->next;
-	free(temp);
-	return;
+        lop = temp->next;
+        free(temp);
+        return;
     }
     while (temp->next == NULL || temp->next->po != po) {
-	if (temp->next == NULL) {
-	    PyErr_SetString(PyExc_RuntimeError,
-			    "remove_lop: can't find Panel Object");
-	    return;
-	}
-	temp = temp->next;
+        if (temp->next == NULL) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "remove_lop: can't find Panel Object");
+            return;
+        }
+        temp = temp->next;
     }
     n = temp->next->next;
     free(temp->next);
@@ -131,7 +131,7 @@ find_po(PANEL *pan)
 {
     list_of_panels *temp;
     for (temp = lop; temp->po->pan != pan; temp = temp->next)
-	if (temp->next == NULL) return NULL;	/* not found!? */
+        if (temp->next == NULL) return NULL;    /* not found!? */
     return temp->po;
 }
 
@@ -179,9 +179,9 @@ PyCursesPanel_New(PANEL *pan, PyCursesWindowObject *wo)
     if (po == NULL) return NULL;
     po->pan = pan;
     if (insert_lop(po) < 0) {
-	po->wo = NULL;
-	Py_DECREF(po);
-	return NULL;
+        po->wo = NULL;
+        Py_DECREF(po);
+        return NULL;
     }
     po->wo = wo;
     Py_INCREF(wo);
@@ -193,8 +193,8 @@ PyCursesPanel_Dealloc(PyCursesPanelObject *po)
 {
     (void)del_panel(po->pan);
     if (po->wo != NULL) {
-	Py_DECREF(po->wo);
-	remove_lop(po);
+        Py_DECREF(po->wo);
+        remove_lop(po);
     }
     PyObject_DEL(po);
 }
@@ -206,19 +206,19 @@ PyCursesPanel_above(PyCursesPanelObject *self)
 {
     PANEL *pan;
     PyCursesPanelObject *po;
-    
+
     pan = panel_above(self->pan);
 
-    if (pan == NULL) {		/* valid output, it means the calling panel
-				   is on top of the stack */
-	Py_INCREF(Py_None);
-	return Py_None;
+    if (pan == NULL) {          /* valid output, it means the calling panel
+                                   is on top of the stack */
+        Py_INCREF(Py_None);
+        return Py_None;
     }
     po = find_po(pan);
     if (po == NULL) {
-	PyErr_SetString(PyExc_RuntimeError,
-			"panel_above: can't find Panel Object");
-	return NULL;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "panel_above: can't find Panel Object");
+        return NULL;
     }
     Py_INCREF(po);
     return (PyObject *)po;
@@ -231,19 +231,19 @@ PyCursesPanel_below(PyCursesPanelObject *self)
 {
     PANEL *pan;
     PyCursesPanelObject *po;
-    
+
     pan = panel_below(self->pan);
-    
-    if (pan == NULL) {		/* valid output, it means the calling panel
-				   is on the bottom of the stack */
-	Py_INCREF(Py_None);
-	return Py_None;
+
+    if (pan == NULL) {          /* valid output, it means the calling panel
+                                   is on the bottom of the stack */
+        Py_INCREF(Py_None);
+        return Py_None;
     }
     po = find_po(pan);
     if (po == NULL) {
-	PyErr_SetString(PyExc_RuntimeError,
-			"panel_below: can't find Panel Object");
-	return NULL;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "panel_below: can't find Panel Object");
+        return NULL;
     }
     Py_INCREF(po);
     return (PyObject *)po;
@@ -262,26 +262,26 @@ PyCursesPanel_replace_panel(PyCursesPanelObject *self, PyObject *args)
     PyCursesPanelObject *po;
     PyCursesWindowObject *temp;
     int rtn;
-    
+
     if (PyTuple_Size(args) != 1) {
-	PyErr_SetString(PyExc_TypeError, "replace requires one argument");
-	return NULL;
+        PyErr_SetString(PyExc_TypeError, "replace requires one argument");
+        return NULL;
     }
     if (!PyArg_ParseTuple(args, "O!;window object",
-			  &PyCursesWindow_Type, &temp))
-	return NULL;
+                          &PyCursesWindow_Type, &temp))
+        return NULL;
 
     po = find_po(self->pan);
     if (po == NULL) {
-	PyErr_SetString(PyExc_RuntimeError,
-			"replace_panel: can't find Panel Object");
-	return NULL;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "replace_panel: can't find Panel Object");
+        return NULL;
     }
 
     rtn = replace_panel(self->pan, temp->win);
     if (rtn == ERR) {
-	PyErr_SetString(PyCursesError, "replace_panel() returned ERR");
-	return NULL;
+        PyErr_SetString(PyCursesError, "replace_panel() returned ERR");
+        return NULL;
     }
     Py_DECREF(po->wo);
     po->wo = temp;
@@ -302,11 +302,11 @@ static PyObject *
 PyCursesPanel_userptr(PyCursesPanelObject *self)
 {
     PyObject *obj;
-    PyCursesInitialised; 
+    PyCursesInitialised;
     obj = (PyObject *) panel_userptr(self->pan);
     if (obj == NULL) {
-	PyErr_SetString(PyCursesError, "no userptr set");
-	return NULL;
+        PyErr_SetString(PyCursesError, "no userptr set");
+        return NULL;
     }
 
     Py_INCREF(obj);
@@ -329,7 +329,7 @@ static PyMethodDef PyCursesPanel_Methods[] = {
     {"top",             (PyCFunction)PyCursesPanel_top_panel, METH_NOARGS},
     {"userptr",         (PyCFunction)PyCursesPanel_userptr, METH_NOARGS},
     {"window",          (PyCFunction)PyCursesPanel_window, METH_NOARGS},
-    {NULL,		NULL}   /* sentinel */
+    {NULL,              NULL}   /* sentinel */
 };
 
 static PyObject *
@@ -342,20 +342,20 @@ PyCursesPanel_GetAttr(PyCursesPanelObject *self, char *name)
 
 PyTypeObject PyCursesPanel_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_curses_panel.curses panel",	/*tp_name*/
-    sizeof(PyCursesPanelObject),	/*tp_basicsize*/
-    0,			/*tp_itemsize*/
+    "_curses_panel.curses panel",       /*tp_name*/
+    sizeof(PyCursesPanelObject),        /*tp_basicsize*/
+    0,                  /*tp_itemsize*/
     /* methods */
     (destructor)PyCursesPanel_Dealloc, /*tp_dealloc*/
-    0,			/*tp_print*/
+    0,                  /*tp_print*/
     (getattrfunc)PyCursesPanel_GetAttr, /*tp_getattr*/
     (setattrfunc)0, /*tp_setattr*/
-    0,			/*tp_compare*/
-    0,			/*tp_repr*/
-    0,			/*tp_as_number*/
-    0,			/*tp_as_sequence*/
-    0,			/*tp_as_mapping*/
-    0,			/*tp_hash*/
+    0,                  /*tp_compare*/
+    0,                  /*tp_repr*/
+    0,                  /*tp_as_number*/
+    0,                  /*tp_as_sequence*/
+    0,                  /*tp_as_mapping*/
+    0,                  /*tp_hash*/
 };
 
 /* Wrapper for panel_above(NULL). This function returns the bottom
@@ -372,16 +372,16 @@ PyCurses_bottom_panel(PyObject *self)
 
     pan = panel_above(NULL);
 
-    if (pan == NULL) {		/* valid output, it means
-				   there's no panel at all */  
-	Py_INCREF(Py_None);
-	return Py_None;
+    if (pan == NULL) {          /* valid output, it means
+                                   there's no panel at all */
+        Py_INCREF(Py_None);
+        return Py_None;
     }
     po = find_po(pan);
     if (po == NULL) {
-	PyErr_SetString(PyExc_RuntimeError,
-			"panel_above: can't find Panel Object");
-	return NULL;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "panel_above: can't find Panel Object");
+        return NULL;
     }
     Py_INCREF(po);
     return (PyObject *)po;
@@ -397,8 +397,8 @@ PyCurses_new_panel(PyObject *self, PyObject *args)
         return NULL;
     pan = new_panel(win->win);
     if (pan == NULL) {
-	PyErr_SetString(PyCursesError, catchall_NULL);
-	return NULL;
+        PyErr_SetString(PyCursesError, catchall_NULL);
+        return NULL;
     }
     return (PyObject *)PyCursesPanel_New(pan, win);
 }
@@ -413,28 +413,28 @@ PyCurses_top_panel(PyObject *self)
 {
     PANEL *pan;
     PyCursesPanelObject *po;
-    
+
     PyCursesInitialised;
 
     pan = panel_below(NULL);
 
-    if (pan == NULL) {		/* valid output, it means
-				   there's no panel at all */
-	Py_INCREF(Py_None);
-	return Py_None;
+    if (pan == NULL) {          /* valid output, it means
+                                   there's no panel at all */
+        Py_INCREF(Py_None);
+        return Py_None;
     }
     po = find_po(pan);
     if (po == NULL) {
-	PyErr_SetString(PyExc_RuntimeError,
-			"panel_below: can't find Panel Object");
-	return NULL;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "panel_below: can't find Panel Object");
+        return NULL;
     }
     Py_INCREF(po);
     return (PyObject *)po;
 }
 
 static PyObject *PyCurses_update_panels(PyObject *self)
-{ 
+{
     PyCursesInitialised;
     update_panels();
     Py_INCREF(Py_None);
@@ -449,7 +449,7 @@ static PyMethodDef PyCurses_methods[] = {
     {"new_panel",           (PyCFunction)PyCurses_new_panel,     METH_VARARGS},
     {"top_panel",           (PyCFunction)PyCurses_top_panel,     METH_NOARGS},
     {"update_panels",       (PyCFunction)PyCurses_update_panels, METH_NOARGS},
-    {NULL,		NULL}		/* sentinel */
+    {NULL,              NULL}           /* sentinel */
 };
 
 /* Initialization function for the module */
@@ -467,7 +467,7 @@ init_curses_panel(void)
     /* Create the module and add the functions */
     m = Py_InitModule("_curses_panel", PyCurses_methods);
     if (m == NULL)
-    	return;
+        return;
     d = PyModule_GetDict(m);
 
     /* For exception _curses_panel.error */
