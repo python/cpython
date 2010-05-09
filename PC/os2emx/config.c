@@ -95,71 +95,71 @@ extern void initgc();
 
 struct _inittab _PyImport_Inittab[] = {
 
-	{"os2", initos2},
-	{"signal", initsignal},
+    {"os2", initos2},
+    {"signal", initsignal},
 #ifdef WITH_THREAD
-	{"_thread", init_thread},
+    {"_thread", init_thread},
 #endif
-	{"_codecs", init_codecs},
-	{"_csv", init_csv},
-	{"_locale", init_locale},
-	{"_random", init_random},
-	{"_sre", init_sre},
-	{"_symtable", init_symtable},
-	{"_weakref", init_weakref},
-	{"array", initarray},
-	{"binascii", initbinascii},
-	{"collections", initcollections},
-	{"cmath", initcmath},
-	{"datetime", initdatetime},
-	{"dl", initdl},
-	{"errno", initerrno},
-	{"fcntl", initfcntl},
-	{"_functools", init_functools},
-	{"_heapq", init_heapq},
-	{"imageop", initimageop},
-	{"itertools", inititertools},
-	{"math", initmath},
-	{"operator", initoperator},
-	{"_sha256", init_sha256},
-	{"_sha512", init_sha512},
-	{"_struct", init_struct},
-	{"termios", inittermios},
-	{"time", inittime},
-	{"xxsubtype", initxxsubtype},
-	{"zipimport", initzipimport},
+    {"_codecs", init_codecs},
+    {"_csv", init_csv},
+    {"_locale", init_locale},
+    {"_random", init_random},
+    {"_sre", init_sre},
+    {"_symtable", init_symtable},
+    {"_weakref", init_weakref},
+    {"array", initarray},
+    {"binascii", initbinascii},
+    {"collections", initcollections},
+    {"cmath", initcmath},
+    {"datetime", initdatetime},
+    {"dl", initdl},
+    {"errno", initerrno},
+    {"fcntl", initfcntl},
+    {"_functools", init_functools},
+    {"_heapq", init_heapq},
+    {"imageop", initimageop},
+    {"itertools", inititertools},
+    {"math", initmath},
+    {"operator", initoperator},
+    {"_sha256", init_sha256},
+    {"_sha512", init_sha512},
+    {"_struct", init_struct},
+    {"termios", inittermios},
+    {"time", inittime},
+    {"xxsubtype", initxxsubtype},
+    {"zipimport", initzipimport},
 #if !HAVE_DYNAMIC_LOADING
-	{"_curses", init_curses},
-	{"_curses_panel", init_curses_panel},
-	{"_testcapi", init_testcapi},
-	{"bz2", initbz2},
-	{"fpectl", initfpectl},
-	{"fpetest", initfpetest},
-	{"parser", initparser},
-	{"pwd", initpwd},
-	{"unicodedata", initunicodedata},
-	{"zlib", initzlib},
+    {"_curses", init_curses},
+    {"_curses_panel", init_curses_panel},
+    {"_testcapi", init_testcapi},
+    {"bz2", initbz2},
+    {"fpectl", initfpectl},
+    {"fpetest", initfpetest},
+    {"parser", initparser},
+    {"pwd", initpwd},
+    {"unicodedata", initunicodedata},
+    {"zlib", initzlib},
 #ifdef USE_SOCKET
-	{"_socket", init_socket},
-	{"select", initselect},
+    {"_socket", init_socket},
+    {"select", initselect},
 #endif
 #endif
 /* -- ADDMODULE MARKER 2 -- */
 
-	/* This module "lives in" with marshal.c */
-	{"marshal", PyMarshal_Init},
+    /* This module "lives in" with marshal.c */
+    {"marshal", PyMarshal_Init},
 
-	/* This lives it with import.c */
-	{"imp", initimp},
+    /* This lives it with import.c */
+    {"imp", initimp},
 
-	/* These entries are here for sys.builtin_module_names */
-	{"__main__", NULL},
-	{"builtins", NULL},
-	{"sys", NULL},
+    /* These entries are here for sys.builtin_module_names */
+    {"__main__", NULL},
+    {"builtins", NULL},
+    {"sys", NULL},
 
-	/* This lives in gcmodule.c */
-	{"gc", initgc},
+    /* This lives in gcmodule.c */
+    {"gc", initgc},
 
-	/* Sentinel */
-	{0, 0}
+    /* Sentinel */
+    {0, 0}
 };

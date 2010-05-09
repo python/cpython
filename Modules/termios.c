@@ -42,14 +42,14 @@ static PyObject *TermiosError;
 
 static int fdconv(PyObject* obj, void* p)
 {
-	int fd;
+    int fd;
 
-	fd = PyObject_AsFileDescriptor(obj);
-	if (fd >= 0) {
-		*(int*)p = fd;
-		return 1;
-	}
-	return 0;
+    fd = PyObject_AsFileDescriptor(obj);
+    if (fd >= 0) {
+        *(int*)p = fd;
+        return 1;
+    }
+    return 0;
 }
 
 PyDoc_STRVAR(termios_tcgetattr__doc__,
@@ -66,67 +66,67 @@ in this module.");
 static PyObject *
 termios_tcgetattr(PyObject *self, PyObject *args)
 {
-	int fd;
-	struct termios mode;
-	PyObject *cc;
-	speed_t ispeed, ospeed;
-	PyObject *v;
-	int i;
-	char ch;
+    int fd;
+    struct termios mode;
+    PyObject *cc;
+    speed_t ispeed, ospeed;
+    PyObject *v;
+    int i;
+    char ch;
 
-	if (!PyArg_ParseTuple(args, "O&:tcgetattr", 
-			      fdconv, (void*)&fd))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "O&:tcgetattr",
+                          fdconv, (void*)&fd))
+        return NULL;
 
-	if (tcgetattr(fd, &mode) == -1)
-		return PyErr_SetFromErrno(TermiosError);
+    if (tcgetattr(fd, &mode) == -1)
+        return PyErr_SetFromErrno(TermiosError);
 
-	ispeed = cfgetispeed(&mode);
-	ospeed = cfgetospeed(&mode);
+    ispeed = cfgetispeed(&mode);
+    ospeed = cfgetospeed(&mode);
 
-	cc = PyList_New(NCCS);
-	if (cc == NULL)
-		return NULL;
-	for (i = 0; i < NCCS; i++) {
-		ch = (char)mode.c_cc[i];
-		v = PyBytes_FromStringAndSize(&ch, 1);
-		if (v == NULL)
-			goto err;
-		PyList_SetItem(cc, i, v);
-	}
+    cc = PyList_New(NCCS);
+    if (cc == NULL)
+        return NULL;
+    for (i = 0; i < NCCS; i++) {
+        ch = (char)mode.c_cc[i];
+        v = PyBytes_FromStringAndSize(&ch, 1);
+        if (v == NULL)
+            goto err;
+        PyList_SetItem(cc, i, v);
+    }
 
-	/* Convert the MIN and TIME slots to integer.  On some systems, the
-	   MIN and TIME slots are the same as the EOF and EOL slots.  So we
-	   only do this in noncanonical input mode.  */
-	if ((mode.c_lflag & ICANON) == 0) {
-		v = PyLong_FromLong((long)mode.c_cc[VMIN]);
-		if (v == NULL)
-			goto err;
-		PyList_SetItem(cc, VMIN, v);
-		v = PyLong_FromLong((long)mode.c_cc[VTIME]);
-		if (v == NULL)
-			goto err;
-		PyList_SetItem(cc, VTIME, v);
-	}
+    /* Convert the MIN and TIME slots to integer.  On some systems, the
+       MIN and TIME slots are the same as the EOF and EOL slots.  So we
+       only do this in noncanonical input mode.  */
+    if ((mode.c_lflag & ICANON) == 0) {
+        v = PyLong_FromLong((long)mode.c_cc[VMIN]);
+        if (v == NULL)
+            goto err;
+        PyList_SetItem(cc, VMIN, v);
+        v = PyLong_FromLong((long)mode.c_cc[VTIME]);
+        if (v == NULL)
+            goto err;
+        PyList_SetItem(cc, VTIME, v);
+    }
 
-	if (!(v = PyList_New(7)))
-		goto err;
+    if (!(v = PyList_New(7)))
+        goto err;
 
-	PyList_SetItem(v, 0, PyLong_FromLong((long)mode.c_iflag));
-	PyList_SetItem(v, 1, PyLong_FromLong((long)mode.c_oflag));
-	PyList_SetItem(v, 2, PyLong_FromLong((long)mode.c_cflag));
-	PyList_SetItem(v, 3, PyLong_FromLong((long)mode.c_lflag));
-	PyList_SetItem(v, 4, PyLong_FromLong((long)ispeed));
-	PyList_SetItem(v, 5, PyLong_FromLong((long)ospeed));
-	PyList_SetItem(v, 6, cc);
-	if (PyErr_Occurred()){
-		Py_DECREF(v);
-		goto err;
-	}
-	return v;
+    PyList_SetItem(v, 0, PyLong_FromLong((long)mode.c_iflag));
+    PyList_SetItem(v, 1, PyLong_FromLong((long)mode.c_oflag));
+    PyList_SetItem(v, 2, PyLong_FromLong((long)mode.c_cflag));
+    PyList_SetItem(v, 3, PyLong_FromLong((long)mode.c_lflag));
+    PyList_SetItem(v, 4, PyLong_FromLong((long)ispeed));
+    PyList_SetItem(v, 5, PyLong_FromLong((long)ospeed));
+    PyList_SetItem(v, 6, cc);
+    if (PyErr_Occurred()){
+        Py_DECREF(v);
+        goto err;
+    }
+    return v;
   err:
-	Py_DECREF(cc);
-	return NULL;
+    Py_DECREF(cc);
+    return NULL;
 }
 
 PyDoc_STRVAR(termios_tcsetattr__doc__,
@@ -143,64 +143,64 @@ queued output and discarding all queued input. ");
 static PyObject *
 termios_tcsetattr(PyObject *self, PyObject *args)
 {
-	int fd, when;
-	struct termios mode;
-	speed_t ispeed, ospeed;
-	PyObject *term, *cc, *v;
-	int i;
+    int fd, when;
+    struct termios mode;
+    speed_t ispeed, ospeed;
+    PyObject *term, *cc, *v;
+    int i;
 
-	if (!PyArg_ParseTuple(args, "O&iO:tcsetattr", 
-			      fdconv, &fd, &when, &term))
-		return NULL;
-	if (!PyList_Check(term) || PyList_Size(term) != 7) {
-		PyErr_SetString(PyExc_TypeError, 
-			     "tcsetattr, arg 3: must be 7 element list");
-		return NULL;
-	}
+    if (!PyArg_ParseTuple(args, "O&iO:tcsetattr",
+                          fdconv, &fd, &when, &term))
+        return NULL;
+    if (!PyList_Check(term) || PyList_Size(term) != 7) {
+        PyErr_SetString(PyExc_TypeError,
+                     "tcsetattr, arg 3: must be 7 element list");
+        return NULL;
+    }
 
-	/* Get the old mode, in case there are any hidden fields... */
-	if (tcgetattr(fd, &mode) == -1)
-		return PyErr_SetFromErrno(TermiosError);
-	mode.c_iflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 0));
-	mode.c_oflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 1));
-	mode.c_cflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 2));
-	mode.c_lflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 3));
-	ispeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 4));
-	ospeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 5));
-	cc = PyList_GetItem(term, 6);
-	if (PyErr_Occurred())
-		return NULL;
+    /* Get the old mode, in case there are any hidden fields... */
+    if (tcgetattr(fd, &mode) == -1)
+        return PyErr_SetFromErrno(TermiosError);
+    mode.c_iflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 0));
+    mode.c_oflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 1));
+    mode.c_cflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 2));
+    mode.c_lflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 3));
+    ispeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 4));
+    ospeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 5));
+    cc = PyList_GetItem(term, 6);
+    if (PyErr_Occurred())
+        return NULL;
 
-	if (!PyList_Check(cc) || PyList_Size(cc) != NCCS) {
-		PyErr_Format(PyExc_TypeError, 
-			"tcsetattr: attributes[6] must be %d element list",
-			     NCCS);
-		return NULL;
-	}
+    if (!PyList_Check(cc) || PyList_Size(cc) != NCCS) {
+        PyErr_Format(PyExc_TypeError,
+            "tcsetattr: attributes[6] must be %d element list",
+                 NCCS);
+        return NULL;
+    }
 
-	for (i = 0; i < NCCS; i++) {
-		v = PyList_GetItem(cc, i);
+    for (i = 0; i < NCCS; i++) {
+        v = PyList_GetItem(cc, i);
 
-		if (PyBytes_Check(v) && PyBytes_Size(v) == 1)
-			mode.c_cc[i] = (cc_t) * PyBytes_AsString(v);
-		else if (PyLong_Check(v))
-			mode.c_cc[i] = (cc_t) PyLong_AsLong(v);
-		else {
-			PyErr_SetString(PyExc_TypeError, 
+        if (PyBytes_Check(v) && PyBytes_Size(v) == 1)
+            mode.c_cc[i] = (cc_t) * PyBytes_AsString(v);
+        else if (PyLong_Check(v))
+            mode.c_cc[i] = (cc_t) PyLong_AsLong(v);
+        else {
+            PyErr_SetString(PyExc_TypeError,
      "tcsetattr: elements of attributes must be characters or integers");
-			return NULL;
-		}
-	}
+                        return NULL;
+                }
+    }
 
-	if (cfsetispeed(&mode, (speed_t) ispeed) == -1)
-		return PyErr_SetFromErrno(TermiosError);
-	if (cfsetospeed(&mode, (speed_t) ospeed) == -1)
-		return PyErr_SetFromErrno(TermiosError);
-	if (tcsetattr(fd, when, &mode) == -1)
-		return PyErr_SetFromErrno(TermiosError);
+    if (cfsetispeed(&mode, (speed_t) ispeed) == -1)
+        return PyErr_SetFromErrno(TermiosError);
+    if (cfsetospeed(&mode, (speed_t) ospeed) == -1)
+        return PyErr_SetFromErrno(TermiosError);
+    if (tcsetattr(fd, when, &mode) == -1)
+        return PyErr_SetFromErrno(TermiosError);
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(termios_tcsendbreak__doc__,
@@ -213,16 +213,16 @@ has a system dependent meaning.");
 static PyObject *
 termios_tcsendbreak(PyObject *self, PyObject *args)
 {
-	int fd, duration;
+    int fd, duration;
 
-	if (!PyArg_ParseTuple(args, "O&i:tcsendbreak", 
-			      fdconv, &fd, &duration))
-		return NULL;
-	if (tcsendbreak(fd, duration) == -1)
-		return PyErr_SetFromErrno(TermiosError);
+    if (!PyArg_ParseTuple(args, "O&i:tcsendbreak",
+                          fdconv, &fd, &duration))
+        return NULL;
+    if (tcsendbreak(fd, duration) == -1)
+        return PyErr_SetFromErrno(TermiosError);
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(termios_tcdrain__doc__,
@@ -233,16 +233,16 @@ Wait until all output written to file descriptor fd has been transmitted.");
 static PyObject *
 termios_tcdrain(PyObject *self, PyObject *args)
 {
-	int fd;
+    int fd;
 
-	if (!PyArg_ParseTuple(args, "O&:tcdrain", 
-			      fdconv, &fd))
-		return NULL;
-	if (tcdrain(fd) == -1)
-		return PyErr_SetFromErrno(TermiosError);
+    if (!PyArg_ParseTuple(args, "O&:tcdrain",
+                          fdconv, &fd))
+        return NULL;
+    if (tcdrain(fd) == -1)
+        return PyErr_SetFromErrno(TermiosError);
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(termios_tcflush__doc__,
@@ -256,16 +256,16 @@ both queues. ");
 static PyObject *
 termios_tcflush(PyObject *self, PyObject *args)
 {
-	int fd, queue;
+    int fd, queue;
 
-	if (!PyArg_ParseTuple(args, "O&i:tcflush", 
-			      fdconv, &fd, &queue))
-		return NULL;
-	if (tcflush(fd, queue) == -1)
-		return PyErr_SetFromErrno(TermiosError);
+    if (!PyArg_ParseTuple(args, "O&i:tcflush",
+                          fdconv, &fd, &queue))
+        return NULL;
+    if (tcflush(fd, queue) == -1)
+        return PyErr_SetFromErrno(TermiosError);
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(termios_tcflow__doc__,
@@ -279,33 +279,33 @@ or termios.TCION to restart input.");
 static PyObject *
 termios_tcflow(PyObject *self, PyObject *args)
 {
-	int fd, action;
+    int fd, action;
 
-	if (!PyArg_ParseTuple(args, "O&i:tcflow", 
-			      fdconv, &fd, &action))
-		return NULL;
-	if (tcflow(fd, action) == -1)
-		return PyErr_SetFromErrno(TermiosError);
+    if (!PyArg_ParseTuple(args, "O&i:tcflow",
+                          fdconv, &fd, &action))
+        return NULL;
+    if (tcflow(fd, action) == -1)
+        return PyErr_SetFromErrno(TermiosError);
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyMethodDef termios_methods[] =
 {
-	{"tcgetattr", termios_tcgetattr, 
-	 METH_VARARGS, termios_tcgetattr__doc__},
-	{"tcsetattr", termios_tcsetattr, 
-	 METH_VARARGS, termios_tcsetattr__doc__},
-	{"tcsendbreak", termios_tcsendbreak, 
-	 METH_VARARGS, termios_tcsendbreak__doc__},
-	{"tcdrain", termios_tcdrain, 
-	 METH_VARARGS, termios_tcdrain__doc__},
-	{"tcflush", termios_tcflush, 
-	 METH_VARARGS, termios_tcflush__doc__},
-	{"tcflow", termios_tcflow, 
-	 METH_VARARGS, termios_tcflow__doc__},
-	{NULL, NULL}
+    {"tcgetattr", termios_tcgetattr,
+     METH_VARARGS, termios_tcgetattr__doc__},
+    {"tcsetattr", termios_tcsetattr,
+     METH_VARARGS, termios_tcsetattr__doc__},
+    {"tcsendbreak", termios_tcsendbreak,
+     METH_VARARGS, termios_tcsendbreak__doc__},
+    {"tcdrain", termios_tcdrain,
+     METH_VARARGS, termios_tcdrain__doc__},
+    {"tcflush", termios_tcflush,
+     METH_VARARGS, termios_tcflush__doc__},
+    {"tcflow", termios_tcflow,
+     METH_VARARGS, termios_tcflow__doc__},
+    {NULL, NULL}
 };
 
 
@@ -318,619 +318,619 @@ static PyMethodDef termios_methods[] =
 #endif
 
 static struct constant {
-	char *name;
-	long value;
+    char *name;
+    long value;
 } termios_constants[] = {
-	/* cfgetospeed(), cfsetospeed() constants */
-	{"B0", B0},
-	{"B50", B50},
-	{"B75", B75},
-	{"B110", B110},
-	{"B134", B134},
-	{"B150", B150},
-	{"B200", B200},
-	{"B300", B300},
-	{"B600", B600},
-	{"B1200", B1200},
-	{"B1800", B1800},
-	{"B2400", B2400},
-	{"B4800", B4800},
-	{"B9600", B9600},
-	{"B19200", B19200},
-	{"B38400", B38400},
+    /* cfgetospeed(), cfsetospeed() constants */
+    {"B0", B0},
+    {"B50", B50},
+    {"B75", B75},
+    {"B110", B110},
+    {"B134", B134},
+    {"B150", B150},
+    {"B200", B200},
+    {"B300", B300},
+    {"B600", B600},
+    {"B1200", B1200},
+    {"B1800", B1800},
+    {"B2400", B2400},
+    {"B4800", B4800},
+    {"B9600", B9600},
+    {"B19200", B19200},
+    {"B38400", B38400},
 #ifdef B57600
-	{"B57600", B57600},
+    {"B57600", B57600},
 #endif
 #ifdef B115200
-	{"B115200", B115200},
+    {"B115200", B115200},
 #endif
 #ifdef B230400
-	{"B230400", B230400},
+    {"B230400", B230400},
 #endif
 #ifdef CBAUDEX
-	{"CBAUDEX", CBAUDEX},
+    {"CBAUDEX", CBAUDEX},
 #endif
 
-	/* tcsetattr() constants */
-	{"TCSANOW", TCSANOW},
-	{"TCSADRAIN", TCSADRAIN},
-	{"TCSAFLUSH", TCSAFLUSH},
+    /* tcsetattr() constants */
+    {"TCSANOW", TCSANOW},
+    {"TCSADRAIN", TCSADRAIN},
+    {"TCSAFLUSH", TCSAFLUSH},
 
-	/* tcflush() constants */
-	{"TCIFLUSH", TCIFLUSH},
-	{"TCOFLUSH", TCOFLUSH},
-	{"TCIOFLUSH", TCIOFLUSH},
+    /* tcflush() constants */
+    {"TCIFLUSH", TCIFLUSH},
+    {"TCOFLUSH", TCOFLUSH},
+    {"TCIOFLUSH", TCIOFLUSH},
 
-	/* tcflow() constants */
-	{"TCOOFF", TCOOFF},
-	{"TCOON", TCOON},
-	{"TCIOFF", TCIOFF},
-	{"TCION", TCION},
+    /* tcflow() constants */
+    {"TCOOFF", TCOOFF},
+    {"TCOON", TCOON},
+    {"TCIOFF", TCIOFF},
+    {"TCION", TCION},
 
-	/* struct termios.c_iflag constants */
-	{"IGNBRK", IGNBRK},
-	{"BRKINT", BRKINT},
-	{"IGNPAR", IGNPAR},
-	{"PARMRK", PARMRK},
-	{"INPCK", INPCK},
-	{"ISTRIP", ISTRIP},
-	{"INLCR", INLCR},
-	{"IGNCR", IGNCR},
-	{"ICRNL", ICRNL},
+    /* struct termios.c_iflag constants */
+    {"IGNBRK", IGNBRK},
+    {"BRKINT", BRKINT},
+    {"IGNPAR", IGNPAR},
+    {"PARMRK", PARMRK},
+    {"INPCK", INPCK},
+    {"ISTRIP", ISTRIP},
+    {"INLCR", INLCR},
+    {"IGNCR", IGNCR},
+    {"ICRNL", ICRNL},
 #ifdef IUCLC
-	{"IUCLC", IUCLC},
+    {"IUCLC", IUCLC},
 #endif
-	{"IXON", IXON},
-	{"IXANY", IXANY},
-	{"IXOFF", IXOFF},
+    {"IXON", IXON},
+    {"IXANY", IXANY},
+    {"IXOFF", IXOFF},
 #ifdef IMAXBEL
-	{"IMAXBEL", IMAXBEL},
+    {"IMAXBEL", IMAXBEL},
 #endif
 
-	/* struct termios.c_oflag constants */
-	{"OPOST", OPOST},
+    /* struct termios.c_oflag constants */
+    {"OPOST", OPOST},
 #ifdef OLCUC
-	{"OLCUC", OLCUC},
+    {"OLCUC", OLCUC},
 #endif
 #ifdef ONLCR
-	{"ONLCR", ONLCR},
+    {"ONLCR", ONLCR},
 #endif
 #ifdef OCRNL
-	{"OCRNL", OCRNL},
+    {"OCRNL", OCRNL},
 #endif
 #ifdef ONOCR
-	{"ONOCR", ONOCR},
+    {"ONOCR", ONOCR},
 #endif
 #ifdef ONLRET
-	{"ONLRET", ONLRET},
+    {"ONLRET", ONLRET},
 #endif
 #ifdef OFILL
-	{"OFILL", OFILL},
+    {"OFILL", OFILL},
 #endif
 #ifdef OFDEL
-	{"OFDEL", OFDEL},
+    {"OFDEL", OFDEL},
 #endif
 #ifdef NLDLY
-	{"NLDLY", NLDLY},
+    {"NLDLY", NLDLY},
 #endif
 #ifdef CRDLY
-	{"CRDLY", CRDLY},
+    {"CRDLY", CRDLY},
 #endif
 #ifdef TABDLY
-	{"TABDLY", TABDLY},
+    {"TABDLY", TABDLY},
 #endif
 #ifdef BSDLY
-	{"BSDLY", BSDLY},
+    {"BSDLY", BSDLY},
 #endif
 #ifdef VTDLY
-	{"VTDLY", VTDLY},
+    {"VTDLY", VTDLY},
 #endif
 #ifdef FFDLY
-	{"FFDLY", FFDLY},
+    {"FFDLY", FFDLY},
 #endif
 
-	/* struct termios.c_oflag-related values (delay mask) */
+    /* struct termios.c_oflag-related values (delay mask) */
 #ifdef NL0
-	{"NL0", NL0},
+    {"NL0", NL0},
 #endif
 #ifdef NL1
-	{"NL1", NL1},
+    {"NL1", NL1},
 #endif
 #ifdef CR0
-	{"CR0", CR0},
+    {"CR0", CR0},
 #endif
 #ifdef CR1
-	{"CR1", CR1},
+    {"CR1", CR1},
 #endif
 #ifdef CR2
-	{"CR2", CR2},
+    {"CR2", CR2},
 #endif
 #ifdef CR3
-	{"CR3", CR3},
+    {"CR3", CR3},
 #endif
 #ifdef TAB0
-	{"TAB0", TAB0},
+    {"TAB0", TAB0},
 #endif
 #ifdef TAB1
-	{"TAB1", TAB1},
+    {"TAB1", TAB1},
 #endif
 #ifdef TAB2
-	{"TAB2", TAB2},
+    {"TAB2", TAB2},
 #endif
 #ifdef TAB3
-	{"TAB3", TAB3},
+    {"TAB3", TAB3},
 #endif
 #ifdef XTABS
-	{"XTABS", XTABS},
+    {"XTABS", XTABS},
 #endif
 #ifdef BS0
-	{"BS0", BS0},
+    {"BS0", BS0},
 #endif
 #ifdef BS1
-	{"BS1", BS1},
+    {"BS1", BS1},
 #endif
 #ifdef VT0
-	{"VT0", VT0},
+    {"VT0", VT0},
 #endif
 #ifdef VT1
-	{"VT1", VT1},
+    {"VT1", VT1},
 #endif
 #ifdef FF0
-	{"FF0", FF0},
+    {"FF0", FF0},
 #endif
 #ifdef FF1
-	{"FF1", FF1},
+    {"FF1", FF1},
 #endif
 
-	/* struct termios.c_cflag constants */
-	{"CSIZE", CSIZE},
-	{"CSTOPB", CSTOPB},
-	{"CREAD", CREAD},
-	{"PARENB", PARENB},
-	{"PARODD", PARODD},
-	{"HUPCL", HUPCL},
-	{"CLOCAL", CLOCAL},
+    /* struct termios.c_cflag constants */
+    {"CSIZE", CSIZE},
+    {"CSTOPB", CSTOPB},
+    {"CREAD", CREAD},
+    {"PARENB", PARENB},
+    {"PARODD", PARODD},
+    {"HUPCL", HUPCL},
+    {"CLOCAL", CLOCAL},
 #ifdef CIBAUD
-	{"CIBAUD", CIBAUD},
+    {"CIBAUD", CIBAUD},
 #endif
 #ifdef CRTSCTS
-	{"CRTSCTS", (long)CRTSCTS},
+    {"CRTSCTS", (long)CRTSCTS},
 #endif
 
-	/* struct termios.c_cflag-related values (character size) */
-	{"CS5", CS5},
-	{"CS6", CS6},
-	{"CS7", CS7},
-	{"CS8", CS8},
+    /* struct termios.c_cflag-related values (character size) */
+    {"CS5", CS5},
+    {"CS6", CS6},
+    {"CS7", CS7},
+    {"CS8", CS8},
 
-	/* struct termios.c_lflag constants */
-	{"ISIG", ISIG},
-	{"ICANON", ICANON},
+    /* struct termios.c_lflag constants */
+    {"ISIG", ISIG},
+    {"ICANON", ICANON},
 #ifdef XCASE
-	{"XCASE", XCASE},
+    {"XCASE", XCASE},
 #endif
-	{"ECHO", ECHO},
-	{"ECHOE", ECHOE},
-	{"ECHOK", ECHOK},
-	{"ECHONL", ECHONL},
+    {"ECHO", ECHO},
+    {"ECHOE", ECHOE},
+    {"ECHOK", ECHOK},
+    {"ECHONL", ECHONL},
 #ifdef ECHOCTL
-	{"ECHOCTL", ECHOCTL},
+    {"ECHOCTL", ECHOCTL},
 #endif
 #ifdef ECHOPRT
-	{"ECHOPRT", ECHOPRT},
+    {"ECHOPRT", ECHOPRT},
 #endif
 #ifdef ECHOKE
-	{"ECHOKE", ECHOKE},
+    {"ECHOKE", ECHOKE},
 #endif
 #ifdef FLUSHO
-	{"FLUSHO", FLUSHO},
+    {"FLUSHO", FLUSHO},
 #endif
-	{"NOFLSH", NOFLSH},
-	{"TOSTOP", TOSTOP},
+    {"NOFLSH", NOFLSH},
+    {"TOSTOP", TOSTOP},
 #ifdef PENDIN
-	{"PENDIN", PENDIN},
+    {"PENDIN", PENDIN},
 #endif
-	{"IEXTEN", IEXTEN},
+    {"IEXTEN", IEXTEN},
 
-	/* indexes into the control chars array returned by tcgetattr() */
-	{"VINTR", VINTR},
-	{"VQUIT", VQUIT},
-	{"VERASE", VERASE},
-	{"VKILL", VKILL},
-	{"VEOF", VEOF},
-	{"VTIME", VTIME},
-	{"VMIN", VMIN},
+    /* indexes into the control chars array returned by tcgetattr() */
+    {"VINTR", VINTR},
+    {"VQUIT", VQUIT},
+    {"VERASE", VERASE},
+    {"VKILL", VKILL},
+    {"VEOF", VEOF},
+    {"VTIME", VTIME},
+    {"VMIN", VMIN},
 #ifdef VSWTC
-	/* The #defines above ensure that if either is defined, both are,
-         * but both may be omitted by the system headers.  ;-(  */
-	{"VSWTC", VSWTC},
-	{"VSWTCH", VSWTCH},
+    /* The #defines above ensure that if either is defined, both are,
+     * but both may be omitted by the system headers.  ;-(  */
+    {"VSWTC", VSWTC},
+    {"VSWTCH", VSWTCH},
 #endif
-	{"VSTART", VSTART},
-	{"VSTOP", VSTOP},
-	{"VSUSP", VSUSP},
-	{"VEOL", VEOL},
+    {"VSTART", VSTART},
+    {"VSTOP", VSTOP},
+    {"VSUSP", VSUSP},
+    {"VEOL", VEOL},
 #ifdef VREPRINT
-	{"VREPRINT", VREPRINT},
+    {"VREPRINT", VREPRINT},
 #endif
 #ifdef VDISCARD
-	{"VDISCARD", VDISCARD},
+    {"VDISCARD", VDISCARD},
 #endif
 #ifdef VWERASE
-	{"VWERASE", VWERASE},
+    {"VWERASE", VWERASE},
 #endif
 #ifdef VLNEXT
-	{"VLNEXT", VLNEXT},
+    {"VLNEXT", VLNEXT},
 #endif
 #ifdef VEOL2
-	{"VEOL2", VEOL2},
+    {"VEOL2", VEOL2},
 #endif
 
 
 #ifdef B460800
-	{"B460800", B460800},
+    {"B460800", B460800},
 #endif
 #ifdef CBAUD
-	{"CBAUD", CBAUD},
+    {"CBAUD", CBAUD},
 #endif
 #ifdef CDEL
-	{"CDEL", CDEL},
+    {"CDEL", CDEL},
 #endif
 #ifdef CDSUSP
-	{"CDSUSP", CDSUSP},
+    {"CDSUSP", CDSUSP},
 #endif
 #ifdef CEOF
-	{"CEOF", CEOF},
+    {"CEOF", CEOF},
 #endif
 #ifdef CEOL
-	{"CEOL", CEOL},
+    {"CEOL", CEOL},
 #endif
 #ifdef CEOL2
-	{"CEOL2", CEOL2},
+    {"CEOL2", CEOL2},
 #endif
 #ifdef CEOT
-	{"CEOT", CEOT},
+    {"CEOT", CEOT},
 #endif
 #ifdef CERASE
-	{"CERASE", CERASE},
+    {"CERASE", CERASE},
 #endif
 #ifdef CESC
-	{"CESC", CESC},
+    {"CESC", CESC},
 #endif
 #ifdef CFLUSH
-	{"CFLUSH", CFLUSH},
+    {"CFLUSH", CFLUSH},
 #endif
 #ifdef CINTR
-	{"CINTR", CINTR},
+    {"CINTR", CINTR},
 #endif
 #ifdef CKILL
-	{"CKILL", CKILL},
+    {"CKILL", CKILL},
 #endif
 #ifdef CLNEXT
-	{"CLNEXT", CLNEXT},
+    {"CLNEXT", CLNEXT},
 #endif
 #ifdef CNUL
-	{"CNUL", CNUL},
+    {"CNUL", CNUL},
 #endif
 #ifdef COMMON
-	{"COMMON", COMMON},
+    {"COMMON", COMMON},
 #endif
 #ifdef CQUIT
-	{"CQUIT", CQUIT},
+    {"CQUIT", CQUIT},
 #endif
 #ifdef CRPRNT
-	{"CRPRNT", CRPRNT},
+    {"CRPRNT", CRPRNT},
 #endif
 #ifdef CSTART
-	{"CSTART", CSTART},
+    {"CSTART", CSTART},
 #endif
 #ifdef CSTOP
-	{"CSTOP", CSTOP},
+    {"CSTOP", CSTOP},
 #endif
 #ifdef CSUSP
-	{"CSUSP", CSUSP},
+    {"CSUSP", CSUSP},
 #endif
 #ifdef CSWTCH
-	{"CSWTCH", CSWTCH},
+    {"CSWTCH", CSWTCH},
 #endif
 #ifdef CWERASE
-	{"CWERASE", CWERASE},
+    {"CWERASE", CWERASE},
 #endif
 #ifdef EXTA
-	{"EXTA", EXTA},
+    {"EXTA", EXTA},
 #endif
 #ifdef EXTB
-	{"EXTB", EXTB},
+    {"EXTB", EXTB},
 #endif
 #ifdef FIOASYNC
-	{"FIOASYNC", FIOASYNC},
+    {"FIOASYNC", FIOASYNC},
 #endif
 #ifdef FIOCLEX
-	{"FIOCLEX", FIOCLEX},
+    {"FIOCLEX", FIOCLEX},
 #endif
 #ifdef FIONBIO
-	{"FIONBIO", FIONBIO},
+    {"FIONBIO", FIONBIO},
 #endif
 #ifdef FIONCLEX
-	{"FIONCLEX", FIONCLEX},
+    {"FIONCLEX", FIONCLEX},
 #endif
 #ifdef FIONREAD
-	{"FIONREAD", FIONREAD},
+    {"FIONREAD", FIONREAD},
 #endif
 #ifdef IBSHIFT
-	{"IBSHIFT", IBSHIFT},
+    {"IBSHIFT", IBSHIFT},
 #endif
 #ifdef INIT_C_CC
-	{"INIT_C_CC", INIT_C_CC},
+    {"INIT_C_CC", INIT_C_CC},
 #endif
 #ifdef IOCSIZE_MASK
-	{"IOCSIZE_MASK", IOCSIZE_MASK},
+    {"IOCSIZE_MASK", IOCSIZE_MASK},
 #endif
 #ifdef IOCSIZE_SHIFT
-	{"IOCSIZE_SHIFT", IOCSIZE_SHIFT},
+    {"IOCSIZE_SHIFT", IOCSIZE_SHIFT},
 #endif
 #ifdef NCC
-	{"NCC", NCC},
+    {"NCC", NCC},
 #endif
 #ifdef NCCS
-	{"NCCS", NCCS},
+    {"NCCS", NCCS},
 #endif
 #ifdef NSWTCH
-	{"NSWTCH", NSWTCH},
+    {"NSWTCH", NSWTCH},
 #endif
 #ifdef N_MOUSE
-	{"N_MOUSE", N_MOUSE},
+    {"N_MOUSE", N_MOUSE},
 #endif
 #ifdef N_PPP
-	{"N_PPP", N_PPP},
+    {"N_PPP", N_PPP},
 #endif
 #ifdef N_SLIP
-	{"N_SLIP", N_SLIP},
+    {"N_SLIP", N_SLIP},
 #endif
 #ifdef N_STRIP
-	{"N_STRIP", N_STRIP},
+    {"N_STRIP", N_STRIP},
 #endif
 #ifdef N_TTY
-	{"N_TTY", N_TTY},
+    {"N_TTY", N_TTY},
 #endif
 #ifdef TCFLSH
-	{"TCFLSH", TCFLSH},
+    {"TCFLSH", TCFLSH},
 #endif
 #ifdef TCGETA
-	{"TCGETA", TCGETA},
+    {"TCGETA", TCGETA},
 #endif
 #ifdef TCGETS
-	{"TCGETS", TCGETS},
+    {"TCGETS", TCGETS},
 #endif
 #ifdef TCSBRK
-	{"TCSBRK", TCSBRK},
+    {"TCSBRK", TCSBRK},
 #endif
 #ifdef TCSBRKP
-	{"TCSBRKP", TCSBRKP},
+    {"TCSBRKP", TCSBRKP},
 #endif
 #ifdef TCSETA
-	{"TCSETA", TCSETA},
+    {"TCSETA", TCSETA},
 #endif
 #ifdef TCSETAF
-	{"TCSETAF", TCSETAF},
+    {"TCSETAF", TCSETAF},
 #endif
 #ifdef TCSETAW
-	{"TCSETAW", TCSETAW},
+    {"TCSETAW", TCSETAW},
 #endif
 #ifdef TCSETS
-	{"TCSETS", TCSETS},
+    {"TCSETS", TCSETS},
 #endif
 #ifdef TCSETSF
-	{"TCSETSF", TCSETSF},
+    {"TCSETSF", TCSETSF},
 #endif
 #ifdef TCSETSW
-	{"TCSETSW", TCSETSW},
+    {"TCSETSW", TCSETSW},
 #endif
 #ifdef TCXONC
-	{"TCXONC", TCXONC},
+    {"TCXONC", TCXONC},
 #endif
 #ifdef TIOCCONS
-	{"TIOCCONS", TIOCCONS},
+    {"TIOCCONS", TIOCCONS},
 #endif
 #ifdef TIOCEXCL
-	{"TIOCEXCL", TIOCEXCL},
+    {"TIOCEXCL", TIOCEXCL},
 #endif
 #ifdef TIOCGETD
-	{"TIOCGETD", TIOCGETD},
+    {"TIOCGETD", TIOCGETD},
 #endif
 #ifdef TIOCGICOUNT
-	{"TIOCGICOUNT", TIOCGICOUNT},
+    {"TIOCGICOUNT", TIOCGICOUNT},
 #endif
 #ifdef TIOCGLCKTRMIOS
-	{"TIOCGLCKTRMIOS", TIOCGLCKTRMIOS},
+    {"TIOCGLCKTRMIOS", TIOCGLCKTRMIOS},
 #endif
 #ifdef TIOCGPGRP
-	{"TIOCGPGRP", TIOCGPGRP},
+    {"TIOCGPGRP", TIOCGPGRP},
 #endif
 #ifdef TIOCGSERIAL
-	{"TIOCGSERIAL", TIOCGSERIAL},
+    {"TIOCGSERIAL", TIOCGSERIAL},
 #endif
 #ifdef TIOCGSOFTCAR
-	{"TIOCGSOFTCAR", TIOCGSOFTCAR},
+    {"TIOCGSOFTCAR", TIOCGSOFTCAR},
 #endif
 #ifdef TIOCGWINSZ
-	{"TIOCGWINSZ", TIOCGWINSZ},
+    {"TIOCGWINSZ", TIOCGWINSZ},
 #endif
 #ifdef TIOCINQ
-	{"TIOCINQ", TIOCINQ},
+    {"TIOCINQ", TIOCINQ},
 #endif
 #ifdef TIOCLINUX
-	{"TIOCLINUX", TIOCLINUX},
+    {"TIOCLINUX", TIOCLINUX},
 #endif
 #ifdef TIOCMBIC
-	{"TIOCMBIC", TIOCMBIC},
+    {"TIOCMBIC", TIOCMBIC},
 #endif
 #ifdef TIOCMBIS
-	{"TIOCMBIS", TIOCMBIS},
+    {"TIOCMBIS", TIOCMBIS},
 #endif
 #ifdef TIOCMGET
-	{"TIOCMGET", TIOCMGET},
+    {"TIOCMGET", TIOCMGET},
 #endif
 #ifdef TIOCMIWAIT
-	{"TIOCMIWAIT", TIOCMIWAIT},
+    {"TIOCMIWAIT", TIOCMIWAIT},
 #endif
 #ifdef TIOCMSET
-	{"TIOCMSET", TIOCMSET},
+    {"TIOCMSET", TIOCMSET},
 #endif
 #ifdef TIOCM_CAR
-	{"TIOCM_CAR", TIOCM_CAR},
+    {"TIOCM_CAR", TIOCM_CAR},
 #endif
 #ifdef TIOCM_CD
-	{"TIOCM_CD", TIOCM_CD},
+    {"TIOCM_CD", TIOCM_CD},
 #endif
 #ifdef TIOCM_CTS
-	{"TIOCM_CTS", TIOCM_CTS},
+    {"TIOCM_CTS", TIOCM_CTS},
 #endif
 #ifdef TIOCM_DSR
-	{"TIOCM_DSR", TIOCM_DSR},
+    {"TIOCM_DSR", TIOCM_DSR},
 #endif
 #ifdef TIOCM_DTR
-	{"TIOCM_DTR", TIOCM_DTR},
+    {"TIOCM_DTR", TIOCM_DTR},
 #endif
 #ifdef TIOCM_LE
-	{"TIOCM_LE", TIOCM_LE},
+    {"TIOCM_LE", TIOCM_LE},
 #endif
 #ifdef TIOCM_RI
-	{"TIOCM_RI", TIOCM_RI},
+    {"TIOCM_RI", TIOCM_RI},
 #endif
 #ifdef TIOCM_RNG
-	{"TIOCM_RNG", TIOCM_RNG},
+    {"TIOCM_RNG", TIOCM_RNG},
 #endif
 #ifdef TIOCM_RTS
-	{"TIOCM_RTS", TIOCM_RTS},
+    {"TIOCM_RTS", TIOCM_RTS},
 #endif
 #ifdef TIOCM_SR
-	{"TIOCM_SR", TIOCM_SR},
+    {"TIOCM_SR", TIOCM_SR},
 #endif
 #ifdef TIOCM_ST
-	{"TIOCM_ST", TIOCM_ST},
+    {"TIOCM_ST", TIOCM_ST},
 #endif
 #ifdef TIOCNOTTY
-	{"TIOCNOTTY", TIOCNOTTY},
+    {"TIOCNOTTY", TIOCNOTTY},
 #endif
 #ifdef TIOCNXCL
-	{"TIOCNXCL", TIOCNXCL},
+    {"TIOCNXCL", TIOCNXCL},
 #endif
 #ifdef TIOCOUTQ
-	{"TIOCOUTQ", TIOCOUTQ},
+    {"TIOCOUTQ", TIOCOUTQ},
 #endif
 #ifdef TIOCPKT
-	{"TIOCPKT", TIOCPKT},
+    {"TIOCPKT", TIOCPKT},
 #endif
 #ifdef TIOCPKT_DATA
-	{"TIOCPKT_DATA", TIOCPKT_DATA},
+    {"TIOCPKT_DATA", TIOCPKT_DATA},
 #endif
 #ifdef TIOCPKT_DOSTOP
-	{"TIOCPKT_DOSTOP", TIOCPKT_DOSTOP},
+    {"TIOCPKT_DOSTOP", TIOCPKT_DOSTOP},
 #endif
 #ifdef TIOCPKT_FLUSHREAD
-	{"TIOCPKT_FLUSHREAD", TIOCPKT_FLUSHREAD},
+    {"TIOCPKT_FLUSHREAD", TIOCPKT_FLUSHREAD},
 #endif
 #ifdef TIOCPKT_FLUSHWRITE
-	{"TIOCPKT_FLUSHWRITE", TIOCPKT_FLUSHWRITE},
+    {"TIOCPKT_FLUSHWRITE", TIOCPKT_FLUSHWRITE},
 #endif
 #ifdef TIOCPKT_NOSTOP
-	{"TIOCPKT_NOSTOP", TIOCPKT_NOSTOP},
+    {"TIOCPKT_NOSTOP", TIOCPKT_NOSTOP},
 #endif
 #ifdef TIOCPKT_START
-	{"TIOCPKT_START", TIOCPKT_START},
+    {"TIOCPKT_START", TIOCPKT_START},
 #endif
 #ifdef TIOCPKT_STOP
-	{"TIOCPKT_STOP", TIOCPKT_STOP},
+    {"TIOCPKT_STOP", TIOCPKT_STOP},
 #endif
 #ifdef TIOCSCTTY
-	{"TIOCSCTTY", TIOCSCTTY},
+    {"TIOCSCTTY", TIOCSCTTY},
 #endif
 #ifdef TIOCSERCONFIG
-	{"TIOCSERCONFIG", TIOCSERCONFIG},
+    {"TIOCSERCONFIG", TIOCSERCONFIG},
 #endif
 #ifdef TIOCSERGETLSR
-	{"TIOCSERGETLSR", TIOCSERGETLSR},
+    {"TIOCSERGETLSR", TIOCSERGETLSR},
 #endif
 #ifdef TIOCSERGETMULTI
-	{"TIOCSERGETMULTI", TIOCSERGETMULTI},
+    {"TIOCSERGETMULTI", TIOCSERGETMULTI},
 #endif
 #ifdef TIOCSERGSTRUCT
-	{"TIOCSERGSTRUCT", TIOCSERGSTRUCT},
+    {"TIOCSERGSTRUCT", TIOCSERGSTRUCT},
 #endif
 #ifdef TIOCSERGWILD
-	{"TIOCSERGWILD", TIOCSERGWILD},
+    {"TIOCSERGWILD", TIOCSERGWILD},
 #endif
 #ifdef TIOCSERSETMULTI
-	{"TIOCSERSETMULTI", TIOCSERSETMULTI},
+    {"TIOCSERSETMULTI", TIOCSERSETMULTI},
 #endif
 #ifdef TIOCSERSWILD
-	{"TIOCSERSWILD", TIOCSERSWILD},
+    {"TIOCSERSWILD", TIOCSERSWILD},
 #endif
 #ifdef TIOCSER_TEMT
-	{"TIOCSER_TEMT", TIOCSER_TEMT},
+    {"TIOCSER_TEMT", TIOCSER_TEMT},
 #endif
 #ifdef TIOCSETD
-	{"TIOCSETD", TIOCSETD},
+    {"TIOCSETD", TIOCSETD},
 #endif
 #ifdef TIOCSLCKTRMIOS
-	{"TIOCSLCKTRMIOS", TIOCSLCKTRMIOS},
+    {"TIOCSLCKTRMIOS", TIOCSLCKTRMIOS},
 #endif
 #ifdef TIOCSPGRP
-	{"TIOCSPGRP", TIOCSPGRP},
+    {"TIOCSPGRP", TIOCSPGRP},
 #endif
 #ifdef TIOCSSERIAL
-	{"TIOCSSERIAL", TIOCSSERIAL},
+    {"TIOCSSERIAL", TIOCSSERIAL},
 #endif
 #ifdef TIOCSSOFTCAR
-	{"TIOCSSOFTCAR", TIOCSSOFTCAR},
+    {"TIOCSSOFTCAR", TIOCSSOFTCAR},
 #endif
 #ifdef TIOCSTI
-	{"TIOCSTI", TIOCSTI},
+    {"TIOCSTI", TIOCSTI},
 #endif
 #ifdef TIOCSWINSZ
-	{"TIOCSWINSZ", TIOCSWINSZ},
+    {"TIOCSWINSZ", TIOCSWINSZ},
 #endif
 #ifdef TIOCTTYGSTRUCT
-	{"TIOCTTYGSTRUCT", TIOCTTYGSTRUCT},
+    {"TIOCTTYGSTRUCT", TIOCTTYGSTRUCT},
 #endif
 
-	/* sentinel */
-	{NULL, 0}
+    /* sentinel */
+    {NULL, 0}
 };
 
 
 static struct PyModuleDef termiosmodule = {
-	PyModuleDef_HEAD_INIT,
-	"termios",
-	termios__doc__,
-	-1,
-	termios_methods,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+    PyModuleDef_HEAD_INIT,
+    "termios",
+    termios__doc__,
+    -1,
+    termios_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC
 PyInit_termios(void)
 {
-	PyObject *m;
-	struct constant *constant = termios_constants;
+    PyObject *m;
+    struct constant *constant = termios_constants;
 
-	m = PyModule_Create(&termiosmodule);
-	if (m == NULL)
-		return NULL;
+    m = PyModule_Create(&termiosmodule);
+    if (m == NULL)
+        return NULL;
 
-	if (TermiosError == NULL) {
-		TermiosError = PyErr_NewException("termios.error", NULL, NULL);
-	}
-	Py_INCREF(TermiosError);
-	PyModule_AddObject(m, "error", TermiosError);
+    if (TermiosError == NULL) {
+        TermiosError = PyErr_NewException("termios.error", NULL, NULL);
+    }
+    Py_INCREF(TermiosError);
+    PyModule_AddObject(m, "error", TermiosError);
 
-	while (constant->name != NULL) {
-		PyModule_AddIntConstant(m, constant->name, constant->value);
-		++constant;
-	}
-	return m;
+    while (constant->name != NULL) {
+        PyModule_AddIntConstant(m, constant->name, constant->value);
+        ++constant;
+    }
+    return m;
 }

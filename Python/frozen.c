@@ -12,25 +12,25 @@
    the appropriate bytes from M___main__.c. */
 
 static unsigned char M___hello__[] = {
-	99,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,
-	0,64,0,0,0,115,10,0,0,0,100,1,0,90,1,0,
-	100,0,0,83,40,2,0,0,0,78,84,40,2,0,0,0,
-	117,4,0,0,0,84,114,117,101,117,11,0,0,0,105,110,
-	105,116,105,97,108,105,122,101,100,40,0,0,0,0,40,0,
-	0,0,0,40,0,0,0,0,117,7,0,0,0,102,108,97,
-	103,46,112,121,117,8,0,0,0,60,109,111,100,117,108,101,
-	62,1,0,0,0,115,0,0,0,0,
+    99,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,
+    0,64,0,0,0,115,10,0,0,0,100,1,0,90,1,0,
+    100,0,0,83,40,2,0,0,0,78,84,40,2,0,0,0,
+    117,4,0,0,0,84,114,117,101,117,11,0,0,0,105,110,
+    105,116,105,97,108,105,122,101,100,40,0,0,0,0,40,0,
+    0,0,0,40,0,0,0,0,117,7,0,0,0,102,108,97,
+    103,46,112,121,117,8,0,0,0,60,109,111,100,117,108,101,
+    62,1,0,0,0,115,0,0,0,0,
 };
 
 #define SIZE (int)sizeof(M___hello__)
 
 static struct _frozen _PyImport_FrozenModules[] = {
-	/* Test module */
-	{"__hello__", M___hello__, SIZE},
-	/* Test package (negative size indicates package-ness) */
-	{"__phello__", M___hello__, -SIZE},
-	{"__phello__.spam", M___hello__, SIZE},
-	{0, 0, 0} /* sentinel */
+    /* Test module */
+    {"__hello__", M___hello__, SIZE},
+    /* Test package (negative size indicates package-ness) */
+    {"__phello__", M___hello__, -SIZE},
+    {"__phello__.spam", M___hello__, SIZE},
+    {0, 0, 0} /* sentinel */
 };
 
 /* Embedding apps may change this pointer to point to their favorite

@@ -13,52 +13,52 @@
 
 ENCODER(big5)
 {
-	while (inleft > 0) {
-		Py_UNICODE c = **inbuf;
-		DBCHAR code;
+    while (inleft > 0) {
+        Py_UNICODE c = **inbuf;
+        DBCHAR code;
 
-		if (c < 0x80) {
-			REQUIRE_OUTBUF(1)
-			**outbuf = (unsigned char)c;
-			NEXT(1, 1)
-			continue;
-		}
-		UCS4INVALID(c)
+        if (c < 0x80) {
+            REQUIRE_OUTBUF(1)
+            **outbuf = (unsigned char)c;
+            NEXT(1, 1)
+            continue;
+        }
+        UCS4INVALID(c)
 
-		REQUIRE_OUTBUF(2)
+        REQUIRE_OUTBUF(2)
 
-		TRYMAP_ENC(big5, code, c);
-		else return 1;
+        TRYMAP_ENC(big5, code, c);
+        else return 1;
 
-		OUT1(code >> 8)
-		OUT2(code & 0xFF)
-		NEXT(1, 2)
-	}
+        OUT1(code >> 8)
+        OUT2(code & 0xFF)
+        NEXT(1, 2)
+    }
 
-	return 0;
+    return 0;
 }
 
 DECODER(big5)
 {
-	while (inleft > 0) {
-		unsigned char c = IN1;
+    while (inleft > 0) {
+        unsigned char c = IN1;
 
-		REQUIRE_OUTBUF(1)
+        REQUIRE_OUTBUF(1)
 
-		if (c < 0x80) {
-			OUT1(c)
-			NEXT(1, 1)
-			continue;
-		}
+        if (c < 0x80) {
+            OUT1(c)
+            NEXT(1, 1)
+            continue;
+        }
 
-		REQUIRE_INBUF(2)
-		TRYMAP_DEC(big5, **outbuf, c, IN2) {
-			NEXT(2, 1)
-		}
-		else return 2;
-	}
+        REQUIRE_INBUF(2)
+        TRYMAP_DEC(big5, **outbuf, c, IN2) {
+            NEXT(2, 1)
+        }
+        else return 2;
+    }
 
-	return 0;
+    return 0;
 }
 
 
@@ -68,53 +68,53 @@ DECODER(big5)
 
 ENCODER(cp950)
 {
-	while (inleft > 0) {
-		Py_UNICODE c = IN1;
-		DBCHAR code;
+    while (inleft > 0) {
+        Py_UNICODE c = IN1;
+        DBCHAR code;
 
-		if (c < 0x80) {
-			WRITE1((unsigned char)c)
-			NEXT(1, 1)
-			continue;
-		}
-		UCS4INVALID(c)
+        if (c < 0x80) {
+            WRITE1((unsigned char)c)
+            NEXT(1, 1)
+            continue;
+        }
+        UCS4INVALID(c)
 
-		REQUIRE_OUTBUF(2)
-		TRYMAP_ENC(cp950ext, code, c);
-		else TRYMAP_ENC(big5, code, c);
-		else return 1;
+        REQUIRE_OUTBUF(2)
+        TRYMAP_ENC(cp950ext, code, c);
+        else TRYMAP_ENC(big5, code, c);
+        else return 1;
 
-		OUT1(code >> 8)
-		OUT2(code & 0xFF)
-		NEXT(1, 2)
-	}
+        OUT1(code >> 8)
+        OUT2(code & 0xFF)
+        NEXT(1, 2)
+    }
 
-	return 0;
+    return 0;
 }
 
 DECODER(cp950)
 {
-	while (inleft > 0) {
-		unsigned char c = IN1;
+    while (inleft > 0) {
+        unsigned char c = IN1;
 
-		REQUIRE_OUTBUF(1)
+        REQUIRE_OUTBUF(1)
 
-		if (c < 0x80) {
-			OUT1(c)
-			NEXT(1, 1)
-			continue;
-		}
+        if (c < 0x80) {
+            OUT1(c)
+            NEXT(1, 1)
+            continue;
+        }
 
-		REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2)
 
-		TRYMAP_DEC(cp950ext, **outbuf, c, IN2);
-		else TRYMAP_DEC(big5, **outbuf, c, IN2);
-		else return 2;
+        TRYMAP_DEC(cp950ext, **outbuf, c, IN2);
+        else TRYMAP_DEC(big5, **outbuf, c, IN2);
+        else return 2;
 
-		NEXT(2, 1)
-	}
+        NEXT(2, 1)
+    }
 
-	return 0;
+    return 0;
 }
 
 

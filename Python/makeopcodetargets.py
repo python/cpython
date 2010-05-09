@@ -28,7 +28,7 @@ def write_contents(f):
             continue
         targets[op] = "TARGET_%s" % opname
     f.write("static void *opcode_targets[256] = {\n")
-    f.write(",\n".join(["\t&&%s" % s for s in targets]))
+    f.write(",\n".join(["    &&%s" % s for s in targets]))
     f.write("\n};\n")
 
 

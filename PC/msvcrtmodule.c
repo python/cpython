@@ -1,18 +1,18 @@
 /*********************************************************
 
-	msvcrtmodule.c
+    msvcrtmodule.c
 
-	A Python interface to the Microsoft Visual C Runtime
-	Library, providing access to those non-portable, but
-	still useful routines.
+    A Python interface to the Microsoft Visual C Runtime
+    Library, providing access to those non-portable, but
+    still useful routines.
 
-	Only ever compiled with an MS compiler, so no attempt
-	has been made to avoid MS language extensions, etc...
+    Only ever compiled with an MS compiler, so no attempt
+    has been made to avoid MS language extensions, etc...
 
-	This may only work on NT or 95...
+    This may only work on NT or 95...
 
-	Author: Mark Hammond and Guido van Rossum.
-	Maintenance: Guido van Rossum.
+    Author: Mark Hammond and Guido van Rossum.
+    Maintenance: Guido van Rossum.
 
 ***********************************************************/
 
@@ -35,14 +35,14 @@
 static PyObject *
 msvcrt_heapmin(PyObject *self, PyObject *args)
 {
-	if (!PyArg_ParseTuple(args, ":heapmin"))
-		return NULL;
+    if (!PyArg_ParseTuple(args, ":heapmin"))
+        return NULL;
 
-	if (_heapmin() != 0)
-		return PyErr_SetFromErrno(PyExc_IOError);
+    if (_heapmin() != 0)
+        return PyErr_SetFromErrno(PyExc_IOError);
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(heapmin_doc,
@@ -55,22 +55,22 @@ to the operating system. On failure, this raises IOError.");
 static PyObject *
 msvcrt_locking(PyObject *self, PyObject *args)
 {
-	int fd;
-	int mode;
-	long nbytes;
-	int err;
+    int fd;
+    int mode;
+    long nbytes;
+    int err;
 
-	if (!PyArg_ParseTuple(args, "iil:locking", &fd, &mode, &nbytes))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "iil:locking", &fd, &mode, &nbytes))
+        return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	err = _locking(fd, mode, nbytes);
-	Py_END_ALLOW_THREADS
-	if (err != 0)
-		return PyErr_SetFromErrno(PyExc_IOError);
+    Py_BEGIN_ALLOW_THREADS
+    err = _locking(fd, mode, nbytes);
+    Py_END_ALLOW_THREADS
+    if (err != 0)
+        return PyErr_SetFromErrno(PyExc_IOError);
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(locking_doc,
@@ -88,16 +88,16 @@ individually.");
 static PyObject *
 msvcrt_setmode(PyObject *self, PyObject *args)
 {
-	int fd;
-	int flags;
-	if (!PyArg_ParseTuple(args,"ii:setmode", &fd, &flags))
-		return NULL;
+    int fd;
+    int flags;
+    if (!PyArg_ParseTuple(args,"ii:setmode", &fd, &flags))
+        return NULL;
 
-	flags = _setmode(fd, flags);
-	if (flags == -1)
-		return PyErr_SetFromErrno(PyExc_IOError);
+    flags = _setmode(fd, flags);
+    if (flags == -1)
+        return PyErr_SetFromErrno(PyExc_IOError);
 
-	return PyLong_FromLong(flags);
+    return PyLong_FromLong(flags);
 }
 
 PyDoc_STRVAR(setmode_doc,
@@ -111,18 +111,18 @@ os.O_BINARY.");
 static PyObject *
 msvcrt_open_osfhandle(PyObject *self, PyObject *args)
 {
-	long handle;
-	int flags;
-	int fd;
+    long handle;
+    int flags;
+    int fd;
 
-	if (!PyArg_ParseTuple(args, "li:open_osfhandle", &handle, &flags))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "li:open_osfhandle", &handle, &flags))
+        return NULL;
 
-	fd = _open_osfhandle(handle, flags);
-	if (fd == -1)
-		return PyErr_SetFromErrno(PyExc_IOError);
+    fd = _open_osfhandle(handle, flags);
+    if (fd == -1)
+        return PyErr_SetFromErrno(PyExc_IOError);
 
-	return PyLong_FromLong(fd);
+    return PyLong_FromLong(fd);
 }
 
 PyDoc_STRVAR(open_osfhandle_doc,
@@ -137,20 +137,20 @@ to os.fdopen() to create a file object.");
 static PyObject *
 msvcrt_get_osfhandle(PyObject *self, PyObject *args)
 {
-	int fd;
-	Py_intptr_t handle;
+    int fd;
+    Py_intptr_t handle;
 
-	if (!PyArg_ParseTuple(args,"i:get_osfhandle", &fd))
-		return NULL;
+    if (!PyArg_ParseTuple(args,"i:get_osfhandle", &fd))
+        return NULL;
 
-	handle = _get_osfhandle(fd);
-	if (handle == -1)
-		return PyErr_SetFromErrno(PyExc_IOError);
+    handle = _get_osfhandle(fd);
+    if (handle == -1)
+        return PyErr_SetFromErrno(PyExc_IOError);
 
-	/* technically 'handle' is not a pointer, but a integer as
-	   large as a pointer, Python's *VoidPtr interface is the
-	   most appropriate here */
-	return PyLong_FromVoidPtr((void*)handle);
+    /* technically 'handle' is not a pointer, but a integer as
+       large as a pointer, Python's *VoidPtr interface is the
+       most appropriate here */
+    return PyLong_FromVoidPtr((void*)handle);
 }
 
 PyDoc_STRVAR(get_osfhandle_doc,
@@ -164,13 +164,13 @@ if fd is not recognized.");
 static PyObject *
 msvcrt_kbhit(PyObject *self, PyObject *args)
 {
-	int ok;
+    int ok;
 
-	if (!PyArg_ParseTuple(args, ":kbhit"))
-		return NULL;
+    if (!PyArg_ParseTuple(args, ":kbhit"))
+        return NULL;
 
-	ok = _kbhit();
-	return PyLong_FromLong(ok);
+    ok = _kbhit();
+    return PyLong_FromLong(ok);
 }
 
 PyDoc_STRVAR(kbhit_doc,
@@ -181,17 +181,17 @@ Return true if a keypress is waiting to be read.");
 static PyObject *
 msvcrt_getch(PyObject *self, PyObject *args)
 {
-	int ch;
-	char s[1];
+    int ch;
+    char s[1];
 
-	if (!PyArg_ParseTuple(args, ":getch"))
-		return NULL;
+    if (!PyArg_ParseTuple(args, ":getch"))
+        return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	ch = _getch();
-	Py_END_ALLOW_THREADS
-	s[0] = ch;
-	return PyBytes_FromStringAndSize(s, 1);
+    Py_BEGIN_ALLOW_THREADS
+    ch = _getch();
+    Py_END_ALLOW_THREADS
+    s[0] = ch;
+    return PyBytes_FromStringAndSize(s, 1);
 }
 
 PyDoc_STRVAR(getch_doc,
@@ -208,17 +208,17 @@ this function.");
 static PyObject *
 msvcrt_getwch(PyObject *self, PyObject *args)
 {
-	Py_UNICODE ch;
-	Py_UNICODE u[1];
+    Py_UNICODE ch;
+    Py_UNICODE u[1];
 
-	if (!PyArg_ParseTuple(args, ":getwch"))
-		return NULL;
+    if (!PyArg_ParseTuple(args, ":getwch"))
+        return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	ch = _getwch();
-	Py_END_ALLOW_THREADS
-	u[0] = ch;
-	return PyUnicode_FromUnicode(u, 1);
+    Py_BEGIN_ALLOW_THREADS
+    ch = _getwch();
+    Py_END_ALLOW_THREADS
+    u[0] = ch;
+    return PyUnicode_FromUnicode(u, 1);
 }
 
 PyDoc_STRVAR(getwch_doc,
@@ -230,17 +230,17 @@ Wide char variant of getch(), returning a Unicode value.");
 static PyObject *
 msvcrt_getche(PyObject *self, PyObject *args)
 {
-	int ch;
-	char s[1];
+    int ch;
+    char s[1];
 
-	if (!PyArg_ParseTuple(args, ":getche"))
-		return NULL;
+    if (!PyArg_ParseTuple(args, ":getche"))
+        return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	ch = _getche();
-	Py_END_ALLOW_THREADS
-	s[0] = ch;
-	return PyBytes_FromStringAndSize(s, 1);
+    Py_BEGIN_ALLOW_THREADS
+    ch = _getche();
+    Py_END_ALLOW_THREADS
+    s[0] = ch;
+    return PyBytes_FromStringAndSize(s, 1);
 }
 
 PyDoc_STRVAR(getche_doc,
@@ -253,17 +253,17 @@ a printable character.");
 static PyObject *
 msvcrt_getwche(PyObject *self, PyObject *args)
 {
-	Py_UNICODE ch;
-	Py_UNICODE s[1];
+    Py_UNICODE ch;
+    Py_UNICODE s[1];
 
-	if (!PyArg_ParseTuple(args, ":getwche"))
-		return NULL;
+    if (!PyArg_ParseTuple(args, ":getwche"))
+        return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	ch = _getwche();
-	Py_END_ALLOW_THREADS
-	s[0] = ch;
-	return PyUnicode_FromUnicode(s, 1);
+    Py_BEGIN_ALLOW_THREADS
+    ch = _getwche();
+    Py_END_ALLOW_THREADS
+    s[0] = ch;
+    return PyUnicode_FromUnicode(s, 1);
 }
 
 PyDoc_STRVAR(getwche_doc,
@@ -275,14 +275,14 @@ Wide char variant of getche(), returning a Unicode value.");
 static PyObject *
 msvcrt_putch(PyObject *self, PyObject *args)
 {
-	char ch;
+    char ch;
 
-	if (!PyArg_ParseTuple(args, "c:putch", &ch))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "c:putch", &ch))
+        return NULL;
 
-	_putch(ch);
-	Py_INCREF(Py_None);
-	return Py_None;
+    _putch(ch);
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(putch_doc,
@@ -294,13 +294,13 @@ Print the character char to the console without buffering.");
 static PyObject *
 msvcrt_putwch(PyObject *self, PyObject *args)
 {
-	int ch;
+    int ch;
 
-	if (!PyArg_ParseTuple(args, "C:putwch", &ch))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "C:putwch", &ch))
+        return NULL;
 
-	_putwch(ch);
-	Py_RETURN_NONE;
+    _putwch(ch);
+    Py_RETURN_NONE;
 
 }
 
@@ -313,15 +313,15 @@ Wide char variant of putch(), accepting a Unicode value.");
 static PyObject *
 msvcrt_ungetch(PyObject *self, PyObject *args)
 {
-	char ch;
+    char ch;
 
-	if (!PyArg_ParseTuple(args, "c:ungetch", &ch))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "c:ungetch", &ch))
+        return NULL;
 
-	if (_ungetch(ch) == EOF)
-		return PyErr_SetFromErrno(PyExc_IOError);
-	Py_INCREF(Py_None);
-	return Py_None;
+    if (_ungetch(ch) == EOF)
+        return PyErr_SetFromErrno(PyExc_IOError);
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(ungetch_doc,
@@ -334,15 +334,15 @@ it will be the next character read by getch() or getche().");
 static PyObject *
 msvcrt_ungetwch(PyObject *self, PyObject *args)
 {
-	int ch;
+    int ch;
 
-	if (!PyArg_ParseTuple(args, "C:ungetwch", &ch))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "C:ungetwch", &ch))
+        return NULL;
 
-	if (_ungetwch(ch) == WEOF)
-		return PyErr_SetFromErrno(PyExc_IOError);
-	Py_INCREF(Py_None);
-	return Py_None;
+    if (_ungetwch(ch) == WEOF)
+        return PyErr_SetFromErrno(PyExc_IOError);
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(ungetwch_doc,
@@ -354,15 +354,15 @@ Wide char variant of ungetch(), accepting a Unicode value.");
 static void
 insertint(PyObject *d, char *name, int value)
 {
-	PyObject *v = PyLong_FromLong((long) value);
-	if (v == NULL) {
-		/* Don't bother reporting this error */
-		PyErr_Clear();
-	}
-	else {
-		PyDict_SetItemString(d, name, v);
-		Py_DECREF(v);
-	}
+    PyObject *v = PyLong_FromLong((long) value);
+    if (v == NULL) {
+        /* Don't bother reporting this error */
+        PyErr_Clear();
+    }
+    else {
+        PyDict_SetItemString(d, name, v);
+        Py_DECREF(v);
+    }
 }
 
 #ifdef _DEBUG
@@ -370,40 +370,40 @@ insertint(PyObject *d, char *name, int value)
 static PyObject*
 msvcrt_setreportfile(PyObject *self, PyObject *args)
 {
-	int type, file;
-	_HFILE res;
+    int type, file;
+    _HFILE res;
 
-	if (!PyArg_ParseTuple(args, "ii", &type, &file))
-		return NULL;
-	res = _CrtSetReportFile(type, (_HFILE)file);
-	return PyLong_FromLong((long)res);
-	Py_INCREF(Py_None);
-	return Py_None;
+    if (!PyArg_ParseTuple(args, "ii", &type, &file))
+        return NULL;
+    res = _CrtSetReportFile(type, (_HFILE)file);
+    return PyLong_FromLong((long)res);
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject*
 msvcrt_setreportmode(PyObject *self, PyObject *args)
 {
-	int type, mode;
-	int res;
+    int type, mode;
+    int res;
 
-	if (!PyArg_ParseTuple(args, "ii", &type, &mode))
-		return NULL;
-	res = _CrtSetReportMode(type, mode);
-	if (res == -1)
-	    return PyErr_SetFromErrno(PyExc_IOError);
-	return PyLong_FromLong(res);
+    if (!PyArg_ParseTuple(args, "ii", &type, &mode))
+        return NULL;
+    res = _CrtSetReportMode(type, mode);
+    if (res == -1)
+        return PyErr_SetFromErrno(PyExc_IOError);
+    return PyLong_FromLong(res);
 }
 
 static PyObject*
 msvcrt_seterrormode(PyObject *self, PyObject *args)
 {
-	int mode, res;
+    int mode, res;
 
-	if (!PyArg_ParseTuple(args, "i", &mode))
-		return NULL;
-	res = _set_error_mode(mode);
-	return PyLong_FromLong(res);
+    if (!PyArg_ParseTuple(args, "i", &mode))
+        return NULL;
+    res = _set_error_mode(mode);
+    return PyLong_FromLong(res);
 }
 
 #endif
@@ -411,104 +411,104 @@ msvcrt_seterrormode(PyObject *self, PyObject *args)
 static PyObject*
 seterrormode(PyObject *self, PyObject *args)
 {
-	unsigned int mode, res;
+    unsigned int mode, res;
 
-	if (!PyArg_ParseTuple(args, "I", &mode))
-		return NULL;
-	res = SetErrorMode(mode);
-	return PyLong_FromUnsignedLong(res);
+    if (!PyArg_ParseTuple(args, "I", &mode))
+        return NULL;
+    res = SetErrorMode(mode);
+    return PyLong_FromUnsignedLong(res);
 }
 
 
 /* List of functions exported by this module */
 static struct PyMethodDef msvcrt_functions[] = {
-	{"heapmin",		msvcrt_heapmin, METH_VARARGS, heapmin_doc},
-	{"locking",             msvcrt_locking, METH_VARARGS, locking_doc},
-	{"setmode",		msvcrt_setmode, METH_VARARGS, setmode_doc},
-	{"open_osfhandle",	msvcrt_open_osfhandle, METH_VARARGS, open_osfhandle_doc},
-	{"get_osfhandle",	msvcrt_get_osfhandle, METH_VARARGS, get_osfhandle_doc},
-	{"kbhit",		msvcrt_kbhit, METH_VARARGS, kbhit_doc},
-	{"getch",		msvcrt_getch, METH_VARARGS, getch_doc},
-	{"getche",		msvcrt_getche, METH_VARARGS, getche_doc},
-	{"putch",		msvcrt_putch, METH_VARARGS, putch_doc},
-	{"ungetch",		msvcrt_ungetch, METH_VARARGS, ungetch_doc},
-	{"SetErrorMode",	seterrormode, METH_VARARGS},
+    {"heapmin",                 msvcrt_heapmin, METH_VARARGS, heapmin_doc},
+    {"locking",             msvcrt_locking, METH_VARARGS, locking_doc},
+    {"setmode",                 msvcrt_setmode, METH_VARARGS, setmode_doc},
+    {"open_osfhandle",          msvcrt_open_osfhandle, METH_VARARGS, open_osfhandle_doc},
+    {"get_osfhandle",           msvcrt_get_osfhandle, METH_VARARGS, get_osfhandle_doc},
+    {"kbhit",                   msvcrt_kbhit, METH_VARARGS, kbhit_doc},
+    {"getch",                   msvcrt_getch, METH_VARARGS, getch_doc},
+    {"getche",                  msvcrt_getche, METH_VARARGS, getche_doc},
+    {"putch",                   msvcrt_putch, METH_VARARGS, putch_doc},
+    {"ungetch",                 msvcrt_ungetch, METH_VARARGS, ungetch_doc},
+    {"SetErrorMode",            seterrormode, METH_VARARGS},
 #ifdef _DEBUG
-	{"CrtSetReportFile",	msvcrt_setreportfile, METH_VARARGS},
-	{"CrtSetReportMode",	msvcrt_setreportmode, METH_VARARGS},
-	{"set_error_mode",	msvcrt_seterrormode, METH_VARARGS},
+    {"CrtSetReportFile",        msvcrt_setreportfile, METH_VARARGS},
+    {"CrtSetReportMode",        msvcrt_setreportmode, METH_VARARGS},
+    {"set_error_mode",          msvcrt_seterrormode, METH_VARARGS},
 #endif
 #ifdef _WCONIO_DEFINED
-	{"getwch",		msvcrt_getwch, METH_VARARGS, getwch_doc},
-	{"getwche",		msvcrt_getwche, METH_VARARGS, getwche_doc},
-	{"putwch",		msvcrt_putwch, METH_VARARGS, putwch_doc},
-	{"ungetwch",		msvcrt_ungetwch, METH_VARARGS, ungetwch_doc},
+    {"getwch",                  msvcrt_getwch, METH_VARARGS, getwch_doc},
+    {"getwche",                 msvcrt_getwche, METH_VARARGS, getwche_doc},
+    {"putwch",                  msvcrt_putwch, METH_VARARGS, putwch_doc},
+    {"ungetwch",                msvcrt_ungetwch, METH_VARARGS, ungetwch_doc},
 #endif
-	{NULL,			NULL}
+    {NULL,                      NULL}
 };
 
 
 static struct PyModuleDef msvcrtmodule = {
-	PyModuleDef_HEAD_INIT,
-	"msvcrt",
-	NULL,
-	-1,
-	msvcrt_functions,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+    PyModuleDef_HEAD_INIT,
+    "msvcrt",
+    NULL,
+    -1,
+    msvcrt_functions,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC
 PyInit_msvcrt(void)
 {
-	int st;
-	PyObject *d;
-	PyObject *m = PyModule_Create(&msvcrtmodule);
-	if (m == NULL)
-		return NULL;
-	d = PyModule_GetDict(m);
+    int st;
+    PyObject *d;
+    PyObject *m = PyModule_Create(&msvcrtmodule);
+    if (m == NULL)
+        return NULL;
+    d = PyModule_GetDict(m);
 
-	/* constants for the locking() function's mode argument */
-	insertint(d, "LK_LOCK", _LK_LOCK);
-	insertint(d, "LK_NBLCK", _LK_NBLCK);
-	insertint(d, "LK_NBRLCK", _LK_NBRLCK);
-	insertint(d, "LK_RLCK", _LK_RLCK);
-	insertint(d, "LK_UNLCK", _LK_UNLCK);
-	insertint(d, "SEM_FAILCRITICALERRORS", SEM_FAILCRITICALERRORS);
-	insertint(d, "SEM_NOALIGNMENTFAULTEXCEPT", SEM_NOALIGNMENTFAULTEXCEPT);
-	insertint(d, "SEM_NOGPFAULTERRORBOX", SEM_NOGPFAULTERRORBOX);
-	insertint(d, "SEM_NOOPENFILEERRORBOX", SEM_NOOPENFILEERRORBOX);
+    /* constants for the locking() function's mode argument */
+    insertint(d, "LK_LOCK", _LK_LOCK);
+    insertint(d, "LK_NBLCK", _LK_NBLCK);
+    insertint(d, "LK_NBRLCK", _LK_NBRLCK);
+    insertint(d, "LK_RLCK", _LK_RLCK);
+    insertint(d, "LK_UNLCK", _LK_UNLCK);
+    insertint(d, "SEM_FAILCRITICALERRORS", SEM_FAILCRITICALERRORS);
+    insertint(d, "SEM_NOALIGNMENTFAULTEXCEPT", SEM_NOALIGNMENTFAULTEXCEPT);
+    insertint(d, "SEM_NOGPFAULTERRORBOX", SEM_NOGPFAULTERRORBOX);
+    insertint(d, "SEM_NOOPENFILEERRORBOX", SEM_NOOPENFILEERRORBOX);
 #ifdef _DEBUG
-	insertint(d, "CRT_WARN", _CRT_WARN);
-	insertint(d, "CRT_ERROR", _CRT_ERROR);
-	insertint(d, "CRT_ASSERT", _CRT_ASSERT);
-	insertint(d, "CRTDBG_MODE_DEBUG", _CRTDBG_MODE_DEBUG);
-	insertint(d, "CRTDBG_MODE_FILE", _CRTDBG_MODE_FILE);
-	insertint(d, "CRTDBG_MODE_WNDW", _CRTDBG_MODE_WNDW);
-	insertint(d, "CRTDBG_REPORT_MODE", _CRTDBG_REPORT_MODE);
-	insertint(d, "CRTDBG_FILE_STDERR", (int)_CRTDBG_FILE_STDERR);
-	insertint(d, "CRTDBG_FILE_STDOUT", (int)_CRTDBG_FILE_STDOUT);
-	insertint(d, "CRTDBG_REPORT_FILE", (int)_CRTDBG_REPORT_FILE);
+    insertint(d, "CRT_WARN", _CRT_WARN);
+    insertint(d, "CRT_ERROR", _CRT_ERROR);
+    insertint(d, "CRT_ASSERT", _CRT_ASSERT);
+    insertint(d, "CRTDBG_MODE_DEBUG", _CRTDBG_MODE_DEBUG);
+    insertint(d, "CRTDBG_MODE_FILE", _CRTDBG_MODE_FILE);
+    insertint(d, "CRTDBG_MODE_WNDW", _CRTDBG_MODE_WNDW);
+    insertint(d, "CRTDBG_REPORT_MODE", _CRTDBG_REPORT_MODE);
+    insertint(d, "CRTDBG_FILE_STDERR", (int)_CRTDBG_FILE_STDERR);
+    insertint(d, "CRTDBG_FILE_STDOUT", (int)_CRTDBG_FILE_STDOUT);
+    insertint(d, "CRTDBG_REPORT_FILE", (int)_CRTDBG_REPORT_FILE);
 #endif
 
-	/* constants for the crt versions */
+    /* constants for the crt versions */
 #ifdef _VC_ASSEMBLY_PUBLICKEYTOKEN
-	st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
-					_VC_ASSEMBLY_PUBLICKEYTOKEN);
-	if (st < 0) return NULL;
+    st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
+                                    _VC_ASSEMBLY_PUBLICKEYTOKEN);
+    if (st < 0) return NULL;
 #endif
 #ifdef _CRT_ASSEMBLY_VERSION
-	st = PyModule_AddStringConstant(m, "CRT_ASSEMBLY_VERSION",
-					_CRT_ASSEMBLY_VERSION);
-	if (st < 0) return NULL;
+    st = PyModule_AddStringConstant(m, "CRT_ASSEMBLY_VERSION",
+                                    _CRT_ASSEMBLY_VERSION);
+    if (st < 0) return NULL;
 #endif
 #ifdef __LIBRARIES_ASSEMBLY_NAME_PREFIX
-	st = PyModule_AddStringConstant(m, "LIBRARIES_ASSEMBLY_NAME_PREFIX",
-					__LIBRARIES_ASSEMBLY_NAME_PREFIX);
-	if (st < 0) return NULL;
+    st = PyModule_AddStringConstant(m, "LIBRARIES_ASSEMBLY_NAME_PREFIX",
+                                    __LIBRARIES_ASSEMBLY_NAME_PREFIX);
+    if (st < 0) return NULL;
 #endif
 
-        return m;
+    return m;
 }

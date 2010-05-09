@@ -21,28 +21,28 @@
 
    Assuming the script is a Bourne shell script, the first line of the
    script should be
-	#!/bin/sh -
+    #!/bin/sh -
    The - is important, don't omit it.  If you're using esh, the first
    line should be
-	#!/usr/local/bin/esh -f
+    #!/usr/local/bin/esh -f
    and for ksh, the first line should be
-	#!/usr/local/bin/ksh -p
+    #!/usr/local/bin/ksh -p
    The script should then set the variable IFS to the string
    consisting of <space>, <tab>, and <newline>.  After this (*not*
    before!), the PATH variable should be set to a reasonable value and
    exported.  Do not expect the PATH to have a reasonable value, so do
    not trust the old value of PATH.  You should then set the umask of
    the program by calling
-	umask 077 # or 022 if you want the files to be readable
+    umask 077 # or 022 if you want the files to be readable
    If you plan to change directories, you should either unset CDPATH
    or set it to a good value.  Setting CDPATH to just ``.'' (dot) is a
    good idea.
    If, for some reason, you want to use csh, the first line should be
-	#!/bin/csh -fb
+    #!/bin/csh -fb
    You should then set the path variable to something reasonable,
    without trusting the inherited path.  Here too, you should set the
    umask using the command
-	umask 077 # or 022 if you want the files to be readable
+    umask 077 # or 022 if you want the files to be readable
 */
 
 #include <unistd.h>
@@ -54,14 +54,14 @@
 
 /* CONFIGURATION SECTION */
 
-#ifndef FULL_PATH	/* so that this can be specified from the Makefile */
+#ifndef FULL_PATH       /* so that this can be specified from the Makefile */
 /* Uncomment the following line:
-#define FULL_PATH	"/full/path/of/script" 
+#define FULL_PATH       "/full/path/of/script"
 * Then comment out the #error line. */
 #error "You must define FULL_PATH somewhere"
 #endif
 #ifndef UMASK
-#define UMASK		077
+#define UMASK           077
 #endif
 
 /* END OF CONFIGURATION SECTION */
@@ -101,76 +101,76 @@ char def_ENV[] = "ENV=:";
 void
 clean_environ(void)
 {
-	char **p;
-	extern char **environ;
+    char **p;
+    extern char **environ;
 
-	for (p = environ; *p; p++) {
-		if (strncmp(*p, "LD_", 3) == 0)
-			**p = 'X';
-		else if (strncmp(*p, "_RLD", 4) == 0)
-			**p = 'X';
-		else if (strncmp(*p, "PYTHON", 6) == 0)
-			**p = 'X';
-		else if (strncmp(*p, "IFS=", 4) == 0)
-			*p = def_IFS;
-		else if (strncmp(*p, "CDPATH=", 7) == 0)
-			*p = def_CDPATH;
-		else if (strncmp(*p, "ENV=", 4) == 0)
-			*p = def_ENV;
-	}
-	putenv(def_PATH);
+    for (p = environ; *p; p++) {
+        if (strncmp(*p, "LD_", 3) == 0)
+            **p = 'X';
+        else if (strncmp(*p, "_RLD", 4) == 0)
+            **p = 'X';
+        else if (strncmp(*p, "PYTHON", 6) == 0)
+            **p = 'X';
+        else if (strncmp(*p, "IFS=", 4) == 0)
+            *p = def_IFS;
+        else if (strncmp(*p, "CDPATH=", 7) == 0)
+            *p = def_CDPATH;
+        else if (strncmp(*p, "ENV=", 4) == 0)
+            *p = def_ENV;
+    }
+    putenv(def_PATH);
 }
 
 int
 main(int argc, char **argv)
 {
-	struct stat statb;
-	gid_t egid = getegid();
-	uid_t euid = geteuid();
+    struct stat statb;
+    gid_t egid = getegid();
+    uid_t euid = geteuid();
 
-	/*
-	   Sanity check #1.
-	   This check should be made compile-time, but that's not possible.
-	   If you're sure that you specified a full path name for FULL_PATH,
-	   you can omit this check.
-	*/
-	if (FULL_PATH[0] != '/') {
-		fprintf(stderr, "%s: %s is not a full path name\n", argv[0],
-			FULL_PATH);
-		fprintf(stderr, "You can only use this wrapper if you\n");
-		fprintf(stderr, "compile it with an absolute path.\n");
-		exit(1);
-	}
+    /*
+       Sanity check #1.
+       This check should be made compile-time, but that's not possible.
+       If you're sure that you specified a full path name for FULL_PATH,
+       you can omit this check.
+    */
+    if (FULL_PATH[0] != '/') {
+        fprintf(stderr, "%s: %s is not a full path name\n", argv[0],
+            FULL_PATH);
+        fprintf(stderr, "You can only use this wrapper if you\n");
+        fprintf(stderr, "compile it with an absolute path.\n");
+        exit(1);
+    }
 
-	/*
-	   Sanity check #2.
-	   Check that the owner of the script is equal to either the
-	   effective uid or the super user.
-	*/
-	if (stat(FULL_PATH, &statb) < 0) {
-		perror("stat");
-		exit(1);
-	}
-	if (statb.st_uid != 0 && statb.st_uid != euid) {
-		fprintf(stderr, "%s: %s has the wrong owner\n", argv[0],
-			FULL_PATH);
-		fprintf(stderr, "The script should be owned by root,\n");
-		fprintf(stderr, "and shouldn't be writable by anyone.\n");
-		exit(1);
-	}
+    /*
+       Sanity check #2.
+       Check that the owner of the script is equal to either the
+       effective uid or the super user.
+    */
+    if (stat(FULL_PATH, &statb) < 0) {
+        perror("stat");
+        exit(1);
+    }
+    if (statb.st_uid != 0 && statb.st_uid != euid) {
+        fprintf(stderr, "%s: %s has the wrong owner\n", argv[0],
+            FULL_PATH);
+        fprintf(stderr, "The script should be owned by root,\n");
+        fprintf(stderr, "and shouldn't be writable by anyone.\n");
+        exit(1);
+    }
 
-	if (setregid(egid, egid) < 0)
-		perror("setregid");
-	if (setreuid(euid, euid) < 0)
-		perror("setreuid");
+    if (setregid(egid, egid) < 0)
+        perror("setregid");
+    if (setreuid(euid, euid) < 0)
+        perror("setreuid");
 
-	clean_environ();
+    clean_environ();
 
-	umask(UMASK);
+    umask(UMASK);
 
-	while (**argv == '-')	/* don't let argv[0] start with '-' */
-		(*argv)++;
-	execv(FULL_PATH, argv);
-	fprintf(stderr, "%s: could not execute the script\n", argv[0]);
-	exit(1);
+    while (**argv == '-')       /* don't let argv[0] start with '-' */
+        (*argv)++;
+    execv(FULL_PATH, argv);
+    fprintf(stderr, "%s: could not execute the script\n", argv[0]);
+    exit(1);
 }
