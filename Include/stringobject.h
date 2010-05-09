@@ -62,9 +62,9 @@ PyAPI_DATA(PyTypeObject) PyString_Type;
 PyAPI_FUNC(PyObject *) PyString_FromStringAndSize(const char *, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyString_FromString(const char *);
 PyAPI_FUNC(PyObject *) PyString_FromFormatV(const char*, va_list)
-				Py_GCC_ATTRIBUTE((format(printf, 1, 0)));
+                                Py_GCC_ATTRIBUTE((format(printf, 1, 0)));
 PyAPI_FUNC(PyObject *) PyString_FromFormat(const char*, ...)
-				Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
+                                Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
 PyAPI_FUNC(Py_ssize_t) PyString_Size(PyObject *);
 PyAPI_FUNC(char *) PyString_AsString(PyObject *);
 PyAPI_FUNC(PyObject *) PyString_Repr(PyObject *, int);
@@ -74,10 +74,10 @@ PyAPI_FUNC(int) _PyString_Resize(PyObject **, Py_ssize_t);
 PyAPI_FUNC(int) _PyString_Eq(PyObject *, PyObject*);
 PyAPI_FUNC(PyObject *) PyString_Format(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyString_FormatLong(PyObject*, int, int,
-						  int, char**, int*);
-PyAPI_FUNC(PyObject *) PyString_DecodeEscape(const char *, Py_ssize_t, 
-						   const char *, Py_ssize_t,
-						   const char *);
+                                                  int, char**, int*);
+PyAPI_FUNC(PyObject *) PyString_DecodeEscape(const char *, Py_ssize_t,
+                                                   const char *, Py_ssize_t,
+                                                   const char *);
 
 PyAPI_FUNC(void) PyString_InternInPlace(PyObject **);
 PyAPI_FUNC(void) PyString_InternImmortal(PyObject **);
@@ -107,7 +107,7 @@ PyAPI_FUNC(PyObject*) PyString_Decode(
     const char *errors          /* error handling */
     );
 
-/* Encodes a char buffer of the given size and returns a 
+/* Encodes a char buffer of the given size and returns a
    Python object. */
 
 PyAPI_FUNC(PyObject*) PyString_Encode(
@@ -117,50 +117,50 @@ PyAPI_FUNC(PyObject*) PyString_Encode(
     const char *errors          /* error handling */
     );
 
-/* Encodes a string object and returns the result as Python 
+/* Encodes a string object and returns the result as Python
    object. */
 
 PyAPI_FUNC(PyObject*) PyString_AsEncodedObject(
-    PyObject *str,	 	/* string object */
-    const char *encoding,	/* encoding */
-    const char *errors		/* error handling */
+    PyObject *str,              /* string object */
+    const char *encoding,       /* encoding */
+    const char *errors          /* error handling */
     );
 
 /* Encodes a string object and returns the result as Python string
-   object.   
-   
+   object.
+
    If the codec returns an Unicode object, the object is converted
    back to a string using the default encoding.
 
    DEPRECATED - use PyString_AsEncodedObject() instead. */
 
 PyAPI_FUNC(PyObject*) PyString_AsEncodedString(
-    PyObject *str,	 	/* string object */
-    const char *encoding,	/* encoding */
-    const char *errors		/* error handling */
+    PyObject *str,              /* string object */
+    const char *encoding,       /* encoding */
+    const char *errors          /* error handling */
     );
 
-/* Decodes a string object and returns the result as Python 
+/* Decodes a string object and returns the result as Python
    object. */
 
 PyAPI_FUNC(PyObject*) PyString_AsDecodedObject(
-    PyObject *str,	 	/* string object */
-    const char *encoding,	/* encoding */
-    const char *errors		/* error handling */
+    PyObject *str,              /* string object */
+    const char *encoding,       /* encoding */
+    const char *errors          /* error handling */
     );
 
 /* Decodes a string object and returns the result as Python string
-   object.  
-   
+   object.
+
    If the codec returns an Unicode object, the object is converted
    back to a string using the default encoding.
 
    DEPRECATED - use PyString_AsDecodedObject() instead. */
 
 PyAPI_FUNC(PyObject*) PyString_AsDecodedString(
-    PyObject *str,	 	/* string object */
-    const char *encoding,	/* encoding */
-    const char *errors		/* error handling */
+    PyObject *str,              /* string object */
+    const char *encoding,       /* encoding */
+    const char *errors          /* error handling */
     );
 
 /* Provides access to the internal data buffer and size of a string
@@ -170,11 +170,11 @@ PyAPI_FUNC(PyObject*) PyString_AsDecodedString(
    cause an exception).  */
 
 PyAPI_FUNC(int) PyString_AsStringAndSize(
-    register PyObject *obj,	/* string or Unicode object */
-    register char **s,		/* pointer to buffer variable */
-    register Py_ssize_t *len	/* pointer to length variable or NULL
-				   (only possible for 0-terminated
-				   strings) */
+    register PyObject *obj,     /* string or Unicode object */
+    register char **s,          /* pointer to buffer variable */
+    register Py_ssize_t *len    /* pointer to length variable or NULL
+                                   (only possible for 0-terminated
+                                   strings) */
     );
 
 /* Using the current locale, insert the thousands grouping
@@ -182,17 +182,17 @@ PyAPI_FUNC(int) PyString_AsStringAndSize(
    see Objects/stringlib/localeutil.h */
 
 PyAPI_FUNC(int) _PyString_InsertThousandsGrouping(char *buffer,
-						  Py_ssize_t n_buffer,
-						  Py_ssize_t n_digits,
-						  Py_ssize_t buf_size,
-						  Py_ssize_t *count,
-						  int append_zero_char);
+                                                  Py_ssize_t n_buffer,
+                                                  Py_ssize_t n_digits,
+                                                  Py_ssize_t buf_size,
+                                                  Py_ssize_t *count,
+                                                  int append_zero_char);
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
 PyAPI_FUNC(PyObject *) _PyBytes_FormatAdvanced(PyObject *obj,
-					       char *format_spec,
-					       Py_ssize_t format_spec_len);
+                                               char *format_spec,
+                                               Py_ssize_t format_spec_len);
 
 #ifdef __cplusplus
 }

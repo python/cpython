@@ -487,15 +487,15 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
     PyObject *format_spec_object = NULL;
     PyObject *(*formatter)(PyObject *, STRINGLIB_CHAR *, Py_ssize_t) = NULL;
     STRINGLIB_CHAR* format_spec_start = format_spec->ptr ?
-	    format_spec->ptr : NULL;
+            format_spec->ptr : NULL;
     Py_ssize_t format_spec_len = format_spec->ptr ?
-	    format_spec->end - format_spec->ptr : 0;
+            format_spec->end - format_spec->ptr : 0;
 
     /* If we know the type exactly, skip the lookup of __format__ and just
        call the formatter directly. */
 #if STRINGLIB_IS_UNICODE
     if (PyUnicode_CheckExact(fieldobj))
-	formatter = _PyUnicode_FormatAdvanced;
+        formatter = _PyUnicode_FormatAdvanced;
     /* Unfortunately, there's a problem with checking for int, long,
        and float here.  If we're being included as unicode, their
        formatters expect string format_spec args.  For now, just skip
@@ -503,29 +503,29 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
        hassle. */
 #else
     if (PyString_CheckExact(fieldobj))
-	formatter = _PyBytes_FormatAdvanced;
+        formatter = _PyBytes_FormatAdvanced;
     else if (PyInt_CheckExact(fieldobj))
-	formatter =_PyInt_FormatAdvanced;
+        formatter =_PyInt_FormatAdvanced;
     else if (PyLong_CheckExact(fieldobj))
-	formatter =_PyLong_FormatAdvanced;
+        formatter =_PyLong_FormatAdvanced;
     else if (PyFloat_CheckExact(fieldobj))
-	formatter = _PyFloat_FormatAdvanced;
+        formatter = _PyFloat_FormatAdvanced;
 #endif
 
     if (formatter) {
-	/* we know exactly which formatter will be called when __format__ is
-	   looked up, so call it directly, instead. */
-	result = formatter(fieldobj, format_spec_start, format_spec_len);
+        /* we know exactly which formatter will be called when __format__ is
+           looked up, so call it directly, instead. */
+        result = formatter(fieldobj, format_spec_start, format_spec_len);
     }
     else {
-	/* We need to create an object out of the pointers we have, because
-	   __format__ takes a string/unicode object for format_spec. */
-	format_spec_object = STRINGLIB_NEW(format_spec_start,
-					   format_spec_len);
-	if (format_spec_object == NULL)
-	    goto done;
+        /* We need to create an object out of the pointers we have, because
+           __format__ takes a string/unicode object for format_spec. */
+        format_spec_object = STRINGLIB_NEW(format_spec_start,
+                                           format_spec_len);
+        if (format_spec_object == NULL)
+            goto done;
 
-	result = PyObject_Format(fieldobj, format_spec_object);
+        result = PyObject_Format(fieldobj, format_spec_object);
     }
     if (result == NULL)
         goto done;
@@ -538,11 +538,11 @@ render_field(PyObject *fieldobj, SubString *format_spec, OutputString *output)
     /* Convert result to our type.  We could be str, and result could
        be unicode */
     {
-	PyObject *tmp = STRINGLIB_TOSTR(result);
-	if (tmp == NULL)
-	    goto done;
-	Py_DECREF(result);
-	result = tmp;
+        PyObject *tmp = STRINGLIB_TOSTR(result);
+        if (tmp == NULL)
+            goto done;
+        Py_DECREF(result);
+        result = tmp;
     }
 #endif
 
@@ -777,17 +777,17 @@ do_conversion(PyObject *obj, STRINGLIB_CHAR conversion)
     case 's':
         return STRINGLIB_TOSTR(obj);
     default:
-	if (conversion > 32 && conversion < 127) {
-		/* It's the ASCII subrange; casting to char is safe
-		   (assuming the execution character set is an ASCII
-		   superset). */
-        	PyErr_Format(PyExc_ValueError,
+        if (conversion > 32 && conversion < 127) {
+                /* It's the ASCII subrange; casting to char is safe
+                   (assuming the execution character set is an ASCII
+                   superset). */
+                PyErr_Format(PyExc_ValueError,
                      "Unknown conversion specifier %c",
                      (char)conversion);
-	} else
-		PyErr_Format(PyExc_ValueError,
-		     "Unknown conversion specifier \\x%x",
-		     (unsigned int)conversion);
+        } else
+                PyErr_Format(PyExc_ValueError,
+                     "Unknown conversion specifier \\x%x",
+                     (unsigned int)conversion);
         return NULL;
     }
 }
@@ -1041,7 +1041,7 @@ formatteriter_next(formatteriterobject *it)
             Py_INCREF(conversion_str);
         }
         else
-	    conversion_str = STRINGLIB_NEW(&conversion, 1);
+            conversion_str = STRINGLIB_NEW(&conversion, 1);
         if (conversion_str == NULL)
             goto done;
 
@@ -1057,39 +1057,39 @@ formatteriter_next(formatteriterobject *it)
 }
 
 static PyMethodDef formatteriter_methods[] = {
-    {NULL,		NULL}		/* sentinel */
+    {NULL,              NULL}           /* sentinel */
 };
 
 static PyTypeObject PyFormatterIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "formatteriterator",		/* tp_name */
-    sizeof(formatteriterobject),	/* tp_basicsize */
-    0,					/* tp_itemsize */
+    "formatteriterator",                /* tp_name */
+    sizeof(formatteriterobject),        /* tp_basicsize */
+    0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)formatteriter_dealloc,	/* tp_dealloc */
-    0,					/* tp_print */
-    0,					/* tp_getattr */
-    0,					/* tp_setattr */
-    0,					/* tp_compare */
-    0,					/* tp_repr */
-    0,					/* tp_as_number */
-    0,					/* tp_as_sequence */
-    0,					/* tp_as_mapping */
-    0,					/* tp_hash */
-    0,					/* tp_call */
-    0,					/* tp_str */
-    PyObject_GenericGetAttr,		/* tp_getattro */
-    0,					/* tp_setattro */
-    0,					/* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,			/* tp_flags */
-    0,					/* tp_doc */
-    0,					/* tp_traverse */
-    0,					/* tp_clear */
-    0,					/* tp_richcompare */
-    0,					/* tp_weaklistoffset */
-    PyObject_SelfIter,			/* tp_iter */
-    (iternextfunc)formatteriter_next,	/* tp_iternext */
-    formatteriter_methods,		/* tp_methods */
+    (destructor)formatteriter_dealloc,  /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_compare */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
+    0,                                  /* tp_doc */
+    0,                                  /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)formatteriter_next,   /* tp_iternext */
+    formatteriter_methods,              /* tp_methods */
     0,
 };
 
@@ -1190,39 +1190,39 @@ fieldnameiter_next(fieldnameiterobject *it)
 }
 
 static PyMethodDef fieldnameiter_methods[] = {
-    {NULL,		NULL}		/* sentinel */
+    {NULL,              NULL}           /* sentinel */
 };
 
 static PyTypeObject PyFieldNameIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "fieldnameiterator",		/* tp_name */
-    sizeof(fieldnameiterobject),	/* tp_basicsize */
-    0,					/* tp_itemsize */
+    "fieldnameiterator",                /* tp_name */
+    sizeof(fieldnameiterobject),        /* tp_basicsize */
+    0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)fieldnameiter_dealloc,	/* tp_dealloc */
-    0,					/* tp_print */
-    0,					/* tp_getattr */
-    0,					/* tp_setattr */
-    0,					/* tp_compare */
-    0,					/* tp_repr */
-    0,					/* tp_as_number */
-    0,					/* tp_as_sequence */
-    0,					/* tp_as_mapping */
-    0,					/* tp_hash */
-    0,					/* tp_call */
-    0,					/* tp_str */
-    PyObject_GenericGetAttr,		/* tp_getattro */
-    0,					/* tp_setattro */
-    0,					/* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,			/* tp_flags */
-    0,					/* tp_doc */
-    0,					/* tp_traverse */
-    0,					/* tp_clear */
-    0,					/* tp_richcompare */
-    0,					/* tp_weaklistoffset */
-    PyObject_SelfIter,			/* tp_iter */
-    (iternextfunc)fieldnameiter_next,	/* tp_iternext */
-    fieldnameiter_methods,		/* tp_methods */
+    (destructor)fieldnameiter_dealloc,  /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_compare */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
+    0,                                  /* tp_doc */
+    0,                                  /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)fieldnameiter_next,   /* tp_iternext */
+    fieldnameiter_methods,              /* tp_methods */
     0};
 
 /* unicode_formatter_field_name_split is used to implement

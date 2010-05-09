@@ -25,10 +25,10 @@ stringlib_expandtabs(PyObject *self, PyObject *args)
     size_t i, j;
     PyObject *u;
     int tabsize = 8;
-    
+
     if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
         return NULL;
-    
+
     /* First pass: determine size of output string */
     i = j = 0;
     e = STRINGLIB_STR(self) + STRINGLIB_LEN(self);
@@ -55,20 +55,20 @@ stringlib_expandtabs(PyObject *self, PyObject *args)
                 }
             }
         }
-    
+
     if ((i + j) > PY_SSIZE_T_MAX) {
         PyErr_SetString(PyExc_OverflowError, "result is too long");
         return NULL;
     }
-    
+
     /* Second pass: create output string and fill it */
     u = STRINGLIB_NEW(NULL, i + j);
     if (!u)
         return NULL;
-    
+
     j = 0;
     q = STRINGLIB_STR(u);
-    
+
     for (p = STRINGLIB_STR(self); p < e; p++)
         if (*p == '\t') {
             if (tabsize > 0) {
@@ -84,7 +84,7 @@ stringlib_expandtabs(PyObject *self, PyObject *args)
             if (*p == '\n' || *p == '\r')
                 j = 0;
         }
-    
+
     return u;
 }
 
@@ -110,16 +110,16 @@ pad(PyObject *self, Py_ssize_t left, Py_ssize_t right, char fill)
     }
 
     u = STRINGLIB_NEW(NULL,
-				   left + STRINGLIB_LEN(self) + right);
+                                   left + STRINGLIB_LEN(self) + right);
     if (u) {
         if (left)
             memset(STRINGLIB_STR(u), fill, left);
         Py_MEMCPY(STRINGLIB_STR(u) + left,
-	       STRINGLIB_STR(self),
-	       STRINGLIB_LEN(self));
+               STRINGLIB_STR(self),
+               STRINGLIB_LEN(self));
         if (right)
             memset(STRINGLIB_STR(u) + left + STRINGLIB_LEN(self),
-		   fill, right);
+                   fill, right);
     }
 
     return u;
@@ -271,17 +271,17 @@ stringlib_zfill(PyObject *self, PyObject *args)
 }
 
 
-#define _STRINGLIB_SPLIT_APPEND(data, left, right)		\
-	str = STRINGLIB_NEW((data) + (left),	                \
-					 (right) - (left));	\
-	if (str == NULL)					\
-		goto onError;					\
-	if (PyList_Append(list, str)) {				\
-		Py_DECREF(str);					\
-		goto onError;					\
-	}							\
-	else							\
-		Py_DECREF(str);
+#define _STRINGLIB_SPLIT_APPEND(data, left, right)              \
+        str = STRINGLIB_NEW((data) + (left),                    \
+                                         (right) - (left));     \
+        if (str == NULL)                                        \
+                goto onError;                                   \
+        if (PyList_Append(list, str)) {                         \
+                Py_DECREF(str);                                 \
+                goto onError;                                   \
+        }                                                       \
+        else                                                    \
+                Py_DECREF(str);
 
 PyDoc_STRVAR(splitlines__doc__,
 "B.splitlines([keepends]) -> list of lines\n\
@@ -320,28 +320,28 @@ stringlib_splitlines(PyObject *self, PyObject *args)
         goto onError;
 
     for (i = j = 0; i < len; ) {
-	Py_ssize_t eol;
+        Py_ssize_t eol;
 
-	/* Find a line and append it */
-	while (i < len && data[i] != '\n' && data[i] != '\r')
-	    i++;
+        /* Find a line and append it */
+        while (i < len && data[i] != '\n' && data[i] != '\r')
+            i++;
 
-	/* Skip the line break reading CRLF as one line break */
-	eol = i;
-	if (i < len) {
-	    if (data[i] == '\r' && i + 1 < len &&
-		data[i+1] == '\n')
-		i += 2;
-	    else
-		i++;
-	    if (keepends)
-		eol = i;
-	}
-	_STRINGLIB_SPLIT_APPEND(data, j, eol);
-	j = i;
+        /* Skip the line break reading CRLF as one line break */
+        eol = i;
+        if (i < len) {
+            if (data[i] == '\r' && i + 1 < len &&
+                data[i+1] == '\n')
+                i += 2;
+            else
+                i++;
+            if (keepends)
+                eol = i;
+        }
+        _STRINGLIB_SPLIT_APPEND(data, j, eol);
+        j = i;
     }
     if (j < len) {
-	_STRINGLIB_SPLIT_APPEND(data, j, len);
+        _STRINGLIB_SPLIT_APPEND(data, j, len);
     }
 
     return list;

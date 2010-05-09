@@ -237,7 +237,7 @@ _Py_bytes_isspace(const char *cptr, Py_ssize_t len)
 
     e = p + len;
     for (; p < e; p++) {
-	if (!ISSPACE(*p))
+        if (!ISSPACE(*p))
             Py_RETURN_FALSE;
     }
     Py_RETURN_TRUE;
@@ -259,16 +259,16 @@ _Py_bytes_isalpha(const char *cptr, Py_ssize_t len)
 
     /* Shortcut for single character strings */
     if (len == 1 && ISALPHA(*p))
-	Py_RETURN_TRUE;
+        Py_RETURN_TRUE;
 
     /* Special case for empty strings */
     if (len == 0)
-	Py_RETURN_FALSE;
+        Py_RETURN_FALSE;
 
     e = p + len;
     for (; p < e; p++) {
-	if (!ISALPHA(*p))
-	    Py_RETURN_FALSE;
+        if (!ISALPHA(*p))
+            Py_RETURN_FALSE;
     }
     Py_RETURN_TRUE;
 }
@@ -289,16 +289,16 @@ _Py_bytes_isalnum(const char *cptr, Py_ssize_t len)
 
     /* Shortcut for single character strings */
     if (len == 1 && ISALNUM(*p))
-	Py_RETURN_TRUE;
+        Py_RETURN_TRUE;
 
     /* Special case for empty strings */
     if (len == 0)
-	Py_RETURN_FALSE;
+        Py_RETURN_FALSE;
 
     e = p + len;
     for (; p < e; p++) {
-	if (!ISALNUM(*p))
-	    Py_RETURN_FALSE;
+        if (!ISALNUM(*p))
+            Py_RETURN_FALSE;
     }
     Py_RETURN_TRUE;
 }
@@ -319,16 +319,16 @@ _Py_bytes_isdigit(const char *cptr, Py_ssize_t len)
 
     /* Shortcut for single character strings */
     if (len == 1 && ISDIGIT(*p))
-	Py_RETURN_TRUE;
+        Py_RETURN_TRUE;
 
     /* Special case for empty strings */
     if (len == 0)
-	Py_RETURN_FALSE;
+        Py_RETURN_FALSE;
 
     e = p + len;
     for (; p < e; p++) {
-	if (!ISDIGIT(*p))
-	    Py_RETURN_FALSE;
+        if (!ISDIGIT(*p))
+            Py_RETURN_FALSE;
     }
     Py_RETURN_TRUE;
 }
@@ -350,19 +350,19 @@ _Py_bytes_islower(const char *cptr, Py_ssize_t len)
 
     /* Shortcut for single character strings */
     if (len == 1)
-	return PyBool_FromLong(ISLOWER(*p));
+        return PyBool_FromLong(ISLOWER(*p));
 
     /* Special case for empty strings */
     if (len == 0)
-	Py_RETURN_FALSE;
+        Py_RETURN_FALSE;
 
     e = p + len;
     cased = 0;
     for (; p < e; p++) {
-	if (ISUPPER(*p))
-	    Py_RETURN_FALSE;
-	else if (!cased && ISLOWER(*p))
-	    cased = 1;
+        if (ISUPPER(*p))
+            Py_RETURN_FALSE;
+        else if (!cased && ISLOWER(*p))
+            cased = 1;
     }
     return PyBool_FromLong(cased);
 }
@@ -384,19 +384,19 @@ _Py_bytes_isupper(const char *cptr, Py_ssize_t len)
 
     /* Shortcut for single character strings */
     if (len == 1)
-	return PyBool_FromLong(ISUPPER(*p));
+        return PyBool_FromLong(ISUPPER(*p));
 
     /* Special case for empty strings */
     if (len == 0)
-	Py_RETURN_FALSE;
+        Py_RETURN_FALSE;
 
     e = p + len;
     cased = 0;
     for (; p < e; p++) {
-	if (ISLOWER(*p))
-	    Py_RETURN_FALSE;
-	else if (!cased && ISUPPER(*p))
-	    cased = 1;
+        if (ISLOWER(*p))
+            Py_RETURN_FALSE;
+        else if (!cased && ISUPPER(*p))
+            cased = 1;
     }
     return PyBool_FromLong(cased);
 }
@@ -420,32 +420,32 @@ _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
 
     /* Shortcut for single character strings */
     if (len == 1)
-	return PyBool_FromLong(ISUPPER(*p));
+        return PyBool_FromLong(ISUPPER(*p));
 
     /* Special case for empty strings */
     if (len == 0)
-	Py_RETURN_FALSE;
+        Py_RETURN_FALSE;
 
     e = p + len;
     cased = 0;
     previous_is_cased = 0;
     for (; p < e; p++) {
-	register const unsigned char ch = *p;
+        register const unsigned char ch = *p;
 
-	if (ISUPPER(ch)) {
-	    if (previous_is_cased)
-		Py_RETURN_FALSE;
-	    previous_is_cased = 1;
-	    cased = 1;
-	}
-	else if (ISLOWER(ch)) {
-	    if (!previous_is_cased)
-		Py_RETURN_FALSE;
-	    previous_is_cased = 1;
-	    cased = 1;
-	}
-	else
-	    previous_is_cased = 0;
+        if (ISUPPER(ch)) {
+            if (previous_is_cased)
+                Py_RETURN_FALSE;
+            previous_is_cased = 1;
+            cased = 1;
+        }
+        else if (ISLOWER(ch)) {
+            if (!previous_is_cased)
+                Py_RETURN_FALSE;
+            previous_is_cased = 1;
+            cased = 1;
+        }
+        else
+            previous_is_cased = 0;
     }
     return PyBool_FromLong(cased);
 }
@@ -459,23 +459,23 @@ Return a copy of B with all ASCII characters converted to lowercase.");
 void
 _Py_bytes_lower(char *result, const char *cptr, Py_ssize_t len)
 {
-	Py_ssize_t i;
+        Py_ssize_t i;
 
         /*
-	newobj = PyString_FromStringAndSize(NULL, len);
-	if (!newobj)
-		return NULL;
+        newobj = PyString_FromStringAndSize(NULL, len);
+        if (!newobj)
+                return NULL;
 
-	s = PyString_AS_STRING(newobj);
+        s = PyString_AS_STRING(newobj);
         */
 
-	Py_MEMCPY(result, cptr, len);
+        Py_MEMCPY(result, cptr, len);
 
-	for (i = 0; i < len; i++) {
-		int c = Py_CHARMASK(result[i]);
-		if (ISUPPER(c))
-			result[i] = TOLOWER(c);
-	}
+        for (i = 0; i < len; i++) {
+                int c = Py_CHARMASK(result[i]);
+                if (ISUPPER(c))
+                        result[i] = TOLOWER(c);
+        }
 }
 
 
@@ -487,23 +487,23 @@ Return a copy of B with all ASCII characters converted to uppercase.");
 void
 _Py_bytes_upper(char *result, const char *cptr, Py_ssize_t len)
 {
-	Py_ssize_t i;
+        Py_ssize_t i;
 
         /*
-	newobj = PyString_FromStringAndSize(NULL, len);
-	if (!newobj)
-		return NULL;
+        newobj = PyString_FromStringAndSize(NULL, len);
+        if (!newobj)
+                return NULL;
 
-	s = PyString_AS_STRING(newobj);
+        s = PyString_AS_STRING(newobj);
         */
 
-	Py_MEMCPY(result, cptr, len);
+        Py_MEMCPY(result, cptr, len);
 
-	for (i = 0; i < len; i++) {
-		int c = Py_CHARMASK(result[i]);
-		if (ISLOWER(c))
-			result[i] = TOUPPER(c);
-	}
+        for (i = 0; i < len; i++) {
+                int c = Py_CHARMASK(result[i]);
+                if (ISLOWER(c))
+                        result[i] = TOUPPER(c);
+        }
 }
 
 
@@ -516,29 +516,29 @@ characters, all remaining cased characters have lowercase.");
 void
 _Py_bytes_title(char *result, char *s, Py_ssize_t len)
 {
-	Py_ssize_t i;
-	int previous_is_cased = 0;
+        Py_ssize_t i;
+        int previous_is_cased = 0;
 
         /*
-	newobj = PyString_FromStringAndSize(NULL, len);
-	if (newobj == NULL)
-		return NULL;
-	s_new = PyString_AsString(newobj);
+        newobj = PyString_FromStringAndSize(NULL, len);
+        if (newobj == NULL)
+                return NULL;
+        s_new = PyString_AsString(newobj);
         */
-	for (i = 0; i < len; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (ISLOWER(c)) {
-			if (!previous_is_cased)
-			    c = TOUPPER(c);
-			previous_is_cased = 1;
-		} else if (ISUPPER(c)) {
-			if (previous_is_cased)
-			    c = TOLOWER(c);
-			previous_is_cased = 1;
-		} else
-			previous_is_cased = 0;
-		*result++ = c;
-	}
+        for (i = 0; i < len; i++) {
+                int c = Py_CHARMASK(*s++);
+                if (ISLOWER(c)) {
+                        if (!previous_is_cased)
+                            c = TOUPPER(c);
+                        previous_is_cased = 1;
+                } else if (ISUPPER(c)) {
+                        if (previous_is_cased)
+                            c = TOLOWER(c);
+                        previous_is_cased = 1;
+                } else
+                        previous_is_cased = 0;
+                *result++ = c;
+        }
 }
 
 
@@ -550,30 +550,30 @@ Return a copy of B with only its first character capitalized (ASCII).");
 void
 _Py_bytes_capitalize(char *result, char *s, Py_ssize_t len)
 {
-	Py_ssize_t i;
+        Py_ssize_t i;
 
         /*
-	newobj = PyString_FromStringAndSize(NULL, len);
-	if (newobj == NULL)
-		return NULL;
-	s_new = PyString_AsString(newobj);
+        newobj = PyString_FromStringAndSize(NULL, len);
+        if (newobj == NULL)
+                return NULL;
+        s_new = PyString_AsString(newobj);
         */
-	if (0 < len) {
-		int c = Py_CHARMASK(*s++);
-		if (ISLOWER(c))
-			*result = TOUPPER(c);
-		else
-			*result = c;
-		result++;
-	}
-	for (i = 1; i < len; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (ISUPPER(c))
-			*result = TOLOWER(c);
-		else
-			*result = c;
-		result++;
-	}
+        if (0 < len) {
+                int c = Py_CHARMASK(*s++);
+                if (ISLOWER(c))
+                        *result = TOUPPER(c);
+                else
+                        *result = c;
+                result++;
+        }
+        for (i = 1; i < len; i++) {
+                int c = Py_CHARMASK(*s++);
+                if (ISUPPER(c))
+                        *result = TOLOWER(c);
+                else
+                        *result = c;
+                result++;
+        }
 }
 
 
@@ -586,25 +586,25 @@ to lowercase ASCII and vice versa.");
 void
 _Py_bytes_swapcase(char *result, char *s, Py_ssize_t len)
 {
-	Py_ssize_t i;
+        Py_ssize_t i;
 
         /*
-	newobj = PyString_FromStringAndSize(NULL, len);
-	if (newobj == NULL)
-		return NULL;
-	s_new = PyString_AsString(newobj);
+        newobj = PyString_FromStringAndSize(NULL, len);
+        if (newobj == NULL)
+                return NULL;
+        s_new = PyString_AsString(newobj);
         */
-	for (i = 0; i < len; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (ISLOWER(c)) {
-			*result = TOUPPER(c);
-		}
-		else if (ISUPPER(c)) {
-			*result = TOLOWER(c);
-		}
-		else
-			*result = c;
-		result++;
-	}
+        for (i = 0; i < len; i++) {
+                int c = Py_CHARMASK(*s++);
+                if (ISLOWER(c)) {
+                        *result = TOUPPER(c);
+                }
+                else if (ISUPPER(c)) {
+                        *result = TOLOWER(c);
+                }
+                else
+                        *result = c;
+                result++;
+        }
 }
 

@@ -218,7 +218,7 @@ BaseException_setstate(PyObject *self, PyObject *state)
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
-#ifdef Py_USING_UNICODE   
+#ifdef Py_USING_UNICODE
    {"__unicode__", (PyCFunction)BaseException_unicode, METH_NOARGS },
 #endif
    {NULL, NULL, 0, NULL},
@@ -237,7 +237,7 @@ BaseException_getitem(PyBaseExceptionObject *self, Py_ssize_t index)
 
 static PyObject *
 BaseException_getslice(PyBaseExceptionObject *self,
-			Py_ssize_t start, Py_ssize_t stop)
+                        Py_ssize_t start, Py_ssize_t stop)
 {
     if (PyErr_WarnPy3k("__getslice__ not supported for exception "
                        "classes in 3.x; use args attribute", 1) < 0)
@@ -317,7 +317,7 @@ static PyObject *
 BaseException_get_message(PyBaseExceptionObject *self)
 {
     PyObject *msg;
-    
+
     /* if "message" is in self->dict, accessing a user-set message attribute */
     if (self->dict &&
         (msg = PyDict_GetItemString(self->dict, "message"))) {
@@ -353,7 +353,7 @@ BaseException_set_message(PyBaseExceptionObject *self, PyObject *val)
         self->message = NULL;
         return 0;
     }
-    
+
     /* else set it in __dict__, but may need to create the dict first */
     if (self->dict == NULL) {
         self->dict = PyDict_New();
@@ -367,7 +367,7 @@ static PyGetSetDef BaseException_getset[] = {
     {"__dict__", (getter)BaseException_get_dict, (setter)BaseException_set_dict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
     {"message", (getter)BaseException_get_message,
-	    (setter)BaseException_set_message},
+            (setter)BaseException_set_message},
     {NULL},
 };
 
@@ -394,7 +394,7 @@ static PyTypeObject _PyExc_BaseException = {
     PyObject_GenericSetAttr,    /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
-    	Py_TPFLAGS_BASE_EXC_SUBCLASS,  /*tp_flags*/
+        Py_TPFLAGS_BASE_EXC_SUBCLASS,  /*tp_flags*/
     PyDoc_STR("Common base class for all exceptions"), /* tp_doc */
     (traverseproc)BaseException_traverse, /* tp_traverse */
     (inquiry)BaseException_clear, /* tp_clear */
@@ -2054,8 +2054,8 @@ static PyMethodDef functions[] = {
 /* crt variable checking in VisualStudio .NET 2005 */
 #include <crtdbg.h>
 
-static int	prevCrtReportMode;
-static _invalid_parameter_handler	prevCrtHandler;
+static int      prevCrtReportMode;
+static _invalid_parameter_handler       prevCrtHandler;
 
 /* Invalid parameter handler.  Sets a ValueError exception */
 static void
@@ -2209,25 +2209,25 @@ _PyExc_Init(void)
 
     PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RuntimeError, NULL, NULL);
     if (!PyExc_RecursionErrorInst)
-	Py_FatalError("Cannot pre-allocate RuntimeError instance for "
-			"recursion errors");
+        Py_FatalError("Cannot pre-allocate RuntimeError instance for "
+                        "recursion errors");
     else {
-	PyBaseExceptionObject *err_inst =
-	    (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
-	PyObject *args_tuple;
-	PyObject *exc_message;
-	exc_message = PyString_FromString("maximum recursion depth exceeded");
-	if (!exc_message)
-	    Py_FatalError("cannot allocate argument for RuntimeError "
-			    "pre-allocation");
-	args_tuple = PyTuple_Pack(1, exc_message);
-	if (!args_tuple)
-	    Py_FatalError("cannot allocate tuple for RuntimeError "
-			    "pre-allocation");
-	Py_DECREF(exc_message);
-	if (BaseException_init(err_inst, args_tuple, NULL))
-	    Py_FatalError("init of pre-allocated RuntimeError failed");
-	Py_DECREF(args_tuple);
+        PyBaseExceptionObject *err_inst =
+            (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
+        PyObject *args_tuple;
+        PyObject *exc_message;
+        exc_message = PyString_FromString("maximum recursion depth exceeded");
+        if (!exc_message)
+            Py_FatalError("cannot allocate argument for RuntimeError "
+                            "pre-allocation");
+        args_tuple = PyTuple_Pack(1, exc_message);
+        if (!args_tuple)
+            Py_FatalError("cannot allocate tuple for RuntimeError "
+                            "pre-allocation");
+        Py_DECREF(exc_message);
+        if (BaseException_init(err_inst, args_tuple, NULL))
+            Py_FatalError("init of pre-allocated RuntimeError failed");
+        Py_DECREF(args_tuple);
     }
 
     Py_DECREF(bltinmod);

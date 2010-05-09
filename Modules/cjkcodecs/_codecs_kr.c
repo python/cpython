@@ -11,151 +11,151 @@
  * EUC-KR codec
  */
 
-#define EUCKR_JAMO_FIRSTBYTE	0xA4
-#define EUCKR_JAMO_FILLER	0xD4
+#define EUCKR_JAMO_FIRSTBYTE    0xA4
+#define EUCKR_JAMO_FILLER       0xD4
 
 static const unsigned char u2cgk_choseong[19] = {
-	0xa1, 0xa2, 0xa4, 0xa7, 0xa8, 0xa9, 0xb1, 0xb2,
-	0xb3, 0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xbb,
-	0xbc, 0xbd, 0xbe
+    0xa1, 0xa2, 0xa4, 0xa7, 0xa8, 0xa9, 0xb1, 0xb2,
+    0xb3, 0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xbb,
+    0xbc, 0xbd, 0xbe
 };
 static const unsigned char u2cgk_jungseong[21] = {
-	0xbf, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6,
-	0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce,
-	0xcf, 0xd0, 0xd1, 0xd2, 0xd3
+    0xbf, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6,
+    0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce,
+    0xcf, 0xd0, 0xd1, 0xd2, 0xd3
 };
 static const unsigned char u2cgk_jongseong[28] = {
-	0xd4, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
-	0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf, 0xb0,
-	0xb1, 0xb2, 0xb4, 0xb5, 0xb6, 0xb7, 0xb8, 0xba,
-	0xbb, 0xbc, 0xbd, 0xbe
+    0xd4, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+    0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf, 0xb0,
+    0xb1, 0xb2, 0xb4, 0xb5, 0xb6, 0xb7, 0xb8, 0xba,
+    0xbb, 0xbc, 0xbd, 0xbe
 };
 
 ENCODER(euc_kr)
 {
-	while (inleft > 0) {
-		Py_UNICODE c = IN1;
-		DBCHAR code;
+    while (inleft > 0) {
+        Py_UNICODE c = IN1;
+        DBCHAR code;
 
-		if (c < 0x80) {
-			WRITE1((unsigned char)c)
-			NEXT(1, 1)
-			continue;
-		}
-		UCS4INVALID(c)
+        if (c < 0x80) {
+            WRITE1((unsigned char)c)
+            NEXT(1, 1)
+            continue;
+        }
+        UCS4INVALID(c)
 
-		REQUIRE_OUTBUF(2)
-		TRYMAP_ENC(cp949, code, c);
-		else return 1;
+        REQUIRE_OUTBUF(2)
+        TRYMAP_ENC(cp949, code, c);
+        else return 1;
 
-		if ((code & 0x8000) == 0) {
-			/* KS X 1001 coded character */
-			OUT1((code >> 8) | 0x80)
-			OUT2((code & 0xFF) | 0x80)
-			NEXT(1, 2)
-		}
-		else {	/* Mapping is found in CP949 extension,
-			 * but we encode it in KS X 1001:1998 Annex 3,
-			 * make-up sequence for EUC-KR. */
+        if ((code & 0x8000) == 0) {
+            /* KS X 1001 coded character */
+            OUT1((code >> 8) | 0x80)
+            OUT2((code & 0xFF) | 0x80)
+            NEXT(1, 2)
+        }
+        else {          /* Mapping is found in CP949 extension,
+                 * but we encode it in KS X 1001:1998 Annex 3,
+                 * make-up sequence for EUC-KR. */
 
-			REQUIRE_OUTBUF(8)
+            REQUIRE_OUTBUF(8)
 
-			/* syllable composition precedence */
-			OUT1(EUCKR_JAMO_FIRSTBYTE)
-			OUT2(EUCKR_JAMO_FILLER)
+            /* syllable composition precedence */
+            OUT1(EUCKR_JAMO_FIRSTBYTE)
+            OUT2(EUCKR_JAMO_FILLER)
 
-			/* All codepoints in CP949 extension are in unicode
-			 * Hangul Syllable area. */
-			assert(0xac00 <= c && c <= 0xd7a3);
-			c -= 0xac00;
+            /* All codepoints in CP949 extension are in unicode
+             * Hangul Syllable area. */
+            assert(0xac00 <= c && c <= 0xd7a3);
+            c -= 0xac00;
 
-			OUT3(EUCKR_JAMO_FIRSTBYTE)
-			OUT4(u2cgk_choseong[c / 588])
-			NEXT_OUT(4)
+            OUT3(EUCKR_JAMO_FIRSTBYTE)
+            OUT4(u2cgk_choseong[c / 588])
+            NEXT_OUT(4)
 
-			OUT1(EUCKR_JAMO_FIRSTBYTE)
-			OUT2(u2cgk_jungseong[(c / 28) % 21])
-			OUT3(EUCKR_JAMO_FIRSTBYTE)
-			OUT4(u2cgk_jongseong[c % 28])
-			NEXT(1, 4)
-		}
-	}
+            OUT1(EUCKR_JAMO_FIRSTBYTE)
+            OUT2(u2cgk_jungseong[(c / 28) % 21])
+            OUT3(EUCKR_JAMO_FIRSTBYTE)
+            OUT4(u2cgk_jongseong[c % 28])
+            NEXT(1, 4)
+        }
+    }
 
-	return 0;
+    return 0;
 }
 
-#define NONE	127
+#define NONE    127
 
 static const unsigned char cgk2u_choseong[] = { /* [A1, BE] */
-	   0,    1, NONE,    2, NONE, NONE,    3,    4,
-	   5, NONE, NONE, NONE, NONE, NONE, NONE, NONE,
-	   6,    7,    8, NONE,    9,   10,   11,   12,
-	  13,   14,   15,   16,   17,   18
+       0,    1, NONE,    2, NONE, NONE,    3,    4,
+       5, NONE, NONE, NONE, NONE, NONE, NONE, NONE,
+       6,    7,    8, NONE,    9,   10,   11,   12,
+      13,   14,   15,   16,   17,   18
 };
 static const unsigned char cgk2u_jongseong[] = { /* [A1, BE] */
-	   1,    2,    3,    4,    5,    6,    7, NONE,
-	   8,    9,   10,   11,   12,   13,   14,   15,
-	  16,   17, NONE,   18,   19,   20,   21,   22,
-	NONE,   23,   24,   25,   26,   27
+       1,    2,    3,    4,    5,    6,    7, NONE,
+       8,    9,   10,   11,   12,   13,   14,   15,
+      16,   17, NONE,   18,   19,   20,   21,   22,
+    NONE,   23,   24,   25,   26,   27
 };
 
 DECODER(euc_kr)
 {
-	while (inleft > 0) {
-		unsigned char c = IN1;
+    while (inleft > 0) {
+        unsigned char c = IN1;
 
-		REQUIRE_OUTBUF(1)
+        REQUIRE_OUTBUF(1)
 
-		if (c < 0x80) {
-			OUT1(c)
-			NEXT(1, 1)
-			continue;
-		}
+        if (c < 0x80) {
+            OUT1(c)
+            NEXT(1, 1)
+            continue;
+        }
 
-		REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2)
 
-		if (c == EUCKR_JAMO_FIRSTBYTE &&
-		    IN2 == EUCKR_JAMO_FILLER) {
-			/* KS X 1001:1998 Annex 3 make-up sequence */
-			DBCHAR cho, jung, jong;
+        if (c == EUCKR_JAMO_FIRSTBYTE &&
+            IN2 == EUCKR_JAMO_FILLER) {
+            /* KS X 1001:1998 Annex 3 make-up sequence */
+            DBCHAR cho, jung, jong;
 
-			REQUIRE_INBUF(8)
-			if ((*inbuf)[2] != EUCKR_JAMO_FIRSTBYTE ||
-			    (*inbuf)[4] != EUCKR_JAMO_FIRSTBYTE ||
-			    (*inbuf)[6] != EUCKR_JAMO_FIRSTBYTE)
-				return 8;
+            REQUIRE_INBUF(8)
+            if ((*inbuf)[2] != EUCKR_JAMO_FIRSTBYTE ||
+                (*inbuf)[4] != EUCKR_JAMO_FIRSTBYTE ||
+                (*inbuf)[6] != EUCKR_JAMO_FIRSTBYTE)
+                return 8;
 
-			c = (*inbuf)[3];
-			if (0xa1 <= c && c <= 0xbe)
-				cho = cgk2u_choseong[c - 0xa1];
-			else
-				cho = NONE;
+            c = (*inbuf)[3];
+            if (0xa1 <= c && c <= 0xbe)
+                cho = cgk2u_choseong[c - 0xa1];
+            else
+                cho = NONE;
 
-			c = (*inbuf)[5];
-			jung = (0xbf <= c && c <= 0xd3) ? c - 0xbf : NONE;
+            c = (*inbuf)[5];
+            jung = (0xbf <= c && c <= 0xd3) ? c - 0xbf : NONE;
 
-			c = (*inbuf)[7];
-			if (c == EUCKR_JAMO_FILLER)
-				jong = 0;
-			else if (0xa1 <= c && c <= 0xbe)
-				jong = cgk2u_jongseong[c - 0xa1];
-			else
-				jong = NONE;
+            c = (*inbuf)[7];
+            if (c == EUCKR_JAMO_FILLER)
+                jong = 0;
+            else if (0xa1 <= c && c <= 0xbe)
+                jong = cgk2u_jongseong[c - 0xa1];
+            else
+                jong = NONE;
 
-			if (cho == NONE || jung == NONE || jong == NONE)
-				return 8;
+            if (cho == NONE || jung == NONE || jong == NONE)
+                return 8;
 
-			OUT1(0xac00 + cho*588 + jung*28 + jong);
-			NEXT(8, 1)
-		}
-		else TRYMAP_DEC(ksx1001, **outbuf, c ^ 0x80, IN2 ^ 0x80) {
-			NEXT(2, 1)
-		}
-		else
-			return 2;
-	}
+            OUT1(0xac00 + cho*588 + jung*28 + jong);
+            NEXT(8, 1)
+        }
+        else TRYMAP_DEC(ksx1001, **outbuf, c ^ 0x80, IN2 ^ 0x80) {
+            NEXT(2, 1)
+        }
+        else
+            return 2;
+    }
 
-	return 0;
+    return 0;
 }
 #undef NONE
 
@@ -166,54 +166,54 @@ DECODER(euc_kr)
 
 ENCODER(cp949)
 {
-	while (inleft > 0) {
-		Py_UNICODE c = IN1;
-		DBCHAR code;
+    while (inleft > 0) {
+        Py_UNICODE c = IN1;
+        DBCHAR code;
 
-		if (c < 0x80) {
-			WRITE1((unsigned char)c)
-			NEXT(1, 1)
-			continue;
-		}
-		UCS4INVALID(c)
+        if (c < 0x80) {
+            WRITE1((unsigned char)c)
+            NEXT(1, 1)
+            continue;
+        }
+        UCS4INVALID(c)
 
-		REQUIRE_OUTBUF(2)
-		TRYMAP_ENC(cp949, code, c);
-		else return 1;
+        REQUIRE_OUTBUF(2)
+        TRYMAP_ENC(cp949, code, c);
+        else return 1;
 
-		OUT1((code >> 8) | 0x80)
-		if (code & 0x8000)
-			OUT2(code & 0xFF) /* MSB set: CP949 */
-		else
-			OUT2((code & 0xFF) | 0x80) /* MSB unset: ks x 1001 */
-		NEXT(1, 2)
-	}
+        OUT1((code >> 8) | 0x80)
+        if (code & 0x8000)
+            OUT2(code & 0xFF) /* MSB set: CP949 */
+        else
+            OUT2((code & 0xFF) | 0x80) /* MSB unset: ks x 1001 */
+        NEXT(1, 2)
+    }
 
-	return 0;
+    return 0;
 }
 
 DECODER(cp949)
 {
-	while (inleft > 0) {
-		unsigned char c = IN1;
+    while (inleft > 0) {
+        unsigned char c = IN1;
 
-		REQUIRE_OUTBUF(1)
+        REQUIRE_OUTBUF(1)
 
-		if (c < 0x80) {
-			OUT1(c)
-			NEXT(1, 1)
-			continue;
-		}
+        if (c < 0x80) {
+            OUT1(c)
+            NEXT(1, 1)
+            continue;
+        }
 
-		REQUIRE_INBUF(2)
-		TRYMAP_DEC(ksx1001, **outbuf, c ^ 0x80, IN2 ^ 0x80);
-		else TRYMAP_DEC(cp949ext, **outbuf, c, IN2);
-		else return 2;
+        REQUIRE_INBUF(2)
+        TRYMAP_DEC(ksx1001, **outbuf, c ^ 0x80, IN2 ^ 0x80);
+        else TRYMAP_DEC(cp949ext, **outbuf, c, IN2);
+        else return 2;
 
-		NEXT(2, 1)
-	}
+        NEXT(2, 1)
+    }
 
-	return 0;
+    return 0;
 }
 
 
@@ -250,58 +250,58 @@ static const DBCHAR u2johabjamo[] = {
 
 ENCODER(johab)
 {
-	while (inleft > 0) {
-		Py_UNICODE c = IN1;
-		DBCHAR code;
+    while (inleft > 0) {
+        Py_UNICODE c = IN1;
+        DBCHAR code;
 
-		if (c < 0x80) {
-			WRITE1((unsigned char)c)
-			NEXT(1, 1)
-			continue;
-		}
-		UCS4INVALID(c)
+        if (c < 0x80) {
+            WRITE1((unsigned char)c)
+            NEXT(1, 1)
+            continue;
+        }
+        UCS4INVALID(c)
 
-		REQUIRE_OUTBUF(2)
+        REQUIRE_OUTBUF(2)
 
-		if (c >= 0xac00 && c <= 0xd7a3) {
-			c -= 0xac00;
-			code = 0x8000 |
-				(u2johabidx_choseong[c / 588] << 10) |
-				(u2johabidx_jungseong[(c / 28) % 21] << 5) |
-				u2johabidx_jongseong[c % 28];
-		}
-		else if (c >= 0x3131 && c <= 0x3163)
-			code = u2johabjamo[c - 0x3131];
-		else TRYMAP_ENC(cp949, code, c) {
-			unsigned char c1, c2, t2;
-			unsigned short t1;
+        if (c >= 0xac00 && c <= 0xd7a3) {
+            c -= 0xac00;
+            code = 0x8000 |
+                (u2johabidx_choseong[c / 588] << 10) |
+                (u2johabidx_jungseong[(c / 28) % 21] << 5) |
+                u2johabidx_jongseong[c % 28];
+        }
+        else if (c >= 0x3131 && c <= 0x3163)
+            code = u2johabjamo[c - 0x3131];
+        else TRYMAP_ENC(cp949, code, c) {
+            unsigned char c1, c2, t2;
+            unsigned short t1;
 
-			assert((code & 0x8000) == 0);
-			c1 = code >> 8;
-			c2 = code & 0xff;
-			if (((c1 >= 0x21 && c1 <= 0x2c) ||
-			    (c1 >= 0x4a && c1 <= 0x7d)) &&
-			    (c2 >= 0x21 && c2 <= 0x7e)) {
-				t1 = (c1 < 0x4a ? (c1 - 0x21 + 0x1b2) :
-						  (c1 - 0x21 + 0x197));
-				t2 = ((t1 & 1) ? 0x5e : 0) + (c2 - 0x21);
-				OUT1(t1 >> 1)
-				OUT2(t2 < 0x4e ? t2 + 0x31 : t2 + 0x43)
-				NEXT(1, 2)
-				continue;
-			}
-			else
-				return 1;
-		}
-		else
-			return 1;
+            assert((code & 0x8000) == 0);
+            c1 = code >> 8;
+            c2 = code & 0xff;
+            if (((c1 >= 0x21 && c1 <= 0x2c) ||
+                (c1 >= 0x4a && c1 <= 0x7d)) &&
+                (c2 >= 0x21 && c2 <= 0x7e)) {
+                t1 = (c1 < 0x4a ? (c1 - 0x21 + 0x1b2) :
+                          (c1 - 0x21 + 0x197));
+                t2 = ((t1 & 1) ? 0x5e : 0) + (c2 - 0x21);
+                OUT1(t1 >> 1)
+                OUT2(t2 < 0x4e ? t2 + 0x31 : t2 + 0x43)
+                NEXT(1, 2)
+                continue;
+            }
+            else
+                return 1;
+        }
+        else
+            return 1;
 
-		OUT1(code >> 8)
-		OUT2(code & 0xff)
-		NEXT(1, 2)
-	}
+        OUT1(code >> 8)
+        OUT2(code & 0xff)
+        NEXT(1, 2)
+    }
 
-	return 0;
+    return 0;
 }
 
 #define FILL 0xfd
@@ -347,91 +347,91 @@ static const unsigned char johabjamo_jongseong[32] = {
 
 DECODER(johab)
 {
-	while (inleft > 0) {
-		unsigned char    c = IN1, c2;
+    while (inleft > 0) {
+        unsigned char    c = IN1, c2;
 
-		REQUIRE_OUTBUF(1)
+        REQUIRE_OUTBUF(1)
 
-		if (c < 0x80) {
-			OUT1(c)
-			NEXT(1, 1)
-			continue;
-		}
+        if (c < 0x80) {
+            OUT1(c)
+            NEXT(1, 1)
+            continue;
+        }
 
-		REQUIRE_INBUF(2)
-		c2 = IN2;
+        REQUIRE_INBUF(2)
+        c2 = IN2;
 
-		if (c < 0xd8) {
-			/* johab hangul */
-			unsigned char c_cho, c_jung, c_jong;
-			unsigned char i_cho, i_jung, i_jong;
+        if (c < 0xd8) {
+            /* johab hangul */
+            unsigned char c_cho, c_jung, c_jong;
+            unsigned char i_cho, i_jung, i_jong;
 
-			c_cho = (c >> 2) & 0x1f;
-			c_jung = ((c << 3) | c2 >> 5) & 0x1f;
-			c_jong = c2 & 0x1f;
+            c_cho = (c >> 2) & 0x1f;
+            c_jung = ((c << 3) | c2 >> 5) & 0x1f;
+            c_jong = c2 & 0x1f;
 
-			i_cho = johabidx_choseong[c_cho];
-			i_jung = johabidx_jungseong[c_jung];
-			i_jong = johabidx_jongseong[c_jong];
+            i_cho = johabidx_choseong[c_cho];
+            i_jung = johabidx_jungseong[c_jung];
+            i_jong = johabidx_jongseong[c_jong];
 
-			if (i_cho == NONE || i_jung == NONE || i_jong == NONE)
-				return 2;
+            if (i_cho == NONE || i_jung == NONE || i_jong == NONE)
+                return 2;
 
-			/* we don't use U+1100 hangul jamo yet. */
-			if (i_cho == FILL) {
-				if (i_jung == FILL) {
-					if (i_jong == FILL)
-						OUT1(0x3000)
-					else
-						OUT1(0x3100 |
-						  johabjamo_jongseong[c_jong])
-				}
-				else {
-					if (i_jong == FILL)
-						OUT1(0x3100 |
-						  johabjamo_jungseong[c_jung])
-					else
-						return 2;
-				}
-			} else {
-				if (i_jung == FILL) {
-					if (i_jong == FILL)
-						OUT1(0x3100 |
-						  johabjamo_choseong[c_cho])
-					else
-						return 2;
-				}
-				else
-					OUT1(0xac00 +
-					     i_cho * 588 +
-					     i_jung * 28 +
-					     (i_jong == FILL ? 0 : i_jong))
-			}
-			NEXT(2, 1)
-		} else {
-			/* KS X 1001 except hangul jamos and syllables */
-			if (c == 0xdf || c > 0xf9 ||
-			    c2 < 0x31 || (c2 >= 0x80 && c2 < 0x91) ||
-			    (c2 & 0x7f) == 0x7f ||
-			    (c == 0xda && (c2 >= 0xa1 && c2 <= 0xd3)))
-				return 2;
-			else {
-				unsigned char t1, t2;
+            /* we don't use U+1100 hangul jamo yet. */
+            if (i_cho == FILL) {
+                if (i_jung == FILL) {
+                    if (i_jong == FILL)
+                        OUT1(0x3000)
+                    else
+                        OUT1(0x3100 |
+                          johabjamo_jongseong[c_jong])
+                }
+                else {
+                    if (i_jong == FILL)
+                        OUT1(0x3100 |
+                          johabjamo_jungseong[c_jung])
+                    else
+                        return 2;
+                }
+            } else {
+                if (i_jung == FILL) {
+                    if (i_jong == FILL)
+                        OUT1(0x3100 |
+                          johabjamo_choseong[c_cho])
+                    else
+                        return 2;
+                }
+                else
+                    OUT1(0xac00 +
+                         i_cho * 588 +
+                         i_jung * 28 +
+                         (i_jong == FILL ? 0 : i_jong))
+            }
+            NEXT(2, 1)
+        } else {
+            /* KS X 1001 except hangul jamos and syllables */
+            if (c == 0xdf || c > 0xf9 ||
+                c2 < 0x31 || (c2 >= 0x80 && c2 < 0x91) ||
+                (c2 & 0x7f) == 0x7f ||
+                (c == 0xda && (c2 >= 0xa1 && c2 <= 0xd3)))
+                return 2;
+            else {
+                unsigned char t1, t2;
 
-				t1 = (c < 0xe0 ? 2 * (c - 0xd9) :
-						 2 * c - 0x197);
-				t2 = (c2 < 0x91 ? c2 - 0x31 : c2 - 0x43);
-				t1 = t1 + (t2 < 0x5e ? 0 : 1) + 0x21;
-				t2 = (t2 < 0x5e ? t2 : t2 - 0x5e) + 0x21;
+                t1 = (c < 0xe0 ? 2 * (c - 0xd9) :
+                         2 * c - 0x197);
+                t2 = (c2 < 0x91 ? c2 - 0x31 : c2 - 0x43);
+                t1 = t1 + (t2 < 0x5e ? 0 : 1) + 0x21;
+                t2 = (t2 < 0x5e ? t2 : t2 - 0x5e) + 0x21;
 
-				TRYMAP_DEC(ksx1001, **outbuf, t1, t2);
-				else return 2;
-				NEXT(2, 1)
-			}
-		}
-	}
+                TRYMAP_DEC(ksx1001, **outbuf, t1, t2);
+                else return 2;
+                NEXT(2, 1)
+            }
+        }
+    }
 
-	return 0;
+    return 0;
 }
 #undef NONE
 #undef FILL
