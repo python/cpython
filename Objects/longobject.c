@@ -31,11 +31,13 @@
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
 #define MIN(x, y) ((x) > (y) ? (y) : (x))
 
-#define SIGCHECK(PyTryBlock) \
-    if (--_Py_Ticker < 0) { \
-        _Py_Ticker = _Py_CheckInterval; \
-        if (PyErr_CheckSignals()) PyTryBlock \
-    }
+#define SIGCHECK(PyTryBlock)                            \
+    do {                                                \
+        if (--_Py_Ticker < 0) {                         \
+            _Py_Ticker = _Py_CheckInterval;             \
+            if (PyErr_CheckSignals()) PyTryBlock        \
+                                          }             \
+    } while(0)
 
 /* Normalize (remove leading zeros from) a long int object.
    Doesn't attempt to free the storage--in most cases, due to the nature
@@ -1151,11 +1153,13 @@ convert_binop(PyObject *v, PyObject *w, PyLongObject **a, PyLongObject **b) {
     return 1;
 }
 
-#define CONVERT_BINOP(v, w, a, b) \
-    if (!convert_binop(v, w, a, b)) { \
-        Py_INCREF(Py_NotImplemented); \
-        return Py_NotImplemented; \
-    }
+#define CONVERT_BINOP(v, w, a, b)               \
+    do {                                        \
+        if (!convert_binop(v, w, a, b)) {       \
+            Py_INCREF(Py_NotImplemented);       \
+            return Py_NotImplemented;           \
+        }                                       \
+    } while(0)                                  \
 
 /* bits_in_digit(d) returns the unique integer k such that 2**(k-1) <= d <
    2**k if d is nonzero, else 0. */
@@ -1371,7 +1375,7 @@ long_to_decimal_string(PyObject *aa, int addL)
         SIGCHECK({
                 Py_DECREF(scratch);
                 return NULL;
-            })
+            });
     }
     /* pout should have at least one digit, so that the case when a = 0
        works correctly */
@@ -1540,7 +1544,7 @@ _PyLong_Format(PyObject *aa, int base, int addL, int newstyle)
                     Py_DECREF(scratch);
                     Py_DECREF(str);
                     return NULL;
-                })
+                });
 
             /* Break rem into digits. */
             assert(ntostore > 0);
@@ -2121,7 +2125,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
                 Py_DECREF(v);
                 *prem = NULL;
                 return NULL;
-            })
+            });
 
         /* estimate quotient digit q; may overestimate by 1 (rare) */
         vtop = vk[size_w];
@@ -2578,7 +2582,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
             SIGCHECK({
                     Py_DECREF(z);
                     return NULL;
-                })
+                });
 
             carry = *pz + f * f;
             *pz++ = (digit)(carry & PyLong_MASK);
@@ -2616,7 +2620,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
             SIGCHECK({
                     Py_DECREF(z);
                     return NULL;
-                })
+                });
 
             while (pb < pbend) {
                 carry += *pz + *pb++ * f;
@@ -3475,26 +3479,28 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
      * is NULL.
      */
 #define REDUCE(X)                                       \
-    if (c != NULL) {                                    \
-        if (l_divmod(X, c, NULL, &temp) < 0)            \
-            goto Error;                                 \
-        Py_XDECREF(X);                                  \
-        X = temp;                                       \
-        temp = NULL;                                    \
-    }
+    do {                                                \
+        if (c != NULL) {                                \
+            if (l_divmod(X, c, NULL, &temp) < 0)        \
+                goto Error;                             \
+            Py_XDECREF(X);                              \
+            X = temp;                                   \
+            temp = NULL;                                \
+        }                                               \
+    } while(0)
 
     /* Multiply two values, then reduce the result:
        result = X*Y % c.  If c is NULL, skip the mod. */
-#define MULT(X, Y, result)                              \
-{                                                       \
-    temp = (PyLongObject *)long_mul(X, Y);              \
-    if (temp == NULL)                                   \
-        goto Error;                                     \
-    Py_XDECREF(result);                                 \
-    result = temp;                                      \
-    temp = NULL;                                        \
-    REDUCE(result)                                      \
-}
+#define MULT(X, Y, result)                      \
+    do {                                        \
+        temp = (PyLongObject *)long_mul(X, Y);  \
+        if (temp == NULL)                       \
+            goto Error;                         \
+        Py_XDECREF(result);                     \
+        result = temp;                          \
+        temp = NULL;                            \
+        REDUCE(result);                         \
+    } while(0)
 
     if (Py_SIZE(b) <= FIVEARY_CUTOFF) {
         /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
@@ -3503,9 +3509,9 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             digit bi = b->ob_digit[i];
 
             for (j = (digit)1 << (PyLong_SHIFT-1); j != 0; j >>= 1) {
-                MULT(z, z, z)
+                MULT(z, z, z);
                 if (bi & j)
-                    MULT(z, a, z)
+                    MULT(z, a, z);
             }
         }
     }
@@ -3514,7 +3520,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         Py_INCREF(z);           /* still holds 1L */
         table[0] = z;
         for (i = 1; i < 32; ++i)
-            MULT(table[i-1], a, table[i])
+            MULT(table[i-1], a, table[i]);
 
         for (i = Py_SIZE(b) - 1; i >= 0; --i) {
             const digit bi = b->ob_digit[i];
@@ -3522,9 +3528,9 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             for (j = PyLong_SHIFT - 5; j >= 0; j -= 5) {
                 const int index = (bi >> j) & 0x1f;
                 for (k = 0; k < 5; ++k)
-                    MULT(z, z, z)
+                    MULT(z, z, z);
                 if (index)
-                    MULT(z, table[index], z)
+                    MULT(z, table[index], z);
             }
         }
     }
