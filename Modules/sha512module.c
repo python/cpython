@@ -24,7 +24,7 @@
 
 /* Endianness testing and definitions */
 #define TestEndianness(variable) {int i=1; variable=PCT_BIG_ENDIAN;\
-	if (*((char*)&i)==1) variable=PCT_LITTLE_ENDIAN;}
+        if (*((char*)&i)==1) variable=PCT_LITTLE_ENDIAN;}
 
 #define PCT_LITTLE_ENDIAN 1
 #define PCT_BIG_ENDIAN 0
@@ -34,8 +34,8 @@
 typedef unsigned char SHA_BYTE;
 
 #if SIZEOF_INT == 4
-typedef unsigned int SHA_INT32;	/* 32-bit integer */
-typedef unsigned PY_LONG_LONG SHA_INT64;	/* 64-bit integer */
+typedef unsigned int SHA_INT32; /* 32-bit integer */
+typedef unsigned PY_LONG_LONG SHA_INT64;        /* 64-bit integer */
 #else
 /* not defined. compilation will die. */
 #endif
@@ -49,11 +49,11 @@ typedef unsigned PY_LONG_LONG SHA_INT64;	/* 64-bit integer */
 
 typedef struct {
     PyObject_HEAD
-    SHA_INT64 digest[8];		/* Message digest */
-    SHA_INT32 count_lo, count_hi;	/* 64-bit bit count */
-    SHA_BYTE data[SHA_BLOCKSIZE];	/* SHA data buffer */
+    SHA_INT64 digest[8];                /* Message digest */
+    SHA_INT32 count_lo, count_hi;       /* 64-bit bit count */
+    SHA_BYTE data[SHA_BLOCKSIZE];       /* SHA data buffer */
     int Endianness;
-    int local;				/* unprocessed amount in data */
+    int local;                          /* unprocessed amount in data */
     int digestsize;
 } SHAobject;
 
@@ -65,22 +65,22 @@ static void longReverse(SHA_INT64 *buffer, int byteCount, int Endianness)
     SHA_INT64 value;
 
     if ( Endianness == PCT_BIG_ENDIAN )
-	return;
+        return;
 
     byteCount /= sizeof(*buffer);
     while (byteCount--) {
         value = *buffer;
 
-		((unsigned char*)buffer)[0] = (unsigned char)(value >> 56) & 0xff;
-		((unsigned char*)buffer)[1] = (unsigned char)(value >> 48) & 0xff;
-		((unsigned char*)buffer)[2] = (unsigned char)(value >> 40) & 0xff;
-		((unsigned char*)buffer)[3] = (unsigned char)(value >> 32) & 0xff;
-		((unsigned char*)buffer)[4] = (unsigned char)(value >> 24) & 0xff;
-		((unsigned char*)buffer)[5] = (unsigned char)(value >> 16) & 0xff;
-		((unsigned char*)buffer)[6] = (unsigned char)(value >>  8) & 0xff;
-		((unsigned char*)buffer)[7] = (unsigned char)(value      ) & 0xff;
-        
-		buffer++;
+                ((unsigned char*)buffer)[0] = (unsigned char)(value >> 56) & 0xff;
+                ((unsigned char*)buffer)[1] = (unsigned char)(value >> 48) & 0xff;
+                ((unsigned char*)buffer)[2] = (unsigned char)(value >> 40) & 0xff;
+                ((unsigned char*)buffer)[3] = (unsigned char)(value >> 32) & 0xff;
+                ((unsigned char*)buffer)[4] = (unsigned char)(value >> 24) & 0xff;
+                ((unsigned char*)buffer)[5] = (unsigned char)(value >> 16) & 0xff;
+                ((unsigned char*)buffer)[6] = (unsigned char)(value >>  8) & 0xff;
+                ((unsigned char*)buffer)[7] = (unsigned char)(value      ) & 0xff;
+
+                buffer++;
     }
 }
 
@@ -125,7 +125,7 @@ static void SHAcopy(SHAobject *src, SHAobject *dest)
     ( ((((x) & Py_ULL(0xFFFFFFFFFFFFFFFF))>>((unsigned PY_LONG_LONG)(y) & 63)) | \
       ((x)<<((unsigned PY_LONG_LONG)(64-((y) & 63))))) & Py_ULL(0xFFFFFFFFFFFFFFFF))
 #define Ch(x,y,z)       (z ^ (x & (y ^ z)))
-#define Maj(x,y,z)      (((x | y) & z) | (x & y)) 
+#define Maj(x,y,z)      (((x | y) & z) | (x & y))
 #define S(x, n)         ROR64((x),(n))
 #define R(x, n)         (((x) & Py_ULL(0xFFFFFFFFFFFFFFFF)) >> ((unsigned PY_LONG_LONG)n))
 #define Sigma0(x)       (S(x, 28) ^ S(x, 34) ^ S(x, 39))
@@ -144,7 +144,7 @@ sha512_transform(SHAobject *sha_info)
     longReverse(W, (int)sizeof(sha_info->data), sha_info->Endianness);
 
     for (i = 16; i < 80; ++i) {
-		W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
+                W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
     }
     for (i = 0; i < 8; ++i) {
         S[i] = sha_info->digest[i];
@@ -238,8 +238,8 @@ sha512_transform(SHAobject *sha_info)
     RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],78,Py_ULL(0x5fcb6fab3ad6faec));
     RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],79,Py_ULL(0x6c44198c4a475817));
 
-#undef RND     
-    
+#undef RND
+
     /* feedback */
     for (i = 0; i < 8; i++) {
         sha_info->digest[i] = sha_info->digest[i] + S[i];
@@ -341,14 +341,14 @@ sha512_final(unsigned char digest[SHA_DIGESTSIZE], SHAobject *sha_info)
     count = (int) ((lo_bit_count >> 3) & 0x7f);
     ((SHA_BYTE *) sha_info->data)[count++] = 0x80;
     if (count > SHA_BLOCKSIZE - 16) {
-	memset(((SHA_BYTE *) sha_info->data) + count, 0,
-	       SHA_BLOCKSIZE - count);
-	sha512_transform(sha_info);
-	memset((SHA_BYTE *) sha_info->data, 0, SHA_BLOCKSIZE - 16);
+        memset(((SHA_BYTE *) sha_info->data) + count, 0,
+               SHA_BLOCKSIZE - count);
+        sha512_transform(sha_info);
+        memset((SHA_BYTE *) sha_info->data, 0, SHA_BLOCKSIZE - 16);
     }
     else {
-	memset(((SHA_BYTE *) sha_info->data) + count, 0,
-	       SHA_BLOCKSIZE - 16 - count);
+        memset(((SHA_BYTE *) sha_info->data) + count, 0,
+               SHA_BLOCKSIZE - 16 - count);
     }
 
     /* GJS: note that we add the hi/lo in big-endian. sha512_transform will
@@ -521,21 +521,21 @@ SHA512_hexdigest(SHAobject *self, PyObject *unused)
     /* Create a new string */
     retval = PyUnicode_FromStringAndSize(NULL, self->digestsize * 2);
     if (!retval)
-	    return NULL;
+            return NULL;
     hex_digest = PyUnicode_AS_UNICODE(retval);
     if (!hex_digest) {
-	    Py_DECREF(retval);
-	    return NULL;
+            Py_DECREF(retval);
+            return NULL;
     }
 
     /* Make hex version of the digest */
     for (i=j=0; i<self->digestsize; i++) {
         char c;
         c = (digest[i] >> 4) & 0xf;
-	c = (c>9) ? c+'a'-10 : c + '0';
+        c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
         c = (digest[i] & 0xf);
-	c = (c>9) ? c+'a'-10 : c + '0';
+        c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
     }
     return retval;
@@ -563,11 +563,11 @@ SHA512_update(SHAobject *self, PyObject *args)
 }
 
 static PyMethodDef SHA_methods[] = {
-    {"copy",	  (PyCFunction)SHA512_copy,      METH_NOARGS, SHA512_copy__doc__},
-    {"digest",	  (PyCFunction)SHA512_digest,    METH_NOARGS, SHA512_digest__doc__},
+    {"copy",      (PyCFunction)SHA512_copy,      METH_NOARGS, SHA512_copy__doc__},
+    {"digest",    (PyCFunction)SHA512_digest,    METH_NOARGS, SHA512_digest__doc__},
     {"hexdigest", (PyCFunction)SHA512_hexdigest, METH_NOARGS, SHA512_hexdigest__doc__},
-    {"update",	  (PyCFunction)SHA512_update,    METH_VARARGS, SHA512_update__doc__},
-    {NULL,	  NULL}		/* sentinel */
+    {"update",    (PyCFunction)SHA512_update,    METH_VARARGS, SHA512_update__doc__},
+    {NULL,        NULL}         /* sentinel */
 };
 
 static PyObject *
@@ -604,13 +604,13 @@ static PyMemberDef SHA_members[] = {
 
 static PyTypeObject SHA384type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_sha512.sha384",	/*tp_name*/
-    sizeof(SHAobject),	/*tp_size*/
-    0,			/*tp_itemsize*/
+    "_sha512.sha384",   /*tp_name*/
+    sizeof(SHAobject),  /*tp_size*/
+    0,                  /*tp_itemsize*/
     /* methods */
-    SHA512_dealloc,	/*tp_dealloc*/
-    0,			/*tp_print*/
-    0,          	/*tp_getattr*/
+    SHA512_dealloc,     /*tp_dealloc*/
+    0,                  /*tp_print*/
+    0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_reserved*/
     0,                  /*tp_repr*/
@@ -626,25 +626,25 @@ static PyTypeObject SHA384type = {
     Py_TPFLAGS_DEFAULT, /*tp_flags*/
     0,                  /*tp_doc*/
     0,                  /*tp_traverse*/
-    0,			/*tp_clear*/
-    0,			/*tp_richcompare*/
-    0,			/*tp_weaklistoffset*/
-    0,			/*tp_iter*/
-    0,			/*tp_iternext*/
-    SHA_methods,	/* tp_methods */
-    SHA_members,	/* tp_members */
+    0,                  /*tp_clear*/
+    0,                  /*tp_richcompare*/
+    0,                  /*tp_weaklistoffset*/
+    0,                  /*tp_iter*/
+    0,                  /*tp_iternext*/
+    SHA_methods,        /* tp_methods */
+    SHA_members,        /* tp_members */
     SHA_getseters,      /* tp_getset */
 };
 
 static PyTypeObject SHA512type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_sha512.sha512",	/*tp_name*/
-    sizeof(SHAobject),	/*tp_size*/
-    0,			/*tp_itemsize*/
+    "_sha512.sha512",   /*tp_name*/
+    sizeof(SHAobject),  /*tp_size*/
+    0,                  /*tp_itemsize*/
     /* methods */
-    SHA512_dealloc,	/*tp_dealloc*/
-    0,			/*tp_print*/
-    0,          	/*tp_getattr*/
+    SHA512_dealloc,     /*tp_dealloc*/
+    0,                  /*tp_print*/
+    0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_reserved*/
     0,                  /*tp_repr*/
@@ -660,13 +660,13 @@ static PyTypeObject SHA512type = {
     Py_TPFLAGS_DEFAULT, /*tp_flags*/
     0,                  /*tp_doc*/
     0,                  /*tp_traverse*/
-    0,			/*tp_clear*/
-    0,			/*tp_richcompare*/
-    0,			/*tp_weaklistoffset*/
-    0,			/*tp_iter*/
-    0,			/*tp_iternext*/
-    SHA_methods,	/* tp_methods */
-    SHA_members,	/* tp_members */
+    0,                  /*tp_clear*/
+    0,                  /*tp_richcompare*/
+    0,                  /*tp_weaklistoffset*/
+    0,                  /*tp_iter*/
+    0,                  /*tp_iternext*/
+    SHA_methods,        /* tp_methods */
+    SHA_members,        /* tp_members */
     SHA_getseters,      /* tp_getset */
 };
 
@@ -761,7 +761,7 @@ SHA384_new(PyObject *self, PyObject *args, PyObject *kwdict)
 static struct PyMethodDef SHA_functions[] = {
     {"sha512", (PyCFunction)SHA512_new, METH_VARARGS|METH_KEYWORDS, SHA512_new__doc__},
     {"sha384", (PyCFunction)SHA384_new, METH_VARARGS|METH_KEYWORDS, SHA384_new__doc__},
-    {NULL,	NULL}		 /* Sentinel */
+    {NULL,      NULL}            /* Sentinel */
 };
 
 
@@ -771,15 +771,15 @@ static struct PyMethodDef SHA_functions[] = {
 
 
 static struct PyModuleDef _sha512module = {
-	PyModuleDef_HEAD_INIT,
-	"_sha512",
-	NULL,
-	-1,
-	SHA_functions,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+        PyModuleDef_HEAD_INIT,
+        "_sha512",
+        NULL,
+        -1,
+        SHA_functions,
+        NULL,
+        NULL,
+        NULL,
+        NULL
 };
 
 PyMODINIT_FUNC

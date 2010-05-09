@@ -7,9 +7,9 @@
    thus rounding from extended precision to double precision. */
 double _Py_force_double(double x)
 {
-	volatile double y;
-	y = x;
-	return y;
+    volatile double y;
+    y = x;
+    return y;
 }
 #endif
 
@@ -34,21 +34,21 @@ void _Py_set_387controlword(unsigned short cw) {
 #ifndef HAVE_HYPOT
 double hypot(double x, double y)
 {
-	double yx;
+    double yx;
 
-	x = fabs(x);
-	y = fabs(y);
-	if (x < y) {
-		double temp = x;
-		x = y;
-		y = temp;
-	}
-	if (x == 0.)
-		return 0.;
-	else {
-		yx = y/x;
-		return x*sqrt(1.+yx*yx);
-	}
+    x = fabs(x);
+    y = fabs(y);
+    if (x < y) {
+        double temp = x;
+        x = y;
+        y = temp;
+    }
+    if (x == 0.)
+        return 0.;
+    else {
+        yx = y/x;
+        return x*sqrt(1.+yx*yx);
+    }
 }
 #endif /* HAVE_HYPOT */
 
@@ -56,12 +56,12 @@ double hypot(double x, double y)
 double
 copysign(double x, double y)
 {
-	/* use atan2 to distinguish -0. from 0. */
-	if (y > 0. || (y == 0. && atan2(y, -1.) > 0.)) {
-		return fabs(x);
-	} else {
-		return -fabs(x);
-	}
+    /* use atan2 to distinguish -0. from 0. */
+    if (y > 0. || (y == 0. && atan2(y, -1.) > 0.)) {
+        return fabs(x);
+    } else {
+        return -fabs(x);
+    }
 }
 #endif /* HAVE_COPYSIGN */
 
@@ -73,7 +73,7 @@ round(double x)
     absx = fabs(x);
     y = floor(absx);
     if (absx - y >= 0.5)
-        y += 1.0;
+    y += 1.0;
     return copysign(y, x);
 }
 #endif /* HAVE_ROUND */

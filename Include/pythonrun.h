@@ -17,7 +17,7 @@ extern "C" {
 #define PyCF_IGNORE_COOKIE 0x0800
 
 typedef struct {
-	int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
+    int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
 } PyCompilerFlags;
 
 PyAPI_FUNC(void) Py_SetProgramName(wchar_t *);
@@ -40,33 +40,33 @@ PyAPI_FUNC(int) PyRun_SimpleFileExFlags(FILE *, const char *, int, PyCompilerFla
 PyAPI_FUNC(int) PyRun_InteractiveOneFlags(FILE *, const char *, PyCompilerFlags *);
 PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(FILE *, const char *, PyCompilerFlags *);
 
-PyAPI_FUNC(struct _mod *) PyParser_ASTFromString(const char *, const char *, 
-						 int, PyCompilerFlags *flags,
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromString(const char *, const char *,
+                                                 int, PyCompilerFlags *flags,
                                                  PyArena *);
-PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(FILE *, const char *, 
-					       const char*, int, 
-					       char *, char *,
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(FILE *, const char *,
+                                               const char*, int,
+                                               char *, char *,
                                                PyCompilerFlags *, int *,
                                                PyArena *);
 #define PyParser_SimpleParseString(S, B) \
-        PyParser_SimpleParseStringFlags(S, B, 0)
+    PyParser_SimpleParseStringFlags(S, B, 0)
 #define PyParser_SimpleParseFile(FP, S, B) \
-        PyParser_SimpleParseFileFlags(FP, S, B, 0)
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlags(const char *, int, 
-							  int);
+    PyParser_SimpleParseFileFlags(FP, S, B, 0)
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlags(const char *, int,
+                                                          int);
 PyAPI_FUNC(struct _node *) PyParser_SimpleParseFileFlags(FILE *, const char *,
-							int, int);
+                                                        int, int);
 
-PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *, 
-					 PyObject *, PyCompilerFlags *);
+PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *,
+                                         PyObject *, PyCompilerFlags *);
 
-PyAPI_FUNC(PyObject *) PyRun_FileExFlags(FILE *, const char *, int, 
-					 PyObject *, PyObject *, int, 
-					 PyCompilerFlags *);
+PyAPI_FUNC(PyObject *) PyRun_FileExFlags(FILE *, const char *, int,
+                                         PyObject *, PyObject *, int,
+                                         PyCompilerFlags *);
 
 #define Py_CompileString(str, p, s) Py_CompileStringFlags(str, p, s, NULL)
 PyAPI_FUNC(PyObject *) Py_CompileStringFlags(const char *, const char *, int,
-					     PyCompilerFlags *);
+                                             PyCompilerFlags *);
 PyAPI_FUNC(struct symtable *) Py_SymtableString(const char *, const char *, int);
 
 PyAPI_FUNC(void) PyErr_Print(void);
@@ -93,20 +93,20 @@ PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
 #define PyRun_String(str, s, g, l) PyRun_StringFlags(str, s, g, l, NULL)
 #define PyRun_AnyFile(fp, name) PyRun_AnyFileExFlags(fp, name, 0, NULL)
 #define PyRun_AnyFileEx(fp, name, closeit) \
-	PyRun_AnyFileExFlags(fp, name, closeit, NULL)
+    PyRun_AnyFileExFlags(fp, name, closeit, NULL)
 #define PyRun_AnyFileFlags(fp, name, flags) \
-	PyRun_AnyFileExFlags(fp, name, 0, flags)
+    PyRun_AnyFileExFlags(fp, name, 0, flags)
 #define PyRun_SimpleString(s) PyRun_SimpleStringFlags(s, NULL)
 #define PyRun_SimpleFile(f, p) PyRun_SimpleFileExFlags(f, p, 0, NULL)
 #define PyRun_SimpleFileEx(f, p, c) PyRun_SimpleFileExFlags(f, p, c, NULL)
 #define PyRun_InteractiveOne(f, p) PyRun_InteractiveOneFlags(f, p, NULL)
 #define PyRun_InteractiveLoop(f, p) PyRun_InteractiveLoopFlags(f, p, NULL)
 #define PyRun_File(fp, p, s, g, l) \
-        PyRun_FileExFlags(fp, p, s, g, l, 0, NULL)
+    PyRun_FileExFlags(fp, p, s, g, l, 0, NULL)
 #define PyRun_FileEx(fp, p, s, g, l, c) \
-        PyRun_FileExFlags(fp, p, s, g, l, c, NULL)
+    PyRun_FileExFlags(fp, p, s, g, l, c, NULL)
 #define PyRun_FileFlags(fp, p, s, g, l, flags) \
-        PyRun_FileExFlags(fp, p, s, g, l, 0, flags)
+    PyRun_FileExFlags(fp, p, s, g, l, 0, flags)
 
 /* In getpath.c */
 PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);

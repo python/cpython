@@ -8,11 +8,11 @@ extern "C" {
 /* Interface to random parts in ceval.c */
 
 PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
-	PyObject *, PyObject *, PyObject *);
+    PyObject *, PyObject *, PyObject *);
 
 /* Inline this */
 #define PyEval_CallObject(func,arg) \
-        PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)
+    PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)
 
 PyAPI_FUNC(PyObject *) PyEval_CallFunction(PyObject *obj,
                                            const char *format, ...);
@@ -45,7 +45,7 @@ PyAPI_FUNC(int) Py_MakePendingCalls(void);
      exceeds the current recursion limit. It raises a RuntimeError, and sets
      the "overflowed" flag in the thread state structure. This flag
      temporarily *disables* the normal protection; this allows cleanup code
-     to potentially outgrow the recursion limit while processing the 
+     to potentially outgrow the recursion limit while processing the
      RuntimeError.
    * "last chance" anti-recursion protection is triggered when the recursion
      level exceeds "current recursion limit + 50". By construction, this
@@ -67,12 +67,12 @@ PyAPI_FUNC(void) Py_SetRecursionLimit(int);
 PyAPI_FUNC(int) Py_GetRecursionLimit(void);
 
 #define Py_EnterRecursiveCall(where)  \
-	    (_Py_MakeRecCheck(PyThreadState_GET()->recursion_depth) &&  \
-	     _Py_CheckRecursiveCall(where))
-#define Py_LeaveRecursiveCall()				\
+            (_Py_MakeRecCheck(PyThreadState_GET()->recursion_depth) &&  \
+             _Py_CheckRecursiveCall(where))
+#define Py_LeaveRecursiveCall()                         \
     do{ if(_Py_MakeEndRecCheck(PyThreadState_GET()->recursion_depth))  \
-	  PyThreadState_GET()->overflowed = 0;  \
-	} while(0)
+      PyThreadState_GET()->overflowed = 0;  \
+    } while(0)
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(char *where);
 PyAPI_DATA(int) _Py_CheckRecursionLimit;
 
@@ -83,15 +83,15 @@ PyAPI_DATA(int) _Py_CheckRecursionLimit;
    of _Py_CheckRecursionLimit for _Py_MakeEndRecCheck() to function properly.
 */
 #  define _Py_MakeRecCheck(x)  \
-	(++(x) > (_Py_CheckRecursionLimit += PyThreadState_GET()->overflowed - 1))
+    (++(x) > (_Py_CheckRecursionLimit += PyThreadState_GET()->overflowed - 1))
 #else
 #  define _Py_MakeRecCheck(x)  (++(x) > _Py_CheckRecursionLimit)
 #endif
 
 #define _Py_MakeEndRecCheck(x) \
-	(--(x) < ((_Py_CheckRecursionLimit > 100) \
-		? (_Py_CheckRecursionLimit - 50) \
-		: (3 * (_Py_CheckRecursionLimit >> 2))))
+    (--(x) < ((_Py_CheckRecursionLimit > 100) \
+        ? (_Py_CheckRecursionLimit - 50) \
+        : (3 * (_Py_CheckRecursionLimit >> 2))))
 
 #define Py_ALLOW_RECURSION \
   do { unsigned char _old = PyThreadState_GET()->recursion_critical;\
@@ -114,31 +114,31 @@ PyAPI_FUNC(PyObject *) PyEval_EvalFrameEx(struct _frame *f, int exc);
    that lasts a long time and doesn't touch Python data) can allow other
    threads to run as follows:
 
-	...preparations here...
-	Py_BEGIN_ALLOW_THREADS
-	...blocking system call here...
-	Py_END_ALLOW_THREADS
-	...interpret result here...
+    ...preparations here...
+    Py_BEGIN_ALLOW_THREADS
+    ...blocking system call here...
+    Py_END_ALLOW_THREADS
+    ...interpret result here...
 
    The Py_BEGIN_ALLOW_THREADS/Py_END_ALLOW_THREADS pair expands to a
    {}-surrounded block.
    To leave the block in the middle (e.g., with return), you must insert
    a line containing Py_BLOCK_THREADS before the return, e.g.
 
-	if (...premature_exit...) {
-		Py_BLOCK_THREADS
-		PyErr_SetFromErrno(PyExc_IOError);
-		return NULL;
-	}
+    if (...premature_exit...) {
+        Py_BLOCK_THREADS
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
 
    An alternative is:
 
-	Py_BLOCK_THREADS
-	if (...premature_exit...) {
-		PyErr_SetFromErrno(PyExc_IOError);
-		return NULL;
-	}
-	Py_UNBLOCK_THREADS
+    Py_BLOCK_THREADS
+    if (...premature_exit...) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
+    Py_UNBLOCK_THREADS
 
    For convenience, that the value of 'errno' is restored across
    Py_END_ALLOW_THREADS and Py_BLOCK_THREADS.
@@ -170,12 +170,12 @@ PyAPI_FUNC(void) _PyEval_SetSwitchInterval(unsigned long microseconds);
 PyAPI_FUNC(unsigned long) _PyEval_GetSwitchInterval(void);
 
 #define Py_BEGIN_ALLOW_THREADS { \
-			PyThreadState *_save; \
-			_save = PyEval_SaveThread();
-#define Py_BLOCK_THREADS	PyEval_RestoreThread(_save);
-#define Py_UNBLOCK_THREADS	_save = PyEval_SaveThread();
-#define Py_END_ALLOW_THREADS	PyEval_RestoreThread(_save); \
-		 }
+                        PyThreadState *_save; \
+                        _save = PyEval_SaveThread();
+#define Py_BLOCK_THREADS        PyEval_RestoreThread(_save);
+#define Py_UNBLOCK_THREADS      _save = PyEval_SaveThread();
+#define Py_END_ALLOW_THREADS    PyEval_RestoreThread(_save); \
+                 }
 
 #else /* !WITH_THREAD */
 

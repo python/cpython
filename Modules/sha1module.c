@@ -23,8 +23,8 @@
 /* Some useful types */
 
 #if SIZEOF_INT == 4
-typedef unsigned int SHA1_INT32;	/* 32-bit integer */
-typedef PY_LONG_LONG SHA1_INT64;	/* 64-bit integer */
+typedef unsigned int SHA1_INT32;        /* 32-bit integer */
+typedef PY_LONG_LONG SHA1_INT64;        /* 64-bit integer */
 #else
 /* not defined. compilation will die. */
 #endif
@@ -122,7 +122,7 @@ static void sha1_compress(struct sha1_state *sha1, unsigned char *buf)
 
     /* expand it */
     for (i = 16; i < 80; i++) {
-        W[i] = ROL(W[i-3] ^ W[i-8] ^ W[i-14] ^ W[i-16], 1); 
+        W[i] = ROL(W[i-3] ^ W[i-8] ^ W[i-14] ^ W[i-16], 1);
     }
 
     /* compress */
@@ -131,7 +131,7 @@ static void sha1_compress(struct sha1_state *sha1, unsigned char *buf)
     #define FF1(a,b,c,d,e,i) e = (ROLc(a, 5) + F1(b,c,d) + e + W[i] + 0x6ed9eba1UL); b = ROLc(b, 30);
     #define FF2(a,b,c,d,e,i) e = (ROLc(a, 5) + F2(b,c,d) + e + W[i] + 0x8f1bbcdcUL); b = ROLc(b, 30);
     #define FF3(a,b,c,d,e,i) e = (ROLc(a, 5) + F3(b,c,d) + e + W[i] + 0xca62c1d6UL); b = ROLc(b, 30);
- 
+
     for (i = 0; i < 20; ) {
        FF0(a,b,c,d,e,i++);
        FF0(e,a,b,c,d,i++);
@@ -141,7 +141,7 @@ static void sha1_compress(struct sha1_state *sha1, unsigned char *buf)
     }
 
     /* round two */
-    for (; i < 40; )  { 
+    for (; i < 40; )  {
        FF1(a,b,c,d,e,i++);
        FF1(e,a,b,c,d,i++);
        FF1(d,e,a,b,c,i++);
@@ -150,7 +150,7 @@ static void sha1_compress(struct sha1_state *sha1, unsigned char *buf)
     }
 
     /* round three */
-    for (; i < 60; )  { 
+    for (; i < 60; )  {
        FF2(a,b,c,d,e,i++);
        FF2(e,a,b,c,d,i++);
        FF2(d,e,a,b,c,i++);
@@ -159,7 +159,7 @@ static void sha1_compress(struct sha1_state *sha1, unsigned char *buf)
     }
 
     /* round four */
-    for (; i < 80; )  { 
+    for (; i < 80; )  {
        FF3(a,b,c,d,e,i++);
        FF3(e,a,b,c,d,i++);
        FF3(d,e,a,b,c,i++);
@@ -362,21 +362,21 @@ SHA1_hexdigest(SHA1object *self, PyObject *unused)
     /* Create a new string */
     retval = PyUnicode_FromStringAndSize(NULL, SHA1_DIGESTSIZE * 2);
     if (!retval)
-	    return NULL;
+            return NULL;
     hex_digest = PyUnicode_AS_UNICODE(retval);
     if (!hex_digest) {
-	    Py_DECREF(retval);
-	    return NULL;
+            Py_DECREF(retval);
+            return NULL;
     }
 
     /* Make hex version of the digest */
     for(i=j=0; i<SHA1_DIGESTSIZE; i++) {
         char c;
         c = (digest[i] >> 4) & 0xf;
-	c = (c>9) ? c+'a'-10 : c + '0';
+        c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
         c = (digest[i] & 0xf);
-	c = (c>9) ? c+'a'-10 : c + '0';
+        c = (c>9) ? c+'a'-10 : c + '0';
         hex_digest[j++] = c;
     }
     return retval;
@@ -404,11 +404,11 @@ SHA1_update(SHA1object *self, PyObject *args)
 }
 
 static PyMethodDef SHA1_methods[] = {
-    {"copy",	  (PyCFunction)SHA1_copy,      METH_NOARGS,  SHA1_copy__doc__},
-    {"digest",	  (PyCFunction)SHA1_digest,    METH_NOARGS,  SHA1_digest__doc__},
+    {"copy",      (PyCFunction)SHA1_copy,      METH_NOARGS,  SHA1_copy__doc__},
+    {"digest",    (PyCFunction)SHA1_digest,    METH_NOARGS,  SHA1_digest__doc__},
     {"hexdigest", (PyCFunction)SHA1_hexdigest, METH_NOARGS,  SHA1_hexdigest__doc__},
-    {"update",	  (PyCFunction)SHA1_update,    METH_VARARGS, SHA1_update__doc__},
-    {NULL,	  NULL}		/* sentinel */
+    {"update",    (PyCFunction)SHA1_update,    METH_VARARGS, SHA1_update__doc__},
+    {NULL,        NULL}         /* sentinel */
 };
 
 static PyObject *
@@ -448,13 +448,13 @@ static PyGetSetDef SHA1_getseters[] = {
 
 static PyTypeObject SHA1type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_sha1.sha1",	        /*tp_name*/
-    sizeof(SHA1object),	/*tp_size*/
-    0,			/*tp_itemsize*/
+    "_sha1.sha1",               /*tp_name*/
+    sizeof(SHA1object), /*tp_size*/
+    0,                  /*tp_itemsize*/
     /* methods */
-    SHA1_dealloc,	/*tp_dealloc*/
-    0,			/*tp_print*/
-    0,          	/*tp_getattr*/
+    SHA1_dealloc,       /*tp_dealloc*/
+    0,                  /*tp_print*/
+    0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_reserved*/
     0,                  /*tp_repr*/
@@ -470,13 +470,13 @@ static PyTypeObject SHA1type = {
     Py_TPFLAGS_DEFAULT, /*tp_flags*/
     0,                  /*tp_doc*/
     0,                  /*tp_traverse*/
-    0,			/*tp_clear*/
-    0,			/*tp_richcompare*/
-    0,			/*tp_weaklistoffset*/
-    0,			/*tp_iter*/
-    0,			/*tp_iternext*/
-    SHA1_methods,	/* tp_methods */
-    NULL,	        /* tp_members */
+    0,                  /*tp_clear*/
+    0,                  /*tp_richcompare*/
+    0,                  /*tp_weaklistoffset*/
+    0,                  /*tp_iter*/
+    0,                  /*tp_iternext*/
+    SHA1_methods,       /* tp_methods */
+    NULL,               /* tp_members */
     SHA1_getseters,      /* tp_getset */
 };
 
@@ -529,7 +529,7 @@ SHA1_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
 static struct PyMethodDef SHA1_functions[] = {
     {"sha1",(PyCFunction)SHA1_new, METH_VARARGS|METH_KEYWORDS,SHA1_new__doc__},
-    {NULL,	NULL}		 /* Sentinel */
+    {NULL,      NULL}            /* Sentinel */
 };
 
 
@@ -539,15 +539,15 @@ static struct PyMethodDef SHA1_functions[] = {
 
 
 static struct PyModuleDef _sha1module = {
-	PyModuleDef_HEAD_INIT,
-	"_sha1",
-	NULL,
-	-1,
-	SHA1_functions,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+        PyModuleDef_HEAD_INIT,
+        "_sha1",
+        NULL,
+        -1,
+        SHA1_functions,
+        NULL,
+        NULL,
+        NULL,
+        NULL
 };
 
 PyMODINIT_FUNC

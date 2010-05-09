@@ -4,7 +4,7 @@
   Windows Registry access module for Python.
 
   * Simple registry access written by Mark Hammond in win32api
-	module circa 1995.
+    module circa 1995.
   * Bill Tutt expanded the support significantly not long after.
   * Numerous other people have submitted patches since then.
   * Ripped from win32api module 03-Feb-2000 by Mark Hammond, and
@@ -28,7 +28,7 @@ static char errNotAHandle[] = "Object is not a handle";
    want to lose this info...
 */
 #define PyErr_SetFromWindowsErrWithFunction(rc, fnname) \
-	PyErr_SetFromWindowsErr(rc)
+    PyErr_SetFromWindowsErr(rc)
 
 /* Forward declares */
 
@@ -383,8 +383,8 @@ PyDoc_STRVAR(PyHKEY_Detach_doc,
 
 ************************************************************************/
 typedef struct {
-	PyObject_VAR_HEAD
-	HKEY hkey;
+    PyObject_VAR_HEAD
+    HKEY hkey;
 } PyHKEYObject;
 
 #define PyHKEY_Check(op) ((op)->ob_type == &PyHKEY_Type)
@@ -394,95 +394,95 @@ static char *failMsg = "bad operand type";
 static PyObject *
 PyHKEY_unaryFailureFunc(PyObject *ob)
 {
-	PyErr_SetString(PyExc_TypeError, failMsg);
-	return NULL;
+    PyErr_SetString(PyExc_TypeError, failMsg);
+    return NULL;
 }
 static PyObject *
 PyHKEY_binaryFailureFunc(PyObject *ob1, PyObject *ob2)
 {
-	PyErr_SetString(PyExc_TypeError, failMsg);
-	return NULL;
+    PyErr_SetString(PyExc_TypeError, failMsg);
+    return NULL;
 }
 static PyObject *
 PyHKEY_ternaryFailureFunc(PyObject *ob1, PyObject *ob2, PyObject *ob3)
 {
-	PyErr_SetString(PyExc_TypeError, failMsg);
-	return NULL;
+    PyErr_SetString(PyExc_TypeError, failMsg);
+    return NULL;
 }
 
 static void
 PyHKEY_deallocFunc(PyObject *ob)
 {
-	/* Can not call PyHKEY_Close, as the ob->tp_type
-	   has already been cleared, thus causing the type
-	   check to fail!
-	*/
-	PyHKEYObject *obkey = (PyHKEYObject *)ob;
-	if (obkey->hkey)
-		RegCloseKey((HKEY)obkey->hkey);
-	PyObject_DEL(ob);
+    /* Can not call PyHKEY_Close, as the ob->tp_type
+       has already been cleared, thus causing the type
+       check to fail!
+    */
+    PyHKEYObject *obkey = (PyHKEYObject *)ob;
+    if (obkey->hkey)
+        RegCloseKey((HKEY)obkey->hkey);
+    PyObject_DEL(ob);
 }
 
 static int
 PyHKEY_boolFunc(PyObject *ob)
 {
-	return ((PyHKEYObject *)ob)->hkey != 0;
+    return ((PyHKEYObject *)ob)->hkey != 0;
 }
 
 static PyObject *
 PyHKEY_intFunc(PyObject *ob)
 {
-	PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
-	return PyLong_FromVoidPtr(pyhkey->hkey);
+    PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
+    return PyLong_FromVoidPtr(pyhkey->hkey);
 }
 
 static PyObject *
 PyHKEY_strFunc(PyObject *ob)
 {
-	PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
-	return PyUnicode_FromFormat("<PyHKEY:%p>", pyhkey->hkey);
+    PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
+    return PyUnicode_FromFormat("<PyHKEY:%p>", pyhkey->hkey);
 }
 
 static int
 PyHKEY_compareFunc(PyObject *ob1, PyObject *ob2)
 {
-	PyHKEYObject *pyhkey1 = (PyHKEYObject *)ob1;
-	PyHKEYObject *pyhkey2 = (PyHKEYObject *)ob2;
-	return pyhkey1 == pyhkey2 ? 0 :
-		 (pyhkey1 < pyhkey2 ? -1 : 1);
+    PyHKEYObject *pyhkey1 = (PyHKEYObject *)ob1;
+    PyHKEYObject *pyhkey2 = (PyHKEYObject *)ob2;
+    return pyhkey1 == pyhkey2 ? 0 :
+         (pyhkey1 < pyhkey2 ? -1 : 1);
 }
 
 static long
 PyHKEY_hashFunc(PyObject *ob)
 {
-	/* Just use the address.
-	   XXX - should we use the handle value?
-	*/
-	return _Py_HashPointer(ob);
+    /* Just use the address.
+       XXX - should we use the handle value?
+    */
+    return _Py_HashPointer(ob);
 }
 
 
 static PyNumberMethods PyHKEY_NumberMethods =
 {
-	PyHKEY_binaryFailureFunc,	/* nb_add */
-	PyHKEY_binaryFailureFunc,	/* nb_subtract */
-	PyHKEY_binaryFailureFunc,	/* nb_multiply */
-	PyHKEY_binaryFailureFunc,	/* nb_remainder */
-	PyHKEY_binaryFailureFunc,	/* nb_divmod */
-	PyHKEY_ternaryFailureFunc,	/* nb_power */
-	PyHKEY_unaryFailureFunc,	/* nb_negative */
-	PyHKEY_unaryFailureFunc,	/* nb_positive */
-	PyHKEY_unaryFailureFunc,	/* nb_absolute */
-	PyHKEY_boolFunc,		/* nb_bool */
-	PyHKEY_unaryFailureFunc,	/* nb_invert */
-	PyHKEY_binaryFailureFunc,	/* nb_lshift */
-	PyHKEY_binaryFailureFunc,	/* nb_rshift */
-	PyHKEY_binaryFailureFunc,	/* nb_and */
-	PyHKEY_binaryFailureFunc,	/* nb_xor */
-	PyHKEY_binaryFailureFunc,	/* nb_or */
-	PyHKEY_intFunc,			/* nb_int */
-	0,				/* nb_reserved */
-	PyHKEY_unaryFailureFunc,	/* nb_float */
+    PyHKEY_binaryFailureFunc,           /* nb_add */
+    PyHKEY_binaryFailureFunc,           /* nb_subtract */
+    PyHKEY_binaryFailureFunc,           /* nb_multiply */
+    PyHKEY_binaryFailureFunc,           /* nb_remainder */
+    PyHKEY_binaryFailureFunc,           /* nb_divmod */
+    PyHKEY_ternaryFailureFunc,          /* nb_power */
+    PyHKEY_unaryFailureFunc,            /* nb_negative */
+    PyHKEY_unaryFailureFunc,            /* nb_positive */
+    PyHKEY_unaryFailureFunc,            /* nb_absolute */
+    PyHKEY_boolFunc,                    /* nb_bool */
+    PyHKEY_unaryFailureFunc,            /* nb_invert */
+    PyHKEY_binaryFailureFunc,           /* nb_lshift */
+    PyHKEY_binaryFailureFunc,           /* nb_rshift */
+    PyHKEY_binaryFailureFunc,           /* nb_and */
+    PyHKEY_binaryFailureFunc,           /* nb_xor */
+    PyHKEY_binaryFailureFunc,           /* nb_or */
+    PyHKEY_intFunc,                     /* nb_int */
+    0,                                  /* nb_reserved */
+    PyHKEY_unaryFailureFunc,            /* nb_float */
 };
 
 static PyObject *PyHKEY_CloseMethod(PyObject *self, PyObject *args);
@@ -491,51 +491,51 @@ static PyObject *PyHKEY_Enter(PyObject *self);
 static PyObject *PyHKEY_Exit(PyObject *self, PyObject *args);
 
 static struct PyMethodDef PyHKEY_methods[] = {
-	{"Close",  PyHKEY_CloseMethod, METH_VARARGS, PyHKEY_Close_doc},
-	{"Detach", PyHKEY_DetachMethod, METH_VARARGS, PyHKEY_Detach_doc},
-	{"__enter__", (PyCFunction)PyHKEY_Enter, METH_NOARGS, NULL},
-	{"__exit__", PyHKEY_Exit, METH_VARARGS, NULL},
-	{NULL}
+    {"Close",  PyHKEY_CloseMethod, METH_VARARGS, PyHKEY_Close_doc},
+    {"Detach", PyHKEY_DetachMethod, METH_VARARGS, PyHKEY_Detach_doc},
+    {"__enter__", (PyCFunction)PyHKEY_Enter, METH_NOARGS, NULL},
+    {"__exit__", PyHKEY_Exit, METH_VARARGS, NULL},
+    {NULL}
 };
 
 #define OFF(e) offsetof(PyHKEYObject, e)
 static PyMemberDef PyHKEY_memberlist[] = {
-	{"handle",      T_INT,      OFF(hkey), READONLY},
-	{NULL}    /* Sentinel */
+    {"handle",      T_INT,      OFF(hkey), READONLY},
+    {NULL}    /* Sentinel */
 };
 
 /* The type itself */
 PyTypeObject PyHKEY_Type =
 {
-	PyVarObject_HEAD_INIT(0, 0) /* fill in type at module init */
-	"PyHKEY",
-	sizeof(PyHKEYObject),
-	0,
-	PyHKEY_deallocFunc,		/* tp_dealloc */
-	0,				/* tp_print */
-	0,				/* tp_getattr */
-	0,				/* tp_setattr */
-	0,				/* tp_reserved */
-	0,				/* tp_repr */
-	&PyHKEY_NumberMethods,		/* tp_as_number */
-	0,				/* tp_as_sequence */
-	0,				/* tp_as_mapping */
-	PyHKEY_hashFunc,		/* tp_hash */
-	0,				/* tp_call */
-	PyHKEY_strFunc,			/* tp_str */
-	0,				/* tp_getattro */
-	0,				/* tp_setattro */
-	0,				/* tp_as_buffer */
-	0,				/* tp_flags */
-	PyHKEY_doc,			/* tp_doc */
-	0,				/*tp_traverse*/
-	0,				/*tp_clear*/
-	0,				/*tp_richcompare*/
-	0,				/*tp_weaklistoffset*/
-	0,				/*tp_iter*/
-	0,				/*tp_iternext*/
-	PyHKEY_methods,			/*tp_methods*/
-	PyHKEY_memberlist,		/*tp_members*/
+    PyVarObject_HEAD_INIT(0, 0) /* fill in type at module init */
+    "PyHKEY",
+    sizeof(PyHKEYObject),
+    0,
+    PyHKEY_deallocFunc,                 /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    &PyHKEY_NumberMethods,              /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    PyHKEY_hashFunc,                    /* tp_hash */
+    0,                                  /* tp_call */
+    PyHKEY_strFunc,                     /* tp_str */
+    0,                                  /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    0,                                  /* tp_flags */
+    PyHKEY_doc,                         /* tp_doc */
+    0,                                  /*tp_traverse*/
+    0,                                  /*tp_clear*/
+    0,                                  /*tp_richcompare*/
+    0,                                  /*tp_weaklistoffset*/
+    0,                                  /*tp_iter*/
+    0,                                  /*tp_iternext*/
+    PyHKEY_methods,                     /*tp_methods*/
+    PyHKEY_memberlist,                  /*tp_members*/
 };
 
 /************************************************************************
@@ -546,39 +546,39 @@ PyTypeObject PyHKEY_Type =
 static PyObject *
 PyHKEY_CloseMethod(PyObject *self, PyObject *args)
 {
-	if (!PyArg_ParseTuple(args, ":Close"))
-		return NULL;
-	if (!PyHKEY_Close(self))
-		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
+    if (!PyArg_ParseTuple(args, ":Close"))
+        return NULL;
+    if (!PyHKEY_Close(self))
+        return NULL;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PyHKEY_DetachMethod(PyObject *self, PyObject *args)
 {
-	void* ret;
-	PyHKEYObject *pThis = (PyHKEYObject *)self;
-	if (!PyArg_ParseTuple(args, ":Detach"))
-		return NULL;
-	ret = (void*)pThis->hkey;
-	pThis->hkey = 0;
-	return PyLong_FromVoidPtr(ret);
+    void* ret;
+    PyHKEYObject *pThis = (PyHKEYObject *)self;
+    if (!PyArg_ParseTuple(args, ":Detach"))
+        return NULL;
+    ret = (void*)pThis->hkey;
+    pThis->hkey = 0;
+    return PyLong_FromVoidPtr(ret);
 }
 
 static PyObject *
 PyHKEY_Enter(PyObject *self)
 {
-	Py_XINCREF(self);
-	return self;
+    Py_XINCREF(self);
+    return self;
 }
 
 static PyObject *
 PyHKEY_Exit(PyObject *self, PyObject *args)
 {
-	if (!PyHKEY_Close(self))
-		return NULL;
-	Py_RETURN_NONE;
+    if (!PyHKEY_Close(self))
+        return NULL;
+    Py_RETURN_NONE;
 }
 
 
@@ -588,74 +588,74 @@ PyHKEY_Exit(PyObject *self, PyObject *args)
 PyObject *
 PyHKEY_New(HKEY hInit)
 {
-	PyHKEYObject *key = PyObject_NEW(PyHKEYObject, &PyHKEY_Type);
-	if (key)
-		key->hkey = hInit;
-	return (PyObject *)key;
+    PyHKEYObject *key = PyObject_NEW(PyHKEYObject, &PyHKEY_Type);
+    if (key)
+        key->hkey = hInit;
+    return (PyObject *)key;
 }
 
 BOOL
 PyHKEY_Close(PyObject *ob_handle)
 {
-	LONG rc;
-	PyHKEYObject *key;
+    LONG rc;
+    PyHKEYObject *key;
 
-	if (!PyHKEY_Check(ob_handle)) {
-		PyErr_SetString(PyExc_TypeError, "bad operand type");
-		return FALSE;
-	}
-	key = (PyHKEYObject *)ob_handle;
-	rc = key->hkey ? RegCloseKey((HKEY)key->hkey) : ERROR_SUCCESS;
-	key->hkey = 0;
-	if (rc != ERROR_SUCCESS)
-		PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
-	return rc == ERROR_SUCCESS;
+    if (!PyHKEY_Check(ob_handle)) {
+        PyErr_SetString(PyExc_TypeError, "bad operand type");
+        return FALSE;
+    }
+    key = (PyHKEYObject *)ob_handle;
+    rc = key->hkey ? RegCloseKey((HKEY)key->hkey) : ERROR_SUCCESS;
+    key->hkey = 0;
+    if (rc != ERROR_SUCCESS)
+        PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
+    return rc == ERROR_SUCCESS;
 }
 
 BOOL
 PyHKEY_AsHKEY(PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
 {
-	if (ob == Py_None) {
-		if (!bNoneOK) {
-			PyErr_SetString(
-				  PyExc_TypeError,
-				  "None is not a valid HKEY in this context");
-			return FALSE;
-		}
-		*pHANDLE = (HKEY)0;
-	}
-	else if (PyHKEY_Check(ob)) {
-		PyHKEYObject *pH = (PyHKEYObject *)ob;
-		*pHANDLE = pH->hkey;
-	}
-	else if (PyLong_Check(ob)) {
-		/* We also support integers */
-		PyErr_Clear();
-		*pHANDLE = (HKEY)PyLong_AsVoidPtr(ob);
-		if (PyErr_Occurred())
-			return FALSE;
-	}
-	else {
-		PyErr_SetString(
-				PyExc_TypeError,
-			"The object is not a PyHKEY object");
-		return FALSE;
-	}
-	return TRUE;
+    if (ob == Py_None) {
+        if (!bNoneOK) {
+            PyErr_SetString(
+                      PyExc_TypeError,
+                      "None is not a valid HKEY in this context");
+            return FALSE;
+        }
+        *pHANDLE = (HKEY)0;
+    }
+    else if (PyHKEY_Check(ob)) {
+        PyHKEYObject *pH = (PyHKEYObject *)ob;
+        *pHANDLE = pH->hkey;
+    }
+    else if (PyLong_Check(ob)) {
+        /* We also support integers */
+        PyErr_Clear();
+        *pHANDLE = (HKEY)PyLong_AsVoidPtr(ob);
+        if (PyErr_Occurred())
+            return FALSE;
+    }
+    else {
+        PyErr_SetString(
+                        PyExc_TypeError,
+            "The object is not a PyHKEY object");
+        return FALSE;
+    }
+    return TRUE;
 }
 
 PyObject *
 PyHKEY_FromHKEY(HKEY h)
 {
-	PyHKEYObject *op;
+    PyHKEYObject *op;
 
-	/* Inline PyObject_New */
-	op = (PyHKEYObject *) PyObject_MALLOC(sizeof(PyHKEYObject));
-	if (op == NULL)
-		return PyErr_NoMemory();
-	PyObject_INIT(op, &PyHKEY_Type);
-	op->hkey = h;
-	return (PyObject *)op;
+    /* Inline PyObject_New */
+    op = (PyHKEYObject *) PyObject_MALLOC(sizeof(PyHKEYObject));
+    if (op == NULL)
+        return PyErr_NoMemory();
+    PyObject_INIT(op, &PyHKEY_Type);
+    op->hkey = h;
+    return (PyObject *)op;
 }
 
 
@@ -665,32 +665,32 @@ PyHKEY_FromHKEY(HKEY h)
 BOOL
 PyWinObject_CloseHKEY(PyObject *obHandle)
 {
-	BOOL ok;
-	if (PyHKEY_Check(obHandle)) {
-		ok = PyHKEY_Close(obHandle);
-	}
+    BOOL ok;
+    if (PyHKEY_Check(obHandle)) {
+        ok = PyHKEY_Close(obHandle);
+    }
 #if SIZEOF_LONG >= SIZEOF_HKEY
-	else if (PyLong_Check(obHandle)) {
-		long rc = RegCloseKey((HKEY)PyLong_AsLong(obHandle));
-		ok = (rc == ERROR_SUCCESS);
-		if (!ok)
-			PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
-	}
+    else if (PyLong_Check(obHandle)) {
+        long rc = RegCloseKey((HKEY)PyLong_AsLong(obHandle));
+        ok = (rc == ERROR_SUCCESS);
+        if (!ok)
+            PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
+    }
 #else
-	else if (PyLong_Check(obHandle)) {
-		long rc = RegCloseKey((HKEY)PyLong_AsVoidPtr(obHandle));
-		ok = (rc == ERROR_SUCCESS);
-		if (!ok)
-			PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
-	}
+    else if (PyLong_Check(obHandle)) {
+        long rc = RegCloseKey((HKEY)PyLong_AsVoidPtr(obHandle));
+        ok = (rc == ERROR_SUCCESS);
+        if (!ok)
+            PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
+    }
 #endif
-	else {
-		PyErr_SetString(
-			PyExc_TypeError,
-			"A handle must be a HKEY object or an integer");
-		return FALSE;
-	}
-	return ok;
+    else {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "A handle must be a HKEY object or an integer");
+        return FALSE;
+    }
+    return ok;
 }
 
 
@@ -707,29 +707,29 @@ PyWinObject_CloseHKEY(PyObject *obHandle)
 static void
 fixupMultiSZ(wchar_t **str, wchar_t *data, int len)
 {
-	wchar_t *P;
-	int i;
-	wchar_t *Q;
+    wchar_t *P;
+    int i;
+    wchar_t *Q;
 
-	Q = data + len;
-	for (P = data, i = 0; P < Q && *P != '\0'; P++, i++) {
-		str[i] = P;
-		for(; *P != '\0'; P++)
-			;
-	}
+    Q = data + len;
+    for (P = data, i = 0; P < Q && *P != '\0'; P++, i++) {
+        str[i] = P;
+        for(; *P != '\0'; P++)
+            ;
+    }
 }
 
 static int
 countStrings(wchar_t *data, int len)
 {
-	int strings;
-	wchar_t *P;
-	wchar_t *Q = data + len;
+    int strings;
+    wchar_t *P;
+    wchar_t *Q = data + len;
 
-	for (P = data, strings = 0; P < Q && *P != '\0'; P++, strings++)
-		for (; P < Q && *P != '\0'; P++)
-			;
-	return strings;
+    for (P = data, strings = 0; P < Q && *P != '\0'; P++, strings++)
+        for (; P < Q && *P != '\0'; P++)
+            ;
+    return strings;
 }
 
 /* Convert PyObject into Registry data.
@@ -737,200 +737,200 @@ countStrings(wchar_t *data, int len)
 static BOOL
 Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 {
-	Py_ssize_t i,j;
-	switch (typ) {
-		case REG_DWORD:
-			if (value != Py_None && !PyLong_Check(value))
-				return FALSE;
-			*retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
-			if (*retDataBuf==NULL){
-				PyErr_NoMemory();
-				return FALSE;
-			}
-			*retDataSize = sizeof(DWORD);
-			if (value == Py_None) {
-				DWORD zero = 0;
-				memcpy(*retDataBuf, &zero, sizeof(DWORD));
-			}
-			else {
-				DWORD d = PyLong_AsLong(value);
-				memcpy(*retDataBuf, &d, sizeof(DWORD));
-			}
-			break;
-		case REG_SZ:
-		case REG_EXPAND_SZ:
-			{
-			if (value == Py_None)
-				*retDataSize = 1;
-			else {
-				if (!PyUnicode_Check(value))
-					return FALSE;
+    Py_ssize_t i,j;
+    switch (typ) {
+        case REG_DWORD:
+            if (value != Py_None && !PyLong_Check(value))
+                return FALSE;
+            *retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
+            if (*retDataBuf==NULL){
+                PyErr_NoMemory();
+                return FALSE;
+            }
+            *retDataSize = sizeof(DWORD);
+            if (value == Py_None) {
+                DWORD zero = 0;
+                memcpy(*retDataBuf, &zero, sizeof(DWORD));
+            }
+            else {
+                DWORD d = PyLong_AsLong(value);
+                memcpy(*retDataBuf, &d, sizeof(DWORD));
+            }
+            break;
+        case REG_SZ:
+        case REG_EXPAND_SZ:
+            {
+            if (value == Py_None)
+                *retDataSize = 1;
+            else {
+                if (!PyUnicode_Check(value))
+                    return FALSE;
 
-				*retDataSize = 2 + PyUnicode_GET_DATA_SIZE(value);
-			}
-			*retDataBuf = (BYTE *)PyMem_NEW(DWORD, *retDataSize);
-			if (*retDataBuf==NULL){
-				PyErr_NoMemory();
-				return FALSE;
-			}
-			if (value == Py_None)
-				wcscpy((wchar_t *)*retDataBuf, L"");
-			else
-				wcscpy((wchar_t *)*retDataBuf,
-				       PyUnicode_AS_UNICODE(value));
-			break;
-			}
-		case REG_MULTI_SZ:
-			{
-				DWORD size = 0;
-				wchar_t *P;
+                *retDataSize = 2 + PyUnicode_GET_DATA_SIZE(value);
+            }
+            *retDataBuf = (BYTE *)PyMem_NEW(DWORD, *retDataSize);
+            if (*retDataBuf==NULL){
+                PyErr_NoMemory();
+                return FALSE;
+            }
+            if (value == Py_None)
+                wcscpy((wchar_t *)*retDataBuf, L"");
+            else
+                wcscpy((wchar_t *)*retDataBuf,
+                       PyUnicode_AS_UNICODE(value));
+            break;
+            }
+        case REG_MULTI_SZ:
+            {
+                DWORD size = 0;
+                wchar_t *P;
 
-				if (value == Py_None)
-					i = 0;
-				else {
-					if (!PyList_Check(value))
-						return FALSE;
-					i = PyList_Size(value);
-				}
-				for (j = 0; j < i; j++)
-				{
-					PyObject *t;
-					t = PyList_GET_ITEM(value, j);
-					if (!PyUnicode_Check(t))
-						return FALSE;
-					size += 2 + PyUnicode_GET_DATA_SIZE(t);
-				}
+                if (value == Py_None)
+                    i = 0;
+                else {
+                    if (!PyList_Check(value))
+                        return FALSE;
+                    i = PyList_Size(value);
+                }
+                for (j = 0; j < i; j++)
+                {
+                    PyObject *t;
+                    t = PyList_GET_ITEM(value, j);
+                    if (!PyUnicode_Check(t))
+                        return FALSE;
+                    size += 2 + PyUnicode_GET_DATA_SIZE(t);
+                }
 
-				*retDataSize = size + 2;
-				*retDataBuf = (BYTE *)PyMem_NEW(char,
-							        *retDataSize);
-				if (*retDataBuf==NULL){
-					PyErr_NoMemory();
-					return FALSE;
-				}
-				P = (wchar_t *)*retDataBuf;
+                *retDataSize = size + 2;
+                *retDataBuf = (BYTE *)PyMem_NEW(char,
+                                                *retDataSize);
+                if (*retDataBuf==NULL){
+                    PyErr_NoMemory();
+                    return FALSE;
+                }
+                P = (wchar_t *)*retDataBuf;
 
-				for (j = 0; j < i; j++)
-				{
-					PyObject *t;
-					t = PyList_GET_ITEM(value, j);
-					wcscpy(P, PyUnicode_AS_UNICODE(t));
-					P += 1 + wcslen(
-						PyUnicode_AS_UNICODE(t));
-				}
-				/* And doubly-terminate the list... */
-				*P = '\0';
-				break;
-			}
-		case REG_BINARY:
-		/* ALSO handle ALL unknown data types here.  Even if we can't
-		   support it natively, we should handle the bits. */
-		default:
-			if (value == Py_None)
-				*retDataSize = 0;
-			else {
-				Py_buffer view;
+                for (j = 0; j < i; j++)
+                {
+                    PyObject *t;
+                    t = PyList_GET_ITEM(value, j);
+                    wcscpy(P, PyUnicode_AS_UNICODE(t));
+                    P += 1 + wcslen(
+                        PyUnicode_AS_UNICODE(t));
+                }
+                /* And doubly-terminate the list... */
+                *P = '\0';
+                break;
+            }
+        case REG_BINARY:
+        /* ALSO handle ALL unknown data types here.  Even if we can't
+           support it natively, we should handle the bits. */
+        default:
+            if (value == Py_None)
+                *retDataSize = 0;
+            else {
+                Py_buffer view;
 
-				if (!PyObject_CheckBuffer(value)) {
-					PyErr_Format(PyExc_TypeError,
-						"Objects of type '%s' can not "
-						"be used as binary registry values",
-						value->ob_type->tp_name);
-					return FALSE;
-				}
+                if (!PyObject_CheckBuffer(value)) {
+                    PyErr_Format(PyExc_TypeError,
+                        "Objects of type '%s' can not "
+                        "be used as binary registry values",
+                        value->ob_type->tp_name);
+                    return FALSE;
+                }
 
-				if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
-					return FALSE;
+                if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
+                    return FALSE;
 
-				*retDataBuf = (BYTE *)PyMem_NEW(char, view.len);
-				if (*retDataBuf==NULL){
-					PyBuffer_Release(&view);
-					PyErr_NoMemory();
-					return FALSE;
-				}
-				*retDataSize = view.len;
-				memcpy(*retDataBuf, view.buf, view.len);
-				PyBuffer_Release(&view);
-			}
-			break;
-	}
-	return TRUE;
+                *retDataBuf = (BYTE *)PyMem_NEW(char, view.len);
+                if (*retDataBuf==NULL){
+                    PyBuffer_Release(&view);
+                    PyErr_NoMemory();
+                    return FALSE;
+                }
+                *retDataSize = view.len;
+                memcpy(*retDataBuf, view.buf, view.len);
+                PyBuffer_Release(&view);
+            }
+            break;
+    }
+    return TRUE;
 }
 
 /* Convert Registry data into PyObject*/
 static PyObject *
 Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
 {
-	PyObject *obData;
+    PyObject *obData;
 
-	switch (typ) {
-		case REG_DWORD:
-			if (retDataSize == 0)
-				obData = PyLong_FromLong(0);
-			else
-				obData = PyLong_FromLong(*(int *)retDataBuf);
-			break;
-		case REG_SZ:
-		case REG_EXPAND_SZ:
-			{
-				/* the buffer may or may not have a trailing NULL */
-				wchar_t *data = (wchar_t *)retDataBuf;
-				int len = retDataSize / 2;
-				if (retDataSize && data[len-1] == '\0')
-					retDataSize -= 2;
-				if (retDataSize <= 0)
-					data = L"";
-				obData = PyUnicode_FromUnicode(data, retDataSize/2);
-				break;
-			}
-		case REG_MULTI_SZ:
-			if (retDataSize == 0)
-				obData = PyList_New(0);
-			else
-			{
-				int index = 0;
-				wchar_t *data = (wchar_t *)retDataBuf;
-				int len = retDataSize / 2;
-				int s = countStrings(data, len);
-				wchar_t **str = (wchar_t **)malloc(sizeof(wchar_t *)*s);
-				if (str == NULL)
-					return PyErr_NoMemory();
+    switch (typ) {
+        case REG_DWORD:
+            if (retDataSize == 0)
+                obData = PyLong_FromLong(0);
+            else
+                obData = PyLong_FromLong(*(int *)retDataBuf);
+            break;
+        case REG_SZ:
+        case REG_EXPAND_SZ:
+            {
+                /* the buffer may or may not have a trailing NULL */
+                wchar_t *data = (wchar_t *)retDataBuf;
+                int len = retDataSize / 2;
+                if (retDataSize && data[len-1] == '\0')
+                    retDataSize -= 2;
+                if (retDataSize <= 0)
+                    data = L"";
+                obData = PyUnicode_FromUnicode(data, retDataSize/2);
+                break;
+            }
+        case REG_MULTI_SZ:
+            if (retDataSize == 0)
+                obData = PyList_New(0);
+            else
+            {
+                int index = 0;
+                wchar_t *data = (wchar_t *)retDataBuf;
+                int len = retDataSize / 2;
+                int s = countStrings(data, len);
+                wchar_t **str = (wchar_t **)malloc(sizeof(wchar_t *)*s);
+                if (str == NULL)
+                    return PyErr_NoMemory();
 
-				fixupMultiSZ(str, data, len);
-				obData = PyList_New(s);
-				if (obData == NULL)
-					return NULL;
-				for (index = 0; index < s; index++)
-				{
-					size_t len = wcslen(str[index]);
-					if (len > INT_MAX) {
-						PyErr_SetString(PyExc_OverflowError,
-							"registry string is too long for a Python string");
-						Py_DECREF(obData);
-						return NULL;
-					}
-					PyList_SetItem(obData,
-						       index,
-						       PyUnicode_FromUnicode(str[index], len));
-				}
-				free(str);
+                fixupMultiSZ(str, data, len);
+                obData = PyList_New(s);
+                if (obData == NULL)
+                    return NULL;
+                for (index = 0; index < s; index++)
+                {
+                    size_t len = wcslen(str[index]);
+                    if (len > INT_MAX) {
+                        PyErr_SetString(PyExc_OverflowError,
+                            "registry string is too long for a Python string");
+                        Py_DECREF(obData);
+                        return NULL;
+                    }
+                    PyList_SetItem(obData,
+                                   index,
+                                   PyUnicode_FromUnicode(str[index], len));
+                }
+                free(str);
 
-				break;
-			}
-		case REG_BINARY:
-		/* ALSO handle ALL unknown data types here.  Even if we can't
-		   support it natively, we should handle the bits. */
-		default:
-			if (retDataSize == 0) {
-				Py_INCREF(Py_None);
-				obData = Py_None;
-			}
-			else
-				obData = PyBytes_FromStringAndSize(
-					     (char *)retDataBuf, retDataSize);
-			break;
-	}
-	return obData;
+                break;
+            }
+        case REG_BINARY:
+        /* ALSO handle ALL unknown data types here.  Even if we can't
+           support it natively, we should handle the bits. */
+        default:
+            if (retDataSize == 0) {
+                Py_INCREF(Py_None);
+                obData = Py_None;
+            }
+            else
+                obData = PyBytes_FromStringAndSize(
+                             (char *)retDataBuf, retDataSize);
+            break;
+    }
+    return obData;
 }
 
 /* The Python methods */
@@ -938,344 +938,344 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
 static PyObject *
 PyCloseKey(PyObject *self, PyObject *args)
 {
-	PyObject *obKey;
-	if (!PyArg_ParseTuple(args, "O:CloseKey", &obKey))
-		return NULL;
-	if (!PyHKEY_Close(obKey))
-		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
+    PyObject *obKey;
+    if (!PyArg_ParseTuple(args, "O:CloseKey", &obKey))
+        return NULL;
+    if (!PyHKEY_Close(obKey))
+        return NULL;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PyConnectRegistry(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	wchar_t *szCompName = NULL;
-	HKEY retKey;
-	long rc;
-	if (!PyArg_ParseTuple(args, "ZO:ConnectRegistry", &szCompName, &obKey))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
-	Py_BEGIN_ALLOW_THREADS
-	rc = RegConnectRegistryW(szCompName, hKey, &retKey);
-	Py_END_ALLOW_THREADS
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-							   "ConnectRegistry");
-	return PyHKEY_FromHKEY(retKey);
+    HKEY hKey;
+    PyObject *obKey;
+    wchar_t *szCompName = NULL;
+    HKEY retKey;
+    long rc;
+    if (!PyArg_ParseTuple(args, "ZO:ConnectRegistry", &szCompName, &obKey))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegConnectRegistryW(szCompName, hKey, &retKey);
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "ConnectRegistry");
+    return PyHKEY_FromHKEY(retKey);
 }
 
 static PyObject *
 PyCreateKey(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	wchar_t *subKey;
-	HKEY retKey;
-	long rc;
-	if (!PyArg_ParseTuple(args, "OZ:CreateKey", &obKey, &subKey))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
-	rc = RegCreateKeyW(hKey, subKey, &retKey);
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc, "CreateKey");
-	return PyHKEY_FromHKEY(retKey);
+    HKEY hKey;
+    PyObject *obKey;
+    wchar_t *subKey;
+    HKEY retKey;
+    long rc;
+    if (!PyArg_ParseTuple(args, "OZ:CreateKey", &obKey, &subKey))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
+    rc = RegCreateKeyW(hKey, subKey, &retKey);
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "CreateKey");
+    return PyHKEY_FromHKEY(retKey);
 }
 
 static PyObject *
 PyCreateKeyEx(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	wchar_t *subKey;
-	HKEY retKey;
-	int res = 0;
-	REGSAM sam = KEY_WRITE;
-	long rc;
-	if (!PyArg_ParseTuple(args, "OZ|ii:CreateKeyEx", &obKey, &subKey,
-						  &res, &sam))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
+    HKEY hKey;
+    PyObject *obKey;
+    wchar_t *subKey;
+    HKEY retKey;
+    int res = 0;
+    REGSAM sam = KEY_WRITE;
+    long rc;
+    if (!PyArg_ParseTuple(args, "OZ|ii:CreateKeyEx", &obKey, &subKey,
+                                              &res, &sam))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
 
-	rc = RegCreateKeyExW(hKey, subKey, res, NULL, (DWORD)NULL, 
-						sam, NULL, &retKey, NULL);
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
-	return PyHKEY_FromHKEY(retKey);
+    rc = RegCreateKeyExW(hKey, subKey, res, NULL, (DWORD)NULL,
+                                            sam, NULL, &retKey, NULL);
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
+    return PyHKEY_FromHKEY(retKey);
 }
 
 static PyObject *
 PyDeleteKey(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	wchar_t *subKey;
-	long rc;
-	if (!PyArg_ParseTuple(args, "Ou:DeleteKey", &obKey, &subKey))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
-	rc = RegDeleteKeyW(hKey, subKey );
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKey");
-	Py_INCREF(Py_None);
-	return Py_None;
+    HKEY hKey;
+    PyObject *obKey;
+    wchar_t *subKey;
+    long rc;
+    if (!PyArg_ParseTuple(args, "Ou:DeleteKey", &obKey, &subKey))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
+    rc = RegDeleteKeyW(hKey, subKey );
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKey");
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PyDeleteKeyEx(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	HMODULE hMod;
-	typedef LONG (WINAPI *RDKEFunc)(HKEY, const wchar_t*, REGSAM, int);
-	RDKEFunc pfn = NULL;
-	wchar_t *subKey;
-	long rc;
-	int res = 0;
-	REGSAM sam = KEY_WOW64_64KEY;
+    HKEY hKey;
+    PyObject *obKey;
+    HMODULE hMod;
+    typedef LONG (WINAPI *RDKEFunc)(HKEY, const wchar_t*, REGSAM, int);
+    RDKEFunc pfn = NULL;
+    wchar_t *subKey;
+    long rc;
+    int res = 0;
+    REGSAM sam = KEY_WOW64_64KEY;
 
-	if (!PyArg_ParseTuple(args, "Ou|ii:DeleteKeyEx",
-						  &obKey, &subKey, &sam, &res))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "Ou|ii:DeleteKeyEx",
+                                              &obKey, &subKey, &sam, &res))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
 
-	/* Only available on 64bit platforms, so we must load it
-	   dynamically. */
-	hMod = GetModuleHandle("advapi32.dll");
-	if (hMod)
-		pfn = (RDKEFunc)GetProcAddress(hMod,
-									   "RegDeleteKeyExW");
-	if (!pfn) {
-		PyErr_SetString(PyExc_NotImplementedError,
-						"not implemented on this platform");
-		return NULL;
-	}
-	Py_BEGIN_ALLOW_THREADS
-	rc = (*pfn)(hKey, subKey, sam, res);
-	Py_END_ALLOW_THREADS
+    /* Only available on 64bit platforms, so we must load it
+       dynamically. */
+    hMod = GetModuleHandle("advapi32.dll");
+    if (hMod)
+        pfn = (RDKEFunc)GetProcAddress(hMod,
+                                                                   "RegDeleteKeyExW");
+    if (!pfn) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                                        "not implemented on this platform");
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
+    rc = (*pfn)(hKey, subKey, sam, res);
+    Py_END_ALLOW_THREADS
 
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKeyEx");
-	Py_INCREF(Py_None);
-	return Py_None;
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKeyEx");
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PyDeleteValue(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	wchar_t *subKey;
-	long rc;
-	if (!PyArg_ParseTuple(args, "OZ:DeleteValue", &obKey, &subKey))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
-	Py_BEGIN_ALLOW_THREADS
-	rc = RegDeleteValueW(hKey, subKey);
-	Py_END_ALLOW_THREADS
-	if (rc !=ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-							   "RegDeleteValue");
-	Py_INCREF(Py_None);
-	return Py_None;
+    HKEY hKey;
+    PyObject *obKey;
+    wchar_t *subKey;
+    long rc;
+    if (!PyArg_ParseTuple(args, "OZ:DeleteValue", &obKey, &subKey))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegDeleteValueW(hKey, subKey);
+    Py_END_ALLOW_THREADS
+    if (rc !=ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegDeleteValue");
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PyEnumKey(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	int index;
-	long rc;
-	PyObject *retStr;
-	wchar_t tmpbuf[256]; /* max key name length is 255 */
-	DWORD len = sizeof(tmpbuf); /* includes NULL terminator */
+    HKEY hKey;
+    PyObject *obKey;
+    int index;
+    long rc;
+    PyObject *retStr;
+    wchar_t tmpbuf[256]; /* max key name length is 255 */
+    DWORD len = sizeof(tmpbuf); /* includes NULL terminator */
 
-	if (!PyArg_ParseTuple(args, "Oi:EnumKey", &obKey, &index))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "Oi:EnumKey", &obKey, &index))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	rc = RegEnumKeyExW(hKey, index, tmpbuf, &len, NULL, NULL, NULL, NULL);
-	Py_END_ALLOW_THREADS
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc, "RegEnumKeyEx");
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegEnumKeyExW(hKey, index, tmpbuf, &len, NULL, NULL, NULL, NULL);
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegEnumKeyEx");
 
-	retStr = PyUnicode_FromUnicode(tmpbuf, len);
-	return retStr;  /* can be NULL */
+    retStr = PyUnicode_FromUnicode(tmpbuf, len);
+    return retStr;  /* can be NULL */
 }
 
 static PyObject *
 PyEnumValue(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	int index;
-	long rc;
-	wchar_t *retValueBuf;
-	BYTE *retDataBuf;
-	DWORD retValueSize;
-	DWORD retDataSize;
-	DWORD typ;
-	PyObject *obData;
-	PyObject *retVal;
+    HKEY hKey;
+    PyObject *obKey;
+    int index;
+    long rc;
+    wchar_t *retValueBuf;
+    BYTE *retDataBuf;
+    DWORD retValueSize;
+    DWORD retDataSize;
+    DWORD typ;
+    PyObject *obData;
+    PyObject *retVal;
 
-	if (!PyArg_ParseTuple(args, "Oi:EnumValue", &obKey, &index))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "Oi:EnumValue", &obKey, &index))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
 
-	if ((rc = RegQueryInfoKeyW(hKey, NULL, NULL, NULL, NULL, NULL, NULL,
-				  NULL,
-				  &retValueSize, &retDataSize, NULL, NULL))
-	    != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-							   "RegQueryInfoKey");
-	++retValueSize;    /* include null terminators */
-	++retDataSize;
-	retValueBuf = (wchar_t *)PyMem_Malloc(sizeof(wchar_t) * retValueSize);
-	if (retValueBuf == NULL)
-		return PyErr_NoMemory();
-	retDataBuf = (BYTE *)PyMem_Malloc(retDataSize);
-	if (retDataBuf == NULL) {
-		PyMem_Free(retValueBuf);
-		return PyErr_NoMemory();
-	}
+    if ((rc = RegQueryInfoKeyW(hKey, NULL, NULL, NULL, NULL, NULL, NULL,
+                              NULL,
+                              &retValueSize, &retDataSize, NULL, NULL))
+        != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegQueryInfoKey");
+    ++retValueSize;    /* include null terminators */
+    ++retDataSize;
+    retValueBuf = (wchar_t *)PyMem_Malloc(sizeof(wchar_t) * retValueSize);
+    if (retValueBuf == NULL)
+        return PyErr_NoMemory();
+    retDataBuf = (BYTE *)PyMem_Malloc(retDataSize);
+    if (retDataBuf == NULL) {
+        PyMem_Free(retValueBuf);
+        return PyErr_NoMemory();
+    }
 
-	Py_BEGIN_ALLOW_THREADS
-	rc = RegEnumValueW(hKey,
-			  index,
-			  retValueBuf,
-			  &retValueSize,
-			  NULL,
-			  &typ,
-			  retDataBuf,
-			  &retDataSize);
-	Py_END_ALLOW_THREADS
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegEnumValueW(hKey,
+                      index,
+                      retValueBuf,
+                      &retValueSize,
+                      NULL,
+                      &typ,
+                      retDataBuf,
+                      &retDataSize);
+    Py_END_ALLOW_THREADS
 
-	if (rc != ERROR_SUCCESS) {
-		retVal = PyErr_SetFromWindowsErrWithFunction(rc,
-							     "PyRegEnumValue");
-		goto fail;
-	}
-	obData = Reg2Py(retDataBuf, retDataSize, typ);
-	if (obData == NULL) {
-		retVal = NULL;
-		goto fail;
-	}
-	retVal = Py_BuildValue("uOi", retValueBuf, obData, typ);
-	Py_DECREF(obData);
+    if (rc != ERROR_SUCCESS) {
+        retVal = PyErr_SetFromWindowsErrWithFunction(rc,
+                                                     "PyRegEnumValue");
+        goto fail;
+    }
+    obData = Reg2Py(retDataBuf, retDataSize, typ);
+    if (obData == NULL) {
+        retVal = NULL;
+        goto fail;
+    }
+    retVal = Py_BuildValue("uOi", retValueBuf, obData, typ);
+    Py_DECREF(obData);
   fail:
-	PyMem_Free(retValueBuf);
-	PyMem_Free(retDataBuf);
-	return retVal;
+    PyMem_Free(retValueBuf);
+    PyMem_Free(retDataBuf);
+    return retVal;
 }
 
 static PyObject *
 PyExpandEnvironmentStrings(PyObject *self, PyObject *args)
 {
-	Py_UNICODE *retValue = NULL;
-	Py_UNICODE *src;
-	DWORD retValueSize;
-	DWORD rc;
-	PyObject *o;
+    Py_UNICODE *retValue = NULL;
+    Py_UNICODE *src;
+    DWORD retValueSize;
+    DWORD rc;
+    PyObject *o;
 
-	if (!PyArg_ParseTuple(args, "u:ExpandEnvironmentStrings", &src))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "u:ExpandEnvironmentStrings", &src))
+        return NULL;
 
-	retValueSize = ExpandEnvironmentStringsW(src, retValue, 0);
-	if (retValueSize == 0) {
-		return PyErr_SetFromWindowsErrWithFunction(retValueSize,
-						"ExpandEnvironmentStrings");
-	}
-	retValue = (Py_UNICODE *)PyMem_Malloc(retValueSize * sizeof(Py_UNICODE));
-	if (retValue == NULL) {
-		return PyErr_NoMemory();
-	}
+    retValueSize = ExpandEnvironmentStringsW(src, retValue, 0);
+    if (retValueSize == 0) {
+        return PyErr_SetFromWindowsErrWithFunction(retValueSize,
+                                        "ExpandEnvironmentStrings");
+    }
+    retValue = (Py_UNICODE *)PyMem_Malloc(retValueSize * sizeof(Py_UNICODE));
+    if (retValue == NULL) {
+        return PyErr_NoMemory();
+    }
 
-	rc = ExpandEnvironmentStringsW(src, retValue, retValueSize);
-	if (rc == 0) {
-		PyMem_Free(retValue);
-		return PyErr_SetFromWindowsErrWithFunction(retValueSize,
-						"ExpandEnvironmentStrings");
-	}
-	o = PyUnicode_FromUnicode(retValue, wcslen(retValue));
-	PyMem_Free(retValue);
-	return o;
+    rc = ExpandEnvironmentStringsW(src, retValue, retValueSize);
+    if (rc == 0) {
+        PyMem_Free(retValue);
+        return PyErr_SetFromWindowsErrWithFunction(retValueSize,
+                                        "ExpandEnvironmentStrings");
+    }
+    o = PyUnicode_FromUnicode(retValue, wcslen(retValue));
+    PyMem_Free(retValue);
+    return o;
 }
 
 static PyObject *
 PyFlushKey(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	long rc;
-	if (!PyArg_ParseTuple(args, "O:FlushKey", &obKey))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
-	Py_BEGIN_ALLOW_THREADS
-	rc = RegFlushKey(hKey);
-	Py_END_ALLOW_THREADS
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc, "RegFlushKey");
-	Py_INCREF(Py_None);
-	return Py_None;
+    HKEY hKey;
+    PyObject *obKey;
+    long rc;
+    if (!PyArg_ParseTuple(args, "O:FlushKey", &obKey))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegFlushKey(hKey);
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegFlushKey");
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 static PyObject *
 PyLoadKey(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	wchar_t *subKey;
-	wchar_t *fileName;
+    HKEY hKey;
+    PyObject *obKey;
+    wchar_t *subKey;
+    wchar_t *fileName;
 
-	long rc;
-	if (!PyArg_ParseTuple(args, "Ouu:LoadKey", &obKey, &subKey, &fileName))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
-	Py_BEGIN_ALLOW_THREADS
-	rc = RegLoadKeyW(hKey, subKey, fileName );
-	Py_END_ALLOW_THREADS
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc, "RegLoadKey");
-	Py_INCREF(Py_None);
-	return Py_None;
+    long rc;
+    if (!PyArg_ParseTuple(args, "Ouu:LoadKey", &obKey, &subKey, &fileName))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegLoadKeyW(hKey, subKey, fileName );
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegLoadKey");
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PyOpenKey(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
+    HKEY hKey;
+    PyObject *obKey;
 
-	wchar_t *subKey;
-	int res = 0;
-	HKEY retKey;
-	long rc;
-	REGSAM sam = KEY_READ;
-	if (!PyArg_ParseTuple(args, "OZ|ii:OpenKey", &obKey, &subKey,
-	                      &res, &sam))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
+    wchar_t *subKey;
+    int res = 0;
+    HKEY retKey;
+    long rc;
+    REGSAM sam = KEY_READ;
+    if (!PyArg_ParseTuple(args, "OZ|ii:OpenKey", &obKey, &subKey,
+                          &res, &sam))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	rc = RegOpenKeyExW(hKey, subKey, res, sam, &retKey);
-	Py_END_ALLOW_THREADS
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc, "RegOpenKeyEx");
-	return PyHKEY_FromHKEY(retKey);
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegOpenKeyExW(hKey, subKey, res, sam, &retKey);
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegOpenKeyEx");
+    return PyHKEY_FromHKEY(retKey);
 }
 
 
@@ -1291,18 +1291,18 @@ PyQueryInfoKey(PyObject *self, PyObject *args)
   PyObject *l;
   PyObject *ret;
   if (!PyArg_ParseTuple(args, "O:QueryInfoKey", &obKey))
-	return NULL;
+    return NULL;
   if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-	return NULL;
+    return NULL;
   if ((rc = RegQueryInfoKey(hKey, NULL, NULL, 0, &nSubKeys, NULL, NULL,
-			    &nValues,  NULL,  NULL, NULL, &ft))
+                            &nValues,  NULL,  NULL, NULL, &ft))
       != ERROR_SUCCESS)
-	return PyErr_SetFromWindowsErrWithFunction(rc, "RegQueryInfoKey");
+    return PyErr_SetFromWindowsErrWithFunction(rc, "RegQueryInfoKey");
   li.LowPart = ft.dwLowDateTime;
   li.HighPart = ft.dwHighDateTime;
   l = PyLong_FromLongLong(li.QuadPart);
   if (l == NULL)
-	return NULL;
+    return NULL;
   ret = Py_BuildValue("iiO", nSubKeys, nValues, l);
   Py_DECREF(l);
   return ret;
@@ -1311,328 +1311,328 @@ PyQueryInfoKey(PyObject *self, PyObject *args)
 static PyObject *
 PyQueryValue(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	wchar_t *subKey;
-	long rc;
-	PyObject *retStr;
-	wchar_t *retBuf;
-	long bufSize = 0;
+    HKEY hKey;
+    PyObject *obKey;
+    wchar_t *subKey;
+    long rc;
+    PyObject *retStr;
+    wchar_t *retBuf;
+    long bufSize = 0;
 
-	if (!PyArg_ParseTuple(args, "OZ:QueryValue", &obKey, &subKey))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "OZ:QueryValue", &obKey, &subKey))
+        return NULL;
 
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
-	if ((rc = RegQueryValueW(hKey, subKey, NULL, &bufSize))
-	    != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-							   "RegQueryValue");
-	retBuf = (wchar_t *)PyMem_Malloc(bufSize);
-	if (retBuf == NULL)
-		return PyErr_NoMemory();
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
+    if ((rc = RegQueryValueW(hKey, subKey, NULL, &bufSize))
+        != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegQueryValue");
+    retBuf = (wchar_t *)PyMem_Malloc(bufSize);
+    if (retBuf == NULL)
+        return PyErr_NoMemory();
 
-	if ((rc = RegQueryValueW(hKey, subKey, retBuf, &bufSize))
-	    != ERROR_SUCCESS) {
-		PyMem_Free(retBuf);
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-							   "RegQueryValue");
-	}
+    if ((rc = RegQueryValueW(hKey, subKey, retBuf, &bufSize))
+        != ERROR_SUCCESS) {
+        PyMem_Free(retBuf);
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegQueryValue");
+    }
 
-	retStr = PyUnicode_FromUnicode(retBuf, wcslen(retBuf));
-	PyMem_Free(retBuf);
-	return retStr;
+    retStr = PyUnicode_FromUnicode(retBuf, wcslen(retBuf));
+    PyMem_Free(retBuf);
+    return retStr;
 }
 
 static PyObject *
 PyQueryValueEx(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	wchar_t *valueName;
+    HKEY hKey;
+    PyObject *obKey;
+    wchar_t *valueName;
 
-	long rc;
-	BYTE *retBuf;
-	DWORD bufSize = 0;
-	DWORD typ;
-	PyObject *obData;
-	PyObject *result;
+    long rc;
+    BYTE *retBuf;
+    DWORD bufSize = 0;
+    DWORD typ;
+    PyObject *obData;
+    PyObject *result;
 
-	if (!PyArg_ParseTuple(args, "OZ:QueryValueEx", &obKey, &valueName))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "OZ:QueryValueEx", &obKey, &valueName))
+        return NULL;
 
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
-	if ((rc = RegQueryValueExW(hKey, valueName,
-				  NULL, NULL, NULL,
-				  &bufSize))
-	    != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-							   "RegQueryValueEx");
-	retBuf = (BYTE *)PyMem_Malloc(bufSize);
-	if (retBuf == NULL)
-		return PyErr_NoMemory();
-	if ((rc = RegQueryValueExW(hKey, valueName, NULL,
-				  &typ, retBuf, &bufSize))
-	    != ERROR_SUCCESS) {
-		PyMem_Free(retBuf);
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-							   "RegQueryValueEx");
-	}
-	obData = Reg2Py(retBuf, bufSize, typ);
-	PyMem_Free(retBuf);
-	if (obData == NULL)
-		return NULL;
-	result = Py_BuildValue("Oi", obData, typ);
-	Py_DECREF(obData);
-	return result;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
+    if ((rc = RegQueryValueExW(hKey, valueName,
+                              NULL, NULL, NULL,
+                              &bufSize))
+        != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegQueryValueEx");
+    retBuf = (BYTE *)PyMem_Malloc(bufSize);
+    if (retBuf == NULL)
+        return PyErr_NoMemory();
+    if ((rc = RegQueryValueExW(hKey, valueName, NULL,
+                              &typ, retBuf, &bufSize))
+        != ERROR_SUCCESS) {
+        PyMem_Free(retBuf);
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegQueryValueEx");
+    }
+    obData = Reg2Py(retBuf, bufSize, typ);
+    PyMem_Free(retBuf);
+    if (obData == NULL)
+        return NULL;
+    result = Py_BuildValue("Oi", obData, typ);
+    Py_DECREF(obData);
+    return result;
 }
 
 
 static PyObject *
 PySaveKey(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	wchar_t *fileName;
-	LPSECURITY_ATTRIBUTES pSA = NULL;
+    HKEY hKey;
+    PyObject *obKey;
+    wchar_t *fileName;
+    LPSECURITY_ATTRIBUTES pSA = NULL;
 
-	long rc;
-	if (!PyArg_ParseTuple(args, "Ou:SaveKey", &obKey, &fileName))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
+    long rc;
+    if (!PyArg_ParseTuple(args, "Ou:SaveKey", &obKey, &fileName))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
 /*  One day we may get security into the core?
-	if (!PyWinObject_AsSECURITY_ATTRIBUTES(obSA, &pSA, TRUE))
-		return NULL;
+    if (!PyWinObject_AsSECURITY_ATTRIBUTES(obSA, &pSA, TRUE))
+        return NULL;
 */
-	Py_BEGIN_ALLOW_THREADS
-	rc = RegSaveKeyW(hKey, fileName, pSA );
-	Py_END_ALLOW_THREADS
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc, "RegSaveKey");
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegSaveKeyW(hKey, fileName, pSA );
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegSaveKey");
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PySetValue(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	wchar_t *subKey;
-	wchar_t *str;
-	DWORD typ;
-	DWORD len;
-	long rc;
-	if (!PyArg_ParseTuple(args, "OZiu#:SetValue",
-			      &obKey,
-			      &subKey,
-			      &typ,
-			      &str,
-			      &len))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
-	if (typ != REG_SZ) {
-		PyErr_SetString(PyExc_TypeError,
-				"Type must be winreg.REG_SZ");
-		return NULL;
-	}
+    HKEY hKey;
+    PyObject *obKey;
+    wchar_t *subKey;
+    wchar_t *str;
+    DWORD typ;
+    DWORD len;
+    long rc;
+    if (!PyArg_ParseTuple(args, "OZiu#:SetValue",
+                          &obKey,
+                          &subKey,
+                          &typ,
+                          &str,
+                          &len))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
+    if (typ != REG_SZ) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Type must be winreg.REG_SZ");
+        return NULL;
+    }
 
-	Py_BEGIN_ALLOW_THREADS
-	rc = RegSetValueW(hKey, subKey, REG_SZ, str, len+1);
-	Py_END_ALLOW_THREADS
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegSetValueW(hKey, subKey, REG_SZ, str, len+1);
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PySetValueEx(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	Py_UNICODE *valueName;
-	PyObject *obRes;
-	PyObject *value;
-	BYTE *data;
-	DWORD len;
-	DWORD typ;
+    HKEY hKey;
+    PyObject *obKey;
+    Py_UNICODE *valueName;
+    PyObject *obRes;
+    PyObject *value;
+    BYTE *data;
+    DWORD len;
+    DWORD typ;
 
-	LONG rc;
+    LONG rc;
 
-	if (!PyArg_ParseTuple(args, "OZOiO:SetValueEx",
-			      &obKey,
-			      &valueName,
-			      &obRes,
-			      &typ,
-			      &value))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
-	if (!Py2Reg(value, typ, &data, &len))
-	{
-		if (!PyErr_Occurred())
-			PyErr_SetString(PyExc_ValueError,
-				 "Could not convert the data to the specified type.");
-		return NULL;
-	}
-	Py_BEGIN_ALLOW_THREADS
-	rc = RegSetValueExW(hKey, valueName, 0, typ, data, len);
-	Py_END_ALLOW_THREADS
-	PyMem_DEL(data);
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-							   "RegSetValueEx");
-	Py_INCREF(Py_None);
-	return Py_None;
+    if (!PyArg_ParseTuple(args, "OZOiO:SetValueEx",
+                          &obKey,
+                          &valueName,
+                          &obRes,
+                          &typ,
+                          &value))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
+    if (!Py2Reg(value, typ, &data, &len))
+    {
+        if (!PyErr_Occurred())
+            PyErr_SetString(PyExc_ValueError,
+                     "Could not convert the data to the specified type.");
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegSetValueExW(hKey, valueName, 0, typ, data, len);
+    Py_END_ALLOW_THREADS
+    PyMem_DEL(data);
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegSetValueEx");
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PyDisableReflectionKey(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	HMODULE hMod;
-	typedef LONG (WINAPI *RDRKFunc)(HKEY);
-	RDRKFunc pfn = NULL;
-	LONG rc;
+    HKEY hKey;
+    PyObject *obKey;
+    HMODULE hMod;
+    typedef LONG (WINAPI *RDRKFunc)(HKEY);
+    RDRKFunc pfn = NULL;
+    LONG rc;
 
-	if (!PyArg_ParseTuple(args, "O:DisableReflectionKey", &obKey))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "O:DisableReflectionKey", &obKey))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
 
-	/* Only available on 64bit platforms, so we must load it
-	   dynamically.*/
-	hMod = GetModuleHandle("advapi32.dll");
-	if (hMod)
-		pfn = (RDRKFunc)GetProcAddress(hMod,
-		                               "RegDisableReflectionKey");
-	if (!pfn) {
-		PyErr_SetString(PyExc_NotImplementedError,
-		                "not implemented on this platform");
-		return NULL;
-	}
-	Py_BEGIN_ALLOW_THREADS
-	rc = (*pfn)(hKey);
-	Py_END_ALLOW_THREADS
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-		                                           "RegDisableReflectionKey");
-	Py_INCREF(Py_None);
-	return Py_None;
+    /* Only available on 64bit platforms, so we must load it
+       dynamically.*/
+    hMod = GetModuleHandle("advapi32.dll");
+    if (hMod)
+        pfn = (RDRKFunc)GetProcAddress(hMod,
+                                       "RegDisableReflectionKey");
+    if (!pfn) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                        "not implemented on this platform");
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
+    rc = (*pfn)(hKey);
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegDisableReflectionKey");
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PyEnableReflectionKey(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	HMODULE hMod;
-	typedef LONG (WINAPI *RERKFunc)(HKEY);
-	RERKFunc pfn = NULL;
-	LONG rc;
+    HKEY hKey;
+    PyObject *obKey;
+    HMODULE hMod;
+    typedef LONG (WINAPI *RERKFunc)(HKEY);
+    RERKFunc pfn = NULL;
+    LONG rc;
 
-	if (!PyArg_ParseTuple(args, "O:EnableReflectionKey", &obKey))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "O:EnableReflectionKey", &obKey))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
 
-	/* Only available on 64bit platforms, so we must load it
-	   dynamically.*/
-	hMod = GetModuleHandle("advapi32.dll");
-	if (hMod)
-		pfn = (RERKFunc)GetProcAddress(hMod,
-		                               "RegEnableReflectionKey");
-	if (!pfn) {
-		PyErr_SetString(PyExc_NotImplementedError,
-		                "not implemented on this platform");
-		return NULL;
-	}
-	Py_BEGIN_ALLOW_THREADS
-	rc = (*pfn)(hKey);
-	Py_END_ALLOW_THREADS
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-		                                           "RegEnableReflectionKey");
-	Py_INCREF(Py_None);
-	return Py_None;
+    /* Only available on 64bit platforms, so we must load it
+       dynamically.*/
+    hMod = GetModuleHandle("advapi32.dll");
+    if (hMod)
+        pfn = (RERKFunc)GetProcAddress(hMod,
+                                       "RegEnableReflectionKey");
+    if (!pfn) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                        "not implemented on this platform");
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
+    rc = (*pfn)(hKey);
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegEnableReflectionKey");
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *
 PyQueryReflectionKey(PyObject *self, PyObject *args)
 {
-	HKEY hKey;
-	PyObject *obKey;
-	HMODULE hMod;
-	typedef LONG (WINAPI *RQRKFunc)(HKEY, BOOL *);
-	RQRKFunc pfn = NULL;
-	BOOL result;
-	LONG rc;
+    HKEY hKey;
+    PyObject *obKey;
+    HMODULE hMod;
+    typedef LONG (WINAPI *RQRKFunc)(HKEY, BOOL *);
+    RQRKFunc pfn = NULL;
+    BOOL result;
+    LONG rc;
 
-	if (!PyArg_ParseTuple(args, "O:QueryReflectionKey", &obKey))
-		return NULL;
-	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "O:QueryReflectionKey", &obKey))
+        return NULL;
+    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
+        return NULL;
 
-	/* Only available on 64bit platforms, so we must load it
-	   dynamically.*/
-	hMod = GetModuleHandle("advapi32.dll");
-	if (hMod)
-		pfn = (RQRKFunc)GetProcAddress(hMod,
-		                               "RegQueryReflectionKey");
-	if (!pfn) {
-		PyErr_SetString(PyExc_NotImplementedError,
-		                "not implemented on this platform");
-		return NULL;
-	}
-	Py_BEGIN_ALLOW_THREADS
-	rc = (*pfn)(hKey, &result);
-	Py_END_ALLOW_THREADS
-	if (rc != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-		                                           "RegQueryReflectionKey");
-	return PyBool_FromLong(result);
+    /* Only available on 64bit platforms, so we must load it
+       dynamically.*/
+    hMod = GetModuleHandle("advapi32.dll");
+    if (hMod)
+        pfn = (RQRKFunc)GetProcAddress(hMod,
+                                       "RegQueryReflectionKey");
+    if (!pfn) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                        "not implemented on this platform");
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
+    rc = (*pfn)(hKey, &result);
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc,
+                                                   "RegQueryReflectionKey");
+    return PyBool_FromLong(result);
 }
 
 static struct PyMethodDef winreg_methods[] = {
-	{"CloseKey",         PyCloseKey,        METH_VARARGS, CloseKey_doc},
-	{"ConnectRegistry",  PyConnectRegistry, METH_VARARGS, ConnectRegistry_doc},
-	{"CreateKey",        PyCreateKey,       METH_VARARGS, CreateKey_doc},
-	{"CreateKeyEx",      PyCreateKeyEx,     METH_VARARGS, CreateKeyEx_doc},
-	{"DeleteKey",        PyDeleteKey,       METH_VARARGS, DeleteKey_doc},
-	{"DeleteKeyEx",      PyDeleteKeyEx,     METH_VARARGS, DeleteKeyEx_doc},
-	{"DeleteValue",      PyDeleteValue,     METH_VARARGS, DeleteValue_doc},
-	{"DisableReflectionKey", PyDisableReflectionKey, METH_VARARGS, DisableReflectionKey_doc},
-	{"EnableReflectionKey",  PyEnableReflectionKey,  METH_VARARGS, EnableReflectionKey_doc},
-	{"EnumKey",          PyEnumKey,         METH_VARARGS, EnumKey_doc},
-	{"EnumValue",        PyEnumValue,       METH_VARARGS, EnumValue_doc},
-	{"ExpandEnvironmentStrings", PyExpandEnvironmentStrings, METH_VARARGS,
-		ExpandEnvironmentStrings_doc },
-	{"FlushKey",         PyFlushKey,        METH_VARARGS, FlushKey_doc},
-	{"LoadKey",          PyLoadKey,         METH_VARARGS, LoadKey_doc},
-	{"OpenKey",          PyOpenKey,         METH_VARARGS, OpenKey_doc},
-	{"OpenKeyEx",        PyOpenKey,         METH_VARARGS, OpenKeyEx_doc},
-	{"QueryValue",       PyQueryValue,      METH_VARARGS, QueryValue_doc},
-	{"QueryValueEx",     PyQueryValueEx,    METH_VARARGS, QueryValueEx_doc},
-	{"QueryInfoKey",     PyQueryInfoKey,    METH_VARARGS, QueryInfoKey_doc},
-	{"QueryReflectionKey",PyQueryReflectionKey,METH_VARARGS, QueryReflectionKey_doc},
-	{"SaveKey",          PySaveKey,         METH_VARARGS, SaveKey_doc},
-	{"SetValue",         PySetValue,        METH_VARARGS, SetValue_doc},
-	{"SetValueEx",       PySetValueEx,      METH_VARARGS, SetValueEx_doc},
-	NULL,
+    {"CloseKey",         PyCloseKey,        METH_VARARGS, CloseKey_doc},
+    {"ConnectRegistry",  PyConnectRegistry, METH_VARARGS, ConnectRegistry_doc},
+    {"CreateKey",        PyCreateKey,       METH_VARARGS, CreateKey_doc},
+    {"CreateKeyEx",      PyCreateKeyEx,     METH_VARARGS, CreateKeyEx_doc},
+    {"DeleteKey",        PyDeleteKey,       METH_VARARGS, DeleteKey_doc},
+    {"DeleteKeyEx",      PyDeleteKeyEx,     METH_VARARGS, DeleteKeyEx_doc},
+    {"DeleteValue",      PyDeleteValue,     METH_VARARGS, DeleteValue_doc},
+    {"DisableReflectionKey", PyDisableReflectionKey, METH_VARARGS, DisableReflectionKey_doc},
+    {"EnableReflectionKey",  PyEnableReflectionKey,  METH_VARARGS, EnableReflectionKey_doc},
+    {"EnumKey",          PyEnumKey,         METH_VARARGS, EnumKey_doc},
+    {"EnumValue",        PyEnumValue,       METH_VARARGS, EnumValue_doc},
+    {"ExpandEnvironmentStrings", PyExpandEnvironmentStrings, METH_VARARGS,
+        ExpandEnvironmentStrings_doc },
+    {"FlushKey",         PyFlushKey,        METH_VARARGS, FlushKey_doc},
+    {"LoadKey",          PyLoadKey,         METH_VARARGS, LoadKey_doc},
+    {"OpenKey",          PyOpenKey,         METH_VARARGS, OpenKey_doc},
+    {"OpenKeyEx",        PyOpenKey,         METH_VARARGS, OpenKeyEx_doc},
+    {"QueryValue",       PyQueryValue,      METH_VARARGS, QueryValue_doc},
+    {"QueryValueEx",     PyQueryValueEx,    METH_VARARGS, QueryValueEx_doc},
+    {"QueryInfoKey",     PyQueryInfoKey,    METH_VARARGS, QueryInfoKey_doc},
+    {"QueryReflectionKey",PyQueryReflectionKey,METH_VARARGS, QueryReflectionKey_doc},
+    {"SaveKey",          PySaveKey,         METH_VARARGS, SaveKey_doc},
+    {"SetValue",         PySetValue,        METH_VARARGS, SetValue_doc},
+    {"SetValueEx",       PySetValueEx,      METH_VARARGS, SetValueEx_doc},
+    NULL,
 };
 
 static void
 insint(PyObject * d, char * name, long value)
 {
-	PyObject *v = PyLong_FromLong(value);
-	if (!v || PyDict_SetItemString(d, name, v))
-		PyErr_Clear();
-	Py_XDECREF(v);
+    PyObject *v = PyLong_FromLong(value);
+    if (!v || PyDict_SetItemString(d, name, v))
+        PyErr_Clear();
+    Py_XDECREF(v);
 }
 
 #define ADD_INT(val) insint(d, #val, val)
@@ -1640,104 +1640,104 @@ insint(PyObject * d, char * name, long value)
 static void
 inskey(PyObject * d, char * name, HKEY key)
 {
-	PyObject *v = PyLong_FromVoidPtr(key);
-	if (!v || PyDict_SetItemString(d, name, v))
-		PyErr_Clear();
-	Py_XDECREF(v);
+    PyObject *v = PyLong_FromVoidPtr(key);
+    if (!v || PyDict_SetItemString(d, name, v))
+        PyErr_Clear();
+    Py_XDECREF(v);
 }
 
 #define ADD_KEY(val) inskey(d, #val, val)
 
 
 static struct PyModuleDef winregmodule = {
-	PyModuleDef_HEAD_INIT,
-	"winreg",
-	module_doc,
-	-1,
-	winreg_methods,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+    PyModuleDef_HEAD_INIT,
+    "winreg",
+    module_doc,
+    -1,
+    winreg_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC PyInit_winreg(void)
 {
-	PyObject *m, *d;
-	m = PyModule_Create(&winregmodule);
-	if (m == NULL)
-		return NULL;
-	d = PyModule_GetDict(m);
-	PyHKEY_Type.tp_doc = PyHKEY_doc;
-	if (PyType_Ready(&PyHKEY_Type) < 0)
-		return NULL;
-	Py_INCREF(&PyHKEY_Type);
-	if (PyDict_SetItemString(d, "HKEYType",
-				 (PyObject *)&PyHKEY_Type) != 0)
-		return NULL;
-	Py_INCREF(PyExc_WindowsError);
-	if (PyDict_SetItemString(d, "error",
-				 PyExc_WindowsError) != 0)
-		return NULL;
+    PyObject *m, *d;
+    m = PyModule_Create(&winregmodule);
+    if (m == NULL)
+        return NULL;
+    d = PyModule_GetDict(m);
+    PyHKEY_Type.tp_doc = PyHKEY_doc;
+    if (PyType_Ready(&PyHKEY_Type) < 0)
+        return NULL;
+    Py_INCREF(&PyHKEY_Type);
+    if (PyDict_SetItemString(d, "HKEYType",
+                             (PyObject *)&PyHKEY_Type) != 0)
+        return NULL;
+    Py_INCREF(PyExc_WindowsError);
+    if (PyDict_SetItemString(d, "error",
+                             PyExc_WindowsError) != 0)
+        return NULL;
 
-	/* Add the relevant constants */
-	ADD_KEY(HKEY_CLASSES_ROOT);
-	ADD_KEY(HKEY_CURRENT_USER);
-	ADD_KEY(HKEY_LOCAL_MACHINE);
-	ADD_KEY(HKEY_USERS);
-	ADD_KEY(HKEY_PERFORMANCE_DATA);
+    /* Add the relevant constants */
+    ADD_KEY(HKEY_CLASSES_ROOT);
+    ADD_KEY(HKEY_CURRENT_USER);
+    ADD_KEY(HKEY_LOCAL_MACHINE);
+    ADD_KEY(HKEY_USERS);
+    ADD_KEY(HKEY_PERFORMANCE_DATA);
 #ifdef HKEY_CURRENT_CONFIG
-	ADD_KEY(HKEY_CURRENT_CONFIG);
+    ADD_KEY(HKEY_CURRENT_CONFIG);
 #endif
 #ifdef HKEY_DYN_DATA
-	ADD_KEY(HKEY_DYN_DATA);
+    ADD_KEY(HKEY_DYN_DATA);
 #endif
-	ADD_INT(KEY_QUERY_VALUE);
-	ADD_INT(KEY_SET_VALUE);
-	ADD_INT(KEY_CREATE_SUB_KEY);
-	ADD_INT(KEY_ENUMERATE_SUB_KEYS);
-	ADD_INT(KEY_NOTIFY);
-	ADD_INT(KEY_CREATE_LINK);
-	ADD_INT(KEY_READ);
-	ADD_INT(KEY_WRITE);
-	ADD_INT(KEY_EXECUTE);
-	ADD_INT(KEY_ALL_ACCESS);
+    ADD_INT(KEY_QUERY_VALUE);
+    ADD_INT(KEY_SET_VALUE);
+    ADD_INT(KEY_CREATE_SUB_KEY);
+    ADD_INT(KEY_ENUMERATE_SUB_KEYS);
+    ADD_INT(KEY_NOTIFY);
+    ADD_INT(KEY_CREATE_LINK);
+    ADD_INT(KEY_READ);
+    ADD_INT(KEY_WRITE);
+    ADD_INT(KEY_EXECUTE);
+    ADD_INT(KEY_ALL_ACCESS);
 #ifdef KEY_WOW64_64KEY
-	ADD_INT(KEY_WOW64_64KEY);
+    ADD_INT(KEY_WOW64_64KEY);
 #endif
 #ifdef KEY_WOW64_32KEY
-	ADD_INT(KEY_WOW64_32KEY);
+    ADD_INT(KEY_WOW64_32KEY);
 #endif
-	ADD_INT(REG_OPTION_RESERVED);
-	ADD_INT(REG_OPTION_NON_VOLATILE);
-	ADD_INT(REG_OPTION_VOLATILE);
-	ADD_INT(REG_OPTION_CREATE_LINK);
-	ADD_INT(REG_OPTION_BACKUP_RESTORE);
-	ADD_INT(REG_OPTION_OPEN_LINK);
-	ADD_INT(REG_LEGAL_OPTION);
-	ADD_INT(REG_CREATED_NEW_KEY);
-	ADD_INT(REG_OPENED_EXISTING_KEY);
-	ADD_INT(REG_WHOLE_HIVE_VOLATILE);
-	ADD_INT(REG_REFRESH_HIVE);
-	ADD_INT(REG_NO_LAZY_FLUSH);
-	ADD_INT(REG_NOTIFY_CHANGE_NAME);
-	ADD_INT(REG_NOTIFY_CHANGE_ATTRIBUTES);
-	ADD_INT(REG_NOTIFY_CHANGE_LAST_SET);
-	ADD_INT(REG_NOTIFY_CHANGE_SECURITY);
-	ADD_INT(REG_LEGAL_CHANGE_FILTER);
-	ADD_INT(REG_NONE);
-	ADD_INT(REG_SZ);
-	ADD_INT(REG_EXPAND_SZ);
-	ADD_INT(REG_BINARY);
-	ADD_INT(REG_DWORD);
-	ADD_INT(REG_DWORD_LITTLE_ENDIAN);
-	ADD_INT(REG_DWORD_BIG_ENDIAN);
-	ADD_INT(REG_LINK);
-	ADD_INT(REG_MULTI_SZ);
-	ADD_INT(REG_RESOURCE_LIST);
-	ADD_INT(REG_FULL_RESOURCE_DESCRIPTOR);
-	ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
-	return m;
+    ADD_INT(REG_OPTION_RESERVED);
+    ADD_INT(REG_OPTION_NON_VOLATILE);
+    ADD_INT(REG_OPTION_VOLATILE);
+    ADD_INT(REG_OPTION_CREATE_LINK);
+    ADD_INT(REG_OPTION_BACKUP_RESTORE);
+    ADD_INT(REG_OPTION_OPEN_LINK);
+    ADD_INT(REG_LEGAL_OPTION);
+    ADD_INT(REG_CREATED_NEW_KEY);
+    ADD_INT(REG_OPENED_EXISTING_KEY);
+    ADD_INT(REG_WHOLE_HIVE_VOLATILE);
+    ADD_INT(REG_REFRESH_HIVE);
+    ADD_INT(REG_NO_LAZY_FLUSH);
+    ADD_INT(REG_NOTIFY_CHANGE_NAME);
+    ADD_INT(REG_NOTIFY_CHANGE_ATTRIBUTES);
+    ADD_INT(REG_NOTIFY_CHANGE_LAST_SET);
+    ADD_INT(REG_NOTIFY_CHANGE_SECURITY);
+    ADD_INT(REG_LEGAL_CHANGE_FILTER);
+    ADD_INT(REG_NONE);
+    ADD_INT(REG_SZ);
+    ADD_INT(REG_EXPAND_SZ);
+    ADD_INT(REG_BINARY);
+    ADD_INT(REG_DWORD);
+    ADD_INT(REG_DWORD_LITTLE_ENDIAN);
+    ADD_INT(REG_DWORD_BIG_ENDIAN);
+    ADD_INT(REG_LINK);
+    ADD_INT(REG_MULTI_SZ);
+    ADD_INT(REG_RESOURCE_LIST);
+    ADD_INT(REG_FULL_RESOURCE_DESCRIPTOR);
+    ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
+    return m;
 }
 
 

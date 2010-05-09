@@ -1,6 +1,6 @@
 /*
-     ---------------------------------------------------------------------  
-    /                       Copyright (c) 1996.                           \ 
+     ---------------------------------------------------------------------
+    /                       Copyright (c) 1996.                           \
    |          The Regents of the University of California.                 |
    |                        All rights reserved.                           |
    |                                                                       |
@@ -32,12 +32,12 @@
    |   opinions  of authors expressed herein do not necessarily state or   |
    |   reflect those of the United States Government or  the  University   |
    |   of  California,  and shall not be used for advertising or product   |
-    \  endorsement purposes.                                              / 
-     ---------------------------------------------------------------------  
+    \  endorsement purposes.                                              /
+     ---------------------------------------------------------------------
 */
 
 /*
-		  Floating point exception test module.
+                  Floating point exception test module.
 
  */
 
@@ -55,7 +55,7 @@ static double nest3(double);
 static void printerr(double);
 
 static PyMethodDef fpetest_methods[] = {
-    {"test",		 (PyCFunction) test,		 METH_VARARGS},
+    {"test",             (PyCFunction) test,             METH_VARARGS},
     {0,0}
 };
 
@@ -174,15 +174,15 @@ static double overflow(double b)
 }
 
 static struct PyModuleDef fpetestmodule = {
-	PyModuleDef_HEAD_INIT,
-	"fpetest",
-	NULL,
-	-1,
-	fpetest_methods,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+    PyModuleDef_HEAD_INIT,
+    "fpetest",
+    NULL,
+    -1,
+    fpetest_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC PyInit_fpetest(void)
@@ -191,10 +191,10 @@ PyMODINIT_FUNC PyInit_fpetest(void)
 
     m = PyModule_Create(&fpetestmodule);
     if (m == NULL)
-    	return NULL;
+    return NULL;
     d = PyModule_GetDict(m);
     fpe_error = PyErr_NewException("fpetest.error", NULL, NULL);
     if (fpe_error != NULL)
-	    PyDict_SetItemString(d, "error", fpe_error);
+        PyDict_SetItemString(d, "error", fpe_error);
     return m;
 }
