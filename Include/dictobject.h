@@ -48,13 +48,13 @@ meaning otherwise.
 #define PyDict_MINSIZE 8
 
 typedef struct {
-	/* Cached hash code of me_key.  Note that hash codes are C longs.
-	 * We have to use Py_ssize_t instead because dict_popitem() abuses
-	 * me_hash to hold a search finger.
-	 */
-	Py_ssize_t me_hash;
-	PyObject *me_key;
-	PyObject *me_value;
+    /* Cached hash code of me_key.  Note that hash codes are C longs.
+     * We have to use Py_ssize_t instead because dict_popitem() abuses
+     * me_hash to hold a search finger.
+     */
+    Py_ssize_t me_hash;
+    PyObject *me_key;
+    PyObject *me_value;
 } PyDictEntry;
 
 /*
@@ -68,24 +68,24 @@ it's two-thirds full.
 */
 typedef struct _dictobject PyDictObject;
 struct _dictobject {
-	PyObject_HEAD
-	Py_ssize_t ma_fill;  /* # Active + # Dummy */
-	Py_ssize_t ma_used;  /* # Active */
+    PyObject_HEAD
+    Py_ssize_t ma_fill;  /* # Active + # Dummy */
+    Py_ssize_t ma_used;  /* # Active */
 
-	/* The table contains ma_mask + 1 slots, and that's a power of 2.
-	 * We store the mask instead of the size because the mask is more
-	 * frequently needed.
-	 */
-	Py_ssize_t ma_mask;
+    /* The table contains ma_mask + 1 slots, and that's a power of 2.
+     * We store the mask instead of the size because the mask is more
+     * frequently needed.
+     */
+    Py_ssize_t ma_mask;
 
-	/* ma_table points to ma_smalltable for small tables, else to
-	 * additional malloc'ed memory.  ma_table is never NULL!  This rule
-	 * saves repeated runtime null-tests in the workhorse getitem and
-	 * setitem calls.
-	 */
-	PyDictEntry *ma_table;
-	PyDictEntry *(*ma_lookup)(PyDictObject *mp, PyObject *key, long hash);
-	PyDictEntry ma_smalltable[PyDict_MINSIZE];
+    /* ma_table points to ma_smalltable for small tables, else to
+     * additional malloc'ed memory.  ma_table is never NULL!  This rule
+     * saves repeated runtime null-tests in the workhorse getitem and
+     * setitem calls.
+     */
+    PyDictEntry *ma_table;
+    PyDictEntry *(*ma_lookup)(PyDictObject *mp, PyObject *key, long hash);
+    PyDictEntry ma_smalltable[PyDict_MINSIZE];
 };
 
 PyAPI_DATA(PyTypeObject) PyDict_Type;
@@ -104,7 +104,7 @@ PyAPI_DATA(PyTypeObject) PyDictValues_Type;
 #define PyDictValues_Check(op) (Py_TYPE(op) == &PyDictValues_Type)
 /* This excludes Values, since they are not sets. */
 # define PyDictViewSet_Check(op) \
-	(PyDictKeys_Check(op) || PyDictItems_Check(op))
+    (PyDictKeys_Check(op) || PyDictItems_Check(op))
 
 
 PyAPI_FUNC(PyObject *) PyDict_New(void);
@@ -114,9 +114,9 @@ PyAPI_FUNC(int) PyDict_SetItem(PyObject *mp, PyObject *key, PyObject *item);
 PyAPI_FUNC(int) PyDict_DelItem(PyObject *mp, PyObject *key);
 PyAPI_FUNC(void) PyDict_Clear(PyObject *mp);
 PyAPI_FUNC(int) PyDict_Next(
-	PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value);
+    PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value);
 PyAPI_FUNC(int) _PyDict_Next(
-	PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, long *hash);
+    PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, long *hash);
 PyAPI_FUNC(PyObject *) PyDict_Keys(PyObject *mp);
 PyAPI_FUNC(PyObject *) PyDict_Values(PyObject *mp);
 PyAPI_FUNC(PyObject *) PyDict_Items(PyObject *mp);
@@ -137,8 +137,8 @@ PyAPI_FUNC(int) PyDict_Update(PyObject *mp, PyObject *other);
    dict.update(other) is equivalent to PyDict_Merge(dict, other, 1).
 */
 PyAPI_FUNC(int) PyDict_Merge(PyObject *mp,
-				   PyObject *other,
-				   int override);
+                                   PyObject *other,
+                                   int override);
 
 /* PyDict_MergeFromSeq2 updates/merges from an iterable object producing
    iterable objects of length 2.  If override is true, the last occurrence
@@ -146,8 +146,8 @@ PyAPI_FUNC(int) PyDict_Merge(PyObject *mp,
    is equivalent to dict={}; PyDict_MergeFromSeq(dict, seq2, 1).
 */
 PyAPI_FUNC(int) PyDict_MergeFromSeq2(PyObject *d,
-					   PyObject *seq2,
-					   int override);
+                                           PyObject *seq2,
+                                           int override);
 
 PyAPI_FUNC(PyObject *) PyDict_GetItemString(PyObject *dp, const char *key);
 PyAPI_FUNC(int) PyDict_SetItemString(PyObject *dp, const char *key, PyObject *item);

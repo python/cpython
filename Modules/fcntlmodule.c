@@ -21,7 +21,7 @@ conv_descriptor(PyObject *object, int *target)
     int fd = PyObject_AsFileDescriptor(object);
 
     if (fd < 0)
-        return 0;
+    return 0;
     *target = fd;
     return 1;
 }
@@ -32,48 +32,48 @@ conv_descriptor(PyObject *object, int *target)
 static PyObject *
 fcntl_fcntl(PyObject *self, PyObject *args)
 {
-	int fd;
-	int code;
-	long arg;
-	int ret;
-	char *str;
-	Py_ssize_t len;
-	char buf[1024];
+    int fd;
+    int code;
+    long arg;
+    int ret;
+    char *str;
+    Py_ssize_t len;
+    char buf[1024];
 
-	if (PyArg_ParseTuple(args, "O&is#:fcntl",
-                             conv_descriptor, &fd, &code, &str, &len)) {
-		if (len > sizeof buf) {
-			PyErr_SetString(PyExc_ValueError,
-					"fcntl string arg too long");
-			return NULL;
-		}
-		memcpy(buf, str, len);
-		Py_BEGIN_ALLOW_THREADS
-		ret = fcntl(fd, code, buf);
-		Py_END_ALLOW_THREADS
-		if (ret < 0) {
-			PyErr_SetFromErrno(PyExc_IOError);
-			return NULL;
-		}
-		return PyBytes_FromStringAndSize(buf, len);
-	}
+    if (PyArg_ParseTuple(args, "O&is#:fcntl",
+                         conv_descriptor, &fd, &code, &str, &len)) {
+        if (len > sizeof buf) {
+            PyErr_SetString(PyExc_ValueError,
+                            "fcntl string arg too long");
+            return NULL;
+        }
+        memcpy(buf, str, len);
+        Py_BEGIN_ALLOW_THREADS
+        ret = fcntl(fd, code, buf);
+        Py_END_ALLOW_THREADS
+        if (ret < 0) {
+            PyErr_SetFromErrno(PyExc_IOError);
+            return NULL;
+        }
+        return PyBytes_FromStringAndSize(buf, len);
+    }
 
-	PyErr_Clear();
-	arg = 0;
-	if (!PyArg_ParseTuple(args,
-             "O&i|l;fcntl requires a file or file descriptor,"
-             " an integer and optionally a third integer or a string", 
-			      conv_descriptor, &fd, &code, &arg)) {
-	  return NULL;
-	}
-	Py_BEGIN_ALLOW_THREADS
-	ret = fcntl(fd, code, arg);
-	Py_END_ALLOW_THREADS
-	if (ret < 0) {
-		PyErr_SetFromErrno(PyExc_IOError);
-		return NULL;
-	}
-	return PyLong_FromLong((long)ret);
+    PyErr_Clear();
+    arg = 0;
+    if (!PyArg_ParseTuple(args,
+         "O&i|l;fcntl requires a file or file descriptor,"
+         " an integer and optionally a third integer or a string",
+                          conv_descriptor, &fd, &code, &arg)) {
+      return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
+    ret = fcntl(fd, code, arg);
+    Py_END_ALLOW_THREADS
+    if (ret < 0) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
+    return PyLong_FromLong((long)ret);
 }
 
 PyDoc_STRVAR(fcntl_doc,
@@ -96,128 +96,128 @@ static PyObject *
 fcntl_ioctl(PyObject *self, PyObject *args)
 {
 #define IOCTL_BUFSZ 1024
-	int fd;
-	/* In PyArg_ParseTuple below, we use the unsigned non-checked 'I'
-	   format for the 'code' parameter because Python turns 0x8000000
-	   into either a large positive number (PyLong or PyInt on 64-bit
-	   platforms) or a negative number on others (32-bit PyInt)
-	   whereas the system expects it to be a 32bit bit field value
-	   regardless of it being passed as an int or unsigned long on
-	   various platforms.  See the termios.TIOCSWINSZ constant across
-	   platforms for an example of thise.
+    int fd;
+    /* In PyArg_ParseTuple below, we use the unsigned non-checked 'I'
+       format for the 'code' parameter because Python turns 0x8000000
+       into either a large positive number (PyLong or PyInt on 64-bit
+       platforms) or a negative number on others (32-bit PyInt)
+       whereas the system expects it to be a 32bit bit field value
+       regardless of it being passed as an int or unsigned long on
+       various platforms.  See the termios.TIOCSWINSZ constant across
+       platforms for an example of thise.
 
-	   If any of the 64bit platforms ever decide to use more than 32bits
-	   in their unsigned long ioctl codes this will break and need
-	   special casing based on the platform being built on.
-	 */
-	unsigned int code;
-	int arg;
-	int ret;
-	Py_buffer pstr;
-	char *str;
-	Py_ssize_t len;
-	int mutate_arg = 1;
- 	char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
+       If any of the 64bit platforms ever decide to use more than 32bits
+       in their unsigned long ioctl codes this will break and need
+       special casing based on the platform being built on.
+     */
+    unsigned int code;
+    int arg;
+    int ret;
+    Py_buffer pstr;
+    char *str;
+    Py_ssize_t len;
+    int mutate_arg = 1;
+    char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
 
-	if (PyArg_ParseTuple(args, "O&Iw*|i:ioctl",
-                             conv_descriptor, &fd, &code, 
-			     &pstr, &mutate_arg)) {
-		char *arg;
-		str = pstr.buf;
-		len = pstr.len;
+    if (PyArg_ParseTuple(args, "O&Iw*|i:ioctl",
+                         conv_descriptor, &fd, &code,
+                         &pstr, &mutate_arg)) {
+        char *arg;
+        str = pstr.buf;
+        len = pstr.len;
 
-	       	if (mutate_arg) {
-			if (len <= IOCTL_BUFSZ) {
-				memcpy(buf, str, len);
-				buf[len] = '\0';
-				arg = buf;
-			} 
-			else {
-				arg = str;
-			}
-		}
-		else {
-			if (len > IOCTL_BUFSZ) {
-				PyBuffer_Release(&pstr);
-				PyErr_SetString(PyExc_ValueError,
-					"ioctl string arg too long");
-				return NULL;
-			}
-			else {
-				memcpy(buf, str, len);
-				buf[len] = '\0';
-				arg = buf;
-			}
-		}
-		if (buf == arg) {
-			Py_BEGIN_ALLOW_THREADS /* think array.resize() */
-			ret = ioctl(fd, code, arg);
-			Py_END_ALLOW_THREADS
-		}
-		else {
-			ret = ioctl(fd, code, arg);
-		}
-		if (mutate_arg && (len < IOCTL_BUFSZ)) {
-			memcpy(str, buf, len);
-		}
-		PyBuffer_Release(&pstr); /* No further access to str below this point */
-		if (ret < 0) {
-			PyErr_SetFromErrno(PyExc_IOError);
-			return NULL;
-		}
-		if (mutate_arg) {
-			return PyLong_FromLong(ret);
-		}
-		else {
-			return PyBytes_FromStringAndSize(buf, len);
-		}
-	}
+        if (mutate_arg) {
+            if (len <= IOCTL_BUFSZ) {
+                memcpy(buf, str, len);
+                buf[len] = '\0';
+                arg = buf;
+            }
+            else {
+                arg = str;
+            }
+        }
+        else {
+            if (len > IOCTL_BUFSZ) {
+                PyBuffer_Release(&pstr);
+                PyErr_SetString(PyExc_ValueError,
+                    "ioctl string arg too long");
+                return NULL;
+            }
+            else {
+                memcpy(buf, str, len);
+                buf[len] = '\0';
+                arg = buf;
+            }
+        }
+        if (buf == arg) {
+            Py_BEGIN_ALLOW_THREADS /* think array.resize() */
+            ret = ioctl(fd, code, arg);
+            Py_END_ALLOW_THREADS
+        }
+        else {
+            ret = ioctl(fd, code, arg);
+        }
+        if (mutate_arg && (len < IOCTL_BUFSZ)) {
+            memcpy(str, buf, len);
+        }
+        PyBuffer_Release(&pstr); /* No further access to str below this point */
+        if (ret < 0) {
+            PyErr_SetFromErrno(PyExc_IOError);
+            return NULL;
+        }
+        if (mutate_arg) {
+            return PyLong_FromLong(ret);
+        }
+        else {
+            return PyBytes_FromStringAndSize(buf, len);
+        }
+    }
 
-	PyErr_Clear();
-	if (PyArg_ParseTuple(args, "O&Is*:ioctl",
-                             conv_descriptor, &fd, &code, &pstr)) {
-		str = pstr.buf;
-		len = pstr.len;
-		if (len > IOCTL_BUFSZ) {
-			PyBuffer_Release(&pstr);
-			PyErr_SetString(PyExc_ValueError,
-					"ioctl string arg too long");
-			return NULL;
-		}
-		memcpy(buf, str, len);
-		buf[len] = '\0';
-		Py_BEGIN_ALLOW_THREADS
-		ret = ioctl(fd, code, buf);
-		Py_END_ALLOW_THREADS
-		if (ret < 0) {
-			PyBuffer_Release(&pstr);
-			PyErr_SetFromErrno(PyExc_IOError);
-			return NULL;
-		}
-		PyBuffer_Release(&pstr);
-		return PyBytes_FromStringAndSize(buf, len);
-	}
+    PyErr_Clear();
+    if (PyArg_ParseTuple(args, "O&Is*:ioctl",
+                         conv_descriptor, &fd, &code, &pstr)) {
+        str = pstr.buf;
+        len = pstr.len;
+        if (len > IOCTL_BUFSZ) {
+            PyBuffer_Release(&pstr);
+            PyErr_SetString(PyExc_ValueError,
+                            "ioctl string arg too long");
+            return NULL;
+        }
+        memcpy(buf, str, len);
+        buf[len] = '\0';
+        Py_BEGIN_ALLOW_THREADS
+        ret = ioctl(fd, code, buf);
+        Py_END_ALLOW_THREADS
+        if (ret < 0) {
+            PyBuffer_Release(&pstr);
+            PyErr_SetFromErrno(PyExc_IOError);
+            return NULL;
+        }
+        PyBuffer_Release(&pstr);
+        return PyBytes_FromStringAndSize(buf, len);
+    }
 
-	PyErr_Clear();
-	arg = 0;
-	if (!PyArg_ParseTuple(args,
-	     "O&I|i;ioctl requires a file or file descriptor,"
-	     " an integer and optionally an integer or buffer argument",
-			      conv_descriptor, &fd, &code, &arg)) {
-	  return NULL;
-	}
-	Py_BEGIN_ALLOW_THREADS
+    PyErr_Clear();
+    arg = 0;
+    if (!PyArg_ParseTuple(args,
+         "O&I|i;ioctl requires a file or file descriptor,"
+         " an integer and optionally an integer or buffer argument",
+                          conv_descriptor, &fd, &code, &arg)) {
+      return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
 #ifdef __VMS
-	ret = ioctl(fd, code, (void *)arg);
+    ret = ioctl(fd, code, (void *)arg);
 #else
-	ret = ioctl(fd, code, arg);
+    ret = ioctl(fd, code, arg);
 #endif
-	Py_END_ALLOW_THREADS
-	if (ret < 0) {
-		PyErr_SetFromErrno(PyExc_IOError);
-		return NULL;
-	}
-	return PyLong_FromLong((long)ret);
+    Py_END_ALLOW_THREADS
+    if (ret < 0) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
+    return PyLong_FromLong((long)ret);
 #undef IOCTL_BUFSZ
 }
 
@@ -258,51 +258,51 @@ code.");
 static PyObject *
 fcntl_flock(PyObject *self, PyObject *args)
 {
-	int fd;
-	int code;
-	int ret;
+    int fd;
+    int code;
+    int ret;
 
-	if (!PyArg_ParseTuple(args, "O&i:flock",
-                              conv_descriptor, &fd, &code))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "O&i:flock",
+                          conv_descriptor, &fd, &code))
+        return NULL;
 
 #ifdef HAVE_FLOCK
-	Py_BEGIN_ALLOW_THREADS
-	ret = flock(fd, code);
-	Py_END_ALLOW_THREADS
+    Py_BEGIN_ALLOW_THREADS
+    ret = flock(fd, code);
+    Py_END_ALLOW_THREADS
 #else
 
 #ifndef LOCK_SH
-#define LOCK_SH		1	/* shared lock */
-#define LOCK_EX		2	/* exclusive lock */
-#define LOCK_NB		4	/* don't block when locking */
-#define LOCK_UN		8	/* unlock */
+#define LOCK_SH         1       /* shared lock */
+#define LOCK_EX         2       /* exclusive lock */
+#define LOCK_NB         4       /* don't block when locking */
+#define LOCK_UN         8       /* unlock */
 #endif
-	{
-		struct flock l;
-		if (code == LOCK_UN)
-			l.l_type = F_UNLCK;
-		else if (code & LOCK_SH)
-			l.l_type = F_RDLCK;
-		else if (code & LOCK_EX)
-			l.l_type = F_WRLCK;
-		else {
-			PyErr_SetString(PyExc_ValueError,
-					"unrecognized flock argument");
-			return NULL;
-		}
-		l.l_whence = l.l_start = l.l_len = 0;
-		Py_BEGIN_ALLOW_THREADS
-		ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
-		Py_END_ALLOW_THREADS
-	}
+    {
+        struct flock l;
+        if (code == LOCK_UN)
+            l.l_type = F_UNLCK;
+        else if (code & LOCK_SH)
+            l.l_type = F_RDLCK;
+        else if (code & LOCK_EX)
+            l.l_type = F_WRLCK;
+        else {
+            PyErr_SetString(PyExc_ValueError,
+                            "unrecognized flock argument");
+            return NULL;
+        }
+        l.l_whence = l.l_start = l.l_len = 0;
+        Py_BEGIN_ALLOW_THREADS
+        ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+        Py_END_ALLOW_THREADS
+    }
 #endif /* HAVE_FLOCK */
-	if (ret < 0) {
-		PyErr_SetFromErrno(PyExc_IOError);
-		return NULL;
-	}
-	Py_INCREF(Py_None);
-	return Py_None;
+    if (ret < 0) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(flock_doc,
@@ -317,72 +317,72 @@ emulated using fcntl().)");
 static PyObject *
 fcntl_lockf(PyObject *self, PyObject *args)
 {
-	int fd, code, ret, whence = 0;
-	PyObject *lenobj = NULL, *startobj = NULL;
+    int fd, code, ret, whence = 0;
+    PyObject *lenobj = NULL, *startobj = NULL;
 
-	if (!PyArg_ParseTuple(args, "O&i|OOi:lockf",
-                              conv_descriptor, &fd, &code,
-			      &lenobj, &startobj, &whence))
-	    return NULL;
+    if (!PyArg_ParseTuple(args, "O&i|OOi:lockf",
+                          conv_descriptor, &fd, &code,
+                          &lenobj, &startobj, &whence))
+        return NULL;
 
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
-	PyErr_SetString(PyExc_NotImplementedError,
-			"lockf not supported on OS/2 (EMX)");
-	return NULL;
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "lockf not supported on OS/2 (EMX)");
+    return NULL;
 #else
 #ifndef LOCK_SH
-#define LOCK_SH		1	/* shared lock */
-#define LOCK_EX		2	/* exclusive lock */
-#define LOCK_NB		4	/* don't block when locking */
-#define LOCK_UN		8	/* unlock */
+#define LOCK_SH         1       /* shared lock */
+#define LOCK_EX         2       /* exclusive lock */
+#define LOCK_NB         4       /* don't block when locking */
+#define LOCK_UN         8       /* unlock */
 #endif  /* LOCK_SH */
-	{
-		struct flock l;
-		if (code == LOCK_UN)
-			l.l_type = F_UNLCK;
-		else if (code & LOCK_SH)
-			l.l_type = F_RDLCK;
-		else if (code & LOCK_EX)
-			l.l_type = F_WRLCK;
-		else {
-			PyErr_SetString(PyExc_ValueError,
-					"unrecognized lockf argument");
-			return NULL;
-		}
-		l.l_start = l.l_len = 0;
-		if (startobj != NULL) {
+    {
+        struct flock l;
+        if (code == LOCK_UN)
+            l.l_type = F_UNLCK;
+        else if (code & LOCK_SH)
+            l.l_type = F_RDLCK;
+        else if (code & LOCK_EX)
+            l.l_type = F_WRLCK;
+        else {
+            PyErr_SetString(PyExc_ValueError,
+                            "unrecognized lockf argument");
+            return NULL;
+        }
+        l.l_start = l.l_len = 0;
+        if (startobj != NULL) {
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-			l.l_start = PyLong_AsLong(startobj);
+            l.l_start = PyLong_AsLong(startobj);
 #else
-			l.l_start = PyLong_Check(startobj) ?
-					PyLong_AsLongLong(startobj) :
-					PyLong_AsLong(startobj);
+            l.l_start = PyLong_Check(startobj) ?
+                            PyLong_AsLongLong(startobj) :
+                    PyLong_AsLong(startobj);
 #endif
-			if (PyErr_Occurred())
-				return NULL;
-		}
-		if (lenobj != NULL) {
+            if (PyErr_Occurred())
+                return NULL;
+        }
+        if (lenobj != NULL) {
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-			l.l_len = PyLong_AsLong(lenobj);
+            l.l_len = PyLong_AsLong(lenobj);
 #else
-			l.l_len = PyLong_Check(lenobj) ?
-					PyLong_AsLongLong(lenobj) :
-					PyLong_AsLong(lenobj);
+            l.l_len = PyLong_Check(lenobj) ?
+                            PyLong_AsLongLong(lenobj) :
+                    PyLong_AsLong(lenobj);
 #endif
-			if (PyErr_Occurred())
-				return NULL;
-		}
-		l.l_whence = whence;
-		Py_BEGIN_ALLOW_THREADS
-		ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
-		Py_END_ALLOW_THREADS
-	}
-	if (ret < 0) {
-		PyErr_SetFromErrno(PyExc_IOError);
-		return NULL;
-	}
-	Py_INCREF(Py_None);
-	return Py_None;
+            if (PyErr_Occurred())
+                return NULL;
+        }
+        l.l_whence = whence;
+        Py_BEGIN_ALLOW_THREADS
+        ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+        Py_END_ALLOW_THREADS
+    }
+    if (ret < 0) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return NULL;
+    }
+    Py_INCREF(Py_None);
+    return Py_None;
 #endif  /* defined(PYOS_OS2) && defined(PYCC_GCC) */
 }
 
@@ -414,11 +414,11 @@ starts.  whence is as with fileobj.seek(), specifically:\n\
 /* List of functions */
 
 static PyMethodDef fcntl_methods[] = {
-	{"fcntl",	fcntl_fcntl, METH_VARARGS, fcntl_doc},
-	{"ioctl",	fcntl_ioctl, METH_VARARGS, ioctl_doc},
-	{"flock",	fcntl_flock, METH_VARARGS, flock_doc},
-	{"lockf",       fcntl_lockf, METH_VARARGS, lockf_doc},
-	{NULL,		NULL}		/* sentinel */
+    {"fcntl",           fcntl_fcntl, METH_VARARGS, fcntl_doc},
+    {"ioctl",           fcntl_ioctl, METH_VARARGS, ioctl_doc},
+    {"flock",           fcntl_flock, METH_VARARGS, flock_doc},
+    {"lockf",       fcntl_lockf, METH_VARARGS, lockf_doc},
+    {NULL,              NULL}           /* sentinel */
 };
 
 
@@ -433,12 +433,12 @@ a file or socket object.");
 static int
 ins(PyObject* d, char* symbol, long value)
 {
-        PyObject* v = PyLong_FromLong(value);
-        if (!v || PyDict_SetItemString(d, symbol, v) < 0)
-                return -1;
+    PyObject* v = PyLong_FromLong(value);
+    if (!v || PyDict_SetItemString(d, symbol, v) < 0)
+        return -1;
 
-        Py_DECREF(v);
-        return 0;
+    Py_DECREF(v);
+    return 0;
 }
 
 #define INS(x) if (ins(d, #x, (long)x)) return -1
@@ -446,199 +446,199 @@ ins(PyObject* d, char* symbol, long value)
 static int
 all_ins(PyObject* d)
 {
-        if (ins(d, "LOCK_SH", (long)LOCK_SH)) return -1;
-        if (ins(d, "LOCK_EX", (long)LOCK_EX)) return -1;
-        if (ins(d, "LOCK_NB", (long)LOCK_NB)) return -1;
-        if (ins(d, "LOCK_UN", (long)LOCK_UN)) return -1;
+    if (ins(d, "LOCK_SH", (long)LOCK_SH)) return -1;
+    if (ins(d, "LOCK_EX", (long)LOCK_EX)) return -1;
+    if (ins(d, "LOCK_NB", (long)LOCK_NB)) return -1;
+    if (ins(d, "LOCK_UN", (long)LOCK_UN)) return -1;
 /* GNU extensions, as of glibc 2.2.4 */
 #ifdef LOCK_MAND
-        if (ins(d, "LOCK_MAND", (long)LOCK_MAND)) return -1;
+    if (ins(d, "LOCK_MAND", (long)LOCK_MAND)) return -1;
 #endif
 #ifdef LOCK_READ
-        if (ins(d, "LOCK_READ", (long)LOCK_READ)) return -1;
+    if (ins(d, "LOCK_READ", (long)LOCK_READ)) return -1;
 #endif
 #ifdef LOCK_WRITE
-        if (ins(d, "LOCK_WRITE", (long)LOCK_WRITE)) return -1;
+    if (ins(d, "LOCK_WRITE", (long)LOCK_WRITE)) return -1;
 #endif
 #ifdef LOCK_RW
-        if (ins(d, "LOCK_RW", (long)LOCK_RW)) return -1;
+    if (ins(d, "LOCK_RW", (long)LOCK_RW)) return -1;
 #endif
 
 #ifdef F_DUPFD
-        if (ins(d, "F_DUPFD", (long)F_DUPFD)) return -1;
+    if (ins(d, "F_DUPFD", (long)F_DUPFD)) return -1;
 #endif
 #ifdef F_GETFD
-        if (ins(d, "F_GETFD", (long)F_GETFD)) return -1;
+    if (ins(d, "F_GETFD", (long)F_GETFD)) return -1;
 #endif
 #ifdef F_SETFD
-        if (ins(d, "F_SETFD", (long)F_SETFD)) return -1;
+    if (ins(d, "F_SETFD", (long)F_SETFD)) return -1;
 #endif
 #ifdef F_GETFL
-        if (ins(d, "F_GETFL", (long)F_GETFL)) return -1;
+    if (ins(d, "F_GETFL", (long)F_GETFL)) return -1;
 #endif
 #ifdef F_SETFL
-        if (ins(d, "F_SETFL", (long)F_SETFL)) return -1;
+    if (ins(d, "F_SETFL", (long)F_SETFL)) return -1;
 #endif
 #ifdef F_GETLK
-        if (ins(d, "F_GETLK", (long)F_GETLK)) return -1;
+    if (ins(d, "F_GETLK", (long)F_GETLK)) return -1;
 #endif
 #ifdef F_SETLK
-        if (ins(d, "F_SETLK", (long)F_SETLK)) return -1;
+    if (ins(d, "F_SETLK", (long)F_SETLK)) return -1;
 #endif
 #ifdef F_SETLKW
-        if (ins(d, "F_SETLKW", (long)F_SETLKW)) return -1;
+    if (ins(d, "F_SETLKW", (long)F_SETLKW)) return -1;
 #endif
 #ifdef F_GETOWN
-        if (ins(d, "F_GETOWN", (long)F_GETOWN)) return -1;
+    if (ins(d, "F_GETOWN", (long)F_GETOWN)) return -1;
 #endif
 #ifdef F_SETOWN
-        if (ins(d, "F_SETOWN", (long)F_SETOWN)) return -1;
+    if (ins(d, "F_SETOWN", (long)F_SETOWN)) return -1;
 #endif
 #ifdef F_GETSIG
-        if (ins(d, "F_GETSIG", (long)F_GETSIG)) return -1;
+    if (ins(d, "F_GETSIG", (long)F_GETSIG)) return -1;
 #endif
 #ifdef F_SETSIG
-        if (ins(d, "F_SETSIG", (long)F_SETSIG)) return -1;
+    if (ins(d, "F_SETSIG", (long)F_SETSIG)) return -1;
 #endif
 #ifdef F_RDLCK
-        if (ins(d, "F_RDLCK", (long)F_RDLCK)) return -1;
+    if (ins(d, "F_RDLCK", (long)F_RDLCK)) return -1;
 #endif
 #ifdef F_WRLCK
-        if (ins(d, "F_WRLCK", (long)F_WRLCK)) return -1;
+    if (ins(d, "F_WRLCK", (long)F_WRLCK)) return -1;
 #endif
 #ifdef F_UNLCK
-        if (ins(d, "F_UNLCK", (long)F_UNLCK)) return -1;
+    if (ins(d, "F_UNLCK", (long)F_UNLCK)) return -1;
 #endif
 /* LFS constants */
 #ifdef F_GETLK64
-        if (ins(d, "F_GETLK64", (long)F_GETLK64)) return -1;
+    if (ins(d, "F_GETLK64", (long)F_GETLK64)) return -1;
 #endif
 #ifdef F_SETLK64
-        if (ins(d, "F_SETLK64", (long)F_SETLK64)) return -1;
+    if (ins(d, "F_SETLK64", (long)F_SETLK64)) return -1;
 #endif
 #ifdef F_SETLKW64
-        if (ins(d, "F_SETLKW64", (long)F_SETLKW64)) return -1;
+    if (ins(d, "F_SETLKW64", (long)F_SETLKW64)) return -1;
 #endif
 /* GNU extensions, as of glibc 2.2.4. */
 #ifdef FASYNC
-        if (ins(d, "FASYNC", (long)FASYNC)) return -1;
+    if (ins(d, "FASYNC", (long)FASYNC)) return -1;
 #endif
 #ifdef F_SETLEASE
-        if (ins(d, "F_SETLEASE", (long)F_SETLEASE)) return -1;
+    if (ins(d, "F_SETLEASE", (long)F_SETLEASE)) return -1;
 #endif
 #ifdef F_GETLEASE
-        if (ins(d, "F_GETLEASE", (long)F_GETLEASE)) return -1;
+    if (ins(d, "F_GETLEASE", (long)F_GETLEASE)) return -1;
 #endif
 #ifdef F_NOTIFY
-        if (ins(d, "F_NOTIFY", (long)F_NOTIFY)) return -1;
+    if (ins(d, "F_NOTIFY", (long)F_NOTIFY)) return -1;
 #endif
 /* Old BSD flock(). */
 #ifdef F_EXLCK
-        if (ins(d, "F_EXLCK", (long)F_EXLCK)) return -1;
+    if (ins(d, "F_EXLCK", (long)F_EXLCK)) return -1;
 #endif
 #ifdef F_SHLCK
-        if (ins(d, "F_SHLCK", (long)F_SHLCK)) return -1;
+    if (ins(d, "F_SHLCK", (long)F_SHLCK)) return -1;
 #endif
 
 /* OS X (and maybe others) let you tell the storage device to flush to physical media */
 #ifdef F_FULLFSYNC
-        if (ins(d, "F_FULLFSYNC", (long)F_FULLFSYNC)) return -1;
+    if (ins(d, "F_FULLFSYNC", (long)F_FULLFSYNC)) return -1;
 #endif
 
 /* For F_{GET|SET}FL */
 #ifdef FD_CLOEXEC
-        if (ins(d, "FD_CLOEXEC", (long)FD_CLOEXEC)) return -1;
+    if (ins(d, "FD_CLOEXEC", (long)FD_CLOEXEC)) return -1;
 #endif
 
 /* For F_NOTIFY */
 #ifdef DN_ACCESS
-        if (ins(d, "DN_ACCESS", (long)DN_ACCESS)) return -1;
+    if (ins(d, "DN_ACCESS", (long)DN_ACCESS)) return -1;
 #endif
 #ifdef DN_MODIFY
-        if (ins(d, "DN_MODIFY", (long)DN_MODIFY)) return -1;
+    if (ins(d, "DN_MODIFY", (long)DN_MODIFY)) return -1;
 #endif
 #ifdef DN_CREATE
-        if (ins(d, "DN_CREATE", (long)DN_CREATE)) return -1;
+    if (ins(d, "DN_CREATE", (long)DN_CREATE)) return -1;
 #endif
 #ifdef DN_DELETE
-        if (ins(d, "DN_DELETE", (long)DN_DELETE)) return -1;
+    if (ins(d, "DN_DELETE", (long)DN_DELETE)) return -1;
 #endif
 #ifdef DN_RENAME
-        if (ins(d, "DN_RENAME", (long)DN_RENAME)) return -1;
+    if (ins(d, "DN_RENAME", (long)DN_RENAME)) return -1;
 #endif
 #ifdef DN_ATTRIB
-        if (ins(d, "DN_ATTRIB", (long)DN_ATTRIB)) return -1;
+    if (ins(d, "DN_ATTRIB", (long)DN_ATTRIB)) return -1;
 #endif
 #ifdef DN_MULTISHOT
-        if (ins(d, "DN_MULTISHOT", (long)DN_MULTISHOT)) return -1;
+    if (ins(d, "DN_MULTISHOT", (long)DN_MULTISHOT)) return -1;
 #endif
 
 #ifdef HAVE_STROPTS_H
-	/* Unix 98 guarantees that these are in stropts.h. */
-	INS(I_PUSH);
-	INS(I_POP);
-	INS(I_LOOK);
-	INS(I_FLUSH);
-	INS(I_FLUSHBAND);
-	INS(I_SETSIG);
-	INS(I_GETSIG);
-	INS(I_FIND);
-	INS(I_PEEK);
-	INS(I_SRDOPT);
-	INS(I_GRDOPT);
-	INS(I_NREAD);
-	INS(I_FDINSERT);
-	INS(I_STR);
-	INS(I_SWROPT);
+    /* Unix 98 guarantees that these are in stropts.h. */
+    INS(I_PUSH);
+    INS(I_POP);
+    INS(I_LOOK);
+    INS(I_FLUSH);
+    INS(I_FLUSHBAND);
+    INS(I_SETSIG);
+    INS(I_GETSIG);
+    INS(I_FIND);
+    INS(I_PEEK);
+    INS(I_SRDOPT);
+    INS(I_GRDOPT);
+    INS(I_NREAD);
+    INS(I_FDINSERT);
+    INS(I_STR);
+    INS(I_SWROPT);
 #ifdef I_GWROPT
-	/* despite the comment above, old-ish glibcs miss a couple... */
-	INS(I_GWROPT);
+    /* despite the comment above, old-ish glibcs miss a couple... */
+    INS(I_GWROPT);
 #endif
-	INS(I_SENDFD);
-	INS(I_RECVFD);
-	INS(I_LIST);
-	INS(I_ATMARK);
-	INS(I_CKBAND);
-	INS(I_GETBAND);
-	INS(I_CANPUT);
-	INS(I_SETCLTIME);
+    INS(I_SENDFD);
+    INS(I_RECVFD);
+    INS(I_LIST);
+    INS(I_ATMARK);
+    INS(I_CKBAND);
+    INS(I_GETBAND);
+    INS(I_CANPUT);
+    INS(I_SETCLTIME);
 #ifdef I_GETCLTIME
-	INS(I_GETCLTIME);
+    INS(I_GETCLTIME);
 #endif
-	INS(I_LINK);
-	INS(I_UNLINK);
-	INS(I_PLINK);
-	INS(I_PUNLINK);
+    INS(I_LINK);
+    INS(I_UNLINK);
+    INS(I_PLINK);
+    INS(I_PUNLINK);
 #endif
-	
-	return 0;
+
+    return 0;
 }
 
 
 static struct PyModuleDef fcntlmodule = {
-	PyModuleDef_HEAD_INIT,
-	"fcntl",
-	module_doc,
-	-1,
-	fcntl_methods,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+    PyModuleDef_HEAD_INIT,
+    "fcntl",
+    module_doc,
+    -1,
+    fcntl_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC
 PyInit_fcntl(void)
 {
-	PyObject *m, *d;
+    PyObject *m, *d;
 
-	/* Create the module and add the functions and documentation */
-	m = PyModule_Create(&fcntlmodule);
-	if (m == NULL)
-		return NULL;
+    /* Create the module and add the functions and documentation */
+    m = PyModule_Create(&fcntlmodule);
+    if (m == NULL)
+        return NULL;
 
-	/* Add some symbolic constants to the module */
-	d = PyModule_GetDict(m);
-	all_ins(d);
-	return m;
+    /* Add some symbolic constants to the module */
+    d = PyModule_GetDict(m);
+    all_ins(d);
+    return m;
 }

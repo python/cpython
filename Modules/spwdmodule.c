@@ -27,16 +27,16 @@ You have to be root to be able to use this module.");
 #if defined(HAVE_GETSPNAM) || defined(HAVE_GETSPENT)
 
 static PyStructSequence_Field struct_spwd_type_fields[] = {
-	{"sp_nam", "login name"},
-	{"sp_pwd", "encrypted password"},
-	{"sp_lstchg", "date of last change"},
-	{"sp_min", "min #days between changes"}, 
-	{"sp_max", "max #days between changes"}, 
-	{"sp_warn", "#days before pw expires to warn user about it"}, 
-	{"sp_inact", "#days after pw expires until account is blocked"},
-	{"sp_expire", "#days since 1970-01-01 until account is disabled"},
-	{"sp_flag", "reserved"},
-	{0}
+    {"sp_nam", "login name"},
+    {"sp_pwd", "encrypted password"},
+    {"sp_lstchg", "date of last change"},
+    {"sp_min", "min #days between changes"},
+    {"sp_max", "max #days between changes"},
+    {"sp_warn", "#days before pw expires to warn user about it"},
+    {"sp_inact", "#days after pw expires until account is blocked"},
+    {"sp_expire", "#days since 1970-01-01 until account is disabled"},
+    {"sp_flag", "reserved"},
+    {0}
 };
 
 PyDoc_STRVAR(struct_spwd__doc__,
@@ -46,10 +46,10 @@ This object may be accessed either as a 9-tuple of\n\
 or via the object attributes as named in the above tuple.");
 
 static PyStructSequence_Desc struct_spwd_type_desc = {
-	"spwd.struct_spwd",
-	struct_spwd__doc__,
-	struct_spwd_type_fields,
-	9,
+    "spwd.struct_spwd",
+    struct_spwd__doc__,
+    struct_spwd_type_fields,
+    9,
 };
 
 static int initialized;
@@ -60,43 +60,43 @@ static void
 sets(PyObject *v, int i, const char* val)
 {
   if (val) {
-	  PyObject *o = PyUnicode_DecodeFSDefault(val);
-	  PyStructSequence_SET_ITEM(v, i, o);
+      PyObject *o = PyUnicode_DecodeFSDefault(val);
+      PyStructSequence_SET_ITEM(v, i, o);
   } else {
-	  PyStructSequence_SET_ITEM(v, i, Py_None);
-	  Py_INCREF(Py_None);
+      PyStructSequence_SET_ITEM(v, i, Py_None);
+      Py_INCREF(Py_None);
   }
 }
 
 static PyObject *mkspent(struct spwd *p)
 {
-	int setIndex = 0;
-	PyObject *v = PyStructSequence_New(&StructSpwdType);
-	if (v == NULL)
-		return NULL;
+    int setIndex = 0;
+    PyObject *v = PyStructSequence_New(&StructSpwdType);
+    if (v == NULL)
+        return NULL;
 
 #define SETI(i,val) PyStructSequence_SET_ITEM(v, i, PyLong_FromLong((long) val))
 #define SETS(i,val) sets(v, i, val)
 
-	SETS(setIndex++, p->sp_namp);
-	SETS(setIndex++, p->sp_pwdp);
-	SETI(setIndex++, p->sp_lstchg);
-	SETI(setIndex++, p->sp_min);
-	SETI(setIndex++, p->sp_max);
-	SETI(setIndex++, p->sp_warn);
-	SETI(setIndex++, p->sp_inact);
-	SETI(setIndex++, p->sp_expire);
-	SETI(setIndex++, p->sp_flag);
+    SETS(setIndex++, p->sp_namp);
+    SETS(setIndex++, p->sp_pwdp);
+    SETI(setIndex++, p->sp_lstchg);
+    SETI(setIndex++, p->sp_min);
+    SETI(setIndex++, p->sp_max);
+    SETI(setIndex++, p->sp_warn);
+    SETI(setIndex++, p->sp_inact);
+    SETI(setIndex++, p->sp_expire);
+    SETI(setIndex++, p->sp_flag);
 
 #undef SETS
 #undef SETI
 
-	if (PyErr_Occurred()) {
-		Py_DECREF(v);
-		return NULL;
-	}
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
 
-	return v;
+    return v;
 }
 
 #endif  /* HAVE_GETSPNAM || HAVE_GETSPENT */
@@ -112,26 +112,26 @@ See spwd.__doc__ for more on shadow password database entries.");
 
 static PyObject* spwd_getspnam(PyObject *self, PyObject *args)
 {
-	char *name;
-	struct spwd *p;
-	PyObject *arg, *bytes, *retval = NULL;
+    char *name;
+    struct spwd *p;
+    PyObject *arg, *bytes, *retval = NULL;
 
-	if (!PyArg_ParseTuple(args, "U:getspnam", &arg))
-		return NULL;
-	if ((bytes = PyUnicode_AsEncodedString(arg,
-					       Py_FileSystemDefaultEncoding,
-					       "surrogateescape")) == NULL)
-		return NULL;
-	if (PyBytes_AsStringAndSize(bytes, &name, NULL) == -1)
-		goto out;
-	if ((p = getspnam(name)) == NULL) {
-		PyErr_SetString(PyExc_KeyError, "getspnam(): name not found");
-		goto out;
-	}
-	retval = mkspent(p);
+    if (!PyArg_ParseTuple(args, "U:getspnam", &arg))
+        return NULL;
+    if ((bytes = PyUnicode_AsEncodedString(arg,
+                                           Py_FileSystemDefaultEncoding,
+                                           "surrogateescape")) == NULL)
+        return NULL;
+    if (PyBytes_AsStringAndSize(bytes, &name, NULL) == -1)
+        goto out;
+    if ((p = getspnam(name)) == NULL) {
+        PyErr_SetString(PyExc_KeyError, "getspnam(): name not found");
+        goto out;
+    }
+    retval = mkspent(p);
 out:
-	Py_DECREF(bytes);
-	return retval;
+    Py_DECREF(bytes);
+    return retval;
 }
 
 #endif /* HAVE_GETSPNAM */
@@ -147,63 +147,63 @@ See spwd.__doc__ for more on shadow password database entries.");
 static PyObject *
 spwd_getspall(PyObject *self, PyObject *args)
 {
-	PyObject *d;
-	struct spwd *p;
-	if ((d = PyList_New(0)) == NULL)
-		return NULL;
-	setspent();
-	while ((p = getspent()) != NULL) {
-		PyObject *v = mkspent(p);
-		if (v == NULL || PyList_Append(d, v) != 0) {
-			Py_XDECREF(v);
-			Py_DECREF(d);
-			endspent();
-			return NULL;
-		}
-		Py_DECREF(v);
-	}
-	endspent();
-	return d;
+    PyObject *d;
+    struct spwd *p;
+    if ((d = PyList_New(0)) == NULL)
+        return NULL;
+    setspent();
+    while ((p = getspent()) != NULL) {
+        PyObject *v = mkspent(p);
+        if (v == NULL || PyList_Append(d, v) != 0) {
+            Py_XDECREF(v);
+            Py_DECREF(d);
+            endspent();
+            return NULL;
+        }
+        Py_DECREF(v);
+    }
+    endspent();
+    return d;
 }
 
 #endif /* HAVE_GETSPENT */
 
 static PyMethodDef spwd_methods[] = {
-#ifdef HAVE_GETSPNAM	
-	{"getspnam",	spwd_getspnam, METH_VARARGS, spwd_getspnam__doc__},
+#ifdef HAVE_GETSPNAM
+    {"getspnam",        spwd_getspnam, METH_VARARGS, spwd_getspnam__doc__},
 #endif
 #ifdef HAVE_GETSPENT
-	{"getspall",	spwd_getspall, METH_NOARGS, spwd_getspall__doc__},
+    {"getspall",        spwd_getspall, METH_NOARGS, spwd_getspall__doc__},
 #endif
-	{NULL,		NULL}		/* sentinel */
+    {NULL,              NULL}           /* sentinel */
 };
 
 
 
 static struct PyModuleDef spwdmodule = {
-	PyModuleDef_HEAD_INIT,
-	"spwd",
-	spwd__doc__,
-	-1,
-	spwd_methods,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+    PyModuleDef_HEAD_INIT,
+    "spwd",
+    spwd__doc__,
+    -1,
+    spwd_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC
 PyInit_spwd(void)
 {
-	PyObject *m;
-	m=PyModule_Create(&spwdmodule);
-	if (m == NULL)
-		return NULL;
-	if (!initialized)
-		PyStructSequence_InitType(&StructSpwdType, 
-					  &struct_spwd_type_desc);
-	Py_INCREF((PyObject *) &StructSpwdType);
-	PyModule_AddObject(m, "struct_spwd", (PyObject *) &StructSpwdType);
-	initialized = 1;
-	return m;
+    PyObject *m;
+    m=PyModule_Create(&spwdmodule);
+    if (m == NULL)
+        return NULL;
+    if (!initialized)
+        PyStructSequence_InitType(&StructSpwdType,
+                                  &struct_spwd_type_desc);
+    Py_INCREF((PyObject *) &StructSpwdType);
+    PyModule_AddObject(m, "struct_spwd", (PyObject *) &StructSpwdType);
+    initialized = 1;
+    return m;
 }

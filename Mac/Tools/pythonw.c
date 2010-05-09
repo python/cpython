@@ -39,8 +39,8 @@ extern char** environ;
  * In a regular framework the structure is:
  *
  *    Python.framework/Versions/2.7
- *    		/Python
- *		/Resources/Python.app/Contents/MacOS/Python
+ *              /Python
+ *              /Resources/Python.app/Contents/MacOS/Python
  *
  * In a virtualenv style structure the expected
  * structure is:
@@ -50,121 +50,121 @@ extern char** environ;
  *       /.Python   <- the dylib
  *       /.Resources/Python.app/Contents/MacOS/Python
  *
- * NOTE: virtualenv's are not an officially supported 
+ * NOTE: virtualenv's are not an officially supported
  * feature, support for that structure is provided as
  * a convenience.
  */
 static char* get_python_path(void)
 {
-	size_t len;
-	Dl_info info;
-	char* end;
-	char* g_path;
+    size_t len;
+    Dl_info info;
+    char* end;
+    char* g_path;
 
-	if (dladdr(Py_Initialize, &info) == 0) {
-		return NULL;
-	}
+    if (dladdr(Py_Initialize, &info) == 0) {
+        return NULL;
+    }
 
-	len = strlen(info.dli_fname);
+    len = strlen(info.dli_fname);
 
-	g_path = malloc(len+60);
-	if (g_path == NULL) {
-		return NULL;
-	}
+    g_path = malloc(len+60);
+    if (g_path == NULL) {
+        return NULL;
+    }
 
-	strcpy(g_path, info.dli_fname);
-	end = g_path + len - 1;
-	while (end != g_path && *end != '/') {
-		end --;
-	}
-	end++;
-	if (*end == '.') {
-		end++;
-	}
-	strcpy(end, "Resources/Python.app/Contents/MacOS/" PYTHONFRAMEWORK);
+    strcpy(g_path, info.dli_fname);
+    end = g_path + len - 1;
+    while (end != g_path && *end != '/') {
+        end --;
+    }
+    end++;
+    if (*end == '.') {
+        end++;
+    }
+    strcpy(end, "Resources/Python.app/Contents/MacOS/" PYTHONFRAMEWORK);
 
-	return g_path;
+    return g_path;
 }
 
 #ifdef HAVE_SPAWN_H
 static void
 setup_spawnattr(posix_spawnattr_t* spawnattr)
 {
-	size_t ocount;
-	size_t count;
-	cpu_type_t cpu_types[1];
-	short flags = 0;
+    size_t ocount;
+    size_t count;
+    cpu_type_t cpu_types[1];
+    short flags = 0;
 #ifdef __LP64__
-	int   ch;
+    int   ch;
 #endif
 
-	if ((errno = posix_spawnattr_init(spawnattr)) != 0) {
-		err(2, "posix_spawnattr_int");
-		/* NOTREACHTED */
-	}
+    if ((errno = posix_spawnattr_init(spawnattr)) != 0) {
+        err(2, "posix_spawnattr_int");
+        /* NOTREACHTED */
+    }
 
-	count = 1;
+    count = 1;
 
-	/* Run the real python executable using the same architure as this 
-	 * executable, this allows users to controle the architecture using 
-	 * "arch -ppc python"
-	 */
+    /* Run the real python executable using the same architure as this
+     * executable, this allows users to controle the architecture using
+     * "arch -ppc python"
+     */
 
 #if defined(__ppc64__)
-	cpu_types[0] = CPU_TYPE_POWERPC64;
+    cpu_types[0] = CPU_TYPE_POWERPC64;
 
 #elif defined(__x86_64__)
-	cpu_types[0] = CPU_TYPE_X86_64;
+    cpu_types[0] = CPU_TYPE_X86_64;
 
 #elif defined(__ppc__)
-	cpu_types[0] = CPU_TYPE_POWERPC;
+    cpu_types[0] = CPU_TYPE_POWERPC;
 #elif defined(__i386__)
-	cpu_types[0] = CPU_TYPE_X86;
+    cpu_types[0] = CPU_TYPE_X86;
 #else
-#	error "Unknown CPU"
+#       error "Unknown CPU"
 #endif
 
-	if (posix_spawnattr_setbinpref_np(spawnattr, count, 
-				cpu_types, &ocount) == -1) {
-		err(1, "posix_spawnattr_setbinpref");
-		/* NOTREACHTED */
-	}
-	if (count != ocount) {
-		fprintf(stderr, "posix_spawnattr_setbinpref failed to copy\n");
-		exit(1);
-		/* NOTREACHTED */
-	}
+    if (posix_spawnattr_setbinpref_np(spawnattr, count,
+                            cpu_types, &ocount) == -1) {
+        err(1, "posix_spawnattr_setbinpref");
+        /* NOTREACHTED */
+    }
+    if (count != ocount) {
+        fprintf(stderr, "posix_spawnattr_setbinpref failed to copy\n");
+        exit(1);
+        /* NOTREACHTED */
+    }
 
 
-	/* 
-	 * Set flag that causes posix_spawn to behave like execv
-	 */
-	flags |= POSIX_SPAWN_SETEXEC;
-	if ((errno = posix_spawnattr_setflags(spawnattr, flags)) != 0) {
-		err(1, "posix_spawnattr_setflags");
-		/* NOTREACHTED */
-	}
+    /*
+     * Set flag that causes posix_spawn to behave like execv
+     */
+    flags |= POSIX_SPAWN_SETEXEC;
+    if ((errno = posix_spawnattr_setflags(spawnattr, flags)) != 0) {
+        err(1, "posix_spawnattr_setflags");
+        /* NOTREACHTED */
+    }
 }
 #endif
 
-int 
+int
 main(int argc, char **argv) {
-	char* exec_path = get_python_path();
+    char* exec_path = get_python_path();
 
 #ifdef HAVE_SPAWN_H
-	/* We're weak-linking to posix-spawnv to ensure that
-	 * an executable build on 10.5 can work on 10.4.
-	 */
-	if (posix_spawn != NULL) {
-		posix_spawnattr_t spawnattr = NULL;
+    /* We're weak-linking to posix-spawnv to ensure that
+     * an executable build on 10.5 can work on 10.4.
+     */
+    if (posix_spawn != NULL) {
+        posix_spawnattr_t spawnattr = NULL;
 
-		setup_spawnattr(&spawnattr);		
-		posix_spawn(NULL, exec_path, NULL,
-			&spawnattr, argv, environ);
-		err(1, "posix_spawn: %s", exec_path);
-	}
+        setup_spawnattr(&spawnattr);
+        posix_spawn(NULL, exec_path, NULL,
+            &spawnattr, argv, environ);
+        err(1, "posix_spawn: %s", exec_path);
+    }
 #endif
-	execve(exec_path, argv, environ);
-	err(1, "execve: %s", argv[0]);
-	/* NOTREACHED */
+    execve(exec_path, argv, environ);
+    err(1, "execve: %s", argv[0]);
+    /* NOTREACHED */
 }

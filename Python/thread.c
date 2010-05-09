@@ -40,7 +40,7 @@
 #endif
 
 /* Check if we're running on HP-UX and _SC_THREADS is defined. If so, then
-   enough of the Posix threads package is implimented to support python 
+   enough of the Posix threads package is implimented to support python
    threads.
 
    This is valid for HP-UX 11.23 running on an ia64 system. If needed, add
@@ -58,8 +58,8 @@
 
 #ifdef Py_DEBUG
 static int thread_debug = 0;
-#define dprintf(args)	(void)((thread_debug & 1) && printf args)
-#define d2printf(args)	((thread_debug & 8) && printf args)
+#define dprintf(args)   (void)((thread_debug & 1) && printf args)
+#define d2printf(args)  ((thread_debug & 8) && printf args)
 #else
 #define dprintf(args)
 #define d2printf(args)
@@ -73,20 +73,20 @@ void
 PyThread_init_thread(void)
 {
 #ifdef Py_DEBUG
-	char *p = Py_GETENV("PYTHONTHREADDEBUG");
+    char *p = Py_GETENV("PYTHONTHREADDEBUG");
 
-	if (p) {
-		if (*p)
-			thread_debug = atoi(p);
-		else
-			thread_debug = 1;
-	}
+    if (p) {
+        if (*p)
+            thread_debug = atoi(p);
+        else
+            thread_debug = 1;
+    }
 #endif /* Py_DEBUG */
-	if (initialized)
-		return;
-	initialized = 1;
-	dprintf(("PyThread_init_thread called\n"));
-	PyThread__init_thread();
+    if (initialized)
+        return;
+    initialized = 1;
+    dprintf(("PyThread_init_thread called\n"));
+    PyThread__init_thread();
 }
 
 /* Support for runtime thread stack size tuning.
@@ -145,21 +145,21 @@ static size_t _pythread_stacksize = 0;
 size_t
 PyThread_get_stacksize(void)
 {
-	return _pythread_stacksize;
+    return _pythread_stacksize;
 }
 
 /* Only platforms defining a THREAD_SET_STACKSIZE() macro
    in thread_<platform>.h support changing the stack size.
    Return 0 if stack size is valid,
-          -1 if stack size value is invalid,
-          -2 if setting stack size is not supported. */
+      -1 if stack size value is invalid,
+      -2 if setting stack size is not supported. */
 int
 PyThread_set_stacksize(size_t size)
 {
 #if defined(THREAD_SET_STACKSIZE)
-	return THREAD_SET_STACKSIZE(size);
+    return THREAD_SET_STACKSIZE(size);
 #else
-	return -2;
+    return -2;
 #endif
 }
 
@@ -211,15 +211,15 @@ that calls to PyThread_create_key() are serialized externally.
  * to enforce exclusion internally.
  */
 struct key {
-	/* Next record in the list, or NULL if this is the last record. */
-	struct key *next;
+    /* Next record in the list, or NULL if this is the last record. */
+    struct key *next;
 
-	/* The thread id, according to PyThread_get_thread_ident(). */
-	long id;
+    /* The thread id, according to PyThread_get_thread_ident(). */
+    long id;
 
-	/* The key and its associated value. */
-	int key;
-	void *value;
+    /* The key and its associated value. */
+    int key;
+    void *value;
 };
 
 static struct key *keyhead = NULL;
@@ -250,41 +250,41 @@ static int nkeys = 0;  /* PyThread_create_key() hands out nkeys+1 next */
 static struct key *
 find_key(int key, void *value)
 {
-	struct key *p, *prev_p;
-	long id = PyThread_get_thread_ident();
+    struct key *p, *prev_p;
+    long id = PyThread_get_thread_ident();
 
-	if (!keymutex)
-		return NULL;
-	PyThread_acquire_lock(keymutex, 1);
-	prev_p = NULL;
-	for (p = keyhead; p != NULL; p = p->next) {
-		if (p->id == id && p->key == key)
-			goto Done;
-		/* Sanity check.  These states should never happen but if
-		 * they do we must abort.  Otherwise we'll end up spinning in
-		 * in a tight loop with the lock held.  A similar check is done
-		 * in pystate.c tstate_delete_common().  */
-		if (p == prev_p)
-			Py_FatalError("tls find_key: small circular list(!)");
-		prev_p = p;
-		if (p->next == keyhead)
-			Py_FatalError("tls find_key: circular list(!)");
-	}
-	if (value == NULL) {
-		assert(p == NULL);
-		goto Done;
-	}
-	p = (struct key *)malloc(sizeof(struct key));
-	if (p != NULL) {
-		p->id = id;
-		p->key = key;
-		p->value = value;
-		p->next = keyhead;
-		keyhead = p;
-	}
+    if (!keymutex)
+        return NULL;
+    PyThread_acquire_lock(keymutex, 1);
+    prev_p = NULL;
+    for (p = keyhead; p != NULL; p = p->next) {
+        if (p->id == id && p->key == key)
+            goto Done;
+        /* Sanity check.  These states should never happen but if
+         * they do we must abort.  Otherwise we'll end up spinning in
+         * in a tight loop with the lock held.  A similar check is done
+         * in pystate.c tstate_delete_common().  */
+        if (p == prev_p)
+            Py_FatalError("tls find_key: small circular list(!)");
+        prev_p = p;
+        if (p->next == keyhead)
+            Py_FatalError("tls find_key: circular list(!)");
+    }
+    if (value == NULL) {
+        assert(p == NULL);
+        goto Done;
+    }
+    p = (struct key *)malloc(sizeof(struct key));
+    if (p != NULL) {
+        p->id = id;
+        p->key = key;
+        p->value = value;
+        p->next = keyhead;
+        keyhead = p;
+    }
  Done:
-	PyThread_release_lock(keymutex);
-	return p;
+    PyThread_release_lock(keymutex);
+    return p;
 }
 
 /* Return a new key.  This must be called before any other functions in
@@ -294,32 +294,32 @@ find_key(int key, void *value)
 int
 PyThread_create_key(void)
 {
-	/* All parts of this function are wrong if it's called by multiple
-	 * threads simultaneously.
-	 */
-	if (keymutex == NULL)
-		keymutex = PyThread_allocate_lock();
-	return ++nkeys;
+    /* All parts of this function are wrong if it's called by multiple
+     * threads simultaneously.
+     */
+    if (keymutex == NULL)
+        keymutex = PyThread_allocate_lock();
+    return ++nkeys;
 }
 
 /* Forget the associations for key across *all* threads. */
 void
 PyThread_delete_key(int key)
 {
-	struct key *p, **q;
+    struct key *p, **q;
 
-	PyThread_acquire_lock(keymutex, 1);
-	q = &keyhead;
-	while ((p = *q) != NULL) {
-		if (p->key == key) {
-			*q = p->next;
-			free((void *)p);
-			/* NB This does *not* free p->value! */
-		}
-		else
-			q = &p->next;
-	}
-	PyThread_release_lock(keymutex);
+    PyThread_acquire_lock(keymutex, 1);
+    q = &keyhead;
+    while ((p = *q) != NULL) {
+        if (p->key == key) {
+            *q = p->next;
+            free((void *)p);
+            /* NB This does *not* free p->value! */
+        }
+        else
+            q = &p->next;
+    }
+    PyThread_release_lock(keymutex);
 }
 
 /* Confusing:  If the current thread has an association for key,
@@ -331,14 +331,14 @@ PyThread_delete_key(int key)
 int
 PyThread_set_key_value(int key, void *value)
 {
-	struct key *p;
+    struct key *p;
 
-	assert(value != NULL);
-	p = find_key(key, value);
-	if (p == NULL)
-		return -1;
-	else
-		return 0;
+    assert(value != NULL);
+    p = find_key(key, value);
+    if (p == NULL)
+        return -1;
+    else
+        return 0;
 }
 
 /* Retrieve the value associated with key in the current thread, or NULL
@@ -347,34 +347,34 @@ PyThread_set_key_value(int key, void *value)
 void *
 PyThread_get_key_value(int key)
 {
-	struct key *p = find_key(key, NULL);
+    struct key *p = find_key(key, NULL);
 
-	if (p == NULL)
-		return NULL;
-	else
-		return p->value;
+    if (p == NULL)
+        return NULL;
+    else
+        return p->value;
 }
 
 /* Forget the current thread's association for key, if any. */
 void
 PyThread_delete_key_value(int key)
 {
-	long id = PyThread_get_thread_ident();
-	struct key *p, **q;
+    long id = PyThread_get_thread_ident();
+    struct key *p, **q;
 
-	PyThread_acquire_lock(keymutex, 1);
-	q = &keyhead;
-	while ((p = *q) != NULL) {
-		if (p->key == key && p->id == id) {
-			*q = p->next;
-			free((void *)p);
-			/* NB This does *not* free p->value! */
-			break;
-		}
-		else
-			q = &p->next;
-	}
-	PyThread_release_lock(keymutex);
+    PyThread_acquire_lock(keymutex, 1);
+    q = &keyhead;
+    while ((p = *q) != NULL) {
+        if (p->key == key && p->id == id) {
+            *q = p->next;
+            free((void *)p);
+            /* NB This does *not* free p->value! */
+            break;
+        }
+        else
+            q = &p->next;
+    }
+    PyThread_release_lock(keymutex);
 }
 
 /* Forget everything not associated with the current thread id.
@@ -385,27 +385,27 @@ PyThread_delete_key_value(int key)
 void
 PyThread_ReInitTLS(void)
 {
-	long id = PyThread_get_thread_ident();
-	struct key *p, **q;
+    long id = PyThread_get_thread_ident();
+    struct key *p, **q;
 
-	if (!keymutex)
-		return;
-	
-	/* As with interpreter_lock in PyEval_ReInitThreads()
-	   we just create a new lock without freeing the old one */
-	keymutex = PyThread_allocate_lock();
+    if (!keymutex)
+        return;
 
-	/* Delete all keys which do not match the current thread id */
-	q = &keyhead;
-	while ((p = *q) != NULL) {
-		if (p->id != id) {
-			*q = p->next;
-			free((void *)p);
-			/* NB This does *not* free p->value! */
-		}
-		else
-			q = &p->next;
-	}
+    /* As with interpreter_lock in PyEval_ReInitThreads()
+       we just create a new lock without freeing the old one */
+    keymutex = PyThread_allocate_lock();
+
+    /* Delete all keys which do not match the current thread id */
+    q = &keyhead;
+    while ((p = *q) != NULL) {
+        if (p->id != id) {
+            *q = p->next;
+            free((void *)p);
+            /* NB This does *not* free p->value! */
+        }
+        else
+            q = &p->next;
+    }
 }
 
 #endif /* Py_HAVE_NATIVE_TLS */
