@@ -937,6 +937,13 @@ class Win32KillTests(unittest.TestCase):
         self._kill_with_event(signal.CTRL_BREAK_EVENT, "CTRL_BREAK_EVENT")
 
 
+class MiscTests(unittest.TestCase):
+    @unittest.skipIf(sys.platform == "win32", "POSIX specific test")
+    def test_fsencode(self):
+        self.assertEquals(os.fsencode(b'ab\xff'), b'ab\xff')
+        self.assertEquals(os.fsencode('ab\uDCFF'), b'ab\xff')
+
+
 def test_main():
     support.run_unittest(
         FileTests,
@@ -951,7 +958,8 @@ def test_main():
         TestInvalidFD,
         PosixUidGidTests,
         Pep383Tests,
-        Win32KillTests
+        Win32KillTests,
+        MiscTests,
     )
 
 if __name__ == "__main__":
