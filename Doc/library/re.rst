@@ -319,7 +319,7 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
    Matches the empty string, but only at the beginning or end of a word.  A word is
    defined as a sequence of alphanumeric or underscore characters, so the end of a
    word is indicated by whitespace or a non-alphanumeric, non-underscore character.
-   Note that  ``\b`` is defined as the boundary between ``\w`` and ``\ W``, so the
+   Note that  ``\b`` is defined as the boundary between ``\w`` and ``\W``, so the
    precise set of characters deemed to be alphanumeric depends on the values of the
    ``UNICODE`` and ``LOCALE`` flags.  Inside a character range, ``\b`` represents
    the backspace character, for compatibility with Python's string literals.
