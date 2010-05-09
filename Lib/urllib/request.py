@@ -2159,7 +2159,7 @@ if sys.platform == 'darwin':
 
         def ip2num(ipAddr):
             parts = ipAddr.split('.')
-            parts = map(int, parts)
+            parts = list(map(int, parts))
             if len(parts) != 4:
                 parts = (parts + [0, 0, 0, 0])[:4]
             return (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]
