@@ -1234,10 +1234,11 @@ PyCursesWindow_NoOutRefresh(PyCursesWindowObject *self, PyObject *args)
   int rtn;
 
 #ifndef WINDOW_HAS_FLAGS
-  if (0) {
+  if (0)
 #else
-  if (self->win->_flags & _ISPAD) {
+  if (self->win->_flags & _ISPAD)
 #endif
+    {
     switch(PyTuple_Size(args)) {
     case 6:
       if (!PyArg_ParseTuple(args, 
@@ -1403,10 +1404,11 @@ PyCursesWindow_Refresh(PyCursesWindowObject *self, PyObject *args)
   int rtn;
   
 #ifndef WINDOW_HAS_FLAGS
-  if (0) {
+  if (0)
 #else
-  if (self->win->_flags & _ISPAD) {
+  if (self->win->_flags & _ISPAD)
 #endif
+    {
     switch(PyTuple_Size(args)) {
     case 6:
       if (!PyArg_ParseTuple(args, 
