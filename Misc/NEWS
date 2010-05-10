@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8674: Fixed a number of incorrect or undefined-behaviour-inducing
+  overflow checks in the audioop module.
+
 - Issue #8571: Fix an internal error when compressing or decompressing a
   chunk larger than 1GB with the zlib module's compressor and decompressor
   objects.
