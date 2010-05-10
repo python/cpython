@@ -243,42 +243,49 @@ PyTypeObject PyCursesWindow_Type;
    */
 
 #define Window_NoArgNoReturnFunction(X) \
-static PyObject *PyCursesWindow_ ## X (PyCursesWindowObject *self, PyObject *args) \
+static PyObject *PyCursesWindow_ ## X \
+(PyCursesWindowObject *self, PyObject *args) \
 { return PyCursesCheckERR(X(self->win), # X); }
 
 #define Window_NoArgTrueFalseFunction(X) \
-static PyObject * PyCursesWindow_ ## X (PyCursesWindowObject *self) \
+static PyObject * PyCursesWindow_ ## X \
+(PyCursesWindowObject *self) \
 { \
   if (X (self->win) == FALSE) { Py_INCREF(Py_False); return Py_False; } \
   else { Py_INCREF(Py_True); return Py_True; } }
 
 #define Window_NoArgNoReturnVoidFunction(X) \
-static PyObject * PyCursesWindow_ ## X (PyCursesWindowObject *self) \
+static PyObject * PyCursesWindow_ ## X \
+(PyCursesWindowObject *self) \
 { \
   X(self->win); Py_INCREF(Py_None); return Py_None; }
 
 #define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR) \
-static PyObject * PyCursesWindow_ ## X (PyCursesWindowObject *self) \
+static PyObject * PyCursesWindow_ ## X \
+(PyCursesWindowObject *self) \
 { \
   TYPE arg1, arg2; \
   X(self->win,arg1,arg2); return Py_BuildValue(ERGSTR, arg1, arg2); } 
 
 #define Window_OneArgNoReturnVoidFunction(X, TYPE, PARSESTR) \
-static PyObject * PyCursesWindow_ ## X (PyCursesWindowObject *self, PyObject *args) \
+static PyObject * PyCursesWindow_ ## X \
+(PyCursesWindowObject *self, PyObject *args) \
 { \
   TYPE arg1; \
   if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) return NULL; \
   X(self->win,arg1); Py_INCREF(Py_None); return Py_None; }
 
 #define Window_OneArgNoReturnFunction(X, TYPE, PARSESTR) \
-static PyObject * PyCursesWindow_ ## X (PyCursesWindowObject *self, PyObject *args) \
+static PyObject * PyCursesWindow_ ## X \
+(PyCursesWindowObject *self, PyObject *args) \
 { \
   TYPE arg1; \
   if (!PyArg_ParseTuple(args,PARSESTR, &arg1)) return NULL; \
   return PyCursesCheckERR(X(self->win, arg1), # X); }
 
 #define Window_TwoArgNoReturnFunction(X, TYPE, PARSESTR) \
-static PyObject * PyCursesWindow_ ## X (PyCursesWindowObject *self, PyObject *args) \
+static PyObject * PyCursesWindow_ ## X \
+(PyCursesWindowObject *self, PyObject *args) \
 { \
   TYPE arg1, arg2; \
   if (!PyArg_ParseTuple(args,PARSESTR, &arg1, &arg2)) return NULL; \
