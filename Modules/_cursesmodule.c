@@ -1705,8 +1705,8 @@ PyCurses_Color_Content(PyObject *self, PyObject *args)
 {
   short color,r,g,b;
 
-  PyCursesInitialised
-  PyCursesInitialisedColor
+  PyCursesInitialised;
+  PyCursesInitialisedColor;
 
   if (!PyArg_ParseTuple(args, "h:color_content", &color)) return NULL;
 
@@ -1724,8 +1724,8 @@ PyCurses_color_pair(PyObject *self, PyObject *args)
 {
   int n;
 
-  PyCursesInitialised
-  PyCursesInitialisedColor
+  PyCursesInitialised;
+  PyCursesInitialisedColor;
 
   if (!PyArg_ParseTuple(args, "i:color_pair", &n)) return NULL;
   return PyInt_FromLong((long) (n << 8));
@@ -1736,7 +1736,7 @@ PyCurses_Curs_Set(PyObject *self, PyObject *args)
 {
   int vis,erg;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args, "i:curs_set", &vis)) return NULL;
 
@@ -1751,7 +1751,7 @@ PyCurses_Delay_Output(PyObject *self, PyObject *args)
 {
   int ms;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args, "i:delay_output", &ms)) return NULL;
 
@@ -1763,7 +1763,7 @@ PyCurses_EraseChar(PyObject *self)
 {
   char ch;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   ch = erasechar();
 
@@ -1776,7 +1776,7 @@ PyCurses_getsyx(PyObject *self)
   int x = 0;
   int y = 0;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   getsyx(y, x);
 
@@ -1790,7 +1790,7 @@ PyCurses_GetMouse(PyObject *self)
 	int rtn;
 	MEVENT event;
 
-	PyCursesInitialised
+	PyCursesInitialised;
 
 	rtn = getmouse( &event );
 	if (rtn == ERR) {
@@ -1808,7 +1808,7 @@ PyCurses_UngetMouse(PyObject *self, PyObject *args)
 {
 	MEVENT event;
 
-	PyCursesInitialised
+	PyCursesInitialised;
 	if (!PyArg_ParseTuple(args, "hiiil",
 			     &event.id, 
 			     &event.x, &event.y, &event.z,
@@ -1824,7 +1824,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *temp)
 {
   WINDOW *win;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyFile_Check(temp)) {
     PyErr_SetString(PyExc_TypeError, "argument must be a file object");
@@ -1846,7 +1846,7 @@ PyCurses_HalfDelay(PyObject *self, PyObject *args)
 {
   unsigned char tenths;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args, "b:halfdelay", &tenths)) return NULL;
 
@@ -1859,7 +1859,7 @@ static PyObject * PyCurses_has_key(PyObject *self, PyObject *args)
 {
   int ch;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args,"i",&ch)) return NULL;
 
@@ -1877,8 +1877,8 @@ PyCurses_Init_Color(PyObject *self, PyObject *args)
 {
   short color, r, g, b;
 
-  PyCursesInitialised
-  PyCursesInitialisedColor
+  PyCursesInitialised;
+  PyCursesInitialisedColor;
 
   switch(PyTuple_Size(args)) {
   case 4:
@@ -1897,8 +1897,8 @@ PyCurses_Init_Pair(PyObject *self, PyObject *args)
 {
   short pair, f, b;
 
-  PyCursesInitialised
-  PyCursesInitialisedColor
+  PyCursesInitialised;
+  PyCursesInitialisedColor;
 
   if (PyTuple_Size(args) != 3) {
     PyErr_SetString(PyExc_TypeError, "init_pair requires 3 arguments");
@@ -2071,7 +2071,7 @@ PyCurses_IntrFlush(PyObject *self, PyObject *args)
 {
   int ch;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   switch(PyTuple_Size(args)) {
   case 1:
@@ -2093,7 +2093,7 @@ PyCurses_Is_Term_Resized(PyObject *self, PyObject *args)
   int columns;
   int result;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args,"ii:is_term_resized", &lines, &columns))
     return NULL;
@@ -2115,7 +2115,7 @@ PyCurses_KeyName(PyObject *self, PyObject *args)
   const char *knp;
   int ch;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args,"i",&ch)) return NULL;
 
@@ -2144,7 +2144,7 @@ PyCurses_Meta(PyObject *self, PyObject *args)
 {
   int ch;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   switch(PyTuple_Size(args)) {
   case 1:
@@ -2163,7 +2163,7 @@ static PyObject *
 PyCurses_MouseInterval(PyObject *self, PyObject *args)
 {
 	int interval;
-	PyCursesInitialised 
+	PyCursesInitialised;
 
 	if (!PyArg_ParseTuple(args,"i;interval",&interval)) 
 		return NULL;
@@ -2176,7 +2176,7 @@ PyCurses_MouseMask(PyObject *self, PyObject *args)
 	int newmask;
 	mmask_t oldmask, availmask;
 
-	PyCursesInitialised 
+	PyCursesInitialised;
 	if (!PyArg_ParseTuple(args,"i;mousemask",&newmask)) 
 		return NULL;
 	availmask = mousemask(newmask, &oldmask);
@@ -2189,7 +2189,7 @@ PyCurses_Napms(PyObject *self, PyObject *args)
 {
     int ms;
 
-    PyCursesInitialised
+    PyCursesInitialised;
     if (!PyArg_ParseTuple(args, "i;ms", &ms)) return NULL;
 
     return Py_BuildValue("i", napms(ms));
@@ -2202,7 +2202,7 @@ PyCurses_NewPad(PyObject *self, PyObject *args)
   WINDOW *win;
   int nlines, ncols;
 
-  PyCursesInitialised 
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args,"ii;nlines,ncols",&nlines,&ncols)) return NULL;
 
@@ -2222,7 +2222,7 @@ PyCurses_NewWindow(PyObject *self, PyObject *args)
   WINDOW *win;
   int nlines, ncols, begin_y=0, begin_x=0;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   switch (PyTuple_Size(args)) {
   case 2:
@@ -2253,8 +2253,8 @@ PyCurses_Pair_Content(PyObject *self, PyObject *args)
 {
   short pair,f,b;
 
-  PyCursesInitialised
-  PyCursesInitialisedColor
+  PyCursesInitialised;
+  PyCursesInitialisedColor;
 
   switch(PyTuple_Size(args)) {
   case 1:
@@ -2279,8 +2279,8 @@ PyCurses_pair_number(PyObject *self, PyObject *args)
 {
   int n;
 
-  PyCursesInitialised
-  PyCursesInitialisedColor
+  PyCursesInitialised;
+  PyCursesInitialisedColor;
 
   switch(PyTuple_Size(args)) {
   case 1:
@@ -2309,7 +2309,7 @@ PyCurses_QiFlush(PyObject *self, PyObject *args)
 {
   int flag = 0;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   switch(PyTuple_Size(args)) {
   case 0:
@@ -2385,7 +2385,7 @@ PyCurses_ResizeTerm(PyObject *self, PyObject *args)
   int columns;
   PyObject *result;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args,"ii:resizeterm", &lines, &columns))
     return NULL;
@@ -2409,7 +2409,7 @@ PyCurses_Resize_Term(PyObject *self, PyObject *args)
 
   PyObject *result;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args,"ii:resize_term", &lines, &columns))
     return NULL;
@@ -2428,7 +2428,7 @@ PyCurses_setsyx(PyObject *self, PyObject *args)
 {
   int y,x;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (PyTuple_Size(args)!=2) {
     PyErr_SetString(PyExc_TypeError, "setsyx requires 2 arguments");
@@ -2449,7 +2449,7 @@ PyCurses_Start_Color(PyObject *self)
   int code;
   PyObject *c, *cp;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   code = start_color();
   if (code != ERR) {
@@ -2541,7 +2541,7 @@ PyCurses_TypeAhead(PyObject *self, PyObject *args)
 {
   int fd;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args,"i;fd",&fd)) return NULL;
 
@@ -2554,7 +2554,7 @@ PyCurses_UnCtrl(PyObject *self, PyObject *args)
   PyObject *temp;
   chtype ch;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
@@ -2576,7 +2576,7 @@ PyCurses_UngetCh(PyObject *self, PyObject *args)
   PyObject *temp;
   int ch;
 
-  PyCursesInitialised
+  PyCursesInitialised;
 
   if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
@@ -2617,8 +2617,8 @@ PyCurses_Use_Default_Colors(PyObject *self)
 {
   int code;
 
-  PyCursesInitialised
-  PyCursesInitialisedColor
+  PyCursesInitialised;
+  PyCursesInitialisedColor;
 
   code = use_default_colors();
   if (code != ERR) {
