@@ -1904,6 +1904,11 @@ large, so the module was turned into a package and the code split into
 several files (by Benjamin Peterson).  This doesn't affect how the
 module is imported or used.
 
+.. seealso::
+
+  http://www.voidspace.org.uk/python/articles/unittest2.shtml
+    Describes the new features, how to use them, and the
+    rationale for various design decisions.  (By Michael Foord.)
 
 .. _elementtree-section:
 
