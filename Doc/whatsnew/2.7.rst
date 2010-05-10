@@ -164,7 +164,7 @@ Other new Python3-mode warnings include:
 
 .. _pep-0372:
 
-PEP 372: Adding an ordered dictionary to collections
+PEP 372: Adding an Ordered Dictionary to collections
 ====================================================
 
 Regular Python dictionaries iterate over key/value pairs in arbitrary order.
