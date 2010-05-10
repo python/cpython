@@ -776,8 +776,7 @@ Test cases
       will be *msg* if given, otherwise it will be :const:`None`.
 
       .. deprecated:: 2.7
-         :meth:`failUnless`; use one of the ``assert`` variants.
-         :meth:`assert_`; use :meth:`assertTrue`.
+         :meth:`failUnless` and :meth:`assert_`; use :meth:`assertTrue`.
 
 
    .. method:: assertEqual(first, second[, msg])
