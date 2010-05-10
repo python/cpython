@@ -15,6 +15,11 @@ Core and Builtins
 Library
 -------
 
+Extension Modules
+-----------------
+
+- Issue #8674: Fixed a number of incorrect or undefined-behaviour-inducing
+  overflow checks in the audioop module.
 
 What's New in Python 2.7 beta 2?
 ================================
