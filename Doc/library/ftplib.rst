@@ -110,7 +110,7 @@ The module defines the following items:
    The set of all exceptions (as a tuple) that methods of :class:`FTP`
    instances may raise as a result of problems with the FTP connection (as
    opposed to programming errors made by the caller).  This set includes the
-   four exceptions listed below as well as :exc:`socket.error` and
+   four exceptions listed above as well as :exc:`socket.error` and
    :exc:`IOError`.
 
 
