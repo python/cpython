@@ -722,7 +722,7 @@ correspond to Unix system calls applicable to sockets.
 
    Set a timeout on blocking socket operations.  The *value* argument can be a
    nonnegative float expressing seconds, or ``None``. If a float is given,
-   subsequent socket operations will raise an :exc:`timeout` exception if the
+   subsequent socket operations will raise a :exc:`timeout` exception if the
    timeout period *value* has elapsed before the operation has completed.  Setting
    a timeout of ``None`` disables timeouts on socket operations.
    ``s.settimeout(0.0)`` is equivalent to ``s.setblocking(0)``;
