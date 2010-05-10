@@ -1114,6 +1114,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #8674: Fixed a number of incorrect or undefined-behaviour-inducing
+  overflow checks in the audioop module.
+
 - Issue #8644: The accuracy of td.total_seconds() has been improved (by
   calculating with integer arithmetic instead of float arithmetic internally):
   the result is now always correctly rounded, and is equivalent to td /
