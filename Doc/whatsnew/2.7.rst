@@ -136,7 +136,7 @@ A partial list of 3.1 features that were backported to 2.7:
 
 * The syntax for set literals (``{1,2,3}`` is a mutable set).
 * Dictionary and set comprehensions (``{ i: i*2 for i in range(3)}``).
-* Multiple context managers in a single :stmt:`with` statement.
+* Multiple context managers in a single :keyword:`with` statement.
 * A new version of the :mod:`io` library, rewritten in C for performance.
 * The ordered-dictionary type described in :ref:`pep-0372`.
 * The new format specifier described in :ref:`pep-0378`.
@@ -146,7 +146,7 @@ A partial list of 3.1 features that were backported to 2.7:
   results more correctly.  And :func:`repr` of a floating-point
   number *x* returns a result that's guaranteed to round back to the
   same number when converted back to a string.
-* The :ctype:`PyCapsule` type, used to provide a C API for an extension module.
+* The :ctype:`PyCapsule` type, used to provide a C API for extension modules.
 * The :cfunc:`PyLong_AsLongAndOverflow` C API function.
 
 One porting change: the :option:`-3` switch now automatically
