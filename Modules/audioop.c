@@ -827,7 +827,7 @@ static PyObject *
 audioop_tostereo(PyObject *self, PyObject *args)
 {
     signed char *cp, *ncp;
-    int len, new_len, size, val1, val2, val = 0;
+    int len, size, val1, val2, val = 0;
     double fac1, fac2, fval, maxval;
     PyObject *rv;
     int i;
@@ -844,14 +844,13 @@ audioop_tostereo(PyObject *self, PyObject *args)
         return 0;
     }
 
-    new_len = len*2;
-    if (new_len < 0) {
+    if (len > INT_MAX/2) {
         PyErr_SetString(PyExc_MemoryError,
                         "not enough memory for output buffer");
         return 0;
     }
 
-    rv = PyString_FromStringAndSize(NULL, new_len);
+    rv = PyString_FromStringAndSize(NULL, len*2);
     if ( rv == 0 )
         return 0;
     ncp = (signed char *)PyString_AsString(rv);
@@ -1014,7 +1013,7 @@ audioop_lin2lin(PyObject *self, PyObject *args)
 {
     signed char *cp;
     unsigned char *ncp;
-    int len, new_len, size, size2, val = 0;
+    int len, size, size2, val = 0;
     PyObject *rv;
     int i, j;
 
@@ -1028,13 +1027,12 @@ audioop_lin2lin(PyObject *self, PyObject *args)
         return 0;
     }
 
-    new_len = (len/size)*size2;
-    if (new_len < 0) {
+    if (len/size > INT_MAX/size2) {
         PyErr_SetString(PyExc_MemoryError,
                         "not enough memory for output buffer");
         return 0;
     }
-    rv = PyString_FromStringAndSize(NULL, new_len);
+    rv = PyString_FromStringAndSize(NULL, (len/size)*size2);
     if ( rv == 0 )
         return 0;
     ncp = (unsigned char *)PyString_AsString(rv);
@@ -1070,7 +1068,6 @@ audioop_ratecv(PyObject *self, PyObject *args)
     int chan, d, *prev_i, *cur_i, cur_o;
     PyObject *state, *samps, *str, *rv = NULL;
     int bytes_per_frame;
-    size_t alloc_size;
 
     weightA = 1;
     weightB = 0;
@@ -1113,14 +1110,13 @@ audioop_ratecv(PyObject *self, PyObject *args)
     inrate /= d;
     outrate /= d;
 
-    alloc_size = sizeof(int) * (unsigned)nchannels;
-    if (alloc_size < (unsigned)nchannels) {
+    if ((size_t)nchannels > PY_SIZE_MAX/sizeof(int)) {
         PyErr_SetString(PyExc_MemoryError,
                         "not enough memory for output buffer");
         return 0;
     }
-    prev_i = (int *) malloc(alloc_size);
-    cur_i = (int *) malloc(alloc_size);
+    prev_i = (int *) malloc(nchannels * sizeof(int));
+    cur_i = (int *) malloc(nchannels * sizeof(int));
     if (prev_i == NULL || cur_i == NULL) {
         (void) PyErr_NoMemory();
         goto exit;
@@ -1294,7 +1290,7 @@ audioop_ulaw2lin(PyObject *self, PyObject *args)
     unsigned char *cp;
     unsigned char cval;
     signed char *ncp;
-    int len, new_len, size, val;
+    int len, size, val;
     PyObject *rv;
     int i;
 
@@ -1307,18 +1303,17 @@ audioop_ulaw2lin(PyObject *self, PyObject *args)
         return 0;
     }
 
-    new_len = len*size;
-    if (new_len < 0) {
+    if (len > INT_MAX/size) {
         PyErr_SetString(PyExc_MemoryError,
                         "not enough memory for output buffer");
         return 0;
     }
-    rv = PyString_FromStringAndSize(NULL, new_len);
+    rv = PyString_FromStringAndSize(NULL, len*size);
     if ( rv == 0 )
         return 0;
     ncp = (signed char *)PyString_AsString(rv);
 
-    for ( i=0; i < new_len; i += size ) {
+    for ( i=0; i < len*size; i += size ) {
         cval = *cp++;
         val = st_ulaw2linear16(cval);
 
@@ -1368,7 +1363,7 @@ audioop_alaw2lin(PyObject *self, PyObject *args)
     unsigned char *cp;
     unsigned char cval;
     signed char *ncp;
-    int len, new_len, size, val;
+    int len, size, val;
     PyObject *rv;
     int i;
 
@@ -1381,18 +1376,17 @@ audioop_alaw2lin(PyObject *self, PyObject *args)
         return 0;
     }
 
-    new_len = len*size;
-    if (new_len < 0) {
+    if (len > INT_MAX/size) {
         PyErr_SetString(PyExc_MemoryError,
                         "not enough memory for output buffer");
         return 0;
     }
-    rv = PyString_FromStringAndSize(NULL, new_len);
+    rv = PyString_FromStringAndSize(NULL, len*size);
     if ( rv == 0 )
         return 0;
     ncp = (signed char *)PyString_AsString(rv);
 
-    for ( i=0; i < new_len; i += size ) {
+    for ( i=0; i < len*size; i += size ) {
         cval = *cp++;
         val = st_alaw2linear16(cval);
 
@@ -1516,7 +1510,7 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
 {
     signed char *cp;
     signed char *ncp;
-    int len, new_len, size, valpred, step, delta, index, sign, vpdiff;
+    int len, size, valpred, step, delta, index, sign, vpdiff;
     PyObject *rv, *str, *state;
     int i, inputbuffer = 0, bufferstep;
 
@@ -1537,13 +1531,12 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
     } else if ( !PyArg_ParseTuple(state, "ii", &valpred, &index) )
         return 0;
 
-    new_len = len*size*2;
-    if (new_len < 0) {
+    if (len > (INT_MAX/2)/size) {
         PyErr_SetString(PyExc_MemoryError,
                         "not enough memory for output buffer");
         return 0;
     }
-    str = PyString_FromStringAndSize(NULL, new_len);
+    str = PyString_FromStringAndSize(NULL, len*size*2);
     if ( str == 0 )
         return 0;
     ncp = (signed char *)PyString_AsString(str);
@@ -1551,7 +1544,7 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
     step = stepsizeTable[index];
     bufferstep = 0;
 
-    for ( i=0; i < new_len; i += size ) {
+    for ( i=0; i < len*size*2; i += size ) {
         /* Step 1 - get the delta value and compute next index */
         if ( bufferstep ) {
             delta = inputbuffer & 0xf;
