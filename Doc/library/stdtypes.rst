@@ -1220,9 +1220,9 @@ string functions based on regular expressions.
    mapped through the given translation table, which must be a string of length
    256.
 
-   You can use the :func:`maketrans` helper function in the :mod:`string` module to
-   create a translation table. For string objects, set the *table* argument to
-   ``None`` for translations that only delete characters:
+   You can use the :func:`~string.maketrans` helper function in the :mod:`string`
+   module to create a translation table. For string objects, set the *table*
+   argument to ``None`` for translations that only delete characters:
 
       >>> 'read this short text'.translate(None, 'aeiou')
       'rd ths shrt txt'
