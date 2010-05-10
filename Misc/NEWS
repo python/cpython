@@ -351,6 +351,9 @@ C-API
 Library
 -------
 
+- Issue #4972: Add support for the context manager protocol to the ftplib.FTP
+  class.
+
 - Issue #8664: In py_compile, create __pycache__ when the compiled path is
   given.
 

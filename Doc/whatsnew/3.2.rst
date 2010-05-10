@@ -66,6 +66,9 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
+* The :class:`ftplib.FTP` class now supports the context manager protocol
+  (Contributed by Tarek Ziadé and Giampaolo Rodolà; :issue:`4972`.)
+
 * The previously deprecated :func:`string.maketrans` function has been
   removed in favor of the static methods, :meth:`bytes.maketrans` and
   :meth:`bytearray.maketrans`.  This change solves the confusion around which

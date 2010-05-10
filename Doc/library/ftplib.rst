@@ -46,6 +46,25 @@ The module defines the following items:
    connection attempt (if is not specified, the global default timeout setting
    will be used).
 
+   :class:`FTP` class supports the :keyword:`with` statement. Here is a sample
+   on how using it:
+
+    >>> from ftplib import FTP
+    >>> with FTP("ftp1.at.proftpd.org") as ftp:
+    ...     ftp.login()
+    ...     ftp.dir()
+    ...
+    '230 Anonymous login ok, restrictions apply.'
+    dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
+    dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
+    dr-xr-xr-x   5 ftp      ftp          4096 May  6 10:43 CentOS
+    dr-xr-xr-x   3 ftp      ftp            18 Jul 10  2008 Fedora
+    >>>
+
+   .. versionchanged:: 3.2
+      Support for the :keyword:`with` statement was added.
+
+
 .. class:: FTP_TLS(host='', user='', passwd='', acct='', [keyfile[, certfile[, timeout]]])
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in

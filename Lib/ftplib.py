@@ -120,6 +120,20 @@ class FTP:
             if user:
                 self.login(user, passwd, acct)
 
+    def __enter__(self):
+        return self
+
+    # Context management protocol: try to quit() if active
+    def __exit__(self, *args):
+        if self.sock is not None:
+            try:
+                self.quit()
+            except (socket.error, EOFError):
+                pass
+            finally:
+                if self.sock is not None:
+                    self.close()
+
     def connect(self, host='', port=0, timeout=-999):
         '''Connect to host.  Arguments are:
          - host: hostname to connect to (string, default previous host)
