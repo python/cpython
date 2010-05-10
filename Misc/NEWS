@@ -211,6 +211,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #8490: asyncore now has a more solid test suite which actually tests 
+  its API.
+
 - Issue #8576: Remove use of find_unused_port() in test_smtplib and
   test_multiprocessing.  Patch by Paul Moore.
 
