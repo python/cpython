@@ -22,10 +22,9 @@ Options:
   -q, --quiet      Minimal output
 %(failfast)s%(catchbreak)s%(buffer)s
 Examples:
-  %(progName)s test_module                       - run tests from test_module
-  %(progName)s test_module.TestClass             - run tests from
-                                                   test_module.TestClass
-  %(progName)s test_module.TestClass.test_method - run specified test method
+  %(progName)s test_module               - run tests from test_module
+  %(progName)s module.TestClass          - run tests from module.TestClass
+  %(progName)s module.Class.test_method  - run specified test method
 
 [tests] can be a list of any number of test modules, classes and test
 methods.
@@ -68,7 +67,7 @@ class TestProgram(object):
     USAGE = USAGE_FROM_MODULE
 
     # defaults for testing
-    failfast = catchbreak = buffer = None
+    failfast = catchbreak = buffer = progName = None
 
     def __init__(self, module='__main__', defaultTest=None, argv=None,
                     testRunner=None, testLoader=loader.defaultTestLoader,
@@ -160,8 +159,10 @@ class TestProgram(object):
 
     def _do_discovery(self, argv, Loader=loader.TestLoader):
         # handle command line args for test discovery
+        self.progName = '%s discover' % self.progName
         import optparse
         parser = optparse.OptionParser()
+        parser.prog = self.progName
         parser.add_option('-v', '--verbose', dest='verbose', default=False,
                           help='Verbose output', action='store_true')
         if self.failfast != False:
