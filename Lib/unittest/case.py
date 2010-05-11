@@ -264,9 +264,6 @@ class TestCase(object):
 
         return self._testMethodName == other._testMethodName
 
-    def __ne__(self, other):
-        return not self == other
-
     def __hash__(self):
         return hash((type(self), self._testMethodName))
 
