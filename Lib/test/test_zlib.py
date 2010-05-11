@@ -361,6 +361,19 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         dco = zlib.decompressobj()
         self.assertEqual(dco.flush(), "") # Returns nothing
 
+    def test_decompress_incomplete_stream(self):
+        # This is 'foo', deflated
+        x = 'x\x9cK\xcb\xcf\x07\x00\x02\x82\x01E'
+        # For the record
+        self.assertEqual(zlib.decompress(x), 'foo')
+        self.assertRaises(zlib.error, zlib.decompress, x[:-5])
+        # Omitting the stream end works with decompressor objects
+        # (see issue #8672).
+        dco = zlib.decompressobj()
+        y = dco.decompress(x[:-5])
+        y += dco.flush()
+        self.assertEqual(y, 'foo')
+
     if hasattr(zlib.compressobj(), "copy"):
         def test_compresscopy(self):
             # Test copying a compression object
