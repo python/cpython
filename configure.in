@@ -979,7 +979,7 @@ yes)
      CC="$CC -fno-strict-aliasing"
      AC_CACHE_VAL(ac_cv_no_strict_aliasing_ok,
        AC_COMPILE_IFELSE(
-         [AC_LANG_PROGRAM([[]], [[int main() { return 0; }]])],
+         [AC_LANG_PROGRAM([[]], [[]])],
 	 [ac_cv_no_strict_aliasing_ok=yes],
 	 [ac_cv_no_strict_aliasing_ok=no]))
      CC="$ac_save_cc"
@@ -1150,7 +1150,7 @@ AC_CACHE_VAL(ac_cv_opt_olimit_ok,
 [ac_save_cc="$CC"
 CC="$CC -OPT:Olimit=0"
 AC_COMPILE_IFELSE(
-  [AC_LANG_PROGRAM([[]], [[int main() { return 0; }]])],
+  [AC_LANG_PROGRAM([[]], [[]])],
   [ac_cv_opt_olimit_ok=yes],
   [ac_cv_opt_olimit_ok=no]
   )
@@ -1173,7 +1173,7 @@ else
   [ac_save_cc="$CC"
   CC="$CC -Olimit 1500"
   AC_COMPILE_IFELSE(
-    [AC_LANG_PROGRAM([[]], [[int main() { return 0; }]])],
+    [AC_LANG_PROGRAM([[]], [[]])],
     [ac_cv_olimit_ok=yes],
     [ac_cv_olimit_ok=no]
     )
@@ -2781,7 +2781,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 
 AC_MSG_CHECKING(for ctermid_r)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include "confdefs.h" 
 #include <stdio.h>
 ]], [[void* p = ctermid_r]])],
   [AC_DEFINE(HAVE_CTERMID_R, 1, Define if you have the 'ctermid_r' function.)
@@ -2791,7 +2790,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 
 AC_MSG_CHECKING(for flock)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include "confdefs.h" 
 #include <sys/file.h>
 ]], [[void* p = flock]])],
   [AC_DEFINE(HAVE_FLOCK, 1, Define if you have the 'flock' function.)
@@ -2801,7 +2799,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 
 AC_MSG_CHECKING(for getpagesize)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include "confdefs.h" 
 #include <unistd.h>
 ]], [[void* p = getpagesize]])],
   [AC_DEFINE(HAVE_GETPAGESIZE, 1, Define if you have the 'getpagesize' function.)
@@ -2892,7 +2889,6 @@ esac
 
 AC_MSG_CHECKING(for hstrerror)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include "confdefs.h" 
 #include <netdb.h>
 ]], [[void* p = hstrerror; hstrerror(0)]])],
   [AC_DEFINE(HAVE_HSTRERROR, 1, Define if you have the 'hstrerror' function.)
@@ -2902,7 +2898,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 
 AC_MSG_CHECKING(for inet_aton)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include "confdefs.h" 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -2915,7 +2910,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 
 AC_MSG_CHECKING(for inet_pton)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include "confdefs.h" 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -2929,7 +2923,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 # On some systems, setgroups is in unistd.h, on others, in grp.h
 AC_MSG_CHECKING(for setgroups)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include "confdefs.h" 
 #include <unistd.h>
 #ifdef HAVE_GRP_H
 #include <grp.h>
