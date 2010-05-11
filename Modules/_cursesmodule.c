@@ -100,6 +100,8 @@ char *PyCursesVersion = "2.2";
 
 /* Includes */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 
 
@@ -1382,7 +1384,7 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
   fseek(fp, 0, 0);
   while (1) {
     char buf[BUFSIZ];
-    int n = fread(buf, 1, BUFSIZ, fp);
+    Py_ssize_t n = fread(buf, 1, BUFSIZ, fp);
     if (n <= 0)
       break;
     Py_DECREF(res);
