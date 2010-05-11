@@ -52,10 +52,24 @@ typedef struct
 static void
 zlib_error(z_stream zst, int err, char *msg)
 {
-    if (zst.msg == Z_NULL)
+    const char *zmsg = zst.msg;
+    if (zmsg == Z_NULL) {
+        switch (err) {
+        case Z_BUF_ERROR:
+            zmsg = "incomplete or truncated stream";
+            break;
+        case Z_STREAM_ERROR:
+            zmsg = "inconsistent stream state";
+            break;
+        case Z_DATA_ERROR:
+            zmsg = "invalid input data";
+            break;
+        }
+    }
+    if (zmsg == Z_NULL)
         PyErr_Format(ZlibError, "Error %d %s", err, msg);
     else
-        PyErr_Format(ZlibError, "Error %d %s: %.200s", err, msg, zst.msg);
+        PyErr_Format(ZlibError, "Error %d %s: %.200s", err, msg, zmsg);
 }
 
 PyDoc_STRVAR(compressobj__doc__,
@@ -241,8 +255,7 @@ PyZlib_decompress(PyObject *self, PyObject *args)
              * process the inflate call() due to an error in the data.
              */
             if (zst.avail_out > 0) {
-                PyErr_Format(ZlibError, "Error %i while decompressing data",
-                             err);
+                zlib_error(zst, err, "while decompressing data");
                 inflateEnd(&zst);
                 goto error;
             }
