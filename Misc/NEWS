@@ -351,6 +351,9 @@ C-API
 Library
 -------
 
+- The audioop module now supports sound fragments of length greater
+  than 2**31 bytes on 64-bit machines, and is PY_SSIZE_T_CLEAN.
+
 - Issue #4972: Add support for the context manager protocol to the ftplib.FTP
   class.
 
