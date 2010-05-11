@@ -216,6 +216,10 @@ Extension Modules
 Tests
 -----
 
+- Issue #8672: Add a zlib test ensuring that an incomplete stream can be
+  handled by a decompressor object without errors (it returns incomplete
+  uncompressed data).
+
 - Issue #8490: asyncore now has a more solid test suite which actually tests 
   its API.
 
