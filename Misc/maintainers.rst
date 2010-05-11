@@ -287,7 +287,7 @@ release management  tarek, lemburg, benjamin.peterson, barry, loewis,
                     gvanrossum, anthonybaxter
 str.format          eric.smith
 time and dates      lemburg
-testing             michael.foord, pitrou
+testing             michael.foord, pitrou, giampaolo.rodola
 threads
 tracker
 unicode             lemburg, ezio.melotti, haypo
