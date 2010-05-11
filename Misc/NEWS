@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8681: Make the zlib module's error messages more informative when
+  the zlib itself doesn't give any detailed explanation.
+
 - Issue #8571: Fix an internal error when compressing or decompressing a
   chunk larger than 1GB with the zlib module's compressor and decompressor
   objects.
