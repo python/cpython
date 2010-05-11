@@ -1276,6 +1276,10 @@ Documentation
 Tests
 -----
 
+- Issue #8672: Add a zlib test ensuring that an incomplete stream can be
+  handled by a decompressor object without errors (it returns incomplete
+  uncompressed data).
+
 - Issue #8533: regrtest uses backslashreplace error handler for stdout to avoid
   UnicodeEncodeError (write non-ASCII character to stdout using ASCII encoding)
 
