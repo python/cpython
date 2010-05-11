@@ -186,6 +186,10 @@ Build
 Tests
 -----
 
+- Issue #8672: Add a zlib test ensuring that an incomplete stream can be
+  handled by a decompressor object without errors (it returns incomplete
+  uncompressed data).
+
 - Issue #8629: Disable some test_ssl tests, since they give different
   results with OpenSSL 1.0.0 and higher.
 
