@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8681: Make the zlib module's error messages more informative when
+  the zlib itself doesn't give any detailed explanation.
+
 - Issue #8674: Fixed a number of incorrect or undefined-behaviour-inducing
   overflow checks in the audioop module.
 

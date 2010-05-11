@@ -134,6 +134,18 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
         x = zlib.compress(data)
         self.assertEqual(zlib.decompress(x), data)
 
+    def test_incomplete_stream(self):
+        # An useful error message is given
+        x = zlib.compress(HAMLET_SCENE)
+        try:
+            zlib.decompress(x[:-1])
+        except zlib.error as e:
+            self.assertTrue(
+                "Error -5 while decompressing data: incomplete or truncated stream"
+                in str(e), str(e))
+        else:
+            self.fail("zlib.error not raised")
+
     # Memory use of the following functions takes into account overallocation
 
     @precisionbigmemtest(size=_1G + 1024 * 1024, memuse=3)
