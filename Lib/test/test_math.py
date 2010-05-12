@@ -294,7 +294,7 @@ class MathTests(unittest.TestCase):
             return result
         values = list(range(10)) + [50, 100, 500]
         random.shuffle(values)
-        for x in range(10):
+        for x in values:
             for cast in (int, float):
                 self.assertEqual(math.factorial(cast(x)), fact(x), (x, fact(x), math.factorial(x)))
         self.assertRaises(ValueError, math.factorial, -1)
