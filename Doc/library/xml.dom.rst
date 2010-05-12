@@ -705,18 +705,27 @@ Attr Objects
 
 .. attribute:: Attr.name
 
-   The attribute name.  In a namespace-using document it may have colons in it.
+   The attribute name.
+   In a namespace-using document it may include a colon.
 
 
 .. attribute:: Attr.localName
 
-   The part of the name following the colon if there is one, else the entire name.
+   The part of the name following the colon if there is one, else the
+   entire name.
    This is a read-only attribute.
 
 
 .. attribute:: Attr.prefix
 
-   The part of the name preceding the colon if there is one, else the empty string.
+   The part of the name preceding the colon if there is one, else the
+   empty string.
+
+
+.. attribute:: Attr.value
+
+   The text value of the attribute.  This is a synonym for the
+   :attr:`nodeValue` attribute.
 
 
 .. _dom-attributelist-objects:
