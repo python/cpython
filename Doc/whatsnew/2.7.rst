@@ -56,18 +56,18 @@ This article explains the new features in Python 2.7.  The final
 release of 2.7 is currently scheduled for July 2010; the detailed
 schedule is described in :pep:`373`.
 
-Python 2.7 is planned to be the last of the 2.x releases, so we worked
-on making it a good release for the long term.  To help with porting
-to Python 3, several new features from the Python 3.x series have been
-included in 2.7.
-
-Numeric handling has been improved in many ways, both for
+Numeric handling has been improved in many ways, for both
 floating-point numbers and for the :class:`Decimal` class.  There are
 some useful additions to the standard library, such as a greatly
 enhanced :mod:`unittest` module, the :mod:`argparse` module for
 parsing command-line options, convenient ordered-dictionary and
 :class:`Counter` classes in the :mod:`collections` module, and many
 other improvements.
+
+Python 2.7 is planned to be the last of the 2.x releases, so we worked
+on making it a good release for the long term.  To help with porting
+to Python 3, several new features from the Python 3.x series have been
+included in 2.7.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
@@ -98,7 +98,7 @@ Two consequences of the long-term significance of 2.7 are:
   releases beyond the typical two years.
 
 * A policy decision was made to silence warnings only of interest to
-  developers by default.  :exc:`DeprecationWarning` and its
+  developers.  :exc:`DeprecationWarning` and its
   descendants are now ignored unless otherwise requested, preventing
   users from seeing warnings triggered by an application.  This change
   was also made in the branch that will become Python 3.2. (Discussed
@@ -113,13 +113,13 @@ Two consequences of the long-term significance of 2.7 are:
   applications who are not directly involved in the development of
   those applications.  :exc:`DeprecationWarning` messages are
   irrelevant to such users, making them worry about an application
-  that's actually working correctly and burdening the developers of
-  these applications with responding to these concerns.
+  that's actually working correctly and burdening application developers
+  with responding to these concerns.
 
   You can re-enable display of :exc:`DeprecationWarning` messages by
   running Python with the :option:`-Wdefault` (short form:
   :option:`-Wd`) switch, or by setting the :envvar:`PYTHONWARNINGS`
-  environment variable to ``"default"`` or ``"d"``) before running
+  environment variable to ``"default"`` (or ``"d"``) before running
   Python.  Python code can also re-enable them
   by calling ``warnings.simplefilter('default')``.
 
@@ -139,24 +139,26 @@ A partial list of 3.1 features that were backported to 2.7:
 * Multiple context managers in a single :keyword:`with` statement.
 * A new version of the :mod:`io` library, rewritten in C for performance.
 * The ordered-dictionary type described in :ref:`pep-0372`.
-* The new format specifier described in :ref:`pep-0378`.
+* The new ``","`` format specifier described in :ref:`pep-0378`.
 * The :class:`memoryview` object.
-* A small subset of the :mod:`importlib` module `described below <#importlib-section>`__.
+* A small subset of the :mod:`importlib` module,
+  `described below <#importlib-section>`__.
 * Float-to-string and string-to-float conversions now round their
-  results more correctly.  And :func:`repr` of a floating-point
+  results more correctly, and :func:`repr` of a floating-point
   number *x* returns a result that's guaranteed to round back to the
   same number when converted back to a string.
 * The :ctype:`PyCapsule` type, used to provide a C API for extension modules.
 * The :cfunc:`PyLong_AsLongAndOverflow` C API function.
 
-One porting change: the :option:`-3` switch now automatically
-enables the :option:`-Qwarn` switch that causes warnings
-about using classic division with integers and long integers.
-
 Other new Python3-mode warnings include:
 
 * :func:`operator.isCallable` and :func:`operator.sequenceIncludes`,
-  which are not supported in 3.x.
+  which are not supported in 3.x, now trigger warnings.
+* The :option:`-3` switch now automatically
+  enables the :option:`-Qwarn` switch that causes warnings
+  about using classic division with integers and long integers.
+
+
 
 .. ========================================================================
 .. Large, PEP-level features and changes should be described here.
@@ -170,16 +172,16 @@ PEP 372: Adding an Ordered Dictionary to collections
 Regular Python dictionaries iterate over key/value pairs in arbitrary order.
 Over the years, a number of authors have written alternative implementations
 that remember the order that the keys were originally inserted.  Based on
-the experiences from those implementations, a new
-:class:`~collections.OrderedDict` class has been introduced in the
-:mod:`collections` module.
+the experiences from those implementations, 2.7 introduces a new
+:class:`~collections.OrderedDict` class in the :mod:`collections` module.
 
-The :class:`~collections.OrderedDict` API is substantially the same as regular
-dictionaries but will iterate over keys and values in a guaranteed order
+The :class:`~collections.OrderedDict` API provides the same interface as regular
+dictionaries but iterates over keys and values in a guaranteed order
 depending on when a key was first inserted::
 
     >>> from collections import OrderedDict
-    >>> d = OrderedDict([('first', 1), ('second', 2),
+    >>> d = OrderedDict([('first', 1),
+    ...                  ('second', 2),
     ...                  ('third', 3)])
     >>> d.items()
     [('first', 1), ('second', 2), ('third', 3)]
@@ -216,9 +218,11 @@ oldest key is selected::
 Comparing two ordered dictionaries checks both the keys and values,
 and requires that the insertion order was the same::
 
-    >>> od1 = OrderedDict([('first', 1), ('second', 2),
+    >>> od1 = OrderedDict([('first', 1),
+    ...                    ('second', 2),
     ...                    ('third', 3)])
-    >>> od2 = OrderedDict([('third', 3), ('first', 1),
+    >>> od2 = OrderedDict([('third', 3),
+    ...                    ('first', 1),
     ...                    ('second', 2)])
     >>> od1 == od2
     False
@@ -239,9 +243,9 @@ remains O(1).
 The standard library now supports use of ordered dictionaries in several
 modules.
 
-* The :mod:`ConfigParser` module uses them by default, letting
-  configuration files be read, modified, and then written back in their original
-  order.
+* The :mod:`ConfigParser` module uses them by default, meaning that
+  configuration files can now read, modified, and then written back
+  in their original order.
 
 * The :meth:`~collections.somenamedtuple._asdict()` method for
   :func:`collections.namedtuple` now returns an ordered dictionary with the
@@ -265,7 +269,7 @@ PEP 378: Format Specifier for Thousands Separator
 =================================================
 
 To make program output more readable, it can be useful to add
-separators to large numbers and render them as
+separators to large numbers, rendering them as
 18,446,744,073,709,551,616 instead of 18446744073709551616.
 
 The fully general solution for doing this is the :mod:`locale` module,
@@ -301,13 +305,13 @@ PEP 389: The argparse Module for Parsing Command Lines
 ======================================================
 
 The :mod:`argparse` module for parsing command-line arguments was
-added, intended as a more powerful replacement for the
+added as a more powerful replacement for the
 :mod:`optparse` module.
 
 This means Python now supports three different modules for parsing
 command-line arguments: :mod:`getopt`, :mod:`optparse`, and
 :mod:`argparse`.  The :mod:`getopt` module closely resembles the C
-:cfunc:`getopt` function, so it remains useful if you're writing a
+library's :cfunc:`getopt` function, so it remains useful if you're writing a
 Python prototype that will eventually be rewritten in C.
 :mod:`optparse` becomes redundant, but there are no plans to remove it
 because there are many scripts still using it, and there's no
@@ -359,23 +363,28 @@ are automatically added, and produce neatly formatted output::
       -o FILE     direct output to FILE instead of stdout
       -C NUM      display NUM lines of added context
 
-Similarly to :mod:`optparse`, the command-line switches and arguments
+As with :mod:`optparse`, the command-line switches and arguments
 are returned as an object with attributes named by the *dest* parameters::
 
     -> ./python.exe argparse-example.py -v
-    {'output': None, 'is_verbose': True, 'context': 0, 'inputs': []}
+    {'output': None,
+     'is_verbose': True,
+     'context': 0,
+     'inputs': []}
 
     -> ./python.exe argparse-example.py -v -o /tmp/output -C 4 file1 file2
-    {'output': '/tmp/output', 'is_verbose': True, 'context': 4,
+    {'output': '/tmp/output',
+     'is_verbose': True,
+     'context': 4,
      'inputs': ['file1', 'file2']}
 
 :mod:`argparse` has much fancier validation than :mod:`optparse`; you
 can specify an exact number of arguments as an integer, 0 or more
 arguments by passing ``'*'``, 1 or more by passing ``'+'``, or an
 optional argument with ``'?'``.  A top-level parser can contain
-sub-parsers, so you can define subcommands that have different sets of
+sub-parsers to define subcommands that have different sets of
 switches, as in ``svn commit``, ``svn checkout``, etc.  You can
-specify an argument type as :class:`~argparse.FileType`, which will
+specify an argument's type as :class:`~argparse.FileType`, which will
 automatically open files for you and understands that ``'-'`` means
 standard input or output.
 
@@ -384,6 +393,8 @@ standard input or output.
    `argparse module documentation <http://docs.python.org/dev/library/argparse.html>`__
 
    `Upgrading optparse code to use argparse <http://docs.python.org/dev/library/argparse.html#upgrading-optparse-code>`__
+     Part of the Python documentation, describing how to convert
+     code that uses :mod:`optparse`.
 
    :pep:`389` - argparse - New Command Line Parsing Module
      PEP written and implemented by Steven Bethard.
@@ -391,26 +402,25 @@ standard input or output.
 PEP 391: Dictionary-Based Configuration For Logging
 ====================================================
 
-.. not documented in library reference yet.
+.. XXX not documented in library reference yet; add link here once it's added.
 
-The :mod:`logging` module is very flexible; an application can define
+The :mod:`logging` module is very flexible; applications can define
 a tree of logging subsystems, and each logger in this tree can filter
 out certain messages, format them differently, and direct messages to
 a varying number of handlers.
 
 All this flexibility can require a lot of configuration.  You can
 write Python statements to create objects and set their properties,
-but a complex set-up would require verbose but boring code.
+but a complex set-up requires verbose but boring code.
 :mod:`logging` also supports a :func:`~logging.config.fileConfig`
 function that parses a file, but the file format doesn't support
 configuring filters, and it's messier to generate programmatically.
 
 Python 2.7 adds a :func:`~logging.config.dictConfig` function that
-uses a dictionary, and there are many ways to produce a dictionary
-from different sources.  You can construct one with code, of course.
-Python's standard library now includes a JSON parser, so you could
-parse a file containing JSON, or you could use a YAML parsing library
-if one is installed.
+uses a dictionary to configure logging.  There are many ways to
+produce a dictionary from different sources: construct one with code;
+parse a file containing JSON; or use a YAML parsing library if one is
+installed.
 
 The following example configures two loggers, the root logger and a
 logger named "network".   Messages sent to the root logger will be
@@ -424,17 +434,18 @@ that will be rotated once the log reaches 1Mb.
     import logging.config
 
     configdict = {
-     'version': 1,    # Must be 1 at present
+     'version': 1,    # Configuration schema in use; must be 1 for now
      'formatters': {
          'standard': {
-             'format': '%(asctime)s %(name)-15s %(levelname)-8s %(message)s'}},
+             'format': ('%(asctime)s %(name)-15s '
+                        '%(levelname)-8s %(message)s')}},
 
      'handlers': {'netlog': {'backupCount': 10,
-                             'class': 'logging.handlers.RotatingFileHandler',
-                             'filename': '/logs/network.log',
-                             'formatter': 'standard',
-                             'level': 'INFO',
-                             'maxBytes': 1024*1024},
+                         'class': 'logging.handlers.RotatingFileHandler',
+                         'filename': '/logs/network.log',
+                         'formatter': 'standard',
+                         'level': 'INFO',
+                         'maxBytes': 1024*1024},
                   'syslog': {'class': 'logging.handlers.SysLogHandler',
                              'formatter': 'standard',
                              'level': 'ERROR'}},
@@ -497,7 +508,7 @@ instead of a fully materialized list.
 It's not possible to change the return values of :meth:`keys`,
 :meth:`values`, and :meth:`items` in Python 2.7 because too much code
 would break.  Instead the 3.x versions were added under the new names
-of :meth:`viewkeys`, :meth:`viewvalues`, and :meth:`viewitems`.
+:meth:`viewkeys`, :meth:`viewvalues`, and :meth:`viewitems`.
 
 ::
 
@@ -507,8 +518,9 @@ of :meth:`viewkeys`, :meth:`viewvalues`, and :meth:`viewitems`.
     >>> d.viewkeys()
     dict_keys([0, 130, 10, 140, 20, 150, 30, ..., 250])
 
-Views can be iterated over, but they also behave like sets.  The ``&``
-operator performs intersection, and ``|`` performs a union::
+Views can be iterated over, but the key and item views also behave
+like sets.  The ``&`` operator performs intersection, and ``|``
+performs a union::
 
     >>> d1 = dict((i*10, chr(65+i)) for i in range(26))
     >>> d2 = dict((i**.5, i) for i in range(1000))
@@ -566,13 +578,13 @@ memory content that matches the :class:`bytes` type's interface.
     >>> m2
     <memory at 0x37f080>
 
-The content of the view can be converted to a string of bytes or to
+The content of the view can be converted to a string of bytes or
 a list of integers:
 
     >>> m2.tobytes()
     'abcdefghijklmnopqrstuvwxyz'
     >>> m2.tolist()
-    [97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122]
+    [97, 98, 99, 100, 101, 102, 103, ... 121, 122]
     >>>
 
 :class:`memoryview` objects allow modifying the underlying object if
@@ -657,8 +669,8 @@ Some smaller changes made to the core Python language are:
   in many different places: :func:`str` on
   floats and complex numbers; the :class:`float` and :class:`complex`
   constructors;
-  numeric formatting; serialization and
-  deserialization of floats and complex numbers using the
+  numeric formatting; serializing and
+  deserializing floats and complex numbers using the
   :mod:`marshal`, :mod:`pickle`
   and :mod:`json` modules;
   parsing of float and imaginary literals in Python code;
@@ -673,7 +685,7 @@ Some smaller changes made to the core Python language are:
   .. maybe add an example?
 
   The rounding library responsible for this improvement works on
-  Windows, and on Unix platforms using the gcc, icc, or suncc
+  Windows and on Unix platforms using the gcc, icc, or suncc
   compilers.  There may be a small number of platforms where correct
   operation of this code cannot be guaranteed, so the code is not
   used on such systems.  You can find out which code is being used
@@ -682,6 +694,33 @@ Some smaller changes made to the core Python language are:
 
   Implemented by Eric Smith and Mark Dickinson, using David Gay's
   :file:`dtoa.c` library; :issue:`7117`.
+
+* Conversions from long integers and regular integers to floating
+  point now round differently, returning the floating-point number
+  closest to the number.  This doesn't matter for small integers that
+  can be converted exactly, but for large numbers that will
+  unavoidably lose precision, Python 2.7 now approximates more
+  closely.  For example, Python 2.6 computed the following::
+
+    >>> n = 295147905179352891391
+    >>> float(n)
+    2.9514790517935283e+20
+    >>> n - long(float(n))
+    65535L
+
+  Python 2.7's floating-point result is larger, but much closer to the
+  true value::
+
+    >>> n = 295147905179352891391
+    >>> float(n)
+    2.9514790517935289e+20
+    >>> n - long(float(n))
+    -1L
+
+  (Implemented by Mark Dickinson; :issue:`3166`.)
+
+  Integer division is also more accurate in its rounding behaviours.  (Also
+  implemented by Mark Dickinson; :issue:`1811`.)
 
 * The :meth:`str.format` method now supports automatic numbering of the replacement
   fields.  This makes using :meth:`str.format` more closely resemble using
@@ -713,8 +752,8 @@ Some smaller changes made to the core Python language are:
   A low-level change: the :meth:`object.__format__` method now triggers
   a :exc:`PendingDeprecationWarning` if it's passed a format string,
   because the :meth:`__format__` method for :class:`object` converts
-  the object to a string representation and formats that.  The method
-  used to silently apply the format string to the string
+  the object to a string representation and formats that.  Previously
+  the method silently applied the format string to the string
   representation, but that could hide mistakes in Python code.  If
   you're supplying formatting information such as an alignment or
   precision, presumably you're expecting the formatting to be applied
@@ -736,33 +775,6 @@ Some smaller changes made to the core Python language are:
       124
 
   (Contributed by Fredrik Johansson and Victor Stinner; :issue:`3439`.)
-
-* Conversions from long integers and regular integers to floating
-  point now round differently, returning the floating-point number
-  closest to the number.  This doesn't matter for small integers that
-  can be converted exactly, but for large numbers that will
-  unavoidably lose precision, Python 2.7 now approximates more
-  closely.  For example, Python 2.6 computed the following::
-
-    >>> n = 295147905179352891391
-    >>> float(n)
-    2.9514790517935283e+20
-    >>> n - long(float(n))
-    65535L
-
-  Python 2.7's floating-point result is larger, but much closer to the
-  true value::
-
-    >>> n = 295147905179352891391
-    >>> float(n)
-    2.9514790517935289e+20
-    >>> n - long(float(n))
-    -1L
-
-  (Implemented by Mark Dickinson; :issue:`3166`.)
-
-  Integer division is also more accurate in its rounding behaviours.  (Also
-  implemented by Mark Dickinson; :issue:`1811`.)
 
 * It's now possible for a subclass of the built-in :class:`unicode` type
   to override the :meth:`__unicode__` method.  (Implemented by
@@ -796,7 +808,7 @@ Some smaller changes made to the core Python language are:
   (fixed by Stefan Krah; :issue:`5677`).
 
 * The Python tokenizer now translates line endings itself, so the
-  :func:`compile` built-in function can now accept code using any
+  :func:`compile` built-in function now accepts code using any
   line-ending convention.  Additionally, it no longer requires that the
   code end in a newline.
 
@@ -829,7 +841,7 @@ used with the :option:`-W` switch, separated by commas.
 For example, the following setting will print warnings every time
 they occur, but turn warnings from the :mod:`Cookie` module into an
 error.  (The exact syntax for setting an environment variable varies
-across operating systems and shells, so it may be different for you.)
+across operating systems and shells.)
 
 ::
 
@@ -865,7 +877,7 @@ Several performance enhancements have been added:
   any of them.  This would previously take quadratic
   time for garbage collection, but now the number of full garbage collections
   is reduced as the number of objects on the heap grows.
-  The new logic is to only perform a full garbage collection pass when
+  The new logic only performs a full garbage collection pass when
   the middle generation has been collected 10 times and when the
   number of survivor objects from the middle generation exceeds 10% of
   the number of objects in the oldest generation.  (Suggested by Martin
@@ -975,10 +987,10 @@ changes, or look through the Subversion logs for all the details.
   The new version features better Python 3.x compatibility, various bug fixes,
   and adds several new BerkeleyDB flags and methods.
   (Updated by Jesús Cea Avión; :issue:`8156`.  The pybsddb
-  changelog can be browsed at http://hg.jcea.es/pybsddb/file/tip/ChangeLog.)
+  changelog can be read at http://hg.jcea.es/pybsddb/file/tip/ChangeLog.)
 
 * The :mod:`bz2` module's :class:`~bz2.BZ2File` now supports the context
-  management protocol, so you can write ``with bz2.BZ2File(...) as f: ...``.
+  management protocol, so you can write ``with bz2.BZ2File(...) as f:``.
   (Contributed by Hagen Fürstenau; :issue:`3860`.)
 
 * New class: the :class:`~collections.Counter` class in the :mod:`collections`
@@ -1003,7 +1015,7 @@ changes, or look through the Subversion logs for all the details.
      >>> c['z']
      0
 
-  There are three additional :class:`~collections.Counter` methods:
+  There are three additional :class:`~collections.Counter` methods.
   :meth:`~collections.Counter.most_common` returns the N most common
   elements and their counts.  :meth:`~collections.Counter.elements`
   returns an iterator over the contained elements, repeating each
@@ -1030,12 +1042,20 @@ changes, or look through the Subversion logs for all the details.
 
   .. revision 79660
 
-  The new :class:`~collections.OrderedDict` class is described in the earlier
+  New class: :class:`~collections.OrderedDict` is described in the earlier
   section :ref:`pep-0372`.
+
+  New method: The :class:`~collections.deque` data type now has a
+  :meth:`~collections.deque.count` method that returns the number of
+  contained elements equal to the supplied argument *x*, and a
+  :meth:`~collections.deque.reverse` method that reverses the elements
+  of the deque in-place.  :class:`deque` also exposes its maximum
+  length as the read-only :attr:`~collections.deque.maxlen` attribute.
+  (Both features added by Raymond Hettinger.)
 
   The :class:`~collections.namedtuple` class now has an optional *rename* parameter.
   If *rename* is true, field names that are invalid because they've
-  been repeated or that aren't legal Python identifiers will be
+  been repeated or aren't legal Python identifiers will be
   renamed to legal names that are derived from the field's
   position within the list of fields:
 
@@ -1045,14 +1065,6 @@ changes, or look through the Subversion logs for all the details.
      ('field1', '_1', '_2', 'field2')
 
   (Added by Raymond Hettinger; :issue:`1818`.)
-
-  The :class:`~collections.deque` data type now has a
-  :meth:`~collections.deque.count` method that returns the number of
-  contained elements equal to the supplied argument *x*, and a
-  :meth:`~collections.deque.reverse` method that reverses the elements
-  of the deque in-place.  :class:`deque` also exposes its maximum
-  length as the read-only :attr:`~collections.deque.maxlen` attribute.
-  (Both features added by Raymond Hettinger.)
 
 * Constructors for the parsing classes in the :mod:`ConfigParser` module now
   take a *allow_no_value* parameter, defaulting to false; if true,
@@ -1074,14 +1086,14 @@ changes, or look through the Subversion logs for all the details.
     >>> print config.get('mysqld', 'unknown')
     Traceback (most recent call last):
       ...
-    ConfigParser.NoOptionError: No option 'unknown' in section: 'mysqld'
+    NoOptionError: No option 'unknown' in section: 'mysqld'
 
   (Contributed by Mats Kindahl; :issue:`7005`.)
 
 * Deprecated function: :func:`contextlib.nested`, which allows
   handling more than one context manager with a single :keyword:`with`
-  statement, has been deprecated, because :keyword:`with` supports
-  multiple context managers syntactically now.
+  statement, has been deprecated, because the :keyword:`with` statement
+  now supports multiple context managers.
 
 * The :mod:`copy` module's :func:`~copy.deepcopy` function will now
   correctly copy bound instance methods.  (Implemented by
@@ -1101,7 +1113,7 @@ changes, or look through the Subversion logs for all the details.
 * New method: the :class:`~decimal.Decimal` class gained a
   :meth:`~decimal.Decimal.from_float` class method that performs an exact
   conversion of a floating-point number to a :class:`~decimal.Decimal`.
-  Note that this is an **exact** conversion that strives for the
+  This exact conversion strives for the
   closest decimal approximation to the floating-point representation's value;
   the resulting decimal value will therefore still include the inaccuracy,
   if any.
@@ -1119,19 +1131,19 @@ changes, or look through the Subversion logs for all the details.
   :class:`Decimal`.
   (Fixed by Mark Dickinson; :issue:`2531`.)
 
-  Most of the methods of the :class:`~decimal.Context` class now accept integers
-  as well as :class:`~decimal.Decimal` instances; the only exceptions are the
-  :meth:`~decimal.Context.canonical` and :meth:`~decimal.Context.is_canonical`
-  methods.  (Patch by Juan José Conti; :issue:`7633`.)
-
   The constructor for :class:`~decimal.Decimal` now accepts
   floating-point numbers (added by Raymond Hettinger; :issue:`8257`)
   and non-European Unicode characters such as Arabic-Indic digits
   (contributed by Mark Dickinson; :issue:`6595`).
 
+  Most of the methods of the :class:`~decimal.Context` class now accept integers
+  as well as :class:`~decimal.Decimal` instances; the only exceptions are the
+  :meth:`~decimal.Context.canonical` and :meth:`~decimal.Context.is_canonical`
+  methods.  (Patch by Juan José Conti; :issue:`7633`.)
+
   When using :class:`~decimal.Decimal` instances with a string's
   :meth:`~str.format` method, the default alignment was previously
-  left-alignment.  This has been changed to right-alignment, which seems
+  left-alignment.  This has been changed to right-alignment, which is
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
   Comparisons involving a signaling NaN value (or ``sNAN``) now signal
@@ -1156,17 +1168,18 @@ changes, or look through the Subversion logs for all the details.
   rationals added in :issue:`5812`, and float/decimal in
   :issue:`8294`.)
 
-  An oversight was fixed, making the :class:`Fraction` match the other
-  numeric types; ordering comparisons (``<``, ``<=``, ``>``, ``>=``) between
+  Ordering comparisons (``<``, ``<=``, ``>``, ``>=``) between
   fractions and complex numbers now raise a :exc:`TypeError`.
+  This fixes an oversight, making the :class:`Fraction` match the other
+  numeric types.
 
   .. revision 79455
 
-* New class: a new :class:`~ftplib.FTP_TLS` class in
+* New class: :class:`~ftplib.FTP_TLS` in
   the :mod:`ftplib` module provides secure FTP
   connections using TLS encapsulation of authentication as well as
   subsequent control and data transfers.
-  (Contributed by Giampaolo Rodola', :issue:`2054`.)
+  (Contributed by Giampaolo Rodola; :issue:`2054`.)
 
   The :meth:`~ftplib.FTP.storbinary` method for binary uploads can now restart
   uploads thanks to an added *rest* parameter (patch by Pablo Mouzo;
@@ -1192,7 +1205,7 @@ changes, or look through the Subversion logs for all the details.
   otherwise. (Contributed by Antoine Pitrou; :issue:`4688`.)
 
 * The :mod:`gzip` module's :class:`~gzip.GzipFile` now supports the context
-  management protocol, so you can write ``with gzip.GzipFile(...) as f: ...``
+  management protocol, so you can write ``with gzip.GzipFile(...) as f:``
   (contributed by Hagen Fürstenau; :issue:`3860`), and it now implements
   the :class:`io.BufferedIOBase` ABC, so you can wrap it with
   :class:`io.BufferedReader` for faster processing
@@ -1208,7 +1221,7 @@ changes, or look through the Subversion logs for all the details.
 * New attribute: the :mod:`hashlib` module now has an :attr:`~hashlib.hashlib.algorithms`
   attribute containing a tuple naming the supported algorithms.
   In Python 2.7, ``hashlib.algorithms`` contains
-  ``('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')``
+  ``('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')``.
   (Contributed by Carl Chenet; :issue:`7418`.)
 
 * The default :class:`~httplib.HTTPResponse` class used by the :mod:`httplib` module now
@@ -1221,7 +1234,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
 
 * The :mod:`ihooks` module now supports relative imports.  Note that
-  :mod:`ihooks` is an older module used to support customizing imports,
+  :mod:`ihooks` is an older module for customizing imports,
   superseded by the :mod:`imputil` module added in Python 2.0.
   (Relative import support added by Neil Schemenauer.)
 
@@ -1239,9 +1252,9 @@ changes, or look through the Subversion logs for all the details.
     >>> def f(a, b=1, *pos, **named):
     ...     pass
     >>> getcallargs(f, 1, 2, 3)
-    {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
+    {'a': 1, 'b': 2, 'pos': (3,), 'named': {}}
     >>> getcallargs(f, a=2, x=4)
-    {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
+    {'a': 2, 'b': 1, 'pos': (), 'named': {'x': 4}}
     >>> getcallargs(f)
     Traceback (most recent call last):
     ...
@@ -1292,8 +1305,8 @@ changes, or look through the Subversion logs for all the details.
   floats or :class:`~decimal.Decimal` instances.  (Implemented by Raymond
   Hettinger; :issue:`5032`.)
 
-  :func:`itertools.combinations` and :func:`itertools.product` were
-  previously raising :exc:`ValueError` for values of *r* larger than
+  :func:`itertools.combinations` and :func:`itertools.product`
+  previously raised :exc:`ValueError` for values of *r* larger than
   the input iterable.  This was deemed a specification error, so they
   now return an empty iterator.  (Fixed by Raymond Hettinger; :issue:`4816`.)
 
@@ -1343,7 +1356,8 @@ changes, or look through the Subversion logs for all the details.
   real, effective, and saved GIDs and UIDs;
   :func:`~os.setresgid` and :func:`~os.setresuid`, which set
   real, effective, and saved GIDs and UIDs to new values;
-  :func:`~os.initgroups`.  (GID/UID functions
+  :func:`~os.initgroups`, which initialize the group access list
+  for the current process.  (GID/UID functions
   contributed by Travis H.; :issue:`6508`.  Support for initgroups added
   by Jean-Paul Calderone; :issue:`7333`.)
 
@@ -1393,9 +1407,9 @@ changes, or look through the Subversion logs for all the details.
 * New functions: in the :mod:`site` module, three new functions
   return various site- and user-specific paths.
   :func:`~site.getsitepackages` returns a list containing all
-  global site-packages directories, and
+  global site-packages directories,
   :func:`~site.getusersitepackages` returns the path of the user's
-  site-packages directory.
+  site-packages directory, and
   :func:`~site.getuserbase` returns the value of the :envvar:`USER_BASE`
   environment variable, giving the path to a directory that can be used
   to store data.
@@ -1461,7 +1475,7 @@ changes, or look through the Subversion logs for all the details.
 
   Another change makes the extension load all of OpenSSL's ciphers and
   digest algorithms so that they're all available.  Some SSL
-  certificates couldn't be verified, reporting an 'unknown algorithm'
+  certificates couldn't be verified, reporting an "unknown algorithm"
   error.  (Reported by Beda Kosata, and fixed by Antoine Pitrou;
   :issue:`8484`.)
 
@@ -1531,7 +1545,7 @@ changes, or look through the Subversion logs for all the details.
 
   :mod:`tarfile` now supports filtering the :class:`~tarfile.TarInfo`
   objects being added to a tar file.  When you call :meth:`~tarfile.TarFile.add`,
-  instance, you may supply an optional *filter* argument
+  you may supply an optional *filter* argument
   that's a callable.  The *filter* callable will be passed the
   :class:`~tarfile.TarInfo` for every file being added, and can modify and return it.
   If the callable returns ``None``, the file will be excluded from the
@@ -1609,7 +1623,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Kristján Valur Jónsson; :issue:`6267`.)
 
 * The :mod:`zipfile` module's :class:`~zipfile.ZipFile` now supports the context
-  management protocol, so you can write ``with zipfile.ZipFile(...) as f: ...``.
+  management protocol, so you can write ``with zipfile.ZipFile(...) as f:``.
   (Contributed by Brian Curtin; :issue:`5511`.)
 
   :mod:`zipfile` now also supports archiving empty directories and
@@ -1661,9 +1675,9 @@ Here are some examples::
     >>> anydbm
     <module 'anydbm' from '/p/python/Lib/anydbm.py'>
     >>> # Relative import
-    >>> sysconfig = import_module('..sysconfig', 'distutils.command')
-    >>> sysconfig
-    <module 'distutils.sysconfig' from '/p/python/Lib/distutils/sysconfig.pyc'>
+    >>> file_util = import_module('..file_util', 'distutils.command')
+    >>> file_util
+    <module 'distutils.file_util' from '/python/Lib/distutils/file_util.pyc'>
 
 :mod:`importlib` was implemented by Brett Cannon and introduced in
 Python 3.1.
@@ -1710,7 +1724,7 @@ set was originally called Tile, but was renamed to Ttk (for "themed Tk")
 on being added to Tcl/Tck release 8.5.
 
 To learn more, read the :mod:`ttk` module documentation.  You may also
-wish to read Tcl/Tk manual page describing the
+wish to read the Tcl/Tk manual page describing the
 Ttk theme engine, available at
 http://www.tcl.tk/man/tcl8.5/TkCmd/ttk_intro.htm. Some
 screenshots of the Python/Ttk code in use are at
@@ -1751,17 +1765,17 @@ The :func:`main` function supports some other new options:
 
 * :option:`-b` or :option:`--buffer` will buffer the standard output
   and standard error streams during each test.  If the test passes,
-  any resulting output will be discard; on failure, the buffered
+  any resulting output will be discarded; on failure, the buffered
   output will be displayed.
 
 * :option:`-c` or :option:`--catch` will cause the control-C interrupt
   to be handled more gracefully.  Instead of interrupting the test
   process immediately, the currently running test will be completed
-  and then the resulting partial results will be reported.  If you're
-  impatient, a second press of control-C will cause an immediate
+  and then the partial results up to the interruption will be reported.
+  If you're impatient, a second press of control-C will cause an immediate
   interruption.
 
-  This control-C handler tries to avoid interfering when the code
+  This control-C handler tries to avoid causing problems when the code
   being tested or the tests being run have defined a signal handler of
   their own, by noticing that a signal handler was already set and
   calling it.  If this doesn't work for you, there's a
@@ -1773,12 +1787,12 @@ The :func:`main` function supports some other new options:
   continuing to execute further tests.  (Suggested by Cliff Dyer and
   implemented by Michael Foord; :issue:`8074`.)
 
-The progress messages now shows 'x' for expected failures
+The progress messages now show 'x' for expected failures
 and 'u' for unexpected successes when run in verbose mode.
 (Contributed by Benjamin Peterson.)
 
 Test cases can raise the :exc:`~unittest.SkipTest` exception to skip a
-test.  (:issue:`1034053`.)
+test (:issue:`1034053`).
 
 The error messages for :meth:`~unittest.TestCase.assertEqual`,
 :meth:`~unittest.TestCase.assertTrue`, and :meth:`~unittest.TestCase.assertFalse`
@@ -1788,7 +1802,7 @@ True, both the standard error message and any additional message you
 provide will be printed for failures.  (Added by Michael Foord; :issue:`5663`.)
 
 The :meth:`~unittest.TestCase.assertRaises` method now
-return a context handler when called without providing a callable
+returns a context handler when called without providing a callable
 object to run.  For example, you can write this::
 
   with self.assertRaises(KeyError):
@@ -1808,7 +1822,7 @@ different module or class.
 
 The methods :meth:`~unittest.TestCase.addCleanup` and
 :meth:`~unittest.TestCase.doCleanups` were added.
-:meth:`~unittest.TestCase.addCleanup` allows you to add cleanup functions that
+:meth:`~unittest.TestCase.addCleanup` lets you add cleanup functions that
 will be called unconditionally (after :meth:`~unittest.TestCase.setUp` if
 :meth:`~unittest.TestCase.setUp` fails, otherwise after :meth:`~unittest.TestCase.tearDown`). This allows
 for much simpler resource allocation and deallocation during tests
@@ -1887,13 +1901,13 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
   objects being compared are of the specified type.  This function
   should compare the two objects and raise an exception if they don't
   match; it's a good idea for the function to provide additional
-  information about why the two objects are matching, much as the new
+  information about why the two objects aren't matching, much as the new
   sequence comparison methods do.
 
 :func:`unittest.main` now takes an optional ``exit`` argument.  If
-False, :func:`~unittest.main` doesn't call :func:`sys.exit`, allowing it to be
-used from the interactive interpreter. (Contributed by J. Pablo
-Fernández; :issue:`3379`.)
+False, :func:`~unittest.main` doesn't call :func:`sys.exit`, allowing
+:func:`main` to be used from the interactive interpreter.
+(Contributed by J. Pablo Fernández; :issue:`3379`.)
 
 :class:`~unittest.TestResult` has new :meth:`~unittest.TestResult.startTestRun` and
 :meth:`~unittest.TestResult.stopTestRun` methods that are called immediately before
@@ -1916,17 +1930,17 @@ Updated module: ElementTree 1.3
 ---------------------------------
 
 The version of the ElementTree library included with Python was updated to
-version 1.3.  Some of the new features in ElementTree 1.3 are:
+version 1.3.  Some of the new features are:
 
 * The various parsing functions now take a *parser* keyword argument
-  that can be used to provide an :class:`XMLParser` instance that will
-  be used.  This makes it possible to override the file's internal encoding:
+  giving an :class:`XMLParser` instance that will
+  be used.  This makes it possible to override the file's internal encoding::
 
     p = ET.XMLParser(encoding='utf-8')
     t = ET.XML("""<root/>""", parser=p)
 
-  Errors in parsing XML now raise a :exc:`ParseError` exception.
-  Instances of :exc:`ParseError` have a :attr:`position` attribute
+  Errors in parsing XML now raise a :exc:`ParseError` exception, whose
+  instances have a :attr:`position` attribute
   containing a (*line*, *column*) tuple giving the location of the problem.
 
 * ElementTree's code for converting trees to a string has been
@@ -1937,15 +1951,15 @@ version 1.3.  Some of the new features in ElementTree 1.3 are:
   elements as ``<empty></empty>`` instead of ``<empty/>``, and text
   mode will skip over elements and only output the text chunks.  If
   you set the :attr:`tag` attribute of an element to ``None`` but
-  leaves its children in place, the element will be omitted when the
+  leave its children in place, the element will be omitted when the
   tree is written out, so you don't need to do more extensive rearrangement
   to remove a single element.
 
-  Namespace aspects have also been improved.  All the ``xmlns:<whatever>``
-  declarations are now put on the root element and not scattered throughout
-  the resulting output.  You can set the default namespace for a tree
+  Namespace handling has also been improved.  All ``xmlns:<whatever>``
+  declarations are now output on the root element, not scattered throughout
+  the resulting XML.  You can set the default namespace for a tree
   by setting the :attr:`default_namespace` attribute and can
-  register new prefixes with :meth:`regsiter_namespace`.  In XML mode,
+  register new prefixes with :meth:`register_namespace`.  In XML mode,
   you can use the true/false *xml_declaration* parameter to suppress the
   XML declaration.
 
@@ -1967,10 +1981,9 @@ version 1.3.  Some of the new features in ElementTree 1.3 are:
 
 * New :class:`Element` method: :meth:`iter` yields the children of the
   element as a generator.  It's also possible to write ``for child in
-  elem: ...`` to loop over an element's children.  The existing method
-  :meth:`getiterator` is now deprecated.  :meth:`getchildren` is
-  another similar method that constructs and returns a list of
-  children; it's also deprecated.
+  elem:`` to loop over an element's children.  The existing method
+  :meth:`getiterator` is now deprecated, as is :meth:`getchildren`
+  which constructs and returns a list of children.
 
 * New :class:`Element` method: :meth:`itertext` yields all chunks of
   text that are descendants of the element.  For example::
@@ -1982,13 +1995,13 @@ version 1.3.  Some of the new features in ElementTree 1.3 are:
     # Outputs ['\n  ', '1', ' ', '2', '  ', '3', '\n']
     print list(t.itertext())
 
-* Deprecated: using an element as a Boolean (i.e., ``if elem: ...``)
-  would return true if the element had any children, or false if
-  there were no children.  This behaviour will eventually change or be removed
-  because it's confusing (``None`` is false, but so is a childless element?),
-  so it will now trigger a :exc:`FutureWarning`.  In your code,
-  you should be explicit: write ``len(elem) != 0`` if you're interested in
-  the number of children, or ``elem is not None``  Instead,
+* Deprecated: using an element as a Boolean (i.e., ``if elem:``) would
+  return true if the element had any children, or false if there were
+  no children.  This behaviour is confusing -- ``None`` is false, but
+  so is a childless element? -- so it will now trigger a
+  :exc:`FutureWarning`.  In your code, you should be explicit: write
+  ``len(elem) != 0`` if you're interested in the number of children,
+  or ``elem is not None``.
 
 Fredrik Lundh develops ElementTree and produced the 1.3 version;
 you can read his article describing 1.3 at
@@ -2009,9 +2022,9 @@ Changes to Python's build process and to the C API include:
   <http://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
   When you begin debugging an executable program P, GDB will look for
   a file named ``P-gdb.py`` and automatically read it.  Dave Malcolm
-  contributed a :file:`python-gdb.py` that adds a number of useful
-  commands when debugging Python itself.  For example, there are
-  ``py-up`` and ``py-down`` that go up or down one Python stack frame,
+  contributed a :file:`python-gdb.py` that adds a number of
+  commands useful when debugging Python itself.  For example,
+  ``py-up`` and ``py-down`` go up or down one Python stack frame,
   which usually corresponds to several C stack frames.  ``py-print``
   prints the value of a Python variable, and ``py-bt`` prints the
   Python stack trace.  (Added as a result of :issue:`8032`.)
@@ -2028,7 +2041,7 @@ Changes to Python's build process and to the C API include:
 
 * New function: :cfunc:`PyCode_NewEmpty` creates an empty code object;
   only the filename, function name, and first line number are required.
-  This is useful to extension modules that are attempting to
+  This is useful for extension modules that are attempting to
   construct a more useful traceback stack.  Previously such
   extensions needed to call :cfunc:`PyCode_New`, which had many
   more arguments.  (Added by Jeffrey Yasskin.)
@@ -2036,7 +2049,7 @@ Changes to Python's build process and to the C API include:
 * New function: :cfunc:`PyErr_NewExceptionWithDoc` creates a new
   exception class, just as the existing :cfunc:`PyErr_NewException` does,
   but takes an extra ``char *`` argument containing the docstring for the
-  new exception class.  (Added by the 'lekma' user on the Python bug tracker;
+  new exception class.  (Added by 'lekma' on the Python bug tracker;
   :issue:`7033`.)
 
 * New function: :cfunc:`PyFrame_GetLineNumber` takes a frame object
@@ -2078,11 +2091,11 @@ Changes to Python's build process and to the C API include:
 * Removed function: :cmacro:`PyEval_CallObject` is now only available
   as a macro.  A function version was being kept around to preserve
   ABI linking compatibility, but that was in 1997; it can certainly be
-  deleted.  (Removed by Antoine Pitrou; :issue:`8276`.)
+  deleted by now.  (Removed by Antoine Pitrou; :issue:`8276`.)
 
 * New format codes: the :cfunc:`PyFormat_FromString`,
-  :cfunc:`PyFormat_FromStringV`, and :cfunc:`PyErr_Format` now
-  accepts ``%lld`` and ``%llu`` format codes for displaying values of
+  :cfunc:`PyFormat_FromStringV`, and :cfunc:`PyErr_Format` functions now
+  accept ``%lld`` and ``%llu`` format codes for displaying
   C's :ctype:`long long` types.
   (Contributed by Mark Dickinson; :issue:`7228`.)
 
@@ -2096,7 +2109,7 @@ Changes to Python's build process and to the C API include:
   ever release the lock, since the other threads weren't replicated,
   and the child process would no longer be able to perform imports.
 
-  Python 2.7 now acquires the import lock before performing an
+  Python 2.7 acquires the import lock before performing an
   :func:`os.fork`, and will also clean up any locks created using the
   :mod:`threading` module.  C extension modules that have internal
   locks, or that call :cfunc:`fork()` themselves, will not benefit
@@ -2123,15 +2136,15 @@ Changes to Python's build process and to the C API include:
   building the :mod:`pyexpat` module to use the system Expat library.
   (Contributed by Arfrever Frehtes Taifersar Arahesis; :issue:`7609`.)
 
-* New configure option: compiling Python with the
+* New configure option: the
   :option:`--with-valgrind` option will now disable the pymalloc
   allocator, which is difficult for the Valgrind memory-error detector
   to analyze correctly.
   Valgrind will therefore be better at detecting memory leaks and
   overruns. (Contributed by James Henstridge; :issue:`2422`.)
 
-* New configure option: you can now supply no arguments to
-  :option:`--with-dbmliborder=` in order to build none of the various
+* New configure option: you can now supply an empty string to
+  :option:`--with-dbmliborder=` in order to disable all of the various
   DBM modules.  (Added by Arfrever Frehtes Taifersar Arahesis;
   :issue:`6491`.)
 
@@ -2158,15 +2171,15 @@ Capsules
 -------------------
 
 Python 3.1 adds a new C datatype, :ctype:`PyCapsule`, for providing a
-C API to an extension module.  A capsule is essentially the holder for
-a C ``void *`` pointer, and is bound to a module attribute; for
+C API to an extension module.  A capsule is essentially the holder of
+a C ``void *`` pointer, and is made available as a module attribute; for
 example, the :mod:`socket` module's API is exposed as ``socket.CAPI``,
-and :mod:`unicodedata` calls it ``ucnhash_CAPI``.  Other extensions
+and :mod:`unicodedata` exposes ``ucnhash_CAPI``.  Other extensions
 can import the module, access its dictionary to get the capsule
 object, and then get the ``void *`` pointer, which will usually point
-to an array of pointers to the various API functions.
+to an array of pointers to the module's various API functions.
 
-There is an existing data type that already does this,
+There is an existing data type already used for this,
 :ctype:`PyCObject`, but it doesn't provide type safety.  Evil code
 written in pure Python could cause a segmentation fault by taking a
 :ctype:`PyCObject` from module A and somehow substituting it for the
@@ -2224,10 +2237,10 @@ Port-Specific Changes: Windows
 
 * The :func:`os.kill` function now works on Windows.  The signal value
   can be the constants :const:`CTRL_C_EVENT`,
-  :const:`CTRL_BREAK_EVENT`, or any integer.  The Control-C and
-  Control-Break keystroke events can be sent to subprocesses; any
-  other value will use the :cfunc:`TerminateProcess` API.
-  (Contributed by Miki Tebeka; :issue:`1220212`.)
+  :const:`CTRL_BREAK_EVENT`, or any integer.  The first two constants
+  will send Control-C and Control-Break keystroke events to
+  subprocesses; any other value will use the :cfunc:`TerminateProcess`
+  API.  (Contributed by Miki Tebeka; :issue:`1220212`.)
 
 * The :func:`os.listdir` function now correctly fails
   for an empty path.  (Fixed by Hirokazu Yamamoto; :issue:`5913`.)
@@ -2259,7 +2272,7 @@ Other Changes and Fixes
 
 * Two benchmark scripts, :file:`iobench` and :file:`ccbench`, were
   added to the :file:`Tools` directory.  :file:`iobench` measures the
-  speed of built-in file I/O objects (as returned by :func:`open`)
+  speed of the built-in file I/O objects returned by :func:`open`
   while performing various operations, and :file:`ccbench` is a
   concurrency benchmark that tries to measure computing throughput,
   thread switching latency, and IO processing bandwidth when
@@ -2353,6 +2366,14 @@ In the standard library:
 * The :mod:`syslog` module will now use the value of ``sys.argv[0]`` as the
   identifier instead of the previous default value of ``'python'``.
   (Changed by Sean Reifschneider; :issue:`8451`.)
+
+* The :mod:`tarfile` module's default error handling has changed, to
+  no longer suppress fatal errors.  The default error level was previously 0,
+  which meant that errors would only result in a message being written to the
+  debug log, but because the debug log is not activated by default,
+  these errors go unnoticed.  The default error level is now 1,
+  which raises an exception if there's an error.
+  (Changed by Lars Gustäbel; :issue:`7357`.)
 
 * The :mod:`urlparse` module's :func:`~urlparse.urlsplit` now handles
   unknown URL schemes in a fashion compliant with :rfc:`3986`: if the
