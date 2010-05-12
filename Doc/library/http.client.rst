@@ -521,9 +521,8 @@ Here is an example session that uses the ``GET`` method::
    >>> data2 = r2.read()
    >>> conn.close()
 
-Here is an example session that uses ``HEAD`` method. Note that ``HEAD`` method
-never returns any data. ::
-
+Here is an example session that uses the ``HEAD`` method.  Note that the
+``HEAD`` method never returns any data. ::
 
    >>> import http.client
    >>> conn = http.client.HTTPConnection("www.python.org")
