@@ -560,9 +560,8 @@ Here is an example session that uses the ``GET`` method::
    >>> data2 = r2.read()
    >>> conn.close()
 
-Here is an example session that uses the ``HEAD`` method.  Note that``HEAD``
-method never returns any data. ::
-
+Here is an example session that uses the ``HEAD`` method.  Note that the
+``HEAD`` method never returns any data. ::
 
    >>> import httplib
    >>> conn = httplib.HTTPConnection("www.python.org")
