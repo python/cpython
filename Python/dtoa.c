@@ -1382,7 +1382,6 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
     Bigint *b, *d;
     int b2, d2, dd, i, nd, nd0, odd, p2, p5;
 
-    dd = 0; /* silence compiler warning about possibly unused variable */
     nd = bc->nd;
     nd0 = bc->nd0;
     p5 = nd + bc->e0;
@@ -2362,7 +2361,7 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
 
     /* set pointers to NULL, to silence gcc compiler warnings and make
        cleanup easier on error */
-    mlo = mhi = b = S = 0;
+    mlo = mhi = S = 0;
     s0 = 0;
 
     u.d = dd;
@@ -2713,8 +2712,6 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
      * and for all and pass them and a shift to quorem, so it
      * can do shifts and ors to compute the numerator for q.
      */
-    if ((i = ((s5 ? 32 - hi0bits(S->x[S->wds-1]) : 1) + s2) & 0x1f))
-        i = 32 - i;
 #define iInc 28
     i = dshift(S, s2);
     b2 += i;
