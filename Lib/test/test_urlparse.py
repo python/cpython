@@ -103,7 +103,12 @@ class UrlParseTestCase(unittest.TestCase):
              ('svn+ssh', 'svn.zope.org', '/repos/main/ZConfig/trunk/',
               '', '', ''),
              ('svn+ssh', 'svn.zope.org', '/repos/main/ZConfig/trunk/',
-              '', ''))
+              '', '')),
+            ('git+ssh://git@github.com/user/project.git',
+            ('git+ssh', 'git@github.com','/user/project.git',
+             '','',''),
+            ('git+ssh', 'git@github.com','/user/project.git',
+             '', ''))
             ]
         for url, parsed, split in testcases:
             self.checkRoundtrips(url, parsed, split)
