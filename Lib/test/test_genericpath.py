@@ -238,7 +238,7 @@ class CommonTest(GenericTest):
                     self.assertIsInstance(abspath(path), unicode)
 
     @unittest.skipIf(sys.platform == 'darwin',
-        "Mac OS X deny the creation of a directory with an invalid utf8 name")
+        "Mac OS X denies the creation of a directory with an invalid utf8 name")
     def test_nonascii_abspath(self):
         # Test non-ASCII, non-UTF8 bytes in the path.
         with test_support.temp_cwd('\xe7w\xf0'):
