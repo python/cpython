@@ -2,9 +2,10 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from __future__ import with_statement
+import random
+import subprocess
 import sys
 import time
-import random
 import unittest
 from test import support
 try:
@@ -34,6 +35,19 @@ class CAPITest(unittest.TestCase):
         InstanceMethod.testfunction.attribute = "test"
         self.assertEqual(testfunction.attribute, "test")
         self.assertRaises(AttributeError, setattr, inst.testfunction, "attribute", "test")
+
+    def test_no_FatalError_infinite_loop(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import _testcapi;'
+                              '_testcapi.crash_no_current_thread()'],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        (out, err) = p.communicate()
+        self.assertEqual(out, b'')
+        # This used to cause an infinite loop.
+        self.assertEqual(err,
+                         b'Fatal Python error:'
+                         b' PyThreadState_Get: no current thread\n')
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')

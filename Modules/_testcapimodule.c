@@ -2005,6 +2005,17 @@ make_exception_with_doc(PyObject *self, PyObject *args, PyObject *kwargs)
     return PyErr_NewExceptionWithDoc(name, doc, base, dict);
 }
 
+/* Test that the fatal error from not having a current thread doesn't
+   cause an infinite loop.  Run via Lib/test/test_capi.py */
+static PyObject *
+crash_no_current_thread(PyObject *self)
+{
+    Py_BEGIN_ALLOW_THREADS
+    PyErr_SetString(PyExc_SystemError, "bork bork bork");
+    Py_END_ALLOW_THREADS
+    return NULL;
+}
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -2069,6 +2080,7 @@ static PyMethodDef TestMethods[] = {
     {"code_newempty", code_newempty,                     METH_VARARGS},
     {"make_exception_with_doc", (PyCFunction)make_exception_with_doc,
      METH_VARARGS | METH_KEYWORDS},
+    {"crash_no_current_thread", (PyCFunction)crash_no_current_thread, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
