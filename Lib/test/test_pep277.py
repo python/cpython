@@ -40,6 +40,18 @@ if sys.platform != 'darwin':
                                 #   NFKC(u'\u2001') == NFKC(u'\u2003')
 ])
 
+
+# Is it Unicode-friendly?
+if not os.path.supports_unicode_filenames:
+    fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
+    try:
+        for name in filenames:
+            name.encode(fsencoding)
+    except UnicodeEncodeError:
+        raise unittest.SkipTest("only NT+ and systems with "
+                                "Unicode-friendly filesystem encoding")
+
+
 # Destroy directory dirname and all files under it, to one level.
 def deltree(dirname):
     # Don't hide legitimate errors:  if one of these suckers exists, it's
@@ -63,14 +75,8 @@ class UnicodeFileTests(unittest.TestCase):
         files = set()
         for name in self.files:
             name = os.path.join(test_support.TESTFN, self.norm(name))
-            try:
-                f = open(name, 'w')
-            except UnicodeEncodeError:
-                if not os.path.supports_unicode_filenames:
-                    self.skipTest("only NT+ and systems with Unicode-friendly"
-                                  "filesystem encoding")
-            f.write((name+'\n').encode("utf-8"))
-            f.close()
+            with open(name, 'w') as f:
+                f.write((name+'\n').encode("utf-8"))
             os.stat(name)
             files.add(name)
         self.files = files
