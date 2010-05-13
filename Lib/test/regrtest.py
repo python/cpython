@@ -426,7 +426,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         # Print basic platform information
         print "==", platform.python_implementation(), \
                     " ".join(sys.version.split())
-        print "==  ", platform.platform(aliased=True)
+        print "==  ", platform.platform(aliased=True), \
+                      "%s-endian" % sys.byteorder,
+        if sys.platform == 'darwin':
+            print platform.mac_ver()
+        else:
+            print
         print "==  ", os.getcwd()
 
     alltests = findtests(testdir, stdtests, nottests)
