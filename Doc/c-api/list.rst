@@ -15,11 +15,8 @@ List Objects
 
 .. cvar:: PyTypeObject PyList_Type
 
-   .. index:: single: ListType (in module types)
-
-   This instance of :ctype:`PyTypeObject` represents the Python list type.
-   This is the same object as ``list`` and ``types.ListType`` in the Python
-   layer.
+   This instance of :ctype:`PyTypeObject` represents the Python list type.  This
+   is the same object as ``list`` in the Python layer.
 
 
 .. cfunction:: int PyList_Check(PyObject *p)
