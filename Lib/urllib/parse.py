@@ -38,7 +38,7 @@ uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap',
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
                'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
-               'svn', 'svn+ssh', 'sftp','nfs']
+               'svn', 'svn+ssh', 'sftp', 'nfs',' git', 'git+ssh']
 non_hierarchical = ['gopher', 'hdl', 'mailto', 'news',
                     'telnet', 'wais', 'imap', 'snews', 'sip', 'sips']
 uses_params = ['ftp', 'hdl', 'prospero', 'http', 'imap',
