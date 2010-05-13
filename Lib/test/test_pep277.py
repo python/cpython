@@ -130,14 +130,10 @@ class UnicodeFileTests(unittest.TestCase):
         if sys.platform == 'darwin':
             files = set(normalize('NFD', file) for file in files)
         for name in others:
-            if sys.platform == 'darwin':
+            if sys.platform == 'darwin' and normalize('NFD', name) in files:
                 # Mac OS X decomposes Unicode names.  See comment above.
-                try:
-                    os.stat(name)
-                    if normalize('NFD', name) in files:
-                        continue
-                except OSError:
-                    pass
+                os.stat(name)
+                continue
             self._apply_failure(open, name, IOError)
             self._apply_failure(os.stat, name, OSError)
             self._apply_failure(os.chdir, name, OSError)
@@ -156,16 +152,7 @@ class UnicodeFileTests(unittest.TestCase):
             sf0 = set(normalize('NFD', unicode(f)) for f in self.files)
             f2 = [normalize('NFD', unicode(f)) for f in f2]
         sf2 = set(os.path.join(unicode(test_support.TESTFN), f) for f in f2)
-        try:
-            self.assertEqual(sf0, sf2)
-        except self.failureException:
-            if sys.platform != 'darwin':
-                raise
-            # XXX Troubleshoot issue #8423
-            f2 = os.listdir(unicode(test_support.TESTFN,
-                                    sys.getfilesystemencoding()))
-            sf2 = set(os.path.join(unicode(test_support.TESTFN), f) for f in f2)
-            self.assertEqual(set(self.files), sf2)
+        self.assertEqual(sf0, sf2)
         self.assertEqual(len(f1), len(f2))
 
     def test_rename(self):
