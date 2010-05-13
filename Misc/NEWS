@@ -21,6 +21,14 @@ Extension Modules
 - Issue #8674: Fixed a number of incorrect or undefined-behaviour-inducing
   overflow checks in the audioop module.
 
+Tests
+-----
+
+- On darwin, test_site assumed that a framework build was being used, leading
+  to a failure where four directories were expected for site-packages instead
+  of two in a non-framework build.
+
+
 What's New in Python 2.7 beta 2?
 ================================
 
