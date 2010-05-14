@@ -120,7 +120,7 @@ can also be used in some cases. ::
 Module initialization and state
 ===============================
 
-Python 3.0 has a revamped extension module initialization system.  (See PEP
+Python 3.0 has a revamped extension module initialization system.  (See
 :pep:`3121`.)  Instead of storing module state in globals, they should be stored
 in an interpreter specific structure.  Creating modules that act correctly in
 both 2.x and 3.0 is tricky.  The following simple example demonstrates how. ::

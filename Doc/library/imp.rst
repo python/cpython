@@ -211,7 +211,7 @@ byte-compiled file paths.
 
 .. function:: cache_from_source(path, debug_override=None)
 
-   Return the PEP 3147 path to the byte-compiled file associated with the
+   Return the :pep:`3147` path to the byte-compiled file associated with the
    source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
    value would be ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.
    The ``cpython-32`` string comes from the current magic tag (see
@@ -225,15 +225,15 @@ byte-compiled file paths.
 
 .. function:: source_from_cache(path)
 
-   Given the *path* to a PEP 3147 file name, return the associated source code
+   Given the *path* to a :pep:`3147` file name, return the associated source code
    file path.  For example, if *path* is
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
    ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
-   to PEP 3147 format, a ``ValueError`` is raised.
+   to :pep:`3147` format, a ``ValueError`` is raised.
 
 .. function:: get_tag()
 
-   Return the PEP 3147 magic tag string matching this version of Python's
+   Return the :pep:`3147` magic tag string matching this version of Python's
    magic number, as returned by :func:`get_magic`.
 
 
