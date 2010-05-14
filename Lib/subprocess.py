@@ -884,9 +884,9 @@ class Popen(object):
 
 
         def _internal_poll(self, _deadstate=None,
-                _WaitForSingleObject=WaitForSingleObject,
-                _WAIT_OBJECT_0=WAIT_OBJECT_0,
-                _GetExitCodeProcess=GetExitCodeProcess):
+                _WaitForSingleObject=_subprocess.WaitForSingleObject,
+                _WAIT_OBJECT_0=_subprocess.WAIT_OBJECT_0,
+                _GetExitCodeProcess=_subprocess.GetExitCodeProcess):
             """Check if child process has terminated.  Returns returncode
             attribute.
 
