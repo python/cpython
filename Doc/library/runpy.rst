@@ -25,7 +25,7 @@ The :mod:`runpy` module provides a single function:
 
    Execute the code of the specified module and return the resulting module globals
    dictionary. The module's code is first located using the standard import
-   mechanism (refer to PEP 302 for details) and then executed in a fresh module
+   mechanism (refer to :pep:`302` for details) and then executed in a fresh module
    namespace.
 
    The optional dictionary argument *init_globals* may be used to pre-populate the
@@ -41,7 +41,7 @@ The :mod:`runpy` module provides a single function:
    ``__name__`` is set to *run_name* if this optional argument is supplied, and the
    *mod_name* argument otherwise.
 
-   ``__loader__`` is set to the PEP 302 module loader used to retrieve the code for
+   ``__loader__`` is set to the :pep:`302` module loader used to retrieve the code for
    the module (This loader may be a wrapper around the standard import mechanism).
 
    ``__file__`` is set to the name provided by the module loader. If the loader
