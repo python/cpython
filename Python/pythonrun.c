@@ -334,7 +334,7 @@ flush_std_files(void)
             Py_DECREF(tmp);
     }
 
-    if (ferr != NULL || ferr != Py_None) {
+    if (ferr != NULL && ferr != Py_None) {
         tmp = PyObject_CallMethod(ferr, "flush", "");
         if (tmp == NULL)
             PyErr_Clear();
