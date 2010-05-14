@@ -181,7 +181,8 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertEquals(dirs[1], wanted)
 
         # let's try the specific Apple location
-        if sys.platform == "darwin":
+        if (sys.platform == "darwin" and
+            sysconfig.get_config_var("PYTHONFRAMEWORK")):
             site.PREFIXES = ['Python.framework']
             dirs = site.getsitepackages()
             self.assertEqual(len(dirs), 4)
