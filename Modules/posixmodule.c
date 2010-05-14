@@ -2364,33 +2364,17 @@ posix_listdir(PyObject *self, PyObject *args)
             (NAMLEN(ep) == 1 ||
              (ep->d_name[1] == '.' && NAMLEN(ep) == 2)))
             continue;
-        v = PyBytes_FromStringAndSize(ep->d_name, NAMLEN(ep));
+        if (arg_is_unicode)
+            v = PyUnicode_DecodeFSDefaultAndSize(ep->d_name, NAMLEN(ep));
+        else
+            v = PyBytes_FromStringAndSize(ep->d_name, NAMLEN(ep));
         if (v == NULL) {
-            Py_DECREF(d);
-            d = NULL;
+            Py_CLEAR(d);
             break;
-        }
-        if (arg_is_unicode) {
-            PyObject *w;
-
-            w = PyUnicode_FromEncodedObject(v,
-                                            Py_FileSystemDefaultEncoding,
-                                            "surrogateescape");
-            Py_DECREF(v);
-            if (w != NULL)
-                v = w;
-            else {
-                /* Encoding failed to decode ASCII bytes.
-                   Raise exception. */
-                Py_DECREF(d);
-                d = NULL;
-                break;
-            }
         }
         if (PyList_Append(d, v) != 0) {
             Py_DECREF(v);
-            Py_DECREF(d);
-            d = NULL;
+            Py_CLEAR(d);
             break;
         }
         Py_DECREF(v);
@@ -4605,22 +4589,10 @@ posix_readlink(PyObject *self, PyObject *args)
         return posix_error_with_allocated_filename(opath);
 
     Py_DECREF(opath);
-    v = PyBytes_FromStringAndSize(buf, n);
-    if (arg_is_unicode) {
-        PyObject *w;
-
-        w = PyUnicode_FromEncodedObject(v,
-                                        Py_FileSystemDefaultEncoding,
-                                        "surrogateescape");
-        if (w != NULL) {
-            Py_DECREF(v);
-            v = w;
-        }
-        else {
-            v = NULL;
-        }
-    }
-    return v;
+    if (arg_is_unicode)
+        return PyUnicode_DecodeFSDefaultAndSize(buf, n);
+    else
+        return PyBytes_FromStringAndSize(buf, n);
 }
 #endif /* HAVE_READLINK */
 
