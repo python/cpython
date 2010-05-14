@@ -11,10 +11,11 @@ Unicode Objects
 ^^^^^^^^^^^^^^^
 
 
+Unicode Type
+""""""""""""
+
 These are the basic Unicode object types used for the Unicode implementation in
 Python:
-
-.. % --- Unicode Type -------------------------------------------------------
 
 
 .. ctype:: Py_UNICODE
@@ -105,11 +106,12 @@ access internal read-only data of Unicode objects:
    .. versionadded:: 2.6
 
 
+Unicode Character Properties
+""""""""""""""""""""""""""""
+
 Unicode provides many different character properties. The most often needed ones
 are available through these macros which are mapped to C functions depending on
 the Python configuration.
-
-.. % --- Unicode character properties ---------------------------------------
 
 
 .. cfunction:: int Py_UNICODE_ISSPACE(Py_UNICODE ch)
@@ -196,10 +198,12 @@ These APIs can be used for fast direct character conversions:
    Return the character *ch* converted to a double. Return ``-1.0`` if this is not
    possible.  This macro does not raise exceptions.
 
+
+Plain Py_UNICODE
+""""""""""""""""
+
 To create Unicode objects and access their basic sequence properties, use these
 APIs:
-
-.. % --- Plain Py_UNICODE ---------------------------------------------------
 
 
 .. cfunction:: PyObject* PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
@@ -258,8 +262,11 @@ Python can interface directly to this type using the following functions.
 Support is optimized if Python's own :ctype:`Py_UNICODE` type is identical to
 the system's :ctype:`wchar_t`.
 
-.. % --- wchar_t support for platforms which support it ---------------------
 
+wchar_t Support
+"""""""""""""""
+
+wchar_t support for platforms which support it:
 
 .. cfunction:: PyObject* PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
 
@@ -312,9 +319,11 @@ built-in codecs is "strict" (:exc:`ValueError` is raised).
 The codecs all use a similar interface.  Only deviation from the following
 generic ones are documented for simplicity.
 
-These are the generic codec APIs:
 
-.. % --- Generic Codecs -----------------------------------------------------
+Generic Codecs
+""""""""""""""
+
+These are the generic codec APIs:
 
 
 .. cfunction:: PyObject* PyUnicode_Decode(const char *s, Py_ssize_t size, const char *encoding, const char *errors)
@@ -351,9 +360,11 @@ These are the generic codec APIs:
    the Python codec registry. Return *NULL* if an exception was raised by the
    codec.
 
-These are the UTF-8 codec APIs:
 
-.. % --- UTF-8 Codecs -------------------------------------------------------
+UTF-8 Codecs
+""""""""""""
+
+These are the UTF-8 codec APIs:
 
 
 .. cfunction:: PyObject* PyUnicode_DecodeUTF8(const char *s, Py_ssize_t size, const char *errors)
@@ -396,9 +407,11 @@ These are the UTF-8 codec APIs:
    object.  Error handling is "strict".  Return *NULL* if an exception was raised
    by the codec.
 
-These are the UTF-32 codec APIs:
 
-.. % --- UTF-32 Codecs ------------------------------------------------------ */
+UTF-32 Codecs
+"""""""""""""
+
+These are the UTF-32 codec APIs:
 
 
 .. cfunction:: PyObject* PyUnicode_DecodeUTF32(const char *s, Py_ssize_t size, const char *errors, int *byteorder)
@@ -471,9 +484,10 @@ These are the UTF-32 codec APIs:
    .. versionadded:: 2.6
 
 
-These are the UTF-16 codec APIs:
+UTF-16 Codecs
+"""""""""""""
 
-.. % --- UTF-16 Codecs ------------------------------------------------------ */
+These are the UTF-16 codec APIs:
 
 
 .. cfunction:: PyObject* PyUnicode_DecodeUTF16(const char *s, Py_ssize_t size, const char *errors, int *byteorder)
@@ -552,9 +566,11 @@ These are the UTF-16 codec APIs:
    string always starts with a BOM mark.  Error handling is "strict".  Return
    *NULL* if an exception was raised by the codec.
 
-These are the "Unicode Escape" codec APIs:
 
-.. % --- Unicode-Escape Codecs ----------------------------------------------
+Unicode-Escape Codecs
+"""""""""""""""""""""
+
+These are the "Unicode Escape" codec APIs:
 
 
 .. cfunction:: PyObject* PyUnicode_DecodeUnicodeEscape(const char *s, Py_ssize_t size, const char *errors)
@@ -584,9 +600,11 @@ These are the "Unicode Escape" codec APIs:
    string object.  Error handling is "strict". Return *NULL* if an exception was
    raised by the codec.
 
-These are the "Raw Unicode Escape" codec APIs:
 
-.. % --- Raw-Unicode-Escape Codecs ------------------------------------------
+Raw-Unicode-Escape Codecs
+"""""""""""""""""""""""""
+
+These are the "Raw Unicode Escape" codec APIs:
 
 
 .. cfunction:: PyObject* PyUnicode_DecodeRawUnicodeEscape(const char *s, Py_ssize_t size, const char *errors)
@@ -616,10 +634,12 @@ These are the "Raw Unicode Escape" codec APIs:
    Python string object. Error handling is "strict". Return *NULL* if an exception
    was raised by the codec.
 
+
+Latin-1 Codecs
+""""""""""""""
+
 These are the Latin-1 codec APIs: Latin-1 corresponds to the first 256 Unicode
 ordinals and only these are accepted by the codecs during encoding.
-
-.. % --- Latin-1 Codecs -----------------------------------------------------
 
 
 .. cfunction:: PyObject* PyUnicode_DecodeLatin1(const char *s, Py_ssize_t size, const char *errors)
@@ -648,10 +668,12 @@ ordinals and only these are accepted by the codecs during encoding.
    object.  Error handling is "strict".  Return *NULL* if an exception was raised
    by the codec.
 
+
+ASCII Codecs
+""""""""""""
+
 These are the ASCII codec APIs.  Only 7-bit ASCII data is accepted. All other
 codes generate errors.
-
-.. % --- ASCII Codecs -------------------------------------------------------
 
 
 .. cfunction:: PyObject* PyUnicode_DecodeASCII(const char *s, Py_ssize_t size, const char *errors)
@@ -680,9 +702,11 @@ codes generate errors.
    object.  Error handling is "strict".  Return *NULL* if an exception was raised
    by the codec.
 
-These are the mapping codec APIs:
 
-.. % --- Character Map Codecs -----------------------------------------------
+Character Map Codecs
+""""""""""""""""""""
+
+These are the mapping codec APIs:
 
 This codec is special in that it can be used to implement many different codecs
 (and this is in fact what was done to obtain most of the standard codecs
@@ -765,7 +789,9 @@ use the Win32 MBCS converters to implement the conversions.  Note that MBCS (or
 DBCS) is a class of encodings, not just one.  The target encoding is defined by
 the user settings on the machine running the codec.
 
-.. % --- MBCS codecs for Windows --------------------------------------------
+
+MBCS codecs for Windows
+"""""""""""""""""""""""
 
 
 .. cfunction:: PyObject* PyUnicode_DecodeMBCS(const char *s, Py_ssize_t size, const char *errors)
@@ -804,8 +830,9 @@ the user settings on the machine running the codec.
    object.  Error handling is "strict".  Return *NULL* if an exception was raised
    by the codec.
 
-.. % --- Methods & Slots ----------------------------------------------------
 
+Methods & Slots
+"""""""""""""""
 
 .. _unicodemethodsandslots:
 
