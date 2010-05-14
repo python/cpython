@@ -712,7 +712,7 @@ This is a working "Hello World" WSGI application::
    # use a function (note that you're not limited to a function, you can
    # use a class for example). The first argument passed to the function
    # is a dictionary containing CGI-style envrironment variables and the
-   # second variable is the callable object (see PEP333)
+   # second variable is the callable object (see :pep:`333`)
    def hello_world_app(environ, start_response):
        status = '200 OK' # HTTP Status
        headers = [('Content-type', 'text/plain')] # HTTP Headers

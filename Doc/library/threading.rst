@@ -14,7 +14,7 @@ The :mod:`dummy_threading` module is provided for situations where
 
 .. note::
 
-   Starting with Python 2.6, this module provides PEP 8 compliant aliases and
+   Starting with Python 2.6, this module provides :pep:`8` compliant aliases and
    properties to replace the ``camelCase`` names that were inspired by Java's
    threading API. This updated API is compatible with that of the
    :mod:`multiprocessing` module. However, no schedule has been set for the
