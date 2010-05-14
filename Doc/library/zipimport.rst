@@ -34,12 +34,12 @@ ZIP archives with an archive comment are currently not supported.
       Documentation on the ZIP file format by Phil Katz, the creator of the format and
       algorithms used.
 
-   :pep:`0273` - Import Modules from Zip Archives
+   :pep:`273` - Import Modules from Zip Archives
       Written by James C. Ahlstrom, who also provided an implementation. Python 2.3
       follows the specification in PEP 273, but uses an implementation written by Just
       van Rossum that uses the import hooks described in PEP 302.
 
-   :pep:`0302` - New Import Hooks
+   :pep:`302` - New Import Hooks
       The PEP to add the import hooks that help this module work.
 
 
