@@ -1240,24 +1240,28 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
 /* --- File system encoding ---------------------------------------------- */
 
 /* ParseTuple converter which converts a Unicode object into the file
-   system encoding as a bytes object, using the PEP 383 error handler; bytes
-   objects are output as-is. */
+   system encoding as a bytes object, using the "surrogateescape" error
+   handler; bytes objects are output as-is. */
 
 PyAPI_FUNC(int) PyUnicode_FSConverter(PyObject*, void*);
 
-/* Decode a null-terminated string using Py_FileSystemDefaultEncoding.
+/* Decode a null-terminated string using Py_FileSystemDefaultEncoding
+   and the "surrogateescape" error handler.
 
-   If the encoding is supported by one of the built-in codecs (i.e., UTF-8,
-   UTF-16, UTF-32, Latin-1 or MBCS), otherwise fallback to UTF-8 and replace
-   invalid characters with '?'.
+   If Py_FileSystemDefaultEncoding is not set, fall back to UTF-8.
 
-   The function is intended to be used for paths and file names only
-   during bootstrapping process where the codecs are not set up.
+   Use PyUnicode_DecodeFSDefaultAndSize() if you have the string length.
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefault(
     const char *s               /* encoded string */
     );
+
+/* Decode a string using Py_FileSystemDefaultEncoding
+   and the "surrogateescape" error handler.
+
+   If Py_FileSystemDefaultEncoding is not set, fall back to UTF-8.
+*/
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
     const char *s,               /* encoded string */
