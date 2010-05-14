@@ -365,6 +365,10 @@ else:
                   'Unicode filename tests may not be effective'
                   % TESTFN_UNICODE_UNENCODEABLE)
 
+if os.path.isdir(TESTFN):
+    # a test failed (eg. test_os) without removing TESTFN directory
+    shutil.rmtree(TESTFN)
+
 # Make sure we can write to TESTFN, try in /tmp if we can't
 fp = None
 try:
