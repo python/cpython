@@ -15,6 +15,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5099: subprocess.Popen's __del__ method (and the methods it calls)
+  referenced global objects, causing errors to pop up during interpreter
+  shutdown.
+
 Extension Modules
 -----------------
 
