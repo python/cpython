@@ -4062,7 +4062,7 @@ Kill a process with a signal.");
 static PyObject *
 win32_kill(PyObject *self, PyObject *args)
 {
-    PyObject *result, handle_obj;
+    PyObject *result;
     DWORD pid, sig, err;
     HANDLE handle;
 
