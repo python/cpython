@@ -45,9 +45,9 @@ class CAPITest(unittest.TestCase):
         (out, err) = p.communicate()
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
-        self.assertEqual(err,
+        self.assertEqual(err.rstrip(),
                          b'Fatal Python error:'
-                         b' PyThreadState_Get: no current thread\n')
+                         b' PyThreadState_Get: no current thread')
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
