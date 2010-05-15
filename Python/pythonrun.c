@@ -57,6 +57,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
 static void initmain(void);
+static void initfsencoding(void);
 static void initsite(void);
 static int initstdio(void);
 static void flush_io(void);
@@ -159,7 +160,6 @@ get_codeset(void)
 
 error:
     Py_XDECREF(codec);
-    PyErr_Clear();
     return NULL;
 }
 #endif
@@ -171,9 +171,6 @@ Py_InitializeEx(int install_sigs)
     PyThreadState *tstate;
     PyObject *bimod, *sysmod, *pstderr;
     char *p;
-#if defined(HAVE_LANGINFO_H) && defined(CODESET)
-    char *codeset;
-#endif
     extern void _Py_ReadyTypes(void);
 
     if (initialized)
@@ -264,21 +261,7 @@ Py_InitializeEx(int install_sigs)
 
     _PyImportHooks_Init();
 
-#if defined(HAVE_LANGINFO_H) && defined(CODESET)
-    /* On Unix, set the file system encoding according to the
-       user's preference, if the CODESET names a well-known
-       Python codec, and Py_FileSystemDefaultEncoding isn't
-       initialized by other means. Also set the encoding of
-       stdin and stdout if these are terminals.  */
-
-    codeset = get_codeset();
-    if (codeset) {
-        if (!Py_FileSystemDefaultEncoding)
-            Py_FileSystemDefaultEncoding = codeset;
-        else
-            free(codeset);
-    }
-#endif
+    initfsencoding();
 
     if (install_sigs)
         initsigs(); /* Signal handling stuff, including initintr() */
@@ -496,7 +479,7 @@ Py_Finalize(void)
     _PyUnicode_Fini();
 
     /* reset file system default encoding */
-    if (!Py_HasFileSystemDefaultEncoding) {
+    if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
         free((char*)Py_FileSystemDefaultEncoding);
         Py_FileSystemDefaultEncoding = NULL;
     }
@@ -704,6 +687,45 @@ initmain(void)
             PyDict_SetItemString(d, "__builtins__", bimod) != 0)
             Py_FatalError("can't add __builtins__ to __main__");
         Py_DECREF(bimod);
+    }
+}
+
+static void
+initfsencoding(void)
+{
+    PyObject *codec;
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+    char *codeset;
+
+    /* On Unix, set the file system encoding according to the
+       user's preference, if the CODESET names a well-known
+       Python codec, and Py_FileSystemDefaultEncoding isn't
+       initialized by other means. Also set the encoding of
+       stdin and stdout if these are terminals.  */
+    codeset = get_codeset();
+    if (codeset != NULL) {
+        Py_FileSystemDefaultEncoding = codeset;
+        Py_HasFileSystemDefaultEncoding = 0;
+        return;
+    }
+
+    PyErr_Clear();
+    fprintf(stderr,
+            "Unable to get the locale encoding: "
+            "fallback to utf-8\n");
+    Py_FileSystemDefaultEncoding = "utf-8";
+    Py_HasFileSystemDefaultEncoding = 1;
+#endif
+
+    /* the encoding is mbcs, utf-8 or ascii */
+    codec = _PyCodec_Lookup(Py_FileSystemDefaultEncoding);
+    if (!codec) {
+        /* Such error can only occurs in critical situations: no more
+         * memory, import a module of the standard library failed,
+         * etc. */
+        Py_FatalError("Py_Initialize: unable to load the file system codec");
+    } else {
+        Py_DECREF(codec);
     }
 }
 
