@@ -55,8 +55,8 @@ Library
 
 - Issue #8573: asyncore _strerror() function might throw ValueError.
 
-- Issue #8483: asyncore.dispatcher's __getattr__ method produced confusing 
-  error messages when accessing undefined class attributes because of the cheap 
+- Issue #8483: asyncore.dispatcher's __getattr__ method produced confusing
+  error messages when accessing undefined class attributes because of the cheap
   inheritance with the underlying socket object.
 
 - Issue #7472: Fixed typo in email.encoders module; messages using ISO-2022
@@ -426,7 +426,7 @@ Library
   opening an empty or very small file.
 
 - Issue #7556: Make sure Distutils' msvc9compile reads and writes the
-  MSVC XML Manifest file in text mode so string patterns can be used 
+  MSVC XML Manifest file in text mode so string patterns can be used
   in regular expressions.
 
 - Issue #7552: Removed line feed in the base64 Authorization header in
@@ -452,7 +452,7 @@ Library
 - Issue #6986: Fix crash in the JSON C accelerator when called with the
   wrong parameter types.  Patch by Victor Stinner.
 
-- Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is 
+- Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is
   generated in Distutils. Patch by Stephen Emslie.
 
 - Issue #4120: Drop reference to CRT from manifest when building extensions with
@@ -466,7 +466,7 @@ Library
 
 - Issue #1488943: difflib.Differ() doesn't always add hints for tab characters
 
-- Issue #7354: distutils.tests.test_msvc9compiler - dragfullwindows can 
+- Issue #7354: distutils.tests.test_msvc9compiler - dragfullwindows can
   be 2.
 
 - Issue #3976: pprint for sets, frozensets, and dicts now succeed when
@@ -530,7 +530,7 @@ Library
 - Issue #5833: Fix extra space character in readline completion with the
   GNU readline library version 6.0.
 
-- Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment 
+- Issue #6894: Fixed the issue urllib2 doesn't respect "no_proxy" environment
 
 - Issue #7082: When falling back to the MIME 'name' parameter, the
   correct place to look for it is the Content-Type header.
@@ -625,7 +625,7 @@ Tests
 - Issue #7498: test_multiprocessing now uses test.support.find_unused_port
   instead of a hardcoded port number in test_rapid_restart.
 
-- Issue #7431: use TESTFN in test_linecache instead of trying to create a 
+- Issue #7431: use TESTFN in test_linecache instead of trying to create a
   file in the Lib/test directory, which might be read-only for the
   user running the tests.
 
@@ -685,7 +685,7 @@ Build
 - Issue #6802: Fix build issues on MacOSX 10.6
 
 - Issue #6801 : symmetric_difference_update also accepts |.
-  Thanks to Carl Chenet. 
+  Thanks to Carl Chenet.
 
 - Issue #7541: when using ``python-config`` with a framework install the
   compiler might use the wrong library.
@@ -760,7 +760,7 @@ Library
   occur when writing to a BufferedRandom object (e.g. a file opened in "rb+" or
   "wb+" mode) after having buffered a certain amount of data for reading. This
   bug was not present in the pure Python implementation.
- 
+
 - Issue #6622: Fix "local variable 'secret' referenced before
   assignment" bug in POP3.apop.
 
@@ -893,7 +893,7 @@ Library
 -------
 
 - Issue #6438: Fixed distutils.cygwinccompiler.get_versions : the regular
-expression string pattern was trying to match against a bytes returned by 
+expression string pattern was trying to match against a bytes returned by
 Popen. Tested under win32 to build the py-postgresql project.
 
 - Issue #6258: Support AMD64 in bdist_msi.
@@ -1652,21 +1652,21 @@ Core and Builtins
 Library
 -------
 
-- Issue #6545: Removed assert statements in distutils.Extension, so the 
+- Issue #6545: Removed assert statements in distutils.Extension, so the
   behavior is similar when used with -O.
 
-- Issue #6459: distutils.command.build_ext.get_export_symbols now uses the 
-  "PyInit" prefix, rather than "init". 
+- Issue #6459: distutils.command.build_ext.get_export_symbols now uses the
+  "PyInit" prefix, rather than "init".
 
 - Issue #6433: fixed issues with multiprocessing.pool.map hanging on empty list
 
-- Issue #6455: Fixed test_build_ext under win32. 
+- Issue #6455: Fixed test_build_ext under win32.
 
 - Issue #6413: Fixed the log level in distutils.dist for announce.
 
 - Issue #6403: Fixed package path usage in build_ext.
 
-- Issue #6365: Distutils build_ext inplace mode was copying the compiled 
+- Issue #6365: Distutils build_ext inplace mode was copying the compiled
   extension in a subdirectory if the extension name had dots.
 
 - Issue #6287: Added the license field in Distutils documentation.
