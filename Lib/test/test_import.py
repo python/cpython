@@ -163,13 +163,14 @@ class ImportTests(unittest.TestCase):
         # Need to be able to load from current dir.
         sys.path.append('')
 
-        # This used to crash.
-        exec('import ' + module)
-
-        # Cleanup.
-        del sys.path[-1]
-        unlink(filename + 'c')
-        unlink(filename + 'o')
+        try:
+            # This used to crash.
+            exec('import ' + module)
+        finally:
+            # Cleanup.
+            del sys.path[-1]
+            unlink(filename + 'c')
+            unlink(filename + 'o')
 
     def test_failing_import_sticks(self):
         source = TESTFN + ".py"
