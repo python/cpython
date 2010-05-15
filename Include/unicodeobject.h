@@ -1268,6 +1268,16 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
     Py_ssize_t size              /* size */
     );
 
+/* Encode a Unicode object to Py_FileSystemDefaultEncoding with the
+   "surrogateescape" error handler, return a bytes object.
+
+   If Py_FileSystemDefaultEncoding is not set, fall back to UTF-8.
+*/
+
+PyAPI_FUNC(PyObject*) PyUnicode_EncodeFSDefault(
+    PyObject *unicode
+    );
+
 /* --- Methods & Slots ----------------------------------------------------
 
    These are capable of handling Unicode objects and strings on input

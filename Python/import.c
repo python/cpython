@@ -1633,8 +1633,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
         if (!v)
             return NULL;
         if (PyUnicode_Check(v)) {
-            v = PyUnicode_AsEncodedString(v,
-                Py_FileSystemDefaultEncoding, NULL);
+            v = PyUnicode_EncodeFSDefault(v);
             if (v == NULL)
                 return NULL;
         }
@@ -2752,14 +2751,7 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
             char *subname;
             PyObject *submod;
             char *p;
-            if (!Py_FileSystemDefaultEncoding) {
-                item8 = PyUnicode_EncodeASCII(PyUnicode_AsUnicode(item),
-                                              PyUnicode_GetSize(item),
-                                              NULL);
-            } else {
-                item8 = PyUnicode_AsEncodedString(item,
-                    Py_FileSystemDefaultEncoding, NULL);
-            }
+            item8 = PyUnicode_EncodeFSDefault(item);
             if (!item8) {
                 PyErr_SetString(PyExc_ValueError, "Cannot encode path item");
                 return 0;

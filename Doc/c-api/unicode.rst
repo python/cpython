@@ -396,12 +396,23 @@ used, passsing :func:PyUnicode_FSConverter as the conversion function:
 
    Use :func:`PyUnicode_DecodeFSDefaultAndSize` if you know the string length.
 
+
 .. cfunction:: PyObject* PyUnicode_DecodeFSDefault(const char *s)
 
    Decode a string using :cdata:`Py_FileSystemDefaultEncoding` and
    the ``"surrogateescape"`` error handler.
 
    If :cdata:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
+
+
+.. cfunction:: PyObject* PyUnicode_EncodeFSDefault(PyObject *unicode)
+
+   Encode a Unicode object to :cdata:`Py_FileSystemDefaultEncoding` with the
+   ``'surrogateescape'`` error handler, return a :func:`bytes` object.
+
+   If :cdata:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
+
+   .. versionadded:: 3.2
 
 
 wchar_t Support

@@ -3147,9 +3147,7 @@ PyInit__tkinter(void)
        it also helps Tcl find its encodings. */
     uexe = PyUnicode_FromWideChar(Py_GetProgramName(), -1);
     if (uexe) {
-        cexe = PyUnicode_AsEncodedString(uexe,
-                                         Py_FileSystemDefaultEncoding,
-                                         NULL);
+        cexe = PyUnicode_EncodeFSDefault(uexe);
         if (cexe)
             Tcl_FindExecutable(PyBytes_AsString(cexe));
         Py_XDECREF(cexe);
