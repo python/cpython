@@ -153,10 +153,9 @@ class ImportTests(unittest.TestCase):
                 f.write('"",\n')
             f.write(']')
 
-        # Compile & remove .py file, we only need .pyc (or .pyo), but that
-        # must be relocated to the PEP 3147 bytecode-only location.
-        with open(filename, 'r') as f:
-            py_compile.compile(filename)
+        # Compile & remove .py file; we only need .pyc (or .pyo).
+        # Bytecode must be relocated from the PEP 3147 bytecode-only location.
+        py_compile.compile(filename)
         unlink(filename)
         make_legacy_pyc(filename)
 
