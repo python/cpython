@@ -408,7 +408,7 @@ used, passsing :func:PyUnicode_FSConverter as the conversion function:
 .. cfunction:: PyObject* PyUnicode_EncodeFSDefault(PyObject *unicode)
 
    Encode a Unicode object to :cdata:`Py_FileSystemDefaultEncoding` with the
-   ``'surrogateescape'`` error handler, return a :func:`bytes` object.
+   ``'surrogateescape'`` error handler, and return :class:`bytes`.
 
    If :cdata:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
 
