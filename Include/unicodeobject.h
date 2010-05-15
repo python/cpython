@@ -1250,7 +1250,7 @@ PyAPI_FUNC(int) PyUnicode_FSConverter(PyObject*, void*);
 
    If Py_FileSystemDefaultEncoding is not set, fall back to UTF-8.
 
-   Use PyUnicode_DecodeFSDefaultAndSize() if you have the string length.
+   Use PyUnicode_DecodeFSDefaultAndSize() if the string length is known.
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefault(
@@ -1269,7 +1269,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
     );
 
 /* Encode a Unicode object to Py_FileSystemDefaultEncoding with the
-   "surrogateescape" error handler, return a bytes object.
+   "surrogateescape" error handler, and return bytes.
 
    If Py_FileSystemDefaultEncoding is not set, fall back to UTF-8.
 */
