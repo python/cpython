@@ -1132,6 +1132,12 @@ Library
 Extension Modules
 -----------------
 
+- Issue #8692: Optimize math.factorial: replace the previous naive
+  algorithm with an improved 'binary-split' algorithm that uses fewer
+  multiplications and allows many of the multiplications to be
+  performed using plain C integer arithmetic instead of PyLong
+  arithmetic.  Also uses a lookup table for small arguments.
+
 - Issue #8674: Fixed a number of incorrect or undefined-behaviour-inducing
   overflow checks in the audioop module.
 
