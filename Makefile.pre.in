@@ -1165,7 +1165,7 @@ TAGS::
 # files, which clobber removes as well
 pycremoval:
 	-find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
-	-find $(srcdir) -name '__pycache__' -exec rmdir {} ';'
+	-find $(srcdir) -name '__pycache__' -exec rmdir {} '+'
 
 rmtestturds:
 	-rm -f *BAD *GOOD *SKIPPED
