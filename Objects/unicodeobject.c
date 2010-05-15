@@ -1461,6 +1461,18 @@ PyObject *PyUnicode_AsEncodedObject(PyObject *unicode,
     return NULL;
 }
 
+PyObject *PyUnicode_EncodeFSDefault(PyObject *unicode)
+{
+    if (Py_FileSystemDefaultEncoding)
+        return PyUnicode_AsEncodedString(unicode,
+                                         Py_FileSystemDefaultEncoding,
+                                         "surrogateescape");
+    else
+        return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
+                                     PyUnicode_GET_SIZE(unicode),
+                                     "surrogateescape");
+}
+
 PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
                                     const char *encoding,
                                     const char *errors)
@@ -1646,9 +1658,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
         arg = PyUnicode_FromObject(arg);
         if (!arg)
             return 0;
-        output = PyUnicode_AsEncodedObject(arg,
-                                           Py_FileSystemDefaultEncoding,
-                                           "surrogateescape");
+        output = PyUnicode_EncodeFSDefault(arg);
         Py_DECREF(arg);
         if (!output)
             return 0;

@@ -247,8 +247,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             if (u == NULL)
                 return -1;
 
-            stringobj = PyUnicode_AsEncodedString(
-                u, Py_FileSystemDefaultEncoding, "surrogateescape");
+            stringobj = PyUnicode_EncodeFSDefault(u);
             Py_DECREF(u);
             if (stringobj == NULL)
                 return -1;

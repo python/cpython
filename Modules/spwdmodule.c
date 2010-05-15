@@ -118,9 +118,7 @@ static PyObject* spwd_getspnam(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "U:getspnam", &arg))
         return NULL;
-    if ((bytes = PyUnicode_AsEncodedString(arg,
-                                           Py_FileSystemDefaultEncoding,
-                                           "surrogateescape")) == NULL)
+    if ((bytes = PyUnicode_EncodeFSDefault(arg)) == NULL)
         return NULL;
     if (PyBytes_AsStringAndSize(bytes, &name, NULL) == -1)
         goto out;
