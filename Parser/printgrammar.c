@@ -20,10 +20,10 @@ printgrammar(grammar *g, FILE *fp)
     printdfas(g, fp);
     printlabels(g, fp);
     fprintf(fp, "grammar _PyParser_Grammar = {\n");
-    fprintf(fp, "\t%d,\n", g->g_ndfas);
-    fprintf(fp, "\tdfas,\n");
-    fprintf(fp, "\t{%d, labels},\n", g->g_ll.ll_nlabels);
-    fprintf(fp, "\t%d\n", g->g_start);
+    fprintf(fp, "    %d,\n", g->g_ndfas);
+    fprintf(fp, "    dfas,\n");
+    fprintf(fp, "    {%d, labels},\n", g->g_ll.ll_nlabels);
+    fprintf(fp, "    %d\n", g->g_start);
     fprintf(fp, "};\n");
 }
 
@@ -53,7 +53,7 @@ printarcs(int i, dfa *d, FILE *fp)
             i, j, s->s_narcs);
         a = s->s_arc;
         for (k = 0; k < s->s_narcs; k++, a++)
-            fprintf(fp, "\t{%d, %d},\n", a->a_lbl, a->a_arrow);
+            fprintf(fp, "    {%d, %d},\n", a->a_lbl, a->a_arrow);
         fprintf(fp, "};\n");
     }
 }
@@ -72,7 +72,7 @@ printstates(grammar *g, FILE *fp)
             i, d->d_nstates);
         s = d->d_state;
         for (j = 0; j < d->d_nstates; j++, s++)
-            fprintf(fp, "\t{%d, arcs_%d_%d},\n",
+            fprintf(fp, "    {%d, arcs_%d_%d},\n",
                 s->s_narcs, i, j);
         fprintf(fp, "};\n");
     }
@@ -88,9 +88,9 @@ printdfas(grammar *g, FILE *fp)
     fprintf(fp, "static dfa dfas[%d] = {\n", g->g_ndfas);
     d = g->g_dfa;
     for (i = 0; i < g->g_ndfas; i++, d++) {
-        fprintf(fp, "\t{%d, \"%s\", %d, %d, states_%d,\n",
+        fprintf(fp, "    {%d, \"%s\", %d, %d, states_%d,\n",
             d->d_type, d->d_name, d->d_initial, d->d_nstates, i);
-        fprintf(fp, "\t \"");
+        fprintf(fp, "     \"");
         for (j = 0; j < NBYTES(g->g_ll.ll_nlabels); j++)
             fprintf(fp, "\\%03o", d->d_first[j] & 0xff);
         fprintf(fp, "\"},\n");
@@ -108,9 +108,9 @@ printlabels(grammar *g, FILE *fp)
     l = g->g_ll.ll_label;
     for (i = g->g_ll.ll_nlabels; --i >= 0; l++) {
         if (l->lb_str == NULL)
-            fprintf(fp, "\t{%d, 0},\n", l->lb_type);
+            fprintf(fp, "    {%d, 0},\n", l->lb_type);
         else
-            fprintf(fp, "\t{%d, \"%s\"},\n",
+            fprintf(fp, "    {%d, \"%s\"},\n",
                 l->lb_type, l->lb_str);
     }
     fprintf(fp, "};\n");
