@@ -450,7 +450,7 @@ class ItimerTest(unittest.TestCase):
             if signal.getitimer(self.itimer) == (0.0, 0.0):
                 break # sig_vtalrm handler stopped this itimer
         else: # Issue 8424
-            sys.stdout.write("test_itimer_virtual: timeout: likely cause: "
+            sys.stderr.write("test_itimer_virtual: timeout: likely cause: "
                              "machine too slow or load too high.\n")
             return
 
