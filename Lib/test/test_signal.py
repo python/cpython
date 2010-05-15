@@ -431,8 +431,8 @@ class ItimerTest(unittest.TestCase):
             if signal.getitimer(self.itimer) == (0.0, 0.0):
                 break # sig_vtalrm handler stopped this itimer
         else: # Issue 8424
-            raise unittest.SkipTest("timeout: likely cause: machine too slow "
-                                    "or load too high")
+            self.skipTest("timeout: likely cause: machine too slow or load too "
+                          "high")
 
         # virtual itimer should be (0.0, 0.0) now
         self.assertEquals(signal.getitimer(self.itimer), (0.0, 0.0))
@@ -454,8 +454,8 @@ class ItimerTest(unittest.TestCase):
             if signal.getitimer(self.itimer) == (0.0, 0.0):
                 break # sig_prof handler stopped this itimer
         else: # Issue 8424
-            raise unittest.SkipTest("timeout: likely cause: machine too slow "
-                                    "or load too high")
+            self.skipTest("timeout: likely cause: machine too slow or load too "
+                          "high")
 
         # profiling itimer should be (0.0, 0.0) now
         self.assertEquals(signal.getitimer(self.itimer), (0.0, 0.0))
