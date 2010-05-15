@@ -39,6 +39,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #7640: In the new `io` module, fix relative seek() for buffered
+  readable streams when the internal buffer isn't empty.  Patch by Pascal
+  Chambon.
+
 - Issue #5099: subprocess.Popen.__del__ no longer references global objects,
   leading to issues during interpreter shutdown.
 

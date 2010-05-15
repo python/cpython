@@ -107,6 +107,10 @@ class IOTest(unittest.TestCase):
 
         self.assertEqual(f.truncate(12), 12)
         self.assertEqual(f.tell(), 13)
+        self.assertEqual(f.write(b"hij"), 3)
+        self.assertEqual(f.seek(0,1), 16)
+        self.assertEqual(f.tell(), 16)
+        self.assertEqual(f.truncate(12), 12)
         self.assertRaises(TypeError, f.seek, 0.0)
 
     def read_ops(self, f, buffered=False):
@@ -129,6 +133,10 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.seek(-6, 1), 5)
         self.assertEqual(f.read(5), b" worl")
         self.assertEqual(f.tell(), 10)
+        f.seek(0)
+        f.read(2)
+        f.seek(0, 1)
+        self.assertEqual(f.tell(), 2)
         self.assertRaises(TypeError, f.seek, 0.0)
         if buffered:
             f.seek(0)
@@ -181,6 +189,13 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.readable(), True)
         self.assertEqual(f.writable(), False)
         self.assertEqual(f.seekable(), True)
+        self.read_ops(f, True)
+        f = io.open(test_support.TESTFN, "r+b")
+        self.assertEqual(f.readable(), True)
+        self.assertEqual(f.writable(), True)
+        self.assertEqual(f.seekable(), True)
+        self.write_ops(f)
+        f.seek(0)
         self.read_ops(f, True)
         f.close()
 
@@ -513,7 +528,7 @@ class BufferedWriterTest(unittest.TestCase):
         self.assertEquals(b"abcdefghijkl", writer._write_stack[0])
 
     def testWriteNonBlocking(self):
-        raw = MockNonBlockWriterIO((9, 2, 22, -6, 10, 12, 12))
+        raw = MockNonBlockWriterIO((9, 2, 10, -6, 10, 8, 12))
         bufio = io.BufferedWriter(raw, 8, 16)
 
         bufio.write(b"asdf")
