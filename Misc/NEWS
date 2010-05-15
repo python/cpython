@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Enable shortcuts for common encodings in PyUnicode_AsEncodedString() for any
+  error handler, not only the default error handler (strict)
+
 - Issue #8610: Load file system codec at startup, and display a fatal error on
   failure. Set the file system encoding to utf-8 (instead of None) if getting
   the locale encoding failed, or if nl_langinfo(CODESET) function is missing.

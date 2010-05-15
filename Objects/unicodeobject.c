@@ -1476,31 +1476,39 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
         encoding = PyUnicode_GetDefaultEncoding();
 
     /* Shortcuts for common default encodings */
-    if (errors == NULL) {
-        if (strcmp(encoding, "utf-8") == 0)
-            return PyUnicode_AsUTF8String(unicode);
-        else if (strcmp(encoding, "latin-1") == 0)
-            return PyUnicode_AsLatin1String(unicode);
+    if (strcmp(encoding, "utf-8") == 0)
+        return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
+                                    PyUnicode_GET_SIZE(unicode),
+                                    errors);
+    else if (strcmp(encoding, "latin-1") == 0)
+        return PyUnicode_EncodeLatin1(PyUnicode_AS_UNICODE(unicode),
+                                      PyUnicode_GET_SIZE(unicode),
+                                      errors);
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
-        else if (strcmp(encoding, "mbcs") == 0)
-            return PyUnicode_AsMBCSString(unicode);
+    else if (strcmp(encoding, "mbcs") == 0)
+        return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
+                                    PyUnicode_GET_SIZE(unicode),
+                                    errors);
 #endif
-        else if (strcmp(encoding, "ascii") == 0)
-            return PyUnicode_AsASCIIString(unicode);
-        /* During bootstrap, we may need to find the encodings
-           package, to load the file system encoding, and require the
-           file system encoding in order to load the encodings
-           package.
+    else if (strcmp(encoding, "ascii") == 0)
+        return PyUnicode_EncodeASCII(PyUnicode_AS_UNICODE(unicode),
+                                     PyUnicode_GET_SIZE(unicode),
+                                     errors);
+    /* During bootstrap, we may need to find the encodings
+       package, to load the file system encoding, and require the
+       file system encoding in order to load the encodings
+       package.
 
-           Break out of this dependency by assuming that the path to
-           the encodings module is ASCII-only.  XXX could try wcstombs
-           instead, if the file system encoding is the locale's
-           encoding. */
-        else if (Py_FileSystemDefaultEncoding &&
-                 strcmp(encoding, Py_FileSystemDefaultEncoding) == 0 &&
-                 !PyThreadState_GET()->interp->codecs_initialized)
-            return PyUnicode_AsASCIIString(unicode);
-    }
+       Break out of this dependency by assuming that the path to
+       the encodings module is ASCII-only.  XXX could try wcstombs
+       instead, if the file system encoding is the locale's
+       encoding. */
+    else if (Py_FileSystemDefaultEncoding &&
+             strcmp(encoding, Py_FileSystemDefaultEncoding) == 0 &&
+             !PyThreadState_GET()->interp->codecs_initialized)
+        return PyUnicode_EncodeASCII(PyUnicode_AS_UNICODE(unicode),
+                                     PyUnicode_GET_SIZE(unicode),
+                                     errors);
 
     /* Encode via the codec registry */
     v = PyCodec_Encode(unicode, encoding, errors);
