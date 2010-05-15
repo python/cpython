@@ -58,8 +58,8 @@ Library
 
 - Issue #8573: asyncore _strerror() function might throw ValueError.
 
-- Issue #8483: asyncore.dispatcher's __getattr__ method produced confusing 
-  error messages when accessing undefined class attributes because of the cheap 
+- Issue #8483: asyncore.dispatcher's __getattr__ method produced confusing
+  error messages when accessing undefined class attributes because of the cheap
   inheritance with the underlying socket object.
 
 - Issue #4265: shutil.copyfile() was leaking file descriptors when disk fills.
@@ -89,7 +89,7 @@ Library
 - Issue #8354: The siginterrupt setting is now preserved for all signals,
   not just SIGCHLD.
 
-- Issue #8577: distutils.sysconfig.get_python_inc() now makes a difference 
+- Issue #8577: distutils.sysconfig.get_python_inc() now makes a difference
   between the build dir and the source dir when looking for "python.h" or
   "Include".
 
@@ -239,7 +239,7 @@ Library
 
 - Reverting the changes made in r78432. Discussed in the tracker issue #7540.
 
-- Issue #8107: Fixed test_distutils so it doesn't crash when the source 
+- Issue #8107: Fixed test_distutils so it doesn't crash when the source
   directory cannot be found.
 
 Extension Modules
@@ -416,7 +416,7 @@ Library
 
 - Fix variations of extending deques:  d.extend(d)  d.extendleft(d)  d+=d
 
-- Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is 
+- Issue #1923: Fixed the removal of meaningful spaces when PKG-INFO is
   generated in Distutils. Patch by Stephen Emslie.
 
 - Issue #4120: Drop reference to CRT from manifest when building extensions
@@ -535,7 +535,7 @@ Build
 
 Documentation
 -------------
- 
+
 - Updating `Using Python` documentation to include description of CPython's
   -J, -U and -X options.
 
@@ -551,7 +551,7 @@ Tests
 - Issue #7498: test_multiprocessing now uses test_support.find_unused_port
   instead of a hardcoded port number in test_rapid_restart.
 
-- Issue #7431: use TESTFN in test_linecache instead of trying to create a 
+- Issue #7431: use TESTFN in test_linecache instead of trying to create a
   file in the Lib/test directory, which might be read-only for the
   user running the tests.
 
@@ -1106,7 +1106,7 @@ Library
 
 - Issue #5387: Fixed mmap.move crash by integer overflow.
 
-- Issue #3807: _multiprocessing build fails when configure is passed 
+- Issue #3807: _multiprocessing build fails when configure is passed
   --without-threads argument. When this occurs, _multiprocessing will
   be disabled, and not compiled.
 
