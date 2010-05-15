@@ -83,9 +83,9 @@ Library
 
 - Issue #8573: asyncore _strerror() function might throw ValueError.
 
-- Issue #8483: asyncore.dispatcher's __getattr__ method produced confusing 
-  error messages when accessing undefined class attributes because of the cheap 
-  inheritance with the underlying socket object. 
+- Issue #8483: asyncore.dispatcher's __getattr__ method produced confusing
+  error messages when accessing undefined class attributes because of the cheap
+  inheritance with the underlying socket object.
   The cheap inheritance has been deprecated.
 
 - Issue #4265: shutil.copyfile() was leaking file descriptors when disk fills.
@@ -120,7 +120,7 @@ Library
 - Issue #7192: webbrowser.get("firefox") now wors on Mac OS X, as does
   webbrowser.get("safari").
 
-- Issue #8577: distutils.sysconfig.get_python_inc() now makes a difference 
+- Issue #8577: distutils.sysconfig.get_python_inc() now makes a difference
   between the build dir and the source dir when looking for "python.h" or
   "Include".
 
@@ -235,7 +235,7 @@ Tests
   handled by a decompressor object without errors (it returns incomplete
   uncompressed data).
 
-- Issue #8490: asyncore now has a more solid test suite which actually tests 
+- Issue #8490: asyncore now has a more solid test suite which actually tests
   its API.
 
 - Issue #8576: Remove use of find_unused_port() in test_smtplib and
@@ -454,7 +454,7 @@ Library
 - Addition of -b command line option to unittest for buffering stdout / stderr
   during test runs.
 
-- Issue #1220212: Added os.kill support for Windows, including support for 
+- Issue #1220212: Added os.kill support for Windows, including support for
   sending CTRL+C and CTRL+BREAK events to console subprocesses.
 
 Extension Modules
@@ -485,7 +485,7 @@ Extension Modules
   and the set of integer codes for which it was used differed between native
   packing and standard packing.)
 
-- Issue #7347: _winreg: Add CreateKeyEx and DeleteKeyEx, as well as fix a 
+- Issue #7347: _winreg: Add CreateKeyEx and DeleteKeyEx, as well as fix a
   bug in the return value of QueryReflectionKey.
 
 Tools/Demos
