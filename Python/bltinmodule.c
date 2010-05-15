@@ -9,6 +9,10 @@
 
 #include <ctype.h>
 
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>   /* CODESET */
+#endif
+
 /* The default encoding used by the platform file system APIs
    Can remain NULL for all platforms that don't have such a concept
 
@@ -21,9 +25,12 @@ int Py_HasFileSystemDefaultEncoding = 1;
 #elif defined(__APPLE__)
 const char *Py_FileSystemDefaultEncoding = "utf-8";
 int Py_HasFileSystemDefaultEncoding = 1;
-#else
-const char *Py_FileSystemDefaultEncoding = NULL; /* use default */
+#elif defined(HAVE_LANGINFO_H) && defined(CODESET)
+const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
 int Py_HasFileSystemDefaultEncoding = 0;
+#else
+const char *Py_FileSystemDefaultEncoding = "utf-8";
+int Py_HasFileSystemDefaultEncoding = 1;
 #endif
 
 int
