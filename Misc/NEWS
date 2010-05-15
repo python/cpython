@@ -14,8 +14,8 @@ Core and Builtins
 
 - Issue #8715: Create PyUnicode_EncodeFSDefault() function: Encode a Unicode
   object to Py_FileSystemDefaultEncoding with the "surrogateescape" error
-  handler, return a bytes object. If Py_FileSystemDefaultEncoding is not set,
-  fall back to UTF-8.
+  handler, and return bytes. If Py_FileSystemDefaultEncoding is not set, fall
+  back to UTF-8.
 
 - Enable shortcuts for common encodings in PyUnicode_AsEncodedString() for any
   error handler, not only the default error handler (strict)
