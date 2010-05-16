@@ -363,8 +363,8 @@ C-API
 Library
 -------
 
-- Issue #8477: _ssl._test_decode_cert() supports str with surrogates and bytes
-  for the filename
+- Issue #8477: ssl.RAND_egd() and ssl._test_decode_cert() support str with
+  surrogates and bytes for the filename
 
 - Issue #8550: Add first class ``SSLContext`` objects to the ssl module.
 
