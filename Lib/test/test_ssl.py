@@ -24,12 +24,13 @@ try:
     import ssl
 except ImportError:
     skip_expected = True
+else:
+    PROTOCOLS = [
+        ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3,
+        ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1
+    ]
 
 HOST = support.HOST
-PROTOCOLS = [
-    ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3,
-    ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1
-]
 
 data_file = lambda name: os.path.join(os.path.dirname(__file__), name)
 fsencode = lambda name: name.encode(sys.getfilesystemencoding(), "surrogateescape")
