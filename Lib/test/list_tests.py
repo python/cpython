@@ -57,13 +57,11 @@ class CommonTest(seq_tests.CommonTest):
         d.append(d)
         d.append(400)
         try:
-            fo = open(test_support.TESTFN, "wb")
-            print >> fo, d,
-            fo.close()
-            fo = open(test_support.TESTFN, "rb")
-            self.assertEqual(fo.read(), repr(d))
+            with open(test_support.TESTFN, "wb") as fo:
+                print >> fo, d,
+            with open(test_support.TESTFN, "rb") as fo:
+                self.assertEqual(fo.read(), repr(d))
         finally:
-            fo.close()
             os.remove(test_support.TESTFN)
 
     def test_set_subscript(self):
