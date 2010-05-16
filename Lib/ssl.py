@@ -59,7 +59,7 @@ import textwrap
 import _ssl             # if we can't import it, let the error propagate
 
 from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
-from _ssl import SSLError
+from _ssl import _SSLContext, SSLError
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from _ssl import (PROTOCOL_SSLv2, PROTOCOL_SSLv3, PROTOCOL_SSLv23,
                   PROTOCOL_TLSv1)
@@ -84,8 +84,29 @@ import base64        # for DER-to-PEM translation
 import traceback
 import errno
 
-class SSLSocket(socket):
 
+class SSLContext(_SSLContext):
+    """An SSLContext holds various SSL-related configuration options and
+    data, such as certificates and possibly a private key."""
+
+    __slots__ = ('protocol',)
+
+    def __new__(cls, protocol, *args, **kwargs):
+        return _SSLContext.__new__(cls, protocol)
+
+    def __init__(self, protocol):
+        self.protocol = protocol
+
+    def wrap_socket(self, sock, server_side=False,
+                    do_handshake_on_connect=True,
+                    suppress_ragged_eofs=True):
+        return SSLSocket(sock=sock, server_side=server_side,
+                         do_handshake_on_connect=do_handshake_on_connect,
+                         suppress_ragged_eofs=suppress_ragged_eofs,
+                         _context=self)
+
+
+class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
     the underlying OS socket in an SSL context when necessary, and
     provides read and write methods over that channel."""
@@ -95,8 +116,31 @@ class SSLSocket(socket):
                  ssl_version=PROTOCOL_SSLv23, ca_certs=None,
                  do_handshake_on_connect=True,
                  family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None,
-                 suppress_ragged_eofs=True, ciphers=None):
+                 suppress_ragged_eofs=True, ciphers=None,
+                 _context=None):
 
+        if _context:
+            self.context = _context
+        else:
+            if certfile and not keyfile:
+                keyfile = certfile
+            self.context = SSLContext(ssl_version)
+            self.context.verify_mode = cert_reqs
+            if ca_certs:
+                self.context.load_verify_locations(ca_certs)
+            if certfile:
+                self.context.load_cert_chain(certfile, keyfile)
+            if ciphers:
+                self.context.set_ciphers(ciphers)
+            self.keyfile = keyfile
+            self.certfile = certfile
+            self.cert_reqs = cert_reqs
+            self.ssl_version = ssl_version
+            self.ca_certs = ca_certs
+            self.ciphers = ciphers
+
+        self.do_handshake_on_connect = do_handshake_on_connect
+        self.suppress_ragged_eofs = suppress_ragged_eofs
         connected = False
         if sock is not None:
             socket.__init__(self,
@@ -119,18 +163,12 @@ class SSLSocket(socket):
         else:
             socket.__init__(self, family=family, type=type, proto=proto)
 
-        if certfile and not keyfile:
-            keyfile = certfile
-
         self._closed = False
         self._sslobj = None
         if connected:
             # create the SSL object
             try:
-                self._sslobj = _ssl.sslwrap(self, server_side,
-                                            keyfile, certfile,
-                                            cert_reqs, ssl_version, ca_certs,
-                                            ciphers)
+                self._sslobj = self.context._wrap_socket(self, server_side)
                 if do_handshake_on_connect:
                     timeout = self.gettimeout()
                     if timeout == 0.0:
@@ -141,15 +179,6 @@ class SSLSocket(socket):
             except socket_error as x:
                 self.close()
                 raise x
-
-        self.keyfile = keyfile
-        self.certfile = certfile
-        self.cert_reqs = cert_reqs
-        self.ssl_version = ssl_version
-        self.ca_certs = ca_certs
-        self.ciphers = ciphers
-        self.do_handshake_on_connect = do_handshake_on_connect
-        self.suppress_ragged_eofs = suppress_ragged_eofs
 
     def dup(self):
         raise NotImplemented("Can't dup() %s instances" %
@@ -331,9 +360,7 @@ class SSLSocket(socket):
         if self._sslobj:
             raise ValueError("attempt to connect already-connected SSLSocket!")
         socket.connect(self, addr)
-        self._sslobj = _ssl.sslwrap(self, False, self.keyfile, self.certfile,
-                                    self.cert_reqs, self.ssl_version,
-                                    self.ca_certs, self.ciphers)
+        self._sslobj = self.context._wrap_socket(self, False)
         try:
             if self.do_handshake_on_connect:
                 self.do_handshake()
