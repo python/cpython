@@ -363,6 +363,9 @@ C-API
 Library
 -------
 
+- Issue #8477: _ssl._test_decode_cert() supports str with surrogates and bytes
+  for the filename
+
 - Issue #8550: Add first class ``SSLContext`` objects to the ssl module.
 
 - Issue #8681: Make the zlib module's error messages more informative when
