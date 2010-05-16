@@ -300,6 +300,10 @@ class NetworkedTests(unittest.TestCase):
 
     def test_connect_capath(self):
         # Verify server certificates using the `capath` argument
+        # NOTE: the subject hashing algorithm has been changed between
+        # OpenSSL 0.9.8n and 1.0.0, as a result the capath directory must
+        # contain both versions of each certificate (same content, different
+        # filename) for this test to be portable accross OpenSSL releases.
         ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.load_verify_locations(capath=CAPATH)
