@@ -2733,9 +2733,9 @@ keys:
 All other keys are optional, but if present they will be interpreted
 as described below.  In all cases below where a 'configuring dict' is
 mentioned, it will be checked for the special ``'()'`` key to see if a
-custom instantiation is required.  If so, the mechanism described
-above is used to instantiate; otherwise, the context is used to
-determine how to instantiate.
+custom instantiation is required.  If so, the mechanism described in
+:ref:`logging-config-dict-userdef` below is used to create an instance;
+otherwise, the context is used to determine what to instantiate.
 
 * `formatters` - the corresponding value will be a dict in which each
   key is a formatter id and each value is a dict describing how to
