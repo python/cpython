@@ -196,6 +196,7 @@ PySSL_SetError(PySSLObject *obj, int ret, char *filename, int lineno)
                     errstr = "EOF occurred in violation of protocol";
                 } else if (ret == -1) {
                     /* underlying BIO reported an I/O error */
+                    ERR_clear_error();
                     return obj->Socket->errorhandler();
                 } else { /* possible? */
                     p = PY_SSL_ERROR_SYSCALL;
@@ -228,6 +229,7 @@ PySSL_SetError(PySSLObject *obj, int ret, char *filename, int lineno)
         errstr = ERR_error_string(ERR_peek_last_error(), NULL);
     }
     PyOS_snprintf(buf, sizeof(buf), "_ssl.c:%d: %s", lineno, errstr);
+    ERR_clear_error();
     v = Py_BuildValue("(is)", p, buf);
     if (v != NULL) {
         PyErr_SetObject(PySSLErrorObject, v);
@@ -247,6 +249,7 @@ _setSSLError (char *errstr, int errcode, char *filename, int lineno) {
         errstr = ERR_error_string(errcode, NULL);
     }
     PyOS_snprintf(buf, sizeof(buf), "_ssl.c:%d: %s", lineno, errstr);
+    ERR_clear_error();
     v = Py_BuildValue("(is)", errcode, buf);
     if (v != NULL) {
         PyErr_SetObject(PySSLErrorObject, v);
