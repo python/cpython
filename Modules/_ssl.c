@@ -1730,15 +1730,17 @@ It is necessary to seed the PRNG with RAND_add() on some platforms before\n\
 using the ssl() function.");
 
 static PyObject *
-PySSL_RAND_egd(PyObject *self, PyObject *arg)
+PySSL_RAND_egd(PyObject *self, PyObject *args)
 {
+    PyObject *path;
     int bytes;
 
-    if (!PyUnicode_Check(arg))
-        return PyErr_Format(PyExc_TypeError,
-                            "RAND_egd() expected string, found %s",
-                            Py_TYPE(arg)->tp_name);
-    bytes = RAND_egd(_PyUnicode_AsString(arg));
+    if (!PyArg_ParseTuple(args, "O&|i:RAND_egd",
+                          PyUnicode_FSConverter, &path))
+        return NULL;
+
+    bytes = RAND_egd(PyBytes_AsString(path));
+    Py_DECREF(path);
     if (bytes == -1) {
         PyErr_SetString(PySSLErrorObject,
                         "EGD connection failed or EGD did not return "
@@ -1767,7 +1769,7 @@ static PyMethodDef PySSL_methods[] = {
 #ifdef HAVE_OPENSSL_RAND
     {"RAND_add",            PySSL_RAND_add, METH_VARARGS,
      PySSL_RAND_add_doc},
-    {"RAND_egd",            PySSL_RAND_egd, METH_O,
+    {"RAND_egd",            PySSL_RAND_egd, METH_VARARGS,
      PySSL_RAND_egd_doc},
     {"RAND_status",         (PyCFunction)PySSL_RAND_status, METH_NOARGS,
      PySSL_RAND_status_doc},
