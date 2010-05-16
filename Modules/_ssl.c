@@ -1462,6 +1462,10 @@ set_ciphers(PySSLContext *self, PyObject *args)
         return NULL;
     ret = SSL_CTX_set_cipher_list(self->ctx, cipherlist);
     if (ret == 0) {
+        /* Clearing the error queue is necessary on some OpenSSL versions,
+           otherwise the error will be reported again when another SSL call
+           is done. */
+        ERR_clear_error();
         PyErr_SetString(PySSLErrorObject,
                         "No cipher can be selected.");
         return NULL;

@@ -142,7 +142,7 @@ class BasicSocketTests(unittest.TestCase):
         # Error checking can happen at instantiation or when connecting
         with self.assertRaisesRegexp(ssl.SSLError, "No cipher can be selected"):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
-                                cert_reqs=ssl.CERT_NONE, ciphers="^$:,;?*'dorothyx")
+                                cert_reqs=ssl.CERT_NONE, ciphers="xyzzy")
             s.connect(remote)
 
     @support.cpython_only
@@ -186,7 +186,7 @@ class ContextTests(unittest.TestCase):
         ctx.set_ciphers("ALL")
         ctx.set_ciphers("DEFAULT")
         with self.assertRaisesRegexp(ssl.SSLError, "No cipher can be selected"):
-            ctx.set_ciphers("^$:,;?*'dorothyx")
+            ctx.set_ciphers("xyzzy")
 
     def test_verify(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
