@@ -222,6 +222,10 @@ Functions, Constants, and Exceptions
 
    Selects SSL version 2 as the channel encryption protocol.
 
+   .. warning::
+
+      SSL version 2 is insecure.  Its use is highly discouraged.
+
 .. data:: PROTOCOL_SSLv23
 
    Selects SSL version 2 or 3 as the channel encryption protocol.  This is a
