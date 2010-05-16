@@ -811,13 +811,13 @@ static PyObject *
 PySSL_test_decode_certificate (PyObject *mod, PyObject *args) {
 
     PyObject *retval = NULL;
-    char *filename = NULL;
+    PyObject *filename;
     X509 *x=NULL;
     BIO *cert;
     int verbose = 1;
 
-    if (!PyArg_ParseTuple(args, "s|i:test_decode_certificate",
-                          &filename, &verbose))
+    if (!PyArg_ParseTuple(args, "O&|i:test_decode_certificate",
+                          PyUnicode_FSConverter, &filename, &verbose))
         return NULL;
 
     if ((cert=BIO_new(BIO_s_file())) == NULL) {
@@ -826,7 +826,7 @@ PySSL_test_decode_certificate (PyObject *mod, PyObject *args) {
         goto fail0;
     }
 
-    if (BIO_read_filename(cert,filename) <= 0) {
+    if (BIO_read_filename(cert, PyBytes_AsString(filename)) <= 0) {
         PyErr_SetString(PySSLErrorObject,
                         "Can't open file");
         goto fail0;
@@ -842,7 +842,7 @@ PySSL_test_decode_certificate (PyObject *mod, PyObject *args) {
     retval = _decode_certificate(x, verbose);
 
   fail0:
-
+    Py_DECREF(filename);
     if (cert != NULL) BIO_free(cert);
     return retval;
 }
