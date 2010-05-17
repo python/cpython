@@ -366,6 +366,8 @@ C-API
 Library
 -------
 
+- Issue #8688: Distutils now recalculates MANIFEST everytime.
+
 - Issue #8477: ssl.RAND_egd() and ssl._test_decode_cert() support str with
   surrogates and bytes for the filename
 
