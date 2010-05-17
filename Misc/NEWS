@@ -39,6 +39,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8688: Distutils now recalculates MANIFEST everytime.
+
 - Issue #7640: In the new `io` module, fix relative seek() for buffered
   readable streams when the internal buffer isn't empty.  Patch by Pascal
   Chambon.
