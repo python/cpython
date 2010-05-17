@@ -2011,7 +2011,11 @@ static PyObject *
 crash_no_current_thread(PyObject *self)
 {
     Py_BEGIN_ALLOW_THREADS
-    PyErr_SetString(PyExc_SystemError, "bork bork bork");
+    /* Using PyThreadState_Get() directly allows the test to pass in
+       !pydebug mode. However, the test only actually tests anything
+       in pydebug mode, since that's where the infinite loop was in
+       the first place. */
+    PyThreadState_Get();
     Py_END_ALLOW_THREADS
     return NULL;
 }
