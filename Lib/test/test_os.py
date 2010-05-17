@@ -12,6 +12,7 @@ import subprocess
 import time
 import shutil
 from test import support
+import contextlib
 
 # Detect whether we're on a Linux system that uses the (now outdated
 # and unmaintained) linuxthreads threading library.  There's an issue
@@ -623,6 +624,39 @@ class URandomTests(unittest.TestCase):
         except NotImplementedError:
             pass
 
+@contextlib.contextmanager
+def _execvpe_mockup(defpath=None):
+    """
+    Stubs out execv and execve functions when used as context manager.
+    Records exec calls. The mock execv and execve functions always raise an
+    exception as they would normally never return.
+    """
+    # A list of tuples containing (function name, first arg, args)
+    # of calls to execv or execve that have been made.
+    calls = []
+
+    def mock_execv(name, *args):
+        calls.append(('execv', name, args))
+        raise RuntimeError("execv called")
+
+    def mock_execve(name, *args):
+        calls.append(('execve', name, args))
+        raise OSError(errno.ENOTDIR, "execve called")
+
+    try:
+        orig_execv = os.execv
+        orig_execve = os.execve
+        orig_defpath = os.defpath
+        os.execv = mock_execv
+        os.execve = mock_execve
+        if defpath is not None:
+            os.defpath = defpath
+        yield calls
+    finally:
+        os.execv = orig_execv
+        os.execve = orig_execve
+        os.defpath = orig_defpath
+
 class ExecTests(unittest.TestCase):
     @unittest.skipIf(USING_LINUXTHREADS,
                      "avoid triggering a linuxthreads bug: see issue #4970")
@@ -633,57 +667,28 @@ class ExecTests(unittest.TestCase):
     def test_execvpe_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execvpe, 'notepad', [], None)
 
-    class _stub_out_for_execvpe_test(object):
-        """
-        Stubs out execv, execve and get_exec_path functions when
-        used as context manager.  Records exec calls.  The mock execv
-        and execve functions always raise an exception as they would
-        normally never return.
-        """
-        def __init__(self):
-            # A list of tuples containing (function name, first arg, args)
-            # of calls to execv or execve that have been made.
-            self.calls = []
-        def _mock_execv(self, name, *args):
-            self.calls.append(('execv', name, args))
-            raise RuntimeError("execv called")
-
-        def _mock_execve(self, name, *args):
-            self.calls.append(('execve', name, args))
-            raise OSError(errno.ENOTDIR, "execve called")
-
-        def _mock_get_exec_path(self, env=None):
-            return [os.sep+'p', os.sep+'pp']
-
-        def __enter__(self):
-            self.orig_execv = os.execv
-            self.orig_execve = os.execve
-            self.orig_get_exec_path = os.get_exec_path
-            os.execv = self._mock_execv
-            os.execve = self._mock_execve
-            os.get_exec_path = self._mock_get_exec_path
-
-        def __exit__(self, type, value, tb):
-            os.execv = self.orig_execv
-            os.execve = self.orig_execve
-            os.get_exec_path = self.orig_get_exec_path
-
     @unittest.skipUnless(hasattr(os, '_execvpe'),
                          "No internal os._execvpe function to test.")
     def test_internal_execvpe(self):
-        exec_stubbed = self._stub_out_for_execvpe_test()
-        with exec_stubbed:
-            self.assertRaises(RuntimeError, os._execvpe, os.sep+'f', ['-a'])
-            self.assertEqual([('execv', os.sep+'f', (['-a'],))],
-                             exec_stubbed.calls)
-            exec_stubbed.calls = []
-            self.assertRaises(OSError, os._execvpe, 'f', ['-a'],
-                              env={'spam': 'beans'})
-            self.assertEqual([('execve', os.sep+'p'+os.sep+'f',
-                               (['-a'], {'spam': 'beans'})),
-                              ('execve', os.sep+'pp'+os.sep+'f',
-                               (['-a'], {'spam': 'beans'}))],
-                             exec_stubbed.calls)
+        program_path = os.sep+'absolutepath'
+        program = 'executable'
+        fullpath = os.path.join(program_path, program)
+        arguments = ['progname', 'arg1', 'arg2']
+        env = {'spam': 'beans'}
+
+        with _execvpe_mockup() as calls:
+            self.assertRaises(RuntimeError, os._execvpe, fullpath, arguments)
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0], ('execv', fullpath, (arguments,)))
+
+        with _execvpe_mockup(defpath=program_path) as calls:
+            self.assertRaises(OSError, os._execvpe, program, arguments, env=env)
+            self.assertEqual(len(calls), 1)
+            if os.name != "nt":
+                self.assertEqual(calls[0], ('execve', os.fsencode(fullpath), (arguments, env)))
+            else:
+                self.assertEqual(calls[0], ('execve', fullpath, (arguments, env)))
+
 
 class Win32ErrorTests(unittest.TestCase):
     def test_rename(self):
