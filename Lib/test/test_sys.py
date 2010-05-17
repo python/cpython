@@ -152,7 +152,7 @@ class SysModuleTest(unittest.TestCase):
             stdout, stderr = process.communicate()
             self.assertEqual(process.returncode, 1)
             self.assertTrue(stderr.startswith(expected),
-                            "%r doesn't start with %r" % (stderr, expected))
+                "%s doesn't start with %s" % (ascii(stderr), ascii(expected)))
 
         # test that stderr buffer if flushed before the exit message is written
         # into stderr
@@ -485,9 +485,8 @@ class SysModuleTest(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c", code], stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         self.assertEqual(p.returncode, 1)
-        self.assert_(stderr.startswith(b"UnicodeEncodeError: "
-            b"'utf-8' codec can't encode character '\\udcff' in "
-            b"position 7: surrogates not allowed"), stderr)
+        self.assert_(b"UnicodeEncodeError:" in stderr,
+            "%r not in %s" % (b"UniodeEncodeError:", ascii(stderr)))
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
