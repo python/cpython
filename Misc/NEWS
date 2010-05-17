@@ -12,6 +12,9 @@ What's New in Python 2.6.6 alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7079: Fix a possible crash when closing a file object while using
+  it from another thread.  Patch by Daniel Stutzbach.
+
 - Issue #1533: fix inconsistency in range function argument
   processing: any non-float non-integer argument is now converted to
   an integer (if possible) using its __int__ method.  Previously, only

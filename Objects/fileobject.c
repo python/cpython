@@ -568,8 +568,10 @@ static PyObject *
 file_close(PyFileObject *f)
 {
     PyObject *sts = close_the_file(f);
-    PyMem_Free(f->f_setbuf);
-    f->f_setbuf = NULL;
+    if (sts) {
+        PyMem_Free(f->f_setbuf);
+        f->f_setbuf = NULL;
+    }
     return sts;
 }
 
