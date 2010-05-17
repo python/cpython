@@ -303,7 +303,9 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
             }
             else if (PyUnicode_Check(s)) {
                 PyObject *t;
-                t = _PyUnicode_AsDefaultEncodedString(s, NULL);
+                t = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(s),
+                                         PyUnicode_GET_SIZE(s),
+                                         "backslashreplace");
                 if (t == NULL)
                     ret = 0;
                 else {

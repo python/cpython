@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- PyObject_Dump() encodes unicode objects to utf8 with backslashreplace
+  (instead of strict) error handler to escape surrogates
+
 - Issue #8715: Create PyUnicode_EncodeFSDefault() function: Encode a Unicode
   object to Py_FileSystemDefaultEncoding with the "surrogateescape" error
   handler, and return bytes. If Py_FileSystemDefaultEncoding is not set, fall
