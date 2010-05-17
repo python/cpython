@@ -57,7 +57,8 @@ class sdist (Command):
          "just regenerate the manifest and then stop "
          "(implies --force-manifest)"),
         ('force-manifest', 'f',
-         "forcibly regenerate the manifest and carry on as usual"),
+         "forcibly regenerate the manifest and carry on as usual. "
+         "Deprecated: now the manifest is always regenerated."),
         ('formats=', None,
          "formats for source distribution (comma-separated list)"),
         ('keep-temp', 'k',

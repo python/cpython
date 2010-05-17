@@ -191,19 +191,11 @@ There are a couple of options that modify this behaviour.  First, use the
 :option:`--no-defaults` and :option:`--no-prune` to disable the standard
 "include" and "exclude" sets.
 
-Second, you might want to force the manifest to be regenerated---for example, if
-you have added or removed files or directories that match an existing pattern in
-the manifest template, you should regenerate the manifest::
-
-   python setup.py sdist --force-manifest
-
-Or, you might just want to (re)generate the manifest, but not create a source
+Second, you might just want to (re)generate the manifest, but not create a source
 distribution::
 
    python setup.py sdist --manifest-only
 
-:option:`--manifest-only` implies :option:`--force-manifest`. :option:`-o` is a
-shortcut for :option:`--manifest-only`, and :option:`-f` for
-:option:`--force-manifest`.
+:option:`-o` is a shortcut for :option:`--manifest-only`.
 
 
