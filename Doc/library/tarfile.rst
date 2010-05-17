@@ -711,6 +711,8 @@ converted. Possible values are listed in section :ref:`codec-base-classes`.
 The default scheme is ``'surrogateescape'`` which Python also uses for its
 file system calls, see :ref:`os-filenames`.
 
-In case of writing :const:`PAX_FORMAT` archives, *encoding* is ignored because
-non-ASCII metadata is stored using *UTF-8*. Storing surrogate characters is not
-possible and will raise a :exc:`UnicodeEncodeError`.
+In case of :const:`PAX_FORMAT` archives, *encoding* is generally not needed
+because all the metadata is stored using *UTF-8*. *encoding* is only used in
+the rare cases when binary pax headers are decoded or when strings with
+surrogate characters are stored.
+

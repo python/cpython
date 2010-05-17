@@ -118,6 +118,9 @@ GNU_TYPES = (GNUTYPE_LONGNAME, GNUTYPE_LONGLINK,
 PAX_FIELDS = ("path", "linkpath", "size", "mtime",
               "uid", "gid", "uname", "gname")
 
+# Fields from a pax header that are affected by hdrcharset.
+PAX_NAME_FIELDS = {"path", "linkpath", "uname", "gname"}
+
 # Fields in a pax header that are numbers, all other fields
 # are treated as strings.
 PAX_NUMBER_FIELDS = {
@@ -988,7 +991,7 @@ class TarInfo(object):
         elif format == GNU_FORMAT:
             return self.create_gnu_header(info, encoding, errors)
         elif format == PAX_FORMAT:
-            return self.create_pax_header(info)
+            return self.create_pax_header(info, encoding)
         else:
             raise ValueError("invalid format")
 
@@ -1019,7 +1022,7 @@ class TarInfo(object):
 
         return buf + self._create_header(info, GNU_FORMAT, encoding, errors)
 
-    def create_pax_header(self, info):
+    def create_pax_header(self, info, encoding):
         """Return the object as a ustar header block. If it cannot be
            represented this way, prepend a pax extended header sequence
            with supplement information.
@@ -1062,7 +1065,7 @@ class TarInfo(object):
 
         # Create a pax extended header if necessary.
         if pax_headers:
-            buf = self._create_pax_generic_header(pax_headers, XHDTYPE)
+            buf = self._create_pax_generic_header(pax_headers, XHDTYPE, encoding)
         else:
             buf = b""
 
@@ -1072,7 +1075,7 @@ class TarInfo(object):
     def create_pax_global_header(cls, pax_headers):
         """Return the object as a pax global header block sequence.
         """
-        return cls._create_pax_generic_header(pax_headers, XGLTYPE)
+        return cls._create_pax_generic_header(pax_headers, XGLTYPE, "utf8")
 
     def _posix_split_name(self, name):
         """Split a name longer than 100 chars into a prefix
@@ -1145,15 +1148,35 @@ class TarInfo(object):
                 cls._create_payload(name)
 
     @classmethod
-    def _create_pax_generic_header(cls, pax_headers, type):
-        """Return a POSIX.1-2001 extended or global header sequence
+    def _create_pax_generic_header(cls, pax_headers, type, encoding):
+        """Return a POSIX.1-2008 extended or global header sequence
            that contains a list of keyword, value pairs. The values
            must be strings.
         """
+        # Check if one of the fields contains surrogate characters and thereby
+        # forces hdrcharset=BINARY, see _proc_pax() for more information.
+        binary = False
+        for keyword, value in pax_headers.items():
+            try:
+                value.encode("utf8", "strict")
+            except UnicodeEncodeError:
+                binary = True
+                break
+
         records = b""
+        if binary:
+            # Put the hdrcharset field at the beginning of the header.
+            records += b"21 hdrcharset=BINARY\n"
+
         for keyword, value in pax_headers.items():
             keyword = keyword.encode("utf8")
-            value = value.encode("utf8")
+            if binary:
+                # Try to restore the original byte representation of `value'.
+                # Needless to say, that the encoding must match the string.
+                value = value.encode(encoding, "surrogateescape")
+            else:
+                value = value.encode("utf8")
+
             l = len(keyword) + len(value) + 3   # ' ' + '=' + '\n'
             n = p = 0
             while True:
@@ -1354,7 +1377,7 @@ class TarInfo(object):
 
     def _proc_pax(self, tarfile):
         """Process an extended or global header as described in
-           POSIX.1-2001.
+           POSIX.1-2008.
         """
         # Read the header information.
         buf = tarfile.fileobj.read(self._block(self.size))
@@ -1366,6 +1389,24 @@ class TarInfo(object):
             pax_headers = tarfile.pax_headers
         else:
             pax_headers = tarfile.pax_headers.copy()
+
+        # Check if the pax header contains a hdrcharset field. This tells us
+        # the encoding of the path, linkpath, uname and gname fields. Normally,
+        # these fields are UTF-8 encoded but since POSIX.1-2008 tar
+        # implementations are allowed to store them as raw binary strings if
+        # the translation to UTF-8 fails.
+        match = re.search(br"\d+ hdrcharset=([^\n]+)\n", buf)
+        if match is not None:
+            pax_headers["hdrcharset"] = match.group(1).decode("utf8")
+
+        # For the time being, we don't care about anything other than "BINARY".
+        # The only other value that is currently allowed by the standard is
+        # "ISO-IR 10646 2000 UTF-8" in other words UTF-8.
+        hdrcharset = pax_headers.get("hdrcharset")
+        if hdrcharset == "BINARY":
+            encoding = tarfile.encoding
+        else:
+            encoding = "utf8"
 
         # Parse pax header information. A record looks like that:
         # "%d %s=%s\n" % (length, keyword, value). length is the size
@@ -1382,8 +1423,21 @@ class TarInfo(object):
             length = int(length)
             value = buf[match.end(2) + 1:match.start(1) + length - 1]
 
-            keyword = keyword.decode("utf8")
-            value = value.decode("utf8")
+            # Normally, we could just use "utf8" as the encoding and "strict"
+            # as the error handler, but we better not take the risk. For
+            # example, GNU tar <= 1.23 is known to store filenames it cannot
+            # translate to UTF-8 as raw strings (unfortunately without a
+            # hdrcharset=BINARY header).
+            # We first try the strict standard encoding, and if that fails we
+            # fall back on the user's encoding and error handler.
+            keyword = self._decode_pax_field(keyword, "utf8", "utf8",
+                    tarfile.errors)
+            if keyword in PAX_NAME_FIELDS:
+                value = self._decode_pax_field(value, encoding, tarfile.encoding,
+                        tarfile.errors)
+            else:
+                value = self._decode_pax_field(value, "utf8", "utf8",
+                        tarfile.errors)
 
             pax_headers[keyword] = value
             pos += length
@@ -1430,6 +1484,14 @@ class TarInfo(object):
             setattr(self, keyword, value)
 
         self.pax_headers = pax_headers.copy()
+
+    def _decode_pax_field(self, value, encoding, fallback_encoding, fallback_errors):
+        """Decode a single field from a pax record.
+        """
+        try:
+            return value.decode(encoding, "strict")
+        except UnicodeDecodeError:
+            return value.decode(fallback_encoding, fallback_errors)
 
     def _block(self, count):
         """Round up a byte count by BLOCKSIZE and return it,
