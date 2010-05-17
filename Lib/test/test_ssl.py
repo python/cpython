@@ -217,6 +217,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
             ctx.load_cert_chain(EMPTYCERT)
         # Separate key and cert
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.load_cert_chain(ONLYCERT, ONLYKEY)
         ctx.load_cert_chain(certfile=ONLYCERT, keyfile=ONLYKEY)
         ctx.load_cert_chain(certfile=BYTES_ONLYCERT, keyfile=BYTES_ONLYKEY)
@@ -227,6 +228,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
             ctx.load_cert_chain(certfile=ONLYKEY, keyfile=ONLYCERT)
         # Mismatching key and cert
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         with self.assertRaisesRegexp(ssl.SSLError, "key values mismatch"):
             ctx.load_cert_chain(CERTFILE, ONLYKEY)
 
