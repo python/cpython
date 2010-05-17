@@ -277,6 +277,47 @@ class SDistTestCase(PyPIRCCommandTestCase):
         self.assertRaises(DistutilsOptionError, cmd.finalize_options)
 
 
+    def test_get_file_list(self):
+        # make sure MANIFEST is recalculated
+        dist, cmd = self.get_cmd()
+
+        # filling data_files by pointing files in package_data
+        dist.package_data = {'somecode': ['*.txt']}
+        self.write_file((self.tmp_dir, 'somecode', 'doc.txt'), '#')
+        cmd.ensure_finalized()
+        cmd.run()
+
+        f = open(cmd.manifest)
+        try:
+            manifest = [line.strip() for line in f.read().split('\n')
+                        if line.strip() != '']
+        finally:
+            f.close()
+
+        self.assertEquals(len(manifest), 4)
+
+        # adding a file
+        self.write_file((self.tmp_dir, 'somecode', 'doc2.txt'), '#')
+
+        # make sure build_py is reinitinialized, like a fresh run
+        build_py = dist.get_command_obj('build_py')
+        build_py.finalized = False
+        build_py.ensure_finalized()
+
+        cmd.run()
+
+        f = open(cmd.manifest)
+        try:
+            manifest2 = [line.strip() for line in f.read().split('\n')
+                         if line.strip() != '']
+        finally:
+            f.close()
+
+        # do we have the new file in MANIFEST ?
+        self.assertEquals(len(manifest2), 5)
+        self.assertIn('doc2.txt', manifest2[-1])
+
+
 def test_suite():
     return unittest.makeSuite(SDistTestCase)
 
