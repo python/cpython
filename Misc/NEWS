@@ -366,6 +366,9 @@ C-API
 Library
 -------
 
+- Issue #1285086: Speed up urllib.parse functions: quote, quote_from_bytes,
+  unquote, unquote_to_bytes.
+
 - Issue #8688: Distutils now recalculates MANIFEST everytime.
 
 - Issue #8477: ssl.RAND_egd() and ssl._test_decode_cert() support str with
