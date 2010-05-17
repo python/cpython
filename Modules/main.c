@@ -516,18 +516,22 @@ Py_Main(int argc, wchar_t **argv)
     }
 
     if (command) {
+        char *commandStr;
         PyObject *commandObj = PyUnicode_FromWideChar(
             command, wcslen(command));
         free(command);
-        if (commandObj != NULL) {
-            sts = PyRun_SimpleStringFlags(
-                _PyUnicode_AsString(commandObj), &cf) != 0;
+        if (commandObj != NULL)
+            commandStr = _PyUnicode_AsString(commandObj);
+        else
+            commandStr = NULL;
+        if (commandStr != NULL) {
+            sts = PyRun_SimpleStringFlags(commandStr, &cf) != 0;
+            Py_DECREF(commandObj);
         }
         else {
             PyErr_Print();
             sts = 1;
         }
-        Py_DECREF(commandObj);
     } else if (module) {
         sts = RunModule(module, 1);
     }
