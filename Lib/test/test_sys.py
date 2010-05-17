@@ -79,6 +79,8 @@ class SysModuleTest(unittest.TestCase):
     # Python/pythonrun.c::PyErr_PrintEx() is tricky.
 
     def test_exit(self):
+        import subprocess
+
         self.assertRaises(TypeError, sys.exit, 42, 42)
 
         # call without argument
@@ -133,10 +135,28 @@ class SysModuleTest(unittest.TestCase):
             self.fail("no exception")
 
         # test that the exit machinery handles SystemExits properly
-        import subprocess
         rc = subprocess.call([sys.executable, "-c",
                               "raise SystemExit(47)"])
         self.assertEqual(rc, 47)
+
+        def check_exit_message(code, expected):
+            process = subprocess.Popen([sys.executable, "-c", code],
+                                       stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+            self.assertEqual(process.returncode, 1)
+            self.assertTrue(stderr.startswith(expected), stderr)
+
+        # test that stderr buffer if flushed before the exit message is written
+        # into stderr
+        check_exit_message(
+            r'import sys; sys.stderr.write("unflushed,"); sys.exit("message")',
+            b"unflushed,message")
+
+        # test that the exit message is written with backslashreplace error
+        # handler to stderr
+        check_exit_message(
+            r'import sys; sys.exit("surrogates:\uDCFF")',
+            b"surrogates:\\udcff")
 
     def test_getdefaultencoding(self):
         self.assertRaises(TypeError, sys.getdefaultencoding, 42)
@@ -403,6 +423,24 @@ class SysModuleTest(unittest.TestCase):
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
 
+    def test_main_invalid_unicode(self):
+        import locale
+        non_decodable = b"\xff"
+        encoding = locale.getpreferredencoding()
+        try:
+            non_decodable.decode(encoding)
+        except UnicodeDecodeError:
+            pass
+        else:
+            self.skipTest('%r is decodable with encoding %s'
+                % (non_decodable, encoding))
+        code = b'print("' + non_decodable + b'")'
+        p = subprocess.Popen([sys.executable, "-c", code], stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        self.assertEqual(p.returncode, 1)
+        self.assert_(stderr.startswith(b"UnicodeEncodeError: "
+            b"'utf-8' codec can't encode character '\\udcff' in "
+            b"position 7: surrogates not allowed"), stderr)
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
