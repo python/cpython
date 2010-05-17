@@ -144,7 +144,8 @@ class SysModuleTest(unittest.TestCase):
                                        stderr=subprocess.PIPE)
             stdout, stderr = process.communicate()
             self.assertEqual(process.returncode, 1)
-            self.assertTrue(stderr.startswith(expected), stderr)
+            self.assertTrue(stderr.startswith(expected),
+                            "%r doesn't start with %r" % (stderr, expected))
 
         # test that stderr buffer if flushed before the exit message is written
         # into stderr
