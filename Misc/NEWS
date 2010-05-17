@@ -12,6 +12,9 @@ What's New in Python 2.7 Release Candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #7079: Fix a possible crash when closing a file object while using
+  it from another thread.  Patch by Daniel Stutzbach.
+
 Library
 -------
 

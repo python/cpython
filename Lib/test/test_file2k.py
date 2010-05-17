@@ -429,6 +429,7 @@ class FileThreadingTests(unittest.TestCase):
         self._count_lock = threading.Lock()
         self.close_count = 0
         self.close_success_count = 0
+        self.use_buffering = False
 
     def tearDown(self):
         if self.f:
@@ -443,7 +444,10 @@ class FileThreadingTests(unittest.TestCase):
         test_support.threading_cleanup(*self._threads)
 
     def _create_file(self):
-        self.f = open(self.filename, "w+")
+        if self.use_buffering:
+            self.f = open(self.filename, "w+", buffering=1024*16)
+        else:
+            self.f = open(self.filename, "w+")
 
     def _close_file(self):
         with self._count_lock:
@@ -526,6 +530,12 @@ class FileThreadingTests(unittest.TestCase):
         self._test_close_open_io(io_func)
 
     def test_close_open_print(self):
+        def io_func():
+            print >> self.f, ''
+        self._test_close_open_io(io_func)
+
+    def test_close_open_print_buffered(self):
+        self.use_buffering = True
         def io_func():
             print >> self.f, ''
         self._test_close_open_io(io_func)
