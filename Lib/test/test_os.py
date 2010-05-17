@@ -684,10 +684,7 @@ class ExecTests(unittest.TestCase):
         with _execvpe_mockup(defpath=program_path) as calls:
             self.assertRaises(OSError, os._execvpe, program, arguments, env=env)
             self.assertEqual(len(calls), 1)
-            if os.name != "nt":
-                self.assertEqual(calls[0], ('execve', os.fsencode(fullpath), (arguments, env)))
-            else:
-                self.assertEqual(calls[0], ('execve', fullpath, (arguments, env)))
+            self.assertEqual(calls[0], ('execve', fullpath, (arguments, env)))
 
 
 class Win32ErrorTests(unittest.TestCase):
