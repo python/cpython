@@ -311,6 +311,7 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
                 else {
                     fwrite(PyBytes_AS_STRING(t), 1,
                            PyBytes_GET_SIZE(t), fp);
+                    Py_DECREF(t);
                 }
             }
             else {
