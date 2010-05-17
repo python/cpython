@@ -449,6 +449,24 @@ class SysModuleTest(unittest.TestCase):
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
 
+    def test_main_invalid_unicode(self):
+        import locale
+        non_decodable = b"\xff"
+        encoding = locale.getpreferredencoding()
+        try:
+            non_decodable.decode(encoding)
+        except UnicodeDecodeError:
+            pass
+        else:
+            self.skipTest('%r is decodable with encoding %s'
+                % (non_decodable, encoding))
+        code = b'print("' + non_decodable + b'")'
+        p = subprocess.Popen([sys.executable, "-c", code], stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        self.assertEqual(p.returncode, 1)
+        self.assert_(stderr.startswith(b"UnicodeEncodeError: "
+            b"'utf-8' codec can't encode character '\\udcff' in "
+            b"position 7: surrogates not allowed"), stderr)
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
