@@ -173,66 +173,34 @@ class sdist(Command):
         distribution, and put it in 'self.filelist'.  This might involve
         reading the manifest template (and writing the manifest), or just
         reading the manifest, or just using the default file set -- it all
-        depends on the user's options and the state of the filesystem.
+        depends on the user's options.
         """
-        # If we have a manifest template, see if it's newer than the
-        # manifest; if so, we'll regenerate the manifest.
+        # new behavior:
+        # the file list is recalculated everytime because
+        # even if MANIFEST.in or setup.py are not changed
+        # the user might have added some files in the tree that
+        # need to be included.
+        #
+        #  This makes --force the default and only behavior.
         template_exists = os.path.isfile(self.template)
+        if not template_exists:
+            self.warn(("manifest template '%s' does not exist " +
+                        "(using default file list)") %
+                        self.template)
+        self.filelist.findall()
+
+        if self.use_defaults:
+            self.add_defaults()
+
         if template_exists:
-            template_newer = dep_util.newer(self.template, self.manifest)
+            self.read_template()
 
-        # The contents of the manifest file almost certainly depend on the
-        # setup script as well as the manifest template -- so if the setup
-        # script is newer than the manifest, we'll regenerate the manifest
-        # from the template.  (Well, not quite: if we already have a
-        # manifest, but there's no template -- which will happen if the
-        # developer elects to generate a manifest some other way -- then we
-        # can't regenerate the manifest, so we don't.)
-        self.debug_print("checking if %s newer than %s" %
-                         (self.distribution.script_name, self.manifest))
-        setup_newer = dep_util.newer(self.distribution.script_name,
-                                     self.manifest)
+        if self.prune:
+            self.prune_file_list()
 
-        # cases:
-        #   1) no manifest, template exists: generate manifest
-        #      (covered by 2a: no manifest == template newer)
-        #   2) manifest & template exist:
-        #      2a) template or setup script newer than manifest:
-        #          regenerate manifest
-        #      2b) manifest newer than both:
-        #          do nothing (unless --force or --manifest-only)
-        #   3) manifest exists, no template:
-        #      do nothing (unless --force or --manifest-only)
-        #   4) no manifest, no template: generate w/ warning ("defaults only")
-
-        manifest_outofdate = (template_exists and
-                              (template_newer or setup_newer))
-        force_regen = self.force_manifest or self.manifest_only
-        manifest_exists = os.path.isfile(self.manifest)
-        neither_exists = (not template_exists and not manifest_exists)
-
-        # Regenerate the manifest if necessary (or if explicitly told to)
-        if manifest_outofdate or neither_exists or force_regen:
-            if not template_exists:
-                self.warn("manifest template '%s' does not exist "
-                          "(using default file list)"
-                          % self.template)
-            self.filelist.findall()
-
-            if self.use_defaults:
-                self.add_defaults()
-            if template_exists:
-                self.read_template()
-            if self.prune:
-                self.prune_file_list()
-
-            self.filelist.sort()
-            self.filelist.remove_duplicates()
-            self.write_manifest()
-
-        # Don't regenerate the manifest, just read it in.
-        else:
-            self.read_manifest()
+        self.filelist.sort()
+        self.filelist.remove_duplicates()
+        self.write_manifest()
 
     def add_defaults(self):
         """Add all the default files to self.filelist:

@@ -43,6 +43,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8688: Distutils now recalculates MANIFEST everytime.
+
 - Issue #5099: subprocess.Popen.__del__ no longer references global objects
   to prevent issues during interpreter shutdown.
 
