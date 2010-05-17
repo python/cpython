@@ -15,6 +15,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8688: Distutils now recalculates MANIFEST everytime.
+
 - Issue #5099: subprocess.Popen's __del__ method (and the methods it calls)
   referenced global objects, causing errors to pop up during interpreter
   shutdown.
