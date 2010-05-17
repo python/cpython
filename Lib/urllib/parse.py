@@ -341,7 +341,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
         encoding = 'utf-8'
     if errors is None:
         errors = 'replace'
-    # pct_sequence: contiguous sequence of percent-encoded bytes
+    # pct_sequence: contiguous sequence of percent-encoded bytes, decoded
     pct_sequence = b''
     string = res[0]
     for item in res[1:]:
