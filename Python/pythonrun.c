@@ -1367,7 +1367,11 @@ handle_system_exit(void)
     if (PyLong_Check(value))
         exitcode = (int)PyLong_AsLong(value);
     else {
+        PyObject *sys_stderr = PySys_GetObject("stderr");
+        if (sys_stderr != NULL)
+            PyObject_CallMethod(sys_stderr, "flush", NULL);
         PyObject_Print(value, stderr, Py_PRINT_RAW);
+        fflush(stderr);
         PySys_WriteStderr("\n");
         exitcode = 1;
     }
