@@ -145,6 +145,16 @@ class SysModuleTest(unittest.TestCase):
                               "raise SystemExit(47)"])
         self.assertEqual(rc, 47)
 
+        # test that the exit message is written with backslashreplace error
+        # handler to stderr
+        import subprocess
+        code = r'import sys; sys.exit("surrogates:\uDCFF")'
+        process = subprocess.Popen([sys.executable, "-c", code],
+                                   stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        self.assertEqual(process.returncode, 1)
+        self.assertTrue(stderr.startswith(b"surrogates:\\udcff"), stderr)
+
     def test_getdefaultencoding(self):
         self.assertRaises(TypeError, sys.getdefaultencoding, 42)
         # can't check more than the type, as the user might have changed it
