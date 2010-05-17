@@ -92,7 +92,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
 def urlcleanup():
     if _urlopener:
         _urlopener.cleanup()
-    _safemaps.clear()
+    _safe_quoters.clear()
     ftpcache.clear()
 
 # check for SSL
@@ -1163,15 +1163,18 @@ _hextochr = dict((a + b, chr(int(a + b, 16)))
 def unquote(s):
     """unquote('abc%20def') -> 'abc def'."""
     res = s.split('%')
-    for i in xrange(1, len(res)):
-        item = res[i]
+    # fastpath
+    if len(res) == 1:
+        return s
+    s = res[0]
+    for item in res[1:]:
         try:
-            res[i] = _hextochr[item[:2]] + item[2:]
+            s += _hextochr[item[:2]] + item[2:]
         except KeyError:
-            res[i] = '%' + item
+            s += '%' + item
         except UnicodeDecodeError:
-            res[i] = unichr(int(item[:2], 16)) + item[2:]
-    return "".join(res)
+            s += unichr(int(item[:2], 16)) + item[2:]
+    return s
 
 def unquote_plus(s):
     """unquote('%7e/abc+def') -> '~/abc def'"""
@@ -1181,7 +1184,10 @@ def unquote_plus(s):
 always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                'abcdefghijklmnopqrstuvwxyz'
                '0123456789' '_.-')
-_safemaps = {}
+_safe_map = {}
+for i, c in zip(xrange(256), str(bytearray(xrange(256)))):
+    _safe_map[c] = c if (i < 128 and c in always_safe) else '%{:02X}'.format(i)
+_safe_quoters = {}
 
 def quote(s, safe='/'):
     """quote('abc def') -> 'abc%20def'
@@ -1204,18 +1210,21 @@ def quote(s, safe='/'):
     called on a path where the existing slash characters are used as
     reserved characters.
     """
+    # fastpath
+    if not s:
+        return s
     cachekey = (safe, always_safe)
     try:
-        safe_map = _safemaps[cachekey]
+        (quoter, safe) = _safe_quoters[cachekey]
     except KeyError:
-        safe += always_safe
-        safe_map = {}
-        for i in range(256):
-            c = chr(i)
-            safe_map[c] = (c in safe) and c or ('%%%02X' % i)
-        _safemaps[cachekey] = safe_map
-    res = map(safe_map.__getitem__, s)
-    return ''.join(res)
+        safe_map = _safe_map.copy()
+        safe_map.update([(c, c) for c in safe])
+        quoter = safe_map.__getitem__
+        safe = always_safe + safe
+        _safe_quoters[cachekey] = (quoter, safe)
+    if not s.rstrip(safe):
+        return s
+    return ''.join(map(quoter, s))
 
 def quote_plus(s, safe=''):
     """Quote the query fragment of a URL; replacing ' ' with '+'"""
