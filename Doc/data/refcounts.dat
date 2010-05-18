@@ -450,6 +450,11 @@ PyImport_ExecCodeModule:PyObject*::+1:
 PyImport_ExecCodeModule:char*:name::
 PyImport_ExecCodeModule:PyObject*:co:0:
 
+PyImport_ExecCodeModuleEx:PyObject*::+1:
+PyImport_ExecCodeModuleEx:char*:name::
+PyImport_ExecCodeModuleEx:PyObject*:co:0:
+PyImport_ExecCodeModuleEx:char*:pathname::
+
 PyImport_GetMagicNumber:long:::
 
 PyImport_GetModuleDict:PyObject*::0:
@@ -468,6 +473,13 @@ PyImport_ImportModuleEx:char*:name::
 PyImport_ImportModuleEx:PyObject*:globals:0:???
 PyImport_ImportModuleEx:PyObject*:locals:0:???
 PyImport_ImportModuleEx:PyObject*:fromlist:0:???
+
+PyImport_ImportModuleLevel:PyObject*::+1:
+PyImport_ImportModuleLevel:char*:name::
+PyImport_ImportModuleLevel:PyObject*:globals:0:???
+PyImport_ImportModuleLevel:PyObject*:locals:0:???
+PyImport_ImportModuleLevel:PyObject*:fromlist:0:???
+PyImport_ImportModuleLevel:int:level::
 
 PyImport_ReloadModule:PyObject*::+1:
 PyImport_ReloadModule:PyObject*:m:0:
