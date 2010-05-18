@@ -5,7 +5,7 @@
 
 /* fast search/count implementation, based on a mix between boyer-
    moore and horspool, with a few more bells and whistles on the top.
-   for some more background, see: http://effbot.org/stringlib */
+   for some more background, see: http://effbot.org/stringlib.htm */
 
 /* note: fastsearch may access s[n], which isn't a problem when using
    Python's ordinary string types, but may cause problems if you're

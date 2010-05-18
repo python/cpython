@@ -1,4 +1,4 @@
-# -*- coding: Latin-1 -*-
+# -*- coding: latin-1 -*-
 
 """Heap queue algorithm (a.k.a. priority queue).
 
