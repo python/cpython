@@ -1,7 +1,7 @@
 """An implementation of the Zephyr Abstract Syntax Definition Language.
 
 See http://asdl.sourceforge.net/ and
-http://www.cs.princeton.edu/~danwang/Papers/dsl97/dsl97-abstract.html.
+http://www.cs.princeton.edu/research/techreps/TR-554-97
 
 Only supports top level module decl, not view.  I'm guessing that view
 is intended to support the browser and I'm not interested in the
