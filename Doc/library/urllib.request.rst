@@ -126,26 +126,6 @@ The :mod:`urllib.request` module defines the following functions:
    of the data it has downloaded, and just returns it.  In this case you just have
    to assume that the download was successful.
 
-
-.. data:: _urlopener
-
-   The public functions :func:`urlopen` and :func:`urlretrieve` create an instance
-   of the :class:`FancyURLopener` class and use it to perform their requested
-   actions.  To override this functionality, programmers can create a subclass of
-   :class:`URLopener` or :class:`FancyURLopener`, then assign an instance of that
-   class to the ``urllib.request._urlopener`` variable before calling the
-   desired function.  For example, applications may want to specify a different
-   :mailheader:`User-Agent` header than :class:`URLopener` defines.
-   This can be accomplished with the following code::
-
-      import urllib.request
-
-      class AppURLopener(urllib.request.FancyURLopener):
-          version = "App/1.7"
-
-      urllib.request._urlopener = AppURLopener()
-
-
 .. function:: urlcleanup()
 
    Clear the cache that may have been built up by previous calls to
