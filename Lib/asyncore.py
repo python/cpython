@@ -63,8 +63,8 @@ except NameError:
 
 def _strerror(err):
     try:
-        return strerror(err)
-    except (ValueError, OverflowError):
+        return os.strerror(err)
+    except (ValueError, OverflowError, NameError):
         if err in errorcode:
             return errorcode[err]
         return "Unknown error %s" %err
