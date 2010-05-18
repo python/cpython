@@ -366,6 +366,11 @@ C-API
 Library
 -------
 
+- Issue #8513: os.get_exec_path() supports b'PATH' key and bytes value.
+  subprocess.Popen() and os._execvpe() support bytes program name. Add
+  os.supports_bytes_environ flag: True if the native OS type of the environment
+  is bytes (eg. False on Windows).
+
 - Issue #8633: tarfile is now able to read and write archives with "raw" binary
   pax headers as described in POSIX.1-2008.
 

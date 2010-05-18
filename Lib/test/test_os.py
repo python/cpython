@@ -370,7 +370,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     def setUp(self):
         self.__save = dict(os.environ)
-        if os.name not in ('os2', 'nt'):
+        if os.supports_bytes_environ:
             self.__saveb = dict(os.environb)
         for key, value in self._reference().items():
             os.environ[key] = value
@@ -378,7 +378,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def tearDown(self):
         os.environ.clear()
         os.environ.update(self.__save)
-        if os.name not in ('os2', 'nt'):
+        if os.supports_bytes_environ:
             os.environb.clear()
             os.environb.update(self.__saveb)
 
@@ -445,7 +445,21 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         # Supplied PATH environment variable
         self.assertSequenceEqual(test_path, os.get_exec_path(test_env))
 
-    @unittest.skipIf(sys.platform == "win32", "POSIX specific test")
+        if os.supports_bytes_environ:
+            # env cannot contain 'PATH' and b'PATH' keys
+            self.assertRaises(ValueError,
+                os.get_exec_path, {'PATH': '1', b'PATH': b'2'})
+
+            # bytes key and/or value
+            self.assertSequenceEqual(os.get_exec_path({b'PATH': b'abc'}),
+                ['abc'])
+            self.assertSequenceEqual(os.get_exec_path({b'PATH': 'abc'}),
+                ['abc'])
+            self.assertSequenceEqual(os.get_exec_path({'PATH': b'abc'}),
+                ['abc'])
+
+    @unittest.skipUnless(os.supports_bytes_environ,
+                         "os.environb required for this test.")
     def test_environb(self):
         # os.environ -> os.environb
         value = 'euro\u20ac'
@@ -669,22 +683,54 @@ class ExecTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, '_execvpe'),
                          "No internal os._execvpe function to test.")
-    def test_internal_execvpe(self):
-        program_path = os.sep+'absolutepath'
-        program = 'executable'
-        fullpath = os.path.join(program_path, program)
-        arguments = ['progname', 'arg1', 'arg2']
+    def _test_internal_execvpe(self, test_type):
+        program_path = os.sep + 'absolutepath'
+        if test_type is bytes:
+            program = b'executable'
+            fullpath = os.path.join(os.fsencode(program_path), program)
+            native_fullpath = fullpath
+            arguments = [b'progname', 'arg1', 'arg2']
+        else:
+            program = 'executable'
+            arguments = ['progname', 'arg1', 'arg2']
+            fullpath = os.path.join(program_path, program)
+            if os.name != "nt":
+                native_fullpath = os.fsencode(fullpath)
+            else:
+                native_fullpath = fullpath
         env = {'spam': 'beans'}
 
+        # test os._execvpe() with an absolute path
         with _execvpe_mockup() as calls:
-            self.assertRaises(RuntimeError, os._execvpe, fullpath, arguments)
+            self.assertRaises(RuntimeError,
+                os._execvpe, fullpath, arguments)
             self.assertEqual(len(calls), 1)
             self.assertEqual(calls[0], ('execv', fullpath, (arguments,)))
 
+        # test os._execvpe() with a relative path:
+        # os.get_exec_path() returns defpath
         with _execvpe_mockup(defpath=program_path) as calls:
-            self.assertRaises(OSError, os._execvpe, program, arguments, env=env)
+            self.assertRaises(OSError,
+                os._execvpe, program, arguments, env=env)
             self.assertEqual(len(calls), 1)
-            self.assertEqual(calls[0], ('execve', fullpath, (arguments, env)))
+            self.assertSequenceEqual(calls[0],
+                ('execve', native_fullpath, (arguments, env)))
+
+        # test os._execvpe() with a relative path:
+        # os.get_exec_path() reads the 'PATH' variable
+        with _execvpe_mockup() as calls:
+            env_path = env.copy()
+            env_path['PATH'] = program_path
+            self.assertRaises(OSError,
+                os._execvpe, program, arguments, env=env_path)
+            self.assertEqual(len(calls), 1)
+            self.assertSequenceEqual(calls[0],
+                ('execve', native_fullpath, (arguments, env_path)))
+
+    def test_internal_execvpe_str(self):
+        self._test_internal_execvpe(str)
+        if os.name != "nt":
+            self._test_internal_execvpe(bytes)
 
 
 class Win32ErrorTests(unittest.TestCase):
