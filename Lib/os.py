@@ -355,7 +355,11 @@ def _execvpe(file, args, env=None):
         return
     last_exc = saved_exc = None
     saved_tb = None
-    for dir in get_exec_path(env):
+    path_list = get_exec_path(env)
+    if name != 'nt':
+        file = fsencode(file)
+        path_list = map(fsencode, path_list)
+    for dir in path_list:
         fullname = path.join(dir, file)
         try:
             exec_func(fullname, *argrest)
@@ -380,7 +384,30 @@ def get_exec_path(env=None):
     """
     if env is None:
         env = environ
-    return env.get('PATH', defpath).split(pathsep)
+
+    try:
+        path_list = env.get('PATH')
+    except TypeError:
+        path_list = None
+
+    if supports_bytes_environ:
+        try:
+            path_listb = env[b'PATH']
+        except (KeyError, TypeError):
+            pass
+        else:
+            if path_list is not None:
+                raise ValueError(
+                    "env cannot contain 'PATH' and b'PATH' keys")
+            path_list = path_listb
+
+        if path_list is not None and isinstance(path_list, bytes):
+            path_list = path_list.decode(sys.getfilesystemencoding(),
+                                         'surrogateescape')
+
+    if path_list is None:
+        path_list = defpath
+    return path_list.split(pathsep)
 
 
 # Change environ to automatically call putenv(), unsetenv if they exist.
@@ -482,9 +509,11 @@ def getenv(key, default=None):
     The optional second argument can specify an alternate default.
     key, default and the result are str."""
     return environ.get(key, default)
-__all__.append("getenv")
 
-if name not in ('os2', 'nt'):
+supports_bytes_environ = name not in ('os2', 'nt')
+__all__.extend(("getenv", "supports_bytes_environ"))
+
+if supports_bytes_environ:
     def _check_bytes(value):
         if not isinstance(value, bytes):
             raise TypeError("bytes expected, not %s" % type(value).__name__)

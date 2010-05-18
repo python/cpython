@@ -142,7 +142,8 @@ process and user.
    synchronized (modify :data:`environb` updates :data:`environ`, and vice
    versa).
 
-   Availability: Unix.
+   :data:`environb` is only available if :data:`supports_bytes_environ` is
+   True.
 
    .. versionadded:: 3.2
 
@@ -455,6 +456,12 @@ process and user.
    error number, :exc:`ValueError` is raised.
 
    Availability: Unix, Windows.
+
+
+.. data:: supports_bytes_environ
+
+   True if the native OS type of the environment is bytes (eg. False on
+   Windows).
 
 
 .. function:: umask(mask)

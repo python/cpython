@@ -1096,15 +1096,14 @@ class Popen(object):
                                         for k, v in env.items()]
                         else:
                             env_list = None  # Use execv instead of execve.
+                        executable = os.fsencode(executable)
                         if os.path.dirname(executable):
-                            executable_list = (os.fsencode(executable),)
+                            executable_list = (executable,)
                         else:
                             # This matches the behavior of os._execvpe().
-                            path_list = os.get_exec_path(env)
-                            executable_list = (os.path.join(dir, executable)
-                                               for dir in path_list)
-                            executable_list = tuple(os.fsencode(exe)
-                                                    for exe in executable_list)
+                            executable_list = tuple(
+                                os.path.join(os.fsencode(dir), executable)
+                                for dir in os.get_exec_path(env))
                         self.pid = _posixsubprocess.fork_exec(
                                 args, executable_list,
                                 close_fds, cwd, env_list,
