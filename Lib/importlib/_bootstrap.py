@@ -494,8 +494,16 @@ class _PyPycFileLoader(PyPycLoader, _PyFileLoader):
         if ext_type == imp.PY_COMPILED:
             # We don't really care what the extension on self._base_path is,
             # as long as it has exactly one dot.
-            bytecode_path = imp.cache_from_source(self._base_path + '.py')
-            return (bytecode_path if _path_exists(bytecode_path) else None)
+            source_path = self._base_path + '.py'
+            pycache_path = imp.cache_from_source(source_path)
+            legacy_path = self._base_path + '.pyc'
+            # The rule is: if the source file exists, then Python always uses
+            # the __pycache__/foo.<tag>.pyc file.  If the source file does not
+            # exist, then Python uses the legacy path.
+            pyc_path = (pycache_path
+                        if _path_exists(source_path)
+                        else legacy_path)
+            return (pyc_path if _path_exists(pyc_path) else None)
         return super()._find_path(ext_type)
 
     @_check_name

@@ -142,7 +142,6 @@ class ImportTests(unittest.TestCase):
             self.assertIs(orig_path, new_os.path)
             self.assertIsNot(orig_getenv, new_os.getenv)
 
-    @unittest.expectedFailure  # Issue 8727 is tracking the fix.
     def test_module_with_large_stack(self, module='longlist'):
         # Regression test for http://bugs.python.org/issue561858.
         filename = module + '.py'

@@ -10,6 +10,8 @@ import stat
 import sys
 import unittest
 
+from test.support import make_legacy_pyc
+
 
 class SimpleTest(unittest.TestCase):
 
@@ -136,6 +138,7 @@ class BadBytecodeTest(unittest.TestCase):
                 file.write(new_bc)
         if del_source:
             os.unlink(mapping[name])
+            make_legacy_pyc(mapping[name])
         return bytecode_path
 
     @source_util.writes_bytecode_files
