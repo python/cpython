@@ -677,6 +677,16 @@ as internal buffering of data.
    Availability: Unix, Windows.
 
 
+.. data:: SEEK_SET
+          SEEK_CUR
+          SEEK_END
+
+   Parameters to the :func:`lseek` function. Their values are 0, 1, and 2,
+   respectively. Availability: Windows, Unix.
+
+   .. versionadded:: 2.5
+
+
 .. function:: open(file, flags[, mode])
 
    Open the file *file* and set various flags according to *flags* and possibly its
@@ -686,7 +696,8 @@ as internal buffering of data.
 
    For a description of the flag and mode values, see the C run-time documentation;
    flag constants (like :const:`O_RDONLY` and :const:`O_WRONLY`) are defined in
-   this module too (see below).
+   this module too (see :ref:`open-constants`).  In particular, on Windows adding
+   :const:`O_BINARY` is needed to open files in binary mode.
 
    Availability: Unix, Windows.
 
@@ -774,6 +785,12 @@ as internal buffering of data.
       :func:`fdopen`, or :data:`sys.stdout` or :data:`sys.stderr`, use its
       :meth:`~file.write` method.
 
+
+.. _open-constants:
+
+``open()`` flag constants
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
 The following constants are options for the *flags* parameter to the
 :func:`~os.open` function.  They can be combined using the bitwise OR operator
 ``|``.  Some of them are not available on all platforms.  For descriptions of
@@ -823,16 +840,6 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
 
    These constants are GNU extensions and not present if they are not defined by
    the C library.
-
-
-.. data:: SEEK_SET
-          SEEK_CUR
-          SEEK_END
-
-   Parameters to the :func:`lseek` function. Their values are 0, 1, and 2,
-   respectively. Availability: Windows, Unix.
-
-   .. versionadded:: 2.5
 
 
 .. _os-file-dir:

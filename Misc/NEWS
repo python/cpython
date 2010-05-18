@@ -29,7 +29,9 @@ Core and Builtins
 
 - Raise a TypeError when trying to delete a T_STRING_INPLACE struct member.
 
-- Issue #1583863: An unicode subclass can now override the __unicode__ method
+- Issue #1583863: An unicode subclass can now override the __unicode__ method.
+
+- Issue #7507: Quote "!" in pipes.quote(); it is special to some shells.
 
 - Issue #7544: Preallocate thread memory before creating the thread to avoid
   a fatal error in low memory condition.
