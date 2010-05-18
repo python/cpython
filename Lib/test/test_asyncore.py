@@ -6,6 +6,7 @@ import socket
 import threading
 import sys
 import time
+import errno
 
 from test import test_support
 from test.test_support import TESTFN, run_unittest, unlink
@@ -313,6 +314,14 @@ class DispatcherTests(unittest.TestCase):
             self.fail("exception not raised")
         # test cheap inheritance with the underlying socket
         self.assertEqual(d.family, socket.AF_INET)
+
+    def test_strerror(self):
+        # refers to bug #8573
+        err = asyncore._strerror(errno.EPERM)
+        if hasattr(os, 'strerror'):
+            self.assertEqual(err, os.strerror(errno.EPERM))
+        err = asyncore._strerror(-1)
+        self.assertTrue("unknown error" in err.lower())
 
 
 class dispatcherwithsend_noread(asyncore.dispatcher_with_send):
