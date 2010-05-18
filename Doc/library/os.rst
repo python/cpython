@@ -463,6 +463,8 @@ process and user.
    True if the native OS type of the environment is bytes (eg. False on
    Windows).
 
+   .. versionadded:: 3.2
+
 
 .. function:: umask(mask)
 
