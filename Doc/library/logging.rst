@@ -333,7 +333,7 @@ Programmers can configure logging in three ways:
    to the :func:`dictConfig` function.
 
 The following example configures a very simple logger, a console
-handler, and a simple formatter using Python code:
+handler, and a simple formatter using Python code::
 
     import logging
 
