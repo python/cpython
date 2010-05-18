@@ -6,6 +6,7 @@ import socket
 import sys
 import time
 import warnings
+import errno
 
 from test import support
 from test.support import TESTFN, run_unittest, unlink
@@ -323,6 +324,14 @@ class DispatcherTests(unittest.TestCase):
             self.assertEqual(family, socket.AF_INET)
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[0].category, DeprecationWarning))
+
+    def test_strerror(self):
+        # refers to bug #8573
+        err = asyncore._strerror(errno.EPERM)
+        if hasattr(os, 'strerror'):
+            self.assertEqual(err, os.strerror(errno.EPERM))
+        err = asyncore._strerror(-1)
+        self.assertTrue("unknown error" in err.lower())
 
 
 class dispatcherwithsend_noread(asyncore.dispatcher_with_send):
