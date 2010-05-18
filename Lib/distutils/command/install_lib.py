@@ -1,4 +1,8 @@
 # This module should be kept compatible with Python 2.1.
+"""distutils.command.install_lib
+
+Implements the Distutils 'install_lib' command
+(install all Python modules)."""
 
 __revision__ = "$Id$"
 
