@@ -38,6 +38,8 @@ Core and Builtins
   PyUnicode_FromString() to support surrogates in the filename and use the
   right encoding
 
+- Issue #7507: Quote "!" in pipes.quote(); it is special to some shells.
+
 - PyUnicode_DecodeFSDefaultAndSize() uses surrogateescape error handler
 
 - Issue #8419: Prevent the dict constructor from accepting non-string keyword

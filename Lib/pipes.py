@@ -249,11 +249,11 @@ def makepipeline(infile, steps, outfile):
 
 # Reliably quote a string as a single argument for /bin/sh
 
-_safechars = string.ascii_letters + string.digits + '!@%_-+=:,./' # Safe unquoted
-_funnychars = '"`$\\'                           # Unsafe inside "double quotes"
+# Safe unquoted
+_safechars = frozenset(string.ascii_letters + string.digits + '@%_-+=:,./')
 
 def quote(file):
-    ''' return a shell-escaped version of the file string '''
+    """Return a shell-escaped version of the file string."""
     for c in file:
         if c not in _safechars:
             break
@@ -261,11 +261,6 @@ def quote(file):
         if not file:
             return "''"
         return file
-    if '\'' not in file:
-        return '\'' + file + '\''
-    res = ''
-    for c in file:
-        if c in _funnychars:
-            c = '\\' + c
-        res = res + c
-    return '"' + res + '"'
+    # use single quotes, and put single quotes into double quotes
+    # the string $'b is then quoted as '$'"'"'b'
+    return "'" + file.replace("'", "'\"'\"'") + "'"
