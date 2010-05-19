@@ -375,6 +375,8 @@ C-API
 Library
 -------
 
+- Issue #8759: Fixed user paths in sysconfig for posix and os2 schemes.
+
 - Issue #8663: distutils.log emulates backslashreplace error handler. Fix
   compilation in a non-ASCII directory if stdout encoding is ASCII (eg. if
   stdout is not a TTY).
