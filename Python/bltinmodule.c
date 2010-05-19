@@ -1610,6 +1610,7 @@ builtin_input(PyObject *self, PyObject *args)
         char *prompt;
         char *s;
         PyObject *stdin_encoding;
+        char *stdin_encoding_str;
         PyObject *result;
 
         stdin_encoding = PyObject_GetAttrString(fin, "encoding");
@@ -1617,6 +1618,11 @@ builtin_input(PyObject *self, PyObject *args)
             /* stdin is a text stream, so it must have an
                encoding. */
             return NULL;
+        stdin_encoding_str = _PyUnicode_AsString(stdin_encoding);
+        if (stdin_encoding_str  == NULL) {
+            Py_DECREF(stdin_encoding);
+            return NULL;
+        }
         tmp = PyObject_CallMethod(fout, "flush", "");
         if (tmp == NULL)
             PyErr_Clear();
@@ -1625,10 +1631,16 @@ builtin_input(PyObject *self, PyObject *args)
         if (promptarg != NULL) {
             PyObject *stringpo;
             PyObject *stdout_encoding;
-            stdout_encoding = PyObject_GetAttrString(fout,
-                                                     "encoding");
+            char *stdout_encoding_str;
+            stdout_encoding = PyObject_GetAttrString(fout, "encoding");
             if (stdout_encoding == NULL) {
                 Py_DECREF(stdin_encoding);
+                return NULL;
+            }
+            stdout_encoding_str = _PyUnicode_AsString(stdout_encoding);
+            if (stdout_encoding_str == NULL) {
+                Py_DECREF(stdin_encoding);
+                Py_DECREF(stdout_encoding);
                 return NULL;
             }
             stringpo = PyObject_Str(promptarg);
@@ -1638,7 +1650,7 @@ builtin_input(PyObject *self, PyObject *args)
                 return NULL;
             }
             po = PyUnicode_AsEncodedString(stringpo,
-                _PyUnicode_AsString(stdout_encoding), NULL);
+                stdout_encoding_str, NULL);
             Py_DECREF(stdout_encoding);
             Py_DECREF(stringpo);
             if (po == NULL) {
@@ -1676,10 +1688,7 @@ builtin_input(PyObject *self, PyObject *args)
                 result = NULL;
             }
             else {
-                result = PyUnicode_Decode
-                    (s, len-1,
-                     _PyUnicode_AsString(stdin_encoding),
-                     NULL);
+                result = PyUnicode_Decode(s, len-1, stdin_encoding_str, NULL);
             }
         }
         Py_DECREF(stdin_encoding);
