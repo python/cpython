@@ -667,6 +667,9 @@ An event object manages an internal flag that can be set to true with the
 
       Return true if and only if the internal flag is true.
 
+      .. versionchanged:: 2.6
+         The ``is_set()`` syntax is new.
+
    .. method:: set()
 
       Set the internal flag to true. All threads waiting for it to become true
