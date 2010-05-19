@@ -252,24 +252,28 @@ class Keywords_TestCase(unittest.TestCase):
             getargs_keywords((1,2), 3, (4,(5,6)), (7,8,9), 10),
             (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
             )
+
     def test_mixed_args(self):
         # positional and keyword args
         self.assertEquals(
             getargs_keywords((1,2), 3, (4,(5,6)), arg4=(7,8,9), arg5=10),
             (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
             )
+
     def test_keyword_args(self):
         # all keywords
         self.assertEquals(
             getargs_keywords(arg1=(1,2), arg2=3, arg3=(4,(5,6)), arg4=(7,8,9), arg5=10),
             (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
             )
+
     def test_optional_args(self):
         # missing optional keyword args, skipping tuples
         self.assertEquals(
             getargs_keywords(arg1=(1,2), arg2=3, arg5=10),
             (1, 2, 3, -1, -1, -1, -1, -1, -1, 10)
             )
+
     def test_required_args(self):
         # required arg missing
         try:
@@ -278,6 +282,7 @@ class Keywords_TestCase(unittest.TestCase):
             self.assertEquals(str(err), "Required argument 'arg2' (pos 2) not found")
         else:
             self.fail('TypeError should have been raised')
+
     def test_too_many_args(self):
         try:
             getargs_keywords((1,2),3,(4,(5,6)),(7,8,9),10,111)
@@ -285,12 +290,21 @@ class Keywords_TestCase(unittest.TestCase):
             self.assertEquals(str(err), "function takes at most 5 arguments (6 given)")
         else:
             self.fail('TypeError should have been raised')
+
     def test_invalid_keyword(self):
         # extraneous keyword arg
         try:
             getargs_keywords((1,2),3,arg5=10,arg666=666)
         except TypeError as err:
             self.assertEquals(str(err), "'arg666' is an invalid keyword argument for this function")
+        else:
+            self.fail('TypeError should have been raised')
+
+    def test_surrogate_keyword(self):
+        try:
+            getargs_keywords((1,2), 3, (4,(5,6)), (7,8,9), **{'\uDC80': 10})
+        except TypeError as err:
+            self.assertEquals(str(err), "'\udc80' is an invalid keyword argument for this function")
         else:
             self.fail('TypeError should have been raised')
 

@@ -1755,18 +1755,21 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
                                 "keywords must be strings");
                 return cleanreturn(0, freelist);
             }
+            /* check that _PyUnicode_AsString() result is not NULL */
             ks = _PyUnicode_AsString(key);
-            for (i = 0; i < len; i++) {
-                if (!strcmp(ks, kwlist[i])) {
-                    match = 1;
-                    break;
+            if (ks != NULL) {
+                for (i = 0; i < len; i++) {
+                    if (!strcmp(ks, kwlist[i])) {
+                        match = 1;
+                        break;
+                    }
                 }
             }
             if (!match) {
                 PyErr_Format(PyExc_TypeError,
-                             "'%s' is an invalid keyword "
+                             "'%U' is an invalid keyword "
                              "argument for this function",
-                             ks);
+                             key);
                 return cleanreturn(0, freelist);
             }
         }
