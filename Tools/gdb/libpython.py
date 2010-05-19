@@ -42,6 +42,7 @@ The module also extends gdb with some python-specific commands.
 '''
 from __future__ import with_statement
 import gdb
+import locale
 
 # Look up the gdb.Type for some standard types:
 _type_char_ptr = gdb.lookup_type('char').pointer() # char*
@@ -69,6 +70,7 @@ MAX_OUTPUT_LEN=1024
 
 hexdigits = "0123456789abcdef"
 
+ENCODING = locale.getpreferredencoding()
 
 class NullPyObjectPtr(RuntimeError):
     pass
@@ -1128,53 +1130,68 @@ class PyUnicodeObjectPtr(PyObjectPtr):
 
             # Non-ASCII characters
             else:
-                ucs = ch;
-
-                if self.char_width == 2:
-                    ch2 = 0
+                ucs = ch
+                orig_ucs = None
+                if self.char_width() == 2:
                     # Get code point from surrogate pair
-                    if i < len(proxy):
+                    if (i < len(proxy)
+                    and 0xD800 <= ord(ch) < 0xDC00 \
+                    and 0xDC00 <= ord(proxy[i]) <= 0xDFFF):
                         ch2 = proxy[i]
-                        if (ord(ch) >= 0xD800 and ord(ch) < 0xDC00
-                            and ord(ch2) >= 0xDC00 and ord(ch2) <= 0xDFFF):
-                            ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
-                            i += 1
+                        code = (ord(ch) & 0x03FF) << 10
+                        code |= ord(ch2) & 0x03FF
+                        code += 0x00010000
+                        orig_ucs = ucs
+                        ucs = unichr(code)
+                        i += 1
+                    else:
+                        ch2 = None
+
+                printable = _unichr_is_printable(ucs)
+                if printable:
+                    try:
+                        ucs.encode(ENCODING)
+                    except UnicodeEncodeError:
+                        printable = False
+                        if orig_ucs is not None:
+                            ucs = orig_ucs
+                            i -= 1
 
                 # Map Unicode whitespace and control characters
                 # (categories Z* and C* except ASCII space)
-                if not _unichr_is_printable(ucs):
+                if not printable:
                     # Unfortuately, Python 2's unicode type doesn't seem
                     # to expose the "isprintable" method
+                    code = ord(ucs)
 
                     # Map 8-bit characters to '\\xhh'
-                    if ucs <= 0xff:
+                    if code <= 0xff:
                         out.write('\\x')
-                        out.write(hexdigits[(ord(ucs) >> 4) & 0x000F])
-                        out.write(hexdigits[ord(ucs) & 0x000F])
+                        out.write(hexdigits[(code >> 4) & 0x000F])
+                        out.write(hexdigits[code & 0x000F])
                     # Map 21-bit characters to '\U00xxxxxx'
-                    elif ucs >= 0x10000:
+                    elif code >= 0x10000:
                         out.write('\\U')
-                        out.write(hexdigits[(ord(ucs) >> 28) & 0x0000000F])
-                        out.write(hexdigits[(ord(ucs) >> 24) & 0x0000000F])
-                        out.write(hexdigits[(ord(ucs) >> 20) & 0x0000000F])
-                        out.write(hexdigits[(ord(ucs) >> 16) & 0x0000000F])
-                        out.write(hexdigits[(ord(ucs) >> 12) & 0x0000000F])
-                        out.write(hexdigits[(ord(ucs) >> 8) & 0x0000000F])
-                        out.write(hexdigits[(ord(ucs) >> 4) & 0x0000000F])
-                        out.write(hexdigits[ord(ucs) & 0x0000000F])
+                        out.write(hexdigits[(code >> 28) & 0x0000000F])
+                        out.write(hexdigits[(code >> 24) & 0x0000000F])
+                        out.write(hexdigits[(code >> 20) & 0x0000000F])
+                        out.write(hexdigits[(code >> 16) & 0x0000000F])
+                        out.write(hexdigits[(code >> 12) & 0x0000000F])
+                        out.write(hexdigits[(code >> 8) & 0x0000000F])
+                        out.write(hexdigits[(code >> 4) & 0x0000000F])
+                        out.write(hexdigits[code & 0x0000000F])
                     # Map 16-bit characters to '\uxxxx'
                     else:
                         out.write('\\u')
-                        out.write(hexdigits[(ord(ucs) >> 12) & 0x000F])
-                        out.write(hexdigits[(ord(ucs) >> 8) & 0x000F])
-                        out.write(hexdigits[(ord(ucs) >> 4) & 0x000F])
-                        out.write(hexdigits[ord(ucs) & 0x000F])
+                        out.write(hexdigits[(code >> 12) & 0x000F])
+                        out.write(hexdigits[(code >> 8) & 0x000F])
+                        out.write(hexdigits[(code >> 4) & 0x000F])
+                        out.write(hexdigits[code & 0x000F])
                 else:
                     # Copy characters as-is
                     out.write(ch)
-                    if self.char_width == 2:
-                        if ord(ucs) >= 0x10000:
-                            out.write(ch2)
+                    if self.char_width() == 2 and (ch2 is not None):
+                        out.write(ch2)
 
         out.write(quote)
 

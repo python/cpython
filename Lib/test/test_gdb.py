@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import unittest
+import locale
 
 from test.support import run_unittest, findfile
 
@@ -177,7 +178,7 @@ class PrettyPrintTests(DebuggerTests):
     def assertGdbRepr(self, val, exp_repr=None, cmds_after_breakpoint=None):
         # Ensure that gdb's rendering of the value in a debugged process
         # matches repr(value) in this process:
-        gdb_repr, gdb_output = self.get_gdb_repr('id(' + repr(val) + ')',
+        gdb_repr, gdb_output = self.get_gdb_repr('id(' + ascii(val) + ')',
                                                  cmds_after_breakpoint)
         if not exp_repr:
             exp_repr = repr(val)
@@ -226,31 +227,35 @@ class PrettyPrintTests(DebuggerTests):
 
     def test_strings(self):
         'Verify the pretty-printing of unicode strings'
+        encoding = locale.getpreferredencoding()
+        def check_repr(text):
+            try:
+                text.encode(encoding)
+                printable = True
+            except UnicodeEncodeError:
+                self.assertGdbRepr(text, ascii(text))
+            else:
+                self.assertGdbRepr(text)
+
         self.assertGdbRepr('')
         self.assertGdbRepr('And now for something hopefully the same')
         self.assertGdbRepr('string with embedded NUL here \0 and then some more text')
 
         # Test printing a single character:
         #    U+2620 SKULL AND CROSSBONES
-        self.assertGdbRepr('\u2620')
+        check_repr('\u2620')
 
         # Test printing a Japanese unicode string
         # (I believe this reads "mojibake", using 3 characters from the CJK
         # Unified Ideographs area, followed by U+3051 HIRAGANA LETTER KE)
-        self.assertGdbRepr('\u6587\u5b57\u5316\u3051')
+        check_repr('\u6587\u5b57\u5316\u3051')
 
         # Test a character outside the BMP:
         #    U+1D121 MUSICAL SYMBOL C CLEF
         # This is:
         # UTF-8: 0xF0 0x9D 0x84 0xA1
         # UTF-16: 0xD834 0xDD21
-        if sys.maxunicode == 0x10FFFF:
-            # wide unicode:
-            self.assertGdbRepr(chr(0x1D121))
-        else:
-            # narrow unicode:
-            self.assertGdbRepr(chr(0x1D121),
-                               "'\\U0000d834\\U0000dd21'")
+        check_repr(chr(0x1D121))
 
     def test_tuples(self):
         'Verify the pretty-printing of tuples'
