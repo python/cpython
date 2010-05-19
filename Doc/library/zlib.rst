@@ -115,14 +115,18 @@ The available exception and functions in this module are:
 
    Decompresses the data in *string*, returning a string containing the
    uncompressed data.  The *wbits* parameter controls the size of the window
-   buffer.  If *bufsize* is given, it is used as the initial size of the output
+   buffer, and is discussed further below.
+   If *bufsize* is given, it is used as the initial size of the output
    buffer.  Raises the :exc:`error` exception if any error occurs.
 
    The absolute value of *wbits* is the base two logarithm of the size of the
    history buffer (the "window size") used when compressing data.  Its absolute
    value should be between 8 and 15 for the most recent versions of the zlib
    library, larger values resulting in better compression at the expense of greater
-   memory usage.  The default value is 15.  When *wbits* is negative, the standard
+   memory usage.  When decompressing a stream, *wbits* must not be smaller
+   than the size originally used to compress the stream; using a too-small
+   value will result in an exception. The default value is therefore the
+   highest value, 15.  When *wbits* is negative, the standard
    :program:`gzip` header is suppressed.
 
    *bufsize* is the initial size of the buffer used to hold decompressed data.  If

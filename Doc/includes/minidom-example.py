@@ -19,11 +19,11 @@ document = """\
 dom = xml.dom.minidom.parseString(document)
 
 def getText(nodelist):
-    rc = ""
+    rc = []
     for node in nodelist:
         if node.nodeType == node.TEXT_NODE:
-            rc = rc + node.data
-    return rc
+            rc.append(node.data)
+    return ''.join(rc)
 
 def handleSlideshow(slideshow):
     print "<html>"
