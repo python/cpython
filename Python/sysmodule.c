@@ -1048,21 +1048,26 @@ PySys_ResetWarnOptions(void)
 }
 
 void
-PySys_AddWarnOption(const wchar_t *s)
+PySys_AddWarnOptionUnicode(PyObject *unicode)
 {
-    PyObject *str;
-
     if (warnoptions == NULL || !PyList_Check(warnoptions)) {
         Py_XDECREF(warnoptions);
         warnoptions = PyList_New(0);
         if (warnoptions == NULL)
             return;
     }
-    str = PyUnicode_FromWideChar(s, -1);
-    if (str != NULL) {
-        PyList_Append(warnoptions, str);
-        Py_DECREF(str);
-    }
+    PyList_Append(warnoptions, unicode);
+}
+
+void
+PySys_AddWarnOption(const wchar_t *s)
+{
+    PyObject *unicode;
+    unicode = PyUnicode_FromWideChar(s, -1);
+    if (unicode == NULL)
+        return;
+    PySys_AddWarnOptionUnicode(unicode);
+    Py_DECREF(unicode);
 }
 
 int

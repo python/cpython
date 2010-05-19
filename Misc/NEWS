@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8589: Decode PYTHONWARNINGS environment variable with the file system
+  encoding and surrogateespace error handler instead of the locale encoding to
+  be consistent with os.environ. Add PySys_AddWarnOptionUnicode() function.
+
 - PyObject_Dump() encodes unicode objects to utf8 with backslashreplace
   (instead of strict) error handler to escape surrogates
 
