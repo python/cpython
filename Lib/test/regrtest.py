@@ -258,6 +258,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     on the command line.
     """
 
+    replace_stdout()
+
     support.record_original_stdout(sys.stdout)
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:nj:',
@@ -376,7 +378,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif o in ('-j', '--multiprocess'):
             use_mp = int(a)
         elif o == '--slaveargs':
-            replace_stdout()
             args, kwargs = json.loads(a)
             try:
                 result = runtest(*args, **kwargs)
@@ -514,8 +515,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         tests = test_forever()
     else:
         tests = iter(selected)
-
-    replace_stdout()
 
     if use_mp:
         try:
