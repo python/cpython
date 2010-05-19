@@ -46,14 +46,6 @@ The module defines the following items:
    connection attempt (if is not specified, the global default timeout setting
    will be used).
 
-   .. attribute:: all_errors
-
-      The set of all exceptions (as a tuple) that methods of :class:`FTP`
-      instances may raise as a result of problems with the FTP connection (as
-      opposed to programming errors made by the caller).  This set includes the
-      four exceptions listed below as well as :exc:`socket.error` and
-      :exc:`IOError`.
-
 
 .. exception:: error_reply
 
@@ -74,6 +66,15 @@ The module defines the following items:
 
    Exception raised when a reply is received from the server that does not begin
    with a digit in the range 1--5.
+
+
+.. data:: all_errors
+
+   The set of all exceptions (as a tuple) that methods of :class:`FTP`
+   instances may raise as a result of problems with the FTP connection (as
+   opposed to programming errors made by the caller).  This set includes the
+   four exceptions listed above as well as :exc:`socket.error` and
+   :exc:`IOError`.
 
 
 .. seealso::
