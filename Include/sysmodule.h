@@ -21,6 +21,7 @@ PyAPI_DATA(PyObject *) _PySys_TraceFunc, *_PySys_ProfileFunc;
 
 PyAPI_FUNC(void) PySys_ResetWarnOptions(void);
 PyAPI_FUNC(void) PySys_AddWarnOption(const wchar_t *);
+PyAPI_FUNC(void) PySys_AddWarnOptionUnicode(PyObject *);
 PyAPI_FUNC(int) PySys_HasWarnOptions(void);
 
 #ifdef __cplusplus

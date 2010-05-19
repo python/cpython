@@ -81,6 +81,10 @@ accessible to C code.  They all work with the current interpreter thread's
 
    Append *s* to :data:`sys.warnoptions`.
 
+.. cfunction:: void PySys_AddWarnOptionUnicode(PyObject *unicode)
+
+   Append *unicode* to :data:`sys.warnoptions`.
+
 .. cfunction:: void PySys_SetPath(wchar_t *path)
 
    Set :data:`sys.path` to a list object of paths found in *path* which should
