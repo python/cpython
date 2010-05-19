@@ -265,13 +265,15 @@ Py_InitializeEx(int install_sigs)
 
     _PyImportHooks_Init();
 
+    /* Initialize _warnings. */
+    _PyWarnings_Init();
+
     initfsencoding();
 
     if (install_sigs)
         initsigs(); /* Signal handling stuff, including initintr() */
 
     /* Initialize warnings. */
-    _PyWarnings_Init();
     if (PySys_HasWarnOptions()) {
         PyObject *warnings_module = PyImport_ImportModule("warnings");
         if (!warnings_module)
