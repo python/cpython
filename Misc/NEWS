@@ -43,6 +43,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7507: Quote "!" in pipes.quote(); it is special to some shells.
+
 - Issue #8663: distutils.log emulates backslashreplace error handler. Fix
   compilation in a non-ASCII directory if stdout encoding is ASCII (eg. if
   stdout is not a TTY).

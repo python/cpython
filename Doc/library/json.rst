@@ -209,7 +209,7 @@ Basic Usage
    specified.  Encodings that are not ASCII based (such as UCS-2) are not
    allowed and should be decoded to :class:`str` first.
 
-   The other arguments have the same meaning as in :func:`dump`.
+   The other arguments have the same meaning as in :func:`load`.
 
 
 Encoders and decoders

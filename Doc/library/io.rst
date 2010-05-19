@@ -235,7 +235,7 @@ I/O Base Classes
 
       Flush and close this stream. This method has no effect if the file is
       already closed. Once the file is closed, any operation on the file
-      (e.g. reading or writing) will raise an :exc:`ValueError`.
+      (e.g. reading or writing) will raise a :exc:`ValueError`.
 
       As a convenience, it is allowed to call this method more than once;
       only the first call, however, will have an effect.
