@@ -452,7 +452,7 @@ prog
 
 By default, :class:`ArgumentParser` objects uses ``sys.argv[0]`` to determine
 how to display the name of the program in help messages.  This default is almost
-always desirable because it will make the help messages match how the pgoram was
+always desirable because it will make the help messages match how the program was
 invoked on the command line.  For example, consider a file named
 ``myprogram.py`` with the following code::
 
