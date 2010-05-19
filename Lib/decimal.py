@@ -164,7 +164,7 @@ class DecimalException(ArithmeticError):
     anything, though.
 
     handle  -- Called when context._raise_error is called and the
-               trap_enabler is set.  First argument is self, second is the
+               trap_enabler is not set.  First argument is self, second is the
                context.  More arguments can be given, those being after
                the explanation in _raise_error (For example,
                context._raise_error(NewError, '(-x)!', self._sign) would
@@ -3888,7 +3888,7 @@ class Context(object):
 
         If the flag is in _ignored_flags, returns the default response.
         Otherwise, it sets the flag, then, if the corresponding
-        trap_enabler is set, it reaises the exception.  Otherwise, it returns
+        trap_enabler is set, it reraises the exception.  Otherwise, it returns
         the default value after setting the flag.
         """
         error = _condition_map.get(condition, condition)
