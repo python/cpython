@@ -1124,7 +1124,7 @@ their parent process exits.  The manager classes are defined in the
 
    Create a BaseManager object.
 
-   Once created one should call :meth:`start` or ```get_server().serve_forever()`` to ensure
+   Once created one should call :meth:`start` or ``get_server().serve_forever()`` to ensure
    that the manager object refers to a started manager process.
 
    *address* is the address on which the manager process listens for new
