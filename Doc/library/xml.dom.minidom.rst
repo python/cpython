@@ -85,22 +85,12 @@ document: the one that holds all others.  Here is an example program::
    dom3 = parseString("<myxml>Some data</myxml>")
    assert dom3.documentElement.tagName == "myxml"
 
-When you are finished with a DOM, you should clean it up.  This is necessary
-because some versions of Python do not support garbage collection of objects
-that refer to each other in a cycle.  Until this restriction is removed from all
-versions of Python, it is safest to write your code as if cycles would not be
-cleaned up.
-
-The way to clean up a DOM is to call its :meth:`unlink` method::
-
-   dom1.unlink()
-   dom2.unlink()
-   dom3.unlink()
-
-:meth:`unlink` is a :mod:`xml.dom.minidom`\ -specific extension to the DOM API.
-After calling :meth:`unlink` on a node, the node and its descendants are
-essentially useless.
-
+When you are finished with a DOM tree, you may optionally call the
+:meth:`unlink` method to encourage early cleanup of the now-unneeded
+objects.  :meth:`unlink` is a :mod:`xml.dom.minidom`\ -specific
+extension to the DOM API that renders the node and its descendants are
+essentially useless.  Otherwise, Python's garbage collector will
+eventually take care of the objects in the tree.
 
 .. seealso::
 
