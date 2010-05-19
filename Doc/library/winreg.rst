@@ -8,21 +8,23 @@
 
 
 These functions expose the Windows registry API to Python.  Instead of using an
-integer as the registry handle, a handle object is used to ensure that the
-handles are closed correctly, even if the programmer neglects to explicitly
-close them.
+integer as the registry handle, a :ref:`handle object <handle-object>` is used
+to ensure that the handles are closed correctly, even if the programmer neglects
+to explicitly close them.
 
 This module offers the following functions:
 
 
 .. function:: CloseKey(hkey)
 
-   Closes a previously opened registry key. The hkey argument specifies a
+   Closes a previously opened registry key.  The *hkey* argument specifies a
    previously opened key.
 
    .. note::
-      If *hkey* is not closed using this method (or via :meth:`hkey.Close() <PyHKEY.Close>`),
-      it is closed when the *hkey* object is destroyed by Python.
+
+      If *hkey* is not closed using this method (or via :meth:`hkey.Close()
+      <PyHKEY.Close>`), it is closed when the *hkey* object is destroyed by
+      Python.
 
 
 .. function:: ConnectRegistry(computer_name, key)
@@ -120,7 +122,7 @@ This module offers the following functions:
 
    *res* is a reserved integer, and must be zero. The default is zero.
 
-   *sam* is an integer that specifies an access mask that describes the
+   *sam* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_ALL_ACCESS`.  See
    :ref:`Access Rights <access-rights>` for other allowed values.
 
@@ -183,13 +185,15 @@ This module offers the following functions:
    |       | registry type                              |
    +-------+--------------------------------------------+
    | ``2`` | An integer that identifies the type of the |
-   |       | value data                                 |
+   |       | value data (see table in docs for          |
+   |       | :meth:`SetValueEx`)                        |
    +-------+--------------------------------------------+
 
 
 .. function:: ExpandEnvironmentStrings(str)
 
-   Expands environment strings %NAME% in unicode string like :const:`REG_EXPAND_SZ`::
+   Expands environment variable placeholders ``%NAME%`` in strings like
+   :const:`REG_EXPAND_SZ`::
 
       >>> ExpandEnvironmentStrings('%windir%')
       'C:\\Windows'
@@ -223,23 +227,20 @@ This module offers the following functions:
    *key* is a handle returned by :func:`ConnectRegistry` or one of the constants
    :const:`HKEY_USERS` or :const:`HKEY_LOCAL_MACHINE`.
 
-   *sub_key* is a string that identifies the sub_key to load.
+   *sub_key* is a string that identifies the subkey to load.
 
    *file_name* is the name of the file to load registry data from. This file must
    have been created with the :func:`SaveKey` function. Under the file allocation
    table (FAT) file system, the filename may not have an extension.
 
-   A call to LoadKey() fails if the calling process does not have the
-   :const:`SE_RESTORE_PRIVILEGE` privilege. Note that privileges are different than
+   A call to :func:`LoadKey` fails if the calling process does not have the
+   :const:`SE_RESTORE_PRIVILEGE` privilege.  Note that privileges are different
    from permissions -- see the `RegLoadKey documentation
    <http://msdn.microsoft.com/en-us/library/ms724889%28v=VS.85%29.aspx>`__ for
    more details.
 
    If *key* is a handle returned by :func:`ConnectRegistry`, then the path
-   specified in *fileName* is relative to the remote computer.
-
-   The Win32 documentation implies *key* must be in the :const:`HKEY_USER` or
-   :const:`HKEY_LOCAL_MACHINE` tree. This may or may not be true.
+   specified in *file_name* is relative to the remote computer.
 
 
 .. function:: OpenKey(key, sub_key[, res[, sam]])
@@ -254,8 +255,8 @@ This module offers the following functions:
    *res* is a reserved integer, and must be zero.  The default is zero.
 
    *sam* is an integer that specifies an access mask that describes the desired
-   security access for the key.  Default is :const:`KEY_READ`.  See
-   :ref:`Access Rights <access-rights>` for other allowed values.
+   security access for the key.  Default is :const:`KEY_READ`.  See :ref:`Access
+   Rights <access-rights>` for other allowed values.
 
    The result is a new handle to the specified key.
 
@@ -327,7 +328,8 @@ This module offers the following functions:
    | ``0`` | The value of the registry item.         |
    +-------+-----------------------------------------+
    | ``1`` | An integer giving the registry type for |
-   |       | this value.                             |
+   |       | this value (see table in docs for       |
+   |       | :meth:`SetValueEx`)                     |
    +-------+-----------------------------------------+
 
 
@@ -338,10 +340,10 @@ This module offers the following functions:
    *key* is an already open key, or one of the predefined
    :ref:`HKEY_* constants <hkey-constants>`.
 
-   *file_name* is the name of the file to save registry data to. This file cannot
-   already exist. If this filename includes an extension, it cannot be used on file
-   allocation table (FAT) file systems by the :meth:`LoadKey`, :meth:`ReplaceKey`
-   or :meth:`RestoreKey` methods.
+   *file_name* is the name of the file to save registry data to.  This file
+   cannot already exist. If this filename includes an extension, it cannot be
+   used on file allocation table (FAT) file systems by the :meth:`LoadKey`
+   method.
 
    If *key* represents a key on a remote computer, the path described by
    *file_name* is relative to the remote computer. The caller of this method must
@@ -411,16 +413,16 @@ This module offers the following functions:
 .. function:: DisableReflectionKey(key)
 
    Disables registry reflection for 32-bit processes running on a 64-bit
-   Operating System.
+   operating system.
 
-   *key* is an already open key, or one of the predefined
-   :ref:`HKEY_* constants <hkey-constants>`.
+   *key* is an already open key, or one of the predefined :ref:`HKEY_* constants
+   <hkey-constants>`.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit
-   Operating System.
+   Will generally raise :exc:`NotImplemented` if executed on a 32-bit operating
+   system.
 
    If the key is not on the reflection list, the function succeeds but has no
-   effect. Disabling reflection for a key does not affect reflection of any
+   effect.  Disabling reflection for a key does not affect reflection of any
    subkeys.
 
 
@@ -428,11 +430,11 @@ This module offers the following functions:
 
    Restores registry reflection for the specified disabled key.
 
-   *key* is an already open key, or one of the predefined
-   :ref:`HKEY_* constants <hkey-constants>`.
+   *key* is an already open key, or one of the predefined :ref:`HKEY_* constants
+   <hkey-constants>`.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit
-   Operating System.
+   Will generally raise :exc:`NotImplemented` if executed on a 32-bit operating
+   system.
 
    Restoring reflection for a key does not affect reflection of any subkeys.
 
@@ -447,7 +449,7 @@ This module offers the following functions:
    Returns ``True`` if reflection is disabled.
 
    Will generally raise :exc:`NotImplemented` if executed on a 32-bit
-   Operating System.
+   operating system.
 
 
 .. _constants:
@@ -646,7 +648,7 @@ Registry Handle Objects
 
 This object wraps a Windows HKEY object, automatically closing it when the
 object is destroyed.  To guarantee cleanup, you can call either the
-:meth:`Close` method on the object, or the :func:`CloseKey` function.
+:meth:`~PyHKEY.Close` method on the object, or the :func:`CloseKey` function.
 
 All registry functions in this module return one of these objects.
 
@@ -666,8 +668,8 @@ true if they both reference the same underlying Windows handle value.
 
 Handle objects can be converted to an integer (e.g., using the built-in
 :func:`int` function), in which case the underlying Windows handle value is
-returned.  You can also use the :meth:`Detach` method to return the integer
-handle, and also disconnect the Windows handle from the handle object.
+returned.  You can also use the :meth:`~PyHKEY.Detach` method to return the
+integer handle, and also disconnect the Windows handle from the handle object.
 
 
 .. method:: PyHKEY.Close()
@@ -692,11 +694,12 @@ handle, and also disconnect the Windows handle from the handle object.
 .. method:: PyHKEY.__enter__()
             PyHKEY.__exit__(\*exc_info)
 
-   The HKEY object implements :meth:`__enter__` and :meth:`__exit__` and thus
-   supports the context protocol for the :keyword:`with` statement::
+   The HKEY object implements :meth:`~object.__enter__` and
+   :meth:`~object.__exit__` and thus supports the context protocol for the
+   :keyword:`with` statement::
 
       with OpenKey(HKEY_LOCAL_MACHINE, "foo") as key:
-          # ... work with key ...
+          ...  # work with key
 
    will automatically close *key* when control leaves the :keyword:`with` block.
 
