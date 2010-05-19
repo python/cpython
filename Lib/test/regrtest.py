@@ -215,6 +215,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     on the command line.
     """
 
+    replace_stdout()
+
     support.record_original_stdout(sys.stdout)
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsSrf:lu:t:TD:NLR:wM:n',
@@ -411,7 +413,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     support.verbose = verbose      # Tell tests to be moderately quiet
     support.use_resources = use_resources
     save_modules = sys.modules.keys()
-    replace_stdout()
     for test in tests:
         if not quiet:
             print(test)
