@@ -1603,11 +1603,17 @@ Super Binding
    ``A.__dict__['m'].__get__(obj, A)``.
 
 For instance bindings, the precedence of descriptor invocation depends on the
-which descriptor methods are defined.  Normally, data descriptors define both
-:meth:`__get__` and :meth:`__set__`, while non-data descriptors have just the
-:meth:`__get__` method.  Data descriptors always override a redefinition in an
+which descriptor methods are defined.  A descriptor can define any combination
+of :meth:`__get__`, :meth:`__set__` and :meth:`__delete__`.  If it does not
+define :meth:`__get__`, then accessing the attribute will return the descriptor
+object itself unless there is a value in the object's instance dictionary.  If
+the descriptor defines :meth:`__set__` and/or :meth:`__delete__`, it is a data
+descriptor; if it defines neither, it is a non-data descriptor.  Normally, data
+descriptors define both :meth:`__get__` and :meth:`__set__`, while non-data
+descriptors have just the :meth:`__get__` method.  Data descriptors with
+:meth:`__set__` and :meth:`__get__` defined always override a redefinition in an
 instance dictionary.  In contrast, non-data descriptors can be overridden by
-instances. [#]_
+instances.
 
 Python methods (including :func:`staticmethod` and :func:`classmethod`) are
 implemented as non-data descriptors.  Accordingly, instances can redefine and
@@ -2475,13 +2481,6 @@ object itself in order to be consistently invoked by the interpreter).
 .. [#] It *is* possible in some cases to change an object's type, under certain
    controlled conditions. It generally isn't a good idea though, since it can
    lead to some very strange behaviour if it is handled incorrectly.
-
-.. [#] A descriptor can define any combination of :meth:`__get__`,
-   :meth:`__set__` and :meth:`__delete__`.  If it does not define :meth:`__get__`,
-   then accessing the attribute even on an instance will return the descriptor
-   object itself.  If the descriptor defines :meth:`__set__` and/or
-   :meth:`__delete__`, it is a data descriptor; if it defines neither, it is a
-   non-data descriptor.
 
 .. [#] For operands of the same type, it is assumed that if the non-reflected method
    (such as :meth:`__add__`) fails the operation is not supported, which is why the
