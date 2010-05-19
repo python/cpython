@@ -829,7 +829,7 @@ LIBSUBDIRS=	lib-tk site-packages test test/output test/data \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		multiprocessing multiprocessing/dummy \
 		lib-old \
-		curses $(MACHDEPS)
+		curses pydoc_data $(MACHDEPS)
 libinstall:	build_all $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
