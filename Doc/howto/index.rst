@@ -16,6 +16,7 @@ Currently, the HOWTOs are:
    advocacy.rst
    cporting.rst
    curses.rst
+   descriptor.rst
    doanddont.rst
    functional.rst
    regex.rst
