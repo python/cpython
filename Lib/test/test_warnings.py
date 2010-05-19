@@ -738,20 +738,38 @@ class PyEnvironmentVariableTests(EnvironmentVariableTests):
     module = py_warnings
 
 
+class BootstrapTest(unittest.TestCase):
+    def test_issue_8766(self):
+        # "import encodings" emits a warning whereas the warnings is not loaded
+        # or not completly loaded (warnings imports indirectly encodings by
+        # importing linecache) yet
+        with support.temp_cwd() as cwd, support.temp_cwd('encodings'):
+            env = os.environ.copy()
+            env['PYTHONPATH'] = cwd
+
+            # encodings loaded by initfsencoding()
+            retcode = subprocess.call([sys.executable, '-c', 'pass'], env=env)
+            self.assertEqual(retcode, 0)
+
+            # Use -W to load warnings module at startup
+            retcode = subprocess.call(
+                [sys.executable, '-c', 'pass', '-W', 'always'],
+                env=env)
+            self.assertEqual(retcode, 0)
+
 def test_main():
     py_warnings.onceregistry.clear()
     c_warnings.onceregistry.clear()
-    support.run_unittest(CFilterTests,
-                                PyFilterTests,
-                                CWarnTests,
-                                PyWarnTests,
-                                CWCmdLineTests, PyWCmdLineTests,
-                                _WarningsTests,
-                                CWarningsDisplayTests, PyWarningsDisplayTests,
-                                CCatchWarningTests, PyCatchWarningTests,
-                                CEnvironmentVariableTests,
-                                PyEnvironmentVariableTests
-                             )
+    support.run_unittest(
+        CFilterTests, PyFilterTests,
+        CWarnTests, PyWarnTests,
+        CWCmdLineTests, PyWCmdLineTests,
+        _WarningsTests,
+        CWarningsDisplayTests, PyWarningsDisplayTests,
+        CCatchWarningTests, PyCatchWarningTests,
+        CEnvironmentVariableTests, PyEnvironmentVariableTests,
+        BootstrapTest,
+    )
 
 
 if __name__ == "__main__":
