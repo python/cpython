@@ -1351,9 +1351,9 @@ consistent method resolution\norder (MRO) for bases");
         if (name != NULL) {
             name_str = _PyUnicode_AsString(name);
             if (name_str == NULL)
-                name_str = "?"
+                name_str = "?";
         } else
-            name_str = "?"
+            name_str = "?";
         off += PyOS_snprintf(buf + off, sizeof(buf) - off, " %s", name_str);
         Py_XDECREF(name);
         if (--n && (size_t)(off+1) < sizeof(buf)) {
