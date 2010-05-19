@@ -1347,8 +1347,14 @@ consistent method resolution\norder (MRO) for bases");
     i = 0;
     while (PyDict_Next(set, &i, &k, &v) && (size_t)off < sizeof(buf)) {
         PyObject *name = class_name(k);
-        off += PyOS_snprintf(buf + off, sizeof(buf) - off, " %s",
-                             name ? _PyUnicode_AsString(name) : "?");
+        char *name_str;
+        if (name != NULL) {
+            name_str = _PyUnicode_AsString(name);
+            if (name_str == NULL)
+                name_str = "?"
+        } else
+            name_str = "?"
+        off += PyOS_snprintf(buf + off, sizeof(buf) - off, " %s", name_str);
         Py_XDECREF(name);
         if (--n && (size_t)(off+1) < sizeof(buf)) {
             buf[off++] = ',';
@@ -2220,6 +2226,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         for (i = 0; i < nslots; i++, mp++) {
             mp->name = _PyUnicode_AsString(
                 PyTuple_GET_ITEM(slots, i));
+            if (mp->name == NULL) {
+                Py_DECREF(type);
+                return NULL;
+            }
             mp->type = T_OBJECT_EX;
             mp->offset = slotoffset;
 
