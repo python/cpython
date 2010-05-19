@@ -2092,14 +2092,14 @@ validate_try(node *tree)
         return (res);
     }
     /* try/except statement: skip past except_clause sections */
-    while (res && (TYPE(CHILD(tree, pos)) == except_clause)) {
+    while (res && pos < nch && (TYPE(CHILD(tree, pos)) == except_clause)) {
         res = (validate_except_clause(CHILD(tree, pos))
                && validate_colon(CHILD(tree, pos + 1))
                && validate_suite(CHILD(tree, pos + 2)));
         pos += 3;
     }
     /* skip else clause */
-    if (res && (TYPE(CHILD(tree, pos)) == NAME) &&
+    if (res && pos < nch && (TYPE(CHILD(tree, pos)) == NAME) &&
         (strcmp(STR(CHILD(tree, pos)), "else") == 0)) {
         res = (validate_colon(CHILD(tree, pos + 1))
                && validate_suite(CHILD(tree, pos + 2)));
