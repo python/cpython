@@ -3,7 +3,7 @@
  * Copyright (C) 2004-2010 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
- * 
+ *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
  * arising from the use of this software.
@@ -495,7 +495,9 @@ void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (PyFloat_Check(py_val)) {
         sqlite3_result_double(context, PyFloat_AsDouble(py_val));
     } else if (PyUnicode_Check(py_val)) {
-        sqlite3_result_text(context, _PyUnicode_AsString(py_val), -1, SQLITE_TRANSIENT);
+        char *str = _PyUnicode_AsString(py_val);
+        if (str != NULL)
+            sqlite3_result_text(context, str, -1, SQLITE_TRANSIENT);
     } else if (PyObject_CheckBuffer(py_val)) {
         if (PyObject_AsCharBuffer(py_val, &buffer, &buflen) != 0) {
             PyErr_SetString(PyExc_ValueError, "could not convert BLOB to buffer");
@@ -892,7 +894,7 @@ static int _progress_handler(void* user_arg)
         }
 
         /* abort query if error occurred */
-        rc = 1; 
+        rc = 1;
     } else {
         rc = (int)PyObject_IsTrue(ret);
         Py_DECREF(ret);
