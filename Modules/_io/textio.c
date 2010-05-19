@@ -905,8 +905,11 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
                 Py_CLEAR(self->encoding);
         }
     }
-    if (self->encoding != NULL)
+    if (self->encoding != NULL) {
         encoding = _PyUnicode_AsString(self->encoding);
+        if (encoding == NULL)
+            goto error;
+    }
     else if (encoding != NULL) {
         self->encoding = PyUnicode_FromString(encoding);
         if (self->encoding == NULL)
@@ -935,6 +938,8 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     self->writetranslate = (newline == NULL || newline[0] != '\0');
     if (!self->readuniversal && self->readnl) {
         self->writenl = _PyUnicode_AsString(self->readnl);
+        if (self->writenl == NULL)
+            goto error;
         if (!strcmp(self->writenl, "\n"))
             self->writenl = NULL;
     }
@@ -2408,7 +2413,7 @@ textiowrapper_close(textio *self, PyObject *args)
     Py_DECREF(res);
     if (r < 0)
         return NULL;
-    
+
     if (r > 0) {
         Py_RETURN_NONE; /* stream already closed */
     }
