@@ -8,8 +8,8 @@
 
 
 .. index::
-   pair: UNIX@Unix; file control
-   pair: UNIX@Unix; I/O control
+   pair: UNIX; file control
+   pair: UNIX; I/O control
 
 This module performs file control and I/O control on file descriptors. It is an
 interface to the :cfunc:`fcntl` and :cfunc:`ioctl` Unix routines.
