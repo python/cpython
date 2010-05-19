@@ -263,10 +263,15 @@ _PyModule_Clear(PyObject *m)
     pos = 0;
     while (PyDict_Next(d, &pos, &key, &value)) {
         if (value != Py_None && PyUnicode_Check(key)) {
-            const char *s = _PyUnicode_AsString(key);
-            if (s[0] == '_' && s[1] != '_') {
-                if (Py_VerboseFlag > 1)
-                    PySys_WriteStderr("#   clear[1] %s\n", s);
+            Py_UNICODE *u = PyUnicode_AS_UNICODE(key);
+            if (u[0] == '_' && u[1] != '_') {
+                if (Py_VerboseFlag > 1) {
+                    const char *s = _PyUnicode_AsString(key);
+                    if (s != NULL)
+                        PySys_WriteStderr("#   clear[1] %s\n", s);
+                    else
+                        PyErr_Clear();
+                }
                 PyDict_SetItem(d, key, Py_None);
             }
         }
@@ -276,10 +281,17 @@ _PyModule_Clear(PyObject *m)
     pos = 0;
     while (PyDict_Next(d, &pos, &key, &value)) {
         if (value != Py_None && PyUnicode_Check(key)) {
-            const char *s = _PyUnicode_AsString(key);
-            if (s[0] != '_' || strcmp(s, "__builtins__") != 0) {
-                if (Py_VerboseFlag > 1)
-                    PySys_WriteStderr("#   clear[2] %s\n", s);
+            Py_UNICODE *u = PyUnicode_AS_UNICODE(key);
+            if (u[0] != '_'
+                || PyUnicode_CompareWithASCIIString(key, "__builtins__") != 0)
+            {
+                if (Py_VerboseFlag > 1) {
+                    const char *s = _PyUnicode_AsString(key);
+                    if (s != NULL)
+                        PySys_WriteStderr("#   clear[2] %s\n", s);
+                    else
+                        PyErr_Clear();
+                }
                 PyDict_SetItem(d, key, Py_None);
             }
         }
