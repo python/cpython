@@ -130,7 +130,10 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
             break;
         case TYPE_UNICODE:
             string = _PyUnicode_AsString(parameter);
-            rc = sqlite3_bind_text(self->st, pos, string, -1, SQLITE_TRANSIENT);
+            if (string != NULL)
+                rc = sqlite3_bind_text(self->st, pos, string, -1, SQLITE_TRANSIENT);
+            else
+                rc = -1;
             break;
         case TYPE_BUFFER:
             if (PyObject_AsCharBuffer(parameter, &buffer, &buflen) == 0) {

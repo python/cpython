@@ -368,7 +368,7 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                         }
                         PyOS_snprintf(buf, sizeof(buf) - 1, "Could not decode to UTF-8 column '%s' with text '%s'",
                                      colname , val_str);
-                        buf_bytes = PyByteArray_FromStringAndSize(buf, strlen(buf)); 
+                        buf_bytes = PyByteArray_FromStringAndSize(buf, strlen(buf));
                         if (!buf_bytes) {
                             PyErr_SetString(pysqlite_OperationalError, "Could not decode to UTF-8");
                         } else {
@@ -533,7 +533,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     }
 
     operation_cstr = _PyUnicode_AsStringAndSize(operation, &operation_len);
-    if (operation == NULL)
+    if (operation_cstr == NULL)
         goto error;
 
     /* reset description and rowcount */

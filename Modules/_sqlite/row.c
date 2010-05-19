@@ -83,6 +83,8 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
         return item;
     } else if (PyUnicode_Check(idx)) {
         key = _PyUnicode_AsString(idx);
+        if (key == NULL)
+            return NULL;
 
         nitems = PyTuple_Size(self->description);
 
