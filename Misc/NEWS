@@ -370,6 +370,10 @@ C-API
 Library
 -------
 
+- Issue #8663: distutils.log emulates backslashreplace error handler. Fix
+  compilation in a non-ASCII directory if stdout encoding is ASCII (eg. if
+  stdout is not a TTY).
+
 - Issue #8513: os.get_exec_path() supports b'PATH' key and bytes value.
   subprocess.Popen() and os._execvpe() support bytes program name. Add
   os.supports_bytes_environ flag: True if the native OS type of the environment
