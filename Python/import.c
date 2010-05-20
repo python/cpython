@@ -2134,7 +2134,8 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
     if (parent == NULL)
         return NULL;
 
-    head = load_next(parent, Py_None, &name, buf, &buflen);
+    head = load_next(parent, level < 0 ? Py_None : parent, &name, buf,
+                        &buflen);
     if (head == NULL)
         return NULL;
 
