@@ -1013,6 +1013,10 @@ class PyTypeObjectPtr(PyObjectPtr):
 class PyUnicodeObjectPtr(PyObjectPtr):
     _typename = 'PyUnicodeObject'
 
+    def char_width(self):
+        _type_Py_UNICODE = gdb.lookup_type('Py_UNICODE')
+        return _type_Py_UNICODE.sizeof
+
     def proxyval(self, visited):
         # From unicodeobject.h:
         #     Py_ssize_t length;  /* Length of raw Unicode data in buffer */
@@ -1028,6 +1032,30 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         # local unicode instance:
         result = u''.join([unichr(ucs) for ucs in Py_UNICODEs])
         return result
+
+    def write_repr(self, out, visited):
+        proxy = self.proxyval(visited)
+        if self.char_width() == 2:
+            # sizeof(Py_UNICODE)==2: join surrogates
+            proxy2 = []
+            i = 0
+            while i < len(proxy):
+                ch = proxy[i]
+                i += 1
+                if (i < len(proxy)
+                and 0xD800 <= ord(ch) < 0xDC00 \
+                and 0xDC00 <= ord(proxy[i]) <= 0xDFFF):
+                    # Get code point from surrogate pair
+                    ch2 = proxy[i]
+                    code = (ord(ch) & 0x03FF) << 10
+                    code |= ord(ch2) & 0x03FF
+                    code += 0x00010000
+                    i += 1
+                    proxy2.append(unichr(code))
+                else:
+                    proxy2.append(ch)
+            proxy = u''.join(proxy2)
+        out.write(repr(proxy))
 
 
 def int_from_int(gdbval):
