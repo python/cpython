@@ -4,7 +4,6 @@ import os
 from io import StringIO
 import sys
 import unittest
-import shutil
 import tempfile
 import subprocess
 from test import support
@@ -678,12 +677,11 @@ class BootstrapTest(unittest.TestCase):
         # "import encodings" emits a warning whereas the warnings is not loaded
         # or not completly loaded (warnings imports indirectly encodings by
         # importing linecache) yet
-        old_cwd = os.getcwd()
+        cwd = tempfile.mkdtemp()
         try:
-            cwd = tempfile.mkdtemp()
+            encodings = os.path.join(cwd, 'encodings')
+            os.mkdir(encodings)
             try:
-                os.chdir(cwd)
-                os.mkdir('encodings')
                 env = os.environ.copy()
                 env['PYTHONPATH'] = cwd
 
@@ -697,9 +695,9 @@ class BootstrapTest(unittest.TestCase):
                     env=env)
                 self.assertEqual(retcode, 0)
             finally:
-                shutil.rmtree(cwd)
+                os.rmdir(encodings)
         finally:
-            os.chdir(old_cwd)
+            os.rmdir(cwd)
 
 def test_main():
     py_warnings.onceregistry.clear()
