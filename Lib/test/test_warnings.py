@@ -4,6 +4,9 @@ import os
 from io import StringIO
 import sys
 import unittest
+import shutil
+import tempfile
+import subprocess
 from test import support
 
 from test import warning_tests
@@ -670,18 +673,46 @@ class PyCatchWarningTests(CatchWarningTests):
     module = py_warnings
 
 
+class BootstrapTest(unittest.TestCase):
+    def test_issue_8766(self):
+        # "import encodings" emits a warning whereas the warnings is not loaded
+        # or not completly loaded (warnings imports indirectly encodings by
+        # importing linecache) yet
+        old_cwd = os.getcwd()
+        try:
+            cwd = tempfile.mkdtemp()
+            try:
+                os.chdir(cwd)
+                os.mkdir('encodings')
+                env = os.environ.copy()
+                env['PYTHONPATH'] = cwd
+
+                # encodings loaded by initfsencoding()
+                retcode = subprocess.call([sys.executable, '-c', 'pass'], env=env)
+                self.assertEqual(retcode, 0)
+
+                # Use -W to load warnings module at startup
+                retcode = subprocess.call(
+                    [sys.executable, '-c', 'pass', '-W', 'always'],
+                    env=env)
+                self.assertEqual(retcode, 0)
+            finally:
+                shutil.rmtree(cwd)
+        finally:
+            os.chdir(old_cwd)
+
 def test_main():
     py_warnings.onceregistry.clear()
     c_warnings.onceregistry.clear()
-    support.run_unittest(CFilterTests,
-                                PyFilterTests,
-                                CWarnTests,
-                                PyWarnTests,
-                                CWCmdLineTests, PyWCmdLineTests,
-                                _WarningsTests,
-                                CWarningsDisplayTests, PyWarningsDisplayTests,
-                                CCatchWarningTests, PyCatchWarningTests,
-                             )
+    support.run_unittest(
+        CFilterTests, PyFilterTests,
+        CWarnTests, PyWarnTests,
+        CWCmdLineTests, PyWCmdLineTests,
+        _WarningsTests,
+        CWarningsDisplayTests, PyWarningsDisplayTests,
+        CCatchWarningTests, PyCatchWarningTests,
+        BootstrapTest,
+    )
 
 
 if __name__ == "__main__":

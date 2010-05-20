@@ -116,7 +116,7 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         _filters = warnings_filters;
     }
 
-    if (!PyList_Check(_filters)) {
+    if (_filters == NULL || !PyList_Check(_filters)) {
         PyErr_SetString(PyExc_ValueError,
                         MODULE_NAME ".filters must be a list");
         return NULL;
