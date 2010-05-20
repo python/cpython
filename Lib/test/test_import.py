@@ -417,6 +417,19 @@ class RelativeImport(unittest.TestCase):
         self.assertRaises(ValueError, check_absolute)
         self.assertRaises(ValueError, check_relative)
 
+    def test_absolute_import_without_future(self):
+        # If absolute import syntax is used, then do not try to perform
+        # a relative import in the face of failure.
+        # Issue #7902.
+        try:
+            from .os import sep
+        except ImportError:
+            pass
+        else:
+            self.fail("explicit relative import triggered an "
+                      "implicit relative import")
+
+
 def test_main(verbose=None):
     run_unittest(ImportTest, TestPycRewriting, PathsTests, RelativeImport)
 
