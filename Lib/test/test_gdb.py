@@ -243,14 +243,8 @@ class PrettyPrintTests(DebuggerTests):
         # This is:
         # UTF-8: 0xF0 0x9D 0x84 0xA1
         # UTF-16: 0xD834 0xDD21
-        try:
-            # This will only work on wide-unicode builds:
-            self.assertGdbRepr(unichr(0x1D121))
-        except ValueError, e:
-            # We're probably on a narrow-unicode build; if we're seeing a
-            # different problem, then re-raise it:
-            if e.args != ('unichr() arg not in range(0x10000) (narrow Python build)',):
-                raise e
+        # This will only work on wide-unicode builds:
+        self.assertGdbRepr(u"\U0001D121")
 
     def test_sets(self):
         'Verify the pretty-printing of sets'
