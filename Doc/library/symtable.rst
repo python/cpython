@@ -67,7 +67,7 @@ Examining Symbol Tables
 
       Return ``True`` if the block uses ``exec``.
 
-   .. method:: has_import_start()
+   .. method:: has_import_star()
 
       Return ``True`` if the block uses a starred from-import.
 
