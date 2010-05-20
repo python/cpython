@@ -264,6 +264,9 @@ Py_InitializeEx(int install_sigs)
 
     _PyImportHooks_Init();
 
+    /* Initialize _warnings. */
+    _PyWarnings_Init();
+
 #if defined(HAVE_LANGINFO_H) && defined(CODESET)
     /* On Unix, set the file system encoding according to the
        user's preference, if the CODESET names a well-known
@@ -284,7 +287,6 @@ Py_InitializeEx(int install_sigs)
         initsigs(); /* Signal handling stuff, including initintr() */
 
     /* Initialize warnings. */
-    _PyWarnings_Init();
     if (PySys_HasWarnOptions()) {
         PyObject *warnings_module = PyImport_ImportModule("warnings");
         if (!warnings_module)

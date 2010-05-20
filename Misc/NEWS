@@ -12,6 +12,9 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #8766: Initialize _warnings module before importing the first module.
+  Fix a crash if an empty directory called "encodings" exists in sys.path.
+
 - PyObject_Dump() encodes unicode objects to utf8 with backslashreplace
   (instead of strict) error handler to escape surrogates
 
