@@ -176,31 +176,32 @@ Thus to get the same effect as::
 
 it is much shorter and far faster to use ::
 
-   L2 = list(L1[:3]) # "list" is redundant if L1 is a list.
+   L2 = list(L1[:3])  # "list" is redundant if L1 is a list.
 
 Note that the functionally-oriented builtins such as :func:`map`, :func:`zip`,
 and friends can be a convenient accelerator for loops that perform a single
 task.  For example to pair the elements of two lists together::
 
-   >>> zip([1,2,3], [4,5,6])
+   >>> list(zip([1, 2, 3], [4, 5, 6]))
    [(1, 4), (2, 5), (3, 6)]
 
 or to compute a number of sines::
 
-   >>> map( math.sin, (1,2,3,4))
-   [0.841470984808, 0.909297426826, 0.14112000806,   -0.756802495308]
+   >>> list(map(math.sin, (1, 2, 3, 4)))
+   [0.841470984808, 0.909297426826, 0.14112000806, -0.756802495308]
 
 The operation completes very quickly in such cases.
 
-Other examples include the ``join()`` and ``split()`` methods of string objects.
+Other examples include the ``join()`` and ``split()`` :ref:`methods
+of string objects <string-methods>`.
+
 For example if s1..s7 are large (10K+) strings then
 ``"".join([s1,s2,s3,s4,s5,s6,s7])`` may be far faster than the more obvious
 ``s1+s2+s3+s4+s5+s6+s7``, since the "summation" will compute many
 subexpressions, whereas ``join()`` does all the copying in one pass.  For
-manipulating strings, use the ``replace()`` method on string objects. Use
-regular expressions only when you're not dealing with constant string patterns.
-Consider using the string formatting operations ``string % tuple`` and ``string
-% dictionary``.
+manipulating strings, use the ``replace()`` and the ``format()`` :ref:`methods
+on string objects <string-methods>`.  Use regular expressions only when you're
+not dealing with constant string patterns.
 
 Be sure to use the :meth:`list.sort` builtin method to do sorting, and see the
 `sorting mini-HOWTO <http://wiki.python.org/moin/HowTo/Sorting>`_ for examples
@@ -210,7 +211,7 @@ sorting in all but the most extreme circumstances.
 Another common trick is to "push loops into functions or methods."  For example
 suppose you have a program that runs slowly and you use the profiler to
 determine that a Python function ``ff()`` is being called lots of times.  If you
-notice that ``ff ()``::
+notice that ``ff()``::
 
    def ff(x):
        ... # do something with x computing result...
@@ -387,7 +388,7 @@ main.py::
 
    import config
    import mod
-   print config.x
+   print(config.x)
 
 Note that using a module is also the basis for implementing the Singleton design
 pattern, for the same reason.
@@ -408,16 +409,15 @@ using multiple imports per line uses less screen space.
 
 It's good practice if you import modules in the following order:
 
-1. standard library modules -- e.g. ``sys``, ``os``, ``getopt``, ``re``)
+1. standard library modules -- e.g. ``sys``, ``os``, ``getopt``, ``re``
 2. third-party library modules (anything installed in Python's site-packages
    directory) -- e.g. mx.DateTime, ZODB, PIL.Image, etc.
 3. locally-developed modules
 
 Never use relative package imports.  If you're writing code that's in the
 ``package.sub.m1`` module and want to import ``package.sub.m2``, do not just
-write ``import m2``, even though it's legal.  Write ``from package.sub import
-m2`` instead.  Relative imports can lead to a module being initialized twice,
-leading to confusing bugs.
+write ``from . import m2``, even though it's legal.  Write ``from package.sub
+import m2`` instead.  See :pep:`328` for details.
 
 It is sometimes necessary to move imports to a function or class to avoid
 problems with circular imports.  Gordon McMillan says:
@@ -499,7 +499,7 @@ desired effect in a number of ways.
 
       x, y = 'old-value', 99
       x, y = func2(x, y)
-      print x, y                 # output: new-value 100
+      print(x, y)                # output: new-value 100
 
    This is almost always the clearest solution.
 
@@ -513,7 +513,7 @@ desired effect in a number of ways.
 
       args = ['old-value', 99]
       func1(args)
-      print args[0], args[1]     # output: new-value 100
+      print(args[0], args[1])    # output: new-value 100
 
 4) By passing in a dictionary that gets mutated::
 
@@ -523,7 +523,7 @@ desired effect in a number of ways.
 
       args = {'a':' old-value', 'b': 99}
       func3(args)
-      print args['a'], args['b']
+      print(args['a'], args['b'])
 
 5) Or bundle up values in a class instance::
 
@@ -538,7 +538,7 @@ desired effect in a number of ways.
 
       args = callByRef(a='old-value', b=99)
       func4(args)
-      print args.a, args.b
+      print(args.a, args.b)
 
 
    There's almost never a good reason to get this complicated.
@@ -644,10 +644,10 @@ callable. Consider the following code::
 
    a = B()
    b = a
-   print b
-   <__main__.A instance at 016D07CC>
-   print a
-   <__main__.A instance at 016D07CC>
+   print(b)
+   <__main__.A object at 0x16D07CC>
+   print(a)
+   <__main__.A object at 0x16D07CC>
 
 Arguably the class has a name: even though it is bound to two names and invoked
 through the name B the created instance is still reported as an instance of
@@ -677,7 +677,7 @@ What's up with the comma operator's precedence?
 Comma is not an operator in Python.  Consider this session::
 
     >>> "a" in "b", "a"
-    (False, '1')
+    (False, 'a')
 
 Since the comma is not an operator, but a separator between expressions the
 above is evaluated as if you had entered::
@@ -686,7 +686,7 @@ above is evaluated as if you had entered::
 
 not::
 
-    >>> "a" in ("5", "a")
+    >>> "a" in ("b", "a")
 
 The same is true of the various assignment operators (``=``, ``+=`` etc).  They
 are not truly operators but syntactic delimiters in assignment statements.
@@ -728,12 +728,12 @@ solution is to implement the ``?:`` operator as a function::
            if not isfunction(on_true):
                return on_true
            else:
-               return apply(on_true)
+               return on_true()
        else:
            if not isfunction(on_false):
                return on_false
            else:
-               return apply(on_false)
+               return on_false()
 
 In most cases you'll pass b and c directly: ``q(a, b, c)``.  To avoid evaluating
 b or c when they shouldn't be, encapsulate them within a lambda function, e.g.:
@@ -758,22 +758,24 @@ Is it possible to write obfuscated one-liners in Python?
 Yes.  Usually this is done by nesting :keyword:`lambda` within
 :keyword:`lambda`.  See the following three examples, due to Ulf Bartelt::
 
+   from functools import reduce
+
    # Primes < 1000
-   print filter(None,map(lambda y:y*reduce(lambda x,y:x*y!=0,
-   map(lambda x,y=y:y%x,range(2,int(pow(y,0.5)+1))),1),range(2,1000)))
+   print(list(filter(None,map(lambda y:y*reduce(lambda x,y:x*y!=0,
+   map(lambda x,y=y:y%x,range(2,int(pow(y,0.5)+1))),1),range(2,1000)))))
 
    # First 10 Fibonacci numbers
-   print map(lambda x,f=lambda x,f:(x<=1) or (f(x-1,f)+f(x-2,f)): f(x,f),
-   range(10))
+   print(list(map(lambda x,f=lambda x,f:(f(x-1,f)+f(x-2,f)) if x>1 else 1:
+   f(x,f), range(10))))
 
    # Mandelbrot set
-   print (lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,
+   print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,
    Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,
    Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,
    i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y
    >=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr(
    64+F(Ru+x*(Ro-Ru)/Sx,yc,0,0,i)),range(Sx))):L(Iu+y*(Io-Iu)/Sy),range(Sy
-   ))))(-2.1, 0.7, -1.2, 1.2, 30, 80, 24)
+   ))))(-2.1, 0.7, -1.2, 1.2, 30, 80, 24))
    #    \___ ___/  \___ ___/  |   |   |__ lines on screen
    #        V          V      |   |______ columns on screen
    #        |          |      |__________ maximum of "iterations"
@@ -789,10 +791,11 @@ Numbers and strings
 How do I specify hexadecimal and octal integers?
 ------------------------------------------------
 
-To specify an octal digit, precede the octal value with a zero.  For example, to
-set the variable "a" to the octal value "10" (8 in decimal), type::
+To specify an octal digit, precede the octal value with a zero, and then a lower
+or uppercase "o".  For example, to set the variable "a" to the octal value "10"
+(8 in decimal), type::
 
-   >>> a = 010
+   >>> a = 0o10
    >>> a
    8
 
@@ -808,17 +811,17 @@ or uppercase.  For example, in the Python interpreter::
    178
 
 
-Why does -22 / 10 return -3?
-----------------------------
+Why does -22 // 10 return -3?
+-----------------------------
 
 It's primarily driven by the desire that ``i % j`` have the same sign as ``j``.
 If you want that, and also want::
 
-    i == (i / j) * j + (i % j)
+    i == (i // j) * j + (i % j)
 
 then integer division has to return the floor.  C also requires that identity to
-hold, and then compilers that truncate ``i / j`` need to make ``i % j`` have the
-same sign as ``i``.
+hold, and then compilers that truncate ``i // j`` need to make ``i % j`` have
+the same sign as ``i``.
 
 There are few real use cases for ``i % j`` when ``j`` is negative.  When ``j``
 is positive, there are many, and in virtually all of them it's more useful for
@@ -848,8 +851,8 @@ unwanted side effects.  For example, someone could pass
 directory.
 
 :func:`eval` also has the effect of interpreting numbers as Python expressions,
-so that e.g. ``eval('09')`` gives a syntax error because Python regards numbers
-starting with '0' as octal (base 8).
+so that e.g. ``eval('09')`` gives a syntax error because Python does not allow
+leading '0' in a decimal number (except '0').
 
 
 How do I convert a number to a string?
@@ -857,10 +860,9 @@ How do I convert a number to a string?
 
 To convert, e.g., the number 144 to the string '144', use the built-in type
 constructor :func:`str`.  If you want a hexadecimal or octal representation, use
-the built-in functions ``hex()`` or ``oct()``.  For fancy formatting, use
-:ref:`the % operator <string-formatting>` on strings, e.g. ``"%04d" % 144``
-yields ``'0144'`` and ``"%.3f" % (1/3.0)`` yields ``'0.333'``.  See the library
-reference manual for details.
+the built-in functions :func:`hex` or :func:`oct`.  For fancy formatting, see
+the :ref:`string-formatting` section, e.g. ``"{:04d}".format(144)`` yields
+``'0144'`` and ``"{:.3f}".format(1/3)`` yields ``'0.333'``.
 
 
 How do I modify a string in place?
@@ -871,19 +873,20 @@ ability, try converting the string to a list or use the array module::
 
    >>> s = "Hello, world"
    >>> a = list(s)
-   >>> print a
+   >>> print(a)
    ['H', 'e', 'l', 'l', 'o', ',', ' ', 'w', 'o', 'r', 'l', 'd']
    >>> a[7:] = list("there!")
    >>> ''.join(a)
    'Hello, there!'
 
    >>> import array
-   >>> a = array.array('c', s)
-   >>> print a
-   array('c', 'Hello, world')
-   >>> a[0] = 'y' ; print a
-   array('c', 'yello world')
-   >>> a.tostring()
+   >>> a = array.array('u', s)
+   >>> print(a)
+   array('u', 'Hello, world')
+   >>> a[0] = 'y'
+   >>> print(a)
+   array('u', 'yello world')
+   >>> a.tounicode()
    'yello, world'
 
 
@@ -931,7 +934,7 @@ There are various techniques.
 * Use :func:`locals` or :func:`eval` to resolve the function name::
 
      def myFunc():
-         print "hello"
+         print("hello")
 
      fname = "myFunc"
 
@@ -958,12 +961,12 @@ blank lines will be removed::
    ...          "\r\n"
    ...          "\r\n")
    >>> lines.rstrip("\n\r")
-   "line 1 "
+   'line 1 '
 
 Since this is typically only desired when reading text one line at a time, using
 ``S.rstrip()`` this way works well.
 
-For older versions of Python, There are two partial substitutes:
+For older versions of Python, there are two partial substitutes:
 
 - If you want to remove all trailing whitespace, use the ``rstrip()`` method of
   string objects.  This removes all trailing whitespace, not just a single
@@ -988,45 +991,10 @@ For more complicated input parsing, regular expressions more powerful than C's
 :cfunc:`sscanf` and better suited for the task.
 
 
-What does 'UnicodeError: ASCII [decoding,encoding] error: ordinal not in range(128)' mean?
-------------------------------------------------------------------------------------------
+What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
+-------------------------------------------------------------------
 
-This error indicates that your Python installation can handle only 7-bit ASCII
-strings.  There are a couple ways to fix or work around the problem.
-
-If your programs must handle data in arbitrary character set encodings, the
-environment the application runs in will generally identify the encoding of the
-data it is handing you.  You need to convert the input to Unicode data using
-that encoding.  For example, a program that handles email or web input will
-typically find character set encoding information in Content-Type headers.  This
-can then be used to properly convert input data to Unicode. Assuming the string
-referred to by ``value`` is encoded as UTF-8::
-
-   value = unicode(value, "utf-8")
-
-will return a Unicode object.  If the data is not correctly encoded as UTF-8,
-the above call will raise a :exc:`UnicodeError` exception.
-
-If you only want strings converted to Unicode which have non-ASCII data, you can
-try converting them first assuming an ASCII encoding, and then generate Unicode
-objects if that fails::
-
-   try:
-       x = unicode(value, "ascii")
-   except UnicodeError:
-       value = unicode(value, "utf-8")
-   else:
-       # value was valid ASCII data
-       pass
-
-It's possible to set a default encoding in a file called ``sitecustomize.py``
-that's part of the Python library.  However, this isn't recommended because
-changing the Python-wide default encoding may cause third-party extension
-modules to fail.
-
-Note that on Windows, there is an encoding known as "mbcs", which uses an
-encoding specific to your current locale.  In many cases, and particularly when
-working with COM, this may be an appropriate default encoding to use.
+See the :ref:`unicode-howto`.
 
 
 Sequences (Tuples/Lists)
@@ -1089,26 +1057,26 @@ See the Python Cookbook for a long discussion of many ways to do this:
 If you don't mind reordering the list, sort it and then scan from the end of the
 list, deleting duplicates as you go::
 
-   if List:
-       List.sort()
-       last = List[-1]
-       for i in range(len(List)-2, -1, -1):
-           if last == List[i]:
-               del List[i]
+   if mylist:
+       mylist.sort()
+       last = mylist[-1]
+       for i in range(len(mylist)-2, -1, -1):
+           if last == mylist[i]:
+               del mylist[i]
            else:
-               last = List[i]
+               last = mylist[i]
 
 If all elements of the list may be used as dictionary keys (i.e. they are all
 hashable) this is often faster ::
 
    d = {}
-   for x in List:
-       d[x] = x
-   List = d.values()
+   for x in mylist:
+       d[x] = 1
+   mylist = list(d.keys())
 
 In Python 2.5 and later, the following is possible instead::
 
-   List = list(set(List))
+   mylist = list(set(mylist))
 
 This converts the list into a set, thereby removing duplicates, and then back
 into a list.
@@ -1184,15 +1152,7 @@ How do I apply a method to a sequence of objects?
 
 Use a list comprehension::
 
-   result = [obj.method() for obj in List]
-
-More generically, you can try the following function::
-
-   def method_map(objects, method, arguments):
-       """method_map([a,b], "meth", (1,2)) gives [a.meth(1,2), b.meth(1,2)]"""
-       nobjects = len(objects)
-       methods = map(getattr, objects, [method]*nobjects)
-       return map(apply, methods, [arguments]*nobjects)
+   result = [obj.method() for obj in mylist]
 
 
 Dictionaries
@@ -1209,23 +1169,17 @@ some changes and then compare it with some other printed dictionary.  In this
 case, use the ``pprint`` module to pretty-print the dictionary; the items will
 be presented in order sorted by the key.
 
-A more complicated solution is to subclass ``UserDict.UserDict`` to create a
+A more complicated solution is to subclass ``dict`` to create a
 ``SortedDict`` class that prints itself in a predictable order.  Here's one
 simpleminded implementation of such a class::
 
-   import UserDict, string
-
-   class SortedDict(UserDict.UserDict):
+   class SortedDict(dict):
        def __repr__(self):
-           result = []
-           append = result.append
-           keys = self.data.keys()
-           keys.sort()
-           for k in keys:
-               append("%s: %s" % (`k`, `self.data[k]`))
-           return "{%s}" % string.join(result, ", ")
+           keys = sorted(self.keys())
+           result = ("{!r}: {!r}".format(k, self[k]) for k in keys)
+           return "{{{}}}".format(", ".join(result))
 
-     __str__ = __repr__
+       __str__ = __repr__
 
 This will work for many common situations you might encounter, though it's far
 from a perfect solution. The largest flaw is that if some values in the
@@ -1247,18 +1201,18 @@ The ``key`` argument is new in Python 2.4, for older versions this kind of
 sorting is quite simple to do with list comprehensions.  To sort a list of
 strings by their uppercase values::
 
-  tmp1 = [(x.upper(), x) for x in L] # Schwartzian transform
+  tmp1 = [(x.upper(), x) for x in L]  # Schwartzian transform
   tmp1.sort()
   Usorted = [x[1] for x in tmp1]
 
 To sort by the integer value of a subfield extending from positions 10-15 in
 each string::
 
-  tmp2 = [(int(s[10:15]), s) for s in L] # Schwartzian transform
+  tmp2 = [(int(s[10:15]), s) for s in L]  # Schwartzian transform
   tmp2.sort()
   Isorted = [x[1] for x in tmp2]
 
-Note that Isorted may also be computed by ::
+For versions prior to 3.0, Isorted may also be computed by ::
 
    def intfield(s):
        return int(s[10:15])
@@ -1276,23 +1230,24 @@ is slower than the Schwartzian Transform.
 How can I sort one list by values from another list?
 ----------------------------------------------------
 
-Merge them into a single list of tuples, sort the resulting list, and then pick
+Merge them into an iterator of tuples, sort the resulting list, and then pick
 out the element you want. ::
 
    >>> list1 = ["what", "I'm", "sorting", "by"]
    >>> list2 = ["something", "else", "to", "sort"]
    >>> pairs = zip(list1, list2)
+   >>> pairs = sorted(pairs)
    >>> pairs
-   [('what', 'something'), ("I'm", 'else'), ('sorting', 'to'), ('by', 'sort')]
-   >>> pairs.sort()
-   >>> result = [ x[1] for x in pairs ]
+   [("I'm", 'else'), ('by', 'sort'), ('sorting', 'to'), ('what', 'something')]
+   >>> result = [x[1] for x in pairs]
    >>> result
    ['else', 'sort', 'to', 'something']
 
+
 An alternative for the last step is::
 
-   result = []
-   for p in pairs: result.append(p[1])
+   >>> result = []
+   >>> for p in pairs: result.append(p[1])
 
 If you find this more legible, you might prefer to use this instead of the final
 list comprehension.  However, it is almost twice as slow for long lists.  Why?
@@ -1351,7 +1306,7 @@ Use the built-in function ``isinstance(obj, cls)``.  You can check if an object
 is an instance of any of a number of classes by providing a tuple instead of a
 single class, e.g. ``isinstance(obj, (class1, class2, ...))``, and can also
 check whether an object is one of Python's built-in types, e.g.
-``isinstance(obj, str)`` or ``isinstance(obj, (int, long, float, complex))``.
+``isinstance(obj, str)`` or ``isinstance(obj, (int, float, complex))``.
 
 Note that most programs do not use :func:`isinstance` on user-defined classes
 very often.  If you are developing the classes yourself, a more proper
@@ -1360,7 +1315,7 @@ particular behaviour, instead of checking the object's class and doing a
 different thing based on what class it is.  For example, if you have a function
 that does something::
 
-   def search (obj):
+   def search(obj):
        if isinstance(obj, Mailbox):
            # ... code to search a mailbox
        elif isinstance(obj, Document):
@@ -1430,17 +1385,17 @@ local state for self without causing an infinite recursion.
 How do I call a method defined in a base class from a derived class that overrides it?
 --------------------------------------------------------------------------------------
 
-If you're using new-style classes, use the built-in :func:`super` function::
+Use the built-in :func:`super` function::
 
    class Derived(Base):
        def meth (self):
            super(Derived, self).meth()
 
-If you're using classic classes: For a class definition such as ``class
-Derived(Base): ...`` you can call method ``meth()`` defined in ``Base`` (or one
-of ``Base``'s base classes) as ``Base.meth(self, arguments...)``.  Here,
-``Base.meth`` is an unbound method, so you need to provide the ``self``
-argument.
+For version prior to 3.0, you may be using classic classes: For a class
+definition such as ``class Derived(Base): ...`` you can call method ``meth()``
+defined in ``Base`` (or one of ``Base``'s base classes) as ``Base.meth(self,
+arguments...)``.  Here, ``Base.meth`` is an unbound method, so you need to
+provide the ``self`` argument.
 
 
 How can I organize my code to make it easier to change the base class?
@@ -1463,8 +1418,8 @@ of resources) which base class to use.  Example::
 How do I create static class data and static class methods?
 -----------------------------------------------------------
 
-Static data (in the sense of C++ or Java) is easy; static methods (again in the
-sense of C++ or Java) are not supported directly.
+Both static data and static methods (in the sense of C++ or Java) are supported
+in Python.
 
 For static data, simply define a class attribute.  To assign a new value to the
 attribute, you have to explicitly use the class name in the assignment::
@@ -1483,9 +1438,9 @@ C)`` holds, unless overridden by ``c`` itself or by some class on the base-class
 search path from ``c.__class__`` back to ``C``.
 
 Caution: within a method of C, an assignment like ``self.count = 42`` creates a
-new and unrelated instance vrbl named "count" in ``self``'s own dict.  Rebinding
-of a class-static data name must always specify the class whether inside a
-method or not::
+new and unrelated instance named "count" in ``self``'s own dict.  Rebinding of a
+class-static data name must always specify the class whether inside a method or
+not::
 
    C.count = 314
 
@@ -1536,9 +1491,9 @@ default arguments.  For example::
    class C:
        def __init__(self, i=None):
            if i is None:
-               print "No arguments"
+               print("No arguments")
            else:
-               print "Argument is", i
+               print("Argument is", i)
 
 This is not entirely equivalent, but close enough in practice.
 
@@ -1597,11 +1552,13 @@ which allows you to point to objects without incrementing their reference count.
 Tree data structures, for instance, should use weak references for their parent
 and sibling references (if they need them!).
 
-If the object has ever been a local variable in a function that caught an
-expression in an except clause, chances are that a reference to the object still
-exists in that function's stack frame as contained in the stack trace.
-Normally, calling :func:`sys.exc_clear` will take care of this by clearing the
-last recorded exception.
+.. XXX relevant for Python 3?
+
+   If the object has ever been a local variable in a function that caught an
+   expression in an except clause, chances are that a reference to the object
+   still exists in that function's stack frame as contained in the stack trace.
+   Normally, calling :func:`sys.exc_clear` will take care of this by clearing
+   the last recorded exception.
 
 Finally, if your :meth:`__del__` method raises an exception, a warning message
 is printed to :data:`sys.stderr`.
@@ -1669,7 +1626,7 @@ provide a command-line interface or a self-test, and only execute this code
 after checking ``__name__``::
 
    def main():
-       print 'Running test...'
+       print('Running test...')
        ...
 
    if __name__ == '__main__':
@@ -1758,8 +1715,9 @@ consisting of many modules where each one imports the same basic module, the
 basic module would be parsed and re-parsed many times.  To force rereading of a
 changed module, do this::
 
+   import imp
    import modname
-   reload(modname)
+   imp.reload(modname)
 
 Warning: this technique is not 100% fool-proof.  In particular, modules
 containing statements like ::
@@ -1771,17 +1729,18 @@ module contains class definitions, existing class instances will *not* be
 updated to use the new class definition.  This can result in the following
 paradoxical behaviour:
 
+   >>> import imp
    >>> import cls
    >>> c = cls.C()                # Create an instance of C
-   >>> reload(cls)
-   <module 'cls' from 'cls.pyc'>
+   >>> imp.reload(cls)
+   <module 'cls' from 'cls.py'>
    >>> isinstance(c, cls.C)       # isinstance is false?!?
    False
 
-The nature of the problem is made clear if you print out the class objects:
+The nature of the problem is made clear if you print out the "identity" of the
+class objects:
 
-   >>> c.__class__
-   <class cls.C at 0x7352a0>
-   >>> cls.C
-   <class cls.C at 0x4198d0>
-
+   >>> hex(id(c.__class__))
+   '0x7352a0'
+   >>> hex(id(cls.C))
+   '0x4198d0'
