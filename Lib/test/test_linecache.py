@@ -81,39 +81,36 @@ class LineCacheTests(unittest.TestCase):
 
     def test_checkcache(self):
         getline = linecache.getline
-        try:
-            # Create a source file and cache its contents
-            source_name = support.TESTFN + '.py'
-            with open(source_name, 'w') as source:
-                source.write(SOURCE_1)
-            getline(source_name, 1)
+        # Create a source file and cache its contents
+        source_name = support.TESTFN + '.py'
+        self.addCleanup(test_support.unlink, source_name)
+        with open(source_name, 'w') as source:
+            source.write(SOURCE_1)
+        getline(source_name, 1)
 
-            # Keep a copy of the old contents
-            source_list = []
-            with open(source_name) as source:
-                for index, line in enumerate(source):
-                    self.assertEquals(line, getline(source_name, index + 1))
-                    source_list.append(line)
-
-            with open(source_name, 'w') as source:
-                source.write(SOURCE_2)
-
-            # Try to update a bogus cache entry
-            linecache.checkcache('dummy')
-
-            # Check that the cache matches the old contents
-            for index, line in enumerate(source_list):
+        # Keep a copy of the old contents
+        source_list = []
+        with open(source_name) as source:
+            for index, line in enumerate(source):
                 self.assertEquals(line, getline(source_name, index + 1))
+                source_list.append(line)
 
-            # Update the cache and check whether it matches the new source file
-            linecache.checkcache(source_name)
-            with open(source_name) as source:
-                for index, line in enumerate(source):
-                    self.assertEquals(line, getline(source_name, index + 1))
-                    source_list.append(line)
+        with open(source_name, 'w') as source:
+            source.write(SOURCE_2)
 
-        finally:
-            support.unlink(source_name)
+        # Try to update a bogus cache entry
+        linecache.checkcache('dummy')
+
+        # Check that the cache matches the old contents
+        for index, line in enumerate(source_list):
+            self.assertEquals(line, getline(source_name, index + 1))
+
+        # Update the cache and check whether it matches the new source file
+        linecache.checkcache(source_name)
+        with open(source_name) as source:
+            for index, line in enumerate(source):
+                self.assertEquals(line, getline(source_name, index + 1))
+                source_list.append(line)
 
 def test_main():
     support.run_unittest(LineCacheTests)
