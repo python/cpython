@@ -1079,7 +1079,7 @@ will use same for decoding the bytes object. ::
 
    >>> import urllib.request
    >>> f = urllib.request.urlopen('http://www.python.org/')
-   >>> print(fp.read(100).decode('utf-8'))
+   >>> print(f.read(100).decode('utf-8'))
    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
    "http://www.w3.org/TR/xhtml1/DTD/xhtm
 
