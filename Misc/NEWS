@@ -393,6 +393,9 @@ C-API
 Library
 -------
 
+- Issue #3798: sys.exit(message) writes the message to sys.stderr file, instead
+  of the C file stderr, to use stderr encoding and error handler
+
 - Issue #8782: Add a trailing newline in linecache.updatecache to the last line
   of files without one.
 

@@ -146,9 +146,9 @@ class SysModuleTest(unittest.TestCase):
                               "raise SystemExit(47)"])
         self.assertEqual(rc, 47)
 
-        def check_exit_message(code, expected):
+        def check_exit_message(code, expected, env=None):
             process = subprocess.Popen([sys.executable, "-c", code],
-                                       stderr=subprocess.PIPE)
+                                       stderr=subprocess.PIPE, env=env)
             stdout, stderr = process.communicate()
             self.assertEqual(process.returncode, 1)
             self.assertTrue(stderr.startswith(expected),
@@ -165,6 +165,14 @@ class SysModuleTest(unittest.TestCase):
         check_exit_message(
             r'import sys; sys.exit("surrogates:\uDCFF")',
             b"surrogates:\\udcff")
+
+        # test that the unicode message is encoded to the stderr encoding
+        # instead of the default encoding (utf8)
+        env = os.environ.copy()
+        env['PYTHONIOENCODING'] = 'latin-1'
+        check_exit_message(
+            r'import sys; sys.exit("h\xe9")',
+            b"h\xe9", env=env)
 
     def test_getdefaultencoding(self):
         self.assertRaises(TypeError, sys.getdefaultencoding, 42)
