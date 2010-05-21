@@ -31,6 +31,11 @@ a = f()
 
 '''
 
+SOURCE_3 = '''
+def f():
+    return 3''' # No ending newline
+
+
 class LineCacheTests(unittest.TestCase):
 
     def test_getline(self):
@@ -63,6 +68,13 @@ class LineCacheTests(unittest.TestCase):
         empty = linecache.getlines('a/b/c/__init__.py')
         self.assertEquals(empty, [])
 
+    def test_no_ending_newline(self):
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, "w") as fp:
+            fp.write(SOURCE_3)
+        lines = linecache.getlines(support.TESTFN)
+        self.assertEqual(lines, ["\n", "def f():\n", "    return 3\n"])
+
     def test_clearcache(self):
         cached = []
         for entry in TESTS:
@@ -81,42 +93,36 @@ class LineCacheTests(unittest.TestCase):
 
     def test_checkcache(self):
         getline = linecache.getline
-        try:
-            # Create a source file and cache its contents
-            source_name = support.TESTFN + '.py'
-            with open(source_name, 'w') as source:
-                source.write(SOURCE_1)
-                source.close()
-                getline(source_name, 1)
+        # Create a source file and cache its contents
+        source_name = support.TESTFN + '.py'
+        self.addCleanup(support.unlink, source_name)
+        with open(source_name, 'w') as source:
+            source.write(SOURCE_1)
+        getline(source_name, 1)
+        # Keep a copy of the old contents
+        source_list = []
+        with open(source_name) as source:
+            for index, line in enumerate(source):
+                self.assertEquals(line, getline(source_name, index + 1))
+                source_list.append(line)
 
-                # Keep a copy of the old contents
-                source_list = []
-                source = open(source_name)
-                for index, line in enumerate(source):
-                    self.assertEquals(line, getline(source_name, index + 1))
-                    source_list.append(line)
-                source.close()
+        with open(source_name, 'w') as source:
+            source.write(SOURCE_2)
 
-                source = open(source_name, 'w')
-                source.write(SOURCE_2)
-                source.close()
+        # Try to update a bogus cache entry
+        linecache.checkcache('dummy')
 
-                # Try to update a bogus cache entry
-                linecache.checkcache('dummy')
+        # Check that the cache matches the old contents
+        for index, line in enumerate(source_list):
+            self.assertEquals(line, getline(source_name, index + 1))
 
-                # Check that the cache matches the old contents
-                for index, line in enumerate(source_list):
-                    self.assertEquals(line, getline(source_name, index + 1))
+        # Update the cache and check whether it matches the new source file
+        linecache.checkcache(source_name)
+        with open(source_name) as source:
+            for index, line in enumerate(source):
+                self.assertEquals(line, getline(source_name, index + 1))
+                source_list.append(line)
 
-                # Update the cache and check whether it matches the new source file
-                linecache.checkcache(source_name)
-                source = open(source_name)
-                for index, line in enumerate(source):
-                    self.assertEquals(line, getline(source_name, index + 1))
-                    source_list.append(line)
-
-        finally:
-            support.unlink(source_name)
 
 def test_main():
     support.run_unittest(LineCacheTests)
