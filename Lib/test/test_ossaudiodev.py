@@ -76,7 +76,7 @@ class OSSAudioDevTests(unittest.TestCase):
 
         # set parameters based on .au file headers
         dsp.setparameters(AFMT_S16_NE, nchannels, rate)
-        self.assertTrue(abs(expected_time - 2.94) < 1e-2, expected_time)
+        self.assertTrue(abs(expected_time - 3.51) < 1e-2, expected_time)
         t1 = time.time()
         dsp.write(data)
         dsp.close()
