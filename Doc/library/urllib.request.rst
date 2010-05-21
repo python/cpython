@@ -604,7 +604,7 @@ OpenerDirector Objects
    method on the currently installed global :class:`OpenerDirector`).  The
    optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
-   timeout setting will be usedi). The timeout feature actually works only for
+   timeout setting will be used). The timeout feature actually works only for
    HTTP, HTTPS, FTP and FTPS connections).
 
 
