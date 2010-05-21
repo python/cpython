@@ -123,15 +123,12 @@ def updatecache(filename, module_globals=None):
                 except os.error:
                     pass
         else:
-            # No luck
-##          print '*** Cannot stat', filename, ':', msg
             return []
     try:
         fp = open(fullname, 'rU')
         lines = fp.readlines()
         fp.close()
     except IOError, msg:
-##      print '*** Cannot open', fullname, ':', msg
         return []
     if lines and not lines[-1].endswith('\n'):
         lines[-1] += '\n'
