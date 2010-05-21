@@ -377,10 +377,7 @@ empty dictionary, a data structure that we discuss in the next section.
 
 Here is a brief demonstration::
 
-   >>> basket = {'apple', 'orange', 'apple', 'pear', 'orange', 'banana'}
-   >>> print(basket)
-   {'orange', 'banana', 'pear', 'apple'}
-   >>> fruit = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+   >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
    >>> fruit = set(basket)               # create a set without duplicates
    >>> fruit
    {'orange', 'pear', 'apple', 'banana'}
