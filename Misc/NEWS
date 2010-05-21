@@ -43,6 +43,14 @@ Core and Builtins
 
 - Issue #7072: isspace(0xa0) is true on Mac OS X
 
+C-API
+-----
+
+- Issue #5753: A new C API function, :cfunc:`PySys_SetArgvEx`, allows
+  embedders of the interpreter to set sys.argv without also modifying
+  sys.path.  This helps fix `CVE-2008-5983
+  <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
+
 Library
 -------
 
