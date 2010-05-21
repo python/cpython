@@ -114,7 +114,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: callable
 
-   Converts ``callable(x)`` to ``hasattr(x, "__call_")``.
+   Converts ``callable(x)`` to ``hasattr(x, "__call__")``.
 
 .. 2to3fixer:: dict
 
