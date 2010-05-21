@@ -375,7 +375,10 @@ C-API
 Library
 -------
 
-- Issue #4870: Add an `options` attribute to SSL contexts, as well as 
+- Issue #8774: tabnanny uses the encoding cookie (#coding:...) to use the
+  correct encoding
+
+- Issue #4870: Add an `options` attribute to SSL contexts, as well as
   several ``OP_*`` constants to the `ssl` module.  This allows to selectively
   disable protocol versions, when used in combination with `PROTOCOL_SSLv23`.
 
