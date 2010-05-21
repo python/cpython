@@ -86,13 +86,21 @@ document could also be refactored with this option.
 The :option:`-v` option enables output of more information on the translation
 process.
 
+Since some print statements can be parsed as function calls or statements, 2to3
+cannot always read files containing the print function.  When 2to3 detects the
+presence of the ``from __future__ import print_function`` compiler directive, it
+modifies its internal grammar to interpert :func:`print` as a function.  This
+change can also be enabled manually with the :option:`-p` flag.  Use
+:option:`-p` to run fixers on code that already has had its print statements
+converted.
+
 
 .. _2to3-fixers:
 
 Fixers
 ------
 
-Each step of tranforming code is encapsulated in a fixer.  The command ``2to3
+Each step of transforming code is encapsulated in a fixer.  The command ``2to3
 -l`` lists them.  As :ref:`documented above <2to3-using>`, each can be turned on
 and off individually.  They are described here in more detail.
 
@@ -114,7 +122,8 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: callable
 
-   Converts ``callable(x)`` to ``hasattr(x, "__call__")``.
+   Converts ``callable(x)`` to ``isinstance(x, collections.Callable)``, adding
+   an import to :mod:`collections` if needed.
 
 .. 2to3fixer:: dict
 
@@ -167,11 +176,11 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: idioms
 
-   This optional fixer preforms several transformations that make Python code
-   more idiomatic.  Type comparisions like ``type(x) is SomeClass`` and
+   This optional fixer performs several transformations that make Python code
+   more idiomatic.  Type comparisons like ``type(x) is SomeClass`` and
    ``type(x) == SomeClass`` are converted to ``isinstance(x, SomeClass)``.
    ``while 1`` becomes ``while True``.  This fixer also tries to make use of
-   :func:`sorted` in appropiate places.  For example, this block ::
+   :func:`sorted` in appropriate places.  For example, this block ::
 
        L = list(some_iterable)
        L.sort()
