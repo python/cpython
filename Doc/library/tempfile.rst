@@ -27,8 +27,7 @@ is recommended to use keyword arguments for clarity.
 
 The module defines the following user-callable functions:
 
-
-.. function:: TemporaryFile(mode='w+b', bufsize=-1, suffix='', prefix='tmp', dir=None)
+.. function:: TemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix='', prefix='tmp', dir=None)
 
    Return a file-like object that can be used as a temporary storage area.
    The file is created using :func:`mkstemp`. It will be destroyed as soon
@@ -41,8 +40,8 @@ The module defines the following user-callable functions:
    The *mode* parameter defaults to ``'w+b'`` so that the file created can
    be read and written without being closed.  Binary mode is used so that it
    behaves consistently on all platforms without regard for the data that is
-   stored.  *bufsize* defaults to ``-1``, meaning that the operating system
-   default is used.
+   stored.  *buffering*, *encoding* and *newline* are interpreted as for
+   :func:`open`.
 
    The *dir*, *prefix* and *suffix* parameters are passed to :func:`mkstemp`.
 
@@ -52,7 +51,7 @@ The module defines the following user-callable functions:
    :keyword:`with` statement, just like a normal file.
 
 
-.. function:: NamedTemporaryFile(mode='w+b', bufsize=-1, suffix='', prefix='tmp', dir=None, delete=True)
+.. function:: NamedTemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix='', prefix='tmp', dir=None, delete=True)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    the file is guaranteed to have a visible name in the file system (on
@@ -67,7 +66,7 @@ The module defines the following user-callable functions:
    be used in a :keyword:`with` statement, just like a normal file.
 
 
-.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', bufsize=-1, suffix='', prefix='tmp', dir=None)
+.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix='', prefix='tmp', dir=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
