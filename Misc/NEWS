@@ -143,7 +143,7 @@ Library
 - Issue #8354: The siginterrupt setting is now preserved for all signals,
   not just SIGCHLD.
 
-- Issue #7192: webbrowser.get("firefox") now wors on Mac OS X, as does
+- Issue #7192: webbrowser.get("firefox") now works on Mac OS X, as does
   webbrowser.get("safari").
 
 - Issue #8577: distutils.sysconfig.get_python_inc() now makes a difference
