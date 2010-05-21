@@ -22,6 +22,7 @@ Initialization, Finalization, and Threads
       module: sys
       triple: module; search; path
       single: PySys_SetArgv()
+      single: PySys_SetArgvEx()
       single: Py_Finalize()
 
    Initialize the Python interpreter.  In an application embedding  Python, this
@@ -31,7 +32,7 @@ Initialization, Finalization, and Threads
    the table of loaded modules (``sys.modules``), and creates the fundamental
    modules :mod:`__builtin__`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
-   :cfunc:`PySys_SetArgv` for that.  This is a no-op when called for a second time
+   :cfunc:`PySys_SetArgvEx` for that.  This is a no-op when called for a second time
    (without calling :cfunc:`Py_Finalize` first).  There is no return value; it is a
    fatal error if the initialization fails.
 
@@ -338,7 +339,7 @@ Initialization, Finalization, and Threads
    ``sys.version``.
 
 
-.. cfunction:: void PySys_SetArgv(int argc, char **argv)
+.. cfunction:: void PySys_SetArgvEx(int argc, char **argv, int updatepath)
 
    .. index::
       single: main()
@@ -353,12 +354,39 @@ Initialization, Finalization, and Threads
    string.  If this function fails to initialize :data:`sys.argv`, a fatal
    condition is signalled using :cfunc:`Py_FatalError`.
 
-   This function also prepends the executed script's path to :data:`sys.path`.
-   If no script is executed (in the case of calling ``python -c`` or just the
-   interactive interpreter), the empty string is used instead.
+   If *updatepath* is zero, this is all the function does.  If *updatepath*
+   is non-zero, the function also modifies :data:`sys.path` according to the
+   following algorithm:
+
+   - If the name of an existing script is passed in ``argv[0]``, the absolute
+     path of the directory where the script is located is prepended to
+     :data:`sys.path`.
+   - Otherwise (that is, if *argc* is 0 or ``argv[0]`` doesn't point
+     to an existing file name), an empty string is prepended to
+     :data:`sys.path`, which is the same as prepending the current working
+     directory (``"."``).
+
+   .. note::
+      It is recommended that applications embedding the Python interpreter
+      for purposes other than executing a single script pass 0 as *updatepath*,
+      and update :data:`sys.path` themselves if desired.
+      See `CVE-2008-5983 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
+
+      On versions before 2.6.6, you can achieve the same effect by manually
+      popping the first :data:`sys.path` element after having called
+      :cfunc:`PySys_SetArgv`, for example using::
+
+         PyRun_SimpleString("import sys; sys.path.pop(0)\n");
+
+   .. versionadded:: 2.6.6
 
    .. XXX impl. doesn't seem consistent in allowing 0/NULL for the params;
       check w/ Guido.
+
+
+.. cfunction:: void PySys_SetArgv(int argc, char **argv)
+
+   This function works like :cfunc:`PySys_SetArgv` with *updatepath* set to 1.
 
 
 .. cfunction:: void Py_SetPythonHome(char *home)
