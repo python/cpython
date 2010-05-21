@@ -107,6 +107,10 @@ class Test_IncrementalEncoder(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, encoder.encode, u'\u0123')
         self.assertEqual(encoder.encode(u'', True), '\xa9\xdc')
 
+    def test_issue5640(self):
+        encoder = codecs.getincrementalencoder('shift-jis')('backslashreplace')
+        self.assertEqual(encoder.encode(u'\xff'), b'\\xff')
+        self.assertEqual(encoder.encode(u'\n'), b'\n')
 
 class Test_IncrementalDecoder(unittest.TestCase):
 
