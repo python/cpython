@@ -843,7 +843,7 @@ class Popen(object):
             # Process startup details
             if startupinfo is None:
                 startupinfo = STARTUPINFO()
-            if None not in (p2cread, c2pwrite, errwrite):
+            if -1 not in (p2cread, c2pwrite, errwrite):
                 startupinfo.dwFlags |= _subprocess.STARTF_USESTDHANDLES
                 startupinfo.hStdInput = p2cread
                 startupinfo.hStdOutput = c2pwrite
