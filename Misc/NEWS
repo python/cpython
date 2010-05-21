@@ -55,6 +55,9 @@ C-API
 Library
 -------
 
+- Issue #5640: Fix Shift-JIS incremental encoder for error handlers different
+  than strict
+
 - Issue #8782: Add a trailing newline in linecache.updatecache to the last line
   of files without one.
 

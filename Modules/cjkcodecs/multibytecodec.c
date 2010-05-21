@@ -498,7 +498,6 @@ multibytecodec_encode(MultibyteCodec *codec,
         outleft = (Py_ssize_t)(buf.outbuf_end - buf.outbuf);
         r = codec->encode(state, codec->config, &buf.inbuf, inleft,
                           &buf.outbuf, outleft, flags);
-        *data = buf.inbuf;
         if ((r == 0) || (r == MBERR_TOOFEW && !(flags & MBENC_FLUSH)))
             break;
         else if (multibytecodec_encerror(codec, state, &buf, errors,r))
@@ -528,6 +527,7 @@ multibytecodec_encode(MultibyteCodec *codec,
         if (_PyString_Resize(&buf.outobj, finalsize) == -1)
             goto errorexit;
 
+	*data = buf.inbuf;
     Py_XDECREF(buf.excobj);
     return buf.outobj;
 
