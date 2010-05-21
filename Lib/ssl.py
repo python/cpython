@@ -63,6 +63,7 @@ from _ssl import _SSLContext, SSLError
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from _ssl import (PROTOCOL_SSLv2, PROTOCOL_SSLv3, PROTOCOL_SSLv23,
                   PROTOCOL_TLSv1)
+from _ssl import OP_ALL, OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_TLSv1
 from _ssl import RAND_status, RAND_egd, RAND_add
 from _ssl import (
     SSL_ERROR_ZERO_RETURN,

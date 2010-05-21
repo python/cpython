@@ -257,6 +257,37 @@ Functions, Constants, and Exceptions
    modern version, and probably the best choice for maximum protection, if both
    sides can speak it.
 
+.. data:: OP_ALL
+
+   Enables workarounds for various bugs present in other SSL implementations.
+   This option is set by default.
+
+   .. versionadded:: 3.2
+
+.. data:: OP_NO_SSLv2
+
+   Prevents an SSLv2 connection.  This option is only applicable in
+   conjunction with :const:`PROTOCOL_SSLv23`.  It prevents the peers from
+   choosing SSLv2 as the protocol version.
+
+   .. versionadded:: 3.2
+
+.. data:: OP_NO_SSLv3
+
+   Prevents an SSLv3 connection.  This option is only applicable in
+   conjunction with :const:`PROTOCOL_SSLv23`.  It prevents the peers from
+   choosing SSLv3 as the protocol version.
+
+   .. versionadded:: 3.2
+
+.. data:: OP_NO_TLSv1
+
+   Prevents a TLSv1 connection.  This option is only applicable in
+   conjunction with :const:`PROTOCOL_SSLv23`.  It prevents the peers from
+   choosing TLSv1 as the protocol version.
+
+   .. versionadded:: 3.2
+
 .. data:: OPENSSL_VERSION
 
    The version string of the OpenSSL library loaded by the interpreter::
@@ -439,6 +470,17 @@ SSL Contexts
    certificates.  The parameters *server_side*, *do_handshake_on_connect*
    and *suppress_ragged_eofs* have the same meaning as in the top-level
    :func:`wrap_socket` function.
+
+.. attribute:: SSLContext.options
+
+   An integer representing the set of SSL options enabled on this context.
+   The default value is :data:`OP_ALL`, but you can specify other options
+   such as :data:`OP_NO_SSLv2` by ORing them together.
+
+   .. note::
+      With versions of OpenSSL older than 0.9.8m, it is only possible
+      to set options, not to clear them.  Attempting to clear an option
+      (by resetting the corresponding bits) will raise a ``ValueError``.
 
 .. attribute:: SSLContext.protocol
 
@@ -793,6 +835,20 @@ to specify :const:`CERT_REQUIRED` and similarly check the client certificate.
       In client mode, :const:`CERT_OPTIONAL` and :const:`CERT_REQUIRED` are
       equivalent unless anonymous ciphers are enabled (they are disabled
       by default).
+
+Protocol versions
+^^^^^^^^^^^^^^^^^
+
+SSL version 2 is considered insecure and is therefore dangerous to use.  If
+you want maximum compatibility between clients and servers, it is recommended
+to use :const:`PROTOCOL_SSLv23` as the protocol version and then disable
+SSLv2 explicitly using the :data:`SSLContext.options` attribute::
+
+   context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+   context.options |= ssl.OP_NO_SSLv2
+
+The SSL context created above will allow SSLv3 and TLSv1 connections, but
+not SSLv2.
 
 
 .. seealso::
