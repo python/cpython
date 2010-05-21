@@ -369,8 +369,9 @@ class Mapping(Sized, Iterable, Container):
     __hash__ = None
 
     def __eq__(self, other):
-        return isinstance(other, Mapping) and \
-               dict(self.items()) == dict(other.items())
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        return dict(self.items()) == dict(other.items())
 
     def __ne__(self, other):
         return not (self == other)
