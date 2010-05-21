@@ -73,13 +73,13 @@ def updatecache(filename, module_globals=None):
 
     if filename in cache:
         del cache[filename]
-    if not filename or filename[0] + filename[-1] == '<>':
+    if not filename or (filename.startswith('<') and filename.endswith('>')):
         return []
 
     fullname = filename
     try:
         stat = os.stat(fullname)
-    except os.error as msg:
+    except OSError:
         basename = filename
 
         # Try for a __loader__, if available
@@ -114,20 +114,23 @@ def updatecache(filename, module_globals=None):
                 fullname = os.path.join(dirname, basename)
             except (TypeError, AttributeError):
                 # Not sufficiently string-like to do anything useful with.
+                continue
+            try:
+                stat = os.stat(fullname)
+                break
+            except os.error:
                 pass
-            else:
-                try:
-                    stat = os.stat(fullname)
-                    break
-                except os.error:
-                    pass
         else:
-            # No luck
             return []
-    with open(fullname, 'rb') as fp:
-        coding, line = tokenize.detect_encoding(fp.readline)
-    with open(fullname, 'r', encoding=coding) as fp:
-        lines = fp.readlines()
+    try:
+        with open(fullname, 'rb') as fp:
+            coding, line = tokenize.detect_encoding(fp.readline)
+        with open(fullname, 'r', encoding=coding) as fp:
+            lines = fp.readlines()
+    except IOError:
+        pass
+    if lines and not lines[-1].endswith('\n'):
+        lines[-1] += '\n'
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
     return lines
