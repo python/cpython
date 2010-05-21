@@ -1555,7 +1555,7 @@ _wrealpath(const wchar_t *path, wchar_t *resolved_path)
 #endif
 
 void
-PySys_SetArgv(int argc, wchar_t **argv)
+PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
 #if defined(HAVE_REALPATH)
     wchar_t fullpath[MAXPATHLEN];
@@ -1568,7 +1568,7 @@ PySys_SetArgv(int argc, wchar_t **argv)
         Py_FatalError("no mem for sys.argv");
     if (PySys_SetObject("argv", av) != 0)
         Py_FatalError("can't assign sys.argv");
-    if (path != NULL) {
+    if (updatepath && path != NULL) {
         wchar_t *argv0 = argv[0];
         wchar_t *p = NULL;
         Py_ssize_t n = 0;
@@ -1653,6 +1653,12 @@ PySys_SetArgv(int argc, wchar_t **argv)
         Py_DECREF(a);
     }
     Py_DECREF(av);
+}
+
+void
+PySys_SetArgv(int argc, wchar_t **argv)
+{
+    PySys_SetArgvEx(argc, argv, 1);
 }
 
 /* Reimplementation of PyFile_WriteString() no calling indirectly
