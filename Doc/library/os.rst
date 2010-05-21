@@ -2350,8 +2350,8 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
 
 .. data:: devnull
 
-   The file path of the null device. For example: ``'/dev/null'`` for POSIX.
-   Also available via :mod:`os.path`.
+   The file path of the null device. For example: ``'/dev/null'`` for
+   POSIX, ``'nul'`` for Windows.  Also available via :mod:`os.path`.
 
    .. versionadded:: 2.4
 
