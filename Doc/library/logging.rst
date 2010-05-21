@@ -440,6 +440,45 @@ import mechanisms. Thus, you could use either :class:`handlers.WatchedFileHandle
 class defined in package :mod:`mypackage` and module :mod:`mymodule`, where
 :mod:`mypackage` is available on the Python import path).
 
+.. versionchanged:: 2.7
+
+In Python 2.7, a new means of configuring logging has been introduced, using
+dictionaries to hold configuration information. This provides a superset of the
+functionality of the config-file-based approach outlined above, and is the
+recommended configuration method for new applications and deployments. Because
+a Python dictionary is used to hold configuration information, and since you
+can populate that dictionary using different means, you have more options for
+configuration. For example, you can use a configuration file in JSON format,
+or, if you have access to YAML processing functionality, a file in YAML
+format, to populate the configuration dictionary. Or, of course, you can
+construct the dictionary in Python code, receive it in pickled form over a
+socket, or use whatever approach makes sense for your application.
+
+Here's an example of the same configuration as above, in YAML format for
+the new dictionary-based approach::
+
+    version: 1
+    formatters:
+      simple:
+        format: format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+    handlers:
+      console:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: simple
+        stream: ext://sys.stdout
+    loggers:
+      simpleExample:
+        level: DEBUG
+        handlers: [console]
+        propagate: no
+    root:
+        level: DEBUG
+        handlers: [console]
+
+For more information about logging using a dictionary, see
+:ref:`logging-config-api`.
+
 .. _library-config:
 
 Configuring Logging for a Library
