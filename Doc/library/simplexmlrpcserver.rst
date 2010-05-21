@@ -20,7 +20,7 @@ XML-RPC servers written in Python.  Servers can either be free standing, using
 :class:`CGIXMLRPCRequestHandler`.
 
 
-.. class:: SimpleXMLRPCServer(addr[, requestHandler[, logRequests[, allow_none[, encoding]]]])
+.. class:: SimpleXMLRPCServer(addr[, requestHandler[, logRequests[, allow_none[, encoding[, bind_and_activate]]]])
 
    Create a new server instance.  This class provides methods for registration of
    functions that can be called by the XML-RPC protocol.  The *requestHandler*
