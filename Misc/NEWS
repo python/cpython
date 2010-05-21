@@ -375,6 +375,10 @@ C-API
 Library
 -------
 
+- Issue #4870: Add an `options` attribute to SSL contexts, as well as 
+  several ``OP_*`` constants to the `ssl` module.  This allows to selectively
+  disable protocol versions, when used in combination with `PROTOCOL_SSLv23`.
+
 - Issue #8759: Fixed user paths in sysconfig for posix and os2 schemes.
 
 - Issue #8663: distutils.log emulates backslashreplace error handler. Fix

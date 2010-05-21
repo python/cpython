@@ -113,6 +113,13 @@ static unsigned int _ssl_locks_count = 0;
 # undef HAVE_OPENSSL_RAND
 #endif
 
+/* SSL_CTX_clear_options() and SSL_clear_options() were first added in OpenSSL 0.9.8m */
+#if OPENSSL_VERSION_NUMBER >= 0x009080dfL
+# define HAVE_SSL_CTX_CLEAR_OPTIONS
+#else
+# undef HAVE_SSL_CTX_CLEAR_OPTIONS
+#endif
+
 typedef struct {
     PyObject_HEAD
     SSL_CTX *ctx;
@@ -1514,6 +1521,35 @@ set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
 }
 
 static PyObject *
+get_options(PySSLContext *self, void *c)
+{
+    return PyLong_FromLong(SSL_CTX_get_options(self->ctx));
+}
+
+static int
+set_options(PySSLContext *self, PyObject *arg, void *c)
+{
+    long new_opts, opts, set, clear;
+    if (!PyArg_Parse(arg, "l", &new_opts))
+        return -1;
+    opts = SSL_CTX_get_options(self->ctx);
+    clear = opts & ~new_opts;
+    set = ~opts & new_opts;
+    if (clear) {
+#ifdef HAVE_SSL_CTX_CLEAR_OPTIONS
+        SSL_CTX_clear_options(self->ctx, clear);
+#else
+        PyErr_SetString(PyExc_ValueError,
+                        "can't clear options before OpenSSL 0.9.8m");
+        return -1;
+#endif
+    }
+    if (set)
+        SSL_CTX_set_options(self->ctx, set);
+    return 0;
+}
+
+static PyObject *
 load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
 {
     char *kwlist[] = {"certfile", "keyfile", NULL};
@@ -1636,6 +1672,8 @@ context_wrap_socket(PySSLContext *self, PyObject *args, PyObject *kwds)
 }
 
 static PyGetSetDef context_getsetlist[] = {
+    {"options", (getter) get_options,
+                (setter) set_options, NULL},
     {"verify_mode", (getter) get_verify_mode,
                     (setter) set_verify_mode, NULL},
     {NULL},            /* sentinel */
@@ -1952,6 +1990,12 @@ PyInit__ssl(void)
                             PY_SSL_VERSION_SSL23);
     PyModule_AddIntConstant(m, "PROTOCOL_TLSv1",
                             PY_SSL_VERSION_TLS1);
+
+    /* protocol options */
+    PyModule_AddIntConstant(m, "OP_ALL", SSL_OP_ALL);
+    PyModule_AddIntConstant(m, "OP_NO_SSLv2", SSL_OP_NO_SSLv2);
+    PyModule_AddIntConstant(m, "OP_NO_SSLv3", SSL_OP_NO_SSLv3);
+    PyModule_AddIntConstant(m, "OP_NO_TLSv1", SSL_OP_NO_TLSv1);
 
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,
