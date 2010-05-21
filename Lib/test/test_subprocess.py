@@ -535,6 +535,17 @@ class ProcessTestCase(BaseTestCase):
             if c.exception.errno != 2:  # ignore "no such file"
                 raise c.exception
 
+    def test_issue8780(self):
+        # Ensure that stdout is inherited from the parent
+        # if stdout=PIPE is not used
+        code = ';'.join((
+            'import subprocess, sys',
+            'retcode = subprocess.call('
+                "[sys.executable, '-c', 'print(\"Hello World!\")'])",
+            'assert retcode == 0'))
+        output = subprocess.check_output([sys.executable, '-c', code])
+        self.assert_(output.startswith(b'Hello World!'), ascii(output))
+
 
 # context manager
 class _SuppressCoreFiles(object):
