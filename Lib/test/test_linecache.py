@@ -31,6 +31,11 @@ a = f()
 
 '''
 
+SOURCE_3 = '''
+def f():
+    return 3''' # No ending newline
+
+
 class LineCacheTests(unittest.TestCase):
 
     def test_getline(self):
@@ -62,6 +67,15 @@ class LineCacheTests(unittest.TestCase):
         # Check that bogus data isn't returned (issue #1309567)
         empty = linecache.getlines('a/b/c/__init__.py')
         self.assertEquals(empty, [])
+
+    def test_no_ending_newline(self):
+        try:
+            with open(support.TESTFN, "w") as fp:
+                fp.write(SOURCE_3)
+            lines = linecache.getlines(support.TESTFN)
+            self.assertEqual(lines, ["\n", "def f():\n", "    return 3\n"])
+        finally:
+            support.unlink(support.TESTFN)
 
     def test_clearcache(self):
         cached = []

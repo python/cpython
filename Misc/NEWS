@@ -55,6 +55,9 @@ C-API
 Library
 -------
 
+- Issue #8782: Add a trailing newline in linecache.updatecache to the last line
+  of files without one.
+
 - Issue #8729: Return NotImplemented from collections.Mapping.__eq__ when
   comparing to a non-mapping.
 
