@@ -93,8 +93,11 @@ def check(file):
                 check(fullname)
         return
 
+    with open(file, 'rb') as f:
+        encoding, lines = tokenize.detect_encoding(f.readline)
+
     try:
-        f = open(file)
+        f = open(file, encoding=encoding)
     except IOError as msg:
         errprint("%r: I/O Error: %s" % (file, msg))
         return
