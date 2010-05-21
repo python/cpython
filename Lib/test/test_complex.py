@@ -110,12 +110,18 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex.__floordiv__, 3+0j, 0+0j)
 
     def test_richcompare(self):
-        self.assertRaises(OverflowError, complex.__eq__, 1+1j, 1<<10000)
+        self.assertIs(complex.__eq__(1+1j, 1<<10000), False)
         self.assertIs(complex.__lt__(1+1j, None), NotImplemented)
         self.assertIs(complex.__eq__(1+1j, 1+1j), True)
         self.assertIs(complex.__eq__(1+1j, 2+2j), False)
         self.assertIs(complex.__ne__(1+1j, 1+1j), False)
         self.assertIs(complex.__ne__(1+1j, 2+2j), True)
+        for i in range(1, 100):
+            f = i / 100.0
+            self.assertIs(complex.__eq__(f+0j, f), True)
+            self.assertIs(complex.__ne__(f+0j, f), False)
+            self.assertIs(complex.__eq__(complex(f, f), f), False)
+            self.assertIs(complex.__ne__(complex(f, f), f), True)
         self.assertIs(complex.__lt__(1+1j, 2+2j), NotImplemented)
         self.assertIs(complex.__le__(1+1j, 2+2j), NotImplemented)
         self.assertIs(complex.__gt__(1+1j, 2+2j), NotImplemented)
@@ -128,6 +134,23 @@ class ComplexTest(unittest.TestCase):
         self.assertIs(operator.eq(1+1j, 2+2j), False)
         self.assertIs(operator.ne(1+1j, 1+1j), False)
         self.assertIs(operator.ne(1+1j, 2+2j), True)
+
+    def test_richcompare_boundaries(self):
+        def check(n, deltas, is_equal, imag = 0.0):
+            for delta in deltas:
+                i = n + delta
+                z = complex(i, imag)
+                self.assertIs(complex.__eq__(z, i), is_equal(delta))
+                self.assertIs(complex.__ne__(z, i), not is_equal(delta))
+        # For IEEE-754 doubles the following should hold:
+        #    x in [2 ** (52 + i), 2 ** (53 + i + 1)] -> x mod 2 ** i == 0
+        # where the interval is representable, of course.
+        for i in range(1, 10):
+            pow = 52 + i
+            mult = 2 ** i
+            check(2 ** pow, range(1, 101), lambda delta: delta % mult == 0)
+            check(2 ** pow, range(1, 101), lambda delta: False, float(i))
+        check(2 ** 53, range(-100, 0), lambda delta: True)
 
     def test_mod(self):
         # % is no longer supported on complex numbers
