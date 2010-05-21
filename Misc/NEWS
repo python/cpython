@@ -55,6 +55,9 @@ C-API
 Library
 -------
 
+- Issue #8729: Return NotImplemented from collections.Mapping.__eq__ when
+  comparing to a non-mapping.
+
 - Issue #5918: Fix a crash in the parser module.
 
 - Issue #8688: Distutils now recalculates MANIFEST everytime.
