@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8774: tabnanny uses the encoding cookie (#coding:...) to use the
+  correct encoding
+
 - Issue #7507: Quote "!" in pipes.quote(); it is special to some shells.
 
 - Issue #8663: distutils.log emulates backslashreplace error handler. Fix
