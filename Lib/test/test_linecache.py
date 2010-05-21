@@ -83,7 +83,7 @@ class LineCacheTests(unittest.TestCase):
         getline = linecache.getline
         # Create a source file and cache its contents
         source_name = support.TESTFN + '.py'
-        self.addCleanup(test_support.unlink, source_name)
+        self.addCleanup(support.unlink, source_name)
         with open(source_name, 'w') as source:
             source.write(SOURCE_1)
         getline(source_name, 1)
