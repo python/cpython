@@ -836,7 +836,7 @@ object -- see :ref:`multiprocessing-managers`.
 
    A bounded semaphore object: a clone of :class:`threading.BoundedSemaphore`.
 
-   (On Mac OS X this is indistinguishable from :class:`Semaphore` because
+   (On Mac OS X, this is indistinguishable from :class:`Semaphore` because
    ``sem_getvalue()`` is not implemented on that platform).
 
 .. class:: Condition([lock])
@@ -872,9 +872,8 @@ object -- see :ref:`multiprocessing-managers`.
    specifies a timeout in seconds.  If *block* is ``False`` then *timeout* is
    ignored.
 
-.. note::
-   On OS/X ``sem_timedwait`` is unsupported, so timeout arguments for the
-   aforementioned :meth:`acquire` methods will be ignored on OS/X.
+   On Mac OS X, ``sem_timedwait`` is unsupported, so calling ``acquire()`` with
+   a timeout will emulate that function's behavior using a sleeping loop.
 
 .. note::
 
