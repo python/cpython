@@ -133,6 +133,8 @@ def updatecache(filename, module_globals=None):
     except IOError, msg:
 ##      print '*** Cannot open', fullname, ':', msg
         return []
+    if lines and not lines[-1].endswith('\n'):
+        lines[-1] += '\n'
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
     return lines
