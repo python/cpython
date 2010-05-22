@@ -20,7 +20,7 @@ class FixSysExc(fixer_base.BaseFix):
 
     def transform(self, node, results):
         sys_attr = results["attribute"][0]
-        index = Number(unicode(self.exc_info.index(sys_attr.value)))
+        index = Number(self.exc_info.index(sys_attr.value))
 
         call = Call(Name(u"exc_info"), prefix=sys_attr.prefix)
         attr = Attr(Name(u"sys"), call)
