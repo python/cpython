@@ -55,6 +55,9 @@ C-API
 Library
 -------
 
+- Issue #6268: Fix seek() method of codecs.open(), don't read the BOM twice
+  after seek(0)
+
 - Issue #5640: Fix Shift-JIS incremental encoder for error handlers different
   than strict
 
