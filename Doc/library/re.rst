@@ -727,12 +727,16 @@ Regular Expression Objects
 
    .. method:: RegexObject.findall(string[, pos[, endpos]])
 
-      Identical to the :func:`findall` function, using the compiled pattern.
+      Similar to the :func:`findall` function, using the compiled pattern, but
+      also accepts optional *pos* and *endpos* parameters that limit the search
+      region like for :meth:`match`.
 
 
    .. method:: RegexObject.finditer(string[, pos[, endpos]])
 
-      Identical to the :func:`finditer` function, using the compiled pattern.
+      Similar to the :func:`finditer` function, using the compiled pattern, but
+      also accepts optional *pos* and *endpos* parameters that limit the search
+      region like for :meth:`match`.
 
 
    .. method:: RegexObject.sub(repl, string[, count=0])
