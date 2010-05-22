@@ -31,8 +31,9 @@ Library
 
 - Issue #3924: Ignore cookies with invalid "version" field in cookielib.
 
-- Issue #6268: Fix seek() method of codecs.open(), don't read the BOM twice
-  after seek(0)
+- Issue #6268: Fix seek() method of codecs.open(), don't read or write the BOM
+  twice after seek(0). Fix also reset() method of codecs, UTF-16, UTF-32 and
+  StreamWriter classes.
 
 - Issue #5640: Fix Shift-JIS incremental encoder for error handlers different
   than strict
