@@ -122,7 +122,7 @@ precision, rounding, or enabled traps::
    >>> from decimal import *
    >>> getcontext()
    Context(prec=28, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-           capitals=1, flags=[], traps=[Overflow, DivisionByZero,
+           capitals=1, clamp=0, flags=[], traps=[Overflow, DivisionByZero,
            InvalidOperation])
 
    >>> getcontext().prec = 7       # Set a new precision
@@ -244,7 +244,7 @@ enabled:
 
    >>> ExtendedContext
    Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-           capitals=1, flags=[], traps=[])
+           capitals=1, clamp=0, flags=[], traps=[])
    >>> setcontext(ExtendedContext)
    >>> Decimal(1) / Decimal(7)
    Decimal('0.142857143')
@@ -269,7 +269,7 @@ using the :meth:`clear_flags` method. ::
    Decimal('3.14159292')
    >>> getcontext()
    Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-           capitals=1, flags=[Inexact, Rounded], traps=[])
+           capitals=1, clamp=0, flags=[Inexact, Rounded], traps=[])
 
 The *flags* entry shows that the rational approximation to :const:`Pi` was
 rounded (digits beyond the context precision were thrown away) and that the
@@ -891,7 +891,7 @@ In addition to the three supplied contexts, new contexts can be created with the
 :class:`Context` constructor.
 
 
-.. class:: Context(prec=None, rounding=None, traps=None, flags=None, Emin=None, Emax=None, capitals=1)
+.. class:: Context(prec=None, rounding=None, traps=None, flags=None, Emin=None, Emax=None, capitals=None, clamp=None)
 
    Creates a new context.  If a field is not specified or is :const:`None`, the
    default values are copied from the :const:`DefaultContext`.  If the *flags*
@@ -922,6 +922,23 @@ In addition to the three supplied contexts, new contexts can be created with the
    :const:`1`, exponents are printed with a capital :const:`E`; otherwise, a
    lowercase :const:`e` is used: :const:`Decimal('6.02e+23')`.
 
+   The *clamp* field is either :const:`0` (the default) or :const:`1`.
+   If set to :const:`1`, the exponent ``e`` of a :class:`Decimal`
+   instance representable in this context is strictly limited to the
+   range ``Emin - prec + 1 <= e <= Emax - prec + 1``.  If *clamp* is
+   :const:`0` then a weaker condition holds: the adjusted exponent of
+   the :class:`Decimal` instance is at most ``Emax``.  When *clamp* is
+   :const:`1`, a large normal number will, where possible, have its
+   exponent reduced and a corresponding number of zeros added to its
+   coefficient, in order to fit the exponent constraints; this
+   preserves the value of the number but loses information about
+   significant trailing zeros.  For example::
+
+      >>> Context(prec=6, Emax=999, clamp=1).create_decimal('1.23e999')
+      Decimal('1.23000E+999')
+
+   A *clamp* value of :const:`1` allows compatibility with the
+   fixed-width decimal interchange formats specified in IEEE 754.
 
    The :class:`Context` class defines several general purpose methods as well as
    a large number of methods for doing arithmetic directly in a given context.

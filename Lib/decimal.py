@@ -1611,9 +1611,9 @@ class Decimal(object):
         """Decapitate the payload of a NaN to fit the context"""
         payload = self._int
 
-        # maximum length of payload is precision if _clamp=0,
-        # precision-1 if _clamp=1.
-        max_payload_len = context.prec - context._clamp
+        # maximum length of payload is precision if clamp=0,
+        # precision-1 if clamp=1.
+        max_payload_len = context.prec - context.clamp
         if len(payload) > max_payload_len:
             payload = payload[len(payload)-max_payload_len:].lstrip('0')
             return _dec_from_triple(self._sign, payload, self._exp, True)
@@ -1638,11 +1638,11 @@ class Decimal(object):
                 return Decimal(self)
 
         # if self is zero then exponent should be between Etiny and
-        # Emax if _clamp==0, and between Etiny and Etop if _clamp==1.
+        # Emax if clamp==0, and between Etiny and Etop if clamp==1.
         Etiny = context.Etiny()
         Etop = context.Etop()
         if not self:
-            exp_max = [context.Emax, Etop][context._clamp]
+            exp_max = [context.Emax, Etop][context.clamp]
             new_exp = min(max(self._exp, Etiny), exp_max)
             if new_exp != self._exp:
                 context._raise_error(Clamped)
@@ -1702,8 +1702,8 @@ class Decimal(object):
         if self_is_subnormal:
             context._raise_error(Subnormal)
 
-        # fold down if _clamp == 1 and self has too few digits
-        if context._clamp == 1 and self._exp > Etop:
+        # fold down if clamp == 1 and self has too few digits
+        if context.clamp == 1 and self._exp > Etop:
             context._raise_error(Clamped)
             self_padded = self._int + '0'*(self._exp - Etop)
             return _dec_from_triple(self._sign, self_padded, Etop)
@@ -2451,7 +2451,7 @@ class Decimal(object):
 
         if not dup:
             return _dec_from_triple(dup._sign, '0', 0)
-        exp_max = [context.Emax, context.Etop()][context._clamp]
+        exp_max = [context.Emax, context.Etop()][context.clamp]
         end = len(dup._int)
         exp = dup._exp
         while dup._int[end-1] == '0' and exp < exp_max:
@@ -3828,13 +3828,13 @@ class Context(object):
     Emax -   Maximum exponent
     capitals -      If 1, 1*10^1 is printed as 1E+1.
                     If 0, printed as 1e1
-    _clamp - If 1, change exponents if too high (Default 0)
+    clamp -  If 1, change exponents if too high (Default 0)
     """
 
     def __init__(self, prec=None, rounding=None,
                  traps=None, flags=None,
                  Emin=None, Emax=None,
-                 capitals=None, _clamp=0,
+                 capitals=None, clamp=None,
                  _ignored_flags=None):
         if flags is None:
             flags = []
@@ -3855,7 +3855,8 @@ class Context(object):
         """Show the current context."""
         s = []
         s.append('Context(prec=%(prec)d, rounding=%(rounding)s, '
-                 'Emin=%(Emin)d, Emax=%(Emax)d, capitals=%(capitals)d'
+                 'Emin=%(Emin)d, Emax=%(Emax)d, capitals=%(capitals)d, '
+                 'clamp=%(clamp)d'
                  % vars(self))
         names = [f.__name__ for f, v in self.flags.items() if v]
         s.append('flags=[' + ', '.join(names) + ']')
@@ -3872,16 +3873,38 @@ class Context(object):
         """Returns a shallow copy from self."""
         nc = Context(self.prec, self.rounding, self.traps,
                      self.flags, self.Emin, self.Emax,
-                     self.capitals, self._clamp, self._ignored_flags)
+                     self.capitals, self.clamp, self._ignored_flags)
         return nc
 
     def copy(self):
         """Returns a deep copy from self."""
         nc = Context(self.prec, self.rounding, self.traps.copy(),
                      self.flags.copy(), self.Emin, self.Emax,
-                     self.capitals, self._clamp, self._ignored_flags)
+                     self.capitals, self.clamp, self._ignored_flags)
         return nc
     __copy__ = copy
+
+    # _clamp is provided for backwards compatibility with third-party
+    # code.  May be removed in Python >= 3.3.
+    def _get_clamp(self):
+        "_clamp mirrors the clamp attribute.  Its use is deprecated."
+        import warnings
+        warnings.warn('Use of the _clamp attribute is deprecated. '
+                      'Please use clamp instead.',
+                      DeprecationWarning)
+        return self.clamp
+
+    def _set_clamp(self, clamp):
+        "_clamp mirrors the clamp attribute.  Its use is deprecated."
+        import warnings
+        warnings.warn('Use of the _clamp attribute is deprecated. '
+                      'Please use clamp instead.',
+                      DeprecationWarning)
+        self.clamp = clamp
+
+    # don't bother with _del_clamp;  no sane 3rd party code should
+    # be deleting the _clamp attribute
+    _clamp = property(_get_clamp, _set_clamp)
 
     def _raise_error(self, condition, explanation = None, *args):
         """Handles an error
@@ -3965,7 +3988,7 @@ class Context(object):
                                      "permitted.")
 
         d = Decimal(num, context=self)
-        if d._isnan() and len(d._int) > self.prec - self._clamp:
+        if d._isnan() and len(d._int) > self.prec - self.clamp:
             return self._raise_error(ConversionSyntax,
                                      "diagnostic info too long in NaN")
         return d._fix(self)
@@ -5875,7 +5898,8 @@ DefaultContext = Context(
         flags=[],
         Emax=999999999,
         Emin=-999999999,
-        capitals=1
+        capitals=1,
+        clamp=0
 )
 
 # Pre-made alternate contexts offered by the specification
