@@ -27,11 +27,13 @@ with the corresponding argument.
 import math
 import os, sys
 import operator
+import warnings
 import pickle, copy
 import unittest
 from decimal import *
 import numbers
 from test.support import run_unittest, run_doctest, is_resource_enabled
+from test.support import check_warnings
 import random
 try:
     import threading
@@ -412,7 +414,7 @@ class DecimalTest(unittest.TestCase):
     def change_max_exponent(self, exp):
         self.context.Emax = exp
     def change_clamp(self, clamp):
-        self.context._clamp = clamp
+        self.context.clamp = clamp
 
 
 
@@ -1814,6 +1816,26 @@ class ContextAPItests(unittest.TestCase):
         self.assertNotEqual(id(c), id(d))
         self.assertNotEqual(id(c.flags), id(d.flags))
         self.assertNotEqual(id(c.traps), id(d.traps))
+
+    def test__clamp(self):
+        # In Python 3.2, the private attribute `_clamp` was made
+        # public (issue 8540), with the old `_clamp` becoming a
+        # property wrapping `clamp`.  For the duration of Python 3.2
+        # only, the attribute should be gettable/settable via both
+        # `clamp` and `_clamp`; in Python 3.3, `_clamp` should be
+        # removed.
+        c = Context(clamp = 0)
+        self.assertEqual(c.clamp, 0)
+
+        with check_warnings(("", DeprecationWarning)):
+            c._clamp = 1
+        self.assertEqual(c.clamp, 1)
+        with check_warnings(("", DeprecationWarning)):
+            self.assertEqual(c._clamp, 1)
+        c.clamp = 0
+        self.assertEqual(c.clamp, 0)
+        with check_warnings(("", DeprecationWarning)):
+            self.assertEqual(c._clamp, 0)
 
     def test_abs(self):
         c = Context()

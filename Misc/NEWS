@@ -393,6 +393,11 @@ C-API
 Library
 -------
 
+- Issue #8540: Decimal module: rename the Context._clamp attribute to
+  Context.clamp and make it public.  This is useful in creating
+  contexts that correspond to the decimal interchange formats
+  specified in IEEE 754.
+
 - Issue #6268: Fix seek() method of codecs.open(), don't read or write the BOM
   twice after seek(0). Fix also reset() method of codecs, UTF-16, UTF-32 and
   StreamWriter classes.
