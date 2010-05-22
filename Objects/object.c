@@ -950,31 +950,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
             goto done;
     }
 
-#if 0 /* XXX this is not quite _PyType_Lookup anymore */
-    /* Inline _PyType_Lookup */
-    {
-        Py_ssize_t i, n;
-        PyObject *mro, *base, *dict;
-
-        /* Look in tp_dict of types in MRO */
-        mro = tp->tp_mro;
-        assert(mro != NULL);
-        assert(PyTuple_Check(mro));
-        n = PyTuple_GET_SIZE(mro);
-        for (i = 0; i < n; i++) {
-            base = PyTuple_GET_ITEM(mro, i);
-            assert(PyType_Check(base));
-            dict = ((PyTypeObject *)base)->tp_dict;
-            assert(dict && PyDict_Check(dict));
-            descr = PyDict_GetItem(dict, name);
-            if (descr != NULL)
-                break;
-        }
-    }
-#else
     descr = _PyType_Lookup(tp, name);
-#endif
-
     Py_XINCREF(descr);
 
     f = NULL;
