@@ -393,8 +393,9 @@ C-API
 Library
 -------
 
-- Issue #6268: Fix seek() method of codecs.open(), don't read the BOM twice
-  after seek(0)
+- Issue #6268: Fix seek() method of codecs.open(), don't read or write the BOM
+  twice after seek(0). Fix also reset() method of codecs, UTF-16, UTF-32 and
+  StreamWriter classes.
 
 - Issue #3798: sys.exit(message) writes the message to sys.stderr file, instead
   of the C file stderr, to use stderr encoding and error handler
