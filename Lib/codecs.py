@@ -374,6 +374,11 @@ class StreamWriter(Codec):
         """
         pass
 
+    def seek(self, offset, whence=0):
+        self.stream.seek(offset, whence)
+        if whence == 0 and offset == 0:
+            self.reset()
+
     def __getattr__(self, name,
                     getattr=getattr):
 
@@ -606,8 +611,8 @@ class StreamReader(Codec):
 
             Resets the codec buffers used for keeping state.
         """
-        self.reset()
         self.stream.seek(offset, whence)
+        self.reset()
 
     def __next__(self):
 
@@ -700,8 +705,10 @@ class StreamReaderWriter:
         self.writer.reset()
 
     def seek(self, offset, whence=0):
-        self.reader.seek(offset, whence)
-        self.writer.seek(offset, whence)
+        self.stream.seek(offset, whence)
+        self.reader.reset()
+        if whence == 0 and offset == 0:
+            self.writer.reset()
 
     def __getattr__(self, name,
                     getattr=getattr):
