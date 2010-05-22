@@ -564,7 +564,9 @@ class RefactoringTool(object):
         This is necessary to get correct line number / offset information
         in the parser diagnostics and embedded into the parse tree.
         """
-        return self.driver.parse_tokens(self.wrap_toks(block, lineno, indent))
+        tree = self.driver.parse_tokens(self.wrap_toks(block, lineno, indent))
+        tree.future_features = frozenset()
+        return tree
 
     def wrap_toks(self, block, lineno, indent):
         """Wraps a tokenize stream to systematically modify start/end."""
