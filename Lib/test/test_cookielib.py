@@ -99,7 +99,8 @@ class DateTimeTests(TestCase):
 
 
 class HeaderTests(TestCase):
-    def test_parse_ns_headers(self):
+
+    def test_parse_ns_headers_expires(self):
         from cookielib import parse_ns_headers
 
         # quotes should be stripped
@@ -107,6 +108,17 @@ class HeaderTests(TestCase):
         for hdr in [
             'foo=bar; expires=01 Jan 2040 22:23:32 GMT',
             'foo=bar; expires="01 Jan 2040 22:23:32 GMT"',
+            ]:
+            self.assertEquals(parse_ns_headers([hdr]), expected)
+
+    def test_parse_ns_headers_version(self):
+        from cookielib import parse_ns_headers
+
+        # quotes should be stripped
+        expected = [[('foo', 'bar'), ('version', '1')]]
+        for hdr in [
+            'foo=bar; version="1"',
+            'foo=bar; Version="1"',
             ]:
             self.assertEquals(parse_ns_headers([hdr]), expected)
 
@@ -1091,6 +1103,8 @@ class CookieTests(TestCase):
             ["Set-Cookie2: a=foo; path=/; Version=1; domain"],
             # bad max-age
             ["Set-Cookie: b=foo; max-age=oops"],
+            # bad version
+            ["Set-Cookie: b=foo; version=spam"],
             ]:
             c = cookiejar_from_cookie_headers(headers)
             # these bad cookies shouldn't be set
