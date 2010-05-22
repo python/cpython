@@ -1488,6 +1488,26 @@ class WithStmtTest(unittest.TestCase):
             self.assertEquals(srw.read(), u"\xfc")
 
 
+class BomTest(unittest.TestCase):
+    def test_seek0(self):
+        data = "1234567890"
+        tests = ("utf-16",
+                 "utf-16-le",
+                 "utf-16-be",
+                 "utf-32",
+                 "utf-32-le",
+                 "utf-32-be")
+        for encoding in tests:
+            with codecs.open('foo', 'wt+', encoding=encoding) as f:
+                # Check if the BOM is written only once
+                f.write(data)
+                f.write(data)
+                f.seek(0)
+                self.assertEquals(f.read(), data * 2)
+                f.seek(0)
+                self.assertEquals(f.read(), data * 2)
+
+
 def test_main():
     test_support.run_unittest(
         UTF32Test,
@@ -1516,6 +1536,7 @@ def test_main():
         BasicStrTest,
         CharmapTest,
         WithStmtTest,
+        BomTest,
     )
 
 
