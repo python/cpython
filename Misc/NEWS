@@ -54,8 +54,9 @@ C-API
 Library
 -------
 
-- Issue #6268: Fix seek() method of codecs.open(), don't read the BOM twice
-  after seek(0)
+- Issue #6268: Fix seek() method of codecs.open(), don't read or write the BOM
+  twice after seek(0). Fix also reset() method of codecs, UTF-16, UTF-32 and
+  StreamWriter classes.
 
 - Issue #8782: Add a trailing newline in linecache.updatecache to the last line
   of files without one.
