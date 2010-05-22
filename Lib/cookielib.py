@@ -434,7 +434,7 @@ def join_header_words(lists):
         if attr: headers.append("; ".join(attr))
     return ", ".join(headers)
 
-def strip_quotes(text):
+def _strip_quotes(text):
     if text.startswith('"'):
         text = text[1:]
     if text.endswith('"'):
@@ -478,11 +478,11 @@ def parse_ns_headers(ns_headers):
                     k = lc
                 if k == "version":
                     # This is an RFC 2109 cookie.
-                    v = strip_quotes(v)
+                    v = _strip_quotes(v)
                     version_set = True
                 if k == "expires":
                     # convert expires date to seconds since epoch
-                    v = http2time(strip_quotes(v))  # None if invalid
+                    v = http2time(_strip_quotes(v))  # None if invalid
             pairs.append((k, v))
 
         if pairs:
