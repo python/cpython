@@ -1592,6 +1592,26 @@ class SurrogateEscapeTest(unittest.TestCase):
                          b"\xe4\xeb\xef\xf6\xfc")
 
 
+class BomTest(unittest.TestCase):
+    def test_seek0(self):
+        data = "1234567890"
+        tests = ("utf-16",
+                 "utf-16-le",
+                 "utf-16-be",
+                 "utf-32",
+                 "utf-32-le",
+                 "utf-32-be")
+        for encoding in tests:
+            with codecs.open('foo', 'w+', encoding=encoding) as f:
+                # Check if the BOM is written only once
+                f.write(data)
+                f.write(data)
+                f.seek(0)
+                self.assertEquals(f.read(), data * 2)
+                f.seek(0)
+                self.assertEquals(f.read(), data * 2)
+
+
 def test_main():
     support.run_unittest(
         UTF32Test,
@@ -1619,6 +1639,7 @@ def test_main():
         WithStmtTest,
         TypesTest,
         SurrogateEscapeTest,
+        BomTest,
     )
 
 

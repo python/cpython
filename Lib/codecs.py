@@ -699,6 +699,10 @@ class StreamReaderWriter:
         self.reader.reset()
         self.writer.reset()
 
+    def seek(self, offset, whence=0):
+        self.reader.seek(offset, whence)
+        self.writer.seek(offset, whence)
+
     def __getattr__(self, name,
                     getattr=getattr):
 
