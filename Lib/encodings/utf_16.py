@@ -67,11 +67,11 @@ class StreamWriter(codecs.StreamWriter):
 
     def encode(self, input, errors='strict'):
         if self.encoder is None:
-            result = codecs.utf_16encoder(input, errors)
+            result = codecs.utf_16_encode(input, errors)
             if sys.byteorder == 'little':
-                self.encoder = codecs.utf_16_leencoder
+                self.encoder = codecs.utf_16_le_encode
             else:
-                self.encoder = codecs.utf_16_beencoder
+                self.encoder = codecs.utf_16_be_encode
             return result
         else:
             return self.encoder(input, errors)
