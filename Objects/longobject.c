@@ -2571,18 +2571,37 @@ long_hash(PyLongObject *v)
         sign = -1;
         i = -(i);
     }
-    /* The following loop produces a C unsigned long x such that x is
-       congruent to the absolute value of v modulo ULONG_MAX.  The
-       resulting x is nonzero if and only if v is. */
     while (--i >= 0) {
-        /* Force a native long #-bits (32 or 64) circular shift */
-        x = (x >> (8*SIZEOF_LONG-PyLong_SHIFT)) | (x << PyLong_SHIFT);
+        /* Here x is a quantity in the range [0, _PyHASH_MODULUS); we
+           want to compute x * 2**PyLong_SHIFT + v->ob_digit[i] modulo
+           _PyHASH_MODULUS.
+
+           The computation of x * 2**PyLong_SHIFT % _PyHASH_MODULUS
+           amounts to a rotation of the bits of x.  To see this, write
+
+             x * 2**PyLong_SHIFT = y * 2**_PyHASH_BITS + z
+
+           where y = x >> (_PyHASH_BITS - PyLong_SHIFT) gives the top
+           PyLong_SHIFT bits of x (those that are shifted out of the
+           original _PyHASH_BITS bits, and z = (x << PyLong_SHIFT) &
+           _PyHASH_MODULUS gives the bottom _PyHASH_BITS - PyLong_SHIFT
+           bits of x, shifted up.  Then since 2**_PyHASH_BITS is
+           congruent to 1 modulo _PyHASH_MODULUS, y*2**_PyHASH_BITS is
+           congruent to y modulo _PyHASH_MODULUS.  So
+
+             x * 2**PyLong_SHIFT = y + z (mod _PyHASH_MODULUS).
+
+           The right-hand side is just the result of rotating the
+           _PyHASH_BITS bits of x left by PyLong_SHIFT places; since
+           not all _PyHASH_BITS bits of x are 1s, the same is true
+           after rotation, so 0 <= y+z < _PyHASH_MODULUS and y + z is
+           the reduction of x*2**PyLong_SHIFT modulo
+           _PyHASH_MODULUS. */
+        x = ((x << PyLong_SHIFT) & _PyHASH_MODULUS) |
+            (x >> (_PyHASH_BITS - PyLong_SHIFT));
         x += v->ob_digit[i];
-        /* If the addition above overflowed we compensate by
-           incrementing.  This preserves the value modulo
-           ULONG_MAX. */
-        if (x < v->ob_digit[i])
-            x++;
+        if (x >= _PyHASH_MODULUS)
+            x -= _PyHASH_MODULUS;
     }
     x = x * sign;
     if (x == (unsigned long)-1)

@@ -595,6 +595,109 @@ hexadecimal string representing the same number::
    '0x1.d380000000000p+11'
 
 
+.. _numeric-hash:
+
+Hashing of numeric types
+------------------------
+
+For numbers ``x`` and ``y``, possibly of different types, it's a requirement
+that ``hash(x) == hash(y)`` whenever ``x == y`` (see the :meth:`__hash__`
+method documentation for more details).  For ease of implementation and
+efficiency across a variety of numeric types (including :class:`int`,
+:class:`float`, :class:`decimal.Decimal` and :class:`fractions.Fraction`)
+Python's hash for numeric types is based on a single mathematical function
+that's defined for any rational number, and hence applies to all instances of
+:class:`int` and :class:`fraction.Fraction`, and all finite instances of
+:class:`float` and :class:`decimal.Decimal`.  Essentially, this function is
+given by reduction modulo ``P`` for a fixed prime ``P``.  The value of ``P`` is
+made available to Python as the :attr:`modulus` attribute of
+:data:`sys.hash_info`.
+
+.. impl-detail::
+
+   Currently, the prime used is ``P = 2**31 - 1`` on machines with 32-bit C
+   longs and ``P = 2**61 - 1`` on machines with 64-bit C longs.
+
+Here are the rules in detail:
+
+ - If ``x = m / n`` is a nonnegative rational number and ``n`` is not divisible
+   by ``P``, define ``hash(x)`` as ``m * invmod(n, P) % P``, where ``invmod(n,
+   P)`` gives the inverse of ``n`` modulo ``P``.
+
+ - If ``x = m / n`` is a nonnegative rational number and ``n`` is
+   divisible by ``P`` (but ``m`` is not) then ``n`` has no inverse
+   modulo ``P`` and the rule above doesn't apply; in this case define
+   ``hash(x)`` to be the constant value ``sys.hash_info.inf``.
+
+ - If ``x = m / n`` is a negative rational number define ``hash(x)``
+   as ``-hash(-x)``.  If the resulting hash is ``-1``, replace it with
+   ``-2``.
+
+ - The particular values ``sys.hash_info.inf``, ``-sys.hash_info.inf``
+   and ``sys.hash_info.nan`` are used as hash values for positive
+   infinity, negative infinity, or nans (respectively).  (All hashable
+   nans have the same hash value.)
+
+ - For a :class:`complex` number ``z``, the hash values of the real
+   and imaginary parts are combined by computing ``hash(z.real) +
+   sys.hash_info.imag * hash(z.imag)``, reduced modulo
+   ``2**sys.hash_info.width`` so that it lies in
+   ``range(-2**(sys.hash_info.width - 1), 2**(sys.hash_info.width -
+   1))``.  Again, if the result is ``-1``, it's replaced with ``-2``.
+
+
+To clarify the above rules, here's some example Python code,
+equivalent to the builtin hash, for computing the hash of a rational
+number, :class:`float`, or :class:`complex`::
+
+
+   import sys, math
+
+   def hash_fraction(m, n):
+       """Compute the hash of a rational number m / n.
+
+       Assumes m and n are integers, with n positive.
+       Equivalent to hash(fractions.Fraction(m, n)).
+
+       """
+       P = sys.hash_info.modulus
+       # Remove common factors of P.  (Unnecessary if m and n already coprime.)
+       while m % P == n % P == 0:
+           m, n = m // P, n // P
+
+       if n % P == 0:
+           hash_ = sys.hash_info.inf
+       else:
+           # Fermat's Little Theorem: pow(n, P-1, P) is 1, so
+           # pow(n, P-2, P) gives the inverse of n modulo P.
+           hash_ = (abs(m) % P) * pow(n, P - 2, P) % P
+       if m < 0:
+           hash_ = -hash_
+       if hash_ == -1:
+           hash_ = -2
+       return hash_
+
+   def hash_float(x):
+       """Compute the hash of a float x."""
+
+       if math.isnan(x):
+           return sys.hash_info.nan
+       elif math.isinf(x):
+           return sys.hash_info.inf if x > 0 else -sys.hash_info.inf
+       else:
+           return hash_fraction(*x.as_integer_ratio())
+
+   def hash_complex(z):
+       """Compute the hash of a complex number z."""
+
+       hash_ = hash_float(z.real) + sys.hash_info.imag * hash_float(z.imag)
+       # do a signed reduction modulo 2**sys.hash_info.width
+       M = 2**(sys.hash_info.width - 1)
+       hash_ = (hash_ & (M - 1)) - (hash & M)
+       if hash_ == -1:
+           hash_ == -2
+       return hash_
+
 .. _typeiter:
 
 Iterator Types

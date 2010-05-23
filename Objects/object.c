@@ -647,63 +647,101 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
    All the utility functions (_Py_Hash*()) return "-1" to signify an error.
 */
 
+/* For numeric types, the hash of a number x is based on the reduction
+   of x modulo the prime P = 2**_PyHASH_BITS - 1.  It's designed so that
+   hash(x) == hash(y) whenever x and y are numerically equal, even if
+   x and y have different types.
+
+   A quick summary of the hashing strategy:
+
+   (1) First define the 'reduction of x modulo P' for any rational
+   number x; this is a standard extension of the usual notion of
+   reduction modulo P for integers.  If x == p/q (written in lowest
+   terms), the reduction is interpreted as the reduction of p times
+   the inverse of the reduction of q, all modulo P; if q is exactly
+   divisible by P then define the reduction to be infinity.  So we've
+   got a well-defined map
+
+      reduce : { rational numbers } -> { 0, 1, 2, ..., P-1, infinity }.
+
+   (2) Now for a rational number x, define hash(x) by:
+
+      reduce(x)   if x >= 0
+      -reduce(-x) if x < 0
+
+   If the result of the reduction is infinity (this is impossible for
+   integers, floats and Decimals) then use the predefined hash value
+   _PyHASH_INF for x >= 0, or -_PyHASH_INF for x < 0, instead.
+   _PyHASH_INF, -_PyHASH_INF and _PyHASH_NAN are also used for the
+   hashes of float and Decimal infinities and nans.
+
+   A selling point for the above strategy is that it makes it possible
+   to compute hashes of decimal and binary floating-point numbers
+   efficiently, even if the exponent of the binary or decimal number
+   is large.  The key point is that
+
+      reduce(x * y) == reduce(x) * reduce(y) (modulo _PyHASH_MODULUS)
+
+   provided that {reduce(x), reduce(y)} != {0, infinity}.  The reduction of a
+   binary or decimal float is never infinity, since the denominator is a power
+   of 2 (for binary) or a divisor of a power of 10 (for decimal).  So we have,
+   for nonnegative x,
+
+      reduce(x * 2**e) == reduce(x) * reduce(2**e) % _PyHASH_MODULUS
+
+      reduce(x * 10**e) == reduce(x) * reduce(10**e) % _PyHASH_MODULUS
+
+   and reduce(10**e) can be computed efficiently by the usual modular
+   exponentiation algorithm.  For reduce(2**e) it's even better: since
+   P is of the form 2**n-1, reduce(2**e) is 2**(e mod n), and multiplication
+   by 2**(e mod n) modulo 2**n-1 just amounts to a rotation of bits.
+
+   */
+
 long
 _Py_HashDouble(double v)
 {
-    double intpart, fractpart;
-    int expo;
-    long hipart;
-    long x;             /* the final hash value */
-    /* This is designed so that Python numbers of different types
-     * that compare equal hash to the same value; otherwise comparisons
-     * of mapping keys will turn out weird.
-     */
+    int e, sign;
+    double m;
+    unsigned long x, y;
 
     if (!Py_IS_FINITE(v)) {
         if (Py_IS_INFINITY(v))
-            return v < 0 ? -271828 : 314159;
+            return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
         else
-            return 0;
+            return _PyHASH_NAN;
     }
-    fractpart = modf(v, &intpart);
-    if (fractpart == 0.0) {
-        /* This must return the same hash as an equal int or long. */
-        if (intpart > LONG_MAX/2 || -intpart > LONG_MAX/2) {
-            /* Convert to long and use its hash. */
-            PyObject *plong;                    /* converted to Python long */
-            plong = PyLong_FromDouble(v);
-            if (plong == NULL)
-                return -1;
-            x = PyObject_Hash(plong);
-            Py_DECREF(plong);
-            return x;
-        }
-        /* Fits in a C long == a Python int, so is its own hash. */
-        x = (long)intpart;
-        if (x == -1)
-            x = -2;
-        return x;
+
+    m = frexp(v, &e);
+
+    sign = 1;
+    if (m < 0) {
+        sign = -1;
+        m = -m;
     }
-    /* The fractional part is non-zero, so we don't have to worry about
-     * making this match the hash of some other type.
-     * Use frexp to get at the bits in the double.
-     * Since the VAX D double format has 56 mantissa bits, which is the
-     * most of any double format in use, each of these parts may have as
-     * many as (but no more than) 56 significant bits.
-     * So, assuming sizeof(long) >= 4, each part can be broken into two
-     * longs; frexp and multiplication are used to do that.
-     * Also, since the Cray double format has 15 exponent bits, which is
-     * the most of any double format in use, shifting the exponent field
-     * left by 15 won't overflow a long (again assuming sizeof(long) >= 4).
-     */
-    v = frexp(v, &expo);
-    v *= 2147483648.0;          /* 2**31 */
-    hipart = (long)v;           /* take the top 32 bits */
-    v = (v - (double)hipart) * 2147483648.0; /* get the next 32 bits */
-    x = hipart + (long)v + (expo << 15);
-    if (x == -1)
-        x = -2;
-    return x;
+
+    /* process 28 bits at a time;  this should work well both for binary
+       and hexadecimal floating point. */
+    x = 0;
+    while (m) {
+        x = ((x << 28) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - 28);
+        m *= 268435456.0;  /* 2**28 */
+        e -= 28;
+        y = (unsigned long)m;  /* pull out integer part */
+        m -= y;
+        x += y;
+        if (x >= _PyHASH_MODULUS)
+            x -= _PyHASH_MODULUS;
+    }
+
+    /* adjust for the exponent;  first reduce it modulo _PyHASH_BITS */
+    e = e >= 0 ? e % _PyHASH_BITS : _PyHASH_BITS-1-((-1-e) % _PyHASH_BITS);
+    x = ((x << e) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - e);
+
+    x = x * sign;
+    if (x == (unsigned long)-1)
+        x = (unsigned long)-2;
+    return (long)x;
 }
 
 long

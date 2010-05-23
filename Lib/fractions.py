@@ -8,6 +8,7 @@ import math
 import numbers
 import operator
 import re
+import sys
 
 __all__ = ['Fraction', 'gcd']
 
@@ -23,6 +24,12 @@ def gcd(a, b):
         a, b = b, a%b
     return a
 
+# Constants related to the hash implementation;  hash(x) is based
+# on the reduction of x modulo the prime _PyHASH_MODULUS.
+_PyHASH_MODULUS = sys.hash_info.modulus
+# Value to be used for rationals that reduce to infinity modulo
+# _PyHASH_MODULUS.
+_PyHASH_INF = sys.hash_info.inf
 
 _RATIONAL_FORMAT = re.compile(r"""
     \A\s*                      # optional whitespace at the start, then
@@ -528,16 +535,22 @@ class Fraction(numbers.Rational):
 
         """
         # XXX since this method is expensive, consider caching the result
-        if self._denominator == 1:
-            # Get integers right.
-            return hash(self._numerator)
-        # Expensive check, but definitely correct.
-        if self == float(self):
-            return hash(float(self))
+
+        # In order to make sure that the hash of a Fraction agrees
+        # with the hash of a numerically equal integer, float or
+        # Decimal instance, we follow the rules for numeric hashes
+        # outlined in the documentation.  (See library docs, 'Built-in
+        # Types').
+
+        # dinv is the inverse of self._denominator modulo the prime
+        # _PyHASH_MODULUS, or 0 if self._denominator is divisible by
+        # _PyHASH_MODULUS.
+        dinv = pow(self._denominator, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
+        if not dinv:
+            hash_ = _PyHASH_INF
         else:
-            # Use tuple's hash to avoid a high collision rate on
-            # simple fractions.
-            return hash((self._numerator, self._denominator))
+            hash_ = abs(self._numerator) * dinv % _PyHASH_MODULUS
+        return hash_ if self >= 0 else -hash_
 
     def __eq__(a, b):
         """a == b"""

@@ -862,7 +862,7 @@ class Decimal(object):
     # that specified by IEEE 754.
 
     def __eq__(self, other, context=None):
-        other = _convert_other(other, allow_float=True)
+        other = _convert_other(other, allow_float = True)
         if other is NotImplemented:
             return other
         if self._check_nans(other, context):
@@ -870,7 +870,7 @@ class Decimal(object):
         return self._cmp(other) == 0
 
     def __ne__(self, other, context=None):
-        other = _convert_other(other, allow_float=True)
+        other = _convert_other(other, allow_float = True)
         if other is NotImplemented:
             return other
         if self._check_nans(other, context):
@@ -879,7 +879,7 @@ class Decimal(object):
 
 
     def __lt__(self, other, context=None):
-        other = _convert_other(other, allow_float=True)
+        other = _convert_other(other, allow_float = True)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -888,7 +888,7 @@ class Decimal(object):
         return self._cmp(other) < 0
 
     def __le__(self, other, context=None):
-        other = _convert_other(other, allow_float=True)
+        other = _convert_other(other, allow_float = True)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -897,7 +897,7 @@ class Decimal(object):
         return self._cmp(other) <= 0
 
     def __gt__(self, other, context=None):
-        other = _convert_other(other, allow_float=True)
+        other = _convert_other(other, allow_float = True)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -906,7 +906,7 @@ class Decimal(object):
         return self._cmp(other) > 0
 
     def __ge__(self, other, context=None):
-        other = _convert_other(other, allow_float=True)
+        other = _convert_other(other, allow_float = True)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -935,55 +935,28 @@ class Decimal(object):
 
     def __hash__(self):
         """x.__hash__() <==> hash(x)"""
-        # Decimal integers must hash the same as the ints
-        #
-        # The hash of a nonspecial noninteger Decimal must depend only
-        # on the value of that Decimal, and not on its representation.
-        # For example: hash(Decimal('100E-1')) == hash(Decimal('10')).
 
-        # Equality comparisons involving signaling nans can raise an
-        # exception; since equality checks are implicitly and
-        # unpredictably used when checking set and dict membership, we
-        # prevent signaling nans from being used as set elements or
-        # dict keys by making __hash__ raise an exception.
+        # In order to make sure that the hash of a Decimal instance
+        # agrees with the hash of a numerically equal integer, float
+        # or Fraction, we follow the rules for numeric hashes outlined
+        # in the documentation.  (See library docs, 'Built-in Types').
         if self._is_special:
             if self.is_snan():
                 raise TypeError('Cannot hash a signaling NaN value.')
             elif self.is_nan():
-                # 0 to match hash(float('nan'))
-                return 0
+                return _PyHASH_NAN
             else:
-                # values chosen to match hash(float('inf')) and
-                # hash(float('-inf')).
                 if self._sign:
-                    return -271828
+                    return -_PyHASH_INF
                 else:
-                    return 314159
+                    return _PyHASH_INF
 
-        # In Python 2.7, we're allowing comparisons (but not
-        # arithmetic operations) between floats and Decimals;  so if
-        # a Decimal instance is exactly representable as a float then
-        # its hash should match that of the float.
-        self_as_float = float(self)
-        if Decimal.from_float(self_as_float) == self:
-            return hash(self_as_float)
-
-        if self._isinteger():
-            op = _WorkRep(self.to_integral_value())
-            # to make computation feasible for Decimals with large
-            # exponent, we use the fact that hash(n) == hash(m) for
-            # any two nonzero integers n and m such that (i) n and m
-            # have the same sign, and (ii) n is congruent to m modulo
-            # 2**64-1.  So we can replace hash((-1)**s*c*10**e) with
-            # hash((-1)**s*c*pow(10, e, 2**64-1).
-            return hash((-1)**op.sign*op.int*pow(10, op.exp, 2**64-1))
-        # The value of a nonzero nonspecial Decimal instance is
-        # faithfully represented by the triple consisting of its sign,
-        # its adjusted exponent, and its coefficient with trailing
-        # zeros removed.
-        return hash((self._sign,
-                     self._exp+len(self._int),
-                     self._int.rstrip('0')))
+        if self._exp >= 0:
+            exp_hash = pow(10, self._exp, _PyHASH_MODULUS)
+        else:
+            exp_hash = pow(_PyHASH_10INV, -self._exp, _PyHASH_MODULUS)
+        hash_ = int(self._int) * exp_hash % _PyHASH_MODULUS
+        return hash_ if self >= 0 else -hash_
 
     def as_tuple(self):
         """Represents the number as a triple tuple.
@@ -6218,6 +6191,17 @@ _NegativeOne = Decimal(-1)
 # _SignedInfinity[sign] is infinity w/ that sign
 _SignedInfinity = (_Infinity, _NegativeInfinity)
 
+# Constants related to the hash implementation;  hash(x) is based
+# on the reduction of x modulo _PyHASH_MODULUS
+import sys
+_PyHASH_MODULUS = sys.hash_info.modulus
+# hash values to use for positive and negative infinities, and nans
+_PyHASH_INF = sys.hash_info.inf
+_PyHASH_NAN = sys.hash_info.nan
+del sys
+
+# _PyHASH_10INV is the inverse of 10 modulo the prime _PyHASH_MODULUS
+_PyHASH_10INV = pow(10, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
 
 
 if __name__ == '__main__':
