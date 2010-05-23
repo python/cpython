@@ -55,6 +55,10 @@ C-API
 Library
 -------
 
+- Issue #1628205: Socket file objects returned by socket.socket.makefile() now
+  properly handles EINTR within the read, readline, write & flush methods.
+  The socket.sendall() method now properly handles interrupted system calls.
+
 - Issue #3924: Ignore cookies with invalid "version" field in cookielib.
 
 - Issue #6268: Fix seek() method of codecs.open(), don't read or write the BOM
