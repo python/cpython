@@ -4921,6 +4921,7 @@ slot_tp_hash(PyObject *self)
     PyObject *func, *res;
     static PyObject *hash_str;
     long h;
+    int overflow;
 
     func = lookup_method(self, "__hash__", &hash_str);
 
@@ -4937,14 +4938,27 @@ slot_tp_hash(PyObject *self)
     Py_DECREF(func);
     if (res == NULL)
         return -1;
-    if (PyLong_Check(res))
+
+    if (!PyLong_Check(res)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__hash__ method should return an integer");
+        return -1;
+    }
+    /* Transform the PyLong `res` to a C long `h`.  For an existing
+       hashable Python object x, hash(x) will always lie within the range
+       of a C long.  Therefore our transformation must preserve values
+       that already lie within this range, to ensure that if x.__hash__()
+       returns hash(y) then hash(x) == hash(y). */
+    h = PyLong_AsLongAndOverflow(res, &overflow);
+    if (overflow)
+        /* res was not within the range of a C long, so we're free to
+           use any sufficiently bit-mixing transformation;
+           long.__hash__ will do nicely. */
         h = PyLong_Type.tp_hash(res);
-    else
-        h = PyLong_AsLong(res);
     Py_DECREF(res);
-           if (h == -1 && !PyErr_Occurred())
-           h = -2;
-           return h;
+    if (h == -1 && !PyErr_Occurred())
+        h = -2;
+    return h;
 }
 
 static PyObject *

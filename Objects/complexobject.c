@@ -403,12 +403,12 @@ complex_str(PyComplexObject *v)
 static long
 complex_hash(PyComplexObject *v)
 {
-    long hashreal, hashimag, combined;
-    hashreal = _Py_HashDouble(v->cval.real);
-    if (hashreal == -1)
+    unsigned long hashreal, hashimag, combined;
+    hashreal = (unsigned long)_Py_HashDouble(v->cval.real);
+    if (hashreal == (unsigned long)-1)
         return -1;
-    hashimag = _Py_HashDouble(v->cval.imag);
-    if (hashimag == -1)
+    hashimag = (unsigned long)_Py_HashDouble(v->cval.imag);
+    if (hashimag == (unsigned long)-1)
         return -1;
     /* Note:  if the imaginary part is 0, hashimag is 0 now,
      * so the following returns hashreal unchanged.  This is
@@ -416,10 +416,10 @@ complex_hash(PyComplexObject *v)
      * compare equal must have the same hash value, so that
      * hash(x + 0*j) must equal hash(x).
      */
-    combined = hashreal + 1000003 * hashimag;
-    if (combined == -1)
-        combined = -2;
-    return combined;
+    combined = hashreal + _PyHASH_IMAG * hashimag;
+    if (combined == (unsigned long)-1)
+        combined = (unsigned long)-2;
+    return (long)combined;
 }
 
 /* This macro may return! */

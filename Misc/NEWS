@@ -12,6 +12,11 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8188: Introduce a new scheme for computing hashes of numbers
+  (instances of int, float, complex, decimal.Decimal and
+  fractions.Fraction) that makes it easy to maintain the invariant
+  that hash(x) == hash(y) whenever x and y have equal value.
+
 - Issue #8748: Fix two issues with comparisons between complex and integer
   objects.  (1) The comparison could incorrectly return True in some cases
   (2**53+1 == complex(2**53) == 2**53), breaking transivity of equality.

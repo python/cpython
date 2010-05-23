@@ -446,6 +446,30 @@ always available.
       Changed to a named tuple and added *service_pack_minor*,
       *service_pack_major*, *suite_mask*, and *product_type*.
 
+
+.. data:: hash_info
+
+   A structseq giving parameters of the numeric hash implementation.  For
+   more details about hashing of numeric types, see :ref:`numeric-hash`.
+
+   +---------------------+--------------------------------------------------+
+   | attribute           | explanation                                      |
+   +=====================+==================================================+
+   | :const:`width`      | width in bits used for hash values               |
+   +---------------------+--------------------------------------------------+
+   | :const:`modulus`    | prime modulus P used for numeric hash scheme     |
+   +---------------------+--------------------------------------------------+
+   | :const:`inf`        | hash value returned for a positive infinity      |
+   +---------------------+--------------------------------------------------+
+   | :const:`nan`        | hash value returned for a nan                    |
+   +---------------------+--------------------------------------------------+
+   | :const:`imag`       | multiplier used for the imaginary part of a      |
+   |                     | complex number                                   |
+   +---------------------+--------------------------------------------------+
+
+   .. versionadded:: 3.2
+
+
 .. data:: hexversion
 
    The version number encoded as a single integer.  This is guaranteed to increase

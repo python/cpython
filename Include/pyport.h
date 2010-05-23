@@ -126,6 +126,20 @@ Used in:  PY_LONG_LONG
 #endif
 #endif
 
+/* Parameters used for the numeric hash implementation.  See notes for
+   _PyHash_Double in Objects/object.c.  Numeric hashes are based on
+   reduction modulo the prime 2**_PyHASH_BITS - 1. */
+
+#if SIZEOF_LONG >= 8
+#define _PyHASH_BITS 61
+#else
+#define _PyHASH_BITS 31
+#endif
+#define _PyHASH_MODULUS ((1UL << _PyHASH_BITS) - 1)
+#define _PyHASH_INF 314159
+#define _PyHASH_NAN 0
+#define _PyHASH_IMAG 1000003UL
+
 /* uintptr_t is the C9X name for an unsigned integral type such that a
  * legitimate void* can be cast to uintptr_t and then back to void* again
  * without loss of information.  Similarly for intptr_t, wrt a signed

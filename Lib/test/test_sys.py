@@ -426,6 +426,23 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(type(sys.int_info.bits_per_digit), int)
         self.assertEqual(type(sys.int_info.sizeof_digit), int)
         self.assertIsInstance(sys.hexversion, int)
+
+        self.assertEqual(len(sys.hash_info), 5)
+        self.assertLess(sys.hash_info.modulus, 2**sys.hash_info.width)
+        # sys.hash_info.modulus should be a prime; we do a quick
+        # probable primality test (doesn't exclude the possibility of
+        # a Carmichael number)
+        for x in range(1, 100):
+            self.assertEqual(
+                pow(x, sys.hash_info.modulus-1, sys.hash_info.modulus),
+                1,
+                "sys.hash_info.modulus {} is a non-prime".format(
+                    sys.hash_info.modulus)
+                )
+        self.assertIsInstance(sys.hash_info.inf, int)
+        self.assertIsInstance(sys.hash_info.nan, int)
+        self.assertIsInstance(sys.hash_info.imag, int)
+
         self.assertIsInstance(sys.maxsize, int)
         self.assertIsInstance(sys.maxunicode, int)
         self.assertIsInstance(sys.platform, str)
