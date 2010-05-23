@@ -834,6 +834,77 @@ class FileObjectClassTestCase(SocketConnectedTest):
     def _testClosedAttr(self):
         self.assert_(not self.cli_file.closed)
 
+
+class FileObjectInterruptedTestCase(unittest.TestCase):
+    """Test that the file object correctly handles EINTR internally."""
+
+    class MockSocket(object):
+        def __init__(self, recv_funcs=()):
+            # A generator that returns callables that we'll call for each
+            # call to recv().
+            self._recv_step = iter(recv_funcs)
+
+        def recv(self, size):
+            return self._recv_step.next()()
+
+    @staticmethod
+    def _raise_eintr():
+        raise socket.error(errno.EINTR)
+
+    def _test_readline(self, size=-1, **kwargs):
+        mock_sock = self.MockSocket(recv_funcs=[
+                lambda : "This is the first line\nAnd the sec",
+                self._raise_eintr,
+                lambda : "ond line is here\n",
+                lambda : "",
+            ])
+        fo = socket._fileobject(mock_sock, **kwargs)
+        self.assertEquals(fo.readline(size), "This is the first line\n")
+        self.assertEquals(fo.readline(size), "And the second line is here\n")
+
+    def _test_read(self, size=-1, **kwargs):
+        mock_sock = self.MockSocket(recv_funcs=[
+                lambda : "This is the first line\nAnd the sec",
+                self._raise_eintr,
+                lambda : "ond line is here\n",
+                lambda : "",
+            ])
+        fo = socket._fileobject(mock_sock, **kwargs)
+        self.assertEquals(fo.read(size), "This is the first line\n"
+                          "And the second line is here\n")
+
+    def test_default(self):
+        self._test_readline()
+        self._test_readline(size=100)
+        self._test_read()
+        self._test_read(size=100)
+
+    def test_with_1k_buffer(self):
+        self._test_readline(bufsize=1024)
+        self._test_readline(size=100, bufsize=1024)
+        self._test_read(bufsize=1024)
+        self._test_read(size=100, bufsize=1024)
+
+    def _test_readline_no_buffer(self, size=-1):
+        mock_sock = self.MockSocket(recv_funcs=[
+                lambda : "aa",
+                lambda : "\n",
+                lambda : "BB",
+                self._raise_eintr,
+                lambda : "bb",
+                lambda : "",
+            ])
+        fo = socket._fileobject(mock_sock, bufsize=0)
+        self.assertEquals(fo.readline(size), "aa\n")
+        self.assertEquals(fo.readline(size), "BBbb")
+
+    def test_no_buffer(self):
+        self._test_readline_no_buffer()
+        self._test_readline_no_buffer(size=4)
+        self._test_read(bufsize=0)
+        self._test_read(size=100, bufsize=0)
+
+
 class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     """Repeat the tests from FileObjectClassTestCase with bufsize==0.
@@ -1229,6 +1300,7 @@ def test_main():
     tests.extend([
         NonBlockingTCPTests,
         FileObjectClassTestCase,
+        FileObjectInterruptedTestCase,
         UnbufferedFileObjectClassTestCase,
         LineBufferedFileObjectClassTestCase,
         SmallBufferedFileObjectClassTestCase,

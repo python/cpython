@@ -2723,8 +2723,21 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 #else
         n = send(s->sock_fd, buf, len, flags);
 #endif
-        if (n < 0)
+        if (n < 0) {
+#ifdef EINTR
+            /* We must handle EINTR here as there is no way for
+             * the caller to know how much was sent otherwise.  */
+            if (errno == EINTR) {
+                /* Run signal handlers.  If an exception was
+                 * raised, abort and leave this socket in
+                 * an unknown state. */
+                if (PyErr_CheckSignals())
+                    return NULL;
+                continue;
+            }
+#endif
             break;
+        }
         buf += n;
         len -= n;
     } while (len > 0);

@@ -84,9 +84,11 @@ except ImportError:
     from StringIO import StringIO
 
 try:
-    from errno import EBADF
+    import errno
 except ImportError:
-    EBADF = 9
+    errno = None
+EBADF = getattr(errno, 'EBADF', 9)
+EINTR = getattr(errno, 'EINTR', 4)
 
 __all__ = ["getfqdn", "create_connection"]
 __all__.extend(os._get_exports_list(_socket))
@@ -280,10 +282,22 @@ class _fileobject(object):
 
     def flush(self):
         if self._wbuf:
-            buffer = "".join(self._wbuf)
+            data = "".join(self._wbuf)
             self._wbuf = []
             self._wbuf_len = 0
-            self._sock.sendall(buffer)
+            buffer_size = max(self._rbufsize, self.default_bufsize)
+            data_size = len(data)
+            write_offset = 0
+            try:
+                while write_offset < data_size:
+                    self._sock.sendall(buffer(data, write_offset, buffer_size))
+                    write_offset += buffer_size
+            finally:
+                if write_offset < data_size:
+                    remainder = data[write_offset:]
+                    del data  # explicit free
+                    self._wbuf.append(remainder)
+                    self._wbuf_len = len(remainder)
 
     def fileno(self):
         return self._sock.fileno()
@@ -326,7 +340,12 @@ class _fileobject(object):
             # Read until EOF
             self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
             while True:
-                data = self._sock.recv(rbufsize)
+                try:
+                    data = self._sock.recv(rbufsize)
+                except error, e:
+                    if e[0] == EINTR:
+                        continue
+                    raise
                 if not data:
                     break
                 buf.write(data)
@@ -350,7 +369,12 @@ class _fileobject(object):
                 # than that.  The returned data string is short lived
                 # as we copy it into a StringIO and free it.  This avoids
                 # fragmentation issues on many platforms.
-                data = self._sock.recv(left)
+                try:
+                    data = self._sock.recv(left)
+                except error, e:
+                    if e[0] == EINTR:
+                        continue
+                    raise
                 if not data:
                     break
                 n = len(data)
@@ -393,17 +417,31 @@ class _fileobject(object):
                 self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
                 data = None
                 recv = self._sock.recv
-                while data != "\n":
-                    data = recv(1)
-                    if not data:
-                        break
-                    buffers.append(data)
+                while True:
+                    try:
+                        while data != "\n":
+                            data = recv(1)
+                            if not data:
+                                break
+                            buffers.append(data)
+                    except error, e:
+                        # The try..except to catch EINTR was moved outside the
+                        # recv loop to avoid the per byte overhead.
+                        if e[0] == EINTR:
+                            continue
+                        raise
+                    break
                 return "".join(buffers)
 
             buf.seek(0, 2)  # seek end
             self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
             while True:
-                data = self._sock.recv(self._rbufsize)
+                try:
+                    data = self._sock.recv(self._rbufsize)
+                except error, e:
+                    if e[0] == EINTR:
+                        continue
+                    raise
                 if not data:
                     break
                 nl = data.find('\n')
@@ -427,7 +465,12 @@ class _fileobject(object):
                 return rv
             self._rbuf = StringIO()  # reset _rbuf.  we consume it via buf.
             while True:
-                data = self._sock.recv(self._rbufsize)
+                try:
+                    data = self._sock.recv(self._rbufsize)
+                except error, e:
+                    if e[0] == EINTR:
+                        continue
+                    raise
                 if not data:
                     break
                 left = size - buf_len
