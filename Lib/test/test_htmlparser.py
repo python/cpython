@@ -313,6 +313,13 @@ DOCTYPE html [
                 ("starttag", "html", [("foo", u"\u20AC&aa&unsupported;")])
                 ])
 
+    def test_malformatted_charref(self):
+        self._run_check("<p>&#bad;</p>", [
+            ("starttag", "p", []),
+            ("data", "&#bad;"),
+            ("endtag", "p"),
+        ])
+
 
 def test_main():
     test_support.run_unittest(HTMLParserTestCase)

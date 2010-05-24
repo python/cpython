@@ -55,6 +55,9 @@ C-API
 Library
 -------
 
+- Issue #6662: Fix parsing of malformatted charref (&#bad;), patch written by
+  Fredrik Håård
+
 - Issue #1628205: Socket file objects returned by socket.socket.makefile() now
   properly handles EINTR within the read, readline, write & flush methods.
   The socket.sendall() method now properly handles interrupted system calls.
