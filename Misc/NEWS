@@ -29,7 +29,8 @@ C-API
 Library
 -------
 
-- Issue #6662: Fix parsing of malformatted charref (&#bad;)
+- Issue #6662: Fix parsing of malformatted charref (&#bad;), patch written by
+  Fredrik Håård
 
 - Issue #8016: Add the CP858 codec.
 
