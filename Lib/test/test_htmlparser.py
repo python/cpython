@@ -136,6 +136,13 @@ text
     ("data", "\n"),
     ])
 
+    def test_malformatted_charref(self):
+        self._run_check("<p>&#bad;</p>", [
+            ("starttag", "p", []),
+            ("data", "&#bad;"),
+            ("endtag", "p"),
+        ])
+
     def test_unclosed_entityref(self):
         self._run_check("&entityref foo", [
             ("entityref", "entityref"),
