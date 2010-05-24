@@ -31,6 +31,11 @@ try:
     import codecs
 except ImportError:
     codecs = None
+try:
+    unicode
+    _unicode = True
+except NameError:
+    _unicode = False
 
 #
 # Some constants...
@@ -777,6 +782,11 @@ class SysLogHandler(logging.Handler):
             self.encodePriority(self.facility,
                                 self.mapPriority(record.levelname)),
                                 msg)
+        # Treat unicode messages as required by RFC 5424
+        if _unicode and type(msg) is unicode:
+            msg = msg.encode('utf-8')
+            if codecs:
+                msg = codecs.BOM_UTF8 + msg
         try:
             if self.unixsocket:
                 try:
