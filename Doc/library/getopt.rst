@@ -5,6 +5,12 @@
    :synopsis: Portable parser for command line options; support both short and
               long option names.
 
+.. note::
+   The :mod:`getopt` module is a parser for command line options whose API is
+   designed to be familiar to users of the C :cfunc:`getopt` function. Users who
+   are unfamiliar with the C :cfunc:`getopt` function or who would like to write
+   less code and get better help and error messages should consider using the
+   :mod:`argparse` module instead.
 
 This module helps scripts to parse the command line arguments in ``sys.argv``.
 It supports the same conventions as the Unix :cfunc:`getopt` function (including
@@ -136,9 +142,21 @@ In a script, typical usage is something like this::
    if __name__ == "__main__":
        main()
 
+Note that an equivalent command line interface could be produced with less code
+and more informative help and error messages by using the :mod:`argparse` module::
+
+   import argparse
+
+   if __name__ == '__main__':
+       parser = argparse.ArgumentParser()
+       parser.add_argument('-o', '--output')
+       parser.add_argument('-v', dest='verbose', action='store_true')
+       args = parser.parse_args()
+       # ... do something with args.output ...
+       # ... do something with args.verbose ..
 
 .. seealso::
 
-   Module :mod:`optparse`
-      More object-oriented command line option parsing.
+   Module :mod:`argparse`
+      Alternative command line option and argument parsing library.
 
