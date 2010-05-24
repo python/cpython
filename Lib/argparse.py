@@ -987,7 +987,7 @@ class _VersionAction(Action):
                  version=None,
                  dest=SUPPRESS,
                  default=SUPPRESS,
-                 help=None):
+                 help="show program's version number and exit"):
         super(_VersionAction, self).__init__(
             option_strings=option_strings,
             dest=dest,
