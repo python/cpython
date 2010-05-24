@@ -175,6 +175,9 @@ class HTMLParser(markupbase.ParserBase):
                     i = self.updatepos(i, k)
                     continue
                 else:
+                    if ";" in rawdata[i:]: #bail by consuming &#
+                        self.handle_data(rawdata[0:2])
+                        i = self.updatepos(i, 2)
                     break
             elif startswith('&', i):
                 match = entityref.match(rawdata, i)
