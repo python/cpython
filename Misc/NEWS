@@ -392,6 +392,9 @@ C-API
 Library
 -------
 
+- Issue #6662: Fix parsing of malformatted charref (&#bad;), patch written by
+  Fredrik Håård
+
 - Issue #8540: Decimal module: rename the Context._clamp attribute to
   Context.clamp and make it public.  This is useful in creating
   contexts that correspond to the decimal interchange formats
