@@ -54,6 +54,9 @@ C-API
 Library
 -------
 
+- Issue #6662: Fix parsing of malformatted charref (&#bad;), patch written by
+  Fredrik Håård
+
 - Issue #6268: Fix seek() method of codecs.open(), don't read or write the BOM
   twice after seek(0). Fix also reset() method of codecs, UTF-16, UTF-32 and
   StreamWriter classes.
