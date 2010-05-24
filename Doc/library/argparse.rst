@@ -672,8 +672,8 @@ command-line args should be handled. The supported actions are:
 
     >>> import argparse
     >>> parser = argparse.ArgumentParser(prog='PROG')
-    >>> parser.add_argument('-v', '--version', action='version', version='%(prog)s 2.0')
-    >>> parser.parse_args(['-v'])
+    >>> parser.add_argument('--version', action='version', version='%(prog)s 2.0')
+    >>> parser.parse_args(['--version'])
     PROG 2.0
 
 You can also specify an arbitrary action by passing an object that implements
@@ -1725,3 +1725,6 @@ A partial upgrade path from optparse to argparse:
 * Replace strings with implicit arguments such as ``%default`` or ``%prog`` with
   the standard python syntax to use dictionaries to format strings, that is,
   ``%(default)s`` and ``%(prog)s``.
+
+* Replace the OptionParser constructor ``version`` argument with a call to
+  ``parser.add_argument('--version', action='version', version='<the version>')``
