@@ -407,6 +407,16 @@ SSL Sockets
    other side of the connection, rather than the original socket.
 
 
+.. attribute:: SSLSocket.context
+
+   The :class:`SSLContext` object this SSL socket is tied to.  If the SSL
+   socket was created using the top-level :func:`wrap_socket` function
+   (rather than :meth:`SSLContext.wrap_socket`), this is a custom context
+   object created for this SSL socket.
+
+   .. versionadded:: 3.2
+
+
 SSL Contexts
 ------------
 
