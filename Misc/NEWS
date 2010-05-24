@@ -29,6 +29,8 @@ C-API
 Library
 -------
 
+- Issue #6662: Fix parsing of malformatted charref (&#bad;)
+
 - Issue #8016: Add the CP858 codec.
 
 - Issue #3924: Ignore cookies with invalid "version" field in cookielib.
