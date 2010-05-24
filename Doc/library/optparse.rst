@@ -3,8 +3,13 @@
 
 .. module:: optparse
    :synopsis: Command-line option parsing library.
-.. moduleauthor:: Greg Ward <gward@python.net>
+   :deprecated:
 
+.. deprecated:: 2.7
+   The :mod:`optparse` module is deprecated and will not be developed further;
+   development will continue with the :mod:`argparse` module.
+
+.. moduleauthor:: Greg Ward <gward@python.net>
 
 .. versionadded:: 2.3
 
