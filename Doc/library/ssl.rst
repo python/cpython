@@ -410,6 +410,8 @@ SSL Sockets
 SSL Contexts
 ------------
 
+.. versionadded:: 3.2
+
 .. class:: SSLContext(protocol)
 
    An object holding various data longer-lived than single SSL connections,
