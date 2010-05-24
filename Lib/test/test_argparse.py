@@ -3699,6 +3699,25 @@ class TestHelpArgumentDefaults(HelpTestCase):
         '''
     version = ''
 
+class TestHelpVersionAction(HelpTestCase):
+    """Test the default help for the version action"""
+
+    parser_signature = Sig(prog='PROG', description='description')
+    argument_signatures = [Sig('-V', '--version', action='version', version='3.6')]
+    argument_group_signatures = []
+    usage = '''\
+        usage: PROG [-h] [-V]
+        '''
+    help = usage + '''\
+
+        description
+
+        optional arguments:
+          -h, --help     show this help message and exit
+          -V, --version  show program's version number and exit
+        '''
+    version = ''
+
 # =====================================
 # Optional/Positional constructor tests
 # =====================================
