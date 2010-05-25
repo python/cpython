@@ -124,6 +124,16 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(abs(-3.14), 3.14)
         # str
         self.assertRaises(TypeError, abs, 'a')
+        # bool
+        self.assertEqual(abs(True), 1)
+        self.assertEqual(abs(False), 0)
+        # other
+        self.assertRaises(TypeError, abs)
+        self.assertRaises(TypeError, abs, None)
+        class AbsClass(object):
+            def __abs__(self):
+                return -5
+        self.assertEqual(abs(AbsClass()), -5)
 
     def test_all(self):
         self.assertEqual(all([2, 4, 6]), True)
@@ -600,6 +610,8 @@ class BuiltinTest(unittest.TestCase):
             def __len__(self):
                 return sys.maxsize + 1
         self.assertRaises(OverflowError, len, HugeLen())
+        class NoLenMethod(object): pass
+        self.assertRaises(TypeError, len, NoLenMethod())
 
     def test_map(self):
         self.assertEqual(
@@ -1187,6 +1199,11 @@ class BuiltinTest(unittest.TestCase):
         b = 2
         return vars()
 
+    class C_get_vars(object):
+        def getDict(self):
+            return {'a':2}
+        __dict__ = property(fget=getDict)
+
     def test_vars(self):
         self.assertEqual(set(vars()), set(dir()))
         import sys
@@ -1195,6 +1212,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(self.get_vars_f2(), {'a': 1, 'b': 2})
         self.assertRaises(TypeError, vars, 42, 42)
         self.assertRaises(TypeError, vars, 42)
+        self.assertEqual(vars(self.C_get_vars()), {'a':2})
 
     def test_zip(self):
         a = (1, 2, 3)
