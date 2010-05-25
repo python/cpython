@@ -301,25 +301,29 @@ def urldefrag(url):
         return url, ''
 
 # unquote method for parse_qs and parse_qsl
-# Cannot use directly from urllib as it would create circular reference.
-# urllib uses urlparse methods ( urljoin)
-
+# Cannot use directly from urllib as it would create a circular reference
+# because urllib uses urlparse methods (urljoin).  If you update this function,
+# update it also in urllib.  This code duplication does not existin in Python3.
 
 _hexdig = '0123456789ABCDEFabcdef'
-_hextochr = dict((a+b, chr(int(a+b,16))) for a in _hexdig for b in _hexdig)
+_hextochr = dict((a+b, chr(int(a+b,16)))
+                 for a in _hexdig for b in _hexdig)
 
 def unquote(s):
     """unquote('abc%20def') -> 'abc def'."""
     res = s.split('%')
-    for i in xrange(1, len(res)):
-        item = res[i]
+    # fastpath
+    if len(res) == 1:
+        return s
+    s = res[0]
+    for item in res[1:]:
         try:
-            res[i] = _hextochr[item[:2]] + item[2:]
+            s += _hextochr[item[:2]] + item[2:]
         except KeyError:
-            res[i] = '%' + item
+            s += '%' + item
         except UnicodeDecodeError:
-            res[i] = unichr(int(item[:2], 16)) + item[2:]
-    return "".join(res)
+            s += unichr(int(item[:2], 16)) + item[2:]
+    return s
 
 def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
     """Parse a query given as a string argument.
