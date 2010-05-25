@@ -20,6 +20,9 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Alexander Belopolsky was given commit access on May 25 2010
+  by MvL at suggestion of Mark Dickinson.
+
 - Tim Golden was given commit access on April 21 2010 by MvL,
   at suggestion of Michael Foord.
 
