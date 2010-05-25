@@ -392,6 +392,9 @@ C-API
 Library
 -------
 
+- Issue #8770: now sysconfig displays information when it's called as
+  a script. Initial idea by Sridhar Ratnakumar.
+
 - Issue #6662: Fix parsing of malformatted charref (&#bad;), patch written by
   Fredrik Håård
 
