@@ -90,6 +90,16 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(abs(-1234L), 1234L)
         # str
         self.assertRaises(TypeError, abs, 'a')
+        # bool
+        self.assertEqual(abs(True), 1)
+        self.assertEqual(abs(False), 0)
+        # other
+        self.assertRaises(TypeError, abs)
+        self.assertRaises(TypeError, abs, None)
+        class AbsClass(object):
+            def __abs__(self):
+                return -5
+        self.assertEqual(abs(AbsClass()), -5)
 
     def test_all(self):
         self.assertEqual(all([2, 4, 6]), True)
@@ -152,19 +162,44 @@ class BuiltinTest(unittest.TestCase):
 
     def test_callable(self):
         self.assertTrue(callable(len))
+        self.assertFalse(callable("a"))
+        self.assertTrue(callable(callable))
+        self.assertTrue(callable(lambda x, y: x + y))
+        self.assertFalse(callable(__builtins__))
         def f(): pass
         self.assertTrue(callable(f))
-        class C:
+
+        class Classic:
             def meth(self): pass
-        self.assertTrue(callable(C))
-        x = C()
-        self.assertTrue(callable(x.meth))
-        self.assertTrue(not callable(x))
-        class D(C):
+        self.assertTrue(callable(Classic))
+        c = Classic()
+        self.assertTrue(callable(c.meth))
+        self.assertFalse(callable(c))
+
+        class NewStyle(object):
+            def meth(self): pass
+        self.assertTrue(callable(NewStyle))
+        n = NewStyle()
+        self.assertTrue(callable(n.meth))
+        self.assertFalse(callable(n))
+
+        # Classic and new-style classes evaluate __call__() differently
+        c.__call__ = None
+        self.assertTrue(callable(c))
+        del c.__call__
+        self.assertFalse(callable(c))
+        n.__call__ = None
+        self.assertFalse(callable(n))
+        del n.__call__
+        self.assertFalse(callable(n))
+
+        class N2(object):
             def __call__(self): pass
-        y = D()
-        self.assertTrue(callable(y))
-        y()
+        n2 = N2()
+        self.assertTrue(callable(n2))
+        class N3(N2): pass
+        n3 = N3()
+        self.assertTrue(callable(n3))
 
     def test_chr(self):
         self.assertEqual(chr(32), ' ')
@@ -729,6 +764,11 @@ class BuiltinTest(unittest.TestCase):
             def __len__(self):
                 raise ValueError
         self.assertRaises(ValueError, len, BadSeq())
+        self.assertRaises(TypeError, len, 2)
+        class ClassicStyle: pass
+        class NewStyle(object): pass
+        self.assertRaises(AttributeError, len, ClassicStyle())
+        self.assertRaises(TypeError, len, NewStyle())
 
     def test_map(self):
         self.assertEqual(
@@ -1188,9 +1228,10 @@ class BuiltinTest(unittest.TestCase):
             unlink(TESTFN)
 
     def test_reduce(self):
-        self.assertEqual(reduce(lambda x, y: x+y, ['a', 'b', 'c'], ''), 'abc')
+        add = lambda x, y: x+y
+        self.assertEqual(reduce(add, ['a', 'b', 'c'], ''), 'abc')
         self.assertEqual(
-            reduce(lambda x, y: x+y, [['a', 'c'], [], ['d', 'w']], []),
+            reduce(add, [['a', 'c'], [], ['d', 'w']], []),
             ['a','c','d','w']
         )
         self.assertEqual(reduce(lambda x, y: x*y, range(2,8), 1), 5040)
@@ -1198,15 +1239,23 @@ class BuiltinTest(unittest.TestCase):
             reduce(lambda x, y: x*y, range(2,21), 1L),
             2432902008176640000L
         )
-        self.assertEqual(reduce(lambda x, y: x+y, Squares(10)), 285)
-        self.assertEqual(reduce(lambda x, y: x+y, Squares(10), 0), 285)
-        self.assertEqual(reduce(lambda x, y: x+y, Squares(0), 0), 0)
+        self.assertEqual(reduce(add, Squares(10)), 285)
+        self.assertEqual(reduce(add, Squares(10), 0), 285)
+        self.assertEqual(reduce(add, Squares(0), 0), 0)
         self.assertRaises(TypeError, reduce)
+        self.assertRaises(TypeError, reduce, 42)
         self.assertRaises(TypeError, reduce, 42, 42)
         self.assertRaises(TypeError, reduce, 42, 42, 42)
+        self.assertRaises(TypeError, reduce, None, range(5))
+        self.assertRaises(TypeError, reduce, add, 42)
         self.assertEqual(reduce(42, "1"), "1") # func is never called with one item
         self.assertEqual(reduce(42, "", "1"), "1") # func is never called with one item
         self.assertRaises(TypeError, reduce, 42, (42, 42))
+        self.assertRaises(TypeError, reduce, add, []) # arg 2 must not be empty sequence with no initial value
+        self.assertRaises(TypeError, reduce, add, "")
+        self.assertRaises(TypeError, reduce, add, ())
+        self.assertEqual(reduce(add, [], None), None)
+        self.assertEqual(reduce(add, [], 42), 42)
 
         class BadSeq:
             def __getitem__(self, index):
@@ -1391,6 +1440,11 @@ class BuiltinTest(unittest.TestCase):
         b = 2
         return vars()
 
+    class C_get_vars(object):
+        def getDict(self):
+            return {'a':2}
+        __dict__ = property(fget=getDict)
+
     def test_vars(self):
         self.assertEqual(set(vars()), set(dir()))
         import sys
@@ -1399,6 +1453,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(self.get_vars_f2(), {'a': 1, 'b': 2})
         self.assertRaises(TypeError, vars, 42, 42)
         self.assertRaises(TypeError, vars, 42)
+        self.assertEqual(vars(self.C_get_vars()), {'a':2})
 
     def test_zip(self):
         a = (1, 2, 3)

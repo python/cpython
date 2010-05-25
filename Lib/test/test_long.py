@@ -320,6 +320,9 @@ class LongTest(unittest.TestCase):
         self.assertEqual(long(3.5), 3L)
         self.assertEqual(long(-3.5), -3L)
         self.assertEqual(long("-3"), -3L)
+        self.assertEqual(long("0b10", 2), 2L)
+        self.assertEqual(long("0o10", 8), 8L)
+        self.assertEqual(long("0x10", 16), 16L)
         if test_support.have_unicode:
             self.assertEqual(long(unicode("-3")), -3L)
         # Different base:
