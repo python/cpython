@@ -5,6 +5,10 @@ import sys
 import os
 from os.path import pardir, realpath
 
+__all__ = ['parse_config_h', 'get_config_h_filename', 'get_scheme_names',
+           'get_path_names', 'get_paths', 'get_path', 'get_config_vars',
+           'get_config_var', 'get_platform', 'get_python_version']
+
 _INSTALL_SCHEMES = {
     'posix_prefix': {
         'stdlib': '{base}/lib/python{py_version_short}',
