@@ -796,9 +796,11 @@ Some smaller changes made to the core Python language are:
   deleting an unset attribute would not raise :exc:`AttributeError`
   as you would expect.  Fixed by Benjamin Peterson; :issue:`7604`.)
 
-* A new encoding named "cp720", used primarily for Arabic text, is now
-  supported.  (Contributed by Alexander Belchenko and Amaury Forgeot
-  d'Arc; :issue:`1616979`.)
+* Two new encodings are now supported: "cp720", used primarily for
+  Arabic text; and "cp858", a variant of CP 850 that adds the euro
+  symbol.  (CP720 contributed by Alexander Belchenko and Amaury
+  Forgeot d'Arc in :issue:`1616979`; CP858 contributed by Tim Hatch in
+  :issue:`8016`.)
 
 * The :class:`file` object will now set the :attr:`filename` attribute
   on the :exc:`IOError` exception when trying to open a directory
@@ -1066,6 +1068,11 @@ changes, or look through the Subversion logs for all the details.
 
   (Added by Raymond Hettinger; :issue:`1818`.)
 
+  Finally, the :class:`~collections.Mapping` abstract base class now
+  raises a :exc:`NotImplemented` exception if a mapping is compared to
+  another type that isn't a :class:`Mapping`.
+  (Fixed by Daniel Stutzbach; :issue:`8729`.)
+
 * Constructors for the parsing classes in the :mod:`ConfigParser` module now
   take a *allow_no_value* parameter, defaulting to false; if true,
   options without values will be allowed.  For example::
@@ -1157,6 +1164,12 @@ changes, or look through the Subversion logs for all the details.
   through one small change, using a tab character instead of spaces as
   a separator in the header giving the filename.  (Fixed by Anatoly
   Techtonik; :issue:`7585`.)
+
+* The Distutils ``sdist`` command now always regenerates the
+  :file:`MANIFEST` file, since even if the :file:`MANIFEST.in` or
+  :file:`setup.py` files haven't been modified, the user might have
+  created some new files that should be included.
+  (Fixed by Tarek Ziadé; :issue:`8688`.)
 
 * The :mod:`doctest` module's :const:`IGNORE_EXCEPTION_DETAIL` flag
   will now ignore the name of the module containing the exception
