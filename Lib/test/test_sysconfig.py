@@ -11,13 +11,14 @@ import subprocess
 import shutil
 from copy import copy, deepcopy
 
-from test.support import run_unittest, TESTFN, unlink, get_attribute
+from test.support import (run_unittest, TESTFN, unlink, get_attribute,
+                          captured_stdout)
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        _get_default_scheme, _expand_vars,
-                       get_scheme_names, get_config_var)
+                       get_scheme_names, get_config_var, _main)
 
 class TestSysConfig(unittest.TestCase):
 
@@ -263,6 +264,13 @@ class TestSysConfig(unittest.TestCase):
             global_path = get_path(name, 'posix_prefix')
             user_path = get_path(name, 'posix_user')
             self.assertEquals(user_path, global_path.replace(base, user))
+
+    def test_main(self):
+        # just making sure _main() runs and returns things in the stdout
+        with captured_stdout() as output:
+            _main()
+        self.assertTrue(len(output.getvalue().split('\n')) > 0)
+
 
 def test_main():
     run_unittest(TestSysConfig)
