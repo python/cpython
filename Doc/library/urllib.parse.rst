@@ -26,7 +26,7 @@ following URL schemes: ``file``, ``ftp``, ``gopher``, ``hdl``, ``http``,
 
 The :mod:`urllib.parse` module defines the following functions:
 
-.. function:: urlparse(urlstring, default_scheme='', allow_fragments=True)
+.. function:: urlparse(urlstring, scheme='', allow_fragments=True)
 
    Parse a URL into six components, returning a 6-tuple.  This corresponds to the
    general structure of a URL: ``scheme://netloc/path;parameters?query#fragment``.
@@ -48,7 +48,7 @@ The :mod:`urllib.parse` module defines the following functions:
       >>> o.geturl()
       'http://www.cwi.nl:80/%7Eguido/Python.html'
 
-   If the *default_scheme* argument is specified, it gives the default addressing
+   If the *scheme* argument is specified, it gives the default addressing
    scheme, to be used only if the URL does not specify one.  The default value for
    this argument is the empty string.
 
@@ -139,7 +139,7 @@ The :mod:`urllib.parse` module defines the following functions:
    states that these are equivalent).
 
 
-.. function:: urlsplit(urlstring, default_scheme='', allow_fragments=True)
+.. function:: urlsplit(urlstring, scheme='', allow_fragments=True)
 
    This is similar to :func:`urlparse`, but does not split the params from the URL.
    This should generally be used instead of :func:`urlparse` if the more recent URL
