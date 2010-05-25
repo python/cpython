@@ -392,6 +392,10 @@ C-API
 Library
 -------
 
+- Issue #4769: Fix main() function of the base64 module, use sys.stdin.buffer
+  and sys.stdout.buffer (instead of sys.stdin and sys.stdout) to use the bytes
+  API
+
 - Issue #8770: now sysconfig displays information when it's called as
   a script. Initial idea by Sridhar Ratnakumar.
 
