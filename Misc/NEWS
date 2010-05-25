@@ -63,6 +63,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #2810: Fix cases where the Windows registry API returns
+  ERROR_MORE_DATA, requiring a re-try in order to get the complete result.
+
 - Issue #8674: Fixed a number of incorrect or undefined-behaviour-inducing
   overflow checks in the ``audioop`` module.
 
