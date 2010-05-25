@@ -238,7 +238,7 @@ class TestMain(unittest.TestCase):
         with open(support.TESTFN, 'wb') as fp:
             fp.write(b'Yf9iCg==')
         output = self.get_output('-d', support.TESTFN)
-        self.assertEquals(output, b'a\xffb\n')
+        self.assertEquals(output.rstrip(), b'a\xffb')
 
 
 
