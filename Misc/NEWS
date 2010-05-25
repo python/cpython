@@ -12,6 +12,9 @@ What's New in Python 2.6.6 alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #3798: Write sys.exit() message to sys.stderr to use stderr encoding
+  and error handler, instead of writing to the C stderr file in utf-8
+
 - Issue #7902: When using explicit relative import syntax, don't try
   implicit relative import semantics.
 
