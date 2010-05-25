@@ -54,6 +54,10 @@ C-API
 Library
 -------
 
+- Issue #4769: Fix main() function of the base64 module, use sys.stdin.buffer
+  and sys.stdout.buffer (instead of sys.stdin and sys.stdout) to use the bytes
+  API
+
 - Issue #6662: Fix parsing of malformatted charref (&#bad;), patch written by
   Fredrik Håård
 

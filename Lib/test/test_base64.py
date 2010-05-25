@@ -2,6 +2,8 @@ import unittest
 from test import support
 import base64
 import binascii
+import sys
+import subprocess
 
 
 
@@ -205,6 +207,38 @@ class BaseXYTestCase(unittest.TestCase):
 
     def test_ErrorHeritage(self):
         self.assertTrue(issubclass(binascii.Error, ValueError))
+
+
+
+class TestMain(unittest.TestCase):
+    def get_output(self, *args, **options):
+        args = (sys.executable, '-m', 'base64') + args
+        return subprocess.check_output(args, **options)
+
+    def test_encode_decode(self):
+        output = self.get_output('-t')
+        self.assertSequenceEqual(output.splitlines(), (
+            b"b'Aladdin:open sesame'",
+            br"b'QWxhZGRpbjpvcGVuIHNlc2FtZQ==\n'",
+            b"b'Aladdin:open sesame'",
+        ))
+
+    def test_encode_file(self):
+        with open(support.TESTFN, 'wb') as fp:
+            fp.write(b'a\xffb\n')
+
+        output = self.get_output('-e', support.TESTFN)
+        self.assertEquals(output.rstrip(), b'Yf9iCg==')
+
+        with open(support.TESTFN, 'rb') as fp:
+            output = self.get_output('-e', stdin=fp)
+        self.assertEquals(output.rstrip(), b'Yf9iCg==')
+
+    def test_decode(self):
+        with open(support.TESTFN, 'wb') as fp:
+            fp.write(b'Yf9iCg==')
+        output = self.get_output('-d', support.TESTFN)
+        self.assertEquals(output, b'a\xffb\n')
 
 
 
