@@ -1156,6 +1156,10 @@ def splitvalue(attr):
     if match: return match.group(1, 2)
     return attr, None
 
+# urlparse contains a duplicate of this method to avoid a circular import.  If
+# you update this method, also update the copy in urlparse.  This code
+# duplication does not exist in Python3.
+
 _hexdig = '0123456789ABCDEFabcdef'
 _hextochr = dict((a + b, chr(int(a + b, 16)))
                  for a in _hexdig for b in _hexdig)
