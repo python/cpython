@@ -173,6 +173,26 @@ class SysModuleTest(unittest.TestCase):
                               "raise SystemExit(47)"])
         self.assertEqual(rc, 47)
 
+        def check_exit_message(code, expected, env=None):
+            process = subprocess.Popen([sys.executable, "-c", code],
+                                       stderr=subprocess.PIPE, env=env)
+            stdout, stderr = process.communicate()
+            self.assertEqual(process.returncode, 1)
+            self.assertTrue(stderr.startswith(expected),
+                "%s doesn't start with %s" % (repr(stderr), repr(expected)))
+
+        # test that stderr buffer if flushed before the exit message is written
+        # into stderr
+        check_exit_message(
+            r'import sys; sys.stderr.write("unflushed,"); sys.exit("message")',
+            b"unflushed,message")
+
+        # test that the unicode message is encoded to the stderr encoding
+        env = os.environ.copy()
+        env['PYTHONIOENCODING'] = 'latin-1'
+        check_exit_message(
+            r'import sys; sys.exit(u"h\xe9")',
+            b"h\xe9", env=env)
 
     def test_getdefaultencoding(self):
         if test.test_support.have_unicode:
