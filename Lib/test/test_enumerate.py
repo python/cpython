@@ -227,7 +227,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         counts = [None] * 5
         for i in range(len(counts)):
-            support.run_unittest(*testclasses)
+            support.run_unittest(__name__)
             counts[i] = sys.gettotalrefcount()
         print(counts)
 
