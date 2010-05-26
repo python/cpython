@@ -4201,140 +4201,169 @@ long__format__(PyObject *self, PyObject *args)
                                   PyUnicode_GET_SIZE(format_spec));
 }
 
+/* Return a pair (q, r) such that a = b * q + r, and
+   abs(r) <= abs(b)/2, with equality possible only if q is even.
+   In other words, q == a / b, rounded to the nearest integer using
+   round-half-to-even. */
+
+PyObject *
+_PyLong_Divmod_Near(PyObject *a, PyObject *b)
+{
+    PyLongObject *quo = NULL, *rem = NULL;
+    PyObject *one = NULL, *twice_rem, *result, *temp;
+    int cmp, quo_is_odd, quo_is_neg;
+
+    /* Equivalent Python code:
+
+       def divmod_near(a, b):
+           q, r = divmod(a, b)
+           # round up if either r / b > 0.5, or r / b == 0.5 and q is odd.
+           # The expression r / b > 0.5 is equivalent to 2 * r > b if b is
+           # positive, 2 * r < b if b negative.
+           greater_than_half = 2*r > b if b > 0 else 2*r < b
+           exactly_half = 2*r == b
+           if greater_than_half or exactly_half and q % 2 == 1:
+               q += 1
+               r -= b
+           return q, r
+
+    */
+    if (!PyLong_Check(a) || !PyLong_Check(b)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "non-integer arguments in division");
+        return NULL;
+    }
+
+    /* Do a and b have different signs?  If so, quotient is negative. */
+    quo_is_neg = (Py_SIZE(a) < 0) != (Py_SIZE(b) < 0);
+
+    one = PyLong_FromLong(1L);
+    if (one == NULL)
+        return NULL;
+
+    if (long_divrem((PyLongObject*)a, (PyLongObject*)b, &quo, &rem) < 0)
+        goto error;
+
+    /* compare twice the remainder with the divisor, to see
+       if we need to adjust the quotient and remainder */
+    twice_rem = long_lshift((PyObject *)rem, one);
+    if (twice_rem == NULL)
+        goto error;
+    if (quo_is_neg) {
+        temp = long_neg((PyLongObject*)twice_rem);
+        Py_DECREF(twice_rem);
+        twice_rem = temp;
+        if (twice_rem == NULL)
+            goto error;
+    }
+    cmp = long_compare((PyLongObject *)twice_rem, (PyLongObject *)b);
+    Py_DECREF(twice_rem);
+
+    quo_is_odd = Py_SIZE(quo) != 0 && ((quo->ob_digit[0] & 1) != 0);
+    if ((Py_SIZE(b) < 0 ? cmp < 0 : cmp > 0) || (cmp == 0 && quo_is_odd)) {
+        /* fix up quotient */
+        if (quo_is_neg)
+            temp = long_sub(quo, (PyLongObject *)one);
+        else
+            temp = long_add(quo, (PyLongObject *)one);
+        Py_DECREF(quo);
+        quo = (PyLongObject *)temp;
+        if (quo == NULL)
+            goto error;
+        /* and remainder */
+        if (quo_is_neg)
+            temp = long_add(rem, (PyLongObject *)b);
+        else
+            temp = long_sub(rem, (PyLongObject *)b);
+        Py_DECREF(rem);
+        rem = (PyLongObject *)temp;
+        if (rem == NULL)
+            goto error;
+    }
+
+    result = PyTuple_New(2);
+    if (result == NULL)
+        goto error;
+
+    /* PyTuple_SET_ITEM steals references */
+    PyTuple_SET_ITEM(result, 0, (PyObject *)quo);
+    PyTuple_SET_ITEM(result, 1, (PyObject *)rem);
+    Py_DECREF(one);
+    return result;
+
+  error:
+    Py_XDECREF(quo);
+    Py_XDECREF(rem);
+    Py_XDECREF(one);
+    return NULL;
+}
+
 static PyObject *
 long_round(PyObject *self, PyObject *args)
 {
-    PyObject *o_ndigits=NULL, *temp;
-    PyLongObject *pow=NULL, *q=NULL, *r=NULL, *ndigits=NULL, *one;
-    int errcode;
-    digit q_mod_4;
+    PyObject *o_ndigits=NULL, *temp, *result, *ndigits;
 
-    /* Notes on the algorithm: to round to the nearest 10**n (n positive),
-       the straightforward method is:
-
-          (1) divide by 10**n
-          (2) round to nearest integer (round to even in case of tie)
-          (3) multiply result by 10**n.
-
-       But the rounding step involves examining the fractional part of the
-       quotient to see whether it's greater than 0.5 or not.  Since we
-       want to do the whole calculation in integer arithmetic, it's
-       simpler to do:
-
-          (1) divide by (10**n)/2
-          (2) round to nearest multiple of 2 (multiple of 4 in case of tie)
-          (3) multiply result by (10**n)/2.
-
-       Then all we need to know about the fractional part of the quotient
-       arising in step (2) is whether it's zero or not.
-
-       Doing both a multiplication and division is wasteful, and is easily
-       avoided if we just figure out how much to adjust the original input
-       by to do the rounding.
-
-       Here's the whole algorithm expressed in Python.
-
-        def round(self, ndigits = None):
-        """round(int, int) -> int"""
-        if ndigits is None or ndigits >= 0:
-            return self
-        pow = 10**-ndigits >> 1
-        q, r = divmod(self, pow)
-        self -= r
-        if (q & 1 != 0):
-            if (q & 2 == r == 0):
-            self -= pow
-            else:
-            self += pow
-        return self
-
-    */
+    /* To round an integer m to the nearest 10**n (n positive), we make use of
+     * the divmod_near operation, defined by:
+     *
+     *   divmod_near(a, b) = (q, r)
+     *
+     * where q is the nearest integer to the quotient a / b (the
+     * nearest even integer in the case of a tie) and r == a - q * b.
+     * Hence q * b = a - r is the nearest multiple of b to a,
+     * preferring even multiples in the case of a tie.
+     *
+     * So the nearest multiple of 10**n to m is:
+     *
+     *   m - divmod_near(m, 10**n)[1].
+     */
     if (!PyArg_ParseTuple(args, "|O", &o_ndigits))
         return NULL;
     if (o_ndigits == NULL)
         return long_long(self);
 
-    ndigits = (PyLongObject *)PyNumber_Index(o_ndigits);
+    ndigits = PyNumber_Index(o_ndigits);
     if (ndigits == NULL)
         return NULL;
 
+    /* if ndigits >= 0 then no rounding is necessary; return self unchanged */
     if (Py_SIZE(ndigits) >= 0) {
         Py_DECREF(ndigits);
         return long_long(self);
     }
 
-    Py_INCREF(self); /* to keep refcounting simple */
-    /* we now own references to self, ndigits */
-
-    /* pow = 10 ** -ndigits >> 1 */
-    pow = (PyLongObject *)PyLong_FromLong(10L);
-    if (pow == NULL)
-        goto error;
-    temp = long_neg(ndigits);
+    /* result = self - divmod_near(self, 10 ** -ndigits)[1] */
+    temp = long_neg((PyLongObject*)ndigits);
     Py_DECREF(ndigits);
-    ndigits = (PyLongObject *)temp;
+    ndigits = temp;
     if (ndigits == NULL)
-        goto error;
-    temp = long_pow((PyObject *)pow, (PyObject *)ndigits, Py_None);
-    Py_DECREF(pow);
-    pow = (PyLongObject *)temp;
-    if (pow == NULL)
-        goto error;
-    assert(PyLong_Check(pow)); /* check long_pow returned a long */
-    one = (PyLongObject *)PyLong_FromLong(1L);
-    if (one == NULL)
-        goto error;
-    temp = long_rshift(pow, one);
-    Py_DECREF(one);
-    Py_DECREF(pow);
-    pow = (PyLongObject *)temp;
-    if (pow == NULL)
-        goto error;
+        return NULL;
 
-    /* q, r = divmod(self, pow) */
-    errcode = l_divmod((PyLongObject *)self, pow, &q, &r);
-    if (errcode == -1)
-        goto error;
-
-    /* self -= r */
-    temp = long_sub((PyLongObject *)self, r);
-    Py_DECREF(self);
-    self = temp;
-    if (self == NULL)
-        goto error;
-
-    /* get value of quotient modulo 4 */
-    if (Py_SIZE(q) == 0)
-        q_mod_4 = 0;
-    else if (Py_SIZE(q) > 0)
-        q_mod_4 = q->ob_digit[0] & 3;
-    else
-        q_mod_4 = (PyLong_BASE-q->ob_digit[0]) & 3;
-
-    if ((q_mod_4 & 1) == 1) {
-        /* q is odd; round self up or down by adding or subtracting pow */
-        if (q_mod_4 == 1 && Py_SIZE(r) == 0)
-            temp = (PyObject *)long_sub((PyLongObject *)self, pow);
-        else
-            temp = (PyObject *)long_add((PyLongObject *)self, pow);
-        Py_DECREF(self);
-        self = temp;
-        if (self == NULL)
-            goto error;
+    result = PyLong_FromLong(10L);
+    if (result == NULL) {
+        Py_DECREF(ndigits);
+        return NULL;
     }
-    Py_DECREF(q);
-    Py_DECREF(r);
-    Py_DECREF(pow);
-    Py_DECREF(ndigits);
-    return self;
 
-  error:
-    Py_XDECREF(q);
-    Py_XDECREF(r);
-    Py_XDECREF(pow);
-    Py_XDECREF(self);
-    Py_XDECREF(ndigits);
-    return NULL;
+    temp = long_pow(result, ndigits, Py_None);
+    Py_DECREF(ndigits);
+    Py_DECREF(result);
+    result = temp;
+    if (result == NULL)
+        return NULL;
+
+    temp = _PyLong_Divmod_Near(self, result);
+    Py_DECREF(result);
+    result = temp;
+    if (result == NULL)
+        return NULL;
+
+    temp = long_sub((PyLongObject *)self,
+                    (PyLongObject *)PyTuple_GET_ITEM(result, 1));
+    Py_DECREF(result);
+    result = temp;
+
+    return result;
 }
 
 static PyObject *

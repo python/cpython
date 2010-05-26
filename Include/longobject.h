@@ -101,6 +101,14 @@ PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
 */
 PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
 
+/* _PyLong_Divmod_Near.  Given integers a and b, compute the nearest
+   integer q to the exact quotient a / b, rounding to the nearest even integer
+   in the case of a tie.  Return (q, r), where r = a - q*b.  The remainder r
+   will satisfy abs(r) <= abs(b)/2, with equality possible only if q is
+   even.
+*/
+PyAPI_FUNC(PyObject *) _PyLong_Divmod_Near(PyObject *, PyObject *);
+
 /* _PyLong_FromByteArray:  View the n unsigned bytes as a binary integer in
    base 256, and return a Python long with the same numeric value.
    If n is 0, the integer is 0.  Else:
