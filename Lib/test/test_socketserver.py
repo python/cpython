@@ -61,6 +61,7 @@ def simple_subprocess(testcase):
     testcase.assertEquals(72 << 8, status)
 
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
 class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
