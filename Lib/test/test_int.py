@@ -175,6 +175,12 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int(' 0O123   ', 0), 83)
         self.assertEqual(int(' 0X123  ', 0), 291)
         self.assertEqual(int(' 0B100 ', 0), 4)
+        self.assertEqual(int('0', 0), 0)
+        self.assertEqual(int('+0', 0), 0)
+        self.assertEqual(int('-0', 0), 0)
+        self.assertEqual(int('00', 0), 0)
+        self.assertRaises(ValueError, int, '08', 0)
+        self.assertRaises(ValueError, int, '-012395', 0)
 
         # without base still base 10
         self.assertEqual(int('0123'), 123)
