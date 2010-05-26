@@ -738,7 +738,7 @@ class TestTLS_FTPClass(TestCase):
 
         self.client.prot_p()
         sock = self.client.transfercmd('list')
-        self.assertIs(self.client.sock.context, ctx)
+        self.assertIs(sock.context, ctx)
         self.assertIsInstance(sock, ssl.SSLSocket)
         sock.close()
 
