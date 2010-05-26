@@ -226,6 +226,8 @@ Build
 Tests
 -----
 
+- Issue #7449: Skip test_socketserver if threading support is disabled
+
 - Issue #8672: Add a zlib test ensuring that an incomplete stream can be
   handled by a decompressor object without errors (it returns incomplete
   uncompressed data).
