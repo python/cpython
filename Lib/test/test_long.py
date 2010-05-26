@@ -345,6 +345,16 @@ class LongTest(unittest.TestCase):
         self.assertRaises(ValueError, int, '08', 0)
         self.assertRaises(ValueError, int, '-012395', 0)
 
+        # invalid bases
+        invalid_bases = [-909,
+                          2**31-1, 2**31, -2**31, -2**31-1,
+                          2**63-1, 2**63, -2**63, -2**63-1,
+                          2**100, -2**100,
+                          ]
+        for base in invalid_bases:
+            self.assertRaises(ValueError, int, '42', base)
+
+
     def test_conversion(self):
 
         class JustLong:
