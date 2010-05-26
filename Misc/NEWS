@@ -75,6 +75,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #7449: Skip test_socketserver if threading support is disabled
+
 - On darwin, ``test_site`` assumed that a framework build was being used,
   leading to a failure where four directories were expected for site-packages
   instead of two in a non-framework build.
