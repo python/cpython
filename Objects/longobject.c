@@ -4098,23 +4098,34 @@ long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static PyObject *
 long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *x = NULL;
-    int base = -909;                         /* unlikely! */
+    PyObject *obase = NULL, *x = NULL;
+    long base;
+    int overflow;
     static char *kwlist[] = {"x", "base", 0};
 
     if (type != &PyLong_Type)
         return long_subtype_new(type, args, kwds); /* Wimp out */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oi:int", kwlist,
-                                     &x, &base))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:int", kwlist,
+                                     &x, &obase))
         return NULL;
     if (x == NULL)
         return PyLong_FromLong(0L);
-    if (base == -909)
+    if (obase == NULL)
         return PyNumber_Long(x);
-    else if (PyUnicode_Check(x))
+
+    base = PyLong_AsLongAndOverflow(obase, &overflow);
+    if (base == -1 && PyErr_Occurred())
+        return NULL;
+    if (overflow || (base != 0 && base < 2) || base > 36) {
+        PyErr_SetString(PyExc_ValueError,
+                        "int() arg 2 must be >= 2 and <= 36");
+        return NULL;
+    }
+
+    if (PyUnicode_Check(x))
         return PyLong_FromUnicode(PyUnicode_AS_UNICODE(x),
                                   PyUnicode_GET_SIZE(x),
-                                  base);
+                                  (int)base);
     else if (PyByteArray_Check(x) || PyBytes_Check(x)) {
         /* Since PyLong_FromString doesn't have a length parameter,
          * check here for possible NULs in the string. */
@@ -4129,10 +4140,10 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                x is a bytes or buffer, *and* a base is given. */
             PyErr_Format(PyExc_ValueError,
                          "invalid literal for int() with base %d: %R",
-                         base, x);
+                         (int)base, x);
             return NULL;
         }
-        return PyLong_FromString(string, NULL, base);
+        return PyLong_FromString(string, NULL, (int)base);
     }
     else {
         PyErr_SetString(PyExc_TypeError,

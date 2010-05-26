@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #2844: Make int('42', n) consistently raise ValueError for
+  invalid integers n (including n = -909).
+
 - Issue #8188: Introduce a new scheme for computing hashes of numbers
   (instances of int, float, complex, decimal.Decimal and
   fractions.Fraction) that makes it easy to maintain the invariant
