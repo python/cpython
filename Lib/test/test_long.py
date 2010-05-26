@@ -404,6 +404,20 @@ class LongTest(unittest.TestCase):
         self.assertEqual(int('2br45qc', 35), 4294967297)
         self.assertEqual(int('1z141z5', 36), 4294967297)
 
+        # tests with base 0
+        self.assertEqual(int('000', 0), 0)
+        self.assertEqual(int('0o123', 0), 83)
+        self.assertEqual(int('0x123', 0), 291)
+        self.assertEqual(int('0b100', 0), 4)
+        self.assertEqual(int(' 0O123   ', 0), 83)
+        self.assertEqual(int(' 0X123  ', 0), 291)
+        self.assertEqual(int(' 0B100 ', 0), 4)
+        self.assertEqual(int('0', 0), 0)
+        self.assertEqual(int('+0', 0), 0)
+        self.assertEqual(int('-0', 0), 0)
+        self.assertEqual(int('00', 0), 0)
+        self.assertRaises(ValueError, int, '08', 0)
+        self.assertRaises(ValueError, int, '-012395', 0)
 
     def test_conversion(self):
         # Test __int__()
