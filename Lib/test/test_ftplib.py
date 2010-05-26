@@ -719,6 +719,29 @@ class TestTLS_FTPClass(TestCase):
         finally:
             self.client.ssl_version = ssl.PROTOCOL_TLSv1
 
+    def test_context(self):
+        self.client.quit()
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        self.assertRaises(ValueError, ftplib.FTP_TLS, keyfile=CERTFILE,
+                          context=ctx)
+        self.assertRaises(ValueError, ftplib.FTP_TLS, certfile=CERTFILE,
+                          context=ctx)
+        self.assertRaises(ValueError, ftplib.FTP_TLS, certfile=CERTFILE,
+                          keyfile=CERTFILE, context=ctx)
+
+        self.client = ftplib.FTP_TLS(context=ctx, timeout=2)
+        self.client.connect(self.server.host, self.server.port)
+        self.assertNotIsInstance(self.client.sock, ssl.SSLSocket)
+        self.client.auth()
+        self.assertIs(self.client.sock.context, ctx)
+        self.assertIsInstance(self.client.sock, ssl.SSLSocket)
+
+        self.client.prot_p()
+        sock = self.client.transfercmd('list')
+        self.assertIs(self.client.sock.context, ctx)
+        self.assertIsInstance(sock, ssl.SSLSocket)
+        sock.close()
+
 
 class TestTimeouts(TestCase):
 

@@ -638,9 +638,17 @@ else:
         ssl_version = ssl.PROTOCOL_TLSv1
 
         def __init__(self, host='', user='', passwd='', acct='', keyfile=None,
-                     certfile=None, timeout=_GLOBAL_DEFAULT_TIMEOUT):
+                     certfile=None, context=None,
+                     timeout=_GLOBAL_DEFAULT_TIMEOUT):
+            if context is not None and keyfile is not None:
+                raise ValueError("context and keyfile arguments are mutually "
+                                 "exclusive")
+            if context is not None and certfile is not None:
+                raise ValueError("context and certfile arguments are mutually "
+                                 "exclusive")
             self.keyfile = keyfile
             self.certfile = certfile
+            self.context = context
             self._prot_p = False
             FTP.__init__(self, host, user, passwd, acct, timeout)
 
@@ -657,8 +665,12 @@ else:
                 resp = self.voidcmd('AUTH TLS')
             else:
                 resp = self.voidcmd('AUTH SSL')
-            self.sock = ssl.wrap_socket(self.sock, self.keyfile, self.certfile,
-                                        ssl_version=self.ssl_version)
+            if self.context is not None:
+                self.sock = self.context.wrap_socket(self.sock)
+            else:
+                self.sock = ssl.wrap_socket(self.sock, self.keyfile,
+                                            self.certfile,
+                                            ssl_version=self.ssl_version)
             self.file = self.sock.makefile(mode='r', encoding=self.encoding)
             return resp
 
@@ -689,8 +701,11 @@ else:
         def ntransfercmd(self, cmd, rest=None):
             conn, size = FTP.ntransfercmd(self, cmd, rest)
             if self._prot_p:
-                conn = ssl.wrap_socket(conn, self.keyfile, self.certfile,
-                                       ssl_version=self.ssl_version)
+                if self.context is not None:
+                    conn = self.context.wrap_socket(conn)
+                else:
+                    conn = ssl.wrap_socket(conn, self.keyfile, self.certfile,
+                                           ssl_version=self.ssl_version)
             return conn, size
 
         def retrbinary(self, cmd, callback, blocksize=8192, rest=None):

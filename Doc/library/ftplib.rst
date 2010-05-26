@@ -65,7 +65,7 @@ The module defines the following items:
       Support for the :keyword:`with` statement was added.
 
 
-.. class:: FTP_TLS(host='', user='', passwd='', acct='', [keyfile[, certfile[, timeout]]])
+.. class:: FTP_TLS(host='', user='', passwd='', acct='', [keyfile[, certfile[, context[, timeout]]]])
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
@@ -74,6 +74,9 @@ The module defines the following items:
    explicitly ask for it by calling the :meth:`prot_p` method.
    *keyfile* and *certfile* are optional -- they can contain a PEM formatted
    private key and certificate chain file name for the SSL connection.
+   *context* parameter is a :class:`ssl.SSLContext` object which allows
+   bundling SSL configuration options, certificates and private keys into a
+   single (potentially long-lived) structure.
 
    .. versionadded:: 3.2
 

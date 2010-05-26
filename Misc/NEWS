@@ -392,6 +392,8 @@ C-API
 Library
 -------
 
+- Issue #8806: add SSL contexts support to ftplib.
+
 - Issue #4769: Fix main() function of the base64 module, use sys.stdin.buffer
   and sys.stdout.buffer (instead of sys.stdin and sys.stdout) to use the bytes
   API
