@@ -323,6 +323,23 @@ class LongTest(unittest.TestCase):
         self.assertRaises(ValueError, long, '53', 40)
         self.assertRaises(TypeError, long, 1, 12)
 
+        # tests with base 0
+        self.assertEqual(long(' 0123  ', 0), 83)
+        self.assertEqual(long(' 0123  ', 0), 83)
+        self.assertEqual(long('000', 0), 0)
+        self.assertEqual(long('0o123', 0), 83)
+        self.assertEqual(long('0x123', 0), 291)
+        self.assertEqual(long('0b100', 0), 4)
+        self.assertEqual(long(' 0O123   ', 0), 83)
+        self.assertEqual(long(' 0X123  ', 0), 291)
+        self.assertEqual(long(' 0B100 ', 0), 4)
+        self.assertEqual(long('0', 0), 0)
+        self.assertEqual(long('+0', 0), 0)
+        self.assertEqual(long('-0', 0), 0)
+        self.assertEqual(long('00', 0), 0)
+        self.assertRaises(ValueError, long, '08', 0)
+        self.assertRaises(ValueError, long, '-012395', 0)
+
         # SF patch #1638879: embedded NULs were not detected with
         # explicit base
         self.assertRaises(ValueError, long, '123\0', 10)
