@@ -1096,7 +1096,14 @@ PyEnumKey(PyObject *self, PyObject *args)
     int index;
     long rc;
     PyObject *retStr;
-    wchar_t tmpbuf[256]; /* max key name length is 255 */
+
+    /* The Windows docs claim that the max key name length is 255
+     * characters, plus a terminating nul character.  However,
+     * empirical testing demonstrates that it is possible to
+     * create a 256 character key that is missing the terminating
+     * nul.  RegEnumKeyEx requires a 257 character buffer to
+     * retrieve such a key name. */
+    wchar_t tmpbuf[257];
     DWORD len = sizeof(tmpbuf); /* includes NULL terminator */
 
     if (!PyArg_ParseTuple(args, "Oi:EnumKey", &obKey, &index))
@@ -1123,8 +1130,8 @@ PyEnumValue(PyObject *self, PyObject *args)
     long rc;
     wchar_t *retValueBuf;
     BYTE *retDataBuf;
-    DWORD retValueSize;
-    DWORD retDataSize;
+    DWORD retValueSize, bufValueSize;
+    DWORD retDataSize, bufDataSize;
     DWORD typ;
     PyObject *obData;
     PyObject *retVal;
@@ -1142,6 +1149,8 @@ PyEnumValue(PyObject *self, PyObject *args)
                                                    "RegQueryInfoKey");
     ++retValueSize;    /* include null terminators */
     ++retDataSize;
+    bufDataSize = retDataSize;
+    bufValueSize = retValueSize;
     retValueBuf = (wchar_t *)PyMem_Malloc(sizeof(wchar_t) * retValueSize);
     if (retValueBuf == NULL)
         return PyErr_NoMemory();
@@ -1151,16 +1160,33 @@ PyEnumValue(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    rc = RegEnumValueW(hKey,
-                      index,
-                      retValueBuf,
-                      &retValueSize,
-                      NULL,
-                      &typ,
-                      retDataBuf,
-                      &retDataSize);
-    Py_END_ALLOW_THREADS
+    while (1) {
+        wchar_t *tmp;
+        Py_BEGIN_ALLOW_THREADS
+        rc = RegEnumValueW(hKey,
+                  index,
+                  retValueBuf,
+                  &retValueSize,
+                  NULL,
+                  &typ,
+                  (BYTE *)retDataBuf,
+                  &retDataSize);
+        Py_END_ALLOW_THREADS
+
+        if (rc != ERROR_MORE_DATA)
+            break;
+
+        bufDataSize *= 2;
+        tmp = (char *)PyMem_Realloc(retDataBuf, bufDataSize);
+        if (tmp == NULL) {
+            PyErr_NoMemory();
+            retVal = NULL;
+            goto fail;
+        }
+        retDataBuf = tmp;
+        retDataSize = bufDataSize;
+        retValueSize = bufValueSize;
+    }
 
     if (rc != ERROR_SUCCESS) {
         retVal = PyErr_SetFromWindowsErrWithFunction(rc,
@@ -1317,23 +1343,44 @@ PyQueryValue(PyObject *self, PyObject *args)
     long rc;
     PyObject *retStr;
     wchar_t *retBuf;
-    long bufSize = 0;
+    DWORD bufSize = 0;
+    DWORD retSize = 0;
+    wchar_t *tmp;
 
     if (!PyArg_ParseTuple(args, "OZ:QueryValue", &obKey, &subKey))
         return NULL;
 
     if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
         return NULL;
-    if ((rc = RegQueryValueW(hKey, subKey, NULL, &bufSize))
-        != ERROR_SUCCESS)
+
+    rc = RegQueryValueW(hKey, subKey, NULL, &retSize);
+    if (rc == ERROR_MORE_DATA)
+        retSize = 256;
+    else if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegQueryValue");
-    retBuf = (wchar_t *)PyMem_Malloc(bufSize);
+
+    bufSize = retSize;
+    retBuf = (wchar_t *) PyMem_Malloc(bufSize);
     if (retBuf == NULL)
         return PyErr_NoMemory();
 
-    if ((rc = RegQueryValueW(hKey, subKey, retBuf, &bufSize))
-        != ERROR_SUCCESS) {
+    while (1) {
+        retSize = bufSize;
+        rc = RegQueryValueW(hKey, subKey, retBuf, &retSize);
+        if (rc != ERROR_MORE_DATA)
+            break;
+
+        bufSize *= 2;
+        tmp = (wchar_t *) PyMem_Realloc(retBuf, bufSize);
+        if (tmp == NULL) {
+            PyMem_Free(retBuf);
+            return PyErr_NoMemory();
+        }
+        retBuf = tmp;
+    }
+
+    if (rc != ERROR_SUCCESS) {
         PyMem_Free(retBuf);
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegQueryValue");
@@ -1352,8 +1399,8 @@ PyQueryValueEx(PyObject *self, PyObject *args)
     wchar_t *valueName;
 
     long rc;
-    BYTE *retBuf;
-    DWORD bufSize = 0;
+    BYTE *retBuf, *tmp;
+    DWORD bufSize = 0, retSize;
     DWORD typ;
     PyObject *obData;
     PyObject *result;
@@ -1363,18 +1410,34 @@ PyQueryValueEx(PyObject *self, PyObject *args)
 
     if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
         return NULL;
-    if ((rc = RegQueryValueExW(hKey, valueName,
-                              NULL, NULL, NULL,
-                              &bufSize))
-        != ERROR_SUCCESS)
+
+    rc = RegQueryValueExW(hKey, valueName, NULL, NULL, NULL, &bufSize);
+    if (rc == ERROR_MORE_DATA)
+        bufSize = 256;
+    else if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegQueryValueEx");
     retBuf = (BYTE *)PyMem_Malloc(bufSize);
     if (retBuf == NULL)
         return PyErr_NoMemory();
-    if ((rc = RegQueryValueExW(hKey, valueName, NULL,
-                              &typ, retBuf, &bufSize))
-        != ERROR_SUCCESS) {
+
+    while (1) {
+        retSize = bufSize;
+        rc = RegQueryValueExW(hKey, valueName, NULL, &typ,
+                             (BYTE *)retBuf, &retSize);
+        if (rc != ERROR_MORE_DATA)
+            break;
+
+        bufSize *= 2;
+        tmp = (char *) PyMem_Realloc(retBuf, bufSize);
+        if (tmp == NULL) {
+            PyMem_Free(retBuf);
+            return PyErr_NoMemory();
+        }
+       retBuf = tmp;
+    }
+
+    if (rc != ERROR_SUCCESS) {
         PyMem_Free(retBuf);
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegQueryValueEx");

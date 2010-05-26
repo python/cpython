@@ -5,6 +5,7 @@
 import os, sys
 import unittest
 from test import support
+threading = support.import_module("threading")
 from platform import machine
 
 # Do this first so test will be skipped if module doesn't exist
@@ -226,6 +227,58 @@ class LocalWinregTests(BaseWinregTests):
                 raise WindowsError
         except WindowsError:
             self.assertEqual(h.handle, 0)
+
+    def test_changing_value(self):
+        # Issue2810: A race condition in 2.6 and 3.1 may cause
+        # EnumValue or QueryValue to throw "WindowsError: More data is
+        # available"
+        done = False
+
+        class VeryActiveThread(threading.Thread):
+            def run(self):
+                with CreateKey(HKEY_CURRENT_USER, test_key_name) as key:
+                    use_short = True
+                    long_string = 'x'*2000
+                    while not done:
+                        s = 'x' if use_short else long_string
+                        use_short = not use_short
+                        SetValue(key, 'changing_value', REG_SZ, s)
+
+        thread = VeryActiveThread()
+        thread.start()
+        try:
+            with CreateKey(HKEY_CURRENT_USER,
+                           test_key_name+'\\changing_value') as key:
+                for _ in range(1000):
+                    num_subkeys, num_values, t = QueryInfoKey(key)
+                    for i in range(num_values):
+                        name = EnumValue(key, i)
+                        QueryValue(key, name[0])
+        finally:
+            done = True
+            thread.join()
+            DeleteKey(HKEY_CURRENT_USER, test_key_name+'\\changing_value')
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
+    def test_long_key(self):
+        # Issue2810, in 2.6 and 3.1 when the key name was exactly 256
+        # characters, EnumKey threw "WindowsError: More data is
+        # available"
+        name = 'x'*256
+        try:
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as key:
+                SetValue(key, name, REG_SZ, 'x')
+                num_subkeys, num_values, t = QueryInfoKey(key)
+                EnumKey(key, 0)
+        finally:
+            DeleteKey(HKEY_CURRENT_USER, '\\'.join((test_key_name, name)))
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
+    def test_dynamic_key(self):
+        # Issue2810, when the value is dynamically generated, these
+        # throw "WindowsError: More data is available" in 2.6 and 3.1
+        EnumValue(HKEY_PERFORMANCE_DATA, 0)
+        QueryValueEx(HKEY_PERFORMANCE_DATA, "")
 
     # Reflection requires XP x64/Vista at a minimum. XP doesn't have this stuff
     # or DeleteKeyEx so make sure their use raises NotImplementedError
