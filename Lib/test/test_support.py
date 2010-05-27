@@ -757,7 +757,9 @@ def transient_internet():
     time_out = TransientResource(IOError, errno=errno.ETIMEDOUT)
     socket_peer_reset = TransientResource(socket.error, errno=errno.ECONNRESET)
     ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
-    with time_out, socket_peer_reset, ioerror_peer_reset:
+    dns_nodata = TransientResource(socket.gaierror, errno=socket.EAI_NODATA)
+    dns_noname = TransientResource(socket.gaierror, errno=socket.EAI_NONAME)
+    with time_out, socket_peer_reset, ioerror_peer_reset, dns_nodata, dns_noname:
         yield
 
 
