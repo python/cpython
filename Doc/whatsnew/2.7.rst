@@ -2354,6 +2354,12 @@ that may require changes to your code:
 
 In the standard library:
 
+* Operations with :class:`datetime` instances that resulted in a year
+  falling outside the supported range didn't always raise
+  :exc:`OverflowError`.  Such errors are now checked more carefully
+  and will now raise the exception. (Reported by Mark Leander, patch
+  by Anand B. Pillai and Alexander Belopolsky; :issue:`7150`.)
+
 * When using :class:`Decimal` instances with a string's
   :meth:`format` method, the default alignment was previously
   left-alignment.  This has been changed to right-alignment, which might
