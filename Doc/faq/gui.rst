@@ -28,17 +28,22 @@ Unix platforms.
 wxWidgets
 '''''''''
 
-wxWidgets is a GUI class library written in C++ that's a portable
-interface to various platform-specific libraries, and that has a
-Python interface called `wxPython <http://www.wxpython.org>`__.
+wxWidgets (http://www.wxwidgets.org) is a free, portable GUI class
+library written in C++ that provides a native look and feel on a
+number of platforms, with Windows, MacOS X, GTK, X11, all listed as
+current stable targets.  Language bindings are available for a number
+of languages including Python, Perl, Ruby, etc.
 
-wxWidgets preserves the look and feel of the
-underlying graphics toolkit, and has a large set of widgets and
-collection of GDI classes.  See `the wxWidgets page
-<http://www.wxwidgets.org>`_ for more details.
+wxPython (http://www.wxpython.org) is the Python binding for
+wxwidgets.  While it often lags slightly behind the official wxWidgets
+releases, it also offers a number of features via pure Python
+extensions that are not available in other language bindings.  There
+is an active wxPython user and developer community.
 
-wxWidgets supports Windows and MacOS; on Unix variants,
-it supports both GTk+ and Motif toolkits.
+Both wxWidgets and wxPython are free, open source, software with
+permissive licences that allow their use in commercial products as
+well as in freeware or shareware.
+
 
 Qt
 '''
