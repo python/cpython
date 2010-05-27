@@ -6,18 +6,15 @@ Graphic User Interface FAQ
 
 .. contents::
 
-General GUI Questions
-=====================
-
 What platform-independent GUI toolkits exist for Python?
---------------------------------------------------------
+========================================================
 
 Depending on what platform(s) you are aiming at, there are several.
 
 .. XXX check links
 
 Tkinter
-'''''''
+-------
 
 Standard builds of Python include an object-oriented interface to the Tcl/Tk
 widget set, called Tkinter.  This is probably the easiest to install and use.
@@ -26,7 +23,7 @@ page at http://www.tcl.tk.  Tcl/Tk is fully portable to the MacOS, Windows, and
 Unix platforms.
 
 wxWidgets
-'''''''''
+---------
 
 wxWidgets (http://www.wxwidgets.org) is a free, portable GUI class
 library written in C++ that provides a native look and feel on a
@@ -46,7 +43,7 @@ well as in freeware or shareware.
 
 
 Qt
-'''
+---
 
 There are bindings available for the Qt toolkit (`PyQt
 <http://www.riverbankcomputing.co.uk/software/pyqt/>`_) and for KDE (`PyKDE <http://www.riverbankcomputing.co.uk/software/pykde/intro>`__).  If
@@ -57,13 +54,13 @@ Qt 4.5 upwards is licensed under the LGPL license) a Qt license from `Trolltech
 <http://www.trolltech.com>`_.
 
 Gtk+
-''''
+----
 
 PyGtk bindings for the `Gtk+ toolkit <http://www.gtk.org>`_ have been
 implemented by James Henstridge; see <http://www.pygtk.org>.
 
 FLTK
-''''
+----
 
 Python bindings for `the FLTK toolkit <http://www.fltk.org>`_, a simple yet
 powerful and mature cross-platform windowing system, are available from `the
@@ -71,7 +68,7 @@ PyFLTK project <http://pyfltk.sourceforge.net>`_.
 
 
 FOX
-'''
+----
 
 A wrapper for `the FOX toolkit <http://www.fox-toolkit.org/>`_ called `FXpy
 <http://fxpy.sourceforge.net/>`_ is available.  FOX supports both Unix variants
@@ -79,13 +76,13 @@ and Windows.
 
 
 OpenGL
-''''''
+------
 
 For OpenGL bindings, see `PyOpenGL <http://pyopengl.sourceforge.net>`_.
 
 
 What platform-specific GUI toolkits exist for Python?
------------------------------------------------------
+========================================================
 
 `The Mac port <http://python.org/download/mac>`_ by Jack Jansen has a rich and
 ever-growing set of modules that support the native Mac toolbox calls.  The port
