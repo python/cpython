@@ -32,6 +32,9 @@ C-API
 Library
 -------
 
+- Issue #7150: Raise OverflowError if the result of adding or subtracting
+  timedelta from date or datetime falls outside of the MINYEAR:MAXYEAR range.
+
 - Issue #6662: Fix parsing of malformatted charref (&#bad;), patch written by
   Fredrik Håård
 

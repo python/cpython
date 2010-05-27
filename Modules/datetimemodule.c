@@ -32,6 +32,7 @@
 
 #define MINYEAR 1
 #define MAXYEAR 9999
+#define MAXORDINAL 3652059 /* date(9999,12,31).toordinal() */
 
 /* Nine decimal digits is easy to communicate, and leaves enough room
  * so that two delta days can be added w/o fear of overflowing a signed
@@ -482,7 +483,7 @@ normalize_d_s_us(int *d, int *s, int *us)
  * The input values must be such that the internals don't overflow.
  * The way this routine is used, we don't get close.
  */
-static void
+static int
 normalize_y_m_d(int *y, int *m, int *d)
 {
     int dim;            /* # of days in month */
@@ -536,11 +537,23 @@ normalize_y_m_d(int *y, int *m, int *d)
         else {
             int ordinal = ymd_to_ord(*y, *m, 1) +
                                       *d - 1;
-            ord_to_ymd(ordinal, y, m, d);
+            if (ordinal < 1 || ordinal > MAXORDINAL) {
+                goto error;
+            } else {
+                ord_to_ymd(ordinal, y, m, d);
+                return 0;
+            }
         }
     }
     assert(*m > 0);
     assert(*d > 0);
+    if (MINYEAR <= *y && *y <= MAXYEAR)
+        return 0;
+ error:
+    PyErr_SetString(PyExc_OverflowError,
+            "date value out of range");
+    return -1;
+
 }
 
 /* Fiddle out-of-bounds months and days so that the result makes some kind
@@ -550,17 +563,7 @@ normalize_y_m_d(int *y, int *m, int *d)
 static int
 normalize_date(int *year, int *month, int *day)
 {
-    int result;
-
-    normalize_y_m_d(year, month, day);
-    if (MINYEAR <= *year && *year <= MAXYEAR)
-        result = 0;
-    else {
-        PyErr_SetString(PyExc_OverflowError,
-                        "date value out of range");
-        result = -1;
-    }
-    return result;
+    return normalize_y_m_d(year, month, day);
 }
 
 /* Force all the datetime fields into range.  The parameters are both
