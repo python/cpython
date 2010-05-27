@@ -700,15 +700,16 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
     def test_overflow(self):
         tiny = self.theclass.resolution
 
-        dt = self.theclass.min + tiny
-        dt -= tiny  # no problem
-        self.assertRaises(OverflowError, dt.__sub__, tiny)
-        self.assertRaises(OverflowError, dt.__add__, -tiny)
+        for delta in [tiny, timedelta(1), timedelta(2)]:
+            dt = self.theclass.min + delta
+            dt -= delta  # no problem
+            self.assertRaises(OverflowError, dt.__sub__, delta)
+            self.assertRaises(OverflowError, dt.__add__, -delta)
 
-        dt = self.theclass.max - tiny
-        dt += tiny  # no problem
-        self.assertRaises(OverflowError, dt.__add__, tiny)
-        self.assertRaises(OverflowError, dt.__sub__, -tiny)
+            dt = self.theclass.max - delta
+            dt += delta  # no problem
+            self.assertRaises(OverflowError, dt.__add__, delta)
+            self.assertRaises(OverflowError, dt.__sub__, -delta)
 
     def test_fromtimestamp(self):
         import time
