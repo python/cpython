@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8837: Remove "O?" format of PyArg_Parse*() functions. The format is no
+  used anymore and it was never documented.
+
 - Issue #2844: Make int('42', n) consistently raise ValueError for
   invalid integers n (including n = -909).
 
