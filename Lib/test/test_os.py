@@ -706,17 +706,22 @@ class Win32KillTests(unittest.TestCase):
                                 stderr=subprocess.PIPE,
                                 stdin=subprocess.PIPE)
 
-        # Let the process start up (See #3137)
-        time.sleep(0.5)
-
-        # Create a string buffer to store the result of stdout from the pipe
-        buf = ctypes.create_string_buffer(len(msg))
-        # Obtain the text currently in proc.stdout
-        # Bytes read/avail/left are left as NULL and unused
-        rslt = PeekNamedPipe(msvcrt.get_osfhandle(proc.stdout.fileno()), buf,
-                             ctypes.sizeof(buf), None, None, None)
-        self.assertNotEqual(rslt, 0, "PeekNamedPipe failed")
-        self.assertEqual(msg, buf.value)
+        count, max = 0, 100
+        while count < max and proc.poll() is None:
+            # Create a string buffer to store the result of stdout from the pipe
+            buf = ctypes.create_string_buffer(len(msg))
+            # Obtain the text currently in proc.stdout
+            # Bytes read/avail/left are left as NULL and unused
+            rslt = PeekNamedPipe(msvcrt.get_osfhandle(proc.stdout.fileno()),
+                                 buf, ctypes.sizeof(buf), None, None, None)
+            self.assertNotEqual(rslt, 0, "PeekNamedPipe failed")
+            if buf.value:
+                self.assertEqual(msg, buf.value)
+                break
+            time.sleep(0.1)
+            count += 1
+        else:
+            self.fail("Did not receive communication from the subprocess")
 
         os.kill(proc.pid, sig)
         self.assertEqual(proc.wait(), sig)
