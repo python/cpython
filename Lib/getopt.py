@@ -1,4 +1,3 @@
-# -*- coding: iso-8859-1 -*-
 """Parser for command line options.
 
 This module helps scripts to parse the command line arguments in
@@ -20,7 +19,7 @@ option involved with the exception.
 # Gerrit Holl <gerrit@nl.linux.org> moved the string-based exceptions
 # to class-based exceptions.
 #
-# Peter Åstrand <astrand@lysator.liu.se> added gnu_getopt().
+# Peter Astrand <astrand@lysator.liu.se> added gnu_getopt().
 #
 # TODO for gnu_getopt():
 #
