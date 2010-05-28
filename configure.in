@@ -342,9 +342,12 @@ case $ac_sys_system/$ac_sys_release in
   # Marc Recht
   NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6@<:@A-S@:>@)
     define_xopen_source=no;;
-  # On Solaris 2.6, sys/wait.h is inconsistent in the usage
-  # of union __?sigval. Reported by Stuart Bishop.
-  SunOS/5.6)
+  # From the perspective of Solaris, _XOPEN_SOURCE is not so much a
+  # request to enable features supported by the standard as a request
+  # to disable features not supported by the standard.  The best way
+  # for Python to use Solaris is simply to leave _XOPEN_SOURCE out
+  # entirely and define __EXTENSIONS__ instead.
+  SunOS/*)
     define_xopen_source=no;;
   # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
   # but used in /usr/include/netinet/tcp.h. Reported by Tim Rice.
@@ -390,35 +393,15 @@ esac
 
 if test $define_xopen_source = yes
 then
-  # On Solaris w/ g++ it appears that _XOPEN_SOURCE has to be
-  # defined precisely as g++ defines it
-  # Furthermore, on Solaris 10, XPG6 requires the use of a C99
-  # compiler
-  case $ac_sys_system/$ac_sys_release in
-    SunOS/5.8|SunOS/5.9|SunOS/5.10)
-      AC_DEFINE(_XOPEN_SOURCE, 500, 
-                Define to the level of X/Open that your system supports)
-      ;;
-    *)
-      AC_DEFINE(_XOPEN_SOURCE, 600, 
-                Define to the level of X/Open that your system supports)
-      ;;
-  esac
+  AC_DEFINE(_XOPEN_SOURCE, 600, 
+            Define to the level of X/Open that your system supports)
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
   # definition of _XOPEN_SOURCE_EXTENDED and _POSIX_C_SOURCE, or else
   # several APIs are not declared. Since this is also needed in some
   # cases for HP-UX, we define it globally.
-  # except for Solaris 10, where it must not be defined, 
-  # as it implies XPG4.2
-  case $ac_sys_system/$ac_sys_release in
-    SunOS/5.10)
-      ;;
-    *)
-      AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1,
-      		Define to activate Unix95-and-earlier features)
-      ;;
-  esac
+  AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1,
+   	    Define to activate Unix95-and-earlier features)
 
   AC_DEFINE(_POSIX_C_SOURCE, 200112L, Define to activate features from IEEE Stds 1003.1-2001)
   

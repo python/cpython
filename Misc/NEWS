@@ -87,6 +87,10 @@ Tests
   leading to a failure where four directories were expected for site-packages
   instead of two in a non-framework build.
 
+Build
+-----
+
+- Issue #1759169: Drop _XOPEN_SOURCE on Solaris.
 
 What's New in Python 2.7 beta 2?
 ================================
