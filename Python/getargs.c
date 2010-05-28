@@ -1293,17 +1293,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 return converterr(type->tp_name, arg, msgbuf, bufsize);
 
         }
-        else if (*format == '?') {
-            inquiry pred = va_arg(*p_va, inquiry);
-            p = va_arg(*p_va, PyObject **);
-            format++;
-            if ((*pred)(arg))
-                *p = arg;
-            else
-                return converterr("(unspecified)",
-                                  arg, msgbuf, bufsize);
-
-        }
         else if (*format == '&') {
             typedef int (*converter)(PyObject *, void *);
             converter convert = va_arg(*p_va, converter);
