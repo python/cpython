@@ -188,11 +188,7 @@ tests.
 .. note::
 
    The :mod:`test.test_support` module has been renamed to :mod:`test.support`
-   in Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
-   converting your sources to 3.0.
-
-
-
+   in Python 3.x.
 
 The :mod:`test.test_support` module provides support for Python's regression
 tests.
