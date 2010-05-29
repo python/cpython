@@ -921,7 +921,7 @@ described below. In addition, the module provides three pre-made contexts:
 
    This context is used by the :class:`Context` constructor as a prototype for new
    contexts.  Changing a field (such a precision) has the effect of changing the
-   default for new contexts creating by the :class:`Context` constructor.
+   default for new contexts created by the :class:`Context` constructor.
 
    This context is most useful in multi-threaded environments.  Changing one of the
    fields before threads are started has the effect of setting system-wide
