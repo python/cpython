@@ -1029,18 +1029,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             else
                 return converterr("string or None",
                                   arg, msgbuf, bufsize);
-            if (*format == '#') {
-                FETCH_SIZE;
-                assert(0); /* XXX redundant with if-case */
-                if (arg == Py_None) {
-                    STORE_SIZE(0);
-                }
-                else {
-                    STORE_SIZE(PyBytes_Size(arg));
-                }
-                format++;
-            }
-            else if (*p != NULL && uarg != NULL &&
+            if (*p != NULL && uarg != NULL &&
                 (Py_ssize_t) strlen(*p) != PyBytes_GET_SIZE(uarg))
                 return converterr(
                     "string without null bytes or None",
