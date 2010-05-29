@@ -320,10 +320,12 @@ I/O Base Classes
 
    .. method:: truncate(size=None)
 
-      Truncate the file to at most *size* bytes.  *size* defaults to the current
-      file position, as returned by :meth:`tell`.  Note that the current file
-      position isn't changed; if you want to change it to the new end of
-      file, you have to :meth:`seek()` explicitly.
+      Resize the stream to the given *size* in bytes (or the current position
+      if *size* is not specified).  The current stream position isn't changed.
+      This resizing can extend or reduce the current file size.  In case of
+      extension, the contents of the new file area depend on the platform
+      (on most systems, additional bytes are zero-filled, on Windows they're
+      undetermined).  The new file size is returned.
 
    .. method:: writable()
 
