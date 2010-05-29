@@ -34,33 +34,32 @@ struct _inittab _PyImport_Inittab[] = {
 
 /* -- ADDMODULE MARKER 2 -- */
 
-	/* This module lives in marshal.c */
-	{"marshal", PyMarshal_Init},
+    /* This module lives in marshal.c */
+    {"marshal", PyMarshal_Init},
 
-	/* This lives in import.c */
-	{"imp", initimp},
+    /* This lives in import.c */
+    {"imp", initimp},
 
-	/* This lives in Python/Python-ast.c */
-	{"_ast", init_ast},
+    /* This lives in Python/Python-ast.c */
+    {"_ast", init_ast},
 
-	/* These entries are here for sys.builtin_module_names */
-	{"__main__", NULL},
-	{"__builtin__", NULL},
-	{"sys", NULL},
-	{"exceptions", NULL},
+    /* These entries are here for sys.builtin_module_names */
+    {"__main__", NULL},
+    {"__builtin__", NULL},
+    {"sys", NULL},
+    {"exceptions", NULL},
 
-	/* This lives in gcmodule.c */
-	{"gc", initgc},
+    /* This lives in gcmodule.c */
+    {"gc", initgc},
 
-	/* This lives in _warnings.c */
-	{"_warnings", _PyWarnings_Init},
+    /* This lives in _warnings.c */
+    {"_warnings", _PyWarnings_Init},
 
-	/* Sentinel */
-	{0, 0}
+    /* Sentinel */
+    {0, 0}
 };
 
 
 #ifdef __cplusplus
 }
 #endif
-
