@@ -783,7 +783,6 @@ complex_coerce(PyObject **pv, PyObject **pw)
 static PyObject *
 complex_richcompare(PyObject *v, PyObject *w, int op)
 {
-    int c;
     Py_complex i, j;
     PyObject *res;
 
