@@ -129,7 +129,7 @@ class ComplexTest(unittest.TestCase):
         self.assertTrue(a < 2.0j)
 
     def test_richcompare(self):
-        self.assertRaises(OverflowError, complex.__eq__, 1+1j, 1L<<10000)
+        self.assertEqual(complex.__eq__(1+1j, 1L<<10000), False)
         self.assertEqual(complex.__lt__(1+1j, None), NotImplemented)
         self.assertIs(complex.__eq__(1+1j, 1+1j), True)
         self.assertIs(complex.__eq__(1+1j, 2+2j), False)
@@ -139,6 +139,23 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex.__le__, 1+1j, 2+2j)
         self.assertRaises(TypeError, complex.__gt__, 1+1j, 2+2j)
         self.assertRaises(TypeError, complex.__ge__, 1+1j, 2+2j)
+
+    def test_richcompare_boundaries(self):
+        def check(n, deltas, is_equal, imag = 0.0):
+            for delta in deltas:
+                i = n + delta
+                z = complex(i, imag)
+                self.assertIs(complex.__eq__(z, i), is_equal(delta))
+                self.assertIs(complex.__ne__(z, i), not is_equal(delta))
+        # For IEEE-754 doubles the following should hold:
+        #    x in [2 ** (52 + i), 2 ** (53 + i + 1)] -> x mod 2 ** i == 0
+        # where the interval is representable, of course.
+        for i in range(1, 10):
+            pow = 52 + i
+            mult = 2 ** i
+            check(2 ** pow, range(1, 101), lambda delta: delta % mult == 0)
+            check(2 ** pow, range(1, 101), lambda delta: False, float(i))
+        check(2 ** 53, range(-100, 0), lambda delta: True)
 
     def test_mod(self):
         self.assertRaises(ZeroDivisionError, (1+1j).__mod__, 0+0j)

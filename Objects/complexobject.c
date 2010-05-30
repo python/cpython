@@ -783,25 +783,70 @@ complex_coerce(PyObject **pv, PyObject **pw)
 static PyObject *
 complex_richcompare(PyObject *v, PyObject *w, int op)
 {
-    Py_complex i, j;
     PyObject *res;
-
-    TO_COMPLEX(v, i);
-    TO_COMPLEX(w, j);
+    Py_complex i;
+    int equal;
 
     if (op != Py_EQ && op != Py_NE) {
-        PyErr_SetString(PyExc_TypeError,
-            "no ordering relation is defined for complex numbers");
-        return NULL;
+        /* for backwards compatibility, comparisons with non-numbers return
+         * NotImplemented.  Only comparisons with core numeric types raise
+         * TypeError.
+         */
+        if (PyInt_Check(w) || PyLong_Check(w) ||
+            PyFloat_Check(w) || PyComplex_Check(w)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "no ordering relation is defined "
+                            "for complex numbers");
+            return NULL;
+        }
+        goto Unimplemented;
     }
 
-    if ((i.real == j.real && i.imag == j.imag) == (op == Py_EQ))
-        res = Py_True;
+    assert(PyComplex_Check(v));
+    TO_COMPLEX(v, i);
+
+    if (PyInt_Check(w) || PyLong_Check(w)) {
+        /* Check for 0.0 imaginary part first to avoid the rich
+         * comparison when possible.
+         */
+        if (i.imag == 0.0) {
+            PyObject *j, *sub_res;
+            j = PyFloat_FromDouble(i.real);
+            if (j == NULL)
+                return NULL;
+
+            sub_res = PyObject_RichCompare(j, w, op);
+            Py_DECREF(j);
+            return sub_res;
+        }
+        else {
+            equal = 0;
+        }
+    }
+    else if (PyFloat_Check(w)) {
+        equal = (i.real == PyFloat_AsDouble(w) && i.imag == 0.0);
+    }
+    else if (PyComplex_Check(w)) {
+        Py_complex j;
+
+        TO_COMPLEX(w, j);
+        equal = (i.real == j.real && i.imag == j.imag);
+    }
+    else {
+        goto Unimplemented;
+    }
+
+    if (equal == (op == Py_EQ))
+         res = Py_True;
     else
-        res = Py_False;
+         res = Py_False;
 
     Py_INCREF(res);
     return res;
+
+  Unimplemented:
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
 }
 
 static PyObject *
