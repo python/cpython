@@ -598,7 +598,7 @@ static struct {
 } pendingcalls[NPENDINGCALLS];
 static volatile int pendingfirst = 0;
 static volatile int pendinglast = 0;
-static volatile int pendingcalls_to_do = 0;
+static _Py_atomic_int pendingcalls_to_do = {0};
 
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
