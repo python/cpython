@@ -12,6 +12,13 @@ What's New in Python 2.7 Release Candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #8748: Fix two issues with comparisons between complex and integer
+  objects.  (1) The comparison could incorrectly return True in some cases
+  (2**53+1 == complex(2**53) == 2**53), breaking transivity of equality.
+  (2) The comparison raised an OverflowError for large integers, leading
+  to unpredictable exceptions when combining integers and complex objects
+  in sets or dicts.
+
 - Issue #5211: Implicit coercion for the complex type is now completely
   removed.  (Coercion for arithmetic operations was already removed in 2.7
   alpha 4, but coercion for rich comparisons was accidentally left in.)
