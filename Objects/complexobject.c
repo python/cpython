@@ -787,25 +787,8 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     Py_complex i, j;
     PyObject *res;
 
-    c = PyNumber_CoerceEx(&v, &w);
-    if (c < 0)
-        return NULL;
-    if (c > 0) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
-    /* Make sure both arguments are complex. */
-    if (!(PyComplex_Check(v) && PyComplex_Check(w))) {
-        Py_DECREF(v);
-        Py_DECREF(w);
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
-
-    i = ((PyComplexObject *)v)->cval;
-    j = ((PyComplexObject *)w)->cval;
-    Py_DECREF(v);
-    Py_DECREF(w);
+    TO_COMPLEX(v, i);
+    TO_COMPLEX(w, j);
 
     if (op != Py_EQ && op != Py_NE) {
         PyErr_SetString(PyExc_TypeError,
