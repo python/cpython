@@ -115,6 +115,19 @@ class ComplexTest(unittest.TestCase):
     def test_coerce(self):
         self.assertRaises(OverflowError, complex.__coerce__, 1+1j, 1L<<10000)
 
+    def test_no_implicit_coerce(self):
+        # Python 2.7 removed implicit coercion from the complex type
+        class A(object):
+            def __coerce__(self, other):
+                raise RuntimeError
+            __hash__ = None
+            def __cmp__(self, other):
+                return -1
+
+        a = A()
+        self.assertRaises(TypeError, lambda: a + 2.0j)
+        self.assertTrue(a < 2.0j)
+
     def test_richcompare(self):
         self.assertRaises(OverflowError, complex.__eq__, 1+1j, 1L<<10000)
         self.assertEqual(complex.__lt__(1+1j, None), NotImplemented)
