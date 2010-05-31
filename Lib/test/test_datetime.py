@@ -1493,19 +1493,14 @@ class TestDateTime(TestDate):
         for insane in -1e200, 1e200:
             self.assertRaises(ValueError, self.theclass.utcfromtimestamp,
                               insane)
-
+    @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_fromtimestamp(self):
-        # Windows doesn't accept negative timestamps
-        if sys.platform == "win32":
-            return
         # The result is tz-dependent; at least test that this doesn't
         # fail (like it did before bug 1646728 was fixed).
         self.theclass.fromtimestamp(-1.05)
 
+    @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_utcfromtimestamp(self):
-        # Windows doesn't accept negative timestamps
-        if sys.platform == "win32":
-            return
         d = self.theclass.utcfromtimestamp(-1.05)
         self.assertEquals(d, self.theclass(1969, 12, 31, 23, 59, 58, 950000))
 
