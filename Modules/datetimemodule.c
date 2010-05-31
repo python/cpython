@@ -152,6 +152,25 @@ round_to_long(double x)
     return (long)x;
 }
 
+/* Nearest integer to m / n for integers m and n. Half-integer results
+ * are rounded to even.
+ */
+static PyObject *
+divide_nearest(PyObject *m, PyObject *n)
+{
+    PyObject *result;
+    PyObject *temp;
+
+    temp = _PyLong_Divmod_Near(m, n);
+    if (temp == NULL)
+        return NULL;
+    result = PyTuple_GET_ITEM(temp, 0);
+    Py_INCREF(result);
+    Py_DECREF(temp);
+
+    return result;
+}
+
 /* ---------------------------------------------------------------------------
  * General calendrical helper functions
  */
@@ -1648,6 +1667,37 @@ multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
 }
 
 static PyObject *
+multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
+{
+    PyObject *result = NULL;
+    PyObject *pyus_in = NULL, *temp, *pyus_out;
+    PyObject *ratio = NULL;
+
+    pyus_in = delta_to_microseconds(delta);
+    if (pyus_in == NULL)
+        return NULL;
+    ratio = PyObject_CallMethod(floatobj, "as_integer_ratio", NULL);
+    if (ratio == NULL)
+        goto error;
+    temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 0));
+    Py_DECREF(pyus_in);
+    pyus_in = NULL;
+    if (temp == NULL)
+        goto error;
+    pyus_out = divide_nearest(temp, PyTuple_GET_ITEM(ratio, 1));
+    Py_DECREF(temp);
+    if (pyus_out == NULL)
+        goto error;
+    result = microseconds_to_delta(pyus_out);
+    Py_DECREF(pyus_out);
+ error:
+    Py_XDECREF(pyus_in);
+    Py_XDECREF(ratio);
+
+    return result;
+}
+
+static PyObject *
 divide_timedelta_int(PyDateTime_Delta *delta, PyObject *intobj)
 {
     PyObject *pyus_in;
@@ -1711,6 +1761,55 @@ truedivide_timedelta_timedelta(PyDateTime_Delta *left, PyDateTime_Delta *right)
     result = PyNumber_TrueDivide(pyus_left, pyus_right);
     Py_DECREF(pyus_left);
     Py_DECREF(pyus_right);
+    return result;
+}
+
+static PyObject *
+truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *f)
+{
+    PyObject *result = NULL;
+    PyObject *pyus_in = NULL, *temp, *pyus_out;
+    PyObject *ratio = NULL;
+
+    pyus_in = delta_to_microseconds(delta);
+    if (pyus_in == NULL)
+        return NULL;
+    ratio = PyObject_CallMethod(f, "as_integer_ratio", NULL);
+    if (ratio == NULL)
+        goto error;
+    temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 1));
+    Py_DECREF(pyus_in);
+    pyus_in = NULL;
+    if (temp == NULL)
+        goto error;
+    pyus_out = divide_nearest(temp, PyTuple_GET_ITEM(ratio, 0));
+    Py_DECREF(temp);
+    if (pyus_out == NULL)
+        goto error;
+    result = microseconds_to_delta(pyus_out);
+    Py_DECREF(pyus_out);
+ error:
+    Py_XDECREF(pyus_in);
+    Py_XDECREF(ratio);
+
+    return result;
+}
+
+static PyObject *
+truedivide_timedelta_int(PyDateTime_Delta *delta, PyObject *i)
+{
+    PyObject *result;
+    PyObject *pyus_in, *pyus_out;
+    pyus_in = delta_to_microseconds(delta);
+    if (pyus_in == NULL)
+        return NULL;
+    pyus_out = divide_nearest(pyus_in, i);
+    Py_DECREF(pyus_in);
+    if (pyus_out == NULL)
+        return NULL;
+    result = microseconds_to_delta(pyus_out);
+    Py_DECREF(pyus_out);
+
     return result;
 }
 
@@ -1838,10 +1937,16 @@ delta_multiply(PyObject *left, PyObject *right)
         if (PyLong_Check(right))
             result = multiply_int_timedelta(right,
                             (PyDateTime_Delta *) left);
+        else if (PyFloat_Check(right))
+            result = multiply_float_timedelta(right,
+                            (PyDateTime_Delta *) left);
     }
     else if (PyLong_Check(left))
         result = multiply_int_timedelta(left,
-                                        (PyDateTime_Delta *) right);
+                        (PyDateTime_Delta *) right);
+    else if (PyFloat_Check(left))
+        result = multiply_float_timedelta(left,
+                        (PyDateTime_Delta *) right);
 
     if (result == Py_NotImplemented)
         Py_INCREF(result);
@@ -1880,6 +1985,12 @@ delta_truedivide(PyObject *left, PyObject *right)
             result = truedivide_timedelta_timedelta(
                             (PyDateTime_Delta *)left,
                             (PyDateTime_Delta *)right);
+        else if (PyFloat_Check(right))
+            result = truedivide_timedelta_float(
+                            (PyDateTime_Delta *)left, right);
+        else if (PyLong_Check(right))
+            result = truedivide_timedelta_int(
+                            (PyDateTime_Delta *)left, right);
     }
 
     if (result == Py_NotImplemented)

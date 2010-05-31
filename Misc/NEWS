@@ -398,6 +398,11 @@ C-API
 Library
 -------
 
+- Issue #1289118: datetime.timedelta objects can now be multiplied by float
+  and divided by float and int objects.  Results are rounded to the nearest
+  multiple of timedelta.resolution with ties resolved using round-half-to-even
+  method.
+
 - Issue #7150: Raise OverflowError if the result of adding or subtracting
   timedelta from date or datetime falls outside of the MINYEAR:MAXYEAR range.
 
