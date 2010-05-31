@@ -220,12 +220,20 @@ Supported operations:
 |                                | In general, *t1* \* i == *t1* \* (i-1) + *t1* |
 |                                | is true. (1)                                  |
 +--------------------------------+-----------------------------------------------+
+| ``t1 = t2 * f or t1 = f * t2`` | Delta multiplied by a float. The result is    |
+|                                | rounded to the nearest multiple of            |
+|                                | timedelta.resolution using round-half-to-even.|
++--------------------------------+-----------------------------------------------+
 | ``f = t2 / t3``                | Division (3) of *t2* by *t3*.  Returns a      |
 |                                | :class:`float` object.                        |
 +--------------------------------+-----------------------------------------------+
+| ``t1 = t2 / f or t1 = t2 / i`` | Delta divided by a float or an int. The result|
+|                                | is rounded to the nearest multiple of         |
+|                                | timedelta.resolution using round-half-to-even.|
++--------------------------------+-----------------------------------------------+
 | ``t1 = t2 // i`` or            | The floor is computed and the remainder (if   |
 | ``t1 = t2 // t3``              | any) is thrown away.  In the second case, an  |
-|                                | integer is returned (3)                       |
+|                                | integer is returned. (3)                      |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 % t3``               | The remainder is computed as a                |
 |                                | :class:`timedelta` object. (3)                |
@@ -267,7 +275,9 @@ objects (see below).
 .. versionadded:: 3.2
    Floor division and true division of a :class:`timedelta` object by
    another :class:`timedelta` object are now supported, as are
-   remainder operations and the :func:`divmod` function.
+   remainder operations and the :func:`divmod` function.  True
+   division and multiplication of a :class:`timedelta` object by
+   a :class:`float` object are now supported.
 
 
 Comparisons of :class:`timedelta` objects are supported with the
