@@ -223,26 +223,44 @@ The module :mod:`socket` exports the following constants and functions:
       *source_address* was added.
 
 
-.. function:: getaddrinfo(host, port[, family[, socktype[, proto[, flags]]]])
+.. function:: getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0)
 
-   Resolves the *host*/*port* argument, into a sequence of 5-tuples that contain
-   all the necessary arguments for creating the corresponding socket. *host* is a domain
-   name, a string representation of an IPv4/v6 address or ``None``. *port* is a string
-   service name such as ``'http'``, a numeric port number or ``None``.
-   The rest of the arguments are optional and must be numeric if specified.
-   By passing ``None`` as the value of *host* and *port*, , you can pass ``NULL`` to the C API.
+   Translate the *host*/*port* argument into a sequence of 5-tuples that contain
+   all the necessary arguments for creating a socket connected to that service.
+   *host* is a domain name, a string representation of an IPv4/v6 address
+   or ``None``. *port* is a string service name such as ``'http'``, a numeric
+   port number or ``None``.  By passing ``None`` as the value of *host*
+   and *port*, you can pass ``NULL`` to the underlying C API.
 
-   The :func:`getaddrinfo` function returns a list of 5-tuples with the following
-   structure:
+   The *family*, *socktype* and *proto* arguments can be optionally specified
+   in order to narrow the list of addresses returned.  Passing zero as a
+   value for each of these arguments selects the full range of results.
+   The *flags* argument can be one or several of the ``AI_*`` constants,
+   and will influence how results are computed and returned.
+   For example, :const:`AI_NUMERICHOST` will disable domain name resolution
+   and will raise an error if *host* is a domain name.
+
+   The function returns a list of 5-tuples with the following structure:
 
    ``(family, socktype, proto, canonname, sockaddr)``
 
-   *family*, *socktype*, *proto* are all integers and are meant to be passed to the
-   :func:`socket` function. *canonname* is a string representing the canonical name
-   of the *host*. It can be a numeric IPv4/v6 address when :const:`AI_CANONNAME` is
-   specified for a numeric *host*. *sockaddr* is a tuple describing a socket
-   address, as described above. See the source for :mod:`socket` and other
-   library modules for a typical usage of the function.
+   In these tuples, *family*, *socktype*, *proto* are all integers and are
+   meant to be passed to the :func:`socket` function.  *canonname* will be
+   a string representing the canonical name of the *host* if
+   :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
+   will be empty.  *sockaddr* is a tuple describing a socket address, whose
+   format depends on the returned *family* (a ``(address, port)`` 2-tuple for
+   :const:`AF_INET`, a ``(address, port, flow info, scope id)`` 4-tuple for
+   :const:`AF_INET6`), and is meant to be passed to the :meth:`socket.connect`
+   method.
+
+   The following example fetches address information for a hypothetical TCP
+   connection to ``www.python.org`` on port 80 (results may differ on your
+   system if IPv6 isn't enabled)::
+
+      >>> socket.getaddrinfo("www.python.org", 80, 0, 0, socket.SOL_TCP)
+      [(2, 1, 6, '', ('82.94.164.162', 80)),
+       (10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]
 
    .. versionadded:: 2.2
 
