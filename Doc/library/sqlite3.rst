@@ -227,6 +227,13 @@ Connection Objects
    one of "DEFERRED", "IMMEDIATE" or "EXCLUSIVE". See section
    :ref:`sqlite3-controlling-transactions` for a more detailed explanation.
 
+.. attribute:: Connection.in_transaction
+
+   .. versionadded:: 3.2
+
+   :cont:`True` if a transaction is active (there are uncommitted changes),
+   :const:`False` otherwise.  Read-only attribute.
+
 
 .. method:: Connection.cursor([cursorClass])
 
@@ -806,7 +813,8 @@ So if you are within a transaction and issue a command like ``CREATE TABLE
 before executing that command. There are two reasons for doing that. The first
 is that some of these commands don't work within transactions. The other reason
 is that sqlite3 needs to keep track of the transaction state (if a transaction
-is active or not).
+is active or not).  The current transaction state is exposed through the
+:attr:`Connection.in_transaction` attribute of the connection object.
 
 You can control which kind of ``BEGIN`` statements sqlite3 implicitly executes
 (or none at all) via the *isolation_level* parameter to the :func:`connect`
