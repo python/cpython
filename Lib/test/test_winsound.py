@@ -6,6 +6,7 @@ support.requires('audio')
 import time
 import os
 import subprocess
+import ctypes
 
 winsound = support.import_module('winsound')
 import winreg
@@ -13,6 +14,11 @@ import winreg
 def has_sound(sound):
     """Find out if a particular event is configured with a default sound"""
     try:
+        # Ask the mixer API for the number of devices it knows about.
+        # When there are no devices, PlaySound will fail.
+        if ctypes.windll.winmm.mixerGetNumDevs() is 0:
+            return False
+
         key = winreg.OpenKeyEx(winreg.HKEY_CURRENT_USER,
                 "AppEvents\Schemes\Apps\.Default\{0}\.Default".format(sound))
         value = winreg.EnumValue(key, 0)[1]
