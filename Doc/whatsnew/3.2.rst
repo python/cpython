@@ -100,6 +100,18 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Tarek Ziade.)
 
+* The *sqlite3* module has some new features:
+
+  * XXX *enable_load_extension*
+
+  * XXX *load_extension*
+
+  * New :class:`~sqlite3.Connection` attribute
+    :attr:`~sqlite3.Connection.in_transaction` is :const:`True` when there
+    are uncommitted changes, and :const:`False` otherwise.  (Contributed
+    by R. David Murray and Shashwat Anand, :issue:`8845`.)
+
+
 Multi-threading
 ===============
 

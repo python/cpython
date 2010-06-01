@@ -84,6 +84,7 @@ class ModuleTests(unittest.TestCase):
                         "NotSupportedError is not a subclass of DatabaseError")
 
 class ConnectionTests(unittest.TestCase):
+
     def setUp(self):
         self.cx = sqlite.connect(":memory:")
         cu = self.cx.cursor()
@@ -139,6 +140,28 @@ class ConnectionTests(unittest.TestCase):
         self.assertEqual(self.cx.InternalError, sqlite.InternalError)
         self.assertEqual(self.cx.ProgrammingError, sqlite.ProgrammingError)
         self.assertEqual(self.cx.NotSupportedError, sqlite.NotSupportedError)
+
+    def CheckInTransaction(self):
+        # Can't use db from setUp because we want to test initial state.
+        cx = sqlite.connect(":memory:")
+        cu = cx.cursor()
+        self.assertEqual(cx.in_transaction, False)
+        cu.execute("create table transactiontest(id integer primary key, name text)")
+        self.assertEqual(cx.in_transaction, False)
+        cu.execute("insert into transactiontest(name) values (?)", ("foo",))
+        self.assertEqual(cx.in_transaction, True)
+        cu.execute("select name from transactiontest where name=?", ["foo"])
+        row = cu.fetchone()
+        self.assertEqual(cx.in_transaction, True)
+        cx.commit()
+        self.assertEqual(cx.in_transaction, False)
+        cu.execute("select name from transactiontest where name=?", ["foo"])
+        row = cu.fetchone()
+        self.assertEqual(cx.in_transaction, False)
+
+    def CheckInTransactionRO(self):
+        with self.assertRaises(AttributeError):
+            self.cx.in_transaction = True
 
 class CursorTests(unittest.TestCase):
     def setUp(self):

@@ -23,6 +23,7 @@
 
 #include "cache.h"
 #include "module.h"
+#include "structmember.h"
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
@@ -1551,6 +1552,7 @@ static struct PyMemberDef connection_members[] =
     {"NotSupportedError", T_OBJECT, offsetof(pysqlite_Connection, NotSupportedError), READONLY},
     {"row_factory", T_OBJECT, offsetof(pysqlite_Connection, row_factory)},
     {"text_factory", T_OBJECT, offsetof(pysqlite_Connection, text_factory)},
+    {"in_transaction", T_BOOL, offsetof(pysqlite_Connection, inTransaction), READONLY},
     {NULL}
 };
 
