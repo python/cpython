@@ -1151,7 +1151,6 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(len(http_handler.requests), 1)
         self.assertFalse(http_handler.requests[0].has_header(auth_header))
 
-
 class MiscTests(unittest.TestCase):
 
     def test_build_opener(self):
