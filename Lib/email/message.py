@@ -256,6 +256,8 @@ class Message:
                             charset=charset.get_output_charset())
         else:
             self.set_param('charset', charset.get_output_charset())
+        if isinstance(self._payload, unicode):
+            self._payload = self._payload.encode(charset.output_charset)
         if str(charset) != charset.get_output_charset():
             self._payload = charset.body_encode(self._payload)
         if 'Content-Transfer-Encoding' not in self:
