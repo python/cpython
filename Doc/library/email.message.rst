@@ -136,9 +136,10 @@ Here are the methods of the :class:`Message` class:
       :mailheader:`Content-Type` header. Anything else will generate a
       :exc:`TypeError`.
 
-      The message will be assumed to be of type :mimetype:`text/\*` encoded with
-      *charset.input_charset*.  It will be converted to *charset.output_charset*
-      and encoded properly, if needed, when generating the plain text
+      The message will be assumed to be of type :mimetype:`text/\*`, with the
+      payload either in unicode or encoded with *charset.input_charset*.
+      It will be encoded or converted to *charset.output_charset*
+      and transfer encoded properly, if needed, when generating the plain text
       representation of the message.  MIME headers (:mailheader:`MIME-Version`,
       :mailheader:`Content-Type`, :mailheader:`Content-Transfer-Encoding`) will
       be added as needed.

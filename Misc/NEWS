@@ -46,6 +46,9 @@ C-API
 Library
 -------
 
+- Issue #1368247: set_charset (and therefore MIMEText) now automatically
+  encodes a unicode _payload to the output_charset.
+
 - Issue #7150: Raise OverflowError if the result of adding or subtracting
   timedelta from date or datetime falls outside of the MINYEAR:MAXYEAR range.
 
