@@ -383,13 +383,6 @@ added value or key/value pair is popped off, the container object remains on
 the stack so that it is available for further iterations of the loop.
 
 
-.. opcode:: LOAD_LOCALS ()
-
-   Pushes a reference to the locals of the current scope on the stack. This is used
-   in the code for a class definition: After the class body is evaluated, the
-   locals are passed to the class definition.
-
-
 .. opcode:: RETURN_VALUE ()
 
    Returns with TOS to the caller of the function.
