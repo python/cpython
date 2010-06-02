@@ -94,6 +94,12 @@ This module defines one class called :class:`Popen`:
    size.  A negative *bufsize* means to use the system default, which usually means
    fully buffered.  The default value for *bufsize* is :const:`0` (unbuffered).
 
+   .. note::
+
+      If you experience performance issues, it is recommended that you try to
+      enable buffering by setting *bufsize* to either -1 or a large enough
+      positive value (such as 4096).
+
    The *executable* argument specifies the program to execute. It is very seldom
    needed: Usually, the program to execute is defined by the *args* argument. If
    ``shell=True``, the *executable* argument specifies which shell to use. On Unix,
