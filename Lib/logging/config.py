@@ -387,15 +387,21 @@ class BaseConfigurator(object):
         """
         name = s.split('.')
         used = name.pop(0)
-        found = self.importer(used)
-        for frag in name:
-            used += '.' + frag
-            try:
-                found = getattr(found, frag)
-            except AttributeError:
-                self.importer(used)
-                found = getattr(found, frag)
-        return found
+        try:
+            found = self.importer(used)
+            for frag in name:
+                used += '.' + frag
+                try:
+                    found = getattr(found, frag)
+                except AttributeError:
+                    self.importer(used)
+                    found = getattr(found, frag)
+            return found
+        except ImportError:
+            e, tb = sys.exc_info()[1:]
+            v = ValueError('Cannot resolve %r: %s' % (s, e))
+            v.__cause__, v.__traceback__ = e, tb
+            raise v
 
     def ext_convert(self, value):
         """Default converter for the ext:// protocol."""
