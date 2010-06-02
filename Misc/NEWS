@@ -32,6 +32,9 @@ Core and Builtins
 - Issue #7079: Fix a possible crash when closing a file object while using it
   from another thread.  Patch by Daniel Stutzbach.
 
+- Issue #8868: Fix that ensures that python scripts have access to the 
+  Window Server again in a framework build on MacOSX 10.5 or earlier.
+
 C-API
 -----
 
