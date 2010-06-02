@@ -151,6 +151,14 @@ int
 main(int argc, char **argv) {
     char* exec_path = get_python_path();
 
+    /*
+     * Let argv[0] refer to the new interpreter. This is needed to
+     * get the effect we want on OSX 10.5 or earlier. That is, without
+     * changing argv[0] the real interpreter won't have access to
+     * the Window Server.
+     */
+    argv[0] = exec_path;
+
 #ifdef HAVE_SPAWN_H
     /* We're weak-linking to posix-spawnv to ensure that
      * an executable build on 10.5 can work on 10.4.
