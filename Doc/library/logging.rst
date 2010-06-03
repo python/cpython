@@ -55,10 +55,12 @@ Simple examples
 
 Most applications are probably going to want to log to a file, so let's start
 with that case. Using the :func:`basicConfig` function, we can set up the
-default handler so that debug messages are written to a file::
+default handler so that debug messages are written to a file (in the example,
+we assume that you have the appropriate permissions to create a file called
+*example.log* in the current directory::
 
    import logging
-   LOG_FILENAME = '/tmp/logging_example.out'
+   LOG_FILENAME = 'example.log'
    logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
    logging.debug('This message should go to the log file')
