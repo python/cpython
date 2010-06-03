@@ -58,6 +58,9 @@ C-API
 Library
 -------
 
+- Issue #8833: tarfile created hard link entries with a size field != 0 by
+  mistake.
+
 - Issue #1368247: set_charset (and therefore MIMEText) now automatically
   encodes a unicode _payload to the output_charset.
 
