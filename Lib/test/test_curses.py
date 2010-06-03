@@ -21,11 +21,6 @@ requires('curses')
 curses = import_module('curses')
 curses.panel = import_module('curses.panel')
 
-# skip all these tests on FreeBSD: test_curses currently hangs the
-# FreeBSD buildbots, preventing other tests from running.  See issue
-# #7384.
-if 'freebsd' in sys.platform:
-    raise unittest.SkipTest('The curses module is broken on FreeBSD.  See http://bugs.python.org/issue7384.')
 
 # XXX: if newterm was supported we could use it instead of initscr and not exit
 term = os.environ.get('TERM')
