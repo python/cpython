@@ -750,17 +750,32 @@ class TransientResource(object):
                 raise ResourceDenied("an optional resource is not available")
 
 
+_transients = {
+    IOError: (errno.ECONNRESET, errno.ETIMEDOUT),
+    socket.error: (errno.ECONNRESET,),
+    socket.gaierror: [getattr(socket, t)
+                      for t in ('EAI_NODATA', 'EAI_NONAME')
+                      if hasattr(socket, t)],
+    }
 @contextlib.contextmanager
 def transient_internet():
     """Return a context manager that raises ResourceDenied when various issues
-    with the Internet connection manifest themselves as exceptions."""
-    time_out = TransientResource(IOError, errno=errno.ETIMEDOUT)
-    socket_peer_reset = TransientResource(socket.error, errno=errno.ECONNRESET)
-    ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
-    dns_nodata = TransientResource(socket.gaierror, errno=socket.EAI_NODATA)
-    dns_noname = TransientResource(socket.gaierror, errno=socket.EAI_NONAME)
-    with time_out, socket_peer_reset, ioerror_peer_reset, dns_nodata, dns_noname:
+    with the Internet connection manifest themselves as exceptions.
+
+    Errors caught:
+        timeout             IOError                  errno = ETIMEDOUT
+        socket reset        socket.error, IOError    errno = ECONNRESET
+        dns no data         socket.gaierror          errno = EAI_NODATA
+        dns no name         socket.gaierror          errno = EAI_NONAME
+    """
+    try:
         yield
+    except tuple(_transients) as err:
+        for errtype in _transients:
+            if isinstance(err, errtype) and err.errno in _transients[errtype]:
+                raise ResourceDenied("could not establish network "
+                                     "connection ({})".format(err))
+        raise
 
 
 @contextlib.contextmanager
