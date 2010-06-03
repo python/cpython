@@ -141,9 +141,10 @@ class InterProcessSignalTests(unittest.TestCase):
 
     def test_main(self):
         # Issue 3864, unknown if this affects earlier versions of freebsd also
-        if sys.platform=='freebsd6' and test_support.verbose:
-            sys.stderr.write('skipping -- inter process signals not reliable '
-                             '(do not mix well with threading) on freebsd6\n')
+        if sys.platform=='freebsd6':
+            if test_support.verbose:
+                sys.stderr.write('skipping -- inter process signals not '
+                    'reliable (do not mix well with threading) on freebsd6\n')
             return
         # This function spawns a child process to insulate the main
         # test-running process from all the signals. It then
@@ -435,9 +436,10 @@ class ItimerTest(unittest.TestCase):
 
     def test_itimer_virtual(self):
         # Issue 3864, unknown if this affects earlier versions of freebsd also
-        if sys.platform=='freebsd6' and test_support.verbose:
-            sys.stderr.write('skipping -- itimer not reliable '
-                             '(does not mix well with threading) on freebsd6\n')
+        if sys.platform=='freebsd6':
+            if test_support.verbose:
+                sys.stderr.write('skipping -- itimer not reliable (does not '
+                                 'mix well with threading) on freebsd6\n')
             return
         self.itimer = signal.ITIMER_VIRTUAL
         signal.signal(signal.SIGVTALRM, self.sig_vtalrm)
@@ -461,9 +463,10 @@ class ItimerTest(unittest.TestCase):
 
     def test_itimer_prof(self):
         # Issue 3864, unknown if this affects earlier versions of freebsd also
-        if sys.platform=='freebsd6' and test_support.verbose:
-            sys.stderr.write('skipping -- itimer not reliable '
-                             '(does not mix well with threading) on freebsd6\n')
+        if sys.platform=='freebsd6':
+            if test_support.verbose:
+                sys.stderr.write('skipping -- itimer not reliable (does not '
+                                 'mix well with threading) on freebsd6\n')
             return
         self.itimer = signal.ITIMER_PROF
         signal.signal(signal.SIGPROF, self.sig_prof)
