@@ -46,6 +46,9 @@ C-API
 Library
 -------
 
+- Issue #5610: feedparser no longer eats extra characters at the end of
+  a body part if the body part ends with a \r\n.
+
 - Issue #8833: tarfile created hard link entries with a size field != 0 by
   mistake.
 
