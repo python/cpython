@@ -105,7 +105,10 @@ Extension Modules
 Tests
 -----
 
-- Issue #8835: test_support.transient_internet() catchs gaierror(EAI_NONAME)
+- Issue #8889: test_support.transient_internet rewritten so that the new
+  checks also work on FreeBSD, which lacks EAI_NODATA.
+
+- Issue #8835: test_support.transient_internet() catches gaierror(EAI_NONAME)
   and gaierror(EAI_NODATA)
 
 - Issue #7449: Skip test_socketserver if threading support is disabled
