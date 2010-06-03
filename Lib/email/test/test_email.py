@@ -535,7 +535,7 @@ class TestEncoders(unittest.TestCase):
         # whose output character set is 7bit gets a transfer-encoding
         # of 7bit.
         eq = self.assertEqual
-        msg = MIMEText('\xca\xb8', _charset='euc-jp')
+        msg = MIMEText('文', _charset='euc-jp')
         eq(msg['content-transfer-encoding'], '7bit')
 
 
@@ -1079,6 +1079,33 @@ class TestMIMEText(unittest.TestCase):
         msg = MIMEText('hello there', _charset='us-ascii')
         eq(msg.get_charset().input_charset, 'us-ascii')
         eq(msg['content-type'], 'text/plain; charset="us-ascii"')
+
+    def test_7bit_input(self):
+        eq = self.assertEqual
+        msg = MIMEText('hello there', _charset='us-ascii')
+        eq(msg.get_charset().input_charset, 'us-ascii')
+        eq(msg['content-type'], 'text/plain; charset="us-ascii"')
+
+    def test_7bit_input_no_charset(self):
+        eq = self.assertEqual
+        msg = MIMEText('hello there')
+        eq(msg.get_charset(), 'us-ascii')
+        eq(msg['content-type'], 'text/plain; charset="us-ascii"')
+        self.assertTrue('hello there' in msg.as_string())
+
+    def test_utf8_input(self):
+        teststr = '\u043a\u0438\u0440\u0438\u043b\u0438\u0446\u0430'
+        eq = self.assertEqual
+        msg = MIMEText(teststr, _charset='utf-8')
+        eq(msg.get_charset().output_charset, 'utf-8')
+        eq(msg['content-type'], 'text/plain; charset="utf-8"')
+        eq(msg.get_payload(decode=True), teststr.encode('utf-8'))
+
+    @unittest.skip("can't fix because of backward compat in email5, "
+        "will fix in email6")
+    def test_utf8_input_no_charset(self):
+        teststr = '\u043a\u0438\u0440\u0438\u043b\u0438\u0446\u0430'
+        self.assertRaises(UnicodeEncodeError, MIMEText, teststr)
 
 
 

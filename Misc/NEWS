@@ -398,6 +398,10 @@ C-API
 Library
 -------
 
+- Charset.body_encode now correctly handles base64 encoding by encoding
+  with the output_charset before calling base64mime.encode.  Passes the
+  tests from 2.x issue 1368247.
+
 - Issue #8845: sqlite3 Connection objects now have a read-only in_transaction
   attribute that is True iff there are uncommitted changes.
 
