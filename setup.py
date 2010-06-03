@@ -607,11 +607,11 @@ class PyBuildExt(build_ext):
         # use the same library for the readline and curses modules.
         if 'curses' in readline_termcap_library:
             curses_library = readline_termcap_library
-        elif self.compiler_obj.find_library_file(lib_dirs, 'ncursesw'):
+        elif self.compiler.find_library_file(lib_dirs, 'ncursesw'):
             curses_library = 'ncursesw'
-        elif self.compiler_obj.find_library_file(lib_dirs, 'ncurses'):
+        elif self.compiler.find_library_file(lib_dirs, 'ncurses'):
             curses_library = 'ncurses'
-        elif self.compiler_obj.find_library_file(lib_dirs, 'curses'):
+        elif self.compiler.find_library_file(lib_dirs, 'curses'):
             curses_library = 'curses'
 
         if platform == 'darwin':
