@@ -377,6 +377,8 @@ class Charset:
         """
         # 7bit/8bit encodings return the string unchanged (module conversions)
         if self.body_encoding is BASE64:
+            if isinstance(string, str):
+                string = string.encode(self.output_charset)
             return email.base64mime.body_encode(string)
         elif self.body_encoding is QP:
             return email.quoprimime.body_encode(string)
