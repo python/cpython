@@ -25,6 +25,25 @@ def add_dir_to_list(dirlist, dir):
     if dir is not None and os.path.isdir(dir) and dir not in dirlist:
         dirlist.insert(0, dir)
 
+def macosx_sdk_root():
+    """
+    Return the directory of the current OSX SDK,
+    or '/' if no SDK was specified.
+    """
+    cflags = sysconfig.get_config_var('CFLAGS')
+    m = re.search(r'-isysroot\s+(\S+)', cflags)
+    if m is None:
+        sysroot = '/'
+    else:
+        sysroot = m.group(1)
+    return sysroot
+
+def is_macosx_sdk_path(path):
+    """
+    Returns True if 'path' can be located in an OSX SDK
+    """
+    return path.startswith('/usr/') or path.startswith('/System/')
+
 def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
     and returns a possibly-empty list of additional directories, or None
@@ -36,15 +55,28 @@ def find_file(filename, std_dirs, paths):
     'paths' is a list of additional locations to check; if the file is
         found in one of them, the resulting list will contain the directory.
     """
+    if sys.platform == 'darwin':
+        # Honor the MacOSX SDK setting when one was specified.
+        # An SDK is a directory with the same structure as a real
+        # system, but with only header files and libraries.
+        sysroot = macosx_sdk_root()
 
     # Check the standard locations
     for dir in std_dirs:
         f = os.path.join(dir, filename)
+
+        if sys.platform == 'darwin' and is_macosx_sdk_path(dir):
+            f = os.path.join(sysroot, dir[1:], filename)
+
         if os.path.exists(f): return []
 
     # Check the additional directories
     for dir in paths:
         f = os.path.join(dir, filename)
+
+        if sys.platform == 'darwin' and is_macosx_sdk_path(dir):
+            f = os.path.join(sysroot, dir[1:], filename)
+
         if os.path.exists(f):
             return [dir]
 
@@ -56,11 +88,19 @@ def find_library_file(compiler, libname, std_dirs, paths):
     if result is None:
         return None
 
+    if sys.platform == 'darwin':
+        sysroot = macosx_sdk_root()
+
     # Check whether the found file is in one of the standard directories
     dirname = os.path.dirname(result)
     for p in std_dirs:
         # Ensure path doesn't end with path separator
         p = p.rstrip(os.sep)
+
+        if sys.platform == 'darwin' and is_macosx_sdk_path(p):
+            if os.path.join(sysroot, p[1:]) == dirname:
+                return [ ]
+
         if p == dirname:
             return [ ]
 
@@ -69,6 +109,11 @@ def find_library_file(compiler, libname, std_dirs, paths):
     for p in paths:
         # Ensure path doesn't end with path separator
         p = p.rstrip(os.sep)
+
+        if sys.platform == 'darwin' and is_macosx_sdk_path(p):
+            if os.path.join(sysroot, p[1:]) == dirname:
+                return [ p ]
+
         if p == dirname:
             return [p]
     else:
@@ -507,7 +552,7 @@ class PyBuildExt(build_ext):
                 # library and then a static library, instead of first looking
                 # for dynamic libraries on the entire path.
                 # This way a staticly linked custom readline gets picked up
-                # before the (broken) dynamic library in /usr/lib.
+                # before the (possibly broken) dynamic library in /usr/lib.
                 readline_extra_link_args = ('-Wl,-search_paths_first',)
             else:
                 readline_extra_link_args = ()
@@ -581,22 +626,23 @@ class PyBuildExt(build_ext):
         openssl_ver = 0
         openssl_ver_re = re.compile(
             '^\s*#\s*define\s+OPENSSL_VERSION_NUMBER\s+(0x[0-9a-fA-F]+)' )
-        for ssl_inc_dir in inc_dirs + search_for_ssl_incs_in:
-            name = os.path.join(ssl_inc_dir, 'openssl', 'opensslv.h')
-            if os.path.isfile(name):
-                try:
-                    incfile = open(name, 'r')
-                    for line in incfile:
-                        m = openssl_ver_re.match(line)
-                        if m:
-                            openssl_ver = eval(m.group(1))
-                            break
-                except IOError:
-                    pass
 
-            # first version found is what we'll use (as the compiler should)
-            if openssl_ver:
-                break
+        # look for the openssl version header on the compiler search path.
+        opensslv_h = find_file('openssl/opensslv.h', [],
+                inc_dirs + search_for_ssl_incs_in)
+        if opensslv_h:
+            name = os.path.join(opensslv_h[0], 'openssl/opensslv.h')
+            if sys.platform == 'darwin' and is_macosx_sdk_path(name):
+                name = os.path.join(macosx_sdk_root(), name[1:])
+            try:
+                incfile = open(name, 'r')
+                for line in incfile:
+                    m = openssl_ver_re.match(line)
+                    if m:
+                        openssl_ver = eval(m.group(1))
+            except IOError as msg:
+                print("IOError while reading opensshv.h:", msg)
+                pass
 
         #print('openssl_ver = 0x%08x' % openssl_ver)
 
@@ -717,12 +763,18 @@ class PyBuildExt(build_ext):
 
         db_ver_inc_map = {}
 
+        if sys.platform == 'darwin':
+            sysroot = macosx_sdk_root()
+
         class db_found(Exception): pass
         try:
             # See whether there is a Sleepycat header in the standard
             # search path.
             for d in inc_dirs + db_inc_paths:
                 f = os.path.join(d, "db.h")
+                if sys.platform == 'darwin' and is_macosx_sdk_path(d):
+                    f = os.path.join(sysroot, d[1:], "db.h")
+
                 if db_setup_debug: print("db: looking for db.h in", f)
                 if os.path.exists(f):
                     f = open(f, "rb").read()
@@ -769,7 +821,22 @@ class PyBuildExt(build_ext):
                     db_incdir.replace("include", 'lib64'),
                     db_incdir.replace("include", 'lib'),
                 ]
-                db_dirs_to_check = list(filter(os.path.isdir, db_dirs_to_check))
+
+                if sys.platform != 'darwin':
+                    db_dirs_to_check = list(filter(os.path.isdir, db_dirs_to_check))
+
+                else:
+                    # Same as other branch, but takes OSX SDK into account
+                    tmp = []
+                    for dn in db_dirs_to_check:
+                        if is_macosx_sdk_path(dn):
+                            if os.path.isdir(os.path.join(sysroot, dn[1:])):
+                                tmp.append(dn)
+                        else:
+                            if os.path.isdir(dn):
+                                tmp.append(dn)
+
+                    db_dirs_to_check = tmp
 
                 # Look for a version specific db-X.Y before an ambiguoius dbX
                 # XXX should we -ever- look for a dbX name?  Do any
@@ -818,8 +885,15 @@ class PyBuildExt(build_ext):
         # Scan the default include directories before the SQLite specific
         # ones. This allows one to override the copy of sqlite on OSX,
         # where /usr/include contains an old version of sqlite.
+        if sys.platform == 'darwin':
+            sysroot = macosx_sdk_root()
+
         for d in inc_dirs + sqlite_inc_paths:
             f = os.path.join(d, "sqlite3.h")
+
+            if sys.platform == 'darwin' and is_macosx_sdk_path(d):
+                f = os.path.join(sysroot, d[1:], "sqlite3.h")
+
             if os.path.exists(f):
                 if sqlite_setup_debug: print("sqlite: found %s"%f)
                 incf = open(f).read()
@@ -1245,14 +1319,22 @@ class PyBuildExt(build_ext):
             join(os.getenv('HOME'), '/Library/Frameworks')
         ]
 
+        sysroot = macosx_sdk_root()
+
         # Find the directory that contains the Tcl.framework and Tk.framework
         # bundles.
         # XXX distutils should support -F!
         for F in framework_dirs:
             # both Tcl.framework and Tk.framework should be present
+
+
             for fw in 'Tcl', 'Tk':
-                if not exists(join(F, fw + '.framework')):
-                    break
+                if is_macosx_sdk_path(F):
+                    if not exists(join(sysroot, F[1:], fw + '.framework')):
+                        break
+                else:
+                    if not exists(join(F, fw + '.framework')):
+                        break
             else:
                 # ok, F is now directory with both frameworks. Continure
                 # building
@@ -1289,8 +1371,12 @@ class PyBuildExt(build_ext):
 
         # Note: cannot use os.popen or subprocess here, that
         # requires extensions that are not available here.
-        os.system("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(F, tmpfile))
+        if is_macosx_sdk_path(F):
+            os.system("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(os.path.join(sysroot, F[1:]), tmpfile))
+        else:
+            os.system("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(F, tmpfile))
         fp = open(tmpfile)
+
         detected_archs = []
         for ln in fp:
             a = ln.split()[-1]
