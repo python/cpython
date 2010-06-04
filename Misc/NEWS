@@ -398,6 +398,8 @@ C-API
 Library
 -------
 
+- Issue #6470: Drop UNC prefix in FixTk.
+
 - Issue #4768: base64 encoded email body parts were incorrectly stored as
   binary strings.  They are now correctly converted to strings.
 
