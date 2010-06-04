@@ -525,6 +525,7 @@ class HTTPResponse:
             return ''
 
         if self._method == 'HEAD':
+            self.close()
             return ''
 
         if self.chunked:
