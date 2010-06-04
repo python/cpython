@@ -398,6 +398,9 @@ C-API
 Library
 -------
 
+- Issue #4768: base64 encoded email body parts were incorrectly stored as
+  binary strings.  They are now correctly converted to strings.
+
 - Issue #8833: tarfile created hard link entries with a size field != 0 by
   mistake.
 

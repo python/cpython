@@ -29,7 +29,7 @@ def encode_base64(msg):
     Also, add an appropriate Content-Transfer-Encoding header.
     """
     orig = msg.get_payload()
-    encdata = _bencode(orig)
+    encdata = str(_bencode(orig), 'ascii')
     msg.set_payload(encdata)
     msg['Content-Transfer-Encoding'] = 'base64'
 
