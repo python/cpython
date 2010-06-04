@@ -15,6 +15,7 @@ from distutils.core import Extension, setup
 from distutils.command.build_ext import build_ext
 from distutils.command.install import install
 from distutils.command.install_lib import install_lib
+from distutils.spawn import find_executable
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
@@ -591,7 +592,7 @@ class PyBuildExt(build_ext):
         readline_termcap_library = ""
         curses_library = ""
         # Determine if readline is already linked against curses or tinfo.
-        if do_readline and platform != 'darwin': # OS X does not have ldd.
+        if do_readline and find_executable('ldd'):
             fp = os.popen("ldd %s" % do_readline)
             for ln in fp:
                 if 'curses' in ln:
