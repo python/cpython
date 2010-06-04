@@ -127,6 +127,31 @@ class TclTest(unittest.TestCase):
         tcl = self.interp
         self.assertRaises(TclError,tcl.eval,'package require DNE')
 
+    def testLoadWithUNC(self):
+        import sys
+        if sys.platform != 'win32':
+            return
+
+        # Build a UNC path from the regular path.
+        # Something like
+        #   \\%COMPUTERNAME%\c$\python27\python.exe
+
+        fullname = os.path.abspath(sys.executable)
+        if fullname[1] != ':':
+            return
+        unc_name = r'\\%s\%s$\%s' % (os.environ['COMPUTERNAME'],
+                                    fullname[0],
+                                    fullname[3:])
+
+        with test_support.EnvironmentVarGuard() as env:
+            env.unset("TCL_LIBRARY")
+            f = os.popen('%s -c "import Tkinter; print Tkinter"' % (unc_name,))
+
+        self.assert_('Tkinter.py' in f.read())
+        # exit code must be zero
+        self.assertEqual(f.close(), None)
+
+
 
 def test_main():
     support.run_unittest(TclTest, TkinterTest)
