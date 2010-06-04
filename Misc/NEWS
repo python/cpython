@@ -58,6 +58,8 @@ C-API
 Library
 -------
 
+- Issue #6470: Drop UNC prefix in FixTk.
+
 - Issue #8833: tarfile created hard link entries with a size field != 0 by
   mistake.
 
