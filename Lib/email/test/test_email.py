@@ -2868,6 +2868,9 @@ class TestCharset(unittest.TestCase):
         self.assertEqual(str(charset), 'us-ascii')
         self.assertRaises(Errors.CharsetError, Charset, 'asc\xffii')
 
+    def test_codecs_aliases_accepted(self):
+        charset = Charset('utf8')
+        self.assertEqual(str(charset), 'utf-8')
 
 
 # Test multilingual MIME headers.

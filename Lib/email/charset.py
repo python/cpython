@@ -9,6 +9,7 @@ __all__ = [
     'add_codec',
     ]
 
+import codecs
 import email.base64mime
 import email.quoprimime
 
@@ -209,7 +210,12 @@ class Charset:
         except UnicodeError:
             raise errors.CharsetError(input_charset)
         input_charset = input_charset.lower()
-        # Set the input charset after filtering through the aliases
+        # Set the input charset after filtering through the aliases and/or codecs
+        if not (input_charset in ALIASES or input_charset in CHARSETS):
+            try:
+                input_charset = codecs.lookup(input_charset).name
+            except LookupError:
+                pass
         self.input_charset = ALIASES.get(input_charset, input_charset)
         # We can try to guess which encoding and conversion to use by the
         # charset_map dictionary.  Try that first, but let the user override
