@@ -3,6 +3,12 @@
 
 #define PY_SSIZE_T_CLEAN
 
+#ifdef __sun
+/* The control message API is only available on Solaris 
+   if XPG 4.2 or later is requested. */
+#define _XOPEN_SOURCE 500
+#endif
+
 #include "Python.h"
 #include "structmember.h"
 #include "pythread.h"
