@@ -57,7 +57,7 @@ Most applications are probably going to want to log to a file, so let's start
 with that case. Using the :func:`basicConfig` function, we can set up the
 default handler so that debug messages are written to a file (in the example,
 we assume that you have the appropriate permissions to create a file called
-*example.log* in the current directory::
+*example.log* in the current directory)::
 
    import logging
    LOG_FILENAME = 'example.log'
@@ -79,7 +79,7 @@ yourself, though, it is simpler to use a :class:`RotatingFileHandler`::
    import logging
    import logging.handlers
 
-   LOG_FILENAME = '/tmp/logging_rotatingfile_example.out'
+   LOG_FILENAME = 'logging_rotatingfile_example.out'
 
    # Set up a specific logger with our desired output level
    my_logger = logging.getLogger('MyLogger')
@@ -104,14 +104,14 @@ yourself, though, it is simpler to use a :class:`RotatingFileHandler`::
 The result should be 6 separate files, each with part of the log history for the
 application::
 
-   /tmp/logging_rotatingfile_example.out
-   /tmp/logging_rotatingfile_example.out.1
-   /tmp/logging_rotatingfile_example.out.2
-   /tmp/logging_rotatingfile_example.out.3
-   /tmp/logging_rotatingfile_example.out.4
-   /tmp/logging_rotatingfile_example.out.5
+   logging_rotatingfile_example.out
+   logging_rotatingfile_example.out.1
+   logging_rotatingfile_example.out.2
+   logging_rotatingfile_example.out.3
+   logging_rotatingfile_example.out.4
+   logging_rotatingfile_example.out.5
 
-The most current file is always :file:`/tmp/logging_rotatingfile_example.out`,
+The most current file is always :file:`logging_rotatingfile_example.out`,
 and each time it reaches the size limit it is renamed with the suffix
 ``.1``. Each of the existing backup files is renamed to increment the suffix
 (``.1`` becomes ``.2``, etc.)  and the ``.6`` file is erased.
@@ -1134,14 +1134,14 @@ destination can be easily changed, as shown in the example below::
 
    logging.basicConfig(level=logging.DEBUG,
                        format='%(asctime)s %(levelname)s %(message)s',
-                       filename='/tmp/myapp.log',
+                       filename='myapp.log',
                        filemode='w')
    logging.debug('A debug message')
    logging.info('Some information')
    logging.warning('A shot across the bows')
 
 The :meth:`basicConfig` method is used to change the configuration defaults,
-which results in output (written to ``/tmp/myapp.log``) which should look
+which results in output (written to ``myapp.log``) which should look
 something like the following::
 
    2004-07-02 13:00:08,743 DEBUG A debug message
