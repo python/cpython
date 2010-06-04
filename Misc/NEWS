@@ -120,7 +120,8 @@ Tests
 Build
 -----
 
-- Issue #1759169: Drop _XOPEN_SOURCE on Solaris.
+- Issues #1759169, #8864: Drop _XOPEN_SOURCE on Solaris, define it for 
+  multiprocessing only.
 
 What's New in Python 2.7 beta 2?
 ================================
