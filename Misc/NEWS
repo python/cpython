@@ -120,6 +120,9 @@ Tests
 Build
 -----
 
+- Display installer warning that Windows 2000 won't be supported in future
+  releases.
+
 - Issues #1759169, #8864: Drop _XOPEN_SOURCE on Solaris, define it for 
   multiprocessing only.
 
