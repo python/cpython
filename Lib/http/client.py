@@ -488,6 +488,7 @@ class HTTPResponse(io.RawIOBase):
             return b""
 
         if self._method == "HEAD":
+            self.close()
             return b""
 
         if self.chunked:
