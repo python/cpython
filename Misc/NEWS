@@ -1548,6 +1548,8 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #5464: Implement plural forms in msgfmt.py.
+
 - iobench (a file I/O benchmark) and ccbench (a concurrency benchmark) were
   added to the `Tools/` directory.  They were previously living in the
   sandbox.
