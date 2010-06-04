@@ -970,7 +970,8 @@ class TestMIMEAudio(unittest.TestCase):
 
     def test_encoding(self):
         payload = self._au.get_payload()
-        self.assertEqual(base64.decodebytes(payload), self._audiodata)
+        self.assertEqual(base64.decodebytes(bytes(payload, 'ascii')),
+                self._audiodata)
 
     def test_checkSetMinor(self):
         au = MIMEAudio(self._audiodata, 'fish')
@@ -1010,7 +1011,8 @@ class TestMIMEImage(unittest.TestCase):
 
     def test_encoding(self):
         payload = self._im.get_payload()
-        self.assertEqual(base64.decodebytes(payload), self._imgdata)
+        self.assertEqual(base64.decodebytes(bytes(payload, 'ascii')),
+                self._imgdata)
 
     def test_checkSetMinor(self):
         im = MIMEImage(self._imgdata, 'fish')
@@ -1050,7 +1052,7 @@ class TestMIMEApplication(unittest.TestCase):
         eq = self.assertEqual
         bytes = b'\xfa\xfb\xfc\xfd\xfe\xff'
         msg = MIMEApplication(bytes)
-        eq(msg.get_payload(), b'+vv8/f7/')
+        eq(msg.get_payload(), '+vv8/f7/')
         eq(msg.get_payload(decode=True), bytes)
 
 
