@@ -30,6 +30,7 @@ import os
 import getopt
 import struct
 import array
+from email.parser import HeaderParser
 
 __version__ = "1.1"
 
@@ -59,13 +60,13 @@ def generate():
     # the keys are sorted in the .mo file
     keys = sorted(MESSAGES.keys())
     offsets = []
-    ids = strs = ''
+    ids = strs = b''
     for id in keys:
         # For each string, we need size and file offset.  Each string is NUL
         # terminated; the NUL does not count into the size.
         offsets.append((len(ids), len(id), len(strs), len(MESSAGES[id])))
-        ids += id + '\0'
-        strs += MESSAGES[id] + '\0'
+        ids += id + b'\0'
+        strs += MESSAGES[id] + b'\0'
     output = ''
     # The header is 7 32-bit unsigned integers.  We don't use hash tables, so
     # the keys start right after the index tables.
@@ -108,7 +109,7 @@ def make(filename, outfile):
         outfile = os.path.splitext(infile)[0] + '.mo'
 
     try:
-        lines = open(infile).readlines()
+        lines = open(infile, 'rb').readlines()
     except IOError as msg:
         print(msg, file=sys.stderr)
         sys.exit(1)
@@ -116,9 +117,14 @@ def make(filename, outfile):
     section = None
     fuzzy = 0
 
+    # Start off assuming Latin-1, so everything decodes without failure,
+    # until we know the exact encoding
+    encoding = 'latin-1'
+
     # Parse the catalog
     lno = 0
     for l in lines:
+        l = l.decode(encoding)
         lno += 1
         # If we get a comment line after a msgstr, this is a new entry
         if l[0] == '#' and section == STR:
@@ -135,9 +141,15 @@ def make(filename, outfile):
         if l.startswith('msgid') and not l.startswith('msgid_plural'):
             if section == STR:
                 add(msgid, msgstr, fuzzy)
+                if not msgid:
+                    # See whether there is an encoding declaration
+                    p = HeaderParser()
+                    charset = p.parsestr(msgstr.decode(encoding)).get_content_charset()
+                    if charset:
+                        encoding = charset
             section = ID
             l = l[5:]
-            msgid = msgstr = ''
+            msgid = msgstr = b''
             is_plural = False
         # This is a message with plural forms
         elif l.startswith('msgid_plural'):
@@ -146,7 +158,7 @@ def make(filename, outfile):
                       file=sys.stderr)
                 sys.exit(1)
             l = l[12:]
-            msgid += '\0' # separator of singular and plural
+            msgid += b'\0' # separator of singular and plural
             is_plural = True
         # Now we are in a msgstr section
         elif l.startswith('msgstr'):
@@ -158,7 +170,7 @@ def make(filename, outfile):
                     sys.exit(1)
                 l = l.split(']', 1)[1]
                 if msgstr:
-                    msgstr += '\0' # Separator of the various plural forms
+                    msgstr += b'\0' # Separator of the various plural forms
             else:
                 if is_plural:
                     print(sys.stderr, 'indexed msgstr required for plural on  %s:%d' % (infile, lno),
@@ -172,9 +184,9 @@ def make(filename, outfile):
         # XXX: Does this always follow Python escape semantics?
         l = eval(l)
         if section == ID:
-            msgid += l
+            msgid += l.encode(encoding)
         elif section == STR:
-            msgstr += l
+            msgstr += l.encode(encoding)
         else:
             print('Syntax error on %s:%d' % (infile, lno), \
                   'before:', file=sys.stderr)
