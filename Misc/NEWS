@@ -123,6 +123,12 @@ Build
 - Issues #1759169, #8864: Drop _XOPEN_SOURCE on Solaris, define it for 
   multiprocessing only.
 
+Tools/Demos
+-----------
+
+- Issue #5464: Implement plural forms in msgfmt.py.
+
+
 What's New in Python 2.7 beta 2?
 ================================
 
