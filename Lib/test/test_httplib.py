@@ -239,7 +239,7 @@ class BasicTest(TestCase):
         self.assertEquals(resp.read(), b'')
         self.assertEquals(resp.status, 200)
         self.assertEquals(resp.reason, 'OK')
-        resp.close()
+        self.assertTrue(resp.isclosed())
 
     def test_negative_content_length(self):
         sock = FakeSocket(
