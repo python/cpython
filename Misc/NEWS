@@ -46,6 +46,9 @@ C-API
 Library
 -------
 
+- Issue #4487: email now accepts as charset aliases all codec aliases
+  accepted by the codecs module.
+
 - Issue #6470: Drop UNC prefix in FixTk.
 
 - Issue #5610: feedparser no longer eats extra characters at the end of
