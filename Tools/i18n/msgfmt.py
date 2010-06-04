@@ -132,16 +132,39 @@ def make(filename, outfile):
         if l[0] == '#':
             continue
         # Now we are in a msgid section, output previous section
-        if l.startswith('msgid'):
+        if l.startswith('msgid') and not l.startswith('msgid_plural'):
             if section == STR:
                 add(msgid, msgstr, fuzzy)
             section = ID
             l = l[5:]
             msgid = msgstr = ''
+            is_plural = False
+        # This is a message with plural forms
+        elif l.startswith('msgid_plural'):
+            if section != ID:
+                print('msgid_plural not preceeded by msgid on %s:%d' % (infile, lno),
+                      file=sys.stderr)
+                sys.exit(1)
+            l = l[12:]
+            msgid += '\0' # separator of singular and plural
+            is_plural = True
         # Now we are in a msgstr section
         elif l.startswith('msgstr'):
             section = STR
-            l = l[6:]
+            if l.startswith('msgstr['):
+                if not is_plural:
+                    print(sys.stderr, 'plural without msgid_plural on %s:%d' % (infile, lno),
+                          file=sys.stderr)
+                    sys.exit(1)
+                l = l.split(']', 1)[1]
+                if msgstr:
+                    msgstr += '\0' # Separator of the various plural forms
+            else:
+                if is_plural:
+                    print(sys.stderr, 'indexed msgstr required for plural on  %s:%d' % (infile, lno),
+                          file=sys.stderr)
+                    sys.exit(1)
+                l = l[6:]
         # Skip empty lines
         l = l.strip()
         if not l:
