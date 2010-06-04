@@ -1328,7 +1328,8 @@ Extension Modules
 Build
 -----
 
-- Issue #1759169: Drop _XOPEN_SOURCE on Solaris.
+- Issue #1759169, #8864: Drop _XOPEN_SOURCE on Solaris, define it for
+  multiprocessing only.
 
 - Issue #8625: Turn off optimization in --with-pydebug builds with
   gcc.  (Optimization was unintentionally turned on in gcc
