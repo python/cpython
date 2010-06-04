@@ -42,6 +42,8 @@ else:
         # Ignore leading \\?\
         if s.startswith("\\\\?\\"):
             s = s[4:]
+        if s.startswith("UNC"):
+            s = "\\" + s[3:]
         return s
 
 prefix = os.path.join(sys.prefix,"tcl")
