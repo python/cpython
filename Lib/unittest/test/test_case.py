@@ -1,3 +1,5 @@
+import difflib
+import pprint
 import re
 import sys
 
@@ -587,6 +589,23 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertRaises(self.failureException, self.assertDictEqual, None, d)
         self.assertRaises(self.failureException, self.assertDictEqual, [], d)
         self.assertRaises(self.failureException, self.assertDictEqual, 1, 1)
+
+    def testAssertSequenceEqualMaxDiff(self):
+        seq1 = 'a' + 'x' * 80**2
+        seq2 = 'b' + 'x' * 80**2
+        diff = '\n'.join(difflib.ndiff(pprint.pformat(seq1).splitlines(),
+                                       pprint.pformat(seq2).splitlines()))
+        try:
+            self.assertSequenceEqual(seq1, seq2, max_diff=len(diff)/2)
+        except AssertionError as e:
+            msg = e.args[0]
+        self.assertTrue(len(msg) < len(diff))
+
+        try:
+            self.assertSequenceEqual(seq1, seq2, max_diff=len(diff)*2)
+        except AssertionError as e:
+            msg = e.args[0]
+        self.assertTrue(len(msg) > len(diff))
 
     def testAssertItemsEqual(self):
         a = object()
