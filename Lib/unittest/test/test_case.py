@@ -592,20 +592,38 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertRaises(self.failureException, self.assertDictEqual, 1, 1)
 
     def testAssertSequenceEqualMaxDiff(self):
+        self.assertEqual(self.maxDiff, 80*8)
         seq1 = 'a' + 'x' * 80**2
         seq2 = 'b' + 'x' * 80**2
         diff = '\n'.join(difflib.ndiff(pprint.pformat(seq1).splitlines(),
                                        pprint.pformat(seq2).splitlines()))
+
+        self.maxDiff = len(diff)//2
         try:
-            self.assertSequenceEqual(seq1, seq2, max_diff=len(diff)//2)
-        except AssertionError as e:
+
+            self.assertSequenceEqual(seq1, seq2)
+        except self.failureException as e:
             msg = e.args[0]
+        else:
+            self.fail('assertSequenceEqual did not fail.')
         self.assertTrue(len(msg) < len(diff))
 
+        self.maxDiff = len(diff) * 2
         try:
-            self.assertSequenceEqual(seq1, seq2, max_diff=len(diff)*2)
-        except AssertionError as e:
+            self.assertSequenceEqual(seq1, seq2)
+        except self.failureException as e:
             msg = e.args[0]
+        else:
+            self.fail('assertSequenceEqual did not fail.')
+        self.assertTrue(len(msg) > len(diff))
+
+        self.maxDiff = None
+        try:
+            self.assertSequenceEqual(seq1, seq2)
+        except self.failureException as e:
+            msg = e.args[0]
+        else:
+            self.fail('assertSequenceEqual did not fail.')
         self.assertTrue(len(msg) > len(diff))
 
     def testAssertItemsEqual(self):
