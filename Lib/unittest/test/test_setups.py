@@ -111,7 +111,7 @@ class TestSetups(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         error, _ = result.errors[0]
         self.assertEqual(str(error),
-                    'classSetUp (%s.BrokenTest)' % __name__)
+                    'setUpClass (%s.BrokenTest)' % __name__)
 
     def test_error_in_teardown_class(self):
         class Test(unittest.TestCase):
@@ -144,7 +144,7 @@ class TestSetups(unittest.TestCase):
 
         error, _ = result.errors[0]
         self.assertEqual(str(error),
-                    'classTearDown (%s.Test)' % __name__)
+                    'tearDownClass (%s.Test)' % __name__)
 
     def test_class_not_torndown_when_setup_fails(self):
         class Test(unittest.TestCase):
@@ -398,3 +398,46 @@ class TestSetups(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         error, _ = result.errors[0]
         self.assertEqual(str(error), 'tearDownModule (Module)')
+
+    def test_skiptest_in_setupclass(self):
+        class Test(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                raise unittest.SkipTest('foo')
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        result = self.runTests(Test)
+        self.assertEqual(result.testsRun, 0)
+        self.assertEqual(len(result.errors), 0)
+        self.assertEqual(len(result.skipped), 1)
+        skipped = result.skipped[0][0]
+        self.assertEqual(str(skipped), 'setUpClass (%s.Test)' % __name__)
+
+    def test_skiptest_in_setupmodule(self):
+        class Test(unittest.TestCase):
+            def test_one(self):
+                pass
+            def test_two(self):
+                pass
+
+        class Module(object):
+            @staticmethod
+            def setUpModule():
+                raise unittest.SkipTest('foo')
+
+        Test.__module__ = 'Module'
+        sys.modules['Module'] = Module
+
+        result = self.runTests(Test)
+        self.assertEqual(result.testsRun, 0)
+        self.assertEqual(len(result.errors), 0)
+        self.assertEqual(len(result.skipped), 1)
+        skipped = result.skipped[0][0]
+        self.assertEqual(str(skipped), 'setUpModule (Module)')
+
+
+if __name__ == '__main__':
+    unittest.main()
