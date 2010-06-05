@@ -4621,7 +4621,6 @@ def test_main():
         deprecations += [
             ("classic (int|long) division", DeprecationWarning),
             ("coerce.. not supported", DeprecationWarning),
-            ("Overriding __cmp__ ", DeprecationWarning),
             (".+__(get|set|del)slice__ has been removed", DeprecationWarning)]
     with test_support.check_warnings(*deprecations):
         # Run all local test cases, with PTypesLongInitTest first.
