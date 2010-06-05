@@ -133,7 +133,7 @@ class TestSuite(BaseTestSuite):
             except Exception as e:
                 currentClass._classSetupFailed = True
                 className = util.strclass(currentClass)
-                errorName = 'classSetUp (%s)' % className
+                errorName = 'setUpClass (%s)' % className
                 self._addClassOrModuleLevelException(result, e, errorName)
 
 
@@ -213,7 +213,7 @@ class TestSuite(BaseTestSuite):
                 tearDownClass()
             except Exception, e:
                 className = util.strclass(previousClass)
-                errorName = 'classTearDown (%s)' % className
+                errorName = 'tearDownClass (%s)' % className
                 self._addClassOrModuleLevelException(result, e, errorName)
 
 
