@@ -87,25 +87,26 @@ An explanation of some terminology and conventions is in order.
   +=======+===================+=================================+
   | 0     | :attr:`tm_year`   | (for example, 1993)             |
   +-------+-------------------+---------------------------------+
-  | 1     | :attr:`tm_mon`    | range [1,12]                    |
+  | 1     | :attr:`tm_mon`    | range [1, 12]                   |
   +-------+-------------------+---------------------------------+
-  | 2     | :attr:`tm_mday`   | range [1,31]                    |
+  | 2     | :attr:`tm_mday`   | range [1, 31]                   |
   +-------+-------------------+---------------------------------+
-  | 3     | :attr:`tm_hour`   | range [0,23]                    |
+  | 3     | :attr:`tm_hour`   | range [0, 23]                   |
   +-------+-------------------+---------------------------------+
-  | 4     | :attr:`tm_min`    | range [0,59]                    |
+  | 4     | :attr:`tm_min`    | range [0, 59]                   |
   +-------+-------------------+---------------------------------+
-  | 5     | :attr:`tm_sec`    | range [0,61]; see **(1)** in    |
+  | 5     | :attr:`tm_sec`    | range [0, 61]; see **(1)** in   |
   |       |                   | :func:`strftime` description    |
   +-------+-------------------+---------------------------------+
-  | 6     | :attr:`tm_wday`   | range [0,6], Monday is 0        |
+  | 6     | :attr:`tm_wday`   | range [0, 6], Monday is 0       |
   +-------+-------------------+---------------------------------+
-  | 7     | :attr:`tm_yday`   | range [1,366]                   |
+  | 7     | :attr:`tm_yday`   | range [1, 366]                  |
   +-------+-------------------+---------------------------------+
   | 8     | :attr:`tm_isdst`  | 0, 1 or -1; see below           |
   +-------+-------------------+---------------------------------+
 
-  Note that unlike the C structure, the month value is a range of 1-12, not 0-11.
+  Note that unlike the C structure, the month value is a range of [1, 12],
+  not [0, 11].
   A year value will be handled as described under "Year 2000 (Y2K) issues" above.
   A ``-1`` argument as the daylight savings flag, passed to :func:`mktime` will
   usually result in the correct daylight savings state to be filled in.

@@ -52,6 +52,8 @@ C-API
 Library
 -------
 
+- Issue #8899: time.struct_time now has class and atribute docstrings.
+
 - Issue #4487: email now accepts as charset aliases all codec aliases
   accepted by the codecs module.
 
