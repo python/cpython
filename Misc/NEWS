@@ -60,6 +60,13 @@ C-API
 Library
 -------
 
+- Issue #8302: SkipTest in unittest.TestCase.setUpClass or setUpModule is now
+  reported as a skip rather than an error.
+
+- Issue #8351: Excessively large diffs due to
+  unittest.TestCase.assertSequenceEqual are no longer included in failure
+  reports.
+
 - Issue #8899: time.struct_time now has class and atribute docstrings.
 
 - Issue #4487: email now accepts as charset aliases all codec aliases
