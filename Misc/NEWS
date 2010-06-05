@@ -12,6 +12,9 @@ What's New in Python 2.7 Release Candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #8627: Remove bogus "Overriding __cmp__ blocks inheritance of
+  __hash__ in 3.x" warning.
+
 - Issue #8748: Fix two issues with comparisons between complex and integer
   objects.  (1) The comparison could incorrectly return True in some cases
   (2**53+1 == complex(2**53) == 2**53), breaking transivity of equality.
