@@ -13,7 +13,10 @@ Core and Builtins
 -----------------
 
 - Issue #8627: Remove bogus "Overriding __cmp__ blocks inheritance of
-  __hash__ in 3.x" warning.
+  __hash__ in 3.x" warning.  Also fix "XXX undetected error" that
+  arises from the "Overriding __eq__ blocks inheritance ..." warning
+  when turned into an exception: in this case the exception simply
+  gets ignored.
 
 - Issue #8748: Fix two issues with comparisons between complex and integer
   objects.  (1) The comparison could incorrectly return True in some cases
