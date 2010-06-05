@@ -600,6 +600,164 @@ class UnicodeTest(
         # * strict decoding testing for all of the
         #   UTF8_ERROR cases in PyUnicode_DecodeUTF8
 
+    def test_utf8_decode_valid_sequences(self):
+        sequences = [
+            # single byte
+            ('\x00', u'\x00'), ('a', u'a'), ('\x7f', u'\x7f'),
+            # 2 bytes
+            ('\xc2\x80', u'\x80'), ('\xdf\xbf', u'\u07ff'),
+            # 3 bytes
+            ('\xe0\xa0\x80', u'\u0800'), ('\xed\x9f\xbf', u'\ud7ff'),
+            ('\xee\x80\x80', u'\uE000'), ('\xef\xbf\xbf', u'\uffff'),
+            # 4 bytes
+            ('\xF0\x90\x80\x80', u'\U00010000'),
+            ('\xf4\x8f\xbf\xbf', u'\U0010FFFF')
+        ]
+        for seq, res in sequences:
+            self.assertEqual(seq.decode('utf-8'), res)
+
+        for ch in map(unichr, range(0, sys.maxunicode)):
+            self.assertEqual(ch, ch.encode('utf-8').decode('utf-8'))
+
+    def test_utf8_decode_invalid_sequences(self):
+        # continuation bytes in a sequence of 2, 3, or 4 bytes
+        continuation_bytes = map(chr, range(0x80, 0xC0))
+        # start bytes of a 2-byte sequence equivalent to codepoints < 0x7F
+        invalid_2B_seq_start_bytes = map(chr, range(0xC0, 0xC2))
+        # start bytes of a 4-byte sequence equivalent to codepoints > 0x10FFFF
+        invalid_4B_seq_start_bytes = map(chr, range(0xF5, 0xF8))
+        invalid_start_bytes = (
+            continuation_bytes + invalid_2B_seq_start_bytes +
+            invalid_4B_seq_start_bytes + map(chr, range(0xF7, 0x100))
+        )
+
+        for byte in invalid_start_bytes:
+            self.assertRaises(UnicodeDecodeError, byte.decode, 'utf-8')
+
+        for sb in invalid_2B_seq_start_bytes:
+            for cb in continuation_bytes:
+                self.assertRaises(UnicodeDecodeError, (sb+cb).decode, 'utf-8')
+
+        for sb in invalid_4B_seq_start_bytes:
+            for cb1 in continuation_bytes[:3]:
+                for cb3 in continuation_bytes[:3]:
+                    self.assertRaises(UnicodeDecodeError,
+                                      (sb+cb1+'\x80'+cb3).decode, 'utf-8')
+
+        for cb in map(chr, range(0x80, 0xA0)):
+            self.assertRaises(UnicodeDecodeError,
+                              ('\xE0'+cb+'\x80').decode, 'utf-8')
+            self.assertRaises(UnicodeDecodeError,
+                              ('\xE0'+cb+'\xBF').decode, 'utf-8')
+        # XXX: surrogates shouldn't be valid UTF-8!
+        # see http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
+        # (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt
+        #for cb in map(chr, range(0xA0, 0xC0)):
+            #sys.__stdout__.write('\\xED\\x%02x\\x80\n' % ord(cb))
+            #self.assertRaises(UnicodeDecodeError,
+                              #('\xED'+cb+'\x80').decode, 'utf-8')
+            #self.assertRaises(UnicodeDecodeError,
+                              #('\xED'+cb+'\xBF').decode, 'utf-8')
+        for cb in map(chr, range(0x80, 0x90)):
+            self.assertRaises(UnicodeDecodeError,
+                              ('\xF0'+cb+'\x80\x80').decode, 'utf-8')
+            self.assertRaises(UnicodeDecodeError,
+                              ('\xF0'+cb+'\xBF\xBF').decode, 'utf-8')
+        for cb in map(chr, range(0x90, 0xC0)):
+            self.assertRaises(UnicodeDecodeError,
+                              ('\xF4'+cb+'\x80\x80').decode, 'utf-8')
+            self.assertRaises(UnicodeDecodeError,
+                              ('\xF4'+cb+'\xBF\xBF').decode, 'utf-8')
+
+    def test_issue8271(self):
+        # Issue #8271: when a byte sequence is invalid, only the start byte
+        # and all the valid continuation bytes should be replaced by U+FFFD,
+        # not the number of bytes specified by the start byte.
+        # See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf (page 95,
+        # table 3-8, Row 2) for more information about the algorithm used.
+        FFFD = u'\ufffd'
+        sequences = [
+            # invalid start bytes
+            ('\x80', FFFD), # continuation byte
+            ('\x80\x80', FFFD*2), # 2 continuation bytes
+            ('\xc0', FFFD),
+            ('\xc0\xc0', FFFD*2),
+            ('\xc1', FFFD),
+            ('\xc1\xc0', FFFD*2),
+            ('\xc0\xc1', FFFD*2),
+            # with start byte of a 2-byte sequence
+            ('\xc2', FFFD), # only the start byte
+            ('\xc2\xc2', FFFD*2), # 2 start bytes
+            ('\xc2\xc2\xc2', FFFD*3), # 2 start bytes
+            ('\xc2\x41', FFFD+'A'), # invalid continuation byte
+            # with start byte of a 3-byte sequence
+            ('\xe1', FFFD), # only the start byte
+            ('\xe1\xe1', FFFD*2), # 2 start bytes
+            ('\xe1\xe1\xe1', FFFD*3), # 3 start bytes
+            ('\xe1\xe1\xe1\xe1', FFFD*4), # 4 start bytes
+            ('\xe1\x80', FFFD), # only 1 continuation byte
+            ('\xe1\x41', FFFD+'A'), # invalid continuation byte
+            ('\xe1\x41\x80', FFFD+'A'+FFFD), # invalid cb followed by valid cb
+            ('\xe1\x41\x41', FFFD+'AA'), # 2 invalid continuation bytes
+            ('\xe1\x80\x41', FFFD+'A'), # only 1 valid continuation byte
+            ('\xe1\x80\xe1\x41', FFFD*2+'A'), # 1 valid and the other invalid
+            ('\xe1\x41\xe1\x80', FFFD+'A'+FFFD), # 1 invalid and the other valid
+            # with start byte of a 4-byte sequence
+            ('\xf1', FFFD), # only the start byte
+            ('\xf1\xf1', FFFD*2), # 2 start bytes
+            ('\xf1\xf1\xf1', FFFD*3), # 3 start bytes
+            ('\xf1\xf1\xf1\xf1', FFFD*4), # 4 start bytes
+            ('\xf1\xf1\xf1\xf1\xf1', FFFD*5), # 5 start bytes
+            ('\xf1\x80', FFFD), # only 1 continuation bytes
+            ('\xf1\x80\x80', FFFD), # only 2 continuation bytes
+            ('\xf1\x80\x41', FFFD+'A'), # 1 valid cb and 1 invalid
+            ('\xf1\x80\x41\x41', FFFD+'AA'), # 1 valid cb and 1 invalid
+            ('\xf1\x80\x80\x41', FFFD+'A'), # 2 valid cb and 1 invalid
+            ('\xf1\x41\x80', FFFD+'A'+FFFD), # 1 invalid cv and 1 valid
+            ('\xf1\x41\x80\x80', FFFD+'A'+FFFD*2), # 1 invalid cb and 2 invalid
+            ('\xf1\x41\x80\x41', FFFD+'A'+FFFD+'A'), # 2 invalid cb and 1 invalid
+            ('\xf1\x41\x41\x80', FFFD+'AA'+FFFD), # 1 valid cb and 1 invalid
+            ('\xf1\x41\xf1\x80', FFFD+'A'+FFFD),
+            ('\xf1\x41\x80\xf1', FFFD+'A'+FFFD*2),
+            ('\xf1\xf1\x80\x41', FFFD*2+'A'),
+            ('\xf1\x41\xf1\xf1', FFFD+'A'+FFFD*2),
+            # with invalid start byte of a 4-byte sequence (rfc2279)
+            ('\xf5', FFFD), # only the start byte
+            ('\xf5\xf5', FFFD*2), # 2 start bytes
+            ('\xf5\x80', FFFD*2), # only 1 continuation byte
+            ('\xf5\x80\x80', FFFD*3), # only 2 continuation byte
+            ('\xf5\x80\x80\x80', FFFD*4), # 3 continuation bytes
+            ('\xf5\x80\x41', FFFD*2+'A'), #  1 valid cb and 1 invalid
+            ('\xf5\x80\x41\xf5', FFFD*2+'A'+FFFD),
+            ('\xf5\x41\x80\x80\x41', FFFD+'A'+FFFD*2+'A'),
+            # with invalid start byte of a 5-byte sequence (rfc2279)
+            ('\xf8', FFFD), # only the start byte
+            ('\xf8\xf8', FFFD*2), # 2 start bytes
+            ('\xf8\x80', FFFD*2), # only one continuation byte
+            ('\xf8\x80\x41', FFFD*2 + 'A'), # 1 valid cb and 1 invalid
+            ('\xf8\x80\x80\x80\x80', FFFD*5), # invalid 5 bytes seq with 5 bytes
+            # with invalid start byte of a 6-byte sequence (rfc2279)
+            ('\xfc', FFFD), # only the start byte
+            ('\xfc\xfc', FFFD*2), # 2 start bytes
+            ('\xfc\x80\x80', FFFD*3), # only 2 continuation bytes
+            ('\xfc\x80\x80\x80\x80\x80', FFFD*6), # 6 continuation bytes
+            # invalid start byte
+            ('\xfe', FFFD),
+            ('\xfe\x80\x80', FFFD*3),
+            # other sequences
+            ('\xf1\x80\x41\x42\x43', u'\ufffd\x41\x42\x43'),
+            ('\xf1\x80\xff\x42\x43', u'\ufffd\ufffd\x42\x43'),
+            ('\xf1\x80\xc2\x81\x43', u'\ufffd\x81\x43'),
+            ('\x61\xF1\x80\x80\xE1\x80\xC2\x62\x80\x63\x80\xBF\x64',
+             u'\x61\uFFFD\uFFFD\uFFFD\x62\uFFFD\x63\uFFFD\uFFFD\x64'),
+        ]
+        for n, (seq, res) in enumerate(sequences):
+            self.assertRaises(UnicodeDecodeError, seq.decode, 'utf-8', 'strict')
+            self.assertEqual(seq.decode('utf-8', 'replace'), res)
+            self.assertEqual((seq+'b').decode('utf-8', 'replace'), res+'b')
+            self.assertEqual(seq.decode('utf-8', 'ignore'),
+                             res.replace(u'\uFFFD', ''))
+
     def test_codecs_idna(self):
         # Test whether trailing dot is preserved
         self.assertEqual(u"www.python.org.".encode("idna"), "www.python.org.")
