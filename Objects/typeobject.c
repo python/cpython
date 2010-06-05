@@ -3310,23 +3310,15 @@ object_format(PyObject *self, PyObject *args)
     PyObject *format_spec;
     PyObject *self_as_str = NULL;
     PyObject *result = NULL;
-    PyObject *format_meth = NULL;
 
     if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
         return NULL;
 
     self_as_str = PyObject_Str(self);
-    if (self_as_str != NULL) {
-        /* find the format function */
-        format_meth = PyObject_GetAttrString(self_as_str, "__format__");
-        if (format_meth != NULL) {
-               /* and call it */
-            result = PyObject_CallFunctionObjArgs(format_meth, format_spec, NULL);
-        }
-    }
+    if (self_as_str != NULL)
+        result = PyObject_Format(self_as_str, format_spec);
 
     Py_XDECREF(self_as_str);
-    Py_XDECREF(format_meth);
 
     return result;
 }
