@@ -248,9 +248,7 @@ class TestPy3KWarnings(unittest.TestCase):
             # With object as the base class
             class WarnOnlyCmp(object):
                 def __cmp__(self, other): pass
-            self.assertEqual(len(w.warnings), 1)
-            self.assertWarning(None, w,
-                 "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
+            self.assertEqual(len(w.warnings), 0)
             w.reset()
             class WarnOnlyEq(object):
                 def __eq__(self, other): pass
@@ -261,9 +259,7 @@ class TestPy3KWarnings(unittest.TestCase):
             class WarnCmpAndEq(object):
                 def __cmp__(self, other): pass
                 def __eq__(self, other): pass
-            self.assertEqual(len(w.warnings), 2)
-            self.assertWarning(None, w.warnings[0],
-                 "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
+            self.assertEqual(len(w.warnings), 1)
             self.assertWarning(None, w,
                  "Overriding __eq__ blocks inheritance of __hash__ in 3.x")
             w.reset()
@@ -277,9 +273,7 @@ class TestPy3KWarnings(unittest.TestCase):
                 def __hash__(self): pass
             class WarnOnlyCmp(DefinesAllThree):
                 def __cmp__(self, other): pass
-            self.assertEqual(len(w.warnings), 1)
-            self.assertWarning(None, w,
-                 "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
+            self.assertEqual(len(w.warnings), 0)
             w.reset()
             class WarnOnlyEq(DefinesAllThree):
                 def __eq__(self, other): pass
@@ -290,9 +284,7 @@ class TestPy3KWarnings(unittest.TestCase):
             class WarnCmpAndEq(DefinesAllThree):
                 def __cmp__(self, other): pass
                 def __eq__(self, other): pass
-            self.assertEqual(len(w.warnings), 2)
-            self.assertWarning(None, w.warnings[0],
-                 "Overriding __cmp__ blocks inheritance of __hash__ in 3.x")
+            self.assertEqual(len(w.warnings), 1)
             self.assertWarning(None, w,
                  "Overriding __eq__ blocks inheritance of __hash__ in 3.x")
             w.reset()
