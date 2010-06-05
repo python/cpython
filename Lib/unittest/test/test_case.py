@@ -776,7 +776,7 @@ test case
     A test case is the smallest unit of testing. [...] You may provide your
     own implementation that does not subclass from TestCase, of course.
 """
-        sample_text_error = """
+        sample_text_error = """\
 - http://www.python.org/doc/2.3/lib/module-unittest.html
 ?                             ^
 + http://www.python.org/doc/2.4.1/lib/module-unittest.html
@@ -787,13 +787,16 @@ test case
 ?                                                       +++++++++++++++++++++
 +     own implementation that does not subclass from TestCase, of course.
 """
-
+        self.maxDiff = None
         try:
             self.assertMultiLineEqual(sample_text, revised_sample_text)
         except self.failureException as e:
+            # need to remove the first line of the error message
+            error = str(e).split('\n', 1)[1]
+
             # no fair testing ourself with ourself, and assertEqual is used for strings
             # so can't use assertEqual either. Just use assertTrue.
-            self.assertTrue(sample_text_error == str(e))
+            self.assertTrue(sample_text_error == error)
 
     def testAssertIsNone(self):
         self.assertIsNone(None)
