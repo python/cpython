@@ -3707,7 +3707,6 @@ overrides_name(PyTypeObject *type, char *name)
 }
 
 #define OVERRIDES_HASH(x)       overrides_name(x, "__hash__")
-#define OVERRIDES_CMP(x)        overrides_name(x, "__cmp__")
 #define OVERRIDES_EQ(x)         overrides_name(x, "__eq__")
 
 static void
@@ -3853,12 +3852,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
                 if (base->tp_hash &&
                                 (base->tp_hash != PyObject_HashNotImplemented) &&
                                 !OVERRIDES_HASH(type)) {
-                    if (OVERRIDES_CMP(type)) {
-                        PyErr_WarnPy3k("Overriding "
-                          "__cmp__ blocks inheritance "
-                          "of __hash__ in 3.x",
-                          1);
-                    }
                     if (OVERRIDES_EQ(type)) {
                         PyErr_WarnPy3k("Overriding "
                           "__eq__ blocks inheritance "
