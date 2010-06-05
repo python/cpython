@@ -752,11 +752,6 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
         goto done;
     }
 
-    /* Make sure the type is initialized.  float gets initialized late */
-    if (Py_TYPE(obj)->tp_dict == NULL)
-        if (PyType_Ready(Py_TYPE(obj)) < 0)
-            goto done;
-
     /* Check for a __format__ method and call it. */
     if (PyInstance_Check(obj)) {
         /* We're an instance of a classic class */
@@ -826,7 +821,7 @@ done1:
     } else {
         /* Not an instance of a classic class, use the code
            from py3k */
-        static PyObject *format_cache;
+        static PyObject *format_cache = NULL;
 
         /* Find the (unbound!) __format__ method (a borrowed
            reference) */
