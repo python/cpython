@@ -723,21 +723,12 @@ PyBuffer_Release(Py_buffer *view)
 PyObject *
 PyObject_Format(PyObject* obj, PyObject *format_spec)
 {
-    static PyObject * str__format__ = NULL;
     PyObject *empty = NULL;
     PyObject *result = NULL;
 #ifdef Py_USING_UNICODE
     int spec_is_unicode;
     int result_is_unicode;
 #endif
-
-    /* Initialize cached value */
-    if (str__format__ == NULL) {
-        /* Initialize static variable needed by _PyType_Lookup */
-        str__format__ = PyString_InternFromString("__format__");
-        if (str__format__ == NULL)
-            goto done;
-    }
 
     /* If no format_spec is provided, use an empty string */
     if (format_spec == NULL) {
@@ -769,8 +760,7 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
     /* Check for a __format__ method and call it. */
     if (PyInstance_Check(obj)) {
         /* We're an instance of a classic class */
-        PyObject *bound_method = PyObject_GetAttr(obj,
-                                                  str__format__);
+        PyObject *bound_method = PyObject_GetAttrString(obj, "__format__");
         if (bound_method != NULL) {
             result = PyObject_CallFunctionObjArgs(bound_method,
                                                   format_spec,
@@ -820,8 +810,7 @@ PyObject_Format(PyObject* obj, PyObject *format_spec)
             }
 
             /* Then call str.__format__ on that result */
-            format_method = PyObject_GetAttr(self_as_str,
-                                             str__format__);
+            format_method = PyObject_GetAttrString(self_as_str, "__format__");
             if (format_method == NULL) {
                 goto done1;
             }
@@ -837,20 +826,21 @@ done1:
     } else {
         /* Not an instance of a classic class, use the code
            from py3k */
+        static PyObject *format_cache;
 
         /* Find the (unbound!) __format__ method (a borrowed
            reference) */
-        PyObject *method = _PyType_Lookup(Py_TYPE(obj),
-                                          str__format__);
+        PyObject *method = _PyObject_LookupSpecial(obj, "__format__",
+                                                   &format_cache);
         if (method == NULL) {
-            PyErr_Format(PyExc_TypeError,
-                         "Type %.100s doesn't define __format__",
-                         Py_TYPE(obj)->tp_name);
+            if (!PyErr_Occurred())
+                PyErr_Format(PyExc_TypeError,
+                             "Type %.100s doesn't define __format__",
+                             Py_TYPE(obj)->tp_name);
             goto done;
         }
-        /* And call it, binding it to the value */
-        result = PyObject_CallFunctionObjArgs(method, obj,
-                                              format_spec, NULL);
+        /* And call it. */
+        result = PyObject_CallFunctionObjArgs(method, format_spec, NULL);
     }
 
     if (result == NULL)

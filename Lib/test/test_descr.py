@@ -1697,6 +1697,8 @@ order (MRO) for bases """
         def some_number(self_, key):
             self.assertEqual(key, "hi")
             return 4
+        def format_impl(self, spec):
+            return "hello"
 
         # It would be nice to have every special method tested here, but I'm
         # only listing the ones I can remember outside of typeobject.c, since it
@@ -1715,6 +1717,7 @@ order (MRO) for bases """
             ("__enter__", run_context, iden, set(), {"__exit__" : swallow}),
             ("__exit__", run_context, swallow, set(), {"__enter__" : iden}),
             ("__complex__", complex, complex_num, set(), {}),
+            ("__format__", format, format_impl, set(), {}),
             ]
 
         class Checker(object):
