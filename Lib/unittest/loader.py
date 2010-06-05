@@ -235,6 +235,10 @@ class TestLoader(object):
         __import__(name)
         return sys.modules[name]
 
+    def _match_path(self, path, full_path, pattern):
+        # override this method to use alternative matching strategy
+        return fnmatch(path, pattern)
+
     def _find_tests(self, start_dir, pattern):
         """Used by discovery. Yields test suites it loads."""
         paths = os.listdir(start_dir)
@@ -245,26 +249,26 @@ class TestLoader(object):
                 if not VALID_MODULE_NAME.match(path):
                     # valid Python identifiers only
                     continue
-
-                if fnmatch(path, pattern):
-                    # if the test file matches, load it
-                    name = self._get_name_from_path(full_path)
-                    try:
-                        module = self._get_module_from_name(name)
-                    except:
-                        yield _make_failed_import_test(name, self.suiteClass)
-                    else:
-                        mod_file = os.path.abspath(getattr(module, '__file__', full_path))
-                        realpath = os.path.splitext(mod_file)[0]
-                        fullpath_noext = os.path.splitext(full_path)[0]
-                        if realpath.lower() != fullpath_noext.lower():
-                            module_dir = os.path.dirname(realpath)
-                            mod_name = os.path.splitext(os.path.basename(full_path))[0]
-                            expected_dir = os.path.dirname(full_path)
-                            msg = ("%r module incorrectly imported from %r. Expected %r. "
-                                   "Is this module globally installed?")
-                            raise ImportError(msg % (mod_name, module_dir, expected_dir))
-                        yield self.loadTestsFromModule(module)
+                if not self._match_path(path, full_path, pattern):
+                    continue
+                # if the test file matches, load it
+                name = self._get_name_from_path(full_path)
+                try:
+                    module = self._get_module_from_name(name)
+                except:
+                    yield _make_failed_import_test(name, self.suiteClass)
+                else:
+                    mod_file = os.path.abspath(getattr(module, '__file__', full_path))
+                    realpath = os.path.splitext(mod_file)[0]
+                    fullpath_noext = os.path.splitext(full_path)[0]
+                    if realpath.lower() != fullpath_noext.lower():
+                        module_dir = os.path.dirname(realpath)
+                        mod_name = os.path.splitext(os.path.basename(full_path))[0]
+                        expected_dir = os.path.dirname(full_path)
+                        msg = ("%r module incorrectly imported from %r. Expected %r. "
+                               "Is this module globally installed?")
+                        raise ImportError(msg % (mod_name, module_dir, expected_dir))
+                    yield self.loadTestsFromModule(module)
             elif os.path.isdir(full_path):
                 if not os.path.isfile(os.path.join(full_path, '__init__.py')):
                     continue
