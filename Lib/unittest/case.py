@@ -14,6 +14,10 @@ from .util import (
 
 __unittest = True
 
+
+DIFF_OMITTED = ('\nDiff is %s characters long. '
+                 'Set self.maxDiff to None to see it.')
+
 class SkipTest(Exception):
     """
     Raise this exception in a test to skip it.
@@ -700,7 +704,7 @@ class TestCase(object):
         max_diff = self.maxDiff
         if max_diff is None or len(diff) <= max_diff:
             return message + diff
-        return message
+        return message + (DIFF_OMITTED % len(diff))
 
     def assertListEqual(self, list1, list2, msg=None):
         """A list-specific equality assertion.
