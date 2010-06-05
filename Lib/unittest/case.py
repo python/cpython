@@ -936,7 +936,7 @@ class TestCase(object):
                 'Second argument is not a string'))
 
         if first != second:
-            standardMsg = '%s != %s' % (safe_repr(d1, True), safe_repr(d2, True))
+            standardMsg = '%s != %s' % (safe_repr(first, True), safe_repr(second, True))
             diff = '\n' + ''.join(difflib.ndiff(first.splitlines(True),
                                                        second.splitlines(True)))
             standardMsg = self._truncateMessage(standardMsg, diff)
