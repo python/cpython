@@ -836,6 +836,7 @@ done1:
         }
         /* And call it. */
         result = PyObject_CallFunctionObjArgs(method, format_spec, NULL);
+        Py_DECREF(method);
     }
 
     if (result == NULL)
