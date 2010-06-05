@@ -716,6 +716,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
 
     /* And call it. */
     result = PyObject_CallFunctionObjArgs(meth, format_spec, NULL);
+    Py_DECREF(meth);
 
     if (result && !PyUnicode_Check(result)) {
         PyErr_SetString(PyExc_TypeError,
