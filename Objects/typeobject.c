@@ -3413,7 +3413,6 @@ object_format(PyObject *self, PyObject *args)
     PyObject *format_spec;
     PyObject *self_as_str = NULL;
     PyObject *result = NULL;
-    PyObject *format_meth = NULL;
     Py_ssize_t format_len;
 
     if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
@@ -3449,21 +3448,11 @@ object_format(PyObject *self, PyObject *args)
             goto done;
             */
         }
-
-        /* find the format function */
-        format_meth = PyObject_GetAttrString(self_as_str,
-                                             "__format__");
-        if (format_meth != NULL) {
-               /* and call it */
-            result = PyObject_CallFunctionObjArgs(format_meth,
-                                                  format_spec,
-                                                  NULL);
-        }
+        return PyObject_Format(self_as_str, format_spec);
     }
 
 done:
     Py_XDECREF(self_as_str);
-    Py_XDECREF(format_meth);
 
     return result;
 }
