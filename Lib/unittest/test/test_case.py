@@ -597,7 +597,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         diff = '\n'.join(difflib.ndiff(pprint.pformat(seq1).splitlines(),
                                        pprint.pformat(seq2).splitlines()))
         try:
-            self.assertSequenceEqual(seq1, seq2, max_diff=len(diff)/2)
+            self.assertSequenceEqual(seq1, seq2, max_diff=len(diff)//2)
         except AssertionError as e:
             msg = e.args[0]
         self.assertTrue(len(msg) < len(diff))
