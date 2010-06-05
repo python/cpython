@@ -1168,6 +1168,21 @@ Test cases
       .. versionadded:: 3.1
 
 
+   .. attribute:: maxDiff
+
+      This attribute controls the maximum length of diffs output by assert
+      methods that report diffs on failure. It defaults to 80*8 characters.
+      Assert methods affected by this attribute are
+      :meth:`assertSequenceEqual` (including all the sequence comparison
+      methods that delegate to it), :meth:`assertDictEqual` and
+      :meth:`assertMultiLineEqual`.
+
+      Setting ``maxDiff`` to None means that there is no maximum length of
+      diffs.
+
+      .. versionadded:: 3.2
+
+
    Testing frameworks can use the following methods to collect information on
    the test:
 
@@ -1862,7 +1877,9 @@ then you must call up to them yourself. The implementations in
 
 If an exception is raised during a ``setUpClass`` then the tests in the class
 are not run and the ``tearDownClass`` is not run. Skipped classes will not
-have ``setUpClass`` or ``tearDownClass`` run.
+have ``setUpClass`` or ``tearDownClass`` run. If the exception is a
+``SkipTest`` exception then the class will be reported as having been skipped
+instead of as an error.
 
 
 setUpModule and tearDownModule
@@ -1877,7 +1894,9 @@ These should be implemented as functions::
         closeConnection()
 
 If an exception is raised in a ``setUpModule`` then none of the tests in the
-module will be run and the ``tearDownModule`` will not be run.
+module will be run and the ``tearDownModule`` will not be run. If the exception is a
+``SkipTest`` exception then the module will be reported as having been skipped
+instead of as an error.
 
 
 Signal Handling
