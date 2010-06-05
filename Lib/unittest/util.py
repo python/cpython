@@ -2,12 +2,16 @@
 
 __unittest = True
 
-
-def safe_repr(obj):
+_MAX_LENGTH = 80
+def safe_repr(obj, short=False):
     try:
-        return repr(obj)
+        result = repr(obj)
     except Exception:
-        return object.__repr__(obj)
+        result = object.__repr__(obj)
+    if not short or len(result) < _MAX_LENGTH:
+        return result
+    return result[:_MAX_LENGTH] + ' [truncated]...'
+
 
 def strclass(cls):
     return "%s.%s" % (cls.__module__, cls.__name__)

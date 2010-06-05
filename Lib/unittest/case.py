@@ -811,10 +811,11 @@ class TestCase(object):
         self.assert_(isinstance(d2, dict), 'Second argument is not a dictionary')
 
         if d1 != d2:
+            standardMsg = '%s != %s' % (safe_repr(d1, True), safe_repr(d2, True))
             diff = ('\n' + '\n'.join(difflib.ndiff(
                            pprint.pformat(d1).splitlines(),
                            pprint.pformat(d2).splitlines())))
-            standardMsg = self._truncateMessage('', diff)
+            standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertDictContainsSubset(self, expected, actual, msg=None):
@@ -931,9 +932,10 @@ class TestCase(object):
                 'Second argument is not a string'))
 
         if first != second:
+            standardMsg = '%s != %s' % (safe_repr(d1, True), safe_repr(d2, True))
             diff = '\n' + ''.join(difflib.ndiff(first.splitlines(True),
                                                        second.splitlines(True)))
-            standardMsg = self._truncateMessage('', diff)
+            standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertLess(self, a, b, msg=None):
