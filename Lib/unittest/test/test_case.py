@@ -807,7 +807,7 @@ test case
     A test case is the smallest unit of testing. [...] You may provide your
     own implementation that does not subclass from TestCase, of course.
 """
-        sample_text_error = b"""
+        sample_text_error = b"""\
 - http://www.python.org/doc/2.3/lib/module-unittest.html
 ?                             ^
 + http://www.python.org/doc/2.4.1/lib/module-unittest.html
@@ -818,15 +818,18 @@ test case
 ?                                                       +++++++++++++++++++++
 +     own implementation that does not subclass from TestCase, of course.
 """
-
+        self.maxDiff = None
         for type_changer in (lambda x: x, lambda x: x.decode('utf8')):
             try:
                 self.assertMultiLineEqual(type_changer(sample_text),
                                           type_changer(revised_sample_text))
             except self.failureException, e:
+                # need to remove the first line of the error message
+                error = str(e).encode('utf8').split('\n', 1)[1]
+
                 # assertMultiLineEqual is hooked up as the default for
                 # unicode strings - so we can't use it for this check
-                self.assertTrue(sample_text_error == str(e).encode('utf8'))
+                self.assertTrue(sample_text_error == error)
 
     def testAssertIsNone(self):
         self.assertIsNone(None)
