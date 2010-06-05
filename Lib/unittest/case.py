@@ -13,7 +13,6 @@ from .util import (
 )
 
 __unittest = True
-TRUNCATED_DIFF = '\n[diff truncated...]'
 
 class SkipTest(Exception):
     """
@@ -156,6 +155,11 @@ class TestCase(object):
     # to any explicit message passed.
 
     longMessage = False
+
+    # This attribute sets the maximum length of a diff in failure messsages
+    # by assert methods using difflib. It is looked up as an instance attribute
+    # so can be configured by individual tests if required.
+    maxDiff = 80*8
 
     # Attribute used by TestSuite for classSetUp
 
@@ -589,8 +593,7 @@ class TestCase(object):
     failUnlessRaises = _deprecate(assertRaises)
     failIf = _deprecate(assertFalse)
 
-    def assertSequenceEqual(self, seq1, seq2, msg=None, seq_type=None,
-                            max_diff=80*8):
+    def assertSequenceEqual(self, seq1, seq2, msg=None, seq_type=None):
         """An equality assertion for ordered sequences (like lists and tuples).
 
         For the purposes of this function, a valid ordered sequence type is one
@@ -603,7 +606,6 @@ class TestCase(object):
                     datatype should be enforced.
             msg: Optional message to use on failure instead of a list of
                     differences.
-            max_diff: Maximum size off the diff, larger diffs are not shown
         """
         if seq_type is not None:
             seq_type_name = seq_type.__name__
@@ -690,14 +692,15 @@ class TestCase(object):
         diffMsg = '\n' + '\n'.join(
             difflib.ndiff(pprint.pformat(seq1).splitlines(),
                           pprint.pformat(seq2).splitlines()))
-        standardMsg = self._truncateMessage(standardMsg, diffMsg, max_diff)
+        standardMsg = self._truncateMessage(standardMsg, diffMsg)
         msg = self._formatMessage(msg, standardMsg)
         self.fail(msg)
 
-    def _truncateMessage(self, message, diff, max_diff):
+    def _truncateMessage(self, message, diff):
+        max_diff = self.maxDiff
         if max_diff is None or len(diff) <= max_diff:
             return message + diff
-        return message + diff[:max_diff] + TRUNCATED_DIFF
+        return message
 
     def assertListEqual(self, list1, list2, msg=None):
         """A list-specific equality assertion.
@@ -797,9 +800,10 @@ class TestCase(object):
         self.assert_(isinstance(d2, dict), 'Second argument is not a dictionary')
 
         if d1 != d2:
-            standardMsg = ('\n' + '\n'.join(difflib.ndiff(
+            diff = ('\n' + '\n'.join(difflib.ndiff(
                            pprint.pformat(d1).splitlines(),
                            pprint.pformat(d2).splitlines())))
+            standardMsg = self._truncateMessage('', diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertDictContainsSubset(self, expected, actual, msg=None):
@@ -882,8 +886,9 @@ class TestCase(object):
                 'Second argument is not a string'))
 
         if first != second:
-            standardMsg = '\n' + ''.join(difflib.ndiff(first.splitlines(True),
+            diff = '\n' + ''.join(difflib.ndiff(first.splitlines(True),
                                                        second.splitlines(True)))
+            standardMsg = self._truncateMessage('', diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertLess(self, a, b, msg=None):
