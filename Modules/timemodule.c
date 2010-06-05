@@ -208,21 +208,27 @@ Delay execution for a given number of seconds.  The argument may be\n\
 a floating point number for subsecond precision.");
 
 static PyStructSequence_Field struct_time_type_fields[] = {
-    {"tm_year", NULL},
-    {"tm_mon", NULL},
-    {"tm_mday", NULL},
-    {"tm_hour", NULL},
-    {"tm_min", NULL},
-    {"tm_sec", NULL},
-    {"tm_wday", NULL},
-    {"tm_yday", NULL},
-    {"tm_isdst", NULL},
+    {"tm_year", "year, for example, 1993"},
+    {"tm_mon", "month of year, range [1, 12]"},
+    {"tm_mday", "day of month, range [1, 31]"},
+    {"tm_hour", "hours, range [0, 23]"},
+    {"tm_min", "minutes, range [0, 59]"},
+    {"tm_sec", "seconds, range [0, 61])"},
+    {"tm_wday", "day of week, range [0, 6], Monday is 0"},
+    {"tm_yday", "day of year, range [1, 366]"},
+    {"tm_isdst", "1 if summer time is in effect, 0 if not, and -1 if unknown"},
     {0}
 };
 
 static PyStructSequence_Desc struct_time_type_desc = {
     "time.struct_time",
-    NULL,
+    "The time value as returned by gmtime(), localtime(), and strptime(), and\n"
+    " accepted by asctime(), mktime() and strftime().  May be considered as a\n"
+    " sequence of 9 integers.\n\n"
+    " Note that several fields' values are not the same as those defined by\n"
+    " the C language standard for struct tm.  For example, the value of the\n"
+    " field tm_year is the actual year, not year - 1900.  See individual\n"
+    " fields' descriptions for details.",
     struct_time_type_fields,
     9,
 };

@@ -398,6 +398,8 @@ C-API
 Library
 -------
 
+- Issue #8899: time.struct_time now has class and atribute docstrings.
+
 - Issue #6470: Drop UNC prefix in FixTk.
 
 - Issue #4768: base64 encoded email body parts were incorrectly stored as
