@@ -127,9 +127,11 @@ class TestSuite(BaseTestSuite):
         if setUpClass is not None:
             try:
                 setUpClass()
-            except:
+            except Exception as e:
                 currentClass._classSetupFailed = True
-                self._addClassSetUpError(result, currentClass)
+                className = util.strclass(currentClass)
+                errorName = 'setUpClass (%s)' % className
+                self._addClassOrModuleLevelException(result, e, errorName)
 
     def _get_previous_module(self, result):
         previousModule = None
@@ -157,10 +159,18 @@ class TestSuite(BaseTestSuite):
         if setUpModule is not None:
             try:
                 setUpModule()
-            except:
+            except Exception as e:
                 result._moduleSetUpFailed = True
-                error = _ErrorHolder('setUpModule (%s)' % currentModule)
-                result.addError(error, sys.exc_info())
+                errorName = 'setUpModule (%s)' % currentModule
+                self._addClassOrModuleLevelException(result, e, errorName)
+
+    def _addClassOrModuleLevelException(self, result, exception, errorName):
+        error = _ErrorHolder(errorName)
+        addSkip = getattr(result, 'addSkip', None)
+        if addSkip is not None and isinstance(exception, case.SkipTest):
+            addSkip(error, str(exception))
+        else:
+            result.addError(error, sys.exc_info())
 
     def _handleModuleTearDown(self, result):
         previousModule = self._get_previous_module(result)
@@ -178,9 +188,9 @@ class TestSuite(BaseTestSuite):
         if tearDownModule is not None:
             try:
                 tearDownModule()
-            except:
-                error = _ErrorHolder('tearDownModule (%s)' % previousModule)
-                result.addError(error, sys.exc_info())
+            except Exception as e:
+                errorName = 'tearDownModule (%s)' % previousModule
+                self._addClassOrModuleLevelException(result, e, errorName)
 
     def _tearDownPreviousClass(self, test, result):
         previousClass = getattr(result, '_previousTestClass', None)
@@ -198,18 +208,11 @@ class TestSuite(BaseTestSuite):
         if tearDownClass is not None:
             try:
                 tearDownClass()
-            except:
-                self._addClassTearDownError(result)
+            except Exception as e:
+                className = util.strclass(previousClass)
+                errorName = 'tearDownClass (%s)' % className
+                self._addClassOrModuleLevelException(result, e, errorName)
 
-    def _addClassTearDownError(self, result):
-        className = util.strclass(result._previousTestClass)
-        error = _ErrorHolder('classTearDown (%s)' % className)
-        result.addError(error, sys.exc_info())
-
-    def _addClassSetUpError(self, result, klass):
-        className = util.strclass(klass)
-        error = _ErrorHolder('classSetUp (%s)' % className)
-        result.addError(error, sys.exc_info())
 
 
 class _ErrorHolder(object):
