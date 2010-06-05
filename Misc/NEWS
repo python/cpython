@@ -13,7 +13,10 @@ Core and Builtins
 -----------------
 
 - Issue #8627: Remove bogus "Overriding __cmp__ blocks inheritance of
-  __hash__ in 3.x" warning.
+  __hash__ in 3.x" warning.  Also fix "XXX undetected error" that
+  arises from the "Overriding __eq__ blocks inheritance ..." warning
+  when turned into an exception: in this case the exception simply
+  gets ignored.
 
 - Issue #3798: Write sys.exit() message to sys.stderr to use stderr encoding
   and error handler, instead of writing to the C stderr file in utf-8
