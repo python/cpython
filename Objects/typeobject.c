@@ -3448,7 +3448,7 @@ object_format(PyObject *self, PyObject *args)
             goto done;
             */
         }
-        return PyObject_Format(self_as_str, format_spec);
+        result = PyObject_Format(self_as_str, format_spec);
     }
 
 done:
