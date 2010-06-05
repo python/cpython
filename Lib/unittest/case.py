@@ -690,12 +690,14 @@ class TestCase(object):
         diffMsg = '\n' + '\n'.join(
             difflib.ndiff(pprint.pformat(seq1).splitlines(),
                           pprint.pformat(seq2).splitlines()))
-        if max_diff is None or len(diffMsg) <= max_diff:
-            standardMsg += diffMsg
-        else:
-            standardMsg += diffMsg[:max_diff] + TRUNCATED_DIFF
+        standardMsg = self._truncateMessage(standardMsg, diffMsg, max_diff)
         msg = self._formatMessage(msg, standardMsg)
         self.fail(msg)
+
+    def _truncateMessage(self, message, diff, max_diff):
+        if max_diff is None or len(diff) <= max_diff:
+            return message + diff
+        return message + diff[:max_diff] + TRUNCATED_DIFF
 
     def assertListEqual(self, list1, list2, msg=None):
         """A list-specific equality assertion.
