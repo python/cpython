@@ -3869,10 +3869,16 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
                                 (base->tp_hash != PyObject_HashNotImplemented) &&
                                 !OVERRIDES_HASH(type)) {
                     if (OVERRIDES_EQ(type)) {
-                        PyErr_WarnPy3k("Overriding "
-                          "__eq__ blocks inheritance "
-                          "of __hash__ in 3.x",
-                          1);
+                        if (PyErr_WarnPy3k("Overriding "
+                                           "__eq__ blocks inheritance "
+                                           "of __hash__ in 3.x",
+                                           1) < 0)
+                            /* XXX This isn't right.  If the warning is turned
+                               into an exception, we should be communicating
+                               the error back to the caller, but figuring out
+                               how to clean-up in that case is tricky.  See
+                               issue 8627 for more. */
+                            PyErr_Clear();
                     }
                 }
             }
