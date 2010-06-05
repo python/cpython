@@ -639,6 +639,10 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         message = self._truncateMessage('foo', 'bar')
         self.assertEqual(message, 'foobar')
 
+        self.maxDiff = 4
+        message = self._truncateMessage('foo', 'bar')
+        self.assertEqual(message, 'foobar')
+
     def testAssertDictEqualTruncates(self):
         test = unittest.TestCase('assertEqual')
         def truncate(msg, diff):
