@@ -596,6 +596,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         seq2 = 'b' + 'x' * 80**2
         diff = '\n'.join(difflib.ndiff(pprint.pformat(seq1).splitlines(),
                                        pprint.pformat(seq2).splitlines()))
+        # the +1 is the leading \n added by assertSequenceEqual
+        omitted = unittest.case.DIFF_OMITTED % (len(diff) + 1,)
 
         self.maxDiff = len(diff)//2
         try:
@@ -605,6 +607,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         else:
             self.fail('assertSequenceEqual did not fail.')
         self.assertTrue(len(msg) < len(diff))
+        self.assertIn(omitted, msg)
 
         self.maxDiff = len(diff) * 2
         try:
@@ -614,6 +617,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         else:
             self.fail('assertSequenceEqual did not fail.')
         self.assertTrue(len(msg) > len(diff))
+        self.assertNotIn(omitted, msg)
 
         self.maxDiff = None
         try:
@@ -623,6 +627,41 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         else:
             self.fail('assertSequenceEqual did not fail.')
         self.assertTrue(len(msg) > len(diff))
+        self.assertNotIn(omitted, msg)
+
+    def testTruncateMessage(self):
+        self.maxDiff = 1
+        message = self._truncateMessage('foo', 'bar')
+        omitted = unittest.case.DIFF_OMITTED % len('bar')
+        self.assertEqual(message, 'foo' + omitted)
+
+        self.maxDiff = None
+        message = self._truncateMessage('foo', 'bar')
+        self.assertEqual(message, 'foobar')
+
+    def testAssertDictEqualTruncates(self):
+        test = unittest.TestCase('assertEqual')
+        def truncate(msg, diff):
+            return 'foo'
+        test._truncateMessage = truncate
+        try:
+            test.assertDictEqual({}, {1: 0})
+        except self.failureException as e:
+            self.assertEqual(str(e), 'foo')
+        else:
+            self.fail('assertDictEqual did not fail')
+
+    def testAssertMultiLineEqualTruncates(self):
+        test = unittest.TestCase('assertEqual')
+        def truncate(msg, diff):
+            return 'foo'
+        test._truncateMessage = truncate
+        try:
+            test.assertMultiLineEqual('foo', 'bar')
+        except self.failureException as e:
+            self.assertEqual(str(e), 'foo')
+        else:
+            self.fail('assertMultiLineEqual did not fail')
 
     def testAssertItemsEqual(self):
         a = object()
