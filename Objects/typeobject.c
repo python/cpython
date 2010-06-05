@@ -3876,7 +3876,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
                             /* XXX This isn't right.  If the warning is turned
                                into an exception, we should be communicating
                                the error back to the caller, but figuring out
-                               how to clean-up in that case is tricky.  See
+                               how to clean up in that case is tricky.  See
                                issue 8627 for more. */
                             PyErr_Clear();
                     }
