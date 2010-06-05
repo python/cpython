@@ -670,9 +670,9 @@ class UnicodeTest(
                               ('\xF4'+cb+'\xBF\xBF').decode, 'utf-8')
 
     def test_issue8271(self):
-        # Issue #8271: when a byte sequence is invalid, only the start byte
-        # and all the valid continuation bytes should be replaced by U+FFFD,
-        # not the number of bytes specified by the start byte.
+        # Issue #8271: during the decoding of an invalid UTF-8 byte sequence,
+        # only the start byte and the continuation byte(s) are now considered
+        # invalid, instead of the number of bytes specified by the start byte.
         # See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf (page 95,
         # table 3-8, Row 2) for more information about the algorithm used.
         FFFD = u'\ufffd'
