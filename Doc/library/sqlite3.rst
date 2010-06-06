@@ -231,7 +231,7 @@ Connection Objects
 
    .. versionadded:: 3.2
 
-   :cont:`True` if a transaction is active (there are uncommitted changes),
+   :const:`True` if a transaction is active (there are uncommitted changes),
    :const:`False` otherwise.  Read-only attribute.
 
 
