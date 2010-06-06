@@ -1172,6 +1172,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 *buffer = PyMem_NEW(char, size + 1);
                 if (*buffer == NULL) {
                     Py_DECREF(s);
+                    PyErr_NoMemory();
                     return converterr(
                         "(memory error)",
                         arg, msgbuf, bufsize);
@@ -1215,6 +1216,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             *buffer = PyMem_NEW(char, size + 1);
             if (*buffer == NULL) {
                 Py_DECREF(s);
+                PyErr_NoMemory();
                 return converterr("(memory error)",
                                   arg, msgbuf, bufsize);
             }
