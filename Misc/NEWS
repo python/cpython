@@ -774,6 +774,9 @@ Documentation
 - Update python manual page (options -B, -O0, -s, environment variables
   PYTHONDONTWRITEBYTECODE, PYTHONNOUSERSITE).
 
+- Issue #8909: Added the size of the bitmap used in the installer created by
+  distutils' bdist_wininst. Patch by Anatoly Techtonik.
+
 
 What's New in Python 3.1.1?
 ===========================
