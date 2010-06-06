@@ -15,6 +15,12 @@ Core and Builtins
 Library
 -------
 
+Documentation
+-------------
+
+- Issues #8909: Added the size of the bitmap used in the installer created by
+  distutils' bdist_wininst. Patch by Anatoly Techtonik.
+
 
 What's New in Python 2.7 Release Candidate 1?
 =============================================
