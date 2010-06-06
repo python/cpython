@@ -111,7 +111,7 @@ This module offers the following functions:
       The :func:`DeleteKeyEx` function is implemented with the RegDeleteKeyEx
       Windows API function, which is specific to 64-bit versions of Windows.
       See the `RegDeleteKeyEx documentation
-     <http://msdn.microsoft.com/en-us/library/ms724847%28VS.85%29.aspx>`__.
+      <http://msdn.microsoft.com/en-us/library/ms724847%28VS.85%29.aspx>`__.
 
    *key* is an already open key, or one of the predefined
    :ref:`HKEY_* constants <hkey-constants>`.
