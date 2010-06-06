@@ -282,6 +282,12 @@ Tests
 
 - Issue #8193: Fix test_zlib failure with zlib 1.2.4.
 
+Documentation
+-------------
+
+- Issue #8909: Added the size of the bitmap used in the installer created by
+  distutils' bdist_wininst. Patch by Anatoly Techtonik.
+
 
 What's New in Python 2.6.5?
 ===========================
