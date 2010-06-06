@@ -321,7 +321,7 @@ the :option:`--no-target-compile` and/or the :option:`--no-target-optimize`
 option.
 
 By default the installer will display the cool "Python Powered" logo when it is
-run, but you can also supply your own bitmap which must be a Windows
+run, but you can also supply your own 152x161 bitmap which must be a Windows
 :file:`.bmp` file with the :option:`--bitmap` option.
 
 The installer will also display a large title on the desktop background window
