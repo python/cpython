@@ -236,7 +236,7 @@ Utility functions
 
 .. function:: urlencode(query[, doseq])
 
-   Convert a mapping object or a sequence of two-element tuples  to a
+   Convert a mapping object or a sequence of two-element tuples to a
    "url-encoded" string, suitable to pass to :func:`urlopen` above as the
    optional *data* argument.  This is useful to pass a dictionary of form
    fields to a ``POST`` request.  The resulting string is a series of
