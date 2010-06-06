@@ -78,7 +78,7 @@ pydoc_topic_labels = [
     'assert', 'assignment', 'atom-identifiers', 'atom-literals',
     'attribute-access', 'attribute-references', 'augassign', 'binary',
     'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
-    'bltin-file-objects', 'bltin-null-object', 'bltin-type-objects', 'booleans',
+    'bltin-null-object', 'bltin-type-objects', 'booleans',
     'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
     'context-managers', 'continue', 'conversions', 'customization', 'debugger',
     'del', 'dict', 'dynamic-features', 'else', 'exceptions', 'execmodel',
