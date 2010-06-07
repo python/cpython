@@ -1455,16 +1455,6 @@ changes, or look through the Subversion logs for all the details.
   will be called and :meth:`handle_request` will return.
   (Contributed by Kristján Valur Jónsson; :issue:`6192` and :issue:`6267`.)
 
-* The XML-RPC client and server, provided by the :mod:`xmlrpclib` and
-  :mod:`SimpleXMLRPCServer` modules, have improved performance by
-  supporting HTTP/1.1 keep-alive and by optionally using gzip encoding
-  to compress the XML being exchanged.  The gzip compression is
-  controlled by the :attr:`encode_threshold` attribute of
-  :class:`SimpleXMLRPCRequestHandler`, which contains a size in bytes;
-  responses larger than this will be compressed.
-  (Contributed by Kristján Valur Jónsson; :issue:`6267`.)
-
-
 * Updated module: the :mod:`sqlite3` module has been updated to
   version 2.6.0 of the `pysqlite package <http://code.google.com/p/pysqlite/>`__. Version 2.6.0 includes a number of bugfixes, and adds
   the ability to load SQLite extensions from shared libraries.
