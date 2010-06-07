@@ -12,6 +12,9 @@ What's New in Python release candidate 2?
 Core and Builtins
 -----------------
 
+- In the unicode/str.format(), raise a ValueError when either indexes to
+  arguments are too large.
+
 Library
 -------
 
