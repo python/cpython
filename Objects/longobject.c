@@ -4218,7 +4218,7 @@ long__format__(PyObject *self, PyObject *args)
    round-half-to-even. */
 
 PyObject *
-_PyLong_Divmod_Near(PyObject *a, PyObject *b)
+_PyLong_DivmodNear(PyObject *a, PyObject *b)
 {
     PyLongObject *quo = NULL, *rem = NULL;
     PyObject *one = NULL, *twice_rem, *result, *temp;
@@ -4363,7 +4363,7 @@ long_round(PyObject *self, PyObject *args)
     if (result == NULL)
         return NULL;
 
-    temp = _PyLong_Divmod_Near(self, result);
+    temp = _PyLong_DivmodNear(self, result);
     Py_DECREF(result);
     result = temp;
     if (result == NULL)
