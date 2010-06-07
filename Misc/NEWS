@@ -54,6 +54,9 @@ C-API
 Library
 -------
 
+- Issue #8897: Fix sunau module, use bytes to write the header. Patch written
+  by Thomas Jollans.
+
 - Issue #6470: Drop UNC prefix in FixTk.
 
 - Issue #4768: base64 encoded email body parts were incorrectly stored as
