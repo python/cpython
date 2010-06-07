@@ -422,8 +422,8 @@ class TestCopyFile(unittest.TestCase):
         self._set_shutil_open(_open)
 
         shutil.copyfile('srcfile', 'destfile')
-        self.failUnless(srcfile._entered)
-        self.failUnless(srcfile._exited_with[0] is IOError)
+        self.assertTrue(srcfile._entered)
+        self.assertTrue(srcfile._exited_with[0] is IOError)
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot open "destfile"',))
 
@@ -442,10 +442,10 @@ class TestCopyFile(unittest.TestCase):
         self._set_shutil_open(_open)
 
         shutil.copyfile('srcfile', 'destfile')
-        self.failUnless(srcfile._entered)
-        self.failUnless(destfile._entered)
-        self.failUnless(destfile._raised)
-        self.failUnless(srcfile._exited_with[0] is IOError)
+        self.assertTrue(srcfile._entered)
+        self.assertTrue(destfile._entered)
+        self.assertTrue(destfile._raised)
+        self.assertTrue(srcfile._exited_with[0] is IOError)
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot close',))
 
@@ -465,11 +465,11 @@ class TestCopyFile(unittest.TestCase):
 
         self.assertRaises(IOError,
                           shutil.copyfile, 'srcfile', 'destfile')
-        self.failUnless(srcfile._entered)
-        self.failUnless(destfile._entered)
-        self.failIf(destfile._raised)
-        self.failUnless(srcfile._exited_with[0] is None)
-        self.failUnless(srcfile._raised)
+        self.assertTrue(srcfile._entered)
+        self.assertTrue(destfile._entered)
+        self.assertFalse(destfile._raised)
+        self.assertTrue(srcfile._exited_with[0] is None)
+        self.assertTrue(srcfile._raised)
 
 
 def test_main():
