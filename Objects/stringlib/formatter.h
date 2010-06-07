@@ -649,7 +649,7 @@ get_locale_info(int type, LocaleInfo *locale_info)
     case LT_DEFAULT_LOCALE:
         locale_info->decimal_point = ".";
         locale_info->thousands_sep = ",";
-        locale_info->grouping = "\3"; /* Group every 3 characters,
+        locale_info->grouping = "\3\0"; /* Group every 3 characters,
                                          trailing 0 means repeat
                                          infinitely. */
         break;
