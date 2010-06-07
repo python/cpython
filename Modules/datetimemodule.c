@@ -161,7 +161,7 @@ divide_nearest(PyObject *m, PyObject *n)
     PyObject *result;
     PyObject *temp;
 
-    temp = _PyLong_Divmod_Near(m, n);
+    temp = _PyLong_DivmodNear(m, n);
     if (temp == NULL)
         return NULL;
     result = PyTuple_GET_ITEM(temp, 0);
