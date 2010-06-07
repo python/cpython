@@ -299,7 +299,7 @@ class Au_write:
         self._nframeswritten = 0
         self._datawritten = 0
         self._datalength = 0
-        self._info = ''
+        self._info = b''
         self._comptype = 'ULAW' # default is U-law
 
     def setnchannels(self, nchannels):
