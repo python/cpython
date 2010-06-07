@@ -1510,7 +1510,7 @@ _PySys_Init(void)
                          PyLong_FromLong(PY_VERSION_HEX));
     svnversion_init();
     SET_SYS_FROM_STRING("subversion",
-                        Py_BuildValue("(UUU)", "CPython", branch,
+                        Py_BuildValue("(sss)", "CPython", branch,
                                       svn_revision));
     SET_SYS_FROM_STRING("dont_write_bytecode",
                          PyBool_FromLong(Py_DontWriteBytecodeFlag));

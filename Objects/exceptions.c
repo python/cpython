@@ -1510,7 +1510,7 @@ PyUnicodeEncodeError_Create(
     const char *encoding, const Py_UNICODE *object, Py_ssize_t length,
     Py_ssize_t start, Py_ssize_t end, const char *reason)
 {
-    return PyObject_CallFunction(PyExc_UnicodeEncodeError, "Uu#nnU",
+    return PyObject_CallFunction(PyExc_UnicodeEncodeError, "su#nns",
                                  encoding, object, length, start, end, reason);
 }
 
@@ -1625,7 +1625,7 @@ PyUnicodeDecodeError_Create(
     assert(length < INT_MAX);
     assert(start < INT_MAX);
     assert(end < INT_MAX);
-    return PyObject_CallFunction(PyExc_UnicodeDecodeError, "Uy#nnU",
+    return PyObject_CallFunction(PyExc_UnicodeDecodeError, "sy#nns",
                                  encoding, object, length, start, end, reason);
 }
 

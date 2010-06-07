@@ -4467,7 +4467,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
 #endif
 
     result = PyObject_CallFunction((PyObject *)&PyCArrayType_Type,
-                                   "U(O){s:n,s:O}",
+                                   "s(O){s:n,s:O}",
                                    name,
                                    &PyCArray_Type,
                                    "_length_",

@@ -679,7 +679,7 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
             goto failure;
     }
     /* Create a real new-style class. */
-    result = PyObject_CallFunction((PyObject *)&PyType_Type, "UOO",
+    result = PyObject_CallFunction((PyObject *)&PyType_Type, "sOO",
                                    dot+1, bases, dict);
   failure:
     Py_XDECREF(bases);

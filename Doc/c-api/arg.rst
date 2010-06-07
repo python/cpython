@@ -530,12 +530,10 @@ Building values
       and ``None`` is returned.
 
    ``U`` (string) [char \*]
-      Convert a null-terminated C string to a Python unicode object. If the C string
-      pointer is *NULL*, ``None`` is used.
+      Same as ``s``.
 
    ``U#`` (string) [char \*, int]
-      Convert a C string and its length to a Python unicode object. If the C string
-      pointer is *NULL*, the length is ignored and ``None`` is returned.
+      Same as ``s#``.
 
    ``i`` (integer) [int]
       Convert a plain C :ctype:`int` to a Python integer object.
