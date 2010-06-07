@@ -373,6 +373,8 @@ FieldNameIterator_next(FieldNameIterator *self, int *is_attribute,
         if (_FieldNameIterator_item(self, name) == 0)
             return 0;
         *name_idx = get_integer(name);
+        if (*name_idx == -1 && PyErr_Occurred())
+            return 0;
         break;
     default:
         /* Invalid character follows ']' */
@@ -429,6 +431,8 @@ field_name_split(STRINGLIB_CHAR *ptr, Py_ssize_t len, SubString *first,
 
     /* see if "first" is an integer, in which case it's used as an index */
     *first_idx = get_integer(first);
+    if (*first_idx == -1 && PyErr_Occurred())
+        return 0;
 
     field_name_is_empty = first->ptr >= first->end;
 
