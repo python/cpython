@@ -7,8 +7,8 @@ import sys
 
 # Setup bsddb warnings
 try:
-    import bsddb
-except ImportError:
+    bsddb = support.import_module('bsddb', deprecated=True)
+except unittest.SkipTest:
     pass
 
 
