@@ -687,6 +687,9 @@ class UnicodeTest(
         self.assertRaises(IndexError, "{:}".format)
         self.assertRaises(IndexError, "{:s}".format)
         self.assertRaises(IndexError, "{}".format)
+        big = "23098475029384702983476098230754973209482573"
+        self.assertRaises(ValueError, ("{" + big + "}").format)
+        self.assertRaises(ValueError, ("{[" + big + "]}").format, [0])
 
         # issue 6089
         self.assertRaises(ValueError, "{0[0]x}".format, [None])
