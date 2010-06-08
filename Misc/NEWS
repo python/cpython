@@ -12,6 +12,13 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8838: Remove codecs.charbuffer_encode() function. The buffer protocol
+  doesn't support "char buffer" anymore in Python3.
+
+- Issue #8339: Remove "t#" format of PyArg_Parse*() functions, use "s#" or "s*"
+  instead. codecs.charbuffer_encode() now accepts modifiable buffer objects
+  like bytearray.
+
 - Issue #8837: Remove "O?" format of PyArg_Parse*() functions. The format is no
   used anymore and it was never documented.
 

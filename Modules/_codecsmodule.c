@@ -639,21 +639,6 @@ readbuffer_encode(PyObject *self,
 }
 
 static PyObject *
-charbuffer_encode(PyObject *self,
-                  PyObject *args)
-{
-    const char *data;
-    Py_ssize_t size;
-    const char *errors = NULL;
-
-    if (!PyArg_ParseTuple(args, "t#|z:charbuffer_encode",
-                          &data, &size, &errors))
-        return NULL;
-
-    return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
-}
-
-static PyObject *
 unicode_internal_encode(PyObject *self,
                         PyObject *args)
 {
@@ -1116,7 +1101,6 @@ static PyMethodDef _codecs_functions[] = {
     {"charmap_decode",          charmap_decode,                 METH_VARARGS},
     {"charmap_build",           charmap_build,                  METH_VARARGS},
     {"readbuffer_encode",       readbuffer_encode,              METH_VARARGS},
-    {"charbuffer_encode",       charbuffer_encode,              METH_VARARGS},
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
     {"mbcs_encode",             mbcs_encode,                    METH_VARARGS},
     {"mbcs_decode",             mbcs_decode,                    METH_VARARGS},

@@ -72,7 +72,6 @@ class ReadTest(unittest.TestCase, MixInCheckStateHandling):
         # check that there's nothing left in the buffers
         self.assertEqual(r.read(), "")
         self.assertEqual(r.bytebuffer, b"")
-        self.assertEqual(r.charbuffer, "")
 
         # do the check again, this time using a incremental decoder
         d = codecs.getincrementaldecoder(self.encoding)()
@@ -627,18 +626,6 @@ class ReadBufferTest(unittest.TestCase):
     def test_bad_args(self):
         self.assertRaises(TypeError, codecs.readbuffer_encode)
         self.assertRaises(TypeError, codecs.readbuffer_encode, 42)
-
-class CharBufferTest(unittest.TestCase):
-
-    def test_string(self):
-        self.assertEqual(codecs.charbuffer_encode(b"spam"), (b"spam", 4))
-
-    def test_empty(self):
-        self.assertEqual(codecs.charbuffer_encode(b""), (b"", 0))
-
-    def test_bad_args(self):
-        self.assertRaises(TypeError, codecs.charbuffer_encode)
-        self.assertRaises(TypeError, codecs.charbuffer_encode, 42)
 
 class UTF8SigTest(ReadTest):
     encoding = "utf-8-sig"
@@ -1663,7 +1650,6 @@ def test_main():
         UTF7Test,
         UTF16ExTest,
         ReadBufferTest,
-        CharBufferTest,
         RecodingTest,
         PunycodeTest,
         UnicodeInternalTest,
