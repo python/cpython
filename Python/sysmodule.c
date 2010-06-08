@@ -1670,6 +1670,9 @@ sys_pyfile_write(const char *text, PyObject *file)
     PyObject *unicode = NULL, *writer = NULL, *args = NULL, *result = NULL;
     int err;
 
+    if (file == NULL)
+        return -1;
+
     unicode = PyUnicode_FromString(text);
     if (unicode == NULL)
         goto error;
