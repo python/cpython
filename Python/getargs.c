@@ -1048,6 +1048,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 *p = PyUnicode_AS_UNICODE(arg);
                 STORE_SIZE(PyUnicode_GET_SIZE(arg));
             }
+            else
+                return converterr("str or None", arg, msgbuf, bufsize);
             format++;
         } else {
             Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
@@ -1057,8 +1059,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             else if (PyUnicode_Check(arg))
                 *p = PyUnicode_AS_UNICODE(arg);
             else
-                return converterr("string or None",
-                                  arg, msgbuf, bufsize);
+                return converterr("str or None", arg, msgbuf, bufsize);
         }
         break;
     }
@@ -1253,7 +1254,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (PyByteArray_Check(arg))
             *p = arg;
         else
-            return converterr("buffer", arg, msgbuf, bufsize);
+            return converterr("bytearray", arg, msgbuf, bufsize);
         break;
     }
 
