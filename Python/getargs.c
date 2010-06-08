@@ -864,7 +864,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         break;
     }
 
-    /* XXX WAAAAH!  's', 'y', 'z', 'u', 'Z', 'e', 'w', 't' codes all
+    /* XXX WAAAAH!  's', 'y', 'z', 'u', 'Z', 'e', 'w' codes all
        need to be cleaned up! */
 
     case 's': {/* text string */
@@ -1358,45 +1358,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             FETCH_SIZE;
             STORE_SIZE(count);
             format++;
-        }
-        break;
-    }
-
-      /*TEO: This can be eliminated --- here only for backward
-        compatibility */
-    case 't': { /* 8-bit character buffer, read-only access */
-        char **p = va_arg(*p_va, char **);
-        PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
-        Py_ssize_t count;
-        Py_buffer view;
-
-        if (*format++ != '#')
-            return converterr(
-                "invalid use of 't' format character",
-                arg, msgbuf, bufsize);
-        if (pb == NULL || pb->bf_getbuffer == NULL)
-            return converterr(
-                "bytes or read-only character buffer",
-                arg, msgbuf, bufsize);
-
-        if (PyObject_GetBuffer(arg, &view, PyBUF_SIMPLE) != 0)
-            return converterr("string or single-segment read-only buffer",
-                              arg, msgbuf, bufsize);
-
-        count = view.len;
-        *p = view.buf;
-        if (pb->bf_releasebuffer)
-            return converterr(
-                "string or pinned buffer",
-                arg, msgbuf, bufsize);
-
-        PyBuffer_Release(&view);
-
-        if (count < 0)
-            return converterr("(unspecified)", arg, msgbuf, bufsize);
-        {
-            FETCH_SIZE;
-            STORE_SIZE(count);
         }
         break;
     }

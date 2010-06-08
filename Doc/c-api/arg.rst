@@ -150,13 +150,6 @@ Unless otherwise stated, buffers are not NUL-terminated.
    any conversion.  Raises :exc:`TypeError` if the object is not a Unicode
    object.  The C variable may also be declared as :ctype:`PyObject\*`.
 
-``t#`` (:class:`bytes`, :class:`bytearray` or read-only character buffer) [char \*, int]
-   Like ``s#``, but accepts any object which implements the read-only buffer
-   interface.  The :ctype:`char\*` variable is set to point to the first byte of
-   the buffer, and the :ctype:`int` is set to the length of the buffer.  Only
-   single-segment buffer objects are accepted; :exc:`TypeError` is raised for all
-   others.
-
 ``w`` (:class:`bytearray` or read-write character buffer) [char \*]
    Similar to ``s``, but accepts any object which implements the read-write buffer
    interface.  The caller must determine the length of the buffer by other means,
