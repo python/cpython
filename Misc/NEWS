@@ -18,8 +18,8 @@ Core and Builtins
   when turned into an exception: in this case the exception simply
   gets ignored.
 
-- In the unicode/str.format(), raise a ValueError when either indexes to
-  arguments are too large.
+- In the unicode/str.format(), raise a ValueError when indexes to arguments are
+  too large.
 
 - Issue #3798: Write sys.exit() message to sys.stderr to use stderr encoding
   and error handler, instead of writing to the C stderr file in utf-8
