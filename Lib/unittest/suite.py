@@ -87,9 +87,16 @@ class TestSuite(BaseTestSuite):
         self._handleModuleTearDown(result)
         return result
 
+    def debug(self):
+        """Run the tests without collecting errors in a TestResult"""
+        debug = _DebugResult()
+        self._wrapped_run(debug, True)
+        self._tearDownPreviousClass(None, debug)
+        self._handleModuleTearDown(debug)
+
     ################################
     # private methods
-    def _wrapped_run(self, result):
+    def _wrapped_run(self, result, debug=False):
         for test in self:
             if result.shouldStop:
                 break
@@ -106,8 +113,10 @@ class TestSuite(BaseTestSuite):
 
             if hasattr(test, '_wrapped_run'):
                 test._wrapped_run(result)
-            else:
+            elif not debug:
                 test(result)
+            else:
+                test.debug()
 
     def _handleClassSetUp(self, test, result):
         previousClass = getattr(result, '_previousTestClass', None)
@@ -131,6 +140,8 @@ class TestSuite(BaseTestSuite):
             try:
                 setUpClass()
             except Exception as e:
+                if isinstance(result, _DebugResult):
+                    raise
                 currentClass._classSetupFailed = True
                 className = util.strclass(currentClass)
                 errorName = 'setUpClass (%s)' % className
@@ -163,6 +174,8 @@ class TestSuite(BaseTestSuite):
             try:
                 setUpModule()
             except Exception, e:
+                if isinstance(result, _DebugResult):
+                    raise
                 result._moduleSetUpFailed = True
                 errorName = 'setUpModule (%s)' % currentModule
                 self._addClassOrModuleLevelException(result, e, errorName)
@@ -192,6 +205,8 @@ class TestSuite(BaseTestSuite):
             try:
                 tearDownModule()
             except Exception as e:
+                if isinstance(result, _DebugResult):
+                    raise
                 errorName = 'tearDownModule (%s)' % previousModule
                 self._addClassOrModuleLevelException(result, e, errorName)
 
@@ -212,6 +227,8 @@ class TestSuite(BaseTestSuite):
             try:
                 tearDownClass()
             except Exception, e:
+                if isinstance(result, _DebugResult):
+                    raise
                 className = util.strclass(previousClass)
                 errorName = 'tearDownClass (%s)' % className
                 self._addClassOrModuleLevelException(result, e, errorName)
@@ -262,3 +279,10 @@ def _isnotsuite(test):
     except TypeError:
         return True
     return False
+
+
+class _DebugResult(object):
+    "Used by the TestSuite to hold previous class when running in debug."
+    _previousTestClass = None
+    _moduleSetUpFailed = False
+    shouldStop = False
