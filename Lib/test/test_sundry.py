@@ -60,7 +60,6 @@ class TestUntestedModules(unittest.TestCase):
             import rlcompleter
             import sched
             import sndhdr
-            import sunau
             import symbol
             import tabnanny
             import timeit
