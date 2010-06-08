@@ -80,7 +80,7 @@ crypt
 csv
 ctypes              theller
 curses              andrew.kuchling
-datetime
+datetime            alexander.belopolsky
 dbm
 decimal             facundobatista, rhettinger, mark.dickinson
 difflib             tim_one
@@ -207,7 +207,7 @@ termios
 test
 textwrap
 threading
-time
+time                alexander.belopolsky
 timeit
 tkinter             gpolo
 token               georg.brandl
