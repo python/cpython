@@ -1105,6 +1105,7 @@ PyEnumValue(PyObject *self, PyObject *args)
     long rc;
     char *retValueBuf;
     char *retDataBuf;
+    char *tmpBuf;
     DWORD retValueSize, bufValueSize;
     DWORD retDataSize, bufDataSize;
     DWORD typ;
@@ -1136,7 +1137,6 @@ PyEnumValue(PyObject *self, PyObject *args)
     }
 
     while (1) {
-        char *tmp;
         Py_BEGIN_ALLOW_THREADS
         rc = RegEnumValue(hKey,
                   index,
@@ -1152,13 +1152,13 @@ PyEnumValue(PyObject *self, PyObject *args)
             break;
 
         bufDataSize *= 2;
-        tmp = (char *)PyMem_Realloc(retDataBuf, bufDataSize);
-        if (tmp == NULL) {
+        tmpBuf = (char *)PyMem_Realloc(retDataBuf, bufDataSize);
+        if (tmpBuf == NULL) {
             PyErr_NoMemory();
             retVal = NULL;
             goto fail;
         }
-        retDataBuf = tmp;
+        retDataBuf = tmpBuf;
         retDataSize = bufDataSize;
         retValueSize = bufValueSize;
     }
