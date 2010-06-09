@@ -426,7 +426,7 @@ PyObject *PyString_Decode(const char *s,
 
     str = PyString_FromStringAndSize(s, size);
     if (str == NULL)
-    return NULL;
+        return NULL;
     v = PyString_AsDecodedString(str, encoding, errors);
     Py_DECREF(str);
     return v;
@@ -439,23 +439,23 @@ PyObject *PyString_AsDecodedObject(PyObject *str,
     PyObject *v;
 
     if (!PyString_Check(str)) {
-    PyErr_BadArgument();
-    goto onError;
+        PyErr_BadArgument();
+        goto onError;
     }
 
     if (encoding == NULL) {
 #ifdef Py_USING_UNICODE
-    encoding = PyUnicode_GetDefaultEncoding();
+        encoding = PyUnicode_GetDefaultEncoding();
 #else
-    PyErr_SetString(PyExc_ValueError, "no encoding specified");
-    goto onError;
+        PyErr_SetString(PyExc_ValueError, "no encoding specified");
+        goto onError;
 #endif
     }
 
     /* Decode via the codec registry */
     v = PyCodec_Decode(str, encoding, errors);
     if (v == NULL)
-    goto onError;
+        goto onError;
 
     return v;
 
@@ -471,24 +471,24 @@ PyObject *PyString_AsDecodedString(PyObject *str,
 
     v = PyString_AsDecodedObject(str, encoding, errors);
     if (v == NULL)
-    goto onError;
+        goto onError;
 
 #ifdef Py_USING_UNICODE
     /* Convert Unicode to a string using the default encoding */
     if (PyUnicode_Check(v)) {
-    PyObject *temp = v;
-    v = PyUnicode_AsEncodedString(v, NULL, NULL);
-    Py_DECREF(temp);
-    if (v == NULL)
-        goto onError;
+        PyObject *temp = v;
+        v = PyUnicode_AsEncodedString(v, NULL, NULL);
+        Py_DECREF(temp);
+        if (v == NULL)
+            goto onError;
     }
 #endif
     if (!PyString_Check(v)) {
-    PyErr_Format(PyExc_TypeError,
-                 "decoder did not return a string object (type=%.400s)",
-                 Py_TYPE(v)->tp_name);
-    Py_DECREF(v);
-    goto onError;
+        PyErr_Format(PyExc_TypeError,
+                     "decoder did not return a string object (type=%.400s)",
+                     Py_TYPE(v)->tp_name);
+        Py_DECREF(v);
+        goto onError;
     }
 
     return v;
@@ -506,7 +506,7 @@ PyObject *PyString_Encode(const char *s,
 
     str = PyString_FromStringAndSize(s, size);
     if (str == NULL)
-    return NULL;
+        return NULL;
     v = PyString_AsEncodedString(str, encoding, errors);
     Py_DECREF(str);
     return v;
@@ -519,23 +519,23 @@ PyObject *PyString_AsEncodedObject(PyObject *str,
     PyObject *v;
 
     if (!PyString_Check(str)) {
-    PyErr_BadArgument();
-    goto onError;
+        PyErr_BadArgument();
+        goto onError;
     }
 
     if (encoding == NULL) {
 #ifdef Py_USING_UNICODE
-    encoding = PyUnicode_GetDefaultEncoding();
+        encoding = PyUnicode_GetDefaultEncoding();
 #else
-    PyErr_SetString(PyExc_ValueError, "no encoding specified");
-    goto onError;
+        PyErr_SetString(PyExc_ValueError, "no encoding specified");
+        goto onError;
 #endif
     }
 
     /* Encode via the codec registry */
     v = PyCodec_Encode(str, encoding, errors);
     if (v == NULL)
-    goto onError;
+        goto onError;
 
     return v;
 
@@ -551,24 +551,24 @@ PyObject *PyString_AsEncodedString(PyObject *str,
 
     v = PyString_AsEncodedObject(str, encoding, errors);
     if (v == NULL)
-    goto onError;
+        goto onError;
 
 #ifdef Py_USING_UNICODE
     /* Convert Unicode to a string using the default encoding */
     if (PyUnicode_Check(v)) {
-    PyObject *temp = v;
-    v = PyUnicode_AsEncodedString(v, NULL, NULL);
-    Py_DECREF(temp);
-    if (v == NULL)
-        goto onError;
+        PyObject *temp = v;
+        v = PyUnicode_AsEncodedString(v, NULL, NULL);
+        Py_DECREF(temp);
+        if (v == NULL)
+            goto onError;
     }
 #endif
     if (!PyString_Check(v)) {
-    PyErr_Format(PyExc_TypeError,
-                 "encoder did not return a string object (type=%.400s)",
-                 Py_TYPE(v)->tp_name);
-    Py_DECREF(v);
-    goto onError;
+        PyErr_Format(PyExc_TypeError,
+                     "encoder did not return a string object (type=%.400s)",
+                     Py_TYPE(v)->tp_name);
+        Py_DECREF(v);
+        goto onError;
     }
 
     return v;
@@ -3002,17 +3002,17 @@ string_encode(PyStringObject *self, PyObject *args, PyObject *kwargs)
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:encode",
                                      kwlist, &encoding, &errors))
-    return NULL;
+        return NULL;
     v = PyString_AsEncodedObject((PyObject *)self, encoding, errors);
     if (v == NULL)
-    goto onError;
+        goto onError;
     if (!PyString_Check(v) && !PyUnicode_Check(v)) {
-    PyErr_Format(PyExc_TypeError,
-                 "encoder did not return a string/unicode object "
-                 "(type=%.400s)",
-                 Py_TYPE(v)->tp_name);
-    Py_DECREF(v);
-    return NULL;
+        PyErr_Format(PyExc_TypeError,
+                     "encoder did not return a string/unicode object "
+                     "(type=%.400s)",
+                     Py_TYPE(v)->tp_name);
+        Py_DECREF(v);
+        return NULL;
     }
     return v;
 
@@ -3041,17 +3041,17 @@ string_decode(PyStringObject *self, PyObject *args, PyObject *kwargs)
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:decode",
                                      kwlist, &encoding, &errors))
-    return NULL;
+        return NULL;
     v = PyString_AsDecodedObject((PyObject *)self, encoding, errors);
     if (v == NULL)
-    goto onError;
+        goto onError;
     if (!PyString_Check(v) && !PyUnicode_Check(v)) {
-    PyErr_Format(PyExc_TypeError,
-                 "decoder did not return a string/unicode object "
-                 "(type=%.400s)",
-                 Py_TYPE(v)->tp_name);
-    Py_DECREF(v);
-    return NULL;
+        PyErr_Format(PyExc_TypeError,
+                     "decoder did not return a string/unicode object "
+                     "(type=%.400s)",
+                     Py_TYPE(v)->tp_name);
+        Py_DECREF(v);
+        return NULL;
     }
     return v;
 
@@ -3076,7 +3076,7 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     int tabsize = 8;
 
     if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
-    return NULL;
+        return NULL;
 
     /* First pass: determine size of output string */
     i = 0; /* chars up to and including most recent \n or \r */
@@ -3085,31 +3085,31 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     for (p = PyString_AS_STRING(self); p < e; p++)
     if (*p == '\t') {
         if (tabsize > 0) {
-        incr = tabsize - (j % tabsize);
-        if (j > PY_SSIZE_T_MAX - incr)
-            goto overflow1;
-        j += incr;
+            incr = tabsize - (j % tabsize);
+            if (j > PY_SSIZE_T_MAX - incr)
+                goto overflow1;
+            j += incr;
         }
     }
     else {
         if (j > PY_SSIZE_T_MAX - 1)
-        goto overflow1;
+            goto overflow1;
         j++;
         if (*p == '\n' || *p == '\r') {
-        if (i > PY_SSIZE_T_MAX - j)
-            goto overflow1;
-        i += j;
-        j = 0;
+            if (i > PY_SSIZE_T_MAX - j)
+                goto overflow1;
+            i += j;
+            j = 0;
         }
     }
 
     if (i > PY_SSIZE_T_MAX - j)
-    goto overflow1;
+        goto overflow1;
 
     /* Second pass: create output string and fill it */
     u = PyString_FromStringAndSize(NULL, i + j);
     if (!u)
-    return NULL;
+        return NULL;
 
     j = 0; /* same as in first pass */
     q = PyString_AS_STRING(u); /* next output char */
@@ -3118,22 +3118,22 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     for (p = PyString_AS_STRING(self); p < e; p++)
     if (*p == '\t') {
         if (tabsize > 0) {
-        i = tabsize - (j % tabsize);
-        j += i;
-        while (i--) {
-            if (q >= qe)
-            goto overflow2;
-            *q++ = ' ';
-        }
+            i = tabsize - (j % tabsize);
+            j += i;
+            while (i--) {
+                if (q >= qe)
+                    goto overflow2;
+                *q++ = ' ';
+            }
         }
     }
     else {
         if (q >= qe)
-        goto overflow2;
+            goto overflow2;
         *q++ = *p;
         j++;
         if (*p == '\n' || *p == '\r')
-        j = 0;
+            j = 0;
     }
 
     return u;
@@ -3151,26 +3151,26 @@ pad(PyStringObject *self, Py_ssize_t left, Py_ssize_t right, char fill)
     PyObject *u;
 
     if (left < 0)
-    left = 0;
+        left = 0;
     if (right < 0)
-    right = 0;
+        right = 0;
 
     if (left == 0 && right == 0 && PyString_CheckExact(self)) {
-    Py_INCREF(self);
-    return (PyObject *)self;
+        Py_INCREF(self);
+        return (PyObject *)self;
     }
 
     u = PyString_FromStringAndSize(NULL,
                                    left + PyString_GET_SIZE(self) + right);
     if (u) {
-    if (left)
-        memset(PyString_AS_STRING(u), fill, left);
-    Py_MEMCPY(PyString_AS_STRING(u) + left,
-           PyString_AS_STRING(self),
-           PyString_GET_SIZE(self));
-    if (right)
-        memset(PyString_AS_STRING(u) + left + PyString_GET_SIZE(self),
-           fill, right);
+        if (left)
+            memset(PyString_AS_STRING(u), fill, left);
+        Py_MEMCPY(PyString_AS_STRING(u) + left,
+               PyString_AS_STRING(self),
+               PyString_GET_SIZE(self));
+        if (right)
+            memset(PyString_AS_STRING(u) + left + PyString_GET_SIZE(self),
+               fill, right);
     }
 
     return u;
@@ -3189,11 +3189,11 @@ string_ljust(PyStringObject *self, PyObject *args)
     char fillchar = ' ';
 
     if (!PyArg_ParseTuple(args, "n|c:ljust", &width, &fillchar))
-    return NULL;
+        return NULL;
 
     if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
-    Py_INCREF(self);
-    return (PyObject*) self;
+        Py_INCREF(self);
+        return (PyObject*) self;
     }
 
     return pad(self, 0, width - PyString_GET_SIZE(self), fillchar);
@@ -3213,11 +3213,11 @@ string_rjust(PyStringObject *self, PyObject *args)
     char fillchar = ' ';
 
     if (!PyArg_ParseTuple(args, "n|c:rjust", &width, &fillchar))
-    return NULL;
+        return NULL;
 
     if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
-    Py_INCREF(self);
-    return (PyObject*) self;
+        Py_INCREF(self);
+        return (PyObject*) self;
     }
 
     return pad(self, width - PyString_GET_SIZE(self), 0, fillchar);
@@ -3238,11 +3238,11 @@ string_center(PyStringObject *self, PyObject *args)
     char fillchar = ' ';
 
     if (!PyArg_ParseTuple(args, "n|c:center", &width, &fillchar))
-    return NULL;
+        return NULL;
 
     if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
-    Py_INCREF(self);
-    return (PyObject*) self;
+        Py_INCREF(self);
+        return (PyObject*) self;
     }
 
     marg = width - PyString_GET_SIZE(self);
@@ -3266,18 +3266,18 @@ string_zfill(PyStringObject *self, PyObject *args)
     Py_ssize_t width;
 
     if (!PyArg_ParseTuple(args, "n:zfill", &width))
-    return NULL;
+        return NULL;
 
     if (PyString_GET_SIZE(self) >= width) {
-    if (PyString_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyObject*) self;
-    }
-    else
-        return PyString_FromStringAndSize(
-        PyString_AS_STRING(self),
-        PyString_GET_SIZE(self)
-        );
+        if (PyString_CheckExact(self)) {
+            Py_INCREF(self);
+            return (PyObject*) self;
+        }
+        else
+            return PyString_FromStringAndSize(
+            PyString_AS_STRING(self),
+            PyString_GET_SIZE(self)
+            );
     }
 
     fill = width - PyString_GET_SIZE(self);
@@ -3285,13 +3285,13 @@ string_zfill(PyStringObject *self, PyObject *args)
     s = pad(self, fill, 0, '0');
 
     if (s == NULL)
-    return NULL;
+        return NULL;
 
     p = PyString_AS_STRING(s);
     if (p[fill] == '+' || p[fill] == '-') {
-    /* move sign to beginning of string */
-    p[0] = p[fill];
-    p[fill] = '0';
+        /* move sign to beginning of string */
+        p[0] = p[fill];
+        p[fill] = '0';
     }
 
     return (PyObject*) s;
@@ -3307,22 +3307,22 @@ static PyObject*
 string_isspace(PyStringObject *self)
 {
     register const unsigned char *p
-    = (unsigned char *) PyString_AS_STRING(self);
+        = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1 &&
-    isspace(*p))
-    return PyBool_FromLong(1);
+        isspace(*p))
+        return PyBool_FromLong(1);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-    return PyBool_FromLong(0);
+        return PyBool_FromLong(0);
 
     e = p + PyString_GET_SIZE(self);
     for (; p < e; p++) {
-    if (!isspace(*p))
-        return PyBool_FromLong(0);
+        if (!isspace(*p))
+            return PyBool_FromLong(0);
     }
     return PyBool_FromLong(1);
 }
@@ -3338,22 +3338,22 @@ static PyObject*
 string_isalpha(PyStringObject *self)
 {
     register const unsigned char *p
-    = (unsigned char *) PyString_AS_STRING(self);
+        = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1 &&
-    isalpha(*p))
-    return PyBool_FromLong(1);
+        isalpha(*p))
+        return PyBool_FromLong(1);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-    return PyBool_FromLong(0);
+        return PyBool_FromLong(0);
 
     e = p + PyString_GET_SIZE(self);
     for (; p < e; p++) {
-    if (!isalpha(*p))
-        return PyBool_FromLong(0);
+        if (!isalpha(*p))
+            return PyBool_FromLong(0);
     }
     return PyBool_FromLong(1);
 }
@@ -3369,22 +3369,22 @@ static PyObject*
 string_isalnum(PyStringObject *self)
 {
     register const unsigned char *p
-    = (unsigned char *) PyString_AS_STRING(self);
+        = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1 &&
-    isalnum(*p))
-    return PyBool_FromLong(1);
+        isalnum(*p))
+        return PyBool_FromLong(1);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-    return PyBool_FromLong(0);
+        return PyBool_FromLong(0);
 
     e = p + PyString_GET_SIZE(self);
     for (; p < e; p++) {
-    if (!isalnum(*p))
-        return PyBool_FromLong(0);
+        if (!isalnum(*p))
+            return PyBool_FromLong(0);
     }
     return PyBool_FromLong(1);
 }
@@ -3400,22 +3400,22 @@ static PyObject*
 string_isdigit(PyStringObject *self)
 {
     register const unsigned char *p
-    = (unsigned char *) PyString_AS_STRING(self);
+        = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1 &&
-    isdigit(*p))
-    return PyBool_FromLong(1);
+        isdigit(*p))
+        return PyBool_FromLong(1);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-    return PyBool_FromLong(0);
+        return PyBool_FromLong(0);
 
     e = p + PyString_GET_SIZE(self);
     for (; p < e; p++) {
-    if (!isdigit(*p))
-        return PyBool_FromLong(0);
+        if (!isdigit(*p))
+            return PyBool_FromLong(0);
     }
     return PyBool_FromLong(1);
 }
@@ -3431,25 +3431,25 @@ static PyObject*
 string_islower(PyStringObject *self)
 {
     register const unsigned char *p
-    = (unsigned char *) PyString_AS_STRING(self);
+        = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
     int cased;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1)
-    return PyBool_FromLong(islower(*p) != 0);
+        return PyBool_FromLong(islower(*p) != 0);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-    return PyBool_FromLong(0);
+        return PyBool_FromLong(0);
 
     e = p + PyString_GET_SIZE(self);
     cased = 0;
     for (; p < e; p++) {
-    if (isupper(*p))
-        return PyBool_FromLong(0);
-    else if (!cased && islower(*p))
-        cased = 1;
+        if (isupper(*p))
+            return PyBool_FromLong(0);
+        else if (!cased && islower(*p))
+            cased = 1;
     }
     return PyBool_FromLong(cased);
 }
@@ -3465,25 +3465,25 @@ static PyObject*
 string_isupper(PyStringObject *self)
 {
     register const unsigned char *p
-    = (unsigned char *) PyString_AS_STRING(self);
+        = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
     int cased;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1)
-    return PyBool_FromLong(isupper(*p) != 0);
+        return PyBool_FromLong(isupper(*p) != 0);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-    return PyBool_FromLong(0);
+        return PyBool_FromLong(0);
 
     e = p + PyString_GET_SIZE(self);
     cased = 0;
     for (; p < e; p++) {
-    if (islower(*p))
-        return PyBool_FromLong(0);
-    else if (!cased && isupper(*p))
-        cased = 1;
+        if (islower(*p))
+            return PyBool_FromLong(0);
+        else if (!cased && isupper(*p))
+            cased = 1;
     }
     return PyBool_FromLong(cased);
 }
@@ -3501,38 +3501,38 @@ static PyObject*
 string_istitle(PyStringObject *self, PyObject *uncased)
 {
     register const unsigned char *p
-    = (unsigned char *) PyString_AS_STRING(self);
+        = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
     int cased, previous_is_cased;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1)
-    return PyBool_FromLong(isupper(*p) != 0);
+        return PyBool_FromLong(isupper(*p) != 0);
 
     /* Special case for empty strings */
     if (PyString_GET_SIZE(self) == 0)
-    return PyBool_FromLong(0);
+        return PyBool_FromLong(0);
 
     e = p + PyString_GET_SIZE(self);
     cased = 0;
     previous_is_cased = 0;
     for (; p < e; p++) {
-    register const unsigned char ch = *p;
+        register const unsigned char ch = *p;
 
-    if (isupper(ch)) {
-        if (previous_is_cased)
-        return PyBool_FromLong(0);
-        previous_is_cased = 1;
-        cased = 1;
-    }
-    else if (islower(ch)) {
-        if (!previous_is_cased)
-        return PyBool_FromLong(0);
-        previous_is_cased = 1;
-        cased = 1;
-    }
-    else
-        previous_is_cased = 0;
+        if (isupper(ch)) {
+            if (previous_is_cased)
+                return PyBool_FromLong(0);
+            previous_is_cased = 1;
+            cased = 1;
+        }
+        else if (islower(ch)) {
+            if (!previous_is_cased)
+                return PyBool_FromLong(0);
+            previous_is_cased = 1;
+            cased = 1;
+        }
+        else
+            previous_is_cased = 0;
     }
     return PyBool_FromLong(cased);
 }
@@ -3551,11 +3551,11 @@ string_splitlines(PyStringObject *self, PyObject *args)
     int keepends = 0;
 
     if (!PyArg_ParseTuple(args, "|i:splitlines", &keepends))
-    return NULL;
+        return NULL;
 
     return stringlib_splitlines(
-    (PyObject*) self, PyString_AS_STRING(self), PyString_GET_SIZE(self),
-    keepends
+        (PyObject*) self, PyString_AS_STRING(self), PyString_GET_SIZE(self),
+        keepends
     );
 }
 
@@ -3594,15 +3594,15 @@ string__format__(PyObject* self, PyObject* args)
     /* If 2.x, convert format_spec to the same type as value */
     /* This is to allow things like u''.format('') */
     if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
-    goto done;
+        goto done;
     if (!(PyString_Check(format_spec) || PyUnicode_Check(format_spec))) {
-    PyErr_Format(PyExc_TypeError, "__format__ arg must be str "
-                 "or unicode, not %s", Py_TYPE(format_spec)->tp_name);
-    goto done;
+        PyErr_Format(PyExc_TypeError, "__format__ arg must be str "
+                     "or unicode, not %s", Py_TYPE(format_spec)->tp_name);
+        goto done;
     }
     tmp = PyObject_Str(format_spec);
     if (tmp == NULL)
-    goto done;
+        goto done;
     format_spec = tmp;
 
     result = _PyBytes_FormatAdvanced(self,
