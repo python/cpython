@@ -67,6 +67,8 @@ C-API
 Library
 -------
 
+- Fix codecs.escape_encode to return the correct consumed size.
+
 - Issue #6470: Drop UNC prefix in FixTk.
 
 - Issue #8833: tarfile created hard link entries with a size field != 0 by
