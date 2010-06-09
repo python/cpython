@@ -57,6 +57,8 @@ C-API
 Library
 -------
 
+- Fix codecs.escape_encode to return the correct consumed size.
+
 - Issue #8897: Fix sunau module, use bytes to write the header. Patch written
   by Thomas Jollans.
 
