@@ -14,10 +14,10 @@ _getbuffer(PyObject *obj, Py_buffer *view)
 
     if (buffer == NULL || buffer->bf_getbuffer == NULL)
     {
-    PyErr_Format(PyExc_TypeError,
-                 "Type %.100s doesn't support the buffer API",
-                 Py_TYPE(obj)->tp_name);
-    return -1;
+        PyErr_Format(PyExc_TypeError,
+                     "Type %.100s doesn't support the buffer API",
+                     Py_TYPE(obj)->tp_name);
+        return -1;
     }
 
     if (buffer->bf_getbuffer(obj, view, PyBUF_SIMPLE) < 0)
@@ -776,19 +776,19 @@ bytes_contains(PyObject *self, PyObject *arg)
 {
     Py_ssize_t ival = PyNumber_AsSsize_t(arg, PyExc_ValueError);
     if (ival == -1 && PyErr_Occurred()) {
-    Py_buffer varg;
-    int pos;
-    PyErr_Clear();
-    if (_getbuffer(arg, &varg) < 0)
-        return -1;
-    pos = stringlib_find(PyBytes_AS_STRING(self), Py_SIZE(self),
-                         varg.buf, varg.len, 0);
-    PyBuffer_Release(&varg);
-    return pos >= 0;
+        Py_buffer varg;
+        int pos;
+        PyErr_Clear();
+        if (_getbuffer(arg, &varg) < 0)
+            return -1;
+        pos = stringlib_find(PyBytes_AS_STRING(self), Py_SIZE(self),
+                             varg.buf, varg.len, 0);
+        PyBuffer_Release(&varg);
+        return pos >= 0;
     }
     if (ival < 0 || ival >= 256) {
-    PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
-    return -1;
+        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
+        return -1;
     }
 
     return memchr(PyBytes_AS_STRING(self), ival, Py_SIZE(self)) != NULL;
@@ -2345,12 +2345,12 @@ bytes_splitlines(PyObject *self, PyObject *args)
     int keepends = 0;
 
     if (!PyArg_ParseTuple(args, "|i:splitlines", &keepends))
-    return NULL;
+        return NULL;
 
     return stringlib_splitlines(
-    (PyObject*) self, PyBytes_AS_STRING(self),
-    PyBytes_GET_SIZE(self), keepends
-    );
+        (PyObject*) self, PyBytes_AS_STRING(self),
+        PyBytes_GET_SIZE(self), keepends
+        );
 }
 
 
