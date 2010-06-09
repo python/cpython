@@ -228,7 +228,14 @@ class MinidomTest(unittest.TestCase):
 
     def testUnlink(self):
         dom = parse(tstfile)
+        self.assertTrue(dom.childNodes)
         dom.unlink()
+        self.assertFalse(dom.childNodes)
+
+    def testContext(self):
+        with parse(tstfile) as dom:
+            self.assertTrue(dom.childNodes)
+        self.assertFalse(dom.childNodes)
 
     def testElement(self):
         dom = Document()

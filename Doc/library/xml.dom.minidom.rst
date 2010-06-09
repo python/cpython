@@ -114,6 +114,13 @@ module documentation.  This section lists the differences between the API and
    to be called on the :class:`Document` object, but may be called on child nodes
    to discard children of that node.
 
+   You can avoid calling this method explicitly by using the :keyword:`with`
+   statement. The following code will automatically unlink *dom* when the
+   :keyword:`with` block is exited::
+
+      with xml.dom.minidom.parse(datasource) as dom:
+          ... # Work with dom.
+
 
 .. method:: Node.writexml(writer, indent="", addindent="", newl="", encoding="")
 

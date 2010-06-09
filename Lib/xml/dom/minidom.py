@@ -268,6 +268,14 @@ class Node(xml.dom.Node):
         self.previousSibling = None
         self.nextSibling = None
 
+    # A Node is its own context manager, to ensure that an unlink() call occurs.
+    # This is similar to how a file object works.
+    def __enter__(self):
+        return self
+
+    def __exit__(self, et, ev, tb):
+        self.unlink()
+
 defproperty(Node, "firstChild", doc="First child node, or None.")
 defproperty(Node, "lastChild",  doc="Last child node, or None.")
 defproperty(Node, "localName",  doc="Namespace-local name of this node.")
