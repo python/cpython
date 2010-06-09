@@ -217,7 +217,7 @@ escape_encode(PyObject *self,
         }
     }
 
-    return codec_tuple(v, PyBytes_Size(v));
+    return codec_tuple(v, size);
 }
 
 /* --- Decoder ------------------------------------------------------------ */
