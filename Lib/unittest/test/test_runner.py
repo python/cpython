@@ -110,6 +110,31 @@ class TestCleanUp(unittest.TestCase):
         test.run(result)
         self.assertEqual(ordering, ['setUp', 'cleanup1'])
 
+    def testTestCaseDebugExecutesCleanups(self):
+        ordering = []
+
+        class TestableTest(unittest.TestCase):
+            def setUp(self):
+                ordering.append('setUp')
+                self.addCleanup(cleanup1)
+
+            def testNothing(self):
+                ordering.append('test')
+
+            def tearDown(self):
+                ordering.append('tearDown')
+
+        test = TestableTest('testNothing')
+
+        def cleanup1():
+            ordering.append('cleanup1')
+            test.addCleanup(cleanup2)
+        def cleanup2():
+            ordering.append('cleanup2')
+
+        test.debug()
+        self.assertEqual(ordering, ['setUp', 'test', 'tearDown', 'cleanup1', 'cleanup2'])
+
 
 class Test_TextTestRunner(unittest.TestCase):
     """Tests for TextTestRunner."""
