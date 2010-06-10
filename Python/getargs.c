@@ -582,19 +582,6 @@ converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
 
 #define CONV_UNICODE "(unicode conversion error)"
 
-/* explicitly check for float arguments when integers are expected.  For now
- * signal a warning.  Returns true if an exception was raised. */
-static int
-float_argument_warning(PyObject *arg)
-{
-    if (PyFloat_Check(arg) &&
-        PyErr_Warn(PyExc_DeprecationWarning,
-                   "integer argument expected, got float" ))
-        return 1;
-    else
-        return 0;
-}
-
 /* Explicitly check for float arguments when integers are expected.
    Return 1 for error, 0 if ok. */
 static int
@@ -791,14 +778,13 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'L': {/* PY_LONG_LONG */
         PY_LONG_LONG *p = va_arg( *p_va, PY_LONG_LONG * );
         PY_LONG_LONG ival;
-        if (float_argument_warning(arg))
+        if (float_argument_error(arg))
             return converterr("long<L>", arg, msgbuf, bufsize);
         ival = PyLong_AsLongLong(arg);
-        if (ival == (PY_LONG_LONG)-1 && PyErr_Occurred() ) {
+        if (ival == (PY_LONG_LONG)-1 && PyErr_Occurred())
             return converterr("long<L>", arg, msgbuf, bufsize);
-        } else {
+        else
             *p = ival;
-        }
         break;
     }
 
