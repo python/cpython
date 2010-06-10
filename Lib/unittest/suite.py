@@ -112,7 +112,7 @@ class TestSuite(BaseTestSuite):
                     continue
 
             if hasattr(test, '_wrapped_run'):
-                test._wrapped_run(result)
+                test._wrapped_run(result, debug)
             elif not debug:
                 test(result)
             else:
