@@ -12,6 +12,11 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8950: (See also issue #5080).  Py_ArgParse*() functions now
+  raise TypeError instead of giving a DeprecationWarning when a float
+  is parsed using the 'L' code (for long long).  (All other integer
+  codes already raise TypeError in this case.)
+
 - Issue #8922: Normalize the encoding name in PyUnicode_AsEncodedString() to
   enable shortcuts for upper case encoding name. Add also a shortcut for
   "iso-8859-1" in PyUnicode_AsEncodedString() and PyUnicode_Decode().
