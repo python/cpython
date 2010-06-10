@@ -172,7 +172,7 @@ class TestCase(object):
 
     longMessage = False
 
-    # This attribute sets the maximum length of a diff in failure messsages
+    # This attribute sets the maximum length of a diff in failure messages
     # by assert methods using difflib. It is looked up as an instance attribute
     # so can be configured by individual tests if required.
 
