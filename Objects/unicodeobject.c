@@ -1293,25 +1293,21 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
     return NULL;
 }
 
-PyObject *PyUnicode_Decode(const char *s,
-                           Py_ssize_t size,
-                           const char *encoding,
-                           const char *errors)
+/* Convert encoding to lower case and replace '_' with '-' in order to
+   catch e.g. UTF_8. Truncate the string if it is longer than lower_len-1
+   characters. */
+static void normalize_encoding(const char *encoding, 
+                               char *lower, 
+                               size_t lower_len)
 {
-    PyObject *buffer = NULL, *unicode;
-    Py_buffer info;
-    char lower[20];  /* Enough for any encoding name we recognize */
-    char *l;
     const char *e;
+    char *l;
+    char *l_end;
 
-    if (encoding == NULL)
-        encoding = PyUnicode_GetDefaultEncoding();
-
-    /* Convert encoding to lower case and replace '_' with '-' in order to
-       catch e.g. UTF_8 */
     e = encoding;
     l = lower;
-    while (*e && l < &lower[(sizeof lower) - 2]) {
+    l_end = &lower[lower_len - 1];
+    while (*e && l < l_end) {
         if (ISUPPER(*e)) {
             *l++ = TOLOWER(*e++);
         }
@@ -1324,8 +1320,22 @@ PyObject *PyUnicode_Decode(const char *s,
         }
     }
     *l = '\0';
+}
+
+PyObject *PyUnicode_Decode(const char *s,
+                           Py_ssize_t size,
+                           const char *encoding,
+                           const char *errors)
+{
+    PyObject *buffer = NULL, *unicode;
+    Py_buffer info;
+    char lower[11];  /* Enough for any encoding shortcut */
+
+    if (encoding == NULL)
+        encoding = PyUnicode_GetDefaultEncoding();
 
     /* Shortcuts for common default encodings */
+    normalize_encoding(encoding, lower, sizeof(lower));
     if (strcmp(lower, "utf-8") == 0)
         return PyUnicode_DecodeUTF8(s, size, errors);
     else if ((strcmp(lower, "latin-1") == 0) ||
@@ -1478,6 +1488,7 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
                                     const char *errors)
 {
     PyObject *v;
+    char lower[11];  /* Enough for any encoding shortcut */
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
@@ -1488,21 +1499,23 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
         encoding = PyUnicode_GetDefaultEncoding();
 
     /* Shortcuts for common default encodings */
-    if (strcmp(encoding, "utf-8") == 0)
+    normalize_encoding(encoding, lower, sizeof(lower));
+    if (strcmp(lower, "utf-8") == 0)
         return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
                                     PyUnicode_GET_SIZE(unicode),
                                     errors);
-    else if (strcmp(encoding, "latin-1") == 0)
+    else if ((strcmp(lower, "latin-1") == 0) ||
+             (strcmp(lower, "iso-8859-1") == 0))
         return PyUnicode_EncodeLatin1(PyUnicode_AS_UNICODE(unicode),
                                       PyUnicode_GET_SIZE(unicode),
                                       errors);
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
-    else if (strcmp(encoding, "mbcs") == 0)
+    else if (strcmp(lower, "mbcs") == 0)
         return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
                                     PyUnicode_GET_SIZE(unicode),
                                     errors);
 #endif
-    else if (strcmp(encoding, "ascii") == 0)
+    else if (strcmp(lower, "ascii") == 0)
         return PyUnicode_EncodeASCII(PyUnicode_AS_UNICODE(unicode),
                                      PyUnicode_GET_SIZE(unicode),
                                      errors);

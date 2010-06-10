@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8922: Normalize the encoding name in PyUnicode_AsEncodedString() to
+  enable shortcuts for upper case encoding name. Add also a shortcut for
+  "iso-8859-1" in PyUnicode_AsEncodedString() and PyUnicode_Decode().
+
 - Issue #8838: Remove codecs.charbuffer_encode() function. The buffer protocol
   doesn't support "char buffer" anymore in Python3.
 
