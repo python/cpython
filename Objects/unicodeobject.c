@@ -1294,11 +1294,12 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 }
 
 /* Convert encoding to lower case and replace '_' with '-' in order to
-   catch e.g. UTF_8. Truncate the string if it is longer than lower_len-1
-   characters. */
-static void normalize_encoding(const char *encoding, 
-                               char *lower, 
-                               size_t lower_len)
+   catch e.g. UTF_8. Return 0 on error (encoding is longer than lower_len-1),
+   1 on success. */
+static int
+normalize_encoding(const char *encoding,
+                   char *lower,
+                   size_t lower_len)
 {
     const char *e;
     char *l;
@@ -1307,7 +1308,9 @@ static void normalize_encoding(const char *encoding,
     e = encoding;
     l = lower;
     l_end = &lower[lower_len - 1];
-    while (*e && l < l_end) {
+    while (*e) {
+        if (l == l_end)
+            return 0;
         if (ISUPPER(*e)) {
             *l++ = TOLOWER(*e++);
         }
@@ -1320,6 +1323,7 @@ static void normalize_encoding(const char *encoding,
         }
     }
     *l = '\0';
+    return 1;
 }
 
 PyObject *PyUnicode_Decode(const char *s,
@@ -1335,22 +1339,23 @@ PyObject *PyUnicode_Decode(const char *s,
         encoding = PyUnicode_GetDefaultEncoding();
 
     /* Shortcuts for common default encodings */
-    normalize_encoding(encoding, lower, sizeof(lower));
-    if (strcmp(lower, "utf-8") == 0)
-        return PyUnicode_DecodeUTF8(s, size, errors);
-    else if ((strcmp(lower, "latin-1") == 0) ||
-             (strcmp(lower, "iso-8859-1") == 0))
-        return PyUnicode_DecodeLatin1(s, size, errors);
+    if (normalize_encoding(encoding, lower, sizeof(lower))) {
+        if (strcmp(lower, "utf-8") == 0)
+            return PyUnicode_DecodeUTF8(s, size, errors);
+        else if ((strcmp(lower, "latin-1") == 0) ||
+                 (strcmp(lower, "iso-8859-1") == 0))
+            return PyUnicode_DecodeLatin1(s, size, errors);
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
-    else if (strcmp(lower, "mbcs") == 0)
-        return PyUnicode_DecodeMBCS(s, size, errors);
+        else if (strcmp(lower, "mbcs") == 0)
+            return PyUnicode_DecodeMBCS(s, size, errors);
 #endif
-    else if (strcmp(lower, "ascii") == 0)
-        return PyUnicode_DecodeASCII(s, size, errors);
-    else if (strcmp(lower, "utf-16") == 0)
-        return PyUnicode_DecodeUTF16(s, size, errors, 0);
-    else if (strcmp(lower, "utf-32") == 0)
-        return PyUnicode_DecodeUTF32(s, size, errors, 0);
+        else if (strcmp(lower, "ascii") == 0)
+            return PyUnicode_DecodeASCII(s, size, errors);
+        else if (strcmp(lower, "utf-16") == 0)
+            return PyUnicode_DecodeUTF16(s, size, errors, 0);
+        else if (strcmp(lower, "utf-32") == 0)
+            return PyUnicode_DecodeUTF32(s, size, errors, 0);
+    }
 
     /* Decode via the codec registry */
     buffer = NULL;
@@ -1499,26 +1504,27 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
         encoding = PyUnicode_GetDefaultEncoding();
 
     /* Shortcuts for common default encodings */
-    normalize_encoding(encoding, lower, sizeof(lower));
-    if (strcmp(lower, "utf-8") == 0)
-        return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
-                                    PyUnicode_GET_SIZE(unicode),
-                                    errors);
-    else if ((strcmp(lower, "latin-1") == 0) ||
-             (strcmp(lower, "iso-8859-1") == 0))
-        return PyUnicode_EncodeLatin1(PyUnicode_AS_UNICODE(unicode),
-                                      PyUnicode_GET_SIZE(unicode),
-                                      errors);
+    if (normalize_encoding(encoding, lower, sizeof(lower))) {
+        if (strcmp(lower, "utf-8") == 0)
+            return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
+                                        PyUnicode_GET_SIZE(unicode),
+                                        errors);
+        else if ((strcmp(lower, "latin-1") == 0) ||
+                 (strcmp(lower, "iso-8859-1") == 0))
+            return PyUnicode_EncodeLatin1(PyUnicode_AS_UNICODE(unicode),
+                                          PyUnicode_GET_SIZE(unicode),
+                                          errors);
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
-    else if (strcmp(lower, "mbcs") == 0)
-        return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
-                                    PyUnicode_GET_SIZE(unicode),
-                                    errors);
+        else if (strcmp(lower, "mbcs") == 0)
+            return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
+                                        PyUnicode_GET_SIZE(unicode),
+                                        errors);
 #endif
-    else if (strcmp(lower, "ascii") == 0)
-        return PyUnicode_EncodeASCII(PyUnicode_AS_UNICODE(unicode),
-                                     PyUnicode_GET_SIZE(unicode),
-                                     errors);
+        else if (strcmp(lower, "ascii") == 0)
+            return PyUnicode_EncodeASCII(PyUnicode_AS_UNICODE(unicode),
+                                         PyUnicode_GET_SIZE(unicode),
+                                         errors);
+    }
     /* During bootstrap, we may need to find the encodings
        package, to load the file system encoding, and require the
        file system encoding in order to load the encodings
@@ -1528,7 +1534,7 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
        the encodings module is ASCII-only.  XXX could try wcstombs
        instead, if the file system encoding is the locale's
        encoding. */
-    else if (Py_FileSystemDefaultEncoding &&
+    if (Py_FileSystemDefaultEncoding &&
              strcmp(encoding, Py_FileSystemDefaultEncoding) == 0 &&
              !PyThreadState_GET()->interp->codecs_initialized)
         return PyUnicode_EncodeASCII(PyUnicode_AS_UNICODE(unicode),
