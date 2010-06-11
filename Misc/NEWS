@@ -27,6 +27,11 @@ Documentation
 - Issues #8909: Added the size of the bitmap used in the installer created by
   distutils' bdist_wininst. Patch by Anatoly Techtonik.
 
+Misc
+----
+
+- Issue #8362: Add maintainers.rst: list of module maintainers
+
 
 What's New in Python 2.7 Release Candidate 1?
 =============================================
@@ -70,7 +75,7 @@ Core and Builtins
 - Issue #7079: Fix a possible crash when closing a file object while using it
   from another thread.  Patch by Daniel Stutzbach.
 
-- Issue #8868: Fix that ensures that python scripts have access to the 
+- Issue #8868: Fix that ensures that python scripts have access to the
   Window Server again in a framework build on MacOSX 10.5 or earlier.
 
 C-API
@@ -175,7 +180,7 @@ Build
 - Display installer warning that Windows 2000 won't be supported in future
   releases.
 
-- Issues #1759169, #8864: Drop _XOPEN_SOURCE on Solaris, define it for 
+- Issues #1759169, #8864: Drop _XOPEN_SOURCE on Solaris, define it for
   multiprocessing only.
 
 Tools/Demos
