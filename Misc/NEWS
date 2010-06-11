@@ -12,6 +12,10 @@ What's New in Python 2.7 release candidate 2?
 Core and Builtins
 -----------------
 
+- Issue #8941: decoding big endian UTF-32 data in UCS-2 builds could crash
+  the interpreter with characters outside the Basic Multilingual Plane
+  (higher than 0x10000).
+
 - In the unicode/str.format(), raise a ValueError when indexes to arguments are
   too large.
 
