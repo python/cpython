@@ -1395,7 +1395,7 @@ static int
 symtable_visit_alias(struct symtable *st, alias_ty a)
 {
     /* Compute store_name, the name actually bound by the import
-       operation.  It is diferent than a->name when a->name is a
+       operation.  It is different than a->name when a->name is a
        dotted package name (e.g. spam.eggs)
     */
     PyObject *store_name;
