@@ -524,12 +524,12 @@ the table of loaded modules, and creates the fundamental modules
 :mod:`__builtin__`, :mod:`__main__`, :mod:`sys`, and :mod:`exceptions`.  It also
 initializes the module search path (``sys.path``).
 
-.. index:: single: PySys_SetArgv()
+.. index:: single: PySys_SetArgvEx()
 
 :cfunc:`Py_Initialize` does not set the "script argument list"  (``sys.argv``).
-If this variable is needed by Python code that  will be executed later, it must
-be set explicitly with a call to  ``PySys_SetArgv(argc, argv)`` subsequent to
-the call to :cfunc:`Py_Initialize`.
+If this variable is needed by Python code that will be executed later, it must
+be set explicitly with a call to  ``PySys_SetArgvEx(argc, argv, updatepath)``
+after the call to :cfunc:`Py_Initialize`.
 
 On most systems (in particular, on Unix and Windows, although the details are
 slightly different), :cfunc:`Py_Initialize` calculates the module search path
