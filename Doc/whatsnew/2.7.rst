@@ -722,6 +722,10 @@ Some smaller changes made to the core Python language are:
   Integer division is also more accurate in its rounding behaviours.  (Also
   implemented by Mark Dickinson; :issue:`1811`.)
 
+* Implicit coercion for complex numbers has been removed; the interpreter
+  will no longer ever attempt to call a :meth:`__coerce__` method on complex
+  objects.  (Removed by Meador Inge and Mark Dickinson; :issue:`5211`.)
+
 * The :meth:`str.format` method now supports automatic numbering of the replacement
   fields.  This makes using :meth:`str.format` more closely resemble using
   ``%s`` formatting::
@@ -1101,6 +1105,10 @@ changes, or look through the Subversion logs for all the details.
   handling more than one context manager with a single :keyword:`with`
   statement, has been deprecated, because the :keyword:`with` statement
   now supports multiple context managers.
+
+* The :mod:`cookielib` module now ignores cookies that have an invalid
+  version field, one that doesn't contain an integer value.  (Fixed by
+  John J. Lee; :issue:`3924`.)
 
 * The :mod:`copy` module's :func:`~copy.deepcopy` function will now
   correctly copy bound instance methods.  (Implemented by
@@ -2073,6 +2081,28 @@ Changes to Python's build process and to the C API include:
   :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof` functions
   are now deprecated.
 
+* New function: :cfunc:`PySys_SetArgvEx` sets the value of
+  ``sys.argv`` and can optionally update ``sys.path`` to include the
+  directory containing the script named by ``sys.argv[0]`` depending
+  on the value of an *updatepath* parameter.
+
+  This function was added to close a security hole for applications
+  that embed Python.  The old function, :cfunc:`PySys_SetArgv`, would
+  always update ``sys.path``, and sometimes it would add the current
+  directory.  This meant that, if you ran an application embedding
+  Python in a directory controlled by someone else, attackers could
+  put a Trojan-horse module in the directory (say, a file named
+  :file:`os.py`) that your application would then import and run.
+
+  If you maintain a C/C++ application that embeds Python, check
+  whether you're calling :cfunc:`PySys_SetArgv` and carefully consider
+  whether the application should be using :cfunc:`PySys_SetArgvEx`
+  with *updatepath* set to false.
+
+  Security issue reported as `CVE-2008-5983
+  <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_;
+  discussed in :issue:`5753`, and fixed by Antoine Pitrou.
+
 * New macros: the Python header files now define the following macros:
   :cmacro:`Py_ISALNUM`,
   :cmacro:`Py_ISALPHA`,
@@ -2281,6 +2311,10 @@ Other Changes and Fixes
   thread switching latency, and IO processing bandwidth when
   performing several tasks using a varying number of threads.
 
+* The :file:`Tools/i18n/msgfmt.py` script now understands plural
+  forms in :file:`.po` files.  (Fixed by Martin von Löwis;
+  :issue:`5464`.)
+
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
   with an existing :file:`.py` counterpart, the :attr:`co_filename`
   attributes of the resulting code objects are overwritten when the
@@ -2415,6 +2449,14 @@ For C extensions:
   :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof` functions,
   which are now deprecated.
 
+For applications that embed Python:
+
+* The :cfunc:`PySys_SetArgvEx` function was added, letting
+  applications close a security hole when the existing
+  :cfunc:`PySys_SetArgv` function was used.  Check whether you're
+  calling :cfunc:`PySys_SetArgv` and carefully consider whether the
+  application should be using :cfunc:`PySys_SetArgvEx` with
+  *updatepath* set to false.
 
 .. ======================================================================
 
