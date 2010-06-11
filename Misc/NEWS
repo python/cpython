@@ -21,6 +21,7 @@ Core and Builtins
 
 Library
 -------
+- Issue #8924: logging: Improved error handling for Unicode in exception text.
 
 - Issue #8948: cleanup functions and class / module setups and teardowns are
   now honored in unittest debug methods.
