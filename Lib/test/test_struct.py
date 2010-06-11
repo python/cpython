@@ -506,6 +506,11 @@ class StructTest(unittest.TestCase):
             for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
                 self.assertTrue(struct.unpack('>?', c)[0])
 
+    def test_count_overflow(self):
+        hugecount = '{}b'.format(sys.maxsize+1)
+        self.assertRaises(struct.error, struct.calcsize, hugecount)
+
+
     if IS32BIT:
         def test_crasher(self):
             self.assertRaises(MemoryError, struct.pack, "357913941b", "a")

@@ -1186,14 +1186,17 @@ prepare_s(PyStructObject *self)
         if ('0' <= c && c <= '9') {
             num = c - '0';
             while ('0' <= (c = *s++) && c <= '9') {
-                x = num*10 + (c - '0');
-                if (x/10 != num) {
+                /* overflow-safe version of
+                   if (num*10 + (c - '0') > PY_SSIZE_T_MAX) { ... } */
+                if (num >= PY_SSIZE_T_MAX / 10 && (
+                        num > PY_SSIZE_T_MAX / 10 ||
+                        (c - '0') > PY_SSIZE_T_MAX % 10)) {
                     PyErr_SetString(
                         StructError,
                         "overflow in item count");
                     return -1;
                 }
-                num = x;
+                num = num*10 + (c - '0');
             }
             if (c == '\0') {
                 PyErr_SetString(StructError,
