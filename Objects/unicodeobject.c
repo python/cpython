@@ -2085,11 +2085,11 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
     PyUnicodeObject *unicode;
     Py_UNICODE *p;
 #ifndef Py_UNICODE_WIDE
-    int i, pairs;
+    int pairs = 0;
 #else
     const int pairs = 0;
 #endif
-    const unsigned char *q, *e;
+    const unsigned char *q, *e, *qq;
     int bo = 0;       /* assume native ordering by default */
     const char *errmsg = "";
     /* Offsets from q for retrieving bytes in the right order. */
@@ -2100,23 +2100,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 #endif
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
-    /* On narrow builds we split characters outside the BMP into two
-       codepoints => count how much extra space we need. */
-#ifndef Py_UNICODE_WIDE
-    for (i = pairs = 0; i < size/4; i++)
-        if (((Py_UCS4 *)s)[i] >= 0x10000)
-            pairs++;
-#endif
-
-    /* This might be one to much, because of a BOM */
-    unicode = _PyUnicode_New((size+3)/4+pairs);
-    if (!unicode)
-        return NULL;
-    if (size == 0)
-        return (PyObject *)unicode;
-
-    /* Unpack UTF-32 encoded data */
-    p = unicode->str;
+    
     q = (unsigned char *)s;
     e = q + size;
 
@@ -2167,6 +2151,24 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
         iorder[2] = 1;
         iorder[3] = 0;
     }
+
+    /* On narrow builds we split characters outside the BMP into two
+       codepoints => count how much extra space we need. */
+#ifndef Py_UNICODE_WIDE
+    for (qq = q; qq < e; qq += 4)
+        if (qq[iorder[2]] != 0 || qq[iorder[3]] != 0)
+            pairs++;
+#endif
+
+    /* This might be one to much, because of a BOM */
+    unicode = _PyUnicode_New((size+3)/4+pairs);
+    if (!unicode)
+        return NULL;
+    if (size == 0)
+        return (PyObject *)unicode;
+
+    /* Unpack UTF-32 encoded data */
+    p = unicode->str;
 
     while (q < e) {
         Py_UCS4 ch;

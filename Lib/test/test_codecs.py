@@ -315,6 +315,16 @@ class UTF32Test(ReadTest):
         self.assertRaises(UnicodeDecodeError, codecs.utf_32_decode,
                           "\xff", "strict", True)
 
+    def test_issue8941(self):
+        # Issue #8941: insufficient result allocation when decoding into
+        # surrogate pairs on UCS-2 builds.
+        encoded_le = '\xff\xfe\x00\x00' + '\x00\x00\x01\x00' * 1024
+        self.assertEqual(u'\U00010000' * 1024,
+                         codecs.utf_32_decode(encoded_le)[0])
+        encoded_be = '\x00\x00\xfe\xff' + '\x00\x01\x00\x00' * 1024
+        self.assertEqual(u'\U00010000' * 1024,
+                         codecs.utf_32_decode(encoded_be)[0])
+
 class UTF32LETest(ReadTest):
     encoding = "utf-32-le"
 
@@ -348,6 +358,13 @@ class UTF32LETest(ReadTest):
         self.assertRaises(UnicodeDecodeError, codecs.utf_32_le_decode,
                           "\xff", "strict", True)
 
+    def test_issue8941(self):
+        # Issue #8941: insufficient result allocation when decoding into
+        # surrogate pairs on UCS-2 builds.
+        encoded = '\x00\x00\x01\x00' * 1024
+        self.assertEqual(u'\U00010000' * 1024,
+                         codecs.utf_32_le_decode(encoded)[0])
+
 class UTF32BETest(ReadTest):
     encoding = "utf-32-be"
 
@@ -380,6 +397,14 @@ class UTF32BETest(ReadTest):
     def test_errors(self):
         self.assertRaises(UnicodeDecodeError, codecs.utf_32_be_decode,
                           "\xff", "strict", True)
+
+    def test_issue8941(self):
+        # Issue #8941: insufficient result allocation when decoding into
+        # surrogate pairs on UCS-2 builds.
+        encoded = '\x00\x01\x00\x00' * 1024
+        self.assertEqual(u'\U00010000' * 1024,
+                         codecs.utf_32_be_decode(encoded)[0])
+
 
 class UTF16Test(ReadTest):
     encoding = "utf-16"
