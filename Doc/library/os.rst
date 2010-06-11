@@ -159,10 +159,10 @@ process and user.
 .. function:: fsencode(value)
 
    Encode *value* to bytes for use in the file system, environment variables or
-   the command line. Uses :func:`sys.getfilesystemencoding` and
-   ``'surrogateescape'`` error handler for strings and returns bytes unchanged.
-
-   Availability: Unix.
+   the command line. Use :func:`sys.getfilesystemencoding` and
+   ``'surrogateescape'`` error handler for strings and return bytes unchanged.
+   On Windows, use ``'strict'`` error handler for strings if the file system
+   encoding is ``'mbcs'`` (which is the default encoding).
 
    .. versionadded:: 3.2
 

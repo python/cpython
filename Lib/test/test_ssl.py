@@ -33,16 +33,15 @@ else:
 HOST = support.HOST
 
 data_file = lambda name: os.path.join(os.path.dirname(__file__), name)
-fsencode = lambda name: name.encode(sys.getfilesystemencoding(), "surrogateescape")
 
 CERTFILE = data_file("keycert.pem")
-BYTES_CERTFILE = fsencode(CERTFILE)
+BYTES_CERTFILE = os.fsencode(CERTFILE)
 ONLYCERT = data_file("ssl_cert.pem")
 ONLYKEY = data_file("ssl_key.pem")
-BYTES_ONLYCERT = fsencode(ONLYCERT)
-BYTES_ONLYKEY = fsencode(ONLYKEY)
+BYTES_ONLYCERT = os.fsencode(ONLYCERT)
+BYTES_ONLYKEY = os.fsencode(ONLYKEY)
 CAPATH = data_file("capath")
-BYTES_CAPATH = fsencode(CAPATH)
+BYTES_CAPATH = os.fsencode(CAPATH)
 
 SVN_PYTHON_ORG_ROOT_CERT = data_file("https_svn_python_org_root.pem")
 
