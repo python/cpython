@@ -143,9 +143,64 @@ class HashTest(unittest.TestCase):
         x = {'halibut', HalibutProxy()}
         self.assertEqual(len(x), 1)
 
+class ComparisonTest(unittest.TestCase):
+    def test_mixed_comparisons(self):
+
+        # ordered list of distinct test values of various types:
+        # int, float, Fraction, Decimal
+        test_values = [
+            float('-inf'),
+            D('-1e999999999'),
+            -1e308,
+            F(-22, 7),
+            -3.14,
+            -2,
+            0.0,
+            1e-320,
+            True,
+            F('1.2'),
+            D('1.3'),
+            float('1.4'),
+            F(275807, 195025),
+            D('1.414213562373095048801688724'),
+            F(114243, 80782),
+            F(473596569, 84615),
+            7e200,
+            D('infinity'),
+            ]
+        for i, first in enumerate(test_values):
+            for second in test_values[i+1:]:
+                self.assertLess(first, second)
+                self.assertLessEqual(first, second)
+                self.assertGreater(second, first)
+                self.assertGreaterEqual(second, first)
+
+    def test_complex(self):
+        # comparisons with complex are special:  equality and inequality
+        # comparisons should always succeed, but order comparisons should
+        # raise TypeError.
+        z = 1.0 + 0j
+        w = -3.14 + 2.7j
+
+        for v in 1, 1.0, F(1), D(1), complex(1):
+            self.assertEqual(z, v)
+            self.assertEqual(v, z)
+
+        for v in 2, 2.0, F(2), D(2), complex(2):
+            self.assertNotEqual(z, v)
+            self.assertNotEqual(v, z)
+            self.assertNotEqual(w, v)
+            self.assertNotEqual(v, w)
+
+        for v in (1, 1.0, F(1), D(1), complex(1),
+                  2, 2.0, F(2), D(2), complex(2), w):
+            for op in operator.le, operator.lt, operator.ge, operator.gt:
+                self.assertRaises(TypeError, op, z, v)
+                self.assertRaises(TypeError, op, v, z)
+
 
 def test_main():
-    run_unittest(HashTest)
+    run_unittest(HashTest, ComparisonTest)
 
 if __name__ == '__main__':
     test_main()

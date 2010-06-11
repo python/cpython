@@ -862,7 +862,7 @@ class Decimal(object):
     # that specified by IEEE 754.
 
     def __eq__(self, other, context=None):
-        other = _convert_other(other, allow_float = True)
+        self, other = _convert_for_comparison(self, other, equality_op=True)
         if other is NotImplemented:
             return other
         if self._check_nans(other, context):
@@ -870,7 +870,7 @@ class Decimal(object):
         return self._cmp(other) == 0
 
     def __ne__(self, other, context=None):
-        other = _convert_other(other, allow_float = True)
+        self, other = _convert_for_comparison(self, other, equality_op=True)
         if other is NotImplemented:
             return other
         if self._check_nans(other, context):
@@ -879,7 +879,7 @@ class Decimal(object):
 
 
     def __lt__(self, other, context=None):
-        other = _convert_other(other, allow_float = True)
+        self, other = _convert_for_comparison(self, other)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -888,7 +888,7 @@ class Decimal(object):
         return self._cmp(other) < 0
 
     def __le__(self, other, context=None):
-        other = _convert_other(other, allow_float = True)
+        self, other = _convert_for_comparison(self, other)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -897,7 +897,7 @@ class Decimal(object):
         return self._cmp(other) <= 0
 
     def __gt__(self, other, context=None):
-        other = _convert_other(other, allow_float = True)
+        self, other = _convert_for_comparison(self, other)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -906,7 +906,7 @@ class Decimal(object):
         return self._cmp(other) > 0
 
     def __ge__(self, other, context=None):
-        other = _convert_other(other, allow_float = True)
+        self, other = _convert_for_comparison(self, other)
         if other is NotImplemented:
             return other
         ans = self._compare_check_nans(other, context)
@@ -5859,6 +5859,37 @@ def _convert_other(other, raiseit=False, allow_float=False):
     if raiseit:
         raise TypeError("Unable to convert %s to Decimal" % other)
     return NotImplemented
+
+def _convert_for_comparison(self, other, equality_op=False):
+    """Given a Decimal instance self and a Python object other, return
+    an pair (s, o) of Decimal instances such that "s op o" is
+    equivalent to "self op other" for any of the 6 comparison
+    operators "op".
+
+    """
+    if isinstance(other, Decimal):
+        return self, other
+
+    # Comparison with a Rational instance (also includes integers):
+    # self op n/d <=> self*d op n (for n and d integers, d positive).
+    # A NaN or infinity can be left unchanged without affecting the
+    # comparison result.
+    if isinstance(other, _numbers.Rational):
+        if not self._is_special:
+            self = _dec_from_triple(self._sign,
+                                    str(int(self._int) * other.denominator),
+                                    self._exp)
+        return self, Decimal(other.numerator)
+
+    # Comparisons with float and complex types.  == and != comparisons
+    # with complex numbers should succeed, returning either True or False
+    # as appropriate.  Other comparisons return NotImplemented.
+    if equality_op and isinstance(other, _numbers.Complex) and other.imag == 0:
+        other = other.real
+    if isinstance(other, float):
+        return self, Decimal.from_float(other)
+    return NotImplemented, NotImplemented
+
 
 ##### Setup Specific Contexts ############################################
 
