@@ -1478,11 +1478,17 @@ PyObject *PyUnicode_AsEncodedObject(PyObject *unicode,
 
 PyObject *PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
-    if (Py_FileSystemDefaultEncoding)
+    if (Py_FileSystemDefaultEncoding) {
+#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
+        if (strcmp(Py_FileSystemDefaultEncoding, "mbcs") == 0)
+            return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
+                                        PyUnicode_GET_SIZE(unicode),
+                                        NULL);
+#endif
         return PyUnicode_AsEncodedString(unicode,
                                          Py_FileSystemDefaultEncoding,
                                          "surrogateescape");
-    else
+    } else
         return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
                                      PyUnicode_GET_SIZE(unicode),
                                      "surrogateescape");
@@ -1639,7 +1645,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
     if (Py_FileSystemDefaultEncoding) {
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
         if (strcmp(Py_FileSystemDefaultEncoding, "mbcs") == 0) {
-            return PyUnicode_DecodeMBCS(s, size, "surrogateescape");
+            return PyUnicode_DecodeMBCS(s, size, NULL);
         }
 #elif defined(__APPLE__)
         if (strcmp(Py_FileSystemDefaultEncoding, "utf-8") == 0) {
@@ -2745,7 +2751,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 #endif
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
-    
+
     q = (unsigned char *)s;
     e = q + size;
 

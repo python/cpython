@@ -533,16 +533,19 @@ if supports_bytes_environ:
         return environb.get(key, default)
     __all__.append("getenvb")
 
-if name != 'nt':
-    def fsencode(value):
-        """Encode value for use in the file system, environment variables
-        or the command line."""
-        if isinstance(value, bytes):
-            return value
-        elif isinstance(value, str):
-            return value.encode(sys.getfilesystemencoding(), 'surrogateescape')
+def fsencode(value):
+    """Encode value for use in the file system, environment variables
+    or the command line."""
+    if isinstance(value, bytes):
+        return value
+    elif isinstance(value, str):
+        encoding = sys.getfilesystemencoding()
+        if encoding == 'mbcs':
+            return value.encode(encoding)
         else:
-            raise TypeError("expect bytes or str, not %s" % type(value).__name__)
+            return value.encode(encoding, 'surrogateescape')
+    else:
+        raise TypeError("expect bytes or str, not %s" % type(value).__name__)
 
 def _exists(name):
     return name in globals()
