@@ -98,10 +98,16 @@ Parse and execute single line of a readline init file.");
 static PyObject *
 read_init_file(PyObject *self, PyObject *args)
 {
-    char *s = NULL;
-    if (!PyArg_ParseTuple(args, "|z:read_init_file", &s))
+    PyObject *filename_obj = Py_None, *filename_bytes;
+    if (!PyArg_ParseTuple(args, "|O:read_init_file", &filename_obj))
         return NULL;
-    errno = rl_read_init_file(s);
+    if (filename_obj != Py_None) {
+        if (!PyUnicode_FSConverter(filename_obj, &filename_bytes))
+            return NULL;
+        errno = rl_read_init_file(PyBytes_AsString(filename_bytes));
+        Py_DECREF(filename_bytes);
+    } else
+        errno = rl_read_init_file(NULL);
     if (errno)
         return PyErr_SetFromErrno(PyExc_IOError);
     Py_RETURN_NONE;
@@ -118,10 +124,16 @@ The default filename is the last filename used.");
 static PyObject *
 read_history_file(PyObject *self, PyObject *args)
 {
-    char *s = NULL;
-    if (!PyArg_ParseTuple(args, "|z:read_history_file", &s))
+    PyObject *filename_obj = Py_None, *filename_bytes;
+    if (!PyArg_ParseTuple(args, "|O:read_history_file", &filename_obj))
         return NULL;
-    errno = read_history(s);
+    if (filename_obj != Py_None) {
+        if (!PyUnicode_FSConverter(filename_obj, &filename_bytes))
+            return NULL;
+        errno = read_history(PyBytes_AsString(filename_bytes));
+        Py_DECREF(filename_bytes);
+    } else
+        errno = read_history(NULL);
     if (errno)
         return PyErr_SetFromErrno(PyExc_IOError);
     Py_RETURN_NONE;
@@ -139,12 +151,22 @@ The default filename is ~/.history.");
 static PyObject *
 write_history_file(PyObject *self, PyObject *args)
 {
-    char *s = NULL;
-    if (!PyArg_ParseTuple(args, "|z:write_history_file", &s))
+    PyObject *filename_obj = Py_None, *filename_bytes;
+    char *filename;
+    if (!PyArg_ParseTuple(args, "|O:write_history_file", &filename_obj))
         return NULL;
-    errno = write_history(s);
+    if (filename_obj != Py_None) {
+        if (!PyUnicode_FSConverter(filename_obj, &filename_bytes))
+            return NULL;
+        filename = PyBytes_AsString(filename_bytes);
+    } else {
+        filename_bytes = NULL;
+        filename = NULL;
+    }
+    errno = write_history(filename);
     if (!errno && _history_length >= 0)
-        history_truncate_file(s, _history_length);
+        history_truncate_file(filename, _history_length);
+    Py_XDECREF(filename_bytes);
     if (errno)
         return PyErr_SetFromErrno(PyExc_IOError);
     Py_RETURN_NONE;
