@@ -792,6 +792,36 @@ class SizeofTest(unittest.TestCase):
         # sys.flags
         check(sys.flags, size(vh) + self.P * len(sys.flags))
 
+    def test_getfilesystemencoding(self):
+        import codecs
+
+        def check_fsencoding(fs_encoding):
+            if sys.platform == 'darwin':
+                self.assertEqual(fs_encoding, 'utf-8')
+            elif fs_encoding is None:
+                return
+            codecs.lookup(fs_encoding)
+
+        fs_encoding = sys.getfilesystemencoding()
+        check_fsencoding(fs_encoding)
+
+        # Even in C locale
+        try:
+            sys.executable.encode('ascii')
+        except UnicodeEncodeError:
+            # Python doesn't start with ASCII locale if its path is not ASCII,
+            # see issue #8611
+            pass
+        else:
+            env = os.environ.copy()
+            env['LANG'] = 'C'
+            output = subprocess.check_output(
+                [sys.executable, "-c",
+                 "import sys; print(sys.getfilesystemencoding())"],
+                env=env)
+            fs_encoding = output.rstrip().decode('ascii')
+            check_fsencoding(fs_encoding)
+
     def test_setfilesystemencoding(self):
         old = sys.getfilesystemencoding()
         try:
