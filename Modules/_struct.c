@@ -1143,16 +1143,19 @@ getentry(int c, const formatdef *f)
 }
 
 
-/* Align a size according to a format code */
+/* Align a size according to a format code.  Return -1 on overflow. */
 
 static Py_ssize_t
 align(Py_ssize_t size, char c, const formatdef *e)
 {
+    Py_ssize_t extra;
+
     if (e->format == c) {
-        if (e->alignment) {
-            size = ((size + e->alignment - 1)
-                / e->alignment)
-                * e->alignment;
+        if (e->alignment && size > 0) {
+            extra = (e->alignment - 1) - (size - 1) % (e->alignment);
+            if (extra > PY_SSIZE_T_MAX - size)
+                return -1;
+            size += extra;
         }
     }
     return size;
@@ -1171,7 +1174,7 @@ prepare_s(PyStructObject *self)
     const char *s;
     const char *fmt;
     char c;
-    Py_ssize_t size, len, num, itemsize, x;
+    Py_ssize_t size, len, num, itemsize;
 
     fmt = PyBytes_AS_STRING(self->s_format);
 
@@ -1190,12 +1193,8 @@ prepare_s(PyStructObject *self)
                    if (num*10 + (c - '0') > PY_SSIZE_T_MAX) { ... } */
                 if (num >= PY_SSIZE_T_MAX / 10 && (
                         num > PY_SSIZE_T_MAX / 10 ||
-                        (c - '0') > PY_SSIZE_T_MAX % 10)) {
-                    PyErr_SetString(
-                        StructError,
-                        "overflow in item count");
-                    return -1;
-                }
+                        (c - '0') > PY_SSIZE_T_MAX % 10))
+                    goto overflow;
                 num = num*10 + (c - '0');
             }
             if (c == '\0') {
@@ -1220,13 +1219,13 @@ prepare_s(PyStructObject *self)
 
         itemsize = e->size;
         size = align(size, c, e);
-        x = num * itemsize;
-        size += x;
-        if (x/itemsize != num || size < 0) {
-            PyErr_SetString(StructError,
-                            "total struct size too long");
-            return -1;
-        }
+        if (size == -1)
+            goto overflow;
+
+        /* if (size + num * itemsize > PY_SSIZE_T_MAX) { ... } */
+        if (num > (PY_SSIZE_T_MAX - size) / itemsize)
+            goto overflow;
+        size += num * itemsize;
     }
 
     /* check for overflow */
@@ -1285,6 +1284,11 @@ prepare_s(PyStructObject *self)
     codes->size = 0;
 
     return 0;
+
+  overflow:
+    PyErr_SetString(StructError,
+                    "total struct size too long");
+    return -1;
 }
 
 static PyObject *
