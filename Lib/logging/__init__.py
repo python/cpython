@@ -445,7 +445,13 @@ class Formatter:
         if record.exc_text:
             if s[-1:] != "\n":
                 s = s + "\n"
-            s = s + record.exc_text
+            try:
+                s = s + record.exc_text
+            except UnicodeError:
+                # Sometimes filenames have non-ASCII chars, which can lead
+                # to errors when s is Unicode and record.exc_text is str
+                # See issue 8924
+                s = s + record.exc_text.decode(sys.getfilesystemencoding())
         return s
 
 #

@@ -71,6 +71,8 @@ C-API
 Library
 -------
 
+- Issue #8924: logging: Improved error handling for Unicode in exception text.
+
 - Fix codecs.escape_encode to return the correct consumed size.
 
 - Issue #6470: Drop UNC prefix in FixTk.
