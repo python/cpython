@@ -572,19 +572,31 @@ PyDoc_STRVAR(bindtextdomain__doc__,
 static PyObject*
 PyIntl_bindtextdomain(PyObject* self,PyObject*args)
 {
-    char *domain, *dirname;
-    if (!PyArg_ParseTuple(args, "sz", &domain, &dirname))
+    char *domain, *dirname, *current_dirname;
+    PyObject *dirname_obj, *dirname_bytes = NULL, *result;
+    if (!PyArg_ParseTuple(args, "sO", &domain, &dirname_obj))
         return 0;
     if (!strlen(domain)) {
         PyErr_SetString(Error, "domain must be a non-empty string");
         return 0;
     }
-    dirname = bindtextdomain(domain, dirname);
-    if (!dirname) {
+    if (dirname_obj != Py_None) {
+        if (!PyUnicode_FSConverter(dirname_obj, &dirname_bytes))
+            return NULL;
+        dirname = PyBytes_AsString(dirname_bytes);
+    } else {
+        dirname_bytes = NULL;
+        dirname = NULL;
+    }
+    current_dirname = bindtextdomain(domain, dirname);
+    if (current_dirname == NULL) {
+        Py_XDECREF(dirname_bytes);
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    return str2uni(dirname);
+    result = str2uni(current_dirname);
+    Py_XDECREF(dirname_bytes);
+    return result;
 }
 
 #ifdef HAVE_BIND_TEXTDOMAIN_CODESET
