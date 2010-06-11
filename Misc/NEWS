@@ -421,6 +421,9 @@ C-API
 Library
 -------
 
+- Issue #8966: If a ctypes structure field is an array of c_char, convert its
+  value to bytes instead of str (as done for c_char and c_char_p).
+
 - Issue #8188: Comparisons between Decimal and Fraction objects are
   now permitted, returning a result based on the exact numerical
   values of the operands.  This builds on issue #2531, which allowed
@@ -1288,7 +1291,7 @@ Extension Modules
 -----------------
 
 - Issue #3129: Trailing digits in format string are no longer ignored.
-  For example, "1" or "ilib123" are now invalid formats and cause 
+  For example, "1" or "ilib123" are now invalid formats and cause
   ``struct.error`` to be raised.
 
 - Issue #7384: If the system readline library is linked against ncurses,
