@@ -3066,7 +3066,7 @@ static PyMethodDef count_methods[] = {
 };
 
 PyDoc_STRVAR(count_doc,
-                         "count(start=0, step=1]) --> count object\n\
+                         "count(start=0, step=1) --> count object\n\
 \n\
 Return a count object whose .__next__() method returns consecutive values.\n\
 Equivalent to:\n\n\
