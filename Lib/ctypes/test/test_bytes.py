@@ -30,8 +30,8 @@ class BytesTest(unittest.TestCase):
 
         X("abc")
         x = X(b"abc")
-        self.assertEqual(x.a, "abc")
-        self.assertEqual(type(x.a), str)
+        self.assertEqual(x.a, b"abc")
+        self.assertEqual(type(x.a), bytes)
 
     def test_struct_W(self):
         class X(Structure):

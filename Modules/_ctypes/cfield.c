@@ -1333,7 +1333,7 @@ s_get(void *ptr, Py_ssize_t size)
             break;
     }
 
-    return PyUnicode_FromStringAndSize((char *)ptr, (Py_ssize_t)i);
+    return PyBytes_FromStringAndSize((char *)ptr, (Py_ssize_t)i);
 }
 
 static PyObject *

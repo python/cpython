@@ -209,9 +209,9 @@ class StructureTestCase(unittest.TestCase):
         self.assertRaises(TypeError, Person, "Name", "HI")
 
         # short enough
-        self.assertEqual(Person("12345", 5).name, "12345")
+        self.assertEqual(Person("12345", 5).name, b"12345")
         # exact fit
-        self.assertEqual(Person("123456", 5).name, "123456")
+        self.assertEqual(Person("123456", 5).name, b"123456")
         # too long
         self.assertRaises(ValueError, Person, "1234567", 5)
 
@@ -269,9 +269,9 @@ class StructureTestCase(unittest.TestCase):
 
         p = Person("Someone", ("1234", "5678"), 5)
 
-        self.assertEqual(p.name, "Someone")
-        self.assertEqual(p.phone.areacode, "1234")
-        self.assertEqual(p.phone.number, "5678")
+        self.assertEqual(p.name, b"Someone")
+        self.assertEqual(p.phone.areacode, b"1234")
+        self.assertEqual(p.phone.number, b"5678")
         self.assertEqual(p.age, 5)
 
     def test_structures_with_wchar(self):
