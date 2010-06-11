@@ -863,6 +863,11 @@ class SizeofTest(unittest.TestCase):
         # sys.flags
         check(sys.flags, size(vh) + self.P * len(sys.flags))
 
+    def test_getfilesystemencoding(self):
+        fs_encoding = sys.getfilesystemencoding()
+        if sys.platform == 'darwin':
+            self.assertEqual(fs_encoding, 'utf-8')
+
     def test_setfilesystemencoding(self):
         old = sys.getfilesystemencoding()
         try:
