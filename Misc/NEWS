@@ -421,6 +421,8 @@ C-API
 Library
 -------
 
+- Issue #8784: Set tarfile default encoding to 'utf-8' on Windows.
+
 - Issue #8966: If a ctypes structure field is an array of c_char, convert its
   value to bytes instead of str (as done for c_char and c_char_p).
 

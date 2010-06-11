@@ -159,9 +159,10 @@ TOEXEC  = 0o001           # execute/search by other
 #---------------------------------------------------------
 # initialization
 #---------------------------------------------------------
-ENCODING = sys.getfilesystemencoding()
-if ENCODING is None:
-    ENCODING = "ascii"
+if os.name in ("nt", "ce"):
+    ENCODING = "utf-8"
+else:
+    ENCODING = sys.getfilesystemencoding()
 
 #---------------------------------------------------------
 # Some useful functions

@@ -185,8 +185,8 @@ The following variables are available on module level:
 
 .. data:: ENCODING
 
-   The default character encoding i.e. the value from either
-   :func:`sys.getfilesystemencoding` or :func:`sys.getdefaultencoding`.
+   The default character encoding: ``'utf-8'`` on Windows,
+   :func:`sys.getfilesystemencoding` otherwise.
 
 
 .. seealso::
