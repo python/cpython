@@ -417,7 +417,7 @@ C-API
 Library
 -------
 
-- Issue #8118: Comparisons between Decimal and Fraction objects are
+- Issue #8188: Comparisons between Decimal and Fraction objects are
   now permitted, returning a result based on the exact numerical
   values of the operands.  This builds on issue #2531, which allowed
   Decimal-to-float comparisons;  all comparisons involving numeric
@@ -722,7 +722,7 @@ Library
   instances now return a result based on the numeric values of the
   operands;  previously they returned an arbitrary result based on
   the relative ordering of id(float) and id(Decimal).  See also
-  issue #8118, which adds Decimal-to-Fraction comparisons.
+  issue #8188, which adds Decimal-to-Fraction comparisons.
 
 - Added a subtract() method to collections.Counter().
 
