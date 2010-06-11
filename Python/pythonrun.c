@@ -703,24 +703,26 @@ initfsencoding(void)
 #if defined(HAVE_LANGINFO_H) && defined(CODESET)
     char *codeset;
 
-    /* On Unix, set the file system encoding according to the
-       user's preference, if the CODESET names a well-known
-       Python codec, and Py_FileSystemDefaultEncoding isn't
-       initialized by other means. Also set the encoding of
-       stdin and stdout if these are terminals.  */
-    codeset = get_codeset();
-    if (codeset != NULL) {
-        Py_FileSystemDefaultEncoding = codeset;
-        Py_HasFileSystemDefaultEncoding = 0;
-        return;
-    }
+    if (Py_FileSystemDefaultEncoding == NULL) {
+        /* On Unix, set the file system encoding according to the
+           user's preference, if the CODESET names a well-known
+           Python codec, and Py_FileSystemDefaultEncoding isn't
+           initialized by other means. Also set the encoding of
+           stdin and stdout if these are terminals.  */
+        codeset = get_codeset();
+        if (codeset != NULL) {
+            Py_FileSystemDefaultEncoding = codeset;
+            Py_HasFileSystemDefaultEncoding = 0;
+            return;
+        }
 
-    PyErr_Clear();
-    fprintf(stderr,
-            "Unable to get the locale encoding: "
-            "fallback to utf-8\n");
-    Py_FileSystemDefaultEncoding = "utf-8";
-    Py_HasFileSystemDefaultEncoding = 1;
+        PyErr_Clear();
+        fprintf(stderr,
+                "Unable to get the locale encoding: "
+                "fallback to utf-8\n");
+        Py_FileSystemDefaultEncoding = "utf-8";
+        Py_HasFileSystemDefaultEncoding = 1;
+    }
 #endif
 
     /* the encoding is mbcs, utf-8 or ascii */
