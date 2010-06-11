@@ -395,12 +395,11 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(1.0 + 0j, (1.0 + 0j) ** F(1, 10))
 
     def testMixingWithDecimal(self):
-        # Decimal refuses mixed comparisons.
+        # Decimal refuses mixed arithmetic (but not mixed comparisons)
         self.assertRaisesMessage(
             TypeError,
             "unsupported operand type(s) for +: 'Fraction' and 'Decimal'",
             operator.add, F(3,11), Decimal('3.1415926'))
-        self.assertNotEquals(F(5, 2), Decimal('2.5'))
 
     def testComparisons(self):
         self.assertTrue(F(1, 2) < F(2, 3))

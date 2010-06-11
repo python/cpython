@@ -363,23 +363,17 @@ Decimal objects
    compared, sorted, and coerced to another type (such as :class:`float` or
    :class:`int`).
 
-   Decimal objects cannot generally be combined with floats in
-   arithmetic operations: an attempt to add a :class:`Decimal` to a
-   :class:`float`, for example, will raise a :exc:`TypeError`.
-   There's one exception to this rule: it's possible to use Python's
-   comparison operators to compare a :class:`float` instance ``x``
-   with a :class:`Decimal` instance ``y``.  Without this exception,
-   comparisons between :class:`Decimal` and :class:`float` instances
-   would follow the general rules for comparing objects of different
-   types described in the :ref:`expressions` section of the reference
-   manual, leading to confusing results.
+   Decimal objects cannot generally be combined with floats or
+   instances of :class:`fractions.Fraction` in arithmetic operations:
+   an attempt to add a :class:`Decimal` to a :class:`float`, for
+   example, will raise a :exc:`TypeError`.  However, it is possible to
+   use Python's comparison operators to compare a :class:`Decimal`
+   instance ``x`` with another number ``y``.  This avoids confusing results
+   when doing equality comparisons between numbers of different types.
 
    .. versionchanged:: 3.2
-      A comparison between a :class:`float` instance ``x`` and a
-      :class:`Decimal` instance ``y`` now returns a result based on
-      the values of ``x`` and ``y``.  In earlier versions ``x < y``
-      returned the same (arbitrary) result for any :class:`Decimal`
-      instance ``x`` and any :class:`float` instance ``y``.
+      Mixed-type comparisons between :class:`Decimal` instances and
+      other numeric types are now fully supported.
 
    In addition to the standard numeric properties, decimal floating point
    objects also have a number of specialized methods:
