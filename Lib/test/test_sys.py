@@ -863,10 +863,21 @@ class SizeofTest(unittest.TestCase):
         # sys.flags
         check(sys.flags, size(vh) + self.P * len(sys.flags))
 
+    @unittest.skipUnless(sys.platform == 'darwin', "test specific to Mac OS X")
     def test_getfilesystemencoding(self):
+        # On Darwing FS encoding is always UTF-8
         fs_encoding = sys.getfilesystemencoding()
-        if sys.platform == 'darwin':
-            self.assertEqual(fs_encoding, 'utf-8')
+        self.assertEqual(fs_encoding, 'utf-8')
+
+        # Even in C locale
+        env = os.environ.copy()
+        env['LANG'] = 'C'
+        output = subprocess.check_output(
+            [sys.executable, "-c",
+             "import sys; print(sys.getfilesystemencoding())"],
+            env=env)
+        fs_encoding = output.rstrip()
+        self.assertEqual(fs_encoding, b'utf-8')
 
     def test_setfilesystemencoding(self):
         old = sys.getfilesystemencoding()
