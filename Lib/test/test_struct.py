@@ -526,6 +526,12 @@ class StructTest(unittest.TestCase):
     def test_crasher(self):
         self.assertRaises(MemoryError, struct.pack, "357913941c", "a")
 
+    def test_count_overflow(self):
+        hugecount = '{}b'.format(sys.maxsize+1)
+        self.assertRaises(struct.error, struct.calcsize, hugecount)
+
+        hugecount2 = '{}b{}H'.format(sys.maxsize//2, sys.maxsize//2)
+        self.assertRaises(struct.error, struct.calcsize, hugecount2)
 
 def test_main():
     run_unittest(StructTest)
