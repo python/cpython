@@ -1283,6 +1283,10 @@ Library
 Extension Modules
 -----------------
 
+- Issue #3129: Trailing digits in format string are no longer ignored.
+  For example, "1" or "ilib123" are now invalid formats and cause 
+  ``struct.error`` to be raised.
+
 - Issue #7384: If the system readline library is linked against ncurses,
   the curses module must be linked against ncurses as well. Otherwise it
   is not safe to load both the readline and curses modules in an application.

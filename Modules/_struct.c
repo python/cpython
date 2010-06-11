@@ -1195,8 +1195,11 @@ prepare_s(PyStructObject *self)
                 }
                 num = x;
             }
-            if (c == '\0')
-                break;
+            if (c == '\0') {
+                PyErr_SetString(StructError,
+                                "repeat count given without format specifier");
+                return -1;
+            }
         }
         else
             num = 1;
