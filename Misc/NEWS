@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8941: decoding big endian UTF-32 data in UCS-2 builds could crash
+  the interpreter with characters outside the Basic Multilingual Plane
+  (higher than 0x10000).
+
 - Issue #8950: (See also issue #5080).  Py_ArgParse*() functions now
   raise TypeError instead of giving a DeprecationWarning when a float
   is parsed using the 'L' code (for long long).  (All other integer
