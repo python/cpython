@@ -133,9 +133,7 @@ Unless otherwise stated, buffers are not NUL-terminated.
 
 ``u#`` (:class:`str`) [Py_UNICODE \*, int]
    This variant on ``u`` stores into two C variables, the first one a pointer to a
-   Unicode data buffer, the second one its length. Non-Unicode objects are handled
-   by interpreting their read-buffer pointer as pointer to a :ctype:`Py_UNICODE`
-   array.
+   Unicode data buffer, the second one its length.
 
 ``Z`` (:class:`str` or ``None``) [Py_UNICODE \*]
    Like ``u``, but the Python object may also be ``None``, in which case the
@@ -151,29 +149,28 @@ Unless otherwise stated, buffers are not NUL-terminated.
    object.  The C variable may also be declared as :ctype:`PyObject\*`.
 
 ``w`` (:class:`bytearray` or read-write character buffer) [char \*]
-   Similar to ``s``, but accepts any object which implements the read-write buffer
+   Similar to ``y``, but accepts any object which implements the read-write buffer
    interface.  The caller must determine the length of the buffer by other means,
    or use ``w#`` instead.  Only single-segment buffer objects are accepted;
    :exc:`TypeError` is raised for all others.
 
 ``w*`` (:class:`bytearray` or read-write byte-oriented buffer) [Py_buffer]
-   This is to ``w`` what ``s*`` is to ``s``.
+   This is to ``w`` what ``y*`` is to ``y``.
 
 ``w#`` (:class:`bytearray` or read-write character buffer) [char \*, int]
-   Like ``s#``, but accepts any object which implements the read-write buffer
+   Like ``y#``, but accepts any object which implements the read-write buffer
    interface.  The :ctype:`char \*` variable is set to point to the first byte
    of the buffer, and the :ctype:`int` is set to the length of the buffer.
    Only single-segment buffer objects are accepted; :exc:`TypeError` is raised
    for all others.
 
 ``es`` (:class:`str`) [const char \*encoding, char \*\*buffer]
-   This variant on ``s`` is used for encoding Unicode and objects convertible to
-   Unicode into a character buffer. It only works for encoded data without embedded
-   NUL bytes.
+   This variant on ``s`` is used for encoding Unicode into a character buffer.
+   It only works for encoded data without embedded NUL bytes.
 
    This format requires two arguments.  The first is only used as input, and
    must be a :ctype:`const char\*` which points to the name of an encoding as a
-   NUL-terminated string, or *NULL*, in which case the default encoding is used.
+   NUL-terminated string, or *NULL*, in which case ``'utf-8'`` encoding is used.
    An exception is raised if the named encoding is not known to Python.  The
    second argument must be a :ctype:`char\*\*`; the value of the pointer it
    references will be set to a buffer with the contents of the argument text.
@@ -190,13 +187,13 @@ Unless otherwise stated, buffers are not NUL-terminated.
    the encoding passed in as parameter.
 
 ``es#`` (:class:`str`) [const char \*encoding, char \*\*buffer, int \*buffer_length]
-   This variant on ``s#`` is used for encoding Unicode and objects convertible to
-   Unicode into a character buffer.  Unlike the ``es`` format, this variant allows
-   input data which contains NUL characters.
+   This variant on ``s#`` is used for encoding Unicode into a character buffer.
+   Unlike the ``es`` format, this variant allows input data which contains NUL
+   characters.
 
    It requires three arguments.  The first is only used as input, and must be a
    :ctype:`const char\*` which points to the name of an encoding as a
-   NUL-terminated string, or *NULL*, in which case the default encoding is used.
+   NUL-terminated string, or *NULL*, in which case ``'utf-8'`` encoding is used.
    An exception is raised if the named encoding is not known to Python.  The
    second argument must be a :ctype:`char\*\*`; the value of the pointer it
    references will be set to a buffer with the contents of the argument text.
@@ -556,11 +553,13 @@ Building values
 
    ``L`` (:class:`int`) [PY_LONG_LONG]
       Convert a C :ctype:`long long` to a Python integer object. Only available
-      on platforms that support :ctype:`long long`.
+      on platforms that support :ctype:`long long` (or :ctype:`_int64` on
+      Windows).
 
    ``K`` (:class:`int`) [unsigned PY_LONG_LONG]
       Convert a C :ctype:`unsigned long long` to a Python integer object. Only
-      available on platforms that support :ctype:`unsigned long long`.
+      available on platforms that support :ctype:`unsigned long long` (or
+      :ctype:`unsigned _int64` on Windows).
 
    ``n`` (:class:`int`) [Py_ssize_t]
       Convert a C :ctype:`Py_ssize_t` to a Python integer.
