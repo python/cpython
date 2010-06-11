@@ -5862,7 +5862,7 @@ def _convert_other(other, raiseit=False, allow_float=False):
 
 def _convert_for_comparison(self, other, equality_op=False):
     """Given a Decimal instance self and a Python object other, return
-    an pair (s, o) of Decimal instances such that "s op o" is
+    a pair (s, o) of Decimal instances such that "s op o" is
     equivalent to "self op other" for any of the 6 comparison
     operators "op".
 
