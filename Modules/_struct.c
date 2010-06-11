@@ -1145,7 +1145,7 @@ getentry(int c, const formatdef *f)
 
 /* Align a size according to a format code */
 
-static int
+static Py_ssize_t
 align(Py_ssize_t size, char c, const formatdef *e)
 {
     if (e->format == c) {
