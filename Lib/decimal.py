@@ -31,7 +31,8 @@ issues associated with binary floating point.  The package is especially
 useful for financial applications or for contexts where users have
 expectations that are at odds with binary floating point (for instance,
 in binary floating point, 1.00 % 0.1 gives 0.09999999999999995 instead
-of the expected Decimal('0.00') returned by decimal floating point).
+of 0.0; Decimal('1.00') % Decimal('0.1') returns the expected
+Decimal('0.00')).
 
 Here are some examples of using the decimal module:
 
