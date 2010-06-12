@@ -859,9 +859,15 @@ class saved_test_environment:
         sys.path_hooks[:] = saved_hooks[2]
 
     def get___import__(self):
-        return __builtins__.__import__
+        if isinstance(__builtins__, dict):
+            return __builtins__['__import__']
+        else:
+            return __builtins__.__import__
     def restore___import__(self, import_):
-        __builtins__.__import__ = import_
+        if isinstance(__builtins__, dict):
+            __builtins__['__import__'] = import_
+        else:
+            __builtins__.__import__ = import_
 
     def get_warnings_filters(self):
         return id(warnings.filters), warnings.filters, warnings.filters[:]
