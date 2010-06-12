@@ -10,9 +10,9 @@ contributed by various authors. The markup used for the Python documentation is
 `reStructuredText`_, developed by the `docutils`_ project, amended by custom
 directives and using a toolset named `Sphinx`_ to postprocess the HTML output.
 
-This document describes the style guide for our documentation, the custom
-reStructuredText markup introduced to support Python documentation and how it
-should be used, as well as the Sphinx build system.
+This document describes the style guide for our documentation as well as the
+custom reStructuredText markup introduced by Sphinx to support Python
+documentation and how it should be used.
 
 .. _reStructuredText: http://docutils.sf.net/rst.html
 .. _docutils: http://docutils.sf.net/
@@ -35,3 +35,4 @@ should be used, as well as the Sphinx build system.
    rest.rst
    markup.rst
    fromlatex.rst
+   building.rst
