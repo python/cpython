@@ -1299,6 +1299,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #8973: Add __all__ to struct module; this ensures that
+  help(struct) includes documentation for the struct.Struct class.
+
 - Issue #3129: Trailing digits in format string are no longer ignored.
   For example, "1" or "ilib123" are now invalid formats and cause
   ``struct.error`` to be raised.
