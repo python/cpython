@@ -225,8 +225,8 @@ executable which is compiling the library.
 Unsupported systems
 -------------------
 
-A number of features are not supported in Python 2.5 anymore. Some
-support code is still present, but will be removed in Python 2.6. 
+A number of systems is not supported in Python 2.7 anymore. Some
+support code is still present, but will be removed in later versions.
 If you still need to use current Python versions on these systems,
 please send a message to python-dev@python.org indicating that you
 volunteer to support this system. For a more detailed discussion 
