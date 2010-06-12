@@ -1965,10 +1965,6 @@ PyInit__struct(void)
 {
     PyObject *ver, *m;
 
-    ver = PyBytes_FromString("0.3");
-    if (ver == NULL)
-        return NULL;
-
     m = PyModule_Create(&_structmodule);
     if (m == NULL)
         return NULL;
@@ -2028,8 +2024,6 @@ PyInit__struct(void)
 
     Py_INCREF((PyObject*)&PyStructType);
     PyModule_AddObject(m, "Struct", (PyObject*)&PyStructType);
-
-    PyModule_AddObject(m, "__version__", ver);
 
     return m;
 }
