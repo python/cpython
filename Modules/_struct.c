@@ -1384,9 +1384,9 @@ fail:
 PyDoc_STRVAR(s_unpack__doc__,
 "S.unpack(buffer) -> (v1, v2, ...)\n\
 \n\
-Return tuple containing values unpacked according to this Struct's format.\n\
-Requires len(buffer) == self.size. See struct.__doc__ for more on format\n\
-strings.");
+Return a tuple containing values unpacked according to the format\n\
+string S.format.  Requires len(buffer) == S.size.  See help(struct)\n\
+for more on format strings.");
 
 static PyObject *
 s_unpack(PyObject *self, PyObject *input)
@@ -1412,12 +1412,11 @@ s_unpack(PyObject *self, PyObject *input)
 }
 
 PyDoc_STRVAR(s_unpack_from__doc__,
-"S.unpack_from(buffer[, offset]) -> (v1, v2, ...)\n\
+"S.unpack_from(buffer[, offset=0]) -> (v1, v2, ...)\n\
 \n\
-Return tuple containing values unpacked according to this Struct's format.\n\
-Unlike unpack, unpack_from can unpack values from any object supporting\n\
-the buffer API, not just str. Requires len(buffer[offset:]) >= self.size.\n\
-See struct.__doc__ for more on format strings.");
+Return a tuple containing values unpacked according to the format\n\
+string S.format.  Requires len(buffer[offset:]) >= S.size.  See\n\
+help(struct) for more on format strings.");
 
 static PyObject *
 s_unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1552,8 +1551,9 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 PyDoc_STRVAR(s_pack__doc__,
 "S.pack(v1, v2, ...) -> bytes\n\
 \n\
-Return a bytes containing values v1, v2, ... packed according to this\n\
-Struct's format. See struct.__doc__ for more on format strings.");
+Return a bytes object containing values v1, v2, ... packed according\n\
+to the format string S.format.  See help(struct) for more on format\n\
+strings.");
 
 static PyObject *
 s_pack(PyObject *self, PyObject *args)
@@ -1589,10 +1589,10 @@ s_pack(PyObject *self, PyObject *args)
 PyDoc_STRVAR(s_pack_into__doc__,
 "S.pack_into(buffer, offset, v1, v2, ...)\n\
 \n\
-Pack the values v1, v2, ... according to this Struct's format, write \n\
-the packed bytes into the writable buffer buf starting at offset.  Note\n\
-that the offset is not an optional argument.  See struct.__doc__ for \n\
-more on format strings.");
+Pack the values v1, v2, ... according to the format string S.format\n\
+and write the packed bytes into the writable buffer buf starting at\n\
+offset.  Note that the offset is a required argument.  See\n\
+help(struct) for more on format strings.");
 
 static PyObject *
 s_pack_into(PyObject *self, PyObject *args)
@@ -1767,7 +1767,9 @@ clearcache(PyObject *self)
 }
 
 PyDoc_STRVAR(calcsize_doc,
-"Return size of C struct described by format string fmt.");
+"calcsize(fmt) -> integer\n\
+\n\
+Return size in bytes of the struct described by the format string fmt.");
 
 static PyObject *
 calcsize(PyObject *self, PyObject *fmt)
@@ -1782,7 +1784,10 @@ calcsize(PyObject *self, PyObject *fmt)
 }
 
 PyDoc_STRVAR(pack_doc,
-"Return bytes containing values v1, v2, ... packed according to fmt.");
+"pack(fmt, v1, v2, ...) -> bytes\n\
+\n\
+Return a bytes object containing the values v1, v2, ... packed according\n\
+to the format string fmt.  See help(struct) for more on format strings.");
 
 static PyObject *
 pack(PyObject *self, PyObject *args)
@@ -1811,8 +1816,12 @@ pack(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(pack_into_doc,
-"Pack the values v1, v2, ... according to fmt.\n\
-Write the packed bytes into the writable buffer buf starting at offset.");
+"pack_into(fmt, buffer, offset, v1, v2, ...)\n\
+\n\
+Pack the values v1, v2, ... according to the format string fmt and write\n\
+the packed bytes into the writable buffer buf starting at offset.  Note\n\
+that the offset is a required argument.  See help(struct) for more\n\
+on format strings.");
 
 static PyObject *
 pack_into(PyObject *self, PyObject *args)
@@ -1841,8 +1850,11 @@ pack_into(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(unpack_doc,
-"Unpack the bytes containing packed C structure data, according to fmt.\n\
-Requires len(bytes) == calcsize(fmt).");
+"unpack(fmt, buffer) -> (v1, v2, ...)\n\
+\n\
+Return a tuple containing values unpacked according to the format string\n\
+fmt.  Requires len(buffer) == calcsize(fmt). See help(struct) for more\n\
+on format strings.");
 
 static PyObject *
 unpack(PyObject *self, PyObject *args)
@@ -1861,8 +1873,11 @@ unpack(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(unpack_from_doc,
-"Unpack the buffer, containing packed C structure data, according to\n\
-fmt, starting at offset. Requires len(buffer[offset:]) >= calcsize(fmt).");
+"unpack_from(fmt, buffer[, offset=0]) -> (v1, v2, ...)\n\
+\n\
+Return a tuple containing values unpacked according to the format string\n\
+fmt.  Requires len(buffer[offset:]) >= calcsize(fmt).  See help(struct)\n\
+for more on format strings.");
 
 static PyObject *
 unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
