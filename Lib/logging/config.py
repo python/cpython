@@ -373,7 +373,7 @@ class BaseConfigurator(object):
     }
 
     # We might want to use a different one, e.g. importlib
-    importer = __import__
+    importer = staticmethod(__import__)
 
     def __init__(self, config):
         self.config = ConvertingDict(config)
