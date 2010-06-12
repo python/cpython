@@ -82,129 +82,9 @@ Format Strings
 --------------
 
 Format strings are the mechanism used to specify the expected layout when
-packing and unpacking data.  They are built up from format characters, which
-specify the type of data being packed/unpacked.  In addition, there are
-special characters for controlling the byte order, size, and alignment.
-
-Format Characters
-^^^^^^^^^^^^^^^^^
-
-Format characters have the following meaning; the conversion between C and
-Python values should be obvious given their types:
-
-+--------+-------------------------+--------------------+------------+
-| Format | C Type                  | Python             | Notes      |
-+========+=========================+====================+============+
-| ``x``  | pad byte                | no value           |            |
-+--------+-------------------------+--------------------+------------+
-| ``c``  | :ctype:`char`           | string of length 1 |            |
-+--------+-------------------------+--------------------+------------+
-| ``b``  | :ctype:`signed char`    | integer            | \(3)       |
-+--------+-------------------------+--------------------+------------+
-| ``B``  | :ctype:`unsigned char`  | integer            | \(3)       |
-+--------+-------------------------+--------------------+------------+
-| ``?``  | :ctype:`_Bool`          | bool               | \(1)       |
-+--------+-------------------------+--------------------+------------+
-| ``h``  | :ctype:`short`          | integer            | \(3)       |
-+--------+-------------------------+--------------------+------------+
-| ``H``  | :ctype:`unsigned short` | integer            | \(3)       |
-+--------+-------------------------+--------------------+------------+
-| ``i``  | :ctype:`int`            | integer            | \(3)       |
-+--------+-------------------------+--------------------+------------+
-| ``I``  | :ctype:`unsigned int`   | integer or long    | \(3)       |
-+--------+-------------------------+--------------------+------------+
-| ``l``  | :ctype:`long`           | integer            | \(3)       |
-+--------+-------------------------+--------------------+------------+
-| ``L``  | :ctype:`unsigned long`  | long               | \(3)       |
-+--------+-------------------------+--------------------+------------+
-| ``q``  | :ctype:`long long`      | long               | \(2),\(3)  |
-+--------+-------------------------+--------------------+------------+
-| ``Q``  | :ctype:`unsigned long   | long               | \(2),\(3)  |
-|        | long`                   |                    |            |
-+--------+-------------------------+--------------------+------------+
-| ``f``  | :ctype:`float`          | float              |            |
-+--------+-------------------------+--------------------+------------+
-| ``d``  | :ctype:`double`         | float              |            |
-+--------+-------------------------+--------------------+------------+
-| ``s``  | :ctype:`char[]`         | string             |            |
-+--------+-------------------------+--------------------+------------+
-| ``p``  | :ctype:`char[]`         | string             |            |
-+--------+-------------------------+--------------------+------------+
-| ``P``  | :ctype:`void \*`        | long               | \(3)       |
-+--------+-------------------------+--------------------+------------+
-
-Notes:
-
-(1)
-   The ``'?'`` conversion code corresponds to the :ctype:`_Bool` type defined by
-   C99. If this type is not available, it is simulated using a :ctype:`char`. In
-   standard mode, it is always represented by one byte.
-
-   .. versionadded:: 2.6
-
-(2)
-   The ``'q'`` and ``'Q'`` conversion codes are available in native mode only if
-   the platform C compiler supports C :ctype:`long long`, or, on Windows,
-   :ctype:`__int64`.  They are always available in standard modes.
-
-   .. versionadded:: 2.2
-
-(3)
-   When attempting to pack a non-integer using any of the integer conversion
-   codes, if the non-integer has a :meth:`__index__` method then that method is
-   called to convert the argument to an integer before packing.  If no
-   :meth:`__index__` method exists, or the call to :meth:`__index__` raises
-   :exc:`TypeError`, then the :meth:`__int__` method is tried.  However, the use
-   of :meth:`__int__` is deprecated, and will raise :exc:`DeprecationWarning`.
-
-   .. versionchanged:: 2.7
-      Use of the :meth:`__index__` method for non-integers is new in 2.7.
-
-   .. versionchanged:: 2.7
-      Prior to version 2.7, not all integer conversion codes would use the
-      :meth:`__int__` method to convert, and :exc:`DeprecationWarning` was
-      raised only for float arguments.
-
-
-A format character may be preceded by an integral repeat count.  For example,
-the format string ``'4h'`` means exactly the same as ``'hhhh'``.
-
-Whitespace characters between formats are ignored; a count and its format must
-not contain whitespace though.
-
-For the ``'s'`` format character, the count is interpreted as the size of the
-string, not a repeat count like for the other format characters; for example,
-``'10s'`` means a single 10-byte string, while ``'10c'`` means 10 characters.
-For packing, the string is truncated or padded with null bytes as appropriate to
-make it fit. For unpacking, the resulting string always has exactly the
-specified number of bytes.  As a special case, ``'0s'`` means a single, empty
-string (while ``'0c'`` means 0 characters).
-
-The ``'p'`` format character encodes a "Pascal string", meaning a short
-variable-length string stored in a fixed number of bytes. The count is the total
-number of bytes stored.  The first byte stored is the length of the string, or
-255, whichever is smaller.  The bytes of the string follow.  If the string
-passed in to :func:`pack` is too long (longer than the count minus 1), only the
-leading count-1 bytes of the string are stored.  If the string is shorter than
-count-1, it is padded with null bytes so that exactly count bytes in all are
-used.  Note that for :func:`unpack`, the ``'p'`` format character consumes count
-bytes, but that the string returned can never contain more than 255 characters.
-
-For the ``'I'``, ``'L'``, ``'q'`` and ``'Q'`` format characters, the return
-value is a Python long integer.
-
-For the ``'P'`` format character, the return value is a Python integer or long
-integer, depending on the size needed to hold a pointer when it has been cast to
-an integer type.  A *NULL* pointer will always be returned as the Python integer
-``0``. When packing pointer-sized values, Python integer or long integer objects
-may be used.  For example, the Alpha and Merced processors use 64-bit pointer
-values, meaning a Python long integer will be used to hold the pointer; other
-platforms use 32-bit pointers and will use a Python integer.
-
-For the ``'?'`` format character, the return value is either :const:`True` or
-:const:`False`. When packing, the truth value of the argument object is used.
-Either 0 or 1 in the native or standard bool representation will be packed, and
-any non-zero value will be True when unpacking.
+packing and unpacking data.  They are built up from :ref:`format-characters`,
+which specify the type of data being packed/unpacked.  In addition, there are
+special characters for controlling the :ref:`struct-alignment`.
 
 
 .. _struct-alignment:
@@ -279,6 +159,127 @@ Notes:
     count of zero.  See :ref:`struct-examples`.
 
 
+.. _format-characters:
+
+Format Characters
+^^^^^^^^^^^^^^^^^
+
+Format characters have the following meaning; the conversion between C and
+Python values should be obvious given their types:
+
++--------+-------------------------+--------------------+----------------+------------+
+| Format | C Type                  | Python type        | Standard size  | Notes      |
++========+=========================+====================+================+============+
+| ``x``  | pad byte                | no value           |                |            |
++--------+-------------------------+--------------------+----------------+------------+
+| ``c``  | :ctype:`char`           | string of length 1 | 1              |            |
++--------+-------------------------+--------------------+----------------+------------+
+| ``b``  | :ctype:`signed char`    | integer            | 1              | \(3)       |
++--------+-------------------------+--------------------+----------------+------------+
+| ``B``  | :ctype:`unsigned char`  | integer            | 1              | \(3)       |
++--------+-------------------------+--------------------+----------------+------------+
+| ``?``  | :ctype:`_Bool`          | bool               | 1              | \(1)       |
++--------+-------------------------+--------------------+----------------+------------+
+| ``h``  | :ctype:`short`          | integer            | 2              | \(3)       |
++--------+-------------------------+--------------------+----------------+------------+
+| ``H``  | :ctype:`unsigned short` | integer            | 2              | \(3)       |
++--------+-------------------------+--------------------+----------------+------------+
+| ``i``  | :ctype:`int`            | integer            | 4              | \(3)       |
++--------+-------------------------+--------------------+----------------+------------+
+| ``I``  | :ctype:`unsigned int`   | integer            | 4              | \(3)       |
++--------+-------------------------+--------------------+----------------+------------+
+| ``l``  | :ctype:`long`           | integer            | 4              | \(3)       |
++--------+-------------------------+--------------------+----------------+------------+
+| ``L``  | :ctype:`unsigned long`  | integer            | 4              | \(3)       |
++--------+-------------------------+--------------------+----------------+------------+
+| ``q``  | :ctype:`long long`      | integer            | 8              | \(2), \(3) |
++--------+-------------------------+--------------------+----------------+------------+
+| ``Q``  | :ctype:`unsigned long   | integer            | 8              | \(2), \(3) |
+|        | long`                   |                    |                |            |
++--------+-------------------------+--------------------+----------------+------------+
+| ``f``  | :ctype:`float`          | float              | 4              |            |
++--------+-------------------------+--------------------+----------------+------------+
+| ``d``  | :ctype:`double`         | float              | 8              |            |
++--------+-------------------------+--------------------+----------------+------------+
+| ``s``  | :ctype:`char[]`         | string             |                |            |
++--------+-------------------------+--------------------+----------------+------------+
+| ``p``  | :ctype:`char[]`         | string             |                |            |
++--------+-------------------------+--------------------+----------------+------------+
+| ``P``  | :ctype:`void \*`        | integer            |                | \(3)       |
++--------+-------------------------+--------------------+----------------+------------+
+
+Notes:
+
+(1)
+   The ``'?'`` conversion code corresponds to the :ctype:`_Bool` type defined by
+   C99. If this type is not available, it is simulated using a :ctype:`char`. In
+   standard mode, it is always represented by one byte.
+
+   .. versionadded:: 2.6
+
+(2)
+   The ``'q'`` and ``'Q'`` conversion codes are available in native mode only if
+   the platform C compiler supports C :ctype:`long long`, or, on Windows,
+   :ctype:`__int64`.  They are always available in standard modes.
+
+   .. versionadded:: 2.2
+
+(3)
+   When attempting to pack a non-integer using any of the integer conversion
+   codes, if the non-integer has a :meth:`__index__` method then that method is
+   called to convert the argument to an integer before packing.  If no
+   :meth:`__index__` method exists, or the call to :meth:`__index__` raises
+   :exc:`TypeError`, then the :meth:`__int__` method is tried.  However, the use
+   of :meth:`__int__` is deprecated, and will raise :exc:`DeprecationWarning`.
+
+   .. versionchanged:: 2.7
+      Use of the :meth:`__index__` method for non-integers is new in 2.7.
+
+   .. versionchanged:: 2.7
+      Prior to version 2.7, not all integer conversion codes would use the
+      :meth:`__int__` method to convert, and :exc:`DeprecationWarning` was
+      raised only for float arguments.
+
+
+A format character may be preceded by an integral repeat count.  For example,
+the format string ``'4h'`` means exactly the same as ``'hhhh'``.
+
+Whitespace characters between formats are ignored; a count and its format must
+not contain whitespace though.
+
+For the ``'s'`` format character, the count is interpreted as the size of the
+string, not a repeat count like for the other format characters; for example,
+``'10s'`` means a single 10-byte string, while ``'10c'`` means 10 characters.
+For packing, the string is truncated or padded with null bytes as appropriate to
+make it fit. For unpacking, the resulting string always has exactly the
+specified number of bytes.  As a special case, ``'0s'`` means a single, empty
+string (while ``'0c'`` means 0 characters).
+
+The ``'p'`` format character encodes a "Pascal string", meaning a short
+variable-length string stored in a fixed number of bytes. The count is the total
+number of bytes stored.  The first byte stored is the length of the string, or
+255, whichever is smaller.  The bytes of the string follow.  If the string
+passed in to :func:`pack` is too long (longer than the count minus 1), only the
+leading count-1 bytes of the string are stored.  If the string is shorter than
+count-1, it is padded with null bytes so that exactly count bytes in all are
+used.  Note that for :func:`unpack`, the ``'p'`` format character consumes count
+bytes, but that the string returned can never contain more than 255 characters.
+
+For the ``'P'`` format character, the return value is a Python integer or long
+integer, depending on the size needed to hold a pointer when it has been cast to
+an integer type.  A *NULL* pointer will always be returned as the Python integer
+``0``. When packing pointer-sized values, Python integer or long integer objects
+may be used.  For example, the Alpha and Merced processors use 64-bit pointer
+values, meaning a Python long integer will be used to hold the pointer; other
+platforms use 32-bit pointers and will use a Python integer.
+
+For the ``'?'`` format character, the return value is either :const:`True` or
+:const:`False`. When packing, the truth value of the argument object is used.
+Either 0 or 1 in the native or standard bool representation will be packed, and
+any non-zero value will be True when unpacking.
+
+
+
 .. _struct-examples:
 
 Examples
@@ -342,7 +343,7 @@ alignment does not enforce any alignment.
 
 .. _struct-objects:
 
-Objects
+Classes
 -------
 
 The :mod:`struct` module also defines the following type:
