@@ -38,38 +38,38 @@ The module defines the following exception and functions:
 
 .. function:: pack(fmt, v1, v2, ...)
 
-   Return a bytes containing the values ``v1, v2, ...`` packed according to the
-   given format.  The arguments must match the values required by the format
-   exactly.
+   Return a bytes object containing the values *v1*, *v2*, ... packed according
+   to the format string *fmt*.  The arguments must match the values required by
+   the format exactly.
 
 
 .. function:: pack_into(fmt, buffer, offset, v1, v2, ...)
 
-   Pack the values ``v1, v2, ...`` according to the given format, write the
-   packed bytes into the writable *buffer* starting at *offset*. Note that the
-   offset is a required argument.
+   Pack the values *v1*, *v2*, ... according to the format string *fmt* and
+   write the packed bytes into the writable buffer *buffer* starting at
+   position *offset*. Note that *offset* is a required argument.
 
 
-.. function:: unpack(fmt, bytes)
+.. function:: unpack(fmt, buffer)
 
-   Unpack the bytes (presumably packed by ``pack(fmt, ...)``) according to the
-   given format.  The result is a tuple even if it contains exactly one item.
-   The bytes must contain exactly the amount of data required by the format
-   (``len(bytes)`` must equal ``calcsize(fmt)``).
+   Unpack from the buffer *buffer* (presumably packed by ``pack(fmt, ...)``)
+   according to the format string *fmt*.  The result is a tuple even if it
+   contains exactly one item.  The buffer must contain exactly the amount of
+   data required by the format (``len(bytes)`` must equal ``calcsize(fmt)``).
 
 
 .. function:: unpack_from(fmt, buffer, offset=0)
 
-   Unpack the *buffer* according to the given format. The result is a tuple even
-   if it contains exactly one item. The *buffer* must contain at least the
-   amount of data required by the format (``len(buffer[offset:])`` must be at
-   least ``calcsize(fmt)``).
+   Unpack from *buffer* starting at position *offset*, according to the format
+   string *fmt*.  The result is a tuple even if it contains exactly one
+   item.  *buffer* must contain at least the amount of data required by the
+   format (``len(buffer[offset:])`` must be at least ``calcsize(fmt)``).
 
 
 .. function:: calcsize(fmt)
 
-   Return the size of the struct (and hence of the bytes) corresponding to the
-   given format.
+   Return the size of the struct (and hence of the bytes object produced by
+   ``pack(fmt, ...)``) corresponding to the format string *fmt*.
 
 .. _struct-format-strings:
 
@@ -358,10 +358,10 @@ The :mod:`struct` module also defines the following type:
       Identical to the :func:`pack_into` function, using the compiled format.
 
 
-   .. method:: unpack(bytes)
+   .. method:: unpack(buffer)
 
       Identical to the :func:`unpack` function, using the compiled format.
-      (``len(bytes)`` must equal :attr:`self.size`).
+      (``len(buffer)`` must equal :attr:`self.size`).
 
 
    .. method:: unpack_from(buffer, offset=0)
@@ -376,6 +376,6 @@ The :mod:`struct` module also defines the following type:
 
    .. attribute:: size
 
-      The calculated size of the struct (and hence of the bytes) corresponding
-      to :attr:`format`.
+      The calculated size of the struct (and hence of the bytes object produced
+      by the :meth:`pack` method) corresponding to :attr:`format`.
 
