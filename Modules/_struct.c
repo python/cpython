@@ -1669,7 +1669,11 @@ static struct PyMethodDef s_methods[] = {
     {NULL,       NULL}          /* sentinel */
 };
 
-PyDoc_STRVAR(s__doc__, "Compiled struct object");
+PyDoc_STRVAR(s__doc__, 
+"Struct(fmt) --> compiled struct object\n"
+"\n"
+"Return a new Struct object which writes and reads binary data according to\n"
+"the format string fmt.  See help(struct) for more on format strings.");
 
 #define OFF(x) offsetof(PyStructObject, x)
 
