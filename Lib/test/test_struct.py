@@ -12,7 +12,6 @@ from test.test_support import TestFailed, verbose, run_unittest
 import sys
 ISBIGENDIAN = sys.byteorder == "big"
 IS32BIT = sys.maxsize == 0x7fffffff
-del sys
 
 try:
     import _struct
@@ -605,7 +604,12 @@ class StructTest(unittest.TestCase):
         def test_crasher(self):
             self.assertRaises(MemoryError, struct.pack, "357913941c", "a")
 
+    def test_count_overflow(self):
+        hugecount = '{0}b'.format(sys.maxsize+1)
+        self.assertRaises(struct.error, struct.calcsize, hugecount)
 
+        hugecount2 = '{0}b{1}H'.format(sys.maxsize//2, sys.maxsize//2)
+        self.assertRaises(struct.error, struct.calcsize, hugecount2)
 
 def test_main():
     run_unittest(StructTest)
