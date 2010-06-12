@@ -1605,7 +1605,7 @@ PyDoc_STRVAR(s_pack_into__doc__,
 \n\
 Pack the values v1, v2, ... according to the format string S.format\n\
 and write the packed bytes into the writable buffer buf starting at\n\
-offset.  Note that the offset is not an optional argument.  See\n\
+offset.  Note that the offset is a required argument.  See\n\
 help(struct) for more on format strings.");
 
 static PyObject *
@@ -1800,8 +1800,8 @@ calcsize(PyObject *self, PyObject *fmt)
 PyDoc_STRVAR(pack_doc,
 "pack(fmt, v1, v2, ...) -> bytes\n\
 \n\
-Return a bytes object containing values v1, v2, ... packed according to\n\
-the format string fmt.  See help(struct) for more on format strings.");
+Return a bytes object containing the values v1, v2, ... packed according\n\
+to the format string fmt.  See help(struct) for more on format strings.");
 
 static PyObject *
 pack(PyObject *self, PyObject *args)
@@ -1834,7 +1834,7 @@ PyDoc_STRVAR(pack_into_doc,
 \n\
 Pack the values v1, v2, ... according to the format string fmt and write\n\
 the packed bytes into the writable buffer buf starting at offset.  Note\n\
-that the offset is not an optional argument.  See help(struct) for more\n\
+that the offset is a required argument.  See help(struct) for more\n\
 on format strings.");
 
 static PyObject *
