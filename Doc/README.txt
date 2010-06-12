@@ -14,12 +14,11 @@ those familiar with the previous docs written in LaTeX.
 Building the docs
 =================
 
-You need to install Python 2.4 or higher; the toolset used to build the docs are
-written in Python.  The toolset used to build the documentation is called
-*Sphinx*, it is not included in this tree, but maintained separately in the
-Python Subversion repository.  Also needed are Jinja, a templating engine
-(included in Sphinx as a Subversion external), and optionally Pygments, a code
-highlighter.
+You need to have Python 2.4 or higher installed; the toolset used to build the
+docs is written in Python.  It is called *Sphinx*, it is not included in this
+tree, but maintained separately.  Also needed are the docutils, supplying the
+base markup that Sphinx uses, Jinja, a templating engine, and optionally
+Pygments, a code highlighter.
 
 
 Using make
@@ -42,29 +41,29 @@ Available make targets are:
    convert them into a single Compiled HTML (.chm) file -- these are popular
    under Microsoft Windows, but very handy on every platform.
 
-   To create the CHM file, you need to run the Microsoft HTML Help Workshop
-   over the generated project (.hhp) file.
+   To create the CHM file, you need to run the Microsoft HTML Help Workshop over
+   the generated project (.hhp) file.
 
- * "latex", which builds LaTeX source files that can be run with "pdflatex"
-   to produce PDF documents.
+ * "latex", which builds LaTeX source files as input to "pdflatex" to produce
+   PDF documents.
 
  * "text", which builds a plain text file for each source file.
 
  * "linkcheck", which checks all external references to see whether they are
-   broken, redirected or malformed, and outputs this information to stdout
-   as well as a plain-text (.txt) file.
+   broken, redirected or malformed, and outputs this information to stdout as
+   well as a plain-text (.txt) file.
 
  * "changes", which builds an overview over all versionadded/versionchanged/
    deprecated items in the current version. This is meant as a help for the
    writer of the "What's New" document.
 
- * "coverage", which builds a coverage overview for standard library modules
-   and C API.
+ * "coverage", which builds a coverage overview for standard library modules and
+   C API.
 
- * "pydoc-topics", which builds a Python module containing a dictionary
-   with plain text documentation for the labels defined in
-   `tools/sphinxext/pyspecific.py` -- pydoc needs these to show topic
-   and keyword help.
+ * "pydoc-topics", which builds a Python module containing a dictionary with
+   plain text documentation for the labels defined in
+   `tools/sphinxext/pyspecific.py` -- pydoc needs these to show topic and
+   keyword help.
 
 A "make update" updates the Subversion checkouts in `tools/`.
 
@@ -90,7 +89,7 @@ You also need Jinja2, either by checking it out via ::
 
 or by installing it from PyPI.
 
-You can optionally also install Pygments, either as a checkout via :: 
+You can optionally also install Pygments, either as a checkout via ::
 
    svn co http://svn.python.org/projects/external/Pygments-1.3.1/pygments tools/pygments
 
