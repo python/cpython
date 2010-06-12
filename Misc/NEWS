@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7490: to facilitate sharing of doctests between 2.x and 3.x test
+  suites, the IGNORE_EXCEPTION_DETAIL directive now also ignores the module
+  location of the raised exception.
+
 - Issue #8969: On Windows, use mbcs codec in strict mode to encode and decode
   filenames and enable os.fsencode().
 
