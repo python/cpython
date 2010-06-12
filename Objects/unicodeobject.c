@@ -2737,10 +2737,11 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
     Py_UNICODE *p;
 #ifndef Py_UNICODE_WIDE
     int pairs = 0;
+    const unsigned char *qq;
 #else
     const int pairs = 0;
 #endif
-    const unsigned char *q, *e, *qq;
+    const unsigned char *q, *e;
     int bo = 0;       /* assume native ordering by default */
     const char *errmsg = "";
     /* Offsets from q for retrieving bytes in the right order. */
