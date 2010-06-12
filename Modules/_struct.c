@@ -1963,7 +1963,7 @@ static struct PyModuleDef _structmodule = {
 PyMODINIT_FUNC
 PyInit__struct(void)
 {
-    PyObject *ver, *m;
+    PyObject *m;
 
     m = PyModule_Create(&_structmodule);
     if (m == NULL)
