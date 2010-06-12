@@ -576,13 +576,13 @@ doctest decides whether actual output matches an example's expected output:
    both these variations will work regardless of whether the test is run under
    Python 2.7 or Python 3.2 (or later versions):
 
-      >>> raise ValueError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
+      >>> raise CustomError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
       Traceback (most recent call last):
-      ValueError: message
+      CustomError: message
 
-      >>> raise ValueError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
+      >>> raise CustomError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
       Traceback (most recent call last):
-      builtin.ValueError: message
+      my_module.CustomError: message
 
    Note that :const:`ELLIPSIS` can also be used to ignore the
    details of the exception message, but such a test may still fail based
