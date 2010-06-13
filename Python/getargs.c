@@ -935,10 +935,15 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         count = convertbuffer(arg, p, &buf);
         if (count < 0)
             return converterr(buf, arg, msgbuf, bufsize);
-        else if (*format == '#') {
+        if (*format == '#') {
             FETCH_SIZE;
             STORE_SIZE(count);
             format++;
+        } else {
+            if (strlen(*p) != count)
+                return converterr(
+                    "bytes without null bytes",
+                    arg, msgbuf, bufsize);
         }
         break;
     }
@@ -1045,9 +1050,13 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
             if (arg == Py_None)
                 *p = 0;
-            else if (PyUnicode_Check(arg))
+            else if (PyUnicode_Check(arg)) {
                 *p = PyUnicode_AS_UNICODE(arg);
-            else
+                if (Py_UNICODE_strlen(*p) != PyUnicode_GET_SIZE(arg))
+                    return converterr(
+                        "str without null character or None",
+                        arg, msgbuf, bufsize);
+            } else
                 return converterr("str or None", arg, msgbuf, bufsize);
         }
         break;
@@ -1227,6 +1236,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             FETCH_SIZE;
             STORE_SIZE(PyUnicode_GET_SIZE(arg));
             format++;
+        } else {
+            if (Py_UNICODE_strlen(*p) != PyUnicode_GET_SIZE(arg))
+                return converterr(
+                    "str without null character",
+                    arg, msgbuf, bufsize);
         }
         break;
     }

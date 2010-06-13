@@ -293,8 +293,136 @@ class Keywords_TestCase(unittest.TestCase):
         else:
             self.fail('TypeError should have been raised')
 
+class Bytes_TestCase(unittest.TestCase):
+    def test_s(self):
+        from _testcapi import getargs_s
+        self.assertEqual(getargs_s('abc\xe9'), b'abc\xc3\xa9')
+        self.assertRaises(TypeError, getargs_s, 'nul:\0')
+        self.assertRaises(TypeError, getargs_s, b'bytes')
+        self.assertRaises(TypeError, getargs_s, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_s, memoryview(b'memoryview'))
+        self.assertRaises(TypeError, getargs_s, None)
+
+    def test_s_star(self):
+        from _testcapi import getargs_s_star
+        self.assertEqual(getargs_s_star('abc\xe9'), b'abc\xc3\xa9')
+        self.assertEqual(getargs_s_star('nul:\0'), b'nul:\0')
+        self.assertEqual(getargs_s_star(b'bytes'), b'bytes')
+        self.assertEqual(getargs_s_star(bytearray(b'bytearray')), b'bytearray')
+        self.assertEqual(getargs_s_star(memoryview(b'memoryview')), b'memoryview')
+        self.assertRaises(TypeError, getargs_s_star, None)
+
+    def test_s_hash(self):
+        from _testcapi import getargs_s_hash
+        self.assertEqual(getargs_s_hash('abc\xe9'), b'abc\xc3\xa9')
+        self.assertEqual(getargs_s_hash('nul:\0'), b'nul:\0')
+        self.assertEqual(getargs_s_hash(b'bytes'), b'bytes')
+        self.assertRaises(TypeError, getargs_s_hash, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_s_hash, memoryview(b'memoryview'))
+        self.assertRaises(TypeError, getargs_s_hash, None)
+
+    def test_z(self):
+        from _testcapi import getargs_z
+        self.assertEqual(getargs_z('abc\xe9'), b'abc\xc3\xa9')
+        self.assertRaises(TypeError, getargs_z, 'nul:\0')
+        self.assertEqual(getargs_z(b'bytes'), b'bytes')
+        self.assertRaises(TypeError, getargs_z, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_z, memoryview(b'memoryview'))
+        self.assertIsNone(getargs_z(None))
+
+    def test_z_star(self):
+        from _testcapi import getargs_z_star
+        self.assertEqual(getargs_z_star('abc\xe9'), b'abc\xc3\xa9')
+        self.assertEqual(getargs_z_star('nul:\0'), b'nul:\0')
+        self.assertEqual(getargs_z_star(b'bytes'), b'bytes')
+        self.assertEqual(getargs_z_star(bytearray(b'bytearray')), b'bytearray')
+        self.assertEqual(getargs_z_star(memoryview(b'memoryview')), b'memoryview')
+        self.assertIsNone(getargs_z_star(None))
+
+    def test_z_hash(self):
+        from _testcapi import getargs_z_hash
+        self.assertEqual(getargs_z_hash('abc\xe9'), b'abc\xc3\xa9')
+        self.assertEqual(getargs_z_hash('nul:\0'), b'nul:\0')
+        self.assertEqual(getargs_z_hash(b'bytes'), b'bytes')
+        self.assertRaises(TypeError, getargs_z_hash, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_z_hash, memoryview(b'memoryview'))
+        self.assertIsNone(getargs_z_hash(None))
+
+    def test_y(self):
+        from _testcapi import getargs_y
+        self.assertRaises(TypeError, getargs_y, 'abc\xe9')
+        self.assertEqual(getargs_y(b'bytes'), b'bytes')
+        self.assertRaises(TypeError, getargs_y, b'nul:\0')
+        self.assertRaises(TypeError, getargs_y, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_y, memoryview(b'memoryview'))
+        self.assertRaises(TypeError, getargs_y, None)
+
+    def test_y_star(self):
+        from _testcapi import getargs_y_star
+        self.assertRaises(TypeError, getargs_y_star, 'abc\xe9')
+        self.assertEqual(getargs_y_star(b'bytes'), b'bytes')
+        self.assertEqual(getargs_y_star(b'nul:\0'), b'nul:\0')
+        self.assertEqual(getargs_y_star(bytearray(b'bytearray')), b'bytearray')
+        self.assertEqual(getargs_y_star(memoryview(b'memoryview')), b'memoryview')
+        self.assertRaises(TypeError, getargs_y_star, None)
+
+    def test_y_hash(self):
+        from _testcapi import getargs_y_hash
+        self.assertRaises(TypeError, getargs_y_hash, 'abc\xe9')
+        self.assertEqual(getargs_y_hash(b'bytes'), b'bytes')
+        self.assertEqual(getargs_y_hash(b'nul:\0'), b'nul:\0')
+        self.assertRaises(TypeError, getargs_y_hash, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_y_hash, memoryview(b'memoryview'))
+        self.assertRaises(TypeError, getargs_y_hash, None)
+
+
+class Unicode_TestCase(unittest.TestCase):
+    def test_u(self):
+        from _testcapi import getargs_u
+        self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
+        self.assertRaises(TypeError, getargs_u, 'nul:\0')
+        self.assertRaises(TypeError, getargs_u, b'bytes')
+        self.assertRaises(TypeError, getargs_u, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
+        self.assertRaises(TypeError, getargs_u, None)
+
+    def test_u_hash(self):
+        from _testcapi import getargs_u_hash
+        self.assertEqual(getargs_u_hash('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_u_hash('nul:\0'), 'nul:\0')
+        self.assertRaises(TypeError, getargs_u_hash, b'bytes')
+        self.assertRaises(TypeError, getargs_u_hash, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
+        self.assertRaises(TypeError, getargs_u_hash, None)
+
+    def test_Z(self):
+        from _testcapi import getargs_Z
+        self.assertEqual(getargs_Z('abc\xe9'), 'abc\xe9')
+        self.assertRaises(TypeError, getargs_Z, 'nul:\0')
+        self.assertRaises(TypeError, getargs_Z, b'bytes')
+        self.assertRaises(TypeError, getargs_Z, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
+        self.assertIsNone(getargs_Z(None))
+
+    def test_Z_hash(self):
+        from _testcapi import getargs_Z_hash
+        self.assertEqual(getargs_Z_hash('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_Z_hash('nul:\0'), 'nul:\0')
+        self.assertRaises(TypeError, getargs_Z_hash, b'bytes')
+        self.assertRaises(TypeError, getargs_Z_hash, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
+        self.assertIsNone(getargs_Z_hash(None))
+
+
 def test_main():
-    tests = [Signed_TestCase, Unsigned_TestCase, Tuple_TestCase, Keywords_TestCase]
+    tests = [
+        Signed_TestCase,
+        Unsigned_TestCase,
+        Tuple_TestCase,
+        Keywords_TestCase,
+        Bytes_TestCase,
+        Unicode_TestCase,
+    ]
     try:
         from _testcapi import getargs_L, getargs_K
     except ImportError:
