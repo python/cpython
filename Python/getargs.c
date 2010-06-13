@@ -1768,7 +1768,6 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     case 'z': /* string or None */
     case 'y': /* bytes */
     case 'u': /* unicode string */
-    case 't': /* buffer, read-only */
     case 'w': /* buffer, read-write */
         {
             (void) va_arg(*p_va, char **);
