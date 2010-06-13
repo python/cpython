@@ -84,6 +84,25 @@ erf0041 erf 1e16 -> 1.0
 erf0042 erf -1e150 -> -1.0
 erf0043 erf 1.7e308 -> 1.0
 
+-- Issue 8986: inputs x with exp(-x*x) near the underflow threshold
+-- incorrectly signalled overflow on some platforms.
+erf0100 erf 26.2 -> 1.0
+erf0101 erf 26.4 -> 1.0
+erf0102 erf 26.6 -> 1.0
+erf0103 erf 26.8 -> 1.0
+erf0104 erf 27.0 -> 1.0
+erf0105 erf 27.2 -> 1.0
+erf0106 erf 27.4 -> 1.0
+erf0107 erf 27.6 -> 1.0
+
+erf0110 erf -26.2 -> -1.0
+erf0111 erf -26.4 -> -1.0
+erf0112 erf -26.6 -> -1.0
+erf0113 erf -26.8 -> -1.0
+erf0114 erf -27.0 -> -1.0
+erf0115 erf -27.2 -> -1.0
+erf0116 erf -27.4 -> -1.0
+erf0117 erf -27.6 -> -1.0
 
 ----------------------------------------
 -- erfc: complementary error function --
@@ -127,6 +146,25 @@ erfc0051 erfc 1e16 -> 0.0
 erfc0052 erfc -1e150 -> 2.0
 erfc0053 erfc 1.7e308 -> 0.0
 
+-- Issue 8986: inputs x with exp(-x*x) near the underflow threshold
+-- incorrectly signalled overflow on some platforms.
+erfc0100 erfc 26.2 -> 1.6432507924389461e-300
+erfc0101 erfc 26.4 -> 4.4017768588035426e-305
+erfc0102 erfc 26.6 -> 1.0885125885442269e-309
+erfc0103 erfc 26.8 -> 2.4849621571966629e-314
+erfc0104 erfc 27.0 -> 5.2370464393526292e-319
+erfc0105 erfc 27.2 -> 9.8813129168249309e-324
+erfc0106 erfc 27.4 -> 0.0
+erfc0107 erfc 27.6 -> 0.0
+
+erfc0110 erfc -26.2 -> 2.0
+erfc0111 erfc -26.4 -> 2.0
+erfc0112 erfc -26.6 -> 2.0
+erfc0113 erfc -26.8 -> 2.0
+erfc0114 erfc -27.0 -> 2.0
+erfc0115 erfc -27.2 -> 2.0
+erfc0116 erfc -27.4 -> 2.0
+erfc0117 erfc -27.6 -> 2.0
 
 ---------------------------------------------------------
 -- lgamma: log of absolute value of the gamma function --
