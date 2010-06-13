@@ -25,6 +25,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #8986: math.erfc was incorrectly raising OverflowError for
+  values between -27.3 and -30.0 on some platforms.
+
 - Issue #8924: logging: Improved error handling for Unicode in exception text.
 
 - Issue #8948: cleanup functions and class / module setups and teardowns are
