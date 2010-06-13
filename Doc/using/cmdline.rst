@@ -95,9 +95,8 @@ source.
       file is not available.
 
    If this option is given, the first element of :data:`sys.argv` will be the
-   full path to the module file (while the module file is being located, the
-   first element will be set to ``"-m"``). As with the :option:`-c` option,
-   the current directory will be added to the start of :data:`sys.path`.
+   full path to the module file. As with the :option:`-c` option, the current
+   directory will be added to the start of :data:`sys.path`.
 
    Many standard library modules contain code that is invoked on their execution
    as a script.  An example is the :mod:`timeit` module::
