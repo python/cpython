@@ -1412,7 +1412,7 @@ s_unpack(PyObject *self, PyObject *input)
 }
 
 PyDoc_STRVAR(s_unpack_from__doc__,
-"S.unpack_from(buffer[, offset=0]) -> (v1, v2, ...)\n\
+"S.unpack_from(buffer, offset=0) -> (v1, v2, ...)\n\
 \n\
 Return a tuple containing values unpacked according to the format\n\
 string S.format.  Requires len(buffer[offset:]) >= S.size.  See\n\
@@ -1877,7 +1877,7 @@ unpack(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(unpack_from_doc,
-"unpack_from(fmt, buffer[, offset=0]) -> (v1, v2, ...)\n\
+"unpack_from(fmt, buffer, offset=0) -> (v1, v2, ...)\n\
 \n\
 Return a tuple containing values unpacked according to the format string\n\
 fmt.  Requires len(buffer[offset:]) >= calcsize(fmt).  See help(struct)\n\
