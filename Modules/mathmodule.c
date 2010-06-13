@@ -428,8 +428,8 @@ m_lgamma(double x)
 static double
 m_erf_series(double x)
 {
-    double x2, acc, fk;
-    int i;
+    double x2, acc, fk, result;
+    int i, saved_errno;
 
     x2 = x * x;
     acc = 0.0;
@@ -438,7 +438,12 @@ m_erf_series(double x)
         acc = 2.0 + x2 * acc / fk;
         fk -= 1.0;
     }
-    return acc * x * exp(-x2) / sqrtpi;
+    /* Make sure the exp call doesn't affect errno;
+       see m_erfc_contfrac for more. */
+    saved_errno = errno;
+    result = acc * x * exp(-x2) / sqrtpi;
+    errno = saved_errno;
+    return result;
 }
 
 /*
@@ -453,8 +458,8 @@ m_erf_series(double x)
 static double
 m_erfc_contfrac(double x)
 {
-    double x2, a, da, p, p_last, q, q_last, b;
-    int i;
+    double x2, a, da, p, p_last, q, q_last, b, result;
+    int i, saved_errno;
 
     if (x >= ERFC_CONTFRAC_CUTOFF)
         return 0.0;
@@ -472,7 +477,12 @@ m_erfc_contfrac(double x)
         temp = p; p = b*p - a*p_last; p_last = temp;
         temp = q; q = b*q - a*q_last; q_last = temp;
     }
-    return p / q * x * exp(-x2) / sqrtpi;
+    /* Issue #8986: On some platforms, exp sets errno on underflow to zero;
+       save the current errno value so that we can restore it later. */
+    saved_errno = errno;
+    result = p / q * x * exp(-x2) / sqrtpi;
+    errno = saved_errno;
+    return result;
 }
 
 /* Error function erf(x), for general x */

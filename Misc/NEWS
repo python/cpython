@@ -428,6 +428,9 @@ C-API
 Library
 -------
 
+- Issue #8986: math.erfc was incorrectly raising OverflowError for
+  values between -27.3 and -30.0 on some platforms.
+
 - Issue #8784: Set tarfile default encoding to 'utf-8' on Windows.
 
 - Issue #8966: If a ctypes structure field is an array of c_char, convert its
