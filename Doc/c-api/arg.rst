@@ -125,6 +125,8 @@ Unless otherwise stated, buffers are not NUL-terminated.
    pointer variable, which will be filled with the pointer to an existing
    Unicode buffer.  Please note that the width of a :ctype:`Py_UNICODE`
    character depends on compilation options (it is either 16 or 32 bits).
+   The Python string must not contain embedded NUL characters; if it does,
+   a :exc:`TypeError` exception is raised.
 
    .. note::
       Since ``u`` doesn't give you back the length of the string, and it
