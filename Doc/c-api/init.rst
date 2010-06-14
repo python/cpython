@@ -386,7 +386,7 @@ Initialization, Finalization, and Threads
 
 .. cfunction:: void PySys_SetArgv(int argc, char **argv)
 
-   This function works like :cfunc:`PySys_SetArgv` with *updatepath* set to 1.
+   This function works like :cfunc:`PySys_SetArgvEx` with *updatepath* set to 1.
 
 
 .. cfunction:: void Py_SetPythonHome(char *home)
