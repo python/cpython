@@ -152,6 +152,7 @@ example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
 """
 
+import builtins
 import getopt
 import json
 import os
@@ -859,15 +860,9 @@ class saved_test_environment:
         sys.path_hooks[:] = saved_hooks[2]
 
     def get___import__(self):
-        if isinstance(__builtins__, dict):
-            return __builtins__['__import__']
-        else:
-            return __builtins__.__import__
+        return builtins.__import__
     def restore___import__(self, import_):
-        if isinstance(__builtins__, dict):
-            __builtins__['__import__'] = import_
-        else:
-            __builtins__.__import__ = import_
+        builtins.__import__ = import_
 
     def get_warnings_filters(self):
         return id(warnings.filters), warnings.filters, warnings.filters[:]
