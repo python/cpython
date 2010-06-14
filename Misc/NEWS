@@ -1306,6 +1306,14 @@ Library
 Extension Modules
 -----------------
 
+- Issue #5094: The ``datetime`` module now has a simple concrete class
+  implementing ``datetime.tzinfo`` interface.  Instances of the new
+  class, ``datetime.timezone``, return fixed name and UTC offset from
+  their ``tzname(dt)`` and ``utcoffset(dt)`` methods.  The ``dst(dt)``
+  method always returns ``None``.  A class attribute, ``utc`` contains
+  an instance representing the UTC timezone.  Original patch by Rafe
+  Kaplan.
+
 - Issue #8973: Add __all__ to struct module; this ensures that
   help(struct) includes documentation for the struct.Struct class.
 

@@ -102,6 +102,7 @@ static PyTypeObject PyDateTime_DateTimeType;
 static PyTypeObject PyDateTime_DeltaType;
 static PyTypeObject PyDateTime_TimeType;
 static PyTypeObject PyDateTime_TZInfoType;
+static PyTypeObject PyDateTime_TimeZoneType;
 
 /* ---------------------------------------------------------------------------
  * Math utilities.
@@ -770,6 +771,52 @@ new_delta_ex(int days, int seconds, int microseconds, int normalize,
 
 #define new_delta(d, s, us, normalize)  \
     new_delta_ex(d, s, us, normalize, &PyDateTime_DeltaType)
+
+
+typedef struct
+{
+    PyObject_HEAD
+    PyObject *offset;
+    PyObject *name;
+} PyDateTime_TimeZone;
+
+/* Create new timezone instance checking offset range.  This
+   function does not check the name argument.  Caller must assure
+   that offset is a timedelta instance and name is either NULL
+   or a unicode object. */
+static PyObject *
+new_timezone(PyObject *offset, PyObject *name)
+{
+    PyDateTime_TimeZone *self;
+    PyTypeObject *type = &PyDateTime_TimeZoneType;
+
+    assert(offset != NULL);
+    assert(PyDelta_Check(offset));
+    assert(name == NULL || PyUnicode_Check(name));
+
+    if (GET_TD_MICROSECONDS(offset) != 0 || GET_TD_SECONDS(offset) % 60 != 0) {
+        PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
+                     " representing a whole number of minutes");
+        return NULL;
+    }
+    if ((GET_TD_DAYS(offset) == -1 && GET_TD_SECONDS(offset) == 0) ||
+        GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
+        PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
+                     " strictly between -timedelta(hours=24) and"
+                     " timedelta(hours=24).");
+        return NULL;
+    }
+
+    self = (PyDateTime_TimeZone *)(type->tp_alloc(type, 0));
+    if (self == NULL) {
+        return NULL;
+    }
+    Py_INCREF(offset);
+    self->offset = offset;
+    Py_XINCREF(name);
+    self->name = name;
+    return (PyObject *)self;
+}
 
 /* ---------------------------------------------------------------------------
  * tzinfo helpers.
@@ -3261,7 +3308,7 @@ static PyTypeObject PyDateTime_TZInfoType = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
     tzinfo_doc,                                 /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -3281,6 +3328,206 @@ static PyTypeObject PyDateTime_TZInfoType = {
     0,                                          /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     0,                                          /* tp_free */
+};
+
+static char *timezone_kws[] = {"offset", "name", NULL};
+
+static PyObject *
+timezone_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+{
+    PyObject *offset;
+    PyObject *name = NULL;
+    if (PyArg_ParseTupleAndKeywords(args, kw, "O!|O!:timezone", timezone_kws,
+                                    &PyDateTime_DeltaType, &offset,
+                                    &PyUnicode_Type, &name))
+        return new_timezone(offset, name);
+
+    return NULL;
+}
+
+static void
+timezone_dealloc(PyDateTime_TimeZone *self)
+{
+    Py_CLEAR(self->offset);
+    Py_CLEAR(self->name);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static PyObject *
+timezone_richcompare(PyDateTime_TimeZone *self,
+                     PyDateTime_TimeZone *other, int op)
+{
+    if (op != Py_EQ && op != Py_NE) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
+    return delta_richcompare(self->offset, other->offset, op);
+}
+
+static long
+timezone_hash(PyDateTime_TimeZone *self)
+{
+    return delta_hash((PyDateTime_Delta *)self->offset);
+}
+
+/* Check argument type passed to tzname, utcoffset, or dst methods.
+   Returns 0 for good argument.  Returns -1 and sets exception info
+   otherwise.
+ */
+static int
+_timezone_check_argument(PyObject *dt, const char *meth)
+{
+    if (dt == Py_None || PyDateTime_Check(dt))
+        return 0;
+    PyErr_Format(PyExc_TypeError, "%s(dt) argument must be a datetime instance"
+                 " or None, not %.200s", meth, Py_TYPE(dt)->tp_name);
+    return -1;
+}
+
+static PyObject *
+timezone_str(PyDateTime_TimeZone *self)
+{
+    char buf[10];
+    int hours, minutes, seconds;
+    PyObject *offset;
+    char sign;
+
+    if (self->name != NULL) {
+        Py_INCREF(self->name);
+        return self->name;
+    }
+    /* Offset is normalized, so it is negative if days < 0 */
+    if (GET_TD_DAYS(self->offset) < 0) {
+        sign = '-';
+        offset = delta_negative((PyDateTime_Delta *)self->offset);
+        if (offset == NULL)
+            return NULL;
+    }
+    else {
+        sign = '+';
+        offset = self->offset;
+        Py_INCREF(offset);
+    }
+    /* Offset is not negative here. */
+    seconds = GET_TD_SECONDS(offset);
+    Py_DECREF(offset);
+    minutes = divmod(seconds, 60, &seconds);
+    hours = divmod(minutes, 60, &minutes);
+    assert(seconds == 0);
+    /* XXX ignore sub-minute data, curently not allowed. */
+    PyOS_snprintf(buf, sizeof(buf), "UTC%c%02d:%02d", sign, hours, minutes);
+
+    return PyUnicode_FromString(buf);
+}
+
+static PyObject *
+timezone_tzname(PyDateTime_TimeZone *self, PyObject *dt)
+{
+    if (_timezone_check_argument(dt, "tzname") == -1)
+        return NULL;
+
+    return timezone_str(self);
+}
+
+static PyObject *
+timezone_utcoffset(PyDateTime_TimeZone *self, PyObject *dt)
+{
+    if (_timezone_check_argument(dt, "utcoffset") == -1)
+        return NULL;
+
+    Py_INCREF(self->offset);
+    return self->offset;
+}
+
+static PyObject *
+timezone_dst(PyObject *self, PyObject *dt)
+{
+    if (_timezone_check_argument(dt, "dst") == -1)
+        return NULL;
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
+                       int factor);
+
+static PyObject *
+timezone_fromutc(PyDateTime_TimeZone *self, PyDateTime_DateTime *dt)
+{
+    if (! PyDateTime_Check(dt)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "fromutc: argument must be a datetime");
+        return NULL;
+    }
+    if (! HASTZINFO(dt) || dt->tzinfo != (PyObject *)self) {
+        PyErr_SetString(PyExc_ValueError, "fromutc: dt.tzinfo "
+                        "is not self");
+        return NULL;
+    }
+
+    return add_datetime_timedelta(dt, (PyDateTime_Delta *)self->offset, 1);
+}
+
+static PyMethodDef timezone_methods[] = {
+    {"tzname", (PyCFunction)timezone_tzname, METH_O,
+     PyDoc_STR("If name is specified when timezone is created, returns the name."
+               "  Otherwise returns offset as 'UTC(+|-)HHMM'.")},
+
+    {"utcoffset", (PyCFunction)timezone_utcoffset, METH_O,
+     PyDoc_STR("Returns fixed offset.  Ignores its argument.")},
+
+    {"dst", (PyCFunction)timezone_dst, METH_O,
+     PyDoc_STR("Returns None.  Ignores its argument.")},
+
+    {"fromutc", (PyCFunction)timezone_fromutc, METH_O,
+     PyDoc_STR("datetime in UTC -> datetime in local time.")},
+
+    {NULL, NULL}
+};
+
+static char timezone_doc[] =
+PyDoc_STR("Fixed offset from UTC implementation of tzinfo.");
+
+static PyTypeObject PyDateTime_TimeZoneType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "datetime.timezone",              /* tp_name */
+    sizeof(PyDateTime_TimeZone),      /* tp_basicsize */
+    0,                                /* tp_itemsize */
+    (destructor)timezone_dealloc,     /* tp_dealloc */
+    0,                                /* tp_print */
+    0,                                /* tp_getattr */
+    0,                                /* tp_setattr */
+    0,                                /* tp_reserved */
+    0,                                /* tp_repr */
+    0,                                /* tp_as_number */
+    0,                                /* tp_as_sequence */
+    0,                                /* tp_as_mapping */
+    (hashfunc)timezone_hash,          /* tp_hash */
+    0,                                /* tp_call */
+    (reprfunc)timezone_str,           /* tp_str */
+    0,                                /* tp_getattro */
+    0,                                /* tp_setattro */
+    0,                                /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,               /* tp_flags */
+    timezone_doc,                     /* tp_doc */
+    0,                                /* tp_traverse */
+    0,                                /* tp_clear */
+    (richcmpfunc)timezone_richcompare,/* tp_richcompare */
+    0,                                /* tp_weaklistoffset */
+    0,                                /* tp_iter */
+    0,                                /* tp_iternext */
+    timezone_methods,                 /* tp_methods */
+    0,                                /* tp_members */
+    0,                                /* tp_getset */
+    &PyDateTime_TZInfoType,           /* tp_base */
+    0,                                /* tp_dict */
+    0,                                /* tp_descr_get */
+    0,                                /* tp_descr_set */
+    0,                                /* tp_dictoffset */
+    0,                                /* tp_init */
+    0,                                /* tp_alloc */
+    timezone_new,                     /* tp_new */
 };
 
 /*
@@ -4971,6 +5218,7 @@ PyInit_datetime(void)
     PyObject *m;        /* a module object */
     PyObject *d;        /* its dict */
     PyObject *x;
+    PyObject *delta;
 
     m = PyModule_Create(&datetimemodule);
     if (m == NULL)
@@ -4985,6 +5233,8 @@ PyInit_datetime(void)
     if (PyType_Ready(&PyDateTime_TimeType) < 0)
         return NULL;
     if (PyType_Ready(&PyDateTime_TZInfoType) < 0)
+        return NULL;
+    if (PyType_Ready(&PyDateTime_TimeZoneType) < 0)
         return NULL;
 
     /* timedelta values */
@@ -5059,6 +5309,36 @@ PyInit_datetime(void)
         return NULL;
     Py_DECREF(x);
 
+    /* timezone values */
+    d = PyDateTime_TimeZoneType.tp_dict;
+
+    delta = new_delta(0, 0, 0, 0);
+    if (delta == NULL)
+        return NULL;
+    x = new_timezone(delta, NULL);
+    Py_DECREF(delta);
+    if (x == NULL || PyDict_SetItemString(d, "utc", x) < 0)
+        return NULL;
+    Py_DECREF(x);
+
+    delta = new_delta(-1, 60, 0, 1); /* -23:59 */
+    if (delta == NULL)
+        return NULL;
+    x = new_timezone(delta, NULL);
+    Py_DECREF(delta);
+    if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
+        return NULL;
+    Py_DECREF(x);
+
+    delta = new_delta(0, (23 * 60 + 59) * 60, 0, 0); /* +23:59 */
+    if (delta == NULL)
+        return NULL;
+    x = new_timezone(delta, NULL);
+    Py_DECREF(delta);
+    if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
+        return NULL;
+    Py_DECREF(x);
+
     /* module initialization */
     PyModule_AddIntConstant(m, "MINYEAR", MINYEAR);
     PyModule_AddIntConstant(m, "MAXYEAR", MAXYEAR);
@@ -5078,6 +5358,9 @@ PyInit_datetime(void)
 
     Py_INCREF(&PyDateTime_TZInfoType);
     PyModule_AddObject(m, "tzinfo", (PyObject *) &PyDateTime_TZInfoType);
+
+    Py_INCREF(&PyDateTime_TimeZoneType);
+    PyModule_AddObject(m, "timezone", (PyObject *) &PyDateTime_TimeZoneType);
 
     x = PyCapsule_New(&CAPI, PyDateTime_CAPSULE_NAME, NULL);
     if (x == NULL)

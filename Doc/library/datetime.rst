@@ -28,11 +28,14 @@ For applications requiring more, :class:`datetime` and :class:`time` objects
 have an optional time zone information member, :attr:`tzinfo`, that can contain
 an instance of a subclass of the abstract :class:`tzinfo` class.  These
 :class:`tzinfo` objects capture information about the offset from UTC time, the
-time zone name, and whether Daylight Saving Time is in effect.  Note that no
-concrete :class:`tzinfo` classes are supplied by the :mod:`datetime` module.
-Supporting timezones at whatever level of detail is required is up to the
-application.  The rules for time adjustment across the world are more political
-than rational, and there is no standard suitable for every application.
+time zone name, and whether Daylight Saving Time is in effect.  Note that only
+one concrete :class:`tzinfo` class, the :class:`timezone` class, is supplied by the
+:mod:`datetime` module.  The :class:`timezone` class can reprsent simple
+timezones with fixed offset from UTC such as UTC itself or North American EST and
+EDT timezones.  Supporting timezones at whatever level of detail is
+required is up to the application.  The rules for time adjustment across the
+world are more political than rational, change frequently, and there is no
+standard suitable for every application aside from UTC.
 
 The :mod:`datetime` module exports the following constants:
 
@@ -99,6 +102,14 @@ Available Types
    time adjustment (for example, to account for time zone and/or daylight saving
    time).
 
+.. class:: timezone
+
+   A class that implements the :class:`tzinfo` abstract base class as a
+   fixed offset from the UTC.
+
+   .. versionadded:: 3.2
+
+
 Objects of these types are immutable.
 
 Objects of the :class:`date` type are always naive.
@@ -116,6 +127,7 @@ Subclass relationships::
    object
        timedelta
        tzinfo
+           timezone
        time
        date
            datetime
@@ -660,8 +672,8 @@ Other constructors, all class methods:
 
    Return the current UTC date and time, with :attr:`tzinfo` ``None``. This is like
    :meth:`now`, but returns the current UTC date and time, as a naive
-   :class:`datetime` object. See also :meth:`now`.
-
+   :class:`datetime` object.  An aware current UTC datetime can be obtained by
+   calling ``datetime.now(timezone.utc)``.  See also :meth:`now`.
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
 
@@ -1318,8 +1330,10 @@ Example:
 :class:`tzinfo` is an abstract base class, meaning that this class should not be
 instantiated directly.  You need to derive a concrete subclass, and (at least)
 supply implementations of the standard :class:`tzinfo` methods needed by the
-:class:`datetime` methods you use.  The :mod:`datetime` module does not supply
-any concrete subclasses of :class:`tzinfo`.
+:class:`datetime` methods you use.  The :mod:`datetime` module supplies
+a simple concrete subclass of :class:`tzinfo` :class:`timezone` which can reprsent
+timezones with fixed offset from UTC such as UTC itself or North American EST and
+EDT.
 
 An instance of (a concrete subclass of) :class:`tzinfo` can be passed to the
 constructors for :class:`datetime` and :class:`time` objects. The latter objects
@@ -1520,9 +1534,65 @@ arranged, as in the example, by expressing DST switch times in the time zone's
 standard local time.
 
 Applications that can't bear such ambiguities should avoid using hybrid
-:class:`tzinfo` subclasses; there are no ambiguities when using UTC, or any
-other fixed-offset :class:`tzinfo` subclass (such as a class representing only
-EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
+:class:`tzinfo` subclasses; there are no ambiguities when using :class:`timezone`,
+or any other fixed-offset :class:`tzinfo` subclass (such as a class representing
+only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
+
+
+.. _datetime-timezone:
+
+:class:`timezone` Objects
+--------------------------
+
+A :class:`timezone` object represents a timezone that is defined by a
+fixed offset from UTC.  Note that objects of this class cannot be used
+to represent timezone information in the locations where different
+offsets are used in different days of the year or where historical
+changes have been made to civil time.
+
+
+.. class:: timezone(offset[, name])
+
+  The ``offset`` argument must be specified as a :class:`timedelta`
+  object representing the difference between the local time and UTC.  It must
+  be within the range [``-timedelta(hours=23, minutes=59),
+  ``timedelta(hours=23, minutes=59)``] and represent whole number of minutes,
+  otherwise :exc:`ValueError` is raised.
+
+  The ``name`` argument is optional.  If specified it must be a string that
+  used as the value returned by the ``tzname(dt)`` method.  Otherwise,
+  ``tzname(dt)`` returns a string 'UTCsHH:MM', where s is the sign of
+  ``offset``, HH and MM are two digits of ``offset.hours`` and
+  ``offset.minutes`` respectively.
+
+.. method:: timezone.utcoffset(self, dt)
+
+  Returns the fixed value specified when the :class:`timezone` instance is
+  constructed.  The ``dt`` argument is ignored.  The return value is a
+  :class:`timedelta` instance equal to the difference between the
+  local time and UTC.
+
+.. method:: timezone.tzname(self, dt)
+
+  Returns the fixed value specified when the :class:`timezone` instance is
+  constructed or a string 'UTCsHH:MM', where s is the sign of
+  ``offset``, HH and MM are two digits of ``offset.hours`` and
+  ``offset.minutes`` respectively.  The ``dt`` argument is ignored.
+
+.. method:: timezone.dst(self, dt)
+
+  Always returns ``None``.
+
+.. method:: timezone.fromutc(self, dt)
+
+  Returns ``dt + offset``.  The ``dt`` argument must be aware with ``tzinfo``
+  set to ``self``.
+
+Class attributes:
+
+.. attribute:: timezone.utc
+
+   The UTC timezone, ``timezone(0, 'UTC')``.
 
 
 .. _strftime-strptime-behavior:

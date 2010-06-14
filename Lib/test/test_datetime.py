@@ -15,6 +15,7 @@ from datetime import MINYEAR, MAXYEAR
 from datetime import timedelta
 from datetime import tzinfo
 from datetime import time
+from datetime import timezone
 from datetime import date, datetime
 
 pickle_choices = [(pickle, pickle, proto) for proto in range(3)]
@@ -49,6 +50,7 @@ class TestModule(unittest.TestCase):
 # tzinfo tests
 
 class FixedOffset(tzinfo):
+
     def __init__(self, offset, name, dstoffset=42):
         if isinstance(offset, int):
             offset = timedelta(minutes=offset)
@@ -67,6 +69,7 @@ class FixedOffset(tzinfo):
         return self.__dstoffset
 
 class PicklableFixedOffset(FixedOffset):
+
     def __init__(self, offset=None, name=None, dstoffset=None):
         FixedOffset.__init__(self, offset, name, dstoffset)
 
@@ -130,6 +133,97 @@ class TestTZInfo(unittest.TestCase):
             self.assertTrue(type(derived) is PicklableFixedOffset)
             self.assertEqual(derived.utcoffset(None), offset)
             self.assertEqual(derived.tzname(None), 'cookie')
+
+class TestTimeZone(unittest.TestCase):
+
+    def setUp(self):
+        self.ACDT = timezone(timedelta(hours=9.5), 'ACDT')
+        self.EST = timezone(-timedelta(hours=5), 'EST')
+        self.DT = datetime(2010, 1, 1)
+
+    def test_str(self):
+        for tz in [self.ACDT, self.EST, timezone.utc,
+                   timezone.min, timezone.max]:
+            self.assertEqual(str(tz), tz.tzname(None))
+
+    def test_class_members(self):
+        limit = timedelta(hours=23, minutes=59)
+        self.assertEquals(timezone.utc.utcoffset(None), ZERO)
+        self.assertEquals(timezone.min.utcoffset(None), -limit)
+        self.assertEquals(timezone.max.utcoffset(None), limit)
+
+
+    def test_constructor(self):
+        self.assertEquals(timezone.utc, timezone(timedelta(0)))
+        # invalid offsets
+        for invalid in [timedelta(microseconds=1), timedelta(1, 1),
+                        timedelta(seconds=1), timedelta(1), -timedelta(1)]:
+            self.assertRaises(ValueError, timezone, invalid)
+            self.assertRaises(ValueError, timezone, -invalid)
+
+        with self.assertRaises(TypeError): timezone(None)
+        with self.assertRaises(TypeError): timezone(42)
+        with self.assertRaises(TypeError): timezone(ZERO, None)
+        with self.assertRaises(TypeError): timezone(ZERO, 42)
+
+    def test_inheritance(self):
+        self.assertTrue(isinstance(timezone.utc, tzinfo))
+        self.assertTrue(isinstance(self.EST, tzinfo))
+
+    def test_utcoffset(self):
+        dummy = self.DT
+        for h in [0, 1.5, 12]:
+            offset = h * HOUR
+            self.assertEquals(offset, timezone(offset).utcoffset(dummy))
+            self.assertEquals(-offset, timezone(-offset).utcoffset(dummy))
+
+        with self.assertRaises(TypeError): self.EST.utcoffset('')
+        with self.assertRaises(TypeError): self.EST.utcoffset(5)
+
+
+    def test_dst(self):
+        self.assertEquals(None, timezone.utc.dst(self.DT))
+
+        with self.assertRaises(TypeError): self.EST.dst('')
+        with self.assertRaises(TypeError): self.EST.dst(5)
+
+    def test_tzname(self):
+        self.assertEquals('UTC+00:00', timezone(ZERO).tzname(None))
+        self.assertEquals('UTC-05:00', timezone(-5 * HOUR).tzname(None))
+        self.assertEquals('UTC+09:30', timezone(9.5 * HOUR).tzname(None))
+        self.assertEquals('UTC-00:01', timezone(timedelta(minutes=-1)).tzname(None))
+        self.assertEquals('XYZ', timezone(-5 * HOUR, 'XYZ').tzname(None))
+
+        with self.assertRaises(TypeError): self.EST.tzname('')
+        with self.assertRaises(TypeError): self.EST.tzname(5)
+
+    def test_fromutc(self):
+        with self.assertRaises(ValueError):
+            timezone.utc.fromutc(self.DT)
+        for tz in [self.EST, self.ACDT, Eastern]:
+            utctime = self.DT.replace(tzinfo=tz)
+            local = tz.fromutc(utctime)
+            self.assertEquals(local - utctime, tz.utcoffset(local))
+            self.assertEquals(local,
+                              self.DT.replace(tzinfo=timezone.utc))
+
+    def test_comparison(self):
+        self.assertNotEqual(timezone(ZERO), timezone(HOUR))
+        self.assertEqual(timezone(HOUR), timezone(HOUR))
+        self.assertEqual(timezone(-5 * HOUR), timezone(-5 * HOUR, 'EST'))
+        with self.assertRaises(TypeError): timezone(ZERO) < timezone(ZERO)
+        self.assertIn(timezone(ZERO), {timezone(ZERO)})
+
+    def test_aware_datetime(self):
+        # test that timezone instances can be used by datetime
+        t = datetime(1, 1, 1)
+        for tz in [timezone.min, timezone.max, timezone.utc]:
+            self.assertEquals(tz.tzname(t),
+                              t.replace(tzinfo=tz).tzname())
+            self.assertEquals(tz.utcoffset(t),
+                              t.replace(tzinfo=tz).utcoffset())
+            self.assertEquals(tz.dst(t),
+                              t.replace(tzinfo=tz).dst())
 
 #############################################################################
 # Base clase for testing a particular aspect of timedelta, time, date and
@@ -2729,20 +2823,21 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         # We don't know which time zone we're in, and don't have a tzinfo
         # class to represent it, so seeing whether a tz argument actually
         # does a conversion is tricky.
-        weirdtz = FixedOffset(timedelta(hours=15, minutes=58), "weirdtz", 0)
         utc = FixedOffset(0, "utc", 0)
-        for dummy in range(3):
-            now = datetime.now(weirdtz)
-            self.assertTrue(now.tzinfo is weirdtz)
-            utcnow = datetime.utcnow().replace(tzinfo=utc)
-            now2 = utcnow.astimezone(weirdtz)
-            if abs(now - now2) < timedelta(seconds=30):
-                break
-            # Else the code is broken, or more than 30 seconds passed between
-            # calls; assuming the latter, just try again.
-        else:
-            # Three strikes and we're out.
-            self.fail("utcnow(), now(tz), or astimezone() may be broken")
+        for weirdtz in [FixedOffset(timedelta(hours=15, minutes=58), "weirdtz", 0),
+                        timezone(timedelta(hours=15, minutes=58), "weirdtz"),]:
+            for dummy in range(3):
+                now = datetime.now(weirdtz)
+                self.assertTrue(now.tzinfo is weirdtz)
+                utcnow = datetime.utcnow().replace(tzinfo=utc)
+                now2 = utcnow.astimezone(weirdtz)
+                if abs(now - now2) < timedelta(seconds=30):
+                    break
+                # Else the code is broken, or more than 30 seconds passed between
+                # calls; assuming the latter, just try again.
+            else:
+                # Three strikes and we're out.
+                self.fail("utcnow(), now(tz), or astimezone() may be broken")
 
     def test_tzinfo_fromtimestamp(self):
         import time
