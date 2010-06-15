@@ -302,8 +302,8 @@ class install(Command):
         # about needing recursive variable expansion (shudder).
 
         py_version = sys.version.split()[0]
-        prefix, exec_prefix, srcdir = get_config_vars('prefix', 'exec_prefix',
-                                                      'srcdir')
+        prefix, exec_prefix, srcdir, projectbase = get_config_vars('prefix', 'exec_prefix',
+                                                      'srcdir', 'projectbase')
 
         self.config_vars = {'dist_name': self.distribution.get_name(),
                             'dist_version': self.distribution.get_version(),
@@ -316,6 +316,7 @@ class install(Command):
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
                             'srcdir': srcdir,
+                            'projectbase': projectbase,
                            }
 
         self.config_vars['userbase'] = self.install_userbase
