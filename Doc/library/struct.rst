@@ -20,9 +20,9 @@ structs and the intended conversion to/from Python values.
    order to maintain proper alignment for the C types involved; similarly,
    alignment is taken into account when unpacking.  This behavior is chosen so
    that the bytes of a packed struct correspond exactly to the layout in memory
-   of the corresponding C struct.  To omit pad bytes, use `standard` size and
-   alignment instead of `native` size and alignment: see :ref:`struct-alignment`
-   for details.
+   of the corresponding C struct.  To handle platform-independent data formats
+   or omit implicit pad bytes, use `standard` size and alignment instead of
+   `native` size and alignment: see :ref:`struct-alignment` for details.
 
 Functions and Exceptions
 ------------------------
@@ -95,19 +95,19 @@ Alternatively, the first character of the format string can be used to indicate
 the byte order, size and alignment of the packed data, according to the
 following table:
 
-+-----------+------------------------+--------------------+
-| Character | Byte order             | Size and alignment |
-+===========+========================+====================+
-| ``@``     | native                 | native             |
-+-----------+------------------------+--------------------+
-| ``=``     | native                 | standard           |
-+-----------+------------------------+--------------------+
-| ``<``     | little-endian          | standard           |
-+-----------+------------------------+--------------------+
-| ``>``     | big-endian             | standard           |
-+-----------+------------------------+--------------------+
-| ``!``     | network (= big-endian) | standard           |
-+-----------+------------------------+--------------------+
++-----------+------------------------+----------+-----------+
+| Character | Byte order             | Size     | Alignment |
++===========+========================+==========+===========+
+| ``@``     | native                 | native   | native    |
++-----------+------------------------+----------+-----------+
+| ``=``     | native                 | standard | none      |
++-----------+------------------------+----------+-----------+
+| ``<``     | little-endian          | standard | none      |
++-----------+------------------------+----------+-----------+
+| ``>``     | big-endian             | standard | none      |
++-----------+------------------------+----------+-----------+
+| ``!``     | network (= big-endian) | standard | none      |
++-----------+------------------------+----------+-----------+
 
 If the first character is not one of these, ``'@'`` is assumed.
 
@@ -120,11 +120,8 @@ endianness of your system.
 Native size and alignment are determined using the C compiler's
 ``sizeof`` expression.  This is always combined with native byte order.
 
-Standard size and alignment are as follows: no alignment is required for any
-type (so you have to use pad bytes); :ctype:`short` is 2 bytes; :ctype:`int` and
-:ctype:`long` are 4 bytes; :ctype:`long long` (:ctype:`__int64` on Windows) is 8
-bytes; :ctype:`float` and :ctype:`double` are 32-bit and 64-bit IEEE floating
-point numbers, respectively. :ctype:`_Bool` is 1 byte.
+Standard size depends only on the format character;  see the table in
+the :ref:`format-characters` section.
 
 Note the difference between ``'@'`` and ``'='``: both use native byte order, but
 the size and alignment of the latter is standardized.
@@ -134,12 +131,6 @@ whether network byte order is big-endian or little-endian.
 
 There is no way to indicate non-native byte order (force byte-swapping); use the
 appropriate choice of ``'<'`` or ``'>'``.
-
-The ``'P'`` format character is only available for the native byte ordering
-(selected as the default or with the ``'@'`` byte order character). The byte
-order character ``'='`` chooses to use little- or big-endian ordering based on
-the host system. The struct module does not interpret this as native ordering,
-so the ``'P'`` format is not available.
 
 Notes:
 
@@ -192,15 +183,15 @@ Python values should be obvious given their types:
 | ``Q``  | :ctype:`unsigned long   | integer            | 8              | \(3), \(4) |
 |        | long`                   |                    |                |            |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``f``  | :ctype:`float`          | float              | 4              |            |
+| ``f``  | :ctype:`float`          | float              | 4              | \(5)       |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``d``  | :ctype:`double`         | float              | 8              |            |
+| ``d``  | :ctype:`double`         | float              | 8              | \(5)       |
 +--------+-------------------------+--------------------+----------------+------------+
 | ``s``  | :ctype:`char[]`         | bytes              |                | \(1)       |
 +--------+-------------------------+--------------------+----------------+------------+
 | ``p``  | :ctype:`char[]`         | bytes              |                | \(1)       |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``P``  | :ctype:`void \*`        | integer            |                |            |
+| ``P``  | :ctype:`void \*`        | integer            |                | \(6)       |
 +--------+-------------------------+--------------------+----------------+------------+
 
 Notes:
@@ -219,6 +210,27 @@ Notes:
    The ``'q'`` and ``'Q'`` conversion codes are available in native mode only if
    the platform C compiler supports C :ctype:`long long`, or, on Windows,
    :ctype:`__int64`.  They are always available in standard modes.
+
+(4)
+   When attempting to pack a non-integer using any of the integer conversion
+   codes, if the non-integer has a :meth:`__index__` method then that method is
+   called to convert the argument to an integer before packing.
+
+   .. versionchanged:: 3.2
+      Use of the :meth:`__index__` method for non-integers is new in 3.2.
+
+(5)
+   For the ``'f'`` and ``'d'`` conversion codes, the packed representation uses
+   the IEEE 754 binary32 (for ``'f'``) or binary64 (for ``'d'``) format,
+   regardless of the floating-point format used by the platform.
+
+(6)
+   The ``'P'`` format character is only available for the native byte ordering
+   (selected as the default or with the ``'@'`` byte order character). The byte
+   order character ``'='`` chooses to use little- or big-endian ordering based
+   on the host system. The struct module does not interpret this as native
+   ordering, so the ``'P'`` format is not available.
+
 
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
