@@ -160,38 +160,38 @@ Python values should be obvious given their types:
 +--------+-------------------------+--------------------+----------------+------------+
 | ``c``  | :ctype:`char`           | bytes of length 1  | 1              |            |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``b``  | :ctype:`signed char`    | integer            | 1              | \(1),\(4)  |
+| ``b``  | :ctype:`signed char`    | integer            | 1              | \(1)       |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``B``  | :ctype:`unsigned char`  | integer            | 1              | \(4)       |
+| ``B``  | :ctype:`unsigned char`  | integer            | 1              |            |
 +--------+-------------------------+--------------------+----------------+------------+
 | ``?``  | :ctype:`_Bool`          | bool               | 1              | \(2)       |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``h``  | :ctype:`short`          | integer            | 2              | \(4)       |
+| ``h``  | :ctype:`short`          | integer            | 2              |            |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``H``  | :ctype:`unsigned short` | integer            | 2              | \(4)       |
+| ``H``  | :ctype:`unsigned short` | integer            | 2              |            |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``i``  | :ctype:`int`            | integer            | 4              | \(4)       |
+| ``i``  | :ctype:`int`            | integer            | 4              |            |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``I``  | :ctype:`unsigned int`   | integer            | 4              | \(4)       |
+| ``I``  | :ctype:`unsigned int`   | integer            | 4              |            |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``l``  | :ctype:`long`           | integer            | 4              | \(4)       |
+| ``l``  | :ctype:`long`           | integer            | 4              |            |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``L``  | :ctype:`unsigned long`  | integer            | 4              | \(4)       |
+| ``L``  | :ctype:`unsigned long`  | integer            | 4              |            |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``q``  | :ctype:`long long`      | integer            | 8              | \(3), \(4) |
+| ``q``  | :ctype:`long long`      | integer            | 8              | \(3)       |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``Q``  | :ctype:`unsigned long   | integer            | 8              | \(3), \(4) |
+| ``Q``  | :ctype:`unsigned long   | integer            | 8              | \(3)       |
 |        | long`                   |                    |                |            |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``f``  | :ctype:`float`          | float              | 4              | \(5)       |
+| ``f``  | :ctype:`float`          | float              | 4              | \(4)       |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``d``  | :ctype:`double`         | float              | 8              | \(5)       |
+| ``d``  | :ctype:`double`         | float              | 8              | \(4)       |
 +--------+-------------------------+--------------------+----------------+------------+
 | ``s``  | :ctype:`char[]`         | bytes              |                | \(1)       |
 +--------+-------------------------+--------------------+----------------+------------+
 | ``p``  | :ctype:`char[]`         | bytes              |                | \(1)       |
 +--------+-------------------------+--------------------+----------------+------------+
-| ``P``  | :ctype:`void \*`        | integer            |                | \(6)       |
+| ``P``  | :ctype:`void \*`        | integer            |                | \(5)       |
 +--------+-------------------------+--------------------+----------------+------------+
 
 Notes:
@@ -212,19 +212,11 @@ Notes:
    :ctype:`__int64`.  They are always available in standard modes.
 
 (4)
-   When attempting to pack a non-integer using any of the integer conversion
-   codes, if the non-integer has a :meth:`__index__` method then that method is
-   called to convert the argument to an integer before packing.
-
-   .. versionchanged:: 3.2
-      Use of the :meth:`__index__` method for non-integers is new in 3.2.
-
-(5)
    For the ``'f'`` and ``'d'`` conversion codes, the packed representation uses
    the IEEE 754 binary32 (for ``'f'``) or binary64 (for ``'d'``) format,
    regardless of the floating-point format used by the platform.
 
-(6)
+(5)
    The ``'P'`` format character is only available for the native byte ordering
    (selected as the default or with the ``'@'`` byte order character). The byte
    order character ``'='`` chooses to use little- or big-endian ordering based
