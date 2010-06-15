@@ -3472,13 +3472,13 @@ timezone_fromutc(PyDateTime_TimeZone *self, PyDateTime_DateTime *dt)
 static PyMethodDef timezone_methods[] = {
     {"tzname", (PyCFunction)timezone_tzname, METH_O,
      PyDoc_STR("If name is specified when timezone is created, returns the name."
-               "  Otherwise returns offset as 'UTC(+|-)HHMM'.")},
+               "  Otherwise returns offset as 'UTC(+|-)HH:MM'.")},
 
     {"utcoffset", (PyCFunction)timezone_utcoffset, METH_O,
-     PyDoc_STR("Returns fixed offset.  Ignores its argument.")},
+     PyDoc_STR("Return fixed offset.")},
 
     {"dst", (PyCFunction)timezone_dst, METH_O,
-     PyDoc_STR("Returns None.  Ignores its argument.")},
+     PyDoc_STR("Return None.")},
 
     {"fromutc", (PyCFunction)timezone_fromutc, METH_O,
      PyDoc_STR("datetime in UTC -> datetime in local time.")},
