@@ -13,12 +13,13 @@ change in future releases of Python.  The ``PyFile_`` APIs are a wrapper over
 the :mod:`io` module.
 
 
-.. cfunction:: PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding, char *newline, int closefd)
+.. cfunction:: PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding, char *errors, char *newline, int closefd)
 
    Create a new :ctype:`PyFileObject` from the file descriptor of an already
-   opened file *fd*. The arguments *name*, *encoding* and *newline* can be
-   *NULL* to use the defaults; *buffering* can be *-1* to use the default.
-   Return *NULL* on failure.
+   opened file *fd*. The arguments *name*, *encoding*, *errors* and *newline*
+   can be *NULL* to use the defaults; *buffering* can be *-1* to use the
+   default.  Return *NULL* on failure. For a more comprehensive description of
+   the arguments, please refer to the :func:`io.open` function documentation.
 
    .. warning::
 
