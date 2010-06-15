@@ -780,6 +780,12 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Fredrik Johansson and Victor Stinner; :issue:`3439`.)
 
+* The :keyword:`import` statement will no longer try a relative import
+  if an absolute import (e.g. ``from .os import sep``) fails.  This
+  fixes a bug, but could possibly break certain :keyword:`import`
+  statements that were only working by accident.  (Fixed by Meador Inge;
+  :issue:`7902`.)
+
 * It's now possible for a subclass of the built-in :class:`unicode` type
   to override the :meth:`__unicode__` method.  (Implemented by
   Victor Stinner; :issue:`1583863`.)
@@ -1183,6 +1189,11 @@ changes, or look through the Subversion logs for all the details.
   will now ignore the name of the module containing the exception
   being tested.  (Patch by Lennart Regebro; :issue:`7490`.)
 
+* The :mod:`email` module's :class:`~email.message.Message` class will
+  now accept a Unicode-valued payload, automatically converting the
+  payload to the encoding specified by :attr:`output_charset`.
+  (Added by R. David Murray; :issue:`1368247`.)
+
 * The :class:`~fractions.Fraction` class now accepts a single float or
   :class:`~decimal.Decimal` instance, or two rational numbers, as
   arguments to its constructor.  (Implemented by Mark Dickinson;
@@ -1424,6 +1435,11 @@ changes, or look through the Subversion logs for all the details.
   asked to copy a named pipe.  Previously the code would treat
   named pipes like a regular file by opening them for reading, and
   this would block indefinitely.  (Fixed by Antoine Pitrou; :issue:`3002`.)
+
+* The :mod:`signal` module no longer re-installs the signal handler
+  unless this is truly necessary, which fixes a bug that could make it
+  impossible to catch the EINTR signal robustly.  (Fixed by
+  Charles-Francois Natali; :issue:`8354`.)
 
 * New functions: in the :mod:`site` module, three new functions
   return various site- and user-specific paths.
