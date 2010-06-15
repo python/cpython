@@ -432,6 +432,8 @@ def get_config_vars(*args):
 
         if 'srcdir' not in _CONFIG_VARS:
             _CONFIG_VARS['srcdir'] = _PROJECT_BASE
+        else:
+            _CONFIG_VARS['srcdir'] = realpath(_CONFIG_VARS['srcdir'])
 
 
         # Convert srcdir into an absolute path if it appears necessary.
