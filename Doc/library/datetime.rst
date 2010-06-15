@@ -1351,7 +1351,7 @@ methods.  Exactly which methods are needed depends on the uses made of aware
 :mod:`datetime` objects.  If in doubt, simply implement all of them.
 
 
-.. method:: tzinfo.utcoffset(self, dt)
+.. method:: tzinfo.utcoffset(dt)
 
    Return offset of local time from UTC, in minutes east of UTC.  If local time is
    west of UTC, this should be negative.  Note that this is intended to be the
@@ -1373,7 +1373,7 @@ methods.  Exactly which methods are needed depends on the uses made of aware
    :exc:`NotImplementedError`.
 
 
-.. method:: tzinfo.dst(self, dt)
+.. method:: tzinfo.dst(dt)
 
    Return the daylight saving time (DST) adjustment, in minutes east of UTC, or
    ``None`` if DST information isn't known.  Return ``timedelta(0)`` if DST is not
@@ -1421,7 +1421,7 @@ methods.  Exactly which methods are needed depends on the uses made of aware
    The default implementation of :meth:`dst` raises :exc:`NotImplementedError`.
 
 
-.. method:: tzinfo.tzname(self, dt)
+.. method:: tzinfo.tzname(dt)
 
    Return the time zone name corresponding to the :class:`datetime` object *dt*, as
    a string. Nothing about string names is defined by the :mod:`datetime` module,
@@ -1457,7 +1457,7 @@ time, and not need worry about objects in other timezones.
 There is one more :class:`tzinfo` method that a subclass may wish to override:
 
 
-.. method:: tzinfo.fromutc(self, dt)
+.. method:: tzinfo.fromutc(dt)
 
    This is called from the default :class:`datetime.astimezone()` implementation.
    When called from that, ``dt.tzinfo`` is *self*, and *dt*'s date and time members
@@ -1553,46 +1553,46 @@ changes have been made to civil time.
 
 .. class:: timezone(offset[, name])
 
-  The ``offset`` argument must be specified as a :class:`timedelta`
+  The *offset* argument must be specified as a :class:`timedelta`
   object representing the difference between the local time and UTC.  It must
-  be within the range [``-timedelta(hours=23, minutes=59),
-  ``timedelta(hours=23, minutes=59)``] and represent whole number of minutes,
+  be strictly between ``-timedelta(hours=24)`` and
+  ``timedelta(hours=24)`` and represent a whole number of minutes,
   otherwise :exc:`ValueError` is raised.
 
-  The ``name`` argument is optional.  If specified it must be a string that
-  used as the value returned by the ``tzname(dt)`` method.  Otherwise,
+  The *name* argument is optional.  If specified it must be a string that
+  is used as the value returned by the ``tzname(dt)`` method.  Otherwise,
   ``tzname(dt)`` returns a string 'UTCsHH:MM', where s is the sign of
-  ``offset``, HH and MM are two digits of ``offset.hours`` and
+  *offset*, HH and MM are two digits of ``offset.hours`` and
   ``offset.minutes`` respectively.
 
-.. method:: timezone.utcoffset(self, dt)
+.. method:: timezone.utcoffset(dt)
 
-  Returns the fixed value specified when the :class:`timezone` instance is
-  constructed.  The ``dt`` argument is ignored.  The return value is a
+  Return the fixed value specified when the :class:`timezone` instance is
+  constructed.  The *dt* argument is ignored.  The return value is a
   :class:`timedelta` instance equal to the difference between the
   local time and UTC.
 
-.. method:: timezone.tzname(self, dt)
+.. method:: timezone.tzname(dt)
 
-  Returns the fixed value specified when the :class:`timezone` instance is
+  Return the fixed value specified when the :class:`timezone` instance is
   constructed or a string 'UTCsHH:MM', where s is the sign of
-  ``offset``, HH and MM are two digits of ``offset.hours`` and
-  ``offset.minutes`` respectively.  The ``dt`` argument is ignored.
+  *offset*, HH and MM are two digits of ``offset.hours`` and
+  ``offset.minutes`` respectively.
 
-.. method:: timezone.dst(self, dt)
+.. method:: timezone.dst(dt)
 
   Always returns ``None``.
 
-.. method:: timezone.fromutc(self, dt)
+.. method:: timezone.fromutc(dt)
 
-  Returns ``dt + offset``.  The ``dt`` argument must be aware with ``tzinfo``
-  set to ``self``.
+  Return ``dt + offset``.  The *dt* argument must be an aware
+  :class:`datetime` instance, with ``tzinfo`` set to ``self``.
 
 Class attributes:
 
 .. attribute:: timezone.utc
 
-   The UTC timezone, ``timezone(0, 'UTC')``.
+   The UTC timezone, ``timezone(timedelta(0))``.
 
 
 .. _strftime-strptime-behavior:
