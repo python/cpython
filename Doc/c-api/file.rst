@@ -7,25 +7,29 @@ File Objects
 
 .. index:: object: file
 
-Python's built-in file objects are implemented entirely on the :ctype:`FILE\*`
-support from the C standard library.  This is an implementation detail and may
-change in future releases of Python.  The ``PyFile_`` APIs are a wrapper over
-the :mod:`io` module.
+These APIs are a minimal emulation of the Python 2 C API for built-in file
+objects, which used to rely on the buffered I/O (:ctype:`FILE\*`) support
+from the C standard library.  In Python 3, files and streams use the new
+:mod:`io` module, which defines several layers over the low-level unbuffered
+I/O of the operating system.  The functions described below are
+convenience C wrappers over these new APIs, and meant mostly for internal
+error reporting in the interpreter; third-party code is advised to access
+the :mod:`io` APIs instead.
 
 
 .. cfunction:: PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding, char *errors, char *newline, int closefd)
 
-   Create a new :ctype:`PyFileObject` from the file descriptor of an already
-   opened file *fd*. The arguments *name*, *encoding*, *errors* and *newline*
+   Create a Python file object from the file descriptor of an already
+   opened file *fd*.  The arguments *name*, *encoding*, *errors* and *newline*
    can be *NULL* to use the defaults; *buffering* can be *-1* to use the
-   default.  Return *NULL* on failure. For a more comprehensive description of
+   default.  Return *NULL* on failure.  For a more comprehensive description of
    the arguments, please refer to the :func:`io.open` function documentation.
 
    .. warning::
 
-     Take care when you are mixing streams and descriptors! For more
-     information, see `the GNU C Library docs
-     <http://www.gnu.org/software/libc/manual/html_node/Stream_002fDescriptor-Precautions.html#Stream_002fDescriptor-Precautions>`_.
+     Since Python streams have their own buffering layer, mixing them with
+     OS-level file descriptors can produce various issues (such as unexpected
+     ordering of data).
 
 
 .. cfunction:: int PyObject_AsFileDescriptor(PyObject *p)
