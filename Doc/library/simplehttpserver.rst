@@ -82,15 +82,16 @@ The :mod:`SimpleHTTPServer` module defines the following class:
       ``text/`` the file is opened in text mode; otherwise binary mode is used.
 
       The :func:`test` function in the :mod:`SimpleHTTPServer` module is an
-      example which interfaces the :class:`SimpleHTTPRequestHandler` as a
-      Handler to the :mod:`BaseHTTPServer` module.
+      example which creates a server using the
+      :class:`SimpleHTTPRequestHandler` as the Handler.
 
       .. versionadded:: 2.5
          The ``'Last-Modified'`` header.
 
 
 The :mod:`SimpleHTTPServer` module can be used the following manner in order to
-setup a very basic web server serving files relative to the current directory.::
+set up a very basic web server serving files relative to the current
+directory.::
 
         import SimpleHTTPServer
         import SocketServer
@@ -104,8 +105,9 @@ setup a very basic web server serving files relative to the current directory.::
         print "serving at port", PORT
         httpd.serve_forever()
 
-It can also be invoked directly using the ``-m`` switch of interpreter a with
-``port number`` argument.::
+:mod:`SimpleHTTPServer` module can also be invoked directly using the ``-m``
+switch of interpreter with a ``port number`` argument. Similar to previous
+example, this serves the files relative to the current directory.::
 
         python -m SimpleHTTPServer 8000
 
