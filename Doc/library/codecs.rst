@@ -1223,6 +1223,23 @@ functions can be used directly if desired.
    Convert a label to Unicode, as specified in :rfc:`3490`.
 
 
+:mod:`encodings.mbcs` --- Windows ANSI codepage
+-----------------------------------------------
+
+.. module:: encodings.mbcs
+   :synopsis: Windows ANSI codepage
+
+Encode operand according to the ANSI codepage (CP_ACP). This codec only
+supports ``'strict'`` and ``'replace'`` error handlers to encode, and
+``'strict'`` and ``'ignore'`` error handlers to decode.
+
+Availability: Windows only.
+
+.. versionchanged:: 3.2
+   Before 3.2, the *errors* argument was ignored; ``'replace'`` was always used
+   to encode, and ``'ignore'`` to decode.
+
+
 :mod:`encodings.utf_8_sig` --- UTF-8 codec with BOM signature
 -------------------------------------------------------------
 

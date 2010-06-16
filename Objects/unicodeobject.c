@@ -1767,6 +1767,33 @@ int PyUnicode_SetDefaultEncoding(const char *encoding)
     return 0;
 }
 
+/* create or adjust a UnicodeDecodeError */
+static void
+make_decode_exception(PyObject **exceptionObject,
+                      const char *encoding,
+                      const char *input, Py_ssize_t length,
+                      Py_ssize_t startpos, Py_ssize_t endpos,
+                      const char *reason)
+{
+    if (*exceptionObject == NULL) {
+        *exceptionObject = PyUnicodeDecodeError_Create(
+            encoding, input, length, startpos, endpos, reason);
+    }
+    else {
+        if (PyUnicodeDecodeError_SetStart(*exceptionObject, startpos))
+            goto onError;
+        if (PyUnicodeDecodeError_SetEnd(*exceptionObject, endpos))
+            goto onError;
+        if (PyUnicodeDecodeError_SetReason(*exceptionObject, reason))
+            goto onError;
+    }
+    return;
+
+onError:
+    Py_DECREF(*exceptionObject);
+    *exceptionObject = NULL;
+}
+
 /* error handling callback helper:
    build arguments, call the callback and check the arguments,
    if no exception occurred, copy the replacement to the output
@@ -1800,20 +1827,13 @@ int unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler
             goto onError;
     }
 
-    if (*exceptionObject == NULL) {
-        *exceptionObject = PyUnicodeDecodeError_Create(
-            encoding, *input, *inend-*input, *startinpos, *endinpos, reason);
-        if (*exceptionObject == NULL)
-            goto onError;
-    }
-    else {
-        if (PyUnicodeDecodeError_SetStart(*exceptionObject, *startinpos))
-            goto onError;
-        if (PyUnicodeDecodeError_SetEnd(*exceptionObject, *endinpos))
-            goto onError;
-        if (PyUnicodeDecodeError_SetReason(*exceptionObject, reason))
-            goto onError;
-    }
+    make_decode_exception(exceptionObject,
+        encoding,
+        *input, *inend - *input,
+        *startinpos, *endinpos,
+        reason);
+    if (*exceptionObject == NULL)
+        goto onError;
 
     restuple = PyObject_CallFunctionObjArgs(*errorHandler, *exceptionObject, NULL);
     if (restuple == NULL)
@@ -4552,13 +4572,27 @@ static int is_dbcs_lead_byte(const char *s, int offset)
 static int decode_mbcs(PyUnicodeObject **v,
                        const char *s, /* MBCS string */
                        int size, /* sizeof MBCS string */
-                       int final)
+                       int final,
+                       const char *errors)
 {
     Py_UNICODE *p;
-    Py_ssize_t n = 0;
-    int usize = 0;
+    Py_ssize_t n;
+    DWORD usize;
+    DWORD flags;
 
     assert(size >= 0);
+
+    /* check and handle 'errors' arg */
+    if (errors==NULL || strcmp(errors, "strict")==0)
+        flags = MB_ERR_INVALID_CHARS;
+    else if (strcmp(errors, "ignore")==0)
+        flags = 0;
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "mbcs encoding does not support errors='%s'",
+                     errors);
+        return -1;
+    }
 
     /* Skip trailing lead-byte unless 'final' is set */
     if (!final && size >= 1 && is_dbcs_lead_byte(s, size - 1))
@@ -4566,18 +4600,18 @@ static int decode_mbcs(PyUnicodeObject **v,
 
     /* First get the size of the result */
     if (size > 0) {
-        usize = MultiByteToWideChar(CP_ACP, 0, s, size, NULL, 0);
-        if (usize == 0) {
-            PyErr_SetFromWindowsErrWithFilename(0, NULL);
-            return -1;
-        }
-    }
+        usize = MultiByteToWideChar(CP_ACP, flags, s, size, NULL, 0);
+        if (usize==0)
+            goto mbcs_decode_error;
+    } else
+        usize = 0;
 
     if (*v == NULL) {
         /* Create unicode object */
         *v = _PyUnicode_New(usize);
         if (*v == NULL)
             return -1;
+        n = 0;
     }
     else {
         /* Extend unicode object */
@@ -4587,15 +4621,35 @@ static int decode_mbcs(PyUnicodeObject **v,
     }
 
     /* Do the conversion */
-    if (size > 0) {
+    if (usize > 0) {
         p = PyUnicode_AS_UNICODE(*v) + n;
-        if (0 == MultiByteToWideChar(CP_ACP, 0, s, size, p, usize)) {
-            PyErr_SetFromWindowsErrWithFilename(0, NULL);
-            return -1;
+        if (0 == MultiByteToWideChar(CP_ACP, flags, s, size, p, usize)) {
+            goto mbcs_decode_error;
         }
     }
-
     return size;
+
+mbcs_decode_error:
+    /* If the last error was ERROR_NO_UNICODE_TRANSLATION, then
+       we raise a UnicodeDecodeError - else it is a 'generic'
+       windows error
+     */
+    if (GetLastError()==ERROR_NO_UNICODE_TRANSLATION) {
+        /* Ideally, we should get reason from FormatMessage - this
+           is the Windows 2000 English version of the message
+        */
+        PyObject *exc = NULL;
+        const char *reason = "No mapping for the Unicode character exists "
+                             "in the target multi-byte code page.";
+        make_decode_exception(&exc, "mbcs", s, size, 0, 0, reason);
+        if (exc != NULL) {
+            PyCodec_StrictErrors(exc);
+            Py_DECREF(exc);
+        }
+    } else {
+        PyErr_SetFromWindowsErrWithFilename(0, NULL);
+    }
+    return -1;
 }
 
 PyObject *PyUnicode_DecodeMBCSStateful(const char *s,
@@ -4612,10 +4666,10 @@ PyObject *PyUnicode_DecodeMBCSStateful(const char *s,
 #ifdef NEED_RETRY
   retry:
     if (size > INT_MAX)
-        done = decode_mbcs(&v, s, INT_MAX, 0);
+        done = decode_mbcs(&v, s, INT_MAX, 0, errors);
     else
 #endif
-        done = decode_mbcs(&v, s, (int)size, !consumed);
+        done = decode_mbcs(&v, s, (int)size, !consumed, errors);
 
     if (done < 0) {
         Py_XDECREF(v);
@@ -4649,20 +4703,45 @@ PyObject *PyUnicode_DecodeMBCS(const char *s,
  */
 static int encode_mbcs(PyObject **repr,
                        const Py_UNICODE *p, /* unicode */
-                       int size) /* size of unicode */
+                       int size, /* size of unicode */
+                       const char* errors)
 {
-    int mbcssize = 0;
-    Py_ssize_t n = 0;
+    BOOL usedDefaultChar = FALSE;
+    BOOL *pusedDefaultChar;
+    int mbcssize;
+    Py_ssize_t n;
+    PyObject *exc = NULL;
+    DWORD flags;
 
     assert(size >= 0);
 
+    /* check and handle 'errors' arg */
+    if (errors==NULL || strcmp(errors, "strict")==0) {
+        flags = WC_NO_BEST_FIT_CHARS;
+        pusedDefaultChar = &usedDefaultChar;
+    } else if (strcmp(errors, "replace")==0) {
+        flags = 0;
+        pusedDefaultChar = NULL;
+    } else {
+         PyErr_Format(PyExc_ValueError,
+                      "mbcs encoding does not support errors='%s'",
+                      errors);
+         return -1;
+    }
+
     /* First get the size of the result */
     if (size > 0) {
-        mbcssize = WideCharToMultiByte(CP_ACP, 0, p, size, NULL, 0, NULL, NULL);
+        mbcssize = WideCharToMultiByte(CP_ACP, flags, p, size, NULL, 0,
+                                       NULL, pusedDefaultChar);
         if (mbcssize == 0) {
             PyErr_SetFromWindowsErrWithFilename(0, NULL);
             return -1;
         }
+        /* If we used a default char, then we failed! */
+        if (pusedDefaultChar && *pusedDefaultChar)
+            goto mbcs_encode_error;
+    } else {
+        mbcssize = 0;
     }
 
     if (*repr == NULL) {
@@ -4670,6 +4749,7 @@ static int encode_mbcs(PyObject **repr,
         *repr = PyBytes_FromStringAndSize(NULL, mbcssize);
         if (*repr == NULL)
             return -1;
+        n = 0;
     }
     else {
         /* Extend string object */
@@ -4681,13 +4761,20 @@ static int encode_mbcs(PyObject **repr,
     /* Do the conversion */
     if (size > 0) {
         char *s = PyBytes_AS_STRING(*repr) + n;
-        if (0 == WideCharToMultiByte(CP_ACP, 0, p, size, s, mbcssize, NULL, NULL)) {
+        if (0 == WideCharToMultiByte(CP_ACP, flags, p, size, s, mbcssize,
+                                     NULL, pusedDefaultChar)) {
             PyErr_SetFromWindowsErrWithFilename(0, NULL);
             return -1;
         }
+        if (pusedDefaultChar && *pusedDefaultChar)
+            goto mbcs_encode_error;
     }
-
     return 0;
+
+mbcs_encode_error:
+    raise_encode_exception(&exc, "mbcs", p, size, 0, 0, "invalid character");
+    Py_XDECREF(exc);
+    return -1;
 }
 
 PyObject *PyUnicode_EncodeMBCS(const Py_UNICODE *p,
@@ -4700,10 +4787,10 @@ PyObject *PyUnicode_EncodeMBCS(const Py_UNICODE *p,
 #ifdef NEED_RETRY
   retry:
     if (size > INT_MAX)
-        ret = encode_mbcs(&repr, p, INT_MAX);
+        ret = encode_mbcs(&repr, p, INT_MAX, errors);
     else
 #endif
-        ret = encode_mbcs(&repr, p, (int)size);
+        ret = encode_mbcs(&repr, p, (int)size, errors);
 
     if (ret < 0) {
         Py_XDECREF(repr);

@@ -1358,11 +1358,6 @@ broken_incremental_coders = broken_unicode_with_streams + [
     "idna",
 ]
 
-# The following encodings only support "strict" mode
-only_strict_mode = [
-    "idna",
-]
-
 class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
     def test_basics(self):
         s = "abc123" # all codecs should be able to encode these
@@ -1437,7 +1432,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                     result = "".join(codecs.iterdecode(codecs.iterencode("", encoding), encoding))
                     self.assertEqual(result, "")
 
-                if encoding not in only_strict_mode:
+                if encoding not in ("idna", "mbcs"):
                     # check incremental decoder/encoder with errors argument
                     try:
                         encoder = codecs.getincrementalencoder(encoding)("ignore")

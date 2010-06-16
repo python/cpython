@@ -265,7 +265,7 @@ except ImportError:
     pass
 else:
     if _os.name in ("nt", "ce"):
-        set_conversion_mode("mbcs", "ignore")
+        set_conversion_mode("mbcs", "strict")
     else:
         set_conversion_mode("ascii", "strict")
 
