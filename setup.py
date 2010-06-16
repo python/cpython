@@ -450,9 +450,9 @@ class PyBuildExt(build_ext):
                                depends=['_math.h'],
                                libraries=math_libs) )
         # time operations and variables
-        exts.append( Extension('time', ['timemodule.c'],
+        exts.append( Extension('time', ['timemodule.c', '_time.c'],
                                libraries=math_libs) )
-        exts.append( Extension('datetime', ['datetimemodule.c', 'timemodule.c'],
+        exts.append( Extension('datetime', ['datetimemodule.c', '_time.c'],
                                libraries=math_libs) )
         # fast iterator tools implemented in C
         exts.append( Extension("itertools", ["itertoolsmodule.c"]) )
