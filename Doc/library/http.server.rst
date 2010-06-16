@@ -281,8 +281,30 @@ of which this module provides three different variants:
       contents of the file are output. If the file's MIME type starts with
       ``text/`` the file is opened in text mode; otherwise binary mode is used.
 
-      For example usage, see the implementation of the :func:`test` function.
+      For example usage, see the implementation of the :func:`test` function
+      invocation in the :mod:`http.server` module.
 
+The :class:`SimpleHTTPRequestHandler` class can be invoked the following manner
+with the :mod:`http.server` to create a very basic webserver serving files
+relative to the current directory.::
+
+        import http.server
+        import socketserver
+
+        PORT = 8000
+
+        Handler = http.server.SimpleHTTPRequestHandler
+
+        httpd = socketserver.TCPServer(("", PORT), Handler)
+
+        print("serving at port", PORT)
+        httpd.serve_forever()
+
+:mod:`http.server` can also be invoked directly using the ``-m`` switch of
+interpreter a with ``port number`` argument which interfaces
+:class:`SimpleHTTPRequestHandler` by default.::
+
+        python -m http.server 8000
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
