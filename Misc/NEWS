@@ -244,6 +244,11 @@ Library
 Extension Modules
 -----------------
 
+- Issue #7384: If the system readline library is linked against
+  ncurses, do not link the readline module against ncursesw. The
+  additional restriction of linking the readline and curses modules
+  against the same curses library is currently not enabled.
+
 - Issue #8973: Add __all__ to struct module; this ensures that
   help(struct) includes documentation for the struct.Struct class.
 
