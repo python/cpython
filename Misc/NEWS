@@ -15,7 +15,7 @@ Core and Builtins
 - Issue #850997: mbcs encoding (Windows only) handles errors argument: strict
   mode raises unicode errors. The encoder only supports "strict" and "replace"
   error handlers, the decoder only supports "strict" and "ignore" error
-  handlers.
+  handlers. Patch written by Mark Hammond.
 
 - Issue #8592: PyArg_Parse*() functions raise a TypeError for "y", "u" and "Z"
   formats if the string contains a null byte/character. Write unit tests for
