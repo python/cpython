@@ -301,8 +301,10 @@ relative to the current directory.::
         httpd.serve_forever()
 
 :mod:`http.server` can also be invoked directly using the ``-m`` switch of
-interpreter a with ``port number`` argument which interfaces
-:class:`SimpleHTTPRequestHandler` by default.::
+interpreter a with ``port number`` argument which uses
+:class:`SimpleHTTPRequestHandler` as the default request Handler. Similar to
+the previous example, even this serves files relative to the current
+directory.::
 
         python -m http.server 8000
 
