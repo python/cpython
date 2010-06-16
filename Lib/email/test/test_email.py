@@ -2584,6 +2584,24 @@ Here's the message body
         eq(headers, ['A', 'B', 'CC'])
         eq(msg.get_payload(), 'body')
 
+    def test_CRLFLF_at_end_of_part(self):
+        # issue 5610: feedparser should not eat two chars from body part ending
+        # with "\r\n\n".
+        m = (
+            "From: foo@bar.com\n"
+            "To: baz\n"
+            "Mime-Version: 1.0\n"
+            "Content-Type: multipart/mixed; boundary=BOUNDARY\n"
+            "\n"
+            "--BOUNDARY\n"
+            "Content-Type: text/plain\n"
+            "\n"
+            "body ending with CRLF newline\r\n"
+            "\n"
+            "--BOUNDARY--\n"
+          )
+        msg = email.message_from_string(m)
+        self.assertTrue(msg.get_payload(0).get_payload().endswith('\r\n'))
 
 
 class TestBase64(unittest.TestCase):
