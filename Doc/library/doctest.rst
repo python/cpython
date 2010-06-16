@@ -325,10 +325,6 @@ The fine print:
   error prone way of handling them.  It is possible to use a different
   algorithm for handling tabs by writing a custom :class:`DocTestParser` class.
 
-  .. versionchanged:: 2.4
-     Expanding tabs to spaces is new; previous versions tried to preserve hard tabs,
-     with confusing results.
-
 * Output to stdout is captured, but not output to stderr (exception tracebacks
   are captured via a different means).
 
