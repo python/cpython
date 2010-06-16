@@ -81,11 +81,33 @@ The :mod:`SimpleHTTPServer` module defines the following class:
       contents of the file are output. If the file's MIME type starts with
       ``text/`` the file is opened in text mode; otherwise binary mode is used.
 
-      For example usage, see the implementation of the :func:`test` function.
+      The :func:`test` function in the :mod:`SimpleHTTPServer` module is an
+      example which interfaces the :class:`SimpleHTTPRequestHandler` as a
+      Handler to the :mod:`BaseHTTPServer` module.
 
       .. versionadded:: 2.5
          The ``'Last-Modified'`` header.
 
+
+The :mod:`SimpleHTTPServer` module can be used the following manner in order to
+setup a very basic web server serving files relative to the current directory.::
+
+        import SimpleHTTPServer
+        import SocketServer
+
+        PORT = 8000
+
+        Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+
+        httpd = SocketServer.TCPServer(("", PORT), Handler)
+
+        print "serving at port", PORT
+        httpd.serve_forever()
+
+It can also be invoked directly using the ``-m`` switch of interpreter a with
+``port number`` argument.::
+
+        python -m SimpleHTTPServer 8000
 
 .. seealso::
 
