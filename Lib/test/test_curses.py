@@ -19,12 +19,6 @@ import curses.panel
 from test.test_support import requires, TestSkipped
 requires('curses')
 
-# skip all these tests on FreeBSD: test_curses currently hangs the
-# FreeBSD buildbots, preventing other tests from running.  See issue
-# #7384.
-if 'freebsd' in sys.platform:
-    raise TestSkipped('The curses module is broken on FreeBSD.  '
-                      'See http://bugs.python.org/issue7384.')
 
 # XXX: if newterm was supported we could use it instead of initscr and not exit
 term = os.environ.get('TERM')
