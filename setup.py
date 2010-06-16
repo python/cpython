@@ -14,6 +14,7 @@ from distutils.core import Extension, setup
 from distutils.command.build_ext import build_ext
 from distutils.command.install import install
 from distutils.command.install_lib import install_lib
+from distutils.spawn import find_executable
 
 # This global variable is used to hold the list of modules to be disabled.
 disabled_module_list = []
@@ -538,6 +539,42 @@ class PyBuildExt(build_ext):
 
         # readline
         do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
+        readline_termcap_library = ""
+        curses_library = ""
+        # Determine if readline is already linked against curses or tinfo.
+        if do_readline and find_executable('ldd'):
+            # Cannot use os.popen here in py3k.
+            tmpfile = os.path.join(self.build_temp, 'readline_termcap_lib')
+            if not os.path.exists(self.build_temp):
+                os.makedirs(self.build_temp)
+            os.system("ldd %s > %s" % (do_readline, tmpfile))
+            fp = open(tmpfile)
+            for ln in fp:
+                if 'curses' in ln:
+                    readline_termcap_library = re.sub(
+                        r'.*lib(n?cursesw?)\.so.*', r'\1', ln
+                    ).rstrip()
+                    break
+                if 'tinfo' in ln: # termcap interface split out from ncurses
+                    readline_termcap_library = 'tinfo'
+                    break
+            fp.close()
+            os.unlink(tmpfile)
+        # Issue 7384: If readline is already linked against curses,
+        # use the same library for the readline and curses modules.
+        # Disabled since applications relying on ncursesw might break.
+        #
+        # if 'curses' in readline_termcap_library:
+        #    curses_library = readline_termcap_library
+        # elif self.compiler.find_library_file(lib_dirs, 'ncursesw'):
+        # (...)
+        if self.compiler.find_library_file(lib_dirs, 'ncursesw'):
+            curses_library = 'ncursesw'
+        elif self.compiler.find_library_file(lib_dirs, 'ncurses'):
+            curses_library = 'ncurses'
+        elif self.compiler.find_library_file(lib_dirs, 'curses'):
+            curses_library = 'curses'
+
         if platform == 'darwin': # and os.uname()[2] < '9.':
             # MacOSX 10.4 has a broken readline. Don't try to build
             # the readline module unless the user has installed a fixed
@@ -558,14 +595,10 @@ class PyBuildExt(build_ext):
                 readline_extra_link_args = ()
 
             readline_libs = ['readline']
-            if self.compiler.find_library_file(lib_dirs,
-                                                 'ncursesw'):
-                readline_libs.append('ncursesw')
-            elif self.compiler.find_library_file(lib_dirs,
-                                                 'ncurses'):
-                readline_libs.append('ncurses')
-            elif self.compiler.find_library_file(lib_dirs, 'curses'):
-                readline_libs.append('curses')
+            if readline_termcap_library:
+                pass # Issue 7384: Already linked against curses or tinfo.
+            elif curses_library:
+                readline_libs.append(curses_library)
             elif self.compiler.find_library_file(lib_dirs +
                                                ['/usr/lib/termcap'],
                                                'termcap'):
@@ -1071,19 +1104,15 @@ class PyBuildExt(build_ext):
         # Curses support, requiring the System V version of curses, often
         # provided by the ncurses library.
         panel_library = 'panel'
-        if (self.compiler.find_library_file(lib_dirs, 'ncursesw')):
-            curses_libs = ['ncursesw']
-            # Bug 1464056: If _curses.so links with ncursesw,
-            # _curses_panel.so must link with panelw.
-            panel_library = 'panelw'
+        if curses_library.startswith('ncurses'):
+            if curses_library == 'ncursesw':
+                # Bug 1464056: If _curses.so links with ncursesw,
+                # _curses_panel.so must link with panelw.
+                panel_library = 'panelw'
+            curses_libs = [curses_library]
             exts.append( Extension('_curses', ['_cursesmodule.c'],
                                    libraries = curses_libs) )
-        elif (self.compiler.find_library_file(lib_dirs, 'ncurses')):
-            curses_libs = ['ncurses']
-            exts.append( Extension('_curses', ['_cursesmodule.c'],
-                                   libraries = curses_libs) )
-        elif (self.compiler.find_library_file(lib_dirs, 'curses')
-              and platform != 'darwin'):
+        elif curses_library == 'curses' and platform != 'darwin':
                 # OSX has an old Berkeley curses, not good enough for
                 # the _curses module.
             if (self.compiler.find_library_file(lib_dirs, 'terminfo')):
