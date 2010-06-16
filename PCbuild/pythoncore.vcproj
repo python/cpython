@@ -1040,6 +1040,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Modules\_time.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Modules\_time.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Modules\_weakref.c"
 				>
 			</File>
