@@ -432,6 +432,9 @@ C-API
 Library
 -------
 
+- Issue #5610: feedparser no longer eats extra characters at the end of
+  a body part if the body part ends with a \r\n.
+
 - Issue #8986: math.erfc was incorrectly raising OverflowError for
   values between -27.3 and -30.0 on some platforms.
 
