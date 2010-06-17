@@ -2047,6 +2047,8 @@ Installation
 Library
 -------
 
+- Issue #8203: Fix IDLE Credits dialog: view_file() uses its encoding argument.
+
 - Issue #5311: bdist_msi can now build packages that do not depend on a
   specific Python version.
 
