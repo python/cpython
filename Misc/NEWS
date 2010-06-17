@@ -61,6 +61,9 @@ C-API
 Library
 -------
 
+- Issue #8720: fix regression caused by fix for #4050 by making getsourcefile
+  smart enough to find source files in the linecache.
+
 - Issue #5610: feedparser no longer eats extra characters at the end of
   a body part if the body part ends with a \r\n.
 
