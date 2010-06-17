@@ -133,33 +133,38 @@ PyTraceBack_Here(PyFrameObject *frame)
     return 0;
 }
 
-static int
-_Py_FindSourceFile(const char* filename, char* namebuf, size_t namelen, int open_flags)
+static PyObject *
+_Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *io)
 {
-    int i;
-    int fd = -1;
+    Py_ssize_t i;
+    PyObject *binary;
     PyObject *v;
-    Py_ssize_t _npath;
-    int npath;
+    Py_ssize_t npath;
     size_t taillen;
     PyObject *syspath;
     const char* path;
     const char* tail;
+    const char* filepath;
     Py_ssize_t len;
 
+    filepath = _PyUnicode_AsString(filename);
+    if (filepath == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
+
     /* Search tail of filename in sys.path before giving up */
-    tail = strrchr(filename, SEP);
+    tail = strrchr(filepath, SEP);
     if (tail == NULL)
-        tail = filename;
+        tail = filepath;
     else
         tail++;
     taillen = strlen(tail);
 
     syspath = PySys_GetObject("path");
     if (syspath == NULL || !PyList_Check(syspath))
-        return -1;
-    _npath = PyList_Size(syspath);
-    npath = Py_SAFE_DOWNCAST(_npath, Py_ssize_t, int);
+        return NULL;
+    npath = PyList_Size(syspath);
 
     for (i = 0; i < npath; i++) {
         v = PyList_GetItem(syspath, i);
@@ -170,6 +175,10 @@ _Py_FindSourceFile(const char* filename, char* namebuf, size_t namelen, int open
         if (!PyUnicode_Check(v))
             continue;
         path = _PyUnicode_AsStringAndSize(v, &len);
+        if (path == NULL) {
+            PyErr_Clear();
+            continue;
+        }
         if (len + 1 + (Py_ssize_t)taillen >= (Py_ssize_t)namelen - 1)
             continue; /* Too long */
         strcpy(namebuf, path);
@@ -178,31 +187,27 @@ _Py_FindSourceFile(const char* filename, char* namebuf, size_t namelen, int open
         if (len > 0 && namebuf[len-1] != SEP)
             namebuf[len++] = SEP;
         strcpy(namebuf+len, tail);
-        Py_BEGIN_ALLOW_THREADS
-        fd = open(namebuf, open_flags);
-        Py_END_ALLOW_THREADS
-        if (0 <= fd) {
-            return fd;
-        }
+
+        binary = PyObject_CallMethod(io, "open", "ss", namebuf, "rb");
+        if (binary != NULL)
+            return binary;
+        PyErr_Clear();
     }
-    return -1;
+    return NULL;
 }
 
 int
-_Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno, int indent)
+_Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
 {
     int err = 0;
     int fd;
     int i;
     char *found_encoding;
     char *encoding;
+    PyObject *io;
+    PyObject *binary;
     PyObject *fob = NULL;
     PyObject *lineobj = NULL;
-#ifdef O_BINARY
-    const int open_flags = O_RDONLY | O_BINARY;   /* necessary for Windows */
-#else
-    const int open_flags = O_RDONLY;
-#endif
     char buf[MAXPATHLEN+1];
     Py_UNICODE *u, *p;
     Py_ssize_t len;
@@ -210,27 +215,32 @@ _Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno, int indent)
     /* open the file */
     if (filename == NULL)
         return 0;
-    Py_BEGIN_ALLOW_THREADS
-    fd = open(filename, open_flags);
-    Py_END_ALLOW_THREADS
-    if (fd < 0) {
-        fd = _Py_FindSourceFile(filename, buf, sizeof(buf), open_flags);
-        if (fd < 0)
+
+    io = PyImport_ImportModuleNoBlock("io");
+    if (io == NULL)
+        return -1;
+    binary = PyObject_CallMethod(io, "open", "Os", filename, "rb");
+
+    if (binary == NULL) {
+        binary = _Py_FindSourceFile(filename, buf, sizeof(buf), io);
+        if (binary == NULL) {
+            Py_DECREF(io);
             return 0;
-        filename = buf;
+        }
     }
 
     /* use the right encoding to decode the file as unicode */
+    fd = PyObject_AsFileDescriptor(binary);
     found_encoding = PyTokenizer_FindEncoding(fd);
-    encoding = (found_encoding != NULL) ? found_encoding :
-        (char*)PyUnicode_GetDefaultEncoding();
+    encoding = (found_encoding != NULL) ? found_encoding : "utf-8";
     lseek(fd, 0, 0); /* Reset position */
-    fob = PyFile_FromFd(fd, (char*)filename, "r", -1, (char*)encoding,
-        NULL, NULL, 1);
+    fob = PyObject_CallMethod(io, "TextIOWrapper", "Os", binary, encoding);
+    Py_DECREF(io);
+    Py_DECREF(binary);
     PyMem_FREE(found_encoding);
+
     if (fob == NULL) {
         PyErr_Clear();
-        close(fd);
         return 0;
     }
 
@@ -287,17 +297,19 @@ _Py_DisplaySourceLine(PyObject *f, const char *filename, int lineno, int indent)
 }
 
 static int
-tb_displayline(PyObject *f, const char *filename, int lineno, const char *name)
+tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
 {
-    int err = 0;
-    char linebuf[2000];
+    int err;
+    PyObject *line;
 
     if (filename == NULL || name == NULL)
         return -1;
-    /* This is needed by Emacs' compile command */
-#define FMT "  File \"%.500s\", line %d, in %.500s\n"
-    PyOS_snprintf(linebuf, sizeof(linebuf), FMT, filename, lineno, name);
-    err = PyFile_WriteString(linebuf, f);
+    line = PyUnicode_FromFormat("  File \"%U\", line %d, in %U\n",
+                                filename, lineno, name);
+    if (line == NULL)
+        return -1;
+    err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+    Py_DECREF(line);
     if (err != 0)
         return err;
     return _Py_DisplaySourceLine(f, filename, lineno, 4);
@@ -316,10 +328,9 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
     while (tb != NULL && err == 0) {
         if (depth <= limit) {
             err = tb_displayline(f,
-                _PyUnicode_AsString(
-                    tb->tb_frame->f_code->co_filename),
-                tb->tb_lineno,
-                _PyUnicode_AsString(tb->tb_frame->f_code->co_name));
+                                 tb->tb_frame->f_code->co_filename,
+                                 tb->tb_lineno,
+                                 tb->tb_frame->f_code->co_name);
         }
         depth--;
         tb = tb->tb_next;
