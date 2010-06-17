@@ -4059,7 +4059,7 @@ posix_getpgrp(PyObject *self, PyObject *noargs)
 #ifdef HAVE_SETPGRP
 PyDoc_STRVAR(posix_setpgrp__doc__,
 "setpgrp()\n\n\
-Make this process a session leader.");
+Make this process the process group leader.");
 
 static PyObject *
 posix_setpgrp(PyObject *self, PyObject *noargs)
