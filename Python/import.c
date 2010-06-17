@@ -558,10 +558,10 @@ PyImport_GetMagicTag(void)
    copy can be retrieved from there by calling
    _PyImport_FindExtension().
 
-   Modules which do support multiple multiple initialization set
-   their m_size field to a non-negative number (indicating the size
-   of the module-specific state). They are still recorded in the
-   extensions dictionary, to avoid loading shared libraries twice.
+   Modules which do support multiple initialization set their m_size
+   field to a non-negative number (indicating the size of the
+   module-specific state). They are still recorded in the extensions
+   dictionary, to avoid loading shared libraries twice.
 */
 
 int
