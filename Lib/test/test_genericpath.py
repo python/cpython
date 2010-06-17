@@ -155,6 +155,9 @@ class GenericTest(unittest.TestCase):
             safe_rmdir(test_support.TESTFN)
 
 
+# Following TestCase is not supposed to be run from test_genericpath.
+# It is inherited by other test modules (macpath, ntpath, posixpath).
+
 class CommonTest(GenericTest):
     # The path module to be tested
     pathmodule = None
