@@ -17,6 +17,7 @@ from datetime import tzinfo
 from datetime import time
 from datetime import timezone
 from datetime import date, datetime
+import time as _time
 
 pickle_choices = [(pickle, pickle, proto) for proto in range(3)]
 assert len(pickle_choices) == 3
@@ -1731,10 +1732,40 @@ class TestDateTime(TestDate):
 
         string = '2004-12-01 13:02:47.197'
         format = '%Y-%m-%d %H:%M:%S.%f'
-        result, frac = _strptime._strptime(string, format)
-        expected = self.theclass(*(result[0:6]+(frac,)))
+        expected = _strptime._strptime_datetime(string, format)
         got = self.theclass.strptime(string, format)
         self.assertEqual(expected, got)
+
+        strptime = self.theclass.strptime
+        self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
+        self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
+        # Only local timezone and UTC are supported
+        for tzseconds, tzname in ((0, 'UTC'), (0, 'GMT'),
+                                 (-_time.timezone, _time.tzname[0])):
+            if tzseconds < 0:
+                sign = '-'
+                seconds = -tzseconds
+            else:
+                sign ='+'
+                seconds = tzseconds
+            hours, minutes = divmod(seconds//60, 60)
+            dtstr = "{}{:02d}{:02d} {}".format(sign, hours, minutes, tzname)
+            dt = strptime(dtstr, "%z %Z")
+            self.assertEqual(dt.utcoffset(), timedelta(seconds=tzseconds))
+            self.assertEqual(dt.tzname(), tzname)
+        # Can produce inconsistent datetime
+        dtstr, fmt = "+1234 UTC", "%z %Z"
+        dt = strptime(dtstr, fmt)
+        self.assertEqual(dt.utcoffset(), 12 * HOUR + 34 * MINUTE)
+        self.assertEqual(dt.tzname(), 'UTC')
+        # yet will roundtrip
+        self.assertEqual(dt.strftime(fmt), dtstr)
+
+        # Produce naive datetime if no %z is provided
+        self.assertEqual(strptime("UTC", "%Z").tzinfo, None)
+
+        with self.assertRaises(ValueError): strptime("-2400", "%z")
+        with self.assertRaises(ValueError): strptime("-000", "%z")
 
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.
@@ -3196,6 +3227,7 @@ def first_sunday_on_or_after(dt):
     return dt
 
 ZERO = timedelta(0)
+MINUTE = timedelta(minutes=1)
 HOUR = timedelta(hours=1)
 DAY = timedelta(days=1)
 # In the US, DST starts at 2am (standard time) on the first Sunday in April.

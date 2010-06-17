@@ -1760,3 +1760,10 @@ Notes:
 (5)
    For example, if :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``,
    ``%z`` is replaced with the string ``'-0330'``.
+
+.. versionadded:: 3.2
+
+   When the ``%z`` directive is provided to the :meth:`strptime`
+   method, an aware :class:`datetime` object will be produced.  The
+   ``tzinfo`` of the result will be set to a :class:`timezone`
+   instance.
