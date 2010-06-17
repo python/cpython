@@ -1322,6 +1322,14 @@ Library
 Extension Modules
 -----------------
 
+- Issue #6641: The ``datetime.strptime`` method now supports the
+  ``%z`` directive.  When the ``%z`` directive is present in the
+  format string, an aware ``datetime`` object is returned with
+  ``tzinfo`` bound to a ``datetime.timezone`` instance constructed
+  from the parsed offset.  If both ``%z`` and ``%Z`` are present, the
+  data in ``%Z`` field is used for timezone name, but ``%Z`` data
+  without ``%z`` is discarded.
+
 - Issue #5094: The ``datetime`` module now has a simple concrete class
   implementing ``datetime.tzinfo`` interface.  Instances of the new
   class, ``datetime.timezone``, return fixed name and UTC offset from

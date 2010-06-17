@@ -16,7 +16,10 @@ import calendar
 from re import compile as re_compile
 from re import IGNORECASE, ASCII
 from re import escape as re_escape
-from datetime import date as datetime_date
+from datetime import (date as datetime_date,
+                      datetime as datetime_datetime,
+                      timedelta as datetime_timedelta,
+                      timezone as datetime_timezone)
 try:
     from _thread import allocate_lock as _thread_allocate_lock
 except:
@@ -204,6 +207,7 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
+            'z': r"(?P<z>[+-]\d\d[0-5]\d)",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -293,7 +297,9 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
 
 
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a time struct based on the input string and the format string."""
+    """Return a 2-tuple consisting of a time struct and an int containg
+    the number of microseconds based on the input string and the
+    format string."""
 
     for index, arg in enumerate([data_string, format]):
         if not isinstance(arg, str):
@@ -333,10 +339,12 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     if len(data_string) != found.end():
         raise ValueError("unconverted data remains: %s" %
                           data_string[found.end():])
+
     year = 1900
     month = day = 1
     hour = minute = second = fraction = 0
     tz = -1
+    tzoffset = None
     # Default to -1 to signify that values not known; not critical to have,
     # though
     week_of_year = -1
@@ -417,6 +425,11 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             else:
                 # W starts week on Monday.
                 week_of_year_start = 0
+        elif group_key == 'z':
+            z = found_dict['z']
+            tzoffset = int(z[1:3]) * 60 + int(z[3:5])
+            if z.startswith("-"):
+                tzoffset = -tzoffset
         elif group_key == 'Z':
             # Since -1 is default value only need to worry about setting tz if
             # it can be something other than -1.
@@ -453,9 +466,35 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         day = datetime_result.day
     if weekday == -1:
         weekday = datetime_date(year, month, day).weekday()
-    return (time.struct_time((year, month, day,
-                              hour, minute, second,
-                              weekday, julian, tz)), fraction)
+    # Add timezone info
+    tzname = found_dict.get("Z")
+    if tzoffset is not None:
+        gmtoff = tzoffset * 60
+    else:
+        gmtoff = None
+
+    return (year, month, day,
+            hour, minute, second,
+            weekday, julian, tz, gmtoff, tzname), fraction
 
 def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
-    return _strptime(data_string, format)[0]
+    """Return a time struct based on the input string and the
+    format string."""
+    tt = _strptime(data_string, format)[0]
+    return time.struct_time(tt[:9])
+
+def _strptime_datetime(data_string, format="%a %b %d %H:%M:%S %Y"):
+    """Return a datetime instace based on the input string and the
+    format string."""
+    tt, fraction = _strptime(data_string, format)
+    gmtoff, tzname = tt[-2:]
+    args = tt[:6] + (fraction,)
+    if gmtoff is not None:
+        tzdelta = datetime_timedelta(seconds=gmtoff)
+        if tzname:
+            tz = datetime_timezone(tzdelta, tzname)
+        else:
+            tz = datetime_timezone(tzdelta)
+        args += (tz,)
+
+    return datetime_datetime(*args)

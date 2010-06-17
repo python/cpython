@@ -4362,82 +4362,23 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
     return result;
 }
 
-/* Return new datetime from time.strptime(). */
+/* Return new datetime from _strptime.strptime_datetime(). */
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
     static PyObject *module = NULL;
-    PyObject *result = NULL, *obj, *st = NULL, *frac = NULL;
     const Py_UNICODE *string, *format;
 
     if (!PyArg_ParseTuple(args, "uu:strptime", &string, &format))
         return NULL;
 
-    if (module == NULL &&
-        (module = PyImport_ImportModuleNoBlock("_strptime")) == NULL)
-        return NULL;
-
-    /* _strptime._strptime returns a two-element tuple.  The first
-       element is a time.struct_time object.  The second is the
-       microseconds (which are not defined for time.struct_time). */
-    obj = PyObject_CallMethod(module, "_strptime", "uu", string, format);
-    if (obj != NULL) {
-        int i, good_timetuple = 1;
-        long int ia[7];
-        if (PySequence_Check(obj) && PySequence_Size(obj) == 2) {
-            st = PySequence_GetItem(obj, 0);
-            frac = PySequence_GetItem(obj, 1);
-            if (st == NULL || frac == NULL)
-                good_timetuple = 0;
-            /* copy y/m/d/h/m/s values out of the
-               time.struct_time */
-            if (good_timetuple &&
-                PySequence_Check(st) &&
-                PySequence_Size(st) >= 6) {
-                for (i=0; i < 6; i++) {
-                    PyObject *p = PySequence_GetItem(st, i);
-                    if (p == NULL) {
-                        good_timetuple = 0;
-                        break;
-                    }
-                    if (PyLong_Check(p))
-                        ia[i] = PyLong_AsLong(p);
-                    else
-                        good_timetuple = 0;
-                    Py_DECREF(p);
-                }
-/*                              if (PyLong_CheckExact(p)) {
-                                        ia[i] = PyLong_AsLongAndOverflow(p, &overflow);
-                                        if (overflow)
-                                                good_timetuple = 0;
-                                }
-                                else
-                                        good_timetuple = 0;
-                                Py_DECREF(p);
-*/                      }
-                        else
-                                good_timetuple = 0;
-                        /* follow that up with a little dose of microseconds */
-            if (PyLong_Check(frac))
-                ia[6] = PyLong_AsLong(frac);
-            else
-                good_timetuple = 0;
-        }
-        else
-            good_timetuple = 0;
-        if (good_timetuple)
-            result = PyObject_CallFunction(cls, "iiiiiii",
-                                           ia[0], ia[1], ia[2],
-                                           ia[3], ia[4], ia[5],
-                                           ia[6]);
-        else
-            PyErr_SetString(PyExc_ValueError,
-                "unexpected value from _strptime._strptime");
+    if (module == NULL) {
+        module = PyImport_ImportModuleNoBlock("_strptime");
+        if(module == NULL)
+            return NULL;
     }
-    Py_XDECREF(obj);
-    Py_XDECREF(st);
-    Py_XDECREF(frac);
-    return result;
+    return PyObject_CallMethod(module, "_strptime_datetime", "uu",
+                               string, format);
 }
 
 /* Return new datetime from date/datetime and time arguments. */
