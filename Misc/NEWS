@@ -66,6 +66,8 @@ C-API
 Library
 -------
 
+- Issue #8203: Fix IDLE Credits dialog: view_file() uses its encoding argument.
+
 - Issue #8720: fix regression caused by fix for #4050 by making getsourcefile
   smart enough to find source files in the linecache.
 
