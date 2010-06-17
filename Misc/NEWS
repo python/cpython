@@ -13,7 +13,8 @@ Core and Builtins
 -----------------
 
 - Issue #6543: Write the traceback in the terminal encoding instead of utf-8.
-  Fix the encoding of the modules filename.
+  Fix the encoding of the modules filename. Patch written by Amaury Forgeot
+  d'Arc.
 
 - Issue #9011: Remove buggy and unnecessary (in 3.x) ST->AST
   compilation code dealing with unary minus applied to a constant.
