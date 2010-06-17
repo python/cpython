@@ -282,8 +282,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
         PyFile_WriteString("\n", f_stderr);
     }
     else
-        if (_Py_DisplaySourceLine(f_stderr, _PyUnicode_AsString(filename),
-                              lineno, 2) < 0)
+        if (_Py_DisplaySourceLine(f_stderr, filename, lineno, 2) < 0)
                 return;
     PyErr_Clear();
 }
