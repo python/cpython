@@ -12,6 +12,11 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #9011: Remove buggy and unnecessary (in 3.x) ST->AST
+  compilation code dealing with unary minus applied to a constant.
+  The removed code was mutating the ST, causing a second compilation
+  to fail.
+
 - Issue #8941: decoding big endian UTF-32 data in UCS-2 builds could crash
   the interpreter with characters outside the Basic Multilingual Plane
   (higher than 0x10000).

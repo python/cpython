@@ -479,8 +479,18 @@ class CompileTestCase(unittest.TestCase):
         st = parser.suite('a = "\\u1"')
         self.assertRaises(SyntaxError, parser.compilest, st)
 
+    def test_issue_9011(self):
+        # Issue 9011: compilation of an unary minus expression changed
+        # the meaning of the ST, so that a second compilation produced
+        # incorrect results.
+        st = parser.expr('-3')
+        code1 = parser.compilest(st)
+        self.assertEqual(eval(code1), -3)
+        code2 = parser.compilest(st)
+        self.assertEqual(eval(code2), -3)
+
 class ParserStackLimitTestCase(unittest.TestCase):
-    """try to push the parser to/over it's limits.
+    """try to push the parser to/over its limits.
     see http://bugs.python.org/issue1881 for a discussion
     """
     def _nested_expression(self, level):
