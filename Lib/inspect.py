@@ -440,7 +440,9 @@ def getmodulename(path):
     if info: return info[0]
 
 def getsourcefile(object):
-    """Return the Python source file an object was defined in, if it exists."""
+    """Return the filename that can be used to locate an object's source.
+    Return None if no way can be identified to get the source.
+    """
     filename = getfile(object)
     if string.lower(filename[-4:]) in ('.pyc', '.pyo'):
         filename = filename[:-4] + '.py'
@@ -452,6 +454,9 @@ def getsourcefile(object):
         return filename
     # only return a non-existent filename if the module has a PEP 302 loader
     if hasattr(getmodule(object, filename), '__loader__'):
+        return filename
+    # or it is in the linecache
+    if filename in linecache.cache:
         return filename
 
 def getabsfile(object, _filename=None):

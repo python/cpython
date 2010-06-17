@@ -3,6 +3,7 @@ import sys
 import types
 import unittest
 import inspect
+import linecache
 import datetime
 from UserList import UserList
 from UserDict import UserDict
@@ -274,6 +275,11 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getsourcefile(self):
         self.assertEqual(inspect.getsourcefile(mod.spam), modfile)
         self.assertEqual(inspect.getsourcefile(git.abuse), modfile)
+        fn = "_non_existing_filename_used_for_sourcefile_test.py"
+        co = compile("None", fn, "exec")
+        self.assertEqual(inspect.getsourcefile(co), None)
+        linecache.cache[co.co_filename] = (1, None, "None", co.co_filename)
+        self.assertEqual(inspect.getsourcefile(co), fn)
 
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
@@ -371,6 +377,15 @@ class TestBuggyCases(GetSourceBase):
     def test_findsource_binary(self):
         self.assertRaises(IOError, inspect.getsource, unicodedata)
         self.assertRaises(IOError, inspect.findsource, unicodedata)
+
+    def test_findsource_code_in_linecache(self):
+        lines = ["x=1"]
+        co = compile(lines[0], "_dynamically_created_file", "exec")
+        self.assertRaises(IOError, inspect.findsource, co)
+        self.assertRaises(IOError, inspect.getsource, co)
+        linecache.cache[co.co_filename] = (1, None, lines, co.co_filename)
+        self.assertEquals(inspect.findsource(co), (lines,0))
+        self.assertEquals(inspect.getsource(co), lines[0])
 
 # Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):

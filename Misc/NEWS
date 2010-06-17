@@ -26,6 +26,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8720: fix regression caused by fix for #4050 by making getsourcefile
+  smart enough to find source files in the linecache.
+
 - Issue #8986: math.erfc was incorrectly raising OverflowError for
   values between -27.3 and -30.0 on some platforms.
 
