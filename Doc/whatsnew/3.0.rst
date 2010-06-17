@@ -798,6 +798,15 @@ Builtins
 * A new built-in function :func:`next` was added to call the
   :meth:`__next__` method on an object.
 
+* The :func:`round` function rounding strategy and return type have
+  changed.  Exact halfway cases are now rounded to the nearest even
+  result instead of away from zero.  (For example, ``round(2.5)`` now
+  returns ``2`` rather than ``3``.)  :func:`round(x[, n])` now
+  delegates to ``x.__round__([n])`` instead of always returning a
+  float.  It generally returns an integer when called with a single
+  argument and a value of the same type as ``x`` when called with two
+  arguments.
+
 * Moved :func:`intern` to :func:`sys.intern`.
 
 * Removed: :func:`apply`.  Instead of ``apply(f, args)`` use
