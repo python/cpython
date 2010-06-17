@@ -12,6 +12,11 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9011: Remove buggy and unnecessary (in 3.x) ST->AST
+  compilation code dealing with unary minus applied to a constant.
+  The removed code was mutating the ST, causing a second compilation
+  to fail.
+
 - Issue #850997: mbcs encoding (Windows only) handles errors argument: strict
   mode raises unicode errors. The encoder only supports "strict" and "replace"
   error handlers, the decoder only supports "strict" and "ignore" error
