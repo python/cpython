@@ -446,6 +446,10 @@ C-API
 Library
 -------
 
+- Issue #1368368: FancyURLOpener class changed to throw an Exception on wrong
+  password instead of presenting an interactive prompt. Older behavior can be
+  obtained by passing retry=True to http_error_xxx methods of FancyURLOpener.
+
 - Issue #8720: fix regression caused by fix for #4050 by making getsourcefile
   smart enough to find source files in the linecache.
 
