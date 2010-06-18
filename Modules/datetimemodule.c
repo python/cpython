@@ -4377,8 +4377,8 @@ datetime_strptime(PyObject *cls, PyObject *args)
         if(module == NULL)
             return NULL;
     }
-    return PyObject_CallMethod(module, "_strptime_datetime", "uu",
-                               string, format);
+    return PyObject_CallMethod(module, "_strptime_datetime", "Ouu",
+                               cls, string, format);
 }
 
 /* Return new datetime from date/datetime and time arguments. */

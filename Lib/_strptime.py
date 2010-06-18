@@ -17,7 +17,6 @@ from re import compile as re_compile
 from re import IGNORECASE, ASCII
 from re import escape as re_escape
 from datetime import (date as datetime_date,
-                      datetime as datetime_datetime,
                       timedelta as datetime_timedelta,
                       timezone as datetime_timezone)
 try:
@@ -297,7 +296,7 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
 
 
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a 2-tuple consisting of a time struct and an int containg
+    """Return a 2-tuple consisting of a time struct and an int containing
     the number of microseconds based on the input string and the
     format string."""
 
@@ -483,8 +482,8 @@ def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
     tt = _strptime(data_string, format)[0]
     return time.struct_time(tt[:9])
 
-def _strptime_datetime(data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a datetime instace based on the input string and the
+def _strptime_datetime(class_, data_string, format="%a %b %d %H:%M:%S %Y"):
+    """Return a class_ instance based on the input string and the
     format string."""
     tt, fraction = _strptime(data_string, format)
     gmtoff, tzname = tt[-2:]
@@ -497,4 +496,4 @@ def _strptime_datetime(data_string, format="%a %b %d %H:%M:%S %Y"):
             tz = datetime_timezone(tzdelta)
         args += (tz,)
 
-    return datetime_datetime(*args)
+    return class_(*args)
