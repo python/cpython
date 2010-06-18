@@ -1866,7 +1866,8 @@ class FancyURLopener(URLopener):
         else:
             return self.http_error_default(url, fp, errcode, errmsg, headers)
 
-    def http_error_401(self, url, fp, errcode, errmsg, headers, data=None):
+    def http_error_401(self, url, fp, errcode, errmsg, headers, data=None,
+            retry=False):
         """Error 401 -- authentication required.
         This function supports Basic authentication only."""
         if not 'www-authenticate' in headers:
@@ -1882,13 +1883,17 @@ class FancyURLopener(URLopener):
         if scheme.lower() != 'basic':
             URLopener.http_error_default(self, url, fp,
                                          errcode, errmsg, headers)
+        if not retry:
+            URLopener.http_error_default(self, url, fp, errcode, errmsg,
+                    headers)
         name = 'retry_' + self.type + '_basic_auth'
         if data is None:
             return getattr(self,name)(url, realm)
         else:
             return getattr(self,name)(url, realm, data)
 
-    def http_error_407(self, url, fp, errcode, errmsg, headers, data=None):
+    def http_error_407(self, url, fp, errcode, errmsg, headers, data=None,
+            retry=False):
         """Error 407 -- proxy authentication required.
         This function supports Basic authentication only."""
         if not 'proxy-authenticate' in headers:
@@ -1904,6 +1909,9 @@ class FancyURLopener(URLopener):
         if scheme.lower() != 'basic':
             URLopener.http_error_default(self, url, fp,
                                          errcode, errmsg, headers)
+        if not retry:
+            URLopener.http_error_default(self, url, fp, errcode, errmsg,
+                    headers)
         name = 'retry_proxy_' + self.type + '_basic_auth'
         if data is None:
             return getattr(self,name)(url, realm)
