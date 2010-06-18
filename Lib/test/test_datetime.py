@@ -1100,8 +1100,13 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.assertEqual(b.__format__(fmt), 'B')
 
     def test_resolution_info(self):
-        self.assertIsInstance(self.theclass.min, self.theclass)
-        self.assertIsInstance(self.theclass.max, self.theclass)
+        # XXX: Should min and max respect subclassing?
+        if issubclass(self.theclass, datetime):
+            expected_class = datetime
+        else:
+            expected_class = date
+        self.assertIsInstance(self.theclass.min, expected_class)
+        self.assertIsInstance(self.theclass.max, expected_class)
         self.assertIsInstance(self.theclass.resolution, timedelta)
         self.assertTrue(self.theclass.max > self.theclass.min)
 
@@ -1732,9 +1737,11 @@ class TestDateTime(TestDate):
 
         string = '2004-12-01 13:02:47.197'
         format = '%Y-%m-%d %H:%M:%S.%f'
-        expected = _strptime._strptime_datetime(string, format)
+        expected = _strptime._strptime_datetime(self.theclass, string, format)
         got = self.theclass.strptime(string, format)
         self.assertEqual(expected, got)
+        self.assertIs(type(expected), self.theclass)
+        self.assertIs(type(got), self.theclass)
 
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
@@ -1895,6 +1902,12 @@ class TestDateTime(TestDate):
         self.assertEqual(dt1.toordinal(), dt2.toordinal())
         self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month +
                                           dt1.second - 7)
+
+class TestSubclassDateTime(TestDateTime):
+    theclass = SubclassDatetime
+    # Override tests not designed for subclass
+    def test_roundtrip(self):
+        pass
 
 class SubclassTime(time):
     sub_var = 1
