@@ -16,7 +16,7 @@ _PyTime_DoubleToTimet(double x)
      * unreasonable, or the input just doesn't fit in a time_t;
      * call it an error regardless.  Note that the original cast to
      * time_t can cause a C error too, but nothing we can do to
-     * worm around that.
+     * work around that.
      */
     diff = x - (double)result;
     if (diff <= -1.0 || diff >= 1.0) {
