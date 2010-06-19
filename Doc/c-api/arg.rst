@@ -36,7 +36,7 @@ the ``es``, ``es#``, ``et`` and ``et#`` formats.
 
 However, when a :ctype:`Py_buffer` structure gets filled, the underlying
 buffer is locked so that the caller can subsequently use the buffer even
-inside a ``Py_BEGIN_ALLOW_THREADS`` block without the risk of mutable data
+inside a :ctype:`Py_BEGIN_ALLOW_THREADS` block without the risk of mutable data
 being resized or destroyed.  As a result, **you have to call**
 :cfunc:`PyBuffer_Release` after you have finished processing the data (or
 in any early abort case).
@@ -48,9 +48,9 @@ Unless otherwise stated, buffers are not NUL-terminated.
    the length argument (int or :ctype:`Py_ssize_t`) is controlled by
    defining the macro :cmacro:`PY_SSIZE_T_CLEAN` before including
    :file:`Python.h`.  If the macro was defined, length is a
-   :ctype:`Py_ssize_t` rather than an int.  This behavior will change
+   :ctype:`Py_ssize_t` rather than an :ctype:`int`. This behavior will change
    in a future Python version to only support :ctype:`Py_ssize_t` and
-   drop int support.  It is best to always define :cmacro:`PY_SSIZE_T_CLEAN`.
+   drop :ctype:`int` support. It is best to always define :cmacro:`PY_SSIZE_T_CLEAN`.
 
 
 ``s`` (:class:`str`) [const char \*]
@@ -488,11 +488,11 @@ Building values
    strings a tad more readable.
 
    ``s`` (:class:`str` or ``None``) [char \*]
-      Convert a null-terminated C string to a Python object using ``'utf-8'``
+      Convert a null-terminated C string to a Python :class:`str` object using ``'utf-8'``
       encoding. If the C string pointer is *NULL*, ``None`` is used.
 
    ``s#`` (:class:`str` or ``None``) [char \*, int]
-      Convert a C string and its length to a Python object using ``'utf-8'``
+      Convert a C string and its length to a Python :class:`str` object using ``'utf-8'``
       encoding. If the C string pointer is *NULL*, the length is ignored and
       ``None`` is returned.
 
