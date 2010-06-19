@@ -22,6 +22,10 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
+#ifdef HAVE_SIGNALFD
+#include <sys/signalfd.h>
+#endif
+
 
 #ifndef SIG_ERR
 #define SIG_ERR ((PyOS_sighandler_t)(-1))
@@ -464,6 +468,144 @@ Returns current value of given itimer.");
 #endif
 
 
+static int
+_iterable_to_mask(PyObject *iterable, sigset_t *mask)
+{
+    static const char* range_format = "signal number %d out of range";
+    char range_buffer[1024];
+    int result = 0;
+
+    PyObject *item, *iterator = NULL;
+
+    sigemptyset(mask);
+
+    iterator = PyObject_GetIter(iterable);
+    if (iterator == NULL) {
+        result = -1;
+        goto error;
+    }
+
+    while ((item = PyIter_Next(iterator))) {
+        int signum = PyInt_AsLong(item);
+        Py_DECREF(item);
+        if (signum == -1 && PyErr_Occurred()) {
+	    result = -1;
+	    goto error;
+        }
+        if (sigaddset(mask, signum) == -1) {
+            PyOS_snprintf(range_buffer, sizeof(range_buffer), range_format, signum);
+            PyErr_SetString(PyExc_ValueError, range_buffer);
+            result = -1;
+            goto error;
+        }
+    }
+
+error:
+    Py_XDECREF(iterator);
+    return result;
+}
+
+#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+# define PY_SIGMASK pthread_sigmask
+#elif defined(HAVE_SIGPROCMASK)
+# define PY_SIGMASK sigprocmask
+#endif
+
+#ifdef PY_SIGMASK
+static PyObject *
+signal_sigprocmask(PyObject *self, PyObject *args)
+{
+    static const char* how_format = "value specified for how (%d) invalid";
+    char how_buffer[1024];
+
+    int how, sig;
+    PyObject *signals, *result, *signum;
+    sigset_t mask, previous;
+
+    if (!PyArg_ParseTuple(args, "iO:sigprocmask", &how, &signals)) {
+        return NULL;
+    }
+
+    if (_iterable_to_mask(signals, &mask) == -1) {
+        return NULL;
+    }
+
+    if (PY_SIGMASK(how, &mask, &previous) != 0) {
+        PyOS_snprintf(how_buffer, sizeof(how_buffer), how_format, how);
+        PyErr_SetString(PyExc_ValueError, how_buffer);
+        return NULL;
+    }
+
+    result = PyList_New(0);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    for (sig = 1; sig < NSIG; ++sig) {
+        if (sigismember(&previous, sig) == 1) {
+            /* Handle the case where it is a member by adding the signal to
+               the result list.  Ignore the other cases because they mean the
+               signal isn't a member of the mask or the signal was invalid,
+               and an invalid signal must have been our fault in constructing
+               the loop boundaries. */
+            signum = PyInt_FromLong(sig);
+            if (signum == NULL) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            if (PyList_Append(result, signum) == -1) {
+                Py_DECREF(signum);
+                Py_DECREF(result);
+                return NULL;
+            }
+            Py_DECREF(signum);
+        }
+    }
+    return result;
+}
+
+PyDoc_STRVAR(sigprocmask_doc,
+"sigprocmask(how, mask) -> old mask\n\
+\n\
+Examine and change blocked signals.");
+#endif
+
+#ifdef HAVE_SIGNALFD
+static PyObject *
+signal_signalfd(PyObject *self, PyObject *args)
+{
+    int result, flags = 0;
+    sigset_t mask;
+
+    int fd;
+    PyObject *signals;
+
+    if (!PyArg_ParseTuple(args, "iO|i:signalfd", &fd, &signals, &flags)) {
+        return NULL;
+    }
+
+    if (_iterable_to_mask(signals, &mask) == -1) {
+        return NULL;
+    }
+
+    result = signalfd(-1, &mask, flags);
+
+    if (result == -1) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    return PyInt_FromLong(result);
+}
+
+PyDoc_STRVAR(signalfd_doc,
+"signalfd(fd, mask, flags)\n\
+\n\
+Create a file descriptor for accepting signals.");
+
+#endif
+
+
 /* List of functions defined in the module */
 static PyMethodDef signal_methods[] = {
 #ifdef HAVE_ALARM
@@ -478,6 +620,14 @@ static PyMethodDef signal_methods[] = {
     {"signal",                  signal_signal, METH_VARARGS, signal_doc},
     {"getsignal",               signal_getsignal, METH_VARARGS, getsignal_doc},
     {"set_wakeup_fd",           signal_set_wakeup_fd, METH_VARARGS, set_wakeup_fd_doc},
+#ifdef PY_SIGMASK
+        {"sigprocmask",         signal_sigprocmask, METH_VARARGS, sigprocmask_doc},
+/* It's no longer needed, so clean up the namespace. */
+#undef PY_SIGMASK
+#endif
+#ifdef HAVE_SIGNALFD
+        {"signalfd",            signal_signalfd, METH_VARARGS, signalfd_doc},
+#endif
 #ifdef HAVE_SIGINTERRUPT
     {"siginterrupt",            signal_siginterrupt, METH_VARARGS, siginterrupt_doc},
 #endif
@@ -809,6 +959,36 @@ PyInit_signal(void)
      PyExc_IOError, NULL);
     if (ItimerError != NULL)
     PyDict_SetItemString(d, "ItimerError", ItimerError);
+#endif
+
+#ifdef SIG_BLOCK
+    x = PyLong_FromLong(SIG_BLOCK);
+    PyDict_SetItemString(d, "SIG_BLOCK", x);
+    Py_DECREF(x);
+#endif
+
+#ifdef SIG_UNBLOCK
+    x = PyLong_FromLong(SIG_UNBLOCK);
+    PyDict_SetItemString(d, "SIG_UNBLOCK", x);
+    Py_DECREF(x);
+#endif
+
+#ifdef SIG_SETMASK
+    x = PyLong_FromLong(SIG_SETMASK);
+    PyDict_SetItemString(d, "SIG_SETMASK", x);
+    Py_DECREF(x);
+#endif
+
+#ifdef SFD_CLOEXEC
+    x = PyLong_FromLong(SFD_CLOEXEC);
+    PyDict_SetItemString(d, "SFD_CLOEXEC", x);
+    Py_DECREF(x);
+#endif
+
+#ifdef SFD_NONBLOCK
+    x = PyLong_FromLong(SFD_NONBLOCK);
+    PyDict_SetItemString(d, "SFD_NONBLOCK", x);
+    Py_DECREF(x);
 #endif
 
 #ifdef CTRL_C_EVENT
