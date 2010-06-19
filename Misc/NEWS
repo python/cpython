@@ -1025,11 +1025,6 @@ Library
 - Issue #5949: added check for correct lineends in input from IMAP server
   in imaplib.
 
-- Issue #8407: The signal module gains the ``signalfd()`` and
-  ``sigprocmask(2)`` functions providing access to the signalfd(2) and
-  sigprocmask(2) system calls respectively on Linux systems which implement
-  them.
-
 - Add count() and reverse() methods to collections.deque().
 
 - Fix variations of extending deques:  d.extend(d)  d.extendleft(d)  d+=d
