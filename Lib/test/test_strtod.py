@@ -23,6 +23,8 @@ strtod_parser = re.compile(r"""    # A numeric string consists of:
     \Z
 """, re.VERBOSE | re.IGNORECASE).match
 
+# Pure Python version of correctly rounded string->float conversion.
+# Avoids any use of floating-point by returning the result as a hex string.
 def strtod(s, mant_dig=53, min_exp = -1021, max_exp = 1024):
     """Convert a finite decimal string to a hex string representing an
     IEEE 754 binary64 float.  Return 'inf' or '-inf' on overflow.
@@ -259,6 +261,10 @@ class StrtodTests(unittest.TestCase):
             '18487398785991994634182916638542680759613590482273e-357',
             '32002864200581033134358724675198044527469366773928e-358',
             '94393431193180696942841837085033647913224148539854e-358',
+            '73608278998966969345824653500136787876436005957953e-358',
+            '64774478836417299491718435234611299336288082136054e-358',
+            '13704940134126574534878641876947980878824688451169e-357',
+            '46697445774047060960624497964425416610480524760471e-358',
             # failing case for bug introduced by METD in r77451 (attempted
             # fix for issue 7632, bug 2), and fixed in r77482.
             '28639097178261763178489759107321392745108491825303e-311',
