@@ -1147,16 +1147,10 @@ Emacs mode
 ----------
 
 There's an excellent Emacs editing mode for Python code; see the file
-Misc/python-mode.el.  Originally written by the famous Tim Peters, it
-is now maintained by the equally famous Barry Warsaw (it's no
-coincidence that they now both work on the same team).  The latest
-version, along with various other contributed Python-related Emacs
-goodies, is online at http://www.python.org/emacs/python-mode/.  And
-if you are planning to edit the Python C code, please pick up the
-latest version of CC Mode http://www.python.org/emacs/cc-mode/; it
-contains a "python" style used throughout most of the Python C source
-files.  (Newer versions of Emacs or XEmacs may already come with the
-latest version of python-mode.)
+Misc/python-mode.el.  Originally written by the famous Tim Peters, it is now
+maintained by the equally famous Barry Warsaw.  The latest version, along with
+various other contributed Python-related Emacs goodies, is online at
+http://launchpad.net/python-mode/.
 
 
 Tkinter
