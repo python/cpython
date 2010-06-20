@@ -7,7 +7,6 @@ import math
 from math import isinf, isnan, copysign, ldexp
 import operator
 import random, fractions
-import re
 
 INF = float("inf")
 NAN = float("nan")
@@ -20,74 +19,6 @@ requires_IEEE_754 = unittest.skipUnless(
 #locate file with float format test values
 test_dir = os.path.dirname(__file__) or os.curdir
 format_testfile = os.path.join(test_dir, 'formatfloat_testcases.txt')
-
-finite_decimal_parser = re.compile(r"""    # A numeric string consists of:
-    (?P<sign>[-+])?          # an optional sign, followed by
-    (?=\d|\.\d)              # a number with at least one digit
-    (?P<int>\d*)             # having a (possibly empty) integer part
-    (?:\.(?P<frac>\d*))?     # followed by an optional fractional part
-    (?:E(?P<exp>[-+]?\d+))?  # and an optional exponent
-    \Z
-""", re.VERBOSE | re.IGNORECASE | re.UNICODE).match
-
-# Pure Python version of correctly rounded string->float conversion.
-# Avoids any use of floating-point by returning the result as a hex string.
-def strtod(s, mant_dig=53, min_exp = -1021, max_exp = 1024):
-    """Convert a finite decimal string to a hex string representing an
-    IEEE 754 binary64 float.  Return 'inf' or '-inf' on overflow.
-    This function makes no use of floating-point arithmetic at any
-    stage."""
-
-    # parse string into a pair of integers 'a' and 'b' such that
-    # abs(decimal value) = a/b, and a boolean 'negative'.
-    m = finite_decimal_parser(s)
-    if m is None:
-        raise ValueError('invalid numeric string')
-    fraction = m.group('frac') or ''
-    intpart = int(m.group('int') + fraction)
-    exp = int(m.group('exp') or '0') - len(fraction)
-    negative = m.group('sign') == '-'
-    a, b = intpart*10**max(exp, 0), 10**max(0, -exp)
-
-    # quick return for zeros
-    if not a:
-        return '-0x0.0p+0' if negative else '0x0.0p+0'
-
-    # compute exponent e for result; may be one too small in the case
-    # that the rounded value of a/b lies in a different binade from a/b
-    d = a.bit_length() - b.bit_length()
-    d += (a >> d if d >= 0 else a << -d) >= b
-    e = max(d, min_exp) - mant_dig
-
-    # approximate a/b by number of the form q * 2**e; adjust e if necessary
-    a, b = a << max(-e, 0), b << max(e, 0)
-    q, r = divmod(a, b)
-    if 2*r > b or 2*r == b and q & 1:
-        q += 1
-        if q.bit_length() == mant_dig+1:
-            q //= 2
-            e += 1
-
-    # double check that (q, e) has the right form
-    assert q.bit_length() <= mant_dig and e >= min_exp - mant_dig
-    assert q.bit_length() == mant_dig or e == min_exp - mant_dig
-
-    # check for overflow and underflow
-    if e + q.bit_length() > max_exp:
-        return '-inf' if negative else 'inf'
-    if not q:
-        return '-0x0.0p+0' if negative else '0x0.0p+0'
-
-    # for hex representation, shift so # bits after point is a multiple of 4
-    hexdigs = 1 + (mant_dig-2)//4
-    shift = 3 - (mant_dig-2)%4
-    q, e = q << shift, e - shift
-    return '{}0x{:x}.{:0{}x}p{:+d}'.format(
-        '-' if negative else '',
-        q // 16**hexdigs,
-        q % 16**hexdigs,
-        hexdigs,
-        e + 4*hexdigs)
 
 class GeneralFloatCases(unittest.TestCase):
 
@@ -1334,38 +1265,6 @@ class HexFloatTestCase(unittest.TestCase):
             else:
                 self.identical(x, fromHex(toHex(x)))
 
-class StrtodTestCase(unittest.TestCase):
-    def check_string(self, s):
-        expected = strtod(s)
-        try:
-            fs = float(s)
-        except OverflowError:
-            got = '-inf' if s[0] == '-' else 'inf'
-        else:
-            got = fs.hex()
-        self.assertEqual(expected, got,
-                         "Incorrectly rounded str->float conversion for "
-                         "{}: expected {}, got {}".format(s, expected, got))
-
-    @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
-                         "applies only when using short float repr style")
-    def test_bug7632(self):
-        # check a few particular values that gave incorrectly rounded
-        # results with previous versions of dtoa.c
-        test_strings = [
-            '94393431193180696942841837085033647913224148539854e-358',
-            '12579816049008305546974391768996369464963024663104e-357',
-            '17489628565202117263145367596028389348922981857013e-357',
-            '18487398785991994634182916638542680759613590482273e-357',
-            '32002864200581033134358724675198044527469366773928e-358',
-            '73608278998966969345824653500136787876436005957953e-358',
-            '64774478836417299491718435234611299336288082136054e-358',
-            '13704940134126574534878641876947980878824688451169e-357',
-            '46697445774047060960624497964425416610480524760471e-358',
-            ]
-        for s in test_strings:
-            self.check_string(s)
-
 
 def test_main():
     support.run_unittest(
@@ -1378,7 +1277,6 @@ def test_main():
         RoundTestCase,
         InfNanTest,
         HexFloatTestCase,
-        StrtodTestCase,
         )
 
 if __name__ == '__main__':
