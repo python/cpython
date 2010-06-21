@@ -2997,8 +2997,6 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             def utcoffset(self, dt):
                 return self.uofs
 
-        # Ensure tm_isdst is 0 regardless of what dst() says:  DST is never
-        # in effect for a UTC time.
         for dstvalue in -33, 33, 0, None:
             d = cls(1, 2, 3, 10, 20, 30, 40, tzinfo=UOFS(-53, dstvalue))
             t = d.utctimetuple()
@@ -3011,34 +3009,32 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             self.assertEqual(d.weekday(), t.tm_wday)
             self.assertEqual(d.toordinal() - date(1, 1, 1).toordinal() + 1,
                              t.tm_yday)
+            # Ensure tm_isdst is 0 regardless of what dst() says: DST
+            # is never in effect for a UTC time.
             self.assertEqual(0, t.tm_isdst)
 
-        # At the edges, UTC adjustment can normalize into years out-of-range
-        # for a datetime object.  Ensure that a correct timetuple is
-        # created anyway.
+        # Check that utctimetuple() is the same as
+        # astimezone(utc).timetuple()
+        d = cls(2010, 11, 13, 14, 15, 16, 171819)
+        for tz in [timezone.min, timezone.utc, timezone.max]:
+            dtz = d.replace(tzinfo=tz)
+            self.assertEqual(dtz.utctimetuple()[:-1],
+                             dtz.astimezone(timezone.utc).timetuple()[:-1])
+        # At the edges, UTC adjustment can produce years out-of-range
+        # for a datetime object.  Ensure that an OverflowError is
+        # raised.
         tiny = cls(MINYEAR, 1, 1, 0, 0, 37, tzinfo=UOFS(1439))
         # That goes back 1 minute less than a full day.
-        t = tiny.utctimetuple()
-        self.assertEqual(t.tm_year, MINYEAR-1)
-        self.assertEqual(t.tm_mon, 12)
-        self.assertEqual(t.tm_mday, 31)
-        self.assertEqual(t.tm_hour, 0)
-        self.assertEqual(t.tm_min, 1)
-        self.assertEqual(t.tm_sec, 37)
-        self.assertEqual(t.tm_yday, 366)    # "year 0" is a leap year
-        self.assertEqual(t.tm_isdst, 0)
+        self.assertRaises(OverflowError, tiny.utctimetuple)
 
         huge = cls(MAXYEAR, 12, 31, 23, 59, 37, 999999, tzinfo=UOFS(-1439))
         # That goes forward 1 minute less than a full day.
-        t = huge.utctimetuple()
-        self.assertEqual(t.tm_year, MAXYEAR+1)
-        self.assertEqual(t.tm_mon, 1)
-        self.assertEqual(t.tm_mday, 1)
-        self.assertEqual(t.tm_hour, 23)
-        self.assertEqual(t.tm_min, 58)
-        self.assertEqual(t.tm_sec, 37)
-        self.assertEqual(t.tm_yday, 1)
-        self.assertEqual(t.tm_isdst, 0)
+        self.assertRaises(OverflowError, huge.utctimetuple)
+        # More overflow cases
+        tiny = cls.min.replace(tzinfo=timezone(MINUTE))
+        self.assertRaises(OverflowError, tiny.utctimetuple)
+        huge = cls.max.replace(tzinfo=timezone(-MINUTE))
+        self.assertRaises(OverflowError, huge.utctimetuple)
 
     def test_tzinfo_isoformat(self):
         zero = FixedOffset(0, "+00:00")

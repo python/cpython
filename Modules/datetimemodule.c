@@ -4932,15 +4932,9 @@ datetime_utctimetuple(PyDateTime_DateTime *self)
 
         mm -= offset;
         stat = normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us);
-        if (stat < 0) {
-            /* At the edges, it's possible we overflowed
-             * beyond MINYEAR or MAXYEAR.
-             */
-            if (PyErr_ExceptionMatches(PyExc_OverflowError))
-                PyErr_Clear();
-            else
-                return NULL;
-        }
+        /* OverflowError may be raised in the edge cases. */
+        if (stat < 0)
+            return NULL;
     }
     return build_struct_time(y, m, d, hh, mm, ss, 0);
 }
