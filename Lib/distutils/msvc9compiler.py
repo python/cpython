@@ -38,9 +38,18 @@ HKEYS = (winreg.HKEY_USERS,
          winreg.HKEY_LOCAL_MACHINE,
          winreg.HKEY_CLASSES_ROOT)
 
-VS_BASE = r"Software\Microsoft\VisualStudio\%0.1f"
-WINSDK_BASE = r"Software\Microsoft\Microsoft SDKs\Windows"
-NET_BASE = r"Software\Microsoft\.NETFramework"
+NATIVE_WIN64 = (sys.platform == 'win32' and sys.maxsize > 2**32)
+if NATIVE_WIN64:
+    # Visual C++ is a 32-bit application, so we need to look in
+    # the corresponding registry branch, if we're running a
+    # 64-bit Python on Win64
+    VS_BASE = r"Software\Wow6432Node\Microsoft\VisualStudio\%0.1f"
+    WINSDK_BASE = r"Software\Wow6432Node\Microsoft\Microsoft SDKs\Windows"
+    NET_BASE = r"Software\Wow6432Node\Microsoft\.NETFramework"
+else:
+    VS_BASE = r"Software\Microsoft\VisualStudio\%0.1f"
+    WINSDK_BASE = r"Software\Microsoft\Microsoft SDKs\Windows"
+    NET_BASE = r"Software\Microsoft\.NETFramework"
 
 # A map keyed by get_platform() return values to values accepted by
 # 'vcvarsall.bat'.  Note a cross-compile may combine these (eg, 'x86_amd64' is

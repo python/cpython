@@ -778,6 +778,8 @@ C-API
 Build
 -----
 
+- Issue #8854: Fix finding Visual Studio 2008 on Windows x64.
+
 - Issue #3920, #7903: Define _BSD_SOURCE on OpenBSD 4.4 through 4.9.
 
 - Issue #7632: When Py_USING_MEMORY_DEBUGGER is defined, disable the
