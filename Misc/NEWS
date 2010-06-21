@@ -23,6 +23,11 @@ Core and Builtins
 - In the unicode/str.format(), raise a ValueError when indexes to arguments are
   too large.
 
+Build
+-----
+
+- Issue #8854: Fix finding Visual Studio 2008 on Windows x64.
+
 Library
 -------
 
