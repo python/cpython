@@ -270,6 +270,8 @@ Extension Modules
 Build
 -----
 
+- Issue #8854: Fix finding Visual Studio 2008 on Windows x64.
+
 - Issue #3928: os.mknod() now available in Solaris, also.
 
 - Issue #8175: --with-universal-archs=all works correctly on OSX 10.5
