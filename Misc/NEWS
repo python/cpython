@@ -26,6 +26,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8959: fix regression caused by using unmodified libffi
+  library on Windows.  ctypes does now again check the stack before
+  and after calling foreign functions.
+
 - Issue #8720: fix regression caused by fix for #4050 by making getsourcefile
   smart enough to find source files in the linecache.
 
