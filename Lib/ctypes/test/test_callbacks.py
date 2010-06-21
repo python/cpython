@@ -166,6 +166,41 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
         self.assertTrue(diff < 0.01, "%s not less than 0.01" % diff)
 
+    def test_issue_8959_a(self):
+        from ctypes.util import find_library
+        libc_path = find_library("c")
+        if not libc_path:
+            return # cannot test
+        libc = CDLL(libc_path)
+
+        @CFUNCTYPE(c_int, POINTER(c_int), POINTER(c_int))
+        def cmp_func(a, b):
+            return a[0] - b[0]
+
+        array = (c_int * 5)(5, 1, 99, 7, 33)
+
+        libc.qsort(array, len(array), sizeof(c_int), cmp_func)
+        self.assertEqual(array[:], [1, 5, 7, 33, 99])
+
+    try:
+        WINFUNCTYPE
+    except NameError:
+        pass
+    else:
+        def test_issue_8959_b(self):
+            from ctypes.wintypes import BOOL, HWND, LPARAM
+            global windowCount
+            windowCount = 0
+
+            @WINFUNCTYPE(BOOL, HWND, LPARAM)
+            def EnumWindowsCallbackFunc(hwnd, lParam):
+                global windowCount
+                windowCount += 1
+                return True #Allow windows to keep enumerating
+
+            windll.user32.EnumWindows(EnumWindowsCallbackFunc, 0)
+            self.assertFalse(windowCount == 0)
+
 ################################################################
 
 if __name__ == '__main__':
