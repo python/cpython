@@ -5295,33 +5295,72 @@ UNIVERSAL_ARCH_FLAGS=
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    # Python violates C99 rules, by casting between incompatible
-    # pointer types. GCC may generate bad code as a result of that,
-    # so use -fno-strict-aliasing if supported.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts -fno-strict-aliasing" >&5
-$as_echo_n "checking whether $CC accepts -fno-strict-aliasing... " >&6; }
+    # Python doesn't violate C99 aliasing rules, but older versions of
+    # GCC produce warnings for legal Python code.  Enable
+    # -fno-strict-aliasing on versions of GCC that support but produce
+    # warnings.  See Issue3326
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts and needs -fno-strict-aliasing" >&5
+$as_echo_n "checking whether $CC accepts and needs -fno-strict-aliasing... " >&6; }
      ac_save_cc="$CC"
      CC="$CC -fno-strict-aliasing"
-     if test "$cross_compiling" = yes; then :
-  ac_cv_no_strict_aliasing_ok=no
+     save_CFLAGS="$CFLAGS"
+     if test "${ac_cv_no_strict_aliasing+set}" = set; then :
+  $as_echo_n "(cached) " >&6
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-int main() { return 0; }
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_no_strict_aliasing_ok=yes
+if ac_fn_c_try_compile "$LINENO"; then :
+
+	   CC="$ac_save_cc -fstrict-aliasing"
+           CFLAGS="$CFLAGS -Werror -Wstrict-aliasing"
+           cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+	       void f(int **x) {}
+int
+main ()
+{
+double *x; f((int **) &x);
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+	       ac_cv_no_strict_aliasing=no
+
 else
-  ac_cv_no_strict_aliasing_ok=no
+
+               ac_cv_no_strict_aliasing=yes
+
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+else
+
+	   ac_cv_no_strict_aliasing=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 
+     CFLAGS="$save_CFLAGS"
      CC="$ac_save_cc"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_no_strict_aliasing_ok" >&5
-$as_echo "$ac_cv_no_strict_aliasing_ok" >&6; }
-    if test $ac_cv_no_strict_aliasing_ok = yes
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_no_strict_aliasing" >&5
+$as_echo "$ac_cv_no_strict_aliasing" >&6; }
+    if test $ac_cv_no_strict_aliasing = yes
     then
       BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
     fi
