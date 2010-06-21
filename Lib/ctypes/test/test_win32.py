@@ -6,6 +6,32 @@ import unittest, sys
 
 import _ctypes_test
 
+if sys.platform == "win32" and sizeof(c_void_p) == sizeof(c_int):
+    # Only windows 32-bit has different calling conventions.
+
+    class WindowsTestCase(unittest.TestCase):
+        def test_callconv_1(self):
+            # Testing stdcall function
+
+            IsWindow = windll.user32.IsWindow
+            # ValueError: Procedure probably called with not enough arguments (4 bytes missing)
+            self.assertRaises(ValueError, IsWindow)
+
+            # This one should succeeed...
+            self.assertEqual(0, IsWindow(0))
+
+            # ValueError: Procedure probably called with too many arguments (8 bytes in excess)
+            self.assertRaises(ValueError, IsWindow, 0, 0, 0)
+
+        def test_callconv_2(self):
+            # Calling stdcall function as cdecl
+
+            IsWindow = cdll.user32.IsWindow
+
+            # ValueError: Procedure called with not enough arguments (4 bytes missing)
+            # or wrong calling convention
+            self.assertRaises(ValueError, IsWindow, None)
+
 if sys.platform == "win32":
     class FunctionCallTestCase(unittest.TestCase):
 
