@@ -40,7 +40,7 @@ class ModuleForLoaderTests(unittest.TestCase):
         with test_util.uncache(name):
             sys.modules[name] = module
             returned_module = self.return_module(name)
-            self.assertTrue(sys.modules[name] is returned_module)
+            self.assertIs(returned_module, sys.modules[name])
 
     def test_new_module_failure(self):
         # Test that a module is removed from sys.modules if added but an
@@ -57,7 +57,7 @@ class ModuleForLoaderTests(unittest.TestCase):
         with test_util.uncache(name):
             sys.modules[name] = module
             self.raise_exception(name)
-            self.assertTrue(sys.modules[name] is module)
+            self.assertIs(module, sys.modules[name])
 
 
 class SetPackageTests(unittest.TestCase):
