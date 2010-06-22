@@ -199,6 +199,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         c = td(0, 0, 1000) # One millisecond
         eq(a+b+c, td(7, 60, 1000))
         eq(a-b, td(6, 24*3600 - 60))
+        eq(b.__rsub__(a), td(6, 24*3600 - 60))
         eq(-a, td(-7))
         eq(+a, td(7))
         eq(-b, td(-1, 24*3600 - 60))
@@ -253,6 +254,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         for zero in 0, 0:
             self.assertRaises(TypeError, lambda: zero // a)
             self.assertRaises(ZeroDivisionError, lambda: a // zero)
+        self.assertRaises(TypeError, lambda: a / '')
 
     def test_basic_attributes(self):
         days, seconds, us = 1, 7, 31
@@ -360,10 +362,20 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                    microseconds=999999)),
            "999999999 days, 23:59:59.999999")
 
+    def test_repr(self):
+        name = 'datetime.' + self.theclass.__name__
+        self.assertEqual(repr(self.theclass(1)),
+                         "%s(1)" % name)
+        self.assertEqual(repr(self.theclass(10, 2)),
+                         "%s(10, 2)" % name)
+        self.assertEqual(repr(self.theclass(-10, 2, 400000)),
+                         "%s(-10, 2, 400000)" % name)
+
     def test_roundtrip(self):
         for td in (timedelta(days=999999999, hours=23, minutes=59,
                              seconds=59, microseconds=999999),
                    timedelta(days=-999999999),
+                   timedelta(days=-999999999, seconds=1),
                    timedelta(days=1, seconds=2, microseconds=3)):
 
             # Verify td -> string -> td identity.
@@ -3230,6 +3242,19 @@ class TestTimezoneConversions(unittest.TestCase):
         class notok(ok):
             def dst(self, dt): return None
         self.assertRaises(ValueError, now.astimezone, notok())
+
+        # Sometimes blow up. In the following, tzinfo.dst()
+        # implementation may return None or not Nonedepending on
+        # whether DST is assumed to be in effect.  In this situation,
+        # a ValueError should be raised by astimezone().
+        class tricky_notok(ok):
+            def dst(self, dt):
+                if dt.year == 2000:
+                    return None
+                else:
+                    return 10*HOUR
+        dt = self.theclass(2001, 1, 1).replace(tzinfo=utc_real)
+        self.assertRaises(ValueError, dt.astimezone, tricky_notok())
 
     def test_fromutc(self):
         self.assertRaises(TypeError, Eastern.fromutc)   # not enough args
