@@ -24,6 +24,8 @@ What's New in Python 2.7 release candidate 2?
 Core and Builtins
 -----------------
 
+- Issue #9058: Remove assertions about INT_MAX in UnicodeDecodeError.
+
 - Issue #8202: Previous change to ``sys.argv[0]`` handling for -m command line
   option reverted due to unintended side effects on handling of ``sys.path``.
   See tracker issue for details.
