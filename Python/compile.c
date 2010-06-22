@@ -994,7 +994,7 @@ compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
 {
     int arg = compiler_add_o(c, dict, o);
     if (arg < 0)
-    return 0;
+        return 0;
     return compiler_addop_i(c, opcode, arg);
 }
 
@@ -1005,11 +1005,11 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
     int arg;
     PyObject *mangled = _Py_Mangle(c->u->u_private, o);
     if (!mangled)
-    return 0;
+        return 0;
     arg = compiler_add_o(c, dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0)
-    return 0;
+        return 0;
     return compiler_addop_i(c, opcode, arg);
 }
 
@@ -1160,7 +1160,7 @@ static int
 compiler_isdocstring(stmt_ty s)
 {
     if (s->kind != Expr_kind)
-    return 0;
+        return 0;
     return s->v.Expr.value->kind == Str_kind;
 }
 
@@ -1266,11 +1266,11 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
     PyObject *k, *v;
     k = PyTuple_Pack(2, name, name->ob_type);
     if (k == NULL)
-    return -1;
+        return -1;
     v = PyDict_GetItem(dict, k);
     Py_DECREF(k);
     if (v == NULL)
-    return -1;
+        return -1;
     return PyInt_AS_LONG(v);
 }
 
@@ -2926,7 +2926,7 @@ compiler_with(struct compiler *c, stmt_ty s)
     block = compiler_new_block(c);
     finally = compiler_new_block(c);
     if (!block || !finally)
-    return 0;
+        return 0;
 
     /* Evaluate EXPR */
     VISIT(c, expr, s->v.With.context_expr);
@@ -2938,15 +2938,15 @@ compiler_with(struct compiler *c, stmt_ty s)
        functions the same as SETUP_FINALLY except that exceptions are
        normalized. */
     if (!compiler_push_fblock(c, FINALLY_TRY, block)) {
-    return 0;
+        return 0;
     }
 
     if (s->v.With.optional_vars) {
-    VISIT(c, expr, s->v.With.optional_vars);
+        VISIT(c, expr, s->v.With.optional_vars);
     }
     else {
     /* Discard result from context.__enter__() */
-    ADDOP(c, POP_TOP);
+        ADDOP(c, POP_TOP);
     }
 
     /* BLOCK code */
@@ -2959,7 +2959,7 @@ compiler_with(struct compiler *c, stmt_ty s)
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     compiler_use_next_block(c, finally);
     if (!compiler_push_fblock(c, FINALLY_END, finally))
-    return 0;
+        return 0;
 
     /* Finally block starts; context.__exit__ is on the stack under
        the exception or return information. Just issue our magic
