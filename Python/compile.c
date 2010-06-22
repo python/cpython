@@ -984,7 +984,7 @@ compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
 {
     int arg = compiler_add_o(c, dict, o);
     if (arg < 0)
-    return 0;
+        return 0;
     return compiler_addop_i(c, opcode, arg);
 }
 
@@ -995,11 +995,11 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
     int arg;
     PyObject *mangled = _Py_Mangle(c->u->u_private, o);
     if (!mangled)
-    return 0;
+        return 0;
     arg = compiler_add_o(c, dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0)
-    return 0;
+        return 0;
     return compiler_addop_i(c, opcode, arg);
 }
 
@@ -1150,7 +1150,7 @@ static int
 compiler_isdocstring(stmt_ty s)
 {
     if (s->kind != Expr_kind)
-    return 0;
+        return 0;
     return s->v.Expr.value->kind == Str_kind;
 }
 
@@ -1256,11 +1256,11 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
     PyObject *k, *v;
     k = PyTuple_Pack(2, name, name->ob_type);
     if (k == NULL)
-    return -1;
+        return -1;
     v = PyDict_GetItem(dict, k);
     Py_DECREF(k);
     if (v == NULL)
-    return -1;
+        return -1;
     return PyLong_AS_LONG(v);
 }
 
@@ -3082,35 +3082,35 @@ compiler_with(struct compiler *c, stmt_ty s)
     assert(s->kind == With_kind);
 
     if (!enter_attr) {
-    enter_attr = PyUnicode_InternFromString("__enter__");
-    if (!enter_attr)
-        return 0;
+        enter_attr = PyUnicode_InternFromString("__enter__");
+        if (!enter_attr)
+            return 0;
     }
     if (!exit_attr) {
-    exit_attr = PyUnicode_InternFromString("__exit__");
-    if (!exit_attr)
-        return 0;
+        exit_attr = PyUnicode_InternFromString("__exit__");
+        if (!exit_attr)
+            return 0;
     }
 
     block = compiler_new_block(c);
     finally = compiler_new_block(c);
     if (!block || !finally)
-    return 0;
+        return 0;
 
     if (s->v.With.optional_vars) {
-    /* Create a temporary variable to hold context.__enter__().
-       We need to do this rather than preserving it on the stack
-       because SETUP_FINALLY remembers the stack level.
-       We need to do the assignment *inside* the try/finally
-       so that context.__exit__() is called when the assignment
-       fails.  But we need to call context.__enter__() *before*
-       the try/finally so that if it fails we won't call
-       context.__exit__().
-    */
-    tmpvalue = compiler_new_tmpname(c);
-    if (tmpvalue == NULL)
-        return 0;
-    PyArena_AddPyObject(c->c_arena, tmpvalue);
+        /* Create a temporary variable to hold context.__enter__().
+           We need to do this rather than preserving it on the stack
+           because SETUP_FINALLY remembers the stack level.
+           We need to do the assignment *inside* the try/finally
+           so that context.__exit__() is called when the assignment
+           fails.  But we need to call context.__enter__() *before*
+           the try/finally so that if it fails we won't call
+           context.__exit__().
+        */
+        tmpvalue = compiler_new_tmpname(c);
+        if (tmpvalue == NULL)
+            return 0;
+        PyArena_AddPyObject(c->c_arena, tmpvalue);
     }
     tmpexit = compiler_new_tmpname(c);
     if (tmpexit == NULL)
@@ -3131,13 +3131,13 @@ compiler_with(struct compiler *c, stmt_ty s)
     ADDOP_I(c, CALL_FUNCTION, 0);
 
     if (s->v.With.optional_vars) {
-    /* Store it in tmpvalue */
-    if (!compiler_nameop(c, tmpvalue, Store))
-        return 0;
+        /* Store it in tmpvalue */
+        if (!compiler_nameop(c, tmpvalue, Store))
+            return 0;
     }
     else {
-    /* Discard result from context.__enter__() */
-    ADDOP(c, POP_TOP);
+        /* Discard result from context.__enter__() */
+        ADDOP(c, POP_TOP);
     }
 
     /* Start the try block */
@@ -3145,15 +3145,15 @@ compiler_with(struct compiler *c, stmt_ty s)
 
     compiler_use_next_block(c, block);
     if (!compiler_push_fblock(c, FINALLY_TRY, block)) {
-    return 0;
+        return 0;
     }
 
     if (s->v.With.optional_vars) {
-    /* Bind saved result of context.__enter__() to VAR */
-    if (!compiler_nameop(c, tmpvalue, Load) ||
-        !compiler_nameop(c, tmpvalue, Del))
-      return 0;
-    VISIT(c, expr, s->v.With.optional_vars);
+        /* Bind saved result of context.__enter__() to VAR */
+        if (!compiler_nameop(c, tmpvalue, Load) ||
+            !compiler_nameop(c, tmpvalue, Del))
+            return 0;
+        VISIT(c, expr, s->v.With.optional_vars);
     }
 
     /* BLOCK code */
@@ -3166,7 +3166,7 @@ compiler_with(struct compiler *c, stmt_ty s)
     ADDOP_O(c, LOAD_CONST, Py_None, consts);
     compiler_use_next_block(c, finally);
     if (!compiler_push_fblock(c, FINALLY_END, finally))
-    return 0;
+        return 0;
 
     /* Finally block starts; context.__exit__ is on the stack under
        the exception or return information. Just issue our magic
