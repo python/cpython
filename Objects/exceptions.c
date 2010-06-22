@@ -1608,9 +1608,6 @@ PyUnicodeDecodeError_Create(
     const char *encoding, const char *object, Py_ssize_t length,
     Py_ssize_t start, Py_ssize_t end, const char *reason)
 {
-    assert(length < INT_MAX);
-    assert(start < INT_MAX);
-    assert(end < INT_MAX);
     return PyObject_CallFunction(PyExc_UnicodeDecodeError, "Uy#nnU",
                                  encoding, object, length, start, end, reason);
 }
