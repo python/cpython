@@ -539,18 +539,6 @@ if sys.platform[:3] == "win":
 # Platform support for MacOS
 #
 
-try:
-    import ic
-except ImportError:
-    pass
-else:
-    class InternetConfig(BaseBrowser):
-        def open(self, url, new=0, autoraise=True):
-            ic.launchurl(url)
-            return True # Any way to get status?
-
-    register("internet-config", InternetConfig, update_tryorder=-1)
-
 if sys.platform == 'darwin':
     # Adapted from patch submitted to SourceForge by Steven J. Burr
     class MacOSX(BaseBrowser):
