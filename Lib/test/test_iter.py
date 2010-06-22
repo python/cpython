@@ -2,7 +2,7 @@
 
 import unittest
 from test.test_support import run_unittest, TESTFN, unlink, have_unicode, \
-                              check_py3k_warnings
+                              check_py3k_warnings, gc_collect
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -807,6 +807,7 @@ class TestCase(unittest.TestCase):
         x = C()
         self.assertEqual(C.count, 1)
         del x
+        gc_collect()
         self.assertEqual(C.count, 0)
         l = [C(), C(), C()]
         self.assertEqual(C.count, 3)
@@ -815,6 +816,7 @@ class TestCase(unittest.TestCase):
         except ValueError:
             pass
         del l
+        gc_collect()
         self.assertEqual(C.count, 0)
 
 
