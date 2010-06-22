@@ -971,8 +971,6 @@ Library
   position to the given argument, which goes against the tradition of
   ftruncate() and other truncation APIs.  Patch by Pascal Chambon.
 
-- UserDict is now a new-style class.
-
 - Issue #7610: Reworked implementation of the internal ``zipfile.ZipExtFile``
   class used to represent files stored inside an archive.  The new
   implementation is significantly faster and can be wrapped in a
