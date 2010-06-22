@@ -17,7 +17,7 @@ module Python version "$Revision$"
 			 expr? starargs,
 			 expr? kwargs,
 			 stmt* body,
-			 expr *decorator_list)
+			 expr* decorator_list)
 	      | Return(expr? value)
 
 	      | Delete(expr* targets)
