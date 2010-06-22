@@ -37,6 +37,8 @@ Core and Builtins
 - Issue #8969: On Windows, use mbcs codec in strict mode to encode and decode
   filenames and enable os.fsencode().
 
+- Issue #9058: Remove assertions about INT_MAX in UnicodeDecodeError.
+
 - Issue #8941: decoding big endian UTF-32 data in UCS-2 builds could crash
   the interpreter with characters outside the Basic Multilingual Plane
   (higher than 0x10000).
