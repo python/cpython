@@ -19,8 +19,9 @@ from datetime import timezone
 from datetime import date, datetime
 import time as _time
 
-pickle_choices = [(pickle, pickle, proto) for proto in range(4)]
-assert len(pickle_choices) == 4
+pickle_choices = [(pickle, pickle, proto)
+                  for proto in range(pickle.HIGHEST_PROTOCOL + 1)]
+assert len(pickle_choices) == pickle.HIGHEST_PROTOCOL + 1
 
 # An arbitrary collection of objects of non-datetime types, for testing
 # mixed-type comparisons.
