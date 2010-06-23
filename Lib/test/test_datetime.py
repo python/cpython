@@ -19,8 +19,8 @@ from datetime import timezone
 from datetime import date, datetime
 import time as _time
 
-pickle_choices = [(pickle, pickle, proto) for proto in range(3)]
-assert len(pickle_choices) == 3
+pickle_choices = [(pickle, pickle, proto) for proto in range(4)]
+assert len(pickle_choices) == 4
 
 # An arbitrary collection of objects of non-datetime types, for testing
 # mixed-type comparisons.
@@ -122,18 +122,23 @@ class TestTZInfo(unittest.TestCase):
     def test_pickling_subclass(self):
         # Make sure we can pickle/unpickle an instance of a subclass.
         offset = timedelta(minutes=-300)
-        orig = PicklableFixedOffset(offset, 'cookie')
-        self.assertIsInstance(orig, tzinfo)
-        self.assertTrue(type(orig) is PicklableFixedOffset)
-        self.assertEqual(orig.utcoffset(None), offset)
-        self.assertEqual(orig.tzname(None), 'cookie')
-        for pickler, unpickler, proto in pickle_choices:
-            green = pickler.dumps(orig, proto)
-            derived = unpickler.loads(green)
-            self.assertIsInstance(derived, tzinfo)
-            self.assertTrue(type(derived) is PicklableFixedOffset)
-            self.assertEqual(derived.utcoffset(None), offset)
-            self.assertEqual(derived.tzname(None), 'cookie')
+        for otype, args in [
+            (PicklableFixedOffset, (offset, 'cookie')),
+            (timezone, (offset,)),
+            (timezone, (offset, "EST"))]:
+            orig = otype(*args)
+            oname = orig.tzname(None)
+            self.assertIsInstance(orig, tzinfo)
+            self.assertIs(type(orig), otype)
+            self.assertEqual(orig.utcoffset(None), offset)
+            self.assertEqual(orig.tzname(None), oname)
+            for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
+                self.assertIsInstance(derived, tzinfo)
+                self.assertIs(type(derived), otype)
+                self.assertEqual(derived.utcoffset(None), offset)
+                self.assertEqual(derived.tzname(None), oname)
 
 class TestTimeZone(unittest.TestCase):
 

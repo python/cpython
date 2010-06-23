@@ -3469,6 +3469,14 @@ timezone_fromutc(PyDateTime_TimeZone *self, PyDateTime_DateTime *dt)
     return add_datetime_timedelta(dt, (PyDateTime_Delta *)self->offset, 1);
 }
 
+static PyObject *
+timezone_getinitargs(PyDateTime_TimeZone *self)
+{
+    if (self->name == NULL)
+        return Py_BuildValue("(O)", self->offset);
+    return Py_BuildValue("(OO)", self->offset, self->name);
+}
+
 static PyMethodDef timezone_methods[] = {
     {"tzname", (PyCFunction)timezone_tzname, METH_O,
      PyDoc_STR("If name is specified when timezone is created, returns the name."
@@ -3482,6 +3490,9 @@ static PyMethodDef timezone_methods[] = {
 
     {"fromutc", (PyCFunction)timezone_fromutc, METH_O,
      PyDoc_STR("datetime in UTC -> datetime in local time.")},
+
+    {"__getinitargs__", (PyCFunction)timezone_getinitargs, METH_NOARGS,
+     PyDoc_STR("pickle support")},
 
     {NULL, NULL}
 };
