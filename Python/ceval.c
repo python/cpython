@@ -87,7 +87,7 @@ void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1,
     inst = inst1 - inst0 - intr;
     loop = loop1 - loop0 - intr;
     fprintf(stderr, "opcode=%03d t=%d inst=%06lld loop=%06lld\n",
-        opcode, ticked, inst, loop);
+            opcode, ticked, inst, loop);
 }
 
 #endif
@@ -126,10 +126,10 @@ static int prtrace(PyObject *, char *);
 static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
                       int, PyObject *);
 static int call_trace_protected(Py_tracefunc, PyObject *,
-                                 PyFrameObject *, int, PyObject *);
+                                PyFrameObject *, int, PyObject *);
 static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
-                                  PyFrameObject *, int *, int *, int *);
+                                 PyFrameObject *, int *, int *, int *);
 
 static PyObject * cmp_outcome(int, PyObject *, PyObject *);
 static PyObject * import_from(PyObject *, PyObject *);
@@ -637,14 +637,14 @@ _Py_CheckRecursiveCall(char *where)
 
 /* Status code for main loop (reason for stack unwind) */
 enum why_code {
-                WHY_NOT =       0x0001, /* No error */
-        WHY_EXCEPTION = 0x0002,         /* Exception occurred */
-        WHY_RERAISE =           0x0004, /* Exception re-raised by 'finally' */
-        WHY_RETURN =            0x0008, /* 'return' statement */
-        WHY_BREAK =             0x0010, /* 'break' statement */
-        WHY_CONTINUE =          0x0020, /* 'continue' statement */
-        WHY_YIELD =             0x0040, /* 'yield' operator */
-        WHY_SILENCED = 0x0080 /* Exception silenced by 'with' */
+        WHY_NOT =       0x0001, /* No error */
+        WHY_EXCEPTION = 0x0002, /* Exception occurred */
+        WHY_RERAISE =   0x0004, /* Exception re-raised by 'finally' */
+        WHY_RETURN =    0x0008, /* 'return' statement */
+        WHY_BREAK =     0x0010, /* 'break' statement */
+        WHY_CONTINUE =  0x0020, /* 'continue' statement */
+        WHY_YIELD =     0x0040, /* 'yield' operator */
+        WHY_SILENCED =  0x0080  /* Exception silenced by 'with' */
 };
 
 static enum why_code do_raise(PyObject *, PyObject *);
@@ -930,36 +930,36 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
-#define STACK_LEVEL()   ((int)(stack_pointer - f->f_valuestack))
-#define EMPTY()         (STACK_LEVEL() == 0)
-#define TOP()           (stack_pointer[-1])
-#define SECOND()        (stack_pointer[-2])
-#define THIRD()         (stack_pointer[-3])
-#define FOURTH()        (stack_pointer[-4])
-#define SET_TOP(v)      (stack_pointer[-1] = (v))
-#define SET_SECOND(v)   (stack_pointer[-2] = (v))
-#define SET_THIRD(v)    (stack_pointer[-3] = (v))
-#define SET_FOURTH(v)   (stack_pointer[-4] = (v))
-#define BASIC_STACKADJ(n)       (stack_pointer += n)
-#define BASIC_PUSH(v)   (*stack_pointer++ = (v))
-#define BASIC_POP()     (*--stack_pointer)
+#define STACK_LEVEL()     ((int)(stack_pointer - f->f_valuestack))
+#define EMPTY()           (STACK_LEVEL() == 0)
+#define TOP()             (stack_pointer[-1])
+#define SECOND()          (stack_pointer[-2])
+#define THIRD()           (stack_pointer[-3])
+#define FOURTH()          (stack_pointer[-4])
+#define SET_TOP(v)        (stack_pointer[-1] = (v))
+#define SET_SECOND(v)     (stack_pointer[-2] = (v))
+#define SET_THIRD(v)      (stack_pointer[-3] = (v))
+#define SET_FOURTH(v)     (stack_pointer[-4] = (v))
+#define BASIC_STACKADJ(n) (stack_pointer += n)
+#define BASIC_PUSH(v)     (*stack_pointer++ = (v))
+#define BASIC_POP()       (*--stack_pointer)
 
 #ifdef LLTRACE
 #define PUSH(v)         { (void)(BASIC_PUSH(v), \
-                   lltrace && prtrace(TOP(), "push")); \
-                   assert(STACK_LEVEL() <= co->co_stacksize); }
+                          lltrace && prtrace(TOP(), "push")); \
+                          assert(STACK_LEVEL() <= co->co_stacksize); }
 #define POP()           ((void)(lltrace && prtrace(TOP(), "pop")), \
-             BASIC_POP())
+                         BASIC_POP())
 #define STACKADJ(n)     { (void)(BASIC_STACKADJ(n), \
-                   lltrace && prtrace(TOP(), "stackadj")); \
-                   assert(STACK_LEVEL() <= co->co_stacksize); }
+                          lltrace && prtrace(TOP(), "stackadj")); \
+                          assert(STACK_LEVEL() <= co->co_stacksize); }
 #define EXT_POP(STACK_POINTER) ((void)(lltrace && \
-                prtrace((STACK_POINTER)[-1], "ext_pop")), \
-                *--(STACK_POINTER))
+                                prtrace((STACK_POINTER)[-1], "ext_pop")), \
+                                *--(STACK_POINTER))
 #else
-#define PUSH(v)         BASIC_PUSH(v)
-#define POP()           BASIC_POP()
-#define STACKADJ(n)     BASIC_STACKADJ(n)
+#define PUSH(v)                BASIC_PUSH(v)
+#define POP()                  BASIC_POP()
+#define STACKADJ(n)            BASIC_STACKADJ(n)
 #define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 #endif
 
@@ -974,8 +974,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
    accessed by other code (e.g. a __del__ method or gc.collect()) and the
    variable would be pointing to already-freed memory. */
 #define SETLOCAL(i, value)      do { PyObject *tmp = GETLOCAL(i); \
-                     GETLOCAL(i) = value; \
-                     Py_XDECREF(tmp); } while (0)
+                                     GETLOCAL(i) = value; \
+                                     Py_XDECREF(tmp); } while (0)
 
 
 #define UNWIND_BLOCK(b) \
@@ -1250,7 +1250,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             it doesn't have to be remembered across a full loop */
         if (HAS_ARG(opcode))
             oparg = NEXTARG();
-      dispatch_opcode:
+    dispatch_opcode:
 #ifdef DYNAMIC_EXECUTION_PROFILE
 #ifdef DXPAIRS
         dxpairs[lastopcode][opcode]++;
@@ -2112,8 +2112,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 break;
             if (oparg < PyTuple_GET_SIZE(co->co_cellvars)) {
                 v = PyTuple_GET_ITEM(co->co_cellvars,
-                                       oparg);
-                   format_exc_check_arg(
+                                     oparg);
+                format_exc_check_arg(
                        PyExc_UnboundLocalError,
                        UNBOUNDLOCAL_ERROR_MSG,
                        v);
@@ -2573,7 +2573,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             func = *pfunc;
 
             if (PyMethod_Check(func)
-            && PyMethod_GET_SELF(func) != NULL) {
+                && PyMethod_GET_SELF(func) != NULL) {
                 PyObject *self = PyMethod_GET_SELF(func);
                 Py_INCREF(self);
                 func = PyMethod_GET_FUNCTION(func);
