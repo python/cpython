@@ -561,6 +561,7 @@ class DictTest(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(t), t)
 
+    @test_support.cpython_only
     def test_track_literals(self):
         # Test GC-optimization of dict literals
         x, y, z, w = 1.5, "a", (1, None), []
@@ -578,6 +579,7 @@ class DictTest(unittest.TestCase):
         self._tracked({1: {}})
         self._tracked({1: set()})
 
+    @test_support.cpython_only
     def test_track_dynamic(self):
         # Test GC-optimization of dynamically-created dicts
         class MyObject(object):
@@ -641,6 +643,7 @@ class DictTest(unittest.TestCase):
         d.update([(x, y), (z, w)])
         self._tracked(d)
 
+    @test_support.cpython_only
     def test_track_subtypes(self):
         # Dict subtypes are always tracked
         class MyDict(dict):
