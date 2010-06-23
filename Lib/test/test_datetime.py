@@ -172,6 +172,7 @@ class TestTimeZone(unittest.TestCase):
         with self.assertRaises(TypeError): timezone(42)
         with self.assertRaises(TypeError): timezone(ZERO, None)
         with self.assertRaises(TypeError): timezone(ZERO, 42)
+        with self.assertRaises(TypeError): timezone(ZERO, 'ABC', 'extra')
 
     def test_inheritance(self):
         self.assertIsInstance(timezone.utc, tzinfo)
@@ -207,6 +208,8 @@ class TestTimeZone(unittest.TestCase):
     def test_fromutc(self):
         with self.assertRaises(ValueError):
             timezone.utc.fromutc(self.DT)
+        with self.assertRaises(TypeError):
+            timezone.utc.fromutc('not datetime')
         for tz in [self.EST, self.ACDT, Eastern]:
             utctime = self.DT.replace(tzinfo=tz)
             local = tz.fromutc(utctime)
@@ -1845,6 +1848,8 @@ class TestDateTime(TestDate):
         self.assertRaises(TypeError, combine, t, d) # args reversed
         self.assertRaises(TypeError, combine, d, t, 1) # too many args
         self.assertRaises(TypeError, combine, "date", "time") # wrong types
+        self.assertRaises(TypeError, combine, d, "time") # wrong type
+        self.assertRaises(TypeError, combine, "date", t) # wrong type
 
     def test_replace(self):
         cls = self.theclass
@@ -1887,6 +1892,8 @@ class TestDateTime(TestDate):
             def dst(self, dt): return timedelta(0)
         bog = Bogus()
         self.assertRaises(ValueError, dt.astimezone, bog)   # naive
+        self.assertRaises(ValueError,
+                          dt.replace(tzinfo=bog).astimezone, f)
 
         class AlsoBogus(tzinfo):
             def utcoffset(self, dt): return timedelta(0)
@@ -2863,6 +2870,11 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         maxdiff = max - min
         self.assertEqual(maxdiff, self.theclass.max - self.theclass.min +
                                   timedelta(minutes=2*1439))
+        # Different tzinfo, but the same offset
+        tza = timezone(HOUR, 'A')
+        tzb = timezone(HOUR, 'B')
+        delta = min.replace(tzinfo=tza) - max.replace(tzinfo=tzb)
+        self.assertEqual(delta, self.theclass.min - self.theclass.max)
 
     def test_tzinfo_now(self):
         meth = self.theclass.now
@@ -3499,7 +3511,7 @@ class TestTimezoneConversions(unittest.TestCase):
         self.assertRaises(ValueError, now.astimezone, notok())
 
         # Sometimes blow up. In the following, tzinfo.dst()
-        # implementation may return None or not Nonedepending on
+        # implementation may return None or not None depending on
         # whether DST is assumed to be in effect.  In this situation,
         # a ValueError should be raised by astimezone().
         class tricky_notok(ok):
