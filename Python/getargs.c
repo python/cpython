@@ -1340,6 +1340,7 @@ getbuffer(PyObject *arg, Py_buffer *view, char **errmsg)
         return -1;
     }
     if (!PyBuffer_IsContiguous(view, 'C')) {
+        PyBuffer_Release(view);
         *errmsg = "contiguous buffer";
         return -1;
     }
