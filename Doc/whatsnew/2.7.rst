@@ -1625,9 +1625,6 @@ changes, or look through the Subversion logs for all the details.
     ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',
                 path='/foo', params='', query='', fragment='')
 
-* The :class:`~UserDict.UserDict` class is now a new-style class.  (Changed by
-  Benjamin Peterson.)
-
 * New class: the :class:`~weakref.WeakSet` class in the :mod:`weakref`
   module is a set that only holds weak references to its elements; elements
   will be removed once there are no references pointing to them.
