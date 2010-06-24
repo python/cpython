@@ -212,8 +212,11 @@ PySSL_SetError(PySSLSocket *obj, int ret, char *filename, int lineno)
                     errstr = "EOF occurred in violation of protocol";
                 } else if (ret == -1) {
                     /* underlying BIO reported an I/O error */
+                    Py_INCREF(s);
                     ERR_clear_error();
-                    return s->errorhandler();
+                    v = s->errorhandler();
+                    Py_DECREF(s);
+                    return v;
                 } else { /* possible? */
                     p = PY_SSL_ERROR_SYSCALL;
                     errstr = "Some I/O error occurred";
@@ -334,6 +337,7 @@ static PyObject *PySSL_SSLdo_handshake(PySSLSocket *self)
                      PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
         return NULL;
     }
+    Py_INCREF(sock);
 
     /* just in case the blocking state of the socket has been changed */
     nonblocking = (sock->sock_timeout >= 0.0);
@@ -348,9 +352,8 @@ static PyObject *PySSL_SSLdo_handshake(PySSLSocket *self)
         ret = SSL_do_handshake(self->ssl);
         err = SSL_get_error(self->ssl, ret);
         PySSL_END_ALLOW_THREADS
-        if(PyErr_CheckSignals()) {
-            return NULL;
-        }
+        if (PyErr_CheckSignals())
+            goto error;
         if (err == SSL_ERROR_WANT_READ) {
             sockstate = check_socket_and_wait_for_timeout(sock, 0);
         } else if (err == SSL_ERROR_WANT_WRITE) {
@@ -361,19 +364,20 @@ static PyObject *PySSL_SSLdo_handshake(PySSLSocket *self)
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
             PyErr_SetString(PySSLErrorObject,
                             ERRSTR("The handshake operation timed out"));
-            return NULL;
+            goto error;
         } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
             PyErr_SetString(PySSLErrorObject,
                             ERRSTR("Underlying socket has been closed."));
-            return NULL;
+            goto error;
         } else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
             PyErr_SetString(PySSLErrorObject,
                             ERRSTR("Underlying socket too large for select()."));
-            return NULL;
+            goto error;
         } else if (sockstate == SOCKET_IS_NONBLOCKING) {
             break;
         }
     } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
+    Py_DECREF(sock);
     if (ret < 1)
         return PySSL_SetError(self, ret, __FILE__, __LINE__);
     self->ssl->debug = 1;
@@ -386,6 +390,10 @@ static PyObject *PySSL_SSLdo_handshake(PySSLSocket *self)
 
     Py_INCREF(Py_None);
     return Py_None;
+
+error:
+    Py_DECREF(sock);
+    return NULL;
 }
 
 static PyObject *
@@ -1051,9 +1059,12 @@ static PyObject *PySSL_SSLwrite(PySSLSocket *self, PyObject *args)
                      PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
         return NULL;
     }
+    Py_INCREF(sock);
 
-    if (!PyArg_ParseTuple(args, "y*:write", &buf))
+    if (!PyArg_ParseTuple(args, "y*:write", &buf)) {
+        Py_DECREF(sock);
         return NULL;
+    }
 
     /* just in case the blocking state of the socket has been changed */
     nonblocking = (sock->sock_timeout >= 0.0);
@@ -1103,6 +1114,7 @@ static PyObject *PySSL_SSLwrite(PySSLSocket *self, PyObject *args)
         }
     } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
 
+    Py_DECREF(sock);
     PyBuffer_Release(&buf);
     if (len > 0)
         return PyLong_FromLong(len);
@@ -1110,6 +1122,7 @@ static PyObject *PySSL_SSLwrite(PySSLSocket *self, PyObject *args)
         return PySSL_SetError(self, len, __FILE__, __LINE__);
 
 error:
+    Py_DECREF(sock);
     PyBuffer_Release(&buf);
     return NULL;
 }
@@ -1159,21 +1172,23 @@ static PyObject *PySSL_SSLread(PySSLSocket *self, PyObject *args)
                      PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
         return NULL;
     }
+    Py_INCREF(sock);
 
     if (!PyArg_ParseTuple(args, "|Oi:read", &dest, &count))
-        return NULL;
+        goto error;
+
     if ((dest == NULL) || (dest == Py_None)) {
         if (!(dest = PyByteArray_FromStringAndSize((char *) 0, len)))
-            return NULL;
+            goto error;
         mem = PyByteArray_AS_STRING(dest);
     } else if (PyLong_Check(dest)) {
         len = PyLong_AS_LONG(dest);
         if (!(dest = PyByteArray_FromStringAndSize((char *) 0, len)))
-            return NULL;
+            goto error;
         mem = PyByteArray_AS_STRING(dest);
     } else {
         if (PyObject_GetBuffer(dest, &buf, PyBUF_CONTIG) < 0)
-            return NULL;
+            goto error;
         mem = buf.buf;
         len = buf.len;
         if ((count > 0) && (count <= len))
@@ -1240,6 +1255,7 @@ static PyObject *PySSL_SSLread(PySSLSocket *self, PyObject *args)
         goto error;
     }
   done:
+    Py_DECREF(sock);
     if (!buf_passed) {
         PyObject *res = PyBytes_FromStringAndSize(mem, count);
         Py_DECREF(dest);
@@ -1249,8 +1265,9 @@ static PyObject *PySSL_SSLread(PySSLSocket *self, PyObject *args)
         return PyLong_FromLong(count);
     }
   error:
+    Py_DECREF(sock);
     if (!buf_passed) {
-        Py_DECREF(dest);
+        Py_XDECREF(dest);
     } else {
         PyBuffer_Release(&buf);
     }
@@ -1275,6 +1292,7 @@ static PyObject *PySSL_SSLshutdown(PySSLSocket *self)
                      PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
         return NULL;
     }
+    Py_INCREF(sock);
 
     /* Just in case the blocking state of the socket has been changed */
     nonblocking = (sock->sock_timeout >= 0.0);
@@ -1324,24 +1342,29 @@ static PyObject *PySSL_SSLshutdown(PySSLSocket *self)
             else
                 PyErr_SetString(PySSLErrorObject,
                                 "The write operation timed out");
-            return NULL;
+            goto error;
         }
         else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
             PyErr_SetString(PySSLErrorObject,
                             "Underlying socket too large for select().");
-            return NULL;
+            goto error;
         }
         else if (sockstate != SOCKET_OPERATION_OK)
             /* Retain the SSL error code */
             break;
     }
 
-    if (err < 0)
+    if (err < 0) {
+        Py_DECREF(sock);
         return PySSL_SetError(self, err, __FILE__, __LINE__);
-    else {
-        Py_INCREF(sock);
-        return (PyObject *) sock;
     }
+    else
+        /* It's already INCREF'ed */
+        return (PyObject *) sock;
+
+error:
+    Py_DECREF(sock);
+    return NULL;
 }
 
 PyDoc_STRVAR(PySSL_SSLshutdown_doc,
