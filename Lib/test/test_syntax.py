@@ -478,9 +478,11 @@ SyntaxError: keyword argument repeated
 
 >>> del ()
 Traceback (most recent call last):
-   ...
-  File "<doctest test.test_syntax[50]>", line 1
 SyntaxError: can't delete ()
+
+>>> {1, 2, 3} = 42
+Traceback (most recent call last):
+SyntaxError: can't assign to literal
 
 """
 
