@@ -1365,7 +1365,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
                 goto letter_quote;
             break;
         }
-        while (Py_ISALNUM(c) || c == '_') {
+        while (c != EOF && (Py_ISALNUM(c) || c == '_')) {
             c = tok_nextc(tok);
         }
         tok_backup(tok, c);
