@@ -1005,11 +1005,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
             if (arg == Py_None)
                 *p = 0;
-            else if (PyBytes_Check(arg)) {
-                /* Enable null byte check below */
-                uarg = arg;
-                *p = PyBytes_AS_STRING(arg);
-            }
             else if (PyUnicode_Check(arg)) {
                 uarg = UNICODE_DEFAULT_ENCODING(arg);
                 if (uarg == NULL)

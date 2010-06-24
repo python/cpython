@@ -325,7 +325,7 @@ class Bytes_TestCase(unittest.TestCase):
         from _testcapi import getargs_z
         self.assertEqual(getargs_z('abc\xe9'), b'abc\xc3\xa9')
         self.assertRaises(TypeError, getargs_z, 'nul:\0')
-        self.assertEqual(getargs_z(b'bytes'), b'bytes')
+        self.assertRaises(TypeError, getargs_z, b'bytes')
         self.assertRaises(TypeError, getargs_z, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_z, memoryview(b'memoryview'))
         self.assertIsNone(getargs_z(None))

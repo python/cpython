@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8949: "z" format of PyArg_Parse*() functions doesn't accept bytes
+  objects, as described in the documentation.
+
 - Issue #6543: Write the traceback in the terminal encoding instead of utf-8.
   Fix the encoding of the modules filename. Patch written by Amaury Forgeot
   d'Arc.
