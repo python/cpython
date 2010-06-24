@@ -184,7 +184,7 @@ class NamespaceSeparatorTest(unittest.TestCase):
             self.fail()
         except TypeError as e:
             self.assertEquals(str(e),
-                'ParserCreate() argument 2 must be string or None, not int')
+                'ParserCreate() argument 2 must be str or None, not int')
 
         try:
             expat.ParserCreate(namespace_separator='too long')
