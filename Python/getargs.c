@@ -1384,6 +1384,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             return converterr(
                 "bytes or read-only character buffer",
                 arg, msgbuf, bufsize);
+        if (pb->bf_releasebuffer)
+            return converterr(
+                "string or pinned buffer",
+                arg, msgbuf, bufsize);
 
         if (PyObject_GetBuffer(arg, &view, PyBUF_SIMPLE) != 0)
             return converterr("string or single-segment read-only buffer",
@@ -1391,10 +1395,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
         count = view.len;
         *p = view.buf;
-        if (pb->bf_releasebuffer)
-            return converterr(
-                "string or pinned buffer",
-                arg, msgbuf, bufsize);
 
         PyBuffer_Release(&view);
 
@@ -1460,6 +1460,7 @@ getbuffer(PyObject *arg, Py_buffer *view, char **errmsg)
             return -1;
         }
         if (!PyBuffer_IsContiguous(view, 'C')) {
+            PyBuffer_Release(view);
             *errmsg = "contiguous buffer";
             return -1;
         }
