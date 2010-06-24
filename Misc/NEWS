@@ -451,6 +451,10 @@ C-API
 Library
 -------
 
+- Issue #8682: The ssl module now temporary increments the reference count of
+  a socket object got through ``PyWeakref_GetObject``, so as to avoid possible
+  deallocation while the object is still being used.
+
 - Issue #1368368: FancyURLOpener class changed to throw an Exception on wrong
   password instead of presenting an interactive prompt. Older behavior can be
   obtained by passing retry=True to http_error_xxx methods of FancyURLOpener.
