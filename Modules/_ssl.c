@@ -500,7 +500,6 @@ static PyObject *PySSL_SSLdo_handshake(PySSLObject *self)
     Py_DECREF(sock);
     if (ret < 1)
         return PySSL_SetError(self, ret, __FILE__, __LINE__);
-    self->ssl->debug = 1;
 
     if (self->peer_cert)
         X509_free (self->peer_cert);
