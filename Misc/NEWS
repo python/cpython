@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Be more specific in error messages about positional arguments.
+
 - Issue #8949: "z" format of PyArg_Parse*() functions doesn't accept bytes
   objects, as described in the documentation.
 

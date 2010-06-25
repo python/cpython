@@ -279,13 +279,13 @@ The number of arguments passed in includes keywords:
     >>> f(6, a=4, *(1, 2, 3))
     Traceback (most recent call last):
       ...
-    TypeError: f() takes exactly 1 argument (5 given)
+    TypeError: f() takes exactly 1 positional argument (5 given)
     >>> def f(a, *, kw):
     ...    pass
     >>> f(6, 4, kw=4)
     Traceback (most recent call last):
       ...
-    TypeError: f() takes exactly 2 arguments (3 given)
+    TypeError: f() takes exactly 1 positional argument (3 given)
 """
 
 import sys

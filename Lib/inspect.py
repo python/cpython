@@ -959,7 +959,7 @@ def getcallargs(func, *positional, **named):
         else:
             arg2value[varargs] = ()
     elif 0 < num_args < num_pos:
-        raise TypeError('%s() takes %s %d %s (%d given)' % (
+        raise TypeError('%s() takes %s %d positional %s (%d given)' % (
             f_name, 'at most' if defaults else 'exactly', num_args,
             'arguments' if num_args > 1 else 'argument', num_total))
     elif num_args == 0 and num_total:
