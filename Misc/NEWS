@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9075: In the ssl module, remove the setting of a ``debug`` flag
+  on an OpenSSL structure.
+
 
 What's New in Python 2.7 release candidate 2?
 =============================================
