@@ -146,6 +146,7 @@ class TestReversed(unittest.TestCase):
         x = range(1)
         self.assertEqual(type(reversed(x)), type(iter(x)))
 
+    @test_support.cpython_only
     def test_len(self):
         # This is an implementation detail, not an interface requirement
         from test.test_iterlen import len
