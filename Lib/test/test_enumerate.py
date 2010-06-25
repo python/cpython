@@ -142,7 +142,7 @@ class TestReversed(unittest.TestCase):
         # don't allow keyword arguments
         self.assertRaises(TypeError, reversed, [], a=1)
 
-    def test_class_class(self):
+    def test_classic_class(self):
         class A:
             def __reversed__(self):
                 return [2, 1]
