@@ -173,7 +173,8 @@ that may require changes to your code:
 
 * bytearray objects cannot be used anymore as filenames: convert them to bytes
 
-* "t#" format of PyArg_Parse*() functions has been removed: use "s#" or "s*"
-  instead
+* PyArg_Parse*() functions:
 
-* Stub
+  * "t#" format has been removed: use "s#" or "s*" instead
+  * "w" and "w#" formats has been removed: use "w*" instead
+

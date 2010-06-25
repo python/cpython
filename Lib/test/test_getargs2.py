@@ -375,6 +375,16 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_y_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_y_hash, None)
 
+    def test_w_star(self):
+        # getargs_w_star() modifies first and last byte
+        from _testcapi import getargs_w_star
+        self.assertRaises(TypeError, getargs_w_star, 'abc\xe9')
+        self.assertRaises(TypeError, getargs_w_star, b'bytes')
+        self.assertRaises(TypeError, getargs_w_star, b'nul:\0')
+        self.assertEqual(getargs_w_star(bytearray(b'bytearray')), b'[ytearra]')
+        self.assertEqual(getargs_w_star(memoryview(b'memoryview')), b'[emoryvie]')
+        self.assertRaises(TypeError, getargs_w_star, None)
+
 
 class Unicode_TestCase(unittest.TestCase):
     def test_u(self):
