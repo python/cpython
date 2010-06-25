@@ -1231,58 +1231,28 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     }
 
 
-    case 'w': { /* memory buffer, read-write access */
+    case 'w': { /* "w*": memory buffer, read-write access */
         void **p = va_arg(*p_va, void **);
-        PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
-        Py_ssize_t count;
-        int temp=-1;
-        Py_buffer view;
 
-        if (pb && pb->bf_releasebuffer && *format != '*')
-            /* Buffer must be released, yet caller does not use
-               the Py_buffer protocol. */
-            return converterr("pinned buffer", arg, msgbuf, bufsize);
+        if (*format != '*')
+            return converterr(
+                "invalid use of 'w' format character",
+                arg, msgbuf, bufsize);
+        format++;
 
-
-        if (pb && pb->bf_getbuffer && *format == '*') {
-            /* Caller is interested in Py_buffer, and the object
-               supports it directly. */
-            format++;
-            if (PyObject_GetBuffer(arg, (Py_buffer*)p, PyBUF_WRITABLE) < 0) {
-                PyErr_Clear();
-                return converterr("read-write buffer", arg, msgbuf, bufsize);
-            }
-            if (addcleanup(p, freelist, cleanup_buffer)) {
-                return converterr(
-                    "(cleanup problem)",
-                    arg, msgbuf, bufsize);
-            }
-            if (!PyBuffer_IsContiguous((Py_buffer*)p, 'C'))
-                return converterr("contiguous buffer", arg, msgbuf, bufsize);
-            break;
+        /* Caller is interested in Py_buffer, and the object
+           supports it directly. */
+        if (PyObject_GetBuffer(arg, (Py_buffer*)p, PyBUF_WRITABLE) < 0) {
+            PyErr_Clear();
+            return converterr("read-write buffer", arg, msgbuf, bufsize);
         }
-
-        /* Here we have processed w*, only w and w# remain. */
-        if (pb == NULL ||
-            pb->bf_getbuffer == NULL ||
-            ((temp = PyObject_GetBuffer(arg, &view,
-                                        PyBUF_SIMPLE)) != 0) ||
-            view.readonly == 1) {
-            if (temp==0) {
-                PyBuffer_Release(&view);
-            }
-            return converterr("single-segment read-write buffer",
-                              arg, msgbuf, bufsize);
+        if (addcleanup(p, freelist, cleanup_buffer)) {
+            return converterr(
+                "(cleanup problem)",
+                arg, msgbuf, bufsize);
         }
-
-        if ((count = view.len) < 0)
-            return converterr("(unspecified)", arg, msgbuf, bufsize);
-        *p = view.buf;
-        if (*format == '#') {
-            FETCH_SIZE;
-            STORE_SIZE(count);
-            format++;
-        }
+        if (!PyBuffer_IsContiguous((Py_buffer*)p, 'C'))
+            return converterr("contiguous buffer", arg, msgbuf, bufsize);
         break;
     }
 

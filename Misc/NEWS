@@ -29,6 +29,9 @@ Core and Builtins
   error handlers, the decoder only supports "strict" and "ignore" error
   handlers. Patch written by Mark Hammond.
 
+- Issue #8850: Remove "w" and "w#" formats from PyArg_Parse*() functions, use
+  "w*" format instead. Add tests for "w*" format.
+
 - Issue #8592: PyArg_Parse*() functions raise a TypeError for "y", "u" and "Z"
   formats if the string contains a null byte/character. Write unit tests for
   string formats.

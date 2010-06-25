@@ -1386,6 +1386,28 @@ test_widechar(PyObject *self)
 }
 
 static PyObject *
+getargs_w_star(PyObject *self, PyObject *args)
+{
+    Py_buffer buffer;
+    PyObject *result;
+    char *str;
+
+    if (!PyArg_ParseTuple(args, "w*:getargs_w_star", &buffer))
+        return NULL;
+
+    if (2 <= buffer.len) {
+        str = buffer.buf;
+        str[0] = '[';
+        str[buffer.len-1] = ']';
+    }
+
+    result = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
+    PyBuffer_Release(&buffer);
+    return result;
+}
+
+
+static PyObject *
 test_empty_argparse(PyObject *self)
 {
     /* Test that formats can begin with '|'. See issue #4720. */
@@ -2227,6 +2249,7 @@ static PyMethodDef TestMethods[] = {
     {"getargs_u_hash",          getargs_u_hash,                  METH_VARARGS},
     {"getargs_Z",               getargs_Z,                       METH_VARARGS},
     {"getargs_Z_hash",          getargs_Z_hash,                  METH_VARARGS},
+    {"getargs_w_star",          getargs_w_star,                  METH_VARARGS},
     {"codec_incrementalencoder",
      (PyCFunction)codec_incrementalencoder,      METH_VARARGS},
     {"codec_incrementaldecoder",
