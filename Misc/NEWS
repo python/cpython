@@ -73,6 +73,9 @@ C-API
 Library
 -------
 
+- Issue #9075: In the ssl module, remove the setting of a ``debug`` flag
+  on an OpenSSL structure.
+
 - Issue #5610: feedparser no longer eats extra characters at the end of
   a body part if the body part ends with a \r\n.
 
