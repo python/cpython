@@ -3100,11 +3100,11 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
             if (!(co->co_flags & CO_VARARGS)) {
                 PyErr_Format(PyExc_TypeError,
                     "%U() takes %s %d "
-                    "argument%s (%d given)",
+                    "positional argument%s (%d given)",
                     co->co_name,
                     defcount ? "at most" : "exactly",
-                    total_args,
-                    total_args == 1 ? "" : "s",
+                    co->co_argcount,
+                    co->co_argcount == 1 ? "" : "s",
                     argcount + kwcount);
                 goto fail;
             }
