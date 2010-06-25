@@ -103,6 +103,7 @@ class EnumerateTestCase(unittest.TestCase):
         self.assertRaises(TypeError, self.enum, 'abc', 'a') # wrong type
         self.assertRaises(TypeError, self.enum, 'abc', 2, 3) # too many arguments
 
+    @test_support.cpython_only
     def test_tuple_reuse(self):
         # Tests an implementation detail where tuple is reused
         # whenever nothing else holds a reference to it
