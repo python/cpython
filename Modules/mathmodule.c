@@ -934,17 +934,17 @@ _fsum_realloc(double **p_ptr, Py_ssize_t  n,
    def msum(iterable):
        partials = []  # sorted, non-overlapping partial sums
        for x in iterable:
-       i = 0
-       for y in partials:
-           if abs(x) < abs(y):
-           x, y = y, x
-           hi = x + y
-           lo = y - (hi - x)
-           if lo:
-           partials[i] = lo
-           i += 1
-           x = hi
-       partials[i:] = [x]
+           i = 0
+           for y in partials:
+               if abs(x) < abs(y):
+                   x, y = y, x
+               hi = x + y
+               lo = y - (hi - x)
+               if lo:
+                   partials[i] = lo
+                   i += 1
+               x = hi
+           partials[i:] = [x]
        return sum_exact(partials)
 
    Rounded x+y stored in hi with the roundoff stored in lo.  Together hi+lo
