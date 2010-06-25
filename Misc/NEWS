@@ -454,6 +454,9 @@ C-API
 Library
 -------
 
+- Issue #9075: In the ssl module, remove the setting of a ``debug`` flag
+  on an OpenSSL structure.
+
 - Issue #8682: The ssl module now temporary increments the reference count of
   a socket object got through ``PyWeakref_GetObject``, so as to avoid possible
   deallocation while the object is still being used.
