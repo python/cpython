@@ -49,6 +49,9 @@ def _get_sep(path):
 def normcase(s):
     """Normalize case of pathname.  Has no effect under Posix"""
     # TODO: on Mac OS X, this should really return s.lower().
+    if not isinstance(s, (bytes, str)):
+        raise TypeError("normcase() argument must be str or bytes, "
+                        "not '{}'".format(s.__class__.__name__))
     return s
 
 
