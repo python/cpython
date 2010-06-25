@@ -454,6 +454,9 @@ C-API
 Library
 -------
 
+- Issue #9018: os.path.normcase() now raises a TypeError if the argument is
+  not ``str`` or ``bytes``.
+
 - Issue #9075: In the ssl module, remove the setting of a ``debug`` flag
   on an OpenSSL structure.
 

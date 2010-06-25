@@ -32,6 +32,9 @@ def _get_colon(path):
 # Normalize the case of a pathname.  Dummy in Posix, but <s>.lower() here.
 
 def normcase(path):
+    if not isinstance(path, (bytes, str)):
+        raise TypeError("normcase() argument must be str or bytes, "
+                        "not '{}'".format(path.__class__.__name__))
     return path.lower()
 
 

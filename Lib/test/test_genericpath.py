@@ -194,14 +194,18 @@ class CommonTest(GenericTest):
     ]
 
     def test_normcase(self):
-        # Check that normcase() is idempotent
-        p = "FoO/./BaR"
-        p = self.pathmodule.normcase(p)
-        self.assertEqual(p, self.pathmodule.normcase(p))
+        normcase = self.pathmodule.normcase
+        # check that normcase() is idempotent
+        for p in ["FoO/./BaR", b"FoO/./BaR"]:
+            p = normcase(p)
+            self.assertEqual(p, normcase(p))
 
-        p = b"FoO/./BaR"
-        p = self.pathmodule.normcase(p)
-        self.assertEqual(p, self.pathmodule.normcase(p))
+        self.assertEqual(normcase(''), '')
+        self.assertEqual(normcase(b''), b'')
+
+        # check that normcase raises a TypeError for invalid types
+        for path in (None, True, 0, 2.5, [], bytearray(b''), {'o','o'}):
+            self.assertRaises(TypeError, normcase, path)
 
     def test_splitdrive(self):
         # splitdrive for non-NT paths

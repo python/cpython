@@ -36,6 +36,9 @@ def normcase(s):
     """Normalize case of pathname.
 
     Makes all characters lowercase and all altseps into seps."""
+    if not isinstance(s, (bytes, str)):
+        raise TypeError("normcase() argument must be str or bytes, "
+                        "not '{}'".format(s.__class__.__name__))
     return s.replace('\\', '/').lower()
 
 
