@@ -7339,7 +7339,7 @@ PyObject *PyUnicode_Replace(PyObject *obj,
 }
 
 PyDoc_STRVAR(replace__doc__,
-             "S.replace (old, new[, count]) -> unicode\n\
+             "S.replace(old, new[, count]) -> unicode\n\
 \n\
 Return a copy of S with all occurrences of substring\n\
 old replaced by new.  If the optional argument count is\n\
