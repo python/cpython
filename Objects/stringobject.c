@@ -3137,7 +3137,7 @@ replace(PyStringObject *self,
 }
 
 PyDoc_STRVAR(replace__doc__,
-"S.replace (old, new[, count]) -> string\n\
+"S.replace(old, new[, count]) -> string\n\
 \n\
 Return a copy of string S with all occurrences of substring\n\
 old replaced by new.  If the optional argument count is\n\
