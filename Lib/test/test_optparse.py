@@ -757,7 +757,7 @@ class TestStandard(BaseTest):
     def test_combined_single_invalid_option(self):
         self.parser.add_option("-t", action="store_true")
         self.assertParseFail(["-test"],
-                          "no such option: -e")
+                             "no such option: -e")
 
 class TestBool(BaseTest):
     def setUp(self):
