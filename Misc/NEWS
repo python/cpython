@@ -73,6 +73,9 @@ C-API
 Library
 -------
 
+- Issue #9085: email package version number bumped to its correct
+  value of 4.0.2 (same as it was in 2.5).
+
 - Issue #9075: In the ssl module, remove the setting of a ``debug`` flag
   on an OpenSSL structure.
 
