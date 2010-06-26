@@ -8,9 +8,9 @@ DateTime Objects
 Various date and time objects are supplied by the :mod:`datetime` module.
 Before using any of these functions, the header file :file:`datetime.h` must be
 included in your source (note that this is not included by :file:`Python.h`),
-and the macro :cfunc:`PyDateTime_IMPORT` must be invoked.  The macro puts a
-pointer to a C structure into a static variable,  ``PyDateTimeAPI``, that is
-used by the following macros.
+and the macro :cmacro:`PyDateTime_IMPORT` must be invoked, usually as part of
+the module initialisation function.  The macro puts a pointer to a C structure
+into a static variable,  ``PyDateTimeAPI``, that is used by the following macros.
 
 Type-check macros:
 
