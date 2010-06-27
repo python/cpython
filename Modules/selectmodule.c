@@ -91,7 +91,7 @@ seq2set(PyObject *seq, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
     fd2obj[0].obj = (PyObject*)0;            /* set list to zero size */
     FD_ZERO(set);
 
-    fast_seq=PySequence_Fast(seq, "arguments 1-3 must be sequences");
+    fast_seq = PySequence_Fast(seq, "arguments 1-3 must be sequences");
     if (!fast_seq)
         return -1;
 
