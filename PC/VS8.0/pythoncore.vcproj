@@ -759,10 +759,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Include\intobject.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Include\intrcheck.h"
 				>
 			</File>
