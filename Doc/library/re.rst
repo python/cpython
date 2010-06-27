@@ -709,18 +709,12 @@ Regular Expression Objects
 
    The :class:`RegexObject` class supports the following methods and attributes:
 
+   .. method:: RegexObject.search(string[, pos[, endpos]])
 
-   .. method:: RegexObject.match(string[, pos[, endpos]])
-
-      If zero or more characters at the beginning of *string* match this regular
-      expression, return a corresponding :class:`MatchObject` instance.  Return
-      ``None`` if the string does not match the pattern; note that this is different
-      from a zero-length match.
-
-      .. note::
-
-         If you want to locate a match anywhere in *string*, use
-         :meth:`~RegexObject.search` instead.
+      Scan through *string* looking for a location where this regular expression
+      produces a match, and return a corresponding :class:`MatchObject` instance.
+      Return ``None`` if no position in the string matches the pattern; note that this
+      is different from finding a zero-length match at some point in the string.
 
       The optional second parameter *pos* gives an index in the string where the
       search is to start; it defaults to ``0``.  This is not completely equivalent to
@@ -732,24 +726,34 @@ Regular Expression Objects
       will be as if the string is *endpos* characters long, so only the characters
       from *pos* to ``endpos - 1`` will be searched for a match.  If *endpos* is less
       than *pos*, no match will be found, otherwise, if *rx* is a compiled regular
-      expression object, ``rx.match(string, 0, 50)`` is equivalent to
-      ``rx.match(string[:50], 0)``.
+      expression object, ``rx.search(string, 0, 50)`` is equivalent to
+      ``rx.search(string[:50], 0)``.
 
-         >>> pattern = re.compile("o")
-         >>> pattern.match("dog")      # No match as "o" is not at the start of "dog."
-         >>> pattern.match("dog", 1)   # Match as "o" is the 2nd character of "dog".
-         <_sre.SRE_Match object at ...>
+      >>> pattern = re.compile("d")
+      >>> pattern.search("dog")     # Match at index 0
+      <_sre.SRE_Match object at ...>
+      >>> pattern.search("dog", 1)  # No match; search doesn't include the "d"
 
 
-   .. method:: RegexObject.search(string[, pos[, endpos]])
+   .. method:: RegexObject.match(string[, pos[, endpos]])
 
-      Scan through *string* looking for a location where this regular expression
-      produces a match, and return a corresponding :class:`MatchObject` instance.
-      Return ``None`` if no position in the string matches the pattern; note that this
-      is different from finding a zero-length match at some point in the string.
+      If zero or more characters at the *beginning* of *string* match this regular
+      expression, return a corresponding :class:`MatchObject` instance.  Return
+      ``None`` if the string does not match the pattern; note that this is different
+      from a zero-length match.
 
       The optional *pos* and *endpos* parameters have the same meaning as for the
-      :meth:`~RegexObject.match` method.
+      :meth:`~RegexObject.search` method.
+
+      .. note::
+
+         If you want to locate a match anywhere in *string*, use
+         :meth:`~RegexObject.search` instead.
+
+      >>> pattern = re.compile("o")
+      >>> pattern.match("dog")      # No match as "o" is not at the start of "dog".
+      >>> pattern.match("dog", 1)   # Match as "o" is the 2nd character of "dog".
+      <_sre.SRE_Match object at ...>
 
 
    .. method:: RegexObject.split(string[, maxsplit=0])
@@ -759,12 +763,16 @@ Regular Expression Objects
 
    .. method:: RegexObject.findall(string[, pos[, endpos]])
 
-      Identical to the :func:`findall` function, using the compiled pattern.
+      Similar to the :func:`findall` function, using the compiled pattern, but
+      also accepts optional *pos* and *endpos* parameters that limit the search
+      region like for :meth:`match`.
 
 
    .. method:: RegexObject.finditer(string[, pos[, endpos]])
 
-      Identical to the :func:`finditer` function, using the compiled pattern.
+      Similar to the :func:`finditer` function, using the compiled pattern, but
+      also accepts optional *pos* and *endpos* parameters that limit the search
+      region like for :meth:`match`.
 
 
    .. method:: RegexObject.sub(repl, string[, count=0])

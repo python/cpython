@@ -1329,6 +1329,10 @@ functions based on regular expressions.
    You can use :meth:`str.maketrans` to create a translation map from
    character-to-character mappings in different formats.
 
+   You can use the :func:`~string.maketrans` helper function in the :mod:`string`
+   module to create a translation table. For string objects, set the *table*
+   argument to ``None`` for translations that only delete characters:
+
    .. note::
 
       An even more flexible approach is to create a custom character mapping
@@ -2295,7 +2299,7 @@ is generally interpreted as simple bytes.
       File "<stdin>", line 1, in <module>
       ValueError: cannot modify size of memoryview object
 
-   Notice how the size of the memoryview object can not be changed.
+   Notice how the size of the memoryview object cannot be changed.
 
 
    :class:`memoryview` has two methods:
