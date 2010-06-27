@@ -75,7 +75,7 @@ get_proxy_settings(PyObject* mod __attribute__((__unused__)))
         aNum = CFDictionaryGetValue(proxyDict,
             kSCPropNetProxiesExcludeSimpleHostnames);
         if (aNum == NULL) {
-            v = PyBool_FromLong(1);
+            v = PyBool_FromLong(0);
         } else {
             v = PyBool_FromLong(cfnum_to_int32(aNum));
         }
