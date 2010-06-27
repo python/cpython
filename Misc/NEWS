@@ -456,6 +456,9 @@ C-API
 Library
 -------
 
+- Implement importlib.abc.SourceLoader and deprecate PyLoader and PyPycLoader
+  for removal in Python 3.4.
+
 - Issue #9064: pdb's "up" and "down" commands now accept an optional argument.
 
 - Issue #9018: os.path.normcase() now raises a TypeError if the argument is
