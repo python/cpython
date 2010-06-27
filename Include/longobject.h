@@ -58,7 +58,7 @@ PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 #error "sizeof(pid_t) is neither sizeof(int), sizeof(long) or sizeof(long long)"
 #endif /* SIZEOF_PID_T */
 
-/* For use by intobject.c only */
+/* Used by Python/mystrtoul.c. */
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 
 /* _PyLong_Frexp returns a double x and an exponent e such that the
