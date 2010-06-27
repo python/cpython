@@ -346,10 +346,10 @@ APIs:
    Coerce an encoded object *obj* to an Unicode object and return a reference with
    incremented refcount.
 
-   String and other char buffer compatible objects are decoded according to the
-   given encoding and using the error handling defined by errors.  Both can be
-   *NULL* to have the interface use the default values (see the next section for
-   details).
+   :class:`bytes`, :class:`bytearray` and other char buffer compatible objects
+   are decoded according to the given encoding and using the error handling
+   defined by errors. Both can be *NULL* to have the interface use the default
+   values (see the next section for details).
 
    All other objects, including Unicode objects, cause a :exc:`TypeError` to be
    set.

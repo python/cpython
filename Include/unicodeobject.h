@@ -498,14 +498,14 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
     Py_ssize_t size             /* size of buffer */
     );
 
-/* Similar to PyUnicode_FromUnicode(), but u points to Latin-1 encoded bytes */
+/* Similar to PyUnicode_FromUnicode(), but u points to UTF-8 encoded bytes */
 PyAPI_FUNC(PyObject*) PyUnicode_FromStringAndSize(
     const char *u,        /* char buffer */
     Py_ssize_t size       /* size of buffer */
     );
 
 /* Similar to PyUnicode_FromUnicode(), but u points to null-terminated
-   Latin-1 encoded bytes */
+   UTF-8 encoded bytes */
 PyAPI_FUNC(PyObject*) PyUnicode_FromString(
     const char *u        /* string */
     );
@@ -550,7 +550,7 @@ PyAPI_FUNC(int) PyUnicode_Resize(
 
    Coercion is done in the following way:
 
-   1. String and other char buffer compatible objects are decoded
+   1. bytes, bytearray and other char buffer compatible objects are decoded
       under the assumptions that they contain data using the current
       default encoding. Decoding is done in "strict" mode.
 
@@ -574,7 +574,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromEncodedObject(
    Unicode objects are passed back as-is (subclasses are converted to
    true Unicode objects), all other objects are delegated to
    PyUnicode_FromEncodedObject(obj, NULL, "strict") which results in
-   using the default encoding as basis for decoding the object.
+   using UTF-8 encoding as basis for decoding the object.
 
    The API returns NULL in case of an error. The caller is responsible
    for decref'ing the returned objects.
@@ -606,7 +606,7 @@ PyAPI_FUNC(void) _Py_ReleaseInternedUnicodeStrings(void);
 
 #ifdef HAVE_WCHAR_H
 
-/* Create a Unicode Object from the whcar_t buffer w of the given
+/* Create a Unicode Object from the wchar_t buffer w of the given
    size.
 
    The buffer is copied into the new object. */
@@ -665,7 +665,7 @@ PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
    parameters encoding and errors have the same semantics as the ones
    of the builtin unicode() API.
 
-   Setting encoding to NULL causes the default encoding to be used.
+   Setting encoding to NULL causes the default encoding (UTF-8) to be used.
 
    Error handling is set by errors which may also be set to NULL
    meaning to use the default handling defined for the codec. Default

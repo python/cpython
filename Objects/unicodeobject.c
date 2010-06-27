@@ -1273,7 +1273,7 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
            case of a TypeError. */
         if (PyErr_ExceptionMatches(PyExc_TypeError))
             PyErr_Format(PyExc_TypeError,
-                         "coercing to str: need string or buffer, "
+                         "coercing to str: need bytes, bytearray or char buffer, "
                          "%.80s found",
                          Py_TYPE(obj)->tp_name);
         goto onError;
