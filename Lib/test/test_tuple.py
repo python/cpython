@@ -96,6 +96,7 @@ class TupleTest(seq_tests.CommonTest):
         gc.collect()
         self.assertTrue(gc.is_tracked(t), t)
 
+    @support.cpython_only
     def test_track_literals(self):
         # Test GC-optimization of tuple literals
         x, y, z = 1.5, "a", []
@@ -136,16 +137,19 @@ class TupleTest(seq_tests.CommonTest):
         self._tracked(tp(tuple([obj]) for obj in [x, y, z]))
         self._tracked(tuple(tp([obj]) for obj in [x, y, z]))
 
+    @support.cpython_only
     def test_track_dynamic(self):
         # Test GC-optimization of dynamically constructed tuples.
         self.check_track_dynamic(tuple, False)
 
+    @support.cpython_only
     def test_track_subtypes(self):
         # Tuple subtypes must always be tracked
         class MyTuple(tuple):
             pass
         self.check_track_dynamic(MyTuple, True)
 
+    @support.cpython_only
     def test_bug7466(self):
         # Trying to untrack an unfinished tuple could crash Python
         self._not_tracked(tuple(gc.collect() for i in range(101)))
