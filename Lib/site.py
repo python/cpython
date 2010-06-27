@@ -273,12 +273,12 @@ def getsitepackages():
     environment, and will return a list of full paths.
     """
     sitepackages = []
-    seen = []
+    seen = set()
 
     for prefix in PREFIXES:
         if not prefix or prefix in seen:
             continue
-        seen.append(prefix)
+        seen.add(prefix)
 
         if sys.platform in ('os2emx', 'riscos'):
             sitepackages.append(os.path.join(prefix, "Lib", "site-packages"))

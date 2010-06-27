@@ -537,8 +537,9 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
 {
     int i, result;
     PyObject *s, *l = PyTuple_New(num_fields);
-    if (!l) return 0;
-    for(i = 0; i < num_fields; i++) {
+    if (!l)
+        return 0;
+    for (i = 0; i < num_fields; i++) {
         s = PyUnicode_FromString(attrs[i]);
         if (!s) {
             Py_DECREF(l);
