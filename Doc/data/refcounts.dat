@@ -846,9 +846,6 @@ PyNumber_InPlaceXor:PyObject*::+1:
 PyNumber_InPlaceXor:PyObject*:v:0:
 PyNumber_InPlaceXor:PyObject*:w:0:
 
-PyNumber_Int:PyObject*::+1:
-PyNumber_Int:PyObject*:o:0:
-
 PyNumber_Invert:PyObject*::+1:
 PyNumber_Invert:PyObject*:o:0:
 

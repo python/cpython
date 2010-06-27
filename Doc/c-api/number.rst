@@ -215,18 +215,6 @@ Number Protocol
    the Python statement ``o1 |= o2``.
 
 
-.. cfunction:: PyObject* PyNumber_Int(PyObject *o)
-
-   Returns the *o* converted to an integer object on success, or *NULL* on
-   failure.  This is the equivalent of the Python expression ``int(o)``.
-
-   .. note::
-
-     This function is defined in the transitional :file:`intobject.h`
-     header file.  It will be removed completely in Python 3.1.  Use
-     the :cfunc:`PyNumber_Long` function instead.
-
-
 .. cfunction:: PyObject* PyNumber_Long(PyObject *o)
 
    .. index:: builtin: int
