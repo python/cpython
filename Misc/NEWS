@@ -1463,8 +1463,6 @@ Extension Modules
 Build
 -----
 
-- Have CFLAGS come after OPT to allow for overriding warnings flags.
-
 - Issue #8854: Fix finding Visual Studio 2008 on Windows x64.
 
 - Issue #1759169, #8864: Drop _XOPEN_SOURCE on Solaris, define it for
