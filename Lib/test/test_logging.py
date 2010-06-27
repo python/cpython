@@ -1670,6 +1670,8 @@ class ConfigDictTest(BaseTest):
         t = logging.config.listen(port)
         t.start()
         t.ready.wait()
+        # Now get the port allocated
+        port = t.port
         t.ready.clear()
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
