@@ -468,6 +468,17 @@ class RelativeImportTests(unittest.TestCase):
         ns = dict(__package__=object())
         self.assertRaises(ValueError, check_relative)
 
+    def test_absolute_import_without_future(self):
+        # If absolute import syntax is used, then do not try to perform
+        # a relative import in the face of failure.
+        # Issue #7902.
+        try:
+            from .os import sep
+        except ImportError:
+            pass
+        else:
+            self.fail("explicit relative import triggered an "
+                      "implicit relative import")
 
 class OverridingImportBuiltinTests(unittest.TestCase):
     def test_override_builtin(self):
