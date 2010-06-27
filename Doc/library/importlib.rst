@@ -18,12 +18,12 @@ implementation of the :keyword:`import` statement (and thus, by extension, the
 :func:`__import__` function) in Python source code. This provides an
 implementation of :keyword:`import` which is portable to any Python
 interpreter. This also provides a reference implementation which is easier to
-comprehend than one in a programming language other than Python.
+comprehend than one implemented in a programming language other than Python.
 
-Two, the components to implement :keyword:`import` can be exposed in this
+Two, the components to implement :keyword:`import` are exposed in this
 package, making it easier for users to create their own custom objects (known
 generically as an :term:`importer`) to participate in the import process.
-Details on providing custom importers can be found in :pep:`302`.
+Details on custom importers can be found in :pep:`302`.
 
 .. seealso::
 
@@ -37,7 +37,7 @@ Details on providing custom importers can be found in :pep:`302`.
 
     The :func:`.__import__` function
         The built-in function for which the :keyword:`import` statement is
-        syntactic sugar.
+        syntactic sugar for.
 
     :pep:`235`
         Import on Case-Insensitive Platforms
@@ -46,7 +46,7 @@ Details on providing custom importers can be found in :pep:`302`.
         Defining Python Source Code Encodings
 
     :pep:`302`
-        New Import Hooks.
+        New Import Hooks
 
     :pep:`328`
         Imports: Multi-Line and Absolute/Relative
@@ -66,8 +66,7 @@ Functions
 
 .. function:: __import__(name, globals={}, locals={}, fromlist=list(), level=0)
 
-    An implementation of the built-in :func:`__import__` function. See the
-    built-in function's documentation for usage instructions.
+    An implementation of the built-in :func:`__import__` function.
 
 .. function:: import_module(name, package=None)
 
@@ -213,21 +212,107 @@ are also provided to help in implementing the core ABCs.
 
     .. method:: get_filename(fullname)
 
-        An abstract method that is to return the value for :attr:`__file__` for
+        An abstract method that is to return the value of :attr:`__file__` for
         the specified module. If no path is available, :exc:`ImportError` is
         raised.
+
+        If source code is available, then the method should return the path to
+        the source file, regardless of whether a bytecode was used to load the
+        module.
+
+
+.. class:: SourceLoader
+
+    An abstract base class for implementing source (and optionally bytecode)
+    file loading. The class inherits from both :class:`ResourceLoader` and
+    :class:`ExecutionLoader`, requiring the implementation of:
+
+    * :meth:`ResourceLoader.get_data`
+    * :meth:`ExecutionLoader.get_filename`
+          Implement to only return the path to the source file; sourceless
+          loading is not supported.
+
+    The abstract methods defined by this class are to add optional bytecode
+    file support. Not implementing these optional methods causes the loader to
+    only work with source code. Implementing the methods allows the loader to
+    work with source *and* bytecode files; it does not allow for *sourceless*
+    loading where only bytecode is provided.  Bytecode files are an
+    optimization to speed up loading by removing the parsing step of Python's
+    compiler, and so no bytecode-specific API is exposed.
+
+    .. method:: path_mtime(self, path)
+
+        Optional abstract method which returns the modification time for the
+        specified path.
+
+    .. method:: set_data(self, path, data)
+
+        Optional abstract method which writes the specified bytes to a file
+        path.
+
+    .. method:: get_code(self, fullname)
+
+        Concrete implementation of :meth:`InspectLoader.get_code`.
+
+    .. method:: load_module(self, fullname)
+
+        Concrete implementation of :meth:`Loader.load_module`.
+
+    .. method:: get_source(self, fullname)
+
+        Concrete implementation of :meth:`InspectLoader.get_source`.
+
+    .. method:: is_package(self, fullname)
+
+        Concrete implementation of :meth:`InspectLoader.is_package`. A module
+        is determined to be a package if its file path is a file named
+        ``__init__`` when the file extension is removed.
 
 
 .. class:: PyLoader
 
     An abstract base class inheriting from
-    :class:`importlib.abc.ExecutionLoader` and
-    :class:`importlib.abc.ResourceLoader` designed to ease the loading of
+    :class:`ExecutionLoader` and
+    :class:`ResourceLoader` designed to ease the loading of
     Python source modules (bytecode is not handled; see
-    :class:`importlib.abc.PyPycLoader` for a source/bytecode ABC). A subclass
+    :class:`SourceLoader` for a source/bytecode ABC). A subclass
     implementing this ABC will only need to worry about exposing how the source
     code is stored; all other details for loading Python source code will be
     handled by the concrete implementations of key methods.
+
+    .. deprecated:: 3.2
+        This class has been deprecated in favor of :class:`SourceLoader` and is
+        slated for removal in Python 3.4. See below for how to create a
+        subclass that is compatbile with Python 3.1 onwards.
+
+    If compatibility with Python 3.1 is required, then use the following idiom
+    to implement a subclass that will work with Python 3.1 onwards (make sure
+    to implement :meth:`ExecutionLoader.get_filename`)::
+
+        try:
+            from importlib.abc import SourceLoader
+        except ImportError:
+            from importlib.abc import PyLoader as SourceLoader
+
+
+        class CustomLoader(SourceLoader):
+            def get_filename(self, fullname):
+                """Return the path to the source file."""
+                # Implement ...
+
+            def source_path(self, fullname):
+                """Implement source_path in terms of get_filename."""
+                try:
+                    return self.get_filename(fullname)
+                except ImportError:
+                    return None
+
+            def is_package(self, fullname):
+                """Implement is_package by looking for an __init__ file
+                name as returned by get_filename."""
+                filename = os.path.basename(self.get_filename(fullname))
+                return os.path.splitext(filename)[0] == '__init__'
+
 
     .. method:: source_path(fullname)
 
@@ -270,9 +355,17 @@ are also provided to help in implementing the core ABCs.
 
 .. class:: PyPycLoader
 
-    An abstract base class inheriting from :class:`importlib.abc.PyLoader`.
+    An abstract base class inheriting from :class:`PyLoader`.
     This ABC is meant to help in creating loaders that support both Python
     source and bytecode.
+
+    .. deprecated:: 3.2
+        This class has been deprecated in favor of :class:`SourceLoader` and to
+        properly support :pep:`3147`. If compatibility is required with
+        Python 3.1, implement both :class:`SourceLoader` and :class:`PyLoader`;
+        instructions on how to do so are included in the documentation for
+        :class:`PyLoader`. Do note that this solution will not support
+        sourceless/bytecode-only loading; only source *and* bytecode loading.
 
     .. method:: source_mtime(fullname)
 
@@ -292,8 +385,8 @@ are also provided to help in implementing the core ABCs.
     .. method:: get_filename(fullname)
 
         A concrete implementation of
-        :meth:`importlib.abc.ExecutionLoader.get_filename` that relies on
-        :meth:`importlib.abc.PyLoader.source_path` and :meth:`bytecode_path`.
+        :meth:`ExecutionLoader.get_filename` that relies on
+        :meth:`PyLoader.source_path` and :meth:`bytecode_path`.
         If :meth:`source_path` returns a path, then that value is returned.
         Else if :meth:`bytecode_path` returns a path, that path will be
         returned. If a path is not available from both methods,
@@ -420,100 +513,3 @@ an :term:`importer`.
     attribute to be used at the global level of the module during
     initialization.
 
-
-Example
--------
-
-Below is an example meta path importer that uses a dict for back-end storage
-for source code. While not an optimal solution -- manipulations of
-:attr:`__path__` on packages does not influence import -- it does illustrate
-what little is required to implement an importer.
-
-.. testcode::
-
-    """An importer where source is stored in a dict."""
-    from importlib import abc
-
-
-    class DictImporter(abc.Finder, abc.PyLoader):
-
-        """A meta path importer that stores source code in a dict.
-
-        The keys are the module names -- packages must end in ``.__init__``.
-        The values must be something that can be passed to 'bytes'.
-
-        """
-
-        def __init__(self, memory):
-            """Store the dict."""
-            self.memory = memory
-
-        def contains(self, name):
-            """See if a module or package is in the dict."""
-            if name in self.memory:
-                return name
-            package_name = '{}.__init__'.format(name)
-            if  package_name in self.memory:
-                return package_name
-            return False
-
-        __contains__ = contains  # Convenience.
-
-        def find_module(self, fullname, path=None):
-            """Find the module in the dict."""
-            if fullname in self:
-                return self
-            return None
-
-        def source_path(self, fullname):
-            """Return the module name if the module is in the dict."""
-            if not fullname in self:
-                raise ImportError
-            return fullname
-
-        def get_data(self, path):
-            """Return the bytes for the source.
-
-            The value found in the dict is passed through 'bytes' before being
-            returned.
-
-            """
-            name = self.contains(path)
-            if not name:
-                raise IOError
-            return bytes(self.memory[name])
-
-        def is_package(self, fullname):
-            """Tell if module is a package based on whether the dict contains the
-            name with ``.__init__`` appended to it."""
-            if fullname not in self:
-                raise ImportError
-            if fullname in self.memory:
-                return False
-            # If name is in this importer but not as it is then it must end in
-            # ``__init__``.
-            else:
-                return True
-
-.. testcode::
-    :hide:
-
-    import importlib
-    import sys
-
-
-    # Build the dict; keys of name, value of __package__.
-    names = {'_top_level': '', '_pkg.__init__': '_pkg', '_pkg.mod': '_pkg'}
-    source = {name: "name = {!r}".format(name).encode() for name in names}
-
-    # Register the meta path importer.
-    importer = DictImporter(source)
-    sys.meta_path.append(importer)
-
-    # Sanity check.
-    for name in names:
-        module = importlib.import_module(name)
-        assert module.__name__ == name
-        assert getattr(module, 'name') == name
-        assert module.__loader__ is importer
-        assert module.__package__ == names[name]
