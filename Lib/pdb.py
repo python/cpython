@@ -618,26 +618,44 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     do_w = do_where
     do_bt = do_where
 
+    def _select_frame(self, number):
+        assert 0 <= number < len(self.stack)
+        self.curindex = number
+        self.curframe = self.stack[self.curindex][0]
+        self.curframe_locals = self.curframe.f_locals
+        self.print_stack_entry(self.stack[self.curindex])
+        self.lineno = None
+
     def do_up(self, arg):
         if self.curindex == 0:
             print('*** Oldest frame', file=self.stdout)
+            return
+        try:
+            count = int(arg or 1)
+        except ValueError:
+            print('*** Invalid frame count (%s)' % arg, file=self.stdout)
+            return
+        if count < 0:
+            newframe = 0
         else:
-            self.curindex = self.curindex - 1
-            self.curframe = self.stack[self.curindex][0]
-            self.curframe_locals = self.curframe.f_locals
-            self.print_stack_entry(self.stack[self.curindex])
-            self.lineno = None
+            newframe = max(0, self.curindex - count)
+        self._select_frame(newframe)
     do_u = do_up
 
     def do_down(self, arg):
         if self.curindex + 1 == len(self.stack):
             print('*** Newest frame', file=self.stdout)
+            return
+        try:
+            count = int(arg or 1)
+        except ValueError:
+            print('*** Invalid frame count (%s)' % arg, file=self.stdout)
+            return
+        if count < 0:
+            newframe = len(self.stack) - 1
         else:
-            self.curindex = self.curindex + 1
-            self.curframe = self.stack[self.curindex][0]
-            self.curframe_locals = self.curframe.f_locals
-            self.print_stack_entry(self.stack[self.curindex])
-            self.lineno = None
+            newframe = min(len(self.stack) - 1, self.curindex + count)
+        self._select_frame(newframe)
     do_d = do_down
 
     def do_until(self, arg):

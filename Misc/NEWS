@@ -456,6 +456,8 @@ C-API
 Library
 -------
 
+- Issue #9064: pdb's "up" and "down" commands now accept an optional argument.
+
 - Issue #9018: os.path.normcase() now raises a TypeError if the argument is
   not ``str`` or ``bytes``.
 

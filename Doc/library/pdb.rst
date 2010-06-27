@@ -210,11 +210,13 @@ w(here)
    Print a stack trace, with the most recent frame at the bottom.  An arrow
    indicates the current frame, which determines the context of most commands.
 
-d(own)
-   Move the current frame one level down in the stack trace (to a newer frame).
+d(own) [*count*]
+   Move the current frame *count* (default one) levels down in the stack trace
+   (to a newer frame).
 
-u(p)
-   Move the current frame one level up in the stack trace (to an older frame).
+u(p) [*count*]
+   Move the current frame *count* (default one) levels up in the stack trace
+   (to an older frame).
 
 b(reak) [[*filename*:]\ *lineno* | *function*\ [, *condition*]]
    With a *lineno* argument, set a break there in the current file.  With a
