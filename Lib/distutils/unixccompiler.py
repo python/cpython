@@ -336,7 +336,9 @@ class UnixCCompiler(CCompiler):
             static = os.path.join(dir, static_f)
 
             if sys.platform == 'darwin' and (
-                    dir.startswith('/System/') or dir.startswith('/usr/')):
+                dir.startswith('/System/') or (
+                dir.startswith('/usr/') and not dir.startswith('/usr/local/'))):
+
                 shared = os.path.join(sysroot, dir[1:], shared_f)
                 dylib = os.path.join(sysroot, dir[1:], dylib_f)
                 static = os.path.join(sysroot, dir[1:], static_f)
