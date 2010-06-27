@@ -1115,7 +1115,8 @@ Files and Directories
 
    Create a directory named *path* with numeric mode *mode*. The default *mode*
    is ``0o777`` (octal).  On some systems, *mode* is ignored.  Where it is used,
-   the current umask value is first masked out.
+   the current umask value is first masked out.  If the directory already
+   exists, :exc:`OSError` is raised.
 
    It is also possible to create temporary directories; see the
    :mod:`tempfile` module's :func:`tempfile.mkdtemp` function.

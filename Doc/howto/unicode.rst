@@ -4,10 +4,12 @@
   Unicode HOWTO
 *****************
 
-:Release: 1.1
+:Release: 1.11
 
-This HOWTO discusses Python's support for Unicode, and explains various problems
-that people commonly encounter when trying to work with Unicode.
+This HOWTO discusses Python 2.x's support for Unicode, and explains
+various problems that people commonly encounter when trying to work
+with Unicode.  (This HOWTO has not yet been updated to cover the 3.x
+versions of Python.)
 
 
 Introduction to Unicode
@@ -146,8 +148,9 @@ problems.
 4. Many Internet standards are defined in terms of textual data, and can't
    handle content with embedded zero bytes.
 
-Generally people don't use this encoding, instead choosing other encodings that
-are more efficient and convenient.
+Generally people don't use this encoding, instead choosing other
+encodings that are more efficient and convenient.  UTF-8 is probably
+the most commonly supported encoding; it will be discussed below.
 
 Encodings don't have to handle every possible Unicode character, and most
 encodings don't.  The rules for converting a Unicode string into the ASCII
@@ -223,8 +226,8 @@ Wikipedia entries are often helpful; see the entries for "character encoding"
 <http://en.wikipedia.org/wiki/UTF-8>, for example.
 
 
-Python's Unicode Support
-========================
+Python 2.x's Unicode Support
+============================
 
 Now that you've learned the rudiments of Unicode, we can look at Python's
 Unicode features.
@@ -266,8 +269,8 @@ Unicode result).  The following examples show the differences::
     >>> b'\x80abc'.decode("utf-8", "ignore")
     'abc'
 
-Encodings are specified as strings containing the encoding's name.  Python comes
-with roughly 100 different encodings; see the Python Library Reference at
+Encodings are specified as strings containing the encoding's name.  Python 3.2
+comes with roughly 100 different encodings; see the Python Library Reference at
 :ref:`standard-encodings` for a list.  Some encodings have multiple names; for
 example, 'latin-1', 'iso_8859_1' and '8859' are all synonyms for the same
 encoding.
@@ -626,7 +629,10 @@ Version 1.02: posted August 16 2005.  Corrects factual errors.
 
 Version 1.1: Feb-Nov 2008.  Updates the document with respect to Python 3 changes.
 
+Version 1.11: posted June 20 2010.  Notes that Python 3.x is not covered,
+and that the HOWTO only covers 2.x.
 
+.. comment Describe Python 3.x support (new section? new document?)
 .. comment Additional topic: building Python w/ UCS2 or UCS4 support
 .. comment Describe use of codecs.StreamRecoder and StreamReaderWriter
 
