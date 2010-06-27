@@ -2204,8 +2204,13 @@ if sys.platform == 'darwin':
                         continue
 
                 base = ip2num(m.group(1))
-                mask = int(m.group(2)[1:])
-                mask = 32 - mask
+                mask = m.group(2)
+                if mask is None:
+                    mask = 8 * (m.group(1).count('.') + 1)
+
+                else:
+                    mask = int(mask[1:])
+                    mask = 32 - mask
 
                 if (hostIP >> mask) == (base >> mask):
                     return True
