@@ -391,7 +391,7 @@ static PyGetSetDef frame_getsetlist[] = {
        the local variables in f_localsplus are NULL.
 
    2. We also maintain a separate free list of stack frames (just like
-   integers are allocated in a special way -- see intobject.c).  When
+   floats are allocated in a special way -- see floatobject.c).  When
    a stack frame is on the free list, only the following members have
    a meaning:
     ob_type             == &Frametype

@@ -21,7 +21,22 @@
 extern int finite(double);
 #endif
 
-/* Special free list -- see comments for same code in intobject.c. */
+/* Special free list
+
+   Since some Python programs can spend much of their time allocating
+   and deallocating floats, these operations should be very fast.
+   Therefore we use a dedicated allocation scheme with a much lower
+   overhead (in space and time) than straight malloc(): a simple
+   dedicated free list, filled when necessary with memory from malloc().
+
+   block_list is a singly-linked list of all PyFloatBlocks ever allocated,
+   linked via their next members.  PyFloatBlocks are never returned to the
+   system before shutdown (PyFloat_Fini).
+
+   free_list is a singly-linked list of available PyFloatObjects, linked
+   via abuse of their ob_type members.
+*/
+
 #define BLOCK_SIZE      1000    /* 1K less typical malloc overhead */
 #define BHEAD_SIZE      8       /* Enough for a 64-bit pointer */
 #define N_FLOATOBJECTS  ((BLOCK_SIZE - BHEAD_SIZE) / sizeof(PyFloatObject))

@@ -10,7 +10,7 @@
    your own types of attributes instead.  Maybe you want to name your
    local variables other than 'self'.  If your object type is needed in
    other files, you'll have to create a file "foobarobject.h"; see
-   intobject.h for an example. */
+   floatobject.h for an example. */
 
 /* Xxo objects */
 
