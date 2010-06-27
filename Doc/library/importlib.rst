@@ -57,6 +57,9 @@ Details on providing custom importers can be found in :pep:`302`.
     :pep:`3120`
         Using UTF-8 as the Default Source Encoding
 
+    :pep:`3147`
+        PYC Repository Directories
+
 
 Functions
 ---------
