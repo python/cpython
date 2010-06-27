@@ -1,5 +1,5 @@
 # Makefile for embedded Python use demo.
-# (This version tailored for my Red Hat Linux 6.1 setup;
+# (This version originally written on Red Hat Linux 6.1;
 # edit lines marked with XXX.)
 
 # XXX The compiler you are using
@@ -10,7 +10,7 @@ blddir=		../..
 srcdir=		../..
 
 # Python version
-VERSION=	3.0
+VERSION=	3.2
 
 # Compiler flags
 OPT=		-g
@@ -21,7 +21,7 @@ CPPFLAGS=	$(INCLUDES)
 # The Python library
 LIBPYTHON=	$(blddir)/libpython$(VERSION).a
 
-# XXX edit LIBS (in particular) to match $(blddir)/Modules/Makefile
+# XXX edit LIBS (in particular) to match $(blddir)/Makefile
 LIBS=		-lnsl -ldl -lreadline -ltermcap -lieee -lpthread -lutil
 LDFLAGS=	-Xlinker -export-dynamic
 SYSLIBS=	-lm
