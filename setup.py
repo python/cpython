@@ -43,7 +43,7 @@ def is_macosx_sdk_path(path):
     """
     Returns True if 'path' can be located in an OSX SDK
     """
-    return path.startswith('/usr/') or path.startswith('/System/')
+    return (path.startswith('/usr/') and not path.startswith('/usr/local')) or path.startswith('/System/')
 
 def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
@@ -868,6 +868,7 @@ class PyBuildExt(build_ext):
                         else:
                             if os.path.isdir(dn):
                                 tmp.append(dn)
+                    db_dirs_to_check = tmp
 
                     db_dirs_to_check = tmp
 
