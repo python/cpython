@@ -251,7 +251,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
 
     name = PyObject_GetAttrString(category, "__name__");
     if (name == NULL)  /* XXX Can an object lack a '__name__' attribute? */
-            return;
+        return;
 
     f_stderr = PySys_GetObject("stderr");
     if (f_stderr == NULL) {
@@ -846,28 +846,35 @@ create_filter(PyObject *category, const char *action)
 static PyObject *
 init_filters(void)
 {
-    PyObject *filters = PyList_New(3);
+    /* Don't silence DeprecationWarning if -3 was used. */
+    PyObject *filters = PyList_New(4);
+    unsigned int pos = 0;  /* Post-incremented in each use. */
+    unsigned int x;
     const char *bytes_action;
+
     if (filters == NULL)
         return NULL;
 
-    PyList_SET_ITEM(filters, 0,
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_DeprecationWarning, "ignore"));
+    PyList_SET_ITEM(filters, pos++,
                     create_filter(PyExc_PendingDeprecationWarning, "ignore"));
-    PyList_SET_ITEM(filters, 1, create_filter(PyExc_ImportWarning, "ignore"));
+    PyList_SET_ITEM(filters, pos++,
+                    create_filter(PyExc_ImportWarning, "ignore"));
     if (Py_BytesWarningFlag > 1)
         bytes_action = "error";
     else if (Py_BytesWarningFlag)
         bytes_action = "default";
     else
         bytes_action = "ignore";
-    PyList_SET_ITEM(filters, 2, create_filter(PyExc_BytesWarning,
+    PyList_SET_ITEM(filters, pos++, create_filter(PyExc_BytesWarning,
                     bytes_action));
 
-    if (PyList_GET_ITEM(filters, 0) == NULL ||
-        PyList_GET_ITEM(filters, 1) == NULL ||
-        PyList_GET_ITEM(filters, 2) == NULL) {
-        Py_DECREF(filters);
-        return NULL;
+    for (x = 0; x < pos; x += 1) {
+        if (PyList_GET_ITEM(filters, x) == NULL) {
+            Py_DECREF(filters);
+            return NULL;
+        }
     }
 
     return filters;

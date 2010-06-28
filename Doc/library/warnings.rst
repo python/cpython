@@ -57,7 +57,7 @@ following warnings category classes are currently defined:
 | :exc:`UserWarning`               | The default category for :func:`warn`.        |
 +----------------------------------+-----------------------------------------------+
 | :exc:`DeprecationWarning`        | Base category for warnings about deprecated   |
-|                                  | features.                                     |
+|                                  | features (ignored by default).                |
 +----------------------------------+-----------------------------------------------+
 | :exc:`SyntaxWarning`             | Base category for warnings about dubious      |
 |                                  | syntactic features.                           |
@@ -90,6 +90,9 @@ because conceptually they belong to the warnings mechanism.
 User code can define additional warning categories by subclassing one of the
 standard warning categories.  A warning category must always be a subclass of
 the :exc:`Warning` class.
+
+.. versionchanged:: 2.7
+   :exc:`DeprecationWarning` is ignored by default.
 
 
 .. _warning-filter:
@@ -149,14 +152,6 @@ interpreter command line.  The interpreter saves the arguments for all
 :option:`-W` options without interpretation in ``sys.warnoptions``; the
 :mod:`warnings` module parses these when it is first imported (invalid options
 are ignored, after printing a message to ``sys.stderr``).
-
-The warnings that are ignored by default may be enabled by passing :option:`-Wd`
-to the interpreter. This enables default handling for all warnings, including
-those that are normally ignored by default. This is particular useful for
-enabling ImportWarning when debugging problems importing a developed package.
-ImportWarning can also be enabled explicitly in Python code using::
-
-   warnings.simplefilter('default', ImportWarning)
 
 
 .. _warning-suppress:
@@ -231,6 +226,37 @@ a new warning (e.g. set warnings to be raised as exceptions and check the
 operations raise exceptions, check that the length of the warning list
 continues to increase after each operation, or else delete the previous
 entries from the warnings list before each new operation).
+
+
+Updating Code For New Versions of Python
+----------------------------------------
+
+Warnings that are only of interest to the developer are ignored by default. As
+such you should make sure to test your code with typically ignored warnings
+made visible. You can do this from the command-line by passing :option:`-Wd`
+to the interpreter (this is shorthand for :option:`-W default`).  This enables
+default handling for all warnings, including those that are ignored by default.
+To change what action is taken for encountered warnings you simply change what
+argument is passed to :option:`-W`, e.g. :option:`-W error`. See the
+:option:`-W` flag for more details on what is possible.
+
+To programmatically do the same as :option:`-Wd`, use::
+
+  warnings.simplefilter('default')
+
+Make sure to execute this code as soon as possible. This prevents the
+registering of what warnings have been raised from unexpectedly influencing how
+future warnings are treated.
+
+Having certain warnings ignored by default is done to prevent a user from
+seeing warnings that are only of interest to the developer. As you do not
+necessarily have control over what interpreter a user uses to run their code,
+it is possible that a new version of Python will be released between your
+release cycles.  The new interpreter release could trigger new warnings in your
+code that were not there in an older interpreter, e.g.
+:exc:`DeprecationWarning` for a module that you are using. While you as a
+developer want to be notified that your code is using a deprecated module, to a
+user this information is essentially noise and provides no benefit to them.
 
 
 .. _warning-functions:
