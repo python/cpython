@@ -118,7 +118,7 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(base.__class__.spam.__doc__, "spam spam spam")
         self.assertEqual(sub.__class__.spam.__doc__, "spam spam spam")
 
-    @unittest.skipIf(sys.flags.optimize >= 1,
+    @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_property_getter_doc_override(self):
         newgettersub = PropertySubNewGetter()
