@@ -53,6 +53,10 @@ class UnparseTestCase(unittest.TestCase):
         self.check_roundtrip("not True or False")
         self.check_roundtrip("True or not False")
 
+    def test_chained_comparisons(self):
+        self.check_roundtrip("1 < 4 <= 5")
+        self.check_roundtrip("a is b is c is not d")
+
 
 def test_main():
     test.support.run_unittest(UnparseTestCase)
