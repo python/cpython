@@ -6,7 +6,7 @@ import unittest
 import pickle, cPickle
 
 from test.test_support import (TESTFN, unlink, run_unittest, captured_output,
-                               check_warnings)
+                               check_warnings, cpython_only)
 from test.test_pep352 import ignore_deprecation_warnings
 
 # XXX This is not really enough, each *operation* should be tested!
@@ -147,6 +147,7 @@ class ExceptionTests(unittest.TestCase):
         ckmsg(s, "'continue' not properly in loop")
         ckmsg("continue\n", "'continue' not properly in loop")
 
+    @cpython_only
     def testSettingException(self):
         # test that setting an exception at the C level works even if the
         # exception object can't be constructed.
@@ -571,6 +572,7 @@ class TestSameStrAndUnicodeMsg(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, str, e)
         self.assertEqual(unicode(e), u'f\xf6\xf6')
 
+    @cpython_only
     def test_exception_with_doc(self):
         import _testcapi
         doc2 = "This is a test docstring."
