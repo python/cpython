@@ -85,6 +85,14 @@ The module provides the following classes:
 
    .. versionadded:: 2.0
 
+.. class:: HTTPMessage
+
+   An :class:`HTTPMessage` instance is used to hold the headers from an HTTP
+   response. It is implemented using the :class:`mimetools.Message` class and
+   provides utility functions to deal with HTTP Headers. It is not directly
+   instantiated by the users.
+
+
 The following exceptions are raised as appropriate:
 
 
