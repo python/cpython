@@ -748,10 +748,9 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
             return closure
 
         self.setUp(magic=b'0000')
-        for exc in (NotImplementedError, IOError):
-            self.loader.set_data = raise_exception(exc)
-            code_object = self.loader.get_code(self.name)
-            self.verify_code(code_object)
+        self.loader.set_data = raise_exception(NotImplementedError)
+        code_object = self.loader.get_code(self.name)
+        self.verify_code(code_object)
 
 class AbstractMethodImplTests(unittest.TestCase):
 
