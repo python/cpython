@@ -549,7 +549,7 @@ class Unparser:
 
 def roundtrip(filename, output=sys.stdout):
     source = open(filename).read()
-    tree = compile(source, filename, "exec", _ast.PyCF_ONLY_AST)
+    tree = compile(source, filename, "exec", ast.PyCF_ONLY_AST)
     Unparser(tree, output)
 
 
