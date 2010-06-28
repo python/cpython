@@ -7,7 +7,7 @@ import pickle
 import weakref
 
 from test.support import (TESTFN, unlink, run_unittest, captured_output,
-                          gc_collect)
+                          gc_collect, cpython_only)
 
 # XXX This is not really enough, each *operation* should be tested!
 
@@ -137,6 +137,7 @@ class ExceptionTests(unittest.TestCase):
         ckmsg(s, "'continue' not properly in loop")
         ckmsg("continue\n", "'continue' not properly in loop")
 
+    @cpython_only
     def testSettingException(self):
         # test that setting an exception at the C level works even if the
         # exception object can't be constructed.
@@ -669,6 +670,7 @@ class ExceptionTests(unittest.TestCase):
         tb2 = raiseMemError()
         self.assertEqual(tb1, tb2)
 
+    @cpython_only
     def test_exception_with_doc(self):
         import _testcapi
         doc2 = "This is a test docstring."
