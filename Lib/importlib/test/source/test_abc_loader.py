@@ -506,7 +506,7 @@ class BadBytecodeFailureTests(unittest.TestCase):
     def test_bad_bytecode(self):
         # Malformed code object bytecode should lead to a ValueError.
         name = 'mod'
-        bc = {name: {'path': os.path.join('path', 'to', 'mod'), 'bc': b'NNN'}}
+        bc = {name: {'path': os.path.join('path', 'to', 'mod'), 'bc': b'1234'}}
         mock = PyPycLoaderMock({name: None}, bc)
         with util.uncache(name), self.assertRaises(ValueError):
             mock.load_module(name)
