@@ -440,9 +440,9 @@ import mechanisms. Thus, you could use either `handlers.WatchedFileHandler`
 class defined in package `mypackage` and module `mymodule`, where `mypackage`
 is available on the Python import path).
 
-.. versionchanged:: 2.7
+.. versionchanged:: 3.2
 
-In Python 2.7, a new means of configuring logging has been introduced, using
+In Python 3.2, a new means of configuring logging has been introduced, using
 dictionaries to hold configuration information. This provides a superset of the
 functionality of the config-file-based approach outlined above, and is the
 recommended configuration method for new applications and deployments. Because
