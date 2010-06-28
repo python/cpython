@@ -91,7 +91,7 @@ User code can define additional warning categories by subclassing one of the
 standard warning categories.  A warning category must always be a subclass of
 the :exc:`Warning` class.
 
-.. versionchanged:: 2.7
+.. versionchanged:: 3.2
    :exc:`DeprecationWarning` is ignored by default.
 
 
