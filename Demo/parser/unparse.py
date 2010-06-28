@@ -115,7 +115,7 @@ class Unparser:
 
     def _Delete(self, t):
         self.fill("del ")
-        self.dispatch(t.targets)
+        interleave(lambda: self.write(", "), self.dispatch, t.targets)
 
     def _Assert(self, t):
         self.fill("assert ")
@@ -245,7 +245,7 @@ class Unparser:
             self.fill("else")
             self.enter()
             self.dispatch(t.orelse)
-            self.leave
+            self.leave()
 
     def _If(self, t):
         self.fill("if ")
@@ -270,7 +270,7 @@ class Unparser:
             self.fill("else")
             self.enter()
             self.dispatch(t.orelse)
-            self.leave
+            self.leave()
 
     def _With(self, t):
         self.fill("with ")
@@ -295,7 +295,16 @@ class Unparser:
         self.write("`")
 
     def _Num(self, t):
-        self.write(repr(t.n))
+        # There are no negative numeric literals in Python; however,
+        # some optimizations produce a negative Num in the AST. Add
+        # parentheses to avoid turning (-1)**2 into -1**2.
+        strnum = repr(t.n)
+        if strnum.startswith("-"):
+            self.write("(")
+            self.write(strnum)
+            self.write(")")
+        else:
+            self.write(repr(t.n))
 
     def _List(self, t):
         self.write("[")
@@ -355,13 +364,14 @@ class Unparser:
 
     unop = {"Invert":"~", "Not": "not", "UAdd":"+", "USub":"-"}
     def _UnaryOp(self, t):
-        self.write(self.unop[t.op.__class__.__name__])
         self.write("(")
+        self.write(self.unop[t.op.__class__.__name__])
+        self.write(" ")
         self.dispatch(t.operand)
         self.write(")")
 
     binop = { "Add":"+", "Sub":"-", "Mult":"*", "Div":"/", "Mod":"%",
-                    "LShift":">>", "RShift":"<<", "BitOr":"|", "BitXor":"^", "BitAnd":"&",
+                    "LShift":"<<", "RShift":">>", "BitOr":"|", "BitXor":"^", "BitAnd":"&",
                     "FloorDiv":"//", "Pow": "**"}
     def _BinOp(self, t):
         self.write("(")
