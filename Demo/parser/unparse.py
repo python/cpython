@@ -1,6 +1,6 @@
 "Usage: unparse.py <path to source file>"
 import sys
-import _ast
+import ast
 import io
 import os
 
@@ -20,7 +20,7 @@ def interleave(inter, f, seq):
 class Unparser:
     """Methods in this class recursively traverse an AST and
     output source code for the abstract syntax; original formatting
-    is disregarged. """
+    is disregarded. """
 
     def __init__(self, tree, file = sys.stdout):
         """Unparser(tree, file=sys.stdout) -> None.
@@ -80,10 +80,11 @@ class Unparser:
 
     def _ImportFrom(self, t):
         self.fill("from ")
-        self.write(t.module)
+        self.write("." * t.level)
+        if t.module:
+            self.write(t.module)
         self.write(" import ")
         interleave(lambda: self.write(", "), self.dispatch, t.names)
-        # XXX(jpe) what is level for?
 
     def _Assign(self, t):
         self.fill()
@@ -124,22 +125,12 @@ class Unparser:
             self.write(", ")
             self.dispatch(t.msg)
 
-    def _Print(self, t):
-        self.fill("print ")
-        do_comma = False
-        if t.dest:
-            self.write(">>")
-            self.dispatch(t.dest)
-            do_comma = True
-        for e in t.values:
-            if do_comma:self.write(", ")
-            else:do_comma=True
-            self.dispatch(e)
-        if not t.nl:
-            self.write(",")
-
     def _Global(self, t):
         self.fill("global ")
+        interleave(lambda: self.write(", "), self.write, t.names)
+
+    def _Nonlocal(self, t):
+        self.fill("nonlocal ")
         interleave(lambda: self.write(", "), self.write, t.names)
 
     def _Yield(self, t):
@@ -151,15 +142,15 @@ class Unparser:
         self.write(")")
 
     def _Raise(self, t):
-        self.fill('raise ')
-        if t.type:
-            self.dispatch(t.type)
-        if t.inst:
-            self.write(", ")
-            self.dispatch(t.inst)
-        if t.tback:
-            self.write(", ")
-            self.dispatch(t.tback)
+        self.fill("raise")
+        if not t.exc:
+            assert not t.cause
+            return
+        self.write(" ")
+        self.dispatch(t.exc)
+        if t.cause:
+            self.write(" from ")
+            self.dispatch(t.cause)
 
     def _TryExcept(self, t):
         self.fill("try")
@@ -192,21 +183,40 @@ class Unparser:
             self.write(" ")
             self.dispatch(t.type)
         if t.name:
-            self.write(", ")
-            self.dispatch(t.name)
+            self.write(" as ")
+            self.write(t.name)
         self.enter()
         self.dispatch(t.body)
         self.leave()
 
     def _ClassDef(self, t):
         self.write("\n")
+        for deco in t.decorator_list:
+            self.fill("@")
+            self.dispatch(deco)
         self.fill("class "+t.name)
-        if t.bases:
-            self.write("(")
-            for a in t.bases:
-                self.dispatch(a)
-                self.write(", ")
-            self.write(")")
+        self.write("(")
+        comma = False
+        for e in t.bases:
+            if comma: self.write(", ")
+            else: comma = True
+            self.dispatch(e)
+        for e in t.keywords:
+            if comma: self.write(", ")
+            else: comma = True
+            self.dispatch(e)
+        if t.starargs:
+            if comma: self.write(", ")
+            else: comma = True
+            self.write("*")
+            self.dispatch(t.starargs)
+        if t.kwargs:
+            if comma: self.write(", ")
+            else: comma = True
+            self.write("*")
+            self.dispatch(t.kwargs)
+        self.write(")")
+
         self.enter()
         self.dispatch(t.body)
         self.leave()
@@ -219,6 +229,9 @@ class Unparser:
         self.fill("def "+t.name + "(")
         self.dispatch(t.args)
         self.write(")")
+        if t.returns:
+            self.write(" -> ")
+            self.dispatch(t.returns)
         self.enter()
         self.dispatch(t.body)
         self.leave()
@@ -273,6 +286,9 @@ class Unparser:
         self.leave()
 
     # expr
+    def _Bytes(self, t):
+        self.write(repr(t.s))
+
     def _Str(self, tree):
         self.write(repr(tree.s))
 
@@ -294,7 +310,7 @@ class Unparser:
             self.write(strnum)
             self.write(")")
         else:
-            self.write(repr(t.n))
+            self.write(strnum)
 
     def _List(self, t):
         self.write("[")
@@ -315,6 +331,22 @@ class Unparser:
             self.dispatch(gen)
         self.write(")")
 
+    def _SetComp(self, t):
+        self.write("{")
+        self.dispatch(t.elt)
+        for gen in t.generators:
+            self.dispatch(gen)
+        self.write("}")
+
+    def _DictComp(self, t):
+        self.write("{")
+        self.dispatch(t.key)
+        self.write(": ")
+        self.dispatch(t.value)
+        for gen in t.generators:
+            self.dispatch(gen)
+        self.write("}")
+
     def _comprehension(self, t):
         self.write(" for ")
         self.dispatch(t.target)
@@ -333,14 +365,20 @@ class Unparser:
         self.dispatch(t.orelse)
         self.write(")")
 
+    def _Set(self, t):
+        assert(t.elts) # should be at least one element
+        self.write("{")
+        interleave(lambda: self.write(", "), self.dispatch, t.elts)
+        self.write("}")
+
     def _Dict(self, t):
         self.write("{")
-        def writem(xxx_todo_changeme):
-            (k, v) = xxx_todo_changeme
+        def write_pair(pair):
+            (k, v) = pair
             self.dispatch(k)
             self.write(": ")
             self.dispatch(v)
-        interleave(lambda: self.write(", "), writem, zip(t.keys, t.values))
+        interleave(lambda: self.write(", "), write_pair, zip(t.keys, t.values))
         self.write("}")
 
     def _Tuple(self, t):
@@ -381,7 +419,7 @@ class Unparser:
             self.dispatch(e)
         self.write(")")
 
-    boolops = {_ast.And: 'and', _ast.Or: 'or'}
+    boolops = {ast.And: 'and', ast.Or: 'or'}
     def _BoolOp(self, t):
         self.write("(")
         s = " %s " % self.boolops[t.op.__class__]
@@ -443,28 +481,55 @@ class Unparser:
     def _ExtSlice(self, t):
         interleave(lambda: self.write(', '), self.dispatch, t.dims)
 
+    # argument
+    def _arg(self, t):
+        self.write(t.arg)
+        if t.annotation:
+            self.write(": ")
+            self.dispatch(t.annotation)
+
     # others
     def _arguments(self, t):
         first = True
-        nonDef = len(t.args)-len(t.defaults)
-        for a in t.args[0:nonDef]:
+        # normal arguments
+        defaults = [None] * (len(t.args) - len(t.defaults)) + t.defaults
+        for a, d in zip(t.args, defaults):
             if first:first = False
             else: self.write(", ")
             self.dispatch(a)
-        for a,d in zip(t.args[nonDef:], t.defaults):
+            if d:
+                self.write("=")
+                self.dispatch(d)
+
+        # varargs, or bare '*' if no varargs but keyword-only arguments present
+        if t.vararg or t.kwonlyargs:
             if first:first = False
             else: self.write(", ")
-            self.dispatch(a),
-            self.write("=")
-            self.dispatch(d)
-        if t.vararg:
-            if first:first = False
-            else: self.write(", ")
-            self.write("*"+t.vararg)
+            self.write("*")
+            if t.vararg:
+                self.write(t.vararg)
+                if t.varargannotation:
+                    self.write(": ")
+                    self.dispatch(t.varargannotation)
+
+        # keyword-only arguments
+        if t.kwonlyargs:
+            for a, d in zip(t.kwonlyargs, t.kw_defaults):
+                if first:first = False
+                else: self.write(", ")
+                self.dispatch(a),
+                if d:
+                    self.write("=")
+                    self.dispatch(d)
+
+        # kwargs
         if t.kwarg:
             if first:first = False
             else: self.write(", ")
             self.write("**"+t.kwarg)
+            if t.kwargannotation:
+                self.write(": ")
+                self.dispatch(t.kwargannotation)
 
     def _keyword(self, t):
         self.write(t.arg)
