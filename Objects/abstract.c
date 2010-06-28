@@ -2533,8 +2533,7 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
     }
     else {
         if (!check_class(cls,
-            "isinstance() arg 2 must be a class, type,"
-            " or tuple of classes and types"))
+            "isinstance() arg 2 must be a type or tuple of types"))
             return -1;
         icls = PyObject_GetAttr(inst, __class__);
         if (icls == NULL) {
