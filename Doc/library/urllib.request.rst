@@ -40,8 +40,8 @@ The :mod:`urllib.request` module defines the following functions:
      commonly used to determine if a redirect was followed
 
    * :meth:`info` --- return the meta-information of the page, such as headers,
-     in the form of an :class:`http.client.HTTPMessage` instance (see `Quick
-     Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
+     in the form of an :func:`email.message_from_string` instance (see
+     `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
 
    Raises :exc:`URLError` on errors.
 
