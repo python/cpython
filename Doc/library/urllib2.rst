@@ -43,8 +43,8 @@ The :mod:`urllib2` module defines the following functions:
    * :meth:`geturl` --- return the URL of the resource retrieved, commonly used to
      determine if a redirect was followed
 
-   * :meth:`info` --- return the meta-information of the page, such as headers, in
-     the form of an ``httplib.HTTPMessage`` instance
+   * :meth:`info` --- return the meta-information of the page, such as headers,
+     in the form of an :class:`mimetools.Message` instance
      (see `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
 
    Raises :exc:`URLError` on errors.
