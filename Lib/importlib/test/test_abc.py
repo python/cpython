@@ -59,6 +59,11 @@ class ExecutionLoader(InheritanceTests, unittest.TestCase):
     subclasses = [abc.PyLoader]
 
 
+class SourceLoader(InheritanceTests, unittest.TestCase):
+
+    superclasses = [abc.ResourceLoader, abc.ExecutionLoader]
+
+
 class PyLoader(InheritanceTests, unittest.TestCase):
 
     superclasses = [abc.Loader, abc.ResourceLoader, abc.ExecutionLoader]
