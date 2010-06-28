@@ -100,7 +100,7 @@ class ExecutionLoader(InspectLoader):
         raise NotImplementedError
 
 
-class SourceLoader(ResourceLoader, ExecutionLoader):
+class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
 
     """Abstract base class for loading source code (and optionally any
     corresponding bytecode).
@@ -116,106 +116,6 @@ class SourceLoader(ResourceLoader, ExecutionLoader):
         * ExecutionLoader.get_filename
 
     """
-
-    def path_mtime(self, path:str) -> int:
-        """Optional method that returns the modification time for the specified
-        path.
-
-        Implementing this method allows the loader to read bytecode files.
-
-        """
-        raise NotImplementedError
-
-    def set_data(self, path:str, data:bytes) -> None:
-        """Optional method which writes data to a file path.
-
-        Implementing this method allows for the writing of bytecode files.
-
-        """
-        raise NotImplementedError
-
-    def is_package(self, fullname):
-        """Concrete implementation of InspectLoader.is_package by checking if
-        the path returned by get_filename has a filename of '__init__.py'."""
-        filename = os.path.basename(self.get_filename(fullname))
-        return os.path.splitext(filename)[0] == '__init__'
-
-    def get_source(self, fullname):
-        """Concrete implementation of InspectLoader.get_source."""
-        path = self.get_filename(fullname)
-        try:
-            source_bytes = self.get_data(path)
-        except IOError:
-            raise ImportError("source not available through get_data()")
-        encoding = tokenize.detect_encoding(io.BytesIO(source_bytes).readline)
-        return source_bytes.decode(encoding[0])
-
-    def get_code(self, fullname):
-        """Concrete implementation of InspectLoader.get_code.
-
-        Reading of bytecode requires path_mtime to be implemented. To write
-        bytecode, set_data must also be implemented.
-
-        """
-        source_path = self.get_filename(fullname)
-        bytecode_path = imp.cache_from_source(source_path)
-        source_mtime = None
-        if bytecode_path is not None:
-            try:
-                source_mtime = self.path_mtime(source_path)
-            except NotImplementedError:
-                pass
-            else:
-                try:
-                    data = self.get_data(bytecode_path)
-                except IOError:
-                    pass
-                else:
-                    magic = data[:4]
-                    raw_timestamp = data[4:8]
-                    if (len(magic) == 4 and len(raw_timestamp) == 4 and
-                            magic == imp.get_magic() and
-                            marshal._r_long(raw_timestamp) == source_mtime):
-                        return marshal.loads(data[8:])
-        source_bytes = self.get_data(source_path)
-        code_object = compile(source_bytes, source_path, 'exec',
-                                dont_inherit=True)
-        if (not sys.dont_write_bytecode and bytecode_path is not None and
-                source_mtime is not None):
-            # If e.g. Jython ever implements imp.cache_from_source to have
-            # their own cached file format, this block of code will most likely
-            # throw an exception.
-            data = bytearray(imp.get_magic())
-            data.extend(marshal._w_long(source_mtime))
-            data.extend(marshal.dumps(code_object))
-            try:
-                self.set_data(bytecode_path, data)
-            except (NotImplementedError, IOError):
-                pass
-        return code_object
-
-    @util.module_for_loader
-    def load_module(self, module):
-        """Concrete implementation of Loader.load_module.
-
-        Requires ExecutionLoader.get_filename and ResourceLoader.get_data to be
-        implemented to load source code. Use of bytecode is dictated by whether
-        get_code uses/writes bytecode.
-
-        """
-        name = module.__name__
-        code_object = self.get_code(name)
-        module.__file__ = self.get_filename(name)
-        module.__cached__ = imp.cache_from_source(module.__file__)
-        module.__package__ = name
-        is_package = self.is_package(name)
-        if is_package:
-            module.__path__  = [os.path.dirname(module.__file__)]
-        else:
-            module.__package__ = module.__package__.rpartition('.')[0]
-        module.__loader__ = self
-        exec(code_object, module.__dict__)
-        return module
 
 
 class PyLoader(SourceLoader):
