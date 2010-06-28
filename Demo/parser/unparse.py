@@ -388,7 +388,7 @@ class Unparser:
         for o, e in zip(t.ops, t.comparators):
             self.write(" " + self.cmpops[o.__class__.__name__] + " ")
             self.dispatch(e)
-            self.write(")")
+        self.write(")")
 
     boolops = {_ast.And: 'and', _ast.Or: 'or'}
     def _BoolOp(self, t):
