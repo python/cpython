@@ -46,7 +46,7 @@ class UnparseTestCase(unittest.TestCase):
         self.check_roundtrip(forelse)
 
     def test_while_else(self):
-        self.check_roundtrip(forelse)
+        self.check_roundtrip(whileelse)
 
     def test_unary_parens(self):
         self.check_roundtrip("(-1)**7")
