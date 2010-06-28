@@ -1102,7 +1102,7 @@ typedef struct {
 } propertyobject;
 
 static PyObject * property_copy(PyObject *, PyObject *, PyObject *,
-                                  PyObject *, PyObject *);
+                                  PyObject *);
 
 static PyMemberDef property_members[] = {
     {"fget", T_OBJECT, offsetof(propertyobject, prop_get), READONLY},
@@ -1119,7 +1119,7 @@ PyDoc_STRVAR(getter_doc,
 static PyObject *
 property_getter(PyObject *self, PyObject *getter)
 {
-    return property_copy(self, getter, NULL, NULL, NULL);
+    return property_copy(self, getter, NULL, NULL);
 }
 
 
@@ -1129,7 +1129,7 @@ PyDoc_STRVAR(setter_doc,
 static PyObject *
 property_setter(PyObject *self, PyObject *setter)
 {
-    return property_copy(self, NULL, setter, NULL, NULL);
+    return property_copy(self, NULL, setter, NULL);
 }
 
 
@@ -1139,7 +1139,7 @@ PyDoc_STRVAR(deleter_doc,
 static PyObject *
 property_deleter(PyObject *self, PyObject *deleter)
 {
-    return property_copy(self, NULL, NULL, deleter, NULL);
+    return property_copy(self, NULL, NULL, deleter);
 }
 
 
@@ -1208,11 +1208,10 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 }
 
 static PyObject *
-property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del,
-                PyObject *doc)
+property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
 {
     propertyobject *pold = (propertyobject *)old;
-    PyObject *new, *type;
+    PyObject *new, *type, *doc;
 
     type = PyObject_Type(old);
     if (type == NULL)
@@ -1230,15 +1229,12 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del,
         Py_XDECREF(del);
         del = pold->prop_del ? pold->prop_del : Py_None;
     }
-    if (doc == NULL || doc == Py_None) {
-        Py_XDECREF(doc);
-        if (pold->getter_doc && get != Py_None) {
-            /* make _init use __doc__ from getter */
-            doc = Py_None;
-        }
-        else {
-            doc = pold->prop_doc ? pold->prop_doc : Py_None;
-        }
+    if (pold->getter_doc && get != Py_None) {
+        /* make _init use __doc__ from getter */
+        doc = Py_None;
+    }
+    else {
+        doc = pold->prop_doc ? pold->prop_doc : Py_None;
     }
 
     new =  PyObject_CallFunction(type, "OOOO", get, set, del, doc);
