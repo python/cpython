@@ -4386,7 +4386,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
 
     if (module == NULL) {
         module = PyImport_ImportModuleNoBlock("_strptime");
-        if(module == NULL)
+        if (module == NULL)
             return NULL;
     }
     return PyObject_CallMethod(module, "_strptime_datetime", "Ouu",
