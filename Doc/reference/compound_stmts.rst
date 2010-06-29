@@ -272,14 +272,12 @@ was translated to ::
        try:
            foo
        finally:
-           N = None
            del N
 
-That means that you have to assign the exception to a different name if you want
-to be able to refer to it after the except clause.  The reason for this is that
-with the traceback attached to them, exceptions will form a reference cycle with
-the stack frame, keeping all locals in that frame alive until the next garbage
-collection occurs.
+This means the exception must be assigned to a different name to be able to
+refer to it after the except clause.  Exceptions are cleared because with the
+traceback attached to them, they form a reference cycle with the stack frame,
+keeping all locals in that frame alive until the next garbage collection occurs.
 
 .. index::
    module: sys
