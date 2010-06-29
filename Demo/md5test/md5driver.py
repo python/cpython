@@ -1,11 +1,10 @@
+from hashlib import md5
 import string
-import md5
 from sys import argv
 
 def MDPrint(str):
     outstr = ''
-    for i in str:
-        o = ord(i)
+    for o in str:
         outstr = (outstr
                   + string.hexdigits[(o >> 4) & 0xF]
                   + string.hexdigits[o & 0xF])
@@ -42,7 +41,7 @@ def MDTimeTrial():
     print('MD5 time trial. Processing', TEST_BYTES, 'characters...')
     t1 = time()
 
-    mdContext = md5.new()
+    mdContext = md5()
 
     for i in range(TEST_BLOCKS):
         mdContext.update(data)
@@ -57,13 +56,13 @@ def MDTimeTrial():
 
 
 def MDString(str):
-    MDPrint(md5.new(str).digest())
+    MDPrint(md5(str.encode("utf-8")).digest())
     print('"' + str + '"')
 
 
 def MDFile(filename):
     f = open(filename, 'rb')
-    mdContext = md5.new()
+    mdContext = md5()
 
     while 1:
         data = f.read(1024)
@@ -78,7 +77,7 @@ def MDFile(filename):
 import sys
 
 def MDFilter():
-    mdContext = md5.new()
+    mdContext = md5()
 
     while 1:
         data = sys.stdin.read(16)
