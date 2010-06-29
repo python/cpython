@@ -1,6 +1,7 @@
 "Usage: unparse.py <path to source file>"
 import sys
 import ast
+import tokenize
 import io
 import os
 
@@ -548,7 +549,10 @@ class Unparser:
             self.write(" as "+t.asname)
 
 def roundtrip(filename, output=sys.stdout):
-    source = open(filename).read()
+    with open(filename, "rb") as pyfile:
+        encoding = tokenize.detect_encoding(pyfile.readline)[0]
+    with open(filename, "r", encoding=encoding) as pyfile:
+        source = pyfile.read()
     tree = compile(source, filename, "exec", ast.PyCF_ONLY_AST)
     Unparser(tree, output)
 
