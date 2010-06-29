@@ -156,6 +156,8 @@ class UnparseTestCase(ASTTestCase):
     def test_class_decorators(self):
         self.check_roundtrip(class_decorator)
 
+    def test_class_definition(self):
+        self.check_roundtrip("class A(metaclass=type, *[], **{}): pass")
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""

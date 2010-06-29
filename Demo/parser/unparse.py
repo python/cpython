@@ -215,7 +215,7 @@ class Unparser:
         if t.kwargs:
             if comma: self.write(", ")
             else: comma = True
-            self.write("*")
+            self.write("**")
             self.dispatch(t.kwargs)
         self.write(")")
 
