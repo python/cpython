@@ -36,8 +36,7 @@ Details on custom importers can be found in :pep:`302`.
         in :data:`sys.modules`).
 
     The :func:`.__import__` function
-        The built-in function for which the :keyword:`import` statement is
-        syntactic sugar for.
+        The :keyword:`import` statement is syntactic sugar for this function.
 
     :pep:`235`
         Import on Case-Insensitive Platforms
