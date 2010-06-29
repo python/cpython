@@ -1,10 +1,19 @@
 import unittest
 import test.support
-
 import io
+import os
+import tokenize
 import ast
-import _ast
 import unparse
+
+def read_pyfile(filename):
+    """Read and return the contents of a Python source file (as a
+    string), taking into account the file encoding."""
+    with open(filename, "rb") as pyfile:
+        encoding = tokenize.detect_encoding(pyfile.readline)[0]
+    with open(filename, "r", encoding=encoding) as pyfile:
+        source = pyfile.read()
+    return source
 
 for_else = """\
 def f():
@@ -55,16 +64,20 @@ class_decorator = """\
 class Foo: pass
 """
 
-class UnparseTestCase(unittest.TestCase):
-    # Tests for specific bugs found in earlier versions of unparse
+class ASTTestCase(unittest.TestCase):
+    def assertASTEqual(self, ast1, ast2):
+        self.assertEqual(ast.dump(ast1), ast.dump(ast2))
 
     def check_roundtrip(self, code1, filename="internal"):
-        ast1 = compile(code1, filename, "exec", _ast.PyCF_ONLY_AST)
+        ast1 = compile(code1, filename, "exec", ast.PyCF_ONLY_AST)
         unparse_buffer = io.StringIO()
         unparse.Unparser(ast1, unparse_buffer)
         code2 = unparse_buffer.getvalue()
-        ast2 = compile(code2, filename, "exec", _ast.PyCF_ONLY_AST)
-        self.assertEqual(ast.dump(ast1), ast.dump(ast2))
+        ast2 = compile(code2, filename, "exec", ast.PyCF_ONLY_AST)
+        self.assertASTEqual(ast1, ast2)
+
+class UnparseTestCase(ASTTestCase):
+    # Tests for specific bugs found in earlier versions of unparse
 
     def test_del_statement(self):
         self.check_roundtrip("del x, y, z")
@@ -143,8 +156,33 @@ class UnparseTestCase(unittest.TestCase):
     def test_class_decorators(self):
         self.check_roundtrip(class_decorator)
 
+
+class DirectoryTestCase(ASTTestCase):
+    """Test roundtrip behaviour on all files in Lib and Lib/test."""
+
+    # test directories, relative to the root of the distribution
+    test_directories = 'Lib', os.path.join('Lib', 'test')
+
+    def test_files(self):
+        # get names of files to test
+        dist_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
+
+        names = []
+        for d in self.test_directories:
+            test_dir = os.path.join(dist_dir, d)
+            for n in os.listdir(test_dir):
+                if n.endswith('.py') and not n.startswith('bad'):
+                    names.append(os.path.join(test_dir, n))
+
+        for filename in names:
+            if test.support.verbose:
+                print('Testing %s' % filename)
+            source = read_pyfile(filename)
+            self.check_roundtrip(source)
+
+
 def test_main():
-    test.support.run_unittest(UnparseTestCase)
+    test.support.run_unittest(UnparseTestCase, DirectoryTestCase)
 
 if __name__ == '__main__':
     test_main()
