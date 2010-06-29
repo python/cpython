@@ -407,7 +407,7 @@ String literals are described by the following lexical definitions:
 
 .. productionlist::
    bytesliteral: `bytesprefix`(`shortbytes` | `longbytes`)
-   bytesprefix: "b" | "B"
+   bytesprefix: "b" | "B" | "br" | "Br" | "bR" | "BR"
    shortbytes: "'" `shortbytesitem`* "'" | '"' `shortbytesitem`* '"'
    longbytes: "'''" `longbytesitem`* "'''" | '"""' `longbytesitem`* '"""'
    shortbytesitem: `shortbyteschar` | `bytesescapeseq`
@@ -431,15 +431,15 @@ of three single or double quotes (these are generally referred to as
 characters that otherwise have a special meaning, such as newline, backslash
 itself, or the quote character.
 
-String literals may optionally be prefixed with a letter ``'r'`` or ``'R'``;
-such strings are called :dfn:`raw strings` and treat backslashes as literal
-characters.  As a result, ``'\U'`` and ``'\u'`` escapes in raw strings are not
-treated specially.
-
 Bytes literals are always prefixed with ``'b'`` or ``'B'``; they produce an
 instance of the :class:`bytes` type instead of the :class:`str` type.  They
 may only contain ASCII characters; bytes with a numeric value of 128 or greater
 must be expressed with escapes.
+
+Both string and bytes literals may optionally be prefixed with a letter ``'r'``
+or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
+literal characters.  As a result, in string literals, ``'\U'`` and ``'\u'``
+escapes in raw strings are not treated specially.
 
 In triple-quoted strings, unescaped newlines and quotes are allowed (and are
 retained), except that three unescaped quotes in a row terminate the string.  (A
@@ -545,9 +545,9 @@ characters as part of the string, *not* as a line continuation.
 String literal concatenation
 ----------------------------
 
-Multiple adjacent string literals (delimited by whitespace), possibly using
-different quoting conventions, are allowed, and their meaning is the same as
-their concatenation.  Thus, ``"hello" 'world'`` is equivalent to
+Multiple adjacent string or bytes literals (delimited by whitespace), possibly
+using different quoting conventions, are allowed, and their meaning is the same
+as their concatenation.  Thus, ``"hello" 'world'`` is equivalent to
 ``"helloworld"``.  This feature can be used to reduce the number of backslashes
 needed, to split long strings conveniently across long lines, or even to add
 comments to parts of strings, for example::
