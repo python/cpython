@@ -49,7 +49,7 @@ High-level interface
    .. index:: module: mimetools
 
    The :meth:`info` method returns an instance of the class
-   :class:`httplib.HTTPMessage` containing meta-information associated with the
+   :class:`mimetools.Message` containing meta-information associated with the
    URL.  When the method is HTTP, these headers are those returned by the server
    at the head of the retrieved HTML page (including Content-Length and
    Content-Type).  When the method is FTP, a Content-Length header will be
