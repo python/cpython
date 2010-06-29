@@ -1,7 +1,7 @@
 import re, unicodedata, sys
 
 if sys.maxunicode == 65535:
-    raise RuntimeError, "need UCS-4 Python"
+    raise RuntimeError("need UCS-4 Python")
 
 def gen_category(cats):
     for i in range(0, 0x110000):
@@ -63,14 +63,14 @@ for l in data:
     if m:
         if m.group(1) == "Start":
             if curname:
-                raise "Double Start",(curname, l)
+                raise RuntimeError("Double Start", (curname, l))
             curname = m.group(2)
             table = {}
             tables.append((curname, table))
             continue
         else:
             if not curname:
-                raise "End without start", l
+                raise RuntimeError("End without start", l)
             curname = None
             continue
     if not curname:
