@@ -42,7 +42,7 @@ brevity.
         ...
     IndentationError: unindent does not match any outer indentation level
 
-There are some standard formattig practises that are easy to get right.
+There are some standard formatting practices that are easy to get right.
 
     >>> roundtrip("if x == 1:\\n"
     ...           "    print(x)\\n")
