@@ -1415,6 +1415,8 @@ When this script is run, the output should look something like this::
    2008-01-18 14:49:54,033 d.e.f WARNING  IP: 127.0.0.1       User: jim      A message at WARNING level with 2 parameters
 
 
+.. _multiple-processes:
+
 Logging to a single file from multiple processes
 ------------------------------------------------
 
@@ -1725,6 +1727,8 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
    :exc:`NotImplementedError`.
 
 
+.. _stream-handler:
+
 StreamHandler
 ^^^^^^^^^^^^^
 
@@ -1758,6 +1762,8 @@ and :meth:`flush` methods).
       no output, so an explicit :meth:`flush` call may be needed at times.
 
 
+.. _file-handler:
+
 FileHandler
 ^^^^^^^^^^^
 
@@ -1766,7 +1772,7 @@ sends logging output to a disk file.  It inherits the output functionality from
 :class:`StreamHandler`.
 
 
-.. class:: FileHandler(filename, mode='a', encoding=None, delay=0)
+.. class:: FileHandler(filename, mode='a', encoding=None, delay=False)
 
    Returns a new instance of the :class:`FileHandler` class. The specified file is
    opened and used as the stream for logging. If *mode* is not specified,
@@ -1784,6 +1790,7 @@ sends logging output to a disk file.  It inherits the output functionality from
 
       Outputs the record to the file.
 
+.. _null-handler:
 
 NullHandler
 ^^^^^^^^^^^
@@ -1806,6 +1813,8 @@ for use by library developers.
 
 See :ref:`library-config` for more information on how to use
 :class:`NullHandler`.
+
+.. _watched-file-handler:
 
 WatchedFileHandler
 ^^^^^^^^^^^^^^^^^^
@@ -1845,6 +1854,7 @@ this value.
       changed.  If it has, the existing stream is flushed and closed and the
       file opened again, before outputting the record to the file.
 
+.. _rotating-file-handler:
 
 RotatingFileHandler
 ^^^^^^^^^^^^^^^^^^^
@@ -1885,6 +1895,7 @@ module, supports rotation of disk log files.
       Outputs the record to the file, catering for rollover as described
       previously.
 
+.. _timed-rotating-file-handler:
 
 TimedRotatingFileHandler
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1894,7 +1905,7 @@ The :class:`TimedRotatingFileHandler` class, located in the
 timed intervals.
 
 
-.. class:: TimedRotatingFileHandler(filename, when='h', interval=1, backupCount=0, encoding=None, delay=0, utc=False)
+.. class:: TimedRotatingFileHandler(filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False)
 
    Returns a new instance of the :class:`TimedRotatingFileHandler` class. The
    specified file is opened and used as the stream for logging. On rotating it also
@@ -1937,6 +1948,9 @@ timed intervals.
    one is deleted. The deletion logic uses the interval to determine which
    files to delete, so changing the interval may leave old files lying around.
 
+   If *delay* is true, then file opening is deferred until the first call to
+   :meth:`emit`.
+
 
    .. method:: doRollover()
 
@@ -1947,6 +1961,8 @@ timed intervals.
 
       Outputs the record to the file, catering for rollover as described above.
 
+
+.. _socket-handler:
 
 SocketHandler
 ^^^^^^^^^^^^^
@@ -1994,12 +2010,19 @@ sends logging output to a network socket. The base class uses a TCP socket.
       Pickles the record's attribute dictionary in binary format with a length
       prefix, and returns it ready for transmission across the socket.
 
+      Note that pickles aren't completely secure. If you are concerned about
+      security, you may want to override this method to implement a more secure
+      mechanism. For example, you can sign pickles using HMAC and then verify
+      them on the receiving end, or alternatively you can disable unpickling of
+      global objects on the receiving end.
 
    .. method:: send(packet)
 
       Send a pickled string *packet* to the socket. This function allows for
       partial sends which can happen when the network is busy.
 
+
+.. _datagram-handler:
 
 DatagramHandler
 ^^^^^^^^^^^^^^^
@@ -2033,6 +2056,8 @@ over UDP sockets.
 
       Send a pickled string to a socket.
 
+
+.. _syslog-handler:
 
 SysLogHandler
 ^^^^^^^^^^^^^
@@ -2223,6 +2248,7 @@ extensions for Python installed.
       lookup to get the message ID. This version returns 1, which is the base
       message ID in :file:`win32service.pyd`.
 
+.. _smtp-handler:
 
 SMTPHandler
 ^^^^^^^^^^^
@@ -2251,6 +2277,7 @@ supports sending logging messages to an email address via SMTP.
       If you want to specify a subject line which is record-dependent, override
       this method.
 
+.. _memory-handler:
 
 MemoryHandler
 ^^^^^^^^^^^^^
@@ -2320,6 +2347,8 @@ should, then :meth:`flush` is expected to do the needful.
 
       Checks for buffer full or a record at the *flushLevel* or higher.
 
+
+.. _http-handler:
 
 HTTPHandler
 ^^^^^^^^^^^
@@ -2463,6 +2492,7 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
       just uses :func:`traceback.print_exception`. The resulting string is
       returned.
 
+.. _filter:
 
 Filter Objects
 --------------
@@ -2488,6 +2518,7 @@ initialized with the empty string, all events are passed.
       yes. If deemed appropriate, the record may be modified in-place by this
       method.
 
+.. _log-record:
 
 LogRecord Objects
 -----------------
@@ -2519,6 +2550,7 @@ made, and any exception information to be logged.
       Returns the message for this :class:`LogRecord` instance after merging any
       user-supplied arguments with the message.
 
+.. _logger-adapter:
 
 LoggerAdapter Objects
 ---------------------
