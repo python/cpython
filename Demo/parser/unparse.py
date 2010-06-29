@@ -302,16 +302,17 @@ class Unparser:
         self.write("`")
 
     def _Num(self, t):
-        # There are no negative numeric literals in Python; however,
-        # some optimizations produce a negative Num in the AST. Add
-        # parentheses to avoid turning (-1)**2 into -1**2.
-        strnum = repr(t.n)
-        if strnum.startswith("-"):
-            self.write("(")
-            self.write(strnum)
-            self.write(")")
-        else:
-            self.write(strnum)
+        # Add parentheses around numeric literals to avoid:
+        #
+        #  (1) turning (-1)**2 into -1**2, and
+        #  (2) turning 3 .__abs__() into 3.__abs__()
+        #
+        # For (1), note that Python doesn't actually have negative
+        # numeric literals, but (at least in Python 2.x) there's a CST
+        # transformation that can produce negative Nums in the AST.
+        self.write("(")
+        self.write(repr(t.n))
+        self.write(")")
 
     def _List(self, t):
         self.write("[")

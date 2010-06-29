@@ -84,6 +84,9 @@ class UnparseTestCase(unittest.TestCase):
         self.check_roundtrip("not True or False")
         self.check_roundtrip("True or not False")
 
+    def test_integer_parens(self):
+        self.check_roundtrip("3 .__abs__()")
+
     def test_chained_comparisons(self):
         self.check_roundtrip("1 < 4 <= 5")
         self.check_roundtrip("a is b is c is not d")
