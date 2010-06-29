@@ -422,12 +422,14 @@ Glossary
       modules, respectively.
 
    nested scope
+
       The ability to refer to a variable in an enclosing definition.  For
       instance, a function defined inside another function can refer to
-      variables in the outer function.  Note that nested scopes work only for
-      reference and not for assignment which will always write to the innermost
-      scope.  In contrast, local variables both read and write in the innermost
-      scope.  Likewise, global variables read and write to the global namespace.
+      variables in the outer function.  Note that nested scopes by default work
+      only for reference and not for assignment.  Local variables both read and
+      write in the innermost scope.  Likewise, global variables read and write
+      to the global namespace.  The :keyword:`nonlocal` allows writing to outer
+      scopes.
 
    new-style class
       Old name for the flavor of classes now used for all class objects.  In
