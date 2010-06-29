@@ -1,5 +1,6 @@
 "Usage: unparse.py <path to source file>"
 import sys
+import math
 import ast
 import tokenize
 import io
@@ -302,17 +303,22 @@ class Unparser:
         self.write("`")
 
     def _Num(self, t):
-        # Add parentheses around numeric literals to avoid:
-        #
-        #  (1) turning (-1)**2 into -1**2, and
-        #  (2) turning 3 .__abs__() into 3.__abs__()
-        #
-        # For (1), note that Python doesn't actually have negative
-        # numeric literals, but (at least in Python 2.x) there's a CST
-        # transformation that can produce negative Nums in the AST.
-        self.write("(")
-        self.write(repr(t.n))
-        self.write(")")
+        if isinstance(t.n, float):
+            # A float literal should be nonnegative, and not a nan.
+            # It could be an infinity, though; in that case we
+            # substitute an overflowing decimal value.
+            assert not math.isnan(t.n)
+            assert math.copysign(1.0, t.n) > 0.0
+            if math.isinf(t.n):
+                self.write("1e" + repr(sys.float_info.max_10_exp + 1))
+            else:
+                self.write(repr(t.n))
+        else:
+            # Parenthesize integer literals to avoid turning
+            # "3 .__abs__()" into "3.__abs__()".
+            self.write("(")
+            self.write(repr(t.n))
+            self.write(")")
 
     def _List(self, t):
         self.write("[")
@@ -539,10 +545,12 @@ class Unparser:
         self.dispatch(t.value)
 
     def _Lambda(self, t):
+        self.write("(")
         self.write("lambda ")
         self.dispatch(t.args)
         self.write(": ")
         self.dispatch(t.body)
+        self.write(")")
 
     def _alias(self, t):
         self.write(t.name)
