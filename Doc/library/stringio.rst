@@ -71,24 +71,29 @@ The module :mod:`cStringIO` provides an interface similar to that of the
 made more efficient by using the function :func:`StringIO` from this module
 instead.
 
-Since this module provides a factory function which returns objects of built-in
-types, there's no way to build your own version using subclassing.  It's not
-possible to set attributes on it.  Use the original :mod:`StringIO` module in
-those cases.
 
-Unlike the memory files implemented by the :mod:`StringIO` module, those
-provided by this module are not able to accept Unicode strings that cannot be
-encoded as plain ASCII strings.
+.. function:: StringIO([s])
 
-Calling :func:`StringIO` with a Unicode string parameter populates
-the object with the buffer representation of the Unicode string, instead of
-encoding the string.
+   Return a StringIO-like stream for reading or writing.
 
-Another difference from the :mod:`StringIO` module is that calling
-:func:`StringIO` with a string parameter creates a read-only object. Unlike an
-object created without a string parameter, it does not have write methods.
-These objects are not generally visible.  They turn up in tracebacks as
-:class:`StringI` and :class:`StringO`.
+   Since this is a factory function which returns objects of built-in types,
+   there's no way to build your own version using subclassing.  It's not
+   possible to set attributes on it.  Use the original :mod:`StringIO` module in
+   those cases.
+
+   Unlike the :mod:`StringIO` module, this module is not able to accept Unicode
+   strings that cannot be encoded as plain ASCII strings.  Calling
+   :func:`StringIO` with a Unicode string parameter populates the object with
+   the buffer representation of the Unicode string instead of encoding the
+   string.
+
+   Another difference from the :mod:`StringIO` module is that calling
+   :func:`StringIO` with a string parameter creates a read-only object. Unlike an
+   object created without a string parameter, it does not have write methods.
+   These objects are not generally visible.  They turn up in tracebacks as
+   :class:`StringI` and :class:`StringO`.
+
+
 
 The following data objects are provided as well:
 
