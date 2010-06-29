@@ -87,6 +87,13 @@ class UnparseTestCase(unittest.TestCase):
     def test_integer_parens(self):
         self.check_roundtrip("3 .__abs__()")
 
+    def test_huge_float(self):
+        self.check_roundtrip("1e1000")
+        self.check_roundtrip("-1e1000")
+
+    def test_lambda_parentheses(self):
+        self.check_roundtrip("(lambda: int)()")
+
     def test_chained_comparisons(self):
         self.check_roundtrip("1 < 4 <= 5")
         self.check_roundtrip("a is b is c is not d")
