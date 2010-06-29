@@ -151,7 +151,11 @@ Format Characters
 ^^^^^^^^^^^^^^^^^
 
 Format characters have the following meaning; the conversion between C and
-Python values should be obvious given their types:
+Python values should be obvious given their types.  The 'Standard size' column
+refers to the size of the packed value in bytes when using standard size; that
+is, when the format string starts with one of ``'<'``, ``'>'``, ``'!'`` or
+``'='``.  When using native size, the size of the packed value is
+platform-dependent.
 
 +--------+-------------------------+--------------------+----------------+------------+
 | Format | C Type                  | Python type        | Standard size  | Notes      |
