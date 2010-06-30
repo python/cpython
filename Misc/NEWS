@@ -73,6 +73,8 @@ C-API
 Library
 -------
 
+- Issue #9125: Add recognition of 'except ... as ...' syntax to parser module.
+
 - Issue #9085: email package version number bumped to its correct
   value of 4.0.2 (same as it was in 2.5).
 
