@@ -51,6 +51,9 @@ Build
 Library
 -------
 
+- Issue #6589: cleanup asyncore.socket_map in case smtpd.SMTPServer constructor 
+  raises an exception.
+
 - Issue #8959: fix regression caused by using unmodified libffi
   library on Windows.  ctypes does now again check the stack before
   and after calling foreign functions.
