@@ -274,14 +274,19 @@ class SMTPServer(asyncore.dispatcher):
         self._localaddr = localaddr
         self._remoteaddr = remoteaddr
         asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        # try to re-use a server port if possible
-        self.set_reuse_addr()
-        self.bind(localaddr)
-        self.listen(5)
-        print('%s started at %s\n\tLocal addr: %s\n\tRemote addr:%s' % (
-            self.__class__.__name__, time.ctime(time.time()),
-            localaddr, remoteaddr), file=DEBUGSTREAM)
+        try:
+            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+            # try to re-use a server port if possible
+            self.set_reuse_addr()
+            self.bind(localaddr)
+            self.listen(5)
+        except:
+            self.close()
+            raise
+        else:
+            print('%s started at %s\n\tLocal addr: %s\n\tRemote addr:%s' % (
+                self.__class__.__name__, time.ctime(time.time()),
+                localaddr, remoteaddr), file=DEBUGSTREAM)
 
     def handle_accept(self):
         conn, addr = self.accept()
