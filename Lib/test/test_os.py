@@ -58,6 +58,7 @@ class FileTests(unittest.TestCase):
         os.closerange(first, first + 2)
         self.assertRaises(OSError, os.write, first, b"a")
 
+    @support.cpython_only
     def test_rename(self):
         path = support.TESTFN
         old = sys.getrefcount(path)
