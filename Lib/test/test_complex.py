@@ -437,6 +437,23 @@ class ComplexTest(unittest.TestCase):
 
     @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
                          "test requires IEEE 754 doubles")
+    def test_negated_imaginary_literal(self):
+        z0 = -0j
+        z1 = -7j
+        z2 = -1e1000j
+        # Note: In versions of Python < 3.2, a negated imaginary literal
+        # accidentally ended up with real part 0.0 instead of -0.0, thanks to a
+        # modification during CST -> AST translation (see issue #9011).  That's
+        # fixed in Python 3.2.
+        self.assertFloatsAreIdentical(z0.real, -0.0)
+        self.assertFloatsAreIdentical(z0.imag, -0.0)
+        self.assertFloatsAreIdentical(z1.real, -0.0)
+        self.assertFloatsAreIdentical(z1.imag, -7.0)
+        self.assertFloatsAreIdentical(z2.real, -0.0)
+        self.assertFloatsAreIdentical(z2.imag, -INF)
+
+    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
+                         "test requires IEEE 754 doubles")
     def test_overflow(self):
         self.assertEqual(complex("1e500"), complex(INF, 0.0))
         self.assertEqual(complex("-1e500j"), complex(0.0, -INF))
