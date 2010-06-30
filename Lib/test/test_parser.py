@@ -235,6 +235,12 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("try: pass\nexcept: pass\nelse: pass\n"
                          "finally: pass\n")
 
+    def test_except_clause(self):
+        self.check_suite("try: pass\nexcept: pass\n")
+        self.check_suite("try: pass\nexcept A: pass\n")
+        self.check_suite("try: pass\nexcept A, e: pass\n")
+        self.check_suite("try: pass\nexcept A as e: pass\n")
+
     def test_position(self):
         # An absolutely minimal test of position information.  Better
         # tests would be a big project.
