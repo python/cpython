@@ -256,9 +256,18 @@ class Unparser:
         self.fill("if ")
         self.dispatch(t.test)
         self.enter()
-        # XXX elif?
         self.dispatch(t.body)
         self.leave()
+        # collapse nested ifs into equivalent elifs.
+        while (t.orelse and len(t.orelse) == 1 and
+               isinstance(t.orelse[0], ast.If)):
+            t = t.orelse[0]
+            self.fill("elif ")
+            self.dispatch(t.test)
+            self.enter()
+            self.dispatch(t.body)
+            self.leave()
+        # final else
         if t.orelse:
             self.fill("else")
             self.enter()

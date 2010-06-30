@@ -64,6 +64,24 @@ class_decorator = """\
 class Foo: pass
 """
 
+elif1 = """\
+if cond1:
+    suite1
+elif cond2:
+    suite2
+else:
+    suite3
+"""
+
+elif2 = """\
+if cond1:
+    suite1
+elif cond2:
+    suite2
+"""
+
+
+
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
         self.assertEqual(ast.dump(ast1), ast.dump(ast2))
@@ -158,6 +176,10 @@ class UnparseTestCase(ASTTestCase):
 
     def test_class_definition(self):
         self.check_roundtrip("class A(metaclass=type, *[], **{}): pass")
+
+    def test_elifs(self):
+        self.check_roundtrip(elif1)
+        self.check_roundtrip(elif2)
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
