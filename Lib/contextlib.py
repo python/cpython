@@ -4,9 +4,20 @@ import sys
 from functools import wraps
 from warnings import warn
 
-__all__ = ["contextmanager", "closing"]
+__all__ = ["contextmanager", "closing", "ContextDecorator"]
 
-class GeneratorContextManager(object):
+
+class ContextDecorator(object):
+    "A base class or mixin that enables context managers to work as decorators."
+    def __call__(self, func):
+        @wraps(func)
+        def inner(*args, **kwds):
+            with self:
+                return func(*args, **kwds)
+        return inner
+
+
+class GeneratorContextManager(ContextDecorator):
     """Helper for @contextmanager decorator."""
 
     def __init__(self, gen):
