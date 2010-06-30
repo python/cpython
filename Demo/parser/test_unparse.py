@@ -123,8 +123,6 @@ class UnparseTestCase(ASTTestCase):
 
     def test_unary_parens(self):
         self.check_roundtrip("(-1)**7")
-        self.check_roundtrip("(-1.)**8")
-        self.check_roundtrip("(-1j)**6")
         self.check_roundtrip("not True or False")
         self.check_roundtrip("True or not False")
 
@@ -134,16 +132,6 @@ class UnparseTestCase(ASTTestCase):
     def test_huge_float(self):
         self.check_roundtrip("1e1000")
         self.check_roundtrip("-1e1000")
-        self.check_roundtrip("1e1000j")
-        self.check_roundtrip("-1e1000j")
-
-    def test_min_int(self):
-        self.check_roundtrip(str(-2**31))
-        self.check_roundtrip(str(-2**63))
-
-    def test_imag_literals(self):
-        self.check_roundtrip("7j")
-        self.check_roundtrip("-7j")
 
     def test_lambda_parentheses(self):
         self.check_roundtrip("(lambda: int)()")
@@ -213,7 +201,7 @@ class DirectoryTestCase(ASTTestCase):
     # test directories, relative to the root of the distribution
     test_directories = 'Lib', os.path.join('Lib', 'test')
 
-    def Xtest_files(self):
+    def test_files(self):
         # get names of files to test
         dist_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
 
