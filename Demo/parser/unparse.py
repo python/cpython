@@ -6,6 +6,10 @@ import tokenize
 import io
 import os
 
+# Large float and imaginary literals get turned into infinities in the AST.
+# We unparse those infinities to INFSTR.
+INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
+
 def interleave(inter, f, seq):
     """Call f on each item in seq, calling inter() in between.
     """
@@ -311,11 +315,8 @@ class Unparser:
         self.write(t.id)
 
     def _Num(self, t):
-        if isinstance(t.n, float) and math.isinf(t.n):
-            # Subsitute overflowing decimal literal for AST infinity
-            self.write("1e" + repr(sys.float_info.max_10_exp + 1))
-        else:
-            self.write(repr(t.n))
+        # Substitute overflowing decimal literal for AST infinities.
+        self.write(repr(t.n).replace("inf", INFSTR))
 
     def _List(self, t):
         self.write("[")
