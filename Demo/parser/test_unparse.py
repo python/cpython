@@ -1,12 +1,20 @@
 import unittest
 from test import test_support
-
 import cStringIO
+import sys
+import os
+import tokenize
 import ast
-import _ast
 import unparse
 
-forelse = """\
+def read_pyfile(filename):
+    """Read and return the contents of a Python source file (as a
+    string), taking into account the file encoding."""
+    with open(filename, "r") as pyfile:
+        source = pyfile.read()
+    return source
+
+for_else = """\
 def f():
     for x in range(10):
         break
@@ -15,7 +23,7 @@ def f():
     z = 3
 """
 
-whileelse = """\
+while_else = """\
 def g():
     while True:
         break
@@ -24,16 +32,63 @@ def g():
     z = 3
 """
 
-class UnparseTestCase(unittest.TestCase):
-    # Tests for specific bugs found in earlier versions of unparse
+relative_import = """\
+from . import fred
+from .. import barney
+from .australia import shrimp as prawns
+"""
+
+class_decorator = """\
+@f1(arg)
+@f2
+class Foo: pass
+"""
+
+elif1 = """\
+if cond1:
+    suite1
+elif cond2:
+    suite2
+else:
+    suite3
+"""
+
+elif2 = """\
+if cond1:
+    suite1
+elif cond2:
+    suite2
+"""
+
+try_except_finally = """\
+try:
+    suite1
+except ex1:
+    suite2
+except ex2:
+    suite3
+else:
+    suite4
+finally:
+    suite5
+"""
+
+class ASTTestCase(unittest.TestCase):
+    def assertASTEqual(self, ast1, ast2):
+        dump1 = ast.dump(ast1)
+        dump2 = ast.dump(ast2)
+        self.assertEqual(ast.dump(ast1), ast.dump(ast2))
 
     def check_roundtrip(self, code1, filename="internal"):
-        ast1 = compile(code1, filename, "exec", _ast.PyCF_ONLY_AST)
+        ast1 = compile(code1, filename, "exec", ast.PyCF_ONLY_AST)
         unparse_buffer = cStringIO.StringIO()
         unparse.Unparser(ast1, unparse_buffer)
         code2 = unparse_buffer.getvalue()
-        ast2 = compile(code2, filename, "exec", _ast.PyCF_ONLY_AST)
-        self.assertEqual(ast.dump(ast1), ast.dump(ast2))
+        ast2 = compile(code2, filename, "exec", ast.PyCF_ONLY_AST)
+        self.assertASTEqual(ast1, ast2)
+
+class UnparseTestCase(ASTTestCase):
+    # Tests for specific bugs found in earlier versions of unparse
 
     def test_del_statement(self):
         self.check_roundtrip("del x, y, z")
@@ -43,23 +98,116 @@ class UnparseTestCase(unittest.TestCase):
         self.check_roundtrip("13 >> 7")
 
     def test_for_else(self):
-        self.check_roundtrip(forelse)
+        self.check_roundtrip(for_else)
 
     def test_while_else(self):
-        self.check_roundtrip(whileelse)
+        self.check_roundtrip(while_else)
 
     def test_unary_parens(self):
         self.check_roundtrip("(-1)**7")
+        self.check_roundtrip("(-1.)**8")
+        self.check_roundtrip("(-1j)**6")
         self.check_roundtrip("not True or False")
         self.check_roundtrip("True or not False")
+
+    def test_integer_parens(self):
+        self.check_roundtrip("3 .__abs__()")
+
+    def test_huge_float(self):
+        self.check_roundtrip("1e1000")
+        self.check_roundtrip("-1e1000")
+        self.check_roundtrip("1e1000j")
+        self.check_roundtrip("-1e1000j")
+
+    def test_min_int(self):
+        self.check_roundtrip(str(-sys.maxint-1))
+        self.check_roundtrip("-(%s)" % (sys.maxint + 1))
+
+    def test_imaginary_literals(self):
+        self.check_roundtrip("7j")
+        self.check_roundtrip("-7j")
+        self.check_roundtrip("-(7j)")
+        self.check_roundtrip("0j")
+        self.check_roundtrip("-0j")
+        self.check_roundtrip("-(0j)")
+
+    def test_negative_zero(self):
+        self.check_roundtrip("-0")
+        self.check_roundtrip("-(0)")
+        self.check_roundtrip("-0b0")
+        self.check_roundtrip("-(0b0)")
+        self.check_roundtrip("-0o0")
+        self.check_roundtrip("-(0o0)")
+        self.check_roundtrip("-0x0")
+        self.check_roundtrip("-(0x0)")
+
+    def test_lambda_parentheses(self):
+        self.check_roundtrip("(lambda: int)()")
 
     def test_chained_comparisons(self):
         self.check_roundtrip("1 < 4 <= 5")
         self.check_roundtrip("a is b is c is not d")
 
+    def test_function_arguments(self):
+        self.check_roundtrip("def f(): pass")
+        self.check_roundtrip("def f(a): pass")
+        self.check_roundtrip("def f(b = 2): pass")
+        self.check_roundtrip("def f(a, b): pass")
+        self.check_roundtrip("def f(a, b = 2): pass")
+        self.check_roundtrip("def f(a = 5, b = 2): pass")
+        self.check_roundtrip("def f(*args, **kwargs): pass")
+
+    def test_relative_import(self):
+        self.check_roundtrip(relative_import)
+
+    def test_bytes(self):
+        self.check_roundtrip("b'123'")
+
+    def test_set_literal(self):
+        self.check_roundtrip("{'a', 'b', 'c'}")
+
+    def test_set_comprehension(self):
+        self.check_roundtrip("{x for x in range(5)}")
+
+    def test_dict_comprehension(self):
+        self.check_roundtrip("{x: x*x for x in range(10)}")
+
+    def test_class_decorators(self):
+        self.check_roundtrip(class_decorator)
+
+    def test_elifs(self):
+        self.check_roundtrip(elif1)
+        self.check_roundtrip(elif2)
+
+    def test_try_except_finally(self):
+        self.check_roundtrip(try_except_finally)
+
+class DirectoryTestCase(ASTTestCase):
+    """Test roundtrip behaviour on all files in Lib and Lib/test."""
+
+    # test directories, relative to the root of the distribution
+    test_directories = 'Lib', os.path.join('Lib', 'test')
+
+    def test_files(self):
+        # get names of files to test
+        dist_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
+
+        names = []
+        for d in self.test_directories:
+            test_dir = os.path.join(dist_dir, d)
+            for n in os.listdir(test_dir):
+                if n.endswith('.py') and not n.startswith('bad'):
+                    names.append(os.path.join(test_dir, n))
+
+        for filename in names:
+            if test_support.verbose:
+                print('Testing %s' % filename)
+            source = read_pyfile(filename)
+            self.check_roundtrip(source)
+
 
 def test_main():
-    test_support.run_unittest(UnparseTestCase)
+    test_support.run_unittest(UnparseTestCase, DirectoryTestCase)
 
 if __name__ == '__main__':
     test_main()
