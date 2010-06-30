@@ -310,11 +310,6 @@ class Unparser:
     def _Name(self, t):
         self.write(t.id)
 
-    def _Repr(self, t):
-        self.write("`")
-        self.dispatch(t.value)
-        self.write("`")
-
     def _Num(self, t):
         if isinstance(t.n, float) and math.isinf(t.n):
             # Subsitute overflowing decimal literal for AST infinity
