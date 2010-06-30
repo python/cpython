@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9011: A negated imaginary literal (e.g., "-7j") now has real
+  part -0.0 rather than 0.0.  So "-7j" is now exactly equivalent to
+  "-(7j)".
+
 - Be more specific in error messages about positional arguments.
 
 - Issue #8949: "z" format of PyArg_Parse*() functions doesn't accept bytes

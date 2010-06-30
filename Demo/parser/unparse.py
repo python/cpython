@@ -1,3 +1,4 @@
+#! /usr/bin/env python3.1
 "Usage: unparse.py <path to source file>"
 import sys
 import math
@@ -311,11 +312,35 @@ class Unparser:
         self.write(t.id)
 
     def _Num(self, t):
-        if isinstance(t.n, float) and math.isinf(t.n):
-            # Subsitute overflowing decimal literal for AST infinity
-            self.write("1e" + repr(sys.float_info.max_10_exp + 1))
+        # Python doesn't have negative numeric literals, but in Python
+        # 2.x and early versions of Python 3.1, there's a compile-time
+        # operation that turns "-<number>" into a single _Num, instead
+        # of an unary minus applied to a _Num.  Here we reverse that.
+        infstr = "1e" + repr(sys.float_info.max_10_exp + 1)
+
+        if isinstance(t.n, complex):
+            # check that real part is as expected:  0 with appropriate sign
+            print(t.n)
+            print(str(t.n.real), str(math.copysign(0.0, t.n.imag)))
+            assert str(t.n.real) == str(math.copysign(0.0, t.n.imag))
+            negate = math.copysign(1.0, t.n.imag) < 0
+        elif isinstance(t.n, float):
+            negate = math.copysign(1.0, t.n) < 0
+        elif isinstance(t.n, int):
+            negate = t.n < 0
+
+        if negate:
+            self.write("(- ")
+            val = -t.n
         else:
-            self.write(repr(t.n))
+            val = t.n
+
+        # Subsitute an overflowing decimal literal for an AST infinity
+        self.write(repr(t.n).replace("inf", infstr))
+
+        if negate:
+            self.write(")")
+
 
     def _List(self, t):
         self.write("[")
