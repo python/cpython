@@ -80,7 +80,18 @@ elif cond2:
     suite2
 """
 
-
+try_except_finally = """\
+try:
+    suite1
+except ex1:
+    suite2
+except ex2:
+    suite3
+else:
+    suite4
+finally:
+    suite5
+"""
 
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
@@ -180,6 +191,9 @@ class UnparseTestCase(ASTTestCase):
     def test_elifs(self):
         self.check_roundtrip(elif1)
         self.check_roundtrip(elif2)
+
+    def test_try_except_finally(self):
+        self.check_roundtrip(try_except_finally)
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""

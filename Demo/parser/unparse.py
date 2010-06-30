@@ -169,10 +169,14 @@ class Unparser:
             self.leave()
 
     def _TryFinally(self, t):
-        self.fill("try")
-        self.enter()
-        self.dispatch(t.body)
-        self.leave()
+        if len(t.body) == 1 and isinstance(t.body[0], ast.TryExcept):
+            # try-except-finally
+            self.dispatch(t.body)
+        else:
+            self.fill("try")
+            self.enter()
+            self.dispatch(t.body)
+            self.leave()
 
         self.fill("finally")
         self.enter()
