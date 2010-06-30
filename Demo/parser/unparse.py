@@ -316,22 +316,11 @@ class Unparser:
         self.write("`")
 
     def _Num(self, t):
-        if isinstance(t.n, float):
-            # A float literal should be nonnegative, and not a nan.
-            # It could be an infinity, though; in that case we
-            # substitute an overflowing decimal value.
-            assert not math.isnan(t.n)
-            assert math.copysign(1.0, t.n) > 0.0
-            if math.isinf(t.n):
-                self.write("1e" + repr(sys.float_info.max_10_exp + 1))
-            else:
-                self.write(repr(t.n))
+        if isinstance(t.n, float) and math.isinf(t.n):
+            # Subsitute overflowing decimal literal for AST infinity
+            self.write("1e" + repr(sys.float_info.max_10_exp + 1))
         else:
-            # Parenthesize integer literals to avoid turning
-            # "3 .__abs__()" into "3.__abs__()".
-            self.write("(")
             self.write(repr(t.n))
-            self.write(")")
 
     def _List(self, t):
         self.write("[")
@@ -449,6 +438,11 @@ class Unparser:
 
     def _Attribute(self,t):
         self.dispatch(t.value)
+        # Special case: 3.__abs__() is a syntax error, so if t.value
+        # is an integer literal then we need to either parenthesize
+        # it or add an extra space to get 3 .__abs__().
+        if isinstance(t.value, ast.Num) and isinstance(t.value.n, int):
+            self.write(" ")
         self.write(".")
         self.write(t.attr)
 
