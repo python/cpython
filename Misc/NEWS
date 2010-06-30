@@ -16,11 +16,6 @@ Core and Builtins
   Fix the encoding of the modules filename. Patch written by Amaury Forgeot
   d'Arc.
 
-- Issue #9011: Remove buggy and unnecessary (in 3.x) ST->AST
-  compilation code dealing with unary minus applied to a constant.
-  The removed code was mutating the ST, causing a second compilation
-  to fail.
-
 - Issue #9058: Remove assertions about INT_MAX in UnicodeDecodeError.
 
 - Issue #8941: decoding big endian UTF-32 data in UCS-2 builds could crash
