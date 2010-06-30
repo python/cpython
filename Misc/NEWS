@@ -73,6 +73,9 @@ C-API
 Library
 -------
 
+- Issue #6589: cleanup asyncore.socket_map in case smtpd.SMTPServer constructor 
+  raises an exception.
+
 - Issue #9125: Add recognition of 'except ... as ...' syntax to parser module.
 
 - Issue #9085: email package version number bumped to its correct
