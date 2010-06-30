@@ -6,26 +6,27 @@ It also contains examples for the AST parser.
 Files:
 ------
 
-	FILES	     -- list of files associated with the parser module.
+    FILES        -- list of files associated with the parser module.
 
-	README	     -- this file.
+    README       -- this file.
 
-	example.py   --	module that uses the `parser' module to extract
-			information from the parse tree of Python source
-			code.
+    docstring.py -- sample source file containing only a module docstring.
 
-	docstring.py -- sample source file containing only a module docstring.
+    example.py   -- module that uses the `parser' module to extract
+                    information from the parse tree of Python source
+                    code.
 
-	simple.py    -- sample source containing a "short form" definition.
+    simple.py    -- sample source containing a "short form" definition.
 
-	source.py    --	sample source code used to demonstrate ability to
-			handle nested constructs easily using the functions
-			and classes in example.py.
+    source.py    -- sample source code used to demonstrate ability to
+                    handle nested constructs easily using the functions
+                    and classes in example.py.
 
-	test_parser.py  program to put the parser module through its paces.
+    test_parser.py  program to put the parser module through its paces.
 
-	unparse.py	AST (2.5) based example to recreate source code
-			from an AST. This is incomplete; contributions
-			are welcome.
+    test_unparse.py tests for the unparse module
+
+    unparse.py      AST (2.7) based example to recreate source code
+                    from an AST.
 
 Enjoy!
