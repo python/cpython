@@ -20,6 +20,7 @@ Library
 - Issue #9075: In the ssl module, remove the setting of a ``debug`` flag
   on an OpenSSL structure.
 
+- Issue #9125: Add recognition of 'except ... as ...' syntax to parser module.
 
 What's New in Python 2.7 release candidate 2?
 =============================================

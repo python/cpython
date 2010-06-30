@@ -2126,10 +2126,13 @@ validate_except_clause(node *tree)
 
     if (res && (nch > 1))
         res = validate_test(CHILD(tree, 1));
-    if (res && (nch == 4))
-        res = (validate_comma(CHILD(tree, 2))
-               && validate_test(CHILD(tree, 3)));
-
+    if (res && (nch == 4)) {
+        if (TYPE(CHILD(tree, 2)) == NAME)
+            res = validate_name(CHILD(tree, 2), "as");
+        else
+            res = validate_comma(CHILD(tree, 2));
+        res = res && validate_test(CHILD(tree, 3));
+    }
     return (res);
 }
 
