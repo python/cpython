@@ -460,6 +460,9 @@ C-API
 Library
 -------
 
+- Issue #6589: cleanup asyncore.socket_map in case smtpd.SMTPServer constructor 
+  raises an exception.
+
 - Issue #9110: Addition of ContextDecorator to contextlib, for creating APIs
   that act as both context managers and decorators. contextmanager changes
   to use ContextDecorator.
