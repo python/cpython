@@ -276,7 +276,7 @@ and off individually.  They are described here in more detail.
 
    Converts the :keyword:`print` statement to the :func:`print` function.
 
-.. 2to3fixer:: raises
+.. 2to3fixer:: raise
 
    Converts ``raise E, V`` to ``raise E(V)``, and ``raise E, V, T`` to ``raise
    E(V).with_traceback(T)``.  If ``E`` is a tuple, the translation will be
