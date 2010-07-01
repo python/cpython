@@ -883,17 +883,13 @@ static PyObject * math_floor(PyObject *self, PyObject *number) {
     static PyObject *floor_str = NULL;
     PyObject *method;
 
-    if (floor_str == NULL) {
-        floor_str = PyUnicode_InternFromString("__floor__");
-        if (floor_str == NULL)
+    method = _PyObject_LookupSpecial(number, "__floor__", &floor_str);
+    if (method == NULL) {
+        if (PyErr_Occurred())
             return NULL;
-    }
-
-    method = _PyType_Lookup(Py_TYPE(number), floor_str);
-    if (method == NULL)
         return math_1_to_int(number, floor, 0);
-    else
-        return PyObject_CallFunction(method, "O", number);
+    }
+    return PyObject_CallFunctionObjArgs(method, NULL);
 }
 
 PyDoc_STRVAR(math_floor_doc,
@@ -1427,20 +1423,15 @@ math_trunc(PyObject *self, PyObject *number)
             return NULL;
     }
 
-    if (trunc_str == NULL) {
-        trunc_str = PyUnicode_InternFromString("__trunc__");
-        if (trunc_str == NULL)
-            return NULL;
-    }
-
-    trunc = _PyType_Lookup(Py_TYPE(number), trunc_str);
+    trunc = _PyObject_LookupSpecial(number, "__trunc__", &trunc_str);
     if (trunc == NULL) {
-        PyErr_Format(PyExc_TypeError,
-                     "type %.100s doesn't define __trunc__ method",
-                     Py_TYPE(number)->tp_name);
+        if (!PyErr_Occurred())
+            PyErr_Format(PyExc_TypeError,
+                         "type %.100s doesn't define __trunc__ method",
+                         Py_TYPE(number)->tp_name);
         return NULL;
     }
-    return PyObject_CallFunctionObjArgs(trunc, number, NULL);
+    return PyObject_CallFunctionObjArgs(trunc, NULL);
 }
 
 PyDoc_STRVAR(math_trunc_doc,
