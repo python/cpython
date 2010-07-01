@@ -1,6 +1,7 @@
 import builtins
 import sys
 import types
+import math
 import unittest
 
 from copy import deepcopy
@@ -1578,6 +1579,8 @@ order (MRO) for bases """
             ("__exit__", run_context, swallow, set(), {"__enter__" : iden}),
             ("__complex__", complex, complex_num, set(), {}),
             ("__format__", format, format_impl, set(), {}),
+            ("__floor__", math.floor, zero, set(), {}),
+            ("__trunc__", math.trunc, zero, set(), {}),
             ]
 
         class Checker(object):

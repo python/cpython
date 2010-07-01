@@ -1374,6 +1374,9 @@ Library
 Extension Modules
 -----------------
 
+- In the math module, correctly lookup __trunc__ and __floor__ as special
+  methods.
+
 - Issue #9005: Prevent utctimetuple() from producing year 0 or year
   10,000.  Prior to this change, timezone adjustment in utctimetuple()
   could produce tm_year value of 0 or 10,000.  Now an OverflowError is
