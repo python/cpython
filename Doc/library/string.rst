@@ -378,6 +378,9 @@ The ``','`` option signals the use of a comma for a thousands separator.
 For a locale aware separator, use the ``'n'`` integer presentation type
 instead.
 
+.. versionchanged:: 2.7
+   Added the ``','`` option (see also :pep:`378`).
+
 *width* is a decimal integer defining the minimum field width.  If not
 specified, then the field width will be determined by the content.
 
@@ -531,6 +534,7 @@ Accessing arguments by name::
 
 Accessing arguments' attributes::
 
+   >>> c = 3-5j
    >>> ('The complex number {0} is formed from the real part {0.real} '
    ...  'and the imaginary part {0.imag}.').format(c)
    'The complex number (3-5j) is formed from the real part 3.0 and the imaginary part -5.0.'
