@@ -841,7 +841,7 @@ FUNC1(atanh, m_atanh, 0,
 
 static PyObject * math_ceil(PyObject *self, PyObject *number) {
     static PyObject *ceil_str = NULL;
-    PyObject *method;
+    PyObject *method, *result;
 
     method = _PyObject_LookupSpecial(number, "__ceil__", &ceil_str);
     if (method == NULL) {
@@ -849,11 +849,9 @@ static PyObject * math_ceil(PyObject *self, PyObject *number) {
             return NULL;
         return math_1_to_int(number, ceil, 0);
     }
-    else {
-        PyObject *result = PyObject_CallFunctionObjArgs(method, NULL);
-        Py_DECREF(method);
-        return result;
-    }
+    result = PyObject_CallFunctionObjArgs(method, NULL);
+    Py_DECREF(method);
+    return result;
 }
 
 PyDoc_STRVAR(math_ceil_doc,
