@@ -859,13 +859,6 @@ across operating systems and shells.)
 
   export PYTHONWARNINGS=all,error:::Cookie:0
 
-When running a module using the interpreter's :option:`-m` switch,
-``sys.argv[0]`` will now be set to the string ``'-m'`` while the
-module is being located.  This change is visible to user code while
-executing the :file:`__init__.py` files for any parent packages of
-the module to be executed.  (Suggested by Michael Foord; implemented
-by Nick Coghlan; :issue:`8202`.)
-
 .. ======================================================================
 
 
