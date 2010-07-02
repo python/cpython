@@ -284,29 +284,29 @@ of which this module provides three different variants:
       For example usage, see the implementation of the :func:`test` function
       invocation in the :mod:`http.server` module.
 
-The :class:`SimpleHTTPRequestHandler` class can be invoked the following manner
-with the :mod:`http.server` to create a very basic webserver serving files
-relative to the current directory.::
 
-        import http.server
-        import socketserver
+The :class:`SimpleHTTPRequestHandler` class can be used in the following
+manner in order to create a very basic webserver serving files relative to
+the current directory. ::
 
-        PORT = 8000
+   import http.server
+   import socketserver
 
-        Handler = http.server.SimpleHTTPRequestHandler
+   PORT = 8000
 
-        httpd = socketserver.TCPServer(("", PORT), Handler)
+   Handler = http.server.SimpleHTTPRequestHandler
 
-        print("serving at port", PORT)
-        httpd.serve_forever()
+   httpd = socketserver.TCPServer(("", PORT), Handler)
 
-:mod:`http.server` can also be invoked directly using the ``-m`` switch of
-interpreter a with ``port number`` argument which uses
-:class:`SimpleHTTPRequestHandler` as the default request Handler. Similar to
-the previous example, even this serves files relative to the current
-directory.::
+   print("serving at port", PORT)
+   httpd.serve_forever()
+
+:mod:`http.server` can also be invoked directly using the :cmdoption:`-m`
+switch of the interpreter a with ``port number`` argument.  Similar to
+the previous example, this serves files relative to the current directory. ::
 
         python -m http.server 8000
+
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
