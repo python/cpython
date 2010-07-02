@@ -1347,7 +1347,7 @@ float_hex(PyObject *v)
         return float_str((PyFloatObject *)v);
 
     if (x == 0.0) {
-        if(copysign(1.0, x) == -1.0)
+        if (copysign(1.0, x) == -1.0)
             return PyString_FromString("-0x0.0p+0");
         else
             return PyString_FromString("0x0.0p+0");
