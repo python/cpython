@@ -881,7 +881,7 @@ FUNC1(fabs, fabs, 0,
 
 static PyObject * math_floor(PyObject *self, PyObject *number) {
     static PyObject *floor_str = NULL;
-    PyObject *method;
+    PyObject *method, *result;
 
     method = _PyObject_LookupSpecial(number, "__floor__", &floor_str);
     if (method == NULL) {
@@ -889,7 +889,9 @@ static PyObject * math_floor(PyObject *self, PyObject *number) {
             return NULL;
         return math_1_to_int(number, floor, 0);
     }
-    return PyObject_CallFunctionObjArgs(method, NULL);
+    result = PyObject_CallFunctionObjArgs(method, NULL);
+    Py_DECREF(method);
+    return result;
 }
 
 PyDoc_STRVAR(math_floor_doc,
@@ -1416,7 +1418,7 @@ static PyObject *
 math_trunc(PyObject *self, PyObject *number)
 {
     static PyObject *trunc_str = NULL;
-    PyObject *trunc;
+    PyObject *trunc, *result;
 
     if (Py_TYPE(number)->tp_dict == NULL) {
         if (PyType_Ready(Py_TYPE(number)) < 0)
@@ -1431,7 +1433,9 @@ math_trunc(PyObject *self, PyObject *number)
                          Py_TYPE(number)->tp_name);
         return NULL;
     }
-    return PyObject_CallFunctionObjArgs(trunc, NULL);
+    result = PyObject_CallFunctionObjArgs(trunc, NULL);
+    Py_DECREF(trunc);
+    return result;
 }
 
 PyDoc_STRVAR(math_trunc_doc,
