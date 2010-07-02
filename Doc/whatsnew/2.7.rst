@@ -861,10 +861,10 @@ across operating systems and shells.)
 
 When running a module using the interpreter's :option:`-m` switch,
 ``sys.argv[0]`` will now be set to the string ``'-m'`` while the
-module is being located, while executing the :file:`__init__.py` files
-for any parent packages of the module to be executed.
-(Suggested by Michael Foord; implemented by Nick Coghlan;
-:issue:`8202`.)
+module is being located.  This change is visible to user code while
+executing the :file:`__init__.py` files for any parent packages of
+the module to be executed.  (Suggested by Michael Foord; implemented
+by Nick Coghlan; :issue:`8202`.)
 
 .. ======================================================================
 
@@ -1420,9 +1420,9 @@ changes, or look through the Subversion logs for all the details.
   ``sys.path`` and the module :mod:`__main__` will be imported.  It's
   expected that the directory or zip contains a :file:`__main__.py`;
   if it doesn't, some other :file:`__main__.py` might be imported from
-  a location later in ``sys.path``.  This makes some of the machinery
+  a location later in ``sys.path``.  This makes more of the machinery
   of :mod:`runpy` available to scripts that want to mimic the way
-  Python's :option:`-m` processes an explicit path name.
+  Python's command line processes an explicit path name.
   (Added by Nick Coghlan; :issue:`6816`.)
 
 * New function: in the :mod:`shutil` module, :func:`~shutil.make_archive`
