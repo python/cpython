@@ -1110,7 +1110,7 @@ float_hex(PyObject *v)
         return float_str((PyFloatObject *)v);
 
     if (x == 0.0) {
-        if(copysign(1.0, x) == -1.0)
+        if (copysign(1.0, x) == -1.0)
             return PyUnicode_FromString("-0x0.0p+0");
         else
             return PyUnicode_FromString("0x0.0p+0");
