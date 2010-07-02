@@ -11,8 +11,13 @@ import random, fractions
 INF = float("inf")
 NAN = float("nan")
 
+have_getformat = hasattr(float, "__getformat__")
+requires_getformat = unittest.skipUnless(have_getformat,
+                                         "requires __getformat__")
+requires_setformat = unittest.skipUnless(hasattr(float, "__setformat__"),
+                                         "requires __setformat__")
 # decorator for skipping tests on non-IEEE 754 platforms
-requires_IEEE_754 = unittest.skipUnless(
+requires_IEEE_754 = unittest.skipUnless(have_getformat and
     float.__getformat__("double").startswith("IEEE"),
     "test requires IEEE 754 doubles")
 
@@ -377,6 +382,7 @@ class GeneralFloatCases(unittest.TestCase):
             #self.assertTrue(0.0 > pow_op(-2.0, -1047) > -1e-315)
 
 
+@requires_setformat
 class FormatFunctionsTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -427,6 +433,7 @@ LE_FLOAT_NAN = bytes(reversed(BE_FLOAT_NAN))
 # on non-IEEE platforms, attempting to unpack a bit pattern
 # representing an infinity or a NaN should raise an exception.
 
+@requires_setformat
 class UnknownFormatTestCase(unittest.TestCase):
     def setUp(self):
         self.save_formats = {'double':float.__getformat__('double'),
@@ -459,36 +466,25 @@ class UnknownFormatTestCase(unittest.TestCase):
 # let's also try to guarantee that -0.0 and 0.0 don't get confused.
 
 class IEEEFormatTestCase(unittest.TestCase):
-    if float.__getformat__("double").startswith("IEEE"):
-        def test_double_specials_do_unpack(self):
-            for fmt, data in [('>d', BE_DOUBLE_INF),
-                              ('>d', BE_DOUBLE_NAN),
-                              ('<d', LE_DOUBLE_INF),
-                              ('<d', LE_DOUBLE_NAN)]:
-                struct.unpack(fmt, data)
 
-    if float.__getformat__("float").startswith("IEEE"):
-        def test_float_specials_do_unpack(self):
-            for fmt, data in [('>f', BE_FLOAT_INF),
-                              ('>f', BE_FLOAT_NAN),
-                              ('<f', LE_FLOAT_INF),
-                              ('<f', LE_FLOAT_NAN)]:
-                struct.unpack(fmt, data)
+    @requires_IEEE_754
+    def test_double_specials_do_unpack(self):
+        for fmt, data in [('>d', BE_DOUBLE_INF),
+                          ('>d', BE_DOUBLE_NAN),
+                          ('<d', LE_DOUBLE_INF),
+                          ('<d', LE_DOUBLE_NAN)]:
+            struct.unpack(fmt, data)
 
-    if float.__getformat__("double").startswith("IEEE"):
-        def test_negative_zero(self):
-            def pos_pos():
-                return 0.0, math.atan2(0.0, -1)
-            def pos_neg():
-                return 0.0, math.atan2(-0.0, -1)
-            def neg_pos():
-                return -0.0, math.atan2(0.0, -1)
-            def neg_neg():
-                return -0.0, math.atan2(-0.0, -1)
-            self.assertEquals(pos_pos(), neg_pos())
-            self.assertEquals(pos_neg(), neg_neg())
+    @requires_IEEE_754
+    def test_float_specials_do_unpack(self):
+        for fmt, data in [('>f', BE_FLOAT_INF),
+                          ('>f', BE_FLOAT_NAN),
+                          ('<f', LE_FLOAT_INF),
+                          ('<f', LE_FLOAT_NAN)]:
+            struct.unpack(fmt, data)
 
 class FormatTestCase(unittest.TestCase):
+
     def test_format(self):
         # these should be rewritten to use both format(x, spec) and
         # x.__format__(spec)
@@ -542,8 +538,7 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(INF, 'f'), 'inf')
         self.assertEqual(format(INF, 'F'), 'INF')
 
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
+    @requires_IEEE_754
     def test_format_testfile(self):
         for line in open(format_testfile):
             if line.startswith('--'):
@@ -623,9 +618,10 @@ class ReprTestCase(unittest.TestCase):
             self.assertEqual(s, repr(float(s)))
             self.assertEqual(negs, repr(float(negs)))
 
+
+@requires_IEEE_754
 class RoundTestCase(unittest.TestCase):
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
+
     def test_inf_nan(self):
         self.assertRaises(OverflowError, round, INF)
         self.assertRaises(OverflowError, round, -INF)
@@ -635,8 +631,6 @@ class RoundTestCase(unittest.TestCase):
         self.assertRaises(TypeError, round, NAN, "ceci n'est pas un integer")
         self.assertRaises(TypeError, round, -0.0, 1j)
 
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
     def test_large_n(self):
         for n in [324, 325, 400, 2**31-1, 2**31, 2**32, 2**100]:
             self.assertEqual(round(123.456, n), 123.456)
@@ -649,8 +643,6 @@ class RoundTestCase(unittest.TestCase):
         self.assertEqual(round(1e150, 309), 1e150)
         self.assertEqual(round(1.4e-315, 315), 1e-315)
 
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
     def test_small_n(self):
         for n in [-308, -309, -400, 1-2**31, -2**31, -2**31-1, -2**100]:
             self.assertEqual(round(123.456, n), 0.0)
@@ -658,8 +650,6 @@ class RoundTestCase(unittest.TestCase):
             self.assertEqual(round(1e300, n), 0.0)
             self.assertEqual(round(1e-320, n), 0.0)
 
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
     def test_overflow(self):
         self.assertRaises(OverflowError, round, 1.6e308, -308)
         self.assertRaises(OverflowError, round, -1.7e308, -308)
@@ -707,9 +697,6 @@ class RoundTestCase(unittest.TestCase):
             self.assertEqual(float(format(x, '.2f')), round(x, 2))
             self.assertEqual(float(format(x, '.3f')), round(x, 3))
 
-
-    @unittest.skipUnless(float.__getformat__("double").startswith("IEEE"),
-                         "test requires IEEE 754 doubles")
     def test_format_specials(self):
         # Test formatting of nans and infs.
 
