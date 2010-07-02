@@ -57,11 +57,14 @@ Glossary
 
    bytecode
       Python source code is compiled into bytecode, the internal representation
-      of a Python program in the interpreter.  The bytecode is also cached in
-      ``.pyc`` and ``.pyo`` files so that executing the same file is faster the
-      second time (recompilation from source to bytecode can be avoided).  This
-      "intermediate language" is said to run on a :term:`virtual machine`
-      that executes the machine code corresponding to each bytecode.
+      of a Python program in the CPython interpreter.  The bytecode is also
+      cached in ``.pyc`` and ``.pyo`` files so that executing the same file is
+      faster the second time (recompilation from source to bytecode can be
+      avoided).  This "intermediate language" is said to run on a
+      :term:`virtual machine` that executes the machine code corresponding to
+      each bytecode. Do note that bytecodes are not expected to work between
+      different Python virtual machines, nor to be stable between Python
+      releases.
 
    class
       A template for creating user-defined objects. Class definitions
