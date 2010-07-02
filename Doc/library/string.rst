@@ -212,7 +212,7 @@ Format String Syntax
 
 The :meth:`str.format` method and the :class:`Formatter` class share the same
 syntax for format strings (although in the case of :class:`Formatter`,
-subclasses can define their own format string syntax.)
+subclasses can define their own format string syntax).
 
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.
 Anything that is not contained in braces is considered literal text, which is
