@@ -223,44 +223,65 @@ always available.
 .. data:: float_info
 
    A structseq holding information about the float type. It contains low level
-   information about the precision and internal representation. Please study
-   your system's :file:`float.h` for more information.
+   information about the precision and internal representation.  The values
+   correspond to the various floating-point constants defined in the standard
+   header file :file:`float.h` for the 'C' programming language; see section
+   5.2.4.2.2 of the 1999 ISO/IEC C standard [C99]_, 'Characteristics of
+   floating types', for details.
 
-   +---------------------+--------------------------------------------------+
-   | attribute           |  explanation                                     |
-   +=====================+==================================================+
-   | :const:`epsilon`    | Difference between 1 and the next representable  |
-   |                     | floating point number                            |
-   +---------------------+--------------------------------------------------+
-   | :const:`dig`        | digits (see :file:`float.h`)                     |
-   +---------------------+--------------------------------------------------+
-   | :const:`mant_dig`   | mantissa digits (see :file:`float.h`)            |
-   +---------------------+--------------------------------------------------+
-   | :const:`max`        | maximum representable finite float               |
-   +---------------------+--------------------------------------------------+
-   | :const:`max_exp`    | maximum int e such that radix**(e-1) is in the   |
-   |                     | range of finite representable floats             |
-   +---------------------+--------------------------------------------------+
-   | :const:`max_10_exp` | maximum int e such that 10**e is in the          |
-   |                     | range of finite representable floats             |
-   +---------------------+--------------------------------------------------+
-   | :const:`min`        | Minimum positive normalizer float                |
-   +---------------------+--------------------------------------------------+
-   | :const:`min_exp`    | minimum int e such that radix**(e-1) is a        |
-   |                     | normalized float                                 |
-   +---------------------+--------------------------------------------------+
-   | :const:`min_10_exp` | minimum int e such that 10**e is a normalized    |
-   |                     | float                                            |
-   +---------------------+--------------------------------------------------+
-   | :const:`radix`      | radix of exponent                                |
-   +---------------------+--------------------------------------------------+
-   | :const:`rounds`     | addition rounds (see :file:`float.h`)            |
-   +---------------------+--------------------------------------------------+
+   +---------------------+----------------+--------------------------------------------------+
+   | attribute           | float.h macro  | explanation                                      |
+   +=====================+================+==================================================+
+   | :const:`epsilon`    | DBL_MAX        | difference between 1 and the least value greater |
+   |                     |                | than 1 that is representable as a float          |
+   +---------------------+----------------+--------------------------------------------------+
+   | :const:`dig`        | DBL_DIG        | maximum number of decimal digits that can be     |
+   |                     |                | faithfully represented in a float;  see below    |
+   +---------------------+----------------+--------------------------------------------------+
+   | :const:`mant_dig`   | DBL_MANT_DIG   | float precision: the number of base-``radix``    |
+   |                     |                | digits in the significand of a float             |
+   +---------------------+----------------+--------------------------------------------------+
+   | :const:`max`        | DBL_MAX        | maximum representable finite float               |
+   +---------------------+----------------+--------------------------------------------------+
+   | :const:`max_exp`    | DBL_MAX_EXP    | maximum integer e such that ``radix**(e-1)`` is  |
+   |                     |                | a representable finite float                     |
+   +---------------------+----------------+--------------------------------------------------+
+   | :const:`max_10_exp` | DBL_MAX_10_EXP | maximum integer e such that ``10**e`` is in the  |
+   |                     |                | range of representable finite floats             |
+   +---------------------+----------------+--------------------------------------------------+
+   | :const:`min`        | DBL_MIN        | minimum positive normalized float                |
+   +---------------------+----------------+--------------------------------------------------+
+   | :const:`min_exp`    | DBL_MIN_EXP    | minimum integer e such that ``radix**(e-1)`` is  |
+   |                     |                | a normalized float                               |
+   +---------------------+----------------+--------------------------------------------------+
+   | :const:`min_10_exp` | DBL_MIN_10_EXP | minimum integer e such that ``10**e`` is a       |
+   |                     |                | normalized float                                 |
+   +---------------------+----------------+--------------------------------------------------+
+   | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
+   +---------------------+----------------+--------------------------------------------------+
+   | :const:`rounds`     | FLT_ROUNDS     | constant representing rounding mode              |
+   |                     |                | used for arithmetic operations                   |
+   +---------------------+----------------+--------------------------------------------------+
 
-   .. note::
+   The attribute :attr:`sys.float_info.dig` needs further explanation.  If
+   ``s`` is any string representing a decimal number with at most
+   :attr:`sys.float_info.dig` significant digits, then converting ``s`` to a
+   float and back again will recover a string representing the same decimal
+   value::
 
-      The information in the table is simplified.
+      >>> import sys
+      >>> sys.float_info.dig
+      15
+      >>> s = '3.14159265358979'    # decimal string with 15 significant digits
+      >>> format(float(s), '.15g')  # convert to float and back -> same value
+      '3.14159265358979'
 
+   But for strings with more than :attr:`sys.float_info.dig` significant digits,
+   this isn't always true::
+
+      >>> s = '9876543211234567'    # 16 significant digits is too many!
+      >>> format(float(s), '.16g')  # conversion changes value
+      '9876543211234568'
 
 .. data:: float_repr_style
 
@@ -957,3 +978,8 @@ always available.
    first three characters of :const:`version`.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python. Availability: Windows.
+
+.. rubric:: Citations
+
+.. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf .
+
