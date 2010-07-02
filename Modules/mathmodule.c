@@ -843,17 +843,17 @@ static PyObject * math_ceil(PyObject *self, PyObject *number) {
     static PyObject *ceil_str = NULL;
     PyObject *method;
 
-    if (ceil_str == NULL) {
-        ceil_str = PyUnicode_InternFromString("__ceil__");
-        if (ceil_str == NULL)
+    method = _PyObject_LookupSpecial(number, "__ceil__", &ceil_str);
+    if (method == NULL) {
+        if (PyErr_Occurred())
             return NULL;
-    }
-
-    method = _PyType_Lookup(Py_TYPE(number), ceil_str);
-    if (method == NULL)
         return math_1_to_int(number, ceil, 0);
-    else
-        return PyObject_CallFunction(method, "O", number);
+    }
+    else {
+        PyObject *result = PyObject_CallFunctionObjArgs(method, NULL);
+        Py_DECREF(method);
+        return result;
+    }
 }
 
 PyDoc_STRVAR(math_ceil_doc,

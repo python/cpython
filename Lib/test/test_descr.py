@@ -1581,6 +1581,7 @@ order (MRO) for bases """
             ("__format__", format, format_impl, set(), {}),
             ("__floor__", math.floor, zero, set(), {}),
             ("__trunc__", math.trunc, zero, set(), {}),
+            ("__ceil__", math.ceil, zero, set(), {}),
             ]
 
         class Checker(object):
