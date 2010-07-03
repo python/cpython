@@ -386,8 +386,8 @@ class SourceLoader(_LoaderBasics):
         except IOError:
             raise ImportError("source not available through get_data()")
         encoding = tokenize.detect_encoding(_io.BytesIO(source_bytes).readline)
-        # XXX Universal newlines?
-        return source_bytes.decode(encoding[0])
+        newline_decoder = _io.IncrementalNewlineDecoder(None, True)
+        return newline_decoder.decode(source_bytes.decode(encoding[0]))
 
     def get_code(self, fullname):
         """Concrete implementation of InspectLoader.get_code.
