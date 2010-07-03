@@ -51,9 +51,8 @@
    This saves the maintainer some effort going through the SVN logs
    when researching a change.
 
-This article explains the new features in Python 2.7.  The final
-release of 2.7 is currently scheduled for July 2010; the detailed
-schedule is described in :pep:`373`.
+This article explains the new features in Python 2.7.  Python 2.7 was released
+on July 7, 2010.
 
 Numeric handling has been improved in many ways, for both
 floating-point numbers and for the :class:`~decimal.Decimal` class.
