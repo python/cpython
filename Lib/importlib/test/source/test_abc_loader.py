@@ -7,6 +7,7 @@ from . import util as source_util
 
 import imp
 import inspect
+import io
 import marshal
 import os
 import sys
@@ -325,30 +326,6 @@ class PyLoaderInterfaceTests(unittest.TestCase):
         mock = PyLoaderMock({name: None})
         with util.uncache(name), self.assertRaises(ImportError):
             mock.get_filename(name)
-
-
-class PyLoaderGetSourceTests(unittest.TestCase):
-
-    """Tests for importlib.abc.PyLoader.get_source()."""
-
-    def test_default_encoding(self):
-        # Should have no problems with UTF-8 text.
-        name = 'mod'
-        mock = PyLoaderMock({name: os.path.join('path', 'to', 'mod')})
-        source = 'x = "ü"'
-        mock.source = source.encode('utf-8')
-        returned_source = mock.get_source(name)
-        self.assertEqual(returned_source, source)
-
-    def test_decoded_source(self):
-        # Decoding should work.
-        name = 'mod'
-        mock = PyLoaderMock({name: os.path.join('path', 'to', 'mod')})
-        source = "# coding: Latin-1\nx='ü'"
-        assert source.encode('latin-1') != source.encode('utf-8')
-        mock.source = source.encode('latin-1')
-        returned_source = mock.get_source(name)
-        self.assertEqual(returned_source, source)
 
 
 class PyPycLoaderTests(PyLoaderTests):
@@ -752,6 +729,39 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         code_object = self.loader.get_code(self.name)
         self.verify_code(code_object)
 
+
+class SourceLoaderGetSourceTests(unittest.TestCase):
+
+    """Tests for importlib.abc.SourceLoader.get_source()."""
+
+    def test_default_encoding(self):
+        # Should have no problems with UTF-8 text.
+        name = 'mod'
+        mock = SourceOnlyLoaderMock('mod.file')
+        source = 'x = "ü"'
+        mock.source = source.encode('utf-8')
+        returned_source = mock.get_source(name)
+        self.assertEqual(returned_source, source)
+
+    def test_decoded_source(self):
+        # Decoding should work.
+        name = 'mod'
+        mock = SourceOnlyLoaderMock("mod.file")
+        source = "# coding: Latin-1\nx='ü'"
+        assert source.encode('latin-1') != source.encode('utf-8')
+        mock.source = source.encode('latin-1')
+        returned_source = mock.get_source(name)
+        self.assertEqual(returned_source, source)
+
+    def test_universal_newlines(self):
+        # PEP 302 says universal newlines should be used.
+        name = 'mod'
+        mock = SourceOnlyLoaderMock('mod.file')
+        source = "x = 42\r\ny = -13\r\n"
+        mock.source = source.encode('utf-8')
+        expect = io.IncrementalNewlineDecoder(None, True).decode(source)
+        self.assertEqual(mock.get_source(name), expect)
+
 class AbstractMethodImplTests(unittest.TestCase):
 
     """Test the concrete abstractmethod implementations."""
@@ -852,12 +862,13 @@ class AbstractMethodImplTests(unittest.TestCase):
 def test_main():
     from test.support import run_unittest
     run_unittest(PyLoaderTests, PyLoaderCompatTests,
-                    PyLoaderInterfaceTests, PyLoaderGetSourceTests,
+                    PyLoaderInterfaceTests,
                     PyPycLoaderTests, PyPycLoaderInterfaceTests,
                     SkipWritingBytecodeTests, RegeneratedBytecodeTests,
                     BadBytecodeFailureTests, MissingPathsTests,
                     SourceOnlyLoaderTests,
                     SourceLoaderBytecodeTests,
+                    SourceLoaderGetSourceTests,
                     AbstractMethodImplTests)
 
 
