@@ -1,7 +1,7 @@
-What's New in IDLE 2.7a0?
-=========================
+What's New in IDLE 2.7?
+=======================
 
-*Release date: XX-XXX-2010*
+*Release date: 07-03-2010*
 
 - idle.py modified and simplified to better support developing experimental
   versions of IDLE which are not installed in the standard location.
