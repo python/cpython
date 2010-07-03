@@ -2450,11 +2450,11 @@ PyObject *PyUnicode_DecodeUTF8Stateful(const char *s,
             break;
 
         case 3:
-            /* XXX: surrogates shouldn't be valid UTF-8!
-               see http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
-               (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt
-               Uncomment the 2 lines below to make them invalid,
-               codepoints: d800-dfff; UTF-8: \xed\xa0\x80-\xed\xbf\xbf. */
+            /* Decoding UTF-8 sequences in range \xed\xa0\x80-\xed\xbf\xbf
+               will result in surrogates in range d800-dfff. Surrogates are
+               not valid UTF-8 so they are rejected.
+               See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
+               (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt */
             if ((s[1] & 0xc0) != 0x80 ||
                 (s[2] & 0xc0) != 0x80 ||
                 ((unsigned char)s[0] == 0xE0 &&
