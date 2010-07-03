@@ -106,7 +106,7 @@ directory. ::
    httpd.serve_forever()
 
 The :mod:`SimpleHTTPServer` module can also be invoked directly using the
-:cmdoption:`-m` switch of the interpreter with a ``port number`` argument.
+:option:`-m` switch of the interpreter with a ``port number`` argument.
 Similar to the previous example, this serves the files relative to the
 current directory. ::
 
