@@ -1,6 +1,7 @@
 import importlib
 from importlib import _bootstrap
 from .. import abc
+from .. import util
 from . import util as source_util
 
 import imp
@@ -107,6 +108,22 @@ class SimpleTest(unittest.TestCase):
             with self.assertRaises(SyntaxError):
                 loader.load_module('_temp')
             self.assertTrue('_temp' not in sys.modules)
+
+    def test_file_from_empty_string_dir(self):
+        # Loading a module found from an empty string entry on sys.path should
+        # not only work, but keep all attributes relative.
+        with open('_temp.py', 'w') as file:
+            file.write("# test file for importlib")
+        try:
+            with util.uncache('_temp'):
+                loader = _bootstrap._SourceFileLoader('_temp', '_temp.py')
+                mod = loader.load_module('_temp')
+                self.assertEqual('_temp.py', mod.__file__)
+                self.assertEqual(imp.cache_from_source('_temp.py'),
+                                 mod.__cached__)
+
+        finally:
+            os.unlink('_temp.py')
 
 
 class BadBytecodeTest(unittest.TestCase):

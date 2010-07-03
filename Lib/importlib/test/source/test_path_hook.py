@@ -12,6 +12,10 @@ class PathHookTest(unittest.TestCase):
             self.assertTrue(hasattr(_bootstrap._file_path_hook(mapping['.root']),
                                  'find_module'))
 
+    def test_empty_string(self):
+        # The empty string represents the cwd.
+        self.assertTrue(hasattr(_bootstrap._file_path_hook(''), 'find_module'))
+
 
 def test_main():
     from test.support import run_unittest
