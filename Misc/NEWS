@@ -468,6 +468,9 @@ C-API
 Library
 -------
 
+- Issue #5468: urlencode to handle bytes type and other encodings in its query
+  parameter. Patch by Dan Mahn.
+
 - Issue #7673: Fix security vulnerability (CVE-2010-2089) in the audioop
   module, ensure that the input string length is a multiple of the frame size
 
