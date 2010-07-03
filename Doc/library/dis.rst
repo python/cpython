@@ -33,10 +33,13 @@ The :mod:`dis` module defines the following functions and constants:
 .. function:: dis(x=None)
 
    Disassemble the *x* object. *x* can denote either a module, a
-   class, a method, a function, or a code object.   For a module, it disassembles
-   all functions.  For a class, it disassembles all methods.  For a single code
-   sequence, it prints one line per bytecode instruction.  If no object is
-   provided, it disassembles the last traceback.
+   class, a method, a function, a code object, a string of source code or a
+   byte sequence of raw bytecode.   For a module, it disassembles all
+   functions.  For a class, it disassembles all methods.  For a code object
+   or sequence of raw bytecode, it prints one line per bytecode instruction.
+   Strings are first compiled to code objects with the :func:`compile`
+   built-in function before being disassembled.  If no object is provided,
+   this function disassembles the last traceback.
 
 
 .. function:: distb(tb=None)
