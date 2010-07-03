@@ -533,7 +533,7 @@ def quote_from_bytes(bs, safe='/'):
         _safe_quoters[cachekey] = quoter
     return ''.join([quoter[char] for char in bs])
 
-def urlencode(query, doseq=False):
+def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
     """Encode a sequence of two-element tuples or dictionary into a URL query string.
 
     If any values in the query arg are sequences and doseq is true, each
@@ -542,6 +542,10 @@ def urlencode(query, doseq=False):
     If the query arg is a sequence of two-element tuples, the order of the
     parameters in the output will match the order of parameters in the
     input.
+
+    The query arg may be either a string or a bytes type. When query arg is a
+    string, the safe, encoding and error parameters are sent the quote_plus for
+    encoding.
     """
 
     if hasattr(query, "items"):
@@ -566,14 +570,28 @@ def urlencode(query, doseq=False):
     l = []
     if not doseq:
         for k, v in query:
-            k = quote_plus(str(k))
-            v = quote_plus(str(v))
+            if isinstance(k, bytes):
+                k = quote_plus(k, safe)
+            else:
+                k = quote_plus(str(k), safe, encoding, errors)
+
+            if isinstance(v, bytes):
+                v = quote_plus(v, safe)
+            else:
+                v = quote_plus(str(v), safe, encoding, errors)
             l.append(k + '=' + v)
     else:
         for k, v in query:
-            k = quote_plus(str(k))
-            if isinstance(v, str):
-                v = quote_plus(v)
+            if isinstance(k, bytes):
+                k = quote_plus(k, safe)
+            else:
+                k = quote_plus(str(k), safe, encoding, errors)
+
+            if isinstance(v, bytes):
+                v = quote_plus(v, safe)
+                l.append(k + '=' + v)
+            elif isinstance(v, str):
+                v = quote_plus(v, safe, encoding, errors)
                 l.append(k + '=' + v)
             else:
                 try:
@@ -581,12 +599,16 @@ def urlencode(query, doseq=False):
                     x = len(v)
                 except TypeError:
                     # not a sequence
-                    v = quote_plus(str(v))
+                    v = quote_plus(str(v), safe, encoding, errors)
                     l.append(k + '=' + v)
                 else:
                     # loop over the sequence
                     for elt in v:
-                        l.append(k + '=' + quote_plus(str(elt)))
+                        if isinstance(elt, bytes):
+                            elt = quote_plus(elt, safe)
+                        else:
+                            elt = quote_plus(str(elt), safe, encoding, errors)
+                        l.append(k + '=' + elt)
     return '&'.join(l)
 
 # Utilities to parse URLs (most of these return None for missing parts):
