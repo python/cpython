@@ -12,6 +12,22 @@ del _opcodes_all
 
 _have_code = (types.MethodType, types.FunctionType, types.CodeType, type)
 
+def _try_compile(source, name):
+    """Attempts to compile the given source, first as an expression and
+       then as a statement if the first approach fails.
+
+       Utility function to accept strings in functions that otherwise
+       expect code objects
+    """
+    # ncoghlan: currently only used by dis(), but plan to add an
+    # equivalent for show_code() as well (but one that returns a
+    # string rather than printing directly to the console)
+    try:
+        c = compile(source, name, 'eval')
+    except SyntaxError:
+        c = compile(source, name, 'exec')
+    return c
+
 def dis(x=None):
     """Disassemble classes, methods, functions, or code.
 
@@ -38,7 +54,9 @@ def dis(x=None):
     elif hasattr(x, 'co_code'):
         disassemble(x)
     elif isinstance(x, (bytes, bytearray)):
-        disassemble_string(x)
+        _disassemble_bytes(x)
+    elif isinstance(x, str):
+        _disassemble_str(x)
     else:
         raise TypeError("don't know how to disassemble %s objects" %
                         type(x).__name__)
@@ -157,7 +175,7 @@ def disassemble(co, lasti=-1):
                 print('(' + free[oparg] + ')', end=' ')
         print()
 
-def disassemble_string(code, lasti=-1, varnames=None, names=None,
+def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        constants=None):
     labels = findlabels(code)
     n = len(code)
@@ -195,6 +213,10 @@ def disassemble_string(code, lasti=-1, varnames=None, names=None,
             elif op in hascompare:
                 print('(' + cmp_op[oparg] + ')', end=' ')
         print()
+
+def _disassemble_str(source):
+    """Compile the source string, then disassemble the code object."""
+    disassemble(_try_compile(source, '<dis>'))
 
 disco = disassemble                     # XXX For backwards compatibility
 

@@ -96,6 +96,46 @@ Disassembly of g:
 
 """
 
+expr_str = "x + 1"
+
+dis_expr_str = """\
+  1           0 LOAD_NAME                0 (x)
+              3 LOAD_CONST               0 (1)
+              6 BINARY_ADD
+              7 RETURN_VALUE
+"""
+
+simple_stmt_str = "x = x + 1"
+
+dis_simple_stmt_str = """\
+  1           0 LOAD_NAME                0 (x)
+              3 LOAD_CONST               0 (1)
+              6 BINARY_ADD
+              7 STORE_NAME               0 (x)
+             10 LOAD_CONST               1 (None)
+             13 RETURN_VALUE
+"""
+
+compound_stmt_str = """\
+x = 0
+while 1:
+    x += 1"""
+# Trailing newline has been deliberately omitted
+
+dis_compound_stmt_str = """\
+  1           0 LOAD_CONST               0 (0)
+              3 STORE_NAME               0 (x)
+
+  2           6 SETUP_LOOP              13 (to 22)
+
+  3     >>    9 LOAD_NAME                0 (x)
+             12 LOAD_CONST               1 (1)
+             15 INPLACE_ADD
+             16 STORE_NAME               0 (x)
+             19 JUMP_ABSOLUTE            9
+        >>   22 LOAD_CONST               2 (None)
+             25 RETURN_VALUE
+"""
 
 class DisTests(unittest.TestCase):
     def do_disassembly_test(self, func, expected):
@@ -165,6 +205,11 @@ class DisTests(unittest.TestCase):
     def test_big_linenos(self):
         from test import dis_module
         self.do_disassembly_test(dis_module, dis_module_expected_results)
+
+    def test_disassemble_str(self):
+        self.do_disassembly_test(expr_str, dis_expr_str)
+        self.do_disassembly_test(simple_stmt_str, dis_simple_stmt_str)
+        self.do_disassembly_test(compound_stmt_str, dis_compound_stmt_str)
 
 def test_main():
     run_unittest(DisTests)
