@@ -63,6 +63,9 @@ Glossary
       "intermediate language" is said to run on a :term:`virtual machine`
       that executes the machine code corresponding to each bytecode.
 
+      A list of bytecode instructions can be found in the documentation for
+      :ref:`the dis module <bytecodes>`.
+
    class
       A template for creating user-defined objects. Class definitions
       normally contain method definitions which operate on instances of the
