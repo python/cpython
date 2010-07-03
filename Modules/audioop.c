@@ -295,6 +295,29 @@ static int stepsizeTable[89] = {
 
 static PyObject *AudioopError;
 
+static int
+audioop_check_size(int size)
+{
+    if (size != 1 && size != 2 && size != 4) {
+        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
+        return 0;
+    }
+    else
+        return 1;
+}
+
+static int
+audioop_check_parameters(int len, int size)
+{
+    if (!audioop_check_size(size))
+        return 0;
+    if (len % size != 0) {
+        PyErr_SetString(AudioopError, "not a whole number of frames");
+        return 0;
+    }
+    return 1;
+}
+
 static PyObject *
 audioop_getsample(PyObject *self, PyObject *args)
 {
@@ -304,10 +327,8 @@ audioop_getsample(PyObject *self, PyObject *args)
 
     if ( !PyArg_ParseTuple(args, "s#ii:getsample", &cp, &len, &size, &i) )
         return 0;
-    if ( size != 1 && size != 2 && size != 4 ) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
     if ( i < 0 || i >= len/size ) {
         PyErr_SetString(AudioopError, "Index out of range");
         return 0;
@@ -328,10 +349,8 @@ audioop_max(PyObject *self, PyObject *args)
 
     if ( !PyArg_ParseTuple(args, "s#i:max", &cp, &len, &size) )
         return 0;
-    if ( size != 1 && size != 2 && size != 4 ) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
     for ( i=0; i<len; i+= size) {
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
@@ -352,10 +371,8 @@ audioop_minmax(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "s#i:minmax", &cp, &len, &size))
         return NULL;
-    if (size != 1 && size != 2 && size != 4) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
+    if (!audioop_check_parameters(len, size))
         return NULL;
-    }
     for (i = 0; i < len; i += size) {
         if (size == 1) val = (int) *CHARP(cp, i);
         else if (size == 2) val = (int) *SHORTP(cp, i);
@@ -376,10 +393,8 @@ audioop_avg(PyObject *self, PyObject *args)
 
     if ( !PyArg_ParseTuple(args, "s#i:avg", &cp, &len, &size) )
         return 0;
-    if ( size != 1 && size != 2 && size != 4 ) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
     for ( i=0; i<len; i+= size) {
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
@@ -403,10 +418,8 @@ audioop_rms(PyObject *self, PyObject *args)
 
     if ( !PyArg_ParseTuple(args, "s#i:rms", &cp, &len, &size) )
         return 0;
-    if ( size != 1 && size != 2 && size != 4 ) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
     for ( i=0; i<len; i+= size) {
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
@@ -614,10 +627,8 @@ audioop_avgpp(PyObject *self, PyObject *args)
 
     if ( !PyArg_ParseTuple(args, "s#i:avgpp", &cp, &len, &size) )
         return 0;
-    if ( size != 1 && size != 2 && size != 4 ) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
     /* Compute first delta value ahead. Also automatically makes us
     ** skip the first extreme value
     */
@@ -671,10 +682,8 @@ audioop_maxpp(PyObject *self, PyObject *args)
 
     if ( !PyArg_ParseTuple(args, "s#i:maxpp", &cp, &len, &size) )
         return 0;
-    if ( size != 1 && size != 2 && size != 4 ) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
     /* Compute first delta value ahead. Also automatically makes us
     ** skip the first extreme value
     */
@@ -722,10 +731,8 @@ audioop_cross(PyObject *self, PyObject *args)
 
     if ( !PyArg_ParseTuple(args, "s#i:cross", &cp, &len, &size) )
         return 0;
-    if ( size != 1 && size != 2 && size != 4 ) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
     ncross = -1;
     prevval = 17; /* Anything <> 0,1 */
     for ( i=0; i<len; i+= size) {
@@ -750,6 +757,8 @@ audioop_mul(PyObject *self, PyObject *args)
 
     if ( !PyArg_ParseTuple(args, "s#id:mul", &cp, &len, &size, &factor ) )
         return 0;
+    if (!audioop_check_parameters(len, size))
+        return NULL;
 
     if ( size == 1 ) maxval = (double) 0x7f;
     else if ( size == 2 ) maxval = (double) 0x7fff;
@@ -792,6 +801,12 @@ audioop_tomono(PyObject *self, PyObject *args)
     if ( !PyArg_ParseTuple(args, "s#idd:tomono",
                            &cp, &len, &size, &fac1, &fac2 ) )
         return 0;
+    if (!audioop_check_parameters(len, size))
+        return NULL;
+    if (((len / size) & 1) != 0) {
+        PyErr_SetString(AudioopError, "not a whole number of frames");
+        return NULL;
+    }
 
     if ( size == 1 ) maxval = (double) 0x7f;
     else if ( size == 2 ) maxval = (double) 0x7fff;
@@ -837,6 +852,8 @@ audioop_tostereo(PyObject *self, PyObject *args)
     if ( !PyArg_ParseTuple(args, "s#idd:tostereo",
                            &cp, &len, &size, &fac1, &fac2 ) )
         return 0;
+    if (!audioop_check_parameters(len, size))
+        return NULL;
 
     if ( size == 1 ) maxval = (double) 0x7f;
     else if ( size == 2 ) maxval = (double) 0x7fff;
@@ -895,7 +912,8 @@ audioop_add(PyObject *self, PyObject *args)
     if ( !PyArg_ParseTuple(args, "s#s#i:add",
                       &cp1, &len1, &cp2, &len2, &size ) )
         return 0;
-
+    if (!audioop_check_parameters(len1, size))
+        return NULL;
     if ( len1 != len2 ) {
         PyErr_SetString(AudioopError, "Lengths should be the same");
         return 0;
@@ -950,10 +968,8 @@ audioop_bias(PyObject *self, PyObject *args)
                       &cp, &len, &size , &bias) )
         return 0;
 
-    if ( size != 1 && size != 2 && size != 4) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
 
     rv = PyString_FromStringAndSize(NULL, len);
     if ( rv == 0 )
@@ -986,10 +1002,8 @@ audioop_reverse(PyObject *self, PyObject *args)
                       &cp, &len, &size) )
         return 0;
 
-    if ( size != 1 && size != 2 && size != 4 ) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
 
     rv = PyString_FromStringAndSize(NULL, len);
     if ( rv == 0 )
@@ -1023,11 +1037,10 @@ audioop_lin2lin(PyObject *self, PyObject *args)
                       &cp, &len, &size, &size2) )
         return 0;
 
-    if ( (size != 1 && size != 2 && size != 4) ||
-         (size2 != 1 && size2 != 2 && size2 != 4)) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
+    if (!audioop_check_size(size2))
+        return NULL;
 
     if (len/size > INT_MAX/size2) {
         PyErr_SetString(PyExc_MemoryError,
@@ -1077,10 +1090,8 @@ audioop_ratecv(PyObject *self, PyObject *args)
                           &nchannels, &inrate, &outrate, &state,
                           &weightA, &weightB))
         return NULL;
-    if (size != 1 && size != 2 && size != 4) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
+    if (!audioop_check_size(size))
         return NULL;
-    }
     if (nchannels < 1) {
         PyErr_SetString(AudioopError, "# of channels should be >= 1");
         return NULL;
@@ -1257,10 +1268,8 @@ audioop_lin2ulaw(PyObject *self, PyObject *args)
                            &cp, &len, &size) )
         return 0 ;
 
-    if ( size != 1 && size != 2 && size != 4) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
 
     rv = PyString_FromStringAndSize(NULL, len/size);
     if ( rv == 0 )
@@ -1291,10 +1300,8 @@ audioop_ulaw2lin(PyObject *self, PyObject *args)
                            &cp, &len, &size) )
         return 0;
 
-    if ( size != 1 && size != 2 && size != 4) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
 
     if (len > INT_MAX/size) {
         PyErr_SetString(PyExc_MemoryError,
@@ -1330,10 +1337,8 @@ audioop_lin2alaw(PyObject *self, PyObject *args)
                            &cp, &len, &size) )
         return 0;
 
-    if ( size != 1 && size != 2 && size != 4) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
 
     rv = PyString_FromStringAndSize(NULL, len/size);
     if ( rv == 0 )
@@ -1364,10 +1369,8 @@ audioop_alaw2lin(PyObject *self, PyObject *args)
                            &cp, &len, &size) )
         return 0;
 
-    if ( size != 1 && size != 2 && size != 4) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
 
     if (len > INT_MAX/size) {
         PyErr_SetString(PyExc_MemoryError,
@@ -1404,11 +1407,8 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
                            &cp, &len, &size, &state) )
         return 0;
 
-
-    if ( size != 1 && size != 2 && size != 4) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
 
     str = PyString_FromStringAndSize(NULL, len/(size*2));
     if ( str == 0 )
@@ -1512,10 +1512,8 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
                            &cp, &len, &size, &state) )
         return 0;
 
-    if ( size != 1 && size != 2 && size != 4) {
-        PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
-        return 0;
-    }
+    if (!audioop_check_parameters(len, size))
+        return NULL;
 
     /* Decode state, should have (value, step) */
     if ( state == Py_None ) {
