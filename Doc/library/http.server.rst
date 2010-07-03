@@ -301,7 +301,7 @@ the current directory. ::
    print("serving at port", PORT)
    httpd.serve_forever()
 
-:mod:`http.server` can also be invoked directly using the :cmdoption:`-m`
+:mod:`http.server` can also be invoked directly using the :option:`-m`
 switch of the interpreter a with ``port number`` argument.  Similar to
 the previous example, this serves files relative to the current directory. ::
 
