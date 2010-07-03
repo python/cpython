@@ -5,7 +5,7 @@
 
     Sphinx extension with Python doc-specific markup.
 
-    :copyright: 2008, 2009 by Georg Brandl.
+    :copyright: 2008, 2009, 2010 by Georg Brandl.
     :license: Python license.
 """
 
@@ -149,7 +149,7 @@ import suspicious
 import re
 from sphinx import addnodes
 
-opcode_sig_re = re.compile(r'(\w+(?:\+\d)?)\s*\((.*)\)')
+opcode_sig_re = re.compile(r'(\w+(?:\+\d)?)(?:\s*\((.*)\))?')
 
 def parse_opcode_signature(env, sig, signode):
     """Transform an opcode signature into RST nodes."""
@@ -158,9 +158,10 @@ def parse_opcode_signature(env, sig, signode):
         raise ValueError
     opname, arglist = m.groups()
     signode += addnodes.desc_name(opname, opname)
-    paramlist = addnodes.desc_parameterlist()
-    signode += paramlist
-    paramlist += addnodes.desc_parameter(arglist, arglist)
+    if arglist is not None:
+        paramlist = addnodes.desc_parameterlist()
+        signode += paramlist
+        paramlist += addnodes.desc_parameter(arglist, arglist)
     return opname.strip()
 
 

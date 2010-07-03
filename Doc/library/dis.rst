@@ -38,9 +38,9 @@ The :mod:`dis` module defines the following functions and constants:
 
 .. function:: dis(x=None)
 
-   Disassemble the *x* object. *x* can denote either a module, a
+   Disassemble the *x* object.  *x* can denote either a module, a
    class, a method, a function, a code object, a string of source code or a
-   byte sequence of raw bytecode.   For a module, it disassembles all
+   byte sequence of raw bytecode.  For a module, it disassembles all
    functions.  For a class, it disassembles all methods.  For a code object
    or sequence of raw bytecode, it prints one line per bytecode instruction.
    Strings are first compiled to code objects with the :func:`compile`
@@ -50,14 +50,15 @@ The :mod:`dis` module defines the following functions and constants:
 
 .. function:: distb(tb=None)
 
-   Disassembles the top-of-stack function of a traceback, using the last traceback
-   if none was passed.  The instruction causing the exception is indicated.
+   Disassemble the top-of-stack function of a traceback, using the last
+   traceback if none was passed.  The instruction causing the exception is
+   indicated.
 
 
 .. function:: disassemble(code, lasti=-1)
               disco(code, lasti=-1)
 
-   Disassembles a code object, indicating the last instruction if *lasti* was
+   Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
 
    #. the line number, for the first instruction of each line
@@ -143,225 +144,233 @@ Python Bytecode Instructions
 The Python compiler currently generates the following bytecode instructions.
 
 
-.. opcode:: STOP_CODE ()
+**General instructions**
+
+.. opcode:: STOP_CODE
 
    Indicates end-of-code to the compiler, not used by the interpreter.
 
 
-.. opcode:: NOP ()
+.. opcode:: NOP
 
    Do nothing code.  Used as a placeholder by the bytecode optimizer.
 
 
-.. opcode:: POP_TOP ()
+.. opcode:: POP_TOP
 
    Removes the top-of-stack (TOS) item.
 
 
-.. opcode:: ROT_TWO ()
+.. opcode:: ROT_TWO
 
    Swaps the two top-most stack items.
 
 
-.. opcode:: ROT_THREE ()
+.. opcode:: ROT_THREE
 
    Lifts second and third stack item one position up, moves top down to position
    three.
 
 
-.. opcode:: ROT_FOUR ()
+.. opcode:: ROT_FOUR
 
    Lifts second, third and forth stack item one position up, moves top down to
    position four.
 
 
-.. opcode:: DUP_TOP ()
+.. opcode:: DUP_TOP
 
    Duplicates the reference on top of the stack.
 
-Unary Operations take the top of the stack, apply the operation, and push the
+
+**Unary operations**
+
+Unary operations take the top of the stack, apply the operation, and push the
 result back on the stack.
 
-
-.. opcode:: UNARY_POSITIVE ()
+.. opcode:: UNARY_POSITIVE
 
    Implements ``TOS = +TOS``.
 
 
-.. opcode:: UNARY_NEGATIVE ()
+.. opcode:: UNARY_NEGATIVE
 
    Implements ``TOS = -TOS``.
 
 
-.. opcode:: UNARY_NOT ()
+.. opcode:: UNARY_NOT
 
    Implements ``TOS = not TOS``.
 
 
-.. opcode:: UNARY_INVERT ()
+.. opcode:: UNARY_INVERT
 
    Implements ``TOS = ~TOS``.
 
 
-.. opcode:: GET_ITER ()
+.. opcode:: GET_ITER
 
    Implements ``TOS = iter(TOS)``.
+
+
+**Binary operations**
 
 Binary operations remove the top of the stack (TOS) and the second top-most
 stack item (TOS1) from the stack.  They perform the operation, and put the
 result back on the stack.
 
-
-.. opcode:: BINARY_POWER ()
+.. opcode:: BINARY_POWER
 
    Implements ``TOS = TOS1 ** TOS``.
 
 
-.. opcode:: BINARY_MULTIPLY ()
+.. opcode:: BINARY_MULTIPLY
 
    Implements ``TOS = TOS1 * TOS``.
 
 
-.. opcode:: BINARY_FLOOR_DIVIDE ()
+.. opcode:: BINARY_FLOOR_DIVIDE
 
    Implements ``TOS = TOS1 // TOS``.
 
 
-.. opcode:: BINARY_TRUE_DIVIDE ()
+.. opcode:: BINARY_TRUE_DIVIDE
 
    Implements ``TOS = TOS1 / TOS``.
 
 
-.. opcode:: BINARY_MODULO ()
+.. opcode:: BINARY_MODULO
 
    Implements ``TOS = TOS1 % TOS``.
 
 
-.. opcode:: BINARY_ADD ()
+.. opcode:: BINARY_ADD
 
    Implements ``TOS = TOS1 + TOS``.
 
 
-.. opcode:: BINARY_SUBTRACT ()
+.. opcode:: BINARY_SUBTRACT
 
    Implements ``TOS = TOS1 - TOS``.
 
 
-.. opcode:: BINARY_SUBSCR ()
+.. opcode:: BINARY_SUBSCR
 
    Implements ``TOS = TOS1[TOS]``.
 
 
-.. opcode:: BINARY_LSHIFT ()
+.. opcode:: BINARY_LSHIFT
 
    Implements ``TOS = TOS1 << TOS``.
 
 
-.. opcode:: BINARY_RSHIFT ()
+.. opcode:: BINARY_RSHIFT
 
    Implements ``TOS = TOS1 >> TOS``.
 
 
-.. opcode:: BINARY_AND ()
+.. opcode:: BINARY_AND
 
    Implements ``TOS = TOS1 & TOS``.
 
 
-.. opcode:: BINARY_XOR ()
+.. opcode:: BINARY_XOR
 
    Implements ``TOS = TOS1 ^ TOS``.
 
 
-.. opcode:: BINARY_OR ()
+.. opcode:: BINARY_OR
 
    Implements ``TOS = TOS1 | TOS``.
+
+
+**In-place operations**
 
 In-place operations are like binary operations, in that they remove TOS and
 TOS1, and push the result back on the stack, but the operation is done in-place
 when TOS1 supports it, and the resulting TOS may be (but does not have to be)
 the original TOS1.
 
-
-.. opcode:: INPLACE_POWER ()
+.. opcode:: INPLACE_POWER
 
    Implements in-place ``TOS = TOS1 ** TOS``.
 
 
-.. opcode:: INPLACE_MULTIPLY ()
+.. opcode:: INPLACE_MULTIPLY
 
    Implements in-place ``TOS = TOS1 * TOS``.
 
 
-.. opcode:: INPLACE_FLOOR_DIVIDE ()
+.. opcode:: INPLACE_FLOOR_DIVIDE
 
    Implements in-place ``TOS = TOS1 // TOS``.
 
 
-.. opcode:: INPLACE_TRUE_DIVIDE ()
+.. opcode:: INPLACE_TRUE_DIVIDE
 
    Implements in-place ``TOS = TOS1 / TOS``.
 
 
-.. opcode:: INPLACE_MODULO ()
+.. opcode:: INPLACE_MODULO
 
    Implements in-place ``TOS = TOS1 % TOS``.
 
 
-.. opcode:: INPLACE_ADD ()
+.. opcode:: INPLACE_ADD
 
    Implements in-place ``TOS = TOS1 + TOS``.
 
 
-.. opcode:: INPLACE_SUBTRACT ()
+.. opcode:: INPLACE_SUBTRACT
 
    Implements in-place ``TOS = TOS1 - TOS``.
 
 
-.. opcode:: INPLACE_LSHIFT ()
+.. opcode:: INPLACE_LSHIFT
 
    Implements in-place ``TOS = TOS1 << TOS``.
 
 
-.. opcode:: INPLACE_RSHIFT ()
+.. opcode:: INPLACE_RSHIFT
 
    Implements in-place ``TOS = TOS1 >> TOS``.
 
 
-.. opcode:: INPLACE_AND ()
+.. opcode:: INPLACE_AND
 
    Implements in-place ``TOS = TOS1 & TOS``.
 
 
-.. opcode:: INPLACE_XOR ()
+.. opcode:: INPLACE_XOR
 
    Implements in-place ``TOS = TOS1 ^ TOS``.
 
 
-.. opcode:: INPLACE_OR ()
+.. opcode:: INPLACE_OR
 
    Implements in-place ``TOS = TOS1 | TOS``.
 
 
-.. opcode:: STORE_SUBSCR ()
+.. opcode:: STORE_SUBSCR
 
    Implements ``TOS1[TOS] = TOS2``.
 
 
-.. opcode:: DELETE_SUBSCR ()
+.. opcode:: DELETE_SUBSCR
 
    Implements ``del TOS1[TOS]``.
 
-Miscellaneous opcodes.
 
+**Miscellaneous opcodes**
 
-.. opcode:: PRINT_EXPR ()
+.. opcode:: PRINT_EXPR
 
    Implements the expression statement for the interactive mode.  TOS is removed
    from the stack and printed.  In non-interactive mode, an expression statement is
    terminated with ``POP_STACK``.
 
 
-.. opcode:: BREAK_LOOP ()
+.. opcode:: BREAK_LOOP
 
    Terminates a loop due to a :keyword:`break` statement.
 
@@ -387,36 +396,35 @@ Miscellaneous opcodes.
    Calls ``dict.setitem(TOS1[-i], TOS, TOS1)``.  Used to implement dict
    comprehensions.
 
-
 For all of the SET_ADD, LIST_APPEND and MAP_ADD instructions, while the
 added value or key/value pair is popped off, the container object remains on
 the stack so that it is available for further iterations of the loop.
 
 
-.. opcode:: RETURN_VALUE ()
+.. opcode:: RETURN_VALUE
 
    Returns with TOS to the caller of the function.
 
 
-.. opcode:: YIELD_VALUE ()
+.. opcode:: YIELD_VALUE
 
    Pops ``TOS`` and yields it from a :term:`generator`.
 
 
-.. opcode:: IMPORT_STAR ()
+.. opcode:: IMPORT_STAR
 
    Loads all symbols not starting with ``'_'`` directly from the module TOS to the
    local namespace. The module is popped after loading all names. This opcode
    implements ``from module import *``.
 
 
-.. opcode:: POP_BLOCK ()
+.. opcode:: POP_BLOCK
 
    Removes one block from the block stack.  Per frame, there is a  stack of blocks,
    denoting nested loops, try statements, and such.
 
 
-.. opcode:: POP_EXCEPT ()
+.. opcode:: POP_EXCEPT
 
    Removes one block from the block stack. The popped block must be an exception
    handler block, as implicitly created when entering an except handler.
@@ -424,14 +432,14 @@ the stack so that it is available for further iterations of the loop.
    last three popped values are used to restore the exception state.
 
 
-.. opcode:: END_FINALLY ()
+.. opcode:: END_FINALLY
 
    Terminates a :keyword:`finally` clause.  The interpreter recalls whether the
    exception has to be re-raised, or whether the function returns, and continues
    with the outer-next block.
 
 
-.. opcode:: LOAD_BUILD_CLASS ()
+.. opcode:: LOAD_BUILD_CLASS
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
    by ``CALL_FUNCTION`` to construct a class.
@@ -449,7 +457,7 @@ the stack so that it is available for further iterations of the loop.
    :opcode:`UNPACK_SEQUENCE`).
 
 
-.. opcode:: WITH_CLEANUP ()
+.. opcode:: WITH_CLEANUP
 
    Cleans up the stack when a :keyword:`with` statement block exits.  TOS is
    the context manager's :meth:`__exit__` bound method. Below TOS are 1--3
@@ -659,7 +667,7 @@ the more significant byte last.
    Pushes a try block from a try-except clause onto the block stack. *delta* points
    to the finally block.
 
-.. opcode:: STORE_MAP ()
+.. opcode:: STORE_MAP
 
    Store a key and value pair in a dictionary.  Pops the key and value while leaving
    the dictionary on the stack.
@@ -775,7 +783,7 @@ the more significant byte last.
    variable-arguments tuple, followed by explicit keyword and positional arguments.
 
 
-.. opcode:: HAVE_ARGUMENT ()
+.. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between opcodes
    which don't take arguments ``< HAVE_ARGUMENT`` and those which do ``>=
