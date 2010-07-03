@@ -182,8 +182,6 @@ class PyLoader(SourceLoader):
         else:
             return path
 
-PyLoader.register(_bootstrap.PyLoader)
-
 
 class PyPycLoader(PyLoader):
 
@@ -266,7 +264,6 @@ class PyPycLoader(PyLoader):
             self.write_bytecode(fullname, data)
         return code_object
 
-
     @abc.abstractmethod
     def source_mtime(self, fullname:str) -> int:
         """Abstract method which when implemented should return the
@@ -285,5 +282,3 @@ class PyPycLoader(PyLoader):
         bytecode for the module, returning a boolean representing whether the
         bytecode was written or not."""
         raise NotImplementedError
-
-PyPycLoader.register(_bootstrap.PyPycLoader)

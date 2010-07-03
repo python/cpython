@@ -34,7 +34,9 @@ class FinderTests(abc.FinderTests):
     """
 
     def import_(self, root, module):
-        finder = _bootstrap._PyPycFileFinder(root)
+        finder = _bootstrap._FileFinder(root,
+                                        _bootstrap._SourceFinderDetails(),
+                                        _bootstrap._SourcelessFinderDetails())
         return finder.find_module(module)
 
     def run_test(self, test, create=None, *, compile_=None, unlink=None):
@@ -116,7 +118,7 @@ class FinderTests(abc.FinderTests):
         # XXX This is not a blackbox test!
         name = '_temp'
         loader = self.run_test(name, {'{0}.__init__'.format(name), name})
-        self.assertTrue('__init__' in loader._base_path)
+        self.assertTrue('__init__' in loader.get_filename(name))
 
 
     def test_failure(self):
