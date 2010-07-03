@@ -1694,6 +1694,8 @@ Customizing file parsing
             yield arg
 
 
+.. _argparse-from-optparse:
+
 Upgrading optparse code
 -----------------------
 
