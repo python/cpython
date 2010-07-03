@@ -10,7 +10,13 @@ disassembling it. The CPython bytecode which this module takes as an
 input is defined in the file :file:`Include/opcode.h` and used by the compiler
 and the interpreter.
 
-.. warning:: Bytecode is an implementation detail of the CPython interpreter!  No guarantees are made that bytecode will not be added, removed, or changed between versions of Python. Use of this module should not be considered to work across Python VMs or Python releases.
+.. impl-detail::
+
+   Bytecode is an implementation detail of the CPython interpreter!  No
+   guarantees are made that bytecode will not be added, removed, or changed
+   between versions of Python.  Use of this module should not be considered to
+   work across Python VMs or Python releases.
+
 
 Example: Given the function :func:`myfunc`::
 
