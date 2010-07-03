@@ -797,6 +797,116 @@ class urlencode_Tests(unittest.TestCase):
         self.assertEqual("a=a&a=b",
                          urllib.parse.urlencode({"a": {"a": 1, "b": 1}}, True))
 
+    def test_urlencode_encoding(self):
+        # ASCII encoding. Expect %3F with errors="replace'
+        given = (('\u00a0', '\u00c1'),)
+        expect = '%3F=%3F'
+        result = urllib.parse.urlencode(given, encoding="ASCII", errors="replace")
+        self.assertEqual(expect, result)
+
+        # Default is UTF-8 encoding.
+        given = (('\u00a0', '\u00c1'),)
+        expect = '%C2%A0=%C3%81'
+        result = urllib.parse.urlencode(given)
+        self.assertEqual(expect, result)
+
+        # Latin-1 encoding.
+        given = (('\u00a0', '\u00c1'),)
+        expect = '%A0=%C1'
+        result = urllib.parse.urlencode(given, encoding="latin-1")
+        self.assertEqual(expect, result)
+
+    def test_urlencode_encoding_doseq(self):
+        # ASCII Encoding. Expect %3F with errors="replace'
+        given = (('\u00a0', '\u00c1'),)
+        expect = '%3F=%3F'
+        result = urllib.parse.urlencode(given, doseq=True,
+                                        encoding="ASCII", errors="replace")
+        self.assertEqual(expect, result)
+
+        # ASCII Encoding. On a sequence of values.
+        given = (("\u00a0", (1, "\u00c1")),)
+        expect = '%3F=1&%3F=%3F'
+        result = urllib.parse.urlencode(given, True,
+                                        encoding="ASCII", errors="replace")
+        self.assertEqual(expect, result)
+
+        # Utf-8
+        given = (("\u00a0", "\u00c1"),)
+        expect = '%C2%A0=%C3%81'
+        result = urllib.parse.urlencode(given, True)
+        self.assertEqual(expect, result)
+
+        given = (("\u00a0", (42, "\u00c1")),)
+        expect = '%C2%A0=42&%C2%A0=%C3%81'
+        result = urllib.parse.urlencode(given, True)
+        self.assertEqual(expect, result)
+
+        # latin-1
+        given = (("\u00a0", "\u00c1"),)
+        expect = '%A0=%C1'
+        result = urllib.parse.urlencode(given, True, encoding="latin-1")
+        self.assertEqual(expect, result)
+
+        given = (("\u00a0", (42, "\u00c1")),)
+        expect = '%A0=42&%A0=%C1'
+        result = urllib.parse.urlencode(given, True, encoding="latin-1")
+        self.assertEqual(expect, result)
+
+    def test_urlencode_bytes(self):
+        given = ((b'\xa0\x24', b'\xc1\x24'),)
+        expect = '%A0%24=%C1%24'
+        result = urllib.parse.urlencode(given)
+        self.assertEqual(expect, result)
+        result = urllib.parse.urlencode(given, True)
+        self.assertEqual(expect, result)
+
+        # Sequence of values
+        given = ((b'\xa0\x24', (42, b'\xc1\x24')),)
+        expect = '%A0%24=42&%A0%24=%C1%24'
+        result = urllib.parse.urlencode(given, True)
+        self.assertEqual(expect, result)
+
+    def test_urlencode_encoding_safe_parameter(self):
+
+        # Send '$' (\x24) as safe character
+        # Default utf-8 encoding
+
+        given = ((b'\xa0\x24', b'\xc1\x24'),)
+        result = urllib.parse.urlencode(given, safe=":$")
+        expect = '%A0$=%C1$'
+        self.assertEqual(expect, result)
+
+        given = ((b'\xa0\x24', b'\xc1\x24'),)
+        result = urllib.parse.urlencode(given, doseq=True, safe=":$")
+        expect = '%A0$=%C1$'
+        self.assertEqual(expect, result)
+
+        # Safe parameter in sequence
+        given = ((b'\xa0\x24', (b'\xc1\x24', 0xd, 42)),)
+        expect = '%A0$=%C1$&%A0$=13&%A0$=42'
+        result = urllib.parse.urlencode(given, True, safe=":$")
+        self.assertEqual(expect, result)
+
+        # Test all above in latin-1 encoding
+
+        given = ((b'\xa0\x24', b'\xc1\x24'),)
+        result = urllib.parse.urlencode(given, safe=":$",
+                                        encoding="latin-1")
+        expect = '%A0$=%C1$'
+        self.assertEqual(expect, result)
+
+        given = ((b'\xa0\x24', b'\xc1\x24'),)
+        expect = '%A0$=%C1$'
+        result = urllib.parse.urlencode(given, doseq=True, safe=":$",
+                                        encoding="latin-1")
+
+        given = ((b'\xa0\x24', (b'\xc1\x24', 0xd, 42)),)
+        expect = '%A0$=%C1$&%A0$=13&%A0$=42'
+        result = urllib.parse.urlencode(given, True, safe=":$",
+                                        encoding="latin-1")
+        self.assertEqual(expect, result)
+
 class Pathname_Tests(unittest.TestCase):
     """Test pathname2url() and url2pathname()"""
 
