@@ -151,13 +151,9 @@ class Complex:
             raise ValueError("can't convert Complex with nonzero im to float")
         return float(self.re)
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         other = ToComplex(other)
-        return cmp((self.re, self.im), (other.re, other.im))
-
-    def __rcmp__(self, other):
-        other = ToComplex(other)
-        return cmp(other, self)
+        return (self.re, self.im) == (other.re, other.im)
 
     def __bool__(self):
         return not (self.re == self.im == 0)
@@ -190,14 +186,14 @@ class Complex:
 
     __rmul__ = __mul__
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         other = ToComplex(other)
         d = float(other.re*other.re + other.im*other.im)
         if not d: raise ZeroDivisionError('Complex division')
         return Complex((self.re*other.re + self.im*other.im) / d,
                        (self.im*other.re - self.re*other.im) / d)
 
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         other = ToComplex(other)
         return other / self
 
@@ -226,8 +222,9 @@ def checkop(expr, a, b, value, fuzz = 1e-6):
     print('       ', a, 'and', b, end=' ')
     try:
         result = eval(expr)
-    except:
-        result = sys.exc_info()[0]
+    except Exception as e:
+        print('!!\t!!\t!! error: {}'.format(e))
+        return
     print('->', result)
     if isinstance(result, str) or isinstance(value, str):
         ok = (result == value)
@@ -294,13 +291,6 @@ def test():
                     (Complex(0,10), Complex(1), Complex(0,10)),
                     (Complex(1), Complex(0,10), 1),
                     (2, Complex(4,0), 16),
-            ],
-            'cmp(a,b)': [
-                    (1, 10, -1),
-                    (1, Complex(0,10), 1),
-                    (Complex(0,10), 1, -1),
-                    (Complex(0,10), Complex(1), -1),
-                    (Complex(1), Complex(0,10), 1),
             ],
     }
     for expr in sorted(testsuite):
