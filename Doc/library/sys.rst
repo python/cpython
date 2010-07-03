@@ -233,7 +233,7 @@ always available.
    +---------------------+----------------+--------------------------------------------------+
    | attribute           | float.h macro  | explanation                                      |
    +=====================+================+==================================================+
-   | :const:`epsilon`    | DBL_MAX        | difference between 1 and the least value greater |
+   | :const:`epsilon`    | DBL_EPSILON    | difference between 1 and the least value greater |
    |                     |                | than 1 that is representable as a float          |
    +---------------------+----------------+--------------------------------------------------+
    | :const:`dig`        | DBL_DIG        | maximum number of decimal digits that can be     |
