@@ -389,10 +389,10 @@ standard input or output.
 
 .. seealso::
 
-   `argparse documentation <http://docs.python.org/dev/library/argparse.html>`__
+   :mod:`argparse` documentation
      The documentation page of the argparse module.
 
-   `Upgrading optparse code to use argparse <http://docs.python.org/dev/library/argparse.html#upgrading-optparse-code>`__
+   :ref:`argparse-from-optparse`
      Part of the Python documentation, describing how to convert
      code that uses :mod:`optparse`.
 
