@@ -39,7 +39,7 @@
 # Note that as of Python 2.3, a datetime module is included in the stardard
 # library.
 
-# vi:set tabsize=8:
+import functools
 
 _MONTH_NAMES = [ 'January', 'February', 'March', 'April', 'May',
                  'June', 'July', 'August', 'September', 'October',
@@ -56,8 +56,6 @@ for dim in _DAYS_IN_MONTH:
     _DAYS_BEFORE_MONTH.append(dbm)
     dbm = dbm + dim
 del dbm, dim
-
-_INT_TYPES = type(1), type(1)
 
 def _is_leap(year):           # 1 if leap year, else 0
     if year % 4 != 0: return 0
@@ -85,7 +83,7 @@ def _date2num(date):          # compute ordinal of date.month,day,year
 _DI400Y = _days_before_year(400)      # number of days in 400 years
 
 def _num2date(n):             # return date with ordinal n
-    if type(n) not in _INT_TYPES:
+    if not isinstance(n, int):
         raise TypeError('argument must be integer: %r' % type(n))
 
     ans = Date(1,1,1)   # arguments irrelevant; just getting a Date obj
@@ -116,7 +114,7 @@ def _num2date(n):             # return date with ordinal n
 def _num2day(n):      # return weekday name of day with ordinal n
     return _DAY_NAMES[ int(n % 7) ]
 
-
+@functools.total_ordering
 class Date:
     def __init__(self, month, day, year):
         if not 1 <= month <= 12:
@@ -133,8 +131,11 @@ class Date:
             raise AttributeError('read-only attribute ' + name)
         self.__dict__[name] = value
 
-    def __cmp__(self, other):
-        return cmp(self.ord, other.ord)
+    def __eq__(self, other):
+        return self.ord == other.ord
+
+    def __lt__(self, other):
+        return self.ord < other.ord
 
     # define a hash function so dates can be used as dictionary keys
     def __hash__(self):
@@ -150,14 +151,14 @@ class Date:
 
     # Python 1.1 coerces neither int+date nor date+int
     def __add__(self, n):
-        if type(n) not in _INT_TYPES:
+        if not isinstance(n, int):
             raise TypeError('can\'t add %r to date' % type(n))
         return _num2date(self.ord + n)
     __radd__ = __add__ # handle int+date
 
     # Python 1.1 coerces neither date-int nor date-date
     def __sub__(self, other):
-        if type(other) in _INT_TYPES:           # date-int
+        if isinstance(other, int):           # date-int
             return _num2date(self.ord - other)
         else:
             return self.ord - other.ord         # date-date
