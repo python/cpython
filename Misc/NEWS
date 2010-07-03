@@ -468,7 +468,8 @@ C-API
 Library
 -------
 
-- Issue #6507: Accept source strings in dis.dis()
+- Issue #6507: Accept source strings in dis.dis(). Original patch by
+  Daniel Urban.
 
 - Issue #7829: Clearly document that the dis module is exposing an
   implementation detail that is not stable between Python VMs or releases.
