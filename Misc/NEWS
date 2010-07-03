@@ -17,13 +17,16 @@ Core and Builtins
 Library
 -------
 
+- Issue #9125: Add recognition of 'except ... as ...' syntax to parser module.
+
+Extension Modules
+-----------------
+
 - Issue #7673: Fix security vulnerability (CVE-2010-2089) in the audioop module,
   ensure that the input string length is a multiple of the frame size.
 
 - Issue #9075: In the ssl module, remove the setting of a ``debug`` flag
   on an OpenSSL structure.
-
-- Issue #9125: Add recognition of 'except ... as ...' syntax to parser module.
 
 
 What's New in Python 2.7 release candidate 2?
