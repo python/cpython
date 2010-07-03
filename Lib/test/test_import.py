@@ -147,22 +147,24 @@ class ImportTests(unittest.TestCase):
         filename = module + '.py'
 
         # Create a file with a list of 65000 elements.
-        with open(filename, 'w+') as f:
+        with open(filename, 'w') as f:
             f.write('d = [\n')
             for i in range(65000):
                 f.write('"",\n')
             f.write(']')
 
-        # Compile & remove .py file; we only need .pyc (or .pyo).
-        # Bytecode must be relocated from the PEP 3147 bytecode-only location.
-        py_compile.compile(filename)
-        unlink(filename)
-        make_legacy_pyc(filename)
+        try:
+            # Compile & remove .py file; we only need .pyc (or .pyo).
+            # Bytecode must be relocated from the PEP 3147 bytecode-only location.
+            py_compile.compile(filename)
+        finally:
+            unlink(filename)
 
         # Need to be able to load from current dir.
         sys.path.append('')
 
         try:
+            make_legacy_pyc(filename)
             # This used to crash.
             exec('import ' + module)
         finally:
