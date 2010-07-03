@@ -26,7 +26,7 @@ __all__ = ['BufferWrapper']
 
 if sys.platform == 'win32':
 
-    from ._multiprocessing import win32
+    from _multiprocessing import win32
 
     class Arena(object):
 

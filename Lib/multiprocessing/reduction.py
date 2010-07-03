@@ -34,7 +34,7 @@ if not(sys.platform == 'win32' or hasattr(_multiprocessing, 'recvfd')):
 
 if sys.platform == 'win32':
     import _subprocess
-    from ._multiprocessing import win32
+    from _multiprocessing import win32
 
     def send_handle(conn, handle, destination_pid):
         process_handle = win32.OpenProcess(
