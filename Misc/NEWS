@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7673: Fix security vulnerability (CVE-2010-2089) in the audioop
+  module, ensure that the input string length is a multiple of the frame size
+
 - Issue #9075: In the ssl module, remove the setting of a ``debug`` flag
   on an OpenSSL structure.
 
@@ -51,7 +54,7 @@ Build
 Library
 -------
 
-- Issue #6589: cleanup asyncore.socket_map in case smtpd.SMTPServer constructor 
+- Issue #6589: cleanup asyncore.socket_map in case smtpd.SMTPServer constructor
   raises an exception.
 
 - Issue #8959: fix regression caused by using unmodified libffi
