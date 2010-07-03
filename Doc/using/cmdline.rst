@@ -315,6 +315,10 @@ Miscellaneous options
    :option:`-W` options are ignored (though, a warning message is printed about
    invalid options when the first warning is issued).
 
+   Starting from Python 2.7, :exc:`DeprecationWarning` and its descendants
+   are ignored by default.  The :option:`-Wd` option can be used to re-enable
+   them.
+
    Warnings can also be controlled from within a Python program using the
    :mod:`warnings` module.
 
