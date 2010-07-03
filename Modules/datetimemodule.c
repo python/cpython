@@ -3277,8 +3277,7 @@ static PyMethodDef tzinfo_methods[] = {
      PyDoc_STR("datetime -> DST offset in minutes east of UTC.")},
 
     {"fromutc",         (PyCFunction)tzinfo_fromutc,            METH_O,
-     PyDoc_STR("datetime -> timedelta showing offset from UTC, negative "
-           "values indicating West of UTC")},
+     PyDoc_STR("datetime in UTC -> datetime in local time.")},
 
     {"__reduce__",  (PyCFunction)tzinfo_reduce,             METH_NOARGS,
      PyDoc_STR("-> (cls, state)")},
