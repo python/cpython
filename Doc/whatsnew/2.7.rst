@@ -52,7 +52,7 @@
    when researching a change.
 
 This article explains the new features in Python 2.7.  Python 2.7 was released
-on July 7, 2010.
+on July 3, 2010.
 
 Numeric handling has been improved in many ways, for both
 floating-point numbers and for the :class:`~decimal.Decimal` class.
