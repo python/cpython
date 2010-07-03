@@ -468,13 +468,16 @@ C-API
 Library
 -------
 
+- Issue #7673: Fix security vulnerability (CVE-2010-2089) in the audioop
+  module, ensure that the input string length is a multiple of the frame size
+
 - Issue #6507: Accept source strings in dis.dis(). Original patch by
   Daniel Urban.
 
 - Issue #7829: Clearly document that the dis module is exposing an
   implementation detail that is not stable between Python VMs or releases.
 
-- Issue #6589: cleanup asyncore.socket_map in case smtpd.SMTPServer constructor 
+- Issue #6589: cleanup asyncore.socket_map in case smtpd.SMTPServer constructor
   raises an exception.
 
 - Issue #9110: Addition of ContextDecorator to contextlib, for creating APIs
