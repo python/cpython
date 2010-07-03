@@ -1,43 +1,45 @@
-# Class Date supplies date objects that support date arithmetic.
-#
-# Date(month,day,year) returns a Date object.  An instance prints as,
-# e.g., 'Mon 16 Aug 1993'.
-#
-# Addition, subtraction, comparison operators, min, max, and sorting
-# all work as expected for date objects:  int+date or date+int returns
-# the date `int' days from `date'; date+date raises an exception;
-# date-int returns the date `int' days before `date'; date2-date1 returns
-# an integer, the number of days from date1 to date2; int-date raises an
-# exception; date1 < date2 is true iff date1 occurs before date2 (&
-# similarly for other comparisons); min(date1,date2) is the earlier of
-# the two dates and max(date1,date2) the later; and date objects can be
-# used as dictionary keys.
-#
-# Date objects support one visible method, date.weekday().  This returns
-# the day of the week the date falls on, as a string.
-#
-# Date objects also have 4 read-only data attributes:
-#   .month  in 1..12
-#   .day    in 1..31
-#   .year   int or long int
-#   .ord    the ordinal of the date relative to an arbitrary staring point
-#
-# The Dates module also supplies function today(), which returns the
-# current date as a date object.
-#
-# Those entranced by calendar trivia will be disappointed, as no attempt
-# has been made to accommodate the Julian (etc) system.  On the other
-# hand, at least this package knows that 2000 is a leap year but 2100
-# isn't, and works fine for years with a hundred decimal digits <wink>.
+"""
+Class Date supplies date objects that support date arithmetic.
 
-# Tim Peters   tim@ksr.com
-# not speaking for Kendall Square Research Corp
+Date(month,day,year) returns a Date object.  An instance prints as,
+e.g., 'Mon 16 Aug 1993'.
 
-# Adapted to Python 1.1 (where some hacks to overcome coercion are unnecessary)
-# by Guido van Rossum
+Addition, subtraction, comparison operators, min, max, and sorting
+all work as expected for date objects:  int+date or date+int returns
+the date `int' days from `date'; date+date raises an exception;
+date-int returns the date `int' days before `date'; date2-date1 returns
+an integer, the number of days from date1 to date2; int-date raises an
+exception; date1 < date2 is true iff date1 occurs before date2 (&
+similarly for other comparisons); min(date1,date2) is the earlier of
+the two dates and max(date1,date2) the later; and date objects can be
+used as dictionary keys.
 
-# Note that as of Python 2.3, a datetime module is included in the stardard
-# library.
+Date objects support one visible method, date.weekday().  This returns
+the day of the week the date falls on, as a string.
+
+Date objects also have 4 read-only data attributes:
+  .month  in 1..12
+  .day    in 1..31
+  .year   int or long int
+  .ord    the ordinal of the date relative to an arbitrary staring point
+
+The Dates module also supplies function today(), which returns the
+current date as a date object.
+
+Those entranced by calendar trivia will be disappointed, as no attempt
+has been made to accommodate the Julian (etc) system.  On the other
+hand, at least this package knows that 2000 is a leap year but 2100
+isn't, and works fine for years with a hundred decimal digits <wink>.
+
+Tim Peters   tim@ksr.com
+not speaking for Kendall Square Research Corp
+
+Adapted to Python 1.1 (where some hacks to overcome coercion are unnecessary)
+by Guido van Rossum
+
+Note that as of Python 2.3, a datetime module is included in the stardard
+library.
+"""
 
 import functools
 
@@ -86,8 +88,9 @@ def _num2date(n):             # return date with ordinal n
     if not isinstance(n, int):
         raise TypeError('argument must be integer: %r' % type(n))
 
-    ans = Date(1,1,1)   # arguments irrelevant; just getting a Date obj
-    del ans.ord, ans.month, ans.day, ans.year # un-initialize it
+    # Get uninitialized Date object.  This is necesary because once
+    # attributes are set, they cannot be changed.
+    ans = Date.__new__(Date)
     ans.ord = n
 
     n400 = (n-1)//_DI400Y                # # of 400-year blocks preceding
@@ -97,11 +100,7 @@ def _num2date(n):             # return date with ordinal n
     if dby >= n:
         more = more - 1
         dby = dby - _days_in_year(more)
-    year, n = year + more, int(n - dby)
-
-    try: year = int(year)               # chop to int, if it fits
-    except (ValueError, OverflowError): pass
-
+    year, n = year + more, n - dby
     month = min(n//29 + 1, 12)
     dbm = _days_before_month(month, year)
     if dbm >= n:
@@ -112,7 +111,7 @@ def _num2date(n):             # return date with ordinal n
     return ans
 
 def _num2day(n):      # return weekday name of day with ordinal n
-    return _DAY_NAMES[ int(n % 7) ]
+    return _DAY_NAMES[n % 7]
 
 @functools.total_ordering
 class Date:
@@ -122,7 +121,7 @@ class Date:
         dim = _days_in_month(month, year)
         if not 1 <= day <= dim:
             raise ValueError('day must be in 1..%r: %r' % (dim, day))
-        self.month, self.day, self.year = month, day, year
+        self.month, self.day, self.year = map(int, (month, day, year))
         self.ord = _date2num(self)
 
     # don't allow setting existing attributes
