@@ -247,8 +247,11 @@ are also provided to help in implementing the core ABCs.
     .. method:: set_data(self, path, data)
 
         Optional abstract method which writes the specified bytes to a file
-        path. When writing to the path fails because the path is read-only, do
-        not propagate the exception.
+        path. Any intermediate directories which do not exist are to be created
+        automatically.
+
+        When writing to the path fails because the path is read-only
+        (:attr:`errno.EACCES`), do not propagate the exception.
 
     .. method:: get_code(self, fullname)
 

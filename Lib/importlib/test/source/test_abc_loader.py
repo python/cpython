@@ -815,6 +815,7 @@ class AbstractMethodImplTests(unittest.TestCase):
     def test_Loader(self):
         self.raises_NotImplementedError(self.Loader(), 'load_module')
 
+    # XXX misplaced; should be somewhere else
     def test_Finder(self):
         self.raises_NotImplementedError(self.Finder(), 'find_module')
 

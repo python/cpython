@@ -13,7 +13,8 @@ class ExtensionModuleCaseSensitivityTest(unittest.TestCase):
         good_name = ext_util.NAME
         bad_name = good_name.upper()
         assert good_name != bad_name
-        finder = _bootstrap._ExtensionFileFinder(ext_util.PATH)
+        finder = _bootstrap._FileFinder(ext_util.PATH,
+                                        _bootstrap._ExtensionFinderDetails())
         return finder.find_module(bad_name)
 
     def test_case_sensitive(self):

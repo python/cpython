@@ -36,7 +36,7 @@ def _case_ok(directory, check):
     """
     if 'PYTHONCASEOK' in os.environ:
         return True
-    elif check in os.listdir(directory):
+    elif check in os.listdir(directory if directory else os.getcwd()):
         return True
     return False
 

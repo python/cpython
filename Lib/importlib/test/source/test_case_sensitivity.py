@@ -19,7 +19,9 @@ class CaseSensitivityTest(unittest.TestCase):
     assert name != name.lower()
 
     def find(self, path):
-        finder = _bootstrap._PyPycFileFinder(path)
+        finder = _bootstrap._FileFinder(path,
+                                        _bootstrap._SourceFinderDetails(),
+                                        _bootstrap._SourcelessFinderDetails())
         return finder.find_module(self.name)
 
     def sensitivity_test(self):
@@ -27,7 +29,7 @@ class CaseSensitivityTest(unittest.TestCase):
         sensitive_pkg = 'sensitive.{0}'.format(self.name)
         insensitive_pkg = 'insensitive.{0}'.format(self.name.lower())
         context = source_util.create_modules(insensitive_pkg, sensitive_pkg)
-        with  context as mapping:
+        with context as mapping:
             sensitive_path = os.path.join(mapping['.root'], 'sensitive')
             insensitive_path = os.path.join(mapping['.root'], 'insensitive')
             return self.find(sensitive_path), self.find(insensitive_path)
@@ -37,7 +39,7 @@ class CaseSensitivityTest(unittest.TestCase):
             env.unset('PYTHONCASEOK')
             sensitive, insensitive = self.sensitivity_test()
             self.assertTrue(hasattr(sensitive, 'load_module'))
-            self.assertIn(self.name, sensitive._base_path)
+            self.assertIn(self.name, sensitive.get_filename(self.name))
             self.assertIsNone(insensitive)
 
     def test_insensitive(self):
@@ -45,9 +47,9 @@ class CaseSensitivityTest(unittest.TestCase):
             env.set('PYTHONCASEOK', '1')
             sensitive, insensitive = self.sensitivity_test()
             self.assertTrue(hasattr(sensitive, 'load_module'))
-            self.assertIn(self.name, sensitive._base_path)
+            self.assertIn(self.name, sensitive.get_filename(self.name))
             self.assertTrue(hasattr(insensitive, 'load_module'))
-            self.assertIn(self.name, insensitive._base_path)
+            self.assertIn(self.name, insensitive.get_filename(self.name))
 
 
 def test_main():

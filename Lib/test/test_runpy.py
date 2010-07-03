@@ -6,7 +6,7 @@ import sys
 import re
 import tempfile
 import py_compile
-from test.support import forget, make_legacy_pyc, run_unittest, verbose
+from test.support import forget, make_legacy_pyc, run_unittest, unload, verbose
 from test.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script, temp_dir)
 
@@ -174,6 +174,7 @@ class RunModuleTest(unittest.TestCase):
             __import__(mod_name)
             os.remove(mod_fname)
             make_legacy_pyc(mod_fname)
+            unload(mod_name)  # In case loader caches paths
             if verbose: print("Running from compiled:", mod_name)
             d2 = run_module(mod_name) # Read from bytecode
             self.assertIn("x", d2)
@@ -197,6 +198,7 @@ class RunModuleTest(unittest.TestCase):
             __import__(mod_name)
             os.remove(mod_fname)
             make_legacy_pyc(mod_fname)
+            unload(mod_name)  # In case loader caches paths
             if verbose: print("Running from compiled:", pkg_name)
             d2 = run_module(pkg_name) # Read from bytecode
             self.assertIn("x", d2)
@@ -252,6 +254,7 @@ from ..uncle.cousin import nephew
             __import__(mod_name)
             os.remove(mod_fname)
             make_legacy_pyc(mod_fname)
+            unload(mod_name)  # In case the loader caches paths
             if verbose: print("Running from compiled:", mod_name)
             d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
             self.assertIn("__package__", d2)
@@ -405,7 +408,11 @@ argv0 = sys.argv[0]
 
 
 def test_main():
-    run_unittest(RunModuleCodeTest, RunModuleTest, RunPathTest)
+    run_unittest(
+                 RunModuleCodeTest,
+                 RunModuleTest,
+                 RunPathTest
+                 )
 
 if __name__ == "__main__":
     test_main()

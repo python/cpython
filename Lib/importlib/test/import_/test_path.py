@@ -5,6 +5,7 @@ from . import util as import_util
 import imp
 import os
 import sys
+import tempfile
 from test import support
 from types import MethodType
 import unittest
@@ -80,23 +81,28 @@ class DefaultPathFinderTests(unittest.TestCase):
 
     def test_implicit_hooks(self):
         # Test that the implicit path hooks are used.
-        existing_path = os.path.dirname(support.TESTFN)
         bad_path = '<path>'
         module = '<module>'
         assert not os.path.exists(bad_path)
-        with util.import_state():
-            nothing = _bootstrap._DefaultPathFinder.find_module(module,
-                                                           path=[existing_path])
-            self.assertTrue(nothing is None)
-            self.assertTrue(existing_path in sys.path_importer_cache)
-            self.assertTrue(not isinstance(sys.path_importer_cache[existing_path],
-                                        imp.NullImporter))
-            nothing = _bootstrap._DefaultPathFinder.find_module(module,
-                                                                path=[bad_path])
-            self.assertTrue(nothing is None)
-            self.assertTrue(bad_path in sys.path_importer_cache)
-            self.assertTrue(isinstance(sys.path_importer_cache[bad_path],
-                                    imp.NullImporter))
+        existing_path = tempfile.mkdtemp()
+        try:
+            with util.import_state():
+                nothing = _bootstrap._DefaultPathFinder.find_module(module,
+                                                        path=[existing_path])
+                self.assertTrue(nothing is None)
+                self.assertTrue(existing_path in sys.path_importer_cache)
+                result = isinstance(sys.path_importer_cache[existing_path],
+                                    imp.NullImporter)
+                self.assertFalse(result)
+                nothing = _bootstrap._DefaultPathFinder.find_module(module,
+                                                            path=[bad_path])
+                self.assertTrue(nothing is None)
+                self.assertTrue(bad_path in sys.path_importer_cache)
+                self.assertTrue(isinstance(sys.path_importer_cache[bad_path],
+                                           imp.NullImporter))
+        finally:
+            os.rmdir(existing_path)
+
 
     def test_path_importer_cache_has_None(self):
         # Test that the default hook is used when sys.path_importer_cache
