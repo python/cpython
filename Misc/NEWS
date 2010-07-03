@@ -468,6 +468,10 @@ C-API
 Library
 -------
 
+- Issue #9094: python -m pickletools will now disassemble pickle files
+  listed in the command line arguments.  See output of python -m
+  pickletools -h for more details.
+
 - Issue #5468: urlencode to handle bytes type and other encodings in its query
   parameter. Patch by Dan Mahn.
 

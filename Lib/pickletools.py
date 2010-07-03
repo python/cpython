@@ -2330,4 +2330,43 @@ def _test():
     return doctest.testmod()
 
 if __name__ == "__main__":
-    _test()
+    import sys, argparse
+    parser = argparse.ArgumentParser(
+        description='disassemble one or more pickle files')
+    parser.add_argument(
+        'pickle_file', type=argparse.FileType('br'),
+        nargs='*', help='the pickle file')
+    parser.add_argument(
+        '-o', '--output', default=sys.stdout, type=argparse.FileType('w'),
+        help='the file where the output should be written')
+    parser.add_argument(
+        '-m', '--memo', action='store_true',
+        help='preserve memo between disassemblies')
+    parser.add_argument(
+        '-l', '--indentlevel', default=4, type=int,
+        help='the number of blanks by which to indent a new MARK level')
+    parser.add_argument(
+        '-p', '--preamble', default="==> {name} <==",
+        help='if more than one pickle file is specified, print this before'
+        ' each disassembly')
+    parser.add_argument(
+        '-t', '--test', action='store_true',
+        help='run self-test suite')
+    parser.add_argument(
+        '-v', action='store_true',
+        help='run verbosely; only affects self-test run')
+    args = parser.parse_args()
+    if args.test:
+        _test()
+    else:
+        if not args.pickle_file:
+            parser.print_help()
+        elif len(args.pickle_file) == 1:
+            dis(args.pickle_file[0], args.output,
+                indentlevel=args.indentlevel)
+        else:
+            memo = {} if args.memo else None
+            for f in args.pickle_file:
+                preamble = args.preamble.format(name=f.name)
+                args.output.write(preamble + '\n')
+                dis(f, args.output, memo, args.indentlevel)
