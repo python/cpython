@@ -309,8 +309,8 @@ The :mod:`urllib.parse` module defines the following functions:
 
 .. function:: urlencode(query, doseq=False, safe='', encoding=None, errors=None)
 
-   Convert a mapping object or a sequence of two-element, which may either be a
-   :class:`str` or a :class:`bytes` tuples,  to a "url-encoded" string,
+   Convert a mapping object or a sequence of two-element tuples, which may
+   either be a :class:`str` or a :class:`bytes`,  to a "url-encoded" string,
    suitable to pass to :func:`urlopen` above as the optional *data* argument.
    This is useful to pass a dictionary of form fields to a ``POST`` request.
    The resulting string is a series of ``key=value`` pairs separated by ``'&'``
