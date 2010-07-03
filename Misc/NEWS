@@ -12,6 +12,14 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #8271: during the decoding of an invalid UTF-8 byte sequence, only the
+  start byte and the continuation byte(s) are now considered invalid, instead
+  of the number of bytes specified by the start byte.
+  E.g.: '\xf1\x80AB'.decode('utf-8', 'replace') now returns u'\ufffdAB' and
+  replaces with U+FFFD only the start byte ('\xf1') and the continuation byte
+  ('\x80') even if '\xf1' is the start byte of a 4-bytes sequence.
+  Previous versions returned a single u'\ufffd'.
+
 - Issue #6543: Write the traceback in the terminal encoding instead of utf-8.
   Fix the encoding of the modules filename. Patch written by Amaury Forgeot
   d'Arc.
