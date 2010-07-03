@@ -9,7 +9,6 @@
 ..  hyperlink all the methods & functions.
 
 .. T_STRING_INPLACE not described in main docs
-.. "Format String Syntax" in string.rst could use many more examples.
 
 .. $Id$
    Rules for maintenance:
@@ -57,12 +56,12 @@ release of 2.7 is currently scheduled for July 2010; the detailed
 schedule is described in :pep:`373`.
 
 Numeric handling has been improved in many ways, for both
-floating-point numbers and for the :class:`Decimal` class.  There are
-some useful additions to the standard library, such as a greatly
-enhanced :mod:`unittest` module, the :mod:`argparse` module for
-parsing command-line options, convenient ordered-dictionary and
-:class:`Counter` classes in the :mod:`collections` module, and many
-other improvements.
+floating-point numbers and for the :class:`~decimal.Decimal` class.
+There are some useful additions to the standard library, such as a
+greatly enhanced :mod:`unittest` module, the :mod:`argparse` module
+for parsing command-line options, convenient :class:`~collections.OrderedDict`
+and :class:`~collections.Counter` classes in the :mod:`collections` module,
+and many other improvements.
 
 Python 2.7 is planned to be the last of the 2.x releases, so we worked
 on making it a good release for the long term.  To help with porting
@@ -117,8 +116,8 @@ Two consequences of the long-term significance of 2.7 are:
   with responding to these concerns.
 
   You can re-enable display of :exc:`DeprecationWarning` messages by
-  running Python with the :option:`-Wdefault` (short form:
-  :option:`-Wd`) switch, or by setting the :envvar:`PYTHONWARNINGS`
+  running Python with the :option:`-Wdefault <-W>` (short form:
+  :option:`-Wd <-W>`) switch, or by setting the :envvar:`PYTHONWARNINGS`
   environment variable to ``"default"`` (or ``"d"``) before running
   Python.  Python code can also re-enable them
   by calling ``warnings.simplefilter('default')``.
@@ -135,7 +134,7 @@ for migrating to the 3.x series.
 A partial list of 3.1 features that were backported to 2.7:
 
 * The syntax for set literals (``{1,2,3}`` is a mutable set).
-* Dictionary and set comprehensions (``{ i: i*2 for i in range(3)}``).
+* Dictionary and set comprehensions (``{i: i*2 for i in range(3)}``).
 * Multiple context managers in a single :keyword:`with` statement.
 * A new version of the :mod:`io` library, rewritten in C for performance.
 * The ordered-dictionary type described in :ref:`pep-0372`.
@@ -155,7 +154,7 @@ Other new Python3-mode warnings include:
 * :func:`operator.isCallable` and :func:`operator.sequenceIncludes`,
   which are not supported in 3.x, now trigger warnings.
 * The :option:`-3` switch now automatically
-  enables the :option:`-Qwarn` switch that causes warnings
+  enables the :option:`-Qwarn <-Q>` switch that causes warnings
   about using classic division with integers and long integers.
 
 
@@ -390,7 +389,8 @@ standard input or output.
 
 .. seealso::
 
-   `argparse module documentation <http://docs.python.org/dev/library/argparse.html>`__
+   `argparse documentation <http://docs.python.org/dev/library/argparse.html>`__
+     The documentation page of the argparse module.
 
    `Upgrading optparse code to use argparse <http://docs.python.org/dev/library/argparse.html#upgrading-optparse-code>`__
      Part of the Python documentation, describing how to convert
@@ -402,8 +402,6 @@ standard input or output.
 PEP 391: Dictionary-Based Configuration For Logging
 ====================================================
 
-.. XXX not documented in library reference yet; add link here once it's added.
-
 The :mod:`logging` module is very flexible; applications can define
 a tree of logging subsystems, and each logger in this tree can filter
 out certain messages, format them differently, and direct messages to
@@ -412,21 +410,21 @@ a varying number of handlers.
 All this flexibility can require a lot of configuration.  You can
 write Python statements to create objects and set their properties,
 but a complex set-up requires verbose but boring code.
-:mod:`logging` also supports a :func:`~logging.config.fileConfig`
+:mod:`logging` also supports a :func:`~logging.fileConfig`
 function that parses a file, but the file format doesn't support
 configuring filters, and it's messier to generate programmatically.
 
-Python 2.7 adds a :func:`~logging.config.dictConfig` function that
+Python 2.7 adds a :func:`~logging.dictConfig` function that
 uses a dictionary to configure logging.  There are many ways to
 produce a dictionary from different sources: construct one with code;
 parse a file containing JSON; or use a YAML parsing library if one is
-installed.
+installed.  For more information see :ref:`logging-config-api`.
 
 The following example configures two loggers, the root logger and a
-logger named "network".   Messages sent to the root logger will be
+logger named "network".  Messages sent to the root logger will be
 sent to the system log using the syslog protocol, and messages
 to the "network" logger will be written to a :file:`network.log` file
-that will be rotated once the log reaches 1Mb.
+that will be rotated once the log reaches 1MB.
 
 ::
 
@@ -445,7 +443,7 @@ that will be rotated once the log reaches 1Mb.
                          'filename': '/logs/network.log',
                          'formatter': 'standard',
                          'level': 'INFO',
-                         'maxBytes': 1024*1024},
+                         'maxBytes': 1000000},
                   'syslog': {'class': 'logging.handlers.SysLogHandler',
                              'formatter': 'standard',
                              'level': 'ERROR'}},
@@ -483,15 +481,18 @@ implemented by Vinay Sajip, are:
   for UDP or :const:`socket.SOCK_STREAM` for TCP.  The default
   protocol remains UDP.
 
-* :class:`Logger` instances gained a :meth:`getChild` method that retrieves a
-  descendant logger using a relative path.  For example,
-  once you retrieve a logger by doing ``log = getLogger('app')``,
+* :class:`~logging.Logger` instances gained a :meth:`~logging.Logger.getChild`
+  method that retrieves a descendant logger using a relative path.
+  For example, once you retrieve a logger by doing ``log = getLogger('app')``,
   calling ``log.getChild('network.listen')`` is equivalent to
   ``getLogger('app.network.listen')``.
 
-* The :class:`LoggerAdapter` class gained a :meth:`isEnabledFor` method
-  that takes a *level* and returns whether the underlying logger would
+* The :class:`~logging.LoggerAdapter` class gained a
+  :meth:`~logging.LoggerAdapter.isEnabledFor` method that takes a
+  *level* and returns whether the underlying logger would
   process a message of that level of importance.
+
+.. XXX: Logger objects don't have a class declaration so the link don't work
 
 .. seealso::
 
@@ -501,14 +502,15 @@ implemented by Vinay Sajip, are:
 PEP 3106: Dictionary Views
 ====================================================
 
-The dictionary methods :meth:`keys`, :meth:`values`, and :meth:`items`
-are different in Python 3.x.  They return an object called a :dfn:`view`
-instead of a fully materialized list.
+The dictionary methods :meth:`~dict.keys`, :meth:`~dict.values`, and
+:meth:`~dict.items` are different in Python 3.x.  They return an object
+called a :dfn:`view` instead of a fully materialized list.
 
-It's not possible to change the return values of :meth:`keys`,
-:meth:`values`, and :meth:`items` in Python 2.7 because too much code
-would break.  Instead the 3.x versions were added under the new names
-:meth:`viewkeys`, :meth:`viewvalues`, and :meth:`viewitems`.
+It's not possible to change the return values of :meth:`~dict.keys`,
+:meth:`~dict.values`, and :meth:`~dict.items` in Python 2.7 because
+too much code would break.  Instead the 3.x versions were added
+under the new names :meth:`~dict.viewkeys`, :meth:`~dict.viewvalues`,
+and :meth:`~dict.viewitems`.
 
 ::
 
@@ -550,8 +552,8 @@ over the view::
     RuntimeError: dictionary changed size during iteration
 
 You can use the view methods in Python 2.x code, and the 2to3
-converter will change them to the standard :meth:`keys`,
-:meth:`values`, and :meth:`items` methods.
+converter will change them to the standard :meth:`~dict.keys`,
+:meth:`~dict.values`, and :meth:`~dict.items` methods.
 
 .. seealso::
 
@@ -624,7 +626,7 @@ Some smaller changes made to the core Python language are:
   ``{}`` continues to represent an empty dictionary; use
   ``set()`` for an empty set.
 
-    >>> {1,2,3,4,5}
+    >>> {1, 2, 3, 4, 5}
     set([1, 2, 3, 4, 5])
     >>> set() # empty set
     set([])
@@ -794,7 +796,7 @@ Some smaller changes made to the core Python language are:
   ``None`` as its first argument.  (Fixed by Georg Brandl;
   :issue:`4759`.)
 
-  .. bytearray doesn't seem to be documented
+  .. XXX bytearray doesn't seem to be documented
 
 * When using ``@classmethod`` and ``@staticmethod`` to wrap
   methods as class or static methods, the wrapper object now
@@ -1054,7 +1056,7 @@ changes, or look through the Subversion logs for all the details.
   :meth:`~collections.deque.count` method that returns the number of
   contained elements equal to the supplied argument *x*, and a
   :meth:`~collections.deque.reverse` method that reverses the elements
-  of the deque in-place.  :class:`deque` also exposes its maximum
+  of the deque in-place.  :class:`~collections.deque` also exposes its maximum
   length as the read-only :attr:`~collections.deque.maxlen` attribute.
   (Both features added by Raymond Hettinger.)
 
@@ -1135,15 +1137,14 @@ changes, or look through the Subversion logs for all the details.
   ``Decimal('0.1000000000000000055511151231257827021181583404541015625')``.
   (Implemented by Raymond Hettinger; :issue:`4796`.)
 
-  Comparing instances of :class:`Decimal` with floating-point
+  Comparing instances of :class:`~decimal.Decimal` with floating-point
   numbers now produces sensible results based on the numeric values
   of the operands.  Previously such comparisons would fall back to
   Python's default rules for comparing objects, which produced arbitrary
   results based on their type.  Note that you still cannot combine
   :class:`Decimal` and floating-point in other operations such as addition,
   since you should be explicitly choosing how to convert between float and
-  :class:`Decimal`.
-  (Fixed by Mark Dickinson; :issue:`2531`.)
+  :class:`~decimal.Decimal`.  (Fixed by Mark Dickinson; :issue:`2531`.)
 
   The constructor for :class:`~decimal.Decimal` now accepts
   floating-point numbers (added by Raymond Hettinger; :issue:`8257`)
@@ -1195,8 +1196,8 @@ changes, or look through the Subversion logs for all the details.
 
   Ordering comparisons (``<``, ``<=``, ``>``, ``>=``) between
   fractions and complex numbers now raise a :exc:`TypeError`.
-  This fixes an oversight, making the :class:`Fraction` match the other
-  numeric types.
+  This fixes an oversight, making the :class:`~fractions.Fraction`
+  match the other numeric types.
 
   .. revision 79455
 
@@ -1210,7 +1211,7 @@ changes, or look through the Subversion logs for all the details.
   uploads thanks to an added *rest* parameter (patch by Pablo Mouzo;
   :issue:`6845`.)
 
-* New class decorator: :func:`total_ordering` in the :mod:`functools`
+* New class decorator: :func:`~functools.total_ordering` in the :mod:`functools`
   module takes a class that defines an :meth:`__eq__` method and one of
   :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, or :meth:`__ge__`,
   and generates the missing comparison methods.  Since the
@@ -1218,7 +1219,7 @@ changes, or look through the Subversion logs for all the details.
   this decorator makes it easier to define ordered classes.
   (Added by Raymond Hettinger; :issue:`5479`.)
 
-  New function: :func:`cmp_to_key` will take an old-style comparison
+  New function: :func:`~functools.cmp_to_key` will take an old-style comparison
   function that expects two arguments and return a new callable that
   can be used as the *key* parameter to functions such as
   :func:`sorted`, :func:`min` and :func:`max`, etc.  The primary
@@ -1345,7 +1346,7 @@ changes, or look through the Subversion logs for all the details.
   with any object literal that decodes to a list of pairs.
   (Contributed by Raymond Hettinger; :issue:`5381`.)
 
-* The :mod:`mailbox` module's :class:`Maildir` class now records the
+* The :mod:`mailbox` module's :class:`~mailbox.Maildir` class now records the
   timestamp on the directories it reads, and only re-reads them if the
   modification time has subsequently changed.  This improves
   performance by avoiding unneeded directory scans.  (Fixed by
@@ -1466,10 +1467,10 @@ changes, or look through the Subversion logs for all the details.
   defaults to False; if overridden to be True,
   new request connections will have the TCP_NODELAY option set to
   prevent buffering many small sends into a single TCP packet.
-  The :attr:`~SocketServer.TCPServer.timeout` class attribute can hold
+  The :attr:`~SocketServer.BaseServer.timeout` class attribute can hold
   a timeout in seconds that will be applied to the request socket; if
-  no request is received within that time, :meth:`handle_timeout`
-  will be called and :meth:`handle_request` will return.
+  no request is received within that time, :meth:`~SocketServer.BaseServer.handle_timeout`
+  will be called and :meth:`~SocketServer.BaseServer.handle_request` will return.
   (Contributed by Kristján Valur Jónsson; :issue:`6192` and :issue:`6267`.)
 
 * Updated module: the :mod:`sqlite3` module has been updated to
@@ -1479,7 +1480,7 @@ changes, or look through the Subversion logs for all the details.
   and then call :meth:`~sqlite3.Connection.load_extension` to load a particular shared library.
   (Updated by Gerhard Häring.)
 
-* The :mod:`ssl` module's :class:`ssl.SSLSocket` objects now support the
+* The :mod:`ssl` module's :class:`~ssl.SSLSocket` objects now support the
   buffer API, which fixed a test suite failure (fix by Antoine Pitrou;
   :issue:`7133`) and automatically set
   OpenSSL's :cmacro:`SSL_MODE_AUTO_RETRY`, which will prevent an error
@@ -1535,7 +1536,7 @@ changes, or look through the Subversion logs for all the details.
   on receiving an :const:`EINTR` signal.  (Reported by several people; final
   patch by Gregory P. Smith in :issue:`1068268`.)
 
-* New function: :func:`~symtable.is_declared_global` in the :mod:`symtable` module
+* New function: :func:`~symtable.Symbol.is_declared_global` in the :mod:`symtable` module
   returns true for variables that are explicitly declared to be global,
   false for ones that are implicitly global.
   (Contributed by Jeremy Hylton.)
@@ -1716,7 +1717,7 @@ Some of the functions in the module are:
   Makefile and the :file:`pyconfig.h` file.
 * :func:`~sysconfig.get_config_vars` returns a dictionary containing
   all of the configuration variables.
-* :func:`~sysconfig.getpath` returns the configured path for
+* :func:`~sysconfig.get_path` returns the configured path for
   a particular type of module: the standard library,
   site-specific modules, platform-specific modules, etc.
 * :func:`~sysconfig.is_python_build` returns true if you're running a
@@ -1778,7 +1779,7 @@ any importable test files named ``test*.py``::
 Consult the :mod:`unittest` module documentation for more details.
 (Developed in :issue:`6001`.)
 
-The :func:`main` function supports some other new options:
+The :func:`~unittest.main` function supports some other new options:
 
 * :option:`-b` or :option:`--buffer` will buffer the standard output
   and standard error streams during each test.  If the test passes,
@@ -1796,7 +1797,7 @@ The :func:`main` function supports some other new options:
   being tested or the tests being run have defined a signal handler of
   their own, by noticing that a signal handler was already set and
   calling it.  If this doesn't work for you, there's a
-  :func:`removeHandler` decorator that can be used to mark tests that
+  :func:`~unittest.removeHandler` decorator that can be used to mark tests that
   should have the control-C handling disabled.
 
 * :option:`-f` or :option:`--failfast` makes
@@ -1923,7 +1924,7 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 
 :func:`unittest.main` now takes an optional ``exit`` argument.  If
 False, :func:`~unittest.main` doesn't call :func:`sys.exit`, allowing
-:func:`main` to be used from the interactive interpreter.
+:func:`~unittest.main` to be used from the interactive interpreter.
 (Contributed by J. Pablo Fernández; :issue:`3379`.)
 
 :class:`~unittest.TestResult` has new :meth:`~unittest.TestResult.startTestRun` and
@@ -2117,7 +2118,7 @@ Changes to Python's build process and to the C API include:
   :cmacro:`Py_ISSPACE`,
   :cmacro:`Py_ISUPPER`,
   :cmacro:`Py_ISXDIGIT`,
-  and :cmacro:`Py_TOLOWER`, :cmacro:`Py_TOUPPER`.
+  :cmacro:`Py_TOLOWER`, and :cmacro:`Py_TOUPPER`.
   All of these functions are analogous to the C
   standard macros for classifying characters, but ignore the current
   locale setting, because in
@@ -2263,11 +2264,11 @@ Port-Specific Changes: Windows
   (Contributed by David Cournapeau; :issue:`4365`.)
 
 * The :mod:`_winreg` module for accessing the registry now implements
-  the :func:`CreateKeyEx` and :func:`DeleteKeyEx` functions, extended
-  versions of previously-supported functions that take several extra
-  arguments.  The :func:`DisableReflectionKey`,
-  :func:`EnableReflectionKey`, and :func:`QueryReflectionKey` were also
-  tested and documented.
+  the :func:`~_winreg.CreateKeyEx` and :func:`~_winreg.DeleteKeyEx`
+  functions, extended versions of previously-supported functions that
+  take several extra arguments.  The :func:`~_winreg.DisableReflectionKey`,
+  :func:`~_winreg.EnableReflectionKey`, and :func:`~_winreg.QueryReflectionKey`
+  were also tested and documented.
   (Implemented by Brian Curtin: :issue:`7347`.)
 
 * The new :cfunc:`_beginthreadex` API is used to start threads, and
@@ -2384,20 +2385,20 @@ that may require changes to your code:
 
 In the standard library:
 
-* Operations with :class:`datetime` instances that resulted in a year
+* Operations with :class:`~datetime.datetime` instances that resulted in a year
   falling outside the supported range didn't always raise
   :exc:`OverflowError`.  Such errors are now checked more carefully
   and will now raise the exception. (Reported by Mark Leander, patch
   by Anand B. Pillai and Alexander Belopolsky; :issue:`7150`.)
 
-* When using :class:`Decimal` instances with a string's
+* When using :class:`~decimal.Decimal` instances with a string's
   :meth:`format` method, the default alignment was previously
   left-alignment.  This has been changed to right-alignment, which might
   change the output of your programs.
   (Changed by Mark Dickinson; :issue:`6857`.)
 
   Comparisons involving a signaling NaN value (or ``sNAN``) now signal
-  :const:`InvalidOperation` instead of silently returning a true or
+  :const:`~decimal.InvalidOperation` instead of silently returning a true or
   false value depending on the comparison operator.  Quiet NaN values
   (or ``NaN``) are now hashable.  (Fixed by Mark Dickinson;
   :issue:`7279`.)
@@ -2408,7 +2409,7 @@ In the standard library:
   or comment (which looks like `<!-- comment -->`).
   (Patch by Neil Muller; :issue:`2746`.)
 
-* The :meth:`readline` method of :class:`StringIO` objects now does
+* The :meth:`~StringIO.StringIO.readline` method of :class:`~StringIO.StringIO` objects now does
   nothing when a negative length is requested, as other file-like
   objects do.  (:issue:`7348`).
 
