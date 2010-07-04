@@ -66,7 +66,7 @@ class oldrange:
 def test():
     import time, builtins
     #Just a quick sanity check
-    correct_result = builtins.range(5, 100, 3)
+    correct_result = list(builtins.range(5, 100, 3))
     oldrange_result = list(oldrange(5, 100, 3))
     genrange_result = list(genrange(5, 100, 3))
     if genrange_result != correct_result or oldrange_result != correct_result:
