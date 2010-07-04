@@ -804,10 +804,13 @@ audioop_tomono(PyObject *self, PyObject *args)
         return 0;
     cp = pcp.buf;
     len = pcp.len;
-    if (!audioop_check_parameters(len, size))
+    if (!audioop_check_parameters(len, size)) {
+        PyBuffer_Release(&pcp);
         return NULL;
+    }
     if (((len / size) & 1) != 0) {
         PyErr_SetString(AudioopError, "not a whole number of frames");
+        PyBuffer_Release(&pcp);
         return NULL;
     }
 
@@ -821,8 +824,10 @@ audioop_tomono(PyObject *self, PyObject *args)
     }
 
     rv = PyBytes_FromStringAndSize(NULL, len/2);
-    if ( rv == 0 )
+    if ( rv == 0 ) {
+        PyBuffer_Release(&pcp);
         return 0;
+    }
     ncp = (signed char *)PyBytes_AsString(rv);
 
 
