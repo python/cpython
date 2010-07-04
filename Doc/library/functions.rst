@@ -402,8 +402,9 @@ available.  They are listed here in alphabetical order.
    iterable if function(item)]`` if function is not ``None`` and ``[item for item
    in iterable if item]`` if function is ``None``.
 
-   See :func:`itertools.ifilterfalse` for the complementary function that returns
-   elements of *iterable* for which *function* returns false.
+   See :func:`itertools.ifilter` and :func:`itertools.ifilterfalse` for iterator
+   versions of this function, including a variation that filters for elements
+   where the *function* returns false.
 
 
 .. function:: float([x])
