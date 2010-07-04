@@ -20,6 +20,9 @@ class FixItertoolsImports(fixer_base.BaseFix):
             if child.type == token.NAME:
                 member = child.value
                 name_node = child
+            elif child.type == token.STAR:
+                # Just leave the import as is.
+                return
             else:
                 assert child.type == syms.import_as_name
                 name_node = child.children[0]
@@ -44,8 +47,8 @@ class FixItertoolsImports(fixer_base.BaseFix):
             children[-1].remove()
 
         # If there are no imports left, just get rid of the entire statement
-        if not (imports.children or getattr(imports, 'value', None)) or \
-                imports.parent is None:
+        if (not (imports.children or getattr(imports, 'value', None)) or
+            imports.parent is None):
             p = node.prefix
             node = BlankLine()
             node.prefix = p
