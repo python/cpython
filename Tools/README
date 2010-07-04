@@ -1,9 +1,7 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
-faqwiz		FAQ Wizard.
-		See http://www.python.org/cgi-bin/faqw.py
-		for a live example.
+faqwiz		FAQ Wizard: a CGI script for a user-editable FAQ.
 
 freeze		Create a stand-alone executable from a Python program.
 
