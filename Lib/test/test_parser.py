@@ -197,6 +197,12 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("import sys as system, math")
         self.check_suite("import sys, math as my_math")
 
+    def test_relative_imports(self):
+        self.check_suite("from . import name")
+        self.check_suite("from .. import name")
+        self.check_suite("from .pkg import name")
+        self.check_suite("from ..pkg import name")
+
     def test_pep263(self):
         self.check_suite("# -*- coding: iso-8859-1 -*-\n"
                          "pass\n")
@@ -493,6 +499,20 @@ class IllegalSyntaxTestCase(unittest.TestCase):
                 (4, ''),
                 (0, ''))
         self.check_bad_tree(tree, "malformed global ast")
+
+    def test_missing_import_source(self):
+        # from import a
+        tree = \
+            (257,
+             (267,
+              (268,
+               (269,
+                (281,
+                 (283, (1, 'from'), (1, 'import'),
+                  (286, (284, (1, 'fred')))))),
+               (4, ''))),
+             (4, ''), (0, ''))
+        self.check_bad_tree(tree, "from import a")
 
 
 class CompileTestCase(unittest.TestCase):
