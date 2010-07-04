@@ -81,6 +81,8 @@ C-API
 Library
 -------
 
+- Issue #9130: Fix validation of relative imports in parser module.
+
 - Issue #9128: Fix validation of class decorators in parser module.
 
 - Issue #7673: Fix security vulnerability (CVE-2010-2089) in the audioop
