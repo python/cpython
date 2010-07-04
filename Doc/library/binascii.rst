@@ -109,11 +109,11 @@ The :mod:`binascii` module defines the following functions:
    use as a checksum algorithm, it is not suitable for use as a general hash
    algorithm.  Use as follows::
 
-      print(binascii.crc32("hello world"))
+      print(binascii.crc32(b"hello world"))
       # Or, in two pieces:
-      crc = binascii.crc32("hello")
-      crc = binascii.crc32(" world", crc) & 0xffffffff
-      print('crc32 = 0x%08x' % crc)
+      crc = binascii.crc32(b"hello")
+      crc = binascii.crc32(b" world", crc) & 0xffffffff
+      print('crc32 = {:#010x}'.format(crc))
 
 .. note::
    To generate the same numeric value across all Python versions and
