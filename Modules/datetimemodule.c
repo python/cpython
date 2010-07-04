@@ -1023,11 +1023,6 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
             Py_DECREF(result);
             result = NULL;
         }
-        else if (!PyUnicode_Check(result)) {
-            PyObject *temp = PyUnicode_FromObject(result);
-            Py_DECREF(result);
-            result = temp;
-        }
     }
     return result;
 }
