@@ -1903,7 +1903,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    .. describe:: iter(d)
 
       Return an iterator over the keys of the dictionary.  This is a shortcut
-      for :meth:`iterkeys`.
+      for ``iter(d.keys())``.
 
    .. method:: clear()
 

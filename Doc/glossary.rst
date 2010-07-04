@@ -355,7 +355,7 @@ Glossary
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
-      return a list with the results.  ``result = ["0x%02x" % x for x in
+      return a list with the results.  ``result = ['{:#04x}'.format(x) for x in
       range(256) if x % 2 == 0]`` generates a list of strings containing
       even hex numbers (0x..) in the range from 0 to 255. The :keyword:`if`
       clause is optional.  If omitted, all elements in ``range(256)`` are
@@ -473,7 +473,7 @@ Glossary
       object drops to zero, it is deallocated.  Reference counting is
       generally not visible to Python code, but it is a key element of the
       :term:`CPython` implementation.  The :mod:`sys` module defines a
-      :func:`getrefcount` function that programmers can call to return the
+      :func:`~sys.getrefcount` function that programmers can call to return the
       reference count for a particular object.
 
    __slots__
