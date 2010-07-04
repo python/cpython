@@ -180,6 +180,14 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
 
     def test_class_defs(self):
         self.check_suite("class foo():pass")
+        self.check_suite("@class_decorator\n"
+                         "class foo():pass")
+        self.check_suite("@class_decorator(arg)\n"
+                         "class foo():pass")
+        self.check_suite("@decorator1\n"
+                         "@decorator2\n"
+                         "class foo():pass")
+
 
     def test_import_from_statement(self):
         self.check_suite("from sys.path import *")
