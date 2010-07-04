@@ -1754,17 +1754,17 @@ validate_import_name(node *tree)
                 && validate_dotted_as_names(CHILD(tree, 1)));
 }
 
-/* Helper function to count the number of leading dots in
+/* Helper function to count the number of leading dots (or ellipsis tokens) in
  * 'from ...module import name'
  */
 static int
 count_from_dots(node *tree)
 {
-        int i;
-        for (i = 1; i < NCH(tree); i++)
-                if (TYPE(CHILD(tree, i)) != DOT)
-                        break;
-        return i-1;
+    int i;
+    for (i = 1; i < NCH(tree); i++)
+        if (TYPE(CHILD(tree, i)) != DOT && TYPE(CHILD(tree, i)) != ELLIPSIS)
+            break;
+    return i - 1;
 }
 
 /* import_from: ('from' ('.'* dotted_name | '.'+)
