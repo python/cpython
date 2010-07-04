@@ -468,6 +468,8 @@ C-API
 Library
 -------
 
+- Issue #9128: Fix validation of class decorators in parser module.
+
 - Issue #9094: python -m pickletools will now disassemble pickle files
   listed in the command line arguments.  See output of python -m
   pickletools -h for more details.

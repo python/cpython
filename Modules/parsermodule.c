@@ -2509,14 +2509,15 @@ validate_funcdef(node *tree)
 static int
 validate_decorated(node *tree)
 {
-  int nch = NCH(tree);
-  int ok = (validate_ntype(tree, decorated)
-            && (nch == 2)
-            && validate_decorators(RCHILD(tree, -2))
-            && (validate_funcdef(RCHILD(tree, -1))
-                || validate_class(RCHILD(tree, -1)))
-            );
-  return ok;
+    int nch = NCH(tree);
+    int ok = (validate_ntype(tree, decorated)
+              && (nch == 2)
+              && validate_decorators(RCHILD(tree, -2)));
+    if (TYPE(RCHILD(tree, -1)) == funcdef)
+        ok = ok && validate_funcdef(RCHILD(tree, -1));
+    else
+        ok = ok && validate_class(RCHILD(tree, -1));
+    return ok;
 }
 
 static int
