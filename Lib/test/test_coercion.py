@@ -2,6 +2,7 @@ import copy
 import unittest
 from test.test_support import run_unittest, TestFailed, check_warnings
 
+
 # Fake a number that implements numeric methods through __coerce__
 class CoerceNumber:
     def __init__(self, arg):
@@ -222,6 +223,11 @@ def process_infix_results():
             infix_results[key] = res
 
 
+with check_warnings(("classic (int|long) division", DeprecationWarning),
+                    quiet=True):
+    process_infix_results()
+    # now infix_results has two lists of results for every pairing.
+
 prefix_binops = [ 'divmod' ]
 prefix_results = [
     [(1,0), (1L,0L), (0.0,2.0), ((1+0j),0j), TE, TE, TE, TE, (1,0)],
@@ -336,9 +342,6 @@ def test_main():
                          DeprecationWarning),
                         ("classic (int|long) division", DeprecationWarning),
                         quiet=True):
-        process_infix_results()
-        # now infix_results has two lists of results for every pairing.
-
         run_unittest(CoercionTest)
 
 if __name__ == "__main__":
