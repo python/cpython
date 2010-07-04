@@ -3670,6 +3670,10 @@ class Test_itertools_imports(FixerTestCase):
         a = "from itertools import bar, filterfalse, foo"
         self.check(b, a)
 
+    def test_import_star(self):
+        s = "from itertools import *"
+        self.unchanged(s)
+
 
     def test_unchanged(self):
         s = "from itertools import foo"
