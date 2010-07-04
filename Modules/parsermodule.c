@@ -1763,8 +1763,8 @@ count_from_dots(node *tree)
         return i-1;
 }
 
-/* 'from' ('.'* dotted_name | '.') 'import' ('*' | '(' import_as_names ')' |
- *     import_as_names
+/* import_from: ('from' ('.'* dotted_name | '.'+)
+ *               'import' ('*' | '(' import_as_names ')' | import_as_names))
  */
 static int
 validate_import_from(node *tree)
@@ -1774,7 +1774,8 @@ validate_import_from(node *tree)
         int havename = (TYPE(CHILD(tree, ndots + 1)) == dotted_name);
         int offset = ndots + havename;
         int res = validate_ntype(tree, import_from)
-                && (nch >= 4 + ndots)
+                && (offset >= 1)
+                && (nch >= 3 + offset)
                 && validate_name(CHILD(tree, 0), "from")
                 && (!havename || validate_dotted_name(CHILD(tree, ndots + 1)))
                 && validate_name(CHILD(tree, offset + 1), "import");
