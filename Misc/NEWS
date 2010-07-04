@@ -75,6 +75,8 @@ C-API
 Library
 -------
 
+- Issue #9128: Fix validation of class decorators in parser module.
+
 - Issue #5468: urlencode to handle bytes type and other encodings in its query
   parameter. Patch by Dan Mahn.
 
