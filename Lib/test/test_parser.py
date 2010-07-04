@@ -192,8 +192,14 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
     def test_relative_imports(self):
         self.check_suite("from . import name")
         self.check_suite("from .. import name")
+        # check all the way up to '....', since '...' is tokenized
+        # differently from '.' (it's an ellipsis token).
+        self.check_suite("from ... import name")
+        self.check_suite("from .... import name")
         self.check_suite("from .pkg import name")
         self.check_suite("from ..pkg import name")
+        self.check_suite("from ...pkg import name")
+        self.check_suite("from ....pkg import name")
 
     def test_pep263(self):
         self.check_suite("# -*- coding: iso-8859-1 -*-\n"
