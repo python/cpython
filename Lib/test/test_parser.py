@@ -471,18 +471,18 @@ class IllegalSyntaxTestCase(unittest.TestCase):
         self.check_bad_tree(tree, "malformed global ast")
 
     def test_missing_import_source(self):
-        # from import a
+        # from import fred
         tree = \
             (257,
-             (267,
-              (268,
-               (269,
-                (281,
-                 (283, (1, 'from'), (1, 'import'),
-                  (286, (284, (1, 'fred')))))),
+             (268,
+              (269,
+               (270,
+                (282,
+                 (284, (1, 'from'), (1, 'import'),
+                  (287, (285, (1, 'fred')))))),
                (4, ''))),
              (4, ''), (0, ''))
-        self.check_bad_tree(tree, "from import a")
+        self.check_bad_tree(tree, "from import fred")
 
 
 class CompileTestCase(unittest.TestCase):
