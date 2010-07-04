@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9130: Fix validation of relative imports in parser module.
+
 - Issue #9128: Fix validation of class decorators in parser module.
 
 Extension Modules
