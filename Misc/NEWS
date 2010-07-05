@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9161: Fix regression in optparse's acceptance of unicode
+  strings in add_option calls.
+
 - Issue #9130: Fix validation of relative imports in parser module.
 
 - Issue #9128: Fix validation of class decorators in parser module.
