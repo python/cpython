@@ -923,13 +923,6 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.trunc, 1, 2)
         self.assertRaises(TypeError, math.trunc, TestNoTrunc())
 
-        # XXX Doesn't work because the method is looked up on
-        #     the type only.
-        #t = TestNoTrunc()
-        #t.__trunc__ = lambda *args: args
-        #self.assertEquals((), math.trunc(t))
-        #self.assertRaises(TypeError, math.trunc, t, 0)
-
     def testIsnan(self):
         self.assertTrue(math.isnan(float("nan")))
         self.assertTrue(math.isnan(float("inf")* 0.))
