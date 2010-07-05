@@ -48,7 +48,7 @@ class CurrentTimeTest(unittest.TestCase):
         # Perform a minimal sanity check on the result, just to be sure
         # the request means what we think it means.
         self.assertIsInstance(builders, collections.Sequence)
-        self.assertTrue([x for x in builders if "trunk" in x], builders)
+        self.assertTrue([x for x in builders if "3.x" in x], builders)
 
 
 def test_main():
