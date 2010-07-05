@@ -11,9 +11,9 @@
 # "How to Change Python's Grammar"
 
 # Start symbols for the grammar:
-#	single_input is a single interactive statement;
-#	file_input is a module or sequence of commands read from an input file;
-#	eval_input is the input for the eval() and input() functions.
+#       single_input is a single interactive statement;
+#       file_input is a module or sequence of commands read from an input file;
+#       eval_input is the input for the eval() and input() functions.
 # NB: compound_stmt in single_input is followed by extra NEWLINE!
 single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
@@ -71,9 +71,9 @@ while_stmt: 'while' test ':' suite ['else' ':' suite]
 for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 try_stmt: ('try' ':' suite
            ((except_clause ':' suite)+
-	    ['else' ':' suite]
-	    ['finally' ':' suite] |
-	   'finally' ':' suite))
+            ['else' ':' suite]
+            ['finally' ':' suite] |
+           'finally' ':' suite))
 with_stmt: 'with' with_item (',' with_item)*  ':' suite
 with_item: test ['as' expr]
 # NB compile.c makes sure that the default except clause is last
