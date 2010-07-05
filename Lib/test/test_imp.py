@@ -44,7 +44,7 @@ class LockTests(unittest.TestCase):
 class ImportTests(unittest.TestCase):
 
     def test_find_module_encoding(self):
-        fd = imp.find_module("heapq")[0]
+        fd = imp.find_module("pydoc")[0]
         self.assertEqual(fd.encoding, "iso-8859-1")
 
     def test_issue1267(self):
