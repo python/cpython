@@ -876,8 +876,8 @@ class MathTests(unittest.TestCase):
 
         self.assertRaises(TypeError, math.trunc)
         self.assertRaises(TypeError, math.trunc, 1, 2)
-        # XXX: This is not ideal, but see the comment in math_trunc().
-        self.assertRaises(AttributeError, math.trunc, TestNoTrunc())
+        self.assertRaises((AttributeError, TypeError), math.trunc,
+                          TestNoTrunc())
 
         t = TestNoTrunc()
         t.__trunc__ = lambda *args: args
