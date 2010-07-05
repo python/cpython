@@ -3476,11 +3476,8 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
 static void
 inherit_special(PyTypeObject *type, PyTypeObject *base)
 {
-    Py_ssize_t oldsize, newsize;
 
     /* Copying basicsize is connected to the GC flags */
-    oldsize = base->tp_basicsize;
-    newsize = type->tp_basicsize ? type->tp_basicsize : oldsize;
     if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
         (base->tp_flags & Py_TPFLAGS_HAVE_GC) &&
         (!type->tp_traverse && !type->tp_clear)) {
@@ -3507,7 +3504,8 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
                 type->tp_new = base->tp_new;
         }
     }
-    type->tp_basicsize = newsize;
+    if (type->tp_basicsize == 0)
+        type->tp_basicsize = base->tp_basicsize;
 
     /* Copy other non-function slots */
 
