@@ -881,6 +881,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
     def test_computations(self):
         a = self.theclass(2002, 1, 31)
         b = self.theclass(1956, 1, 31)
+        c = self.theclass(2001,2,1)
 
         diff = a-b
         self.assertEqual(diff.days, 46*365 + len(range(1956, 2002, 4)))
@@ -906,6 +907,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(a - (a + day), -day)
         self.assertEqual(a - (a - week), week)
         self.assertEqual(a - (a - day), day)
+        self.assertEqual(c - (c - day), day)
 
         # Add/sub ints or floats should be illegal
         for i in 1, 1.0:
@@ -1347,6 +1349,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         for month_byte in b'9', b'\0', b'\r', b'\xff':
             self.assertRaises(TypeError, self.theclass,
                                          base[:2] + month_byte + base[3:])
+        # Good bytes, but bad tzinfo:
+        self.assertRaises(TypeError, self.theclass,
+                          bytes([1] * len(base)), 'EST')
+
         for ord_byte in range(1, 13):
             # This shouldn't blow up because of the month byte alone.  If
             # the implementation changes to do more-careful checking, it may
