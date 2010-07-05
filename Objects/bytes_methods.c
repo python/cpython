@@ -332,7 +332,8 @@ _Py_bytes_title(char *result, char *s, Py_ssize_t len)
 PyDoc_STRVAR_shared(_Py_capitalize__doc__,
 "B.capitalize() -> copy of B\n\
 \n\
-Return a copy of B with only its first character capitalized (ASCII).");
+Return a copy of B with only its first character capitalized (ASCII)\n\
+and the rest lower-cased.");
 
 void
 _Py_bytes_capitalize(char *result, char *s, Py_ssize_t len)

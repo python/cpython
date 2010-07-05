@@ -6766,7 +6766,7 @@ PyDoc_STRVAR(capitalize__doc__,
              "S.capitalize() -> str\n\
 \n\
 Return a capitalized version of S, i.e. make the first character\n\
-have upper case.");
+have upper case and the rest lower case.");
 
 static PyObject*
 unicode_capitalize(PyUnicodeObject *self)
