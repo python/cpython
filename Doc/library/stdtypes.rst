@@ -830,7 +830,8 @@ string functions based on regular expressions.
 
 .. method:: str.capitalize()
 
-   Return a copy of the string with only its first character capitalized.
+   Return a copy of the string with its first character capitalized and the
+   rest lowered.
 
    For 8-bit strings, this method is locale-dependent.
 
