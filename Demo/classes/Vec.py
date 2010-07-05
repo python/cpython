@@ -1,8 +1,6 @@
 # A simple vector class
 
-
-def vec(*v):
-    return Vec(*v)
+import operator
 
 
 class Vec:
@@ -10,14 +8,16 @@ class Vec:
     def __init__(self, *v):
         self.v = list(v)
 
-    def fromlist(self, v):
+    @classmethod
+    def fromlist(cls, v):
         if not isinstance(v, list):
             raise TypeError
-        self.v = v[:]
-        return self
+        inst = cls()
+        inst.v = v
+        return inst
 
     def __repr__(self):
-        return 'vec(' + repr(self.v)[1:-1] + ')'
+        return 'Vec(' + repr(self.v)[1:-1] + ')'
 
     def __len__(self):
         return len(self.v)
@@ -27,24 +27,24 @@ class Vec:
 
     def __add__(self, other):
         # Element-wise addition
-        v = list(map(lambda x, y: x+y, self, other))
-        return Vec().fromlist(v)
+        v = list(map(operator.add, self, other))
+        return Vec.fromlist(v)
 
     def __sub__(self, other):
         # Element-wise subtraction
-        v = list(map(lambda x, y: x-y, self, other))
-        return Vec().fromlist(v)
+        v = list(map(operator.sub, self, other))
+        return Vec.fromlist(v)
 
     def __mul__(self, scalar):
         # Multiply by scalar
         v = [x*scalar for x in self.v]
-        return Vec().fromlist(v)
+        return Vec.fromlist(v)
 
 
 
 def test():
-    a = vec(1, 2, 3)
-    b = vec(3, 2, 1)
+    a = Vec(1, 2, 3)
+    b = Vec(3, 2, 1)
     print(a)
     print(b)
     print(a+b)
