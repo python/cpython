@@ -100,7 +100,7 @@ Unless otherwise stated, buffers are not NUL-terminated.
    contain embedded NUL bytes; if it does, a :exc:`TypeError`
    exception is raised.
 
-``y*`` (:class:`bytes`, :class:`bytearray` or buffer compatible object) [Py_buffer \*]
+``y*`` (:class:`bytes`, :class:`bytearray` or buffer compatible object) [Py_buffer]
    This variant on ``s*`` doesn't accept Unicode objects, only objects
    supporting the buffer protocol.  **This is the recommended way to accept
    binary data.**
