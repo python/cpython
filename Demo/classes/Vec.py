@@ -1,10 +1,27 @@
-# A simple vector class
-
-import operator
-
-
 class Vec:
+    """ A simple vector class
 
+    Instances of the Vec class  can be constructed from numbers
+
+    >>> a = Vec(1, 2, 3)
+    >>> b = Vec(3, 2, 1)
+
+    added
+    >>> a + b
+    Vec(4, 4, 4)
+
+    subtracted
+    >>> a - b
+    Vec(-2, 0, 2)
+
+    and multiplied by a scalar on the left
+    >>> 3.0 * a
+    Vec(3.0, 6.0, 9.0)
+
+    or on the right
+    >>> a * 3.0
+    Vec(3.0, 6.0, 9.0)
+    """
     def __init__(self, *v):
         self.v = list(v)
 
@@ -17,7 +34,8 @@ class Vec:
         return inst
 
     def __repr__(self):
-        return 'Vec(' + repr(self.v)[1:-1] + ')'
+        args = ', '.join(repr(x) for x in self.v)
+        return 'Vec({})'.format(args)
 
     def __len__(self):
         return len(self.v)
@@ -27,28 +45,24 @@ class Vec:
 
     def __add__(self, other):
         # Element-wise addition
-        v = list(map(operator.add, self, other))
+        v = [x + y for x, y in zip(self.v, other.v)]
         return Vec.fromlist(v)
 
     def __sub__(self, other):
         # Element-wise subtraction
-        v = list(map(operator.sub, self, other))
+        v = [x - y for x, y in zip(self.v, other.v)]
         return Vec.fromlist(v)
 
     def __mul__(self, scalar):
         # Multiply by scalar
-        v = [x*scalar for x in self.v]
+        v = [x * scalar for x in self.v]
         return Vec.fromlist(v)
 
+    __rmul__ = __mul__
 
 
 def test():
-    a = Vec(1, 2, 3)
-    b = Vec(3, 2, 1)
-    print(a)
-    print(b)
-    print(a+b)
-    print(a-b)
-    print(a*3.0)
+    import doctest
+    doctest.testmod()
 
 test()
