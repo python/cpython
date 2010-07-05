@@ -3008,7 +3008,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
 
     def test_utctimetuple(self):
         class DST(tzinfo):
-            def __init__(self, dstvalue):
+            def __init__(self, dstvalue=0):
                 if isinstance(dstvalue, int):
                     dstvalue = timedelta(minutes=dstvalue)
                 self.dstvalue = dstvalue
@@ -3042,6 +3042,26 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             # Ensure tm_isdst is 0 regardless of what dst() says: DST
             # is never in effect for a UTC time.
             self.assertEqual(0, t.tm_isdst)
+
+        # For naive datetime, utctimetuple == timetuple except for isdst
+        d = cls(1, 2, 3, 10, 20, 30, 40)
+        t = d.utctimetuple()
+        self.assertEqual(t[:-1], d.timetuple()[:-1])
+        self.assertEqual(0, t.tm_isdst)
+        # Same if utcoffset is None
+        class NOFS(DST):
+            def utcoffset(self, dt):
+                return None
+        d = cls(1, 2, 3, 10, 20, 30, 40, tzinfo=NOFS())
+        t = d.utctimetuple()
+        self.assertEqual(t[:-1], d.timetuple()[:-1])
+        self.assertEqual(0, t.tm_isdst)
+        # Check that bad tzinfo is detected
+        class BOFS(DST):
+            def utcoffset(self, dt):
+                return "EST"
+        d = cls(1, 2, 3, 10, 20, 30, 40, tzinfo=BOFS())
+        self.assertRaises(TypeError, d.utctimetuple)
 
         # Check that utctimetuple() is the same as
         # astimezone(utc).timetuple()
