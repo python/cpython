@@ -61,7 +61,7 @@ source.
 
 .. cmdoption:: -c <command>
 
-   Execute the Python code in *command*.  *command* can be one ore more
+   Execute the Python code in *command*.  *command* can be one or more
    statements separated by newlines, with significant leading whitespace as in
    normal module code.
 
