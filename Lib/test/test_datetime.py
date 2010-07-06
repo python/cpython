@@ -153,6 +153,15 @@ class TestTimeZone(unittest.TestCase):
                    timezone.min, timezone.max]:
             self.assertEqual(str(tz), tz.tzname(None))
 
+    def test_repr(self):
+        import datetime
+        for tz in [self.ACDT, self.EST, timezone.utc,
+                   timezone.min, timezone.max]:
+            # test round-trip
+            tzrep = repr(tz)
+            self.assertEqual(tz, eval(tzrep))
+
+
     def test_class_members(self):
         limit = timedelta(hours=23, minutes=59)
         self.assertEqual(timezone.utc.utcoffset(None), ZERO)

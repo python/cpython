@@ -780,6 +780,8 @@ typedef struct
     PyObject *name;
 } PyDateTime_TimeZone;
 
+PyObject *PyDateTime_TimeZone_UTC;
+
 /* Create new timezone instance checking offset range.  This
    function does not check the name argument.  Caller must assure
    that offset is a timedelta instance and name is either NULL
@@ -3380,6 +3382,24 @@ _timezone_check_argument(PyObject *dt, const char *meth)
 }
 
 static PyObject *
+timezone_repr(PyDateTime_TimeZone *self)
+{
+    /* Note that although timezone is not subclassable, it is convenient
+       to use Py_TYPE(self)->tp_name here. */
+    const char *type_name = Py_TYPE(self)->tp_name;
+
+    if (((PyObject *)self) == PyDateTime_TimeZone_UTC)
+        return PyUnicode_FromFormat("%s.utc", type_name);
+
+    if (self->name == NULL)
+        return PyUnicode_FromFormat("%s(%R)", type_name, self->offset);
+
+    return PyUnicode_FromFormat("%s(%R, %R)", type_name, self->offset,
+                                self->name);
+}
+
+
+static PyObject *
 timezone_str(PyDateTime_TimeZone *self)
 {
     char buf[10];
@@ -3505,7 +3525,7 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     0,                                /* tp_getattr */
     0,                                /* tp_setattr */
     0,                                /* tp_reserved */
-    0,                                /* tp_repr */
+    (reprfunc)timezone_repr,          /* tp_repr */
     0,                                /* tp_as_number */
     0,                                /* tp_as_sequence */
     0,                                /* tp_as_mapping */
@@ -5260,7 +5280,7 @@ PyInit_datetime(void)
     Py_DECREF(delta);
     if (x == NULL || PyDict_SetItemString(d, "utc", x) < 0)
         return NULL;
-    Py_DECREF(x);
+    PyDateTime_TimeZone_UTC = x;
 
     delta = new_delta(-1, 60, 0, 1); /* -23:59 */
     if (delta == NULL)
