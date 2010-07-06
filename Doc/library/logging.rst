@@ -55,10 +55,12 @@ Simple examples
 
 Most applications are probably going to want to log to a file, so let's start
 with that case. Using the :func:`basicConfig` function, we can set up the
-default handler so that debug messages are written to a file::
+default handler so that debug messages are written to a file (in the example,
+we assume that you have the appropriate permissions to create a file called
+*example.log* in the current directory)::
 
    import logging
-   LOG_FILENAME = '/tmp/logging_example.out'
+   LOG_FILENAME = 'example.log'
    logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
    logging.debug('This message should go to the log file')
@@ -77,7 +79,7 @@ yourself, though, it is simpler to use a :class:`RotatingFileHandler`::
    import logging
    import logging.handlers
 
-   LOG_FILENAME = '/tmp/logging_rotatingfile_example.out'
+   LOG_FILENAME = 'logging_rotatingfile_example.out'
 
    # Set up a specific logger with our desired output level
    my_logger = logging.getLogger('MyLogger')
@@ -102,14 +104,14 @@ yourself, though, it is simpler to use a :class:`RotatingFileHandler`::
 The result should be 6 separate files, each with part of the log history for the
 application::
 
-   /tmp/logging_rotatingfile_example.out
-   /tmp/logging_rotatingfile_example.out.1
-   /tmp/logging_rotatingfile_example.out.2
-   /tmp/logging_rotatingfile_example.out.3
-   /tmp/logging_rotatingfile_example.out.4
-   /tmp/logging_rotatingfile_example.out.5
+   logging_rotatingfile_example.out
+   logging_rotatingfile_example.out.1
+   logging_rotatingfile_example.out.2
+   logging_rotatingfile_example.out.3
+   logging_rotatingfile_example.out.4
+   logging_rotatingfile_example.out.5
 
-The most current file is always :file:`/tmp/logging_rotatingfile_example.out`,
+The most current file is always :file:`logging_rotatingfile_example.out`,
 and each time it reaches the size limit it is renamed with the suffix
 ``.1``. Each of the existing backup files is renamed to increment the suffix
 (``.1`` becomes ``.2``, etc.)  and the ``.6`` file is erased.
@@ -246,16 +248,16 @@ With the logger object configured, the following methods create log messages:
   methods listed above, but this is how to log at custom log levels.
 
 :func:`getLogger` returns a reference to a logger instance with the specified
-if it it is provided, or ``root`` if not.  The names are period-separated
+name if it is provided, or ``root`` if not.  The names are period-separated
 hierarchical structures.  Multiple calls to :func:`getLogger` with the same name
 will return a reference to the same logger object.  Loggers that are further
 down in the hierarchical list are children of loggers higher up in the list.
 For example, given a logger with a name of ``foo``, loggers with names of
-``foo.bar``, ``foo.bar.baz``, and ``foo.bam`` are all children of ``foo``.
-Child loggers propagate messages up to their parent loggers.  Because of this,
-it is unnecessary to define and configure all the loggers an application uses.
-It is sufficient to configure a top-level logger and create child loggers as
-needed.
+``foo.bar``, ``foo.bar.baz``, and ``foo.bam`` are all descendants of ``foo``.
+Child loggers propagate messages up to the handlers associated with their
+ancestor loggers.  Because of this, it is unnecessary to define and configure
+handlers for all the loggers an application uses. It is sufficient to
+configure handlers for a top-level logger and create child loggers as needed.
 
 
 Handlers
@@ -283,15 +285,16 @@ custom handlers) are the following configuration methods:
   are there two :func:`setLevel` methods?  The level set in the logger
   determines which severity of messages it will pass to its handlers.  The level
   set in each handler determines which messages that handler will send on.
-  :func:`setFormatter` selects a Formatter object for this handler to use.
+
+* :func:`setFormatter` selects a Formatter object for this handler to use.
 
 * :func:`addFilter` and :func:`removeFilter` respectively configure and
   deconfigure filter objects on handlers.
 
-Application code should not directly instantiate and use handlers.  Instead, the
-:class:`Handler` class is a base class that defines the interface that all
-Handlers should have and establishes some default behavior that child classes
-can use (or override).
+Application code should not directly instantiate and use instances of
+:class:`Handler`.  Instead, the :class:`Handler` class is a base class that
+defines the interface that all handlers should have and establishes some
+default behavior that child classes can use (or override).
 
 
 Formatters
@@ -510,7 +513,9 @@ support desk staff, system administrators, developers). Handlers are passed
 can have zero, one or more handlers associated with it (via the
 :meth:`addHandler` method of :class:`Logger`). In addition to any handlers
 directly associated with a logger, *all handlers associated with all ancestors
-of the logger* are called to dispatch the message.
+of the logger* are called to dispatch the message (unless the *propagate* flag
+for a logger is set to a false value, at which point the passing to ancestor
+handlers stops).
 
 Just as for loggers, handlers can have levels associated with them. A handler's
 level acts as a filter in the same way as a logger's level does. If a handler
@@ -712,7 +717,11 @@ functions.
 
    Provides an overriding level *lvl* for all loggers which takes precedence over
    the logger's own level. When the need arises to temporarily throttle logging
-   output down across the whole application, this function can be useful.
+   output down across the whole application, this function can be useful. Its
+   effect is to disable all logging calls of severity *lvl* and below, so that
+   if you call it with a value of INFO, then all INFO and DEBUG events would be
+   discarded, whereas those of severity WARNING and above would be processed
+   according to the logger's effective level.
 
 
 .. function:: addLevelName(lvl, levelName)
@@ -748,12 +757,12 @@ functions.
 
    Does basic configuration for the logging system by creating a
    :class:`StreamHandler` with a default :class:`Formatter` and adding it to the
-   root logger. The function does nothing if any handlers have been defined for
-   the root logger. The functions :func:`debug`, :func:`info`, :func:`warning`,
+   root logger. The functions :func:`debug`, :func:`info`, :func:`warning`,
    :func:`error` and :func:`critical` will call :func:`basicConfig` automatically
    if no handlers are defined for the root logger.
 
-   This function does nothing if the root logger already has handlers configured.
+   This function does nothing if the root logger already has handlers
+   configured for it.
 
    .. versionchanged:: 2.4
       Formerly, :func:`basicConfig` did not take any keyword arguments.
@@ -827,8 +836,8 @@ instantiated directly, but always through the module-level function
 .. attribute:: Logger.propagate
 
    If this evaluates to false, logging messages are not passed by this logger or by
-   child loggers to higher level (ancestor) loggers. The constructor sets this
-   attribute to 1.
+   its child loggers to the handlers of higher level (ancestor) loggers. The
+   constructor sets this attribute to 1.
 
 
 .. method:: Logger.setLevel(lvl)
@@ -1043,14 +1052,14 @@ destination can be easily changed, as shown in the example below::
 
    logging.basicConfig(level=logging.DEBUG,
                        format='%(asctime)s %(levelname)s %(message)s',
-                       filename='/tmp/myapp.log',
+                       filename='myapp.log',
                        filemode='w')
    logging.debug('A debug message')
    logging.info('Some information')
    logging.warning('A shot across the bows')
 
 The :meth:`basicConfig` method is used to change the configuration defaults,
-which results in output (written to ``/tmp/myapp.log``) which should look
+which results in output (written to ``myapp.log``) which should look
 something like the following::
 
    2004-07-02 13:00:08,743 DEBUG A debug message
@@ -1499,6 +1508,11 @@ printed on the console; on the server side, you should see something like::
       69 myapp.area2     WARNING  Jail zesty vixen who grabbed pay from quack.
       69 myapp.area2     ERROR    The five boxing wizards jump quickly.
 
+Note that there are some security issues with pickle in some scenarios. If
+these affect you, you can use an alternative serialization scheme by overriding
+the :meth:`makePickle` method and implementing your alternative there, as
+well as adapting the above script to use your alternative serialization.
+
 Using arbitrary objects as messages
 -----------------------------------
 
@@ -1659,13 +1673,13 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
 StreamHandler
 ^^^^^^^^^^^^^
 
-.. module:: logging.handlers
-
 The :class:`StreamHandler` class, located in the core :mod:`logging` package,
 sends logging output to streams such as *sys.stdout*, *sys.stderr* or any
 file-like object (or, more precisely, any object which supports :meth:`write`
 and :meth:`flush` methods).
 
+
+.. currentmodule:: logging
 
 .. class:: StreamHandler([strm])
 
@@ -1850,6 +1864,11 @@ timed intervals.
    The extensions are date-and-time based, using the strftime format
    ``%Y-%m-%d_%H-%M-%S`` or a leading portion thereof, depending on the
    rollover interval.
+
+   When computing the next rollover time for the first time (when the handler
+   is created), the last modification time of an existing log file, or else
+   the current time, is used to compute when the next rotation will occur.
+
    If the *utc* argument is true, times in UTC will be used; otherwise
    local time is used.
 
@@ -1922,6 +1941,11 @@ sends logging output to a network socket. The base class uses a TCP socket.
       Pickles the record's attribute dictionary in binary format with a length
       prefix, and returns it ready for transmission across the socket.
 
+      Note that pickles aren't completely secure. If you are concerned about
+      security, you may want to override this method to implement a more secure
+      mechanism. For example, you can sign pickles using HMAC and then verify
+      them on the receiving end, or alternatively you can disable unpickling of
+      global objects on the receiving end.
 
    .. method:: send(packet)
 
@@ -2002,6 +2026,85 @@ supports sending logging messages to a remote or local Unix syslog.
       or integers - if strings are passed, internal mapping dictionaries are
       used to convert them to integers.
 
+      The symbolic ``LOG_`` values are defined in :class:`SysLogHandler` and
+      mirror the values defined in the ``sys/syslog.h`` header file.
+
+      **Priorities**
+
+      +--------------------------+---------------+
+      | Name (string)            | Symbolic value|
+      +==========================+===============+
+      | ``alert``                | LOG_ALERT     |
+      +--------------------------+---------------+
+      | ``crit`` or ``critical`` | LOG_CRIT      |
+      +--------------------------+---------------+
+      | ``debug``                | LOG_DEBUG     |
+      +--------------------------+---------------+
+      | ``emerg`` or ``panic``   | LOG_EMERG     |
+      +--------------------------+---------------+
+      | ``err`` or ``error``     | LOG_ERR       |
+      +--------------------------+---------------+
+      | ``info``                 | LOG_INFO      |
+      +--------------------------+---------------+
+      | ``notice``               | LOG_NOTICE    |
+      +--------------------------+---------------+
+      | ``warn`` or ``warning``  | LOG_WARNING   |
+      +--------------------------+---------------+
+
+      **Facilities**
+
+      +---------------+---------------+
+      | Name (string) | Symbolic value|
+      +===============+===============+
+      | ``auth``      | LOG_AUTH      |
+      +---------------+---------------+
+      | ``authpriv``  | LOG_AUTHPRIV  |
+      +---------------+---------------+
+      | ``cron``      | LOG_CRON      |
+      +---------------+---------------+
+      | ``daemon``    | LOG_DAEMON    |
+      +---------------+---------------+
+      | ``ftp``       | LOG_FTP       |
+      +---------------+---------------+
+      | ``kern``      | LOG_KERN      |
+      +---------------+---------------+
+      | ``lpr``       | LOG_LPR       |
+      +---------------+---------------+
+      | ``mail``      | LOG_MAIL      |
+      +---------------+---------------+
+      | ``news``      | LOG_NEWS      |
+      +---------------+---------------+
+      | ``syslog``    | LOG_SYSLOG    |
+      +---------------+---------------+
+      | ``user``      | LOG_USER      |
+      +---------------+---------------+
+      | ``uucp``      | LOG_UUCP      |
+      +---------------+---------------+
+      | ``local0``    | LOG_LOCAL0    |
+      +---------------+---------------+
+      | ``local1``    | LOG_LOCAL1    |
+      +---------------+---------------+
+      | ``local2``    | LOG_LOCAL2    |
+      +---------------+---------------+
+      | ``local3``    | LOG_LOCAL3    |
+      +---------------+---------------+
+      | ``local4``    | LOG_LOCAL4    |
+      +---------------+---------------+
+      | ``local5``    | LOG_LOCAL5    |
+      +---------------+---------------+
+      | ``local6``    | LOG_LOCAL6    |
+      +---------------+---------------+
+      | ``local7``    | LOG_LOCAL7    |
+      +---------------+---------------+
+
+   .. method:: mapPriority(levelname)
+
+      Maps a logging level name to a syslog priority name.
+      You may need to override this if you are using custom levels, or
+      if the default algorithm is not suitable for your needs. The
+      default algorithm maps ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR`` and
+      ``CRITICAL`` to the equivalent syslog names, and all other level
+      names to "warning".
 
 .. _nt-eventlog-handler:
 
@@ -2481,17 +2584,17 @@ Configuration file format
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The configuration file format understood by :func:`fileConfig` is based on
-ConfigParser functionality. The file must contain sections called ``[loggers]``,
-``[handlers]`` and ``[formatters]`` which identify by name the entities of each
-type which are defined in the file. For each such entity, there is a separate
-section which identified how that entity is configured. Thus, for a logger named
-``log01`` in the ``[loggers]`` section, the relevant configuration details are
-held in a section ``[logger_log01]``. Similarly, a handler called ``hand01`` in
-the ``[handlers]`` section will have its configuration held in a section called
-``[handler_hand01]``, while a formatter called ``form01`` in the
-``[formatters]`` section will have its configuration specified in a section
-called ``[formatter_form01]``. The root logger configuration must be specified
-in a section called ``[logger_root]``.
+:mod:`ConfigParser` functionality. The file must contain sections called
+``[loggers]``, ``[handlers]`` and ``[formatters]`` which identify by name the
+entities of each type which are defined in the file. For each such entity,
+there is a separate section which identifies how that entity is configured.
+Thus, for a logger named ``log01`` in the ``[loggers]`` section, the relevant
+configuration details are held in a section ``[logger_log01]``. Similarly, a
+handler called ``hand01`` in the ``[handlers]`` section will have its
+configuration held in a section called ``[handler_hand01]``, while a formatter
+called ``form01`` in the ``[formatters]`` section will have its configuration
+specified in a section called ``[formatter_form01]``. The root logger
+configuration must be specified in a section called ``[logger_root]``.
 
 Examples of these sections in the file are given below. ::
 
