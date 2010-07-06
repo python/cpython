@@ -595,7 +595,7 @@ static PyStructSequence_Desc hash_info_desc = {
     5,
 };
 
-PyObject *
+static PyObject *
 get_hash_info(void)
 {
     PyObject *hash_info;
