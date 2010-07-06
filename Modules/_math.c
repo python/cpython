@@ -55,7 +55,8 @@ _Py_acosh(double x)
     else if (x >= two_pow_p28) {        /* x > 2**28 */
         if (Py_IS_INFINITY(x)) {
             return x+x;
-        } else {
+        }
+        else {
             return log(x)+ln2;          /* acosh(huge)=log(2x) */
         }
     }
@@ -173,15 +174,15 @@ _Py_expm1(double x)
     */
 
     if (fabs(x) < 0.7) {
-    double u;
-    u = exp(x);
-    if (u == 1.0)
-        return x;
-    else
-        return (u - 1.0) * x / log(u);
+        double u;
+        u = exp(x);
+        if (u == 1.0)
+            return x;
+        else
+            return (u - 1.0) * x / log(u);
     }
     else
-    return exp(x) - 1.0;
+        return exp(x) - 1.0;
 }
 
 /* log1p(x) = log(1+x).  The log1p function is designed to avoid the
@@ -213,17 +214,19 @@ _Py_log1p(double x)
 
     double y;
     if (fabs(x) < DBL_EPSILON/2.) {
-    return x;
-    } else if (-0.5 <= x && x <= 1.) {
-    /* WARNING: it's possible than an overeager compiler
-       will incorrectly optimize the following two lines
-       to the equivalent of "return log(1.+x)". If this
-       happens, then results from log1p will be inaccurate
-       for small x. */
-    y = 1.+x;
-    return log(y)-((y-1.)-x)/y;
-    } else {
-    /* NaNs and infinities should end up here */
-    return log(1.+x);
+        return x;
+    }
+    else if (-0.5 <= x && x <= 1.) {
+        /* WARNING: it's possible than an overeager compiler
+           will incorrectly optimize the following two lines
+           to the equivalent of "return log(1.+x)". If this
+           happens, then results from log1p will be inaccurate
+           for small x. */
+        y = 1.+x;
+        return log(y)-((y-1.)-x)/y;
+    }
+    else {
+        /* NaNs and infinities should end up here */
+        return log(1.+x);
     }
 }
