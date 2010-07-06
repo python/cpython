@@ -1422,7 +1422,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
                     round_up = 1;
                     break;
                 }
-        if (round_up == 1) {
+        if (round_up) {
             x += 2*half_eps;
             if (top_exp == DBL_MAX_EXP &&
                 x == ldexp((double)(2*half_eps), DBL_MANT_DIG))
