@@ -158,12 +158,6 @@ Optimizations
 
 Several performance enhancements have been added:
 
-.. * A new :program:`configure` option, :option:`--with-computed-gotos`,
-   compiles the main bytecode interpreter loop using a new dispatch
-   mechanism that gives speedups of up to 20%, depending on the system
-   and benchmark.  The new mechanism is only supported on certain
-   compilers, such as gcc, SunPro, and icc.
-
 * The garbage collector now performs better when many objects are
   being allocated without deallocating any.  A full garbage collection
   pass is only performed when the middle generation has been collected
