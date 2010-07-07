@@ -26,17 +26,12 @@ PyAPI_FUNC(void) PyStructSequence_InitType(PyTypeObject *type,
 
 PyAPI_FUNC(PyObject *) PyStructSequence_New(PyTypeObject* type);
 
-typedef struct {
-    PyObject_VAR_HEAD
-    PyObject *ob_item[1];
-} PyStructSequence;
+typedef PyTupleObject PyStructSequence;
 
 /* Macro, *only* to be used to fill in brand new objects */
-#define PyStructSequence_SET_ITEM(op, i, v) \
-    (((PyStructSequence *)(op))->ob_item[i] = v)
+#define PyStructSequence_SET_ITEM(op, i, v) PyTuple_SET_ITEM(op, i, v)
 
-#define PyStructSequence_GET_ITEM(op, i) \
-    (((PyStructSequence *)(op))->ob_item[i])
+#define PyStructSequence_GET_ITEM(op, i) PyTuple_GET_ITEM(op, i)
 
 
 #ifdef __cplusplus
