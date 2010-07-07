@@ -475,6 +475,9 @@ class StructTest(unittest.TestCase):
             self.assertEqual(value, 0x12345678)
 
     def test_bool(self):
+        class ExplodingBool(object):
+            def __bool__(self):
+                raise IOError
         for prefix in tuple("<>!=")+('',):
             false = (), [], [], '', 0
             true = [1], 'test', 5, -1, 0xffffffff+1, 0xffffffff/2
@@ -502,6 +505,9 @@ class StructTest(unittest.TestCase):
             if len(packed) != 1:
                 self.assertFalse(prefix, msg='encoded bool is not one byte: %r'
                                              %packed)
+
+            self.assertRaises(IOError, struct.pack, prefix + '?',
+                              ExplodingBool())
 
         for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
             self.assertTrue(struct.unpack('>?', c)[0])
