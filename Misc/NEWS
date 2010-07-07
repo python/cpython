@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8413: structsequence now subclasses tuple.
+
 - Issue #8271: during the decoding of an invalid UTF-8 byte sequence, only the
   start byte and the continuation byte(s) are now considered invalid, instead
   of the number of bytes specified by the start byte.
