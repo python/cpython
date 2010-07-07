@@ -491,6 +491,9 @@ class StructTest(unittest.TestCase):
             self.test_unpack_from(cls=buffer)
 
     def test_bool(self):
+        class ExplodingBool(object):
+            def __nonzero__(self):
+                raise IOError
         for prefix in tuple("<>!=")+('',):
             false = (), [], [], '', 0
             true = [1], 'test', 5, -1, 0xffffffffL+1, 0xffffffff//2
@@ -519,8 +522,11 @@ class StructTest(unittest.TestCase):
                 self.assertFalse(prefix, msg='encoded bool is not one byte: %r'
                                              %packed)
 
-            for c in '\x01\x7f\xff\x0f\xf0':
-                self.assertTrue(struct.unpack('>?', c)[0])
+            self.assertRaises(IOError, struct.pack, prefix + '?',
+                              ExplodingBool())
+
+        for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
+            self.assertTrue(struct.unpack('>?', c)[0])
 
     @unittest.skipUnless(IS32BIT, "Specific to 32bit machines")
     def test_crasher(self):
