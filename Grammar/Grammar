@@ -29,7 +29,7 @@ typedargslist: ((tfpdef ['=' test] ',')*
                 | tfpdef ['=' test] (',' tfpdef ['=' test])* [','])
 tfpdef: NAME [':' test]
 varargslist: ((vfpdef ['=' test] ',')*
-              ('*' [vfpdef] (',' vfpdef ['=' test])*  [',' '**' vfpdef] | '**' vfpdef)
+              ('*' [vfpdef] (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef)
               | vfpdef ['=' test] (',' vfpdef ['=' test])* [','])
 vfpdef: NAME
 
