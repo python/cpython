@@ -468,6 +468,8 @@ C-API
 Library
 -------
 
+- Issue #9186: Fix math.log1p(-1.0) to raise ValueError, not OverflowError.
+
 - Issue #9130: Fix validation of relative imports in parser module.
 
 - Issue #9128: Fix validation of class decorators in parser module.
