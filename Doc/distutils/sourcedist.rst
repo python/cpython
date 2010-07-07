@@ -76,10 +76,10 @@ source distribution:
   :option:`packages` options
 
 * all C source files mentioned in the :option:`ext_modules` or
-  :option:`libraries` options (
+  :option:`libraries` options
 
-  **\*\*** getting C library sources currently broken---no
-  :meth:`get_source_files` method in :file:`build_clib.py`! **\*\***)
+  .. XXX Getting C library sources is currently broken -- no
+     :meth:`get_source_files` method in :file:`build_clib.py`!
 
 * scripts identified by the :option:`scripts` option
   See :ref:`distutils-installing-scripts`.
