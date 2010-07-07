@@ -1396,6 +1396,9 @@ Library
 Extension Modules
 -----------------
 
+- In struct.pack, correctly propogate exceptions from computing the truth of an
+  object in the '?' format.
+
 - Issue #9000: datetime.timezone objects now have eval-friendly repr.
 
 - In the math module, correctly lookup __trunc__, __ceil__, and __floor__ as
