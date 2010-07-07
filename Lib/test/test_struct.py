@@ -450,8 +450,10 @@ class StructTest(unittest.TestCase):
 
         # Go beyond boundaries.
         small_buf = array.array('c', ' '*10)
-        self.assertRaises(struct.error, s.pack_into, small_buf, 0, test_string)
-        self.assertRaises(struct.error, s.pack_into, small_buf, 2, test_string)
+        self.assertRaises((ValueError, struct.error), s.pack_into, small_buf, 0,
+                          test_string)
+        self.assertRaises((ValueError, struct.error), s.pack_into, small_buf, 2,
+                          test_string)
 
         # Test bogus offset (issue 3694)
         sb = small_buf
@@ -475,8 +477,10 @@ class StructTest(unittest.TestCase):
 
         # Go beyond boundaries.
         small_buf = array.array('c', ' '*10)
-        self.assertRaises(struct.error, pack_into, small_buf, 0, test_string)
-        self.assertRaises(struct.error, pack_into, small_buf, 2, test_string)
+        self.assertRaises((ValueError, struct.error), pack_into, small_buf, 0,
+                          test_string)
+        self.assertRaises((ValueError, struct.error), pack_into, small_buf, 2,
+                          test_string)
 
     def test_unpack_with_buffer(self):
         with check_py3k_warnings(("buffer.. not supported in 3.x",
