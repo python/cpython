@@ -69,6 +69,7 @@ extern double copysign(double, double);
 
 static const double pi = 3.141592653589793238462643383279502884197;
 static const double sqrtpi = 1.772453850905516027298167483341145182798;
+static const double logpi = 1.144729885849400174143427351353058711647;
 
 static double
 sinpi(double x)
@@ -356,20 +357,15 @@ m_lgamma(double x)
     if (absx < 1e-20)
         return -log(absx);
 
-    /* Lanczos' formula */
-    if (x > 0.0) {
-        /* we could save a fraction of a ulp in accuracy by having a
-           second set of numerator coefficients for lanczos_sum that
-           absorbed the exp(-lanczos_g) term, and throwing out the
-           lanczos_g subtraction below; it's probably not worth it. */
-        r = log(lanczos_sum(x)) - lanczos_g +
-            (x-0.5)*(log(x+lanczos_g-0.5)-1);
-    }
-    else {
-        r = log(pi) - log(fabs(sinpi(absx))) - log(absx) -
-            (log(lanczos_sum(absx)) - lanczos_g +
-             (absx-0.5)*(log(absx+lanczos_g-0.5)-1));
-    }
+    /* Lanczos' formula.  We could save a fraction of a ulp in accuracy by
+       having a second set of numerator coefficients for lanczos_sum that
+       absorbed the exp(-lanczos_g) term, and throwing out the lanczos_g
+       subtraction below; it's probably not worth it. */
+    r = log(lanczos_sum(absx)) - lanczos_g;
+    r += (absx - 0.5) * (log(absx + lanczos_g - 0.5) - 1);
+    if (x < 0.0)
+        /* Use reflection formula to get value for negative x. */
+        r = logpi - log(fabs(sinpi(absx))) - log(absx) - r;
     if (Py_IS_INFINITY(r))
         errno = ERANGE;
     return r;
