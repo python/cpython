@@ -896,7 +896,7 @@ FUNC1A(gamma, m_tgamma,
       "gamma(x)\n\nGamma function at x.")
 FUNC1A(lgamma, m_lgamma,
       "lgamma(x)\n\nNatural logarithm of absolute value of Gamma function at x.")
-FUNC1(log1p, m_log1p, 1,
+FUNC1(log1p, m_log1p, 0,
       "log1p(x)\n\nReturn the natural logarithm of 1+x (base e).\n"
       "The result is computed in a way which is accurate for x near zero.")
 FUNC1(sin, sin, 0,
