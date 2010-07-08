@@ -470,6 +470,10 @@ C-API
 Library
 -------
 
+- Issue #9136: Fix 'dictionary changed size during iteration'
+  RuntimeError produced when profiling the decimal module.  This was
+  due to a dangerous iteration over 'locals()' in Context.__init__.
+
 - Fix extreme speed issue in Decimal.pow when the base is an exact
   power of 10 and the exponent is tiny (for example,
   Decimal(10) ** Decimal('1e-999999999')).
