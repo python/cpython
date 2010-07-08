@@ -35,10 +35,25 @@ PyStructSequence_New(PyTypeObject *type)
     obj = PyObject_GC_NewVar(PyStructSequence, type, size);
     if (obj == NULL)
         return NULL;
+    /* Hack the size of the variable object, so invisible fields don't appear
+     to Python code. */
+    Py_SIZE(obj) = VISIBLE_SIZE_TP(type);
     for (i = 0; i < size; i++)
         obj->ob_item[i] = NULL;
 
     return (PyObject*)obj;
+}
+
+static void
+structseq_dealloc(PyStructSequence *obj)
+{
+    Py_ssize_t i, size;
+    
+    size = REAL_SIZE(obj);
+    for (i = 0; i < size; ++i) {
+        Py_XDECREF(obj->ob_item[i]);
+    }
+    PyObject_GC_Del(obj);
 }
 
 static PyObject *
@@ -154,8 +169,11 @@ structseq_repr(PyStructSequence *obj)
         char *cname, *crepr;
 
         cname = typ->tp_members[i].name;
-        if (cname == NULL)
+        if (cname == NULL) {
+            PyErr_Format(PyExc_SystemError, "In structseq_repr(), member %d name is NULL"
+                         " for type %.500s", i, typ->tp_name);
             return NULL;
+        }
         val = PyStructSequence_GET_ITEM(obj, i);
         repr = PyObject_Repr(val);
         if (repr == NULL)
@@ -249,7 +267,7 @@ static PyTypeObject _struct_sequence_template = {
     NULL,                                       /* tp_name */
     sizeof(PyStructSequence) - sizeof(PyObject *), /* tp_basicsize */
     sizeof(PyObject *),                         /* tp_itemsize */
-    0,                                          /* tp_dealloc */
+    (destructor)structseq_dealloc,              /* tp_dealloc */
     0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
