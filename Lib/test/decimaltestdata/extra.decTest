@@ -213,7 +213,20 @@ extr1658 shift 1234567 3 -> 7000
 extr1659 shift 1234567 4 -> 0
 extr1660 shift 1234567 5 -> NaN Invalid_operation
 
+-- Cases where the power function was impossibly slow to determine that the
+-- result is inexact.  Thanks Stefan Krah for identifying this problem.
+precision: 16
+maxExponent: 999999999
+minExponent: -999999999
+extr1700 power 10 1e-999999999 -> 1.000000000000000 Inexact Rounded
+extr1701 power 100.0 -557.71e-742888888 -> 1.000000000000000 Inexact Rounded
+extr1702 power 10 1e-100 -> 1.000000000000000 Inexact Rounded
 
+-- A couple of interesting exact cases for power.  Note that the specification
+-- requires these to be reported as Inexact.
+extr1710 power 1e375 56e-3 -> 1.000000000000000E+21 Inexact Rounded
+extr1711 power 10000 0.75 -> 1000.000000000000 Inexact Rounded
+extr1712 power 1e-24 0.875 -> 1.000000000000000E-21 Inexact Rounded
 
 -- Tests for the is_* boolean operations
 precision: 9
