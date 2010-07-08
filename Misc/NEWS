@@ -510,6 +510,10 @@ What's New in Python 2.7 beta 1?
 Core and Builtins
 -----------------
 
+- Issue #9136: Fix 'dictionary changed size during iteration'
+  RuntimeError produced when profiling the decimal module.  This was
+  due to a dangerous iteration over 'locals()' in Context.__init__.
+
 - Issue #7301: Add environment variable $PYTHONWARNINGS.
 
 - Issue #8329: Don't return the same lists from select.select when no fds are
