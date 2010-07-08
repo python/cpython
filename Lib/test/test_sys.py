@@ -263,7 +263,7 @@ class SysModuleTest(unittest.TestCase):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute
         test.support.get_attribute(sys, "getwindowsversion")
         v = sys.getwindowsversion()
-        self.assertEqual(len(v), 5)
+        self.assertEqual(len(v), 9)
         self.assertIsInstance(v[0], int)
         self.assertIsInstance(v[1], int)
         self.assertIsInstance(v[2], int)

@@ -520,7 +520,7 @@ class WalkTests(unittest.TestCase):
             f = open(path, "w")
             f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
             f.close()
-        if hasattr(os, "symlink"):
+        if support.can_symlink():
             os.symlink(os.path.abspath(t2_path), link_path)
             sub2_tree = (sub2_path, ["link"], ["tmp3"])
         else:
@@ -564,7 +564,7 @@ class WalkTests(unittest.TestCase):
         self.assertEqual(all[flipped + 1], (sub1_path, ["SUB11"], ["tmp2"]))
         self.assertEqual(all[2 - 2 * flipped], sub2_tree)
 
-        if hasattr(os, "symlink"):
+        if support.can_symlink():
             # Walk, following symlinks.
             for root, dirs, files in os.walk(walk_path, followlinks=True):
                 if root == link_path:
@@ -1033,6 +1033,83 @@ class Win32KillTests(unittest.TestCase):
         self._kill_with_event(signal.CTRL_BREAK_EVENT, "CTRL_BREAK_EVENT")
 
 
+def skipUnlessWindows6(test):
+    if hasattr(sys, 'getwindowsversion') and sys.getwindowsversion().major >= 6:
+        return test
+    return unittest.skip("Requires Windows Vista or later")(test)
+
+@unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
+@support.skip_unless_symlink
+class Win32SymlinkTests(unittest.TestCase):
+    filelink = 'filelinktest'
+    filelink_target = os.path.abspath(__file__)
+    dirlink = 'dirlinktest'
+    dirlink_target = os.path.dirname(filelink_target)
+    missing_link = 'missing link'
+
+    def setUp(self):
+        assert os.path.exists(self.dirlink_target)
+        assert os.path.exists(self.filelink_target)
+        assert not os.path.exists(self.dirlink)
+        assert not os.path.exists(self.filelink)
+        assert not os.path.exists(self.missing_link)
+
+    def tearDown(self):
+        if os.path.exists(self.filelink):
+            os.remove(self.filelink)
+        if os.path.exists(self.dirlink):
+            os.rmdir(self.dirlink)
+        if os.path.lexists(self.missing_link):
+            os.remove(self.missing_link)
+
+    def test_directory_link(self):
+        os.symlink(self.dirlink_target, self.dirlink)
+        self.assertTrue(os.path.exists(self.dirlink))
+        self.assertTrue(os.path.isdir(self.dirlink))
+        self.assertTrue(os.path.islink(self.dirlink))
+        self.check_stat(self.dirlink, self.dirlink_target)
+
+    def test_file_link(self):
+        os.symlink(self.filelink_target, self.filelink)
+        self.assertTrue(os.path.exists(self.filelink))
+        self.assertTrue(os.path.isfile(self.filelink))
+        self.assertTrue(os.path.islink(self.filelink))
+        self.check_stat(self.filelink, self.filelink_target)
+
+    def _create_missing_dir_link(self):
+        'Create a "directory" link to a non-existent target'
+        linkname = self.missing_link
+        if os.path.lexists(linkname):
+            os.remove(linkname)
+        target = r'c:\\target does not exist.29r3c740'
+        assert not os.path.exists(target)
+        target_is_dir = True
+        os.symlink(target, linkname, target_is_dir)
+
+    def test_remove_directory_link_to_missing_target(self):
+        self._create_missing_dir_link()
+        # For compatibility with Unix, os.remove will check the
+        #  directory status and call RemoveDirectory if the symlink
+        #  was created with target_is_dir==True.
+        os.remove(self.missing_link)
+
+    @unittest.skip("currently fails; consider for improvement")
+    def test_isdir_on_directory_link_to_missing_target(self):
+        self._create_missing_dir_link()
+        # consider having isdir return true for directory links
+        self.assertTrue(os.path.isdir(self.missing_link))
+
+    @unittest.skip("currently fails; consider for improvement")
+    def test_rmdir_on_directory_link_to_missing_target(self):
+        self._create_missing_dir_link()
+        # consider allowing rmdir to remove directory links
+        os.rmdir(self.missing_link)
+
+    def check_stat(self, link, target):
+        self.assertEqual(os.stat(link), os.stat(target))
+        self.assertNotEqual(os.lstat(link), os.stat(link))
+
+
 class MiscTests(unittest.TestCase):
 
     @unittest.skipIf(os.name == "nt", "POSIX specific test")
@@ -1056,6 +1133,7 @@ def test_main():
         PosixUidGidTests,
         Pep383Tests,
         Win32KillTests,
+        Win32SymlinkTests,
         MiscTests,
     )
 

@@ -571,7 +571,7 @@ posix_error_with_allocated_filename(PyObject* name)
 
 #ifdef MS_WINDOWS
 static PyObject *
-win32_error(char* function, char* filename)
+win32_error(char* function, const char* filename)
 {
     /* XXX We should pass the function name along in the future.
        (winreg.c also wants to pass the function name.)
@@ -978,12 +978,28 @@ attributes_from_dir_w(LPCWSTR pszFile, LPWIN32_FILE_ATTRIBUTE_DATA pfad)
     return TRUE;
 }
 
-static int
-win32_stat(const char* path, struct win32_stat *result)
+/* About the following functions: win32_lstat, win32_lstat_w, win32_stat,
+   win32_stat_w
+
+   In Posix, stat automatically traverses symlinks and returns the stat
+   structure for the target.  In Windows, the equivalent GetFileAttributes by
+   default does not traverse symlinks and instead returns attributes for
+   the symlink.
+
+   Therefore, win32_lstat will get the attributes traditionally, and
+   win32_stat will first explicitly resolve the symlink target and then will
+   call win32_lstat on that result.
+
+   The _w represent Unicode equivalents of the aformentioned ANSI functions. */
+
+static int 
+win32_lstat(const char* path, struct win32_stat *result)
 {
     WIN32_FILE_ATTRIBUTE_DATA info;
     int code;
     char *dot;
+    WIN32_FIND_DATAA find_data;
+    HANDLE find_data_handle;
     if (!GetFileAttributesExA(path, GetFileExInfoStandard, &info)) {
         if (GetLastError() != ERROR_SHARING_VIOLATION) {
             /* Protocol violation: we explicitly clear errno, instead of
@@ -1000,28 +1016,214 @@ win32_stat(const char* path, struct win32_stat *result)
             }
         }
     }
+
     code = attribute_data_to_stat(&info, result);
     if (code != 0)
         return code;
+
+    /* Get WIN32_FIND_DATA structure for the path to determine if
+       it is a symlink */
+    if(info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+        find_data_handle = FindFirstFileA(path, &find_data);
+        if(find_data_handle != INVALID_HANDLE_VALUE) {
+            if(find_data.dwReserved0 == IO_REPARSE_TAG_SYMLINK) {
+                /* first clear the S_IFMT bits */
+                result->st_mode ^= (result->st_mode & 0170000);
+                /* now set the bits that make this a symlink */
+                result->st_mode |= 0120000;
+            }
+            FindClose(find_data_handle);
+        }
+    }
+
     /* Set S_IFEXEC if it is an .exe, .bat, ... */
     dot = strrchr(path, '.');
     if (dot) {
-        if (stricmp(dot, ".bat") == 0 ||
-        stricmp(dot, ".cmd") == 0 ||
-        stricmp(dot, ".exe") == 0 ||
-        stricmp(dot, ".com") == 0)
+        if (stricmp(dot, ".bat") == 0 || stricmp(dot, ".cmd") == 0 ||
+            stricmp(dot, ".exe") == 0 || stricmp(dot, ".com") == 0)
             result->st_mode |= 0111;
     }
     return code;
 }
 
 static int
-win32_wstat(const wchar_t* path, struct win32_stat *result)
+win32_lstat_w(const wchar_t* path, struct win32_stat *result)
 {
     int code;
     const wchar_t *dot;
     WIN32_FILE_ATTRIBUTE_DATA info;
+    WIN32_FIND_DATAW find_data;
+    HANDLE find_data_handle;
     if (!GetFileAttributesExW(path, GetFileExInfoStandard, &info)) {
+        if (GetLastError() != ERROR_SHARING_VIOLATION) {
+            /* Protocol violation: we explicitly clear errno, instead of
+               setting it to a POSIX error. Callers should use GetLastError. */
+            errno = 0;
+            return -1;
+        } else {
+            /* Could not get attributes on open file. Fall back to reading
+            the directory. */
+            if (!attributes_from_dir_w(path, &info)) {
+                /* Very strange. This should not fail now */
+                errno = 0;
+                return -1;
+            }
+        }
+    }
+    code = attribute_data_to_stat(&info, result);
+    if (code < 0)
+        return code;
+
+    /* Get WIN32_FIND_DATA structure for the path to determine if
+       it is a symlink */
+    if(info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+        find_data_handle = FindFirstFileW(path, &find_data);
+        if(find_data_handle != INVALID_HANDLE_VALUE) {
+            if(find_data.dwReserved0 == IO_REPARSE_TAG_SYMLINK) {
+                /* first clear the S_IFMT bits */
+                result->st_mode ^= (result->st_mode & 0170000);
+                /* now set the bits that make this a symlink */
+                result->st_mode |= 0120000;
+            }
+            FindClose(find_data_handle);
+        }
+    }
+
+    /* Set IFEXEC if it is an .exe, .bat, ... */
+    dot = wcsrchr(path, '.');
+    if (dot) {
+        if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
+            _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0)
+            result->st_mode |= 0111;
+    }
+    return code;
+}
+
+/* Grab GetFinalPathNameByHandle dynamically from kernel32 */
+static int has_GetFinalPathNameByHandle = 0;
+static DWORD (CALLBACK *Py_GetFinalPathNameByHandleA)(HANDLE, LPSTR, DWORD,
+                                                      DWORD);
+static DWORD (CALLBACK *Py_GetFinalPathNameByHandleW)(HANDLE, LPWSTR, DWORD,
+                                                      DWORD);
+static int
+check_GetFinalPathNameByHandle()
+{
+    HINSTANCE hKernel32;
+    /* only recheck */
+    if (!has_GetFinalPathNameByHandle)
+    {
+        hKernel32 = GetModuleHandle("KERNEL32");
+        *(FARPROC*)&Py_GetFinalPathNameByHandleA = GetProcAddress(hKernel32,
+                                                "GetFinalPathNameByHandleA");
+        *(FARPROC*)&Py_GetFinalPathNameByHandleW = GetProcAddress(hKernel32,
+                                                "GetFinalPathNameByHandleW");
+        has_GetFinalPathNameByHandle = Py_GetFinalPathNameByHandleA && Py_GetFinalPathNameByHandleW;
+    }
+    return has_GetFinalPathNameByHandle;
+}
+
+static int
+win32_stat(const char* path, struct win32_stat *result)
+{
+    /* Traverse the symlink to the target using
+    GetFinalPathNameByHandle()
+    */
+    int code;
+    HANDLE hFile;
+    int buf_size;
+    char *target_path;
+    int result_length;
+    WIN32_FILE_ATTRIBUTE_DATA info;
+    
+    if(!check_GetFinalPathNameByHandle()) {
+        /* if the OS doesn't have GetFinalPathNameByHandle, it doesn't
+           have symlinks, so just fall back to the traditional behavior
+           found in lstat. */
+        return win32_lstat(path, result);
+    }
+
+    hFile = CreateFileA(
+        path,
+        0, /* desired access */
+        0, /* share mode */
+        NULL, /* security attributes */
+        OPEN_EXISTING,
+        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
+        FILE_FLAG_BACKUP_SEMANTICS,
+        NULL);
+    
+    if(hFile == INVALID_HANDLE_VALUE) {
+        /* Either the target doesn't exist, or we don't have access to
+           get a handle to it. If the former, we need to return an error.
+           If the latter, we can use attributes_from_dir. */
+        if (GetLastError() != ERROR_SHARING_VIOLATION) {
+            /* Protocol violation: we explicitly clear errno, instead of
+               setting it to a POSIX error. Callers should use GetLastError. */
+            errno = 0;
+            return -1;
+        } else {
+            /* Could not get attributes on open file. Fall back to
+               reading the directory. */
+            if (!attributes_from_dir(path, &info)) {
+                /* Very strange. This should not fail now */
+                errno = 0;
+                return -1;
+            }
+        }
+        code = attribute_data_to_stat(&info, result);
+    }
+    
+    buf_size = Py_GetFinalPathNameByHandleA(hFile, 0, 0, VOLUME_NAME_DOS);
+    if(!buf_size) return -1;
+    target_path = (char *)malloc((buf_size+1)*sizeof(char));
+    result_length = Py_GetFinalPathNameByHandleA(hFile, target_path,
+                                                 buf_size, VOLUME_NAME_DOS);
+    
+    if(!result_length)
+        return -1;
+
+    if(!CloseHandle(hFile))
+        return -1;
+
+    target_path[result_length] = 0;
+    code = win32_lstat(target_path, result);
+    free(target_path);
+    
+    return code;
+}
+
+static int 
+win32_stat_w(const wchar_t* path, struct win32_stat *result)
+{
+    /* Traverse the symlink to the target using GetFinalPathNameByHandle() */
+    int code;
+    HANDLE hFile;
+    int buf_size;
+    wchar_t *target_path;
+    int result_length;
+    WIN32_FILE_ATTRIBUTE_DATA info;
+    
+    if(!check_GetFinalPathNameByHandle()) {
+        /* If the OS doesn't have GetFinalPathNameByHandle, it doesn't have
+           symlinks, so just fall back to the traditional behavior found
+           in lstat. */
+        return win32_lstat_w(path, result);
+    }
+
+    hFile = CreateFileW(
+        path,
+        0, /* desired access */
+        0, /* share mode */
+        NULL, /* security attributes */
+        OPEN_EXISTING,
+        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
+        NULL);
+    
+    if(hFile == INVALID_HANDLE_VALUE) {
+        /* Either the target doesn't exist, or we don't have access to
+           get a handle to it. If the former, we need to return an error.
+           If the latter, we can use attributes_from_dir. */
         if (GetLastError() != ERROR_SHARING_VIOLATION) {
             /* Protocol violation: we explicitly clear errno, instead of
                setting it to a POSIX error. Callers should use GetLastError. */
@@ -1036,19 +1238,30 @@ win32_wstat(const wchar_t* path, struct win32_stat *result)
                 return -1;
             }
         }
+        code = attribute_data_to_stat(&info, result);
     }
-    code = attribute_data_to_stat(&info, result);
-    if (code < 0)
-        return code;
-    /* Set IFEXEC if it is an .exe, .bat, ... */
-    dot = wcsrchr(path, '.');
-    if (dot) {
-        if (_wcsicmp(dot, L".bat") == 0 ||
-            _wcsicmp(dot, L".cmd") == 0 ||
-            _wcsicmp(dot, L".exe") == 0 ||
-            _wcsicmp(dot, L".com") == 0)
-            result->st_mode |= 0111;
+    else {
+        /* We have a good handle to the target, use it to determine the target
+           path name (then we'll call lstat on it). */
+        buf_size = Py_GetFinalPathNameByHandleW(hFile, 0, 0, VOLUME_NAME_DOS);
+        if(!buf_size)
+            return -1;
+
+        target_path = (wchar_t *)malloc((buf_size+1)*sizeof(wchar_t));
+        result_length = Py_GetFinalPathNameByHandleW(hFile, target_path,
+                                                buf_size, VOLUME_NAME_DOS);
+        
+        if(!result_length)
+            return -1;
+
+        if(!CloseHandle(hFile))
+            return -1;
+
+        target_path[result_length] = 0;
+        code = win32_lstat_w(target_path, result);
+        free(target_path);
     }
+    
     return code;
 }
 
@@ -2443,6 +2656,69 @@ posix__getfullpathname(PyObject *self, PyObject *args)
     }
     return PyBytes_FromString(outbuf);
 } /* end of posix__getfullpathname */
+
+/* A helper function for samepath on windows */
+static PyObject *
+posix__getfinalpathname(PyObject *self, PyObject *args)
+{
+    HANDLE hFile;
+    int buf_size;
+    wchar_t *target_path;
+    int result_length;
+    PyObject *result;
+    wchar_t *path;
+    
+    if (!PyArg_ParseTuple(args, "u|:_getfullpathname", &path)) {
+        return NULL;
+    }
+
+    if(!check_GetFinalPathNameByHandle()) {
+        /* If the OS doesn't have GetFinalPathNameByHandle, return a
+           NotImplementedError. */
+        return PyErr_Format(PyExc_NotImplementedError,
+            "GetFinalPathNameByHandle not available on this platform");
+    }
+
+    hFile = CreateFileW(
+        path,
+        0, /* desired access */
+        0, /* share mode */
+        NULL, /* security attributes */
+        OPEN_EXISTING,
+        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
+        FILE_FLAG_BACKUP_SEMANTICS,
+        NULL);
+    
+    if(hFile == INVALID_HANDLE_VALUE) {
+        return win32_error_unicode("GetFinalPathNamyByHandle", path);
+        return PyErr_Format(PyExc_RuntimeError, "Could not get a handle to file.");
+    }
+
+    /* We have a good handle to the target, use it to determine the
+       target path name. */
+    buf_size = Py_GetFinalPathNameByHandleW(hFile, 0, 0, VOLUME_NAME_NT);
+
+    if(!buf_size)
+        return win32_error_unicode("GetFinalPathNameByHandle", path);
+
+    target_path = (wchar_t *)malloc((buf_size+1)*sizeof(wchar_t));
+    if(!target_path)
+        return PyErr_NoMemory();
+
+    result_length = Py_GetFinalPathNameByHandleW(hFile, target_path,
+                                                 buf_size, VOLUME_NAME_DOS);
+    if(!result_length)
+        return win32_error_unicode("GetFinalPathNamyByHandle", path);
+
+    if(!CloseHandle(hFile))
+        return win32_error_unicode("GetFinalPathNameByHandle", path);
+
+    target_path[result_length] = 0;
+    result = PyUnicode_FromUnicode(target_path, result_length);
+    free(target_path);
+    return result;
+
+} /* end of posix__getfinalpathname */
 #endif /* MS_WINDOWS */
 
 PyDoc_STRVAR(posix_mkdir__doc__,
@@ -2623,7 +2899,7 @@ static PyObject *
 posix_stat(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-    return posix_do_stat(self, args, "O&:stat", STAT, "U:stat", win32_wstat);
+    return posix_do_stat(self, args, "O&:stat", STAT, "U:stat", win32_stat_w);
 #else
     return posix_do_stat(self, args, "O&:stat", STAT, NULL, NULL);
 #endif
@@ -2681,6 +2957,41 @@ posix_umask(PyObject *self, PyObject *args)
     return PyLong_FromLong((long)i);
 }
 
+#ifdef MS_WINDOWS
+
+/* override the default DeleteFileW behavior so that directory
+symlinks can be removed with this function, the same as with
+Unix symlinks */
+BOOL WINAPI Py_DeleteFileW(LPCWSTR lpFileName)
+{
+    WIN32_FILE_ATTRIBUTE_DATA info;
+    WIN32_FIND_DATAW find_data;
+    HANDLE find_data_handle;
+    int is_directory = 0;
+    int is_link = 0;
+
+    if (GetFileAttributesExW(lpFileName, GetFileExInfoStandard, &info)) {
+        is_directory = info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+        
+        /* Get WIN32_FIND_DATA structure for the path to determine if
+           it is a symlink */
+        if(is_directory &&
+           info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            find_data_handle = FindFirstFileW(lpFileName, &find_data);
+
+            if(find_data_handle != INVALID_HANDLE_VALUE) {
+                is_link = find_data.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
+                FindClose(find_data_handle);
+            }
+        }
+    }
+
+    if (is_directory && is_link)
+        return RemoveDirectoryW(lpFileName);
+
+    return DeleteFileW(lpFileName);
+}
+#endif /* MS_WINDOWS */
 
 PyDoc_STRVAR(posix_unlink__doc__,
 "unlink(path)\n\n\
@@ -2694,7 +3005,7 @@ static PyObject *
 posix_unlink(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-    return win32_1str(args, "remove", "y:remove", DeleteFileA, "U:remove", DeleteFileW);
+    return win32_1str(args, "remove", "y:remove", DeleteFileA, "U:remove", Py_DeleteFileW);
 #else
     return posix_1str(args, "O&:remove", unlink);
 #endif
@@ -4544,7 +4855,8 @@ posix_lstat(PyObject *self, PyObject *args)
     return posix_do_stat(self, args, "O&:lstat", lstat, NULL, NULL);
 #else /* !HAVE_LSTAT */
 #ifdef MS_WINDOWS
-    return posix_do_stat(self, args, "O&:lstat", STAT, "U:lstat", win32_wstat);
+    return posix_do_stat(self, args, "O&:lstat", STAT, "U:lstat",
+                         win32_lstat_w);
 #else
     return posix_do_stat(self, args, "O&:lstat", STAT, NULL, NULL);
 #endif
@@ -4609,6 +4921,193 @@ posix_symlink(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_SYMLINK */
 
+#if !defined(HAVE_READLINK) && defined(MS_WINDOWS)
+
+PyDoc_STRVAR(win_readlink__doc__,
+"readlink(path) -> path\n\n\
+Return a string representing the path to which the symbolic link points.");
+
+/* The following structure was copied from
+   http://msdn.microsoft.com/en-us/library/ms791514.aspx as the required
+   include doesn't seem to be present in the Windows SDK (at least as included
+   with Visual Studio Express). */
+typedef struct _REPARSE_DATA_BUFFER {
+    ULONG ReparseTag;
+    USHORT ReparseDataLength;
+    USHORT Reserved;
+    union {
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT SubstituteNameLength;
+            USHORT PrintNameOffset;
+            USHORT PrintNameLength;
+            ULONG Flags;
+            WCHAR PathBuffer[1];
+        } SymbolicLinkReparseBuffer;
+
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT  SubstituteNameLength;
+            USHORT  PrintNameOffset;
+            USHORT  PrintNameLength;
+            WCHAR  PathBuffer[1];
+        } MountPointReparseBuffer;
+
+        struct {
+            UCHAR  DataBuffer[1];
+        } GenericReparseBuffer;
+    };
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+
+#define REPARSE_DATA_BUFFER_HEADER_SIZE  FIELD_OFFSET(REPARSE_DATA_BUFFER, GenericReparseBuffer)
+
+#define MAXIMUM_REPARSE_DATA_BUFFER_SIZE  ( 16 * 1024 )
+
+/* Windows readlink implementation */
+static PyObject *
+win_readlink(PyObject *self, PyObject *args)
+{
+    wchar_t *path;
+    DWORD n_bytes_returned;
+    DWORD io_result;
+    PyObject *result;
+    HANDLE reparse_point_handle;
+
+    char target_buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+    REPARSE_DATA_BUFFER *rdb = (REPARSE_DATA_BUFFER *)target_buffer;
+    wchar_t *print_name;
+
+    if (!PyArg_ParseTuple(args,
+                  "u:readlink",
+                  &path))
+        return NULL;
+
+    /* First get a handle to the reparse point */
+    Py_BEGIN_ALLOW_THREADS
+    reparse_point_handle = CreateFileW(
+        path,
+        0,
+        0,
+        0,
+        OPEN_EXISTING,
+        FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS,
+        0);
+    Py_END_ALLOW_THREADS
+    
+    if (reparse_point_handle==INVALID_HANDLE_VALUE)
+    {
+        return win32_error_unicode("readlink", path);
+    }
+    
+    Py_BEGIN_ALLOW_THREADS
+    /* New call DeviceIoControl to read the reparse point */
+    io_result = DeviceIoControl(
+        reparse_point_handle,
+        FSCTL_GET_REPARSE_POINT,
+        0, 0, /* in buffer */
+        target_buffer, sizeof(target_buffer),
+        &n_bytes_returned,
+        0 /* we're not using OVERLAPPED_IO */
+        );
+    CloseHandle(reparse_point_handle);
+    Py_END_ALLOW_THREADS
+
+    if (io_result==0)
+    {
+        return win32_error_unicode("readlink", path);
+    }
+
+    if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK)
+    {
+        PyErr_SetString(PyExc_ValueError,
+                "not a symbolic link");
+        return NULL;
+    }
+    print_name = rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset;
+    result = PyUnicode_FromWideChar(print_name, rdb->SymbolicLinkReparseBuffer.PrintNameLength/2);
+    return result;
+}
+
+#endif /* !defined(HAVE_READLINK) && defined(MS_WINDOWS) */
+
+#if !defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
+
+/* Grab CreateSymbolicLinkW dynamically from kernel32 */
+static int has_CreateSymbolicLinkW = 0;
+static DWORD (CALLBACK *Py_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD);
+static int
+check_CreateSymbolicLinkW()
+{
+    HINSTANCE hKernel32;
+    /* only recheck */
+    if (has_CreateSymbolicLinkW)
+        return has_CreateSymbolicLinkW;
+    hKernel32 = GetModuleHandle("KERNEL32");
+    *(FARPROC*)&Py_CreateSymbolicLinkW = GetProcAddress(hKernel32, "CreateSymbolicLinkW");
+    if (Py_CreateSymbolicLinkW)
+        has_CreateSymbolicLinkW = 1;
+    return has_CreateSymbolicLinkW;
+}
+
+PyDoc_STRVAR(win_symlink__doc__,
+"symlink(src, dst, target_is_directory=False)\n\n\
+Create a symbolic link pointing to src named dst.\n\
+target_is_directory is required if the target is to be interpreted as\n\
+a directory.\n\
+This function requires Windows 6.0 or greater, and raises a\n\
+NotImplementedError otherwise.");
+
+static PyObject *
+win_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"src", "dest", "target_is_directory", NULL};
+    PyObject *src, *dest;
+    int target_is_directory = 0;
+    DWORD res;
+    WIN32_FILE_ATTRIBUTE_DATA src_info;
+    
+    if (!check_CreateSymbolicLinkW())
+    {
+        /* raise NotImplementedError */
+        return PyErr_Format(PyExc_NotImplementedError,
+            "CreateSymbolicLinkW not found");
+    }
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|i:symlink",
+        kwlist, &src, &dest, &target_is_directory))
+        return NULL;
+    if (!convert_to_unicode(&src)) { return NULL; }
+    if (!convert_to_unicode(&dest)) {
+        Py_DECREF(src);
+        return NULL;
+    }
+    
+    /* if src is a directory, ensure target_is_directory==1 */
+    if(
+        GetFileAttributesExW(
+            PyUnicode_AsUnicode(src), GetFileExInfoStandard, &src_info
+        ))
+    {
+        target_is_directory = target_is_directory ||
+            (src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    res = Py_CreateSymbolicLinkW(
+        PyUnicode_AsUnicode(dest),
+        PyUnicode_AsUnicode(src),
+        target_is_directory);
+    Py_END_ALLOW_THREADS
+    Py_DECREF(src);
+    Py_DECREF(dest);
+    if (!res)
+    {
+        return win32_error_unicode("symlink", PyUnicode_AsUnicode(src));
+    }
+    
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+#endif /* !defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
 
 #ifdef HAVE_TIMES
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
@@ -7076,13 +7575,19 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_READLINK
     {"readlink",        posix_readlink, METH_VARARGS, posix_readlink__doc__},
 #endif /* HAVE_READLINK */
-    {"rename",          posix_rename, METH_VARARGS, posix_rename__doc__},
-    {"rmdir",           posix_rmdir, METH_VARARGS, posix_rmdir__doc__},
-    {"stat",            posix_stat, METH_VARARGS, posix_stat__doc__},
+#if !defined(HAVE_READLINK) && defined(MS_WINDOWS)
+    {"readlink",	win_readlink, METH_VARARGS, win_readlink__doc__},
+#endif /* !defined(HAVE_READLINK) && defined(MS_WINDOWS) */
+    {"rename",	posix_rename, METH_VARARGS, posix_rename__doc__},
+    {"rmdir",	posix_rmdir, METH_VARARGS, posix_rmdir__doc__},
+    {"stat",	posix_stat, METH_VARARGS, posix_stat__doc__},
     {"stat_float_times", stat_float_times, METH_VARARGS, stat_float_times__doc__},
 #ifdef HAVE_SYMLINK
     {"symlink",         posix_symlink, METH_VARARGS, posix_symlink__doc__},
 #endif /* HAVE_SYMLINK */
+#if !defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
+    {"symlink", (PyCFunction)win_symlink, METH_VARARGS | METH_KEYWORDS, win_symlink__doc__},
+#endif /* !defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
 #ifdef HAVE_SYSTEM
     {"system",          posix_system, METH_VARARGS, posix_system__doc__},
 #endif
@@ -7307,6 +7812,7 @@ static PyMethodDef posix_methods[] = {
     {"abort",           posix_abort, METH_NOARGS, posix_abort__doc__},
 #ifdef MS_WINDOWS
     {"_getfullpathname",        posix__getfullpathname, METH_VARARGS, NULL},
+    {"_getfinalpathname",       posix__getfinalpathname, METH_VARARGS, NULL},
 #endif
 #ifdef HAVE_GETLOADAVG
     {"getloadavg",      posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},
