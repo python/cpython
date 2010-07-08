@@ -1170,7 +1170,7 @@ count_set_bits(unsigned long n)
  * http://www.luschny.de/math/factorial/binarysplitfact.html
  *
  * Faster algorithms exist, but they're more complicated and depend on
- * a fast prime factoriazation algorithm.
+ * a fast prime factorization algorithm.
  *
  * Notes on the algorithm
  * ----------------------
