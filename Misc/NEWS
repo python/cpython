@@ -16,6 +16,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #9136: Fix 'dictionary changed size during iteration'
+  RuntimeError produced when profiling the decimal module.  This was
+  due to a dangerous iteration over 'locals()' in Context.__init__.
+
+- Fix extreme speed issue in Decimal.pow when the base is an exact
+  power of 10 and the exponent is tiny (for example,
+  Decimal(10) ** Decimal('1e-999999999')).
+
 - Issue #9161: Fix regression in optparse's acceptance of unicode
   strings in add_option calls.
 
@@ -510,18 +518,10 @@ What's New in Python 2.7 beta 1?
 Core and Builtins
 -----------------
 
-- Issue #9136: Fix 'dictionary changed size during iteration'
-  RuntimeError produced when profiling the decimal module.  This was
-  due to a dangerous iteration over 'locals()' in Context.__init__.
-
 - Issue #7301: Add environment variable $PYTHONWARNINGS.
 
 - Issue #8329: Don't return the same lists from select.select when no fds are
   changed.
-
-- Fix extreme speed issue in Decimal.pow when the base is an exact
-  power of 10 and the exponent is tiny (for example,
-  Decimal(10) ** Decimal('1e-999999999')).
 
 - Issue #8259: ``1L << (2**31)`` no longer produces an 'outrageous shift error'
   on 64-bit machines.  The shift count for either left or right shift is
