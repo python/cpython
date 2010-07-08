@@ -75,6 +75,10 @@ C-API
 Library
 -------
 
+- Fix extreme speed issue in Decimal.pow when the base is an exact
+  power of 10 and the exponent is tiny (for example,
+  Decimal(10) ** Decimal('1e-999999999')).
+
 - Issue #9130: Fix validation of relative imports in parser module.
 
 - Issue #9128: Fix validation of class decorators in parser module.
