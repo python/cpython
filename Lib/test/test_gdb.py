@@ -9,6 +9,7 @@ import subprocess
 import sys
 import unittest
 import locale
+import sysconfig
 
 from test.support import run_unittest, findfile
 
@@ -664,6 +665,15 @@ class PyLocalsTests(DebuggerTests):
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
 def test_main():
+    cflags = sysconfig.get_config_vars()['PY_CFLAGS']
+    final_opt = ""
+    for opt in cflags.split():
+        if opt.startswith('-O'):
+            final_opt = opt
+    if final_opt and final_opt != '-O0':
+        raise unittest.SkipTest("Python was built with compiler optimizations, "
+                                "tests can't reliably succeed")
+
     run_unittest(PrettyPrintTests,
                  PyListTests,
                  StackNavigationTests,
