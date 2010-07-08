@@ -7,6 +7,7 @@ class StructSeqTest(unittest.TestCase):
 
     def test_tuple(self):
         t = time.gmtime()
+        assert isinstance(t, tuple)
         astuple = tuple(t)
         self.assertEqual(len(t), len(astuple))
         self.assertEqual(t, astuple)
