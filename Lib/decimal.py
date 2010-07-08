@@ -2044,12 +2044,14 @@ class Decimal(object):
         # case where xc == 1: result is 10**(xe*y), with xe*y
         # required to be an integer
         if xc == 1:
-            if ye >= 0:
-                exponent = xe*yc*10**ye
-            else:
-                exponent, remainder = divmod(xe*yc, 10**-ye)
-                if remainder:
-                    return None
+            xe *= yc
+            # result is now 10**(xe * 10**ye);  xe * 10**ye must be integral
+            while xe % 10 == 0:
+                xe //= 10
+                ye += 1
+            if ye < 0:
+                return None
+            exponent = xe * 10**ye
             if y.sign == 1:
                 exponent = -exponent
             # if other is a nonnegative integer, use ideal exponent
@@ -2322,9 +2324,10 @@ class Decimal(object):
         # try for an exact result with precision +1
         if ans is None:
             ans = self._power_exact(other, context.prec + 1)
-            if ans is not None and result_sign == 1:
-                ans = _dec_from_triple(1, ans._int, ans._exp)
-            exact = True
+            if ans is not None:
+                if result_sign == 1:
+                    ans = _dec_from_triple(1, ans._int, ans._exp)
+                exact = True
 
         # usual case: inexact result, x**y computed directly as exp(y*log(x))
         if ans is None:
