@@ -291,6 +291,8 @@ class MiscReadTest(CommonReadTest):
         self.assertTrue(self.tar.getmembers()[-1].name == "misc/eof",
                 "could not find all members")
 
+    @unittest.skipUnless(hasattr(os, "link"), "Missing hardlink implementation")
+    @support.skip_unless_symlink
     def test_extract_hardlink(self):
         # Test hardlink extraction (e.g. bug #857297).
         tar = tarfile.open(tarname, errorlevel=1, encoding="iso8859-1")
@@ -695,16 +697,16 @@ class WriteTest(WriteTestBase):
                 os.remove(target)
                 os.remove(link)
 
+    @support.skip_unless_symlink
     def test_symlink_size(self):
-        if hasattr(os, "symlink"):
-            path = os.path.join(TEMPDIR, "symlink")
-            os.symlink("link_target", path)
-            try:
-                tar = tarfile.open(tmpname, self.mode)
-                tarinfo = tar.gettarinfo(path)
-                self.assertEqual(tarinfo.size, 0)
-            finally:
-                os.remove(path)
+        path = os.path.join(TEMPDIR, "symlink")
+        os.symlink("link_target", path)
+        try:
+            tar = tarfile.open(tmpname, self.mode)
+            tarinfo = tar.gettarinfo(path)
+            self.assertEqual(tarinfo.size, 0)
+        finally:
+            os.remove(path)
 
     def test_add_self(self):
         # Test for #1257255.
@@ -1408,15 +1410,24 @@ class LinkEmulationTest(ReadTest):
         data = open(os.path.join(TEMPDIR, name), "rb").read()
         self.assertEqual(md5sum(data), md5_regtype)
 
+    # When 8879 gets fixed, this will need to change. Currently on Windows
+    # we have os.path.islink but no os.link, so these tests fail without the
+    # following skip until link is completed.
+    @unittest.skipIf(hasattr(os.path, "islink"),
+                     "Skip emulation - has os.path.islink but not os.link")
     def test_hardlink_extraction1(self):
         self._test_link_extraction("ustar/lnktype")
 
+    @unittest.skipIf(hasattr(os.path, "islink"),
+                     "Skip emulation - has os.path.islink but not os.link")
     def test_hardlink_extraction2(self):
         self._test_link_extraction("./ustar/linktest2/lnktype")
 
+    @unittest.skipIf(hasattr(os, "symlink"), "Skip emulation if symlink exists")
     def test_symlink_extraction1(self):
         self._test_link_extraction("ustar/symtype")
 
+    @unittest.skipIf(hasattr(os, "symlink"), "Skip emulation if symlink exists")
     def test_symlink_extraction2(self):
         self._test_link_extraction("./ustar/linktest2/symtype")
 

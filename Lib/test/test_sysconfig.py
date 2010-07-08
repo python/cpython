@@ -12,7 +12,7 @@ import shutil
 from copy import copy, deepcopy
 
 from test.support import (run_unittest, TESTFN, unlink, get_attribute,
-                          captured_stdout)
+                          captured_stdout, skip_unless_symlink)
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -239,17 +239,23 @@ class TestSysConfig(unittest.TestCase):
                   'posix_home', 'posix_prefix', 'posix_user')
         self.assertEquals(get_scheme_names(), wanted)
 
+    @skip_unless_symlink
     def test_symlink(self):
+        # On Windows, the EXE needs to know where pythonXY.dll is at so we have
+        # to add the directory to the path.
+        if sys.platform == "win32":
+            os.environ["Path"] = "{};{}".format(os.path.dirname(sys.executable),
+                                                os.environ["Path"])
+
         # Issue 7880
-        symlink = get_attribute(os, "symlink")
         def get(python):
             cmd = [python, '-c',
                    'import sysconfig; print(sysconfig.get_platform())']
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=os.environ)
             return p.communicate()
         real = os.path.realpath(sys.executable)
         link = os.path.abspath(TESTFN)
-        symlink(real, link)
+        os.symlink(real, link)
         try:
             self.assertEqual(get(real), get(link))
         finally:

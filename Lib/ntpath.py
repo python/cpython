@@ -16,7 +16,8 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
            "ismount", "expanduser","expandvars","normpath","abspath",
            "splitunc","curdir","pardir","sep","pathsep","defpath","altsep",
-           "extsep","devnull","realpath","supports_unicode_filenames","relpath"]
+           "extsep","devnull","realpath","supports_unicode_filenames","relpath",
+           "samefile",]
 
 # strings representing various path-related bits and pieces
 # These are primarily for export; internally, they are hardcoded.
@@ -309,16 +310,28 @@ def dirname(p):
     return split(p)[0]
 
 # Is a path a symbolic link?
-# This will always return false on systems where posix.lstat doesn't exist.
+# This will always return false on systems where os.lstat doesn't exist.
 
 def islink(path):
-    """Test for symbolic link.
-    On WindowsNT/95 and OS/2 always returns false
+    """Test whether a path is a symbolic link.
+    This will always return false for Windows prior to 6.0
+    and for OS/2.
     """
-    return False
+    try:
+        st = os.lstat(path)
+    except (os.error, AttributeError):
+        return False
+    return stat.S_ISLNK(st.st_mode)
 
-# alias exists to lexists
-lexists = exists
+# Being true for dangling symbolic links is also useful.
+
+def lexists(path):
+    """Test whether a path exists.  Returns True for broken symbolic links"""
+    try:
+        st = os.lstat(path)
+    except (os.error, WindowsError):
+        return False
+    return True
 
 # Is a path a mount point?  Either a root (with or without drive letter)
 # or an UNC path with at most a / or \ after the mount point.
@@ -612,3 +625,17 @@ def relpath(path, start=curdir):
     if not rel_list:
         return _get_dot(path)
     return join(*rel_list)
+
+
+# determine if two files are in fact the same file
+def samefile(f1, f2):
+    "Test whether two pathnames reference the same actual file"
+    try:
+        from nt import _getfinalpathname
+        return _getfinalpathname(f1) == _getfinalpathname(f2)
+    except (NotImplementedError, ImportError):
+        # On Windows XP and earlier, two files are the same if their
+        #  absolute pathnames are the same.
+        # Also, on other operating systems, fake this method with a
+        #  Windows-XP approximation.
+        return abspath(f1) == abspath(f2)

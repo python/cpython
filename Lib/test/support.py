@@ -17,6 +17,7 @@ import unittest
 import importlib
 import collections
 import re
+import subprocess
 import imp
 import time
 try:
@@ -38,8 +39,7 @@ __all__ = [
     "set_memlimit", "bigmemtest", "bigaddrspacetest", "BasicTestRunner",
     "run_unittest", "run_doctest", "threading_setup", "threading_cleanup",
     "reap_children", "cpython_only", "check_impl_detail", "get_attribute",
-    "swap_item", "swap_attr",
-    ]
+    "swap_item", "swap_attr", "can_symlink", "skip_unless_symlink"]
 
 
 class Error(Exception):
@@ -1168,6 +1168,27 @@ def reap_children():
                     break
             except:
                 break
+
+try:
+    from .symlink_support import enable_symlink_privilege
+except:
+    enable_symlink_privilege = lambda: True
+
+def can_symlink():
+    """It's no longer sufficient to test for the presence of symlink in the
+    os module - on Windows XP and earlier, os.symlink exists but a
+    NotImplementedError is thrown.
+    """
+    has_symlink = hasattr(os, 'symlink')
+    is_old_windows = sys.platform == "win32" and sys.getwindowsversion().major < 6
+    has_privilege = False if is_old_windows else enable_symlink_privilege()
+    return has_symlink and (not is_old_windows) and has_privilege
+
+def skip_unless_symlink(test):
+    """Skip decorator for tests that require functional symlink"""
+    selector = can_symlink()
+    msg = "Requires functional symlink implementation"
+    return [unittest.skip(msg)(test), test][selector]
 
 @contextlib.contextmanager
 def swap_attr(obj, attr, new_val):

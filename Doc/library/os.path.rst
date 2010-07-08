@@ -231,11 +231,15 @@ applications should use string objects to access all files.
 
 .. function:: samefile(path1, path2)
 
-   Return ``True`` if both pathname arguments refer to the same file or directory
-   (as indicated by device number and i-node number). Raise an exception if a
-   :func:`os.stat` call on either pathname fails.
+   Return ``True`` if both pathname arguments refer to the same file or directory.
+   On Unix, this is determined by the device number and i-node number and raises an
+   exception if a :func:`os.stat` call on either pathname fails.
 
-   Availability: Unix.
+   On Windows, two files are the same if they resolve to the same final path
+   name using the Windows API call GetFinalPathNameByHandle and this function
+   raises an exception if handles cannot be obtained to either file.
+
+   Availability: Windows, Unix.
 
 
 .. function:: sameopenfile(fp1, fp2)
