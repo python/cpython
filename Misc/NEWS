@@ -26,6 +26,11 @@ Library
 Extension Modules
 -----------------
 
+Tests
+-----
+
+- Issue #8605: Skip test_gdb if Python is compiled with optimizations.
+
 
 What's New in Python 2.7?
 =========================
