@@ -1001,17 +1001,9 @@ format_float_short(double d, char format_code,
         else {
             /* shouldn't get here: Gay's code should always return
                something starting with a digit, an 'I',  or 'N' */
-            printf("Unexpected failure in format_float_short. "
-                   "Arguments: d = %.17g, format_code = %d, "
-                   "mode = %d, precision = %ld\n",
-                   d, format_code, mode, precision);
-            printf("digits == %.100s\n", digits);
-            PyErr_Format(PyExc_RuntimeError,
-                         "Unexpected failure in format_float_short. "
-                         "Arguments: d = %.17g, format_code = %d, "
-                         "mode = %d, precision = %ld\n",
-                         d, format_code, mode, precision);
-            return NULL;
+            strncpy(p, "ERR", 3);
+            p += 3;
+            assert(0);
         }
         goto exit;
     }
