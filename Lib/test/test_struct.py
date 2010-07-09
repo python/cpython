@@ -446,7 +446,8 @@ class StructTest(unittest.TestCase):
 
         # Test bogus offset (issue 3694)
         sb = small_buf
-        self.assertRaises((TypeError, struct.error), struct.pack_into, b'', sb, None)
+        self.assertRaises((TypeError, struct.error), struct.pack_into, b'', sb,
+                          None)
 
     def test_pack_into_fn(self):
         test_string = b'Reykjavik rocks, eow!'
