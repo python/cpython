@@ -38,7 +38,7 @@ class StructSeqTest(unittest.TestCase):
         # os.stat() gives a complicated struct sequence.
         st = os.stat(__file__)
         rep = repr(st)
-        self.assertTrue(rep.startswith("posix.stat_result"))
+        self.assertTrue(rep.startswith(os.name + ".stat_result"))
         self.assertIn("st_mode=", rep)
         self.assertIn("st_ino=", rep)
         self.assertIn("st_dev=", rep)
