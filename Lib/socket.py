@@ -252,10 +252,6 @@ class SocketIO(io.RawIOBase):
         self._sock._decref_socketios()
         self._sock = None
 
-    def __del__(self):
-        if not self.closed:
-            self._sock._decref_socketios()
-
 
 def getfqdn(name=''):
     """Get fully qualified domain name from name.
