@@ -262,7 +262,9 @@ def _parse_makefile(filename, vars=None):
     # Add in CFLAGS, LDFLAGS, and CPPFLAGS, which are named with a
     # prefix in the Makefile.
     for var in ('CFLAGS', 'LDFLAGS', 'CPPFLAGS'):
-        done[var] = done['PY_' + var]
+        makefile_value = done.get('PY_' + var)
+        if makefile_value is not None:
+            done[var] = makefile_value
 
     # save the results in the global dictionary
     vars.update(done)
