@@ -1117,7 +1117,8 @@ check_GetFinalPathNameByHandle()
                                                 "GetFinalPathNameByHandleA");
         *(FARPROC*)&Py_GetFinalPathNameByHandleW = GetProcAddress(hKernel32,
                                                 "GetFinalPathNameByHandleW");
-        has_GetFinalPathNameByHandle = Py_GetFinalPathNameByHandleA && Py_GetFinalPathNameByHandleW;
+        has_GetFinalPathNameByHandle = Py_GetFinalPathNameByHandleA &&
+                                       Py_GetFinalPathNameByHandleW;
     }
     return has_GetFinalPathNameByHandle;
 }
@@ -1310,9 +1311,12 @@ win32_fstat(int file_number, struct win32_stat *result)
     /* similar to stat() */
     result->st_mode = attributes_to_mode(info.dwFileAttributes);
     result->st_size = (((__int64)info.nFileSizeHigh)<<32) + info.nFileSizeLow;
-    FILE_TIME_to_time_t_nsec(&info.ftCreationTime, &result->st_ctime, &result->st_ctime_nsec);
-    FILE_TIME_to_time_t_nsec(&info.ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-    FILE_TIME_to_time_t_nsec(&info.ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    FILE_TIME_to_time_t_nsec(&info.ftCreationTime, &result->st_ctime,
+                             &result->st_ctime_nsec);
+    FILE_TIME_to_time_t_nsec(&info.ftLastWriteTime, &result->st_mtime,
+                             &result->st_mtime_nsec);
+    FILE_TIME_to_time_t_nsec(&info.ftLastAccessTime, &result->st_atime,
+                             &result->st_atime_nsec);
     /* specific to fstat() */
     result->st_nlink = info.nNumberOfLinks;
     result->st_ino = (((__int64)info.nFileIndexHigh)<<32) + info.nFileIndexLow;
@@ -2691,7 +2695,8 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
     
     if(hFile == INVALID_HANDLE_VALUE) {
         return win32_error_unicode("GetFinalPathNamyByHandle", path);
-        return PyErr_Format(PyExc_RuntimeError, "Could not get a handle to file.");
+        return PyErr_Format(PyExc_RuntimeError,
+                            "Could not get a handle to file.");
     }
 
     /* We have a good handle to the target, use it to determine the
@@ -3005,7 +3010,8 @@ static PyObject *
 posix_unlink(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-    return win32_1str(args, "remove", "y:remove", DeleteFileA, "U:remove", Py_DeleteFileW);
+    return win32_1str(args, "remove", "y:remove", DeleteFileA,
+                      "U:remove", Py_DeleteFileW);
 #else
     return posix_1str(args, "O&:remove", unlink);
 #endif
@@ -4959,7 +4965,8 @@ typedef struct _REPARSE_DATA_BUFFER {
     };
 } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 
-#define REPARSE_DATA_BUFFER_HEADER_SIZE  FIELD_OFFSET(REPARSE_DATA_BUFFER, GenericReparseBuffer)
+#define REPARSE_DATA_BUFFER_HEADER_SIZE  FIELD_OFFSET(REPARSE_DATA_BUFFER,\
+                                                      GenericReparseBuffer)
 
 #define MAXIMUM_REPARSE_DATA_BUFFER_SIZE  ( 16 * 1024 )
 
@@ -5023,8 +5030,11 @@ win_readlink(PyObject *self, PyObject *args)
                 "not a symbolic link");
         return NULL;
     }
-    print_name = rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset;
-    result = PyUnicode_FromWideChar(print_name, rdb->SymbolicLinkReparseBuffer.PrintNameLength/2);
+    print_name = rdb->SymbolicLinkReparseBuffer.PathBuffer +
+                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset;
+
+    result = PyUnicode_FromWideChar(print_name,
+                    rdb->SymbolicLinkReparseBuffer.PrintNameLength/2);
     return result;
 }
 
@@ -5043,7 +5053,8 @@ check_CreateSymbolicLinkW()
     if (has_CreateSymbolicLinkW)
         return has_CreateSymbolicLinkW;
     hKernel32 = GetModuleHandle("KERNEL32");
-    *(FARPROC*)&Py_CreateSymbolicLinkW = GetProcAddress(hKernel32, "CreateSymbolicLinkW");
+    *(FARPROC*)&Py_CreateSymbolicLinkW = GetProcAddress(hKernel32,
+                                                        "CreateSymbolicLinkW");
     if (Py_CreateSymbolicLinkW)
         has_CreateSymbolicLinkW = 1;
     return has_CreateSymbolicLinkW;
@@ -7586,7 +7597,8 @@ static PyMethodDef posix_methods[] = {
     {"symlink",         posix_symlink, METH_VARARGS, posix_symlink__doc__},
 #endif /* HAVE_SYMLINK */
 #if !defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
-    {"symlink", (PyCFunction)win_symlink, METH_VARARGS | METH_KEYWORDS, win_symlink__doc__},
+    {"symlink", (PyCFunction)win_symlink, METH_VARARGS | METH_KEYWORDS,
+                win_symlink__doc__},
 #endif /* !defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
 #ifdef HAVE_SYSTEM
     {"system",          posix_system, METH_VARARGS, posix_system__doc__},

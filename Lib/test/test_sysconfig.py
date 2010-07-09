@@ -244,8 +244,8 @@ class TestSysConfig(unittest.TestCase):
         # On Windows, the EXE needs to know where pythonXY.dll is at so we have
         # to add the directory to the path.
         if sys.platform == "win32":
-            os.environ["Path"] = "{};{}".format(os.path.dirname(sys.executable),
-                                                os.environ["Path"])
+            os.environ["Path"] = "{};{}".format(
+                os.path.dirname(sys.executable), os.environ["Path"])
 
         # Issue 7880
         def get(python):

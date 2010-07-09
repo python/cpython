@@ -291,7 +291,8 @@ class MiscReadTest(CommonReadTest):
         self.assertTrue(self.tar.getmembers()[-1].name == "misc/eof",
                 "could not find all members")
 
-    @unittest.skipUnless(hasattr(os, "link"), "Missing hardlink implementation")
+    @unittest.skipUnless(hasattr(os, "link"),
+                         "Missing hardlink implementation")
     @support.skip_unless_symlink
     def test_extract_hardlink(self):
         # Test hardlink extraction (e.g. bug #857297).
@@ -1423,11 +1424,13 @@ class LinkEmulationTest(ReadTest):
     def test_hardlink_extraction2(self):
         self._test_link_extraction("./ustar/linktest2/lnktype")
 
-    @unittest.skipIf(hasattr(os, "symlink"), "Skip emulation if symlink exists")
+    @unittest.skipIf(hasattr(os, "symlink"),
+                     "Skip emulation if symlink exists")
     def test_symlink_extraction1(self):
         self._test_link_extraction("ustar/symtype")
 
-    @unittest.skipIf(hasattr(os, "symlink"), "Skip emulation if symlink exists")
+    @unittest.skipIf(hasattr(os, "symlink"),
+                     "Skip emulation if symlink exists")
     def test_symlink_extraction2(self):
         self._test_link_extraction("./ustar/linktest2/symtype")
 
