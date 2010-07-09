@@ -317,9 +317,8 @@ class StructTest(unittest.TestCase):
                                   randrange)
                 with check_warnings(("integer argument expected, "
                                      "got non-integer", DeprecationWarning)):
-                    self.assertRaises((TypeError, struct.error),
-                                      struct.pack, self.format,
-                                      3+42j)
+                    with self.assertRaises((TypeError, struct.error)):
+                        struct.pack(self.format, 3+42j)
 
                 # an attempt to convert a non-integer (with an
                 # implicit conversion via __int__) should succeed,
