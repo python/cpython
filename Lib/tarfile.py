@@ -55,6 +55,15 @@ try:
 except ImportError:
     grp = pwd = None
 
+# os.symlink on Windows prior to 6.0 raises NotImplementedError
+symlink_exception = (AttributeError, NotImplementedError)
+try:
+    # WindowsError (1314) will be raised if the caller does not hold the
+    # SeCreateSymbolicLinkPrivilege privilege
+    symlink_exception += (WindowsError,)
+except NameError:
+    pass
+
 # from tarfile import *
 __all__ = ["TarFile", "TarInfo", "is_tarfile", "TarError"]
 
@@ -2283,17 +2292,16 @@ class TarFile(object):
                     os.link(tarinfo._link_target, targetpath)
                 else:
                     self._extract_mem
-        except (AttributeError, NotImplementedError, WindowsError):
-            # AttributeError if no os.symlink
-            # NotImplementedError if on Windows XP
-            # WindowsError (1314) if the required privilege is not held by the client
+        except symlink_exception:
             if tarinfo.issym():
-                linkpath = os.path.join(os.path.dirname(tarinfo.name),tarinfo.linkname)
+                linkpath = os.path.join(os.path.dirname(tarinfo.name),
+                                        tarinfo.linkname)
             else:
                 linkpath = tarinfo.linkname
         else:
             try:
-                self._extract_member(self._find_link_target(tarinfo), targetpath)
+                self._extract_member(self._find_link_target(tarinfo),
+                                     targetpath)
             except KeyError:
                 raise ExtractError("unable to resolve link inside archive")
 

@@ -208,6 +208,7 @@ class PosixPathTest(unittest.TestCase):
     def test_samestat_on_links(self):
         test_fn1 = support.TESTFN + "1"
         test_fn2 = support.TESTFN + "2"
+        self._create_file(test_fn1)
         test_fns = (test_fn1, test_fn2)
         os.symlink(*test_fns)
         stats = map(os.stat, test_fns)
