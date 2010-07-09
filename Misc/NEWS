@@ -470,6 +470,8 @@ C-API
 Library
 -------
 
+- Issue #7646: The fnmatch pattern cache no longer grows without bound.
+
 - Issue #9136: Fix 'dictionary changed size during iteration'
   RuntimeError produced when profiling the decimal module.  This was
   due to a dangerous iteration over 'locals()' in Context.__init__.
