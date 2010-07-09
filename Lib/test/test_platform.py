@@ -15,8 +15,8 @@ class PlatformTest(unittest.TestCase):
         # On Windows, the EXE needs to know where pythonXY.dll is at so we have
         # to add the directory to the path.
         if sys.platform == "win32":
-            os.environ["Path"] = "{};{}".format(os.path.dirname(sys.executable),
-                                                os.environ["Path"])
+            os.environ["Path"] = "{};{}".format(
+                os.path.dirname(sys.executable), os.environ["Path"])
 
         def get(python):
             cmd = [python, '-c',

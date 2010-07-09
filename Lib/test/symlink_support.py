@@ -12,7 +12,8 @@ from ctypes import wintypes
 GetCurrentProcess = ctypes.windll.kernel32.GetCurrentProcess
 GetCurrentProcess.restype = wintypes.HANDLE
 OpenProcessToken = ctypes.windll.advapi32.OpenProcessToken
-OpenProcessToken.argtypes = (wintypes.HANDLE, wintypes.DWORD, ctypes.POINTER(wintypes.HANDLE))
+OpenProcessToken.argtypes = (wintypes.HANDLE, wintypes.DWORD,
+                             ctypes.POINTER(wintypes.HANDLE))
 OpenProcessToken.restype = wintypes.BOOL
 
 class LUID(ctypes.Structure):
@@ -91,7 +92,8 @@ class TOKEN_PRIVILEGES(ctypes.Structure):
 
     def get_array(self):
         array_type = LUID_AND_ATTRIBUTES*self.count
-        privileges = ctypes.cast(self.privileges, ctypes.POINTER(array_type)).contents
+        privileges = ctypes.cast(self.privileges,
+                                 ctypes.POINTER(array_type)).contents
         return privileges
 
     def __iter__(self):
@@ -133,7 +135,8 @@ def get_process_token():
 def get_symlink_luid():
     "Get the LUID for the SeCreateSymbolicLinkPrivilege"
     symlink_luid = LUID()
-    res = LookupPrivilegeValue(None, "SeCreateSymbolicLinkPrivilege", symlink_luid)
+    res = LookupPrivilegeValue(None, "SeCreateSymbolicLinkPrivilege",
+                               symlink_luid)
     if not res > 0:
         raise RuntimeError("Couldn't lookup privilege value")
     return symlink_luid

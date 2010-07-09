@@ -1034,7 +1034,8 @@ class Win32KillTests(unittest.TestCase):
 
 
 def skipUnlessWindows6(test):
-    if hasattr(sys, 'getwindowsversion') and sys.getwindowsversion().major >= 6:
+    if (hasattr(sys, 'getwindowsversion')
+        and sys.getwindowsversion().major >= 6):
         return test
     return unittest.skip("Requires Windows Vista or later")(test)
 
