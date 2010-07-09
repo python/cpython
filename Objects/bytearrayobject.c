@@ -33,6 +33,7 @@ _getbytevalue(PyObject* arg, int *value)
         PyObject *index = PyNumber_Index(arg);
         if (index == NULL) {
             PyErr_Format(PyExc_TypeError, "an integer is required");
+            *value = -1;
             return 0;
         }
         face_value = PyLong_AsLong(index);
@@ -42,6 +43,7 @@ _getbytevalue(PyObject* arg, int *value)
     if (face_value < 0 || face_value >= 256) {
         /* this includes the OverflowError in case the long is too large */
         PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
+        *value = -1;
         return 0;
     }
 
