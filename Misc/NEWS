@@ -1530,6 +1530,12 @@ Extension Modules
 Build
 -----
 
+- Issue #9189: Make a user-specified CFLAGS, CPPFLAGS, or LDFLAGS
+  setting override the configure and makefile defaults, without
+  deleting options the user didn't intend to override.  Developers
+  should no longer need to specify OPT or EXTRA_CFLAGS, although those
+  variables are still present for backward-compatibility.
+
 - Issue #8854: Fix finding Visual Studio 2008 on Windows x64.
 
 - Issue #1759169, #8864: Drop _XOPEN_SOURCE on Solaris, define it for

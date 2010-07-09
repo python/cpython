@@ -259,6 +259,11 @@ def _parse_makefile(filename, vars=None):
                 # bogus variable reference; just drop it since we can't deal
                 variables.remove(name)
 
+    # Add in CFLAGS, LDFLAGS, and CPPFLAGS, which are named with a
+    # prefix in the Makefile.
+    for var in ('CFLAGS', 'LDFLAGS', 'CPPFLAGS'):
+        done[var] = done['PY_' + var]
+
     # save the results in the global dictionary
     vars.update(done)
     return vars
