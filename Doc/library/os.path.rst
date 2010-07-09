@@ -236,10 +236,12 @@ applications should use string objects to access all files.
    exception if a :func:`os.stat` call on either pathname fails.
 
    On Windows, two files are the same if they resolve to the same final path
-   name using the Windows API call GetFinalPathNameByHandle and this function
+   name using the Windows API call GetFinalPathNameByHandle. This function
    raises an exception if handles cannot be obtained to either file.
 
    Availability: Windows, Unix.
+
+   .. versionchanged:: 3.2 Added Windows support
 
 
 .. function:: sameopenfile(fp1, fp2)

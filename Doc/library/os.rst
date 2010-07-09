@@ -1064,8 +1064,9 @@ Files and Directories
 .. function:: lstat(path)
 
    Like :func:`stat`, but do not follow symbolic links.  This is an alias for
-   :func:`stat` on platforms that do not support symbolic links, such as
-   Windows prior to 6.0 (Vista).
+   :func:`stat` on platforms that do not support symbolic links.
+
+   .. versionchanged:: 3.2 Added support for Windows 6.0 (Vista)
 
 
 .. function:: mkfifo(path[, mode])
@@ -1181,7 +1182,9 @@ Files and Directories
    and the call may raise an UnicodeDecodeError. If the *path* is a bytes
    object, the result will be a bytes object.
 
-   Availability: Unix, Windows.
+   Availability: Unix, Windows
+
+   .. versionchanged:: 3.2 Added support for Windows 6.0 (Vista)
 
 
 .. function:: remove(path)
@@ -1341,8 +1344,9 @@ Files and Directories
 
 .. function:: symlink(source, link_name)
 
-   Create a symbolic link pointing to *source* named *link_name*.  On Windows,
-   symlink version takes an additional, optional parameter,
+   Create a symbolic link pointing to *source* named *link_name*.
+
+   On Windows, symlink version takes an additional, optional parameter,
    *target_is_directory*, which defaults to False.
 
    symlink(source, link_name, target_is_directory=False)
@@ -1359,7 +1363,9 @@ Files and Directories
    will raise a NotImplementedError on Windows versions earlier than 6.0. The
    SeCreateSymbolicLinkPrivilege is required in order to create symlinks.
 
-   Availability:  Unix, Windows 6.0.
+   Availability:  Unix, Windows
+
+   .. versionchanged:: 3.2 Added support for Windows 6.0 (Vista)
 
 
 .. function:: unlink(path)
