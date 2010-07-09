@@ -62,8 +62,8 @@ class StructTest(unittest.TestCase):
 
         self.assertRaises(struct.error, struct.pack, 'iii', 3)
         self.assertRaises(struct.error, struct.pack, 'i', 3, 3, 3)
-        self.assertRaises(struct.error, struct.pack, 'i', 'foo')
-        self.assertRaises(struct.error, struct.pack, 'P', 'foo')
+        self.assertRaises((TypeError, struct.error), struct.pack, 'i', 'foo')
+        self.assertRaises((TypeError, struct.error), struct.pack, 'P', 'foo')
         self.assertRaises(struct.error, struct.unpack, 'd', 'flap')
         s = struct.pack('ii', 1, 2)
         self.assertRaises(struct.error, struct.unpack, 'iii', s)
@@ -458,7 +458,8 @@ class StructTest(unittest.TestCase):
 
         # Test bogus offset (issue 3694)
         sb = small_buf
-        self.assertRaises(TypeError, struct.pack_into, b'1', sb, None)
+        self.assertRaises((TypeError, struct.error), struct.pack_into, b'', sb,
+                          None)
 
     def test_pack_into_fn(self):
         test_string = 'Reykjavik rocks, eow!'
