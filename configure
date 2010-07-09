@@ -1929,11 +1929,11 @@ else
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 $ac_includes_default
+	     enum { N = $2 / 2 - 1 };
 int
 main ()
 {
-static int test_array [1 - 2 * !(enum { N = $2 / 2 - 1 };
-	     0 < ($ac_type) ((((($ac_type) 1 << N) << N) - 1) * 2 + 1))];
+static int test_array [1 - 2 * !(0 < ($ac_type) ((((($ac_type) 1 << N) << N) - 1) * 2 + 1))];
 test_array [0] = 0
 
   ;
@@ -1944,11 +1944,11 @@ if ac_fn_c_try_compile "$LINENO"; then :
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 $ac_includes_default
+	        enum { N = $2 / 2 - 1 };
 int
 main ()
 {
-static int test_array [1 - 2 * !(enum { N = $2 / 2 - 1 };
-		($ac_type) ((((($ac_type) 1 << N) << N) - 1) * 2 + 1)
+static int test_array [1 - 2 * !(($ac_type) ((((($ac_type) 1 << N) << N) - 1) * 2 + 1)
 		 < ($ac_type) ((((($ac_type) 1 << N) << N) - 1) * 2 + 2))];
 test_array [0] = 0
 
@@ -3158,9 +3158,12 @@ then
 (it is also a good idea to do 'make clean' before compiling)" "$LINENO" 5
 fi
 
-# If the user set CFLAGS, use this instead of the automatically
-# determined setting
-preset_cflags="$CFLAGS"
+# Don't let AC_PROG_CC set the default CFLAGS. It normally sets -g -O2
+# when the compiler supports them, but we don't always want -O2, and
+# we set -g later.
+if test -z "$CFLAGS"; then
+        CFLAGS=
+fi
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3952,10 +3955,6 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-if test ! -z "$preset_cflags"
-then
-	CFLAGS=$preset_cflags
-fi
 
 
 
