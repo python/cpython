@@ -504,6 +504,13 @@ then
   ])
 fi
 
+# If using GCC, give result of 'gcc -v' in configure output.
+if test "$GCC" = yes; then
+AC_MSG_CHECKING(gcc version)
+gcc_version=`$CC -v`
+AC_MSG_RESULT($gcc_version)
+fi
+
 
 # checks for UNIX variants that set C preprocessor variables
 AC_AIX
