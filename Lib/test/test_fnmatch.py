@@ -3,7 +3,7 @@
 from test import support
 import unittest
 
-from fnmatch import fnmatch, fnmatchcase
+from fnmatch import fnmatch, fnmatchcase, _MAXCACHE, _cache, _cacheb
 
 
 class FnmatchTestCase(unittest.TestCase):
@@ -59,6 +59,21 @@ class FnmatchTestCase(unittest.TestCase):
         self.check_match(b'test', b'te*')
         self.check_match(b'test\xff', b'te*\xff')
         self.check_match(b'foo\nbar', b'foo*')
+
+    def test_cache_clearing(self):
+        # check that caches do not grow too large
+        # http://bugs.python.org/issue7846
+
+        # string pattern cache
+        for i in range(_MAXCACHE + 1):
+            fnmatch('foo', '?' * i)
+
+        self.assertLessEqual(len(_cache), _MAXCACHE)
+
+        # bytes pattern cache
+        for i in range(_MAXCACHE + 1):
+            fnmatch(b'foo', b'?' * i)
+        self.assertLessEqual(len(_cacheb), _MAXCACHE)
 
 
 def test_main():

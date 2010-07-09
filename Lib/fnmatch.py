@@ -16,6 +16,7 @@ __all__ = ["filter", "fnmatch","fnmatchcase","translate"]
 
 _cache = {}  # Maps text patterns to compiled regexen.
 _cacheb = {}  # Ditto for bytes patterns.
+_MAXCACHE = 100 # Maximum size of caches
 
 def fnmatch(name, pat):
     """Test whether FILENAME matches PATTERN.
@@ -48,6 +49,8 @@ def _compile_pattern(pat):
             res = bytes(res_str, 'ISO-8859-1')
         else:
             res = translate(pat)
+        if len(cache) >= _MAXCACHE:
+            cache.clear()
         cache[pat] = regex = re.compile(res)
     return regex.match
 
