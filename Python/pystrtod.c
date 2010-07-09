@@ -1003,7 +1003,7 @@ format_float_short(double d, char format_code,
                something starting with a digit, an 'I',  or 'N' */
             strncpy(p, "ERR", 3);
             p += 3;
-            assert(0);
+            /* assert(0); */
         }
         goto exit;
     }
