@@ -3,10 +3,14 @@
 from test import support
 import unittest
 
-from fnmatch import fnmatch, fnmatchcase, _MAXCACHE, _cache, _cacheb
+from fnmatch import fnmatch, fnmatchcase, _MAXCACHE, _cache, _cacheb, purge
 
 
 class FnmatchTestCase(unittest.TestCase):
+
+    def tearDown(self):
+        purge()
+
     def check_match(self, filename, pattern, should_match=1, fn=fnmatch):
         if should_match:
             self.assertTrue(fn(filename, pattern),
