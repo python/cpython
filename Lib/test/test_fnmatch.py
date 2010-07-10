@@ -4,9 +4,14 @@ from test import test_support
 import unittest
 
 from fnmatch import fnmatch, fnmatchcase, _MAXCACHE, _cache
+from fnmatch import fnmatch, fnmatchcase, _MAXCACHE, _cache, _purge
 
 
 class FnmatchTestCase(unittest.TestCase):
+
+    def tearDown(self):
+        _purge()
+
     def check_match(self, filename, pattern, should_match=1, fn=fnmatch):
         if should_match:
             self.assertTrue(fn(filename, pattern),
