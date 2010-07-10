@@ -2228,8 +2228,8 @@ collect the results:
 
 
 An example of how a pool of worker processes can each run a
-:class:`SimpleHTTPServer.HttpServer` instance while sharing a single listening
-socket.
+:class:`~http.server.SimpleHTTPRequestHandler` instance while sharing a single
+listening socket.
 
 .. literalinclude:: ../includes/mp_webserver.py
 
