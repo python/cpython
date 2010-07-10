@@ -940,9 +940,14 @@ class TestCase(object):
                 'Second argument is not a string'))
 
         if first != second:
-            standardMsg = '%s != %s' % (safe_repr(first, True), safe_repr(second, True))
-            diff = '\n' + ''.join(difflib.ndiff(first.splitlines(True),
-                                                       second.splitlines(True)))
+            firstlines = first.splitlines(True)
+            secondlines = second.splitlines(True)
+            if len(firstlines) == 1 and first.strip('\r\n') == first:
+                firstlines = [first + '\n']
+                secondlines = [second + '\n']
+            standardMsg = '%s != %s' % (safe_repr(first, True),
+                                        safe_repr(second, True))
+            diff = '\n' + ''.join(difflib.ndiff(firstlines, secondlines))
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
