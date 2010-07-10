@@ -12,10 +12,14 @@ corresponding to PATTERN.  (It does not compile it.)
 
 import re
 
-__all__ = ["filter", "fnmatch","fnmatchcase","translate"]
+__all__ = ["filter", "fnmatch", "fnmatchcase", "translate"]
 
 _cache = {}
 _MAXCACHE = 100
+
+def _purge():
+    """Clear the pattern cache"""
+    _cache.clear()
 
 def fnmatch(name, pat):
     """Test whether FILENAME matches PATTERN.
