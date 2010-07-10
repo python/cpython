@@ -154,9 +154,9 @@ Glossary
       object.
 
    duck-typing
-      A pythonic programming style which determines an object's type by inspection
-      of its method or attribute signature rather than by explicit relationship
-      to some type object ("If it looks like a duck and quacks like a duck, it
+      A programming style which does not look at an object's type to determine
+      if it has the right interface; instead, the method or attribute is simply
+      called or used ("If it looks like a duck and quacks like a duck, it
       must be a duck.")  By emphasizing interfaces rather than specific types,
       well-designed code improves its flexibility by allowing polymorphic
       substitution.  Duck-typing avoids tests using :func:`type` or
