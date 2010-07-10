@@ -1066,7 +1066,8 @@ Files and Directories
    Like :func:`stat`, but do not follow symbolic links.  This is an alias for
    :func:`stat` on platforms that do not support symbolic links.
 
-   .. versionchanged:: 3.2 Added support for Windows 6.0 (Vista)
+   .. versionchanged:: 3.2
+      Added support for Windows 6.0 (Vista) symbolic links.
 
 
 .. function:: mkfifo(path[, mode])
@@ -1184,7 +1185,8 @@ Files and Directories
 
    Availability: Unix, Windows
 
-   .. versionchanged:: 3.2 Added support for Windows 6.0 (Vista)
+   .. versionchanged:: 3.2
+      Added support for Windows 6.0 (Vista) symbolic links.
 
 
 .. function:: remove(path)
@@ -1365,7 +1367,8 @@ Files and Directories
 
    Availability:  Unix, Windows
 
-   .. versionchanged:: 3.2 Added support for Windows 6.0 (Vista)
+   .. versionchanged:: 3.2
+      Added support for Windows 6.0 (Vista) symbolic links.
 
 
 .. function:: unlink(path)

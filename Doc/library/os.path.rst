@@ -241,7 +241,8 @@ applications should use string objects to access all files.
 
    Availability: Windows, Unix.
 
-   .. versionchanged:: 3.2 Added Windows support
+   .. versionchanged:: 3.2
+      Added Windows support.
 
 
 .. function:: sameopenfile(fp1, fp2)
