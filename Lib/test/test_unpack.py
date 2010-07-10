@@ -62,14 +62,14 @@ Unpacking tuple of wrong size
     >>> a, b = t
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack
+    ValueError: too many values to unpack (expected 2)
 
 Unpacking tuple of wrong size
 
     >>> a, b = l
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack
+    ValueError: too many values to unpack (expected 2)
 
 Unpacking sequence too short
 
@@ -83,7 +83,7 @@ Unpacking sequence too long
     >>> a, b = Seq()
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack
+    ValueError: too many values to unpack (expected 2)
 
 Unpacking a sequence where the test for too long raises a different kind of
 error
