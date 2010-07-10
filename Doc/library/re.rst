@@ -672,6 +672,11 @@ form.
    metacharacters in it.
 
 
+.. function:: purge()
+
+   Clear the regular expression cache.
+
+
 .. exception:: error
 
    Exception raised when a string passed to one of the functions here is not a
