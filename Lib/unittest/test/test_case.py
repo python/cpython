@@ -874,6 +874,21 @@ test case
                 # unicode strings - so we can't use it for this check
                 self.assertTrue(sample_text_error == error)
 
+    def testAsertEqualSingleLine(self):
+        sample_text = u"laden swallows fly slowly"
+        revised_sample_text = u"unladen swallows fly quickly"
+        sample_text_error = """\
+- laden swallows fly slowly
+?                    ^^^^
++ unladen swallows fly quickly
+? ++                   ^^^^^
+"""
+        try:
+            self.assertEqual(sample_text, revised_sample_text)
+        except self.failureException as e:
+            error = str(e).split('\n', 1)[1]
+            self.assertTrue(sample_text_error == error)
+
     def testAssertIsNone(self):
         self.assertIsNone(None)
         self.assertRaises(self.failureException, self.assertIsNone, False)
