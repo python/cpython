@@ -136,7 +136,7 @@ Module functions and constants
    first blank for the column name: the column name would simply be "x".
 
 
-.. function:: connect(database[, timeout, isolation_level, detect_types, factory])
+.. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements])
 
    Opens a connection to the SQLite database file *database*. You can use
    ``":memory:"`` to open a database connection to a database that resides in RAM
