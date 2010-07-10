@@ -12,11 +12,16 @@ corresponding to PATTERN.  (It does not compile it.)
 
 import re
 
-__all__ = ["filter", "fnmatch","fnmatchcase","translate"]
+__all__ = ["filter", "fnmatch", "fnmatchcase", "translate"]
 
 _cache = {}  # Maps text patterns to compiled regexen.
 _cacheb = {}  # Ditto for bytes patterns.
 _MAXCACHE = 100 # Maximum size of caches
+
+def _purge():
+    """Clear the pattern cache"""
+    _cache.clear()
+    _cacheb.clear()
 
 def fnmatch(name, pat):
     """Test whether FILENAME matches PATTERN.
