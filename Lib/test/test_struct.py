@@ -234,8 +234,8 @@ class StructTest(unittest.TestCase):
                                                                  b'\x01' + got)
                 else:
                     # x is out of range -- verify pack realizes that.
-                    self.assertRaises((OverflowError, struct.error), pack,
-                                      format, x)
+                    self.assertRaises((OverflowError, ValueError, struct.error),
+                                      pack, format, x)
 
             def run(self):
                 from random import randrange
