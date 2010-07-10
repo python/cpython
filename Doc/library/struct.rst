@@ -259,18 +259,16 @@ then :exc:`struct.error` is raised.
    In 3.0, some of the integer formats wrapped out-of-range values and
    raised :exc:`DeprecationWarning` instead of :exc:`struct.error`.
 
-
 The ``'p'`` format character encodes a "Pascal string", meaning a short
-variable-length string stored in a fixed number of bytes. The count is the total
-number of bytes stored.  The first byte stored is the length of the string, or
-255, whichever is smaller.  The bytes of the string follow.  If the string
-passed in to :func:`pack` is too long (longer than the count minus 1), only the
-leading count-1 bytes of the string are stored.  If the string is shorter than
-count-1, it is padded with null bytes so that exactly count bytes in all are
-used.  Note that for :func:`unpack`, the ``'p'`` format character consumes count
-bytes, but that the string returned can never contain more than 255 bytes.
-
-
+variable-length string stored in a *fixed number of bytes*, given by the count.
+The first byte stored is the length of the string, or 255, whichever is
+smaller.  The bytes of the string follow.  If the string passed in to
+:func:`pack` is too long (longer than the count minus 1), only the leading
+``count-1`` bytes of the string are stored.  If the string is shorter than
+``count-1``, it is padded with null bytes so that exactly count bytes in all
+are used.  Note that for :func:`unpack`, the ``'p'`` format character consumes
+``count`` bytes, but that the string returned can never contain more than 255
+bytes.
 
 For the ``'?'`` format character, the return value is either :const:`True` or
 :const:`False`. When packing, the truth value of the argument object is used.
