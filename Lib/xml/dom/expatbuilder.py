@@ -242,7 +242,7 @@ class ExpatBuilder:
         doctype = self.document.implementation.createDocumentType(
             doctypeName, publicId, systemId)
         doctype.ownerDocument = self.document
-        self.document.childNodes.append(doctype)
+        _append_child(self.document, doctype)
         self.document.doctype = doctype
         if self._filter and self._filter.acceptNode(doctype) == FILTER_REJECT:
             self.document.doctype = None
