@@ -285,6 +285,7 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.literal_eval('[1, 2, 3]'), [1, 2, 3])
         self.assertEqual(ast.literal_eval('{"foo": 42}'), {"foo": 42})
         self.assertEqual(ast.literal_eval('(True, False, None)'), (True, False, None))
+        self.assertEqual(ast.literal_eval('{1, 2, 3}'), {1, 2, 3})
         self.assertRaises(ValueError, ast.literal_eval, 'foo()')
 
     def test_literal_eval_issue4907(self):
