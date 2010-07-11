@@ -78,6 +78,8 @@ C-API
 Library
 -------
 
+- ``ast.literal_eval()`` now allows byte literals.
+
 - Issue #9137: Fix issue in MutableMapping.update, which incorrectly
   treated keyword arguments called 'self' or 'other' specially.
 
