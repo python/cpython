@@ -776,14 +776,6 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
             goto done;
         }
 
-        /* Error to specify a comma. */
-        if (format->thousands_separators) {
-            PyErr_SetString(PyExc_ValueError,
-                            "Thousands separators not allowed with integer"
-                            " format specifier 'c'");
-            goto done;
-        }
-
         /* taken from unicodeobject.c formatchar() */
         /* Integer input truncated to a character */
 /* XXX: won't work for int */
