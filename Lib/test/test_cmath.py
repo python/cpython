@@ -448,7 +448,7 @@ class CMathTests(unittest.TestCase):
         for x in real_vals:
             for y in real_vals:
                 z = complex(x, y)
-                self.assertEquals(cmath.isfinite(z),
+                self.assertEqual(cmath.isfinite(z),
                                   math.isfinite(x) and math.isfinite(y))
 
     def test_isnan(self):
