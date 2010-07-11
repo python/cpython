@@ -12,6 +12,9 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #7616: Fix copying of overlapping memoryview slices with the Intel
+  compiler.
+
 - Issue #8271: during the decoding of an invalid UTF-8 byte sequence, only the
   start byte and the continuation byte(s) are now considered invalid, instead
   of the number of bytes specified by the start byte.
