@@ -1818,6 +1818,19 @@ PyDoc_STRVAR(math_radians_doc,
 Convert angle x from degrees to radians.");
 
 static PyObject *
+math_isfinite(PyObject *self, PyObject *arg)
+{
+    double x = PyFloat_AsDouble(arg);
+    if (x == -1.0 && PyErr_Occurred())
+        return NULL;
+    return PyBool_FromLong((long)Py_IS_FINITE(x));
+}
+
+PyDoc_STRVAR(math_isfinite_doc,
+"isfinite(x) -> bool\n\n\
+Check if float x is finite (not an infinity or NaN).");
+
+static PyObject *
 math_isnan(PyObject *self, PyObject *arg)
 {
     double x = PyFloat_AsDouble(arg);
@@ -1868,6 +1881,7 @@ static PyMethodDef math_methods[] = {
     {"fsum",            math_fsum,      METH_O,         math_fsum_doc},
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     {"hypot",           math_hypot,     METH_VARARGS,   math_hypot_doc},
+    {"isfinite",        math_isfinite,  METH_O,         math_isfinite_doc},
     {"isinf",           math_isinf,     METH_O,         math_isinf_doc},
     {"isnan",           math_isnan,     METH_O,         math_isnan_doc},
     {"ldexp",           math_ldexp,     METH_VARARGS,   math_ldexp_doc},
