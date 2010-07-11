@@ -165,7 +165,7 @@ def make(filename, outfile):
             section = STR
             if l.startswith('msgstr['):
                 if not is_plural:
-                    print(sys.stderr, 'plural without msgid_plural on %s:%d' % (infile, lno),
+                    print('plural without msgid_plural on %s:%d' % (infile, lno),
                           file=sys.stderr)
                     sys.exit(1)
                 l = l.split(']', 1)[1]
@@ -173,7 +173,7 @@ def make(filename, outfile):
                     msgstr += b'\0' # Separator of the various plural forms
             else:
                 if is_plural:
-                    print(sys.stderr, 'indexed msgstr required for plural on  %s:%d' % (infile, lno),
+                    print('indexed msgstr required for plural on  %s:%d' % (infile, lno),
                           file=sys.stderr)
                     sys.exit(1)
                 l = l[6:]
