@@ -108,10 +108,6 @@ The following classes are provided:
       :mod:`http.cookiejar` and :mod:`http.cookies` modules do not depend on each
       other.
 
-   http://wwwsearch.sourceforge.net/mechanize/
-      Extensions to this module, including a class for reading Microsoft Internet
-      Explorer cookies on Windows.
-
    http://wp.netscape.com/newsref/std/cookie_spec.html
       The specification of the original Netscape cookie protocol.  Though this is
       still the dominant protocol, the 'Netscape cookie protocol' implemented by all
@@ -292,11 +288,8 @@ contained :class:`Cookie` objects.
 FileCookieJar subclasses and co-operation with web browsers
 -----------------------------------------------------------
 
-The following :class:`CookieJar` subclasses are provided for reading and writing
-.  Further :class:`CookieJar` subclasses, including one that reads Microsoft
-Internet Explorer cookies, are available at
-http://wwwsearch.sourceforge.net/mechanize/.
-
+The following :class:`CookieJar` subclasses are provided for reading and
+writing .
 
 .. class:: MozillaCookieJar(filename, delayload=None, policy=None)
 
