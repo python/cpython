@@ -1005,6 +1005,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9137: Fix issue in MutableMapping.update, which incorrectly
+  treated keyword arguments called 'self' or 'other' specially.
+
 - Issue #7835: shelve should no longer produce mysterious warnings during
   interpreter shutdown.
 
