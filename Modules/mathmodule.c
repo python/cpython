@@ -1828,7 +1828,7 @@ math_isfinite(PyObject *self, PyObject *arg)
 
 PyDoc_STRVAR(math_isfinite_doc,
 "isfinite(x) -> bool\n\n\
-Check if float x is finite (not an infinity or NaN).");
+Return True if x is neither an infinity nor a NaN, and False otherwise.");
 
 static PyObject *
 math_isnan(PyObject *self, PyObject *arg)
@@ -1841,7 +1841,7 @@ math_isnan(PyObject *self, PyObject *arg)
 
 PyDoc_STRVAR(math_isnan_doc,
 "isnan(x) -> bool\n\n\
-Check if float x is not a number (NaN).");
+Return True if x is a NaN (not a number), and False otherwise.");
 
 static PyObject *
 math_isinf(PyObject *self, PyObject *arg)
@@ -1854,7 +1854,7 @@ math_isinf(PyObject *self, PyObject *arg)
 
 PyDoc_STRVAR(math_isinf_doc,
 "isinf(x) -> bool\n\n\
-Check if float x is infinite (positive or negative).");
+Return True if x is a positive or negative infinity, and False otherwise.");
 
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
