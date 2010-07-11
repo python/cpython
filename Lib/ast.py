@@ -58,6 +58,8 @@ def literal_eval(node_or_string):
             return tuple(map(_convert, node.elts))
         elif isinstance(node, List):
             return list(map(_convert, node.elts))
+        elif isinstance(node, Set):
+            return set(map(_convert, node.elts))
         elif isinstance(node, Dict):
             return dict((_convert(k), _convert(v)) for k, v
                         in zip(node.keys, node.values))
