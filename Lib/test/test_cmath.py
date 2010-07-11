@@ -442,6 +442,15 @@ class CMathTests(unittest.TestCase):
         self.assertCEqual(rect(1, pi/2), (0, 1.))
         self.assertCEqual(rect(1, -pi/2), (0, -1.))
 
+    def test_isfinite(self):
+        real_vals = [float('-inf'), -2.3, -0.0,
+                     0.0, 2.3, float('inf'), float('nan')]
+        for x in real_vals:
+            for y in real_vals:
+                z = complex(x, y)
+                self.assertEquals(cmath.isfinite(z),
+                                  math.isfinite(x) and math.isfinite(y))
+
     def test_isnan(self):
         self.assertFalse(cmath.isnan(1))
         self.assertFalse(cmath.isnan(1j))

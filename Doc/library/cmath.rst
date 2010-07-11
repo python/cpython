@@ -187,6 +187,12 @@ Hyperbolic functions
 Classification functions
 ------------------------
 
+.. function:: isfinite(x)
+
+   Return ``True`` if both the real and imaginary parts of *x* are finite,
+   and ``False`` otherwise.
+
+
 .. function:: isinf(x)
 
    Return *True* if the real or the imaginary part of x is positive

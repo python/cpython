@@ -1024,6 +1024,19 @@ PyDoc_STRVAR(cmath_rect_doc,
 Convert from polar coordinates to rectangular coordinates.");
 
 static PyObject *
+cmath_isfinite(PyObject *self, PyObject *args)
+{
+    Py_complex z;
+    if (!PyArg_ParseTuple(args, "D:isfinite", &z))
+        return NULL;
+    return PyBool_FromLong(Py_IS_FINITE(z.real) && Py_IS_FINITE(z.imag));
+}
+
+PyDoc_STRVAR(cmath_isfinite_doc,
+"isfinite(z) -> bool\n\
+Return True if both the real and imaginary parts of z are finite, else False.");
+
+static PyObject *
 cmath_isnan(PyObject *self, PyObject *args)
 {
     Py_complex z;
@@ -1065,6 +1078,7 @@ static PyMethodDef cmath_methods[] = {
     {"cos",    cmath_cos,   METH_VARARGS, c_cos_doc},
     {"cosh",   cmath_cosh,  METH_VARARGS, c_cosh_doc},
     {"exp",    cmath_exp,   METH_VARARGS, c_exp_doc},
+    {"isfinite", cmath_isfinite, METH_VARARGS, cmath_isfinite_doc},
     {"isinf",  cmath_isinf, METH_VARARGS, cmath_isinf_doc},
     {"isnan",  cmath_isnan, METH_VARARGS, cmath_isnan_doc},
     {"log",    cmath_log,   METH_VARARGS, cmath_log_doc},

@@ -97,6 +97,12 @@ Number-theoretic and representation functions
    <http://code.activestate.com/recipes/393090/>`_\.
 
 
+.. function:: isfinite(x)
+
+   Return ``True`` if *x* is neither an infinity nor a NaN, and
+   ``False`` otherwise.  (Note that ``0.0`` *is* considered finite.)
+
+
 .. function:: isinf(x)
 
    Check if the float *x* is positive or negative infinity.

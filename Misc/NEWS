@@ -1415,6 +1415,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9165: Add new functions math.isfinite and cmath.isfinite, to
+  accompany existing isinf and isnan functions.
+
 - Issue #1578269: Implement os.symlink for Windows 6.0+. Patch by
   Jason R. Coombs
 
