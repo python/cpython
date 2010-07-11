@@ -144,7 +144,7 @@ A partial list of 3.1 features that were backported to 2.7:
 * Float-to-string and string-to-float conversions now round their
   results more correctly, and :func:`repr` of a floating-point
   number *x* returns a result that's guaranteed to round back to the
-  same number when converted back to a string.
+  same number when converted back to a float.
 * The :ctype:`PyCapsule` type, used to provide a C API for extension modules.
 * The :cfunc:`PyLong_AsLongAndOverflow` C API function.
 
