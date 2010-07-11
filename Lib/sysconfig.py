@@ -645,8 +645,7 @@ def get_platform():
                 cflags = get_config_vars().get('CFLAGS')
 
                 archs = re.findall('-arch\s+(\S+)', cflags)
-                archs.sort()
-                archs = tuple(archs)
+                archs = tuple(sorted(set(archs)))
 
                 if len(archs) == 1:
                     machine = archs[0]

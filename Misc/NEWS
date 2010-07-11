@@ -33,6 +33,8 @@ Library
 
 - Issue #9128: Fix validation of class decorators in parser module.
 
+- Issue #9164: Ensure sysconfig handles dupblice archs while building on OSX
+
 Extension Modules
 -----------------
 
