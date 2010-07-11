@@ -473,6 +473,9 @@ C-API
 Library
 -------
 
+- Issue #9137: Fix issue in MutableMapping.update, which incorrectly
+  treated keyword arguments called 'self' or 'other' specially.
+
 - ``ast.literal_eval()`` now allows set literals.
 
 - Issue #9164: Ensure that sysconfig handles duplicate -arch flags in CFLAGS.
