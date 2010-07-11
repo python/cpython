@@ -1596,7 +1596,7 @@ The following methods are used to override the default behavior of the
 
 In particular, the metaclass :class:`abc.ABCMeta` implements these methods in
 order to allow the addition of Abstract Base Classes (ABCs) as "virtual base
-classes" to any class or type (including built-in types), and including to other
+classes" to any class or type (including built-in types), including other
 ABCs.
 
 .. method:: class.__instancecheck__(self, instance)
@@ -1615,7 +1615,7 @@ ABCs.
 
 Note that these methods are looked up on the type (metaclass) of a class.  They
 cannot be defined as class methods in the actual class.  This is consistent with
-the lookup of special methods that are called on instances, only that in this
+the lookup of special methods that are called on instances, only in this
 case the instance is itself a class.
 
 .. seealso::

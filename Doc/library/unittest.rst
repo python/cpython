@@ -1413,5 +1413,5 @@ Loading and running tests
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
    This stores the result of the tests run as the ``result`` attribute.
 
-   .. versionchanged:: 3.2
+   .. versionchanged:: 3.1
       The ``exit`` parameter was added.

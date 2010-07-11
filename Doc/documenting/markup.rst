@@ -698,10 +698,10 @@ tables of contents.  The ``toctree`` directive is the central element.
       .. toctree::
          :maxdepth: 2
 
-         intro.rst
-         strings.rst
-         datatypes.rst
-         numeric.rst
+         intro
+         strings
+         datatypes
+         numeric
          (many more files listed here)
 
    This accomplishes two things:
@@ -709,8 +709,8 @@ tables of contents.  The ``toctree`` directive is the central element.
    * Tables of contents from all those files are inserted, with a maximum depth
      of two, that means one nested heading.  ``toctree`` directives in those
      files are also taken into account.
-   * Sphinx knows that the relative order of the files ``intro.rst``,
-     ``strings.rst`` and so forth, and it knows that they are children of the
+   * Sphinx knows that the relative order of the files ``intro``,
+     ``strings`` and so forth, and it knows that they are children of the
      shown file, the library index.  From this information it generates "next
      chapter", "previous chapter" and "parent chapter" links.
 

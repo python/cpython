@@ -10,14 +10,14 @@ General GUI Questions
 =====================
 
 What platform-independent GUI toolkits exist for Python?
---------------------------------------------------------
+========================================================
 
 Depending on what platform(s) you are aiming at, there are several.
 
 .. XXX check links
 
 Tkinter
-'''''''
+-------
 
 Standard builds of Python include an object-oriented interface to the Tcl/Tk
 widget set, called Tkinter.  This is probably the easiest to install and use.
@@ -26,23 +26,26 @@ page at http://www.tcl.tk.  Tcl/Tk is fully portable to the MacOS, Windows, and
 Unix platforms.
 
 wxWindows
-'''''''''
+---------
 
-wxWindows is a portable GUI class library written in C++ that's a portable
-interface to various platform-specific libraries; wxWidgets is a Python
-interface to wxWindows.  wxWindows supports Windows and MacOS; on Unix variants,
-it supports both GTk+ and Motif toolkits.  wxWindows preserves the look and feel
-of the underlying graphics toolkit, and there is quite a rich widget set and
-collection of GDI classes.  See `the wxWindows page <http://www.wxwindows.org>`_
-for more details.
+wxWidgets (http://www.wxwidgets.org) is a free, portable GUI class
+library written in C++ that provides a native look and feel on a
+number of platforms, with Windows, MacOS X, GTK, X11, all listed as
+current stable targets.  Language bindings are available for a number
+of languages including Python, Perl, Ruby, etc.
 
-`wxWidgets <http://wxwidgets.org>`_ is an extension module that wraps many of
-the wxWindows C++ classes, and is quickly gaining popularity amongst Python
-developers.  You can get wxWidgets as part of the source or CVS distribution of
-wxWindows, or directly from its home page.
+wxPython (http://www.wxpython.org) is the Python binding for
+wxwidgets.  While it often lags slightly behind the official wxWidgets
+releases, it also offers a number of features via pure Python
+extensions that are not available in other language bindings.  There
+is an active wxPython user and developer community.
+
+Both wxWidgets and wxPython are free, open source, software with
+permissive licences that allow their use in commercial products as
+well as in freeware or shareware.
 
 Qt
-'''
+---
 
 There are bindings available for the Qt toolkit (`PyQt
 <http://www.riverbankcomputing.co.uk/software/pyqt/>`_) and for KDE (PyKDE).  If
@@ -53,13 +56,13 @@ Qt 4.5 upwards is licensed under the LGPL license) a Qt license from `Trolltech
 <http://www.trolltech.com>`_.
 
 Gtk+
-''''
+----
 
 PyGtk bindings for the `Gtk+ toolkit <http://www.gtk.org>`_ have been
 implemented by by James Henstridge; see ftp://ftp.gtk.org/pub/gtk/python/.
 
 FLTK
-''''
+----
 
 Python bindings for `the FLTK toolkit <http://www.fltk.org>`_, a simple yet
 powerful and mature cross-platform windowing system, are available from `the
@@ -67,7 +70,7 @@ PyFLTK project <http://pyfltk.sourceforge.net>`_.
 
 
 FOX
-'''
+----
 
 A wrapper for `the FOX toolkit <http://www.fox-toolkit.org/>`_ called `FXpy
 <http://fxpy.sourceforge.net/>`_ is available.  FOX supports both Unix variants
@@ -75,13 +78,13 @@ and Windows.
 
 
 OpenGL
-''''''
+------
 
 For OpenGL bindings, see `PyOpenGL <http://pyopengl.sourceforge.net>`_.
 
 
 What platform-specific GUI toolkits exist for Python?
------------------------------------------------------
+========================================================
 
 `The Mac port <http://python.org/download/mac>`_ by Jack Jansen has a rich and
 ever-growing set of modules that support the native Mac toolbox calls.  The port

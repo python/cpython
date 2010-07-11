@@ -208,7 +208,7 @@ next line is a logical continuation of the line::
 
    print(hello)
 
-Note that newlines still need to be embedded in the string using ``\n``; the
+Note that newlines still need to be embedded in the string using ``\n`` -- the
 newline following the trailing backslash is discarded.  This example would print
 the following:
 
