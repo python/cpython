@@ -470,7 +470,9 @@ C-API
 Library
 -------
 
-- Issue #9164: Ensure that sysconfig handles duplicate -arch flags in CFLAGS
+- ``ast.literal_eval()`` now allows set literals.
+
+- Issue #9164: Ensure that sysconfig handles duplicate -arch flags in CFLAGS.
 
 - Issue #7646: The fnmatch pattern cache no longer grows without bound.
 
