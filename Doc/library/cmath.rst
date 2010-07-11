@@ -189,19 +189,22 @@ Classification functions
 
 .. function:: isfinite(x)
 
-   Return ``True`` if both the real and imaginary parts of *x* are finite,
-   and ``False`` otherwise.
+   Return ``True`` if both the real and imaginary parts of *x* are finite, and
+   ``False`` otherwise.
+
+   .. versionadded:: 3.2
 
 
 .. function:: isinf(x)
 
-   Return *True* if the real or the imaginary part of x is positive
-   or negative infinity.
+   Return ``True`` if either the real or the imaginary part of *x* is an
+   infinity, and ``False`` otherwise.
 
 
 .. function:: isnan(x)
 
-   Return *True* if the real or imaginary part of x is not a number (NaN).
+   Return ``True`` if either the real or the imaginary part of *x* is a NaN,
+   and ``False`` otherwise.
 
 
 Constants
