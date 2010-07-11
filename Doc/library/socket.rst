@@ -72,18 +72,21 @@ for use in clustered computer environments.  Addresses are represented by a
 tuple, and the fields depend on the address type. The general tuple form is
 ``(addr_type, v1, v2, v3 [, scope])``, where:
 
-   - *addr_type* is one of TIPC_ADDR_NAMESEQ, TIPC_ADDR_NAME, or
-     TIPC_ADDR_ID.
-   - *scope* is one of TIPC_ZONE_SCOPE, TIPC_CLUSTER_SCOPE, and
-     TIPC_NODE_SCOPE.
-   - If *addr_type* is TIPC_ADDR_NAME, then *v1* is the server type, *v2* is
-     the port identifier, and *v3* should be 0.
+- *addr_type* is one of TIPC_ADDR_NAMESEQ, TIPC_ADDR_NAME, or
+  TIPC_ADDR_ID.
+- *scope* is one of TIPC_ZONE_SCOPE, TIPC_CLUSTER_SCOPE, and
+  TIPC_NODE_SCOPE.
+- If *addr_type* is TIPC_ADDR_NAME, then *v1* is the server type, *v2* is
+  the port identifier, and *v3* should be 0.
 
-     If *addr_type* is TIPC_ADDR_NAMESEQ, then *v1* is the server type, *v2*
-     is the lower port number, and *v3* is the upper port number.
+  If *addr_type* is TIPC_ADDR_NAMESEQ, then *v1* is the server type, *v2*
+  is the lower port number, and *v3* is the upper port number.
 
-     If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
-     reference, and *v3* should be set to 0.
+  If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
+  reference, and *v3* should be set to 0.
+
+  If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
+  reference, and *v3* should be set to 0.
 
 
 All errors raise exceptions.  The normal exceptions for invalid argument types
@@ -684,7 +687,7 @@ correspond to Unix system calls applicable to sockets.
 
    Set a timeout on blocking socket operations.  The *value* argument can be a
    nonnegative float expressing seconds, or ``None``. If a float is given,
-   subsequent socket operations will raise an :exc:`timeout` exception if the
+   subsequent socket operations will raise a :exc:`timeout` exception if the
    timeout period *value* has elapsed before the operation has completed.  Setting
    a timeout of ``None`` disables timeouts on socket operations.
    ``s.settimeout(0.0)`` is equivalent to ``s.setblocking(0)``;
