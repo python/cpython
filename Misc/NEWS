@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7616: Fix copying of overlapping memoryview slices with the Intel
+  compiler.
+
 - Issue #8413: structsequence now subclasses tuple.
 
 - Issue #8271: during the decoding of an invalid UTF-8 byte sequence, only the
