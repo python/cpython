@@ -29,6 +29,8 @@ function that is going to be called by the Python interpreter.  Global or static
 C++ objects with constructors are probably not a good idea.
 
 
+.. _c-wrapper-software:
+
 Writing C is hard; are there any alternatives?
 ----------------------------------------------
 
@@ -200,11 +202,7 @@ begin by reading :ref:`the "Extending and Embedding" document
 whole lot of difference between C and C++ -- so the strategy of building a new
 Python type around a C structure (pointer) type will also work for C++ objects.
 
-For C++ libraries, you can look at `SIP
-<http://www.riverbankcomputing.co.uk/software/sip/>`_, `CXX
-<http://cxx.sourceforge.net/>`_, `Boost
-<http://www.boost.org/libs/python/doc/index.html>`_, `Weave
-<http://www.scipy.org/Weave>`_ or `SWIG <http://www.swig.org>`_
+For C++ libraries, see :ref:`c-wrapper-software`.
 
 
 I added a module using the Setup file and the make fails; why?
