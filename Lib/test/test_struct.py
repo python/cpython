@@ -512,8 +512,13 @@ class StructTest(unittest.TestCase):
                 self.assertFalse(prefix, msg='encoded bool is not one byte: %r'
                                              %packed)
 
-            self.assertRaises(IOError, struct.pack, prefix + '?',
-                              ExplodingBool())
+            try:
+                struct.pack(prefix + '?', ExplodingBool())
+            except IOError:
+                pass
+            else:
+                self.fail("Expected IOError: struct.pack(%r, "
+                          "ExplodingBool())" % (prefix + '?'))
 
         for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
             self.assertTrue(struct.unpack('>?', c)[0])
