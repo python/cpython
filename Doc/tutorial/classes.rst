@@ -599,12 +599,12 @@ Note that the mangling rules are designed mostly to avoid accidents; it still is
 possible to access or modify a variable that is considered private.  This can
 even be useful in special circumstances, such as in the debugger.
 
-Notice that code passed to ``exec()``, ``eval()`` or ``execfile()`` does not
-consider the classname of the invoking  class to be the current class; this is
-similar to the effect of the  ``global`` statement, the effect of which is
-likewise restricted to  code that is byte-compiled together.  The same
-restriction applies to ``getattr()``, ``setattr()`` and ``delattr()``, as well
-as when referencing ``__dict__`` directly.
+Notice that code passed to ``exec()`` or ``eval()`` does not consider the
+classname of the invoking class to be the current class; this is similar to the
+effect of the ``global`` statement, the effect of which is likewise restricted
+to code that is byte-compiled together.  The same restriction applies to
+``getattr()``, ``setattr()`` and ``delattr()``, as well as when referencing
+``__dict__`` directly.
 
 
 .. _tut-odds:
