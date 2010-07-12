@@ -2086,10 +2086,19 @@ simple bytes or complex data structures.
    buffer protocol.  Builtin objects that support the buffer protocol include
    :class:`bytes` and :class:`bytearray`.
 
-   ``len(view)`` returns the total number of bytes in the memoryview, *view*.
+   A :class:`memoryview` has the notion of an *element*, which is the
+   atomic memory unit handled by the originating object *obj*.  For many
+   simple types such as :class:`bytes` and :class:`bytearray`, an element
+   is a single byte, but other types such as :class:`array.array` may have
+   bigger elements.
+
+   ``len(view)`` returns the total number of elements in the memoryview,
+   *view*.  The :class:`~memoryview.itemsize` attribute will give you the
+   number of bytes in a single element.
 
    A :class:`memoryview` supports slicing to expose its data.  Taking a single
-   index will return a single byte.  Full slicing will result in a subview::
+   index will return a single element as a :class:`bytes` object.  Full
+   slicing will result in a subview::
 
       >>> v = memoryview(b'abcefg')
       >>> v[1]
@@ -2100,11 +2109,8 @@ simple bytes or complex data structures.
       <memory at 0x77ab28>
       >>> bytes(v[1:4])
       b'bce'
-      >>> v[3:-1]
-      <memory at 0x744f18>
-      >>> bytes(v[4:-1])
 
-   If the object the memory view is over supports changing its data, the
+   If the object the memoryview is over supports changing its data, the
    memoryview supports slice assignment::
 
       >>> data = bytearray(b'abcefg')
@@ -2124,12 +2130,18 @@ simple bytes or complex data structures.
 
    Notice how the size of the memoryview object cannot be changed.
 
-
    :class:`memoryview` has two methods:
 
    .. method:: tobytes()
 
-      Return the data in the buffer as a bytestring.
+      Return the data in the buffer as a bytestring.  This is equivalent to
+      calling the :class:`bytes` constructor on the memoryview. ::
+
+         >>> m = memoryview(b"abc")
+         >>> m.tobytes()
+         b'abc'
+         >>> bytes(m)
+         b'abc'
 
    .. method:: tolist()
 
@@ -2147,7 +2159,15 @@ simple bytes or complex data structures.
 
    .. attribute:: itemsize
 
-      The size in bytes of each element of the memoryview.
+      The size in bytes of each element of the memoryview::
+
+         >>> m = memoryview(array.array('H', [1,2,3]))
+         >>> m.itemsize
+         2
+         >>> m[0]
+         b'\x01\x00'
+         >>> len(m[0]) == m.itemsize
+         True
 
    .. attribute:: shape
 
