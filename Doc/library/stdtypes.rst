@@ -2554,10 +2554,18 @@ is generally interpreted as simple bytes.
    buffer protocol.  Builtin objects that support the buffer protocol include
    :class:`str` and :class:`bytearray` (but not :class:`unicode`).
 
-   ``len(view)`` returns the total number of bytes in the memoryview, *view*.
+   A :class:`memoryview` has the notion of an *element*, which is the
+   atomic memory unit handled by the originating object *obj*.  For many
+   simple types such as :class:`str` and :class:`bytearray`, an element
+   is a single byte, but other third-party types may expose larger elements.
+
+   ``len(view)`` returns the total number of elements in the memoryview,
+   *view*.  The :class:`~memoryview.itemsize` attribute will give you the
+   number of bytes in a single element.
 
    A :class:`memoryview` supports slicing to expose its data.  Taking a single
-   index will return a single byte.  Full slicing will result in a subview::
+   index will return a single element as a :class:`str` object.  Full
+   slicing will result in a subview::
 
       >>> v = memoryview('abcefg')
       >>> v[1]
@@ -2568,12 +2576,8 @@ is generally interpreted as simple bytes.
       <memory at 0x77ab28>
       >>> str(v[1:4])
       'bce'
-      >>> v[3:-1]
-      <memory at 0x744f18>
-      >>> str(v[4:-1])
-      'f'
 
-   If the object the memory view is over supports changing its data, the
+   If the object the memoryview is over supports changing its data, the
    memoryview supports slice assignment::
 
       >>> data = bytearray('abcefg')
@@ -2593,13 +2597,16 @@ is generally interpreted as simple bytes.
 
    Notice how the size of the memoryview object cannot be changed.
 
-
    :class:`memoryview` has two methods:
 
    .. method:: tobytes()
 
       Return the data in the buffer as a bytestring (an object of class
-      :class:`str`).
+      :class:`str`). ::
+
+         >>> m = memoryview("abc")
+         >>> m.tobytes()
+         'abc'
 
    .. method:: tolist()
 
