@@ -277,7 +277,6 @@ class SDistTestCase(PyPIRCCommandTestCase):
         self.assertRaises(DistutilsOptionError, cmd.finalize_options)
 
 
-    @unittest.skipUnless(zlib, "requires zlib")
     def test_get_file_list(self):
         # make sure MANIFEST is recalculated
         dist, cmd = self.get_cmd()
