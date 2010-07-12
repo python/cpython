@@ -420,7 +420,6 @@ Glossary
       modules, respectively.
 
    nested scope
-
       The ability to refer to a variable in an enclosing definition.  For
       instance, a function defined inside another function can refer to
       variables in the outer function.  Note that nested scopes by default work
