@@ -10,6 +10,7 @@ import time
 import os
 import pwd
 import shutil
+import sys
 import unittest
 import warnings
 
@@ -345,8 +346,13 @@ class PosixTester(unittest.TestCase):
                     os.chdir(dirname)
                     try:
                         os.getcwd()
-                        if current_path_length < 1027:
+                        if current_path_length < 4099:
                             _create_and_do_getcwd(dirname, current_path_length + len(dirname) + 1)
+                    except OSError as e:
+                        expected_errno = errno.ENAMETOOLONG
+                        if 'sunos' in sys.platform or 'openbsd' in sys.platform:
+                            expected_errno = errno.ERANGE # Issue 9185
+                        self.assertEqual(e.errno, expected_errno)
                     finally:
                         os.chdir('..')
                         os.rmdir(dirname)
