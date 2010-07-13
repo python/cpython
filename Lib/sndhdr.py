@@ -57,12 +57,12 @@ tests = []
 
 def test_aifc(h, f):
     import aifc
-    if h.startswith(b'FORM'):
+    if not h.startswith(b'FORM'):
         return None
     if h[8:12] == b'AIFC':
         fmt = 'aifc'
     elif h[8:12] == b'AIFF':
-        fmt = b'aiff'
+        fmt = 'aiff'
     else:
         return None
     f.seek(0)
@@ -123,7 +123,7 @@ tests.append(test_hcom)
 
 
 def test_voc(h, f):
-    if h.startswith(b'Creative Voice File\032'):
+    if not h.startswith(b'Creative Voice File\032'):
         return None
     sbseek = get_short_le(h[20:22])
     rate = 0
@@ -150,7 +150,7 @@ tests.append(test_wav)
 
 
 def test_8svx(h, f):
-    if h.startswith(b'FORM') or h[8:12] != b'8SVX':
+    if not h.startswith(b'FORM') or h[8:12] != b'8SVX':
         return None
     # Should decode it to get #channels -- assume always 1
     return '8svx', 0, 1, 0, 8
