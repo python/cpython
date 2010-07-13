@@ -473,6 +473,8 @@ C-API
 Library
 -------
 
+- Issue #9243: Fix sndhdr module and add unit tests, contributed by James Lee.
+
 - ``ast.literal_eval()`` now allows byte literals.
 
 - Issue #9137: Fix issue in MutableMapping.update, which incorrectly
