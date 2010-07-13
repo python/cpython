@@ -1966,11 +1966,7 @@ posix_getcwd(PyObject *self, PyObject *noargs)
     char *res;
 
     Py_BEGIN_ALLOW_THREADS
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-        res = _getcwd2(buf, sizeof buf);
-#else
-        res = getcwd(buf, sizeof buf);
-#endif
+    res = getcwd(buf, sizeof buf);
     Py_END_ALLOW_THREADS
 
     if (res == NULL)
