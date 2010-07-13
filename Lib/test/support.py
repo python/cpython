@@ -98,7 +98,7 @@ def _save_and_block_module(name, orig_modules):
         orig_modules[name] = sys.modules[name]
     except KeyError:
         saved = False
-    sys.modules[name] = 0
+    sys.modules[name] = None
     return saved
 
 
