@@ -119,14 +119,14 @@ and classes for traversing abstract syntax trees:
 
    Safely evaluate an expression node or a string containing a Python
    expression.  The string or node provided may only consist of the following
-   Python literal structures: strings, numbers, tuples, lists, dicts, sets,
-   booleans, and ``None``.
+   Python literal structures: strings, bytes, numbers, tuples, lists, dicts,
+   sets, booleans, and ``None``.
 
    This can be used for safely evaluating strings containing Python expressions
    from untrusted sources without the need to parse the values oneself.
 
    .. versionchanged:: 3.2
-      Now allows set literals.
+      Now allows bytes and set literals.
 
 
 .. function:: get_docstring(node, clean=True)
