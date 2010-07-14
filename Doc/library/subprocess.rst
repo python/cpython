@@ -540,7 +540,7 @@ Return code handling translates as follows::
    pipe = os.popen(cmd, 'w')
    ...
    rc = pipe.close()
-   if  rc != None and rc % 256:
+   if rc is not None and rc >> 8:
        print("There were some errors")
    ==>
    process = Popen(cmd, 'w', stdin=PIPE)
