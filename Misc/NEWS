@@ -1650,6 +1650,9 @@ Documentation
 Tests
 -----
 
+- Issue #9251: test_threaded_import didn't fail when run through regrtest
+  if the import lock was disabled.
+
 - Issue #8605: Skip test_gdb if Python is compiled with optimizations.
 
 - Issue #7449: Skip test_socketserver if threading support is disabled
