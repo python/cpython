@@ -41,6 +41,7 @@ The module also extends gdb with some python-specific commands.
 '''
 from __future__ import with_statement
 import gdb
+import sys
 
 # Look up the gdb.Type for some standard types:
 _type_char_ptr = gdb.lookup_type('char').pointer() # char*
