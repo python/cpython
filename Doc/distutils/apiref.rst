@@ -21,7 +21,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
 .. function:: setup(arguments)
 
    The basic do-everything function that does most everything you could ever ask
-   for from a Distutils method. See XXXXX
+   for from a Distutils method.
 
    The setup function takes a large number of arguments. These are laid out in the
    following table.
