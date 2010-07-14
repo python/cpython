@@ -482,8 +482,8 @@ def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
     tt = _strptime(data_string, format)[0]
     return time.struct_time(tt[:9])
 
-def _strptime_datetime(class_, data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a class_ instance based on the input string and the
+def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
+    """Return a class cls instance based on the input string and the
     format string."""
     tt, fraction = _strptime(data_string, format)
     gmtoff, tzname = tt[-2:]
@@ -496,4 +496,4 @@ def _strptime_datetime(class_, data_string, format="%a %b %d %H:%M:%S %Y"):
             tz = datetime_timezone(tzdelta)
         args += (tz,)
 
-    return class_(*args)
+    return cls(*args)
