@@ -21,7 +21,9 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
 .. function:: setup(arguments)
 
    The basic do-everything function that does most everything you could ever ask
-   for from a Distutils method. See XXXXX
+   for from a Distutils method.
+
+   .. See XXXXX
 
    The setup function takes a large number of arguments. These are laid out in the
    following table.
@@ -1743,11 +1745,11 @@ Subclasses of :class:`Command` must define the following methods.
 
 .. method:: Command.run()
 
-   A command's raison d'etre: carry out the action it exists to perform, controlled
-   by the options initialized in :meth:`initialize_options`, customized by other
-   commands, the setup script, the command-line, and config files, and finalized in
-   :meth:`finalize_options`.  All terminal output and filesystem interaction should
-   be done by :meth:`run`.
+   A command's raison d'etre: carry out the action it exists to perform,
+   controlled by the options initialized in :meth:`initialize_options`,
+   customized by other commands, the setup script, the command-line, and config
+   files, and finalized in :meth:`finalize_options`.  All terminal output and
+   filesystem interaction should be done by :meth:`run`.
 
 
 .. attribute:: Command.sub_commands
