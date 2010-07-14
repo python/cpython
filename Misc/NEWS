@@ -333,6 +333,9 @@ Build
 Tests
 -----
 
+- Issue #9251: test_threaded_import didn't fail when run through regrtest
+  if the import lock was disabled.
+
 - Issue #7449: Skip test_socketserver if threading support is disabled
 
 - Issue #8672: Add a zlib test ensuring that an incomplete stream can be

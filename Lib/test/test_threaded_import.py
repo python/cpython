@@ -5,71 +5,67 @@
 # complains several times about module random having no attribute
 # randrange, and then Python hangs.
 
-import _thread as thread
-from test.support import verbose, TestFailed
+import imp
+import sys
+import unittest
+from test.support import verbose, TestFailed, import_module, run_unittest
+thread = import_module('_thread')
 
-critical_section = thread.allocate_lock()
-done = thread.allocate_lock()
+def task(N, done, done_tasks, errors):
+    try:
+        import random
+        # This will fail if random is not completely initialized
+        x = random.randrange(1, 3)
+    except Exception as e:
+        errors.append(e.with_traceback(None))
+    finally:
+        done_tasks.append(thread.get_ident())
+        finished = len(done_tasks) == N
+        if finished:
+            done.release()
 
-def task():
-    global N, critical_section, done
-    import random
-    x = random.randrange(1, 3)
-    critical_section.acquire()
-    N -= 1
-    # Must release critical_section before releasing done, else the main
-    # thread can exit and set critical_section to None as part of global
-    # teardown; then critical_section.release() raises AttributeError.
-    finished = N == 0
-    critical_section.release()
-    if finished:
+
+class ThreadedImportTests(unittest.TestCase):
+
+    def test_parallel_module_init(self):
+        if imp.lock_held():
+            # This triggers on, e.g., from test import autotest.
+            raise unittest.SkipTest("can't run when import lock is held")
+
+        done = thread.allocate_lock()
+        done.acquire()
+        for N in (20, 50) * 3:
+            if verbose:
+                print("Trying", N, "threads ...", end=' ')
+            # Make sure that random gets reimported freshly
+            try:
+                del sys.modules['random']
+            except KeyError:
+                pass
+            errors = []
+            done_tasks = []
+            for i in range(N):
+                thread.start_new_thread(task, (N, done, done_tasks, errors,))
+            done.acquire()
+            self.assertFalse(errors)
+            if verbose:
+                print("OK.")
         done.release()
 
-def test_import_hangers():
-    import sys
-    if verbose:
-        print("testing import hangers ...", end=' ')
-
-    import test.threaded_import_hangers
-    try:
-        if test.threaded_import_hangers.errors:
-            raise TestFailed(test.threaded_import_hangers.errors)
-        elif verbose:
-            print("OK.")
-    finally:
+    def test_import_hangers(self):
         # In case this test is run again, make sure the helper module
         # gets loaded from scratch again.
-        del sys.modules['test.threaded_import_hangers']
+        try:
+            del sys.modules['test.threaded_import_hangers']
+        except KeyError:
+            pass
+        import test.threaded_import_hangers
+        self.assertFalse(test.threaded_import_hangers.errors)
 
-# Tricky:  When regrtest imports this module, the thread running regrtest
-# grabs the import lock and won't let go of it until this module returns.
-# All other threads attempting an import hang for the duration.  Since
-# this test spawns threads that do little *but* import, we can't do that
-# successfully until after this module finishes importing and regrtest
-# regains control.  To make this work, a special case was added to
-# regrtest to invoke a module's "test_main" function (if any) after
-# importing it.
 
-def test_main():        # magic name!  see above
-    global N, done
+def test_main():
+    run_unittest(ThreadedImportTests)
 
-    import imp
-    if imp.lock_held():
-        # This triggers on, e.g., from test import autotest.
-        raise unittest.SkipTest("can't run when import lock is held")
-
-    done.acquire()
-    for N in (20, 50) * 3:
-        if verbose:
-            print("Trying", N, "threads ...", end=' ')
-        for i in range(N):
-            thread.start_new_thread(task, ())
-        done.acquire()
-        if verbose:
-            print("OK.")
-    done.release()
-
-    test_import_hangers()
 
 if __name__ == "__main__":
     test_main()
