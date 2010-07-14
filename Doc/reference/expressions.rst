@@ -1031,9 +1031,9 @@ Comparison of objects of the same type depends on the type:
   ``x <= y``.  If the corresponding element does not exist, the shorter
   sequence is ordered first (for example, ``[1,2] < [1,2,3]``).
 
-* Mappings (dictionaries) compare equal if and only if their sorted ``(key,
-  value)`` lists compare equal. [#]_ Outcomes other than equality are resolved
-  consistently, but are not otherwise defined. [#]_
+* Mappings (dictionaries) compare equal if and only if they have the same
+  ``(key, value)`` pairs. Order comparisons ``('<', '<=', '>=', '>')``
+  raise :exc:`TypeError`.
 
 * Sets and frozensets define comparison operators to mean subset and superset
   tests.  Those relations do not define total orderings (the two sets ``{1,2}``
@@ -1329,15 +1329,6 @@ groups from right to left).
    same unicode character (LATIN CAPITAL LETTER C WITH CEDILLA).  To compare
    strings in a human recognizable way, compare using
    :func:`unicodedata.normalize`.
-
-.. [#] The implementation computes this efficiently, without constructing lists
-   or sorting.
-
-.. [#] Earlier versions of Python used lexicographic comparison of the sorted (key,
-   value) lists, but this was very expensive for the common case of comparing
-   for equality.  An even earlier version of Python compared dictionaries by
-   identity only, but this caused surprises because people expected to be able
-   to test a dictionary for emptiness by comparing it to ``{}``.
 
 .. [#] Due to automatic garbage-collection, free lists, and the dynamic nature of
    descriptors, you may notice seemingly unusual behaviour in certain uses of
