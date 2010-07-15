@@ -1,9 +1,10 @@
 """Benchmark some basic import use-cases."""
 # XXX
-#    - Bench from source (turn off bytecode generation)
-#    - Bench from bytecode (remove existence of source)
-#    - Bench bytecode generation
-#    - Bench extensions
+#    - from source
+#        + sys.dont_write_bytecode = True
+#        + sys.dont_write_bytecode = False
+#    - from bytecode
+#    - extensions
 from . import util
 from .source import util as source_util
 import imp
@@ -30,7 +31,7 @@ def bench(name, cleanup=lambda: None, *, seconds=1, repeat=3):
             # One execution too far
             if total_time > seconds:
                 count -= 1
-        yield count
+        yield count // seconds
 
 def from_cache(repeat):
     """sys.modules"""
@@ -49,13 +50,15 @@ def builtin_mod(repeat):
     name = 'errno'
     if name in sys.modules:
         del sys.modules[name]
+    # Relying on built-in importer being implicit.
     for result in bench(name, lambda: sys.modules.pop(name), repeat=repeat):
         yield result
 
 
-def main(import_, repeat=3):
+def main(import_, *, repeat=3):
     __builtins__.__import__ = import_
     benchmarks = from_cache, builtin_mod
+    print("Measuring imports/second\n")
     for benchmark in benchmarks:
         print(benchmark.__doc__, "[", end=' ')
         sys.stdout.flush()
@@ -75,7 +78,7 @@ if __name__ == '__main__':
                         default=False, help="use the built-in __import__")
     options, args = parser.parse_args()
     if args:
-        raise RuntimeError("unrecognized args: {0}".format(args))
+        raise RuntimeError("unrecognized args: {}".format(args))
     import_ = __import__
     if not options.builtin:
         import_ = importlib.__import__
