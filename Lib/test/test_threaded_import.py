@@ -27,6 +27,16 @@ def task(N, done, done_tasks, errors):
 
 class ThreadedImportTests(unittest.TestCase):
 
+    def setUp(self):
+        self.old_random = sys.modules.pop('random', None)
+
+    def tearDown(self):
+        # If the `random` module was already initialized, we restore the
+        # old module at the end so that pickling tests don't fail.
+        # See http://bugs.python.org/issue3657#msg110461
+        if self.old_random is not None:
+            sys.modules['random'] = self.old_random
+
     def test_parallel_module_init(self):
         if imp.lock_held():
             # This triggers on, e.g., from test import autotest.
