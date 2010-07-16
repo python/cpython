@@ -110,7 +110,7 @@ def main(import_):
             print(result, end=' ')
             sys.stdout.flush()
         assert not sys.dont_write_bytecode
-        print("]", "best is", max(results))
+        print("]", "best is", format(max(results), ',d'))
 
 
 if __name__ == '__main__':
