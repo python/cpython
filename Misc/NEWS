@@ -753,6 +753,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #5180: Fixed a bug that prevented loading 2.x pickles in 3.x
+  python when they contain instances of old-style classes.
+
 - Issue #7670: sqlite3: Fixed crashes when operating on closed connections.
 
 - Stop providing crtassem.h symbols when compiling with Visual Studio 2010, as
