@@ -833,6 +833,8 @@ Core and Builtins
 
 Library
 -------
+- Issue #1555570: email no longer inserts extra blank lines when a \r\n
+  combo crosses an 8192 byte boundary.
 
 - Issue #6906: Tk should not set Unicode environment variables on Windows.
 
