@@ -40,6 +40,11 @@ Library
 Extension Modules
 -----------------
 
+Build
+-----
+
+- Issue #9280: Make sharedinstall depend on sharedmods.
+
 Tests
 -----
 
