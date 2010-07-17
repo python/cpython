@@ -473,6 +473,9 @@ C-API
 Library
 -------
 
+- Issue #1555570: email no longer inserts extra blank lines when a \r\n
+  combo crosses an 8192 byte boundary.
+
 - Issue #9243: Fix sndhdr module and add unit tests, contributed by James Lee.
 
 - ``ast.literal_eval()`` now allows byte literals.
