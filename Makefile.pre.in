@@ -1018,7 +1018,7 @@ libainstall:	all
 
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
-sharedinstall:
+sharedinstall: sharedmods
 	$(RUNSHARED) ./$(BUILDPYTHON) -E $(srcdir)/setup.py install \
 	   	--prefix=$(prefix) \
 		--install-scripts=$(BINDIR) \
