@@ -1907,7 +1907,7 @@ def optimize(p):
 ##############################################################################
 # A symbolic pickle disassembler.
 
-def dis(pickle, out=None, memo=None, indentlevel=4):
+def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     """Produce a symbolic disassembly of a pickle.
 
     'pickle' is a file-like object, or string, containing a (at least one)
@@ -1923,8 +1923,14 @@ def dis(pickle, out=None, memo=None, indentlevel=4):
     to proceed across multiple pickles that were all created by the same
     pickler with the same memo.  Ordinarily you don't need to worry about this.
 
-    Optional arg indentlevel is the number of blanks by which to indent
+    Optional arg 'indentlevel' is the number of blanks by which to indent
     a new MARK level.  It defaults to 4.
+
+    Optional arg 'annotate' if nonzero instructs dis() to add short
+    description of the opcode on each line of disassembled output.
+    The value given to 'annotate' must be an integer and is used as a
+    hint for the column where annotation should start.  The default
+    value is 0, meaning no annotations.
 
     In addition to printing the disassembly, some sanity checks are made:
 
@@ -1953,6 +1959,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4):
     markstack = []      # bytecode positions of MARK opcodes
     indentchunk = ' ' * indentlevel
     errormsg = None
+    annocol = annotate  # columnt hint for annotations
     for opcode, arg, pos in genops(pickle):
         if pos is not None:
             print("%5d:" % pos, end=' ', file=out)
@@ -2020,6 +2027,13 @@ def dis(pickle, out=None, memo=None, indentlevel=4):
                 line += ' ' + repr(arg)
             if markmsg:
                 line += ' ' + markmsg
+        if annotate:
+            line += ' ' * (annocol - len(line))
+            # make a mild effort to align annotations
+            annocol = len(line)
+            if annocol > 50:
+                annocol = annotate
+            line += ' ' + opcode.doc.split('\n', 1)[0]
         print(line, file=out)
 
         if errormsg:
@@ -2293,6 +2307,22 @@ highest protocol among opcodes = 2
    12: h    BINGET     1
    14: .    STOP
 highest protocol among opcodes = 2
+
+Try protocol 3 with annotations:
+
+>>> dis(pickle.dumps(T, 3), annotate=1)
+    0: \x80 PROTO      3 Protocol version indicator.
+    2: ]    EMPTY_LIST   Push an empty list.
+    3: q    BINPUT     0 Store the stack top into the memo.  The stack is not popped.
+    5: h    BINGET     0 Read an object from the memo and push it on the stack.
+    7: \x85 TUPLE1       Build a one-tuple out of the topmost item on the stack.
+    8: q    BINPUT     1 Store the stack top into the memo.  The stack is not popped.
+   10: a    APPEND       Append an object to a list.
+   11: 0    POP          Discard the top stack item, shrinking the stack by one item.
+   12: h    BINGET     1 Read an object from the memo and push it on the stack.
+   14: .    STOP         Stop the unpickling machine.
+highest protocol among opcodes = 2
+
 """
 
 _memo_test = r"""
@@ -2349,6 +2379,9 @@ if __name__ == "__main__":
         '-l', '--indentlevel', default=4, type=int,
         help='the number of blanks by which to indent a new MARK level')
     parser.add_argument(
+        '-a', '--annotate',  action='store_true',
+        help='annotate each line with a short opcode description')
+    parser.add_argument(
         '-p', '--preamble', default="==> {name} <==",
         help='if more than one pickle file is specified, print this before'
         ' each disassembly')
@@ -2362,14 +2395,15 @@ if __name__ == "__main__":
     if args.test:
         _test()
     else:
+        annotate = 30 if args.annotate else 0
         if not args.pickle_file:
             parser.print_help()
         elif len(args.pickle_file) == 1:
-            dis(args.pickle_file[0], args.output,
-                indentlevel=args.indentlevel)
+            dis(args.pickle_file[0], args.output, None,
+                args.indentlevel, annotate)
         else:
             memo = {} if args.memo else None
             for f in args.pickle_file:
                 preamble = args.preamble.format(name=f.name)
                 args.output.write(preamble + '\n')
-                dis(f, args.output, memo, args.indentlevel)
+                dis(f, args.output, memo, args.indentlevel, annotate)
