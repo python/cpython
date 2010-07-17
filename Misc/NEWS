@@ -81,6 +81,9 @@ C-API
 Library
 -------
 
+- Issue #1555570: email no longer inserts extra blank lines when a \r\n
+  combo crosses an 8192 byte boundary.
+
 - Issue #9164: Ensure sysconfig handles dupblice archs while building on OSX
 
 - Issue #7646: The fnmatch pattern cache no longer grows without bound.
