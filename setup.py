@@ -594,16 +594,18 @@ class PyBuildExt(build_ext):
         # Determine if readline is already linked against curses or tinfo.
         if do_readline and find_executable('ldd'):
             fp = os.popen("ldd %s" % do_readline)
-            for ln in fp:
-                if 'curses' in ln:
-                    readline_termcap_library = re.sub(
-                        r'.*lib(n?cursesw?)\.so.*', r'\1', ln
-                    ).rstrip()
-                    break
-                if 'tinfo' in ln: # termcap interface split out from ncurses
-                    readline_termcap_library = 'tinfo'
-                    break
-            fp.close()
+            ldd_output = fp.readlines()
+            ret = fp.close()
+            if ret is None or ret >> 8 == 0:
+                for ln in ldd_output:
+                    if 'curses' in ln:
+                        readline_termcap_library = re.sub(
+                            r'.*lib(n?cursesw?)\.so.*', r'\1', ln
+                        ).rstrip()
+                        break
+                    if 'tinfo' in ln: # termcap interface split out from ncurses
+                        readline_termcap_library = 'tinfo'
+                        break
         # Issue 7384: If readline is already linked against curses,
         # use the same library for the readline and curses modules.
         if 'curses' in readline_termcap_library:
