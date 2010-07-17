@@ -65,9 +65,21 @@ class C:
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
+class D(C):
+    def __init__(self, arg):
+        pass
+
+class E(C):
+    def __getinitargs__(self):
+        return ()
+
 import __main__
 __main__.C = C
 C.__module__ = "__main__"
+__main__.D = D
+D.__module__ = "__main__"
+__main__.E = E
+E.__module__ = "__main__"
 
 class myint(int):
     def __init__(self, x):
@@ -424,6 +436,63 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_load_from_data2(self):
         self.assertEqual(self._testdata, self.loads(DATA2))
+
+    def test_load_classic_instance(self):
+        # See issue5180.  Test loading 2.x pickles that
+        # contain an instance of old style class.
+        for X, args in [(C, ()), (D, ('x',)), (E, ())]:
+            xname = X.__name__.encode('ascii')
+            # Protocol 0 (text mode pickle):
+            """
+            0: (    MARK
+            1: i        INST       '__main__ X' (MARK at 0)
+            15: p    PUT        0
+            18: (    MARK
+            19: d        DICT       (MARK at 18)
+            20: p    PUT        1
+            23: b    BUILD
+            24: .    STOP
+            """
+            pickle0 = (b"(i__main__\n"
+                       b"X\n"
+                       b"p0\n"
+                       b"(dp1\nb.").replace(b'X', xname)
+            self.assertEqual(X(*args), self.loads(pickle0))
+
+            # Protocol 1 (binary mode pickle)
+            """
+            0: (    MARK
+            1: c        GLOBAL     '__main__ X'
+            15: q        BINPUT     0
+            17: o        OBJ        (MARK at 0)
+            18: q    BINPUT     1
+            20: }    EMPTY_DICT
+            21: q    BINPUT     2
+            23: b    BUILD
+            24: .    STOP
+            """
+            pickle1 = (b'(c__main__\n'
+                       b'X\n'
+                       b'q\x00oq\x01}q\x02b.').replace(b'X', xname)
+            self.assertEqual(X(*args), self.loads(pickle1))
+
+            # Protocol 2 (pickle2 = b'\x80\x02' + pickle1)
+            """
+            0: \x80 PROTO      2
+            2: (    MARK
+            3: c        GLOBAL     '__main__ X'
+            17: q        BINPUT     0
+            19: o        OBJ        (MARK at 2)
+            20: q    BINPUT     1
+            22: }    EMPTY_DICT
+            23: q    BINPUT     2
+            25: b    BUILD
+            26: .    STOP
+            """
+            pickle2 = (b'\x80\x02(c__main__\n'
+                       b'X\n'
+                       b'q\x00oq\x01}q\x02b.').replace(b'X', xname)
+            self.assertEqual(X(*args), self.loads(pickle2))
 
     # There are gratuitous differences between pickles produced by
     # pickle and cPickle, largely because cPickle starts PUT indices at
