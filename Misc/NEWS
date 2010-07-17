@@ -473,6 +473,10 @@ C-API
 Library
 -------
 
+- Issue #9268: ``pickletools.dis()`` now has an optional *annotate*
+  argument which controls printing of opcode descriptions in ``dis()``
+  output.
+
 - Issue #1555570: email no longer inserts extra blank lines when a \r\n
   combo crosses an 8192 byte boundary.
 
