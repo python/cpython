@@ -534,18 +534,19 @@ class PyBuildExt(build_ext):
             tmpfile = os.path.join(self.build_temp, 'readline_termcap_lib')
             if not os.path.exists(self.build_temp):
                 os.makedirs(self.build_temp)
-            os.system("ldd %s > %s" % (do_readline, tmpfile))
-            fp = open(tmpfile)
-            for ln in fp:
-                if 'curses' in ln:
-                    readline_termcap_library = re.sub(
-                        r'.*lib(n?cursesw?)\.so.*', r'\1', ln
-                    ).rstrip()
-                    break
-                if 'tinfo' in ln: # termcap interface split out from ncurses
-                    readline_termcap_library = 'tinfo'
-                    break
-            fp.close()
+            ret = os.system("ldd %s > %s" % (do_readline, tmpfile))
+            if ret >> 8 == 0:
+                fp = open(tmpfile)
+                for ln in fp:
+                    if 'curses' in ln:
+                        readline_termcap_library = re.sub(
+                            r'.*lib(n?cursesw?)\.so.*', r'\1', ln
+                        ).rstrip()
+                        break
+                    if 'tinfo' in ln: # termcap interface split out from ncurses
+                        readline_termcap_library = 'tinfo'
+                        break
+                fp.close()
             os.unlink(tmpfile)
         # Issue 7384: If readline is already linked against curses,
         # use the same library for the readline and curses modules.
