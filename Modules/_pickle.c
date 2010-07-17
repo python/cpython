@@ -3466,29 +3466,19 @@ load_dict(UnpicklerObject *self)
 static PyObject *
 instantiate(PyObject *cls, PyObject *args)
 {
-    PyObject *r = NULL;
-
-    /* XXX: The pickle.py module does not create instances this way when the
-       args tuple is empty. See Unpickler._instantiate(). */
-    if ((r = PyObject_CallObject(cls, args)))
-        return r;
-
-    /* XXX: Is this still nescessary? */
-    {
-        PyObject *tp, *v, *tb, *tmp_value;
-
-        PyErr_Fetch(&tp, &v, &tb);
-        tmp_value = v;
-        /* NULL occurs when there was a KeyboardInterrupt */
-        if (tmp_value == NULL)
-            tmp_value = Py_None;
-        if ((r = PyTuple_Pack(3, tmp_value, cls, args))) {
-            Py_XDECREF(v);
-            v = r;
-        }
-        PyErr_Restore(tp, v, tb);
+    PyObject *result = NULL;
+    /* Caller must assure args are a tuple.  Normally, args come from
+       Pdata_poptuple which packs objects from the top of the stack
+       into a newly created tuple. */
+    assert(PyTuple_Check(args));
+    if (Py_SIZE(args) > 0 || !PyType_Check(cls) ||
+        PyObject_HasAttrString(cls, "__getinitargs__")) {
+        result = PyObject_CallObject(cls, args);
     }
-    return NULL;
+    else {
+        result = PyObject_CallMethod(cls, "__new__", "O", cls);
+    }
+    return result;
 }
 
 static int
@@ -3547,7 +3537,7 @@ load_inst(UnpicklerObject *self)
         if (len < 2)
             return bad_readline();
         class_name = PyUnicode_DecodeASCII(s, len - 1, "strict");
-        if (class_name == NULL) {
+        if (class_name != NULL) {
             cls = find_class(self, module_name, class_name);
             Py_DECREF(class_name);
         }
@@ -4276,7 +4266,7 @@ load_reduce(UnpicklerObject *self)
         return -1;
     PDATA_POP(self->stack, callable);
     if (callable) {
-        obj = instantiate(callable, argtup);
+        obj = PyObject_CallObject(callable, argtup);
         Py_DECREF(callable);
     }
     Py_DECREF(argtup);
