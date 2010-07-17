@@ -1554,6 +1554,8 @@ Extension Modules
 Build
 -----
 
+- Issue #9280: Make sharedinstall depend on sharedmods.
+
 - Issue #9189: Make a user-specified CFLAGS, CPPFLAGS, or LDFLAGS
   setting override the configure and makefile defaults, without
   deleting options the user didn't intend to override.  Developers
