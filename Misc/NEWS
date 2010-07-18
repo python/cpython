@@ -755,8 +755,8 @@ Extension Modules
 
 - Issue #9277: Fix bug in struct.pack for bools in standard mode
   (e.g., struct.pack('>?')):  if conversion to bool raised an exception
-  then that exception wasn't properly propagated on machines with
-  unsigned char.
+  then that exception wasn't properly propagated on machines where
+  char is unsigned.
 
 - Issue #5180: Fixed a bug that prevented loading 2.x pickles in 3.x
   python when they contain instances of old-style classes.
