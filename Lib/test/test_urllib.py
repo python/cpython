@@ -355,6 +355,38 @@ class QuotingTests(unittest.TestCase):
         self.assertEqual(quote_by_default, result,
                          "using quote_plus(): %s != %s" %
                          (quote_by_default, result))
+        # Safe expressed as unicode rather than str
+        result = urllib.quote(quote_by_default, safe=u"<>")
+        self.assertEqual(quote_by_default, result,
+                         "using quote(): %r != %r" % (quote_by_default, result))
+        # "Safe" non-ASCII bytes should still work
+        # (Technically disallowed by the URI standard, but allowed for
+        # backwards compatibility with previous versions of Python)
+        result = urllib.quote(b"a\xfcb", safe=b"\xfc")
+        expect = b"a\xfcb"
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" %
+                         (expect, result))
+        # Same as above, but with 'safe' as a unicode rather than str
+        # "Safe" non-ASCII unicode characters should have no effect
+        # (Since URIs are not allowed to have non-ASCII characters)
+        result = urllib.quote(b"a\xfcb", safe=u"\xfc")
+        expect = urllib.quote(b"a\xfcb", safe="")
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" %
+                         (expect, result))
+        # Same as above, but quoting a unicode rather than a str
+        result = urllib.quote(u"a\xfcb", encoding="latin-1", safe=b"\xfc")
+        expect = b"a\xfcb"
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" %
+                         (expect, result))
+        # Same as above, but with both the quoted value and 'safe' as unicode
+        result = urllib.quote(u"a\xfcb", encoding="latin-1", safe=u"\xfc")
+        expect = urllib.quote(u"a\xfcb", encoding="latin-1", safe="")
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" %
+                         (expect, result))
 
     def test_default_quoting(self):
         # Make sure all characters that should be quoted are by default sans
@@ -406,6 +438,81 @@ class QuotingTests(unittest.TestCase):
                          'alpha%2Bbeta+gamma')
         self.assertEqual(urllib.quote_plus('alpha+beta gamma', '+'),
                          'alpha+beta+gamma')
+        # Test with unicode
+        self.assertEqual(urllib.quote_plus(u'alpha+beta gamma'),
+                         'alpha%2Bbeta+gamma')
+        # Test with safe unicode
+        self.assertEqual(urllib.quote_plus('alpha+beta gamma', u'+'),
+                         'alpha+beta+gamma')
+
+    def test_quote_bytes(self):
+        # Non-ASCII bytes should quote directly to percent-encoded values
+        given = b"\xa2\xd8ab\xff"
+        expect = "%A2%D8ab%FF"
+        result = urllib.quote(given)
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" % (expect, result))
+        # Encoding argument should raise UnicodeDecodeError on bytes input
+        # with non-ASCII characters (just as with str.encode).
+        self.assertRaises(UnicodeDecodeError, urllib.quote, given,
+                            encoding="latin-1")
+
+    def test_quote_with_unicode(self):
+        # Characters in Latin-1 range, encoded by default in UTF-8
+        given = u"\xa2\xd8ab\xff"
+        expect = "%C2%A2%C3%98ab%C3%BF"
+        result = urllib.quote(given)
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" % (expect, result))
+        # Characters in Latin-1 range, encoded by with None (default)
+        result = urllib.quote(given, encoding=None, errors=None)
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" % (expect, result))
+        # Characters in Latin-1 range, encoded with Latin-1
+        given = u"\xa2\xd8ab\xff"
+        expect = "%A2%D8ab%FF"
+        result = urllib.quote(given, encoding="latin-1")
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" % (expect, result))
+        # Characters in BMP, encoded by default in UTF-8
+        given = u"\u6f22\u5b57"              # "Kanji"
+        expect = "%E6%BC%A2%E5%AD%97"
+        result = urllib.quote(given)
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" % (expect, result))
+        # Characters in BMP, encoded with Latin-1
+        given = u"\u6f22\u5b57"
+        self.assertRaises(UnicodeEncodeError, urllib.quote, given,
+                                    encoding="latin-1")
+        # Characters in BMP, encoded with Latin-1, with replace error handling
+        given = u"\u6f22\u5b57"
+        expect = "%3F%3F"                    # "??"
+        result = urllib.quote(given, encoding="latin-1",
+                                    errors="replace")
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" % (expect, result))
+        # Characters in BMP, Latin-1, with xmlcharref error handling
+        given = u"\u6f22\u5b57"
+        expect = "%26%2328450%3B%26%2323383%3B"      # "&#28450;&#23383;"
+        result = urllib.quote(given, encoding="latin-1",
+                                    errors="xmlcharrefreplace")
+        self.assertEqual(expect, result,
+                         "using quote(): %r != %r" % (expect, result))
+
+    def test_quote_plus_with_unicode(self):
+        # Encoding (latin-1) test for quote_plus
+        given = u"\xa2\xd8 \xff"
+        expect = "%A2%D8+%FF"
+        result = urllib.quote_plus(given, encoding="latin-1")
+        self.assertEqual(expect, result,
+                         "using quote_plus(): %r != %r" % (expect, result))
+        # Errors test for quote_plus
+        given = u"ab\u6f22\u5b57 cd"
+        expect = "ab%3F%3F+cd"
+        result = urllib.quote_plus(given, encoding="latin-1",
+                                         errors="replace")
+        self.assertEqual(expect, result,
+                         "using quote_plus(): %r != %r" % (expect, result))
 
 class UnquotingTests(unittest.TestCase):
     """Tests for unquote() and unquote_plus()
