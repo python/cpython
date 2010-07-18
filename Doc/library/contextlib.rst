@@ -57,6 +57,7 @@ Functions provided:
    .. versionchanged:: 3.2
       Use of :class:`ContextDecorator`.
 
+
 .. function:: closing(thing)
 
    Return a context manager that closes *thing* upon completion of the block.  This
@@ -92,22 +93,25 @@ Functions provided:
    ``__enter__`` and ``__exit__`` as normal. ``__exit__`` retains its optional
    exception handling even when used as a decorator.
 
-   Example::
+   ``ContextDecorator`` is used by :func:`contextmanager`, so you get this
+   functionality automatically.
+
+   Example of ``ContextDecorator``::
 
       from contextlib import ContextDecorator
 
       class mycontext(ContextDecorator):
-         def __enter__(self):
-            print('Starting')
-            return self
+          def __enter__(self):
+              print('Starting')
+              return self
 
-         def __exit__(self, *exc):
-            print('Finishing')
-            return False
+          def __exit__(self, *exc):
+              print('Finishing')
+              return False
 
       >>> @mycontext()
       ... def function():
-      ...    print('The bit in the middle')
+      ...     print('The bit in the middle')
       ...
       >>> function()
       Starting
@@ -115,11 +119,26 @@ Functions provided:
       Finishing
 
       >>> with mycontext():
-      ...    print('The bit in the middle')
+      ...     print('The bit in the middle')
       ...
       Starting
       The bit in the middle
       Finishing
+
+   This change is just syntactic sugar for any construct of the following form::
+
+      def f():
+          with cm():
+              # Do stuff
+
+   ``ContextDecorator`` lets you instead write::
+
+      @cm()
+      def f():
+          # Do stuff
+
+   It makes it clear that the ``cm`` applies to the whole function, rather than
+   just a piece of it (and saving an indentation level is nice, too).
 
    Existing context managers that already have a base class can be extended by
    using ``ContextDecorator`` as a mixin class::
@@ -127,11 +146,11 @@ Functions provided:
       from contextlib import ContextDecorator
 
       class mycontext(ContextBaseClass, ContextDecorator):
-         def __enter__(self):
-            return self
+          def __enter__(self):
+              return self
 
-         def __exit__(self, *exc):
-            return False
+          def __exit__(self, *exc):
+              return False
 
    .. versionadded:: 3.2
 
