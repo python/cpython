@@ -131,15 +131,15 @@ Edge and Level Trigger Polling (epoll) Objects
    | :const:`EPOLLONESHOT` | Set one-shot behavior. After one event is     |
    |                       | pulled out, the fd is internally disabled     |
    +-----------------------+-----------------------------------------------+
-   | :const:`EPOLLRDNORM`  | ???                                           |
+   | :const:`EPOLLRDNORM`  | Equivalent to :const:`EPOLLIN`                |
    +-----------------------+-----------------------------------------------+
-   | :const:`EPOLLRDBAND`  | ???                                           |
+   | :const:`EPOLLRDBAND`  | Priority data band can be read.               |
    +-----------------------+-----------------------------------------------+
-   | :const:`EPOLLWRNORM`  | ???                                           |
+   | :const:`EPOLLWRNORM`  | Equivalent to :const:`EPOLLOUT`               |
    +-----------------------+-----------------------------------------------+
-   | :const:`EPOLLWRBAND`  | ???                                           |
+   | :const:`EPOLLWRBAND`  | Priority data may be written.                 |
    +-----------------------+-----------------------------------------------+
-   | :const:`EPOLLMSG`     | ???                                           |
+   | :const:`EPOLLMSG`     | Ignored.                                      |
    +-----------------------+-----------------------------------------------+
 
 
