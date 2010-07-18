@@ -20,7 +20,7 @@ supports post-mortem debugging and can be called under program control.
    module: bdb
    module: cmd
 
-The debugger is extensible --- it is actually defined as the class :class:`Pdb`.
+The debugger is extensible -- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
 extension interface uses the modules :mod:`bdb` and :mod:`cmd`.
 
@@ -55,8 +55,8 @@ insert ::
    import pdb; pdb.set_trace()
 
 at the location you want to break into the debugger.  You can then step through
-the code following this statement, and continue running without the debugger using
-the ``c`` command.
+the code following this statement, and continue running without the debugger
+using the :pdbcmd:`continue` command.
 
 The typical usage to inspect a crashed program is::
 
@@ -82,26 +82,28 @@ slightly different way:
 .. function:: run(statement, globals=None, locals=None)
 
    Execute the *statement* (given as a string) under debugger control.  The
-   debugger prompt appears before any code is executed; you can set breakpoints and
-   type ``continue``, or you can step through the statement using ``step`` or
-   ``next`` (all these commands are explained below).  The optional *globals* and
-   *locals* arguments specify the environment in which the code is executed; by
-   default the dictionary of the module :mod:`__main__` is used.  (See the
-   explanation of the built-in :func:`exec` or :func:`eval` functions.)
+   debugger prompt appears before any code is executed; you can set breakpoints
+   and type :pdbcmd:`continue`, or you can step through the statement using
+   :pdbcmd:`step` or :pdbcmd:`next` (all these commands are explained below).
+   The optional *globals* and *locals* arguments specify the environment in
+   which the code is executed; by default the dictionary of the module
+   :mod:`__main__` is used.  (See the explanation of the built-in :func:`exec`
+   or :func:`eval` functions.)
 
 
 .. function:: runeval(expression, globals=None, locals=None)
 
    Evaluate the *expression* (given as a string) under debugger control.  When
-   :func:`runeval` returns, it returns the value of the expression.  Otherwise this
-   function is similar to :func:`run`.
+   :func:`runeval` returns, it returns the value of the expression.  Otherwise
+   this function is similar to :func:`run`.
 
 
 .. function:: runcall(function, *args, **kwds)
 
-   Call the *function* (a function or method object, not a string) with the given
-   arguments.  When :func:`runcall` returns, it returns whatever the function call
-   returned.  The debugger prompt appears as soon as the function is entered.
+   Call the *function* (a function or method object, not a string) with the
+   given arguments.  When :func:`runcall` returns, it returns whatever the
+   function call returned.  The debugger prompt appears as soon as the function
+   is entered.
 
 
 .. function:: set_trace()
@@ -160,16 +162,17 @@ access further features, you have to do this yourself:
 Debugger Commands
 =================
 
-The debugger recognizes the following commands.  Most commands can be
-abbreviated to one or two letters; e.g. ``h(elp)`` means that either ``h`` or
-``help`` can be used to enter the help command (but not ``he`` or ``hel``, nor
-``H`` or ``Help`` or ``HELP``).  Arguments to commands must be separated by
-whitespace (spaces or tabs).  Optional arguments are enclosed in square brackets
-(``[]``) in the command syntax; the square brackets must not be typed.
-Alternatives in the command syntax are separated by a vertical bar (``|``).
+The commands recognized by the debugger are listed below.  Most commands can be
+abbreviated to one or two letters as indicated; e.g. ``h(elp)`` means that
+either ``h`` or ``help`` can be used to enter the help command (but not ``he``
+or ``hel``, nor ``H`` or ``Help`` or ``HELP``).  Arguments to commands must be
+separated by whitespace (spaces or tabs).  Optional arguments are enclosed in
+square brackets (``[]``) in the command syntax; the square brackets must not be
+typed.  Alternatives in the command syntax are separated by a vertical bar
+(``|``).
 
 Entering a blank line repeats the last command entered.  Exception: if the last
-command was a ``list`` command, the next 11 lines are listed.
+command was a :pdbcmd:`list` command, the next 11 lines are listed.
 
 Commands that the debugger doesn't recognize are assumed to be Python statements
 and are executed in the context of the program being debugged.  Python
@@ -179,93 +182,107 @@ change a variable or call a function.  When an exception occurs in such a
 statement, the exception name is printed but the debugger's state is not
 changed.
 
+The debugger supports :ref:`aliases <debugger-aliases>`.  Aliases can have
+parameters which allows one a certain level of adaptability to the context under
+examination.
+
 Multiple commands may be entered on a single line, separated by ``;;``.  (A
 single ``;`` is not used as it is the separator for multiple commands in a line
-that is passed to the Python parser.) No intelligence is applied to separating
+that is passed to the Python parser.)  No intelligence is applied to separating
 the commands; the input is split at the first ``;;`` pair, even if it is in the
 middle of a quoted string.
-
-The debugger supports aliases.  Aliases can have parameters which allows one a
-certain level of adaptability to the context under examination.
 
 .. index::
    pair: .pdbrc; file
    triple: debugger; configuration; file
 
-If a file :file:`.pdbrc`  exists in the user's home directory or in the current
+If a file :file:`.pdbrc` exists in the user's home directory or in the current
 directory, it is read in and executed as if it had been typed at the debugger
-prompt. This is particularly useful for aliases.  If both files exist, the one
+prompt.  This is particularly useful for aliases.  If both files exist, the one
 in the home directory is read first and aliases defined there can be overridden
 by the local file.
 
-h(elp) [*command*]
+
+.. pdbcommand:: h(elp) [command]
+
    Without argument, print the list of available commands.  With a *command* as
    argument, print help about that command.  ``help pdb`` displays the full
-   documentation file; if the environment variable :envvar:`PAGER` is defined, the
-   file is piped through that command instead.  Since the *command* argument must
-   be an identifier, ``help exec`` must be entered to get help on the ``!``
-   command.
+   documentation (the docstring of the :mod:`pdb` module); if the environment
+   variable :envvar:`PAGER` is defined, the string is piped through that command
+   instead.  Since the *command* argument must be an identifier, ``help exec``
+   must be entered to get help on the ``!`` command.
 
-w(here)
+.. pdbcommand:: w(here)
+
    Print a stack trace, with the most recent frame at the bottom.  An arrow
    indicates the current frame, which determines the context of most commands.
 
-d(own) [*count*]
+.. pdbcommand:: d(own) [count]
+
    Move the current frame *count* (default one) levels down in the stack trace
    (to a newer frame).
 
-u(p) [*count*]
-   Move the current frame *count* (default one) levels up in the stack trace
-   (to an older frame).
+.. pdbcommand:: u(p) [count]
 
-b(reak) [[*filename*:]\ *lineno* | *function*\ [, *condition*]]
+   Move the current frame *count* (default one) levels up in the stack trace (to
+   an older frame).
+
+.. pdbcommand:: b(reak) [([filename:]lineno | function) [, condition]]
+
    With a *lineno* argument, set a break there in the current file.  With a
-   *function* argument, set a break at the first executable statement within that
-   function. The line number may be prefixed with a filename and a colon, to
-   specify a breakpoint in another file (probably one that hasn't been loaded yet).
-   The file is searched on ``sys.path``. Note that each breakpoint is assigned a
-   number to which all the other breakpoint commands refer.
+   *function* argument, set a break at the first executable statement within
+   that function.  The line number may be prefixed with a filename and a colon,
+   to specify a breakpoint in another file (probably one that hasn't been loaded
+   yet).  The file is searched on :data:`sys.path`.  Note that each breakpoint
+   is assigned a number to which all the other breakpoint commands refer.
 
-   If a second argument is present, it is an expression which must evaluate to true
-   before the breakpoint is honored.
+   If a second argument is present, it is an expression which must evaluate to
+   true before the breakpoint is honored.
 
-   Without argument, list all breaks, including for each breakpoint, the number of
-   times that breakpoint has been hit, the current ignore count, and the associated
-   condition if any.
+   Without argument, list all breaks, including for each breakpoint, the number
+   of times that breakpoint has been hit, the current ignore count, and the
+   associated condition if any.
 
-tbreak [[*filename*:]\ *lineno* | *function*\ [, *condition*]]
-   Temporary breakpoint, which is removed automatically when it is first hit.  The
-   arguments are the same as break.
+.. pdbcommand:: tbreak [([filename:]lineno | function) [, condition]]
 
-cl(ear) [*bpnumber* [*bpnumber ...*]]
+   Temporary breakpoint, which is removed automatically when it is first hit.
+   The arguments are the same as for :pdbcmd:`break`.
+
+.. pdbcommand:: cl(ear) [bpnumber [bpnumber ...]]
+
    With a space separated list of breakpoint numbers, clear those breakpoints.
    Without argument, clear all breaks (but first ask confirmation).
 
-disable [*bpnumber* [*bpnumber ...*]]
-   Disables the breakpoints given as a space separated list of breakpoint numbers.
-   Disabling a breakpoint means it cannot cause the program to stop execution, but
-   unlike clearing a breakpoint, it remains in the list of breakpoints and can be
-   (re-)enabled.
+.. pdbcommand:: disable [bpnumber [bpnumber ...]]
 
-enable [*bpnumber* [*bpnumber ...*]]
-   Enables the breakpoints specified.
+   Disable the breakpoints given as a space separated list of breakpoint
+   numbers.  Disabling a breakpoint means it cannot cause the program to stop
+   execution, but unlike clearing a breakpoint, it remains in the list of
+   breakpoints and can be (re-)enabled.
 
-ignore *bpnumber* [*count*]
-   Sets the ignore count for the given breakpoint number.  If count is omitted, the
-   ignore count is set to 0.  A breakpoint becomes active when the ignore count is
-   zero.  When non-zero, the count is decremented each time the breakpoint is
-   reached and the breakpoint is not disabled and any associated condition
-   evaluates to true.
+.. pdbcommand:: enable [bpnumber [bpnumber ...]]
 
-condition *bpnumber* [*condition*]
-   Condition is an expression which must evaluate to true before the breakpoint is
-   honored.  If condition is absent, any existing condition is removed; i.e., the
-   breakpoint is made unconditional.
+   Enable the breakpoints specified.
 
-commands [*bpnumber*]
+.. pdbcommand:: ignore bpnumber [count]
+
+   Set the ignore count for the given breakpoint number.  If count is omitted,
+   the ignore count is set to 0.  A breakpoint becomes active when the ignore
+   count is zero.  When non-zero, the count is decremented each time the
+   breakpoint is reached and the breakpoint is not disabled and any associated
+   condition evaluates to true.
+
+.. pdbcommand:: condition bpnumber [condition]
+
+   Set a new *condition* for the breakpoint, an expression which must evaluate
+   to true before the breakpoint is honored.  If *condition* is absent, any
+   existing condition is removed; i.e., the breakpoint is made unconditional.
+
+.. pdbcommand:: commands [bpnumber]
+
    Specify a list of commands for breakpoint number *bpnumber*.  The commands
-   themselves appear on the following lines.  Type a line containing just 'end' to
-   terminate the commands. An example::
+   themselves appear on the following lines.  Type a line containing just
+   ``end`` to terminate the commands. An example::
 
       (Pdb) commands 1
       (com) print some_variable
@@ -273,12 +290,12 @@ commands [*bpnumber*]
       (Pdb)
 
    To remove all commands from a breakpoint, type commands and follow it
-   immediately with  end; that is, give no commands.
+   immediately with ``end``; that is, give no commands.
 
    With no *bpnumber* argument, commands refers to the last breakpoint set.
 
-   You can use breakpoint commands to start your program up again. Simply use the
-   continue command, or step, or any other command that resumes execution.
+   You can use breakpoint commands to start your program up again.  Simply use
+   the continue command, or step, or any other command that resumes execution.
 
    Specifying any command resuming execution (currently continue, step, next,
    return, jump, quit and their abbreviations) terminates the command list (as if
@@ -292,63 +309,81 @@ commands [*bpnumber*]
    that are to print a specific message and then continue.  If none of the other
    commands print anything, you see no sign that the breakpoint was reached.
 
-s(tep)
+.. pdbcommand:: s(tep)
+
    Execute the current line, stop at the first possible occasion (either in a
    function that is called or on the next line in the current function).
 
-n(ext)
-   Continue execution until the next line in the current function is reached or it
-   returns.  (The difference between ``next`` and ``step`` is that ``step`` stops
-   inside a called function, while ``next`` executes called functions at (nearly)
-   full speed, only stopping at the next line in the current function.)
+.. pdbcommand:: n(ext)
 
-unt(il)
+   Continue execution until the next line in the current function is reached or
+   it returns.  (The difference between :pdbcmd:`next` and :pdbcmd:`step` is
+   that :pdbcmd:`step` stops inside a called function, while :pdbcmd:`next`
+   executes called functions at (nearly) full speed, only stopping at the next
+   line in the current function.)
+
+.. pdbcommand:: unt(il)
+
    Continue execution until the line with the line number greater than the
    current one is reached or when returning from current frame.
 
-r(eturn)
+.. pdbcommand:: r(eturn)
+
    Continue execution until the current function returns.
 
-c(ont(inue))
+.. pdbcommand:: c(ont(inue))
+
    Continue execution, only stop when a breakpoint is encountered.
 
-j(ump) *lineno*
-   Set the next line that will be executed.  Only available in the bottom-most
-   frame.  This lets you jump back and execute code again, or jump forward to skip
-   code that you don't want to run.
+.. pdbcommand:: j(ump) lineno
 
-   It should be noted that not all jumps are allowed --- for instance it is not
+   Set the next line that will be executed.  Only available in the bottom-most
+   frame.  This lets you jump back and execute code again, or jump forward to
+   skip code that you don't want to run.
+
+   It should be noted that not all jumps are allowed -- for instance it is not
    possible to jump into the middle of a :keyword:`for` loop or out of a
    :keyword:`finally` clause.
 
-l(ist) [*first*\ [, *last*]]
-   List source code for the current file.  Without arguments, list 11 lines around
-   the current line or continue the previous listing.  With one argument, list 11
-   lines around at that line.  With two arguments, list the given range; if the
-   second argument is less than the first, it is interpreted as a count.
+.. pdbcommand:: l(ist) [first[, last]]
 
-a(rgs)
+   List source code for the current file.  Without arguments, list 11 lines
+   around the current line or continue the previous listing.  With one argument,
+   list 11 lines around at that line.  With two arguments, list the given range;
+   if the second argument is less than the first, it is interpreted as a count.
+
+.. pdbcommand:: a(rgs)
+
    Print the argument list of the current function.
 
-p(rint) *expression*
+.. pdbcommand:: p(rint) expression
+
    Evaluate the *expression* in the current context and print its value.
 
-pp *expression*
-   Like the ``p`` command, except the value of the expression is pretty-printed
-   using the :mod:`pprint` module.
+.. pdbcommand:: pp expression
 
-alias [*name* [command]]
-   Creates an alias called *name* that executes *command*.  The command must *not*
-   be enclosed in quotes.  Replaceable parameters can be indicated by ``%1``,
-   ``%2``, and so on, while ``%*`` is replaced by all the parameters.  If no
-   command is given, the current alias for *name* is shown. If no arguments are
-   given, all aliases are listed.
+   Like the :pdbcmd:`print` command, except the value of the expression is
+   pretty-printed using the :mod:`pprint` module.
 
-   Aliases may be nested and can contain anything that can be legally typed at the
-   pdb prompt.  Note that internal pdb commands *can* be overridden by aliases.
-   Such a command is then hidden until the alias is removed.  Aliasing is
-   recursively applied to the first word of the command line; all other words in
-   the line are left alone.
+.. pdbcommand:: whatis expression
+
+   Print the type of the *expression*.
+
+.. _debugger-aliases:
+
+.. pdbcommand:: alias [name [command]]
+
+   Create an alias called *name* that executes *command*.  The command must
+   *not* be enclosed in quotes.  Replaceable parameters can be indicated by
+   ``%1``, ``%2``, and so on, while ``%*`` is replaced by all the parameters.
+   If no command is given, the current alias for *name* is shown. If no
+   arguments are given, all aliases are listed.
+
+   Aliases may be nested and can contain anything that can be legally typed at
+   the pdb prompt.  Note that internal pdb commands *can* be overridden by
+   aliases.  Such a command is then hidden until the alias is removed.  Aliasing
+   is recursively applied to the first word of the command line; all other words
+   in the line are left alone.
 
    As an example, here are two useful aliases (especially when placed in the
    :file:`.pdbrc` file)::
@@ -358,25 +393,32 @@ alias [*name* [command]]
       #Print instance variables in self
       alias ps pi self
 
-unalias *name*
-   Deletes the specified alias.
+.. pdbcommand:: unalias name
 
-[!]\ *statement*
+   Delete the specified alias.
+
+.. pdbcommand:: ! statement
+
    Execute the (one-line) *statement* in the context of the current stack frame.
    The exclamation point can be omitted unless the first word of the statement
-   resembles a debugger command. To set a global variable, you can prefix the
-   assignment command with a ``global`` command on the same line, e.g.::
+   resembles a debugger command.  To set a global variable, you can prefix the
+   assignment command with a :keyword:`global` statement on the same line,
+   e.g.::
 
       (Pdb) global list_options; list_options = ['-l']
       (Pdb)
 
-run [*args* ...]
-   Restart the debugged Python program. If an argument is supplied, it is split
-   with "shlex" and the result is used as the new sys.argv. History, breakpoints,
-   actions and debugger options are preserved. "restart" is an alias for "run".
+.. pdbcommand:: run [args ...]
+                restart [args ...]
 
-q(uit)
-   Quit from the debugger. The program being executed is aborted.
+   Restart the debugged Python program.  If an argument is supplied, it is split
+   with :mod:`shlex` and the result is used as the new :data:`sys.argv`.
+   History, breakpoints, actions and debugger options are preserved.
+   :pdbcmd:`restart` is an alias for :pdbcmd:`run`.
+
+.. pdbcommand:: q(uit)
+
+   Quit from the debugger.  The program being executed is aborted.
 
 
 .. rubric:: Footnotes
