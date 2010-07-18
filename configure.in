@@ -3334,6 +3334,26 @@ then
    in ARM mixed-endian order (byte order 45670123)])
 fi
 
+# Temporary check for a floating-point bug that appeared on ARM.
+AC_MSG_CHECKING(for buggy subnormal floating-point)
+AC_CACHE_VAL(ac_cv_buggy_subnormal, [
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+int main() {
+    double MIN = 2.2250738585072014e-308;  /* 2**-1022 */
+    double TINY = 4.9406564584124654e-324; /* 2**-1074 */
+    double TRIPLE_TINY = 1.4821969375237396e-323;  /* 3 * TINY */
+
+    double diff = MIN - TRIPLE_TINY;
+    double expected_diff = 2.2250738585071999e-308;
+
+    return !(diff == expected_diff);    
+}
+]])],
+[ac_cv_buggy_subnormal=no],
+[ac_cv_buggy_subnormal=yes],
+[ac_cv_buggy_subnormal=no])])
+AC_MSG_RESULT($ac_cv_buggy_subnormal)
+
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from
 # Python/dtoa.c, which in turn require that the FPU uses 53-bit
