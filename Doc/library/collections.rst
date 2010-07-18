@@ -551,7 +551,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
    :class:`defaultdict` objects support the following method in addition to the
    standard :class:`dict` operations:
 
-   .. method:: defaultdict.__missing__(key)
+   .. method:: __missing__(key)
 
       If the :attr:`default_factory` attribute is ``None``, this raises a
       :exc:`KeyError` exception with the *key* as argument.
@@ -571,7 +571,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
    :class:`defaultdict` objects support the following instance variable:
 
 
-   .. attribute:: defaultdict.default_factory
+   .. attribute:: default_factory
 
       This attribute is used by the :meth:`__missing__` method; it is
       initialized from the first argument to the constructor, if present, or to
@@ -891,11 +891,11 @@ the items are returned in the order their keys were first added.
 
    .. versionadded:: 3.1
 
-.. method:: OrderedDict.popitem(last=True)
+   .. method:: popitem(last=True)
 
-   The :meth:`popitem` method for ordered dictionaries returns and removes
-   a (key, value) pair.  The pairs are returned in LIFO order if *last* is
-   true or FIFO order if false.
+      The :meth:`popitem` method for ordered dictionaries returns and removes a
+      (key, value) pair.  The pairs are returned in LIFO order if *last* is true
+      or FIFO order if false.
 
 In addition to the usual mapping methods, ordered dictionaries also support
 reverse iteration using :func:`reversed`.
@@ -956,12 +956,13 @@ attribute.
    initialized with its contents; note that a reference to *initialdata* will not
    be kept, allowing it be used for other purposes.
 
-In addition to supporting the methods and operations of mappings,
-:class:`UserDict` instances provide the following attribute:
+   In addition to supporting the methods and operations of mappings,
+   :class:`UserDict` instances provide the following attribute:
 
-.. attribute:: UserDict.data
+   .. attribute:: data
 
-   A real dictionary used to store the contents of the :class:`UserDict` class.
+      A real dictionary used to store the contents of the :class:`UserDict`
+      class.
 
 
 
@@ -985,13 +986,13 @@ to work with because the underlying list is accessible as an attribute.
    defaulting to the empty list ``[]``.  *list* can be any iterable, for
    example a real Python list or a :class:`UserList` object.
 
-In addition to supporting the methods and operations of mutable sequences,
-:class:`UserList` instances provide the following attribute:
+   In addition to supporting the methods and operations of mutable sequences,
+   :class:`UserList` instances provide the following attribute:
 
-.. attribute:: UserList.data
+   .. attribute:: data
 
-   A real :class:`list` object used to store the contents of the
-   :class:`UserList` class.
+      A real :class:`list` object used to store the contents of the
+      :class:`UserList` class.
 
 **Subclassing requirements:** Subclasses of :class:`UserList` are expect to
 offer a constructor which can be called with either no arguments or one
