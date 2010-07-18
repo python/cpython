@@ -1013,9 +1013,9 @@ bp_double(char *p, PyObject *v, const formatdef *f)
 static int
 bp_bool(char *p, PyObject *v, const formatdef *f)
 {
-    char y;
+    int y;
     y = PyObject_IsTrue(v);
-    memcpy(p, (char *)&y, sizeof y);
+    *p = (char)y;
     return 0;
 }
 
