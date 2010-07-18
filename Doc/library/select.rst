@@ -233,7 +233,7 @@ linearly scanned again. :cfunc:`select` is O(highest file descriptor), while
 .. method:: poll.modify(fd, eventmask)
 
    Modifies an already registered fd. This has the same effect as
-   :meth:`register(fd, eventmask)`.  Attempting to modify a file descriptor
+   ``register(fd, eventmask)``.  Attempting to modify a file descriptor
    that was never registered causes an :exc:`IOError` exception with errno
    :const:`ENOENT` to be raised.
 
