@@ -50,7 +50,7 @@ def literal_eval(node_or_string):
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
     def _convert(node):
-        if isinstance(node, (Str, Bytes)):
+        if isinstance(node, Str):
             return node.s
         elif isinstance(node, Num):
             return node.n
