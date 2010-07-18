@@ -763,7 +763,7 @@ In addition to the methods inherited from tuples, named tuples support
 three additional methods and one attribute.  To prevent conflicts with
 field names, the method and attribute names start with an underscore.
 
-.. method:: somenamedtuple._make(iterable)
+.. classmethod:: somenamedtuple._make(iterable)
 
    Class method that makes a new instance from an existing sequence or iterable.
 
