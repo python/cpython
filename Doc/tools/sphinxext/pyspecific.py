@@ -165,6 +165,28 @@ def parse_opcode_signature(env, sig, signode):
     return opname.strip()
 
 
+pdbcmd_sig_re = re.compile(r'([a-z()!]+)\s*(.*)')
+
+# later...
+#pdbargs_tokens_re = re.compile(r'''[a-zA-Z]+  |  # identifiers
+#                                   [.,:]+     |  # punctuation
+#                                   [\[\]()]   |  # parens
+#                                   \s+           # whitespace
+#                                   ''', re.X)
+
+def parse_pdb_command(env, sig, signode):
+    """Transform a pdb command signature into RST nodes."""
+    m = pdbcmd_sig_re.match(sig)
+    if m is None:
+        raise ValueError
+    name, args = m.groups()
+    fullname = name.replace('(', '').replace(')', '')
+    signode += addnodes.desc_name(name, name)
+    if args:
+        signode += addnodes.desc_addname(' '+args, ' '+args)
+    return fullname
+
+
 def setup(app):
     app.add_role('issue', issue_role)
     app.add_directive('impl-detail', ImplementationDetail)
@@ -172,4 +194,6 @@ def setup(app):
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
     app.add_description_unit('opcode', 'opcode', '%s (opcode)',
                              parse_opcode_signature)
+    app.add_description_unit('pdbcommand', 'pdbcmd', '%s (pdb command)',
+                             parse_pdb_command)
     app.add_description_unit('2to3fixer', '2to3fixer', '%s (2to3 fixer)')

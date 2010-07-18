@@ -503,7 +503,7 @@ in a different style:
 .. describe:: option
 
    A command-line option to an executable program.  The leading hyphen(s) must
-   be included.
+   be included.  If a matching ``cmdoption`` directive exists, it is linked to.
 
 .. describe:: program
 
