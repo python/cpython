@@ -44,6 +44,11 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9277: Fix bug in struct.pack for bools in standard mode
+  (e.g., struct.pack('>?')):  if conversion to bool raised an exception
+  then that exception wasn't properly propagated on machines where
+  char is unsigned.
+
 Build
 -----
 
