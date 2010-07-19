@@ -134,13 +134,8 @@ PyAPI_FUNC(wchar_t *) _Py_char2wchar(char *);
 }
 #endif
 
-/* Convert a possibly signed character to a nonnegative int */
-/* XXX This assumes characters are 8 bits wide */
-#ifdef __CHAR_UNSIGNED__
-#define Py_CHARMASK(c)		(c)
-#else
+/* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c)		((unsigned char)((c) & 0xff))
-#endif
 
 #include "pyfpe.h"
 
