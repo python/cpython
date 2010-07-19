@@ -7,6 +7,7 @@ try:
 except ImportError:
     raise test_support.TestSkipped, "posix is not available"
 
+import errno
 import time
 import os
 import pwd
