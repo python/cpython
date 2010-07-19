@@ -314,6 +314,8 @@ def unquote_to_bytes(string):
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
     # unescaped non-ASCII characters, which URIs should not.
     if not string:
+        if string is None:
+            raise TypeError('None object is invalid for unquote_to_bytes()')
         return b''
     if isinstance(string, str):
         string = string.encode('utf-8')
@@ -339,6 +341,8 @@ def unquote(string, encoding='utf-8', errors='replace'):
     unquote('abc%20def') -> 'abc def'.
     """
     if not string:
+        if string is None:
+            raise TypeError('None object is invalid for unquote() function.')
         return string
     res = string.split('%')
     if len(res) == 1:
