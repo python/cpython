@@ -1,18 +1,21 @@
 """Tests for http/cookiejar.py."""
 
-import re, os, time, urllib.request
-from unittest import TestCase
+import os
+import re
+import test.support
+import time
+import unittest
+import urllib.request
 
-from test import support
+from http.cookiejar import (time2isoz, http2time, time2netscape,
+     parse_ns_headers, join_header_words, split_header_words, Cookie,
+     CookieJar, DefaultCookiePolicy, LWPCookieJar, MozillaCookieJar,
+     LoadError, lwp_cookie_str, DEFAULT_HTTP_PORT, escape_path,
+     reach, is_HDN, domain_match, user_domain_match, request_path,
+     request_port, request_host)
 
-from http.cookiejar import time2isoz, http2time, time2netscape, \
-     parse_ns_headers, join_header_words, split_header_words, Cookie, \
-     CookieJar, DefaultCookiePolicy, LWPCookieJar, MozillaCookieJar, \
-     LoadError, lwp_cookie_str, DEFAULT_HTTP_PORT, escape_path, \
-     reach, is_HDN, domain_match, user_domain_match, request_path, \
-     request_port, request_host
 
-class DateTimeTests(TestCase):
+class DateTimeTests(unittest.TestCase):
 
     def test_time2isoz(self):
         base = 1019227000
@@ -96,7 +99,7 @@ class DateTimeTests(TestCase):
                          )
 
 
-class HeaderTests(TestCase):
+class HeaderTests(unittest.TestCase):
 
     def test_parse_ns_headers(self):
         # quotes should be stripped
@@ -228,10 +231,10 @@ def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
     return cookie_hdr
 
 
-class FileCookieJarTests(TestCase):
+class FileCookieJarTests(unittest.TestCase):
     def test_lwp_valueless_cookie(self):
         # cookies with no value should be saved and loaded consistently
-        filename = support.TESTFN
+        filename = test.support.TESTFN
         c = LWPCookieJar()
         interact_netscape(c, "http://www.acme.com/", 'boo')
         self.assertEqual(c._cookies["www.acme.com"]["/"]["boo"].value, None)
@@ -246,7 +249,7 @@ class FileCookieJarTests(TestCase):
 
     def test_bad_magic(self):
         # IOErrors (eg. file doesn't exist) are allowed to propagate
-        filename = support.TESTFN
+        filename = test.support.TESTFN
         for cookiejar_class in LWPCookieJar, MozillaCookieJar:
             c = cookiejar_class()
             try:
@@ -269,7 +272,7 @@ class FileCookieJarTests(TestCase):
             try: os.unlink(filename)
             except OSError: pass
 
-class CookieTests(TestCase):
+class CookieTests(unittest.TestCase):
     # XXX
     # Get rid of string comparisons where not actually testing str / repr.
     # .clear() etc.
@@ -349,7 +352,7 @@ class CookieTests(TestCase):
     def test_missing_value(self):
         # missing = sign in Cookie: header is regarded by Mozilla as a missing
         # name, and by http.cookiejar as a missing value
-        filename = support.TESTFN
+        filename = test.support.TESTFN
         c = MozillaCookieJar(filename)
         interact_netscape(c, "http://www.acme.com/", 'eggs')
         interact_netscape(c, "http://www.acme.com/", '"spam"; path=/foo/')
@@ -534,6 +537,16 @@ class CookieTests(TestCase):
         interact_netscape(c, "http://www.acme.com/blah/rhubarb/", 'eggs="bar"')
         self.assertIn("/blah/rhubarb", c._cookies["www.acme.com"])
 
+    def test_default_path_with_query(self):
+        cj = CookieJar()
+        uri = "http://example.com/?spam/eggs"
+        value = 'eggs="bar"'
+        interact_netscape(cj, uri, value)
+        # Default path does not include query, so is "/", not "/?spam".
+        self.assertIn("/", cj._cookies["example.com"])
+        # Cookie is sent back to the same URI.
+        self.assertEquals(interact_netscape(cj, uri), value)
+
     def test_escape_path(self):
         cases = [
             # quoted safe
@@ -562,16 +575,15 @@ class CookieTests(TestCase):
     def test_request_path(self):
         # with parameters
         req = urllib.request.Request(
-            "http://www.example.com/rheum/rhaponicum;"
+            "http://www.example.com/rheum/rhaponticum;"
             "foo=bar;sing=song?apples=pears&spam=eggs#ni")
-        self.assertEquals(request_path(req), "/rheum/rhaponicum;"
-                     "foo=bar;sing=song?apples=pears&spam=eggs#ni")
+        self.assertEquals(request_path(req),
+                          "/rheum/rhaponticum;foo=bar;sing=song")
         # without parameters
         req = urllib.request.Request(
-            "http://www.example.com/rheum/rhaponicum?"
+            "http://www.example.com/rheum/rhaponticum?"
             "apples=pears&spam=eggs#ni")
-        self.assertEquals(request_path(req), "/rheum/rhaponicum?"
-                     "apples=pears&spam=eggs#ni")
+        self.assertEquals(request_path(req), "/rheum/rhaponticum")
         # missing final slash
         req = urllib.request.Request("http://www.example.com")
         self.assertEquals(request_path(req), "/")
@@ -1045,7 +1057,7 @@ class CookieTests(TestCase):
         self.assertTrue(cookie.expires is None)
 
 
-class LWPCookieTests(TestCase):
+class LWPCookieTests(unittest.TestCase):
     # Tests taken from libwww-perl, with a few modifications and additions.
 
     def test_netscape_example_1(self):
@@ -1435,7 +1447,7 @@ class LWPCookieTests(TestCase):
         self.assertEquals(len(c), 6)
 
         # save and restore
-        filename = support.TESTFN
+        filename = test.support.TESTFN
 
         try:
             c.save(filename, ignore_discard=True)
@@ -1475,7 +1487,7 @@ class LWPCookieTests(TestCase):
         # Save / load Mozilla/Netscape cookie file format.
         year_plus_one = time.localtime()[0] + 1
 
-        filename = support.TESTFN
+        filename = test.support.TESTFN
 
         c = MozillaCookieJar(filename,
                              policy=DefaultCookiePolicy(rfc2965=True))
@@ -1637,7 +1649,7 @@ class LWPCookieTests(TestCase):
 
 
 def test_main(verbose=None):
-    support.run_unittest(
+    test.support.run_unittest(
         DateTimeTests,
         HeaderTests,
         CookieTests,
