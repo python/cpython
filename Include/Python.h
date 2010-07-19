@@ -126,13 +126,8 @@
 /* _Py_Mangle is defined in compile.c */
 PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 
-/* Convert a possibly signed character to a nonnegative int */
-/* XXX This assumes characters are 8 bits wide */
-#ifdef __CHAR_UNSIGNED__
-#define Py_CHARMASK(c)		(c)
-#else
+/* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c)		((unsigned char)((c) & 0xff))
-#endif
 
 #include "pyfpe.h"
 
