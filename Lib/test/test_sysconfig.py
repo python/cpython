@@ -277,6 +277,12 @@ class TestSysConfig(unittest.TestCase):
             _main()
         self.assertTrue(len(output.getvalue().split('\n')) > 0)
 
+    def test_ldshared_value(self):
+        ldflags = sysconfig.get_config_var('LDFLAGS')
+        ldshared = sysconfig.get_config_var('LDSHARED')
+
+        self.assertIn(ldflags, ldshared)
+
 
 def test_main():
     run_unittest(TestSysConfig)
