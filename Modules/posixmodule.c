@@ -1970,6 +1970,24 @@ PyDoc_STRVAR(posix_getcwd__doc__,
 "getcwd() -> path\n\n\
 Return a string representing the current working directory.");
 
+#if (defined(__sun) && defined(__SVR4)) || defined(__OpenBSD__)
+/* Issue 9185: getcwd() returns NULL/ERANGE indefinitely. */
+static PyObject *
+posix_getcwd(PyObject *self, PyObject *noargs)
+{
+    char buf[PATH_MAX+2];
+    char *res;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = getcwd(buf, sizeof buf);
+    Py_END_ALLOW_THREADS
+
+    if (res == NULL)
+        return posix_error();
+
+    return PyString_FromString(buf);
+}
+#else
 static PyObject *
 posix_getcwd(PyObject *self, PyObject *noargs)
 {
@@ -2006,6 +2024,7 @@ posix_getcwd(PyObject *self, PyObject *noargs)
 
     return dynamic_return;
 }
+#endif /* getcwd() NULL/ERANGE workaround. */
 
 #ifdef Py_USING_UNICODE
 PyDoc_STRVAR(posix_getcwdu__doc__,
