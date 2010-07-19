@@ -8607,7 +8607,7 @@ PyObject *PyUnicode_Format(PyObject *format,
                 else if (c >= '0' && c <= '9') {
                     prec = c - '0';
                     while (--fmtcnt >= 0) {
-                        c = Py_CHARMASK(*fmt++);
+                        c = *fmt++;
                         if (c < '0' || c > '9')
                             break;
                         if ((prec*10) / 10 != prec) {

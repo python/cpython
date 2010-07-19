@@ -392,6 +392,7 @@ class UnicodeTest(
 
         self.assertEqual(u'%c' % 0x1234, u'\u1234')
         self.assertRaises(OverflowError, u"%c".__mod__, (sys.maxunicode+1,))
+        self.assertRaises(ValueError, u"%.1\u1032f".__mod__, (1.0/3))
 
         for num in range(0x00,0x80):
             char = chr(num)
