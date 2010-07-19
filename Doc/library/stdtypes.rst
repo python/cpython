@@ -2574,7 +2574,7 @@ is generally interpreted as simple bytes.
       'g'
       >>> v[1:4]
       <memory at 0x77ab28>
-      >>> str(v[1:4])
+      >>> v[1:4].tobytes()
       'bce'
 
    If the object the memoryview is over supports changing its data, the
@@ -2612,7 +2612,7 @@ is generally interpreted as simple bytes.
 
       Return the data in the buffer as a list of integers. ::
 
-         >>> memoryview(b'abc').tolist()
+         >>> memoryview("abc").tolist()
          [97, 98, 99]
 
    There are also several readonly attributes available:
