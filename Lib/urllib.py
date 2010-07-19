@@ -1223,6 +1223,8 @@ def quote(s, safe='/', encoding=None, errors=None):
     """
     # fastpath
     if not s:
+        if s is None:
+            raise TypeError('None object cannot be quoted')
         return s
 
     if encoding is not None or isinstance(s, unicode):
