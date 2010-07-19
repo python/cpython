@@ -473,6 +473,9 @@ C-API
 Library
 -------
 
+- Issue #3704: http.cookiejar was not properly handling URLs with a / in the
+  parameters.
+
 - Issue #9268: ``pickletools.dis()`` now has an optional *annotate*
   argument which controls printing of opcode descriptions in ``dis()``
   output.
