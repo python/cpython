@@ -737,7 +737,7 @@ built-in function; this example shows how it all works::
    StopIteration
 
 Having seen the mechanics behind the iterator protocol, it is easy to add
-iterator behavior to your classes.  Define a :meth:`__iter__` method which
+iterator behavior to your classes.  Define an :meth:`__iter__` method which
 returns an object with a :meth:`__next__` method.  If the class defines
 :meth:`__next__`, then :meth:`__iter__` can just return ``self``::
 
@@ -754,7 +754,10 @@ returns an object with a :meth:`__next__` method.  If the class defines
            self.index = self.index - 1
            return self.data[self.index]
 
-   >>> for char in Reverse('spam'):
+   >>> rev = Reverse('spam')
+   >>> iter(rev)
+   <__main__.Reverse object at 0x00A1DB50>
+   >>> for char in rev:
    ...     print(char)
    ...
    m
