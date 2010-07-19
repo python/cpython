@@ -641,6 +641,25 @@ class POSIXProcessTestCase(BaseTestCase):
         os.remove(fname)
         self.assertEqual(rc, 47)
 
+    def test_specific_shell(self):
+        # Issue #9265: Incorrect name passed as arg[0].
+        shells = []
+        for prefix in ['/bin', '/usr/bin/', '/usr/local/bin']:
+            for name in ['bash', 'ksh']:
+                sh = os.path.join(prefix, name)
+                if os.path.isfile(sh):
+                    shells.append(sh)
+        if not shells: # Will probably work for any shell but csh.
+            self.skipTest("bash or ksh required for this test")
+        sh = '/bin/sh'
+        if os.path.isfile(sh) and not os.path.islink(sh):
+            # Test will fail if /bin/sh is a symlink to csh.
+            shells.append(sh)
+        for sh in shells:
+            p = subprocess.Popen("echo $0", executable=sh, shell=True,
+                                 stdout=subprocess.PIPE)
+            self.assertEqual(p.stdout.read().strip(), sh)
+
     def _kill_process(self, method, *args):
         # Do not inherit file handles from the parent.
         # It should fix failures on some platforms.
