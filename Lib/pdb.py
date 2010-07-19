@@ -1123,7 +1123,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         print("""h(elp)
 Without argument, print the list of available commands.
 With a command name as argument, print help about that command
-"help pdb" pipes the full documentation file to the $PAGER
+"help pdb" shows the full pdb documentation
 "help exec" gives help on the ! command""", file=self.stdout)
 
     def help_where(self):

@@ -207,10 +207,9 @@ by the local file.
 
    Without argument, print the list of available commands.  With a *command* as
    argument, print help about that command.  ``help pdb`` displays the full
-   documentation (the docstring of the :mod:`pdb` module); if the environment
-   variable :envvar:`PAGER` is defined, the string is piped through that command
-   instead.  Since the *command* argument must be an identifier, ``help exec``
-   must be entered to get help on the ``!`` command.
+   documentation (the docstring of the :mod:`pdb` module).  Since the *command*
+   argument must be an identifier, ``help exec`` must be entered to get help on
+   the ``!`` command.
 
 .. pdbcommand:: w(here)
 
