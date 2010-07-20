@@ -225,6 +225,12 @@ def _parse_makefile(filename, vars=None):
     # do variable interpolation here
     variables = list(notdone.keys())
 
+    # Variables with a 'PY_' prefix in the makefile. These need to
+    # be made available without that prefix through sysconfig.
+    # Special care is needed to ensure that variable expansion works, even
+    # if the expansion uses the name without a prefix.
+    renamed_variables = ('CFLAGS', 'LDFLAGS', 'CPPFLAGS')
+
     while len(variables) > 0:
         for name in tuple(variables):
             value = notdone[name]
@@ -240,8 +246,20 @@ def _parse_makefile(filename, vars=None):
                 elif n in os.environ:
                     # do it like make: fall back to environment
                     item = os.environ[n]
+
+                elif n in renamed_variables:
+                    if name.startswith('PY_') and name[3:] in renamed_variables:
+                        item = ""
+
+                    elif 'PY_' + n in notdone:
+                        found = False
+
+                    else:
+                        item = str(done['PY_' + n])
+
                 else:
                     done[n] = item = ""
+
                 if found:
                     after = value[m.end():]
                     value = value[:m.start()] + item + after
@@ -255,16 +273,18 @@ def _parse_makefile(filename, vars=None):
                         else:
                             done[name] = value
                         variables.remove(name)
+
+                        if name.startswith('PY_') \
+                                and name[3:] in renamed_variables:
+
+                            name = name[3:]
+                            if name not in done:
+                                done[name] = value
+
+
             else:
                 # bogus variable reference; just drop it since we can't deal
                 variables.remove(name)
-
-    # Add in CFLAGS, LDFLAGS, and CPPFLAGS, which are named with a
-    # prefix in the Makefile.
-    for var in ('CFLAGS', 'LDFLAGS', 'CPPFLAGS'):
-        makefile_value = done.get('PY_' + var)
-        if makefile_value is not None:
-            done[var] = makefile_value
 
     # save the results in the global dictionary
     vars.update(done)
