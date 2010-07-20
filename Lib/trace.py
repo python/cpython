@@ -257,7 +257,8 @@ class CoverageResults:
         if self.calledfuncs:
             print()
             print("functions called:")
-            for filename, modulename, funcname in sorted(calls.keys()):
+            calls = self.calledfuncs.keys()
+            for filename, modulename, funcname in sorted(calls):
                 print(("filename: %s, modulename: %s, funcname: %s"
                        % (filename, modulename, funcname)))
 
