@@ -2052,7 +2052,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             break;
 
         TARGET(LOAD_NAME)
-        TARGET(LOAD_NAME_LOCAL_ONLY)
             w = GETITEM(names, oparg);
             if ((v = f->f_locals) == NULL) {
                 PyErr_Format(PyExc_SystemError,
@@ -2074,14 +2073,15 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 }
             }
             if (x == NULL) {
-                if (opcode != LOAD_NAME_LOCAL_ONLY) {
-                    x = PyDict_GetItem(f->f_globals, w);
-                    if (x == NULL)
-                        x = PyDict_GetItem(f->f_builtins, w);
-                }
+                x = PyDict_GetItem(f->f_globals, w);
                 if (x == NULL) {
-                    format_exc_check_arg(PyExc_NameError, NAME_ERROR_MSG, w);
-                    break;
+                    x = PyDict_GetItem(f->f_builtins, w);
+                    if (x == NULL) {
+                        format_exc_check_arg(
+                                    PyExc_NameError,
+                                    NAME_ERROR_MSG, w);
+                        break;
+                    }
                 }
                 Py_INCREF(x);
             }

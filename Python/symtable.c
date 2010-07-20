@@ -432,14 +432,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
         return PySet_Add(free, name) >= 0;
     }
     if (flags & DEF_BOUND) {
-        if (ste->ste_type == ClassBlock &&
-            !(flags & DEF_PARAM) &&
-            bound && PySet_Contains(bound, name)) {
-            SET_SCOPE(scopes, name, LOCAL_ONLY);
-        }
-        else {
-            SET_SCOPE(scopes, name, LOCAL);
-        }
+        SET_SCOPE(scopes, name, LOCAL);
         if (PySet_Add(local, name) < 0)
             return 0;
         if (PySet_Discard(global, name) < 0)
@@ -496,7 +489,7 @@ analyze_cells(PyObject *scopes, PyObject *free, const char *restricted)
         long scope;
         assert(PyLong_Check(v));
         scope = PyLong_AS_LONG(v);
-        if (scope != LOCAL && scope != LOCAL_ONLY)
+        if (scope != LOCAL)
             continue;
         if (!PySet_Contains(free, name))
             continue;
