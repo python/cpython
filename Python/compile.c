@@ -787,6 +787,7 @@ opcode_stack_effect(int opcode, int oparg)
         case LOAD_CONST:
             return 1;
         case LOAD_NAME:
+        case LOAD_NAME_LOCAL_ONLY:
             return 1;
         case BUILD_TUPLE:
         case BUILD_LIST:
@@ -2481,6 +2482,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         optype = OP_DEREF;
         break;
     case LOCAL:
+    case LOCAL_ONLY:
         if (c->u->u_ste->ste_type == FunctionBlock)
             optype = OP_FAST;
         break;
@@ -2556,7 +2558,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         break;
     case OP_NAME:
         switch (ctx) {
-        case Load: op = LOAD_NAME; break;
+        case Load: op = (scope == LOCAL_ONLY) ? LOAD_NAME_LOCAL_ONLY : LOAD_NAME; break;
         case Store: op = STORE_NAME; break;
         case Del: op = DELETE_NAME; break;
         case AugLoad:

@@ -6094,6 +6094,7 @@ supercheck(PyTypeObject *type, PyObject *obj)
     PyErr_SetString(PyExc_TypeError,
                     "super(type, obj): "
                     "obj must be an instance or subtype of type");
+    printf("%s\n", type->tp_name);
     return NULL;
 }
 

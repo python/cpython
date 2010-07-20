@@ -88,6 +88,7 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define GLOBAL_IMPLICIT 3
 #define FREE 4
 #define CELL 5
+#define LOCAL_ONLY 6
 
 /* The following two names are used for the ste_unoptimized bit field */
 #define OPT_IMPORT_STAR 1
