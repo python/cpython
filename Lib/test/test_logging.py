@@ -69,6 +69,12 @@ class BaseTest(unittest.TestCase):
         finally:
             logging._releaseLock()
 
+        # Set two unused loggers: one non-ASCII and one Unicode.
+        # This is to test correct operation when sorting existing
+        # loggers in the configuration code. See issues 8201, 9310.
+        logging.getLogger("\xab\xd7\xbb")
+        logging.getLogger(u"\u013f\u00d6\u0047")
+
         self.root_logger = logging.getLogger("")
         self.original_logging_level = self.root_logger.getEffectiveLevel()
 
