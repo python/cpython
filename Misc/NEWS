@@ -473,6 +473,9 @@ C-API
 Library
 -------
 
+- Issue #9282: Fixed --listfuncs option of trace.py.  Thanks Eli
+  Bendersky for the patch.
+
 - Issue #3704: http.cookiejar was not properly handling URLs with a / in the
   parameters.
 
