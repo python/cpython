@@ -690,14 +690,6 @@ result2 = h()
         h = g()
         self.assertEqual(h(), 3)
 
-    def testLocalClosureShadowing(self):
-        exec("""
-x = 4
-def f(x):
-    class C:
-         x = x
-raises(NameError, f, 3)""", {"raises" : self.assertRaises})
-
 
 def test_main():
     run_unittest(ScopeTests)
