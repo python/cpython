@@ -536,19 +536,19 @@ PyDoc_STRVAR(doc_is_package,
 "is_package(fullname) -> bool.\n\
 \n\
 Return True if the module specified by fullname is a package.\n\
-Raise ZipImportError is the module couldn't be found.");
+Raise ZipImportError if the module couldn't be found.");
 
 PyDoc_STRVAR(doc_get_code,
 "get_code(fullname) -> code object.\n\
 \n\
 Return the code object for the specified module. Raise ZipImportError\n\
-is the module couldn't be found.");
+if the module couldn't be found.");
 
 PyDoc_STRVAR(doc_get_source,
 "get_source(fullname) -> source string.\n\
 \n\
 Return the source code for the specified module. Raise ZipImportError\n\
-is the module couldn't be found, return None if the archive does\n\
+if the module couldn't be found, return None if the archive does\n\
 contain the module, but has no source for it.");
 
 
