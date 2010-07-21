@@ -473,6 +473,9 @@ C-API
 Library
 -------
 
+- Issue #9323: Fixed a bug in trace.py that resulted in loosing the
+  name of the script being traced.  Patch by Eli Bendersky.
+
 - Issue #9282: Fixed --listfuncs option of trace.py.  Thanks Eli
   Bendersky for the patch.
 
