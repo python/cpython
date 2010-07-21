@@ -81,6 +81,10 @@ C-API
 Library
 -------
 
+- Issue #5395: array.fromfile() would raise a spurious EOFError when an
+  I/O error occurred.  Now an IOError is raised instead.  Patch by chuck
+  (Jan Hosang).
+
 - Issue #1555570: email no longer inserts extra blank lines when a \r\n
   combo crosses an 8192 byte boundary.
 
