@@ -212,7 +212,7 @@ timeit
 tkinter             gpolo
 token               georg.brandl
 tokenize
-trace
+trace               alexander.belopolsky
 traceback           georg.brandl
 tty
 turtle              gregorlingl
