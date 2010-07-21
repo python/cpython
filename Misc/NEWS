@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5395: array.fromfile() would raise a spurious EOFError when an
+  I/O error occurred.  Now an IOError is raised instead.  Patch by chuck
+  (Jan Hosang).
+
 - Issue 1712522: urllib.quote supports Unicode String with encoding and errors
   parameter. The encoding parameter defaults to utf-8 and errors to strict.
   Patch by Matt Giuca.
