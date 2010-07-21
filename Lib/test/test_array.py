@@ -182,6 +182,17 @@ class BaseTest(unittest.TestCase):
                 f.close()
             support.unlink(support.TESTFN)
 
+    def test_fromfile_ioerror(self):
+        # Issue #5395: Check if fromfile raises a proper IOError
+        # instead of EOFError.
+        a = array.array(self.typecode)
+        f = open(support.TESTFN, 'wb')
+        try:
+            self.assertRaises(IOError, a.fromfile, f, len(self.example))
+        finally:
+            f.close()
+            support.unlink(support.TESTFN)
+
     def test_tofromlist(self):
         a = array.array(self.typecode, 2*self.example)
         b = array.array(self.typecode)
