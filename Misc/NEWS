@@ -363,6 +363,12 @@ Tests
 - Issue #8193: Fix test_zlib failure with zlib 1.2.4.
 
 
+Documentation
+-------------
+
+- Issue #7829: Document in dis that bytecode is an implementation detail.
+
+
 What's New in Python 3.1.2?
 ===========================
 
