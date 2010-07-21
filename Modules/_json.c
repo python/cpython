@@ -1454,7 +1454,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
         }
         else {
             /* TODO: include repr of key */
-            PyErr_SetString(PyExc_ValueError, "keys must be a string");
+            PyErr_SetString(PyExc_TypeError, "keys must be a string");
             goto bail;
         }
 
