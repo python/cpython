@@ -59,6 +59,11 @@ Tests
 
 - Issue #8605: Skip test_gdb if Python is compiled with optimizations.
 
+Documentation
+-------------
+
+- Issue 7829: Document in dis that bytecode is an implementation detail.
+
 
 What's New in Python 2.7?
 =========================
