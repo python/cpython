@@ -228,7 +228,7 @@ are also provided to help in implementing the core ABCs.
 
     * :meth:`ResourceLoader.get_data`
     * :meth:`ExecutionLoader.get_filename`
-          Implement to only return the path to the source file; sourceless
+          Should only return the path to the source file; sourceless
           loading is not supported.
 
     The abstract methods defined by this class are to add optional bytecode
