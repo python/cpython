@@ -74,3 +74,12 @@ class TestFail(TestCase):
                 pass
             else:
                 self.fail("Expected failure for fail{0}.json: {1!r}".format(idx, doc))
+
+    def test_non_string_keys_dict(self):
+        data = {'a' : 1, (1, 2) : 2}
+
+        #This is for c encoder
+        self.assertRaises(TypeError, json.dumps, data)
+
+        #This is for python encoder
+        self.assertRaises(TypeError, json.dumps, data, indent=True)
