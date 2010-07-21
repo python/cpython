@@ -1228,8 +1228,14 @@ array_fromfile(arrayobject *self, PyObject *args)
             PyMem_RESIZE(item, char, Py_SIZE(self)*itemsize);
             self->ob_item = item;
             self->allocated = Py_SIZE(self);
-            PyErr_SetString(PyExc_EOFError,
-                             "not enough items in file");
+            if (ferror(fp)) {
+                PyErr_SetFromErrno(PyExc_IOError);
+                clearerr(fp);
+            }
+            else {
+                PyErr_SetString(PyExc_EOFError,
+                                "not enough items in file");
+            }
             return NULL;
         }
     }
