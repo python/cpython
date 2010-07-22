@@ -2,20 +2,28 @@
 import unittest
 import sys
 import os
+from io import BytesIO
 import subprocess
-import warnings
-import sysconfig
-
-from test.support import check_warnings, run_unittest
-from test.support import captured_stdout
 
 from distutils import cygwinccompiler
 from distutils.cygwinccompiler import (CygwinCCompiler, check_config_h,
                                        CONFIG_H_OK, CONFIG_H_NOTOK,
                                        CONFIG_H_UNCERTAIN, get_versions,
-                                       get_msvcr, RE_VERSION)
-from distutils.util import get_compiler_versions
+                                       get_msvcr)
 from distutils.tests import support
+
+class FakePopen(object):
+    test_class = None
+
+    def __init__(self, cmd, shell, stdout):
+        self.cmd = cmd.split()[0]
+        exes = self.test_class._exes
+        if self.cmd in exes:
+            # issue #6438 in Python 3.x, Popen returns bytes
+            self.stdout = BytesIO(exes[self.cmd])
+        else:
+            self.stdout = os.popen(cmd, 'r')
+
 
 class CygwinCCompilerTestCase(support.TempdirManager,
                               unittest.TestCase):
@@ -24,16 +32,31 @@ class CygwinCCompilerTestCase(support.TempdirManager,
         super(CygwinCCompilerTestCase, self).setUp()
         self.version = sys.version
         self.python_h = os.path.join(self.mkdtemp(), 'python.h')
+        from distutils import sysconfig
         self.old_get_config_h_filename = sysconfig.get_config_h_filename
         sysconfig.get_config_h_filename = self._get_config_h_filename
+        self.old_find_executable = cygwinccompiler.find_executable
+        cygwinccompiler.find_executable = self._find_executable
+        self._exes = {}
+        self.old_popen = cygwinccompiler.Popen
+        FakePopen.test_class = self
+        cygwinccompiler.Popen = FakePopen
 
     def tearDown(self):
         sys.version = self.version
+        from distutils import sysconfig
         sysconfig.get_config_h_filename = self.old_get_config_h_filename
+        cygwinccompiler.find_executable = self.old_find_executable
+        cygwinccompiler.Popen = self.old_popen
         super(CygwinCCompilerTestCase, self).tearDown()
 
     def _get_config_h_filename(self):
         return self.python_h
+
+    def _find_executable(self, name):
+        if name in self._exes:
+            return name
+        return None
 
     def test_check_config_h(self):
 
@@ -57,6 +80,40 @@ class CygwinCCompilerTestCase(support.TempdirManager,
         # and CONFIG_H_OK if __GNUC__ is found
         self.write_file(self.python_h, 'xxx __GNUC__ xxx')
         self.assertEquals(check_config_h()[0], CONFIG_H_OK)
+
+    def test_get_versions(self):
+
+        # get_versions calls distutils.spawn.find_executable on
+        # 'gcc', 'ld' and 'dllwrap'
+        self.assertEquals(get_versions(), (None, None, None))
+
+        # Let's fake we have 'gcc' and it returns '3.4.5'
+        self._exes['gcc'] = b'gcc (GCC) 3.4.5 (mingw special)\nFSF'
+        res = get_versions()
+        self.assertEquals(str(res[0]), '3.4.5')
+
+        # and let's see what happens when the version
+        # doesn't match the regular expression
+        # (\d+\.\d+(\.\d+)*)
+        self._exes['gcc'] = b'very strange output'
+        res = get_versions()
+        self.assertEquals(res[0], None)
+
+        # same thing for ld
+        self._exes['ld'] = b'GNU ld version 2.17.50 20060824'
+        res = get_versions()
+        self.assertEquals(str(res[1]), '2.17.50')
+        self._exes['ld'] = b'@(#)PROGRAM:ld  PROJECT:ld64-77'
+        res = get_versions()
+        self.assertEquals(res[1], None)
+
+        # and dllwrap
+        self._exes['dllwrap'] = b'GNU dllwrap 2.17.50 20060824\nFSF'
+        res = get_versions()
+        self.assertEquals(str(res[2]), '2.17.50')
+        self._exes['dllwrap'] = b'Cheese Wrap'
+        res = get_versions()
+        self.assertEquals(res[2], None)
 
     def test_get_msvcr(self):
 
@@ -90,23 +147,8 @@ class CygwinCCompilerTestCase(support.TempdirManager,
                        '[MSC v.1999 32 bits (Intel)]')
         self.assertRaises(ValueError, get_msvcr)
 
-
-    def test_get_version_deprecated(self):
-        with check_warnings() as w:
-            warnings.simplefilter("always")
-            # make sure get_compiler_versions and get_versions
-            # returns the same thing
-            self.assertEquals(get_compiler_versions(), get_versions())
-            # make sure using get_version() generated a warning
-            self.assertEquals(len(w.warnings), 1)
-            # make sure any usage of RE_VERSION will also
-            # generate a warning, but till works
-            version = RE_VERSION.search('1.2').group(1)
-            self.assertEquals(version, '1.2')
-            self.assertEquals(len(w.warnings), 2)
-
 def test_suite():
     return unittest.makeSuite(CygwinCCompilerTestCase)
 
 if __name__ == '__main__':
-    run_unittest(test_suite())
+    test_support.run_unittest(test_suite())

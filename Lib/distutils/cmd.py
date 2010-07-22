@@ -367,11 +367,9 @@ class Command:
         from distutils.spawn import spawn
         spawn(cmd, search_path, dry_run=self.dry_run)
 
-    def make_archive(self, base_name, format, root_dir=None, base_dir=None,
-                     owner=None, group=None):
-        return archive_util.make_archive(base_name, format, root_dir,
-                                         base_dir, dry_run=self.dry_run,
-                                         owner=owner, group=group)
+    def make_archive(self, base_name, format, root_dir=None, base_dir=None):
+        return archive_util.make_archive(base_name, format, root_dir, base_dir,
+                                         dry_run=self.dry_run)
 
     def make_file(self, infiles, outfile, func, args,
                   exec_msg=None, skip_msg=None, level=1):

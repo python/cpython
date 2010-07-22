@@ -50,13 +50,16 @@ __revision__ = "$Id$"
 import os
 import sys
 import copy
+from subprocess import Popen, PIPE
 import re
-from warnings import warn
 
+from distutils.ccompiler import gen_preprocess_options, gen_lib_options
 from distutils.unixccompiler import UnixCCompiler
 from distutils.file_util import write_file
 from distutils.errors import DistutilsExecError, CompileError, UnknownFileError
-from distutils.util import get_compiler_versions
+from distutils import log
+from distutils.version import LooseVersion
+from distutils.spawn import find_executable
 
 def get_msvcr():
     """Include the appropriate MSVC runtime library if Python was built
@@ -107,7 +110,7 @@ class CygwinCCompiler(UnixCCompiler):
                 % details)
 
         self.gcc_version, self.ld_version, self.dllwrap_version = \
-            get_compiler_versions()
+            get_versions()
         self.debug_print(self.compiler_type + ": gcc %s, ld %s, dllwrap %s\n" %
                          (self.gcc_version,
                           self.ld_version,
@@ -337,7 +340,7 @@ def check_config_h():
     # XXX since this function also checks sys.version, it's not strictly a
     # "pyconfig.h" check -- should probably be renamed...
 
-    _sysconfig = __import__('sysconfig')
+    from distutils import sysconfig
 
     # if sys.version contains GCC then python was compiled with GCC, and the
     # pyconfig.h file should be OK
@@ -345,7 +348,7 @@ def check_config_h():
         return CONFIG_H_OK, "sys.version mentions 'GCC'"
 
     # let's see if __GNUC__ is mentioned in python.h
-    fn = _sysconfig.get_config_h_filename()
+    fn = sysconfig.get_config_h_filename()
     try:
         with open(fn) as config_h:
             if "__GNUC__" in config_h.read():
@@ -356,27 +359,33 @@ def check_config_h():
         return (CONFIG_H_UNCERTAIN,
                 "couldn't read '%s': %s" % (fn, exc.strerror))
 
-class _Deprecated_SRE_Pattern(object):
-    def __init__(self, pattern):
-        self.pattern = pattern
+RE_VERSION = re.compile(b'(\d+\.\d+(\.\d+)*)')
 
-    def __getattr__(self, name):
-        if name in ('findall', 'finditer', 'match', 'scanner', 'search',
-                    'split', 'sub', 'subn'):
-            warn("'distutils.cygwinccompiler.RE_VERSION' is deprecated "
-                 "and will be removed in the next version", DeprecationWarning)
-        return getattr(self.pattern, name)
+def _find_exe_version(cmd):
+    """Find the version of an executable by running `cmd` in the shell.
 
-
-RE_VERSION = _Deprecated_SRE_Pattern(re.compile('(\d+\.\d+(\.\d+)*)'))
+    If the command is not found, or the output does not match
+    `RE_VERSION`, returns None.
+    """
+    executable = cmd.split()[0]
+    if find_executable(executable) is None:
+        return None
+    out = Popen(cmd, shell=True, stdout=PIPE).stdout
+    try:
+        out_string = out.read()
+    finally:
+        out.close()
+    result = RE_VERSION.search(out_string)
+    if result is None:
+        return None
+    # LooseVersion works with strings
+    # so we need to decode our bytes
+    return LooseVersion(result.group(1).decode())
 
 def get_versions():
     """ Try to find out the versions of gcc, ld and dllwrap.
 
     If not possible it returns None for it.
     """
-    warn("'distutils.cygwinccompiler.get_versions' is deprecated "
-         "use 'distutils.util.get_compiler_versions' instead",
-         DeprecationWarning)
-
-    return get_compiler_versions()
+    commands = ['gcc -dumpversion', 'ld -v', 'dllwrap --version']
+    return tuple([_find_exe_version(cmd) for cmd in commands])

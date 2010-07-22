@@ -5,14 +5,15 @@ Implements the Distutils 'build' command."""
 __revision__ = "$Id$"
 
 import sys, os
-
-from distutils.util import get_platform
 from distutils.core import Command
 from distutils.errors import DistutilsOptionError
+from distutils.util import get_platform
+
 
 def show_compilers():
     from distutils.ccompiler import show_compilers
     show_compilers()
+
 
 class build(Command):
 
@@ -126,6 +127,7 @@ class build(Command):
         for cmd_name in self.get_sub_commands():
             self.run_command(cmd_name)
 
+
     # -- Predicates for the sub-command list ---------------------------
 
     def has_pure_modules(self):
@@ -139,6 +141,7 @@ class build(Command):
 
     def has_scripts(self):
         return self.distribution.has_scripts()
+
 
     sub_commands = [('build_py',      has_pure_modules),
                     ('build_clib',    has_c_libraries),

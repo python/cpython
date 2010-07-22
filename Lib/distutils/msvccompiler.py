@@ -10,12 +10,12 @@ for the Microsoft Visual Studio.
 
 __revision__ = "$Id$"
 
-import sys
-import os
-
-from distutils.errors import (DistutilsExecError, DistutilsPlatformError,
-                              CompileError, LibError, LinkError)
-from distutils.ccompiler import CCompiler, gen_lib_options
+import sys, os
+from distutils.errors import \
+     DistutilsExecError, DistutilsPlatformError, \
+     CompileError, LibError, LinkError
+from distutils.ccompiler import \
+     CCompiler, gen_preprocess_options, gen_lib_options
 from distutils import log
 
 _can_read_reg = False
@@ -124,7 +124,7 @@ class MacroExpander:
                 self.set_macro("FrameworkSDKDir", net, "sdkinstallrootv1.1")
             else:
                 self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
-        except KeyError:
+        except KeyError as exc: #
             raise DistutilsPlatformError(
             """Python was built with Visual Studio 2003;
 extensions must be built with a compiler than can generate compatible binaries.

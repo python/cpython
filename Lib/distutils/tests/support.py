@@ -3,18 +3,10 @@ import os
 import shutil
 import tempfile
 from copy import deepcopy
-import warnings
 
 from distutils import log
 from distutils.log import DEBUG, INFO, WARN, ERROR, FATAL
 from distutils.core import Distribution
-
-def capture_warnings(func):
-    def _capture_warnings(*args, **kw):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            return func(*args, **kw)
-    return _capture_warnings
 
 class LoggingSilencer(object):
 
@@ -63,8 +55,6 @@ class TempdirManager(object):
         super().tearDown()
         while self.tempdirs:
             d = self.tempdirs.pop()
-            if not os.path.exists(d):
-                continue
             shutil.rmtree(d, os.name in ('nt', 'cygwin'))
 
     def mkdtemp(self):

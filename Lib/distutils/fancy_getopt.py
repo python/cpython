@@ -10,11 +10,9 @@ additional features:
 
 __revision__ = "$Id$"
 
-import sys
-import string
-import re
+import sys, string, re
 import getopt
-from distutils.errors import DistutilsGetoptError, DistutilsArgError
+from distutils.errors import *
 
 # Much like command_re in distutils.core, this is close to but not quite
 # the same as a Python NAME -- except, in the spirit of most GNU
@@ -446,3 +444,16 @@ class OptionDummy:
         'options' will be initialized to None."""
         for opt in options:
             setattr(self, opt, None)
+
+
+if __name__ == "__main__":
+    text = """\
+Tra-la-la, supercalifragilisticexpialidocious.
+How *do* you spell that odd word, anyways?
+(Someone ask Mary -- she'll know [or she'll
+say, "How should I know?"].)"""
+
+    for w in (10, 20, 30, 40):
+        print("width: %d" % w)
+        print("\n".join(wrap_text(text, w)))
+        print()

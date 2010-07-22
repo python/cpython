@@ -16,7 +16,7 @@ class BuildPyTestCase(support.TempdirManager,
                       support.LoggingSilencer,
                       unittest.TestCase):
 
-    def _setup_package_data(self):
+    def test_package_data(self):
         sources = self.mkdtemp()
         f = open(os.path.join(sources, "__init__.py"), "w")
         f.write("# Pretend this is a package.")
@@ -52,18 +52,9 @@ class BuildPyTestCase(support.TempdirManager,
         self.assertEqual(len(cmd.get_outputs()), 3)
         pkgdest = os.path.join(destination, "pkg")
         files = os.listdir(pkgdest)
-        return files
-
-    def test_package_data(self):
-        files = self._setup_package_data()
         self.assertTrue("__init__.py" in files)
-        self.assertTrue("README.txt" in files)
-
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "pyc files are not written with -O2 and above")
-    def test_package_data_pyc(self):
-        files = self._setup_package_data()
         self.assertTrue("__init__.pyc" in files)
+        self.assertTrue("README.txt" in files)
 
     def test_empty_package_dir (self):
         # See SF 1668596/1720897.

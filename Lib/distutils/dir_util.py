@@ -4,7 +4,7 @@ Utility functions for manipulating directories and directory trees."""
 
 __revision__ = "$Id$"
 
-import os
+import os, sys
 from distutils.errors import DistutilsFileError, DistutilsInternalError
 from distutils import log
 

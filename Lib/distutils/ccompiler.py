@@ -5,70 +5,14 @@ for the Distutils compiler abstraction model."""
 
 __revision__ = "$Id$"
 
-import sys
-import os
-import re
-
-from distutils.errors import (CompileError, LinkError, UnknownFileError,
-                              DistutilsPlatformError, DistutilsModuleError)
+import sys, os, re
+from distutils.errors import *
 from distutils.spawn import spawn
 from distutils.file_util import move_file
 from distutils.dir_util import mkpath
-from distutils.dep_util import newer_group
+from distutils.dep_util import newer_pairwise, newer_group
 from distutils.util import split_quoted, execute
 from distutils import log
-
-_sysconfig = __import__('sysconfig')
-
-def customize_compiler(compiler):
-    """Do any platform-specific customization of a CCompiler instance.
-
-    Mainly needed on Unix, so we can plug in the information that
-    varies across Unices and is stored in Python's Makefile.
-    """
-    if compiler.compiler_type == "unix":
-        (cc, cxx, opt, cflags, ccshared, ldshared, so_ext, ar, ar_flags) = \
-            _sysconfig.get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
-                                       'CCSHARED', 'LDSHARED', 'SO', 'AR',
-                                       'ARFLAGS')
-
-        if 'CC' in os.environ:
-            cc = os.environ['CC']
-        if 'CXX' in os.environ:
-            cxx = os.environ['CXX']
-        if 'LDSHARED' in os.environ:
-            ldshared = os.environ['LDSHARED']
-        if 'CPP' in os.environ:
-            cpp = os.environ['CPP']
-        else:
-            cpp = cc + " -E"           # not always
-        if 'LDFLAGS' in os.environ:
-            ldshared = ldshared + ' ' + os.environ['LDFLAGS']
-        if 'CFLAGS' in os.environ:
-            cflags = opt + ' ' + os.environ['CFLAGS']
-            ldshared = ldshared + ' ' + os.environ['CFLAGS']
-        if 'CPPFLAGS' in os.environ:
-            cpp = cpp + ' ' + os.environ['CPPFLAGS']
-            cflags = cflags + ' ' + os.environ['CPPFLAGS']
-            ldshared = ldshared + ' ' + os.environ['CPPFLAGS']
-        if 'AR' in os.environ:
-            ar = os.environ['AR']
-        if 'ARFLAGS' in os.environ:
-            archiver = ar + ' ' + os.environ['ARFLAGS']
-        else:
-            archiver = ar + ' ' + ar_flags
-
-        cc_cmd = cc + ' ' + cflags
-        compiler.set_executables(
-            preprocessor=cpp,
-            compiler=cc_cmd,
-            compiler_so=cc_cmd + ' ' + ccshared,
-            compiler_cxx=cxx,
-            linker_so=ldshared,
-            linker_exe=cc,
-            archiver=archiver)
-
-        compiler.shared_lib_extension = so_ext
 
 class CCompiler:
     """Abstract base class to define the interface that must be implemented
@@ -449,6 +393,22 @@ class CCompiler:
 
         return output_dir, macros, include_dirs
 
+    def _prep_compile(self, sources, output_dir, depends=None):
+        """Decide which souce files must be recompiled.
+
+        Determine the list of object files corresponding to 'sources',
+        and figure out which ones really need to be recompiled.
+        Return a list of all object files and a dictionary telling
+        which source files can be skipped.
+        """
+        # Get the list of expected output (object) files
+        objects = self.object_filenames(sources, output_dir=output_dir)
+        assert len(objects) == len(sources)
+
+        # Return an empty dict for the "which source files can be skipped"
+        # return value to preserve API compatibility.
+        return objects, {}
+
     def _fix_object_args(self, objects, output_dir):
         """Typecheck and fix up some arguments supplied to various methods.
         Specifically: ensure that 'objects' is a list; if output_dir is
@@ -650,15 +610,26 @@ class CCompiler:
         """
         pass
 
+
     # values for target_desc parameter in link()
     SHARED_OBJECT = "shared_object"
     SHARED_LIBRARY = "shared_library"
     EXECUTABLE = "executable"
 
-    def link(self, target_desc, objects, output_filename, output_dir=None,
-             libraries=None, library_dirs=None, runtime_library_dirs=None,
-             export_symbols=None, debug=0, extra_preargs=None,
-             extra_postargs=None, build_temp=None, target_lang=None):
+    def link(self,
+             target_desc,
+             objects,
+             output_filename,
+             output_dir=None,
+             libraries=None,
+             library_dirs=None,
+             runtime_library_dirs=None,
+             export_symbols=None,
+             debug=0,
+             extra_preargs=None,
+             extra_postargs=None,
+             build_temp=None,
+             target_lang=None):
         """Link a bunch of stuff together to create an executable or
         shared library file.
 
@@ -707,11 +678,19 @@ class CCompiler:
 
     # Old 'link_*()' methods, rewritten to use the new 'link()' method.
 
-    def link_shared_lib(self, objects, output_libname, output_dir=None,
-                        libraries=None, library_dirs=None,
-                        runtime_library_dirs=None, export_symbols=None,
-                        debug=0, extra_preargs=None, extra_postargs=None,
-                        build_temp=None, target_lang=None):
+    def link_shared_lib(self,
+                        objects,
+                        output_libname,
+                        output_dir=None,
+                        libraries=None,
+                        library_dirs=None,
+                        runtime_library_dirs=None,
+                        export_symbols=None,
+                        debug=0,
+                        extra_preargs=None,
+                        extra_postargs=None,
+                        build_temp=None,
+                        target_lang=None):
         self.link(CCompiler.SHARED_LIBRARY, objects,
                   self.library_filename(output_libname, lib_type='shared'),
                   output_dir,
@@ -720,11 +699,19 @@ class CCompiler:
                   extra_preargs, extra_postargs, build_temp, target_lang)
 
 
-    def link_shared_object(self, objects, output_filename, output_dir=None,
-                           libraries=None, library_dirs=None,
-                           runtime_library_dirs=None, export_symbols=None,
-                           debug=0, extra_preargs=None, extra_postargs=None,
-                           build_temp=None, target_lang=None):
+    def link_shared_object(self,
+                           objects,
+                           output_filename,
+                           output_dir=None,
+                           libraries=None,
+                           library_dirs=None,
+                           runtime_library_dirs=None,
+                           export_symbols=None,
+                           debug=0,
+                           extra_preargs=None,
+                           extra_postargs=None,
+                           build_temp=None,
+                           target_lang=None):
         self.link(CCompiler.SHARED_OBJECT, objects,
                   output_filename, output_dir,
                   libraries, library_dirs, runtime_library_dirs,
@@ -732,10 +719,17 @@ class CCompiler:
                   extra_preargs, extra_postargs, build_temp, target_lang)
 
 
-    def link_executable(self, objects, output_progname, output_dir=None,
-                        libraries=None, library_dirs=None,
-                        runtime_library_dirs=None, debug=0, extra_preargs=None,
-                        extra_postargs=None, target_lang=None):
+    def link_executable(self,
+                        objects,
+                        output_progname,
+                        output_dir=None,
+                        libraries=None,
+                        library_dirs=None,
+                        runtime_library_dirs=None,
+                        debug=0,
+                        extra_preargs=None,
+                        extra_postargs=None,
+                        target_lang=None):
         self.link(CCompiler.EXECUTABLE, objects,
                   self.executable_filename(output_progname), output_dir,
                   libraries, library_dirs, runtime_library_dirs, None,
@@ -917,7 +911,7 @@ main (int argc, char **argv) {
     def move_file(self, src, dst):
         return move_file(src, dst, dry_run=self.dry_run)
 
-    def mkpath(self, name, mode=0o777):
+    def mkpath (self, name, mode=0o777):
         mkpath(name, mode, dry_run=self.dry_run)
 
 
@@ -1085,14 +1079,12 @@ def gen_preprocess_options(macros, include_dirs):
     return pp_opts
 
 
-def gen_lib_options(compiler, library_dirs, runtime_library_dirs, libraries):
+def gen_lib_options (compiler, library_dirs, runtime_library_dirs, libraries):
     """Generate linker options for searching library directories and
-    linking with specific libraries.
-
-    'libraries' and 'library_dirs' are, respectively, lists of library names
-    (not filenames!) and search directories.  Returns a list of command-line
-    options suitable for use with some compiler (depending on the two format
-    strings passed in).
+    linking with specific libraries.  'libraries' and 'library_dirs' are,
+    respectively, lists of library names (not filenames!) and search
+    directories.  Returns a list of command-line options suitable for use
+    with some compiler (depending on the two format strings passed in).
     """
     lib_opts = []
 
@@ -1102,7 +1094,7 @@ def gen_lib_options(compiler, library_dirs, runtime_library_dirs, libraries):
     for dir in runtime_library_dirs:
         opt = compiler.runtime_library_dir_option(dir)
         if isinstance(opt, list):
-            lib_opts.extend(opt)
+            lib_opts = lib_opts + opt
         else:
             lib_opts.append(opt)
 
@@ -1113,14 +1105,14 @@ def gen_lib_options(compiler, library_dirs, runtime_library_dirs, libraries):
     # pretty nasty way to arrange your C code.
 
     for lib in libraries:
-        lib_dir, lib_name = os.path.split(lib)
-        if lib_dir != '':
+        (lib_dir, lib_name) = os.path.split(lib)
+        if lib_dir:
             lib_file = compiler.find_library_file([lib_dir], lib_name)
-            if lib_file is not None:
+            if lib_file:
                 lib_opts.append(lib_file)
             else:
                 compiler.warn("no library file corresponding to "
                               "'%s' found (skipping)" % lib)
         else:
-            lib_opts.append(compiler.library_option(lib))
+            lib_opts.append(compiler.library_option (lib))
     return lib_opts

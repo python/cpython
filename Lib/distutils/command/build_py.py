@@ -4,16 +4,16 @@ Implements the Distutils 'build_py' command."""
 
 __revision__ = "$Id$"
 
-import os
+import sys, os
 import sys
 from glob import glob
 
 from distutils.core import Command
-from distutils.errors import DistutilsOptionError, DistutilsFileError
+from distutils.errors import *
 from distutils.util import convert_path, Mixin2to3
 from distutils import log
 
-class build_py(Command):
+class build_py (Command):
 
     description = "\"build\" pure Python modules (copy to build directory)"
 
@@ -133,6 +133,7 @@ class build_py(Command):
 
     def build_package_data(self):
         """Copy data files into build directory"""
+        lastdir = None
         for package, src_dir, build_dir, filenames in self.data_files:
             for filename in filenames:
                 target = os.path.join(build_dir, filename)

@@ -18,8 +18,8 @@ __revision__ = "$Id$"
 
 import os
 from distutils.core import Command
-from distutils.errors import DistutilsSetupError
-from distutils.ccompiler import customize_compiler
+from distutils.errors import *
+from distutils.sysconfig import customize_compiler
 from distutils import log
 
 def show_compilers():

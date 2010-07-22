@@ -108,7 +108,7 @@ class FileList:
         # defined: it's the first word of the line.  Which of the other
         # three are defined depends on the action; it'll be either
         # patterns, (dir and patterns), or (dir_pattern).
-        action, patterns, dir, dir_pattern = self._parse_template_line(line)
+        (action, patterns, dir, dir_pattern) = self._parse_template_line(line)
 
         # OK, now we know that the action is valid and we have the
         # right number of words on the line for that action -- so we
@@ -175,15 +175,15 @@ class FileList:
             raise DistutilsInternalError(
                   "this cannot happen: invalid action '%s'" % action)
 
+
     # -- Filtering/selection methods -----------------------------------
 
     def include_pattern(self, pattern, anchor=1, prefix=None, is_regex=0):
         """Select strings (presumably filenames) from 'self.files' that
-        match 'pattern', a Unix-style wildcard (glob) pattern.
-
-        Patterns are not quite the same as implemented by the 'fnmatch'
-        module: '*' and '?'  match non-special characters, where "special"
-        is platform-dependent: slash on Unix; colon, slash, and backslash on
+        match 'pattern', a Unix-style wildcard (glob) pattern.  Patterns
+        are not quite the same as implemented by the 'fnmatch' module: '*'
+        and '?'  match non-special characters, where "special" is platform-
+        dependent: slash on Unix; colon, slash, and backslash on
         DOS/Windows; and colon on Mac OS.
 
         If 'anchor' is true (the default), then the pattern match is more
@@ -220,13 +220,13 @@ class FileList:
         return files_found
 
 
-    def exclude_pattern(self, pattern, anchor=1, prefix=None, is_regex=0):
+    def exclude_pattern (self, pattern,
+                         anchor=1, prefix=None, is_regex=0):
         """Remove strings (presumably filenames) from 'files' that match
-        'pattern'.
-
-        Other parameters are the same as for 'include_pattern()', above.
-        The list 'self.files' is modified in place. Return 1 if files are
-        found.
+        'pattern'.  Other parameters are the same as for
+        'include_pattern()', above.
+        The list 'self.files' is modified in place.
+        Return True if files are found, False otherwise.
         """
         files_found = False
         pattern_re = translate_pattern(pattern, anchor, prefix, is_regex)
@@ -275,11 +275,10 @@ def findall(dir=os.curdir):
 
 
 def glob_to_re(pattern):
-    """Translate a shell-like glob pattern to a regular expression.
-
-    Return a string containing the regex.  Differs from
-    'fnmatch.translate()' in that '*' does not match "special characters"
-    (which are platform-specific).
+    """Translate a shell-like glob pattern to a regular expression; return
+    a string containing the regex.  Differs from 'fnmatch.translate()' in
+    that '*' does not match "special characters" (which are
+    platform-specific).
     """
     pattern_re = fnmatch.translate(pattern)
 
@@ -297,9 +296,7 @@ def glob_to_re(pattern):
 
 def translate_pattern(pattern, anchor=1, prefix=None, is_regex=0):
     """Translate a shell-like wildcard pattern to a compiled regular
-    expression.
-
-    Return the compiled regex.  If 'is_regex' true,
+    expression.  Return the compiled regex.  If 'is_regex' true,
     then 'pattern' is directly compiled to a regex (if it's a string)
     or just returned as-is (assumes it's a regex object).
     """
@@ -317,7 +314,7 @@ def translate_pattern(pattern, anchor=1, prefix=None, is_regex=0):
     if prefix is not None:
         # ditch end of pattern character
         empty_pattern = glob_to_re('')
-        prefix_re = glob_to_re(prefix)[:-len(empty_pattern)]
+        prefix_re = (glob_to_re(prefix))[:-len(empty_pattern)]
         pattern_re = "^" + os.path.join(prefix_re, ".*" + pattern_re)
     else:                               # no prefix -- respect anchor flag
         if anchor:

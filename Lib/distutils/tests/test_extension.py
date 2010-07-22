@@ -1,16 +1,13 @@
 """Tests for distutils.extension."""
-import os
-import sys
 import unittest
+import os
 import warnings
 
 from test.support import check_warnings
 from distutils.extension import read_setup_file, Extension
-from distutils.tests.support import capture_warnings
 
 class ExtensionTestCase(unittest.TestCase):
 
-    @capture_warnings
     def test_read_setup_file(self):
         # trying to read a Setup file
         # (sample extracted from the PyGame project)
@@ -33,22 +30,16 @@ class ExtensionTestCase(unittest.TestCase):
 
         self.assertEquals(names, wanted)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Assertions are omitted with -O2 and above")
-    def test_extension_init_assertions(self):
-        # The first argument, which is the name, must be a string.
+    def test_extension_init(self):
+        # the first argument, which is the name, must be a string
         self.assertRaises(AssertionError, Extension, 1, [])
+        ext = Extension('name', [])
+        self.assertEquals(ext.name, 'name')
 
         # the second argument, which is the list of files, must
         # be a list of strings
         self.assertRaises(AssertionError, Extension, 'name', 'file')
         self.assertRaises(AssertionError, Extension, 'name', ['file', 1])
-
-    def test_extension_init(self):
-        ext = Extension('name', [])
-        self.assertEquals(ext.name, 'name')
-
-
         ext = Extension('name', ['file1', 'file2'])
         self.assertEquals(ext.sources, ['file1', 'file2'])
 

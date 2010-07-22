@@ -4,15 +4,6 @@ import unittest
 import sys
 import os
 
-# zlib is not used here, but if it's not available
-# test_simple_built will fail
-try:
-    import zlib
-except ImportError:
-    zlib = None
-
-from test.support import run_unittest
-
 from distutils.core import Distribution
 from distutils.command.bdist_dumb import bdist_dumb
 from distutils.tests import support
@@ -42,7 +33,6 @@ class BuildDumbTestCase(support.TempdirManager,
         sys.argv[:] = self.old_sys_argv[1]
         super(BuildDumbTestCase, self).tearDown()
 
-    @unittest.skipUnless(zlib, "requires zlib")
     def test_simple_built(self):
 
         # let's create a simple package
@@ -83,23 +73,8 @@ class BuildDumbTestCase(support.TempdirManager,
         # now let's check what we have in the zip file
         # XXX to be done
 
-    def test_finalize_options(self):
-        pkg_dir, dist = self.create_dist()
-        os.chdir(pkg_dir)
-        cmd = bdist_dumb(dist)
-        self.assertEquals(cmd.bdist_dir, None)
-        cmd.finalize_options()
-
-        # bdist_dir is initialized to bdist_base/dumb if not set
-        base = cmd.get_finalized_command('bdist').bdist_base
-        self.assertEquals(cmd.bdist_dir, os.path.join(base, 'dumb'))
-
-        # the format is set to a default value depending on the os.name
-        default = cmd.default_format[os.name]
-        self.assertEquals(cmd.format, default)
-
 def test_suite():
     return unittest.makeSuite(BuildDumbTestCase)
 
 if __name__ == '__main__':
-    run_unittest(test_suite())
+    test_support.run_unittest(test_suite())

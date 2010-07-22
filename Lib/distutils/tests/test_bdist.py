@@ -5,8 +5,6 @@ import os
 import tempfile
 import shutil
 
-from test.support import run_unittest
-
 from distutils.core import Distribution
 from distutils.command.bdist import bdist
 from distutils.tests import support
@@ -42,4 +40,4 @@ def test_suite():
     return unittest.makeSuite(BuildTestCase)
 
 if __name__ == '__main__':
-    run_unittest(test_suite())
+    test_support.run_unittest(test_suite())
