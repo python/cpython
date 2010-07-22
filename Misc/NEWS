@@ -22,10 +22,6 @@ Library
   I/O error occurred.  Now an IOError is raised instead.  Patch by chuck
   (Jan Hosang).
 
-- Issue 1712522: urllib.quote supports Unicode String with encoding and errors
-  parameter. The encoding parameter defaults to utf-8 and errors to strict.
-  Patch by Matt Giuca.
-
 - Issue #7646: The fnmatch pattern cache no longer grows without bound.
 
 - Issue #9136: Fix 'dictionary changed size during iteration'

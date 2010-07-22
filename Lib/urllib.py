@@ -1193,7 +1193,7 @@ for i, c in zip(xrange(256), str(bytearray(xrange(256)))):
     _safe_map[c] = c if (i < 128 and c in always_safe) else '%{:02X}'.format(i)
 _safe_quoters = {}
 
-def quote(s, safe='/', encoding=None, errors=None):
+def quote(s, safe='/'):
     """quote('abc def') -> 'abc%20def'
 
     Each part of a URL, e.g. the path info, the query, etc., has a
@@ -1213,30 +1213,12 @@ def quote(s, safe='/', encoding=None, errors=None):
     is reserved, but in typical usage the quote function is being
     called on a path where the existing slash characters are used as
     reserved characters.
-
-    string and safe may be either str or unicode objects.
-
-    The optional encoding and errors parameters specify how to deal with the
-    non-ASCII characters, as accepted by the unicode.encode method.
-    By default, encoding='utf-8' (characters are encoded with UTF-8), and
-    errors='strict' (unsupported characters raise a UnicodeEncodeError).
     """
     # fastpath
     if not s:
         if s is None:
             raise TypeError('None object cannot be quoted')
         return s
-
-    if encoding is not None or isinstance(s, unicode):
-        if encoding is None:
-            encoding = 'utf-8'
-        if errors is None:
-            errors = 'strict'
-        s = s.encode(encoding, errors)
-    if isinstance(safe, unicode):
-        # Normalize 'safe' by converting to str and removing non-ASCII chars
-        safe = safe.encode('ascii', 'ignore')
-
     cachekey = (safe, always_safe)
     try:
         (quoter, safe) = _safe_quoters[cachekey]
@@ -1250,12 +1232,12 @@ def quote(s, safe='/', encoding=None, errors=None):
         return s
     return ''.join(map(quoter, s))
 
-def quote_plus(s, safe='', encoding=None, errors=None):
+def quote_plus(s, safe=''):
     """Quote the query fragment of a URL; replacing ' ' with '+'"""
     if ' ' in s:
-        s = quote(s, safe + ' ', encoding, errors)
+        s = quote(s, safe + ' ')
         return s.replace(' ', '+')
-    return quote(s, safe, encoding, errors)
+    return quote(s, safe)
 
 def urlencode(query, doseq=0):
     """Encode a sequence of two-element tuples or dictionary into a URL query string.
