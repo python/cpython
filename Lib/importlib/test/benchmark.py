@@ -6,6 +6,7 @@ thus has no external changes made to import-related attributes in sys.
 """
 from . import util
 from .source import util as source_util
+import decimal
 import imp
 import importlib
 import os
@@ -58,7 +59,7 @@ def builtin_mod(seconds, repeat):
 
 
 def source_wo_bytecode(seconds, repeat):
-    """Source w/o bytecode"""
+    """Source w/o bytecode: simple"""
     sys.dont_write_bytecode = True
     try:
         name = '__importlib_test_benchmark__'
@@ -72,8 +73,23 @@ def source_wo_bytecode(seconds, repeat):
         sys.dont_write_bytecode = False
 
 
+def decimal_wo_bytecode(seconds, repeat):
+    """Source w/o bytecode: decimal"""
+    name = 'decimal'
+    decimal_bytecode = imp.cache_from_source(decimal.__file__)
+    if os.path.exists(decimal_bytecode):
+        os.unlink(decimal_bytecode)
+    sys.dont_write_bytecode = True
+    try:
+        for result in bench(name, lambda: sys.modules.pop(name), repeat=repeat,
+                            seconds=seconds):
+            yield result
+    finally:
+        sys.dont_write_bytecode = False
+
+
 def source_writing_bytecode(seconds, repeat):
-    """Source writing bytecode"""
+    """Source writing bytecode: simple"""
     assert not sys.dont_write_bytecode
     name = '__importlib_test_benchmark__'
     with source_util.create_modules(name) as mapping:
@@ -85,8 +101,19 @@ def source_writing_bytecode(seconds, repeat):
             yield result
 
 
+def decimal_writing_bytecode(seconds, repeat):
+    """Source writing bytecode: decimal"""
+    assert not sys.dont_write_bytecode
+    name = 'decimal'
+    def cleanup():
+        sys.modules.pop(name)
+        os.unlink(imp.cache_from_source(decimal.__file__))
+    for result in bench(name, cleanup, repeat=repeat, seconds=seconds):
+        yield result
+
+
 def source_using_bytecode(seconds, repeat):
-    """Bytecode w/ source"""
+    """Bytecode w/ source: simple"""
     name = '__importlib_test_benchmark__'
     with source_util.create_modules(name) as mapping:
         py_compile.compile(mapping[name])
@@ -96,16 +123,32 @@ def source_using_bytecode(seconds, repeat):
             yield result
 
 
+def decimal_using_bytecode(seconds, repeat):
+    """Bytecode w/ source: decimal"""
+    name = 'decimal'
+    py_compile.compile(decimal.__file__)
+    for result in bench(name, lambda: sys.modules.pop(name), repeat=repeat,
+                        seconds=seconds):
+        yield result
+
+
 def main(import_):
     __builtins__.__import__ = import_
-    benchmarks = (from_cache, builtin_mod, source_using_bytecode,
-                  source_wo_bytecode, source_writing_bytecode,)
-    print("Measuring imports/second\n")
+    benchmarks = (from_cache, builtin_mod,
+                  source_using_bytecode, source_wo_bytecode,
+                  source_writing_bytecode,
+                  decimal_using_bytecode, decimal_writing_bytecode,
+                  decimal_wo_bytecode,)
+    seconds = 1
+    seconds_plural = 's' if seconds > 1 else ''
+    repeat = 3
+    header = "Measuring imports/second over {} second{}, best out of {}\n"
+    print(header.format(seconds, seconds_plural, repeat))
     for benchmark in benchmarks:
         print(benchmark.__doc__, "[", end=' ')
         sys.stdout.flush()
         results = []
-        for result in benchmark(seconds=1, repeat=3):
+        for result in benchmark(seconds=seconds, repeat=repeat):
             results.append(result)
             print(result, end=' ')
             sys.stdout.flush()
