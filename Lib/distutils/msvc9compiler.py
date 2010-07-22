@@ -19,9 +19,10 @@ import subprocess
 import sys
 import re
 
-from distutils.errors import (DistutilsExecError, DistutilsPlatformError,
-                              CompileError, LibError, LinkError)
-from distutils.ccompiler import CCompiler, gen_lib_options
+from distutils.errors import DistutilsExecError, DistutilsPlatformError, \
+                             CompileError, LibError, LinkError
+from distutils.ccompiler import CCompiler, gen_preprocess_options, \
+                                gen_lib_options
 from distutils import log
 from distutils.util import get_platform
 

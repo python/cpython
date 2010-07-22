@@ -3,7 +3,7 @@ import unittest
 import os
 import shutil
 
-from distutils.file_util import move_file, write_file, copy_file
+from distutils.file_util import move_file
 from distutils import log
 from distutils.tests import support
 
@@ -55,21 +55,6 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
         wanted = ['moving %s -> %s' % (self.source, self.target_dir)]
         self.assertEquals(self._logs, wanted)
 
-    def test_write_file(self):
-        lines = ['a', 'b', 'c']
-        dir = self.mkdtemp()
-        foo = os.path.join(dir, 'foo')
-        write_file(foo, lines)
-        content = [line.strip() for line in open(foo).readlines()]
-        self.assertEquals(content, lines)
-
-    def test_copy_file(self):
-        src_dir = self.mkdtemp()
-        foo = os.path.join(src_dir, 'foo')
-        write_file(foo, 'content')
-        dst_dir = self.mkdtemp()
-        copy_file(foo, dst_dir)
-        self.assertTrue(os.path.exists(os.path.join(dst_dir, 'foo')))
 
 def test_suite():
     return unittest.makeSuite(FileUtilTestCase)

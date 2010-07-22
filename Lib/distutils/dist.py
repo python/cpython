@@ -7,15 +7,13 @@ being built/installed/distributed.
 __revision__ = "$Id$"
 
 import sys, os, re
-from email import message_from_file
 
 try:
     import warnings
 except ImportError:
     warnings = None
 
-from distutils.errors import (DistutilsOptionError, DistutilsArgError,
-                              DistutilsModuleError, DistutilsClassError)
+from distutils.errors import *
 from distutils.fancy_getopt import FancyGetopt, translate_longopt
 from distutils.util import check_environ, strtobool, rfc822_escape
 from distutils import log
@@ -55,9 +53,7 @@ class Distribution:
                       ('quiet', 'q', "run quietly (turns verbosity off)"),
                       ('dry-run', 'n', "don't actually do anything"),
                       ('help', 'h', "show detailed help message"),
-                      ('no-user-cfg', None,
-                       'ignore pydistutils.cfg in your home directory'),
-    ]
+                     ]
 
     # 'common_usage' is a short (2-3 line) string describing the common
     # usage of the setup script.
@@ -264,22 +260,6 @@ Common commands: (see '--help-commands' for more)
                     else:
                         sys.stderr.write(msg + "\n")
 
-        # no-user-cfg is handled before other command line args
-        # because other args override the config files, and this
-        # one is needed before we can load the config files.
-        # If attrs['script_args'] wasn't passed, assume false.
-        #
-        # This also make sure we just look at the global options
-        self.want_user_cfg = True
-
-        if self.script_args is not None:
-            for arg in self.script_args:
-                if not arg.startswith('-'):
-                    break
-                if arg == '--no-user-cfg':
-                    self.want_user_cfg = False
-                    break
-
         self.finalize_options()
 
     def get_option_dict(self, command):
@@ -331,10 +311,7 @@ Common commands: (see '--help-commands' for more)
         Distutils installation directory (ie. where the top-level
         Distutils __inst__.py file lives), a file in the user's home
         directory named .pydistutils.cfg on Unix and pydistutils.cfg
-        on Windows/Mac; and setup.cfg in the current directory.
-
-        The file in the user's home directory can be disabled with the
-        --no-user-cfg option.
+        on Windows/Mac, and setup.cfg in the current directory.
         """
         files = []
         check_environ()
@@ -354,18 +331,14 @@ Common commands: (see '--help-commands' for more)
             user_filename = "pydistutils.cfg"
 
         # And look for the user config file
-        if self.want_user_cfg:
-            user_file = os.path.join(os.path.expanduser('~'), user_filename)
-            if os.path.isfile(user_file):
-                files.append(user_file)
+        user_file = os.path.join(os.path.expanduser('~'), user_filename)
+        if os.path.isfile(user_file):
+            files.append(user_file)
 
         # All platforms support local setup.cfg
         local_file = "setup.cfg"
         if os.path.isfile(local_file):
             files.append(local_file)
-
-        if DEBUG:
-            self.announce("using config files: %s" % ', '.join(files))
 
         return files
 
@@ -1016,80 +989,25 @@ class DistributionMetadata:
                          "provides", "requires", "obsoletes",
                          )
 
-    def __init__(self, path=None):
-        if path is not None:
-            self.read_pkg_file(open(path))
-        else:
-            self.name = None
-            self.version = None
-            self.author = None
-            self.author_email = None
-            self.maintainer = None
-            self.maintainer_email = None
-            self.url = None
-            self.license = None
-            self.description = None
-            self.long_description = None
-            self.keywords = None
-            self.platforms = None
-            self.classifiers = None
-            self.download_url = None
-            # PEP 314
-            self.provides = None
-            self.requires = None
-            self.obsoletes = None
-
-    def read_pkg_file(self, file):
-        """Reads the metadata values from a file object."""
-        msg = message_from_file(file)
-
-        def _read_field(name):
-            value = msg[name]
-            if value == 'UNKNOWN':
-                return None
-            return value
-
-        def _read_list(name):
-            values = msg.get_all(name, None)
-            if values == []:
-                return None
-            return values
-
-        metadata_version = msg['metadata-version']
-        self.name = _read_field('name')
-        self.version = _read_field('version')
-        self.description = _read_field('summary')
-        # we are filling author only.
-        self.author = _read_field('author')
+    def __init__ (self):
+        self.name = None
+        self.version = None
+        self.author = None
+        self.author_email = None
         self.maintainer = None
-        self.author_email = _read_field('author-email')
         self.maintainer_email = None
-        self.url = _read_field('home-page')
-        self.license = _read_field('license')
-
-        if 'download-url' in msg:
-            self.download_url = _read_field('download-url')
-        else:
-            self.download_url = None
-
-        self.long_description = _read_field('description')
-        self.description = _read_field('summary')
-
-        if 'keywords' in msg:
-            self.keywords = _read_field('keywords').split(',')
-
-        self.platforms = _read_list('platform')
-        self.classifiers = _read_list('classifier')
-
-        # PEP 314 - these fields only exist in 1.1
-        if metadata_version == '1.1':
-            self.requires = _read_list('requires')
-            self.provides = _read_list('provides')
-            self.obsoletes = _read_list('obsoletes')
-        else:
-            self.requires = None
-            self.provides = None
-            self.obsoletes = None
+        self.url = None
+        self.license = None
+        self.description = None
+        self.long_description = None
+        self.keywords = None
+        self.platforms = None
+        self.classifiers = None
+        self.download_url = None
+        # PEP 314
+        self.provides = None
+        self.requires = None
+        self.obsoletes = None
 
     def write_pkg_info(self, base_dir):
         """Write the PKG-INFO file into the release tree.

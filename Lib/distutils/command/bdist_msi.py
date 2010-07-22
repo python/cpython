@@ -6,15 +6,15 @@
 """
 Implements the bdist_msi command.
 """
-import sys, os
-from sysconfig import get_python_version, get_platform
 
+import sys, os
 from distutils.core import Command
 from distutils.dir_util import remove_tree
+from distutils.sysconfig import get_python_version
 from distutils.version import StrictVersion
 from distutils.errors import DistutilsOptionError
+from distutils.util import get_platform
 from distutils import log
-
 import msilib
 from msilib import schema, sequence, text
 from msilib import Directory, Feature, Dialog, add_data
@@ -28,6 +28,7 @@ class PyDialog(Dialog):
         default, cancel, bitmap=true)"""
         Dialog.__init__(self, *args)
         ruler = self.h - 36
+        bmwidth = 152*ruler/328
         #if kw.get("bitmap", True):
         #    self.bitmap("Bitmap", 0, 0, bmwidth, ruler, "PythonWin")
         self.line("BottomLine", 0, ruler, self.w, 0)
@@ -418,6 +419,7 @@ class bdist_msi(Command):
         # see "Dialog Style Bits"
         modal = 3      # visible | modal
         modeless = 1   # visible
+        track_disk_space = 32
 
         # UI customization properties
         add_data(db, "Property",

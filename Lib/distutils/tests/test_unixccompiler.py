@@ -1,8 +1,8 @@
 """Tests for distutils.unixccompiler."""
 import sys
 import unittest
-import sysconfig
 
+from distutils import sysconfig
 from distutils.unixccompiler import UnixCCompiler
 
 class UnixCCompilerTestCase(unittest.TestCase):
@@ -113,14 +113,6 @@ class UnixCCompilerTestCase(unittest.TestCase):
                 return 'no'
         sysconfig.get_config_var = gcv
         self.assertEqual(self.cc.rpath_foo(), '-R/foo')
-
-        # AIX C/C++ linker
-        sys.platform = 'aix'
-        def gcv(v):
-            return 'xxx'
-        sysconfig.get_config_var = gcv
-        self.assertEqual(self.cc.rpath_foo(), '-blibpath:/foo')
-
 
 def test_suite():
     return unittest.makeSuite(UnixCCompilerTestCase)

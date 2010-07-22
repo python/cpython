@@ -7,14 +7,14 @@ __revision__ = "$Id$"
 import os
 import string
 import sys
+from types import *
 from glob import glob
 from warnings import warn
 
 from distutils.core import Command
 from distutils import dir_util, dep_util, file_util, archive_util
 from distutils.text_file import TextFile
-from distutils.errors import (DistutilsPlatformError, DistutilsOptionError,
-                              DistutilsTemplateError)
+from distutils.errors import *
 from distutils.filelist import FileList
 from distutils import log
 from distutils.util import convert_path
@@ -76,10 +76,6 @@ class sdist(Command):
         ('medata-check', None,
          "Ensure that all required elements of meta-data "
          "are supplied. Warn if any missing. [default]"),
-        ('owner=', 'u',
-         "Owner name used when creating a tar file [default: current user]"),
-        ('group=', 'g',
-         "Group name used when creating a tar file [default: current group]"),
         ]
 
     boolean_options = ['use-defaults', 'prune',
@@ -119,8 +115,6 @@ class sdist(Command):
 
         self.archive_files = None
         self.metadata_check = 1
-        self.owner = None
-        self.group = None
 
     def finalize_options(self):
         if self.manifest is None:
@@ -424,8 +418,7 @@ class sdist(Command):
             self.formats.append(self.formats.pop(self.formats.index('tar')))
 
         for fmt in self.formats:
-            file = self.make_archive(base_name, fmt, base_dir=base_dir,
-                                     owner=self.owner, group=self.group)
+            file = self.make_archive(base_name, fmt, base_dir=base_dir)
             archive_files.append(file)
             self.distribution.dist_files.append(('sdist', '', file))
 

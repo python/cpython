@@ -1,8 +1,6 @@
 """Tests for distutils.command.bdist_wininst."""
 import unittest
 
-from test.support import run_unittest
-
 from distutils.command.bdist_wininst import bdist_wininst
 from distutils.tests import support
 
@@ -29,4 +27,4 @@ def test_suite():
     return unittest.makeSuite(BuildWinInstTestCase)
 
 if __name__ == '__main__':
-    run_unittest(test_suite())
+    test_support.run_unittest(test_suite())

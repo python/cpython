@@ -7,40 +7,182 @@ one of the other *util.py modules.
 __revision__ = "$Id$"
 
 import sys, os, string, re
-
 from distutils.errors import DistutilsPlatformError
 from distutils.dep_util import newer
-from distutils.spawn import spawn, find_executable
+from distutils.spawn import spawn
 from distutils import log
-from distutils.version import LooseVersion
 from distutils.errors import DistutilsByteCompileError
 
-_sysconfig = __import__('sysconfig')
-_PLATFORM = None
+def get_platform ():
+    """Return a string that identifies the current platform.  This is used
+    mainly to distinguish platform-specific build directories and
+    platform-specific built distributions.  Typically includes the OS name
+    and version and the architecture (as supplied by 'os.uname()'),
+    although the exact information included depends on the OS; eg. for IRIX
+    the architecture isn't particularly important (IRIX only runs on SGI
+    hardware), but for Linux the kernel version isn't particularly
+    important.
 
-def get_platform():
-    """Return a string that identifies the current platform.
+    Examples of returned values:
+       linux-i586
+       linux-alpha (?)
+       solaris-2.6-sun4u
+       irix-5.3
+       irix64-6.2
 
-    By default, will return the value returned by sysconfig.get_platform(),
-    but it can be changed by calling set_platform().
+    Windows will return one of:
+       win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+       win-ia64 (64bit Windows on Itanium)
+       win32 (all others - specifically, sys.platform is returned)
+
+    For other non-POSIX platforms, currently just returns 'sys.platform'.
     """
-    global _PLATFORM
-    if _PLATFORM is None:
-        _PLATFORM = _sysconfig.get_platform()
-    return _PLATFORM
+    if os.name == 'nt':
+        # sniff sys.version for architecture.
+        prefix = " bit ("
+        i = sys.version.find(prefix)
+        if i == -1:
+            return sys.platform
+        j = sys.version.find(")", i)
+        look = sys.version[i+len(prefix):j].lower()
+        if look == 'amd64':
+            return 'win-amd64'
+        if look == 'itanium':
+            return 'win-ia64'
+        return sys.platform
 
-def set_platform(identifier):
-    """Sets the platform string identifier returned by get_platform().
+    if os.name != "posix" or not hasattr(os, 'uname'):
+        # XXX what about the architecture? NT is Intel or Alpha,
+        # Mac OS is M68k or PPC, etc.
+        return sys.platform
 
-    Note that this change doesn't impact the value returned by
-    sysconfig.get_platform() and is local to Distutils
-    """
-    global _PLATFORM
-    _PLATFORM = identifier
+    # Try to distinguish various flavours of Unix
 
-def convert_path(pathname):
-    """Return 'pathname' as a name that will work on the native filesystem.
+    (osname, host, release, version, machine) = os.uname()
 
+    # Convert the OS name to lowercase, remove '/' characters
+    # (to accommodate BSD/OS), and translate spaces (for "Power Macintosh")
+    osname = osname.lower().replace('/', '')
+    machine = machine.replace(' ', '_')
+    machine = machine.replace('/', '-')
+
+    if osname[:5] == "linux":
+        # At least on Linux/Intel, 'machine' is the processor --
+        # i386, etc.
+        # XXX what about Alpha, SPARC, etc?
+        return  "%s-%s" % (osname, machine)
+    elif osname[:5] == "sunos":
+        if release[0] >= "5":           # SunOS 5 == Solaris 2
+            osname = "solaris"
+            release = "%d.%s" % (int(release[0]) - 3, release[2:])
+        # fall through to standard osname-release-machine representation
+    elif osname[:4] == "irix":              # could be "irix64"!
+        return "%s-%s" % (osname, release)
+    elif osname[:3] == "aix":
+        return "%s-%s.%s" % (osname, version, release)
+    elif osname[:6] == "cygwin":
+        osname = "cygwin"
+        rel_re = re.compile (r'[\d.]+', re.ASCII)
+        m = rel_re.match(release)
+        if m:
+            release = m.group()
+    elif osname[:6] == "darwin":
+        #
+        # For our purposes, we'll assume that the system version from
+        # distutils' perspective is what MACOSX_DEPLOYMENT_TARGET is set
+        # to. This makes the compatibility story a bit more sane because the
+        # machine is going to compile and link as if it were
+        # MACOSX_DEPLOYMENT_TARGET.
+        from distutils.sysconfig import get_config_vars
+        cfgvars = get_config_vars()
+
+        macver = os.environ.get('MACOSX_DEPLOYMENT_TARGET')
+        if not macver:
+            macver = cfgvars.get('MACOSX_DEPLOYMENT_TARGET')
+
+        if 1:
+            # Always calculate the release of the running machine,
+            # needed to determine if we can build fat binaries or not.
+
+            macrelease = macver
+            # Get the system version. Reading this plist is a documented
+            # way to get the system version (see the documentation for
+            # the Gestalt Manager)
+            try:
+                f = open('/System/Library/CoreServices/SystemVersion.plist')
+            except IOError:
+                # We're on a plain darwin box, fall back to the default
+                # behaviour.
+                pass
+            else:
+                m = re.search(
+                        r'<key>ProductUserVisibleVersion</key>\s*' +
+                        r'<string>(.*?)</string>', f.read())
+                f.close()
+                if m is not None:
+                    macrelease = '.'.join(m.group(1).split('.')[:2])
+                # else: fall back to the default behaviour
+
+        if not macver:
+            macver = macrelease
+
+        if macver:
+            from distutils.sysconfig import get_config_vars
+            release = macver
+            osname = "macosx"
+
+            if (macrelease + '.') >= '10.4.' and \
+                    '-arch' in get_config_vars().get('CFLAGS', '').strip():
+                # The universal build will build fat binaries, but not on
+                # systems before 10.4
+                #
+                # Try to detect 4-way universal builds, those have machine-type
+                # 'universal' instead of 'fat'.
+
+                machine = 'fat'
+                cflags = get_config_vars().get('CFLAGS')
+
+                archs = re.findall('-arch\s+(\S+)', cflags)
+                archs = tuple(sorted(set(archs)))
+
+                if len(archs) == 1:
+                    machine = archs[0]
+                elif archs == ('i386', 'ppc'):
+                    machine = 'fat'
+                elif archs == ('i386', 'x86_64'):
+                    machine = 'intel'
+                elif archs == ('i386', 'ppc', 'x86_64'):
+                    machine = 'fat3'
+                elif archs == ('ppc64', 'x86_64'):
+                    machine = 'fat64'
+                elif archs == ('i386', 'ppc', 'ppc64', 'x86_64'):
+                    machine = 'universal'
+                else:
+                    raise ValueError(
+                       "Don't know machine value for archs=%r"%(archs,))
+
+            elif machine == 'i386':
+                # On OSX the machine type returned by uname is always the
+                # 32-bit variant, even if the executable architecture is
+                # the 64-bit variant
+                if sys.maxsize >= 2**32:
+                    machine = 'x86_64'
+
+            elif machine in ('PowerPC', 'Power_Macintosh'):
+                # Pick a sane name for the PPC architecture.
+                machine = 'ppc'
+
+                # See 'i386' case
+                if sys.maxsize >= 2**32:
+                    machine = 'ppc64'
+
+    return "%s-%s-%s" % (osname, release, machine)
+
+# get_platform ()
+
+
+def convert_path (pathname):
+    """Return 'pathname' as a name that will work on the native filesystem,
     i.e. split it on '/' and put it back together again using the current
     directory separator.  Needed because filenames in the setup script are
     always supplied in Unix style, and have to be converted to the local
@@ -64,12 +206,12 @@ def convert_path(pathname):
         return os.curdir
     return os.path.join(*paths)
 
+# convert_path ()
 
-def change_root(new_root, pathname):
-    """Return 'pathname' with 'new_root' prepended.
 
-    If 'pathname' is relative, this is equivalent to
-    "os.path.join(new_root,pathname)".
+def change_root (new_root, pathname):
+    """Return 'pathname' with 'new_root' prepended.  If 'pathname' is
+    relative, this is equivalent to "os.path.join(new_root,pathname)".
     Otherwise, it requires making 'pathname' relative and then joining the
     two, which is tricky on DOS/Windows and Mac OS.
     """
@@ -91,16 +233,23 @@ def change_root(new_root, pathname):
             path = path[1:]
         return os.path.join(new_root, path)
 
+    elif os.name == 'mac':
+        if not os.path.isabs(pathname):
+            return os.path.join(new_root, pathname)
+        else:
+            # Chop off volume name from start of path
+            elements = pathname.split(":", 1)
+            pathname = ":" + elements[1]
+            return os.path.join(new_root, pathname)
+
     else:
-        raise DistutilsPlatformError("nothing known about "
-                                     "platform '%s'" % os.name)
+        raise DistutilsPlatformError("nothing known about platform '%s'" % os.name)
+
 
 _environ_checked = 0
-
-def check_environ():
-    """Ensure that 'os.environ' has all the environment variables needed.
-
-    We guarantee that users can use in config files, command-line options,
+def check_environ ():
+    """Ensure that 'os.environ' has all the environment variables we
+    guarantee that users can use in config files, command-line options,
     etc.  Currently this includes:
       HOME - user's home directory (Unix only)
       PLAT - description of the current platform, including hardware
@@ -115,14 +264,14 @@ def check_environ():
         os.environ['HOME'] = pwd.getpwuid(os.getuid())[5]
 
     if 'PLAT' not in os.environ:
-        os.environ['PLAT'] = _sysconfig.get_platform()
+        os.environ['PLAT'] = get_platform()
 
     _environ_checked = 1
 
-def subst_vars(s, local_vars):
-    """Perform shell/Perl-style variable substitution on 'string'.
 
-    Every occurrence of '$' followed by a name is considered a variable, and
+def subst_vars (s, local_vars):
+    """Perform shell/Perl-style variable substitution on 'string'.  Every
+    occurrence of '$' followed by a name is considered a variable, and
     variable is substituted by the value found in the 'local_vars'
     dictionary, or in 'os.environ' if it's not in 'local_vars'.
     'os.environ' is first checked/augmented to guarantee that it contains
@@ -142,11 +291,12 @@ def subst_vars(s, local_vars):
     except KeyError as var:
         raise ValueError("invalid variable '$%s'" % var)
 
-def grok_environment_error(exc, prefix="error: "):
-    """Generate a useful error message from an EnvironmentError.
+# subst_vars ()
 
-    This will generate an IOError or an OSError exception object.
-    Handles Python 1.5.1 and 1.5.2 styles, and
+
+def grok_environment_error (exc, prefix="error: "):
+    """Generate a useful error message from an EnvironmentError (IOError or
+    OSError) exception object.  Handles Python 1.5.1 and 1.5.2 styles, and
     does what it can to deal with exception objects that don't have a
     filename (which happens when the error is due to a two-file operation,
     such as 'rename()' or 'link()'.  Returns the error message as a string
@@ -165,20 +315,18 @@ def grok_environment_error(exc, prefix="error: "):
 
     return error
 
+
 # Needed by 'split_quoted()'
 _wordchars_re = _squote_re = _dquote_re = None
-
 def _init_regex():
     global _wordchars_re, _squote_re, _dquote_re
     _wordchars_re = re.compile(r'[^\\\'\"%s ]*' % string.whitespace)
     _squote_re = re.compile(r"'(?:[^'\\]|\\.)*'")
     _dquote_re = re.compile(r'"(?:[^"\\]|\\.)*"')
 
-def split_quoted(s):
+def split_quoted (s):
     """Split a string up according to Unix shell-like rules for quotes and
-    backslashes.
-
-    In short: words are delimited by spaces, as long as those
+    backslashes.  In short: words are delimited by spaces, as long as those
     spaces are not escaped by a backslash, or inside a quoted string.
     Single and double quotes are equivalent, and the quote characters can
     be backslash-escaped.  The backslash is stripped from any two-character
@@ -186,6 +334,7 @@ def split_quoted(s):
     characters are stripped from any quoted string.  Returns a list of
     words.
     """
+
     # This is a nice algorithm for splitting up a single string, since it
     # doesn't require character-by-character examination.  It was a little
     # bit of a brain-bender to get it working right, though...
@@ -233,12 +382,13 @@ def split_quoted(s):
 
     return words
 
+# split_quoted ()
 
-def execute(func, args, msg=None, verbose=0, dry_run=0):
-    """Perform some action that affects the outside world.
 
-    eg. by writing to the filesystem).  Such actions are special because
-    they are disabled by the 'dry_run' flag.  This method takes care of all
+def execute (func, args, msg=None, verbose=0, dry_run=0):
+    """Perform some action that affects the outside world (eg.  by
+    writing to the filesystem).  Such actions are special because they
+    are disabled by the 'dry_run' flag.  This method takes care of all
     that bureaucracy for you; all you have to do is supply the
     function to call and an argument tuple for it (to embody the
     "external action" being performed), and an optional message to
@@ -254,7 +404,7 @@ def execute(func, args, msg=None, verbose=0, dry_run=0):
         func(*args)
 
 
-def strtobool(val):
+def strtobool (val):
     """Convert a string representation of truth to true (1) or false (0).
 
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
@@ -270,13 +420,15 @@ def strtobool(val):
         raise ValueError("invalid truth value %r" % (val,))
 
 
-def byte_compile(py_files, optimize=0, force=0, prefix=None, base_dir=None,
-                  verbose=1, dry_run=0, direct=None):
+def byte_compile (py_files,
+                  optimize=0, force=0,
+                  prefix=None, base_dir=None,
+                  verbose=1, dry_run=0,
+                  direct=None):
     """Byte-compile a collection of Python source files to either .pyc
-    or .pyo files in the same directory.
-
-    'py_files' is a list of files to compile; any files that don't end in
-    ".py" are silently skipped. 'optimize' must be one of the following:
+    or .pyo files in the same directory.  'py_files' is a list of files
+    to compile; any files that don't end in ".py" are silently skipped.
+    'optimize' must be one of the following:
       0 - don't optimize (generate .pyc)
       1 - normal optimization (like "python -O")
       2 - extra optimization (like "python -OO")
@@ -392,8 +544,8 @@ byte_compile(files, optimize=%r, force=%r,
             dfile = file
             if prefix:
                 if file[:len(prefix)] != prefix:
-                    raise ValueError("invalid prefix: filename %r doesn't "
-                                     "start with %r" % (file, prefix))
+                    raise ValueError("invalid prefix: filename %r doesn't start with %r"
+                           % (file, prefix))
                 dfile = dfile[len(prefix):]
             if base_dir:
                 dfile = os.path.join(base_dir, dfile)
@@ -408,64 +560,15 @@ byte_compile(files, optimize=%r, force=%r,
                     log.debug("skipping byte-compilation of %s to %s",
                               file, cfile_base)
 
+# byte_compile ()
 
-def rfc822_escape(header):
+def rfc822_escape (header):
     """Return a version of the string escaped for inclusion in an
     RFC-822 header, by ensuring there are 8 spaces space after each newline.
     """
     lines = header.split('\n')
     sep = '\n' + 8 * ' '
     return sep.join(lines)
-
-_RE_VERSION = re.compile(b'(\d+\.\d+(\.\d+)*)')
-_MAC_OS_X_LD_VERSION = re.compile(b'^@\(#\)PROGRAM:ld  PROJECT:ld64-((\d+)(\.\d+)*)')
-
-def _find_ld_version():
-    """Finds the ld version. The version scheme differs under Mac OSX."""
-    if sys.platform == 'darwin':
-        return _find_exe_version('ld -v', _MAC_OS_X_LD_VERSION)
-    else:
-        return _find_exe_version('ld -v')
-
-def _find_exe_version(cmd, pattern=_RE_VERSION):
-    """Find the version of an executable by running `cmd` in the shell.
-
-    `pattern` is a compiled regular expression. If not provided, default
-    to _RE_VERSION. If the command is not found, or the output does not
-    match the mattern, returns None.
-    """
-    from subprocess import Popen, PIPE
-    executable = cmd.split()[0]
-    if find_executable(executable) is None:
-        return None
-    pipe = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-    try:
-        stdout, stderr = pipe.stdout.read(), pipe.stderr.read()
-    finally:
-        pipe.stdout.close()
-        pipe.stderr.close()
-    # some commands like ld under MacOS X, will give the
-    # output in the stderr, rather than stdout.
-    if stdout != b'':
-        out_string = stdout
-    else:
-        out_string = stderr
-
-    result = pattern.search(out_string)
-    if result is None:
-        return None
-    return LooseVersion(result.group(1).decode())
-
-def get_compiler_versions():
-    """Returns a tuple providing the versions of gcc, ld and dllwrap
-
-    For each command, if a command is not found, None is returned.
-    Otherwise a LooseVersion instance is returned.
-    """
-    gcc = _find_exe_version('gcc -dumpversion')
-    ld = _find_ld_version()
-    dllwrap = _find_exe_version('dllwrap --version')
-    return gcc, ld, dllwrap
 
 # 2to3 support
 

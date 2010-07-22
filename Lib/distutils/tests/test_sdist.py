@@ -3,22 +3,6 @@ import os
 import unittest
 import shutil
 import zipfile
-import tarfile
-
-# zlib is not used here, but if it's not available
-# the tests that use zipfile may fail
-try:
-    import zlib
-except ImportError:
-    zlib = None
-
-try:
-    import grp
-    import pwd
-    UID_GID_SUPPORT = True
-except ImportError:
-    UID_GID_SUPPORT = False
-
 from os.path import join
 import sys
 import tempfile
@@ -95,7 +79,6 @@ class SDistTestCase(PyPIRCCommandTestCase):
         cmd.warn = _warn
         return dist, cmd
 
-    @unittest.skipUnless(zlib, "requires zlib")
     def test_prune_file_list(self):
         # this test creates a package with some vcs dirs in it
         # and launch sdist to make sure they get pruned
@@ -137,7 +120,6 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # making sure everything has been pruned correctly
         self.assertEquals(len(content), 4)
 
-    @unittest.skipUnless(zlib, "requires zlib")
     def test_make_distribution(self):
 
         # check if tar and gzip are installed
@@ -174,7 +156,6 @@ class SDistTestCase(PyPIRCCommandTestCase):
         self.assertEquals(result,
                 ['fake-1.0.tar', 'fake-1.0.tar.gz'])
 
-    @unittest.skipUnless(zlib, "requires zlib")
     def test_add_defaults(self):
 
         # http://bugs.python.org/issue2279
@@ -236,7 +217,6 @@ class SDistTestCase(PyPIRCCommandTestCase):
         manifest = open(join(self.tmp_dir, 'MANIFEST')).read()
         self.assertEquals(manifest, MANIFEST % {'sep': os.sep})
 
-    @unittest.skipUnless(zlib, "requires zlib")
     def test_metadata_check_option(self):
         # testing the `medata-check` option
         dist, cmd = self.get_cmd(metadata={})
@@ -296,57 +276,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         cmd.formats = 'supazipa'
         self.assertRaises(DistutilsOptionError, cmd.finalize_options)
 
-    @unittest.skipUnless(zlib, "requires zlib")
-    @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
-    def test_make_distribution_owner_group(self):
 
-        # check if tar and gzip are installed
-        if (find_executable('tar') is None or
-            find_executable('gzip') is None):
-            return
-
-        # now building a sdist
-        dist, cmd = self.get_cmd()
-
-        # creating a gztar and specifying the owner+group
-        cmd.formats = ['gztar']
-        cmd.owner = pwd.getpwuid(0)[0]
-        cmd.group = grp.getgrgid(0)[0]
-        cmd.ensure_finalized()
-        cmd.run()
-
-        # making sure we have the good rights
-        archive_name = join(self.tmp_dir, 'dist', 'fake-1.0.tar.gz')
-        archive = tarfile.open(archive_name)
-        try:
-            for member in archive.getmembers():
-                self.assertEquals(member.uid, 0)
-                self.assertEquals(member.gid, 0)
-        finally:
-            archive.close()
-
-        # building a sdist again
-        dist, cmd = self.get_cmd()
-
-        # creating a gztar
-        cmd.formats = ['gztar']
-        cmd.ensure_finalized()
-        cmd.run()
-
-        # making sure we have the good rights
-        archive_name = join(self.tmp_dir, 'dist', 'fake-1.0.tar.gz')
-        archive = tarfile.open(archive_name)
-
-        # note that we are not testing the group ownership here
-        # because, depending on the platforms and the container
-        # rights (see #7408)
-        try:
-            for member in archive.getmembers():
-                self.assertEquals(member.uid, os.getuid())
-        finally:
-            archive.close()
-
-    @unittest.skipUnless(zlib, "requires zlib")
     def test_get_file_list(self):
         # make sure MANIFEST is recalculated
         dist, cmd = self.get_cmd()
