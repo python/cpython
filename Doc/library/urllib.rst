@@ -202,39 +202,23 @@ High-level interface
 Utility functions
 -----------------
 
-.. function:: quote(string[, safe[, encoding[, errors]]])
+.. function:: quote(string[, safe])
 
    Replace special characters in *string* using the ``%xx`` escape. Letters,
    digits, and the characters ``'_.-'`` are never quoted. By default, this
-   function is intended for quoting the path section of the URL. The optional
+   function is intended for quoting the path section of the URL.The optional
    *safe* parameter specifies additional characters that should not be quoted
    --- its default value is ``'/'``.
 
-   *string* may be either a :class:`str` or a :class:`unicode`.
-
-   The optional *encoding* and *errors* parameters specify how to deal with
-   non-ASCII characters, as accepted by the :meth:`unicode.encode` method.
-   *encoding* defaults to ``'utf-8'``.
-   *errors* defaults to ``'strict'``, meaning unsupported characters raise a
-   :class:`UnicodeEncodeError`.
-   Non-Unicode strings are not encoded by default, and all bytes are allowed.
-
    Example: ``quote('/~connolly/')`` yields ``'/%7econnolly/'``.
 
-   Example: ``quote(u'/El Niño/')`` yields ``'/El%20Ni%C3%B1o/'``.
 
-   .. versionchanged:: 2.7.1
-      Added *encoding* and *errors* parameters.
-
-
-.. function:: quote_plus(string[, safe[, encoding[, errors]]])
+.. function:: quote_plus(string[, safe])
 
    Like :func:`quote`, but also replaces spaces by plus signs, as required for
    quoting HTML form values when building up a query string to go into a URL.
    Plus signs in the original string are escaped unless they are included in
    *safe*.  It also does not have *safe* default to ``'/'``.
-
-   Example: ``quote_plus(u'/El Niño/')`` yields ``'%2FEl+Ni%C3%B1o%2F'``.
 
 
 .. function:: unquote(string)
