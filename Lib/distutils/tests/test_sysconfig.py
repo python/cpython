@@ -93,6 +93,15 @@ class SysconfigTestCase(support.EnvironGuard,
                               'OTHER': 'foo'})
 
 
+    def test_sysconfig_module(self):
+        import sysconfig as global_sysconfig
+        self.assertEquals(global_sysconfig.get_config_var('CFLAGS'), sysconfig.get_config_var('CFLAGS'))
+        self.assertEquals(global_sysconfig.get_config_var('LDFLAGS'), sysconfig.get_config_var('LDFLAGS'))
+        self.assertEquals(global_sysconfig.get_config_var('LDSHARED'),sysconfig.get_config_var('LDSHARED'))
+        self.assertEquals(global_sysconfig.get_config_var('CC'), sysconfig.get_config_var('CC'))
+
+
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(SysconfigTestCase))
