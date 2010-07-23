@@ -473,6 +473,8 @@ C-API
 Library
 -------
 
+- Issue #7895: platform.mac_ver() no longer crashes after calling os.fork()
+
 - Issue #9323: Fixed a bug in trace.py that resulted in loosing the
   name of the script being traced.  Patch by Eli Bendersky.
 
