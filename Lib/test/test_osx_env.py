@@ -8,7 +8,7 @@ import sys
 import unittest
 
 class OSXEnvironmentVariableTestCase(unittest.TestCase):
-    def _check_sys(self, ev, cond, sv, val = '/some/path/to/python'):
+    def _check_sys(self, ev, cond, sv, val = sys.executable + 'dummy'):
         with EnvironmentVarGuard() as evg:
             subpc = [str(sys.executable), '-c',
                 'import sys; sys.exit(2 if "%s" %s %s else 3)' % (val, cond, sv)]
