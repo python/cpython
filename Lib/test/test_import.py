@@ -1,6 +1,8 @@
 import builtins
 import errno
 import imp
+from importlib.test.import_ import test_relative_imports
+from importlib.test.import_ import util as importlib_util
 import marshal
 import os
 import py_compile
@@ -633,10 +635,21 @@ class PycacheTests(unittest.TestCase):
                          os.path.join(os.curdir, foo_pyc))
 
 
+class RelativeImportTests(test_relative_imports.RelativeImports):
+
+    def setUp(self):
+        self._importlib_util_flag = importlib_util.using___import__
+        importlib_util.using___import__ = True
+
+    def tearDown(self):
+        importlib_util.using___import__ = self._importlib_util_flag
+
+
 def test_main(verbose=None):
     run_unittest(ImportTests, PycacheTests,
                  PycRewritingTests, PathsTests, RelativeImportTests,
-                 OverridingImportBuiltinTests)
+                 OverridingImportBuiltinTests,
+                 RelativeImportTests)
 
 
 if __name__ == '__main__':
