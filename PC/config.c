@@ -43,7 +43,7 @@ extern PyObject* PyInit__sre(void);
 extern PyObject* PyInit_parser(void);
 extern PyObject* PyInit_winreg(void);
 extern PyObject* PyInit__struct(void);
-extern PyObject* PyInit_datetime(void);
+extern PyObject* PyInit__datetime(void);
 extern PyObject* PyInit__functools(void);
 extern PyObject* PyInit__json(void);
 extern PyObject* PyInit_zlib(void);
@@ -116,7 +116,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"parser", PyInit_parser},
     {"winreg", PyInit_winreg},
     {"_struct", PyInit__struct},
-    {"datetime", PyInit_datetime},
+    {"_datetime", PyInit__datetime},
     {"_functools", PyInit__functools},
     {"_json", PyInit__json},
 

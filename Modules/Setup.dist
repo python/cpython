@@ -170,7 +170,7 @@ _symtable symtablemodule.c
 #atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator
-#datetime datetimemodule.c	# date/time type
+#_datetime _datetimemodule.c	# datetime accelerator
 #_bisect _bisectmodule.c	# Bisection algorithms
 #_heapq _heapqmodule.c	# Heap queue algorithm
 

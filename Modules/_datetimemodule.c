@@ -25,7 +25,7 @@
  * final result fits in a C int (this can be an issue on 64-bit boxes).
  */
 #if SIZEOF_INT < 4
-#       error "datetime.c requires that C int have at least 32 bits"
+#       error "_datetime.c requires that C int have at least 32 bits"
 #endif
 
 #define MINYEAR 1
@@ -5086,7 +5086,7 @@ static PyDateTime_CAPI CAPI = {
 
 static struct PyModuleDef datetimemodule = {
     PyModuleDef_HEAD_INIT,
-    "datetime",
+    "_datetime",
     "Fast implementation of the datetime type.",
     -1,
     module_methods,
@@ -5097,7 +5097,7 @@ static struct PyModuleDef datetimemodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_datetime(void)
+PyInit__datetime(void)
 {
     PyObject *m;        /* a module object */
     PyObject *d;        /* its dict */
