@@ -414,11 +414,11 @@ class ThreadTests(BaseTestCase):
         e.isSet()
         threading.activeCount()
 
-def test_repr_daemon(self):
-    t = threading.Thread()
-    self.assertFalse('daemon' in repr(t))
-    t.daemon = True
-    self.assertTrue('daemon' in repr(t))
+    def test_repr_daemon(self):
+        t = threading.Thread()
+        self.assertFalse('daemon' in repr(t))
+        t.daemon = True
+        self.assertTrue('daemon' in repr(t))
 
 
 class ThreadJoinOnShutdown(BaseTestCase):
