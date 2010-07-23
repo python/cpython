@@ -548,6 +548,20 @@ class _SuppressCoreFiles(object):
         except (ImportError, ValueError, resource.error):
             pass
 
+        if sys.platform == 'darwin':
+            # Check if the 'Crash Reporter' on OSX was configured
+            # in 'Developer' mode and warn that it will get triggered
+            # when it is.
+            #
+            # This assumes that this context manager is used in tests
+            # that might trigger the next manager.
+            value = subprocess.Popen(['/usr/bin/defaults', 'read',
+                    'com.apple.CrashReporter', 'DialogType'],
+                    stdout=subprocess.PIPE).communicate()[0]
+            if value.strip() == b'developer':
+                print "this tests triggers the Crash Reporter, that is intentional"
+                sys.stdout.flush()
+
     def __exit__(self, *args):
         """Return core file behavior to default."""
         if self.old_limit is None:
