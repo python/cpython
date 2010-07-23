@@ -81,6 +81,8 @@ C-API
 Library
 -------
 
+- Issue #7895: platform.mac_ver() no longer crashes after calling os.fork()
+
 - Issue #5395: array.fromfile() would raise a spurious EOFError when an
   I/O error occurred.  Now an IOError is raised instead.  Patch by chuck
   (Jan Hosang).

@@ -120,6 +120,25 @@ class PlatformTest(unittest.TestCase):
             else:
                 self.assertEquals(res[2], 'PowerPC')
 
+
+    if sys.platform == 'darwin':
+        def test_mac_ver_with_fork(self):
+            # Issue7895: platform.mac_ver() crashes when using fork without exec
+            #
+            # This test checks that the fix for that issue works.
+            #
+            pid = os.fork()
+            if pid == 0:
+                # child
+                info = platform.mac_ver()
+                os._exit(0)
+
+            else:
+                # parent
+                cpid, sts = os.waitpid(pid, 0)
+                self.assertEquals(cpid, pid)
+                self.assertEquals(sts, 0)
+
     def test_dist(self):
         res = platform.dist()
 
