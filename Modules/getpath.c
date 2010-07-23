@@ -552,7 +552,7 @@ calculate_path(void)
         if (!ismodule(argv0_path)) {
                 /* We are in the build directory so use the name of the
                    executable - we know that the absolute path is passed */
-                wcsncpy(argv0_path, prog, MAXPATHLEN);
+                wcsncpy(argv0_path, progpath, MAXPATHLEN);
         }
         else {
                 /* Use the location of the library as the progpath */
