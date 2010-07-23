@@ -97,7 +97,8 @@ class ThreadTests(BaseTestCase):
             self.assertTrue(not t.is_alive())
             self.assertNotEqual(t.ident, 0)
             self.assertFalse(t.ident is None)
-            self.assertTrue(re.match('<TestThread\(.*, \w+ -?\d+\)>', repr(t)))
+            self.assertTrue(re.match('<TestThread\(.*, stopped -?\d+\)>',
+                                     repr(t)))
         if verbose:
             print('all tasks done')
         self.assertEqual(numrunning.get(), 0)
@@ -412,6 +413,12 @@ class ThreadTests(BaseTestCase):
         e = threading.Event()
         e.isSet()
         threading.activeCount()
+
+def test_repr_daemon(self):
+    t = threading.Thread()
+    self.assertFalse('daemon' in repr(t))
+    t.daemon = True
+    self.assertTrue('daemon' in repr(t))
 
 
 class ThreadJoinOnShutdown(BaseTestCase):
