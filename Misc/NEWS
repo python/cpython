@@ -54,6 +54,8 @@ Build
 
 - Issue #9280: Make sharedinstall depend on sharedmods.
 
+- Issue #9275: The OSX installer once again installs links to binaries in ``/usr/local/bin``
+
 Tests
 -----
 
