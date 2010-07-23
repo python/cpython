@@ -275,7 +275,7 @@ def pkg_recipes():
                 is not necessary to use Python.
                 """,
             required=False,
-            selected='unselected',
+            selected='selected',
         ),
         dict(
             name="PythonDocumentation",
