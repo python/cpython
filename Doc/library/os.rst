@@ -1049,10 +1049,10 @@ Files and Directories
    Availability: Unix.
 
 
-.. function:: listdir(path)
+.. function:: listdir([path])
 
    Return a list containing the names of the entries in the directory given by
-   *path*.  The list is in arbitrary order.  It does not include the special
+   *path* (default: '.').  The list is in arbitrary order.  It does not include the special
    entries ``'.'`` and ``'..'`` even if they are present in the directory.
 
    This function can be called with a bytes or string argument, and returns
@@ -1060,6 +1060,8 @@ Files and Directories
 
    Availability: Unix, Windows.
 
+   .. versionchanged:: 3.2
+      The *path* parameter became optional.
 
 .. function:: lstat(path)
 
