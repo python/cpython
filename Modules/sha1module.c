@@ -127,50 +127,50 @@ static void sha1_compress(struct sha1_state *sha1, unsigned char *buf)
 
     /* compress */
     /* round one */
-    #define FF0(a,b,c,d,e,i) e = (ROLc(a, 5) + F0(b,c,d) + e + W[i] + 0x5a827999UL); b = ROLc(b, 30);
-    #define FF1(a,b,c,d,e,i) e = (ROLc(a, 5) + F1(b,c,d) + e + W[i] + 0x6ed9eba1UL); b = ROLc(b, 30);
-    #define FF2(a,b,c,d,e,i) e = (ROLc(a, 5) + F2(b,c,d) + e + W[i] + 0x8f1bbcdcUL); b = ROLc(b, 30);
-    #define FF3(a,b,c,d,e,i) e = (ROLc(a, 5) + F3(b,c,d) + e + W[i] + 0xca62c1d6UL); b = ROLc(b, 30);
+    #define FF_0(a,b,c,d,e,i) e = (ROLc(a, 5) + F0(b,c,d) + e + W[i] + 0x5a827999UL); b = ROLc(b, 30);
+    #define FF_1(a,b,c,d,e,i) e = (ROLc(a, 5) + F1(b,c,d) + e + W[i] + 0x6ed9eba1UL); b = ROLc(b, 30);
+    #define FF_2(a,b,c,d,e,i) e = (ROLc(a, 5) + F2(b,c,d) + e + W[i] + 0x8f1bbcdcUL); b = ROLc(b, 30);
+    #define FF_3(a,b,c,d,e,i) e = (ROLc(a, 5) + F3(b,c,d) + e + W[i] + 0xca62c1d6UL); b = ROLc(b, 30);
 
     for (i = 0; i < 20; ) {
-       FF0(a,b,c,d,e,i++);
-       FF0(e,a,b,c,d,i++);
-       FF0(d,e,a,b,c,i++);
-       FF0(c,d,e,a,b,i++);
-       FF0(b,c,d,e,a,i++);
+       FF_0(a,b,c,d,e,i++);
+       FF_0(e,a,b,c,d,i++);
+       FF_0(d,e,a,b,c,i++);
+       FF_0(c,d,e,a,b,i++);
+       FF_0(b,c,d,e,a,i++);
     }
 
     /* round two */
     for (; i < 40; )  {
-       FF1(a,b,c,d,e,i++);
-       FF1(e,a,b,c,d,i++);
-       FF1(d,e,a,b,c,i++);
-       FF1(c,d,e,a,b,i++);
-       FF1(b,c,d,e,a,i++);
+       FF_1(a,b,c,d,e,i++);
+       FF_1(e,a,b,c,d,i++);
+       FF_1(d,e,a,b,c,i++);
+       FF_1(c,d,e,a,b,i++);
+       FF_1(b,c,d,e,a,i++);
     }
 
     /* round three */
     for (; i < 60; )  {
-       FF2(a,b,c,d,e,i++);
-       FF2(e,a,b,c,d,i++);
-       FF2(d,e,a,b,c,i++);
-       FF2(c,d,e,a,b,i++);
-       FF2(b,c,d,e,a,i++);
+       FF_2(a,b,c,d,e,i++);
+       FF_2(e,a,b,c,d,i++);
+       FF_2(d,e,a,b,c,i++);
+       FF_2(c,d,e,a,b,i++);
+       FF_2(b,c,d,e,a,i++);
     }
 
     /* round four */
     for (; i < 80; )  {
-       FF3(a,b,c,d,e,i++);
-       FF3(e,a,b,c,d,i++);
-       FF3(d,e,a,b,c,i++);
-       FF3(c,d,e,a,b,i++);
-       FF3(b,c,d,e,a,i++);
+       FF_3(a,b,c,d,e,i++);
+       FF_3(e,a,b,c,d,i++);
+       FF_3(d,e,a,b,c,i++);
+       FF_3(c,d,e,a,b,i++);
+       FF_3(b,c,d,e,a,i++);
     }
 
-    #undef FF0
-    #undef FF1
-    #undef FF2
-    #undef FF3
+    #undef FF_0
+    #undef FF_1
+    #undef FF_2
+    #undef FF_3
 
     /* store */
     sha1->state[0] = sha1->state[0] + a;
