@@ -635,7 +635,7 @@ class PycacheTests(unittest.TestCase):
                          os.path.join(os.curdir, foo_pyc))
 
 
-class RelativeImportTests(test_relative_imports.RelativeImports):
+class RelativeImportFromImportlibTests(test_relative_imports.RelativeImports):
 
     def setUp(self):
         self._importlib_util_flag = importlib_util.using___import__
@@ -649,7 +649,7 @@ def test_main(verbose=None):
     run_unittest(ImportTests, PycacheTests,
                  PycRewritingTests, PathsTests, RelativeImportTests,
                  OverridingImportBuiltinTests,
-                 RelativeImportTests)
+                 RelativeImportFromImportlibTests)
 
 
 if __name__ == '__main__':
