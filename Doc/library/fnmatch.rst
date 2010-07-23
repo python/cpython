@@ -70,6 +70,8 @@ patterns.
 
    Return the shell-style *pattern* converted to a regular expression.
 
+   Be aware there is no way to quote meta-characters.
+
    Example:
 
       >>> import fnmatch, re
