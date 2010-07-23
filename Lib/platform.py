@@ -724,27 +724,19 @@ def _bcd2str(bcd):
 
     return hex(bcd)[2:]
 
-def mac_ver(release='',versioninfo=('','',''),machine=''):
-
-    """ Get MacOS version information and return it as tuple (release,
-        versioninfo, machine) with versioninfo being a tuple (version,
-        dev_stage, non_release_version).
-
-        Entries which cannot be determined are set to the paramter values
-        which default to ''. All tuple entries are strings.
-
+def _mac_ver_gestalt():
+    """
         Thanks to Mark R. Levinson for mailing documentation links and
         code examples for this function. Documentation for the
         gestalt() API is available online at:
 
            http://www.rgaros.nl/gestalt/
-
     """
     # Check whether the version info module is available
     try:
         import _gestalt
     except ImportError:
-        return release,versioninfo,machine
+        return None
     # Get the infos
     sysv, sysa = _mac_ver_lookup(('sysv','sysa'))
     # Decode the infos
@@ -768,6 +760,53 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
         machine = {0x1: '68k',
                    0x2: 'PowerPC',
                    0xa: 'i386'}.get(sysa,'')
+
+    return release,versioninfo,machine
+
+def _mac_ver_xml():
+    fn = '/System/Library/CoreServices/SystemVersion.plist'
+    if not os.path.exists(fn):
+        return None
+
+    try:
+        import plistlib
+    except ImportError:
+        return None
+
+    pl = plistlib.readPlist(fn)
+    release = pl['ProductVersion']
+    versioninfo=('', '', '')
+    machine = os.uname()[4]
+    if machine == 'ppc':
+        # for compatibility with the gestalt based code
+        machine = 'PowerPC'
+
+    return release,versioninfo,machine
+
+
+def mac_ver(release='',versioninfo=('','',''),machine=''):
+
+    """ Get MacOS version information and return it as tuple (release,
+        versioninfo, machine) with versioninfo being a tuple (version,
+        dev_stage, non_release_version).
+
+        Entries which cannot be determined are set to the paramter values
+        which default to ''. All tuple entries are strings.
+    """
+
+    # First try reading the information from an XML file which should
+    # always be present
+    info = _mac_ver_xml()
+    if info is not None:
+        return info
+
+    # If that doesn't work for some reason fall back to reading the
+    # information using gestalt calls.
+    info = _mac_ver_gestalt()
+    if info is not None:
+        return info
+
+    # If that also doesn't work return the default values
     return release,versioninfo,machine
 
 def _java_getprop(name,default):
