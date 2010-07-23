@@ -347,7 +347,8 @@ by the local file.
 .. pdbcommand:: l(ist) [first[, last]]
 
    List source code for the current file.  Without arguments, list 11 lines
-   around the current line or continue the previous listing.  With one argument,
+   around the current line or continue the previous listing.  With ``.`` as
+   argument, list 11 lines around the current line.  With one argument,
    list 11 lines around at that line.  With two arguments, list the given range;
    if the second argument is less than the first, it is interpreted as a count.
 
