@@ -521,6 +521,20 @@ class ProcessTestCase(unittest.TestCase):
             """Try to prevent core files from being created.
             Returns previous ulimit if successful, else None.
             """
+            if sys.platform == 'darwin':
+                # Check if the 'Crash Reporter' on OSX was configured
+                # in 'Developer' mode and warn that it will get triggered
+                # when it is.
+                #
+                # This assumes that this context manager is used in tests
+                # that might trigger the next manager.
+                value = subprocess.Popen(['/usr/bin/defaults', 'read',
+                    'com.apple.CrashReporter', 'DialogType'],
+                    stdout=subprocess.PIPE).communicate()[0]
+                if value.strip() == b'developer':
+                    print "this tests triggers the Crash Reporter, that is intentional"
+                    sys.stdout.flush()
+
             try:
                 import resource
                 old_limit = resource.getrlimit(resource.RLIMIT_CORE)
