@@ -2085,3 +2085,8 @@ else:
          _days_before_year, _days_in_month, _format_time, _is_leap,
          _isoweek1monday, _math, _ord2ymd, _time, _time_class, _tzinfo_class,
          _wrap_strftime, _ymd2ord)
+    # XXX Since import * above excludes names that start with _,
+    # docstring does not get overwritten. In the future, it may be
+    # appropriate to maintain a single module level docstring and
+    # remove the following line.
+    from _datetime import __doc__
