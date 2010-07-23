@@ -3,7 +3,8 @@
 from test import support
 import unittest
 
-from fnmatch import fnmatch, fnmatchcase, _MAXCACHE, _cache, _cacheb, purge
+from fnmatch import (fnmatch, fnmatchcase, _MAXCACHE, _cache, _cacheb, purge,
+                        translate, filter)
 
 
 class FnmatchTestCase(unittest.TestCase):
@@ -80,8 +81,29 @@ class FnmatchTestCase(unittest.TestCase):
         self.assertLessEqual(len(_cacheb), _MAXCACHE)
 
 
+class TranslateTestCase(unittest.TestCase):
+
+    def test_translate(self):
+        self.assertEqual(translate('*'), '.*\Z(?ms)')
+        self.assertEqual(translate('?'), '.\Z(?ms)')
+        self.assertEqual(translate('a?b*'), 'a.b.*\Z(?ms)')
+        self.assertEqual(translate('[abc]'), '[abc]\Z(?ms)')
+        self.assertEqual(translate('[]]'), '[]]\Z(?ms)')
+        self.assertEqual(translate('[!x]'), '[^x]\Z(?ms)')
+        self.assertEqual(translate('[^x]'), '[\\^x]\Z(?ms)')
+        self.assertEqual(translate('[x'), '\\[x\Z(?ms)')
+
+
+class FilterTestCase(unittest.TestCase):
+
+    def test_filter(self):
+        self.assertEqual(filter(['a', 'b'], 'a'), ['a'])
+
+
 def test_main():
-    support.run_unittest(FnmatchTestCase)
+    support.run_unittest(FnmatchTestCase,
+                         TranslateTestCase,
+                         FilterTestCase)
 
 
 if __name__ == "__main__":
