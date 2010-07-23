@@ -2291,10 +2291,10 @@ posix_link(PyObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(posix_listdir__doc__,
-"listdir(path) -> list_of_strings\n\n\
+"listdir([path]) -> list_of_strings\n\n\
 Return a list containing the names of the entries in the directory.\n\
 \n\
-    path: path of directory to list\n\
+    path: path of directory to list (default: '.')\n\
 \n\
 The list is in arbitrary order.  It does not include the special\n\
 entries '.' and '..' even if they are present in the directory.");
@@ -2315,18 +2315,25 @@ posix_listdir(PyObject *self, PyObject *args)
     char *bufptr = namebuf;
     Py_ssize_t len = sizeof(namebuf)-5; /* only claim to have space for MAX_PATH */
 
-    PyObject *po;
-    if (PyArg_ParseTuple(args, "U:listdir", &po)) {
+    PyObject *po = NULL;
+    if (PyArg_ParseTuple(args, "|U:listdir", &po)) {
         WIN32_FIND_DATAW wFileData;
-        Py_UNICODE *wnamebuf;
+        Py_UNICODE *wnamebuf, *po_wchars;
+        
+        if (po == NULL) { // Default arg: "."
+            po_wchars = L".";
+            len = 1;
+        } else {
+            po_wchars = PyUnicode_AS_UNICODE(po);
+            len = PyUnicode_GET_SIZE(po);
+        }
         /* Overallocate for \\*.*\0 */
-        len = PyUnicode_GET_SIZE(po);
         wnamebuf = malloc((len + 5) * sizeof(wchar_t));
         if (!wnamebuf) {
             PyErr_NoMemory();
             return NULL;
         }
-        wcscpy(wnamebuf, PyUnicode_AS_UNICODE(po));
+        wcscpy(wnamebuf, po_wchars);
         if (len > 0) {
             Py_UNICODE wch = wnamebuf[len-1];
             if (wch != L'/' && wch != L'\\' && wch != L':')
@@ -2548,12 +2555,17 @@ posix_listdir(PyObject *self, PyObject *args)
     int arg_is_unicode = 1;
 
     errno = 0;
-    if (!PyArg_ParseTuple(args, "U:listdir", &v)) {
+    /* v is never read, so it does not need to be initialized yet. */
+    if (!PyArg_ParseTuple(args, "|U:listdir", &v)) {
         arg_is_unicode = 0;
         PyErr_Clear();
     }
-    if (!PyArg_ParseTuple(args, "O&:listdir", PyUnicode_FSConverter, &oname))
+    oname = NULL;
+    if (!PyArg_ParseTuple(args, "|O&:listdir", PyUnicode_FSConverter, &oname))
         return NULL;
+    if (oname == NULL) { // Default arg: "."
+      oname = PyBytes_FromString(".");
+    }
     name = PyBytes_AsString(oname);
     if ((dirp = opendir(name)) == NULL) {
         return posix_error_with_allocated_filename(oname);

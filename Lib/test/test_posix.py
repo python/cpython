@@ -252,9 +252,14 @@ class PosixTester(unittest.TestCase):
             posix.chdir(os.curdir)
             self.assertRaises(OSError, posix.chdir, support.TESTFN)
 
-    def test_lsdir(self):
-        if hasattr(posix, 'lsdir'):
-            self.assertIn(support.TESTFN, posix.lsdir(os.curdir))
+    def test_listdir(self):
+        if hasattr(posix, 'listdir'):
+            self.assertTrue(support.TESTFN in posix.listdir(os.curdir))
+
+    def test_listdir_default(self):
+        # When listdir is called without argument, it's the same as listdir(os.curdir)
+        if hasattr(posix, 'listdir'):
+            self.assertTrue(support.TESTFN in posix.listdir())
 
     def test_access(self):
         if hasattr(posix, 'access'):
