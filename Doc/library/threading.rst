@@ -299,8 +299,8 @@ impossible to detect the termination of alien threads.
 
       Return whether the thread is alive.
 
-      Roughly, a thread is alive from the moment the :meth:`start` method
-      returns until its :meth:`run` method terminates. The module function
+      This method returns ``True`` just before the :meth:`run` method starts
+      until just after the :meth:`run` method terminates.  The module function
       :func:`.enumerate` returns a list of all alive threads.
 
    .. attribute:: daemon
