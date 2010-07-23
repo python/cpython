@@ -1068,7 +1068,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Modules\datetimemodule.c"
+				RelativePath="..\Modules\_datetimemodule.c"
 				>
 			</File>
 			<File

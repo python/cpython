@@ -473,6 +473,14 @@ C-API
 Library
 -------
 
+- Issue #7989: Added pure python implementation of the `datetime`
+  module.  The C module is renamed to `_datetime` and if available,
+  overrides all classes defined in datetime with fast C impementation.
+  Python implementation is based on the original python prototype for
+  the datetime module by Tim Peters with minor modifications by the
+  PyPy project.  The test suite now tests `datetime` module with and
+  without `_datetime` acceleration using the same test cases.
+
 - Issue #7895: platform.mac_ver() no longer crashes after calling os.fork()
 
 - Issue #9323: Fixed a bug in trace.py that resulted in loosing the
