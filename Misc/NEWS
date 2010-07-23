@@ -64,6 +64,8 @@ Tests
 Documentation
 -------------
 
+- Issue 9255: Document that the 'test' package is for internal Python use only.
+
 - Issue 7829: Document in dis that bytecode is an implementation detail.
 
 
