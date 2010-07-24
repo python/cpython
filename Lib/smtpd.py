@@ -78,6 +78,7 @@ import time
 import socket
 import asyncore
 import asynchat
+from warnings import warn
 
 __all__ = ["SMTPServer","DebuggingServer","PureProxy","MailmanProxy"]
 
@@ -111,20 +112,142 @@ class SMTPChannel(asynchat.async_chat):
 
     def __init__(self, server, conn, addr):
         asynchat.async_chat.__init__(self, conn)
-        self.__server = server
-        self.__conn = conn
-        self.__addr = addr
-        self.__line = []
-        self.__state = self.COMMAND
-        self.__greeting = 0
-        self.__mailfrom = None
-        self.__rcpttos = []
-        self.__data = ''
-        self.__fqdn = socket.getfqdn()
-        self.__peer = conn.getpeername()
-        print('Peer:', repr(self.__peer), file=DEBUGSTREAM)
-        self.push('220 %s %s' % (self.__fqdn, __version__))
+        self.smtp_server = server
+        self.conn = conn
+        self.addr = addr
+        self.received_lines = []
+        self.smtp_state = self.COMMAND
+        self.seen_greeting = ''
+        self.mailfrom = None
+        self.rcpttos = []
+        self.received_data = ''
+        self.fqdn = socket.getfqdn()
+        self.peer = conn.getpeername()
+        print('Peer:', repr(self.peer), file=DEBUGSTREAM)
+        self.push('220 %s %s' % (self.fqdn, __version__))
         self.set_terminator(b'\r\n')
+
+    # properties for backwards-compatibility
+    @property
+    def __server(self):
+        warn("Access to __server attribute on SMTPChannel is deprecated, "
+            "use 'smtp_server' instead", PendingDeprecationWarning, 2)
+        return self.smtp_server
+    @__server.setter
+    def __server(self, value):
+        warn("Setting __server attribute on SMTPChannel is deprecated, "
+            "set 'smtp_server' instead", PendingDeprecationWarning, 2)
+        self.smtp_server = value
+
+    @property
+    def __line(self):
+        warn("Access to __line attribute on SMTPChannel is deprecated, "
+            "use 'received_lines' instead", PendingDeprecationWarning, 2)
+        return self.received_lines
+    @__line.setter
+    def __line(self, value):
+        warn("Setting __line attribute on SMTPChannel is deprecated, "
+            "set 'received_lines' instead", PendingDeprecationWarning, 2)
+        self.received_lines = value
+
+    @property
+    def __state(self):
+        warn("Access to __state attribute on SMTPChannel is deprecated, "
+            "use 'smtp_state' instead", PendingDeprecationWarning, 2)
+        return self.smtp_state
+    @__state.setter
+    def __state(self, value):
+        warn("Setting __state attribute on SMTPChannel is deprecated, "
+            "set 'smtp_state' instead", PendingDeprecationWarning, 2)
+        self.smtp_state = value
+
+    @property
+    def __greeting(self):
+        warn("Access to __greeting attribute on SMTPChannel is deprecated, "
+            "use 'seen_greeting' instead", PendingDeprecationWarning, 2)
+        return self.seen_greeting
+    @__greeting.setter
+    def __greeting(self, value):
+        warn("Setting __greeting attribute on SMTPChannel is deprecated, "
+            "set 'seen_greeting' instead", PendingDeprecationWarning, 2)
+        self.seen_greeting = value
+
+    @property
+    def __mailfrom(self):
+        warn("Access to __mailfrom attribute on SMTPChannel is deprecated, "
+            "use 'mailfrom' instead", PendingDeprecationWarning, 2)
+        return self.mailfrom
+    @__mailfrom.setter
+    def __mailfrom(self, value):
+        warn("Setting __mailfrom attribute on SMTPChannel is deprecated, "
+            "set 'mailfrom' instead", PendingDeprecationWarning, 2)
+        self.mailfrom = value
+
+    @property
+    def __rcpttos(self):
+        warn("Access to __rcpttos attribute on SMTPChannel is deprecated, "
+            "use 'rcpttos' instead", PendingDeprecationWarning, 2)
+        return self.rcpttos
+    @__rcpttos.setter
+    def __rcpttos(self, value):
+        warn("Setting __rcpttos attribute on SMTPChannel is deprecated, "
+            "set 'rcpttos' instead", PendingDeprecationWarning, 2)
+        self.rcpttos = value
+
+    @property
+    def __data(self):
+        warn("Access to __data attribute on SMTPChannel is deprecated, "
+            "use 'received_data' instead", PendingDeprecationWarning, 2)
+        return self.received_data
+    @__data.setter
+    def __data(self, value):
+        warn("Setting __data attribute on SMTPChannel is deprecated, "
+            "set 'received_data' instead", PendingDeprecationWarning, 2)
+        self.received_data = value
+
+    @property
+    def __fqdn(self):
+        warn("Access to __fqdn attribute on SMTPChannel is deprecated, "
+            "use 'fqdn' instead", PendingDeprecationWarning, 2)
+        return self.fqdn
+    @__fqdn.setter
+    def __fqdn(self, value):
+        warn("Setting __fqdn attribute on SMTPChannel is deprecated, "
+            "set 'fqdn' instead", PendingDeprecationWarning, 2)
+        self.fqdn = value
+
+    @property
+    def __peer(self):
+        warn("Access to __peer attribute on SMTPChannel is deprecated, "
+            "use 'peer' instead", PendingDeprecationWarning, 2)
+        return self.peer
+    @__peer.setter
+    def __peer(self, value):
+        warn("Setting __peer attribute on SMTPChannel is deprecated, "
+            "set 'peer' instead", PendingDeprecationWarning, 2)
+        self.peer = value
+
+    @property
+    def __conn(self):
+        warn("Access to __conn attribute on SMTPChannel is deprecated, "
+            "use 'conn' instead", PendingDeprecationWarning, 2)
+        return self.conn
+    @__conn.setter
+    def __conn(self, value):
+        warn("Setting __conn attribute on SMTPChannel is deprecated, "
+            "set 'conn' instead", PendingDeprecationWarning, 2)
+        self.conn = value
+
+    @property
+    def __addr(self):
+        warn("Access to __addr attribute on SMTPChannel is deprecated, "
+            "use 'addr' instead", PendingDeprecationWarning, 2)
+        return self.addr
+    @__addr.setter
+    def __addr(self, value):
+        warn("Setting __addr attribute on SMTPChannel is deprecated, "
+            "set 'addr' instead", PendingDeprecationWarning, 2)
+        self.addr = value
 
     # Overrides base class for convenience
     def push(self, msg):
@@ -132,14 +255,14 @@ class SMTPChannel(asynchat.async_chat):
 
     # Implementation of base class abstract method
     def collect_incoming_data(self, data):
-        self.__line.append(str(data, "utf8"))
+        self.received_lines.append(str(data, "utf8"))
 
     # Implementation of base class abstract method
     def found_terminator(self):
-        line = EMPTYSTRING.join(self.__line)
+        line = EMPTYSTRING.join(self.received_lines)
         print('Data:', repr(line), file=DEBUGSTREAM)
-        self.__line = []
-        if self.__state == self.COMMAND:
+        self.received_lines = []
+        if self.smtp_state == self.COMMAND:
             if not line:
                 self.push('500 Error: bad syntax')
                 return
@@ -158,7 +281,7 @@ class SMTPChannel(asynchat.async_chat):
             method(arg)
             return
         else:
-            if self.__state != self.DATA:
+            if self.smtp_state != self.DATA:
                 self.push('451 Internal confusion')
                 return
             # Remove extraneous carriage returns and de-transparency according
@@ -169,14 +292,14 @@ class SMTPChannel(asynchat.async_chat):
                     data.append(text[1:])
                 else:
                     data.append(text)
-            self.__data = NEWLINE.join(data)
-            status = self.__server.process_message(self.__peer,
-                                                   self.__mailfrom,
-                                                   self.__rcpttos,
-                                                   self.__data)
-            self.__rcpttos = []
-            self.__mailfrom = None
-            self.__state = self.COMMAND
+            self.received_data = NEWLINE.join(data)
+            status = self.__server.process_message(self.peer,
+                                                   self.mailfrom,
+                                                   self.rcpttos,
+                                                   self.received_data)
+            self.rcpttos = []
+            self.mailfrom = None
+            self.smtp_state = self.COMMAND
             self.set_terminator(b'\r\n')
             if not status:
                 self.push('250 Ok')
@@ -188,11 +311,11 @@ class SMTPChannel(asynchat.async_chat):
         if not arg:
             self.push('501 Syntax: HELO hostname')
             return
-        if self.__greeting:
+        if self.seen_greeting:
             self.push('503 Duplicate HELO/EHLO')
         else:
-            self.__greeting = arg
-            self.push('250 %s' % self.__fqdn)
+            self.seen_greeting = arg
+            self.push('250 %s' % self.fqdn)
 
     def smtp_NOOP(self, arg):
         if arg:
@@ -225,24 +348,24 @@ class SMTPChannel(asynchat.async_chat):
         if not address:
             self.push('501 Syntax: MAIL FROM:<address>')
             return
-        if self.__mailfrom:
+        if self.mailfrom:
             self.push('503 Error: nested MAIL command')
             return
-        self.__mailfrom = address
-        print('sender:', self.__mailfrom, file=DEBUGSTREAM)
+        self.mailfrom = address
+        print('sender:', self.mailfrom, file=DEBUGSTREAM)
         self.push('250 Ok')
 
     def smtp_RCPT(self, arg):
         print('===> RCPT', arg, file=DEBUGSTREAM)
-        if not self.__mailfrom:
+        if not self.mailfrom:
             self.push('503 Error: need MAIL command')
             return
         address = self.__getaddr('TO:', arg) if arg else None
         if not address:
             self.push('501 Syntax: RCPT TO: <address>')
             return
-        self.__rcpttos.append(address)
-        print('recips:', self.__rcpttos, file=DEBUGSTREAM)
+        self.rcpttos.append(address)
+        print('recips:', self.rcpttos, file=DEBUGSTREAM)
         self.push('250 Ok')
 
     def smtp_RSET(self, arg):
@@ -250,26 +373,29 @@ class SMTPChannel(asynchat.async_chat):
             self.push('501 Syntax: RSET')
             return
         # Resets the sender, recipients, and data, but not the greeting
-        self.__mailfrom = None
-        self.__rcpttos = []
-        self.__data = ''
-        self.__state = self.COMMAND
+        self.mailfrom = None
+        self.rcpttos = []
+        self.received_data = ''
+        self.smtp_state = self.COMMAND
         self.push('250 Ok')
 
     def smtp_DATA(self, arg):
-        if not self.__rcpttos:
+        if not self.rcpttos:
             self.push('503 Error: need RCPT command')
             return
         if arg:
             self.push('501 Syntax: DATA')
             return
-        self.__state = self.DATA
+        self.smtp_state = self.DATA
         self.set_terminator(b'\r\n.\r\n')
         self.push('354 End data with <CR><LF>.<CR><LF>')
 
 
 
 class SMTPServer(asyncore.dispatcher):
+    # SMTPChannel class to use for managing client connections
+    channel_class = SMTPChannel
+
     def __init__(self, localaddr, remoteaddr):
         self._localaddr = localaddr
         self._remoteaddr = remoteaddr
@@ -291,7 +417,7 @@ class SMTPServer(asyncore.dispatcher):
     def handle_accept(self):
         conn, addr = self.accept()
         print('Incoming connection from %s' % repr(addr), file=DEBUGSTREAM)
-        channel = SMTPChannel(self, conn, addr)
+        channel = self.channel_class(self, conn, addr)
 
     # API for "doing something useful with the message"
     def process_message(self, peer, mailfrom, rcpttos, data):
