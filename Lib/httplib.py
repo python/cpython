@@ -67,6 +67,7 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
 from array import array
+import os
 import socket
 from sys import py3kwarning
 from urlparse import urlsplit
@@ -756,27 +757,17 @@ class HTTPConnection:
             else:
                 raise NotConnected()
 
-        # send the data to the server. if we get a broken pipe, then close
-        # the socket. we want to reconnect when somebody tries to send again.
-        #
-        # NOTE: we DO propagate the error, though, because we cannot simply
-        #       ignore the error... the caller will know if they can retry.
         if self.debuglevel > 0:
             print "send:", repr(str)
-        try:
-            blocksize=8192
-            if hasattr(str,'read') and not isinstance(str, array):
-                if self.debuglevel > 0: print "sendIng a read()able"
-                data=str.read(blocksize)
-                while data:
-                    self.sock.sendall(data)
-                    data=str.read(blocksize)
-            else:
-                self.sock.sendall(str)
-        except socket.error, v:
-            if v.args[0] == 32:      # Broken pipe
-                self.close()
-            raise
+        blocksize = 8192
+        if hasattr(str,'read') and not isinstance(str, array):
+            if self.debuglevel > 0: print "sendIng a read()able"
+            data = str.read(blocksize)
+            while data:
+                self.sock.sendall(data)
+                data = str.read(blocksize)
+        else:
+            self.sock.sendall(str)
 
     def _output(self, s):
         """Add a line of output to the current request buffer.
@@ -941,15 +932,7 @@ class HTTPConnection:
 
     def request(self, method, url, body=None, headers={}):
         """Send a complete request to the server."""
-
-        try:
-            self._send_request(method, url, body, headers)
-        except socket.error, v:
-            # trap 'Broken pipe' if we're allowed to automatically reconnect
-            if v.args[0] != 32 or not self.auto_open:
-                raise
-            # try one more time
-            self._send_request(method, url, body, headers)
+        self._send_request(method, url, body, headers)
 
     def _set_content_length(self, body):
         # Set the content-length based on the body.
@@ -959,7 +942,6 @@ class HTTPConnection:
         except TypeError, te:
             # If this is a file-like object, try to
             # fstat its file descriptor
-            import os
             try:
                 thelen = str(os.fstat(body.fileno()).st_size)
             except (AttributeError, OSError):
@@ -970,7 +952,7 @@ class HTTPConnection:
             self.putheader('Content-Length', thelen)
 
     def _send_request(self, method, url, body, headers):
-        # honour explicitly requested Host: and Accept-Encoding headers
+        # Honor explicitly requested Host: and Accept-Encoding: headers.
         header_names = dict.fromkeys([k.lower() for k in headers])
         skips = {}
         if 'host' in header_names:

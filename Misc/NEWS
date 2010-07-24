@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5542: Remove special logic that closes HTTPConnection socket on EPIPE.
+
 - Issue #4629: getopt raises an error if an argument ends with = whereas getopt
   doesn't except a value (eg. --help= is rejected if getopt uses ['help='] long
   options).

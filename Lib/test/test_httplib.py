@@ -2,6 +2,7 @@ import array
 import httplib
 import StringIO
 import socket
+import errno
 
 import unittest
 TestCase = unittest.TestCase
@@ -23,6 +24,21 @@ class FakeSocket:
         if mode != 'r' and mode != 'rb':
             raise httplib.UnimplementedFileMode()
         return self.fileclass(self.text)
+
+class EPipeSocket(FakeSocket):
+
+    def __init__(self, text, pipe_trigger):
+        # When sendall() is called with pipe_trigger, raise EPIPE.
+        FakeSocket.__init__(self, text)
+        self.pipe_trigger = pipe_trigger
+
+    def sendall(self, data):
+        if self.pipe_trigger in data:
+            raise socket.error(errno.EPIPE, "gotcha")
+        self.data += data
+
+    def close(self):
+        pass
 
 class NoEOFStringIO(StringIO.StringIO):
     """Like StringIO, but raises AssertionError on EOF.
@@ -253,6 +269,21 @@ class BasicTest(TestCase):
             self.fail('IncompleteRead expected')
         finally:
             resp.close()
+
+    def test_epipe(self):
+        sock = EPipeSocket(
+            "HTTP/1.0 401 Authorization Required\r\n"
+            "Content-type: text/html\r\n"
+            "WWW-Authenticate: Basic realm=\"example\"\r\n",
+            b"Content-Length")
+        conn = httplib.HTTPConnection("example.com")
+        conn.sock = sock
+        self.assertRaises(socket.error,
+                          lambda: conn.request("PUT", "/url", "body"))
+        resp = conn.getresponse()
+        self.assertEqual(401, resp.status)
+        self.assertEqual("Basic realm=\"example\"",
+                         resp.getheader("www-authenticate"))
 
 
 class OfflineTest(TestCase):
