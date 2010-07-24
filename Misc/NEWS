@@ -56,6 +56,13 @@ Library
 Extension Modules
 -----------------
 
+- Issue #7900: The getgroups(2) system call on MacOSX behaves rather oddly
+  compared to other unix systems. In particular, os.getgroups() does
+  not reflect any changes made using os.setgroups() but basicly always
+  returns the same information as the id command.
+
+  os.getgroups() can now return more than 16 groups on MacOSX.
+
 - Issue #9277: Fix bug in struct.pack for bools in standard mode
   (e.g., struct.pack('>?')):  if conversion to bool raised an exception
   then that exception wasn't properly propagated on machines where
