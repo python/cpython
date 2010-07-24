@@ -8,6 +8,7 @@ except ImportError:
     raise test_support.TestSkipped, "posix is not available"
 
 import errno
+import sys
 import time
 import os
 import pwd
@@ -306,9 +307,52 @@ class PosixTester(unittest.TestCase):
                 os.chdir(curdir)
                 shutil.rmtree(base_path)
 
+    def test_getgroups(self):
+        with os.popen('id -G') as idg:
+            groups = idg.read().strip()
+
+        if not groups:
+            raise unittest.SkipTest("need working 'id -G'")
+
+        self.assertEqual([int(x) for x in groups.split()], posix.getgroups())
+
+class PosixGroupsTester(unittest.TestCase):
+    if posix.getuid() == 0 and hasattr(posix, 'getgroups') and sys.platform != 'darwin':
+
+        def setUp(self):
+            self.saved_groups = posix.getgroups()
+
+        def tearDown(self):
+            if hasattr(posix, 'setgroups'):
+                posix.setgroups(self.saved_groups)
+            elif hasattr(posix, 'initgroups'):
+                name = pwd.getpwuid(posix.getuid()).pw_name
+                posix.initgroups(name, self.saved_groups[0])
+
+        if hasattr(posix, 'initgroups'):
+            def test_initgroups(self):
+                # find missing group
+
+                groups = sorted(self.saved_groups)
+                for g1,g2 in zip(groups[:-1], groups[1:]):
+                    g = g1 + 1
+                    if g < g2:
+                        break
+                else:
+                    g = g2 + 1
+                name = pwd.getpwuid(posix.getuid()).pw_name
+                posix.initgroups(name, g)
+                self.assertIn(g, posix.getgroups())
+
+        if hasattr(posix, 'setgroups'):
+            def test_setgroups(self):
+                for groups in [[0], range(16)]:
+                    posix.setgroups(groups)
+                    self.assertListEqual(groups, posix.getgroups())
+
 
 def test_main():
-    test_support.run_unittest(PosixTester)
+    test_support.run_unittest(PosixTester, PosixGroupsTester)
 
 if __name__ == '__main__':
     test_main()
