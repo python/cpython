@@ -281,7 +281,11 @@ class PosixTester(unittest.TestCase):
         if not groups:
             raise unittest.SkipTest("need working 'id -G'")
 
-        self.assertEqual([int(x) for x in groups.split()], posix.getgroups())
+        # The order of groups isn't important, hence the calls
+        # to sorted.
+        self.assertEqual(
+                list(sorted([int(x) for x in groups.split()])),
+                list(sorted(posix.getgroups())))
 
 class PosixGroupsTester(unittest.TestCase):
 
