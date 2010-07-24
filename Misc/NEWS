@@ -81,6 +81,10 @@ C-API
 Library
 -------
 
+- Issue #4629: getopt raises an error if an argument ends with = whereas getopt
+  doesn't except a value (eg. --help= is rejected if getopt uses ['help='] long
+  options).
+
 - Issue #7895: platform.mac_ver() no longer crashes after calling os.fork()
 
 - Issue #5395: array.fromfile() would raise a spurious EOFError when an

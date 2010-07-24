@@ -171,6 +171,12 @@ class GetoptTests(unittest.TestCase):
         m = types.ModuleType("libreftest", s)
         run_doctest(m, verbose)
 
+    def test_issue4629(self):
+        longopts, shortopts = getopt.getopt(['--help='], '', ['help='])
+        self.assertEquals(longopts, [('--help', '')])
+        longopts, shortopts = getopt.getopt(['--help=x'], '', ['help='])
+        self.assertEquals(longopts, [('--help', 'x')])
+        self.assertRaises(getopt.GetoptError, getopt.getopt, ['--help='], '', ['help'])
 
 def test_main():
     run_unittest(GetoptTests)
