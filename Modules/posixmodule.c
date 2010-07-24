@@ -3895,17 +3895,49 @@ posix_getgroups(PyObject *self, PyObject *noargs)
 #define MAX_GROUPS 64
 #endif
     gid_t grouplist[MAX_GROUPS];
+
+    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results 
+     * This is a helper variable to store the intermediate result when
+     * that happens.
+     *
+     * To keep the code readable the OSX behaviour is unconditional,
+     * according to the POSIX spec this should be safe on all unix-y
+     * systems.
+     */
+    gid_t* alt_grouplist = grouplist;
     int n;
 
     n = getgroups(MAX_GROUPS, grouplist);
-    if (n < 0)
-        posix_error();
-    else {
-        result = PyList_New(n);
-        if (result != NULL) {
+    if (n < 0) {
+        if (errno == EINVAL) {
+            n = getgroups(0, NULL);
+            if (n == -1) {
+                return posix_error();
+            }
+            if (n == 0) {
+                /* Avoid malloc(0) */
+                alt_grouplist = grouplist;
+            } else {
+                alt_grouplist = PyMem_Malloc(n * sizeof(gid_t));
+                if (alt_grouplist == NULL) {
+                    errno = EINVAL;
+                    return posix_error();
+                }
+                n = getgroups(n, alt_grouplist);
+                if (n == -1) {
+                    PyMem_Free(alt_grouplist);
+                    return posix_error();
+                }
+            }
+        } else {
+            return posix_error();
+        }
+    }
+    result = PyList_New(n);
+    if (result != NULL) {
         int i;
         for (i = 0; i < n; ++i) {
-            PyObject *o = PyInt_FromLong((long)grouplist[i]);
+            PyObject *o = PyInt_FromLong((long)alt_grouplist[i]);
             if (o == NULL) {
             Py_DECREF(result);
             result = NULL;
@@ -3913,7 +3945,10 @@ posix_getgroups(PyObject *self, PyObject *noargs)
             }
             PyList_SET_ITEM(result, i, o);
         }
-        }
+    }
+
+    if (alt_grouplist != grouplist) {
+        PyMem_Free(alt_grouplist);
     }
 
     return result;
