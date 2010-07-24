@@ -1263,7 +1263,7 @@ class Transport:
             try:
                 return self.single_request(host, handler, request_body, verbose)
             except socket.error, e:
-                if i or e.errno not in (errno.ECONNRESET, errno.ECONNABORTED):
+                if i or e.errno not in (errno.ECONNRESET, errno.ECONNABORTED, errno.EPIPE):
                     raise
             except httplib.BadStatusLine: #close after we sent request
                 if i:

@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9032: XML-RPC client retries the request on EPIPE error. The EPIPE
+  error occurs when the server closes the socket and the client sends a big
+  XML-RPC request.
+
 - Issue #5542: Remove special logic that closes HTTPConnection socket on EPIPE.
 
 - Issue #4629: getopt raises an error if an argument ends with = whereas getopt
