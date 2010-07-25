@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3704: cookielib was not properly handling URLs with a / in the
+  parameters.
+
 - Issue #9032: XML-RPC client retries the request on EPIPE error. The EPIPE
   error occurs when the server closes the socket and the client sends a big
   XML-RPC request.
