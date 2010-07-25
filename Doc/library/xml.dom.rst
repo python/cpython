@@ -976,29 +976,24 @@ Python.
 Type Mapping
 ^^^^^^^^^^^^
 
-The primitive IDL types used in the DOM specification are mapped to Python types
+The IDL types used in the DOM specification are mapped to Python types
 according to the following table.
 
 +------------------+-------------------------------------------+
 | IDL Type         | Python Type                               |
 +==================+===========================================+
-| ``boolean``      | ``IntegerType`` (with a value of ``0`` or |
-|                  | ``1``)                                    |
+| ``boolean``      | ``bool`` or ``int``                       |
 +------------------+-------------------------------------------+
-| ``int``          | ``IntegerType``                           |
+| ``int``          | ``int``                                   |
 +------------------+-------------------------------------------+
-| ``long int``     | ``IntegerType``                           |
+| ``long int``     | ``int``                                   |
 +------------------+-------------------------------------------+
-| ``unsigned int`` | ``IntegerType``                           |
+| ``unsigned int`` | ``int``                                   |
 +------------------+-------------------------------------------+
-
-Additionally, the :class:`DOMString` defined in the recommendation is mapped to
-a bytes or string object.  Applications should be able to handle
-Unicode whenever a string is returned from the DOM.
-
-The IDL ``null`` value is mapped to ``None``, which may be accepted or
-provided by the implementation whenever ``null`` is allowed by the API.
-
+| ``DOMString``    | ``str`` or ``bytes``                      |
++------------------+-------------------------------------------+
+| ``null``         | ``None``                                  |
++------------------+-------------------------------------------+
 
 .. _dom-accessor-methods:
 
