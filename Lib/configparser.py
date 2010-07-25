@@ -142,6 +142,7 @@ class NoSectionError(Error):
     def __init__(self, section):
         Error.__init__(self, 'No section: %r' % (section,))
         self.section = section
+        self.args = (section, )
 
 class DuplicateSectionError(Error):
     """Raised when a section is multiply-created."""
@@ -149,6 +150,7 @@ class DuplicateSectionError(Error):
     def __init__(self, section):
         Error.__init__(self, "Section %r already exists" % section)
         self.section = section
+        self.args = (section, )
 
 class NoOptionError(Error):
     """A requested option was not found."""
@@ -158,6 +160,7 @@ class NoOptionError(Error):
                        (option, section))
         self.option = option
         self.section = section
+        self.args = (option, section)
 
 class InterpolationError(Error):
     """Base class for interpolation-related exceptions."""
@@ -166,6 +169,7 @@ class InterpolationError(Error):
         Error.__init__(self, msg)
         self.option = option
         self.section = section
+        self.args = (option, section, msg)
 
 class InterpolationMissingOptionError(InterpolationError):
     """A string substitution required a setting which was not available."""
@@ -179,6 +183,7 @@ class InterpolationMissingOptionError(InterpolationError):
                % (section, option, reference, rawval))
         InterpolationError.__init__(self, option, section, msg)
         self.reference = reference
+        self.args = (option, section, rawval, reference)
 
 class InterpolationSyntaxError(InterpolationError):
     """Raised when the source text into which substitutions are made
@@ -194,6 +199,7 @@ class InterpolationDepthError(InterpolationError):
                "\trawval : %s\n"
                % (section, option, rawval))
         InterpolationError.__init__(self, option, section, msg)
+        self.args = (option, section, rawval)
 
 class ParsingError(Error):
     """Raised when a configuration file does not follow legal syntax."""
@@ -202,6 +208,7 @@ class ParsingError(Error):
         Error.__init__(self, 'File contains parsing errors: %s' % filename)
         self.filename = filename
         self.errors = []
+        self.args = (filename, )
 
     def append(self, lineno, line):
         self.errors.append((lineno, line))
@@ -218,7 +225,7 @@ class MissingSectionHeaderError(ParsingError):
         self.filename = filename
         self.lineno = lineno
         self.line = line
-
+        self.args = (filename, lineno, line)
 
 class RawConfigParser:
     def __init__(self, defaults=None, dict_type=_default_dict,

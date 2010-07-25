@@ -5,7 +5,7 @@
 ##################################################################
 [project attributes]
 proj.directory-list = [{'dirloc': loc('..'),
-                        'excludes': (),
+                        'excludes': [u'Lib/__pycache__'],
                         'filter': '*',
                         'include_hidden': False,
                         'recursive': True,
