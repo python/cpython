@@ -136,18 +136,20 @@ module documentation.  This section lists the differences between the API and
 
 .. method:: Node.toxml(encoding=None)
 
-   Return the XML that the DOM represents as a string.
+   Return a string or byte string containing the XML represented by
+   the DOM node.
 
-   With no argument, the XML header does not specify an encoding, and the result is
-   Unicode string if the default encoding cannot represent all characters in the
-   document. Encoding this string in an encoding other than UTF-8 is likely
-   incorrect, since UTF-8 is the default encoding of XML.
+   With an explicit *encoding* [1]_ argument, the result is a byte
+   string in the specified encoding.  It is recommended that you
+   always specify an encoding; you may use any encoding you like, but
+   an argument of "utf-8" is the most common, avoid
+   :exc:`UnicodeError` exceptions in case of unrepresentable text
+   data.
 
-   With an explicit *encoding* [1]_ argument, the result is a byte string in the
-   specified encoding. It is recommended that this argument is always specified. To
-   avoid :exc:`UnicodeError` exceptions in case of unrepresentable text data, the
-   encoding argument should be specified as "utf-8".
-
+   With no *encoding* argument, the result is a Unicode string, and the
+   XML declaration in the resulting string does not specify an
+   encoding. Encoding this string in an encoding other than UTF-8 is
+   likely incorrect, since UTF-8 is the default encoding of XML.
 
 .. method:: Node.toprettyxml(indent="", newl="", encoding="")
 
@@ -155,7 +157,8 @@ module documentation.  This section lists the differences between the API and
    indentation string and defaults to a tabulator; *newl* specifies the string
    emitted at the end of each line and defaults to ``\n``.
 
-   There's also an *encoding* argument; see :meth:`toxml`.
+   There's also an *encoding* argument, that behaves like the corresponding
+   argument of :meth:`toxml`.
 
 
 .. _dom-example:
@@ -240,7 +243,9 @@ utility to most DOM users.
 
 .. rubric:: Footnotes
 
-.. [#] The encoding string included in XML output should conform to the
-   appropriate standards. For example, "UTF-8" is valid, but "UTF8" is
-   not. See http://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
+.. [#] The encoding name included in the XML output should conform to
+   the appropriate standards. For example, "UTF-8" is valid, but
+   "UTF8" is not valid in an XML document's declaration, even though
+   Python accepts it as an encoding name.
+   See http://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
    and http://www.iana.org/assignments/character-sets .
