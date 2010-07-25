@@ -603,17 +603,14 @@ def eff_request_host(request):
     return req_host, erhn
 
 def request_path(request):
-    """request-URI, as defined by RFC 2965."""
+    """Path component of request-URI, as defined by RFC 2965."""
     url = request.get_full_url()
-    path, parameters, query, frag = urllib.parse.urlparse(url)[2:]
-    if parameters:
-        path = "%s;%s" % (path, parameters)
-    path = escape_path(path)
-    req_path = urllib.parse.urlunparse(("", "", path, "", query, frag))
-    if not req_path.startswith("/"):
+    parts = urllib.parse.urlsplit(url)
+    path = escape_path(parts.path)
+    if not path.startswith("/"):
         # fix bad RFC 2396 absoluteURI
-        req_path = "/"+req_path
-    return req_path
+        path = "/" + path
+    return path
 
 def request_port(request):
     host = request.get_host()
