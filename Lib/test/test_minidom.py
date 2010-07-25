@@ -951,6 +951,14 @@ class MinidomTest(unittest.TestCase):
         doc.unlink()
 
 
+    def testBug0777884(self):
+        doc = parseString("<o>text</o>")
+        text = doc.documentElement.childNodes[0]
+        self.assertEquals(text.nodeType, Node.TEXT_NODE)
+        # Should run quietly, doing nothing.
+        text.normalize()
+        doc.unlink()
+
     def testBug1433694(self):
         doc = parseString("<o><i/>t</o>")
         node = doc.documentElement
