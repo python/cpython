@@ -1,10 +1,15 @@
 # -*- coding: latin-1 -*-
 """Tests for cookielib.py."""
 
-import re, os, time
+import cookielib
+import os
+import re
+import time
+
 from unittest import TestCase
 
 from test import test_support
+
 
 class DateTimeTests(TestCase):
 
@@ -563,6 +568,16 @@ class CookieTests(TestCase):
         interact_netscape(c, "http://www.acme.com/blah/rhubarb/", 'eggs="bar"')
         self.assert_("/blah/rhubarb" in c._cookies["www.acme.com"])
 
+    def test_default_path_with_query(self):
+        cj = cookielib.CookieJar()
+        uri = "http://example.com/?spam/eggs"
+        value = 'eggs="bar"'
+        interact_netscape(cj, uri, value)
+        # default path does not include query, so is "/", not "/?spam"
+        self.assert_("/" in cj._cookies["example.com"])
+        # cookie is sent back to the same URI
+        self.assertEquals(interact_netscape(cj, uri), value)
+
     def test_escape_path(self):
         from cookielib import escape_path
         cases = [
@@ -591,15 +606,14 @@ class CookieTests(TestCase):
         from urllib2 import Request
         from cookielib import request_path
         # with parameters
-        req = Request("http://www.example.com/rheum/rhaponicum;"
+        req = Request("http://www.example.com/rheum/rhaponticum;"
                       "foo=bar;sing=song?apples=pears&spam=eggs#ni")
-        self.assertEquals(request_path(req), "/rheum/rhaponicum;"
-                     "foo=bar;sing=song?apples=pears&spam=eggs#ni")
+        self.assertEquals(request_path(req),
+                          "/rheum/rhaponticum;foo=bar;sing=song")
         # without parameters
-        req = Request("http://www.example.com/rheum/rhaponicum?"
+        req = Request("http://www.example.com/rheum/rhaponticum?"
                       "apples=pears&spam=eggs#ni")
-        self.assertEquals(request_path(req), "/rheum/rhaponicum?"
-                     "apples=pears&spam=eggs#ni")
+        self.assertEquals(request_path(req), "/rheum/rhaponticum")
         # missing final slash
         req = Request("http://www.example.com")
         self.assertEquals(request_path(req), "/")
