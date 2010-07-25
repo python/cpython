@@ -920,6 +920,10 @@ class Childless:
         raise xml.dom.NotFoundErr(
             self.nodeName + " nodes do not have children")
 
+    def normalize(self):
+        # For childless nodes, normalize() has nothing to do.
+        pass
+
     def replaceChild(self, newChild, oldChild):
         raise xml.dom.HierarchyRequestErr(
             self.nodeName + " nodes do not have children")
