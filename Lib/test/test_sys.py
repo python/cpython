@@ -205,8 +205,8 @@ class SysModuleTest(unittest.TestCase):
             # can't check more than the type, as the user might have changed it
             self.assertIsInstance(sys.getdefaultencoding(), str)
 
-    # testing sys.settrace() is done in test_trace.py
-    # testing sys.setprofile() is done in test_profile.py
+    # testing sys.settrace() is done in test_sys_settrace.py
+    # testing sys.setprofile() is done in test_sys_setprofile.py
 
     def test_setcheckinterval(self):
         self.assertRaises(TypeError, sys.setcheckinterval)
