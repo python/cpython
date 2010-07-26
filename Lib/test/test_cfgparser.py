@@ -1,5 +1,6 @@
 import ConfigParser
 import StringIO
+import os
 import unittest
 import UserDict
 
@@ -186,7 +187,8 @@ class TestCaseBase(unittest.TestCase):
         self.assertEqual(cf.sections(), [],
                          "new ConfigParser should have no defined sections")
         self.assertFalse(cf.has_section("Foo"),
-                    "new ConfigParser should have no acknowledged sections")
+                         "new ConfigParser should have no acknowledged "
+                         "sections")
         self.assertRaises(ConfigParser.NoSectionError,
                           cf.options, "Foo")
         self.assertRaises(ConfigParser.NoSectionError,
@@ -357,6 +359,11 @@ class ConfigParserTestCase(TestCaseBase):
     config_class = ConfigParser.ConfigParser
 
     def test_interpolation(self):
+        rawval = {
+            ConfigParser.ConfigParser: ("something %(with11)s "
+                                        "lots of interpolation (11 steps)"),
+            ConfigParser.SafeConfigParser: "%(with1)s",
+        }
         cf = self.get_interpolation_config()
         eq = self.assertEqual
         eq(cf.get("Foo", "getname"), "Foo")
@@ -403,6 +410,33 @@ class ConfigParserTestCase(TestCaseBase):
         self.assertRaises(ValueError, cf.get, 'non-string',
                           'string_with_interpolation', raw=False)
 
+class MultilineValuesTestCase(TestCaseBase):
+    config_class = ConfigParser.ConfigParser
+    wonderful_spam = ("I'm having spam spam spam spam "
+                      "spam spam spam beaked beans spam "
+                      "spam spam and spam!").replace(' ', '\t\n')
+
+    def setUp(self):
+        cf = self.newconfig()
+        for i in range(100):
+            s = 'section{}'.format(i)
+            cf.add_section(s)
+            for j in range(10):
+                cf.set(s, 'lovely_spam{}'.format(j), self.wonderful_spam)
+        with open(test_support.TESTFN, 'w') as f:
+            cf.write(f)
+
+    def tearDown(self):
+        os.unlink(test_support.TESTFN)
+
+    def test_dominating_multiline_values(self):
+        # we're reading from file because this is where the code changed
+        # during performance updates in Python 3.2
+        cf_from_file = self.newconfig()
+        with open(test_support.TESTFN) as f:
+            cf_from_file.readfp(f)
+        self.assertEqual(cf_from_file.get('section8', 'lovely_spam4'),
+                         self.wonderful_spam.replace('\t\n', '\n'))
 
 class RawConfigParserTestCase(TestCaseBase):
     config_class = ConfigParser.RawConfigParser
@@ -521,10 +555,11 @@ class SortedTestCase(RawConfigParserTestCase):
 def test_main():
     test_support.run_unittest(
         ConfigParserTestCase,
+        MultilineValuesTestCase,
         RawConfigParserTestCase,
         SafeConfigParserTestCase,
-        SortedTestCase,
         SafeConfigParserTestCaseNoValue,
+        SortedTestCase,
         )
 
 
