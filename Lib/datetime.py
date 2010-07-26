@@ -1356,16 +1356,20 @@ class datetime(date):
         """
 
         _check_tzinfo_arg(tz)
-        if tz is None:
-            converter = _time.localtime
-        else:
-            converter = _time.gmtime
-        if 1 - (t % 1.0) < 0.000001:
-            t = float(int(t)) + 1
-        if t < 0:
-            t -= 1
+
+        converter = _time.localtime if tz is None else _time.gmtime
+
+        t, frac = divmod(t, 1.0)
+        us = round(frac * 1e6)
+
+        # If timestamp is less than one microsecond smaller than a
+        # full second, us can be rounded up to 1000000.  In this case,
+        # roll over to seconds, otherwise, ValueError is raised
+        # by the constructor.
+        if us == 1000000:
+            t += 1
+            us = 0
         y, m, d, hh, mm, ss, weekday, jday, dst = converter(t)
-        us = int((t % 1.0) * 1000000)
         ss = min(ss, 59)    # clamp out leap seconds if the platform has them
         result = cls(y, m, d, hh, mm, ss, us, tz)
         if tz is not None:
