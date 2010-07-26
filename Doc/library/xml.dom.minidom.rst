@@ -142,7 +142,7 @@ module documentation.  This section lists the differences between the API and
    With an explicit *encoding* [1]_ argument, the result is a byte
    string in the specified encoding.  It is recommended that you
    always specify an encoding; you may use any encoding you like, but
-   an argument of "utf-8" is the most common, avoid
+   an argument of "utf-8" is the most common choice, avoiding
    :exc:`UnicodeError` exceptions in case of unrepresentable text
    data.
 
@@ -157,8 +157,8 @@ module documentation.  This section lists the differences between the API and
    indentation string and defaults to a tabulator; *newl* specifies the string
    emitted at the end of each line and defaults to ``\n``.
 
-   There's also an *encoding* argument, that behaves like the corresponding
-   argument of :meth:`toxml`.
+   The *encoding* argument behaves like the corresponding argument of
+   :meth:`toxml`.
 
 
 .. _dom-example:
