@@ -1728,9 +1728,15 @@ class TestDateTime(TestDate):
 
     def test_microsecond_rounding(self):
         # Test whether fromtimestamp "rounds up" floats that are less
-        # than one microsecond smaller than an integer.
+        # than 1/2 microsecond smaller than an integer.
         self.assertEqual(self.theclass.fromtimestamp(0.9999999),
                          self.theclass.fromtimestamp(1))
+        self.assertEqual(self.theclass.fromtimestamp(0.99999949).microsecond,
+                         999999)
+        # XXX Arguably incorrect behavior.  Since round(0.6112295, 6)
+        # returns 0.611229, we should see 611229 us below, not 611230
+        self.assertEqual(self.theclass.fromtimestamp(0.6112295).microsecond,
+                         611230)
 
     def test_insane_fromtimestamp(self):
         # It's possible that some platform maps time_t to double,
