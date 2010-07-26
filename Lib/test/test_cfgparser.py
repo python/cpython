@@ -1,7 +1,8 @@
+import collections
 import configparser
 import io
+import os
 import unittest
-import collections
 
 from test import support
 
@@ -162,7 +163,7 @@ class TestCaseBase(unittest.TestCase):
     def test_parse_errors(self):
         self.newconfig()
         e = self.parse_error(configparser.ParsingError,
-                         "[Foo]\n  extra-spaces: splat\n")
+                             "[Foo]\n  extra-spaces: splat\n")
         self.assertEqual(e.args, ('<???>',))
         self.parse_error(configparser.ParsingError,
                          "[Foo]\n  extra-spaces= splat\n")
@@ -171,7 +172,7 @@ class TestCaseBase(unittest.TestCase):
         self.parse_error(configparser.ParsingError,
                          "[Foo]\n=value-without-option-name\n")
         e = self.parse_error(configparser.MissingSectionHeaderError,
-                         "No Section!\n")
+                             "No Section!\n")
         self.assertEqual(e.args, ('<???>', 1, "No Section!\n"))
 
     def parse_error(self, exc, src):
@@ -185,7 +186,8 @@ class TestCaseBase(unittest.TestCase):
         self.assertEqual(cf.sections(), [],
                          "new ConfigParser should have no defined sections")
         self.assertFalse(cf.has_section("Foo"),
-                    "new ConfigParser should have no acknowledged sections")
+                         "new ConfigParser should have no acknowledged "
+                         "sections")
         with self.assertRaises(configparser.NoSectionError) as cm:
             cf.options("Foo")
         with self.assertRaises(configparser.NoSectionError) as cm:
@@ -355,8 +357,8 @@ class ConfigParserTestCase(TestCaseBase):
 
     def test_interpolation(self):
         rawval = {
-            configparser.ConfigParser: "something %(with11)s "\
-                                           "lots of interpolation (11 steps)",
+            configparser.ConfigParser: ("something %(with11)s "
+                                        "lots of interpolation (11 steps)"),
             configparser.SafeConfigParser: "%(with1)s",
         }
         cf = self.get_interpolation_config()
@@ -412,6 +414,33 @@ class ConfigParserTestCase(TestCaseBase):
         self.assertRaises(ValueError, cf.get, 'non-string',
                           'string_with_interpolation', raw=False)
 
+class MultilineValuesTestCase(TestCaseBase):
+    config_class = configparser.ConfigParser
+    wonderful_spam = ("I'm having spam spam spam spam "
+                      "spam spam spam beaked beans spam "
+                      "spam spam and spam!").replace(' ', '\t\n')
+
+    def setUp(self):
+        cf = self.newconfig()
+        for i in range(100):
+            s = 'section{}'.format(i)
+            cf.add_section(s)
+            for j in range(10):
+                cf.set(s, 'lovely_spam{}'.format(j), self.wonderful_spam)
+        with open(support.TESTFN, 'w') as f:
+            cf.write(f)
+
+    def tearDown(self):
+        os.unlink(support.TESTFN)
+
+    def test_dominating_multiline_values(self):
+        # We're reading from file because this is where the code changed
+        # during performance updates in Python 3.2
+        cf_from_file = self.newconfig()
+        with open(support.TESTFN) as f:
+            cf_from_file.readfp(f)
+        self.assertEqual(cf_from_file.get('section8', 'lovely_spam4'),
+                         self.wonderful_spam.replace('\t\n', '\n'))
 
 class RawConfigParserTestCase(TestCaseBase):
     config_class = configparser.RawConfigParser
@@ -530,10 +559,11 @@ class SortedTestCase(RawConfigParserTestCase):
 def test_main():
     support.run_unittest(
         ConfigParserTestCase,
+        MultilineValuesTestCase,
         RawConfigParserTestCase,
         SafeConfigParserTestCase,
-        SortedTestCase,
         SafeConfigParserTestCaseNoValue,
+        SortedTestCase,
         )
 
 
