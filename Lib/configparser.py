@@ -405,12 +405,11 @@ class RawConfigParser:
         for section in self._sections:
             fp.write("[%s]\n" % section)
             for (key, value) in self._sections[section].items():
-                if key != "__name__":
-                    if value is None:
-                        fp.write("%s\n" % (key))
-                    else:
-                        fp.write("%s = %s\n" %
-                                 (key, str(value).replace('\n', '\n\t')))
+                if key == "__name__":
+                    continue
+                if value is not None:
+                    key = " = ".join((key, str(value).replace('\n', '\n\t')))
+                fp.write("%s\n" % (key))
             fp.write("\n")
 
     def remove_option(self, section, option):
@@ -471,10 +470,10 @@ class RawConfigParser:
         leading whitespace.  Blank lines, lines beginning with a '#',
         and just about everything else are ignored.
         """
-        cursect = None                            # None, or a dictionary
+        cursect = None                        # None, or a dictionary
         optname = None
         lineno = 0
-        e = None                                  # None, or an exception
+        e = None                              # None, or an exception
         while True:
             line = fp.readline()
             if not line:
@@ -490,7 +489,7 @@ class RawConfigParser:
             if line[0].isspace() and cursect is not None and optname:
                 value = line.strip()
                 if value:
-                    cursect[optname] = "%s\n%s" % (cursect[optname], value)
+                    cursect[optname].append(value)
             # a section header or option header?
             else:
                 # is it a section header?
@@ -515,6 +514,7 @@ class RawConfigParser:
                     mo = self._optcre.match(line)
                     if mo:
                         optname, vi, optval = mo.group('option', 'vi', 'value')
+                        optname = self.optionxform(optname.rstrip())
                         # This check is fine because the OPTCRE cannot
                         # match if it would set optval to None
                         if optval is not None:
@@ -525,11 +525,13 @@ class RawConfigParser:
                                 if pos != -1 and optval[pos-1].isspace():
                                     optval = optval[:pos]
                             optval = optval.strip()
-                        # allow empty values
-                        if optval == '""':
-                            optval = ''
-                        optname = self.optionxform(optname.rstrip())
-                        cursect[optname] = optval
+                            # allow empty values
+                            if optval == '""':
+                                optval = ''
+                            cursect[optname] = [optval]
+                        else:
+                            # valueless option handling
+                            cursect[optname] = optval
                     else:
                         # a non-fatal parsing error occurred.  set up the
                         # exception but keep going. the exception will be
@@ -542,6 +544,13 @@ class RawConfigParser:
         if e:
             raise e
 
+        # join the multi-line values collected while reading
+        all_sections = [self._defaults]
+        all_sections.extend(self._sections.values())
+        for options in all_sections:
+            for name, val in options.items():
+                if isinstance(val, list):
+                    options[name] = '\n'.join(val)
 
 class ConfigParser(RawConfigParser):
 
