@@ -258,15 +258,10 @@ _PyObject_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
     return PyObject_INIT_VAR(op, tp, nitems);
 }
 
-/* Implementation of PyObject_Print with recursion checking */
-static int
-internal_print(PyObject *op, FILE *fp, int flags, int nesting)
+int
+PyObject_Print(PyObject *op, FILE *fp, int flags)
 {
     int ret = 0;
-    if (nesting > 10) {
-        PyErr_SetString(PyExc_RuntimeError, "print recursion");
-        return -1;
-    }
     if (PyErr_CheckSignals())
         return -1;
 #ifdef USE_STACKCHECK
@@ -331,12 +326,6 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
         }
     }
     return ret;
-}
-
-int
-PyObject_Print(PyObject *op, FILE *fp, int flags)
-{
-    return internal_print(op, fp, flags, 0);
 }
 
 /* For debugging convenience.  Set a breakpoint here and call it from your DLL */
