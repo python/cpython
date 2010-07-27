@@ -19,7 +19,7 @@ class Test(unittest.TestCase):
 
         libc_open.argtypes = c_char_p, c_int
 
-        self.assertEqual(libc_open("", 0), -1)
+        self.assertEqual(libc_open(b"", 0), -1)
         self.assertEqual(get_errno(), errno.ENOENT)
 
         self.assertEqual(set_errno(32), errno.ENOENT)
@@ -35,7 +35,7 @@ class Test(unittest.TestCase):
                 else:
                     libc_open = libc.open
                 libc_open.argtypes = c_char_p, c_int
-                self.assertEqual(libc_open("", 0), -1)
+                self.assertEqual(libc_open(b"", 0), -1)
                 self.assertEqual(get_errno(), 0)
 
             t = threading.Thread(target=_worker)

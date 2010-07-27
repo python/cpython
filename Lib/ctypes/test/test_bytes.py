@@ -11,10 +11,10 @@ class BytesTest(unittest.TestCase):
         (c_char * 3)(b"a", b"b", b"c")
 
     def test_c_wchar(self):
-        x = c_wchar(b"x")
-        x.value = b"y"
-        c_wchar.from_param(b"x")
-        (c_wchar * 3)(b"a", b"b", b"c")
+        x = c_wchar("x")
+        x.value = "y"
+        c_wchar.from_param("x")
+        (c_wchar * 3)("a", "b", "c")
 
     def test_c_char_p(self):
         c_char_p("foo bar")
@@ -37,8 +37,8 @@ class BytesTest(unittest.TestCase):
         class X(Structure):
             _fields_ = [("a", c_wchar * 3)]
 
-        X("abc")
-        x = X(b"abc")
+        X(b"abc")
+        x = X("abc")
         self.assertEqual(x.a, "abc")
         self.assertEqual(type(x.a), str)
 

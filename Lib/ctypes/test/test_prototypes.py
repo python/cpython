@@ -127,7 +127,7 @@ class CharPointersTestCase(unittest.TestCase):
         self.assertEqual(None, func(c_char_p(None)))
 
         self.assertEqual(b"123", func(c_buffer(b"123")))
-        ca = c_char("a")
+        ca = c_char(b"a")
         self.assertEqual(ord(b"a"), func(pointer(ca))[0])
         self.assertEqual(ord(b"a"), func(byref(ca))[0])
 

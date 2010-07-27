@@ -28,10 +28,10 @@ class ReturnFuncPtrTestCase(unittest.TestCase):
         # _CFuncPtr instances are now callable with an integer argument
         # which denotes a function address:
         strchr = CFUNCTYPE(c_char_p, c_char_p, c_char)(addr)
-        self.assertTrue(strchr("abcdef", "b"), "bcdef")
-        self.assertEqual(strchr("abcdef", "x"), None)
-        self.assertRaises(ArgumentError, strchr, "abcdef", 3.0)
-        self.assertRaises(TypeError, strchr, "abcdef")
+        self.assertTrue(strchr(b"abcdef", b"b"), "bcdef")
+        self.assertEqual(strchr(b"abcdef", b"x"), None)
+        self.assertRaises(ArgumentError, strchr, b"abcdef", 3.0)
+        self.assertRaises(TypeError, strchr, b"abcdef")
 
 if __name__ == "__main__":
     unittest.main()

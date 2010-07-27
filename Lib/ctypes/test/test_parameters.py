@@ -19,7 +19,6 @@ class SimpleTypesTestCase(unittest.TestCase):
         else:
             set_conversion_mode(*self.prev_conv_mode)
 
-
     def test_subclasses(self):
         from ctypes import c_void_p, c_char_p
         # ctypes 0.9.5 and before did overwrite from_param in SimpleType_new
@@ -60,12 +59,11 @@ class SimpleTypesTestCase(unittest.TestCase):
         # new in 0.9.1: convert (encode) unicode to ascii
         self.assertEqual(c_char_p.from_param("123")._obj, b"123")
         self.assertRaises(UnicodeEncodeError, c_char_p.from_param, "123\377")
-
         self.assertRaises(TypeError, c_char_p.from_param, 42)
 
         # calling c_char_p.from_param with a c_char_p instance
         # returns the argument itself:
-        a = c_char_p("123")
+        a = c_char_p(b"123")
         self.assertTrue(c_char_p.from_param(a) is a)
 
     def test_cw_strings(self):

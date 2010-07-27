@@ -205,15 +205,15 @@ class StructureTestCase(unittest.TestCase):
                         ("age", c_int)]
 
         self.assertRaises(TypeError, Person, 42)
-        self.assertRaises(ValueError, Person, "asldkjaslkdjaslkdj")
+        self.assertRaises(ValueError, Person, b"asldkjaslkdjaslkdj")
         self.assertRaises(TypeError, Person, "Name", "HI")
 
         # short enough
-        self.assertEqual(Person("12345", 5).name, b"12345")
+        self.assertEqual(Person(b"12345", 5).name, b"12345")
         # exact fit
-        self.assertEqual(Person("123456", 5).name, b"123456")
+        self.assertEqual(Person(b"123456", 5).name, b"123456")
         # too long
-        self.assertRaises(ValueError, Person, "1234567", 5)
+        self.assertRaises(ValueError, Person, b"1234567", 5)
 
     def test_conflicting_initializers(self):
         class POINT(Structure):
@@ -267,7 +267,7 @@ class StructureTestCase(unittest.TestCase):
                         ("phone", Phone),
                         ("age", c_int)]
 
-        p = Person("Someone", ("1234", "5678"), 5)
+        p = Person(b"Someone", (b"1234", b"5678"), 5)
 
         self.assertEqual(p.name, b"Someone")
         self.assertEqual(p.phone.areacode, b"1234")
@@ -284,8 +284,8 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("name", c_wchar * 12),
                         ("age", c_int)]
 
-        p = PersonW("Someone")
-        self.assertEqual(p.name, "Someone")
+        p = PersonW("Someone \xe9")
+        self.assertEqual(p.name, "Someone \xe9")
 
         self.assertEqual(PersonW("1234567890").name, "1234567890")
         self.assertEqual(PersonW("12345678901").name, "12345678901")
@@ -304,13 +304,13 @@ class StructureTestCase(unittest.TestCase):
                         ("phone", Phone),
                         ("age", c_int)]
 
-        cls, msg = self.get_except(Person, "Someone", (1, 2))
+        cls, msg = self.get_except(Person, b"Someone", (1, 2))
         self.assertEqual(cls, RuntimeError)
         self.assertEqual(msg,
                              "(Phone) <class 'TypeError'>: "
                              "expected string, int found")
 
-        cls, msg = self.get_except(Person, "Someone", ("a", "b", "c"))
+        cls, msg = self.get_except(Person, b"Someone", (b"a", b"b", b"c"))
         self.assertEqual(cls, RuntimeError)
         if issubclass(Exception, object):
             self.assertEqual(msg,

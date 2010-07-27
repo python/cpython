@@ -9,7 +9,7 @@ class StringBufferTestCase(unittest.TestCase):
         self.assertEqual(sizeof(b), 32 * sizeof(c_char))
         self.assertTrue(type(b[0]) is bytes)
 
-        b = create_string_buffer("abc")
+        b = create_string_buffer(b"abc")
         self.assertEqual(len(b), 4) # trailing nul char
         self.assertEqual(sizeof(b), 4 * sizeof(c_char))
         self.assertTrue(type(b[0]) is bytes)

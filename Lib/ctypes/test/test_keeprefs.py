@@ -13,9 +13,9 @@ class SimpleTestCase(unittest.TestCase):
     def test_ccharp(self):
         x = c_char_p()
         self.assertEquals(x._objects, None)
-        x.value = "abc"
+        x.value = b"abc"
         self.assertEquals(x._objects, b"abc")
-        x = c_char_p("spam")
+        x = c_char_p(b"spam")
         self.assertEquals(x._objects, b"spam")
 
 class StructureTestCase(unittest.TestCase):
@@ -37,8 +37,8 @@ class StructureTestCase(unittest.TestCase):
         x = X()
         self.assertEquals(x._objects, None)
 
-        x.a = "spam"
-        x.b = "foo"
+        x.a = b"spam"
+        x.b = b"foo"
         self.assertEquals(x._objects, {"0": b"spam", "1": b"foo"})
 
     def test_struct_struct(self):

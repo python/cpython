@@ -22,8 +22,8 @@ class ReprTest(unittest.TestCase):
             self.assertEqual("<X object at", repr(typ(42))[:12])
 
     def test_char(self):
-        self.assertEqual("c_char(b'x')", repr(c_char('x')))
-        self.assertEqual("<X object at", repr(X('x'))[:12])
+        self.assertEqual("c_char(b'x')", repr(c_char(b'x')))
+        self.assertEqual("<X object at", repr(X(b'x'))[:12])
 
 if __name__ == "__main__":
     unittest.main()
