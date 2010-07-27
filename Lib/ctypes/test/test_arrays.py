@@ -42,7 +42,7 @@ class ArrayTestCase(unittest.TestCase):
 
         CharArray = ARRAY(c_char, 3)
 
-        ca = CharArray("a", "b", "c")
+        ca = CharArray(b"a", b"b", b"c")
 
         # Should this work? It doesn't:
         # CharArray("abc")
@@ -89,7 +89,7 @@ class ArrayTestCase(unittest.TestCase):
 
     def test_from_address(self):
         # Failed with 0.9.8, reported by JUrner
-        p = create_string_buffer("foo")
+        p = create_string_buffer(b"foo")
         sz = (c_char * 3).from_address(addressof(p))
         self.assertEqual(sz[:], b"foo")
         self.assertEqual(sz[::], b"foo")

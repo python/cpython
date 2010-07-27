@@ -25,7 +25,7 @@ class LibTest(unittest.TestCase):
         def sort(a, b):
             return three_way_cmp(a[0], b[0])
 
-        chars = create_string_buffer("spam, spam, and spam")
+        chars = create_string_buffer(b"spam, spam, and spam")
         lib.my_qsort(chars, len(chars)-1, sizeof(c_char), comparefunc(sort))
         self.assertEqual(chars.raw, b"   ,,aaaadmmmnpppsss\x00")
 

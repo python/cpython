@@ -14,7 +14,7 @@ class StringPtrTestCase(unittest.TestCase):
 
         # NULL pointer access
         self.assertRaises(ValueError, getattr, x.str, "contents")
-        b = c_buffer("Hello, World")
+        b = c_buffer(b"Hello, World")
         from sys import getrefcount as grc
         self.assertEqual(grc(b), 2)
         x.str = b
@@ -63,8 +63,8 @@ class StringPtrTestCase(unittest.TestCase):
         # So we must keep a reference to buf separately
 
         strchr.restype = POINTER(c_char)
-        buf = c_buffer("abcdef")
-        r = strchr(buf, "c")
+        buf = c_buffer(b"abcdef")
+        r = strchr(buf, b"c")
         x = r[0], r[1], r[2], r[3], r[4]
         self.assertEqual(x, (b"c", b"d", b"e", b"f", b"\000"))
         del buf

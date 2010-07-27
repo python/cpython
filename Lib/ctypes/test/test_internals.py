@@ -70,19 +70,17 @@ class ObjectsTestCase(unittest.TestCase):
         class Y(Structure):
             _fields_ = [("x", X), ("y", X)]
 
-        s1 = "Hello, World"
-        s2 = "Hallo, Welt"
+        s1 = b"Hello, World"
+        s2 = b"Hallo, Welt"
 
         x = X()
         x.a = s1
         x.b = s2
-        self.assertEqual(x._objects, {"0": bytes(s1, "ascii"),
-                                          "1": bytes(s2, "ascii")})
+        self.assertEqual(x._objects, {"0": s1, "1": s2})
 
         y = Y()
         y.x = x
-        self.assertEqual(y._objects, {"0": {"0": bytes(s1, "ascii"),
-                                                "1": bytes(s2, "ascii")}})
+        self.assertEqual(y._objects, {"0": {"0": s1, "1": s2}})
 ##        x = y.x
 ##        del y
 ##        print x._b_base_._objects
