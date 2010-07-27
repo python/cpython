@@ -55,7 +55,7 @@ class BinASCIITest(unittest.TestCase):
                              "{!r} != {!r}".format(fb, fa, res, raw))
             self.assertIsInstance(res, bytes)
             self.assertIsInstance(a, bytes)
-            self.assertLess(max(c for c in a), 128)
+            self.assertLess(max(a), 128)
         self.assertIsInstance(binascii.crc_hqx(raw, 0), int)
         self.assertIsInstance(binascii.crc32(raw), int)
 
@@ -167,7 +167,7 @@ class BinASCIITest(unittest.TestCase):
     def test_qp(self):
         # A test for SF bug 534347 (segfaults without the proper fix)
         try:
-            binascii.a2b_qp("", **{1:1})
+            binascii.a2b_qp(b"", **{1:1})
         except TypeError:
             pass
         else:
@@ -179,12 +179,10 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.a2b_qp(b"=00\r\n=00"), b"\x00\r\n\x00")
         self.assertEqual(
             binascii.b2a_qp(b"\xff\r\n\xff\n\xff"),
-            b"=FF\r\n=FF\r\n=FF"
-        )
+            b"=FF\r\n=FF\r\n=FF")
         self.assertEqual(
             binascii.b2a_qp(b"0"*75+b"\xff\r\n\xff\r\n\xff"),
-            b"0"*75+b"=\r\n=FF\r\n=FF\r\n=FF"
-        )
+            b"0"*75+b"=\r\n=FF\r\n=FF\r\n=FF")
 
         self.assertEqual(binascii.b2a_qp(b'\0\n'), b'=00\n')
         self.assertEqual(binascii.b2a_qp(b'\0\n', quotetabs=True), b'=00\n')
@@ -210,13 +208,15 @@ class BinASCIITest(unittest.TestCase):
             except Exception as err:
                 self.fail("{}({!r}) raises {!r}".format(func, empty, err))
 
-    def test_no_binary_strings(self):
-        # b2a_ must not accept strings
-        for f in (binascii.b2a_uu, binascii.b2a_base64,
-                  binascii.b2a_hqx, binascii.b2a_qp,
-                  binascii.hexlify, binascii.rlecode_hqx,
-                  binascii.crc_hqx, binascii.crc32):
-            self.assertRaises(TypeError, f, "test")
+    def test_unicode_strings(self):
+        # Unicode strings are not accepted.
+        for func in all_functions:
+            try:
+                self.assertRaises(TypeError, getattr(binascii, func), "test")
+            except Exception as err:
+                self.fail('{}("test") raises {!r}'.format(func, err))
+        # crc_hqx needs 2 arguments
+        self.assertRaises(TypeError, binascii.crc_hqx, "test", 0)
 
 
 class ArrayBinASCIITest(BinASCIITest):

@@ -473,6 +473,10 @@ C-API
 Library
 -------
 
+- Issue #4770: Restrict binascii module to accept only bytes (as specified).
+  And fix the email package to encode to ASCII instead of
+  ``raw-unicode-escape`` before ASCII-to-binary decoding.
+
 - Issue #9384: python -m tkinter will now display a simple demo applet.
 
 - The default size of the re module's compiled regular expression cache has

@@ -546,7 +546,7 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
     Py_ssize_t len;
     int done = 0;
 
-    if ( !PyArg_ParseTuple(args, "s*:a2b_hqx", &pascii) )
+    if ( !PyArg_ParseTuple(args, "y*:a2b_hqx", &pascii) )
         return NULL;
     ascii_data = pascii.buf;
     len = pascii.len;
@@ -750,7 +750,7 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
     PyObject *rv;
     Py_ssize_t in_len, out_len, out_len_left;
 
-    if ( !PyArg_ParseTuple(args, "s*:rledecode_hqx", &pin) )
+    if ( !PyArg_ParseTuple(args, "y*:rledecode_hqx", &pin) )
         return NULL;
     in_data = pin.buf;
     in_len = pin.len;
@@ -1121,7 +1121,7 @@ binascii_unhexlify(PyObject *self, PyObject *args)
     char* retbuf;
     Py_ssize_t i, j;
 
-    if (!PyArg_ParseTuple(args, "s*:a2b_hex", &parg))
+    if (!PyArg_ParseTuple(args, "y*:a2b_hex", &parg))
         return NULL;
     argbuf = parg.buf;
     arglen = parg.len;
@@ -1199,7 +1199,7 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *kwlist[] = {"data", "header", NULL};
     int header = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|i", kwlist, &pdata,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|i", kwlist, &pdata,
           &header))
         return NULL;
     data = pdata.buf;
