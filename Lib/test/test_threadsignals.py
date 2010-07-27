@@ -4,7 +4,7 @@ import unittest
 import signal
 import os
 import sys
-from test.test_support import run_unittest, import_module
+from test.test_support import run_unittest, import_module, reap_threads
 thread = import_module('thread')
 
 if sys.platform[:3] in ('win', 'os2') or sys.platform=='riscos':
@@ -39,6 +39,7 @@ class ThreadSignals(unittest.TestCase):
        wait for it to finish. Check that we got both signals
        and that they were run by the main thread.
     """
+    @reap_threads
     def test_signals(self):
         signalled_all.acquire()
         self.spawnSignallingThread()
