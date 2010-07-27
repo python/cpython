@@ -9,7 +9,9 @@
 The :mod:`tkinter` package ("Tk interface") is the standard Python interface to
 the Tk GUI toolkit.  Both Tk and :mod:`tkinter` are available on most Unix
 platforms, as well as on Windows systems.  (Tk itself is not part of Python; it
-is maintained at ActiveState.)
+is maintained at ActiveState.) You can check that :mod:`tkinter` is properly
+installed on your system by running ``python -m tkinter`` from the command line;
+this should open a window demonstrating a simple Tk interface.
 
 .. seealso::
 

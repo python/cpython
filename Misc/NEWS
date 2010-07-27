@@ -473,6 +473,8 @@ C-API
 Library
 -------
 
+- Issue #9384: python -m tkinter will now display a simple demo applet.
+
 - The default size of the re module's compiled regular expression cache has
   been increased from 100 to 500 and the cache replacement policy has changed
   from simply clearing the entire cache on overflow to randomly forgetting 20%
