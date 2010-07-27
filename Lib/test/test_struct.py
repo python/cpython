@@ -213,6 +213,7 @@ class StructTest(unittest.TestCase):
                     expected = '%x' % expected
                     if len(expected) & 1:
                         expected = "0" + expected
+                    expected = expected.encode('ascii')
                     expected = unhexlify(expected)
                     expected = (b"\x00" * (self.bytesize - len(expected)) +
                                 expected)

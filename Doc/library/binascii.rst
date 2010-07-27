@@ -18,6 +18,11 @@ use these functions directly but use wrapper modules like :mod:`uu`,
 low-level functions written in C for greater speed that are used by the
 higher-level modules.
 
+.. note::
+
+   Encoding and decoding functions do not accept Unicode strings.  Only bytestring
+   and bytearray objects can be processed.
+
 The :mod:`binascii` module defines the following functions:
 
 
@@ -54,6 +59,9 @@ The :mod:`binascii` module defines the following functions:
    data. More than one line may be passed at a time. If the optional argument
    *header* is present and true, underscores will be decoded as spaces.
 
+   .. versionchanged:: 3.2
+      accept only bytestring or bytearray object as input.
+
 
 .. function:: b2a_qp(data, quotetabs=False, istext=True, header=False)
 
@@ -82,6 +90,9 @@ The :mod:`binascii` module defines the following functions:
    A count of ``0`` specifies a byte value of ``0x90``. The routine returns the
    decompressed data, unless data input data ends in an orphaned repeat indicator,
    in which case the :exc:`Incomplete` exception is raised.
+
+   .. versionchanged:: 3.2
+      accept only bytestring or bytearray object as input.
 
 
 .. function:: rlecode_hqx(data)
@@ -139,6 +150,9 @@ The :mod:`binascii` module defines the following functions:
    of hexadecimal digits (which can be upper or lower case), otherwise a
    :exc:`TypeError` is raised.
 
+   .. versionchanged:: 3.2
+      accept only bytestring or bytearray object as input.
+
 
 .. exception:: Error
 
@@ -164,4 +178,3 @@ The :mod:`binascii` module defines the following functions:
 
    Module :mod:`quopri`
       Support for quoted-printable encoding used in MIME email messages.
-

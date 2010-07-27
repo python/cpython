@@ -198,17 +198,19 @@ class Message:
             return None
         cte = self.get('content-transfer-encoding', '').lower()
         if cte == 'quoted-printable':
+            if isinstance(payload, str):
+                payload = payload.encode('ascii')
             return utils._qdecode(payload)
         elif cte == 'base64':
             try:
                 if isinstance(payload, str):
-                    payload = payload.encode('raw-unicode-escape')
+                    payload = payload.encode('ascii')
                 return base64.b64decode(payload)
             except binascii.Error:
                 # Incorrect padding
                 pass
         elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
-            in_file = BytesIO(payload.encode('raw-unicode-escape'))
+            in_file = BytesIO(payload.encode('ascii'))
             out_file = BytesIO()
             try:
                 uu.decode(in_file, out_file, quiet=True)
