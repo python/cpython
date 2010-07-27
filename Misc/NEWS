@@ -473,6 +473,9 @@ C-API
 Library
 -------
 
+- Issue #9378: python -m pickle <pickle file> will now load and
+  display the first object in the pickle file.
+
 - Issue #4770: Restrict binascii module to accept only bytes (as specified).
   And fix the email package to encode to ASCII instead of
   ``raw-unicode-escape`` before ASCII-to-binary decoding.

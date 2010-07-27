@@ -1322,4 +1322,26 @@ def _test():
     return doctest.testmod()
 
 if __name__ == "__main__":
-    _test()
+    import sys, argparse
+    parser = argparse.ArgumentParser(
+        description='display contents of the pickle files')
+    parser.add_argument(
+        'pickle_file', type=argparse.FileType('br'),
+        nargs='*', help='the pickle file')
+    parser.add_argument(
+        '-t', '--test', action='store_true',
+        help='run self-test suite')
+    parser.add_argument(
+        '-v', action='store_true',
+        help='run verbosely; only affects self-test run')
+    args = parser.parse_args()
+    if args.test:
+        _test()
+    else:
+        if not args.pickle_file:
+            parser.print_help()
+        else:
+            import pprint
+            for f in args.pickle_file:
+                obj = load(f)
+                pprint.pprint(obj)
