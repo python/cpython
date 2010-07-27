@@ -693,18 +693,15 @@ class BaseTestAPI(unittest.TestCase):
 class TestAPI_UseSelect(BaseTestAPI):
     use_poll = False
 
+@unittest.skipUnless(hasattr(select, 'poll'), 'select.poll required')
 class TestAPI_UsePoll(BaseTestAPI):
     use_poll = True
 
 
 def test_main():
     tests = [HelperFunctionTests, DispatcherTests, DispatcherWithSendTests,
-             DispatcherWithSendTests_UsePoll, TestAPI_UseSelect]
-    if hasattr(asyncore, 'file_wrapper'):
-        tests.append(FileWrapperTest)
-    if hasattr(select, 'poll'):
-        tests.append(TestAPI_UsePoll)
-
+             DispatcherWithSendTests_UsePoll, TestAPI_UseSelect,
+             TestAPI_UsePoll, FileWrapperTest]
     run_unittest(*tests)
 
 if __name__ == "__main__":
