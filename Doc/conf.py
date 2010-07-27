@@ -152,7 +152,7 @@ latex_preamble = r'''
 latex_appendices = ['glossary', 'about', 'license', 'copyright']
 
 # Get LaTeX to handle Unicode correctly
-latex_elements = {'inputenc': r'\usepackage[utf8x]{inputenc}'}
+latex_elements = {'inputenc': r'\usepackage[utf8x]{inputenc}', 'utf8extra': ''}
 
 # Options for the coverage checker
 # --------------------------------

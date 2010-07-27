@@ -40,7 +40,7 @@ help:
 checkout:
 	@if [ ! -d tools/sphinx ]; then \
 	  echo "Checking out Sphinx..."; \
-	  svn checkout $(SVNROOT)/external/Sphinx-1.0/sphinx tools/sphinx; \
+	  svn checkout $(SVNROOT)/external/Sphinx-1.0.1/sphinx tools/sphinx; \
 	fi
 	@if [ ! -d tools/docutils ]; then \
 	  echo "Checking out Docutils..."; \
