@@ -475,6 +475,9 @@ C-API
 Library
 -------
 
+- Issue #1682942: Improvements to configparser: support alternate
+  delimiters, alternate comment prefixes and empty lines in values.
+
 - Issue #9354: Provide getsockopt() in asyncore's file_wrapper.
 
 - Issue #8966: ctypes: Remove implicit bytes-unicode conversion.
