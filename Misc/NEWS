@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8991: convertbuffer() rejects discontigious buffers.
+
 - Issue #7616: Fix copying of overlapping memoryview slices with the Intel
   compiler.
 
