@@ -132,8 +132,6 @@ static PyTypeObject Simple_Type;
 /* a callable object used for unpickling */
 static PyObject *_unpickle;
 
-char *_ctypes_conversion_encoding = NULL;
-char *_ctypes_conversion_errors = NULL;
 
 
 /****************************************************************/
@@ -1090,13 +1088,7 @@ CharArray_set_value(CDataObject *self, PyObject *value)
         return -1;
     }
 
-    if (PyUnicode_Check(value)) {
-        value = PyUnicode_AsEncodedString(value,
-                                          _ctypes_conversion_encoding,
-                                          _ctypes_conversion_errors);
-        if (!value)
-            return -1;
-    } else if (!PyBytes_Check(value)) {
+    if (!PyBytes_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "str/bytes expected instead of %s instance",
                      Py_TYPE(value)->tp_name);
@@ -1150,13 +1142,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
                         "can't delete attribute");
         return -1;
     }
-    if (PyBytes_Check(value)) {
-        value = PyUnicode_FromEncodedObject(value,
-                                            _ctypes_conversion_encoding,
-                                            _ctypes_conversion_errors);
-        if (!value)
-            return -1;
-    } else if (!PyUnicode_Check(value)) {
+    if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                         "unicode string expected instead of %s instance",
                         Py_TYPE(value)->tp_name);
@@ -1510,7 +1496,7 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    if (PyBytes_Check(value) || PyUnicode_Check(value)) {
+    if (PyBytes_Check(value)) {
         PyCArgObject *parg;
         struct fielddesc *fd = _ctypes_get_fielddesc("z");
 

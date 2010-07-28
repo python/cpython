@@ -1168,20 +1168,6 @@ O_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    if (PyUnicode_Check(value)) {
-        value = PyUnicode_AsEncodedString(value,
-                                          _ctypes_conversion_encoding,
-                                          _ctypes_conversion_errors);
-        if (value == NULL)
-            return NULL;
-        if (PyBytes_GET_SIZE(value) != 1) {
-            Py_DECREF(value);
-            goto error;
-        }
-        *(char *)ptr = PyBytes_AS_STRING(value)[0];
-        Py_DECREF(value);
-        _RET(value);
-    }
     if (PyBytes_Check(value) && PyBytes_GET_SIZE(value) == 1) {
         *(char *)ptr = PyBytes_AS_STRING(value)[0];
         _RET(value);
@@ -1217,13 +1203,7 @@ static PyObject *
 u_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     Py_ssize_t len;
-    if (PyBytes_Check(value)) {
-        value = PyUnicode_FromEncodedObject(value,
-                                            _ctypes_conversion_encoding,
-                                            _ctypes_conversion_errors);
-        if (!value)
-            return NULL;
-    } else if (!PyUnicode_Check(value)) {
+    if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                         "unicode string expected instead of %s instance",
                         value->ob_type->tp_name);
@@ -1292,13 +1272,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
     /* It's easier to calculate in characters than in bytes */
     length /= sizeof(wchar_t);
 
-    if (PyBytes_Check(value)) {
-        value = PyUnicode_FromEncodedObject(value,
-                                            _ctypes_conversion_encoding,
-                                            _ctypes_conversion_errors);
-        if (!value)
-            return NULL;
-    } else if (!PyUnicode_Check(value)) {
+    if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                         "unicode string expected instead of %s instance",
                         value->ob_type->tp_name);
@@ -1342,14 +1316,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     char *data;
     Py_ssize_t size;
 
-    if (PyUnicode_Check(value)) {
-        value = PyUnicode_AsEncodedString(value,
-                                                                          _ctypes_conversion_encoding,
-                                                                          _ctypes_conversion_errors);
-        if (value == NULL)
-            return NULL;
-        assert(PyBytes_Check(value));
-    } else if(PyBytes_Check(value)) {
+    if(PyBytes_Check(value)) {
         Py_INCREF(value);
     } else {
         PyErr_Format(PyExc_TypeError,
@@ -1393,14 +1360,6 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
         *(char **)ptr = PyBytes_AsString(value);
         Py_INCREF(value);
         return value;
-    } else if (PyUnicode_Check(value)) {
-        PyObject *str = PyUnicode_AsEncodedString(value,
-                                                  _ctypes_conversion_encoding,
-                                                  _ctypes_conversion_errors);
-        if (str == NULL)
-            return NULL;
-        *(char **)ptr = PyBytes_AS_STRING(str);
-        return str;
     } else if (PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
         *(char **)ptr = (char *)PyLong_AsUnsignedLongLongMask(value);
@@ -1454,13 +1413,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    if (PyBytes_Check(value)) {
-        value = PyUnicode_FromEncodedObject(value,
-                                            _ctypes_conversion_encoding,
-                                            _ctypes_conversion_errors);
-        if (!value)
-            return NULL;
-    } else if (!PyUnicode_Check(value)) {
+    if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "unicode string or integer address expected instead of %s instance",
                      value->ob_type->tp_name);
@@ -1540,12 +1493,6 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
     /* convert value into a PyUnicodeObject or NULL */
     if (Py_None == value) {
         value = NULL;
-    } else if (PyBytes_Check(value)) {
-        value = PyUnicode_FromEncodedObject(value,
-                                            _ctypes_conversion_encoding,
-                                            _ctypes_conversion_errors);
-        if (!value)
-            return NULL;
     } else if (PyUnicode_Check(value)) {
         Py_INCREF(value); /* for the descref below */
     } else {
