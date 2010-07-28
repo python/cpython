@@ -446,7 +446,9 @@ class _Environ(MutableMapping):
         return len(self.data)
 
     def __repr__(self):
-        return 'environ({!r})'.format(self.data)
+        return 'environ({})'.format(', '.join(
+            ('{!r}: {!r}'.format(self.decodekey(key), self.decodevalue(value))
+            for key, value in self.data.items())))
 
     def copy(self):
         return dict(self)
