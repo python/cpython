@@ -2087,7 +2087,6 @@ class TextIOWrapperTest(unittest.TestCase):
 
         self.assertEqual(buffer.seekable(), txt.seekable())
 
-    @unittest.skip("Issue #6213 with incremental encoders")
     def test_append_bom(self):
         # The BOM is not written again when appending to a non-empty file
         filename = support.TESTFN
@@ -2103,7 +2102,6 @@ class TextIOWrapperTest(unittest.TestCase):
             with self.open(filename, 'rb') as f:
                 self.assertEquals(f.read(), 'aaaxxx'.encode(charset))
 
-    @unittest.skip("Issue #6213 with incremental encoders")
     def test_seek_bom(self):
         # Same test, but when seeking manually
         filename = support.TESTFN

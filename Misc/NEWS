@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6213: Implement getstate() and setstate() methods of utf-8-sig and
+  utf-16 incremental encoders.
+
 - Issue #7113: Speed up loading in ConfigParser. Patch by Łukasz Langa.
 
 - Issue #3704: cookielib was not properly handling URLs with a / in the
