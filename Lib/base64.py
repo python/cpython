@@ -241,7 +241,7 @@ def b32decode(s, casefold=False, map01=None):
         acc += _b32rev[c] << shift
         shift -= 5
         if shift < 0:
-            parts.append(binascii.unhexlify('%010x' % acc))
+            parts.append(binascii.unhexlify(bytes('%010x' % acc, "ascii")))
             acc = 0
             shift = 35
     # Process the last, partial quanta
