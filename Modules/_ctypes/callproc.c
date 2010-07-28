@@ -1641,37 +1641,6 @@ My_Py_DECREF(PyObject *self, PyObject *arg)
     return arg;
 }
 
-#ifdef CTYPES_UNICODE
-
-static char set_conversion_mode_doc[] =
-"set_conversion_mode(encoding, errors) -> (previous-encoding, previous-errors)\n\
-\n\
-Set the encoding and error handling ctypes uses when converting\n\
-between unicode and strings.  Returns the previous values.\n";
-
-static PyObject *
-set_conversion_mode(PyObject *self, PyObject *args)
-{
-    char *coding, *mode;
-    PyObject *result;
-
-    if (!PyArg_ParseTuple(args, "zs:set_conversion_mode", &coding, &mode))
-        return NULL;
-    result = Py_BuildValue("(zz)", _ctypes_conversion_encoding, _ctypes_conversion_errors);
-    if (coding) {
-        PyMem_Free(_ctypes_conversion_encoding);
-        _ctypes_conversion_encoding = PyMem_Malloc(strlen(coding) + 1);
-        strcpy(_ctypes_conversion_encoding, coding);
-    } else {
-        _ctypes_conversion_encoding = NULL;
-    }
-    PyMem_Free(_ctypes_conversion_errors);
-    _ctypes_conversion_errors = PyMem_Malloc(strlen(mode) + 1);
-    strcpy(_ctypes_conversion_errors, mode);
-    return result;
-}
-#endif
-
 static PyObject *
 resize(PyObject *self, PyObject *args)
 {
@@ -1852,9 +1821,6 @@ PyMethodDef _ctypes_module_methods[] = {
     {"_unpickle", unpickle, METH_VARARGS },
     {"buffer_info", buffer_info, METH_O, "Return buffer interface information"},
     {"resize", resize, METH_VARARGS, "Resize the memory buffer of a ctypes instance"},
-#ifdef CTYPES_UNICODE
-    {"set_conversion_mode", set_conversion_mode, METH_VARARGS, set_conversion_mode_doc},
-#endif
 #ifdef MS_WIN32
     {"get_last_error", get_last_error, METH_NOARGS},
     {"set_last_error", set_last_error, METH_VARARGS},

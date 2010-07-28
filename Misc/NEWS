@@ -473,6 +473,8 @@ C-API
 Library
 -------
 
+- Issue #8966: ctypes: Remove implicit bytes-unicode conversion.
+
 - Issue #9378: python -m pickle <pickle file> will now load and
   display the first object in the pickle file.
 
