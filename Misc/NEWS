@@ -12,6 +12,9 @@ What's New in Python 2.6.6 alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #6213: Implement getstate() and setstate() methods of utf-8-sig and
+  utf-16 incremental encoders.
+
 - Issue #8271: during the decoding of an invalid UTF-8 byte sequence, only the
   start byte and the continuation byte(s) are now considered invalid, instead
   of the number of bytes specified by the start byte.
