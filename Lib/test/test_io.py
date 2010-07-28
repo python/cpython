@@ -799,6 +799,37 @@ class StatefulIncrementalDecoderTest(unittest.TestCase):
         self.assertEquals(d.decode(b'oiabcd'), '')
         self.assertEquals(d.decode(b'', 1), 'abcd.')
 
+    def test_append_bom(self):
+        # The BOM is not written again when appending to a non-empty file
+        filename = test_support.TESTFN
+        for charset in ('utf-8-sig', 'utf-16', 'utf-32'):
+            with io.open(filename, 'w', encoding=charset) as f:
+                f.write('aaa')
+                pos = f.tell()
+            with io.open(filename, 'rb') as f:
+                self.assertEquals(f.read(), 'aaa'.encode(charset))
+
+            with io.open(filename, 'a', encoding=charset) as f:
+                f.write('xxx')
+            with io.open(filename, 'rb') as f:
+                self.assertEquals(f.read(), 'aaaxxx'.encode(charset))
+
+    def test_seek_bom(self):
+        # Same test, but when seeking manually
+        filename = test_support.TESTFN
+        for charset in ('utf-8-sig', 'utf-16', 'utf-32'):
+            with io.open(filename, 'w', encoding=charset) as f:
+                f.write('aaa')
+                pos = f.tell()
+            with io.open(filename, 'r+', encoding=charset) as f:
+                f.seek(pos)
+                f.write('zzz')
+                f.seek(0)
+                f.write('bbb')
+            with io.open(filename, 'rb') as f:
+                self.assertEquals(f.read(), 'bbbzzz'.encode(charset))
+
+
 class TextIOWrapperTest(unittest.TestCase):
 
     def setUp(self):

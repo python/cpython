@@ -1440,6 +1440,15 @@ class TextIOWrapper(TextIOBase):
         self._snapshot = None  # info for reconstructing decoder state
         self._seekable = self._telling = self.buffer.seekable()
 
+        if self._seekable and self.writable():
+            position = self.buffer.tell()
+            if position != 0:
+                try:
+                    self._get_encoder().setstate(0)
+                except LookupError:
+                    # Sometimes the encoder doesn't exist
+                    pass
+
     # self._snapshot is either None, or a tuple (dec_flags, next_input)
     # where dec_flags is the second (integer) item of the decoder state
     # and next_input is the chunk of input bytes that comes next after the
@@ -1726,6 +1735,17 @@ class TextIOWrapper(TextIOBase):
                 raise IOError("can't restore logical file position")
             self._decoded_chars_used = chars_to_skip
 
+        # Finally, reset the encoder (merely useful for proper BOM handling)
+        try:
+            encoder = self._encoder or self._get_encoder()
+        except LookupError:
+            # Sometimes the encoder doesn't exist
+            pass
+        else:
+            if cookie != 0:
+                encoder.setstate(0)
+            else:
+                encoder.reset()
         return cookie
 
     def read(self, n=None):
