@@ -1,0 +1,537 @@
+# This is the main Samba configuration file. You should read the
+# smb.conf(5) manual page in order to understand the options listed
+# here. Samba has a huge number of configurable options (perhaps too
+# many!) most of which are not shown in this example
+#
+# Any line which starts with a ; (semi-colon) or a # (hash) 
+# is a comment and is ignored. In this example we will use a #
+# for commentry and a ; for parts of the config file that you
+# may wish to enable
+#
+# NOTE: Whenever you modify this file you should run the command #"testparm" # to check that you have not made any basic syntactic #errors. 
+#
+#======================= Global Settings =====================================
+[global]
+
+# 1. Server Naming Options:
+# workgroup = NT-Domain-Name or Workgroup-Name
+   
+  workgroup = MDKGROUP
+
+# netbios name is the name you will see in "Network Neighbourhood",
+# but defaults to your hostname
+
+;  netbios name = <name_of_this_server>
+
+# server string is the equivalent of the NT Description field
+   
+  server string = Samba Server %v
+
+# Message command is run by samba when a "popup" message is sent to it.
+# The example below is for use with LinPopUp:
+; message command = /usr/bin/linpopup "%f" "%m" %s; rm %s
+
+# 2. Printing Options:
+# CHANGES TO ENABLE PRINTING ON ALL CUPS PRINTERS IN THE NETWORK
+# (as cups is now used in linux-mandrake 7.2 by default)
+# if you want to automatically load your printer list rather
+# than setting them up individually then you'll need this
+   
+   printcap name = lpstat
+   load printers = yes
+
+# It should not be necessary to spell out the print system type unless
+# yours is non-standard. Currently supported print systems include:
+# bsd, sysv, plp, lprng, aix, hpux, qnx, cups
+   
+  printing = cups
+
+# Samba 2.2 supports the Windows NT-style point-and-print feature. To
+# use this, you need to be able to upload print drivers to the samba
+# server. The printer admins (or root) may install drivers onto samba.
+# Note that this feature uses the print$ share, so you will need to 
+# enable it below.
+# This parameter works like domain admin group:
+# printer admin = @<group> <user>
+;   printer admin = @adm
+# This should work well for winbind:
+;   printer admin = @"Domain Admins"
+
+# 3. Logging Options:
+# this tells Samba to use a separate log file for each machine
+# that connects
+
+   log file = /var/log/samba/log.%m
+
+# Put a capping on the size of the log files (in Kb).
+   max log size = 50
+
+# Set the log (verbosity) level (0 <= log level <= 10)
+; log level = 3
+
+# 4. Security and Domain Membership Options:
+# This option is important for security. It allows you to restrict
+# connections to machines which are on your local network. The
+# following example restricts access to two C class networks and
+# the "loopback" interface. For more examples of the syntax see
+# the smb.conf man page. Do not enable this if (tcp/ip) name resolution #does
+# not work for all the hosts in your network.
+;   hosts allow = 192.168.1. 192.168.2. 127.
+
+  hosts allow = 127.  //note this is only my private IP address
+
+# Uncomment this if you want a guest account, you must add this to
+# /etc/passwd
+# otherwise the user "nobody" is used
+;  guest account = pcguest
+
+# Security mode. Most people will want user level security. See
+# security_level.txt for details.
+
+   security = user
+
+# Use password server option only with security = server or security = # domain
+# When using security = domain, you should use password server = *
+;   password server = 
+;   password server = *
+
+# Password Level allows matching of _n_ characters of the password for
+# all combinations of upper and lower case.
+
+  password level = 8
+
+;  username level = 8
+
+# You may wish to use password encryption. Please read
+# ENCRYPTION.txt, Win95.txt and WinNT.txt in the Samba documentation.
+# Do not enable this option unless you have read those documents
+# Encrypted passwords are required for any use of samba in a Windows NT #domain
+# The smbpasswd file is only required by a server doing authentication, #thus members of a domain do not need one.
+
+  encrypt passwords = yes
+  smb passwd file = /etc/samba/smbpasswd
+
+# The following are needed to allow password changing from Windows to
+# also update the Linux system password.
+# NOTE: Use these with 'encrypt passwords' and 'smb passwd file' above.
+# NOTE2: You do NOT need these to allow workstations to change only
+#        the encrypted SMB passwords. They allow the Unix password
+#        to be kept in sync with the SMB password.
+;  unix password sync = Yes
+# You either need to setup a passwd program and passwd chat, or
+# enable pam password change
+;  pam password change = yes
+;  passwd program = /usr/bin/passwd %u
+;  passwd chat = *New*UNIX*password* %n\n *ReType*new*UNIX*password* 
+# %n\n
+;*passwd:*all*authentication*tokens*updated*successfully*
+
+# Unix users can map to different SMB User names
+;  username map = /etc/samba/smbusers
+
+# Using the following line enables you to customise your configuration
+# on a per machine basis. The %m gets replaced with the netbios name
+# of the machine that is connecting
+;   include = /etc/samba/smb.conf.%m
+
+# Options for using winbind. Winbind allows you to do all account and
+# authentication from a Windows or samba domain controller, creating
+# accounts on the fly, and maintaining a mapping of Windows RIDs to
+# unix uid's 
+# and gid's. winbind uid and winbind gid are the only required
+# parameters.
+#
+# winbind uid is the range of uid's winbind can use when mapping RIDs #to uid's
+;  winbind uid = 10000-20000
+#
+# winbind gid is the range of uid's winbind can use when mapping RIDs
+# to gid's
+;  winbind gid = 10000-20000
+#
+# winbind separator is the character a user must use between their
+# domain name and username, defaults to "\"
+;  winbind separator = +
+#
+# winbind use default domain allows you to have winbind return
+# usernames in the form user instead of DOMAIN+user for the domain
+# listed in the workgroup parameter.
+;  winbind use default domain = yes
+#
+# template homedir determines the home directory for winbind users,
+# with %D expanding to their domain name and %U expanding to their
+# username:
+;  template homedir = /home/%D/%U
+
+# When using winbind, you may want to have samba create home
+# directories on the fly for authenticated users. Ensure that 
+# /etc/pam.d/samba is using 'service=system-auth-winbind' in pam_stack 
+# modules, and then enable obedience of pam restrictions below:
+;  obey pam restrictions = yes
+
+#
+# template shell determines the shell users authenticated by winbind #get
+;  template shell = /bin/bash
+
+# 5. Browser Control and Networking Options:
+# Most people will find that this option gives better performance.
+# See speed.txt and the manual pages for details
+
+   socket options = TCP_NODELAY SO_RCVBUF=8192 SO_SNDBUF=8192
+
+# Configure Samba to use multiple interfaces
+# If you have multiple network interfaces then you must list them
+# here. See the man page for details.
+;   interfaces = 192.168.12.2/24 192.168.13.2/24 
+
+# Configure remote browse list synchronisation here
+#  request announcement to, or browse list sync from:
+#       a specific host or from / to a whole subnet (see below)
+;   remote browse sync = 192.168.3.25 192.168.5.255
+# Cause this host to announce itself to local subnets here
+;   remote announce = 192.168.1.255 192.168.2.44
+
+# set local master to no if you don't want Samba to become a master
+# browser on your network. Otherwise the normal election rules apply
+;   local master = no
+
+# OS Level determines the precedence of this server in master browser
+# elections. The default value should be reasonable
+;   os level = 33
+
+# Domain Master specifies Samba to be the Domain Master Browser. This
+# allows Samba to collate browse lists between subnets. Don't use this
+# if you already have a Windows NT domain controller doing this job
+;   domain master = yes 
+
+# Preferred Master causes Samba to force a local browser election on
+# startup and gives it a slightly higher chance of winning the election
+;   preferred master = yes
+
+# 6. Domain Control Options:
+# Enable this if you want Samba to be a domain logon server for 
+# Windows95 workstations or Primary Domain Controller for WinNT and
+# Win2k
+
+;  domain logons = yes
+
+
+# if you enable domain logons then you may want a per-machine or
+# per user logon script
+# run a specific logon batch file per workstation (machine)
+;   logon script = %m.bat
+# run a specific logon batch file per username
+;   logon script = %U.bat
+
+# Where to store roaming profiles for WinNT and Win2k
+#        %L substitutes for this servers netbios name, %U is username
+#        You must uncomment the [Profiles] share below
+;   logon path = \\%L\Profiles\%U
+
+# Where to store roaming profiles for Win9x. Be careful with this as it
+# also impacts where Win2k finds it's /HOME share
+; logon home = \\%L\%U\.profile
+
+# The add user script is used by a domain member to add local user
+# accounts that have been authenticated by the domain controller, or by 
+# the domain controller to add local machine accounts when adding 
+# machines to the domain.
+# The script must work from the command line when replacing the macros,
+# or the operation will fail. Check that groups exist if forcing a 
+# group.
+# Script for domain controller for adding machines:
+; add user script = /usr/sbin/useradd -d /dev/null -g machines –c
+# 'Machine Account' -s /bin/false -M %u
+# Script for domain controller with LDAP backend for adding machines 
+#(please
+# configure in /etc/samba/smbldap_conf.pm first):
+; add user script = /usr/share/samba/scripts/smbldap-useradd.pl -w –d
+# /dev/null -g machines -c 'Machine Account' -s /bin/false %u
+# Script for domain member for adding local accounts for authenticated
+# users:
+; add user script = /usr/sbin/useradd -s /bin/false %u
+
+# Domain groups:
+# domain admin group is a list of unix users or groups who are made
+# members
+# of the Domain Admin group
+; domain admin group = root @wheel
+#
+# domain guest groups is a list of unix users or groups who are made
+# members
+# of the Domain Guests group
+; domain guest group = nobody @guest
+
+# LDAP configuration for Domain Controlling:
+# The account (dn) that samba uses to access the LDAP server
+# This account needs to have write access to the LDAP tree
+# You will need to give samba the password for this dn, by 
+# running 'smbpasswd -w mypassword'
+; ldap admin dn = cn=root,dc=mydomain,dc=com
+; ldap ssl = start_tls
+# start_tls should run on 389, but samba defaults incorrectly to 636
+; ldap port = 389
+; ldap suffix = dc=mydomain,dc=com
+; ldap server = ldap.mydomain.com
+
+
+# 7. Name Resolution Options:
+# All NetBIOS names must be resolved to IP Addresses
+# 'Name Resolve Order' allows the named resolution mechanism to be
+# specified the default order is "host lmhosts wins bcast". "host" 
+# means use the unix system gethostbyname() function call that will use 
+# either /etc/hosts OR DNS or NIS depending on the settings of 
+# /etc/host.config, /etc/nsswitch.conf
+# and the /etc/resolv.conf file. "host" therefore is system 
+# configuration dependant. This parameter is most often of use to 
+# prevent DNS lookups
+# in order to resolve NetBIOS names to IP Addresses. Use with care!
+# The example below excludes use of name resolution for machines that
+# are NOT on the local network segment  - OR - are not deliberately to 
+# be known via lmhosts or via WINS.
+; name resolve order = wins lmhosts bcast
+
+# Windows Internet Name Serving Support Section:
+# WINS Support - Tells the NMBD component of Samba to enable it's WINS
+# Server
+;   wins support = yes
+
+# WINS Server - Tells the NMBD components of Samba to be a WINS Client
+#       Note: Samba can be either a WINS Server, or a WINS Client, but 
+# NOT both
+;   wins server = w.x.y.z
+
+# WINS Proxy - Tells Samba to answer name resolution queries on
+# behalf of a non WINS capable client, for this to work there must be
+# at least one  WINS Server on the network. The default is NO.
+;   wins proxy = yes
+
+# DNS Proxy - tells Samba whether or not to try to resolve NetBIOS 
+# names  via DNS nslookups. The built-in default for versions 1.9.17 is 
+# yes, this has been changed in version 1.9.18 to no.
+
+   dns proxy = no 
+
+# 8. File Naming Options:
+# Case Preservation can be handy - system default is _no_
+# NOTE: These can be set on a per share basis
+;  preserve case = no
+;  short preserve case = no
+# Default case is normally upper case for all DOS files
+;  default case = lower
+# Be very careful with case sensitivity - it can break things!
+;  case sensitive = no
+
+# Enabling internationalization:
+# you can match a Windows code page with a UNIX character set.
+# Windows: 437 (US), 737 (GREEK), 850 (Latin1 - Western European),
+# 852 (Eastern Eu.), 861 (Icelandic), 932 (Cyrillic - Russian),
+# 936 (Japanese - Shift-JIS), 936 (Simpl. Chinese), 949 (Korean 
+# Hangul),
+# 950 (Trad. Chin.).
+# UNIX: ISO8859-1 (Western European), ISO8859-2 (Eastern Eu.),
+# ISO8859-5 (Russian Cyrillic), KOI8-R (Alt-Russ. Cyril.)
+# This is an example for french users:
+;   client code page = 850
+;   character set = ISO8859-1
+
+#============================ Share Definitions ==============================
+
+[homes]
+   comment = Home Directories
+   browseable = no
+   writable = yes
+
+# You can enable VFS recycle bin on a per share basis:
+# Uncomment the next 2 lines (make sure you create a
+# .recycle folder in the base of the share and ensure
+# all users will have write access to it. See
+# examples/VFS/recycle/REAME in samba-doc for details
+;   vfs object = /usr/lib/samba/vfs/recycle.so
+;   vfs options= /etc/samba/recycle.conf
+
+# Un-comment the following and create the netlogon directory for Domain
+# Logons
+; [netlogon]
+;   comment = Network Logon Service
+;   path = /var/lib/samba/netlogon
+;   guest ok = yes
+;   writable = no
+
+#Uncomment the following 2 lines if you would like your login scripts
+# to be created dynamically by ntlogon (check that you have it in the
+# correct location (the default of the ntlogon rpm available in
+# contribs)
+
+;root preexec = /usr/bin/ntlogon -u %U -g %G -o %a -d /var/lib/samba/netlogon
+;root postexec = rm -f /var/lib/samba/netlogon/%U.bat
+
+# Un-comment the following to provide a specific roving profile share
+# the default is to use the user's home directory
+;[Profiles]
+;    path = /var/lib/samba/profiles
+;    browseable = no
+;    guest ok = yes
+
+
+# NOTE: If you have a CUPS print system there is no need to 
+# specifically define each individual printer.
+# You must configure the samba printers with the appropriate Windows
+# drivers on your Windows clients. On the Samba server no filtering is
+# done. If you wish that the server provides the driver and the clients
+# send PostScript ("Generic PostScript Printer" under Windows), you
+# have to swap the 'print command' line below with the commented one.
+
+[printers]
+   comment = All Printers
+   path = /var/spool/samba
+   browseable = no
+# to allow user 'guest account' to print.
+   guest ok = yes
+   writable = no
+   printable = yes
+   create mode = 0700
+
+# =====================================
+# print command: see above for details.
+# =====================================
+
+   print command = lpr-cups -P %p -o raw %s -r 
+# using client side printer drivers.
+;  print command = lpr-cups -P %p %s 
+# using cups own drivers (use generic PostScript on clients).
+# The following two commands are the samba defaults for printing=cups
+# change them only if you need different options:
+;   lpq command = lpq -P %p
+;   lprm command = cancel %p-%j
+
+# This share is used for Windows NT-style point-and-print support.
+# To be able to install drivers, you need to be either root, or listed
+# in the printer admin parameter above. Note that you also need write 
+# access to the directory and share definition to be able to upload the 
+# drivers.
+# For more information on this, please see the Printing Support Section
+# of  /usr/share/doc/samba-/docs/Samba-HOWTO-Collection.pdf 
+
+[print$]
+   path = /var/lib/samba/printers
+   browseable = yes
+   read only = yes
+   write list = @adm root
+
+# A useful application of samba is to make a PDF-generation service
+# To streamline this, install windows postscript drivers (preferably 
+# colour)on the samba server, so that clients can automatically install
+# them.
+
+[pdf-generator]
+   path = /var/tmp
+   guest ok = No
+   printable = Yes
+   comment = PDF Generator (only valid users)
+   #print command = /usr/share/samba/scripts/print-pdf file path win_path recipient IP &
+   print command = /usr/share/samba/scripts/print-pdf %s ~%u \\\\\\\\%L\\\\%u %m %I &
+
+# This one is useful for people to share files
+[tmp]
+   comment = Temporary file space
+   path = /tmp
+   read only = no
+   public = yes
+   echo command = cat %s; rm %s
+
+# A publicly accessible directory, but read only, except for people in
+# the "staff" group
+
+
+
+
+;[public]
+;   comment = Public Stuff
+;   path = /home/samba/public
+;   public = yes
+;   writable = no
+;   write list = @staff
+# Audited directory through experimental VFS audit.so module:
+# Uncomment next line.
+;   vfs object = /usr/lib/samba/vfs/audit.so
+
+# Other examples. 
+#
+# A private printer, usable only by Fred. Spool data will be placed in
+# Fred's
+# home directory. Note that fred must have write access to the spool 
+# directory,
+# wherever it is.
+;[fredsprn]
+;   comment = Fred's Printer
+;   valid users = fred
+;   path = /homes/fred
+;   printer = freds_printer
+;   public = no
+;   writable = no
+;   printable = yes
+
+
+-----------------------------------------------------------
+# A private directory, usable only by Fred. Note that Fred requires 
+# write access to the directory.
+
+;[fredsdir]
+
+    [Agustin]
+;   comment = Fred's Service
+    comment = Agustin Private Files
+;   path = /usr/somewhere/private
+    path = /home/agustin/Documents
+;   valid users = fred
+    valid users = agustin
+;   public = no
+;   writable = yes
+    writable = yes
+;   printable = no
+
+
+-----------------------------------------------------------
+
+# a service which has a different directory for each machine that 
+# connects this allows you to tailor configurations to incoming 
+# machines. You could also use the %u option to tailor it by user name.
+# The %m gets replaced with the machine name that is connecting.
+;[pchome]
+;  comment = PC Directories
+;  path = /usr/pc/%m
+;  public = no
+;  writable = yes
+
+
+-----------------------------------------------------------
+# A publicly accessible directory, read/write to all users. Note that
+# all files created in the directory by users will be owned by the 
+# default user, so any user with access can delete any other user's 
+# files. Obviously this directory must be writable by the default user. 
+# Another user could of course be specified, in which case all files 
+# would be owned by that user instead.
+
+;[public]
+;   path = /usr/somewhere/else/public
+;   public = yes
+;   only guest = yes
+;   writable = yes
+;   printable = no
+
+-----------------------------------------------------------
+
+# The following two entries demonstrate how to share a directory so 
+# that two users can place files there that will be owned by the 
+# specific users. In this setup, the directory should be writable by 
+# both users and should have the sticky bit set on it to prevent abuse. 
+# Obviously this could be extended to as many users as required.
+
+;[myshare]
+;   comment = Mary's and Fred's stuff
+;   path = /usr/somewhere/shared
+;   valid users = mary fred
+;   public = no
+;   writable = yes
+;   printable = no
+;   create mask = 0765
