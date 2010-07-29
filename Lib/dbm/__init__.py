@@ -5,12 +5,11 @@ Use
         import dbm
         d = dbm.open(file, 'w', 0o666)
 
-The returned object is a dbm.bsd, dbm.gnu, dbm.ndbm or dbm.dumb
-object, dependent on the type of database being opened (determined by
-the whichdb function) in the case of an existing dbm.  If the dbm does
-not exist and the create or new flag ('c' or 'n') was specified, the
-dbm type will be determined by the availability of the modules (tested
-in the above order).
+The returned object is a dbm.gnu, dbm.ndbm or dbm.dumb object, dependent on the
+type of database being opened (determined by the whichdb function) in the case
+of an existing dbm. If the dbm does not exist and the create or new flag ('c'
+or 'n') was specified, the dbm type will be determined by the availability of
+the modules (tested in the above order).
 
 It has the following interface (key and data are strings):
 
@@ -47,7 +46,7 @@ import sys
 class error(Exception):
     pass
 
-_names = ['dbm.bsd', 'dbm.gnu', 'dbm.ndbm', 'dbm.dumb']
+_names = ['dbm.gnu', 'dbm.ndbm', 'dbm.dumb']
 _defaultmod = None
 _modules = {}
 
@@ -168,20 +167,12 @@ def whichdb(filename):
     if magic == 0x13579ace:
         return "dbm.gnu"
 
-    ## Check for old Berkeley db hash file format v2
-    #if magic in (0x00061561, 0x61150600):
-    #    return "bsddb185" # not supported anymore
-
     # Later versions of Berkeley db hash file have a 12-byte pad in
     # front of the file type
     try:
         (magic,) = struct.unpack("=l", s16[-4:])
     except struct.error:
         return ""
-
-    ## Check for BSD hash
-    #if magic in (0x00061561, 0x61150600):
-    #    return "dbm.bsd"
 
     # Unknown
     return ""
