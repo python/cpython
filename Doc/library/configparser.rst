@@ -178,6 +178,11 @@ keys within each section.
       *allow_no_value* were added.
 
 
+.. exception:: Error
+
+   Base class for all other configparser exceptions.
+
+
 .. exception:: NoSectionError
 
    Exception raised when a specified section is not found.
