@@ -533,7 +533,8 @@ if supports_bytes_environ:
         The optional second argument can specify an alternate default.
         key, default and the result are bytes."""
         return environb.get(key, default)
-    __all__.append("getenvb")
+
+    __all__.extend(("environb", "getenvb"))
 
 def fsencode(value):
     """Encode value for use in the file system, environment variables
