@@ -83,6 +83,8 @@ Build
 
 - Issue #9275: The OSX installer once again installs links to binaries in ``/usr/local/bin``
 
+- Issue #9392: A framework build on OSX  will once again use a versioned name of the ``2to3`` tool, that is you can use ``2to3-2.7`` to select the Python 2.7 edition of 2to3.
+
 Tests
 -----
 
