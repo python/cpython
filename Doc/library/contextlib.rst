@@ -12,7 +12,7 @@ statement. For more information see also :ref:`typecontextmanager` and
 Functions provided:
 
 
-.. function:: contextmanager(func)
+.. decorator:: contextmanager
 
    This function is a :term:`decorator` that can be used to define a factory
    function for :keyword:`with` statement context managers, without needing to

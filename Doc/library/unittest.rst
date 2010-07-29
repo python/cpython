@@ -621,20 +621,20 @@ the test unless the passed object has a certain attribute: ::
 
 The following decorators implement test skipping and expected failures:
 
-.. function:: skip(reason)
+.. decorator:: skip(reason)
 
    Unconditionally skip the decorated test.  *reason* should describe why the
    test is being skipped.
 
-.. function:: skipIf(condition, reason)
+.. decorator:: skipIf(condition, reason)
 
    Skip the decorated test if *condition* is true.
 
-.. function:: skipUnless(condition, reason)
+.. decorator:: skipUnless(condition, reason)
 
    Skip the decoratored test unless *condition* is true.
 
-.. function:: expectedFailure
+.. decorator:: expectedFailure
 
    Mark the test as an expected failure.  If the test fails when run, the test
    is not counted as a failure.
@@ -1048,11 +1048,11 @@ Test cases
       :attr:`exception` attribute.  This can be useful if the intention
       is to perform additional checks on the exception raised::
 
-        with self.assertRaises(SomeException) as cm:
-            do_something()
+         with self.assertRaises(SomeException) as cm:
+             do_something()
 
-        the_exception = cm.exception
-        self.assertEqual(the_exception.error_code, 3)
+         the_exception = cm.exception
+         self.assertEqual(the_exception.error_code, 3)
 
       .. versionchanged:: 3.1
          Added the ability to use :meth:`assertRaises` as a context manager.

@@ -37,7 +37,7 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.2
 
-.. function:: total_ordering(cls)
+.. decorator:: total_ordering
 
    Given a class defining one or more rich comparison ordering methods, this
    class decorator supplies the rest.  This simplifies the effort involved
@@ -122,7 +122,7 @@ The :mod:`functools` module defines the following functions:
    than helpful.
 
 
-.. function:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
+.. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 
    This is a convenience function for invoking ``partial(update_wrapper,
    wrapped=wrapped, assigned=assigned, updated=updated)`` as a function decorator

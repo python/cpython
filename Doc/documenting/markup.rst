@@ -177,6 +177,34 @@ The directives are:
    are modified), side effects, and possible exceptions.  A small example may be
    provided.
 
+.. describe:: decorator
+
+   Describes a decorator function.  The signature should *not* represent the
+   signature of the actual function, but the usage as a decorator.  For example,
+   given the functions
+
+   .. code-block:: python
+
+      def removename(func):
+          func.__name__ = ''
+          return func
+
+      def setnewname(name):
+          def decorator(func):
+              func.__name__ = name
+              return func
+          return decorator
+
+   the descriptions should look like this::
+
+      .. decorator:: removename
+
+         Remove name of the decorated function.
+
+      .. decorator:: setnewname(name)
+
+         Set name of the decorated function to *name*.
+
 .. describe:: class
 
    Describes a class.  The signature can include parentheses with parameters
@@ -193,6 +221,10 @@ The directives are:
    Describes an object method.  The parameters should not include the ``self``
    parameter.  The description should include similar information to that
    described for ``function``.
+
+.. describe:: decoratormethod
+
+   Same as ``decorator``, but for decorators that are methods.
 
 .. describe:: opcode
 
