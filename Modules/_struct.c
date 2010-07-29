@@ -1247,6 +1247,9 @@ prepare_s(PyStructObject *self)
         PyErr_NoMemory();
         return -1;
     }
+    /* Free any s_codes value left over from a previous initialization. */
+    if (self->s_codes != NULL)
+        PyMem_FREE(self->s_codes);
     self->s_codes = codes;
 
     s = fmt;
