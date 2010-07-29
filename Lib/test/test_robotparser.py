@@ -216,6 +216,20 @@ bad = ['/some/path?name=value']
 
 RobotTest(14, doc, good, bad)
 
+# 15. For issue #4108 (obey first * entry)
+doc = """
+User-agent: *
+Disallow: /some/path
+
+User-agent: *
+Disallow: /another/path
+"""
+
+good = ['/another/path']
+bad = ['/some/path']
+
+RobotTest(15, doc, good, bad)
+
 
 class NetworkTestCase(unittest.TestCase):
 
