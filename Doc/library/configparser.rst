@@ -44,7 +44,7 @@ inline comment, while ``#`` does not.)
 On top of the core functionality, :class:`SafeConfigParser` supports
 interpolation.  This means values can contain format strings which refer to
 other values in the same section, or values in a special ``DEFAULT`` section.
-Additional defaults can be provided on initialization and retrieval.
+Additional defaults can be provided on initialization.
 
 For example::
 
@@ -92,8 +92,7 @@ value of ``my_pictures`` and ``%(home_dir)s/lumberjack`` as the value of
 manner by both parsers.
 
 Default values can be specified by passing them as a dictionary when
-constructing the :class:`SafeConfigParser`.  Additional defaults may be passed
-to the :meth:`get` method which will override all others.
+constructing the :class:`SafeConfigParser`.
 
 Sections are normally stored in an :class:`collections.OrderedDict` which
 maintains the order of all keys.  An alternative dictionary type can be passed
@@ -418,10 +417,13 @@ for the interpolation.
 
 .. method:: ConfigParser.get(section, option, raw=False, vars=None)
 
-   Get an *option* value for the named *section*.  All the ``'%'``
-   interpolations are expanded in the return values, based on the defaults
-   passed into the :meth:`__init__` method, as well as the options *vars*
-   provided, unless the *raw* argument is true.
+   Get an *option* value for the named *section*.  If *vars* is provided, it
+   must be a dictionary.  The *option* is looked up in *vars* (if provided),
+   *section*, and in *defaults* in that order.
+
+   All the ``'%'`` interpolations are expanded in the return values, unless the
+   *raw* argument is true.  Values for interpolation keys are looked up in the
+   same manner as the option.
 
 
 .. method:: ConfigParser.items(section, raw=False, vars=None)
