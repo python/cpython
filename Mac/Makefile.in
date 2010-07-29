@@ -70,9 +70,10 @@ installunixtools:
 	if [ ! -d "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ]; then  \
 		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
 	fi
-	for fn in python pythonw idle pydoc python-config smtpd.py   \
+	for fn in python pythonw idle pydoc python-config smtpd.py 2to3 \
 		  python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
-		  pydoc$(VERSION) python$(VERSION)-config smtpd$(VERSION).py ;\
+		  pydoc$(VERSION) python$(VERSION)-config smtpd$(VERSION).py \
+		  2to3-$(VERSION) ;\
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
@@ -90,6 +91,7 @@ altinstallunixtools:
 	do \
 		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
+	ln -fs "$(prefix)/bin/2to3-$(VERSION)" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/2to3-$(VERSION)" ;\
 
 # By default most tools are installed without a version in their basename, to
 # make it easier to install (and use) several python versions side-by-side move
@@ -111,6 +113,10 @@ install_versionedtools:
 	if [ ! -h "$(DESTDIR)$(prefix)/bin/smtpd.py" ]; then \
 		mv "$(DESTDIR)$(prefix)/bin/smtpd.py" "$(DESTDIR)$(prefix)/bin/smtpd$(VERSION).py"  ;\
 		ln -sf "smtpd$(VERSION).py" "$(DESTDIR)$(prefix)/bin/smtpd.py" ;\
+	fi
+	if [ ! -h "$(DESTDIR)$(prefix)/bin/2to3" ]; then \
+		mv "$(DESTDIR)$(prefix)/bin/2to3" "$(DESTDIR)$(prefix)/bin/2to3-$(VERSION)"  ;\
+		ln -sf "2to3-$(VERSION)" "$(DESTDIR)$(prefix)/bin/2to3" ;\
 	fi
 
 
