@@ -286,25 +286,29 @@ RawConfigParser Objects
    :const:`True`; otherwise return :const:`False`.
 
 
-.. method:: RawConfigParser.read(filenames)
+.. method:: RawConfigParser.read(filenames, encoding=None)
 
    Attempt to read and parse a list of filenames, returning a list of filenames
-   which were successfully parsed.  If *filenames* is a string,
-   it is treated as a single filename. If a file named in *filenames* cannot be
-   opened, that file will be ignored.  This is designed so that you can specify a
-   list of potential configuration file locations (for example, the current
-   directory, the user's home directory, and some system-wide directory), and all
-   existing configuration files in the list will be read.  If none of the named
-   files exist, the :class:`ConfigParser` instance will contain an empty dataset.
-   An application which requires initial values to be loaded from a file should
-   load the required file or files using :meth:`readfp` before calling :meth:`read`
-   for any optional files::
+   which were successfully parsed.  If *filenames* is a string, it is treated as
+   a single filename.  If a file named in *filenames* cannot be opened, that
+   file will be ignored.  This is designed so that you can specify a list of
+   potential configuration file locations (for example, the current directory,
+   the user's home directory, and some system-wide directory), and all existing
+   configuration files in the list will be read.  If none of the named files
+   exist, the :class:`ConfigParser` instance will contain an empty dataset.  An
+   application which requires initial values to be loaded from a file should
+   load the required file or files using :meth:`readfp` before calling
+   :meth:`read` for any optional files::
 
       import configparser, os
 
       config = configparser.ConfigParser()
       config.readfp(open('defaults.cfg'))
-      config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')])
+      config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')], encoding='cp1250')
+
+   .. versionadded:: 3.2
+      The *encoding* parameter.  Previously, all files were read using the
+      default encoding for :func:`open`.
 
 
 .. method:: RawConfigParser.readfp(fp, filename=None)

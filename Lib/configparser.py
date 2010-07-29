@@ -61,7 +61,7 @@ ConfigParser -- responsible for parsing a list of
     options(section)
         Return list of configuration options for the named section.
 
-    read(filenames)
+    read(filenames, encoding=None)
         Read and parse the list of named configuration files, given by
         name.  A single filename is also allowed.  Non-existing files
         are ignored.  Return list of successfully read files.
@@ -369,7 +369,7 @@ class RawConfigParser:
             del opts['__name__']
         return list(opts.keys())
 
-    def read(self, filenames):
+    def read(self, filenames, encoding=None):
         """Read and parse a filename or a list of filenames.
 
         Files that cannot be opened are silently ignored; this is
@@ -386,7 +386,7 @@ class RawConfigParser:
         read_ok = []
         for filename in filenames:
             try:
-                fp = open(filename)
+                fp = open(filename, encoding=encoding)
             except IOError:
                 continue
             self._read(fp, filename)
