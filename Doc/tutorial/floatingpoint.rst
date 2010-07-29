@@ -81,7 +81,7 @@ approximated by ``3602879701896397 / 2 ** 55``.  Since all of these decimal
 values share the same approximation, any one of them could be displayed
 while still preserving the invariant ``eval(repr(x)) == x``.
 
-Historically, the Python prompt and built-in :func:`repr` function would chose
+Historically, the Python prompt and built-in :func:`repr` function would choose
 the one with 17 significant digits, ``0.10000000000000001``.   Starting with
 Python 3.1, Python (on most systems) is now able to choose the shortest of
 these and simply display ``0.1``.
