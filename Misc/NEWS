@@ -323,6 +323,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9422: Fix memory leak when re-initializing a struct.Struct object.
+
 - Issue #7900: The getgroups(2) system call on MacOSX behaves rather oddly
   compared to other unix systems. In particular, os.getgroups() does
   not reflect any changes made using os.setgroups() but basicly always
