@@ -485,7 +485,7 @@ form.
 
    Note that for backward compatibility, the :const:`re.U` flag still
    exists (as well as its synonym :const:`re.UNICODE` and its embedded
-   counterpart ``(?u)``), but these are redundant in Python 3.0 since
+   counterpart ``(?u)``), but these are redundant in Python 3 since
    matches are Unicode by default for strings (and Unicode matching
    isn't allowed for bytes).
 
@@ -504,7 +504,7 @@ form.
    Make ``\w``, ``\W``, ``\b``, ``\B``, ``\s`` and ``\S`` dependent on the
    current locale. The use of this flag is discouraged as the locale mechanism
    is very unreliable, and it only handles one "culture" at a time anyway;
-   you should use Unicode matching instead, which is the default in Python 3.0
+   you should use Unicode matching instead, which is the default in Python 3
    for Unicode (str) patterns.
 
 
@@ -889,10 +889,7 @@ Match Objects
 
       Return a tuple containing all the subgroups of the match, from 1 up to however
       many groups are in the pattern.  The *default* argument is used for groups that
-      did not participate in the match; it defaults to ``None``.  (Incompatibility
-      note: in the original Python 1.5 release, if the tuple was one element long, a
-      string would be returned instead.  In later versions (from 1.5.1 on), a
-      singleton tuple is returned in such cases.)
+      did not participate in the match; it defaults to ``None``.
 
       For example:
 
@@ -1114,7 +1111,7 @@ recursion, you may encounter a :exc:`RuntimeError` exception with the message
    >>> re.match('Begin (\w| )*? end', s).end()
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
-     File "/usr/local/lib/python2.5/re.py", line 132, in match
+     File "/usr/local/lib/python3.2/re.py", line 132, in match
        return _compile(pattern, flags).match(string)
    RuntimeError: maximum recursion limit exceeded
 
