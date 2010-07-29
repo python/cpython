@@ -558,7 +558,7 @@ class RawConfigParser:
         indent_level = 0
         e = None                              # None, or an exception
         for lineno, line in enumerate(fp, start=1):
-            # strip prefix-only comments
+            # strip full line comments
             comment_start = None
             for prefix in self._startonly_comment_prefixes:
                 if line.strip().startswith(prefix):
@@ -572,11 +572,14 @@ class RawConfigParser:
                     break
             value = line[:comment_start].strip()
             if not value:
-                if self._empty_lines_in_values and comment_start is None:
+                if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
                     # comment on the line
-                    if cursect is not None and optname:
-                        cursect[optname].append('\n')
+                    if (comment_start is None and
+                        cursect is not None and
+                        optname and
+                        cursect[optname] is not None):
+                        cursect[optname].append('') # newlines added at join
                 else:
                     # empty line marks end of value
                     indent_level = sys.maxsize
@@ -643,9 +646,7 @@ class RawConfigParser:
         for options in all_sections:
             for name, val in options.items():
                 if isinstance(val, list):
-                    if val[-1] == '\n':
-                        val = val[:-1]
-                    options[name] = '\n'.join(val)
+                    options[name] = '\n'.join(val).rstrip()
 
     def _handle_error(self, exc, fpname, lineno, line):
         if not exc:
