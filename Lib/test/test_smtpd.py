@@ -42,7 +42,9 @@ class DummySocket:
         pass
 
 class DummyServer(smtpd.SMTPServer):
-    messages = []
+    def __init__(self, *args):
+        smtpd.SMTPServer.__init__(self, *args)
+        self.messages = []
     def create_socket(self, family, type):
         self.family_and_type = (socket.AF_INET, socket.SOCK_STREAM)
         self.set_socket(DummySocket())
