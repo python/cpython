@@ -475,6 +475,9 @@ C-API
 Library
 -------
 
+- Issue #6630: Allow customizing regex flags when subclassing the
+  string.Template class.
+
 - Issue #9411: Allow specifying an encoding for config files in the
   configparser module.
 

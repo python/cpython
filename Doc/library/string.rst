@@ -710,6 +710,14 @@ to parse template strings.  To do this, you can override these class attributes:
   appropriate).  The default value is the regular expression
   ``[_a-z][_a-z0-9]*``.
 
+* *flags* -- The regular expression flags that will be applied when compiling
+  the regular expression used for recognizing substitutions.  The default value
+  is ``re.IGNORECASE``.  Note that ``re.VERBOSE`` will always be added to the
+  flags, so custom *idpattern*\ s must follow conventions for verbose regular
+  expressions.
+
+  .. versionadded:: 3.2
+
 Alternatively, you can provide the entire regular expression pattern by
 overriding the class attribute *pattern*.  If you do this, the value must be a
 regular expression object with four named capturing groups.  The capturing
