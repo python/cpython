@@ -533,7 +533,7 @@ class RawConfigParserTestSambaConf(BasicTestCase):
         smbconf = support.findfile("cfgparser.2")
         # check when we pass a mix of readable and non-readable files:
         cf = self.newconfig()
-        parsed_files = cf.read([smbconf, "nonexistent-file"])
+        parsed_files = cf.read([smbconf, "nonexistent-file"], encoding='utf-8')
         self.assertEqual(parsed_files, [smbconf])
         sections = ['global', 'homes', 'printers',
                     'print$', 'pdf-generator', 'tmp', 'Agustin']
@@ -600,6 +600,46 @@ class SafeConfigParserTestCaseNonStandardDelimiters(SafeConfigParserTestCase):
 class SafeConfigParserTestCaseNoValue(SafeConfigParserTestCase):
     allow_no_value = True
 
+class SafeConfigParserTestCaseTrickyFile(CfgParserTestCaseClass):
+    config_class = configparser.SafeConfigParser
+    delimiters = {'='}
+    comment_prefixes = {'#'}
+    allow_no_value = True
+
+    def test_cfgparser_dot_3(self):
+        tricky = support.findfile("cfgparser.3")
+        cf = self.newconfig()
+        self.assertEqual(len(cf.read(tricky, encoding='utf-8')), 1)
+        self.assertEqual(cf.sections(), ['strange',
+                                         'corruption',
+                                         'yeah, sections can be '
+                                         'indented as well',
+                                         'another one!',
+                                         'no values here',
+                                         'tricky interpolation',
+                                         'more interpolation'])
+        #self.assertEqual(cf.getint('DEFAULT', 'go', vars={'interpolate': '-1'}),
+        #                 -1)
+        self.assertEqual(len(cf.get('strange', 'other').split('\n')), 4)
+        self.assertEqual(len(cf.get('corruption', 'value').split('\n')), 10)
+        longname = 'yeah, sections can be indented as well'
+        self.assertFalse(cf.getboolean(longname, 'are they subsections'))
+        self.assertEquals(cf.get(longname, 'lets use some Unicode'),
+                                           '片仮名')
+        self.assertEqual(len(cf.items('another one!')), 5) # 4 in section and
+                                                           # `go` from DEFAULT
+        with self.assertRaises(configparser.InterpolationMissingOptionError):
+            cf.items('no values here')
+        self.assertEqual(cf.get('tricky interpolation', 'lets'), 'do this')
+        self.assertEqual(cf.get('tricky interpolation', 'lets'),
+                         cf.get('tricky interpolation', 'go'))
+        self.assertEqual(cf.get('more interpolation', 'lets'), 'go shopping')
+
+    def test_unicode_failure(self):
+        tricky = support.findfile("cfgparser.3")
+        cf = self.newconfig()
+        with self.assertRaises(UnicodeDecodeError):
+            cf.read(tricky, encoding='ascii')
 
 class SortedTestCase(RawConfigParserTestCase):
     dict_type = SortedDict
@@ -635,10 +675,13 @@ class CompatibleTestCase(CfgParserTestCaseClass):
         foo: bar # not a comment!
         # but this is a comment
         ; another comment
+        quirk: this;is not a comment
+        ; a space must precede a comment character
         """)
         cf = self.fromstring(config_string)
         self.assertEqual(cf.get('Commented Bar', 'foo'), 'bar # not a comment!')
         self.assertEqual(cf.get('Commented Bar', 'baz'), 'qwe')
+        self.assertEqual(cf.get('Commented Bar', 'quirk'), 'this;is not a comment')
 
 
 def test_main():
@@ -652,6 +695,7 @@ def test_main():
         SafeConfigParserTestCase,
         SafeConfigParserTestCaseNonStandardDelimiters,
         SafeConfigParserTestCaseNoValue,
+        SafeConfigParserTestCaseTrickyFile,
         SortedTestCase,
         CompatibleTestCase,
         )

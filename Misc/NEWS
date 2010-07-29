@@ -475,6 +475,9 @@ C-API
 Library
 -------
 
+- Issue #9411: Allow specifying an encoding for config files in the
+  configparser module.
+
 - Issue #1682942: Improvements to configparser: support alternate
   delimiters, alternate comment prefixes and empty lines in values.
 
