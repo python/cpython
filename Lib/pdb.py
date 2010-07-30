@@ -675,7 +675,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Return `lineno` if it is, 0 if not (e.g. a docstring, comment, blank
         line or EOF). Warning: testing is not comprehensive.
         """
-        line = linecache.getline(filename, lineno, self.curframe.f_globals)
+        # this method should be callable before starting debugging, so default
+        # to "no globals" if there is no current frame
+        globs = self.curframe.f_globals if hasattr(self, 'curframe') else None
+        line = linecache.getline(filename, lineno, globs)
         if not line:
             print('End of file', file=self.stdout)
             return 0
@@ -1514,7 +1517,7 @@ def main():
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
     pdb = Pdb()
-    while 1:
+    while True:
         try:
             pdb._runscript(mainpyfile)
             if pdb._user_requested_quit:
