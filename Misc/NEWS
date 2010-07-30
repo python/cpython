@@ -475,6 +475,9 @@ C-API
 Library
 -------
 
+- Issue #8048: Prevent doctests from failing when sys.displayhook has
+  been reassigned.
+
 - Issue #8015: In pdb, do not crash when an empty line is entered as
   a breakpoint command.
 
