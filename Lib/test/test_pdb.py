@@ -359,6 +359,68 @@ def test_list_commands():
     """
 
 
+def test_post_mortem():
+    """Test post mortem traceback debugging.
+
+    >>> def test_function_2():
+    ...     try:
+    ...         1/0
+    ...     finally:
+    ...         print('Exception!')
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     test_function_2()
+    ...     print('Not reached.')
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'next',      # step over exception-raising call
+    ...     'bt',        # get a backtrace
+    ...     'list',      # list code of test_function()
+    ...     'down',      # step into test_function_2()
+    ...     'list',      # list code of test_function_2()
+    ...     'continue',
+    ... ]):
+    ...    try:
+    ...        test_function()
+    ...    except ZeroDivisionError:
+    ...        print('Correctly reraised.')
+    > <doctest test.test_pdb.test_post_mortem[1]>(3)test_function()
+    -> test_function_2()
+    (Pdb) next
+    Exception!
+    ZeroDivisionError: division by zero
+    > <doctest test.test_pdb.test_post_mortem[1]>(3)test_function()
+    -> test_function_2()
+    (Pdb) bt
+    ...
+      <doctest test.test_pdb.test_post_mortem[2]>(10)<module>()
+    -> test_function()
+    > <doctest test.test_pdb.test_post_mortem[1]>(3)test_function()
+    -> test_function_2()
+      <doctest test.test_pdb.test_post_mortem[0]>(3)test_function_2()
+    -> 1/0
+    (Pdb) list
+      1         def test_function():
+      2             import pdb; pdb.Pdb().set_trace()
+      3  ->         test_function_2()
+      4             print('Not reached.')
+    [EOF]
+    (Pdb) down
+    > <doctest test.test_pdb.test_post_mortem[0]>(3)test_function_2()
+    -> 1/0
+    (Pdb) list
+      1         def test_function_2():
+      2             try:
+      3  >>             1/0
+      4             finally:
+      5  ->             print('Exception!')
+    [EOF]
+    (Pdb) continue
+    Correctly reraised.
+    """
+
+
 def test_pdb_skip_modules():
     """This illustrates the simple case of module skipping.
 

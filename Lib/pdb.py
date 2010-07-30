@@ -70,8 +70,10 @@ import sys
 import linecache
 import cmd
 import bdb
+import dis
 import os
 import re
+import code
 import pprint
 import traceback
 import inspect
@@ -107,13 +109,21 @@ def find_function(funcname, filename):
 
 def getsourcelines(obj):
     lines, lineno = inspect.findsource(obj)
-    if inspect.isframe(obj) and lineno == 0 and \
-           obj.f_globals is obj.f_locals:
+    if inspect.isframe(obj) and obj.f_globals is obj.f_locals:
         # must be a module frame: do not try to cut a block out of it
-        return lines, 0
+        return lines, 1
     elif inspect.ismodule(obj):
-        return lines, 0
+        return lines, 1
     return inspect.getblock(lines[lineno:]), lineno+1
+
+def lasti2lineno(code, lasti):
+    linestarts = list(dis.findlinestarts(code))
+    linestarts.reverse()
+    for i, lineno in linestarts:
+        if lasti >= i:
+            return lineno
+    return 0
+
 
 # Interaction prompt line will separate file and call info from code
 # text using value of line_prefix string.  A newline and arrow may
@@ -133,6 +143,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.aliases = {}
         self.mainpyfile = ''
         self._wait_for_mainpyfile = 0
+        self.tb_lineno = {}
         # Try to load readline if it exists
         try:
             import readline
@@ -179,10 +190,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.stack = []
         self.curindex = 0
         self.curframe = None
+        self.tb_lineno.clear()
 
-    def setup(self, f, t):
+    def setup(self, f, tb):
         self.forget()
-        self.stack, self.curindex = self.get_stack(f, t)
+        self.stack, self.curindex = self.get_stack(f, tb)
+        while tb:
+            # when setting up post-mortem debugging with a traceback, save all
+            # the original line numbers to be displayed along the current line
+            # numbers (which can be different, e.g. due to finally clauses)
+            lineno = lasti2lineno(tb.tb_frame.f_code, tb.tb_lasti)
+            self.tb_lineno[tb.tb_frame] = lineno
+            tb = tb.tb_next
         self.curframe = self.stack[self.curindex][0]
         # The f_locals dictionary is updated from the actual frame
         # locals whenever the .f_locals accessor is called, so we
@@ -1005,13 +1024,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_list(self, arg):
         """l(ist) [first [,last] | .]
-        List source code for the current file.
-        Without arguments, list 11 lines around the current line
-        or continue the previous listing.
-        With . as argument, list 11 lines around the current line.
-        With one argument, list 11 lines starting at that line.
-        With two arguments, list the given range;
-        if the second argument is less than the first, it is a count.
+
+        List source code for the current file.  Without arguments,
+        list 11 lines around the current line or continue the previous
+        listing.  With . as argument, list 11 lines around the current
+        line.  With one argument, list 11 lines starting at that line.
+        With two arguments, list the given range; if the second
+        argument is less than the first, it is a count.
+
+        The current line in the current frame is indicated by "->".
+        If an exception is being debugged, the line where the
+        exception was originally raised or propagated is indicated by
+        ">>", if it differs from the current line.
         """
         self.lastcmd = 'list'
         last = None
@@ -1039,10 +1063,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
-            # XXX add tb_lineno feature
             lines = linecache.getlines(filename, self.curframe.f_globals)
             self._print_lines(lines[first-1:last], first, breaklist,
-                              self.curframe.f_lineno, -1)
+                              self.curframe)
             self.lineno = min(last, len(lines))
             if len(lines) < last:
                 self.message('[EOF]')
@@ -1061,7 +1084,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except IOError as err:
             self.error(err)
             return
-        self._print_lines(lines, lineno, breaklist, self.curframe.f_lineno, -1)
+        self._print_lines(lines, lineno, breaklist, self.curframe)
     do_ll = do_longlist
 
     def do_source(self, arg):
@@ -1077,10 +1100,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except (IOError, TypeError) as err:
             self.error(err)
             return
-        self._print_lines(lines, lineno, [], -1, -1)
+        self._print_lines(lines, lineno)
 
-    def _print_lines(self, lines, start, breaks, current, special):
+    def _print_lines(self, lines, start, breaks=(), frame=None):
         """Print a range of lines."""
+        if frame:
+            current_lineno = frame.f_lineno
+            exc_lineno = self.tb_lineno.get(frame, -1)
+        else:
+            current_lineno = exc_lineno = -1
         for lineno, line in enumerate(lines, start):
             s = str(lineno).rjust(3)
             if len(s) < 4:
@@ -1089,9 +1117,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 s += 'B'
             else:
                 s += ' '
-            if lineno == current:
+            if lineno == current_lineno:
                 s += '->'
-            elif lineno == special:
+            elif lineno == exc_lineno:
                 s += '>>'
             self.message(s + '\t' + line.rstrip())
 

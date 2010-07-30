@@ -368,9 +368,18 @@ by the local file.
    list 11 lines around at that line.  With two arguments, list the given range;
    if the second argument is less than the first, it is interpreted as a count.
 
+   The current line in the current frame is indicated by ``->``.  If an
+   exception is being debugged, the line where the exception was originally
+   raised or propagated is indicated by ``>>``, if it differs from the current
+   line.
+
+   .. versionadded:: 3.2
+      The ``>>`` marker.
+
 .. pdbcommand:: ll | longlist
 
-   List all source code for the current function or frame.
+   List all source code for the current function or frame.  Interesting lines
+   are marked as for :pdbcmd:`list`.
 
    .. versionadded:: 3.2
 
