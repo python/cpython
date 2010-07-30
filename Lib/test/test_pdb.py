@@ -126,6 +126,33 @@ def test_pdb_skip_modules_with_callback():
     """
 
 
+def test_pdb_unicode_exception():
+    r"""This tests exceptions that cannot be displayed due to Unicode issues.
+    http://bugs.python.org/issue7539
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     pass
+
+    >>> def raising_function():
+    ...     raise ValueError(u"\xff")
+
+    >>> with PdbTestInput([
+    ...     'raising_function()',
+    ...     'p raising_function()',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_unicode_exception[0]>(3)test_function()
+    -> pass
+    (Pdb) raising_function()
+    *** ValueError: ValueError(u'\xff',)
+    (Pdb) p raising_function()
+    *** ValueError: ValueError(u'\xff',)
+    (Pdb) continue
+    """
+
+
 def test_main():
     from test import test_pdb
     test_support.run_doctest(test_pdb, verbosity=True)
