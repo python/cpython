@@ -1,6 +1,359 @@
 
                 ChangeLog file for zlib
 
+Changes in 1.2.5 (19 Apr 2010)
+- Disable visibility attribute in win32/Makefile.gcc [Bar-Lev]
+- Default to libdir as sharedlibdir in configure [Nieder]
+- Update copyright dates on modified source files
+- Update trees.c to be able to generate modified trees.h
+- Exit configure for MinGW, suggesting win32/Makefile.gcc
+
+Changes in 1.2.4.5 (18 Apr 2010)
+- Set sharedlibdir in configure [Torok]
+- Set LDFLAGS in Makefile.in [Bar-Lev]
+- Avoid mkdir objs race condition in Makefile.in [Bowler]
+- Add ZLIB_INTERNAL in front of internal inter-module functions and arrays
+- Define ZLIB_INTERNAL to hide internal functions and arrays for GNU C
+- Don't use hidden attribute when it is a warning generator (e.g. Solaris)
+
+Changes in 1.2.4.4 (18 Apr 2010)
+- Fix CROSS_PREFIX executable testing, CHOST extract, mingw* [Torok]
+- Undefine _LARGEFILE64_SOURCE in zconf.h if it is zero, but not if empty
+- Try to use bash or ksh regardless of functionality of /bin/sh
+- Fix configure incompatibility with NetBSD sh
+- Remove attempt to run under bash or ksh since have better NetBSD fix
+- Fix win32/Makefile.gcc for MinGW [Bar-Lev]
+- Add diagnostic messages when using CROSS_PREFIX in configure
+- Added --sharedlibdir option to configure [Weigelt]
+- Use hidden visibility attribute when available [Frysinger]
+
+Changes in 1.2.4.3 (10 Apr 2010)
+- Only use CROSS_PREFIX in configure for ar and ranlib if they exist
+- Use CROSS_PREFIX for nm [Bar-Lev]
+- Assume _LARGEFILE64_SOURCE defined is equivalent to true
+- Avoid use of undefined symbols in #if with && and ||
+- Make *64 prototypes in gzguts.h consistent with functions
+- Add -shared load option for MinGW in configure [Bowler]
+- Move z_off64_t to public interface, use instead of off64_t
+- Remove ! from shell test in configure (not portable to Solaris)
+- Change +0 macro tests to -0 for possibly increased portability
+
+Changes in 1.2.4.2 (9 Apr 2010)
+- Add consistent carriage returns to readme.txt's in masmx86 and masmx64
+- Really provide prototypes for *64 functions when building without LFS
+- Only define unlink() in minigzip.c if unistd.h not included
+- Update README to point to contrib/vstudio project files
+- Move projects/vc6 to old/ and remove projects/
+- Include stdlib.h in minigzip.c for setmode() definition under WinCE
+- Clean up assembler builds in win32/Makefile.msc [Rowe]
+- Include sys/types.h for Microsoft for off_t definition
+- Fix memory leak on error in gz_open()
+- Symbolize nm as $NM in configure [Weigelt]
+- Use TEST_LDSHARED instead of LDSHARED to link test programs [Weigelt]
+- Add +0 to _FILE_OFFSET_BITS and _LFS64_LARGEFILE in case not defined
+- Fix bug in gzeof() to take into account unused input data
+- Avoid initialization of structures with variables in puff.c
+- Updated win32/README-WIN32.txt [Rowe]
+
+Changes in 1.2.4.1 (28 Mar 2010)
+- Remove the use of [a-z] constructs for sed in configure [gentoo 310225]
+- Remove $(SHAREDLIB) from LIBS in Makefile.in [Creech]
+- Restore "for debugging" comment on sprintf() in gzlib.c
+- Remove fdopen for MVS from gzguts.h
+- Put new README-WIN32.txt in win32 [Rowe]
+- Add check for shell to configure and invoke another shell if needed
+- Fix big fat stinking bug in gzseek() on uncompressed files
+- Remove vestigial F_OPEN64 define in zutil.h
+- Set and check the value of _LARGEFILE_SOURCE and _LARGEFILE64_SOURCE
+- Avoid errors on non-LFS systems when applications define LFS macros
+- Set EXE to ".exe" in configure for MINGW [Kahle]
+- Match crc32() in crc32.c exactly to the prototype in zlib.h [Sherrill]
+- Add prefix for cross-compilation in win32/makefile.gcc [Bar-Lev]
+- Add DLL install in win32/makefile.gcc [Bar-Lev]
+- Allow Linux* or linux* from uname in configure [Bar-Lev]
+- Allow ldconfig to be redefined in configure and Makefile.in [Bar-Lev]
+- Add cross-compilation prefixes to configure [Bar-Lev]
+- Match type exactly in gz_load() invocation in gzread.c
+- Match type exactly of zcalloc() in zutil.c to zlib.h alloc_func
+- Provide prototypes for *64 functions when building zlib without LFS
+- Don't use -lc when linking shared library on MinGW
+- Remove errno.h check in configure and vestigial errno code in zutil.h
+
+Changes in 1.2.4 (14 Mar 2010)
+- Fix VER3 extraction in configure for no fourth subversion
+- Update zlib.3, add docs to Makefile.in to make .pdf out of it
+- Add zlib.3.pdf to distribution
+- Don't set error code in gzerror() if passed pointer is NULL
+- Apply destination directory fixes to CMakeLists.txt [Lowman]
+- Move #cmakedefine's to a new zconf.in.cmakein
+- Restore zconf.h for builds that don't use configure or cmake
+- Add distclean to dummy Makefile for convenience
+- Update and improve INDEX, README, and FAQ
+- Update CMakeLists.txt for the return of zconf.h [Lowman]
+- Update contrib/vstudio/vc9 and vc10 [Vollant]
+- Change libz.dll.a back to libzdll.a in win32/Makefile.gcc
+- Apply license and readme changes to contrib/asm686 [Raiter]
+- Check file name lengths and add -c option in minigzip.c [Li]
+- Update contrib/amd64 and contrib/masmx86/ [Vollant]
+- Avoid use of "eof" parameter in trees.c to not shadow library variable
+- Update make_vms.com for removal of zlibdefs.h [Zinser]
+- Update assembler code and vstudio projects in contrib [Vollant]
+- Remove outdated assembler code contrib/masm686 and contrib/asm586
+- Remove old vc7 and vc8 from contrib/vstudio
+- Update win32/Makefile.msc, add ZLIB_VER_SUBREVISION [Rowe]
+- Fix memory leaks in gzclose_r() and gzclose_w(), file leak in gz_open()
+- Add contrib/gcc_gvmat64 for longest_match and inflate_fast [Vollant]
+- Remove *64 functions from win32/zlib.def (they're not 64-bit yet)
+- Fix bug in void-returning vsprintf() case in gzwrite.c
+- Fix name change from inflate.h in contrib/inflate86/inffas86.c
+- Check if temporary file exists before removing in make_vms.com [Zinser]
+- Fix make install and uninstall for --static option
+- Fix usage of _MSC_VER in gzguts.h and zutil.h [Truta]
+- Update readme.txt in contrib/masmx64 and masmx86 to assemble
+
+Changes in 1.2.3.9 (21 Feb 2010)
+- Expunge gzio.c
+- Move as400 build information to old
+- Fix updates in contrib/minizip and contrib/vstudio
+- Add const to vsnprintf test in configure to avoid warnings [Weigelt]
+- Delete zconf.h (made by configure) [Weigelt]
+- Change zconf.in.h to zconf.h.in per convention [Weigelt]
+- Check for NULL buf in gzgets()
+- Return empty string for gzgets() with len == 1 (like fgets())
+- Fix description of gzgets() in zlib.h for end-of-file, NULL return
+- Update minizip to 1.1 [Vollant]
+- Avoid MSVC loss of data warnings in gzread.c, gzwrite.c
+- Note in zlib.h that gzerror() should be used to distinguish from EOF
+- Remove use of snprintf() from gzlib.c
+- Fix bug in gzseek()
+- Update contrib/vstudio, adding vc9 and vc10 [Kuno, Vollant]
+- Fix zconf.h generation in CMakeLists.txt [Lowman]
+- Improve comments in zconf.h where modified by configure
+
+Changes in 1.2.3.8 (13 Feb 2010)
+- Clean up text files (tabs, trailing whitespace, etc.) [Oberhumer]
+- Use z_off64_t in gz_zero() and gz_skip() to match state->skip
+- Avoid comparison problem when sizeof(int) == sizeof(z_off64_t)
+- Revert to Makefile.in from 1.2.3.6 (live with the clutter)
+- Fix missing error return in gzflush(), add zlib.h note
+- Add *64 functions to zlib.map [Levin]
+- Fix signed/unsigned comparison in gz_comp()
+- Use SFLAGS when testing shared linking in configure
+- Add --64 option to ./configure to use -m64 with gcc
+- Fix ./configure --help to correctly name options
+- Have make fail if a test fails [Levin]
+- Avoid buffer overrun in contrib/masmx64/gvmat64.asm [Simpson]
+- Remove assembler object files from contrib
+
+Changes in 1.2.3.7 (24 Jan 2010)
+- Always gzopen() with O_LARGEFILE if available
+- Fix gzdirect() to work immediately after gzopen() or gzdopen()
+- Make gzdirect() more precise when the state changes while reading
+- Improve zlib.h documentation in many places
+- Catch memory allocation failure in gz_open()
+- Complete close operation if seek forward in gzclose_w() fails
+- Return Z_ERRNO from gzclose_r() if close() fails
+- Return Z_STREAM_ERROR instead of EOF for gzclose() being passed NULL
+- Return zero for gzwrite() errors to match zlib.h description
+- Return -1 on gzputs() error to match zlib.h description
+- Add zconf.in.h to allow recovery from configure modification [Weigelt]
+- Fix static library permissions in Makefile.in [Weigelt]
+- Avoid warnings in configure tests that hide functionality [Weigelt]
+- Add *BSD and DragonFly to Linux case in configure [gentoo 123571]
+- Change libzdll.a to libz.dll.a in win32/Makefile.gcc [gentoo 288212]
+- Avoid access of uninitialized data for first inflateReset2 call [Gomes]
+- Keep object files in subdirectories to reduce the clutter somewhat
+- Remove default Makefile and zlibdefs.h, add dummy Makefile
+- Add new external functions to Z_PREFIX, remove duplicates, z_z_ -> z_
+- Remove zlibdefs.h completely -- modify zconf.h instead
+
+Changes in 1.2.3.6 (17 Jan 2010)
+- Avoid void * arithmetic in gzread.c and gzwrite.c
+- Make compilers happier with const char * for gz_error message
+- Avoid unused parameter warning in inflate.c
+- Avoid signed-unsigned comparison warning in inflate.c
+- Indent #pragma's for traditional C
+- Fix usage of strwinerror() in glib.c, change to gz_strwinerror()
+- Correct email address in configure for system options
+- Update make_vms.com and add make_vms.com to contrib/minizip [Zinser]
+- Update zlib.map [Brown]
+- Fix Makefile.in for Solaris 10 make of example64 and minizip64 [Torok]
+- Apply various fixes to CMakeLists.txt [Lowman]
+- Add checks on len in gzread() and gzwrite()
+- Add error message for no more room for gzungetc()
+- Remove zlib version check in gzwrite()
+- Defer compression of gzprintf() result until need to
+- Use snprintf() in gzdopen() if available
+- Remove USE_MMAP configuration determination (only used by minigzip)
+- Remove examples/pigz.c (available separately)
+- Update examples/gun.c to 1.6
+
+Changes in 1.2.3.5 (8 Jan 2010)
+- Add space after #if in zutil.h for some compilers
+- Fix relatively harmless bug in deflate_fast() [Exarevsky]
+- Fix same problem in deflate_slow()
+- Add $(SHAREDLIBV) to LIBS in Makefile.in [Brown]
+- Add deflate_rle() for faster Z_RLE strategy run-length encoding
+- Add deflate_huff() for faster Z_HUFFMAN_ONLY encoding
+- Change name of "write" variable in inffast.c to avoid library collisions
+- Fix premature EOF from gzread() in gzio.c [Brown]
+- Use zlib header window size if windowBits is 0 in inflateInit2()
+- Remove compressBound() call in deflate.c to avoid linking compress.o
+- Replace use of errno in gz* with functions, support WinCE [Alves]
+- Provide alternative to perror() in minigzip.c for WinCE [Alves]
+- Don't use _vsnprintf on later versions of MSVC [Lowman]
+- Add CMake build script and input file [Lowman]
+- Update contrib/minizip to 1.1 [Svensson, Vollant]
+- Moved nintendods directory from contrib to .
+- Replace gzio.c with a new set of routines with the same functionality
+- Add gzbuffer(), gzoffset(), gzclose_r(), gzclose_w() as part of above
+- Update contrib/minizip to 1.1b
+- Change gzeof() to return 0 on error instead of -1 to agree with zlib.h
+
+Changes in 1.2.3.4 (21 Dec 2009)
+- Use old school .SUFFIXES in Makefile.in for FreeBSD compatibility
+- Update comments in configure and Makefile.in for default --shared
+- Fix test -z's in configure [Marquess]
+- Build examplesh and minigzipsh when not testing
+- Change NULL's to Z_NULL's in deflate.c and in comments in zlib.h
+- Import LDFLAGS from the environment in configure
+- Fix configure to populate SFLAGS with discovered CFLAGS options
+- Adapt make_vms.com to the new Makefile.in [Zinser]
+- Add zlib2ansi script for C++ compilation [Marquess]
+- Add _FILE_OFFSET_BITS=64 test to make test (when applicable)
+- Add AMD64 assembler code for longest match to contrib [Teterin]
+- Include options from $SFLAGS when doing $LDSHARED
+- Simplify 64-bit file support by introducing z_off64_t type
+- Make shared object files in objs directory to work around old Sun cc
+- Use only three-part version number for Darwin shared compiles
+- Add rc option to ar in Makefile.in for when ./configure not run
+- Add -WI,-rpath,. to LDFLAGS for OSF 1 V4*
+- Set LD_LIBRARYN32_PATH for SGI IRIX shared compile
+- Protect against _FILE_OFFSET_BITS being defined when compiling zlib
+- Rename Makefile.in targets allstatic to static and allshared to shared
+- Fix static and shared Makefile.in targets to be independent
+- Correct error return bug in gz_open() by setting state [Brown]
+- Put spaces before ;;'s in configure for better sh compatibility
+- Add pigz.c (parallel implementation of gzip) to examples/
+- Correct constant in crc32.c to UL [Leventhal]
+- Reject negative lengths in crc32_combine()
+- Add inflateReset2() function to work like inflateEnd()/inflateInit2()
+- Include sys/types.h for _LARGEFILE64_SOURCE [Brown]
+- Correct typo in doc/algorithm.txt [Janik]
+- Fix bug in adler32_combine() [Zhu]
+- Catch missing-end-of-block-code error in all inflates and in puff
+    Assures that random input to inflate eventually results in an error
+- Added enough.c (calculation of ENOUGH for inftrees.h) to examples/
+- Update ENOUGH and its usage to reflect discovered bounds
+- Fix gzerror() error report on empty input file [Brown]
+- Add ush casts in trees.c to avoid pedantic runtime errors
+- Fix typo in zlib.h uncompress() description [Reiss]
+- Correct inflate() comments with regard to automatic header detection
+- Remove deprecation comment on Z_PARTIAL_FLUSH (it stays)
+- Put new version of gzlog (2.0) in examples with interruption recovery
+- Add puff compile option to permit invalid distance-too-far streams
+- Add puff TEST command options, ability to read piped input
+- Prototype the *64 functions in zlib.h when _FILE_OFFSET_BITS == 64, but
+  _LARGEFILE64_SOURCE not defined
+- Fix Z_FULL_FLUSH to truly erase the past by resetting s->strstart
+- Fix deflateSetDictionary() to use all 32K for output consistency
+- Remove extraneous #define MIN_LOOKAHEAD in deflate.c (in deflate.h)
+- Clear bytes after deflate lookahead to avoid use of uninitialized data
+- Change a limit in inftrees.c to be more transparent to Coverity Prevent
+- Update win32/zlib.def with exported symbols from zlib.h
+- Correct spelling error in zlib.h [Willem]
+- Allow Z_BLOCK for deflate() to force a new block
+- Allow negative bits in inflatePrime() to delete existing bit buffer
+- Add Z_TREES flush option to inflate() to return at end of trees
+- Add inflateMark() to return current state information for random access
+- Add Makefile for NintendoDS to contrib [Costa]
+- Add -w in configure compile tests to avoid spurious warnings [Beucler]
+- Fix typos in zlib.h comments for deflateSetDictionary()
+- Fix EOF detection in transparent gzread() [Maier]
+
+Changes in 1.2.3.3 (2 October 2006)
+- Make --shared the default for configure, add a --static option
+- Add compile option to permit invalid distance-too-far streams
+- Add inflateUndermine() function which is required to enable above
+- Remove use of "this" variable name for C++ compatibility [Marquess]
+- Add testing of shared library in make test, if shared library built
+- Use ftello() and fseeko() if available instead of ftell() and fseek()
+- Provide two versions of all functions that use the z_off_t type for
+  binary compatibility -- a normal version and a 64-bit offset version,
+  per the Large File Support Extension when _LARGEFILE64_SOURCE is
+  defined; use the 64-bit versions by default when _FILE_OFFSET_BITS
+  is defined to be 64
+- Add a --uname= option to configure to perhaps help with cross-compiling
+
+Changes in 1.2.3.2 (3 September 2006)
+- Turn off silly Borland warnings [Hay]
+- Use off64_t and define _LARGEFILE64_SOURCE when present
+- Fix missing dependency on inffixed.h in Makefile.in
+- Rig configure --shared to build both shared and static [Teredesai, Truta]
+- Remove zconf.in.h and instead create a new zlibdefs.h file
+- Fix contrib/minizip/unzip.c non-encrypted after encrypted [Vollant]
+- Add treebuild.xml (see http://treebuild.metux.de/) [Weigelt]
+
+Changes in 1.2.3.1 (16 August 2006)
+- Add watcom directory with OpenWatcom make files [Daniel]
+- Remove #undef of FAR in zconf.in.h for MVS [Fedtke]
+- Update make_vms.com [Zinser]
+- Use -fPIC for shared build in configure [Teredesai, Nicholson]
+- Use only major version number for libz.so on IRIX and OSF1 [Reinholdtsen]
+- Use fdopen() (not _fdopen()) for Interix in zutil.h [BŠck]
+- Add some FAQ entries about the contrib directory
+- Update the MVS question in the FAQ
+- Avoid extraneous reads after EOF in gzio.c [Brown]
+- Correct spelling of "successfully" in gzio.c [Randers-Pehrson]
+- Add comments to zlib.h about gzerror() usage [Brown]
+- Set extra flags in gzip header in gzopen() like deflate() does
+- Make configure options more compatible with double-dash conventions
+  [Weigelt]
+- Clean up compilation under Solaris SunStudio cc [Rowe, Reinholdtsen]
+- Fix uninstall target in Makefile.in [Truta]
+- Add pkgconfig support [Weigelt]
+- Use $(DESTDIR) macro in Makefile.in [Reinholdtsen, Weigelt]
+- Replace set_data_type() with a more accurate detect_data_type() in
+  trees.c, according to the txtvsbin.txt document [Truta]
+- Swap the order of #include <stdio.h> and #include "zlib.h" in
+  gzio.c, example.c and minigzip.c [Truta]
+- Shut up annoying VS2005 warnings about standard C deprecation [Rowe,
+  Truta] (where?)
+- Fix target "clean" from win32/Makefile.bor [Truta]
+- Create .pdb and .manifest files in win32/makefile.msc [Ziegler, Rowe]
+- Update zlib www home address in win32/DLL_FAQ.txt [Truta]
+- Update contrib/masmx86/inffas32.asm for VS2005 [Vollant, Van Wassenhove]
+- Enable browse info in the "Debug" and "ASM Debug" configurations in
+  the Visual C++ 6 project, and set (non-ASM) "Debug" as default [Truta]
+- Add pkgconfig support [Weigelt]
+- Add ZLIB_VER_MAJOR, ZLIB_VER_MINOR and ZLIB_VER_REVISION in zlib.h,
+  for use in win32/zlib1.rc [Polushin, Rowe, Truta]
+- Add a document that explains the new text detection scheme to
+  doc/txtvsbin.txt [Truta]
+- Add rfc1950.txt, rfc1951.txt and rfc1952.txt to doc/ [Truta]
+- Move algorithm.txt into doc/ [Truta]
+- Synchronize FAQ with website
+- Fix compressBound(), was low for some pathological cases [Fearnley]
+- Take into account wrapper variations in deflateBound()
+- Set examples/zpipe.c input and output to binary mode for Windows
+- Update examples/zlib_how.html with new zpipe.c (also web site)
+- Fix some warnings in examples/gzlog.c and examples/zran.c (it seems
+  that gcc became pickier in 4.0)
+- Add zlib.map for Linux: "All symbols from zlib-1.1.4 remain
+  un-versioned, the patch adds versioning only for symbols introduced in
+  zlib-1.2.0 or later.  It also declares as local those symbols which are
+  not designed to be exported." [Levin]
+- Update Z_PREFIX list in zconf.in.h, add --zprefix option to configure
+- Do not initialize global static by default in trees.c, add a response
+  NO_INIT_GLOBAL_POINTERS to initialize them if needed [Marquess]
+- Don't use strerror() in gzio.c under WinCE [Yakimov]
+- Don't use errno.h in zutil.h under WinCE [Yakimov]
+- Move arguments for AR to its usage to allow replacing ar [Marot]
+- Add HAVE_VISIBILITY_PRAGMA in zconf.in.h for Mozilla [Randers-Pehrson]
+- Improve inflateInit() and inflateInit2() documentation
+- Fix structure size comment in inflate.h
+- Change configure help option from --h* to --help [Santos]
+
 Changes in 1.2.3 (18 July 2005)
 - Apply security vulnerability fixes to contrib/infback9 as well
 - Clean up some text files (carriage returns, trailing space)
@@ -13,7 +366,7 @@ Changes in 1.2.2.4 (11 July 2005)
   compile
 - Fix some spelling errors in comments [Betts]
 - Correct inflateInit2() error return documentation in zlib.h
-- Added zran.c example of compressed data random access to examples
+- Add zran.c example of compressed data random access to examples
   directory, shows use of inflatePrime()
 - Fix cast for assignments to strm->state in inflate.c and infback.c
 - Fix zlibCompileFlags() in zutil.c to use 1L for long shifts [Oberhumer]
