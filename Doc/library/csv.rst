@@ -78,7 +78,7 @@ The :mod:`csv` module defines the following functions:
    A short usage example::
 
       >>> import csv
-      >>> spamReader = csv.reader(open('eggs.csv'), delimiter=' ', quotechar='|')
+      >>> spamReader = csv.reader(open('eggs.csv', 'rb'), delimiter=' ', quotechar='|')
       >>> for row in spamReader:
       ...     print ', '.join(row)
       Spam, Spam, Spam, Spam, Spam, Baked Beans
@@ -116,7 +116,7 @@ The :mod:`csv` module defines the following functions:
    A short usage example::
 
       >>> import csv
-      >>> spamWriter = csv.writer(open('eggs.csv', 'w'), delimiter=' ',
+      >>> spamWriter = csv.writer(open('eggs.csv', 'wb'), delimiter=' ',
       ...                         quotechar='|', quoting=csv.QUOTE_MINIMAL)
       >>> spamWriter.writerow(['Spam'] * 5 + ['Baked Beans'])
       >>> spamWriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
@@ -234,7 +234,7 @@ The :mod:`csv` module defines the following classes:
 
 An example for :class:`Sniffer` use::
 
-   csvfile = open("example.csv")
+   csvfile = open("example.csv", "rb")
    dialect = csv.Sniffer().sniff(csvfile.read(1024))
    csvfile.seek(0)
    reader = csv.reader(csvfile, dialect)
