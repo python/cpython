@@ -71,11 +71,11 @@ w(here)
         An arrow indicates the "current frame", which determines the
         context of most commands.
 
-d(own) [ count ]
+d(own) [count]
         Move the current frame count (default one) levels down in the
         stack trace (to a newer frame).
 
-u(p) [ count ]
+u(p) [count]
         Move the current frame count (default one) levels up in the
         stack trace (to an older frame).
 
@@ -140,9 +140,12 @@ n(ext)
         Continue execution until the next line in the current function
         is reached or it returns.
 
-unt(il)
-        Continue execution until the line with a number greater than
-        the current one is reached or until the current frame returns.
+unt(il) [lineno]
+        Without argument, continue execution until the line with a
+        number greater than the current one is reached.  With a line
+        number, continue execution until a line with a number greater
+        or equal to that is reached.  In both cases, also stop when
+        the current frame returns.
 
 r(eturn)
         Continue execution until the current function returns.
@@ -883,7 +886,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     do_d = do_down
 
     def do_until(self, arg):
-        self.set_until(self.curframe)
+        if arg:
+            try:
+                lineno = int(arg)
+            except ValueError:
+                print('*** Error in argument:', repr(arg), file=self.stdout)
+                return
+            if lineno <= self.curframe.f_lineno:
+                print('*** "until" line number is smaller than current '
+                      'line number', file=self.stdout)
+                return
+        else:
+            lineno = None
+        self.set_until(self.curframe, lineno)
         return 1
     do_unt = do_until
 
@@ -1518,8 +1533,8 @@ and in the current directory, if they exist.  Commands supplied with
 -c are executed after commands from .pdbrc files.
 
 To let the script run until an exception occurs, use "-c continue".
-To let the script run until a given line X in the debugged file, use
-"-c 'break X' -c continue"."""
+To let the script run up to a given line X in the debugged file, use
+"-c 'until X'"."""
 
 def main():
     import getopt

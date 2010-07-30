@@ -475,6 +475,8 @@ C-API
 Library
 -------
 
+- In pdb, allow giving a line number to the "until" command.
+
 - Issue #1437051: For pdb, allow "continue" and related commands in
   .pdbrc files.  Also, add a command-line option "-c" that runs a
   command as if given in .pdbrc.
