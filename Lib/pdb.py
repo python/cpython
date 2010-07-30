@@ -509,8 +509,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return self.handle_command_def(line)
 
     def handle_command_def(self,line):
-        """ Handles one command line during command list definition. """
+        """Handles one command line during command list definition."""
         cmd, arg, line = self.parseline(line)
+        if not cmd:
+            return
         if cmd == 'silent':
             self.commands_silent[self.commands_bnum] = True
             return # continue to handle other cmd def in the cmd list
@@ -518,7 +520,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.cmdqueue = []
             return 1 # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
-        if (arg):
+        if arg:
             cmdlist.append(cmd+' '+arg)
         else:
             cmdlist.append(cmd)
@@ -561,9 +563,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         prompt_back = self.prompt
         self.prompt = '(com) '
         self.commands_defining = True
-        self.cmdloop()
-        self.commands_defining = False
-        self.prompt = prompt_back
+        try:
+            self.cmdloop()
+        finally:
+            self.commands_defining = False
+            self.prompt = prompt_back
 
     def do_break(self, arg, temporary = 0):
         # break [ ([filename:]lineno | function) [, "condition"] ]

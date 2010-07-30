@@ -475,6 +475,9 @@ C-API
 Library
 -------
 
+- Issue #8015: In pdb, do not crash when an empty line is entered as
+  a breakpoint command.
+
 - In pdb, allow giving a line number to the "until" command.
 
 - Issue #1437051: For pdb, allow "continue" and related commands in
