@@ -475,6 +475,9 @@ C-API
 Library
 -------
 
+- Issue #6719: In pdb, do not stop somewhere in the encodings machinery
+  if the source file to be debugged is in a non-builtin encoding.
+
 - Issue #8048: Prevent doctests from failing when sys.displayhook has
   been reassigned.
 
