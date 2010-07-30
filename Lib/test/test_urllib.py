@@ -527,6 +527,7 @@ class QuotingTests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "using quote_plus(): %r != %r" % (expect, result))
 
+
 class UnquotingTests(unittest.TestCase):
     """Tests for unquote() and unquote_plus()
 
@@ -555,6 +556,7 @@ class UnquotingTests(unittest.TestCase):
                          "using unquote(): not all characters escaped: "
                          "%s" % result)
         self.assertRaises(TypeError, urllib.parse.unquote, None)
+        self.assertRaises(TypeError, urllib.parse.unquote, ())
 
     def test_unquoting_badpercent(self):
         # Test unquoting on bad percent-escapes
@@ -589,8 +591,8 @@ class UnquotingTests(unittest.TestCase):
         result = urllib.parse.unquote_to_bytes(given)
         self.assertEqual(expect, result, "using unquote_to_bytes(): %r != %r"
                          % (expect, result))
-
         self.assertRaises(TypeError, urllib.parse.unquote_to_bytes, None)
+        self.assertRaises(TypeError, urllib.parse.unquote_to_bytes, ())
 
     def test_unquoting_mixed_case(self):
         # Test unquoting on mixed-case hex digits in the percent-escapes
