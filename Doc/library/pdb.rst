@@ -44,10 +44,14 @@ example::
    python3 -m pdb myscript.py
 
 When invoked as a script, pdb will automatically enter post-mortem debugging if
-the program being debugged exits abnormally. After post-mortem debugging (or
-after normal exit of the program), pdb will restart the program. Automatic
+the program being debugged exits abnormally.  After post-mortem debugging (or
+after normal exit of the program), pdb will restart the program.  Automatic
 restarting preserves pdb's state (such as breakpoints) and in most cases is more
 useful than quitting the debugger upon program's exit.
+
+.. versionadded:: 3.2
+   :file:`pdb.py` now accepts a ``-c`` option that executes commands as if given
+   in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
 
 The typical usage to break into the debugger from a running program is to
 insert ::
@@ -201,6 +205,11 @@ directory, it is read in and executed as if it had been typed at the debugger
 prompt.  This is particularly useful for aliases.  If both files exist, the one
 in the home directory is read first and aliases defined there can be overridden
 by the local file.
+
+.. versionchanged:: 3.2
+   :file:`.pdbrc` can now contain commands that continue debugging, such as
+   :pdbcmd:`continue` or :pdbcmd:`next`.  Previously, these commands had no
+   effect.
 
 
 .. pdbcommand:: h(elp) [command]
@@ -388,9 +397,9 @@ by the local file.
    As an example, here are two useful aliases (especially when placed in the
    :file:`.pdbrc` file)::
 
-      #Print instance variables (usage "pi classInst")
+      # Print instance variables (usage "pi classInst")
       alias pi for k in %1.__dict__.keys(): print("%1.",k,"=",%1.__dict__[k])
-      #Print instance variables in self
+      # Print instance variables in self
       alias ps pi self
 
 .. pdbcommand:: unalias name

@@ -332,19 +332,26 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # locals whenever the .f_locals accessor is called, so we
         # cache it here to ensure that modifications are not overwritten.
         self.curframe_locals = self.curframe.f_locals
-        self.execRcLines()
+        return self.execRcLines()
 
     # Can be executed earlier than 'setup' if desired
     def execRcLines(self):
-        if self.rcLines:
-            # Make local copy because of recursion
-            rcLines = self.rcLines
-            # executed only once
-            self.rcLines = []
-            for line in rcLines:
-                line = line[:-1]
-                if len(line) > 0 and line[0] != '#':
-                    self.onecmd(line)
+        if not self.rcLines:
+            return
+        # local copy because of recursion
+        rcLines = self.rcLines
+        rcLines.reverse()
+        # execute every line only once
+        self.rcLines = []
+        while rcLines:
+            line = rcLines.pop().strip()
+            if line and line[0] != '#':
+                if self.onecmd(line):
+                    # if onecmd returns True, the command wants to exit
+                    # from the interaction, save leftover rc lines
+                    # to execute before next interaction
+                    self.rcLines += reversed(rcLines)
+                    return True
 
     # Override Bdb methods
 
@@ -367,7 +374,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if self.bp_commands(frame):
             self.interaction(frame, None)
 
-    def bp_commands(self,frame):
+    def bp_commands(self, frame):
         """Call every command that was set for the current active breakpoint
         (if there is one).
 
@@ -409,7 +416,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # General interaction function
 
     def interaction(self, frame, traceback):
-        self.setup(frame, traceback)
+        if self.setup(frame, traceback):
+            # no interaction desired at this time (happens if .pdbrc contains
+            # a command like "continue")
+            self.forget()
+            return
         self.print_stack_entry(self.stack[self.curindex])
         self.cmdloop()
         self.forget()
@@ -1497,17 +1508,42 @@ def help():
     import pydoc
     pydoc.pager(__doc__)
 
+_usage = """\
+usage: pdb.py [-c command] ... pyfile [arg] ...
+
+Debug the Python program given by pyfile.
+
+Initial commands are read from .pdbrc files in your home directory
+and in the current directory, if they exist.  Commands supplied with
+-c are executed after commands from .pdbrc files.
+
+To let the script run until an exception occurs, use "-c continue".
+To let the script run until a given line X in the debugged file, use
+"-c 'break X' -c continue"."""
+
 def main():
-    if not sys.argv[1:] or sys.argv[1] in ("--help", "-h"):
-        print("usage: pdb.py scriptfile [arg] ...")
+    import getopt
+
+    opts, args = getopt.getopt(sys.argv[1:], 'hc:', ['--help', '--command='])
+
+    if not args:
+        print(_usage)
         sys.exit(2)
 
-    mainpyfile =  sys.argv[1]     # Get script filename
+    commands = []
+    for opt, optarg in opts:
+        if opt in ['-h', '--help']:
+            print(_usage)
+            sys.exit()
+        elif opt in ['-c', '--command']:
+            commands.append(optarg)
+
+    mainpyfile = args[0]     # Get script filename
     if not os.path.exists(mainpyfile):
         print('Error:', mainpyfile, 'does not exist')
         sys.exit(1)
 
-    del sys.argv[0]         # Hide "pdb.py" from argument list
+    sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
 
     # Replace pdb's dir with script's dir in front of module search path.
     sys.path[0] = os.path.dirname(mainpyfile)
@@ -1517,6 +1553,7 @@ def main():
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
     pdb = Pdb()
+    pdb.rcLines.extend(commands)
     while True:
         try:
             pdb._runscript(mainpyfile)
@@ -1525,10 +1562,10 @@ def main():
             print("The program finished and will be restarted")
         except Restart:
             print("Restarting", mainpyfile, "with arguments:")
-            print("\t" + " ".join(sys.argv[1:]))
+            print("\t" + " ".join(args))
         except SystemExit:
             # In most cases SystemExit does not warrant a post-mortem session.
-            print("The program exited via sys.exit(). Exit status: ", end=' ')
+            print("The program exited via sys.exit(). Exit status:", end=' ')
             print(sys.exc_info()[1])
         except:
             traceback.print_exc()
