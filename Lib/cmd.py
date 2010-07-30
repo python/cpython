@@ -84,7 +84,6 @@ class Cmd:
         sys.stdin and sys.stdout are used.
 
         """
-        import sys
         if stdin is not None:
             self.stdin = stdin
         else:
