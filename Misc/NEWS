@@ -475,6 +475,9 @@ C-API
 Library
 -------
 
+- Issue #5294: Fix the behavior of pdb's "continue" command when called
+  in the top-level debugged frame.
+
 - Issue #5727: Restore the ability to use readline when calling into pdb
   in doctests.
 
