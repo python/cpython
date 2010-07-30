@@ -50,9 +50,10 @@ The :mod:`bdb` module also defines two classes:
       Mark the breakpoint as disabled.
 
 
-   .. method:: bpprint(out=None)
+   .. method:: bpformat()
 
-      Print all the information about the breakpoint:
+      Return a string with all the information about the breakpoint, nicely
+      formatted:
 
       * The breakpoint number.
       * If it is temporary or not.
@@ -60,6 +61,13 @@ The :mod:`bdb` module also defines two classes:
       * The condition that causes a break.
       * If it must be ignored the next N times.
       * The breakpoint hit count.
+
+      .. versionadded:: 3.2
+
+   .. method:: bpprint(out=None)
+
+      Print the output of :meth:`bpformat` to the file *out*, or if it is
+      ``None``, to standard output.
 
 
 .. class:: Bdb(skip=None)

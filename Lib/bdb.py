@@ -499,6 +499,9 @@ class Breakpoint:
     def bpprint(self, out=None):
         if out is None:
             out = sys.stdout
+        print(self.bpformat(), file=out)
+
+    def bpformat(self):
         if self.temporary:
             disp = 'del  '
         else:
@@ -507,17 +510,19 @@ class Breakpoint:
             disp = disp + 'yes  '
         else:
             disp = disp + 'no   '
-        print('%-4dbreakpoint   %s at %s:%d' % (self.number, disp,
-                                                       self.file, self.line), file=out)
+        ret = '%-4dbreakpoint   %s at %s:%d' % (self.number, disp,
+                                                self.file, self.line)
         if self.cond:
-            print('\tstop only if %s' % (self.cond,), file=out)
+            ret += '\n\tstop only if %s' % (self.cond,)
         if self.ignore:
-            print('\tignore next %d hits' % (self.ignore), file=out)
-        if (self.hits):
-            if (self.hits > 1): ss = 's'
-            else: ss = ''
-            print(('\tbreakpoint already hit %d time%s' %
-                          (self.hits, ss)), file=out)
+            ret += '\n\tignore next %d hits' % (self.ignore,)
+        if self.hits:
+            if self.hits > 1:
+                ss = 's'
+            else:
+                ss = ''
+            ret += '\n\tbreakpoint already hit %d time%s' % (self.hits, ss)
+        return ret
 
     def __str__(self):
         return 'breakpoint %s at %s:%s' % (self.number, self.file, self.line)
