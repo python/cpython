@@ -368,6 +368,12 @@ by the local file.
    list 11 lines around at that line.  With two arguments, list the given range;
    if the second argument is less than the first, it is interpreted as a count.
 
+.. pdbcommand:: ll | longlist
+
+   List all source code for the current function or frame.
+
+   .. versionadded:: 3.2
+
 .. pdbcommand:: a(rgs)
 
    Print the argument list of the current function.
@@ -384,6 +390,12 @@ by the local file.
 .. pdbcommand:: whatis expression
 
    Print the type of the *expression*.
+
+.. pdbcommand:: source expression
+
+   Try to get source code for the given object and display it.
+
+   .. versionadded:: 3.2
 
 .. _debugger-aliases:
 
