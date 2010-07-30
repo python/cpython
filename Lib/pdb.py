@@ -552,12 +552,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Those commands will be executed whenever the breakpoint causes
         the program to stop execution."""
         if not arg:
-            bnum = len(bdb.Breakpoint.bpbynumber)-1
+            bnum = len(bdb.Breakpoint.bpbynumber) - 1
         else:
             try:
                 bnum = int(arg)
             except:
-                print("Usage : commands [bnum]\n        ...\n        end",
+                print("Usage: commands [bnum]\n        ...\n        end",
                       file=self.stdout)
                 return
         self.commands_bnum = bnum
@@ -634,10 +634,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     # last thing to try
                     (ok, filename, ln) = self.lineinfo(arg)
                     if not ok:
-                        print('*** The specified object', end=' ', file=self.stdout)
-                        print(repr(arg), end=' ', file=self.stdout)
-                        print('is not a function', file=self.stdout)
-                        print('or was not found along sys.path.', file=self.stdout)
+                        print('*** The specified object %r is not a function '
+                              'or was not found along sys.path.' % arg,
+                              file=self.stdout)
                         return
                     funcname = ok # ok contains a function name
                     lineno = int(ln)
@@ -726,81 +725,56 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         args = arg.split()
         for i in args:
             try:
-                i = int(i)
-            except ValueError:
-                print('Breakpoint index %r is not a number' % i, file=self.stdout)
-                continue
-
-            if not (0 <= i < len(bdb.Breakpoint.bpbynumber)):
-                print('No breakpoint numbered', i, file=self.stdout)
-                continue
-
-            bp = bdb.Breakpoint.bpbynumber[i]
-            if bp:
+                bp = self.get_bpbynumber(i)
+            except ValueError as err:
+                print('***', err, file=self.stdout)
+            else:
                 bp.enable()
+                print('Enabled %s' % bp, file=self.stdout)
 
     def do_disable(self, arg):
         args = arg.split()
         for i in args:
             try:
-                i = int(i)
-            except ValueError:
-                print('Breakpoint index %r is not a number' % i, file=self.stdout)
-                continue
-
-            if not (0 <= i < len(bdb.Breakpoint.bpbynumber)):
-                print('No breakpoint numbered', i, file=self.stdout)
-                continue
-
-            bp = bdb.Breakpoint.bpbynumber[i]
-            if bp:
+                bp = self.get_bpbynumber(i)
+            except ValueError as err:
+                print('***', err, file=self.stdout)
+            else:
                 bp.disable()
+                print('Disabled %s' % bp, file=self.stdout)
 
     def do_condition(self, arg):
         # arg is breakpoint number and condition
         args = arg.split(' ', 1)
         try:
-            bpnum = int(args[0].strip())
-        except ValueError:
-            # something went wrong
-            print('Breakpoint index %r is not a number' % args[0], file=self.stdout)
-            return
-        try:
             cond = args[1]
-        except:
+        except IndexError:
             cond = None
         try:
-            bp = bdb.Breakpoint.bpbynumber[bpnum]
-        except IndexError:
-            print('Breakpoint index %r is not valid' % args[0],
-                  file=self.stdout)
-            return
-        if bp:
+            bp = self.get_bpbynumber(args[0].strip())
+        except ValueError as err:
+            print('***', err, file=self.stdout)
+        else:
             bp.cond = cond
             if not cond:
-                print('Breakpoint', bpnum, end=' ', file=self.stdout)
-                print('is now unconditional.', file=self.stdout)
+                print('Breakpoint %d is now unconditional.' % bp.number,
+                      file=self.stdout)
+            else:
+                print('New condition set for breakpoint %d.' % bp.number,
+                      file=self.stdout)
 
-    def do_ignore(self,arg):
+    def do_ignore(self, arg):
         """arg is bp number followed by ignore count."""
         args = arg.split()
-        try:
-            bpnum = int(args[0].strip())
-        except ValueError:
-            # something went wrong
-            print('Breakpoint index %r is not a number' % args[0], file=self.stdout)
-            return
         try:
             count = int(args[1].strip())
         except:
             count = 0
         try:
-            bp = bdb.Breakpoint.bpbynumber[bpnum]
-        except IndexError:
-            print('Breakpoint index %r is not valid' % args[0],
-                  file=self.stdout)
-            return
-        if bp:
+            bp = self.get_bpbynumber(args[0].strip())
+        except ValueError as err:
+            print('***', err, file=self.stdout)
+        else:
             bp.ignore = count
             if count > 0:
                 reply = 'Will ignore next '
@@ -808,10 +782,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     reply = reply + '%d crossings' % count
                 else:
                     reply = reply + '1 crossing'
-                print(reply + ' of breakpoint %d.' % bpnum, file=self.stdout)
+                print(reply + ' of breakpoint %d.' % bp.number, file=self.stdout)
             else:
-                print('Will stop next time breakpoint', end=' ', file=self.stdout)
-                print(bpnum, 'is reached.', file=self.stdout)
+                print('Will stop next time breakpoint %d is reached.'
+                      % bp.number, file=self.stdout)
 
     def do_clear(self, arg):
         """Three possibilities, tried in this order:
@@ -825,7 +799,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 reply = 'no'
             reply = reply.strip().lower()
             if reply in ('y', 'yes'):
+                bplist = [bp for bp in bdb.Breakpoint.bpbynumber if bp]
                 self.clear_all_breaks()
+                for bp in bplist:
+                    print('Deleted %s' % bp, file=self.stdout)
             return
         if ':' in arg:
             # Make sure it works for "clear C:\foo\bar.py:12"
@@ -837,25 +814,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except ValueError:
                 err = "Invalid line number (%s)" % arg
             else:
+                bplist = self.get_breaks(filename, lineno)
                 err = self.clear_break(filename, lineno)
-            if err: print('***', err, file=self.stdout)
+            if err:
+                print('***', err, file=self.stdout)
+            else:
+                for bp in bplist:
+                    print('Deleted %s' % bp, file=self.stdout)
             return
         numberlist = arg.split()
         for i in numberlist:
             try:
-                i = int(i)
-            except ValueError:
-                print('Breakpoint index %r is not a number' % i, file=self.stdout)
-                continue
-
-            if not (0 <= i < len(bdb.Breakpoint.bpbynumber)):
-                print('No breakpoint numbered', i, file=self.stdout)
-                continue
-            err = self.clear_bpbynumber(i)
-            if err:
+                bp = self.get_bpbynumber(i)
+            except ValueError as err:
                 print('***', err, file=self.stdout)
             else:
-                print('Deleted breakpoint', i, file=self.stdout)
+                self.clear_break(bp.file, bp.line)
+                print('Deleted %s' % bp, file=self.stdout)
     do_cl = do_clear # 'c' is already an abbreviation for 'continue'
 
     def do_where(self, arg):

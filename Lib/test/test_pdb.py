@@ -134,7 +134,7 @@ def test_pdb_continue_in_bottomframe():
     ...     print(3)
     ...     print(4)
 
-    >>> with PdbTestInput([
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
     ...     'next',
     ...     'break 7',
     ...     'continue',
@@ -149,7 +149,7 @@ def test_pdb_continue_in_bottomframe():
     > <doctest test.test_pdb.test_pdb_continue_in_bottomframe[0]>(5)test_function()
     -> print(1)
     (Pdb) break 7
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_continue_in_bottomframe[0]>:7
+    Breakpoint ... at <doctest test.test_pdb.test_pdb_continue_in_bottomframe[0]>:7
     (Pdb) continue
     1
     2
@@ -160,6 +160,84 @@ def test_pdb_continue_in_bottomframe():
     > <doctest test.test_pdb.test_pdb_continue_in_bottomframe[0]>(8)test_function()
     -> print(4)
     (Pdb) continue
+    4
+    """
+
+
+def test_pdb_breakpoints():
+    """Test handling of breakpoints.
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+    ...     print(4)
+
+    First, need to clear bdb state that might be left over from previous tests.
+    Otherwise, the new breakpoints might get assigned different numbers.
+
+    >>> from bdb import Breakpoint
+    >>> Breakpoint.next = 1
+    >>> Breakpoint.bplist = {}
+    >>> Breakpoint.bpbynumber = [None]
+
+    Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
+    the breakpoint list outputs a tab for the "stop only" and "ignore next"
+    lines, which we don't want to put in here.
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 3',
+    ...     'disable 1',
+    ...     'ignore 1 10',
+    ...     'condition 1 1 < 2',
+    ...     'break 4',
+    ...     'break',
+    ...     'condition 1',
+    ...     'enable 1',
+    ...     'clear 1',
+    ...     'commands 2',
+    ...     'print 42',
+    ...     'end',
+    ...     'continue',  # will stop at breakpoint 2
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoints[0]>(3)test_function()
+    -> print(1)
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoints[0]>:3
+    (Pdb) disable 1
+    Disabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoints[0]>:3
+    (Pdb) ignore 1 10
+    Will ignore next 10 crossings of breakpoint 1.
+    (Pdb) condition 1 1 < 2
+    New condition set for breakpoint 1.
+    (Pdb) break 4
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoints[0]>:4
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep no    at <doctest test.test_pdb.test_pdb_breakpoints[0]>:3
+            stop only if 1 < 2
+            ignore next 10 hits
+    2   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoints[0]>:4
+    (Pdb) condition 1
+    Breakpoint 1 is now unconditional.
+    (Pdb) enable 1
+    Enabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoints[0]>:3
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoints[0]>:3
+    (Pdb) commands 2
+    (com) print 42
+    (com) end
+    (Pdb) continue
+    1
+    42
+    > <doctest test.test_pdb.test_pdb_breakpoints[0]>(4)test_function()
+    -> print(2)
+    (Pdb) continue
+    2
+    3
     4
     """
 

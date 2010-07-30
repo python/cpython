@@ -267,6 +267,15 @@ The :mod:`bdb` module also defines two classes:
 
       Delete all existing breakpoints.
 
+   .. method:: get_bpbynumber(arg)
+
+      Return a breakpoint specified by the given number.  If *arg* is a string,
+      it will be converted to a number.  If *arg* is a non-numeric string, if
+      the given breakpoint never existed or has been deleted, a
+      :exc:`ValueError` is raised.
+
+      .. versionadded:: 3.2
+
    .. method:: get_break(filename, lineno)
 
       Check if there is a breakpoint for *lineno* of *filename*.
