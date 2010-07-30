@@ -1,7 +1,10 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
 import imp
+import pdb
 import sys
+import unittest
+import subprocess
 
 from test import support
 # This little helper class is essential for testing pdb under doctest.
@@ -286,9 +289,30 @@ def test_pdb_run_with_code_object():
     """
 
 
+class PdbTestCase(unittest.TestCase):
+
+    def test_issue7964(self):
+        # open the file as binary so we can force \r\n newline
+        with open(support.TESTFN, 'wb') as f:
+            f.write(b'print("testing my pdb")\r\n')
+        cmd = [sys.executable, '-m', 'pdb', support.TESTFN]
+        proc = subprocess.Popen(cmd,
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            )
+        stdout, stderr = proc.communicate(b'quit\n')
+        self.assertNotIn(b'SyntaxError', stdout,
+                         "Got a syntax error running test script under PDB")
+
+    def tearDown(self):
+        support.unlink(support.TESTFN)
+
+
 def test_main():
     from test import test_pdb
     support.run_doctest(test_pdb, verbosity=True)
+    support.run_unittest(PdbTestCase)
 
 
 if __name__ == '__main__':
