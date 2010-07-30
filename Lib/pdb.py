@@ -160,6 +160,7 @@ l(ist) [first [,last]]
         List source code for the current file.
         Without arguments, list 11 lines around the current line
         or continue the previous listing.
+        With . as argument, list 11 lines around the current line.
         With one argument, list 11 lines starting at that line.
         With two arguments, list the given range;
         if the second argument is less than the first, it is a count.
@@ -997,7 +998,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_list(self, arg):
         self.lastcmd = 'list'
         last = None
-        if arg:
+        if arg and arg != '.':
             try:
                 x = eval(arg, {}, {})
                 if type(x) == type(()):
@@ -1012,7 +1013,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except:
                 print('*** Error in argument:', repr(arg), file=self.stdout)
                 return
-        elif self.lineno is None:
+        elif self.lineno is None or arg == '.':
             first = max(1, self.curframe.f_lineno - 5)
         else:
             first = self.lineno + 1
