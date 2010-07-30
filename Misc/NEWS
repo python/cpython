@@ -475,6 +475,9 @@ C-API
 Library
 -------
 
+- Issue #809887: Make the output of pdb's breakpoint deletions more
+  consistent; emit a message when a breakpoint is enabled or disabled.
+
 - Issue #5294: Fix the behavior of pdb's "continue" command when called
   in the top-level debugged frame.
 
