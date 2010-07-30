@@ -371,7 +371,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             return self.handle_command_def(line)
 
-    def handle_command_def(self,line):
+    def handle_command_def(self, line):
         """Handles one command line during command list definition."""
         cmd, arg, line = self.parseline(line)
         if not cmd:
@@ -457,14 +457,33 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.error("Usage: commands [bnum]\n        ...\n        end")
                 return
         self.commands_bnum = bnum
+        # Save old definitions for the case of a keyboard interrupt.
+        if bnum in self.commands:
+            old_command_defs = (self.commands[bnum],
+                                self.commands_doprompt[bnum],
+                                self.commands_silent[bnum])
+        else:
+            old_command_defs = None
         self.commands[bnum] = []
         self.commands_doprompt[bnum] = True
         self.commands_silent[bnum] = False
+
         prompt_back = self.prompt
         self.prompt = '(com) '
         self.commands_defining = True
         try:
             self.cmdloop()
+        except KeyboardInterrupt:
+            # Restore old definitions.
+            if old_command_defs:
+                self.commands[bnum] = old_command_defs[0]
+                self.commands_doprompt[bnum] = old_command_defs[1]
+                self.commands_silent[bnum] = old_command_defs[2]
+            else:
+                del self.commands[bnum]
+                del self.commands_doprompt[bnum]
+                del self.commands_silent[bnum]
+            self.error('command definition aborted, old commands restored')
         finally:
             self.commands_defining = False
             self.prompt = prompt_back
