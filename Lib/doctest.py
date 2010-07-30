@@ -318,6 +318,8 @@ class _OutputRedirectingPdb(pdb.Pdb):
         self.__out = out
         self.__debugger_used = False
         pdb.Pdb.__init__(self, stdout=out)
+        # still use input() to get user input
+        self.use_rawinput = 1
 
     def set_trace(self, frame=None):
         self.__debugger_used = True
