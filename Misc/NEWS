@@ -1673,6 +1673,8 @@ Extension Modules
 - Issue #7347: winreg: Add CreateKeyEx and DeleteKeyEx, as well as fix a
   bug in the return value of QueryReflectionKey.
 
+- Issue #7567: PyCurses_setupterm: Don't call `setupterm' twice.
+
 Build
 -----
 

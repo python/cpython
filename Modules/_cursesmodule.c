@@ -2126,7 +2126,7 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
         }
     }
 
-    if (setupterm(termstr,fd,&err) == ERR) {
+    if (!initialised_setupterm && setupterm(termstr,fd,&err) == ERR) {
         char* s = "setupterm: unknown error";
 
         if (err == 0) {
