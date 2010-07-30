@@ -475,6 +475,9 @@ C-API
 Library
 -------
 
+- In pdb, when Ctrl-C is entered while defining commands for a
+  breakpoint, the old commands are restored.
+
 - For traceback debugging, the pdb listing now also shows the locations
   where the exception was originally (re)raised, if it differs from the
   last line executed (e.g. in case of finally clauses).
