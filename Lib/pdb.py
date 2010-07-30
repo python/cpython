@@ -413,6 +413,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
+        if self._wait_for_mainpyfile:
+            return
         frame.f_locals['__return__'] = return_value
         print('--Return--', file=self.stdout)
         self.interaction(frame, None)
@@ -420,6 +422,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def user_exception(self, frame, exc_info):
         """This function is called if an exception occurs,
         but only if we are to stop at or just below this level."""
+        if self._wait_for_mainpyfile:
+            return
         exc_type, exc_value, exc_traceback = exc_info
         frame.f_locals['__exception__'] = exc_type, exc_value
         exc_type_name = exc_type.__name__
