@@ -237,7 +237,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if type(t) == type(''):
                 exc_type_name = t
             else: exc_type_name = t.__name__
-            print >>self.stdout, '***', exc_type_name + ':', v
+            print >>self.stdout, '***', exc_type_name + ':', _saferepr(v)
 
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
@@ -753,7 +753,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if isinstance(t, str):
                 exc_type_name = t
             else: exc_type_name = t.__name__
-            print >>self.stdout, '***', exc_type_name + ':', repr(v)
+            print >>self.stdout, '***', exc_type_name + ':', _saferepr(v)
             raise
 
     def do_p(self, arg):
