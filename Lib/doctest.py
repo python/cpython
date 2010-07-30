@@ -1379,12 +1379,17 @@ class DocTestRunner:
         self.save_linecache_getlines = linecache.getlines
         linecache.getlines = self.__patched_linecache_getlines
 
+        # Make sure sys.displayhook just prints the value to stdout
+        save_displayhook = sys.displayhook
+        sys.displayhook = sys.__displayhook__
+
         try:
             return self.__run(test, compileflags, out)
         finally:
             sys.stdout = save_stdout
             pdb.set_trace = save_set_trace
             linecache.getlines = self.save_linecache_getlines
+            sys.displayhook = save_displayhook
             if clear_globs:
                 test.globs.clear()
                 import builtins
