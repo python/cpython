@@ -105,6 +105,15 @@ def find_function(funcname, filename):
     fp.close()
     return answer
 
+def getsourcelines(obj):
+    lines, lineno = inspect.findsource(obj)
+    if inspect.isframe(obj) and lineno == 0 and \
+           obj.f_globals is obj.f_locals:
+        # must be a module frame: do not try to cut a block out of it
+        return lines, 0
+    elif inspect.ismodule(obj):
+        return lines, 0
+    return inspect.getblock(lines[lineno:]), lineno+1
 
 # Interaction prompt line will separate file and call info from code
 # text using value of line_prefix string.  A newline and arrow may
@@ -1048,7 +1057,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
-            lines, lineno = inspect.getsourcelines(self.curframe)
+            lines, lineno = getsourcelines(self.curframe)
         except IOError as err:
             self.error(err)
             return
@@ -1064,7 +1073,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             return
         try:
-            lines, lineno = inspect.getsourcelines(obj)
+            lines, lineno = getsourcelines(obj)
         except (IOError, TypeError) as err:
             self.error(err)
             return
