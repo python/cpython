@@ -339,6 +339,9 @@ by the local file.
    equal to that is reached.  In both cases, also stop when the current frame
    returns.
 
+   .. versionchanged:: 3.2
+      Allow giving an explicit line number.
+
 .. pdbcommand:: r(eturn)
 
    Continue execution until the current function returns.
