@@ -298,6 +298,7 @@ def test_list_commands():
     ...     'step',      # step into do_nothing
     ...     'longlist',  # list all lines
     ...     'source do_something',  # list all lines of function
+    ...     'source fooxxx',        # something that doesn't exit
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -352,6 +353,8 @@ def test_list_commands():
     (Pdb) source do_something
     ...         def do_something():
     ...             print(42)
+    (Pdb) source fooxxx
+    *** ...
     (Pdb) continue
     """
 
