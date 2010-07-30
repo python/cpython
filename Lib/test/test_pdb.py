@@ -54,6 +54,209 @@ def test_pdb_displayhook():
     """
 
 
+def test_pdb_basic_commands():
+    """Test the basic commands of pdb.
+
+    >>> def test_function_2(foo, bar='default'):
+    ...     print(foo)
+    ...     for i in range(5):
+    ...         print(i)
+    ...     print(bar)
+    ...     for i in range(10):
+    ...         never_executed
+    ...     print('after for')
+    ...     print('...')
+    ...     return foo.upper()
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     ret = test_function_2('baz')
+    ...     print(ret)
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'step',       # entering the function call
+    ...     'args',       # display function args
+    ...     'list',       # list function source
+    ...     'bt',         # display backtrace
+    ...     'up',         # step up to test_function()
+    ...     'down',       # step down to test_function_2() again
+    ...     'next',       # stepping to print(foo)
+    ...     'next',       # stepping to the for loop
+    ...     'step',       # stepping into the for loop
+    ...     'until',      # continuing until out of the for loop
+    ...     'next',       # executing the print(bar)
+    ...     'jump 8',     # jump over second for loop
+    ...     'return',     # return out of function
+    ...     'retval',     # display return value
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_basic_commands[1]>(3)test_function()
+    -> ret = test_function_2('baz')
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(1)test_function_2()
+    -> def test_function_2(foo, bar='default'):
+    (Pdb) args
+    foo = 'baz'
+    bar = 'default'
+    (Pdb) list
+      1  ->     def test_function_2(foo, bar='default'):
+      2             print(foo)
+      3             for i in range(5):
+      4                 print(i)
+      5             print(bar)
+      6             for i in range(10):
+      7                 never_executed
+      8             print('after for')
+      9             print('...')
+     10             return foo.upper()
+    [EOF]
+    (Pdb) bt
+    ...
+      <doctest test.test_pdb.test_pdb_basic_commands[2]>(18)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_basic_commands[1]>(3)test_function()
+    -> ret = test_function_2('baz')
+    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(1)test_function_2()
+    -> def test_function_2(foo, bar='default'):
+    (Pdb) up
+    > <doctest test.test_pdb.test_pdb_basic_commands[1]>(3)test_function()
+    -> ret = test_function_2('baz')
+    (Pdb) down
+    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(1)test_function_2()
+    -> def test_function_2(foo, bar='default'):
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(2)test_function_2()
+    -> print(foo)
+    (Pdb) next
+    baz
+    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(3)test_function_2()
+    -> for i in range(5):
+    (Pdb) step
+    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(4)test_function_2()
+    -> print(i)
+    (Pdb) until
+    0
+    1
+    2
+    3
+    4
+    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(5)test_function_2()
+    -> print(bar)
+    (Pdb) next
+    default
+    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(6)test_function_2()
+    -> for i in range(10):
+    (Pdb) jump 8
+    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(8)test_function_2()
+    -> print('after for')
+    (Pdb) return
+    after for
+    ...
+    --Return--
+    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(10)test_function_2()->'BAZ'
+    -> return foo.upper()
+    (Pdb) retval
+    'BAZ'
+    (Pdb) continue
+    BAZ
+    """
+
+
+def test_pdb_breakpoint_commands():
+    """Test basic commands related to breakpoints.
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+    ...     print(4)
+
+    First, need to clear bdb state that might be left over from previous tests.
+    Otherwise, the new breakpoints might get assigned different numbers.
+
+    >>> from bdb import Breakpoint
+    >>> Breakpoint.next = 1
+    >>> Breakpoint.bplist = {}
+    >>> Breakpoint.bpbynumber = [None]
+
+    Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
+    the breakpoint list outputs a tab for the "stop only" and "ignore next"
+    lines, which we don't want to put in here.
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 3',
+    ...     'disable 1',
+    ...     'ignore 1 10',
+    ...     'condition 1 1 < 2',
+    ...     'break 4',
+    ...     'break',
+    ...     'condition 1',
+    ...     'enable 1',
+    ...     'clear 1',
+    ...     'commands 2',
+    ...     'print 42',
+    ...     'end',
+    ...     'continue',  # will stop at breakpoint 2 (line 4)
+    ...     'clear',     # clear all!
+    ...     'y',
+    ...     'tbreak 5',
+    ...     'continue',  # will stop at temporary breakpoint
+    ...     'break',     # make sure breakpoint is gone
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(3)test_function()
+    -> print(1)
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+    (Pdb) disable 1
+    Disabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+    (Pdb) ignore 1 10
+    Will ignore next 10 crossings of breakpoint 1.
+    (Pdb) condition 1 1 < 2
+    New condition set for breakpoint 1.
+    (Pdb) break 4
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep no    at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+            stop only if 1 < 2
+            ignore next 10 hits
+    2   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    (Pdb) condition 1
+    Breakpoint 1 is now unconditional.
+    (Pdb) enable 1
+    Enabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+    (Pdb) commands 2
+    (com) print 42
+    (com) end
+    (Pdb) continue
+    1
+    42
+    > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(4)test_function()
+    -> print(2)
+    (Pdb) clear
+    Clear all breaks? y
+    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
+    (Pdb) tbreak 5
+    Breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:5
+    (Pdb) continue
+    2
+    Deleted breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:5
+    > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(5)test_function()
+    -> print(3)
+    (Pdb) break
+    (Pdb) continue
+    3
+    4
+    """
+
+
 def test_pdb_skip_modules():
     """This illustrates the simple case of module skipping.
 
@@ -163,84 +366,6 @@ def test_pdb_continue_in_bottomframe():
     > <doctest test.test_pdb.test_pdb_continue_in_bottomframe[0]>(8)test_function()
     -> print(4)
     (Pdb) continue
-    4
-    """
-
-
-def test_pdb_breakpoints():
-    """Test handling of breakpoints.
-
-    >>> def test_function():
-    ...     import pdb; pdb.Pdb().set_trace()
-    ...     print(1)
-    ...     print(2)
-    ...     print(3)
-    ...     print(4)
-
-    First, need to clear bdb state that might be left over from previous tests.
-    Otherwise, the new breakpoints might get assigned different numbers.
-
-    >>> from bdb import Breakpoint
-    >>> Breakpoint.next = 1
-    >>> Breakpoint.bplist = {}
-    >>> Breakpoint.bpbynumber = [None]
-
-    Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
-    the breakpoint list outputs a tab for the "stop only" and "ignore next"
-    lines, which we don't want to put in here.
-
-    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
-    ...     'break 3',
-    ...     'disable 1',
-    ...     'ignore 1 10',
-    ...     'condition 1 1 < 2',
-    ...     'break 4',
-    ...     'break',
-    ...     'condition 1',
-    ...     'enable 1',
-    ...     'clear 1',
-    ...     'commands 2',
-    ...     'print 42',
-    ...     'end',
-    ...     'continue',  # will stop at breakpoint 2
-    ...     'continue',
-    ... ]):
-    ...    test_function()
-    > <doctest test.test_pdb.test_pdb_breakpoints[0]>(3)test_function()
-    -> print(1)
-    (Pdb) break 3
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoints[0]>:3
-    (Pdb) disable 1
-    Disabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoints[0]>:3
-    (Pdb) ignore 1 10
-    Will ignore next 10 crossings of breakpoint 1.
-    (Pdb) condition 1 1 < 2
-    New condition set for breakpoint 1.
-    (Pdb) break 4
-    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoints[0]>:4
-    (Pdb) break
-    Num Type         Disp Enb   Where
-    1   breakpoint   keep no    at <doctest test.test_pdb.test_pdb_breakpoints[0]>:3
-            stop only if 1 < 2
-            ignore next 10 hits
-    2   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoints[0]>:4
-    (Pdb) condition 1
-    Breakpoint 1 is now unconditional.
-    (Pdb) enable 1
-    Enabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoints[0]>:3
-    (Pdb) clear 1
-    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoints[0]>:3
-    (Pdb) commands 2
-    (com) print 42
-    (com) end
-    (Pdb) continue
-    1
-    42
-    > <doctest test.test_pdb.test_pdb_breakpoints[0]>(4)test_function()
-    -> print(2)
-    (Pdb) continue
-    2
-    3
     4
     """
 
