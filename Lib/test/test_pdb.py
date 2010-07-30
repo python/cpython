@@ -122,6 +122,48 @@ def test_pdb_skip_modules_with_callback():
     """
 
 
+def test_pdb_continue_in_bottomframe():
+    """Test that "continue" and "next" work properly in bottom frame (issue #5294).
+
+    >>> def test_function():
+    ...     import pdb, sys; inst = pdb.Pdb()
+    ...     inst.set_trace()
+    ...     inst.botframe = sys._getframe()  # hackery to get the right botframe
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+    ...     print(4)
+
+    >>> with PdbTestInput([
+    ...     'next',
+    ...     'break 7',
+    ...     'continue',
+    ...     'next',
+    ...     'continue',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_continue_in_bottomframe[0]>(4)test_function()
+    -> inst.botframe = sys._getframe()  # hackery to get the right botframe
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_continue_in_bottomframe[0]>(5)test_function()
+    -> print(1)
+    (Pdb) break 7
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_continue_in_bottomframe[0]>:7
+    (Pdb) continue
+    1
+    2
+    > <doctest test.test_pdb.test_pdb_continue_in_bottomframe[0]>(7)test_function()
+    -> print(3)
+    (Pdb) next
+    3
+    > <doctest test.test_pdb.test_pdb_continue_in_bottomframe[0]>(8)test_function()
+    -> print(4)
+    (Pdb) continue
+    4
+    """
+
+
 def pdb_invoke(method, arg):
     """Run pdb.method(arg)."""
     import pdb; getattr(pdb, method)(arg)
