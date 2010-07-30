@@ -330,10 +330,14 @@ by the local file.
    executes called functions at (nearly) full speed, only stopping at the next
    line in the current function.)
 
-.. pdbcommand:: unt(il)
+.. pdbcommand:: unt(il) [lineno]
 
-   Continue execution until the line with the line number greater than the
-   current one is reached or when returning from current frame.
+   Without argument, continue execution until the line with a number greater
+   than the current one is reached.
+
+   With a line number, continue execution until a line with a number greater or
+   equal to that is reached.  In both cases, also stop when the current frame
+   returns.
 
 .. pdbcommand:: r(eturn)
 

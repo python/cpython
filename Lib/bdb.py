@@ -174,10 +174,13 @@ class Bdb:
     # Derived classes and clients can call the following methods
     # to affect the stepping state.
 
-    def set_until(self, frame): #the name "until" is borrowed from gdb
+    def set_until(self, frame, lineno=None):
         """Stop when the line with the line no greater than the current one is
         reached or when returning from current frame"""
-        self._set_stopinfo(frame, frame, frame.f_lineno+1)
+        # the name "until" is borrowed from gdb
+        if lineno is None:
+            lineno = frame.f_lineno + 1
+        self._set_stopinfo(frame, frame, lineno)
 
     def set_step(self):
         """Stop after one line of code."""
