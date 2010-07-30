@@ -54,7 +54,6 @@ class TestUntestedModules(unittest.TestCase):
             import nturl2path
             import opcode
             import os2emxpath
-            import pdb
             import pstats
             import py_compile
             import rlcompleter
