@@ -1672,6 +1672,8 @@ Extension Modules
 Build
 -----
 
+- Use OpenSSL 1.0.0a on Windows.
+
 - Issue #9280: Make sharedinstall depend on sharedmods.
 
 - Issue #9189: Make a user-specified CFLAGS, CPPFLAGS, or LDFLAGS
