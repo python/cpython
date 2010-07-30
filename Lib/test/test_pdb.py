@@ -257,6 +257,105 @@ def test_pdb_breakpoint_commands():
     """
 
 
+def do_nothing():
+    pass
+
+def do_something():
+    print(42)
+
+def test_list_commands():
+    """Test the list and source commands of pdb.
+
+    >>> def test_function_2(foo):
+    ...     import test_pdb
+    ...     test_pdb.do_nothing()
+    ...     'some...'
+    ...     'more...'
+    ...     'code...'
+    ...     'to...'
+    ...     'make...'
+    ...     'a...'
+    ...     'long...'
+    ...     'listing...'
+    ...     'useful...'
+    ...     '...'
+    ...     '...'
+    ...     return foo
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     ret = test_function_2('baz')
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'list',      # list first function
+    ...     'step',      # step into second function
+    ...     'list',      # list second function
+    ...     'list',      # continue listing to EOF
+    ...     'list 1,3',  # list specific lines
+    ...     'list x',    # invalid argument
+    ...     'next',      # step to import
+    ...     'next',      # step over import
+    ...     'step',      # step into do_nothing
+    ...     'longlist',  # list all lines
+    ...     'source do_something',  # list all lines of function
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_list_commands[1]>(3)test_function()
+    -> ret = test_function_2('baz')
+    (Pdb) list
+      1         def test_function():
+      2             import pdb; pdb.Pdb().set_trace()
+      3  ->         ret = test_function_2('baz')
+    [EOF]
+    (Pdb) step
+    --Call--
+    > <doctest test.test_pdb.test_list_commands[0]>(1)test_function_2()
+    -> def test_function_2(foo):
+    (Pdb) list
+      1  ->     def test_function_2(foo):
+      2             import test_pdb
+      3             test_pdb.do_nothing()
+      4             'some...'
+      5             'more...'
+      6             'code...'
+      7             'to...'
+      8             'make...'
+      9             'a...'
+     10             'long...'
+     11             'listing...'
+    (Pdb) list
+     12             'useful...'
+     13             '...'
+     14             '...'
+     15             return foo
+    [EOF]
+    (Pdb) list 1,3
+      1  ->     def test_function_2(foo):
+      2             import test_pdb
+      3             test_pdb.do_nothing()
+    (Pdb) list x
+    *** ...
+    (Pdb) next
+    > <doctest test.test_pdb.test_list_commands[0]>(2)test_function_2()
+    -> import test_pdb
+    (Pdb) next
+    > <doctest test.test_pdb.test_list_commands[0]>(3)test_function_2()
+    -> test_pdb.do_nothing()
+    (Pdb) step
+    --Call--
+    > /home/gbr/devel/python/Lib/test/test_pdb.py(260)do_nothing()
+    -> def do_nothing():
+    (Pdb) longlist
+    ...  ->     def do_nothing():
+    ...             pass
+    (Pdb) source do_something
+    ...         def do_something():
+    ...             print(42)
+    (Pdb) continue
+    """
+
+
 def test_pdb_skip_modules():
     """This illustrates the simple case of module skipping.
 

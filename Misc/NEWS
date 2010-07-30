@@ -475,6 +475,15 @@ C-API
 Library
 -------
 
+- The pdb command "source" has been added.  It displays the source
+  code for a given object, if possible.
+
+- The pdb command "longlist" has been added.  It displays the whole
+  source code for the current function.
+
+- Issue #1503502: Make pdb.Pdb easier to subclass by putting message
+  and error output into methods.
+
 - Issue #809887: Make the output of pdb's breakpoint deletions more
   consistent; emit a message when a breakpoint is enabled or disabled.
 

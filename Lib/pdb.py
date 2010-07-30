@@ -74,6 +74,8 @@ import os
 import re
 import pprint
 import traceback
+import inspect
+import types
 
 
 class Restart(Exception):
@@ -1028,24 +1030,61 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
-            for lineno in range(first, last+1):
-                line = linecache.getline(filename, lineno,
-                                         self.curframe.f_globals)
-                if not line:
-                    self.message('[EOF]')
-                    break
-                else:
-                    s = repr(lineno).rjust(3)
-                    if len(s) < 4: s = s + ' '
-                    if lineno in breaklist: s = s + 'B'
-                    else: s = s + ' '
-                    if lineno == self.curframe.f_lineno:
-                        s = s + '->'
-                    self.message(s + '\t' + line.rstrip())
-                    self.lineno = lineno
+            # XXX add tb_lineno feature
+            lines = linecache.getlines(filename, self.curframe.f_globals)
+            self._print_lines(lines[first-1:last], first, breaklist,
+                              self.curframe.f_lineno, -1)
+            self.lineno = min(last, len(lines))
+            if len(lines) < last:
+                self.message('[EOF]')
         except KeyboardInterrupt:
             pass
     do_l = do_list
+
+    def do_longlist(self, arg):
+        """longlist | ll
+        List the whole source code for the current function or frame.
+        """
+        filename = self.curframe.f_code.co_filename
+        breaklist = self.get_file_breaks(filename)
+        try:
+            lines, lineno = inspect.getsourcelines(self.curframe)
+        except IOError as err:
+            self.error(err)
+            return
+        self._print_lines(lines, lineno, breaklist, self.curframe.f_lineno, -1)
+    do_ll = do_longlist
+
+    def do_source(self, arg):
+        """source expression
+        Try to get source code for the given object and display it.
+        """
+        try:
+            obj = self._getval(arg)
+        except:
+            return
+        try:
+            lines, lineno = inspect.getsourcelines(obj)
+        except (IOError, TypeError) as err:
+            self.error(err)
+            return
+        self._print_lines(lines, lineno, [], -1, -1)
+
+    def _print_lines(self, lines, start, breaks, current, special):
+        """Print a range of lines."""
+        for lineno, line in enumerate(lines, start):
+            s = str(lineno).rjust(3)
+            if len(s) < 4:
+                s += ' '
+            if lineno in breaks:
+                s += 'B'
+            else:
+                s += ' '
+            if lineno == current:
+                s += '->'
+            elif lineno == special:
+                s += '>>'
+            self.message(s + '\t' + line.rstrip())
 
     def do_whatis(self, arg):
         """whatis arg
@@ -1249,10 +1288,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 _help_order = [
     'help', 'where', 'down', 'up', 'break', 'tbreak', 'clear', 'disable',
     'enable', 'ignore', 'condition', 'commands', 'step', 'next', 'until',
-    'jump', 'return', 'retval', 'run', 'continue', 'list', 'args', 'print',
-    'whatis', 'alias', 'unalias', 'quit',
+    'jump', 'return', 'retval', 'run', 'continue', 'list', 'longlist',
+    'args', 'print', 'pp', 'whatis', 'source', 'alias', 'unalias',
+    'debug', 'quit',
 ]
 
+docs = set()
 for _command in _help_order:
     __doc__ += getattr(Pdb, 'do_' + _command).__doc__.strip() + '\n\n'
 __doc__ += Pdb.help_exec.__doc__
