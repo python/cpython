@@ -1095,6 +1095,14 @@ available.  They are listed here in alphabetical order.
    example, ``round(0.5)`` is ``1.0`` and ``round(-0.5)`` is ``-1.0``).
 
 
+   .. note::
+
+      The behavior of :func:`round` for floats can be surprising: for example,
+      ``round(2.675, 2)`` gives ``2.67`` instead of the expected ``2.68``.
+      This is not a bug: it's a result of the fact that most decimal fractions
+      can't be represented exactly as a float.  See :ref:`tut-fp-issues` for
+      more information.
+
 .. function:: set([iterable])
    :noindex:
 
