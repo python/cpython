@@ -972,6 +972,13 @@ are always available.  They are listed here in alphabetical order.
    The return value is an integer if called with one argument, otherwise of the
    same type as *x*.
 
+   .. note::
+
+      The behavior of :func:`round` for floats can be surprising: for example,
+      ``round(2.675, 2)`` gives ``2.67`` instead of the expected ``2.68``.
+      This is not a bug: it's a result of the fact that most decimal fractions
+      can't be represented exactly as a float.  See :ref:`tut-fp-issues` for
+      more information.
 
 .. function:: set([iterable])
    :noindex:
