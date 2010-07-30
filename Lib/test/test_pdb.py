@@ -1,5 +1,4 @@
-# A test suite for pdb; at the moment, this only validates skipping of
-# specified test modules (RFE #5142).
+# A test suite for pdb; not very comprehensive at the moment.
 
 import imp
 import sys
@@ -119,6 +118,50 @@ def test_pdb_skip_modules_with_callback():
     (Pdb) step
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[1]>(10)<module>()
     -> pass  # provides something to "step" to
+    (Pdb) continue
+    """
+
+
+def pdb_invoke(method, arg):
+    """Run pdb.method(arg)."""
+    import pdb; getattr(pdb, method)(arg)
+
+
+def test_pdb_run_with_incorrect_argument():
+    """Testing run and runeval with incorrect first argument.
+
+    >>> pti = PdbTestInput(['continue',])
+    >>> with pti:
+    ...     pdb_invoke('run', lambda x: x)
+    Traceback (most recent call last):
+    TypeError: exec() arg 1 must be a string, bytes or code object
+
+    >>> with pti:
+    ...     pdb_invoke('runeval', lambda x: x)
+    Traceback (most recent call last):
+    TypeError: eval() arg 1 must be a string, bytes or code object
+    """
+
+
+def test_pdb_run_with_code_object():
+    """Testing run and runeval with code object as a first argument.
+
+    >>> with PdbTestInput(['step','x', 'continue']):
+    ...     pdb_invoke('run', compile('x=1', '<string>', 'exec'))
+    > <string>(1)<module>()
+    (Pdb) step
+    --Return--
+    > <string>(1)<module>()->None
+    (Pdb) x
+    1
+    (Pdb) continue
+
+    >>> with PdbTestInput(['x', 'continue']):
+    ...     x=0
+    ...     pdb_invoke('runeval', compile('x+1', '<string>', 'eval'))
+    > <string>(1)<module>()->None
+    (Pdb) x
+    1
     (Pdb) continue
     """
 

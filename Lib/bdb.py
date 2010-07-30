@@ -364,8 +364,9 @@ class Bdb:
         if line: s = s + lprefix + line.strip()
         return s
 
-    # The following two methods can be called by clients to use
-    # a debugger to debug a statement, given as a string.
+    # The following methods can be called by clients to use
+    # a debugger to debug a statement or an expression.
+    # Both can be given as a string, or a code object.
 
     def run(self, cmd, globals=None, locals=None):
         if globals is None:
@@ -375,8 +376,6 @@ class Bdb:
             locals = globals
         self.reset()
         sys.settrace(self.trace_dispatch)
-        if not isinstance(cmd, types.CodeType):
-            cmd = cmd+'\n'
         try:
             exec(cmd, globals, locals)
         except BdbQuit:
@@ -393,8 +392,6 @@ class Bdb:
             locals = globals
         self.reset()
         sys.settrace(self.trace_dispatch)
-        if not isinstance(expr, types.CodeType):
-            expr = expr+'\n'
         try:
             return eval(expr, globals, locals)
         except BdbQuit:

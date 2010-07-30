@@ -85,21 +85,21 @@ slightly different way:
 
 .. function:: run(statement, globals=None, locals=None)
 
-   Execute the *statement* (given as a string) under debugger control.  The
-   debugger prompt appears before any code is executed; you can set breakpoints
-   and type :pdbcmd:`continue`, or you can step through the statement using
-   :pdbcmd:`step` or :pdbcmd:`next` (all these commands are explained below).
-   The optional *globals* and *locals* arguments specify the environment in
-   which the code is executed; by default the dictionary of the module
-   :mod:`__main__` is used.  (See the explanation of the built-in :func:`exec`
-   or :func:`eval` functions.)
+   Execute the *statement* (given as a string or a code object) under debugger
+   control.  The debugger prompt appears before any code is executed; you can
+   set breakpoints and type :pdbcmd:`continue`, or you can step through the
+   statement using :pdbcmd:`step` or :pdbcmd:`next` (all these commands are
+   explained below).  The optional *globals* and *locals* arguments specify the
+   environment in which the code is executed; by default the dictionary of the
+   module :mod:`__main__` is used.  (See the explanation of the built-in
+   :func:`exec` or :func:`eval` functions.)
 
 
 .. function:: runeval(expression, globals=None, locals=None)
 
-   Evaluate the *expression* (given as a string) under debugger control.  When
-   :func:`runeval` returns, it returns the value of the expression.  Otherwise
-   this function is similar to :func:`run`.
+   Evaluate the *expression* (given as a string or a code object) under debugger
+   control.  When :func:`runeval` returns, it returns the value of the
+   expression.  Otherwise this function is similar to :func:`run`.
 
 
 .. function:: runcall(function, *args, **kwds)
