@@ -69,6 +69,37 @@ New, Improved, and Deprecated Modules
 * The :class:`ftplib.FTP` class now supports the context manager protocol
   (Contributed by Tarek Ziadé and Giampaolo Rodolà; :issue:`4972`.)
 
+* The :mod:`ssl` module has a new class, :class:`~ssl.SSLContext` which
+  serves as a container for various persistent SSL data, such as protocol
+  settings, certificates, private keys, and various other options.
+  The :meth:`~ssl.SSLContext.wrap_socket` method allows to create an
+  SSL socket from such an SSL context.
+  (Added by Antoine Pitrou; :issue:`8550`.)
+
+  The :func:`ssl.wrap_socket` constructor function now takes a
+  *ciphers* argument that's a string listing the encryption algorithms
+  to be allowed; the format of the string is described
+  `in the OpenSSL documentation
+  <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`__.
+  (Added by Antoine Pitrou; :issue:`8322`.)
+
+  Various options have been added to the :mod:`ssl` module, such as
+  :data:`~ssl.OP_NO_SSLv2` which allows to force disabling of the insecure
+  and obsolete SSLv2 protocol.
+  (Added by Antoine Pitrou; :issue:`4870`.)
+
+  Another change makes the extension load all of OpenSSL's ciphers and
+  digest algorithms so that they're all available.  Some SSL
+  certificates couldn't be verified, reporting an "unknown algorithm"
+  error.  (Reported by Beda Kosata, and fixed by Antoine Pitrou;
+  :issue:`8484`.)
+
+  The version of OpenSSL being used is now available as the module
+  attributes :data:`ssl.OPENSSL_VERSION` (a string),
+  :data:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
+  :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
+  Pitrou; :issue:`8321`.)
+
 * The previously deprecated :func:`string.maketrans` function has been
   removed in favor of the static methods, :meth:`bytes.maketrans` and
   :meth:`bytearray.maketrans`.  This change solves the confusion around which
