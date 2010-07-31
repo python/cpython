@@ -18,7 +18,7 @@ if sys.platform == "win32":
             windll.kernel32.GetProcAddress.restype = c_void_p
 
             hdll = windll.kernel32.LoadLibraryA(b"kernel32")
-            funcaddr = windll.kernel32.GetProcAddress(hdll, "GetModuleHandleA")
+            funcaddr = windll.kernel32.GetProcAddress(hdll, b"GetModuleHandleA")
 
             self.assertEqual(call_function(funcaddr, (None,)),
                                  windll.kernel32.GetModuleHandleA(None))
