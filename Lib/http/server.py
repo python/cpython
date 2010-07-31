@@ -1023,8 +1023,9 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         if ua:
             env['HTTP_USER_AGENT'] = ua
         co = filter(None, self.headers.get_all('cookie', []))
-        if co:
-            env['HTTP_COOKIE'] = ', '.join(co)
+        cookie_str = ', '.join(co)
+        if cookie_str:
+            env['HTTP_COOKIE'] = cookie_str
         # XXX Other HTTP_* headers
         # Since we're setting the env in the parent, provide empty
         # values to override previously set values
