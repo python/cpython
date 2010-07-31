@@ -338,7 +338,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
     unquote('abc%20def') -> 'abc def'.
     """
-    if string in (b'', ''):
+    if string == '':
         return string
     res = string.split('%')
     if len(res) == 1:
