@@ -66,8 +66,40 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
+* The previously deprecated :func:`contextlib.nested` function has been
+  removed in favor of a plain :keyword:`with` statement which can
+  accept multiple context managers.  The latter technique is faster
+  (because it is built-in), and it does a better job finalizing multiple
+  context managers when one of them raises an exception.
+
+  (Contributed by Georg Brandl and Mattias Brändström;
+  `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
+
 * The :class:`ftplib.FTP` class now supports the context manager protocol
   (Contributed by Tarek Ziadé and Giampaolo Rodolà; :issue:`4972`.)
+
+* The :func:`shutil.copytree` function has two new options:
+
+  * *ignore_dangling_symlinks*: when ``symlinks=False`` (meaning that the
+    function copies the file pointed to by the symlink, not the symlink
+    itself) this option will silence the error thrown if the file doesn't
+    exist.
+
+  * *copy_function*: a callable that will be used to copy files.
+    :func:`shutil.copy2` is used by default.
+
+  (Contributed by Tarek Ziadé.)
+
+* The *sqlite3* module has some new features:
+
+  * XXX *enable_load_extension*
+
+  * XXX *load_extension*
+
+  * New :class:`~sqlite3.Connection` attribute
+    :attr:`~sqlite3.Connection.in_transaction` is :const:`True` when there
+    are uncommitted changes, and :const:`False` otherwise.  (Contributed
+    by R. David Murray and Shashwat Anand, :issue:`8845`.)
 
 * The :mod:`ssl` module has a new class, :class:`~ssl.SSLContext` which
   serves as a container for various persistent SSL data, such as protocol
@@ -109,38 +141,6 @@ New, Improved, and Deprecated Modules
   appropriate type.
 
   (Contributed by Georg Brandl; :issue:`5675`.)
-
-* The previously deprecated :func:`contextlib.nested` function has been
-  removed in favor of a plain :keyword:`with` statement which can
-  accept multiple context managers.  The latter technique is faster
-  (because it is built-in), and it does a better job finalizing multiple
-  context managers when one of them raises an exception.
-
-  (Contributed by Georg Brandl and Mattias Brändström;
-  `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
-
-* The :func:`shutil.copytree` function has two new options:
-
-  * *ignore_dangling_symlinks*: when ``symlinks=False`` (meaning that the
-    function copies the file pointed to by the symlink, not the symlink
-    itself) this option will silence the error thrown if the file doesn't
-    exist.
-
-  * *copy_function*: a callable that will be used to copy files.
-    :func:`shutil.copy2` is used by default.
-
-  (Contributed by Tarek Ziade.)
-
-* The *sqlite3* module has some new features:
-
-  * XXX *enable_load_extension*
-
-  * XXX *load_extension*
-
-  * New :class:`~sqlite3.Connection` attribute
-    :attr:`~sqlite3.Connection.in_transaction` is :const:`True` when there
-    are uncommitted changes, and :const:`False` otherwise.  (Contributed
-    by R. David Murray and Shashwat Anand, :issue:`8845`.)
 
 
 Multi-threading
