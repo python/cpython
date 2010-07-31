@@ -557,6 +557,7 @@ class UnquotingTests(unittest.TestCase):
                          "%s" % result)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, None)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, ())
+        self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, b'')
 
     def test_unquoting_badpercent(self):
         # Test unquoting on bad percent-escapes
