@@ -37,6 +37,57 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.2
 
+.. decorator:: lfu_cache(maxsize)
+
+   Decorator to wrap a function with a memoizing callable that saves up to the
+   *maxsize* most frequent calls.  It can save time when an expensive or I/O
+   bound function is periodically called with the same arguments.
+
+   The *maxsize* parameter defaults to 100.  Since a dictionary is used to cache
+   results, the positional and keyword arguments to the function must be
+   hashable.
+
+   The wrapped function is instrumented with two attributes, :attr:`hits`
+   and :attr:`misses` which count the number of successful or unsuccessful
+   cache lookups.  These statistics are helpful for tuning the *maxsize*
+   parameter and for measuring the cache's effectiveness.
+
+   The wrapped function also has a :attr:`clear` attribute which can be
+   called (with no arguments) to clear the cache.
+
+   A `LFU (least frequently used) cache
+   <http://en.wikipedia.org/wiki/Cache_algorithms#Least-Frequently_Used>`_
+   is indicated when the pattern of calls does not change over time, when
+   more the most common calls already seen are the best predictors of the
+   most common upcoming calls.
+
+   .. versionadded:: 3.2
+
+.. decorator:: lru_cache(maxsize)
+
+   Decorator to wrap a function with a memoizing callable that saves up to the
+   *maxsize* most recent calls.  It can save time when an expensive or I/O bound
+   function is periodically called with the same arguments.
+
+   The *maxsize* parameter defaults to 100.  Since a dictionary is used to cache
+   results, the positional and keyword arguments to the function must be
+   hashable.
+
+   The wrapped function is instrumented with two attributes, :attr:`hits`
+   and :attr:`misses` which count the number of successful or unsuccessful
+   cache lookups.  These statistics are helpful for tuning the *maxsize*
+   parameter and for measuring the cache's effectiveness.
+
+   The wrapped function also has a :attr:`clear` attribute which can be
+   called (with no arguments) to clear the cache.
+
+   A `LRU (least recently used) cache
+   <http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used>`_
+   is indicated when the pattern of calls changes over time, such as
+   when more recent calls are the best predictors of upcoming calls.
+
+   .. versionadded:: 3.2
+
 .. decorator:: total_ordering
 
    Given a class defining one or more rich comparison ordering methods, this

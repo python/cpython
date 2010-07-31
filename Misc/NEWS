@@ -504,6 +504,8 @@ Library
 - Issue #4179: In pdb, allow "list ." as a command to return to the currently
   debugged line.
 
+- Add lfu_cache() and lru_cache() decorators to the functools module.
+
 - Issue #4108: In urllib.robotparser, if there are multiple 'User-agent: *'
   entries, consider the first one.
 
