@@ -879,7 +879,6 @@ def generate_license():
     shutil.copyfileobj(open(os.path.join(srcdir, "LICENSE")), out)
     shutil.copyfileobj(open("crtlicense.txt"), out)
     for name, pat, file in (("bzip2","bzip2-*", "LICENSE"),
-                      ("Berkeley DB", "db-*", "LICENSE"),
                       ("openssl", "openssl-*", "LICENSE"),
                       ("Tcl", "tcl8*", "license.terms"),
                       ("Tk", "tk8*", "license.terms"),
@@ -1122,7 +1121,7 @@ def add_files(db):
     # Add tools
     tools.set_current()
     tooldir = PyDirectory(db, cab, root, "Tools", "Tools", "TOOLS|Tools")
-    for f in ['i18n', 'pynche', 'Scripts', 'versioncheck', 'webchecker']:
+    for f in ['i18n', 'pynche', 'Scripts', 'versioncheck']:
         lib = PyDirectory(db, cab, tooldir, f, f, "%s|%s" % (tooldir.make_short(f), f))
         lib.glob("*.py")
         lib.glob("*.pyw", exclude=['pydocgui.pyw'])
