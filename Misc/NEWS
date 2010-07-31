@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5147: Fix the header generated for cookie files written by
+  http.cookiejar.MozillaCookieJar.
+
 - Issue #8198: In pydoc, output all help text to the correct stream
   when sys.stdout is reassigned.
 
