@@ -1733,10 +1733,6 @@ class TestDateTime(TestDate):
                          self.theclass.fromtimestamp(1))
         self.assertEqual(self.theclass.fromtimestamp(0.99999949).microsecond,
                          999999)
-        # XXX Arguably incorrect behavior.  Since round(0.6112295, 6)
-        # returns 0.611229, we should see 611229 us below, not 611230
-        self.assertEqual(self.theclass.fromtimestamp(0.6112295).microsecond,
-                         611230)
 
     def test_insane_fromtimestamp(self):
         # It's possible that some platform maps time_t to double,
