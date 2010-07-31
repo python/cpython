@@ -1,5 +1,5 @@
-This is Python version 3.2
-==========================
+This is Python version 3.2 alpha 1
+==================================
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
 Python Software Foundation.
@@ -53,9 +53,9 @@ What's New
 ----------
 
 We try to have a comprehensive overview of the changes in the "What's New in
-Python 3.1" document, found at
+Python 3.2" document, found at
 
-    http://docs.python.org/dev/3.1/whatsnew/3.1.html
+    http://docs.python.org/dev/3.2/whatsnew/3.2.html
 
 For a more detailed change log, read Misc/NEWS (though this file, too,
 is incomplete, and also doesn't list anything merged in from the 2.7
@@ -68,30 +68,27 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-Documentation for Python 3.1 is online, updated twice a day:
+Documentation for Python 3.2 is online, updated daily:
 
-    http://docs.python.org/dev/3.1/
+    http://docs.python.org/dev/
 
-All documentation is also available online at the Python web site
-(http://docs.python.org/, see below).  It is available online for
-occasional reference, or can be downloaded in many formats for faster
-access.  The documentation is downloadable in HTML, PostScript, PDF,
-LaTeX (through 2.5), and reStructuredText (2.6+) formats; the LaTeX and
-reStructuredText versions are primarily for documentation authors,
-translators, and people with special formatting requirements.
+It can also be downloaded in many formats for faster access.  The documentation
+is downloadable in HTML, PDF, and reStructuredText formats; the latter version
+is primarily for documentation authors, translators, and people with special
+formatting requirements.
 
 
 Converting From Python 2.x to 3.x
 ---------------------------------
 
-Python starting with 2.6 will contain features to help locating code that
+Python starting with 2.6 contains features to help locating code that
 needs to be changed, such as optional warnings when deprecated features are
 used, and backported versions of certain key Python 3.x features.
 
 A source-to-source translation tool, "2to3", can take care of the mundane task
 of converting large amounts of source code.  It is not a complete solution but
 is complemented by the deprecation warnings in 2.6.  See
-http://docs.python.org/dev/py3k/library/2to3.html for more information.
+http://docs.python.org/dev/library/2to3.html for more information.
 
 
 Testing
@@ -135,7 +132,7 @@ to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using
 "make install".  Install all other versions using "make altinstall".
 
-For example, if you want to install Python 2.5, 2.6 and 3.0 with 2.6 being
+For example, if you want to install Python 2.5, 2.6 and 3.2 with 2.6 being
 the primary version, you would execute "make install" in your 2.6 build
 directory and "make altinstall" in the others.
 
