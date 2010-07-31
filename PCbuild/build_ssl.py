@@ -163,12 +163,14 @@ def main():
         do_script = "ms\\do_nasm"
         makefile="ms\\nt.mak"
         m32 = makefile
+        dirsuffix = "32"
     elif sys.argv[2] == "x64":
         arch="amd64"
         configure = "VC-WIN64A"
         do_script = "ms\\do_win64a"
         makefile = "ms\\nt64.mak"
         m32 = makefile.replace('64', '')
+        dirsuffix = "64"
         #os.environ["VSEXTCOMP_USECL"] = "MS_OPTERON"
     else:
         raise ValueError(str(sys.argv))
@@ -224,6 +226,13 @@ def main():
             fix_makefile(makefile)
             shutil.copy(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
             shutil.copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
+
+        # If the assembler files don't exist in tmpXX, copy them there
+        if not os.path.exists("tmp"+dirsuffix):
+            os.mkdir("tmp"+dirsuffix)
+        for f in os.listdir("asm"+dirsuffix):
+            if not f.endswith(".asm"): continue
+            shutil.copy(r"asm%s\%s" % (dirsuffix, f), "tmp"+dirsuffix)
 
         # Now run make.
         if arch == "amd64":
