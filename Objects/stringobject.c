@@ -3580,7 +3580,7 @@ string_getnewargs(PyStringObject *v)
 #include "stringlib/string_format.h"
 
 PyDoc_STRVAR(format__doc__,
-"S.format(*args, **kwargs) -> unicode\n\
+"S.format(*args, **kwargs) -> string\n\
 \n\
 ");
 
@@ -3614,7 +3614,7 @@ done:
 }
 
 PyDoc_STRVAR(p_format__doc__,
-"S.__format__(format_spec) -> unicode\n\
+"S.__format__(format_spec) -> string\n\
 \n\
 ");
 
