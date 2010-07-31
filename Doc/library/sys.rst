@@ -936,8 +936,9 @@ always available.
 
    A string containing the version number of the Python interpreter plus additional
    information on the build number and compiler used. It has a value of the form
-   ``'version (#build_number, build_date, build_time) [compiler]'``.  The first
-   three characters are used to identify the version in the installation
+   ``'version (#build_number, build_date, build_time) [compiler]'``.  There may be
+   a newline character preceding the opening bracket with of the compiler info.
+   The first three characters are used to identify the version in the installation
    directories (where appropriate on each platform).  An example::
 
       >>> import sys
