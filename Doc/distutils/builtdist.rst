@@ -141,13 +141,13 @@ The following sections give details on the individual :command:`bdist_\*`
 commands.
 
 
-.. _creating-dumb:
+.. .. _creating-dumb:
 
-Creating dumb built distributions
-=================================
+.. Creating dumb built distributions
+.. =================================
 
-**\*\*** Need to document absolute vs. prefix-relative packages here, but first
-I have to implement it! **\*\***
+.. XXX Need to document absolute vs. prefix-relative packages here, but first
+   I have to implement it!
 
 
 .. _creating-rpms:
