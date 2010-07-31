@@ -1185,8 +1185,9 @@ docclean:
 	-rm -rf Doc/tools/sphinx Doc/tools/pygments Doc/tools/docutils
 
 clean: pycremoval
-	find . -name '*.o' -exec rm -f {} ';'
+	find . -name '*.[oa]' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
+	find . -name '*.so.[0-9]*.[0-9]*' -exec rm -f {} ';'
 	find build -name 'fficonfig.h' -exec rm -f {} ';' || true
 	find build -name 'fficonfig.py' -exec rm -f {} ';' || true
 	-rm -f Lib/lib2to3/*Grammar*.pickle
