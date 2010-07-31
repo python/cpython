@@ -1974,9 +1974,9 @@ class MozillaCookieJar(FileCookieJar):
     """
     magic_re = re.compile("#( Netscape)? HTTP Cookie File")
     header = """\
-    # Netscape HTTP Cookie File
-    # http://www.netscape.com/newsref/std/cookie_spec.html
-    # This is a generated file!  Do not edit.
+# Netscape HTTP Cookie File
+# http://www.netscape.com/newsref/std/cookie_spec.html
+# This is a generated file!  Do not edit.
 
 """
 
