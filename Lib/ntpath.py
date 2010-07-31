@@ -71,6 +71,12 @@ def _get_colon(path):
     else:
         return ':'
 
+def _get_special(path):
+    if isinstance(path, bytes):
+        return (b'\\\\.\\', b'\\\\?\\')
+    else:
+        return ('\\\\.\\', '\\\\?\\')
+
 # Normalize the case of a pathname and map slashes to backslashes.
 # Other normalizations (such as optimizing '../' away) are not done
 # (this is done by normpath).
@@ -524,6 +530,13 @@ def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
     sep = _get_sep(path)
     dotdot = _get_dot(path) * 2
+    special_prefixes = _get_special(path)
+    if path.startswith(special_prefixes):
+        # in the case of paths with these prefixes:
+        # \\.\ -> device names
+        # \\?\ -> literal paths
+        # do not do any normalization, but return the path unchanged
+        return path
     path = path.replace(_get_altsep(path), sep)
     prefix, path = splitdrive(path)
 
