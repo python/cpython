@@ -106,7 +106,10 @@ class LogReader:
                 return what, t, tdelta
 
             if what == WHAT_EXIT:
-                return what, self._pop(), tdelta
+                try:
+                    return what, self._pop(), tdelta
+                except IndexError:
+                    raise StopIteration
 
             if what == WHAT_LINENO:
                 filename, firstlineno, funcname = self._stack[-1]
