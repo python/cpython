@@ -5,11 +5,10 @@ Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
 Python Software Foundation.
 All rights reserved.
 
-Python 3.x is a new version of the language, which is incompatible with the
-2.x line of releases.  The language is mostly the same, but many details,
-especially how built-in objects like dictionaries and strings work, have
-changed considerably, and a lot of deprecated features have finally been
-removed.
+Python 3.x is a new version of the language, which is incompatible with the 2.x
+line of releases.  The language is mostly the same, but many details, especially
+how built-in objects like dictionaries and strings work, have changed
+considerably, and a lot of deprecated features have finally been removed.
 
 
 Build Instructions
@@ -24,20 +23,19 @@ On Unix, Linux, BSD, OSX, and Cygwin:
 
 This will install Python as python3.
 
-You can pass many options to the configure script; run "./configure
---help" to find out more.  On OSX and Cygwin, the executable is called
-python.exe; elsewhere it's just python.
+You can pass many options to the configure script; run "./configure --help" to
+find out more.  On OSX and Cygwin, the executable is called python.exe;
+elsewhere it's just python.
 
-On Mac OS X, if you have configured Python with --enable-framework,
-you should use "make frameworkinstall" to do the installation.  Note
-that this installs the Python executable in a place that is not
-normally on your PATH, you may want to set up a symlink in
-/usr/local/bin.
+On Mac OS X, if you have configured Python with --enable-framework, you should
+use "make frameworkinstall" to do the installation.  Note that this installs the
+Python executable in a place that is not normally on your PATH, you may want to
+set up a symlink in /usr/local/bin.
 
 On Windows, see PCbuild/readme.txt.
 
-If you wish, you can create a subdirectory and invoke configure from
-there.  For example:
+If you wish, you can create a subdirectory and invoke configure from there.  For
+example:
 
     mkdir debug
     cd debug
@@ -45,8 +43,8 @@ there.  For example:
     make
     make test
 
-(This will fail if you *also* built at the top-level directory.  You
-should do a "make clean" at the toplevel first.)
+(This will fail if you *also* built at the top-level directory.  You should do a
+"make clean" at the toplevel first.)
 
 
 What's New
@@ -57,9 +55,9 @@ Python 3.2" document, found at
 
     http://docs.python.org/dev/3.2/whatsnew/3.2.html
 
-For a more detailed change log, read Misc/NEWS (though this file, too,
-is incomplete, and also doesn't list anything merged in from the 2.7
-release under development).
+For a more detailed change log, read Misc/NEWS (though this file, too, is
+incomplete, and also doesn't list anything merged in from the 2.7 release under
+development).
 
 If you want to install multiple versions of Python see the section below
 entitled "Installing multiple versions".
@@ -81,9 +79,9 @@ formatting requirements.
 Converting From Python 2.x to 3.x
 ---------------------------------
 
-Python starting with 2.6 contains features to help locating code that
-needs to be changed, such as optional warnings when deprecated features are
-used, and backported versions of certain key Python 3.x features.
+Python starting with 2.6 contains features to help locating code that needs to
+be changed, such as optional warnings when deprecated features are used, and
+backported versions of certain key Python 3.x features.
 
 A source-to-source translation tool, "2to3", can take care of the mundane task
 of converting large amounts of source code.  It is not a complete solution but
@@ -94,60 +92,58 @@ http://docs.python.org/dev/library/2to3.html for more information.
 Testing
 -------
 
-To test the interpreter, type "make test" in the top-level directory.
-This runs the test set twice (once with no compiled files, once with
-the compiled files left by the previous test run).  The test set
-produces some output.  You can generally ignore the messages about
-skipped tests due to optional features which can't be imported.
-If a message is printed about a failed test or a traceback or core
-dump is produced, something is wrong.  On some Linux systems (those
-that are not yet using glibc 6), test_strftime fails due to a
-non-standard implementation of strftime() in the C library. Please
-ignore this, or upgrade to glibc version 6.
+To test the interpreter, type "make test" in the top-level directory.  This runs
+the test set twice (once with no compiled files, once with the compiled files
+left by the previous test run).  The test set produces some output.  You can
+generally ignore the messages about skipped tests due to optional features which
+can't be imported.  If a message is printed about a failed test or a traceback
+or core dump is produced, something is wrong.  On some Linux systems (those that
+are not yet using glibc 6), test_strftime fails due to a non-standard
+implementation of strftime() in the C library. Please ignore this, or upgrade to
+glibc version 6.
 
 By default, tests are prevented from overusing resources like disk space and
 memory.  To enable these tests, run "make testall".
 
-IMPORTANT: If the tests fail and you decide to mail a bug report,
-*don't* include the output of "make test".  It is useless.  Run the
-failing test manually, as follows:
+IMPORTANT: If the tests fail and you decide to mail a bug report, *don't*
+include the output of "make test".  It is useless.  Run the failing test
+manually, as follows:
 
         ./python Lib/test/regrtest.py -v test_whatever
 
-(substituting the top of the source tree for '.' if you built in a
-different directory).  This runs the test in verbose mode.
+(substituting the top of the source tree for '.' if you built in a different
+directory).  This runs the test in verbose mode.
 
 
 Installing multiple versions
 ----------------------------
 
 On Unix and Mac systems if you intend to install multiple versions of Python
-using the same installation prefix (--prefix argument to the configure
-script) you must take care that your primary python executable is not
-overwritten by the installation of a different version.  All files and
-directories installed using "make altinstall" contain the major and minor
-version and can thus live side-by-side.  "make install" also creates
-${prefix}/bin/python3 which refers to ${prefix}/bin/pythonX.Y.  If you intend
-to install multiple versions using the same prefix you must decide which
-version (if any) is your "primary" version.  Install that version using
-"make install".  Install all other versions using "make altinstall".
+using the same installation prefix (--prefix argument to the configure script)
+you must take care that your primary python executable is not overwritten by the
+installation of a different version.  All files and directories installed using
+"make altinstall" contain the major and minor version and can thus live
+side-by-side.  "make install" also creates ${prefix}/bin/python3 which refers to
+${prefix}/bin/pythonX.Y.  If you intend to install multiple versions using the
+same prefix you must decide which version (if any) is your "primary" version.
+Install that version using "make install".  Install all other versions using
+"make altinstall".
 
-For example, if you want to install Python 2.5, 2.6 and 3.2 with 2.6 being
-the primary version, you would execute "make install" in your 2.6 build
-directory and "make altinstall" in the others.
+For example, if you want to install Python 2.5, 2.6 and 3.2 with 2.6 being the
+primary version, you would execute "make install" in your 2.6 build directory
+and "make altinstall" in the others.
 
 
 Issue Tracker and Mailing List
 ------------------------------
 
-We're soliciting bug reports about all aspects of the language.  Fixes
-are also welcome, preferable in unified diff format.  Please use the
-issue tracker:
+We're soliciting bug reports about all aspects of the language.  Fixes are also
+welcome, preferable in unified diff format.  Please use the issue tracker:
 
     http://bugs.python.org/
 
-If you're not sure whether you're dealing with a bug or a feature, use
-the mailing list:
+If you're not sure whether you're dealing with a bug or a feature, use the
+mailing list:
 
     python-dev@python.org
 
