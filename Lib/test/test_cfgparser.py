@@ -676,7 +676,7 @@ class CompatibleTestCase(CfgParserTestCaseClass):
         # but this is a comment
         ; another comment
         quirk: this;is not a comment
-        ; a space must precede a comment character
+        ; a space must precede an inline comment
         """)
         cf = self.fromstring(config_string)
         self.assertEqual(cf.get('Commented Bar', 'foo'), 'bar # not a comment!')
