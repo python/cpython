@@ -207,7 +207,7 @@ However, you can also include SWIG interface (:file:`.i`) files in the list; the
 SWIG on the interface file and compile the resulting C/C++ file into your
 extension.
 
-.. XXX SWIG support is rough around the edges and largely untested!
+**\*\*** SWIG support is rough around the edges and largely untested! **\*\***
 
 This warning notwithstanding, options to SWIG can be currently passed like
 this::
@@ -326,7 +326,7 @@ include the location in ``library_dirs``::
 (Again, this sort of non-portable construct should be avoided if you intend to
 distribute your code.)
 
-.. XXX Should mention clib libraries here or somewhere else!
+**\*\*** Should mention clib libraries here or somewhere else! **\*\***
 
 
 Other options

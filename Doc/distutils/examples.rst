@@ -233,6 +233,58 @@ With exactly the same source tree layout, this extension can be put in the
          ext_modules=[Extension('foopkg.foo', ['foo.c'])],
          )
 
+Checking a package
+==================
+
+The ``check`` command allows you to verify if your package meta-data
+meet the minimum requirements to build a distribution.
+
+To run it, just call it using your :file:`setup.py` script. If something is
+missing, ``check`` will display a warning.
+
+Let's take an example with a simple script::
+
+    from distutils.core import setup
+
+    setup(name='foobar')
+
+Running the ``check`` command will display some warnings::
+
+    $ python setup.py check
+    running check
+    warning: check: missing required meta-data: version, url
+    warning: check: missing meta-data: either (author and author_email) or
+             (maintainer and maintainer_email) must be supplied
+
+
+If you use the reStructuredText syntax in the `long_description` field and
+`docutils <http://docutils.sourceforge.net/>`_ is installed you can check if
+the syntax is fine with the ``check`` command, using the `restructuredtext`
+option.
+
+For example, if the :file:`setup.py` script is changed like this::
+
+    from distutils.core import setup
+
+    desc = """\
+    My description
+    =============
+
+    This is the description of the ``foobar`` package.
+    """
+
+    setup(name='foobar', version='1', author='tarek',
+        author_email='tarek@ziade.org',
+        url='http://example.com', long_description=desc)
+
+Where the long description is broken, ``check`` will be able to detect it
+by using the `docutils` parser::
+
+    $ pythontrunk setup.py check --restructuredtext
+    running check
+    warning: check: Title underline too short. (line 2)
+    warning: check: Could not finish the parsing.
+
 .. % \section{Multiple extension modules}
 .. % \label{multiple-ext}
 
