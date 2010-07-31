@@ -267,8 +267,8 @@ def test_list_commands():
     """Test the list and source commands of pdb.
 
     >>> def test_function_2(foo):
-    ...     import test_pdb
-    ...     test_pdb.do_nothing()
+    ...     import test.test_pdb
+    ...     test.test_pdb.do_nothing()
     ...     'some...'
     ...     'more...'
     ...     'code...'
@@ -315,8 +315,8 @@ def test_list_commands():
     -> def test_function_2(foo):
     (Pdb) list
       1  ->     def test_function_2(foo):
-      2             import test_pdb
-      3             test_pdb.do_nothing()
+      2             import test.test_pdb
+      3             test.test_pdb.do_nothing()
       4             'some...'
       5             'more...'
       6             'code...'
@@ -333,16 +333,16 @@ def test_list_commands():
     [EOF]
     (Pdb) list 1,3
       1  ->     def test_function_2(foo):
-      2             import test_pdb
-      3             test_pdb.do_nothing()
+      2             import test.test_pdb
+      3             test.test_pdb.do_nothing()
     (Pdb) list x
     *** ...
     (Pdb) next
     > <doctest test.test_pdb.test_list_commands[0]>(2)test_function_2()
-    -> import test_pdb
+    -> import test.test_pdb
     (Pdb) next
     > <doctest test.test_pdb.test_list_commands[0]>(3)test_function_2()
-    -> test_pdb.do_nothing()
+    -> test.test_pdb.do_nothing()
     (Pdb) step
     --Call--
     > ...test_pdb.py(...)do_nothing()
