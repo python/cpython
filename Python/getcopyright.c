@@ -2,7 +2,7 @@
 
 #include "Python.h"
 
-static char cprt[] = 
+static char cprt[] =
 "\
 Copyright (c) 2001-2010 Python Software Foundation.\n\
 All Rights Reserved.\n\
