@@ -4,17 +4,10 @@
 # to allow utilities written in Python to be added
 # to the functools module.
 # Written by Nick Coghlan <ncoghlan at gmail.com>
-# and Raymond Hettinger <python at rcn.com>
-#   Copyright (C) 2006-2010 Python Software Foundation.
+#   Copyright (C) 2006 Python Software Foundation.
 # See C source code for _functools credits/copyright
 
-__all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
-           'total_ordering', 'cmp_to_key', 'lfu_cache', 'lru_cache']
-
 from _functools import partial, reduce
-from collections import OrderedDict, Counter
-from heapq import nsmallest
-from operator import itemgetter
 
 # update_wrapper() and wraps() are tools to help write
 # wrapper functions that can handle naive introspection
@@ -104,88 +97,3 @@ def cmp_to_key(mycmp):
         def __hash__(self):
             raise TypeError('hash not implemented')
     return K
-
-def lfu_cache(maxsize=100):
-    '''Least-frequently-used cache decorator.
-
-    Arguments to the cached function must be hashable.
-    Cache performance statistics stored in f.hits and f.misses.
-    Clear the cache using f.clear().
-    http://en.wikipedia.org/wiki/Cache_algorithms#Least-Frequently_Used
-
-    '''
-    def decorating_function(user_function):
-        cache = {}                      # mapping of args to results
-        use_count = Counter()           # times each key has been accessed
-        kwd_mark = object()             # separate positional and keyword args
-
-        @wraps(user_function)
-        def wrapper(*args, **kwds):
-            key = args
-            if kwds:
-                key += (kwd_mark,) + tuple(sorted(kwds.items()))
-            use_count[key] += 1         # count a use of this key
-            try:
-                result = cache[key]
-                wrapper.hits += 1
-            except KeyError:
-                result = user_function(*args, **kwds)
-                cache[key] = result
-                wrapper.misses += 1
-                if len(cache) > maxsize:
-                    # purge the 10% least frequently used entries
-                    for key, _ in nsmallest(maxsize // 10,
-                                            use_count.items(),
-                                            key=itemgetter(1)):
-                        del cache[key], use_count[key]
-            return result
-
-        def clear():
-            'Clear the cache and cache statistics'
-            cache.clear()
-            use_count.clear()
-            wrapper.hits = wrapper.misses = 0
-
-        wrapper.hits = wrapper.misses = 0
-        wrapper.clear = clear
-        return wrapper
-    return decorating_function
-
-def lru_cache(maxsize=100):
-    '''Least-recently-used cache decorator.
-
-    Arguments to the cached function must be hashable.
-    Cache performance statistics stored in f.hits and f.misses.
-    Clear the cache using f.clear().
-    http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
-
-    '''
-    def decorating_function(user_function):
-        cache = OrderedDict()           # ordered least recent to most recent
-        kwd_mark = object()             # separate positional and keyword args
-
-        @wraps(user_function)
-        def wrapper(*args, **kwds):
-            key = args
-            if kwds:
-                key += (kwd_mark,) + tuple(sorted(kwds.items()))
-            try:
-                result = cache.pop(key)
-                wrapper.hits += 1
-            except KeyError:
-                result = user_function(*args, **kwds)
-                wrapper.misses += 1
-                if len(cache) >= maxsize:
-                    cache.popitem(0)    # purge least recently used cache entry
-            cache[key] = result         # record recent use of this key
-            return result
-
-        def clear():
-            'Clear the cache and cache statistics'
-            cache.clear()
-            wrapper.hits = wrapper.misses = 0
-
-        wrapper.hits = wrapper.misses = 0
-        wrapper.clear = clear
-        return wrapper
-    return decorating_function
