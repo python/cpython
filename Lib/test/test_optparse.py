@@ -781,15 +781,13 @@ class TestBool(BaseTest):
         (options, args) = self.assertParseOK(["-q"],
                                              {'verbose': 0},
                                              [])
-        if hasattr(__builtins__, 'False'):
-            self.assertTrue(options.verbose is False)
+        self.assertTrue(options.verbose is False)
 
     def test_bool_true(self):
         (options, args) = self.assertParseOK(["-v"],
                                              {'verbose': 1},
                                              [])
-        if hasattr(__builtins__, 'True'):
-            self.assertTrue(options.verbose is True)
+        self.assertTrue(options.verbose is True)
 
     def test_bool_flicker_on_and_off(self):
         self.assertParseOK(["-qvq", "-q", "-v"],
