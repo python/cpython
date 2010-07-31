@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8198: In pydoc, output all help text to the correct stream
+  when sys.stdout is reassigned.
+
 - Issue #7909: Do not touch paths with the special prefixes ``\\.\``
   or ``\\?\`` in ntpath.normpath().
 
