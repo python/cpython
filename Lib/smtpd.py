@@ -293,10 +293,10 @@ class SMTPChannel(asynchat.async_chat):
                 else:
                     data.append(text)
             self.received_data = NEWLINE.join(data)
-            status = self.__server.process_message(self.peer,
-                                                   self.mailfrom,
-                                                   self.rcpttos,
-                                                   self.received_data)
+            status = self.smtp_server.process_message(self.peer,
+                                                      self.mailfrom,
+                                                      self.rcpttos,
+                                                      self.received_data)
             self.rcpttos = []
             self.mailfrom = None
             self.smtp_state = self.COMMAND
