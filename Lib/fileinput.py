@@ -238,6 +238,12 @@ class FileInput:
         self.nextfile()
         self._files = ()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     def __iter__(self):
         return self
 

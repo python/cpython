@@ -24,7 +24,7 @@ as the first argument to :func:`.input`.  A single file name is also allowed.
 
 All files are opened in text mode by default, but you can override this by
 specifying the *mode* parameter in the call to :func:`.input` or
-:class:`FileInput()`.  If an I/O error occurs during opening or reading a file,
+:class:`FileInput`.  If an I/O error occurs during opening or reading a file,
 :exc:`IOError` is raised.
 
 If ``sys.stdin`` is used more than once, the second and further use will return
@@ -53,6 +53,16 @@ The following function is the primary interface of this module:
    as global state for the functions of this module, and is also returned to use
    during iteration.  The parameters to this function will be passed along to the
    constructor of the :class:`FileInput` class.
+
+   The :class:`FileInput` instance can be used as a context manager in the
+   :keyword:`with` statement.  In this example, *input* is closed after the
+   :keyword:`with` statement is exited, even if an exception occurs::
+
+      with fileinput.input(files=('spam.txt', 'eggs.txt')) as input:
+          process(input)
+
+   .. versionchanged:: 3.2
+      Can be used as a context manager.
 
 
 The following functions use the global state created by :func:`fileinput.input`;
@@ -132,13 +142,23 @@ available for subclassing as well:
    *filename* and *mode*, and returns an accordingly opened file-like object. You
    cannot use *inplace* and *openhook* together.
 
+   A :class:`FileInput` instance can be used as a context manager in the
+   :keyword:`with` statement.  In this example, *input* is closed after the
+   :keyword:`with` statement is exited, even if an exception occurs::
 
-**Optional in-place filtering:** if the keyword argument ``inplace=1`` is passed
-to :func:`fileinput.input` or to the :class:`FileInput` constructor, the file is
-moved to a backup file and standard output is directed to the input file (if a
-file of the same name as the backup file already exists, it will be replaced
-silently).  This makes it possible to write a filter that rewrites its input
-file in place.  If the *backup* parameter is given (typically as
+      with FileInput(files=('spam.txt', 'eggs.txt')) as input:
+          process(input)
+
+   .. versionchanged:: 3.2
+      Can be used as a context manager.
+
+
+**Optional in-place filtering:** if the keyword argument ``inplace=True`` is
+passed to :func:`fileinput.input` or to the :class:`FileInput` constructor, the
+file is moved to a backup file and standard output is directed to the input file
+(if a file of the same name as the backup file already exists, it will be
+replaced silently).  This makes it possible to write a filter that rewrites its
+input file in place.  If the *backup* parameter is given (typically as
 ``backup='.<some extension>'``), it specifies the extension for the backup file,
 and the backup file remains around; by default, the extension is ``'.bak'`` and
 it is deleted when the output file is closed.  In-place filtering is disabled

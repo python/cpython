@@ -231,6 +231,30 @@ class FileInputTests(unittest.TestCase):
 ##         finally:
 ##             remove_tempfiles(t1)
 
+    def test_context_manager(self):
+        try:
+            t1 = writeTmp(1, ["A\nB\nC"])
+            t2 = writeTmp(2, ["D\nE\nF"])
+            with FileInput(files=(t1, t2)) as fi:
+                lines = list(fi)
+            self.assertEqual(lines, ["A\n", "B\n", "C", "D\n", "E\n", "F"])
+            self.assertEqual(fi.filelineno(), 3)
+            self.assertEqual(fi.lineno(), 6)
+            self.assertEqual(fi._files, ())
+        finally:
+            remove_tempfiles(t1, t2)
+
+    def test_close_on_exception(self):
+        try:
+            t1 = writeTmp(1, [""])
+            with FileInput(files=t1) as fi:
+                raise IOError
+        except IOError:
+            self.assertEqual(fi._files, ())
+        finally:
+            remove_tempfiles(t1)
+
+
 def test_main():
     run_unittest(BufferSizesTests, FileInputTests)
 
