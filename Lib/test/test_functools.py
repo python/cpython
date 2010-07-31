@@ -4,7 +4,6 @@ import unittest
 from test import support
 from weakref import proxy
 import pickle
-from random import choice
 
 @staticmethod
 def PythonPartial(func, *args, **keywords):
@@ -455,50 +454,6 @@ class TestTotalOrdering(unittest.TestCase):
             class A:
                 pass
 
-class TestLRU(unittest.TestCase):
-
-    def test_lru(self):
-        def orig(x, y):
-            return 3*x+y
-        f = functools.lru_cache(maxsize=20)(orig)
-
-        domain = range(5)
-        for i in range(1000):
-            x, y = choice(domain), choice(domain)
-            actual = f(x, y)
-            expected = orig(x, y)
-            self.assertEquals(actual, expected)
-        self.assert_(f.hits > f.misses)
-        self.assertEquals(f.hits + f.misses, 1000)
-
-        f.clear()   # test clearing
-        self.assertEqual(f.hits, 0)
-        self.assertEqual(f.misses, 0)
-        f(x, y)
-        self.assertEqual(f.hits, 0)
-        self.assertEqual(f.misses, 1)
-
-    def test_lfu(self):
-        def orig(x, y):
-            return 3*x+y
-        f = functools.lfu_cache(maxsize=20)(orig)
-
-        domain = range(5)
-        for i in range(1000):
-            x, y = choice(domain), choice(domain)
-            actual = f(x, y)
-            expected = orig(x, y)
-            self.assertEquals(actual, expected)
-        self.assert_(f.hits > f.misses)
-        self.assertEquals(f.hits + f.misses, 1000)
-
-        f.clear()   # test clearing
-        self.assertEqual(f.hits, 0)
-        self.assertEqual(f.misses, 0)
-        f(x, y)
-        self.assertEqual(f.hits, 0)
-        self.assertEqual(f.misses, 1)
-
 def test_main(verbose=None):
     test_classes = (
         TestPartial,
@@ -506,8 +461,7 @@ def test_main(verbose=None):
         TestPythonPartial,
         TestUpdateWrapper,
         TestWraps,
-        TestReduce,
-        TestLRU,
+        TestReduce
     )
     support.run_unittest(*test_classes)
 
