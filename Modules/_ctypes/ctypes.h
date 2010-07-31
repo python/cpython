@@ -1,3 +1,7 @@
+#if defined (__SVR4) && defined (__sun)
+#   include <alloca.h>
+#endif
+
 #ifndef MS_WIN32
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
