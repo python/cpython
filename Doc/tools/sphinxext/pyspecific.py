@@ -145,10 +145,10 @@ class PydocTopicsBuilder(Builder):
         for label in self.status_iterator(pydoc_topic_labels,
                                           'building topics... ',
                                           length=len(pydoc_topic_labels)):
-            if label not in self.env.labels:
+            if label not in self.env.domaindata['std']['labels']:
                 self.warn('label %r not in documentation' % label)
                 continue
-            docname, labelid, sectname = self.env.labels[label]
+            docname, labelid, sectname = self.env.domaindata['std']['labels'][label]
             doctree = self.env.get_and_resolve_doctree(docname, self)
             document = new_document('<section node>')
             document.append(doctree.ids[labelid])
