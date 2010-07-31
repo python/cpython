@@ -26,16 +26,16 @@ to create a gzipped tarball and a zip file.  The available formats are:
 +===========+=========================+=========+
 | ``zip``   | zip file (:file:`.zip`) | (1),(3) |
 +-----------+-------------------------+---------+
-| ``gztar`` | gzip'ed tar file        | \(2)    |
+| ``gztar`` | gzip'ed tar file        | (2),(4) |
 |           | (:file:`.tar.gz`)       |         |
 +-----------+-------------------------+---------+
-| ``bztar`` | bzip2'ed tar file       |         |
+| ``bztar`` | bzip2'ed tar file       | \(4)    |
 |           | (:file:`.tar.bz2`)      |         |
 +-----------+-------------------------+---------+
 | ``ztar``  | compressed tar file     | \(4)    |
 |           | (:file:`.tar.Z`)        |         |
 +-----------+-------------------------+---------+
-| ``tar``   | tar file (:file:`.tar`) |         |
+| ``tar``   | tar file (:file:`.tar`) | \(4)    |
 +-----------+-------------------------+---------+
 
 Notes:
@@ -51,16 +51,8 @@ Notes:
    of the standard Python library since Python 1.6)
 
 (4)
-   requires the :program:`compress` program. Notice that this format is now
-   pending for deprecation and will be removed in the future versions of Python.
-
-When using any ``tar`` format (``gztar``, ``bztar``, ``ztar`` or
-``tar``) under Unix, you can specify the ``owner`` and ``group`` names
-that will be set for each member of the archive.
-
-For example, if you want all files of the archive to be owned by root::
-
-    python setup.py sdist --owner=root --group=root
+   requires external utilities: :program:`tar` and possibly one of :program:`gzip`,
+   :program:`bzip2`, or :program:`compress`
 
 
 .. _manifest:
@@ -76,10 +68,10 @@ source distribution:
   :option:`packages` options
 
 * all C source files mentioned in the :option:`ext_modules` or
-  :option:`libraries` options
+  :option:`libraries` options (
 
-  .. XXX Getting C library sources is currently broken -- no
-     :meth:`get_source_files` method in :file:`build_clib.py`!
+  **\*\*** getting C library sources currently broken---no
+  :meth:`get_source_files` method in :file:`build_clib.py`! **\*\***)
 
 * scripts identified by the :option:`scripts` option
   See :ref:`distutils-installing-scripts`.
@@ -111,60 +103,9 @@ per line, regular files (or symlinks to them) only.  If you do supply your own
 :file:`MANIFEST`, you must specify everything: the default set of files
 described above does not apply in this case.
 
-See :ref:`manifest_template` section for a syntax reference.
-
-.. _manifest-options:
-
-Manifest-related options
-========================
-
-The normal course of operations for the :command:`sdist` command is as follows:
-
-* if the manifest file, :file:`MANIFEST` doesn't exist, read :file:`MANIFEST.in`
-  and create the manifest
-
-* if neither :file:`MANIFEST` nor :file:`MANIFEST.in` exist, create a manifest
-  with just the default file set
-
-* if either :file:`MANIFEST.in` or the setup script (:file:`setup.py`) are more
-  recent than :file:`MANIFEST`, recreate :file:`MANIFEST` by reading
-  :file:`MANIFEST.in`
-
-* use the list of files now in :file:`MANIFEST` (either just generated or read
-  in) to create the source distribution archive(s)
-
-There are a couple of options that modify this behaviour.  First, use the
-:option:`--no-defaults` and :option:`--no-prune` to disable the standard
-"include" and "exclude" sets.
-
-Second, you might just want to (re)generate the manifest, but not create a
-source distribution::
-
-   python setup.py sdist --manifest-only
-
-:option:`-o` is a sortcut for :option:`--manifest-only`.
-
-.. _manifest_template:
-
-The MANIFEST.in template
-========================
-
-A :file:`MANIFEST.in` file can be added in a project to define the list of
-files to include in the distribution built by the :command:`sdist` command.
-
-When :command:`sdist` is run, it will look for the :file:`MANIFEST.in` file
-and interpret it to generate the :file:`MANIFEST` file that contains the
-list of files that will be included in the package.
-
-This mechanism can be used when the default list of files is not enough.
-(See :ref:`manifest`).
-
-Principle
----------
-
 The manifest template has one command per line, where each command specifies a
 set of files to include or exclude from the source distribution.  For an
-example, let's look at the Distutils' own manifest template::
+example, again we turn to the Distutils' own manifest template::
 
    include *.txt
    recursive-include examples *.txt *.py
@@ -176,7 +117,9 @@ matching :file:`\*.txt` or :file:`\*.py`, and exclude all directories matching
 :file:`examples/sample?/build`.  All of this is done *after* the standard
 include set, so you can exclude files from the standard set with explicit
 instructions in the manifest template.  (Or, you can use the
-:option:`--no-defaults` option to disable the standard set entirely.)
+:option:`--no-defaults` option to disable the standard set entirely.)  There are
+several other commands available in the manifest template mini-language; see
+section :ref:`sdist-cmd`.
 
 The order of commands in the manifest template matters: initially, we have the
 list of default files as described above, and each command in the template adds
@@ -230,41 +173,36 @@ should always be slash-separated; the Distutils will take care of converting
 them to the standard representation on your platform. That way, the manifest
 template is portable across operating systems.
 
-Commands
---------
 
-The manifest template commands are:
+.. _manifest-options:
 
-+-------------------------------------------+-----------------------------------------------+
-| Command                                   | Description                                   |
-+===========================================+===============================================+
-| :command:`include pat1 pat2 ...`          | include all files matching any of the listed  |
-|                                           | patterns                                      |
-+-------------------------------------------+-----------------------------------------------+
-| :command:`exclude pat1 pat2 ...`          | exclude all files matching any of the listed  |
-|                                           | patterns                                      |
-+-------------------------------------------+-----------------------------------------------+
-| :command:`recursive-include dir pat1 pat2 | include all files under *dir* matching any of |
-| ...`                                      | the listed patterns                           |
-+-------------------------------------------+-----------------------------------------------+
-| :command:`recursive-exclude dir pat1 pat2 | exclude all files under *dir* matching any of |
-| ...`                                      | the listed patterns                           |
-+-------------------------------------------+-----------------------------------------------+
-| :command:`global-include pat1 pat2 ...`   | include all files anywhere in the source tree |
-|                                           | matching --- & any of the listed patterns     |
-+-------------------------------------------+-----------------------------------------------+
-| :command:`global-exclude pat1 pat2 ...`   | exclude all files anywhere in the source tree |
-|                                           | matching --- & any of the listed patterns     |
-+-------------------------------------------+-----------------------------------------------+
-| :command:`prune dir`                      | exclude all files under *dir*                 |
-+-------------------------------------------+-----------------------------------------------+
-| :command:`graft dir`                      | include all files under *dir*                 |
-+-------------------------------------------+-----------------------------------------------+
+Manifest-related options
+========================
 
-The patterns here are Unix-style "glob" patterns: ``*`` matches any sequence of
-regular filename characters, ``?`` matches any single regular filename
-character, and ``[range]`` matches any of the characters in *range* (e.g.,
-``a-z``, ``a-zA-Z``, ``a-f0-9_.``).  The definition of "regular filename
-character" is platform-specific: on Unix it is anything except slash; on Windows
-anything except backslash or colon.
+The normal course of operations for the :command:`sdist` command is as follows:
+
+* if the manifest file, :file:`MANIFEST` doesn't exist, read :file:`MANIFEST.in`
+  and create the manifest
+
+* if neither :file:`MANIFEST` nor :file:`MANIFEST.in` exist, create a manifest
+  with just the default file set
+
+* if either :file:`MANIFEST.in` or the setup script (:file:`setup.py`) are more
+  recent than :file:`MANIFEST`, recreate :file:`MANIFEST` by reading
+  :file:`MANIFEST.in`
+
+* use the list of files now in :file:`MANIFEST` (either just generated or read
+  in) to create the source distribution archive(s)
+
+There are a couple of options that modify this behaviour.  First, use the
+:option:`--no-defaults` and :option:`--no-prune` to disable the standard
+"include" and "exclude" sets.
+
+Second, you might just want to (re)generate the manifest, but not create a source
+distribution::
+
+   python setup.py sdist --manifest-only
+
+:option:`-o` is a shortcut for :option:`--manifest-only`.
+
 
