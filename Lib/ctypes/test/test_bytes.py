@@ -45,7 +45,6 @@ class BytesTest(unittest.TestCase):
                 _type_ = "X"
 
             BSTR("abc")
-            BSTR(b"abc")
 
 if __name__ == '__main__':
     unittest.main()
