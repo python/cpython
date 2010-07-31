@@ -345,7 +345,7 @@ def test_list_commands():
     -> test_pdb.do_nothing()
     (Pdb) step
     --Call--
-    > /home/gbr/devel/python/Lib/test/test_pdb.py(260)do_nothing()
+    > ...test_pdb.py(...)do_nothing()
     -> def do_nothing():
     (Pdb) longlist
     ...  ->     def do_nothing():
@@ -558,9 +558,9 @@ def test_pdb_run_with_incorrect_argument():
 def test_pdb_run_with_code_object():
     """Testing run and runeval with code object as a first argument.
 
-    >>> with PdbTestInput(['step','x', 'continue']):
+    >>> with PdbTestInput(['step','x', 'continue']):  # doctest: +ELLIPSIS
     ...     pdb_invoke('run', compile('x=1', '<string>', 'exec'))
-    > <string>(1)<module>()
+    > <string>(1)<module>()...
     (Pdb) step
     --Return--
     > <string>(1)<module>()->None
