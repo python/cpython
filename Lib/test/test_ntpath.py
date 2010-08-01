@@ -128,6 +128,9 @@ class TestNtpath(unittest.TestCase):
             self.assertTrue(isinstance(ntpath.normpath(path), unicode),
                             'normpath() returned str instead of unicode')
 
+        tester("ntpath.normpath('\\\\.\\NUL')", r'\\.\NUL')
+        tester("ntpath.normpath('\\\\?\\D:/XY\\Z')", r'\\?\D:/XY\Z')
+
     def test_expandvars(self):
         oldenv = os.environ.copy()
         try:
