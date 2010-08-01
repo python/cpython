@@ -3734,7 +3734,7 @@ PyObject *PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
 
             ch2 = *s++;
             size--;
-            if (ch2 >= 0xDC00 && ch2 <= 0xDFFF && size) {
+            if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
                 ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
                 *p++ = '\\';
                 *p++ = 'U';
@@ -3976,7 +3976,7 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
 
                 ch2 = *s++;
                 size--;
-                if (ch2 >= 0xDC00 && ch2 <= 0xDFFF && size) {
+                if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
                     ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
                     *p++ = '\\';
                     *p++ = 'U';
