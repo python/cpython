@@ -314,8 +314,8 @@ The idea behind the "home scheme" is that you build and maintain a personal
 stash of Python modules.  This scheme's name is derived from the idea of a
 "home" directory on Unix, since it's not unusual for a Unix user to make their
 home directory have a layout similar to :file:`/usr/` or :file:`/usr/local/`.
-This scheme can be used by anyone, regardless of the operating system their
-installing for.
+This scheme can be used by anyone, regardless of the operating system they
+are installing for.
 
 Installing a new module distribution is as simple as ::
 

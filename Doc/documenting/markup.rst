@@ -200,8 +200,8 @@ The directives are:
 
 .. describe:: cmdoption
 
-   Describes a command line option or switch.  Option argument names should be
-   enclosed in angle brackets.  Example::
+   Describes a Python command line option or switch.  Option argument names
+   should be enclosed in angle brackets.  Example::
 
       .. cmdoption:: -m <module>
 
