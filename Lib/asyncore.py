@@ -594,6 +594,14 @@ if os.name == 'posix':
         def send(self, *args):
             return os.write(self.fd, *args)
 
+        def getsockopt(self, level, optname, buflen=None):
+            if (level == socket.SOL_SOCKET and
+                optname == socket.SO_ERROR and
+                not buflen):
+                return 0
+            raise NotImplementedError("Only asyncore specific behaviour "
+                                      "implemented.")
+
         read = recv
         write = send
 
