@@ -40,7 +40,7 @@
 %define name python
 #--start constants--
 %define version 2.7.1a0
-%define libver 2.7
+%define libvers 2.7
 #--end constants--
 %define release 1pydotorg
 %define __prefix /usr
@@ -61,7 +61,7 @@ Summary: An interpreted, interactive, object-oriented programming language.
 Name: %{name}%{binsuffix}
 Version: %{version}
 Release: %{release}
-License: Modified CNRI Open Source License
+License: PSF
 Group: Development/Languages
 Source: Python-%{version}.tar.bz2
 %if %{include_docs}
