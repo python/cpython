@@ -42,14 +42,14 @@ The module defines the following:
 
 .. function:: kqueue()
 
-   (Only supported on BSD.)  Returns a kernel queue object object; see section
+   (Only supported on BSD.)  Returns a kernel queue object; see section
    :ref:`kqueue-objects` below for the methods supported by kqueue objects.
 
 
 .. function:: kevent(ident, filter=KQ_FILTER_READ, flags=KQ_EV_ADD, fflags=0, data=0, udata=0)
 
-   (Only supported on BSD.)  Returns a kernel event object object; see section
-   :ref:`kevent-objects` below for the methods supported by kqueue objects.
+   (Only supported on BSD.)  Returns a kernel event object; see section
+   :ref:`kevent-objects` below for the methods supported by kevent objects.
 
 
 .. function:: select(rlist, wlist, xlist[, timeout])

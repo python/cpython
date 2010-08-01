@@ -56,8 +56,8 @@ Module Interface
    Open *file* and return a corresponding stream.  If the file cannot be opened,
    an :exc:`IOError` is raised.
 
-   *file* is either a string or bytes object giving the name (and the path if
-   the file isn't in the current working directory) of the file to be opened or
+   *file* is either a string or bytes object giving the pathname (absolute or
+   relative to the current working directory) of the file to be opened or
    an integer file descriptor of the file to be wrapped.  (If a file descriptor
    is given, it is closed when the returned I/O object is closed, unless
    *closefd* is set to ``False``.)
