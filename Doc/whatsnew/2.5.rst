@@ -1765,7 +1765,7 @@ Full documentation for ElementTree is available at
 http://effbot.org/zone/element-index.htm.
 
 ElementTree represents an XML document as a tree of element nodes. The text
-content of the document is stored as the :attr:`.text` and :attr:`.tail`
+content of the document is stored as the :attr:`text` and :attr:`tail`
 attributes of  (This is one of the major differences between ElementTree and
 the Document Object Model; in the DOM there are many different types of node,
 including :class:`TextNode`.)
