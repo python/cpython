@@ -1009,6 +1009,8 @@ def add_files(db):
             lib.add_file("185test.db")
             lib.add_file("audiotest.au")
             lib.add_file("cfgparser.1")
+            lib.add_file("cfgparser.2")
+            lib.add_file("cfgparser.3")
             lib.add_file("sgml_input.html")
             lib.add_file("testtar.tar")
             lib.add_file("test_difflib_expect.html")
@@ -1019,6 +1021,8 @@ def add_files(db):
             lib.glob("*.pem")
             lib.glob("*.pck")
             lib.add_file("zipdir.zip")
+        if dir=='tests' and parent.physical=='distutils':
+            lib.add_file("Setup.sample")
         if dir=='decimaltestdata':
             lib.glob("*.decTest")
         if dir=='xmltestdata':
