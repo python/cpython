@@ -84,6 +84,14 @@ C-API
 Library
 -------
 
+- Issue #5146: Handle UID THREAD command correctly in imaplib.
+
+- Issue #5147: Fix the header generated for cookie files written by
+  http.cookiejar.MozillaCookieJar.
+
+- Issue #8198: In pydoc, output all help text to the correct stream
+  when sys.stdout is reassigned.
+
 - Issue #8230: Fix Lib/test/sortperf.py.
 
 - Issue #7395: Fix tracebacks in pstats interactive browser.

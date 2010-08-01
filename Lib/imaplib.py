@@ -765,7 +765,7 @@ class IMAP4:
                               ', '.join(Commands[command])))
         name = 'UID'
         typ, dat = self._simple_command(name, command, *args)
-        if command in ('SEARCH', 'SORT'):
+        if command in ('SEARCH', 'SORT', 'THREAD'):
             name = command
         else:
             name = 'FETCH'
