@@ -27,6 +27,9 @@ Library
 - Issue #9448: Fix a leak of OS resources (mutexes or semaphores) when
   re-initializing a buffered IO object by calling its ``__init__`` method.
 
+- Issue #7909: Do not touch paths with the special prefixes ``\\.\``
+  or ``\\?\`` in ntpath.normpath().
+
 - Issue #5146: Handle UID THREAD command correctly in imaplib.
 
 - Issue #5147: Fix the header generated for cookie files written by
