@@ -263,6 +263,9 @@ class _SpoofOut(StringIO):
         StringIO.truncate(self, size)
         if hasattr(self, "softspace"):
             del self.softspace
+        if not self.buf:
+            # Reset it to an empty string, to make sure it's not unicode.
+            self.buf = ''
 
 # Worst-case linear-time ellipsis matching.
 def _ellipsis_match(want, got):
