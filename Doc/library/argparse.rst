@@ -698,8 +698,8 @@ An example of a custom action::
 
    >>> class FooAction(argparse.Action):
    ...     def __call__(self, parser, namespace, values, option_string=None):
-   ...     print '%r %r %r' % (namespace, values, option_string)
-   ...     setattr(namespace, self.dest, values)
+   ...         print '%r %r %r' % (namespace, values, option_string)
+   ...         setattr(namespace, self.dest, values)
    ...
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', action=FooAction)
