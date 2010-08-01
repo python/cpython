@@ -15,6 +15,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #7395: Fix tracebacks in pstats interactive browser.
+
 - Issue #8230: Fix Lib/test/sortperf.py.
 
 - Issue #8620: when a Cmd is fed input that reaches EOF without a final
