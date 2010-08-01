@@ -20,6 +20,42 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Brian Quinlan was given commit access on Jul 26 2010 by GFB,
+  for work related to PEP 3148.
+
+- Reid Kleckner was given commit access on Jul 11 2010 by GFB,
+  for work on the py3k-jit branch, at suggestion of the Unladen
+  Swallow team.
+
+- Alexander Belopolsky was given commit access on May 25 2010
+  by MvL at suggestion of Mark Dickinson.
+
+- Tim Golden was given commit access on April 21 2010 by MvL,
+  at suggestion of Michael Foord.
+
+- Giampaolo Rodolà was given commit access on April 17 2010 by
+  MvL, at suggestion of R. David Murray.
+
+- Jean-Paul Calderone was given commit access on April 6 2010 by
+  GFB, at suggestion of Michael Foord and others.
+
+- Brian Curtin was given commit access on March 24 2010 by MvL.
+
+- Florent Xicluna was given commit access on February 25 2010 by
+  MvL, based on Antoine Pitrou's recommendation.
+
+- Dino Viehland was given SVN access on February 23 2010 by Brett
+  Cannon, for backporting tests from IronPython.
+
+- Larry Hastings was given SVN access on February 22 2010 by
+  Andrew Kuchling, based on Brett Cannon's recommendation.
+
+- Victor Stinner was given SVN access on January 30 2010 by MvL,
+  at recommendation by Mark Dickinson and Amaury Forgeot d'Arc.
+
+- Stefan Krah was given SVN access on January 5 2010 by GFB, at
+  suggestion of Mark Dickinson, for work on the decimal module.
+
 - Doug Hellmann was given SVN access on September 19 2009 by GFB, at
   suggestion of Jesse Noller, for documentation work.
 

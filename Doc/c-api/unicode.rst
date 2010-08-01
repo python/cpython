@@ -358,7 +358,7 @@ To encode and decode file names and other environment strings,
 :cdata:`Py_FileSystemEncoding` should be used as the encoding, and
 ``"surrogateescape"`` should be used as the error handler (:pep:`383`). To
 encode file names during argument parsing, the ``"O&"`` converter should be
-used, passsing :func:PyUnicode_FSConverter as the conversion function:
+used, passsing :func:`PyUnicode_FSConverter` as the conversion function:
 
 .. cfunction:: int PyUnicode_FSConverter(PyObject* obj, void* result)
 
