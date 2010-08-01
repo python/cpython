@@ -295,7 +295,7 @@ def getsitepackages():
             # locations.
             from sysconfig import get_config_var
             framework = get_config_var("PYTHONFRAMEWORK")
-            if framework and "/%s.framework/"%(framework,) in prefix:
+            if framework:
                 sitepackages.append(
                         os.path.join("/Library", framework,
                             sys.version[:3], "site-packages"))

@@ -185,13 +185,10 @@ class HelperFunctionsTests(unittest.TestCase):
             sysconfig.get_config_var("PYTHONFRAMEWORK")):
             site.PREFIXES = ['Python.framework']
             dirs = site.getsitepackages()
-            self.assertEqual(len(dirs), 4)
-            wanted = os.path.join('~', 'Library', 'Python',
-                                  sys.version[:3], 'site-packages')
-            self.assertEquals(dirs[2], os.path.expanduser(wanted))
+            self.assertEqual(len(dirs), 3)
             wanted = os.path.join('/Library', 'Python', sys.version[:3],
                                   'site-packages')
-            self.assertEquals(dirs[3], wanted)
+            self.assertEquals(dirs[2], wanted)
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""

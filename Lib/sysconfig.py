@@ -173,7 +173,7 @@ def _getuserbase():
     if sys.platform == "darwin":
         framework = get_config_var("PYTHONFRAMEWORK")
         if framework:
-            return joinuser("~", "Library", framework, "%d.%d"%(
+            return env_base if env_base else joinuser("~", "Library", framework, "%d.%d"%(
                 sys.version_info[:2]))
 
     return env_base if env_base else joinuser("~", ".local")
