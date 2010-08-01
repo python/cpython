@@ -101,7 +101,7 @@ loops that truncate the stream.
                   yield element
 
 
-.. function:: itertools.chain.from_iterable(iterable)
+.. classmethod:: chain.from_iterable(iterable)
 
    Alternate constructor for :func:`chain`.  Gets chained inputs from a
    single iterable argument that is evaluated lazily.  Equivalent to::
