@@ -244,10 +244,6 @@ The :mod:`locale` module defines the following exception and functions:
       specified, and therefore you should not assume knowledge of it on different
       systems.
 
-   .. data:: ERA_YEAR
-
-      Get the year in the relevant era of the locale.
-
    .. data:: ERA_D_T_FMT
 
       Get a format string for :func:`strftime` to represent dates and times in a

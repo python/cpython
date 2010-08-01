@@ -21,8 +21,8 @@ the Oracle Berkeley DB.
 .. function:: whichdb(filename)
 
    This functionattempts to guess which of the several simple database modules
-   available --- :mod:`dbm.bsd`, :mod:`dbm.gnu`, :mod:`dbm.ndbm` or
-   :mod:`dbm.dumb` --- should be used to open a given file.
+   available --- :mod:`dbm.gnu`, :mod:`dbm.ndbm` or :mod:`dbm.dumb` --- should
+   be used to open a given file.
 
    Returns one of the following values: ``None`` if the file can't be opened
    because it's unreadable or doesn't exist; the empty string (``''``) if the
@@ -227,10 +227,9 @@ Dbm objects behave like mappings (dictionaries), except that keys and values are
 always stored as bytes. Printing a ``dbm`` object doesn't print the keys and
 values, and the :meth:`items` and :meth:`values` methods are not supported.
 
-This module can be used with the "classic" ndbm interface, the BSD DB
-compatibility interface, or the GNU GDBM compatibility interface. On Unix, the
-:program:`configure` script will attempt to locate the appropriate header file
-to simplify building this module.
+This module can be used with the "classic" ndbm interface or the GNU GDBM
+compatibility interface. On Unix, the :program:`configure` script will attempt
+to locate the appropriate header file to simplify building this module.
 
 .. exception:: error
 
@@ -246,9 +245,7 @@ to simplify building this module.
 .. function:: open(filename[, flag[, mode]])
 
    Open a dbm database and return a ``dbm`` object.  The *filename* argument is the
-   name of the database file (without the :file:`.dir` or :file:`.pag` extensions;
-   note that the BSD DB implementation of the interface will append the extension
-   :file:`.db` and only create one file).
+   name of the database file (without the :file:`.dir` or :file:`.pag` extensions).
 
    The optional *flag* argument must be one of these values:
 
