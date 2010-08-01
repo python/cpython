@@ -29,6 +29,9 @@ Extensions
 Library
 -------
 
+- Issue #8397: Raise an error when attempting to mix iteration and regular
+  reads on a BZ2File object, rather than returning incorrect results.
+
 - Issue #9448: Fix a leak of OS resources (mutexes or semaphores) when
   re-initializing a buffered IO object by calling its ``__init__`` method.
 
