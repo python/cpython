@@ -1508,7 +1508,33 @@ source:
     >>> test = doctest.DocTestParser().get_doctest(s, {}, 's', 's.py', 0)
     Traceback (most recent call last):
     ValueError: line 0 of the doctest for s has an option directive on a line with no example: '# doctest: +ELLIPSIS'
-"""
+
+    """
+
+    def test_unicode_output(self): r"""
+
+Check that unicode output works:
+
+    >>> u'\xe9'
+    u'\xe9'
+
+If we return unicode, SpoofOut's buf variable becomes automagically
+converted to unicode. This means all subsequent output becomes converted
+to unicode, and if the output contains non-ascii characters that failed.
+It used to be that this state change carried on between tests, meaning
+tests would fail if unicode has been output previously in the testrun.
+This test tests that this is no longer so:
+
+    >>> print u'abc'
+    abc
+
+And then return a string with non-ascii characters:
+
+    >>> print u'\xe9'.encode('utf-8')
+    é
+
+    """
+
 
 def test_testsource(): r"""
 Unit tests for `testsource()`.

@@ -89,7 +89,18 @@ C-API
 Library
 -------
 
+- Issue #5146: Handle UID THREAD command correctly in imaplib.
+
+- Issue #5147: Fix the header generated for cookie files written by
+  http.cookiejar.MozillaCookieJar.
+
+- Issue #8198: In pydoc, output all help text to the correct stream
+  when sys.stdout is reassigned.
+
 - Issue #1019882: Fix IndexError when loading certain hotshot stats.
+
+- Issue #8471: In doctest, properly reset the output stream to an empty
+  string when Unicode was previously output.
 
 - Issue #8397: Raise an error when attempting to mix iteration and regular
   reads on a BZ2File object, rather than returning incorrect results.
