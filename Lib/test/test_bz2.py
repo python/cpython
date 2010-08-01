@@ -302,6 +302,24 @@ class BZ2FileTest(BaseTest):
         finally:
             f.close()
 
+    def testMixedIterationReads(self):
+        # Issue #8397: mixed iteration and reads should be forbidden.
+        f = bz2.BZ2File(self.filename, 'wb')
+        try:
+            # The internal buffer size is hard-wired to 8192 bytes, we must
+            # write out more than that for the test to stop half through
+            # the buffer.
+            f.write(self.TEXT * 100)
+        finally:
+            f.close()
+        f = bz2.BZ2File(self.filename, 'rb')
+        try:
+            next(f)
+            self.assertRaises(ValueError, f.read)
+            self.assertRaises(ValueError, f.readline)
+            self.assertRaises(ValueError, f.readlines)
+        finally:
+            f.close()
 
 class BZ2CompressorTest(BaseTest):
     def testCompress(self):
