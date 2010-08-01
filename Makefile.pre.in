@@ -1192,7 +1192,9 @@ clobber: clean profile-removal
 # remove all generated files, even Makefile[.pre]
 # Keep configure and Python-ast.[ch], it's possible they can't be generated
 distclean: clobber
-	-rm -f Lib/test/data/*
+	for file in Lib/test/data/* ; do \
+	    if test "$$file" != "Lib/test/data/README"; then rm "$$file"; fi; \
+	done
 	-rm -f core Makefile Makefile.pre config.status \
 		Modules/Setup Modules/Setup.local Modules/Setup.config \
 		Misc/python.pc
