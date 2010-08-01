@@ -262,6 +262,15 @@ extern int lstat(const char *, struct stat *);
 #ifdef HAVE_PROCESS_H
 #include <process.h>
 #endif
+#ifndef VOLUME_NAME_DOS
+#define VOLUME_NAME_DOS	0x0
+#endif
+#ifndef VOLUME_NAME_NT
+#define VOLUME_NAME_NT	0x2
+#endif
+#ifndef IO_REPARSE_TAG_SYMLINK
+#define IO_REPARSE_TAG_SYMLINK	(0xA000000CL)
+#endif
 #include "osdefs.h"
 #include <malloc.h>
 #include <windows.h>
