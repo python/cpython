@@ -739,7 +739,7 @@ Library
 
 - Charset.body_encode now correctly handles base64 encoding by encoding with the
   output_charset before calling base64mime.encode.  Passes the tests from 2.x
-  issue 1368247.
+  issue #1368247.
 
 - Issue #8845: sqlite3 Connection objects now have a read-only in_transaction
   attribute that is True iff there are uncommitted changes.
@@ -1355,7 +1355,7 @@ Library
   argument added to the TextTestRunner constructor allowing a different result
   class to be used without having to subclass.
 
-- Issue 7588: ``unittest.TextTestResult.getDescription`` now includes the test
+- Issue #7588: ``unittest.TextTestResult.getDescription`` now includes the test
   name in failure reports even if the test has a docstring.
 
 - Issue #3001: Add a C implementation of recursive locks which is used by
@@ -1774,10 +1774,10 @@ Build
 
 - Issue #6244: Allow detect_tkinter to look for Tcl/Tk 8.6.
 
-- Issue 4601: 'make install' did not set the appropriate permissions on
+- Issue #4601: 'make install' did not set the appropriate permissions on
   directories.
 
-- Issue 5390: Add uninstall icon independent of whether file extensions are
+- Issue #5390: Add uninstall icon independent of whether file extensions are
   installed.
 
 - Issue #7541: When using ``python-config`` with a framework install the
@@ -1792,7 +1792,7 @@ Build
 Documentation
 ------------
 
-- Issue 9255: Document that the 'test' package is meant for internal Python use
+- Issue #9255: Document that the 'test' package is meant for internal Python use
   only.
 
 - A small WSGI server was added as Tools/scripts/serve.py, and is used to
@@ -2168,7 +2168,7 @@ Library
   file is a binary.  Patch by Brodie Rao, tests by Daniel Diniz.  This fix
   corrects a pydoc regression.
 
-- Issue 5955: aifc's close method did not close the file it wrapped,
+- Issue #5955: aifc's close method did not close the file it wrapped,
   now it does.  This also means getfp method now returns the real fp.
 
 Installation
@@ -2201,7 +2201,7 @@ Build
 Tests
 -----
 
-- Issue 5442: Tests for importlib were not properly skipping case-sensitivity
+- Issue #5442: Tests for importlib were not properly skipping case-sensitivity
   tests on darwin even when the OS was installed on a case-sensitive
   filesystem. Also fixed tests that should not be run when
   sys.dont_write_bytecode is true.
@@ -2317,7 +2317,7 @@ Core and Builtins
   conversions (including all float formatting operations) will be
   correctly rounded on these platforms.
 
-  See issue 1580 discussions for details of platforms for which
+  See issue #1580 discussions for details of platforms for which
   this change does not apply.
 
 - Issue #5759: float() didn't call __float__ on str subclasses.
