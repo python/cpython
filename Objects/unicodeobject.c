@@ -294,7 +294,7 @@ int unicode_resize(register PyUnicodeObject *unicode,
 }
 
 /* We allocate one more byte to make sure the string is
-   Ux0000 terminated -- XXX is this needed ?
+   Ux0000 terminated; some code relies on that.
 
    XXX This allocator could further be enhanced by assuring that the
    free list never reduces its size below 1.
@@ -3067,7 +3067,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 
             ch2 = *s++;
             size--;
-            if (ch2 >= 0xDC00 && ch2 <= 0xDFFF && size) {
+            if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
                 ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
                 *p++ = '\\';
                 *p++ = 'U';
@@ -3316,7 +3316,7 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
 
                 ch2 = *s++;
                 size--;
-                if (ch2 >= 0xDC00 && ch2 <= 0xDFFF && size) {
+                if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
                     ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
                     *p++ = '\\';
                     *p++ = 'U';
