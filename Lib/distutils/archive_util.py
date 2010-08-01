@@ -162,9 +162,12 @@ def make_archive (base_name, format,
         kwargs[arg] = val
     filename = apply(func, (base_name, base_dir), kwargs)
 
-    if root_dir is not None:
-        log.debug("changing back to '%s'", save_cwd)
-        os.chdir(save_cwd)
+    try:
+        filename = func(base_name, base_dir, **kwargs)
+    finally:
+        if root_dir is not None:
+            log.debug("changing back to '%s'", save_cwd)
+            os.chdir(save_cwd)
 
     return filename
 
