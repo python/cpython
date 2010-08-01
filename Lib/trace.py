@@ -192,11 +192,13 @@ def fullmodname(path):
         base = path[len(longest) + 1:]
     else:
         base = path
+    # the drive letter is never part of the module name
+    drive, base = os.path.splitdrive(base)
     base = base.replace(os.sep, ".")
     if os.altsep:
         base = base.replace(os.altsep, ".")
     filename, ext = os.path.splitext(base)
-    return filename
+    return filename.lstrip(".")
 
 class CoverageResults:
     def __init__(self, counts=None, calledfuncs=None, infile=None,
