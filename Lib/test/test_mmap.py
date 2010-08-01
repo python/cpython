@@ -1,6 +1,6 @@
 from test.support import TESTFN, run_unittest, import_module
 import unittest
-import os, re, itertools
+import os, re, itertools, socket
 
 # Skip test if we can't import mmap.
 mmap = import_module('mmap')
@@ -586,6 +586,16 @@ class MmapTests(unittest.TestCase):
                 pass
             m.close()
 
+        def test_invalid_descriptor(self):
+            # socket file descriptors are valid, but out of range
+            # for _get_osfhandle, causing a crash when validating the
+            # parameters to _get_osfhandle.
+            s = socket.socket()
+            try:
+                with self.assertRaises(mmap.error):
+                    m = mmap.mmap(s.fileno(), 10)
+            finally:
+                s.close()
 
 def test_main():
     run_unittest(MmapTests)
