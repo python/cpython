@@ -586,6 +586,20 @@ class MmapTests(unittest.TestCase):
                 pass
             m.close()
 
+    def test_context_manager(self):
+        with mmap.mmap(-1, 10) as m:
+            self.assertFalse(m.closed)
+        self.assertTrue(m.closed)
+
+    def test_context_manager_exception(self):
+        # Test that the IOError gets passed through
+        with self.assertRaises(Exception) as exc:
+            with mmap.mmap(-1, 10) as m:
+                raise IOError
+        self.assertIsInstance(exc.exception, IOError,
+                              "wrong exception raised in context manager")
+        self.assertTrue(m.closed, "context manager failed")
+
 
 def test_main():
     run_unittest(MmapTests)
