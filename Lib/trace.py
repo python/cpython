@@ -195,11 +195,13 @@ def fullmodname(path):
         base = path[len(longest) + 1:]
     else:
         base = path
+    # the drive letter is never part of the module name
+    drive, base = os.path.splitdrive(base)
     base = base.replace(os.sep, ".")
     if os.altsep:
         base = base.replace(os.altsep, ".")
     filename, ext = os.path.splitext(base)
-    return filename
+    return filename.lstrip(".")
 
 class CoverageResults:
     def __init__(self, counts=None, calledfuncs=None, infile=None,
@@ -798,7 +800,16 @@ def main(argv=None):
                   ignoredirs=ignore_dirs, infile=counts_file,
                   outfile=counts_file, timing=timing)
         try:
-            t.run('execfile(%r)' % (progname,))
+            with open(progname) as fp:
+                code = compile(fp.read(), progname, 'exec')
+            # try to emulate __main__ namespace as much as possible
+            globs = {
+                '__file__': progname,
+                '__name__': '__main__',
+                '__package__': None,
+                '__cached__': None,
+            }
+            t.runctx(code, globs, globs)
         except IOError, err:
             _err_exit("Cannot run file %r because: %s" % (sys.argv[0], err))
         except SystemExit:
