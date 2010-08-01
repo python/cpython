@@ -35,7 +35,7 @@
 %define name python
 #--start constants--
 %define version 3.1.2
-%define libver 3.1
+%define libvers 3.1
 #--end constants--
 %define release 1pydotorg
 %define __prefix /usr
@@ -54,7 +54,7 @@ Summary: An interpreted, interactive, object-oriented programming language.
 Name: %{name}%{binsuffix}
 Version: %{version}
 Release: %{release}
-Copyright: Modified CNRI Open Source License
+License: PSF
 Group: Development/Languages
 Source: Python-%{version}.tar.bz2
 %if %{include_docs}
@@ -256,7 +256,7 @@ if [ ! -z "%{binsuffix}" ]
 then
    ( cd $RPM_BUILD_ROOT%{__prefix}/bin; rm -f python[0-9a-zA-Z]*;
          mv -f python python"%{binsuffix}" )
-   ( cd $RPM_BUILD_ROOT%{__prefix}/man/man1; mv python.1 python%{binsuffix}.1 )
+   ( cd $RPM_BUILD_ROOT%{__prefix}/share/man/man1; mv python.1 python%{binsuffix}.1 )
    ( cd $RPM_BUILD_ROOT%{__prefix}/bin; mv -f pydoc pydoc"%{binsuffix}" )
    ( cd $RPM_BUILD_ROOT%{__prefix}/bin; mv -f idle idle"%{binsuffix}" )
 fi
@@ -341,14 +341,13 @@ rm -f mainpkg.files tools.files
 %defattr(-,root,root)
 %doc Misc/README Misc/cheatsheet Misc/Porting
 %doc LICENSE Misc/ACKS Misc/HISTORY Misc/NEWS
-%{__prefix}/man/man1/python%{binsuffix}.1*
+%{__prefix}/share/man/man1/python%{binsuffix}.1*
 
 %attr(755,root,root) %dir %{__prefix}/include/python%{libvers}
 %attr(755,root,root) %dir %{__prefix}/%{libdirname}/python%{libvers}/
 %{__prefix}/%{libdirname}/python%{libvers}/*.txt
 %{__prefix}/%{libdirname}/python%{libvers}/*.py*
 %{__prefix}/%{libdirname}/python%{libvers}/pdb.doc
-%{__prefix}/%{libdirname}/python%{libvers}/profile.doc
 %{__prefix}/%{libdirname}/python%{libvers}/curses
 %{__prefix}/%{libdirname}/python%{libvers}/distutils
 %{__prefix}/%{libdirname}/python%{libvers}/encodings
