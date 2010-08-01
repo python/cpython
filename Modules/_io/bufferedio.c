@@ -632,6 +632,8 @@ _buffered_init(buffered *self)
         return -1;
     }
 #ifdef WITH_THREAD
+    if (self->lock)
+        PyThread_free_lock(self->lock);
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "can't allocate read lock");
