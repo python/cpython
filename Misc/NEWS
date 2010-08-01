@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9354: Provide getsockopt() in asyncore's file_wrapper.
+
 - Issue #4108: In urllib.robotparser, if there are multiple 'User-agent: *'
   entries, consider the first one.
 
@@ -951,6 +953,7 @@ Core and Builtins
 
 Library
 -------
+
 - Issue #1555570: email no longer inserts extra blank lines when a \r\n
   combo crosses an 8192 byte boundary.
 
