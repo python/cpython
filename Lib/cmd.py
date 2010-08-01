@@ -137,7 +137,7 @@ class Cmd:
                         if not len(line):
                             line = 'EOF'
                         else:
-                            line = line[:-1] # chop \n
+                            line = line.rstrip('\r\n')
                 line = self.precmd(line)
                 stop = self.onecmd(line)
                 stop = self.postcmd(stop, line)
