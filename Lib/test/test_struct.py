@@ -560,7 +560,12 @@ class StructTest(unittest.TestCase):
                           'spam and eggs')
         self.assertRaises(struct.error, struct.unpack_from, '14s42', store, 0)
 
-
+    def test_Struct_reinitialization(self):
+        # Issue 9422: there was a memory leak when reinitializing a
+        # Struct instance.  This test can be used to detect the leak
+        # when running with regrtest -L.
+        s = struct.Struct('i')
+        s.__init__('ii')
 
 def test_main():
     run_unittest(StructTest)
