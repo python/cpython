@@ -7,6 +7,9 @@ Original by Michael Schneider
 
 import cmd
 import sys
+import re
+import unittest
+import StringIO
 
 class samplecmdclass(cmd.Cmd):
     """
@@ -165,9 +168,33 @@ class samplecmdclass(cmd.Cmd):
     def do_exit(self, arg):
         return True
 
+
+class TestAlternateInput(unittest.TestCase):
+
+    class simplecmd(cmd.Cmd):
+
+        def do_print(self, args):
+            print >>self.stdout, args
+
+        def do_EOF(self, args):
+            return True
+
+    def test_file_with_missing_final_nl(self):
+        input = StringIO.StringIO("print test\nprint test2")
+        output = StringIO.StringIO()
+        cmd = self.simplecmd(stdin=input, stdout=output)
+        cmd.use_rawinput = False
+        cmd.cmdloop()
+        self.assertEqual(output.getvalue(),
+            ("(Cmd) test\n"
+             "(Cmd) test2\n"
+             "(Cmd) "))
+
+
 def test_main(verbose=None):
     from test import test_support, test_cmd
     test_support.run_doctest(test_cmd, verbose)
+    test_support.run_unittest(TestAlternateInput)
 
 def test_coverage(coverdir):
     import trace
