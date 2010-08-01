@@ -1144,9 +1144,10 @@ format_complex_internal(PyObject *value,
         /* Omitted type specifier. Should be like str(self). */
         type = 'g';
         default_precision = PyFloat_STR_PRECISION;
-        add_parens = 1;
-        if (re == 0.0)
+        if (re == 0.0 && copysign(1.0, re) == 1.0)
             skip_re = 1;
+        else
+            add_parens = 1;
     }
 
     if (type == 'n')
@@ -1231,8 +1232,11 @@ format_complex_internal(PyObject *value,
                                     n_re_digits, n_re_remainder,
                                     re_has_decimal, &locale, &tmp_format);
 
-    /* Same formatting, but always include a sign. */
-    tmp_format.sign = '+';
+    /* Same formatting, but always include a sign, unless the real part is
+     * going to be omitted, in which case we use whatever sign convention was
+     * requested by the original format. */
+    if (!skip_re)
+        tmp_format.sign = '+';
     n_im_total = calc_number_widths(&im_spec, 0, im_sign_char, p_im,
                                     n_im_digits, n_im_remainder,
                                     im_has_decimal, &locale, &tmp_format);

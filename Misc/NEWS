@@ -12,6 +12,12 @@ What's New in Python 2.7.1?
 Core and Builtins
 -----------------
 
+- Issue #9416: Fix some issues with complex formatting where the
+  output with no type specifier failed to match the str output:
+
+    - format(complex(-0.0, 2.0), '-') omitted the real part from the output,
+    - format(complex(0.0, 2.0), '-') included a sign and parentheses.
+
 - Issue #7616: Fix copying of overlapping memoryview slices with the Intel
   compiler.
 
