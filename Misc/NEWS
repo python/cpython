@@ -1047,7 +1047,7 @@ Library
 - Issue #5971: StreamHandler.handleError now swallows IOErrors which occur when
   trying to print a traceback.
 
-- Issue 5955: aifc's close method did not close the file it wrapped,
+- Issue #5955: aifc's close method did not close the file it wrapped,
   now it does.  This also means getfp method now returns the real fp.
 
 - Issue #4875: On win32, ctypes.util.find_library does no longer
@@ -1157,7 +1157,7 @@ Build
 
 - Issue #6802: Fix build issues on MacOSX 10.6
 
-- Issue 5390: Add uninstall icon independent of whether file
+- Issue #5390: Add uninstall icon independent of whether file
   extensions are installed.
 
 - Issue #6094: Build correctly with Subversion 1.7.
@@ -1165,7 +1165,7 @@ Build
 - Issue #5726: Make Modules/ld_so_aix return the actual exit code of the
   linker, rather than always exit successfully. Patch by Floris Bruynooghe.
 
-- Issue 5809: Specifying both --enable-framework and --enable-shared is
+- Issue #5809: Specifying both --enable-framework and --enable-shared is
   an error. Configure now explicity tells you about this.
 
 Documentation
@@ -1219,7 +1219,7 @@ Core and Builtins
 - Issue #5013: Fixed a bug in FileHandler which occurred when the delay
   parameter was set.
 
-- Issue 1242657: the __len__() and __length_hint__() calls in several tools
+- Issue #1242657: the __len__() and __length_hint__() calls in several tools
   were suppressing all exceptions.  These include list(), filter(), map(),
   zip(), and bytearray().
 
@@ -1299,9 +1299,9 @@ Library
 - Issue #1491431: Fixed distutils.filelist.glob_to_re for edge cases.
   Initial fix by Wayne Davison.
 
-- Issue 5471: Fix os.path.expanduser() for $HOME set to '/'.
+- Issue #5471: Fix os.path.expanduser() for $HOME set to '/'.
 
-- Issue 1726172: fix IndexError in the case of and empty response in ftplib.
+- Issue #1726172: fix IndexError in the case of and empty response in ftplib.
 
 - In Pdb, prevent the reassignment of __builtin__._ by sys.displayhook on
   printing out values.
@@ -1316,7 +1316,7 @@ Library
 
 - Actually make the SimpleXMLRPCServer CGI handler work.
 
-- Issue 2625: added missing iteritems() call to the for loop in
+- Issue #2625: added missing iteritems() call to the for loop in
   mailbox.MH.get_message().
 
 - Issue #5647: MutableSet.__iand__() no longer mutates self during iteration.
@@ -1435,10 +1435,10 @@ Library
   inside its source path if it began with the same letters (e.g. "src" vs.
   "src.new").
 
-- Issue 4920:  Fixed .next() vs .__next__() issues in the ABCs for
+- Issue #4920:  Fixed .next() vs .__next__() issues in the ABCs for
   Iterator and MutableSet.
 
-- Issue 5021:  doctest.testfile() did not create __name__ and
+- Issue #5021:  doctest.testfile() did not create __name__ and
   collections.namedtuple() relied on __name__ being defined.
 
 - Issue #3881: Help Tcl to load even when started through the
@@ -1455,14 +1455,14 @@ Library
 - Issue #3997: zipfiles generated with more than 65536 files could not be
   opened with other applications.
 
-- Issue 4816: itertools.combinations() and itertools.product were raising
+- Issue #4816: itertools.combinations() and itertools.product were raising
   a ValueError for values of *r* larger than the input iterable.  They now
   correctly return an empty iterator.
 
 - Fractions.from_float() no longer loses precision for integers too big to
   cast as floats.
 
-- Issue 4790: The nsmallest() and nlargest() functions in the heapq module
+- Issue #4790: The nsmallest() and nlargest() functions in the heapq module
   did unnecessary work in the common case where no key function was specified.
 
 - Issue #3767: Convert Tk object to string in tkColorChooser.
@@ -1926,7 +1926,7 @@ Library
 
 - Issue #3772: Fixed regression problem in StreamHandler.emit().
 
-- Issue 600362: Relocated parse_qs() and parse_qsl(), from the cgi module
+- Issue #600362: Relocated parse_qs() and parse_qsl(), from the cgi module
   to the urlparse one.  Added a PendingDeprecationWarning in the old
   module, it will be deprecated in the future.
 
@@ -1938,7 +1938,7 @@ Library
 - Issue #3719: platform.architecture() fails if there are spaces in the
   path to the Python binary.
 
-- Issue 3602: Moved test.test_support.catch_warning() to
+- Issue #3602: Moved test.test_support.catch_warning() to
   warnings.catch_warnings() along with some API cleanup. Expanding the tests
   for catch_warnings() also led to an improvement in the raising of a
   DeprecationWarning related to warnings.warn_explicit().
@@ -2093,7 +2093,7 @@ Library
 - Issue #2222: Fixed reference leak when occurred os.rename()
   fails unicode conversion on 2nd parameter. (windows only)
 
-- Issue 2464. urllib2 now supports a malformation in the URL received
+- Issue #2464: urllib2 now supports a malformation in the URL received
   in a redirect.
 
 - Silence the DeprecationWarning raised when importing mimetools in
@@ -2153,9 +2153,9 @@ Library
 - Issue #3449: Update decimal module to use most recent specification
   (v. 1.68) and tests (v. 2.58) from IBM.
 
-- Issue 3437: Bug fix in robotparser parsing of Allow: lines.
+- Issue #3437: Bug fix in robotparser parsing of Allow: lines.
 
-- Issue 1592:  Improve error reporting when operations are attempted
+- Issue #1592:  Improve error reporting when operations are attempted
   on a closed shelf.
 
 - Deprecate the "ast" parser function aliases.
@@ -3108,7 +3108,7 @@ Tests
 
 - Issue #2055: Convert test_fcntl to unittest.
 
-- Issue 1960: Convert test_gdbm to unittest.
+- Issue #1960: Convert test_gdbm to unittest.
 
 - GHOP 294: Convert test_contains, test_crypt, and test_select to
   unittest.
@@ -3153,7 +3153,7 @@ Core and builtins
 - Patch #1759: Backport of PEP 3129 class decorators.
 
 - Issue #1881: An internal parser limit has been increased. Also see
-  issue 215555 for a discussion.
+  issue #215555 for a discussion.
 
 - Added the future_builtins module, which contains hex() and oct().
   These are the PEP 3127 version of these functions, designed to be
@@ -4665,7 +4665,7 @@ Tools
 - Tools/scripts/reindent.py now creates the backup file using
   shutil.copy to preserve user/group and permissions. Added also a
   --nobackup option to not create the backup if the user is concerned
-  regarding this.  Check issue 1050828 for more details.
+  regarding this.  Check issue #1050828 for more details.
 
 - Tools/scripts/win_add2path.py was added. The simple script modifes
   the PATH environment var of the HKCU tree and adds the python bin
