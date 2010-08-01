@@ -9,7 +9,8 @@ import cmd
 import sys
 import trace
 import re
-from io import StringIO
+import unittest
+import io
 
 class samplecmdclass(cmd.Cmd):
     """
@@ -166,9 +167,33 @@ class samplecmdclass(cmd.Cmd):
     def do_exit(self, arg):
         return True
 
+
+class TestAlternateInput(unittest.TestCase):
+
+    class simplecmd(cmd.Cmd):
+
+        def do_print(self, args):
+            print(args, file=self.stdout)
+
+        def do_EOF(self, args):
+            return True
+
+    def test_file_with_missing_final_nl(self):
+        input = io.StringIO("print test\nprint test2")
+        output = io.StringIO()
+        cmd = self.simplecmd(stdin=input, stdout=output)
+        cmd.use_rawinput = False
+        cmd.cmdloop()
+        self.assertMultiLineEqual(output.getvalue(),
+            ("(Cmd) test\n"
+             "(Cmd) test2\n"
+             "(Cmd) "))
+
+
 def test_main(verbose=None):
     from test import support, test_cmd
     support.run_doctest(test_cmd, verbose)
+    support.run_unittest(TestAlternateInput)
 
 def test_coverage(coverdir):
     tracer=trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,],
