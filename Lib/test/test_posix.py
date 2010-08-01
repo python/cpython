@@ -308,11 +308,12 @@ class PosixTester(unittest.TestCase):
                 shutil.rmtree(base_path)
 
     def test_getgroups(self):
-        with os.popen('id -G') as idg:
+        with os.popen('id -G 2>/dev/null') as idg:
             groups = idg.read().strip()
 
         if not groups:
-            raise unittest.SkipTest("need working 'id -G'")
+            # This test needs 'id -G'
+            return
 
         # The order of groups isn't important, hence the calls
         # to sorted.
