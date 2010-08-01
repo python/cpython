@@ -84,6 +84,9 @@ C-API
 Library
 -------
 
+- Issue #8397: Raise an error when attempting to mix iteration and regular
+  reads on a BZ2File object, rather than returning incorrect results.
+
 - Issue #7909: Do not touch paths with the special prefixes ``\\.\``
   or ``\\?\`` in ntpath.normpath().
 
