@@ -76,6 +76,16 @@ class CookieTests(unittest.TestCase):
         # can't test exact output, it always depends on current date/time
         self.assertTrue(C.output().endswith('GMT'))
 
+        # loading 'expires'
+        C = cookies.SimpleCookie()
+        C.load('Customer="W"; expires=Wed, 01-Jan-2010 00:00:00 GMT')
+        self.assertEqual(C['Customer']['expires'],
+                         'Wed, 01-Jan-2010 00:00:00 GMT')
+        C = cookies.SimpleCookie()
+        C.load('Customer="W"; expires=Wed, 01-Jan-98 00:00:00 GMT')
+        self.assertEqual(C['Customer']['expires'],
+                         'Wed, 01-Jan-98 00:00:00 GMT')
+
         # 'max-age'
         C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
         C['Customer']['max-age'] = 10
