@@ -27,6 +27,14 @@ Library
 - Issue #9448: Fix a leak of OS resources (mutexes or semaphores) when
   re-initializing a buffered IO object by calling its ``__init__`` method.
 
+- Issue #5146: Handle UID THREAD command correctly in imaplib.
+
+- Issue #5147: Fix the header generated for cookie files written by
+  http.cookiejar.MozillaCookieJar.
+
+- Issue #8198: In pydoc, output all help text to the correct stream
+  when sys.stdout is reassigned.
+
 - Issue #7395: Fix tracebacks in pstats interactive browser.
 
 - Issue #8230: Fix Lib/test/sortperf.py.
