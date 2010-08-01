@@ -943,6 +943,10 @@
 				>
 			</File>
 			<File
+                                RelativePath="..\..\Include\_time.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Include\timefuncs.h"
 				>
 			</File>
@@ -1164,6 +1168,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Modules\_threadmodule.c"
+				>
+			</File>
+			<File
+                                RelativePath="..\..\Modules\_time.c"
 				>
 			</File>
 			<File
