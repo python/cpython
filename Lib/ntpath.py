@@ -399,6 +399,12 @@ def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
     # Preserve unicode (if path is unicode)
     backslash, dot = (u'\\', u'.') if isinstance(path, unicode) else ('\\', '.')
+    if path.startswith(('\\\\.\\', '\\\\?\\')):
+        # in the case of paths with these prefixes:
+        # \\.\ -> device names
+        # \\?\ -> literal paths
+        # do not do any normalization, but return the path unchanged
+        return path
     path = path.replace("/", "\\")
     prefix, path = splitdrive(path)
     # We need to be careful here. If the prefix is empty, and the path starts
