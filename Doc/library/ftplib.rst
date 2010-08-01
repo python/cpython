@@ -186,9 +186,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    Retrieve a file or directory listing in ASCII transfer mode.  *command*
    should be an appropriate ``RETR`` command (see :meth:`retrbinary`) or a
    command such as ``LIST``, ``NLST`` or ``MLSD`` (usually just the string
-   ``'LIST'``).  The *callback* function is called for each line, with the
-   trailing CRLF stripped.  The default *callback* prints the line to
-   ``sys.stdout``.
+   ``'LIST'``).  The *callback* function is called for each line with a
+   string argument containing the line with the trailing CRLF stripped.
+   The default *callback* prints the line to ``sys.stdout``.
 
 
 .. method:: FTP.set_pasv(boolean)
