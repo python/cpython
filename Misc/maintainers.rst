@@ -151,7 +151,7 @@ optparse            aronacher
 os                  loewis
 ossaudiodev
 parser
-pdb
+pdb                 georg.brandl
 pickle              alexandre.vassalotti, pitrou
 pickletools         alexandre.vassalotti
 pipes
