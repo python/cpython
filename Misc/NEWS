@@ -84,6 +84,9 @@ C-API
 Library
 -------
 
+- Issue #7909: Do not touch paths with the special prefixes ``\\.\``
+  or ``\\?\`` in ntpath.normpath().
+
 - Issue #5146: Handle UID THREAD command correctly in imaplib.
 
 - Issue #5147: Fix the header generated for cookie files written by
@@ -1551,8 +1554,8 @@ Extension Modules
   an error.  The _PY_STRUCT_FLOAT_COERCE constant has been removed.
   The version number has been bumped to 0.3.
 
-- Issue #5359: Readd the Berkley-DB detection code to allow _dbm be built
-  using Berkley-DB.
+- Issue #5359: Readd the Berkeley DB detection code to allow _dbm be built
+  using Berkeley DB.
 
 Tests
 -----

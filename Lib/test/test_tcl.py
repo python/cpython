@@ -143,7 +143,7 @@ class TclTest(unittest.TestCase):
                                     fullname[0],
                                     fullname[3:])
 
-        with test_support.EnvironmentVarGuard() as env:
+        with support.EnvironmentVarGuard() as env:
             env.unset("TCL_LIBRARY")
             f = os.popen('%s -c "import Tkinter; print Tkinter"' % (unc_name,))
 
