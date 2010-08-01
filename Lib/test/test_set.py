@@ -750,7 +750,7 @@ class TestBasicOps(unittest.TestCase):
         result = self.set ^ self.set
         self.assertEqual(result, empty_set)
 
-    def checkempty_symmetric_difference(self):
+    def test_empty_symmetric_difference(self):
         result = self.set ^ empty_set
         self.assertEqual(result, self.set)
 

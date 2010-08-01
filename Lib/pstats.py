@@ -588,7 +588,10 @@ if __name__ == '__main__':
             print >> self.stream, "  that match it are printed."
 
         def do_add(self, line):
-            self.stats.add(line)
+            if self.stats:
+                self.stats.add(line)
+            else:
+                print >> self.stream, "No statistics object is loaded."
             return 0
         def help_add(self):
             print >> self.stream, "Add profile info from given file to current statistics object."
@@ -623,22 +626,33 @@ if __name__ == '__main__':
                 except IOError, args:
                     print >> self.stream, args[1]
                     return
+                except Exception as err:
+                    print >> self.stream, err.__class__.__name__ + ':', err
+                    return
                 self.prompt = line + "% "
             elif len(self.prompt) > 2:
-                line = self.prompt[-2:]
+                line = self.prompt[:-2]
+                self.do_read(line)
             else:
                 print >> self.stream, "No statistics object is current -- cannot reload."
             return 0
         def help_read(self):
             print >> self.stream, "Read in profile data from a specified file."
+            print >> self.stream, "Without argument, reload the current file."
 
         def do_reverse(self, line):
-            self.stats.reverse_order()
+            if self.stats:
+                self.stats.reverse_order()
+            else:
+                print >> self.stream, "No statistics object is loaded."
             return 0
         def help_reverse(self):
             print >> self.stream, "Reverse the sort order of the profiling report."
 
         def do_sort(self, line):
+            if not self.stats:
+                print >> self.stream, "No statistics object is loaded."
+                return
             abbrevs = self.stats.get_sort_arg_defs()
             if line and all((x in abbrevs) for x in line.split()):
                 self.stats.sort_stats(*line.split())
@@ -660,10 +674,15 @@ if __name__ == '__main__':
             self.generic_help()
 
         def do_strip(self, line):
-            self.stats.strip_dirs()
-            return 0
+            if self.stats:
+                self.stats.strip_dirs()
+            else:
+                print >> self.stream, "No statistics object is loaded."
         def help_strip(self):
             print >> self.stream, "Strip leading path information from filenames in the report."
+
+        def help_help(self):
+            print >> self.stream, "Show help for a given command."
 
         def postcmd(self, stop, line):
             if stop:
