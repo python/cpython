@@ -439,19 +439,21 @@ class Morsel(dict):
 #
 
 _LegalCharsPatt  = r"[\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
-_CookiePattern = re.compile(
-    r"(?x)"                       # This is a Verbose pattern
-    r"(?P<key>"                   # Start of group 'key'
-    ""+ _LegalCharsPatt +"+?"     # Any word of at least one letter, nongreedy
-    r")"                          # End of group 'key'
-    r"\s*=\s*"                    # Equal Sign
-    r"(?P<val>"                   # Start of group 'val'
-    r'"(?:[^\\"]|\\.)*"'            # Any doublequoted string
-    r"|"                            # or
-    ""+ _LegalCharsPatt +"*"        # Any word or empty string
-    r")"                          # End of group 'val'
-    r"\s*;?"                      # Probably ending in a semi-colon
-    , re.ASCII)                   # May be removed if safe.
+_CookiePattern = re.compile(r"""
+    (?x)                           # This is a verbose pattern
+    (?P<key>                       # Start of group 'key'
+    """ + _LegalCharsPatt + r"""+?   # Any word of at least one letter
+    )                              # End of group 'key'
+    \s*=\s*                        # Equal Sign
+    (?P<val>                       # Start of group 'val'
+    "(?:[^\\"]|\\.)*"                # Any doublequoted string
+    |                                # or
+    \w{3},\s[\w\d-]{9,11}\s[\d:]{8}\sGMT  # Special case for "expires" attr
+    |                                # or
+    """ + _LegalCharsPatt + r"""*    # Any word or empty string
+    )                              # End of group 'val'
+    \s*;?                          # Probably ending in a semi-colon
+    """, re.ASCII)                 # May be removed if safe.
 
 
 # At long last, here is the cookie class.

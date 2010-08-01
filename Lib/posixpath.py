@@ -197,6 +197,9 @@ def samestat(s1, s2):
 
 def ismount(path):
     """Test whether a path is a mount point"""
+    if islink(path):
+        # A symlink can never be a mount point
+        return False
     try:
         s1 = os.lstat(path)
         if isinstance(path, bytes):

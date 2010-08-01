@@ -84,6 +84,13 @@ C-API
 Library
 -------
 
+- Issue #1713: Fix os.path.ismount(), which returned true for symbolic links
+  across devices.
+
+- Issue #8826: Properly load old-style "expires" attribute in http.cookies.
+
+- Issue #1690103: Fix initial namespace for code run with trace.main().
+
 - Issue #9448: Fix a leak of OS resources (mutexes or semaphores) when
   re-initializing a buffered IO object by calling its ``__init__`` method.
 
