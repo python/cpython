@@ -27,6 +27,10 @@ Library
 - Issue #9448: Fix a leak of OS resources (mutexes or semaphores) when
   re-initializing a buffered IO object by calling its ``__init__`` method.
 
+- Issue #7395: Fix tracebacks in pstats interactive browser.
+
+- Issue #8230: Fix Lib/test/sortperf.py.
+
 - Issue #1713: Fix os.path.ismount(), which returned true for symbolic links
   across devices.
 
