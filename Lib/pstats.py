@@ -576,7 +576,10 @@ if __name__ == '__main__':
             print("  that match it are printed.", file=self.stream)
 
         def do_add(self, line):
-            self.stats.add(line)
+            if self.stats:
+                self.stats.add(line)
+            else:
+                print("No statistics object is loaded.", file=self.stream)
             return 0
         def help_add(self):
             print("Add profile info from given file to current statistics object.", file=self.stream)
@@ -621,12 +624,18 @@ if __name__ == '__main__':
             print("Read in profile data from a specified file.", file=self.stream)
 
         def do_reverse(self, line):
-            self.stats.reverse_order()
+            if self.stats:
+                self.stats.reverse_order()
+            else:
+                print("No statistics object is loaded.", file=self.stream)
             return 0
         def help_reverse(self):
             print("Reverse the sort order of the profiling report.", file=self.stream)
 
         def do_sort(self, line):
+            if not self.stats:
+                print("No statistics object is loaded.", file=self.stream)
+                return
             abbrevs = self.stats.get_sort_arg_defs()
             if line and all((x in abbrevs) for x in line.split()):
                 self.stats.sort_stats(*line.split())
@@ -648,8 +657,10 @@ if __name__ == '__main__':
             self.generic_help()
 
         def do_strip(self, line):
-            self.stats.strip_dirs()
-            return 0
+            if self.stats:
+                self.stats.strip_dirs()
+            else:
+                print("No statistics object is loaded.", file=self.stream)
         def help_strip(self):
             print("Strip leading path information from filenames in the report.", file=self.stream)
 
