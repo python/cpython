@@ -17,6 +17,16 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Brian Quinlan was given commit access on Jul 26 2010 by GFB,
+  for work related to PEP 3148.
+
+- Reid Kleckner was given commit access on Jul 11 2010 by GFB,
+  for work on the py3k-jit branch, at suggestion of the Unladen
+  Swallow team.
+
+- Alexander Belopolsky was given commit access on May 25 2010
+  by MvL at suggestion of Mark Dickinson.
+
 - Tim Golden was given commit access on April 21 2010 by MvL,
   at suggestion of Michael Foord.
 
