@@ -1699,13 +1699,8 @@ class Helper:
         self._input = input
         self._output = output
 
-    @property
-    def input(self):
-        return self._input or sys.stdin
-
-    @property
-    def output(self):
-        return self._output or sys.stdout
+    input  = property(lambda self: self._input or sys.stdin)
+    output = property(lambda self: self._output or sys.stdout)
 
     def __repr__(self):
         if inspect.stack()[1][3] == '?':
