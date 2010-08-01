@@ -1280,6 +1280,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                    "don't use 0 for anonymous memory");
      */
     if (fileno != -1 && fileno != 0) {
+        /* Ensure that fileno is within the CRT's valid range */
+        if (_PyVerify_fd(fileno) == 0) {
+            PyErr_SetFromErrno(mmap_module_error);
+            return NULL;
+        }
         fh = (HANDLE)_get_osfhandle(fileno);
         if (fh==(HANDLE)-1) {
             PyErr_SetFromErrno(mmap_module_error);

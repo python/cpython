@@ -76,6 +76,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #8105: Validate file descriptor passed to mmap.mmap on Windows.
+
 - Issue #1019882: Fix IndexError when loading certain hotshot stats.
 
 - Issue #9422: Fix memory leak when re-initializing a struct.Struct object.
