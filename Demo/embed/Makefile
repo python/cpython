@@ -22,7 +22,7 @@ CPPFLAGS=	$(INCLUDES)
 LIBPYTHON=	$(blddir)/libpython$(VERSION).a
 
 # XXX edit LIBS (in particular) to match $(blddir)/Makefile
-LIBS=		-lnsl -ldl -lreadline -ltermcap -lieee -lpthread -lutil
+LIBS=		-lnsl -ldl -lreadline -lieee -lpthread -lutil
 LDFLAGS=	-Xlinker -export-dynamic
 SYSLIBS=	-lm
 MODLIBS=	

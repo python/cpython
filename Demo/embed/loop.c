@@ -19,7 +19,7 @@ main(int argc, char **argv)
         count = atoi(argv[2]);
     }
 
-    Py_SetProgramName(argv[0]);
+    Py_SetProgramName(L"loop");
 
     /* uncomment this if you don't want to load site.py */
     /* Py_NoSiteFlag = 1; */
