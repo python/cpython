@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4108: In urllib.robotparser, if there are multiple 'User-agent: *'
+  entries, consider the first one.
+
 - Issue #8397: Raise an error when attempting to mix iteration and regular
   reads on a BZ2File object, rather than returning incorrect results.
 
