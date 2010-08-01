@@ -22,7 +22,7 @@ main(int argc, char **argv)
     /* Define sys.argv.  It is up to the application if you
        want this; you can also leave it undefined (since the Python
        code is generally not a main program it has no business
-       touching sys.argv...) 
+       touching sys.argv...)
 
        If the third argument is true, sys.path is modified to include
        either the directory containing the script named by argv[0], or
@@ -32,7 +32,7 @@ main(int argc, char **argv)
        directory (say, a file named os.py) that your application would
        then import and run.
     */
-    PySys_SetArgvEx(argc, argv, 0);
+    PySys_SetArgvEx(2, args, 0);
 
     /* Do some application specific code */
     printf("Hello, brave new world\n\n");
