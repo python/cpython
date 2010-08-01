@@ -521,11 +521,12 @@ class ConfigParser(RawConfigParser):
     def get(self, section, option, raw=False, vars=None):
         """Get an option value for a given section.
 
-        All % interpolations are expanded in the return values, based on the
-        defaults passed into the constructor, unless the optional argument
-        `raw' is true.  Additional substitutions may be provided using the
-        `vars' argument, which must be a dictionary whose contents overrides
-        any pre-existing defaults.
+        If `vars' is provided, it must be a dictionary. The option is looked up
+        in `vars' (if provided), `section', and in `defaults' in that order.
+
+        All % interpolations are expanded in the return values, unless the
+        optional argument `raw' is true.  Values for interpolation keys are
+        looked up in the same manner as the option.
 
         The section DEFAULT is special.
         """
