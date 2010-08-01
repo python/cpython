@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9448: Fix a leak of OS resources (mutexes or semaphores) when
+  re-initializing a buffered IO object by calling its ``__init__`` method.
+
 - Issue #8471: In doctest, properly reset the output stream to an empty
   string when Unicode was previously output.
 
