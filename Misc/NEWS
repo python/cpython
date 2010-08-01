@@ -18,6 +18,12 @@ Core and Builtins
     - format(complex(-0.0, 2.0), '-') omitted the real part from the output,
     - format(complex(0.0, 2.0), '-') included a sign and parentheses.
 
+Extensions
+----------
+
+- Issue #8046: Add context manager protocol support and .closed property
+  to mmap objects.
+
 Library
 -------
 

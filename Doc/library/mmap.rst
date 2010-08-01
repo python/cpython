@@ -112,6 +112,18 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
           map.close()
 
 
+   :class:`mmap` can also be used as a context manager in a :keyword:`with`
+   statement.::
+
+      import mmap
+
+      with mmap.mmap(-1, 13) as map:
+          map.write("Hello world!")
+
+   .. versionadded:: 3.2
+      Context manager support.
+
+
    The next example demonstrates how to create an anonymous map and exchange
    data between the parent and child processes::
 
@@ -132,11 +144,17 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    Memory-mapped file objects support the following methods:
 
-
    .. method:: close()
 
       Close the file.  Subsequent calls to other methods of the object will
       result in an exception being raised.
+
+
+   .. attribute:: closed
+
+      True if the file is closed.
+
+      .. versionadded:: 3.2
 
 
    .. method:: find(sub[, start[, end]])
@@ -236,5 +254,3 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       position of the file pointer; the file position is advanced by ``1``. If
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       throw a :exc:`TypeError` exception.
-
-
