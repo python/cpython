@@ -89,6 +89,15 @@ C-API
 Library
 -------
 
+- Issue #7395: Fix tracebacks in pstats interactive browser.
+
+- Issue #1713: Fix os.path.ismount(), which returned true for symbolic links
+  across devices.
+
+- Issue #8826: Properly load old-style "expires" attribute in http.cookies.
+
+- Issue #1690103: Fix initial namespace for code run with trace.main().
+
 - Issue #5294: Fix the behavior of pdb's "continue" command when called
   in the top-level debugged frame.
 
