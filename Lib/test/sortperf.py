@@ -118,12 +118,12 @@ def tabulate(r):
             L = L * (n // 4)
             # Force the elements to be distinct objects, else timings can be
             # artificially low.
-            L = map(lambda x: --x, L)
+            L = list(map(lambda x: --x, L))
         doit(L) # ~sort
         del L
 
         # All equal.  Again, force the elements to be distinct objects.
-        L = map(abs, [-0.5] * n)
+        L = list(map(abs, [-0.5] * n))
         doit(L) # =sort
         del L
 
@@ -131,11 +131,11 @@ def tabulate(r):
         # for an older implementation of quicksort, which used the median
         # of the first, last and middle elements as the pivot.
         half = n // 2
-        L = range(half - 1, -1, -1)
+        L = list(range(half - 1, -1, -1))
         L.extend(range(half))
         # Force to float, so that the timings are comparable.  This is
         # significantly faster if we leave tham as ints.
-        L = map(float, L)
+        L = list(map(float, L))
         doit(L) # !sort
         print()
 
