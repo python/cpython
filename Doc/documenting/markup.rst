@@ -502,8 +502,9 @@ in a different style:
 
 .. describe:: option
 
-   A command-line option to an executable program.  The leading hyphen(s) must
-   be included.
+   A command-line option of Python.  The leading hyphen(s) must be included.
+   If a matching ``cmdoption`` directive exists, it is linked to.  For options
+   of other programs or scripts, use simple ````code```` markup.
 
 .. describe:: program
 
