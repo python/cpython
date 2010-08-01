@@ -799,7 +799,14 @@ def main(argv=None):
         try:
             with open(progname) as fp:
                 code = compile(fp.read(), progname, 'exec')
-            t.run(code)
+            # try to emulate __main__ namespace as much as possible
+            globs = {
+                '__file__': progname,
+                '__name__': '__main__',
+                '__package__': None,
+                '__cached__': None,
+            }
+            t.runctx(code, globs, globs)
         except IOError as err:
             _err_exit("Cannot run file %r because: %s" % (sys.argv[0], err))
         except SystemExit:
