@@ -1595,13 +1595,13 @@ class URLopener:
 
         if proxy_passwd:
             import base64
-            proxy_auth = base64.b64encode(proxy_passwd).strip()
+            proxy_auth = base64.b64encode(proxy_passwd.encode()).strip()
         else:
             proxy_auth = None
 
         if user_passwd:
             import base64
-            auth = base64.b64encode(user_passwd).strip()
+            auth = base64.b64encode(user_passwd.encode()).strip()
         else:
             auth = None
         http_conn = connection_factory(host)
