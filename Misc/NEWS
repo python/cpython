@@ -127,6 +127,8 @@ Library
 
 - Issue #1690103: Fix initial namespace for code run with trace.main().
 
+- Issue #9354: Provide getsockopt() in asyncore's file_wrapper.
+
 - Issue #9448: Fix a leak of OS resources (mutexes or semaphores) when
   re-initializing a buffered IO object by calling its ``__init__`` method.
 
