@@ -215,7 +215,7 @@ Library
 
 - Charset.body_encode now correctly handles base64 encoding by encoding
   with the output_charset before calling base64mime.encode.  Passes the
-  tests from 2.x issue 1368247.
+  tests from 2.x issue #1368247.
 
 - Issue #7150: Raise OverflowError if the result of adding or subtracting
   timedelta from date or datetime falls outside of the MINYEAR:MAXYEAR range.
@@ -446,7 +446,7 @@ Tests
 Documentation
 -------------
 
-- Issue 9255: Document that the 'test' package is meant for interal Python use
+- Issue #9255: Document that the 'test' package is meant for interal Python use
   only.
 
 - Issue #7829: Document in dis that bytecode is an implementation detail.
@@ -1084,10 +1084,10 @@ Extension Modules
 Build
 -----
 
-- Issue 4601: 'make install' did not set the appropriate permissions on
+- Issue #4601: 'make install' did not set the appropriate permissions on
 directories.
 
-- Issue 5390: Add uninstall icon independent of whether file
+- Issue #5390: Add uninstall icon independent of whether file
 extensions are installed.
 
 Test
@@ -1309,7 +1309,7 @@ Library
   file is a binary.  Patch by Brodie Rao, tests by Daniel Diniz.  This fix
   corrects a pydoc regression.
 
-- Issue 5955: aifc's close method did not close the file it wrapped,
+- Issue #5955: aifc's close method did not close the file it wrapped,
   now it does.  This also means getfp method now returns the real fp.
 
 Installation
@@ -1342,7 +1342,7 @@ Build
 Tests
 -----
 
-- Issue 5442: Tests for importlib were not properly skipping case-sensitivity
+- Issue #5442: Tests for importlib were not properly skipping case-sensitivity
   tests on darwin even when the OS was installed on a case-sensitive
   filesystem. Also fixed tests that should not be run when
   sys.dont_write_bytecode is true.
@@ -1458,7 +1458,7 @@ Core and Builtins
   conversions (including all float formatting operations) will be
   correctly rounded on these platforms.
 
-  See issue 1580 discussions for details of platforms for which
+  See issue #1580 discussions for details of platforms for which
   this change does not apply.
 
 - Issue #5759: float() didn't call __float__ on str subclasses.
