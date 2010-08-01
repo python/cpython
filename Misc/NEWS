@@ -35,6 +35,9 @@ Core and Builtins
   when turned into an exception: in this case the exception simply
   gets ignored.
 
+- Issue #4108: In urllib.robotparser, if there are multiple 'User-agent: *'
+  entries, consider the first one.
+
 - Issue #9354: Provide getsockopt() in asyncore's file_wrapper.
 
 - In the unicode/str.format(), raise a ValueError when indexes to arguments are

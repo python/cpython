@@ -202,6 +202,20 @@ bad = ['/folder1/anotherfile.html']
 RobotTest(13, doc, good, bad, agent="googlebot")
 
 
+# 14. For issue #4108 (obey first * entry)
+doc = """
+User-agent: *
+Disallow: /some/path
+
+User-agent: *
+Disallow: /another/path
+"""
+
+good = ['/another/path']
+bad = ['/some/path']
+
+RobotTest(14, doc, good, bad)
+
 
 class TestCase(unittest.TestCase):
     def runTest(self):
