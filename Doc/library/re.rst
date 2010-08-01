@@ -1226,9 +1226,9 @@ in each word of a sentence except for the first and last characters::
    ...   random.shuffle(inner_word)
    ...   return m.group(1) + "".join(inner_word) + m.group(3)
    >>> text = "Professor Abdolmalek, please report your absences promptly."
-   >>> re.sub("(\w)(\w+)(\w)", repl, text)
+   >>> re.sub(r"(\w)(\w+)(\w)", repl, text)
    'Poefsrosr Aealmlobdk, pslaee reorpt your abnseces plmrptoy.'
-   >>> re.sub("(\w)(\w+)(\w)", repl, text)
+   >>> re.sub(r"(\w)(\w+)(\w)", repl, text)
    'Pofsroser Aodlambelk, plasee reoprt yuor asnebces potlmrpy.'
 
 
