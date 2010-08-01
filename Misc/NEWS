@@ -149,9 +149,12 @@ Build
 
 - Issue #9280: Make sharedinstall depend on sharedmods.
 
-- Issue #9275: The OSX installer once again installs links to binaries in ``/usr/local/bin``
+- Issue #9275: The OSX installer once again installs links to binaries in
+  ``/usr/local/bin``.
 
-- Issue #9392: A framework build on OSX  will once again use a versioned name of the ``2to3`` tool, that is you can use ``2to3-2.7`` to select the Python 2.7 edition of 2to3.
+- Issue #9392: A framework build on OSX  will once again use a versioned name
+  of the ``2to3`` tool, that is you can use ``2to3-2.7`` to select the Python
+  2.7 edition of 2to3.
 
 Tests
 -----
@@ -161,9 +164,10 @@ Tests
 Documentation
 -------------
 
-- Issue 9255: Document that the 'test' package is for internal Python use only.
+- Issue #9255: Document that the 'test' package is for internal Python use
+  only.
 
-- Issue 7829: Document in dis that bytecode is an implementation detail.
+- Issue #7829: Document in dis that bytecode is an implementation detail.
 
 
 What's New in Python 2.7?
@@ -2311,7 +2315,7 @@ Library
   Makefile besides AR and make Distutils use it.  Original patch by David
   Cournapeau.
 
-- Issue 5955: aifc's close method did not close the file it wrapped, now it
+- Issue #5955: aifc's close method did not close the file it wrapped, now it
   does.  This also means getfp method now returns the real fp.
 
 - Issue #4875: On win32, ctypes.util.find_library does no longer return
@@ -2920,10 +2924,10 @@ Build
 
 - Issue #6244: Allow detect_tkinter to look for Tcl/Tk 8.6.
 
-- Issue 5390: Add uninstall icon independent of whether file extensions are
+- Issue #5390: Add uninstall icon independent of whether file extensions are
   installed.
 
-- Issue 5809: Specifying both --enable-framework and --enable-shared is an
+- Issue #5809: Specifying both --enable-framework and --enable-shared is an
   error. Configure now explicity tells you about this.
 
 - Issue #3585: Add pkg-config support.  It creates a python-2.7.pc file and a
@@ -3350,7 +3354,7 @@ Library
 
 - Issue #3772: Fixed regression problem in StreamHandler.emit().
 
-- Issue 600362: Relocated parse_qs() and parse_qsl(), from the cgi module
+- Issue #600362: Relocated parse_qs() and parse_qsl(), from the cgi module
   to the urlparse one.  Added a PendingDeprecationWarning in the old
   module, it will be deprecated in the future.
 
@@ -3362,7 +3366,7 @@ Library
 - Issue #3719: platform.architecture() fails if there are spaces in the
   path to the Python binary.
 
-- Issue 3602: Moved test.test_support.catch_warning() to
+- Issue #3602: Moved test.test_support.catch_warning() to
   warnings.catch_warnings() along with some API cleanup. Expanding the tests
   for catch_warnings() also led to an improvement in the raising of a
   DeprecationWarning related to warnings.warn_explicit().
@@ -3520,7 +3524,7 @@ Library
 - Issue #2222: Fixed reference leak when occurred os.rename()
   fails unicode conversion on 2nd parameter. (windows only)
 
-- Issue 2464. urllib2 now supports a malformation in the URL received
+- Issue #2464: urllib2 now supports a malformation in the URL received
   in a redirect.
 
 - Silence the DeprecationWarning raised when importing mimetools in
@@ -3580,9 +3584,9 @@ Library
 - Issue #3449: Update decimal module to use most recent specification
   (v. 1.68) and tests (v. 2.58) from IBM.
 
-- Issue 3437: Bug fix in robotparser parsing of Allow: lines.
+- Issue #3437: Bug fix in robotparser parsing of Allow: lines.
 
-- Issue 1592:  Improve error reporting when operations are attempted
+- Issue #1592:  Improve error reporting when operations are attempted
   on a closed shelf.
 
 - Deprecate the "ast" parser function aliases.
@@ -4535,7 +4539,7 @@ Tests
 
 - Issue #2055: Convert test_fcntl to unittest.
 
-- Issue 1960: Convert test_gdbm to unittest.
+- Issue #1960: Convert test_gdbm to unittest.
 
 - GHOP 294: Convert test_contains, test_crypt, and test_select to
   unittest.
@@ -4580,7 +4584,7 @@ Core and builtins
 - Patch #1759: Backport of PEP 3129 class decorators.
 
 - Issue #1881: An internal parser limit has been increased. Also see
-  issue 215555 for a discussion.
+  issue #215555 for a discussion.
 
 - Added the future_builtins module, which contains hex() and oct().
   These are the PEP 3127 version of these functions, designed to be
@@ -6092,7 +6096,7 @@ Tools
 - Tools/scripts/reindent.py now creates the backup file using
   shutil.copy to preserve user/group and permissions. Added also a
   --nobackup option to not create the backup if the user is concerned
-  regarding this.  Check issue 1050828 for more details.
+  regarding this.  Check issue #1050828 for more details.
 
 - Tools/scripts/win_add2path.py was added. The simple script modifes
   the PATH environment var of the HKCU tree and adds the python bin
