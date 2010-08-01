@@ -65,6 +65,36 @@ class CookieTests(unittest.TestCase):
         </script>
         """)
 
+    def test_special_attrs(self):
+        # 'expires'
+        C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
+        C['Customer']['expires'] = 0
+        # can't test exact output, it always depends on current date/time
+        self.assertTrue(C.output().endswith('GMT'))
+
+        # loading 'expires'
+        C = cookies.SimpleCookie()
+        C.load('Customer="W"; expires=Wed, 01-Jan-2010 00:00:00 GMT')
+        self.assertEqual(C['Customer']['expires'],
+                         'Wed, 01-Jan-2010 00:00:00 GMT')
+        C = cookies.SimpleCookie()
+        C.load('Customer="W"; expires=Wed, 01-Jan-98 00:00:00 GMT')
+        self.assertEqual(C['Customer']['expires'],
+                         'Wed, 01-Jan-98 00:00:00 GMT')
+
+        # 'max-age'
+        C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
+        C['Customer']['max-age'] = 10
+        self.assertEqual(C.output(),
+                         'Set-Cookie: Customer="WILE_E_COYOTE"; Max-Age=10')
+
+        # others
+        C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
+        C['Customer']['secure'] = True
+        C['Customer']['httponly'] = True
+        self.assertEqual(C.output(),
+            'Set-Cookie: Customer="WILE_E_COYOTE"; httponly; secure')
+
     def test_quoted_meta(self):
         # Try cookie with quoted meta-data
         C = cookies.SimpleCookie()
