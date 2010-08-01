@@ -437,6 +437,9 @@ Tests
 Documentation
 -------------
 
+- Issue #9255: Document that the 'test' package is for internal Python use
+  only.
+
 - Issue #8909: Added the size of the bitmap used in the installer created by
   distutils' bdist_wininst. Patch by Anatoly Techtonik.
 
