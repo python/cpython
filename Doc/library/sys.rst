@@ -853,14 +853,10 @@ always available.
 .. data:: version
 
    A string containing the version number of the Python interpreter plus additional
-   information on the build number and compiler used. It has a value of the form
-   ``'version (#build_number, build_date, build_time) [compiler]'``.  The first
-   three characters are used to identify the version in the installation
-   directories (where appropriate on each platform).  An example::
-
-      >>> import sys
-      >>> sys.version
-      '1.5.2 (#0 Apr 13 1999, 10:51:12) [MSC 32 bit (Intel)]'
+   information on the build number and compiler used.  This string is displayed
+   when the interactive interpreter is started.  Do not extract version information
+   out of it, rather, use :data:`version_info` and the functions provided by the
+   :mod:`platform` module.
 
 
 .. data:: api_version
