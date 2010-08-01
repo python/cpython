@@ -9,7 +9,7 @@ the Python Cookbook, published by O'Reilly.
 Library usage: see the Timer class.
 
 Command line usage:
-    python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [-h] [statement]
+    python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [-h] [--] [statement]
 
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
@@ -19,6 +19,7 @@ Options:
   -c/--clock: use time.clock() (default on Windows)
   -v/--verbose: print raw timing results; repeat for more digits precision
   -h/--help: print this usage message and exit
+  --: separate options from statement, use when statement starts with -
   statement: statement to be timed (default 'pass')
 
 A multi-line statement may be given by specifying each line as a
