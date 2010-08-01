@@ -41,6 +41,18 @@ section, or values in a special ``DEFAULT`` section.  Additional defaults can be
 provided on initialization and retrieval.  Lines beginning with ``'#'`` or
 ``';'`` are ignored and may be used to provide comments.
 
+Configuration files may include comments, prefixed by specific characters (``#``
+and ``;``).  Comments may appear on their own in an otherwise empty line, or may
+be entered in lines holding values or spection names.  In the latter case, they
+need to be preceded by a whitespace character to be recognized as a comment.
+(For backwards compatibility, only ``;`` starts an inline comment, while ``#``
+does not.)
+
+On top of the core functionality, :class:`SafeConfigParser` supports
+interpolation.  This means values can contain format strings which refer to
+other values in the same section, or values in a special ``DEFAULT`` section.
+Additional defaults can be provided on initialization.
+
 For example::
 
    [My Section]
@@ -126,6 +138,11 @@ write-back, as will be the keys within each section.
    .. versionchanged:: 2.7
       The default *dict_type* is :class:`collections.OrderedDict`.
       *allow_no_value* was added.
+
+
+.. exception:: Error
+
+   Base class for all other configparser exceptions.
 
 
 .. exception:: NoSectionError
@@ -371,11 +388,13 @@ The :class:`ConfigParser` class extends some methods of the
 
 .. method:: ConfigParser.get(section, option[, raw[, vars]])
 
-   Get an *option* value for the named *section*.  All the ``'%'`` interpolations
-   are expanded in the return values, based on the defaults passed into the
-   constructor, as well as the options *vars* provided, unless the *raw* argument
-   is true.
+   Get an *option* value for the named *section*.  If *vars* is provided, it
+   must be a dictionary.  The *option* is looked up in *vars* (if provided),
+   *section*, and in *defaults* in that order.
 
+   All the ``'%'`` interpolations are expanded in the return values, unless the
+   *raw* argument is true.  Values for interpolation keys are looked up in the
+   same manner as the option.
 
 .. method:: ConfigParser.items(section[, raw[, vars]])
 
