@@ -68,7 +68,9 @@ class RobotFileParser:
     def _add_entry(self, entry):
         if "*" in entry.useragents:
             # the default entry is considered last
-            self.default_entry = entry
+            if self.default_entry is None:
+                # the first default entry wins
+                self.default_entry = entry
         else:
             self.entries.append(entry)
 
@@ -120,7 +122,7 @@ class RobotFileParser:
                         entry.rulelines.append(RuleLine(line[1], True))
                         state = 2
         if state == 2:
-            self.entries.append(entry)
+            self._add_entry(entry)
 
 
     def can_fetch(self, useragent, url):
