@@ -10,6 +10,7 @@ import gc
 from test import test_support
 
 from hotshot.log import ENTER, EXIT, LINE
+from hotshot import stats
 
 
 def shortfilename(fn):
@@ -135,6 +136,19 @@ class HotShotTestCase(unittest.TestCase):
         finally:
             emptyfile.close()
         gc.collect()
+
+    def test_load_stats(self):
+        def start(prof):
+            prof.start()
+        # Make sure stats can be loaded when start and stop of profiler
+        # are not executed in the same stack frame.
+        profiler = self.new_profiler()
+        start(profiler)
+        profiler.stop()
+        profiler.close()
+        stats.load(self.logfn)
+        os.unlink(self.logfn)
+
 
 def test_main():
     test_support.run_unittest(HotShotTestCase)
