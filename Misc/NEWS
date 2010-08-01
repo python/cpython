@@ -84,6 +84,8 @@ C-API
 Library
 -------
 
+- Issue #7395: Fix tracebacks in pstats interactive browser.
+
 - Issue #1713: Fix os.path.ismount(), which returned true for symbolic links
   across devices.
 
