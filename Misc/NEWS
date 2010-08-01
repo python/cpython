@@ -29,6 +29,9 @@ Extensions
 Library
 -------
 
+- Update collections.OrderedDict to match the implementation in Py2.7
+  (based on lists instead of weakly referenced Link objects).
+
 - Issue #8397: Raise an error when attempting to mix iteration and regular
   reads on a BZ2File object, rather than returning incorrect results.
 
