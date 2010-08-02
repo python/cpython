@@ -26,6 +26,12 @@ Library
 
 - Issue #9354: Provide getsockopt() in asyncore's file_wrapper.
 
+- Issue #7781: Fix restricting stats by entry counts in the pstats
+  interactive browser.
+
+- Issue #9209: Do not crash in the pstats interactive browser on invalid
+  regular expressions.
+
 - Issue #7372: Fix pstats regression when stripping paths from profile
   data generated with the profile module.
 
