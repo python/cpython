@@ -7,10 +7,15 @@ be run.
 
 import distutils.tests
 import test.test_support
+import warnings
 
 
 def test_main():
-    test.test_support.run_unittest(distutils.tests.test_suite())
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore",
+                                "distutils.sysconfig.\w+ is deprecated",
+                                DeprecationWarning)
+        test.test_support.run_unittest(distutils.tests.test_suite())
 
 
 if __name__ == "__main__":

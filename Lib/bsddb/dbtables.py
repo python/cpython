@@ -332,7 +332,7 @@ class bsdTableDB :
         except db.DBError, dberror:
             if txn:
                 txn.abort()
-            if sys.version_info[0] < 3 :
+            if sys.version_info < (2, 6) :
                 raise TableDBError, dberror[1]
             else :
                 raise TableDBError, dberror.args[1]
@@ -416,7 +416,7 @@ class bsdTableDB :
             except db.DBError, dberror:
                 if txn:
                     txn.abort()
-                if sys.version_info[0] < 3 :
+                if sys.version_info < (2, 6) :
                     raise TableDBError, dberror[1]
                 else :
                     raise TableDBError, dberror.args[1]
@@ -499,7 +499,7 @@ class bsdTableDB :
             if txn:
                 txn.abort()
                 self.db.delete(_rowid_key(table, rowid))
-            if sys.version_info[0] < 3 :
+            if sys.version_info < (2, 6) :
                 raise TableDBError, dberror[1], info[2]
             else :
                 raise TableDBError, dberror.args[1], info[2]
@@ -554,7 +554,7 @@ class bsdTableDB :
                     raise
 
         except db.DBError, dberror:
-            if sys.version_info[0] < 3 :
+            if sys.version_info < (2, 6) :
                 raise TableDBError, dberror[1]
             else :
                 raise TableDBError, dberror.args[1]
@@ -598,7 +598,7 @@ class bsdTableDB :
                         txn.abort()
                     raise
         except db.DBError, dberror:
-            if sys.version_info[0] < 3 :
+            if sys.version_info < (2, 6) :
                 raise TableDBError, dberror[1]
             else :
                 raise TableDBError, dberror.args[1]
@@ -621,7 +621,7 @@ class bsdTableDB :
                 columns = self.__tablecolumns[table]
             matching_rowids = self.__Select(table, columns, conditions)
         except db.DBError, dberror:
-            if sys.version_info[0] < 3 :
+            if sys.version_info < (2, 6) :
                 raise TableDBError, dberror[1]
             else :
                 raise TableDBError, dberror.args[1]
@@ -677,7 +677,7 @@ class bsdTableDB :
             # leave all unknown condition callables alone as equals
             return 0
 
-        if sys.version_info[0] < 3 :
+        if sys.version_info < (2, 6) :
             conditionlist = conditions.items()
             conditionlist.sort(cmp_conditions)
         else :  # Insertion Sort. Please, improve
@@ -749,7 +749,7 @@ class bsdTableDB :
                         rowdata[column] = self.db.get(
                             _data_key(table, column, rowid))
                     except db.DBError, dberror:
-                        if sys.version_info[0] < 3 :
+                        if sys.version_info < (2, 6) :
                             if dberror[0] != db.DB_NOTFOUND:
                                 raise
                         else :
