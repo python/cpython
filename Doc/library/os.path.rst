@@ -207,7 +207,9 @@ applications should use string objects to access all files.
 .. function:: normpath(path)
 
    Normalize a pathname.  This collapses redundant separators and up-level
-   references so that ``A//B``, ``A/./B`` and ``A/foo/../B`` all become ``A/B``.
+   references so that ``A//B``, ``A/B/``, ``A/./B`` and ``A/foo/../B`` all become
+   ``A/B``.
+
    It does not normalize the case (use :func:`normcase` for that).  On Windows, it
    converts forward slashes to backward slashes. It should be understood that this
    may change the meaning of the path if it contains symbolic links!
