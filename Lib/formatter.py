@@ -228,7 +228,8 @@ class AbstractFormatter:
             self.align = None
             self.writer.new_alignment(None)
 
-    def push_font(self, (size, i, b, tt)):
+    def push_font(self, font):
+        size, i, b, tt = font
         if self.softspace:
             self.hard_break = self.para_end = self.softspace = 0
             self.nospace = 1

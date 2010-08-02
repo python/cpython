@@ -442,12 +442,12 @@ class Stats:
         if nc == 0:
             print >> self.stream, ' '*8,
         else:
-            print >> self.stream, f8(tt/nc),
+            print >> self.stream, f8(float(tt)/nc),
         print >> self.stream, f8(ct),
         if cc == 0:
             print >> self.stream, ' '*8,
         else:
-            print >> self.stream, f8(ct/cc),
+            print >> self.stream, f8(float(ct)/cc),
         print >> self.stream, func_std_string(func)
 
 class TupleComp:

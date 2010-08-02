@@ -89,6 +89,9 @@ C-API
 Library
 -------
 
+- Issue #7092: Fix the DeprecationWarnings emitted by the standard library
+  when using the -3 flag.  Patch by Florent Xicluna.
+
 - Issue #7395: Fix tracebacks in pstats interactive browser.
 
 - Issue #1713: Fix os.path.ismount(), which returned true for symbolic links
