@@ -205,7 +205,7 @@ def convert_path (pathname):
         paths.remove('.')
     if not paths:
         return os.curdir
-    return apply(os.path.join, paths)
+    return os.path.join(*paths)
 
 # convert_path ()
 

@@ -1012,7 +1012,7 @@ def _syscmd_file(target,default=''):
     if sys.platform in ('dos','win32','win16','os2'):
         # XXX Others too ?
         return default
-    target = _follow_symlinks(target)
+    target = _follow_symlinks(target).replace('"', '\\"')
     try:
         f = os.popen('file "%s" 2> /dev/null' % target)
     except (AttributeError,os.error):
@@ -1078,13 +1078,13 @@ def architecture(executable=sys.executable,bits='',linkage=''):
        executable == sys.executable:
         # "file" command did not return anything; we'll try to provide
         # some sensible defaults then...
-        if _default_architecture.has_key(sys.platform):
-            b,l = _default_architecture[sys.platform]
+        if sys.platform in _default_architecture:
+            b, l = _default_architecture[sys.platform]
             if b:
                 bits = b
             if l:
                 linkage = l
-        return bits,linkage
+        return bits, linkage
 
     # Split the output into a list of strings omitting the filename
     fileout = _architecture_split(output)[1:]

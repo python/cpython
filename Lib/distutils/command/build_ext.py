@@ -676,7 +676,7 @@ class build_ext (Command):
         # extensions in debug_mode are named 'module_d.pyd' under windows
         so_ext = get_config_var('SO')
         if os.name == 'nt' and self.debug:
-            return apply(os.path.join, ext_path) + '_d' + so_ext
+            return os.path.join(*ext_path) + '_d' + so_ext
         return os.path.join(*ext_path) + so_ext
 
     def get_export_symbols (self, ext):
