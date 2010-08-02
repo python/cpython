@@ -2,7 +2,7 @@ import unittest
 import __builtin__
 import exceptions
 import warnings
-from test.test_support import run_unittest
+from test.test_support import run_unittest, check_warnings
 import os
 import sys
 from platform import system as platform_system
@@ -15,14 +15,13 @@ if sys.py3kwarning:
          "catching classes that don't inherit from BaseException is not allowed",
          "__get(item|slice)__ not supported for exception classes"])
 
+_deprecations = [(msg, DeprecationWarning) for msg in DEPRECATION_WARNINGS]
+
 # Silence Py3k and other deprecation warnings
 def ignore_deprecation_warnings(func):
     """Ignore the known DeprecationWarnings."""
     def wrapper(*args, **kw):
-        with warnings.catch_warnings():
-            warnings.resetwarnings()
-            for text in DEPRECATION_WARNINGS:
-                warnings.filterwarnings("ignore", text, DeprecationWarning)
+        with check_warnings(*_deprecations, quiet=True):
             return func(*args, **kw)
     return wrapper
 
@@ -139,16 +138,8 @@ class ExceptionClassTests(unittest.TestCase):
 
     def test_message_deprecation(self):
         # As of Python 2.6, BaseException.message is deprecated.
-        with warnings.catch_warnings():
-            warnings.resetwarnings()
-            warnings.filterwarnings('error')
-
-            try:
-                BaseException().message
-            except DeprecationWarning:
-                pass
-            else:
-                self.fail("BaseException.message not deprecated")
+        with check_warnings(("", DeprecationWarning)):
+            BaseException().message
 
 
 class UsageTests(unittest.TestCase):

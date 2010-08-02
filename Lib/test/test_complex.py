@@ -1,12 +1,5 @@
-import unittest, os
+import unittest
 from test import test_support
-
-import warnings
-warnings.filterwarnings(
-    "ignore",
-    category=DeprecationWarning,
-    message=".*complex divmod.*are deprecated"
-)
 
 from random import random
 from math import atan2
@@ -371,10 +364,7 @@ class ComplexTest(unittest.TestCase):
         finally:
             if (fo is not None) and (not fo.closed):
                 fo.close()
-            try:
-                os.remove(test_support.TESTFN)
-            except (OSError, IOError):
-                pass
+            test_support.unlink(test_support.TESTFN)
 
     def test_getnewargs(self):
         self.assertEqual((1+2j).__getnewargs__(), (1.0, 2.0))
@@ -392,7 +382,9 @@ class ComplexTest(unittest.TestCase):
             self.assertEquals(atan2(z2.imag, -1.), atan2(-0., -1.))
 
 def test_main():
-    test_support.run_unittest(ComplexTest)
+    with test_support.check_warnings(("complex divmod.., // and % are "
+                                      "deprecated", DeprecationWarning)):
+        test_support.run_unittest(ComplexTest)
 
 if __name__ == "__main__":
     test_main()

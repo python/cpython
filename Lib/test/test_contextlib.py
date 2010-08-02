@@ -1,6 +1,5 @@
 """Unit tests for contextlib.py, and other context managers."""
 
-
 import sys
 import os
 import decimal
@@ -139,7 +138,7 @@ class NestedTestCase(unittest.TestCase):
             with nested(a(), b()) as (x, y):
                 state.append(x)
                 state.append(y)
-                1/0
+                1 // 0
         except ZeroDivisionError:
             self.assertEqual(state, [1, 4, 2, 5, 6, 3])
         else:
@@ -160,7 +159,7 @@ class NestedTestCase(unittest.TestCase):
                     pass
         try:
             with nested(a(), b()) as (x, y):
-                1/0
+                1 // 0
         except ZeroDivisionError:
             self.assertEqual((x, y), (1, 2))
         except Exception:
@@ -181,7 +180,7 @@ class NestedTestCase(unittest.TestCase):
                 pass
         try:
             with nested(a(), b()):
-                1/0
+                1 // 0
         except ZeroDivisionError:
             self.fail("Didn't swallow ZeroDivisionError")
 
@@ -247,7 +246,7 @@ class ClosingTestCase(unittest.TestCase):
         try:
             with closing(x) as y:
                 self.assertEqual(x, y)
-                1/0
+                1 // 0
         except ZeroDivisionError:
             self.assertEqual(state, [1])
         else:
@@ -268,7 +267,7 @@ class FileContextTestCase(unittest.TestCase):
                 with open(tfn, "r") as f:
                     self.failIf(f.closed)
                     self.assertEqual(f.read(), "Booh\n")
-                    1/0
+                    1 // 0
             except ZeroDivisionError:
                 self.failUnless(f.closed)
             else:
@@ -289,7 +288,7 @@ class LockContextTestCase(unittest.TestCase):
         try:
             with lock:
                 self.failUnless(locked())
-                1/0
+                1 // 0
         except ZeroDivisionError:
             self.failIf(locked())
         else:
@@ -332,6 +331,7 @@ class LockContextTestCase(unittest.TestCase):
 # This is needed to make the test actually run under regrtest.py!
 def test_main():
     test_support.run_unittest(__name__)
+
 
 if __name__ == "__main__":
     test_main()

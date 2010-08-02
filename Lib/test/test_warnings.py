@@ -620,14 +620,21 @@ class CatchWarningTests(BaseTest):
         with test_support.check_warnings(('foo', UserWarning)):
             wmod.warn("foo")
 
-        with self.assertRaises(AssertionError):
+        try:
             with test_support.check_warnings(('', RuntimeWarning)):
                 # defaults to quiet=False with argument
                 pass
-        with self.assertRaises(AssertionError):
+        except AssertionError:
+            pass
+        else:
+            self.fail("Dind't raise AssertionError")
+        try:
             with test_support.check_warnings(('foo', RuntimeWarning)):
                 wmod.warn("foo")
-
+        except AssertionError:
+            pass
+        else:
+            self.fail("Dind't raise AssertionError")
 
 class CCatchWarningTests(CatchWarningTests):
     module = c_warnings
