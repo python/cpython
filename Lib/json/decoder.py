@@ -263,9 +263,9 @@ class JSONDecoder(object):
     +---------------+-------------------+
     | array         | list              |
     +---------------+-------------------+
-    | string        | unicode           |
+    | string        | str               |
     +---------------+-------------------+
-    | number (int)  | int, long         |
+    | number (int)  | int               |
     +---------------+-------------------+
     | number (real) | float             |
     +---------------+-------------------+
@@ -318,8 +318,8 @@ class JSONDecoder(object):
 
 
     def decode(self, s, _w=WHITESPACE.match):
-        """Return the Python representation of ``s`` (a ``str`` or ``unicode``
-        instance containing a JSON document)
+        """Return the Python representation of ``s`` (a ``str`` instance
+        containing a JSON document).
 
         """
         obj, end = self.raw_decode(s, idx=_w(s, 0).end())
@@ -329,8 +329,8 @@ class JSONDecoder(object):
         return obj
 
     def raw_decode(self, s, idx=0):
-        """Decode a JSON document from ``s`` (a ``str`` or ``unicode``
-        beginning with a JSON document) and return a 2-tuple of the Python
+        """Decode a JSON document from ``s`` (a ``str`` beginning with
+        a JSON document) and return a 2-tuple of the Python
         representation and the index in ``s`` where the document ended.
 
         This can be used to decode a JSON document from a string that may
