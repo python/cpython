@@ -670,6 +670,38 @@ These are the UTF-16 codec APIs:
    Return *NULL* if an exception was raised by the codec.
 
 
+UTF-7 Codecs
+""""""""""""
+
+These are the UTF-7 codec APIs:
+
+
+.. cfunction:: PyObject* PyUnicode_DecodeUTF7(const char *s, Py_ssize_t size, const char *errors)
+
+   Create a Unicode object by decoding *size* bytes of the UTF-7 encoded string
+   *s*.  Return *NULL* if an exception was raised by the codec.
+
+
+.. cfunction:: PyObject* PyUnicode_DecodeUTF8Stateful(const char *s, Py_ssize_t size, const char *errors, Py_ssize_t *consumed)
+
+   If *consumed* is *NULL*, behave like :cfunc:`PyUnicode_DecodeUTF7`.  If
+   *consumed* is not *NULL*, trailing incomplete UTF-7 base-64 sections will not
+   be treated as an error.  Those bytes will not be decoded and the number of
+   bytes that have been decoded will be stored in *consumed*.
+
+
+.. cfunction:: PyObject* PyUnicode_EncodeUTF7(const Py_UNICODE *s, Py_ssize_t size, int base64SetO, int base64WhiteSpace, const char *errors)
+
+   Encode the :ctype:`Py_UNICODE` buffer of the given size using UTF-7 and
+   return a Python bytes object.  Return *NULL* if an exception was raised by
+   the codec.
+
+   If *base64SetO* is nonzero, "Set O" (punctuation that has no otherwise
+   special meaning) will be encoded in base-64.  If *base64WhiteSpace* is
+   nonzero, whitespace will be encoded in base-64.  Both are set to zero for the
+   Python "utf-7" codec.
+
+
 Unicode-Escape Codecs
 """""""""""""""""""""
 
