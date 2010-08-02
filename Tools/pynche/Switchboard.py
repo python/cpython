@@ -42,7 +42,6 @@ master window.
 """
 
 import sys
-from types import DictType
 import marshal
 
 
@@ -62,10 +61,11 @@ class Switchboard:
         if initfile:
             try:
                 try:
-                    fp = open(initfile)
+                    fp = open(initfile, 'rb')
                     self.__optiondb = marshal.load(fp)
-                    if not isinstance(self.__optiondb, DictType):
-                        print('Problem reading options from file:', initfile, file=sys.stderr)
+                    if not isinstance(self.__optiondb, dict):
+                        print('Problem reading options from file:', initfile,
+                              file=sys.stderr)
                         self.__optiondb = {}
                 except (IOError, EOFError, ValueError):
                     pass
@@ -116,7 +116,7 @@ class Switchboard:
         fp = None
         try:
             try:
-                fp = open(self.__initfile, 'w')
+                fp = open(self.__initfile, 'wb')
             except IOError:
                 print('Cannot write options to file:', \
                       self.__initfile, file=sys.stderr)
