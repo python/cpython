@@ -52,7 +52,7 @@ Shift + Left == -25
 Shift + Right == +25
 """
 
-from Tkinter import *
+from tkinter import *
 
 STOP = 'Stop'
 WRAP = 'Wrap Around'

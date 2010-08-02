@@ -24,7 +24,7 @@ select the color under the cursor while you drag it, but be forewarned that
 this can be slow.
 """
 
-from Tkinter import *
+from tkinter import *
 import ColorDB
 
 # Load this script into the Tcl interpreter and call it in
@@ -62,32 +62,32 @@ def constant(numchips):
 # red variations, green+blue = cyan constant
 def constant_red_generator(numchips, red, green, blue):
     seq = constant(numchips)
-    return list(map(None, [red] * numchips, seq, seq))
+    return list(zip([red] * numchips, seq, seq))
 
 # green variations, red+blue = magenta constant
 def constant_green_generator(numchips, red, green, blue):
     seq = constant(numchips)
-    return list(map(None, seq, [green] * numchips, seq))
+    return list(zip(seq, [green] * numchips, seq))
 
 # blue variations, red+green = yellow constant
 def constant_blue_generator(numchips, red, green, blue):
     seq = constant(numchips)
-    return list(map(None, seq, seq, [blue] * numchips))
+    return list(zip(seq, seq, [blue] * numchips))
 
 # red variations, green+blue = cyan constant
 def constant_cyan_generator(numchips, red, green, blue):
     seq = constant(numchips)
-    return list(map(None, seq, [green] * numchips, [blue] * numchips))
+    return list(zip(seq, [green] * numchips, [blue] * numchips))
 
 # green variations, red+blue = magenta constant
 def constant_magenta_generator(numchips, red, green, blue):
     seq = constant(numchips)
-    return list(map(None, [red] * numchips, seq, [blue] * numchips))
+    return list(zip([red] * numchips, seq, [blue] * numchips))
 
 # blue variations, red+green = yellow constant
 def constant_yellow_generator(numchips, red, green, blue):
     seq = constant(numchips)
-    return list(map(None, [red] * numchips, [green] * numchips, seq))
+    return list(zip([red] * numchips, [green] * numchips, seq))
 
 
 
@@ -119,7 +119,7 @@ class LeftArrow:
         return arrow, text
 
     def _x(self):
-        coords = self._canvas.coords(self._TAG)
+        coords = list(self._canvas.coords(self._TAG))
         assert coords
         return coords[0]
 
@@ -151,7 +151,7 @@ class RightArrow(LeftArrow):
         return arrow, text
 
     def _x(self):
-        coords = self._canvas.coords(self._TAG)
+        coords = list(self._canvas.coords(self._TAG))
         assert coords
         return coords[0] + self._ARROWWIDTH
 

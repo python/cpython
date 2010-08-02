@@ -12,7 +12,7 @@ color selection will be made on every change to the text field.  Otherwise,
 you must hit Return or Tab to select the color.
 """
 
-from Tkinter import *
+from tkinter import *
 
 
 
