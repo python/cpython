@@ -29,6 +29,9 @@ Extensions
 Library
 -------
 
+- Issue #9428: Fix running scripts with the profile/cProfile modules from
+  the command line.
+
 - Issue #7781: Fix restricting stats by entry counts in the pstats
   interactive browser.
 
