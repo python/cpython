@@ -626,7 +626,7 @@ class Trace:
                 print('%.2f' % (time.time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
             print("%s(%d): %s" % (bname, lineno,
-                                  linecache.getline(filename, lineno)), end=' ')
+                                  linecache.getline(filename, lineno)), end='')
         return self.localtrace
 
     def localtrace_trace(self, frame, why, arg):
@@ -639,7 +639,7 @@ class Trace:
                 print('%.2f' % (time.time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
             print("%s(%d): %s" % (bname, lineno,
-                                  linecache.getline(filename, lineno)), end=' ')
+                                  linecache.getline(filename, lineno)), end='')
         return self.localtrace
 
     def localtrace_count(self, frame, why, arg):
