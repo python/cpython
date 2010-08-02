@@ -52,10 +52,11 @@ class TestBasicOps(unittest.TestCase):
         state3 = self.gen.getstate()    # s/b distinct from state2
         self.assertNotEqual(state2, state3)
 
-        self.assertRaises(TypeError, self.gen.jumpahead)  # needs an arg
-        self.assertRaises(TypeError, self.gen.jumpahead, "ick")  # wrong type
-        self.assertRaises(TypeError, self.gen.jumpahead, 2.3)  # wrong type
-        self.assertRaises(TypeError, self.gen.jumpahead, 2, 3)  # too many
+        with test_support._check_py3k_warnings(quiet=True):
+            self.assertRaises(TypeError, self.gen.jumpahead)  # needs an arg
+            self.assertRaises(TypeError, self.gen.jumpahead, "ick")  # wrong type
+            self.assertRaises(TypeError, self.gen.jumpahead, 2.3)  # wrong type
+            self.assertRaises(TypeError, self.gen.jumpahead, 2, 3)  # too many
 
     def test_sample(self):
         # For the entire allowable range of 0 <= k <= N, validate that

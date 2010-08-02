@@ -195,8 +195,9 @@ class OverflowTestCase(unittest.TestCase):
         x = GetItem()
         self.assertEqual(x[self.pos], self.pos)
         self.assertEqual(x[self.neg], self.neg)
-        self.assertEqual(x[self.neg:self.pos], (maxint+minsize, maxsize))
-        self.assertEqual(x[self.neg:self.pos:1].indices(maxsize), (0, maxsize, 1))
+        with test_support._check_py3k_warnings():
+            self.assertEqual(x[self.neg:self.pos], (maxint+minsize, maxsize))
+            self.assertEqual(x[self.neg:self.pos:1].indices(maxsize), (0, maxsize, 1))
 
     def test_getitem(self):
         self._getitem_helper(object)

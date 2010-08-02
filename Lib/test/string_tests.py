@@ -686,8 +686,9 @@ class CommonTest(unittest.TestCase):
         EQ("bobobXbobob", "bobobobXbobobob", "replace", "bobob", "bob")
         EQ("BOBOBOB", "BOBOBOB", "replace", "bob", "bobby")
 
-        ba = buffer('a')
-        bb = buffer('b')
+        with test_support._check_py3k_warnings():
+            ba = buffer('a')
+            bb = buffer('b')
         EQ("bbc", "abc", "replace", ba, bb)
         EQ("aac", "abc", "replace", bb, ba)
 

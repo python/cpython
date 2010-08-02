@@ -259,7 +259,7 @@ class OtherFileTests(unittest.TestCase):
         self.assertRaises(TypeError, _fileio._FileIO, "1", 0, 0)
 
     def testWarnings(self):
-        with check_warnings() as w:
+        with check_warnings(quiet=True) as w:
             self.assertEqual(w.warnings, [])
             self.assertRaises(TypeError, _fileio._FileIO, [])
             self.assertEqual(w.warnings, [])

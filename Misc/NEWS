@@ -35,9 +35,6 @@ Core and Builtins
   when turned into an exception: in this case the exception simply
   gets ignored.
 
-- Issue #7372: Fix pstats regression when stripping paths from profile
-  data generated with the profile module.
-
 - Issue #4108: In urllib.robotparser, if there are multiple 'User-agent: *'
   entries, consider the first one.
 
@@ -421,6 +418,10 @@ Build
 
 Tests
 -----
+
+- Issue #7849: Now the utility ``check_warnings`` verifies if the warnings are
+  effectively raised.  A new private utility ``_check_py3k_warnings`` has been
+  backported to help silencing py3k warnings.
 
 - Issue #8672: Add a zlib test ensuring that an incomplete stream can be
   handled by a decompressor object without errors (it returns incomplete
