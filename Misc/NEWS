@@ -29,6 +29,12 @@ Extensions
 Library
 -------
 
+- Issue #7781: Fix restricting stats by entry counts in the pstats
+  interactive browser.
+
+- Issue #9209: Do not crash in the pstats interactive browser on invalid
+  regular expressions.
+
 - Update collections.OrderedDict to match the implementation in Py2.7
   (based on lists instead of weakly referenced Link objects).
 
