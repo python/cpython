@@ -2458,7 +2458,7 @@ then
 fi
 AC_MSG_RESULT($with_doc_strings)
 
-# Check for Python-specific malloc support
+# Check if eval loop should use timestamp counter profiling
 AC_MSG_CHECKING(for --with-tsc)
 AC_ARG_WITH(tsc,
 	    AS_HELP_STRING([--with(out)-tsc],[enable/disable timestamp counter profile]),[
