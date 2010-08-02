@@ -4,11 +4,12 @@ test_support.requires('audio')
 from test.test_support import findfile, TestSkipped, run_unittest
 
 import errno
-linuxaudiodev = test_support.import_module('linuxaudiodev', deprecated=True)
 import sys
-import sunaudio
 import audioop
 import unittest
+
+linuxaudiodev = test_support.import_module('linuxaudiodev', deprecated=True)
+sunaudio = test_support.import_module('sunaudio', deprecated=True)
 
 SND_FORMAT_MULAW_8 = 1
 

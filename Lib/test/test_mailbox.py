@@ -5,7 +5,6 @@ import stat
 import socket
 import email
 import email.message
-import rfc822
 import re
 import StringIO
 from test import test_support
@@ -17,6 +16,8 @@ try:
 except ImportError:
     pass
 
+# Silence Py3k warning
+rfc822 = test_support.import_module('rfc822', deprecated=True)
 
 class TestBase(unittest.TestCase):
 

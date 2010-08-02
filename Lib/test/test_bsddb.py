@@ -9,6 +9,14 @@ import dbhash # Just so we know it's imported
 import unittest
 from test import test_support
 
+# Skip test if _bsddb wasn't built.
+test_support.import_module('_bsddb')
+
+bsddb = test_support.import_module('bsddb', deprecated=True)
+# Just so we know it's imported:
+test_support.import_module('dbhash', deprecated=True)
+
+
 class TestBSDDB(unittest.TestCase):
     openflag = 'c'
 
