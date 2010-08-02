@@ -2,8 +2,6 @@
 # Tkinter interface to Linux `kill' command.
 
 from tkinter import *
-from string import splitfields
-from string import split
 import subprocess
 import os
 
@@ -26,13 +24,13 @@ class Kill(Frame):
                    ('Hex', '-X', 0)]
     def kill(self, selected):
         c = self.format_list[self.format.get()][2]
-        pid = split(selected)[c]
+        pid = selected.split()[c]
         os.system('kill -9 ' + pid)
         self.do_update()
     def do_update(self):
         name, option, column = self.format_list[self.format.get()]
         s = subprocess.getoutput('ps -w ' + option)
-        list = splitfields(s, '\n')
+        list = s.split('\n')
         self.header.set(list[0])
         del list[0]
         y = self.frame.vscroll.get()[0]

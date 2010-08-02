@@ -107,13 +107,13 @@ class EditableManPage(ScrolledText):
             # Save this line -- we need one line read-ahead
             self.buffer = nextline
             return
-        if emptyprog.match(self.buffer) >= 0:
+        if emptyprog.match(self.buffer):
             # Buffered line was empty -- set a flag
             self.empty = 1
             self.buffer = nextline
             return
         textline = self.buffer
-        if ulprog.match(nextline) >= 0:
+        if ulprog.match(nextline):
             # Next line is properties for buffered line
             propline = nextline
             self.buffer = None
@@ -127,7 +127,7 @@ class EditableManPage(ScrolledText):
             self.ok = 1
             self.empty = 0
             return
-        if footerprog.match(textline) >= 0:
+        if footerprog.match(textline):
             # Footer -- start skipping until next non-blank line
             self.ok = 0
             self.empty = 0
@@ -190,7 +190,7 @@ def test():
     import os
     import sys
     # XXX This directory may be different on your system
-    MANDIR = '/usr/local/man/mann'
+    MANDIR = ''
     DEFAULTPAGE = 'Tcl'
     formatted = 0
     if sys.argv[1:] and sys.argv[1] == '-f':

@@ -32,7 +32,7 @@ def particle(canvas):                   # particle = iterator over the moves
             yield None
 
 def move(particle): # move the particle at random time
-    particle.next()
+    next(particle)
     dt = random.expovariate(LAMBDA)
     root.after(int(dt*1000), move, particle)
 

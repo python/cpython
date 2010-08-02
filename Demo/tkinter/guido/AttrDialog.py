@@ -120,7 +120,7 @@ class Dialog:
                 cl = self.classes[c]
             except KeyError:
                 cl = 'unknown'
-            if type(cl) == TupleType:
+            if type(cl) == tuple:
                 cl = self.enumoption
             elif cl == 'boolean':
                 cl = self.booleanoption
