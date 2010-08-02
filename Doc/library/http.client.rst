@@ -466,7 +466,8 @@ statement.
 .. method:: HTTPResponse.getheader(name, default=None)
 
    Get the contents of the header *name*, or *default* if there is no matching
-   header.
+   header. If *default* is an iterator other than a string, then the return
+   value will be a string consisting of items of the iterator joined by comma.
 
 
 .. method:: HTTPResponse.getheaders()
