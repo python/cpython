@@ -261,9 +261,8 @@ class BoolTest(unittest.TestCase):
         import operator
         self.assertIs(operator.truth(0), False)
         self.assertIs(operator.truth(1), True)
-        with test_support._check_py3k_warnings():
-            self.assertIs(operator.isCallable(0), False)
-            self.assertIs(operator.isCallable(len), True)
+        self.assertIs(operator.isCallable(0), False)
+        self.assertIs(operator.isCallable(len), True)
         self.assertIs(operator.isNumberType(None), False)
         self.assertIs(operator.isNumberType(0), True)
         self.assertIs(operator.not_(1), False)
