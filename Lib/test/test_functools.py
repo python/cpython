@@ -119,7 +119,7 @@ class TestPartial(unittest.TestCase):
 
     def test_error_propagation(self):
         def f(x, y):
-            x / y
+            x // y
         self.assertRaises(ZeroDivisionError, self.thetype(f, 1, 0))
         self.assertRaises(ZeroDivisionError, self.thetype(f, 1), 0)
         self.assertRaises(ZeroDivisionError, self.thetype(f), 1, 0)

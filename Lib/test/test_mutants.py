@@ -210,7 +210,7 @@ class Machiavelli:
         # Tim sez:  "luck of the draw; crashes with or without for me."
         print >> f
 
-        return `"machiavelli"`
+        return repr("machiavelli")
 
     def __hash__(self):
         return 0

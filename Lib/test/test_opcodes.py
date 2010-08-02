@@ -1,6 +1,6 @@
 # Python test set -- part 2, opcodes
 
-from test.test_support import run_unittest
+from test.test_support import run_unittest, _check_py3k_warnings
 import unittest
 
 class OpcodeTest(unittest.TestCase):
@@ -9,7 +9,7 @@ class OpcodeTest(unittest.TestCase):
         n = 0
         for i in range(10):
             n = n+i
-            try: 1/0
+            try: 1 // 0
             except NameError: pass
             except ZeroDivisionError: pass
             except TypeError: pass
@@ -104,7 +104,12 @@ class OpcodeTest(unittest.TestCase):
 
 
 def test_main():
-    run_unittest(OpcodeTest)
+    with _check_py3k_warnings(("exceptions must derive from BaseException",
+                              DeprecationWarning),
+                             ("catching classes that don't inherit "
+                              "from BaseException is not allowed",
+                              DeprecationWarning)):
+        run_unittest(OpcodeTest)
 
 if __name__ == '__main__':
     test_main()

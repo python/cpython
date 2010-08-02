@@ -26,12 +26,6 @@ from optparse import make_option, Option, IndentedHelpFormatter, \
 from optparse import _match_abbrev
 from optparse import _parse_num
 
-# Do the right thing with boolean values for all known Python versions.
-try:
-    True, False
-except NameError:
-    (True, False) = (1, 0)
-
 retype = type(re.compile(''))
 
 class InterceptedError(Exception):

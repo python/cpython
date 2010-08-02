@@ -248,11 +248,11 @@ class IOTest(unittest.TestCase):
             f = None
             try:
                 with open(test_support.TESTFN, "wb", bufsize) as f:
-                    1/0
+                    1 // 0
             except ZeroDivisionError:
                 self.assertEqual(f.closed, True)
             else:
-                self.fail("1/0 didn't raise an exception")
+                self.fail("1 // 0 didn't raise an exception")
 
     # issue 5008
     def test_append_mode_tell(self):

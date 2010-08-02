@@ -4,6 +4,7 @@ from _testcapi import traceback_print
 from StringIO import StringIO
 import sys
 import unittest
+from imp import reload
 from test.test_support import run_unittest, is_jython, Error
 
 import traceback
@@ -158,7 +159,7 @@ def test():
     def test_format_exception_only_bad__str__(self):
         class X(Exception):
             def __str__(self):
-                1/0
+                1 // 0
         err = traceback.format_exception_only(X, X())
         self.assertEqual(len(err), 1)
         str_value = '<unprintable %s object>' % X.__name__

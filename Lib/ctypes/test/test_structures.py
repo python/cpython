@@ -367,11 +367,11 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("d", c_int), ("e", c_int), ("f", c_int)]
 
         z = Z(1, 2, 3, 4, 5, 6)
-        self.failUnlessEqual((z.a, z.b, z.c, z.d, z.e, z.f),
-                             (1, 2, 3, 4, 5, 6))
+        self.assertEqual((z.a, z.b, z.c, z.d, z.e, z.f),
+                         (1, 2, 3, 4, 5, 6))
         z = Z(1)
-        self.failUnlessEqual((z.a, z.b, z.c, z.d, z.e, z.f),
-                             (1, 0, 0, 0, 0, 0))
+        self.assertEqual((z.a, z.b, z.c, z.d, z.e, z.f),
+                         (1, 0, 0, 0, 0, 0))
         self.assertRaises(TypeError, lambda: Z(1, 2, 3, 4, 5, 6, 7))
 
 class PointerMemberTestCase(unittest.TestCase):

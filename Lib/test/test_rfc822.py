@@ -46,9 +46,9 @@ class MessageTestCase(unittest.TestCase):
                 continue
             i = i + 1
             self.assertEqual(mn, n,
-                             "Un-expected name: %s != %s" % (`mn`, `n`))
+                             "Un-expected name: %r != %r" % (mn, n))
             self.assertEqual(ma, a,
-                             "Un-expected address: %s != %s" % (`ma`, `a`))
+                             "Un-expected address: %r != %r" % (ma, a))
             if mn == n and ma == a:
                 pass
             else:

@@ -102,21 +102,23 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
             q.put(i)
             self.assert_(not q.empty(), "Queue should not be empty")
         self.assert_(not q.full(), "Queue should not be full")
-        q.put("last")
+        last = 2 * QUEUE_SIZE
+        full = 3 * 2 * QUEUE_SIZE
+        q.put(last)
         self.assert_(q.full(), "Queue should be full")
         try:
-            q.put("full", block=0)
+            q.put(full, block=0)
             self.fail("Didn't appear to block with a full queue")
         except Queue.Full:
             pass
         try:
-            q.put("full", timeout=0.01)
+            q.put(full, timeout=0.01)
             self.fail("Didn't appear to time-out with a full queue")
         except Queue.Full:
             pass
         # Test a blocking put
-        self.do_blocking_test(q.put, ("full",), q.get, ())
-        self.do_blocking_test(q.put, ("full", True, 10), q.get, ())
+        self.do_blocking_test(q.put, (full,), q.get, ())
+        self.do_blocking_test(q.put, (full, True, 10), q.get, ())
         # Empty it
         for i in range(QUEUE_SIZE):
             q.get()

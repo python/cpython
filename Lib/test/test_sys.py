@@ -75,7 +75,8 @@ class SysModuleTest(unittest.TestCase):
             self.assert_(value is exc)
             self.assert_(traceback is not None)
 
-            sys.exc_clear()
+            with test.test_support._check_py3k_warnings():
+                sys.exc_clear()
 
             typ, value, traceback = sys.exc_info()
             self.assert_(typ is None)
@@ -498,7 +499,8 @@ class SizeofTest(unittest.TestCase):
         # bool
         check(True, size(h + 'l'))
         # buffer
-        check(buffer(''), size(h + '2P2Pil'))
+        with test.test_support._check_py3k_warnings():
+            check(buffer(''), size(h + '2P2Pil'))
         # builtin_function_or_method
         check(len, size(h + '3P'))
         # bytearray

@@ -1044,7 +1044,7 @@ This is the dingus fish.
             sign = '-'
         else:
             sign = '+'
-        tzoffset = ' %s%04d' % (sign, tzsecs / 36)
+        tzoffset = ' %s%04d' % (sign, tzsecs // 36)
         container['Date'] = time.strftime(
             '%a, %d %b %Y %H:%M:%S',
             time.localtime(now)) + tzoffset

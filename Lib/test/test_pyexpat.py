@@ -554,7 +554,7 @@ class ChardataBufferTest(unittest.TestCase):
 
         self.n=0
         parser.Parse(xml1, 0)
-        parser.buffer_size /= 2
+        parser.buffer_size //= 2
         self.assertEquals(parser.buffer_size, 1024)
         parser.Parse(xml2, 1)
         self.assertEquals(self.n, 4)

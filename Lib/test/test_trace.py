@@ -401,7 +401,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
         we're testing, so that the 'exception' trace event fires."""
         if self.raiseOnEvent == 'exception':
             x = 0
-            y = 1/x
+            y = 1 // x
         else:
             return 1
 

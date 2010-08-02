@@ -75,7 +75,7 @@ class CompilerTest(unittest.TestCase):
 
     def testTryExceptFinally(self):
         # Test that except and finally clauses in one try stmt are recognized
-        c = compiler.compile("try:\n 1/0\nexcept:\n e = 1\nfinally:\n f = 1",
+        c = compiler.compile("try:\n 1//0\nexcept:\n e = 1\nfinally:\n f = 1",
                              "<string>", "exec")
         dct = {}
         exec c in dct
