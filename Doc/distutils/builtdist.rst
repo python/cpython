@@ -173,7 +173,7 @@ easily specify multiple formats in one run.  If you need to do both, you can
 explicitly specify multiple :command:`bdist_\*` commands and their options::
 
    python setup.py bdist_rpm --packager="John Doe <jdoe@example.org>" \
-                   bdist_wininst --target_version="2.0"
+                   bdist_wininst --target-version="2.0"
 
 Creating RPM packages is driven by a :file:`.spec` file, much as using the
 Distutils is driven by the setup script.  To make your life easier, the
