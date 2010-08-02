@@ -226,8 +226,27 @@ needed to ensure that it will not be discarded, causing :cdata:`SpamError` to
 become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
 
-We discuss the use of PyMODINIT_FUNC as a function return type later in this
+We discuss the use of ``PyMODINIT_FUNC`` as a function return type later in this
 sample.
+
+The :exc:`spam.error` exception can be raised in your extension module using a
+call to :cfunc:`PyErr_SetString` as shown below::
+
+   static PyObject *
+   spam_system(PyObject *self, PyObject *args)
+   {
+       const char *command;
+       int sts;
+
+       if (!PyArg_ParseTuple(args, "s", &command))
+           return NULL;
+       sts = system(command);
+       if (sts < 0) {
+           PyErr_SetString(SpamError, "System command failed");
+           return NULL;
+       }
+       return PyLong_FromLong(sts);
+   }
 
 
 .. _backtoexample:
