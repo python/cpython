@@ -3,14 +3,13 @@ import re
 
 # Write the config.c file
 
-never = ['marshal', '__main__', 'builtins', 'sys', 'exceptions', '_warnings']
+never = ['marshal', 'imp', '_ast', '__main__', 'builtins',
+         'sys', 'gc', '_warnings']
 
 def makeconfig(infp, outfp, modules, with_ifdef=0):
     m1 = re.compile('-- ADDMODULE MARKER 1 --')
     m2 = re.compile('-- ADDMODULE MARKER 2 --')
-    while 1:
-        line = infp.readline()
-        if not line: break
+    for line in infp:
         outfp.write(line)
         if m1 and m1.search(line):
             m1 = None
@@ -18,8 +17,8 @@ def makeconfig(infp, outfp, modules, with_ifdef=0):
                 if mod in never:
                     continue
                 if with_ifdef:
-                    outfp.write("#ifndef init%s\n"%mod)
-                outfp.write('extern void init%s(void);\n' % mod)
+                    outfp.write("#ifndef PyInit_%s\n"%mod)
+                outfp.write('extern PyObject* PyInit_%s(void);\n' % mod)
                 if with_ifdef:
                     outfp.write("#endif\n")
         elif m2 and m2.search(line):
@@ -27,7 +26,7 @@ def makeconfig(infp, outfp, modules, with_ifdef=0):
             for mod in modules:
                 if mod in never:
                     continue
-                outfp.write('\t{"%s", init%s},\n' %
+                outfp.write('\t{"%s", PyInit_%s},\n' %
                             (mod, mod))
     if m1:
         sys.stderr.write('MARKER 1 never found\n')

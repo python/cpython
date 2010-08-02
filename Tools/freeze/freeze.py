@@ -201,7 +201,7 @@ def main():
 
     # modules that are imported by the Python runtime
     implicits = []
-    for module in ('site', 'warnings',):
+    for module in ('site', 'warnings', 'encodings.utf_8', 'encodings.latin_1'):
         if module not in exclude:
             implicits.append(module)
 
