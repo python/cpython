@@ -513,8 +513,13 @@ def add_callers(target, source):
         new_callers[func] = caller
     for func, caller in source.iteritems():
         if func in new_callers:
-            new_callers[func] = tuple([i[0] + i[1] for i in
-                                       zip(caller, new_callers[func])])
+            if isinstance(caller, tuple):
+                # format used by cProfile
+                new_callers[func] = tuple([i[0] + i[1] for i in
+                                           zip(caller, new_callers[func])])
+            else:
+                # format used by profile
+                new_callers[func] += caller
         else:
             new_callers[func] = caller
     return new_callers
