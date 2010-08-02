@@ -281,7 +281,8 @@ class Importer:
             setattr(parent, modname, module)
         return module
 
-    def _process_result(self, (ispkg, code, values), fqname):
+    def _process_result(self, result, fqname):
+        ispkg, code, values = result
         # did get_code() return an actual module? (rather than a code object)
         is_module = isinstance(code, _ModuleType)
 

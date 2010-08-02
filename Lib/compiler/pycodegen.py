@@ -900,10 +900,10 @@ class CodeGenerator:
         level = node.level
         if level == 0 and not self.graph.checkFlag(CO_FUTURE_ABSIMPORT):
             level = -1
-        fromlist = map(lambda (name, alias): name, node.names)
+        fromlist = tuple(name for (name, alias) in node.names)
         if VERSION > 1:
             self.emit('LOAD_CONST', level)
-            self.emit('LOAD_CONST', tuple(fromlist))
+            self.emit('LOAD_CONST', fromlist)
         self.emit('IMPORT_NAME', node.modname)
         for name, alias in node.names:
             if VERSION > 1:
