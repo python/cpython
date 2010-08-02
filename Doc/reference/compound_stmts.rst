@@ -552,24 +552,27 @@ Class definitions
 
 A class definition defines a class object (see section :ref:`types`):
 
-.. XXX need to document PEP 3115 changes here (new metaclasses)
-
 .. productionlist::
    classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
-   inheritance: "(" [`expression_list`] ")"
+   inheritance: "(" [`argument_list` [","] ] ")"
    classname: `identifier`
 
 
-A class definition is an executable statement.  It first evaluates the
-inheritance list, if present.  Each item in the inheritance list should evaluate
-to a class object or class type which allows subclassing.  The class's suite is
-then executed in a new execution frame (see section :ref:`naming`), using a
-newly created local namespace and the original global namespace. (Usually, the
-suite contains only function definitions.)  When the class's suite finishes
-execution, its execution frame is discarded but its local namespace is
-saved. [#]_ A class object is then created using the inheritance list for the
-base classes and the saved local namespace for the attribute dictionary.  The
-class name is bound to this class object in the original local namespace.
+A class definition is an executable statement.  The inheritance list usually
+gives a list of base classes (see :ref:`metaclasses` for more advanced uses), so
+each item in the list should evaluate to a class object which allows
+subclassing.
+
+The class's suite is then executed in a new execution frame (see :ref:`naming`),
+using a newly created local namespace and the original global namespace.
+(Usually, the suite contains mostly function definitions.)  When the class's
+suite finishes execution, its execution frame is discarded but its local
+namespace is saved. [#]_ A class object is then created using the inheritance
+list for the base classes and the saved local namespace for the attribute
+dictionary.  The class name is bound to this class object in the original local
+namespace.
+
+Class creation can be customized heavily using :ref:`metaclasses <metaclasses>`.
 
 Classes can also be decorated; as with functions, ::
 
@@ -583,24 +586,19 @@ is equivalent to ::
    Foo = f1(arg)(f2(Foo))
 
 **Programmer's note:** Variables defined in the class definition are class
-variables; they are shared by instances. Instance variables can be set in a
-method with ``self.name = value``.  Both class and instance variables are
-accessible through the notation "``self.name``", and an instance variable hides
-a class variable with the same name when accessed in this way.  Class variables
-can be used as defaults for instance variables, but using mutable values there
-can lead to unexpected results.  Descriptors can be used to create instance
-variables with different implementation details.
+attributes; they are shared by instances.  Instance attributes can be set in a
+method with ``self.name = value``.  Both class and instance attributes are
+accessible through the notation "``self.name``", and an instance attribute hides
+a class attribute with the same name when accessed in this way.  Class
+attributes can be used as defaults for instance attributes, but using mutable
+values there can lead to unexpected results.  :ref:`Descriptors <descriptors>`
+can be used to create instance variables with different implementation details.
 
-.. XXX add link to descriptor docs above
 
 .. seealso::
 
+   :pep:`3116` - Metaclasses in Python 3
    :pep:`3129` - Class Decorators
-
-Class definitions, like function definitions, may be wrapped by one or more
-:term:`decorator` expressions.  The evaluation rules for the decorator
-expressions are the same as for functions.  The result must be a class object,
-which is then bound to the class name.
 
 
 .. rubric:: Footnotes
