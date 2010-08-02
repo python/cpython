@@ -8,7 +8,8 @@
 # regression test, the filterwarnings() call has been added to
 # regrtest.py.
 
-from test.test_support import run_unittest, check_syntax_error
+from test.test_support import (run_unittest, check_syntax_error,
+                               _check_py3k_warnings)
 import unittest
 import sys
 # testing import *
@@ -152,8 +153,9 @@ class GrammarTests(unittest.TestCase):
         f1(*(), **{})
         def f2(one_argument): pass
         def f3(two, arguments): pass
-        def f4(two, (compound, (argument, list))): pass
-        def f5((compound, first), two): pass
+        # Silence Py3k warning
+        exec('def f4(two, (compound, (argument, list))): pass')
+        exec('def f5((compound, first), two): pass')
         self.assertEquals(f2.func_code.co_varnames, ('one_argument',))
         self.assertEquals(f3.func_code.co_varnames, ('two', 'arguments'))
         if sys.platform.startswith('java'):
@@ -172,7 +174,8 @@ class GrammarTests(unittest.TestCase):
         def v0(*rest): pass
         def v1(a, *rest): pass
         def v2(a, b, *rest): pass
-        def v3(a, (b, c), *rest): return a, b, c, rest
+        # Silence Py3k warning
+        exec('def v3(a, (b, c), *rest): return a, b, c, rest')
 
         f1()
         f2(1)
@@ -277,9 +280,10 @@ class GrammarTests(unittest.TestCase):
         d22v(*(1, 2, 3, 4))
         d22v(1, 2, *(3, 4, 5))
         d22v(1, *(2, 3), **{'d': 4})
-        def d31v((x)): pass
+        # Silence Py3k warning
+        exec('def d31v((x)): pass')
+        exec('def d32v((x,)): pass')
         d31v(1)
-        def d32v((x,)): pass
         d32v((1,))
 
         # keyword arguments after *arglist
@@ -474,7 +478,7 @@ hello world
                     continue
                 except:
                     raise
-            if count > 2 or big_hippo <> 1:
+            if count > 2 or big_hippo != 1:
                 self.fail("continue then break in try/except in loop broken!")
         test_inner()
 
@@ -536,7 +540,7 @@ hello world
             if z != 2: self.fail('exec u\'z=1+1\'')"""
         g = {}
         exec 'z = 1' in g
-        if g.has_key('__builtins__'): del g['__builtins__']
+        if '__builtins__' in g: del g['__builtins__']
         if g != {'z': 1}: self.fail('exec \'z = 1\' in g')
         g = {}
         l = {}
@@ -544,8 +548,8 @@ hello world
         import warnings
         warnings.filterwarnings("ignore", "global statement", module="<string>")
         exec 'global a; a = 1; b = 2' in g, l
-        if g.has_key('__builtins__'): del g['__builtins__']
-        if l.has_key('__builtins__'): del l['__builtins__']
+        if '__builtins__' in g: del g['__builtins__']
+        if '__builtins__' in l: del l['__builtins__']
         if (g, l) != ({'a':1}, {'b':2}):
             self.fail('exec ... in g (%s), l (%s)' %(g,l))
 
@@ -677,7 +681,6 @@ hello world
         x = (1 == 1)
         if 1 == 1: pass
         if 1 != 1: pass
-        if 1 <> 1: pass
         if 1 < 1: pass
         if 1 > 1: pass
         if 1 <= 1: pass
@@ -686,7 +689,10 @@ hello world
         if 1 is not 1: pass
         if 1 in (): pass
         if 1 not in (): pass
-        if 1 < 1 > 1 == 1 >= 1 <= 1 <> 1 != 1 in 1 not in 1 is 1 is not 1: pass
+        if 1 < 1 > 1 == 1 >= 1 <= 1 != 1 in 1 not in 1 is 1 is not 1: pass
+        # Silence Py3k warning
+        if eval('1 <> 1'): pass
+        if eval('1 < 1 > 1 == 1 >= 1 <= 1 <> 1 != 1 in 1 not in 1 is 1 is not 1'): pass
 
     def testBinaryMaskOps(self):
         x = 1 & 1
@@ -769,9 +775,10 @@ hello world
         x = {'one': 1, 'two': 2,}
         x = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6}
 
-        x = `x`
-        x = `1 or 2 or 3`
-        self.assertEqual(`1,2`, '(1, 2)')
+        # Silence Py3k warning
+        x = eval('`x`')
+        x = eval('`1 or 2 or 3`')
+        self.assertEqual(eval('`1,2`'), '(1, 2)')
 
         x = x
         x = 'x'
@@ -948,7 +955,13 @@ hello world
 
 
 def test_main():
-    run_unittest(TokenTests, GrammarTests)
+    with _check_py3k_warnings(
+            ("backquote not supported", SyntaxWarning),
+            ("tuple parameter unpacking has been removed", SyntaxWarning),
+            ("parenthesized argument names are invalid", SyntaxWarning),
+            ("classic int division", DeprecationWarning),
+            (".+ not supported in 3.x", DeprecationWarning)):
+        run_unittest(TokenTests, GrammarTests)
 
 if __name__ == '__main__':
     test_main()

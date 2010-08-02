@@ -133,6 +133,7 @@ import warnings
 # keep a reference to the ascii module to workaround #7140 bug
 # (see issue #7027)
 import encodings.ascii
+import imp
 
 # I see no other way to suppress these warnings;
 # putting them in test_grammar.py has no effect:
@@ -657,7 +658,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
             indirect_test()
     else:
         def run_the_test():
-            reload(the_module)
+            imp.reload(the_module)
 
     deltas = []
     nwarmup, ntracked, fname = huntrleaks

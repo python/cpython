@@ -15,7 +15,7 @@ def eggs(x, y):
     fr = inspect.currentframe()
     st = inspect.stack()
     p = x
-    q = y / 0
+    q = y // 0
 
 # line 20
 class StupidGit:

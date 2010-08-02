@@ -118,7 +118,7 @@ class AutoFileTests(unittest.TestCase):
         self.assertEquals(self.f.__exit__(None, None, None), None)
         # it must also return None if an exception was given
         try:
-            1/0
+            1 // 0
         except:
             self.assertEquals(self.f.__exit__(*sys.exc_info()), None)
 

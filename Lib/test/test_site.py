@@ -196,7 +196,7 @@ class ImportSideEffectTests(unittest.TestCase):
         site.abs__file__()
         for module in (sys, os, __builtin__):
             try:
-                self.failUnless(os.path.isabs(module.__file__), `module`)
+                self.assertTrue(os.path.isabs(module.__file__), repr(module))
             except AttributeError:
                 continue
         # We could try everything in sys.modules; however, when regrtest.py
@@ -248,7 +248,7 @@ class ImportSideEffectTests(unittest.TestCase):
 
     def test_sitecustomize_executed(self):
         # If sitecustomize is available, it should have been imported.
-        if not sys.modules.has_key("sitecustomize"):
+        if "sitecustomize" not in sys.modules:
             try:
                 import sitecustomize
             except ImportError:

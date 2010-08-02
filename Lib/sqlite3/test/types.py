@@ -226,7 +226,7 @@ class ColNamesTests(unittest.TestCase):
 
         sqlite.converters["FOO"] = lambda x: "[%s]" % x
         sqlite.converters["BAR"] = lambda x: "<%s>" % x
-        sqlite.converters["EXC"] = lambda x: 5/0
+        sqlite.converters["EXC"] = lambda x: 5 // 0
         sqlite.converters["B1B1"] = lambda x: "MARKER"
 
     def tearDown(self):

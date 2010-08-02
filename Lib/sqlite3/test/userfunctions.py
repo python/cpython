@@ -38,7 +38,7 @@ def func_returnnull():
 def func_returnblob():
     return buffer("blob")
 def func_raiseexception():
-    5/0
+    5 // 0
 
 def func_isstring(v):
     return type(v) is unicode
@@ -67,7 +67,7 @@ class AggrNoFinalize:
 
 class AggrExceptionInInit:
     def __init__(self):
-        5/0
+        5 // 0
 
     def step(self, x):
         pass
@@ -80,7 +80,7 @@ class AggrExceptionInStep:
         pass
 
     def step(self, x):
-        5/0
+        5 // 0
 
     def finalize(self):
         return 42
@@ -93,7 +93,7 @@ class AggrExceptionInFinalize:
         pass
 
     def finalize(self):
-        5/0
+        5 // 0
 
 class AggrCheckType:
     def __init__(self):

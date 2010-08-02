@@ -66,7 +66,7 @@ dictionaries, such as the locals/globals dictionaries for the exec
 statement or the built-in function eval():
 
     >>> def sorted(seq):
-    ...     seq.sort()
+    ...     seq.sort(key=str)
     ...     return seq
     >>> print sorted(a.keys())
     [1, 2]

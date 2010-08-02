@@ -207,6 +207,9 @@ class Rat(object):
         """Compare two Rats for inequality."""
         return not self == other
 
+    # Silence Py3k warning
+    __hash__ = None
+
 class RatTestCase(unittest.TestCase):
     """Unit tests for Rat class and its support utilities."""
 

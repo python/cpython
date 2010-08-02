@@ -6,6 +6,7 @@ import time
 import pickle
 import warnings
 from math import log, exp, sqrt, pi, fsum as msum
+from functools import reduce
 from test import test_support
 
 class TestBasicOps(unittest.TestCase):

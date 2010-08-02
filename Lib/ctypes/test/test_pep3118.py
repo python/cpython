@@ -24,7 +24,7 @@ class memoryview(object):
         else:
             size = sizeof(ob)
             for dim in self.shape:
-                size /= dim
+                size //= dim
             self.itemsize = size
         self.strides = None
         self.readonly = False

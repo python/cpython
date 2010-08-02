@@ -432,10 +432,10 @@ class HandlerTests(TestCase):
         env = handler.environ
         from os import environ
         for k,v in environ.items():
-            if not empty.has_key(k):
+            if k not in empty:
                 self.assertEqual(env[k],v)
         for k,v in empty.items():
-            self.failUnless(env.has_key(k))
+            self.assertTrue(k in env)
 
     def testEnviron(self):
         h = TestHandler(X="Y")
@@ -448,7 +448,7 @@ class HandlerTests(TestCase):
         h = BaseCGIHandler(None,None,None,{})
         h.setup_environ()
         for key in 'wsgi.url_scheme', 'wsgi.input', 'wsgi.errors':
-            self.assert_(h.environ.has_key(key))
+            self.assertTrue(key in h.environ)
 
     def testScheme(self):
         h=TestHandler(HTTPS="on"); h.setup_environ()

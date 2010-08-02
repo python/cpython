@@ -6,14 +6,14 @@ class TestImport(unittest.TestCase):
 
     def __init__(self, *args, **kw):
         self.package_name = 'PACKAGE_'
-        while sys.modules.has_key(self.package_name):
+        while self.package_name in sys.modules:
             self.package_name += random.choose(string.letters)
         self.module_name = self.package_name + '.foo'
         unittest.TestCase.__init__(self, *args, **kw)
 
     def remove_modules(self):
         for module_name in (self.package_name, self.module_name):
-            if sys.modules.has_key(module_name):
+            if module_name in sys.modules:
                 del sys.modules[module_name]
 
     def setUp(self):
@@ -52,8 +52,8 @@ class TestImport(unittest.TestCase):
         try: __import__(self.module_name)
         except SyntaxError: pass
         else: raise RuntimeError, 'Failed to induce SyntaxError'
-        self.assert_(not sys.modules.has_key(self.module_name) and
-                     not hasattr(sys.modules[self.package_name], 'foo'))
+        self.assertTrue(self.module_name not in sys.modules)
+        self.assertFalse(hasattr(sys.modules[self.package_name], 'foo'))
 
         # ...make up a variable name that isn't bound in __builtins__
         var = 'a'
