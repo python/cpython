@@ -13,9 +13,8 @@ def main():
         filename = sys.argv[0]
     print('Reading', filename)
 
-    f = open(filename, 'rb')           # Get the data to compress
-    s = f.read()
-    f.close()
+    with open(filename, 'rb') as f:           # Get the data to compress
+        s = f.read()
 
     # First, we'll compress the string in one step
     comptext = zlib.compress(s, 1)
@@ -30,15 +29,15 @@ def main():
     chunk = 256
     compressor = zlib.compressobj(9)
     decompressor = zlib.decompressobj()
-    comptext = decomp = ''
+    comptext = decomp = b''
     for i in range(0, len(s), chunk):
-        comptext = comptext+compressor.compress(s[i:i+chunk])
+        comptext += compressor.compress(s[i:i+chunk])
     # Don't forget to call flush()!!
-    comptext = comptext + compressor.flush()
+    comptext += compressor.flush()
 
     for i in range(0, len(comptext), chunk):
-        decomp = decomp + decompressor.decompress(comptext[i:i+chunk])
-    decomp=decomp+decompressor.flush()
+        decomp += decompressor.decompress(comptext[i:i+chunk])
+    decomp += decompressor.flush()
 
     print('Progressive compression (level 9):')
     print('    Original:', len(s), 'Compressed:', len(comptext), end=' ')
