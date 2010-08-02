@@ -10,10 +10,10 @@ import zlib, sys, os
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
 def write32(output, value):
-    output.write(chr(value & 255)) ; value=value // 256
-    output.write(chr(value & 255)) ; value=value // 256
-    output.write(chr(value & 255)) ; value=value // 256
-    output.write(chr(value & 255))
+    output.write(bytes([value & 255])) ; value=value // 256
+    output.write(bytes([value & 255])) ; value=value // 256
+    output.write(bytes([value & 255])) ; value=value // 256
+    output.write(bytes([value & 255]))
 
 def read32(input):
     v = ord(input.read(1))
@@ -22,23 +22,24 @@ def read32(input):
     v += (ord(input.read(1)) << 24)
     return v
 
-def compress (filename, input, output):
-    output.write('\037\213\010')        # Write the header, ...
-    output.write(chr(FNAME))            # ... flag byte ...
+def compress(filename, input, output):
+    output.write(b'\037\213\010')        # Write the header, ...
+    output.write(bytes([FNAME]))         # ... flag byte ...
 
-    statval = os.stat(filename)           # ... modification time ...
+    statval = os.stat(filename)          # ... modification time ...
     mtime = statval[8]
     write32(output, mtime)
-    output.write('\002')                # ... slowest compression alg. ...
-    output.write('\377')                # ... OS (=unknown) ...
-    output.write(filename+'\000')       # ... original filename ...
+    output.write(b'\002')                # ... slowest compression alg. ...
+    output.write(b'\377')                # ... OS (=unknown) ...
+    bfilename = filename.encode(sys.getfilesystemencoding())
+    output.write(bfilename + b'\000')    # ... original filename ...
 
-    crcval = zlib.crc32("")
+    crcval = zlib.crc32(b'')
     compobj = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS,
                              zlib.DEF_MEM_LEVEL, 0)
     while True:
         data = input.read(1024)
-        if data == "":
+        if data == b'':
             break
         crcval = zlib.crc32(data, crcval)
         output.write(compobj.compress(data))
@@ -46,9 +47,9 @@ def compress (filename, input, output):
     write32(output, crcval)             # ... the CRC ...
     write32(output, statval[6])         # and the file size.
 
-def decompress (input, output):
+def decompress(input, output):
     magic = input.read(2)
-    if magic != '\037\213':
+    if magic != b'\037\213':
         print('Not a gzipped file')
         sys.exit(0)
     if ord(input.read(1)) != 8:
@@ -66,21 +67,21 @@ def decompress (input, output):
         # Read and discard a null-terminated string containing the filename
         while True:
             s = input.read(1)
-            if s == '\0': break
+            if s == b'\0': break
     if flag & FCOMMENT:
         # Read and discard a null-terminated string containing a comment
         while True:
-            s=input.read(1)
-            if s=='\0': break
+            s = input.read(1)
+            if s == b'\0': break
     if flag & FHCRC:
         input.read(2)                   # Read & discard the 16-bit header CRC
 
     decompobj = zlib.decompressobj(-zlib.MAX_WBITS)
-    crcval = zlib.crc32("")
+    crcval = zlib.crc32(b'')
     length = 0
     while True:
-        data=input.read(1024)
-        if data == "":
+        data = input.read(1024)
+        if data == b"":
             break
         decompdata = decompobj.decompress(data)
         output.write(decompdata)
