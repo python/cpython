@@ -1,31 +1,40 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
-faqwiz		FAQ Wizard: a CGI script for a user-editable FAQ.
+buildbot        Batchfiles for running on Windows buildslaves.
 
-freeze		Create a stand-alone executable from a Python program.
+ccbench         A Python concurrency benchmark.
+
+framer          Generate boilerplate code for C extension types.
+
+freeze          Create a stand-alone executable from a Python program.
 
 gdb             Python code to be run inside gdb, to make it easier to
                 debug Python itself (by David Malcolm).
 
-i18n		Tools for internationalization. pygettext.py 
-		parses Python source code and generates .pot files,
-		and msgfmt.py generates a binary message catalog 
-		from a catalog in text format.
+i18n            Tools for internationalization. pygettext.py
+                parses Python source code and generates .pot files,
+                and msgfmt.py generates a binary message catalog
+                from a catalog in text format.
 
-pynche		A Tkinter-based color editor.
+iobench         Benchmark for the new Python I/O system.
 
-scripts		A number of useful single-file programs, e.g. tabnanny.py
-		(by Tim Peters), which checks for inconsistent mixing
-		of tabs and spaces.
+msi             Support for packaging Python as an MSI package on Windows.
 
-unicode		Tools used to generate unicode database files for
-		Python 2.0 (by Fredrik Lundh).
+pybench         Comprehensive Python benchmarking suite.
 
-versioncheck	A tool to automate checking whether you have the latest
-		version of a package (by Jack Jansen).
+pynche          A Tkinter-based color editor.
 
-world		Script to take a list of Internet addresses and print
-		out where in the world those addresses originate from,
-		based on the top-level domain country code found in
-		the address. 
+scripts         A number of useful single-file programs, e.g. tabnanny.py
+                (by Tim Peters), which checks for inconsistent mixing
+                of tabs and spaces.
+
+ssl             Currently, a tool to fetch server certificates.
+
+unicode         Tools used to generate unicode database files for
+                Python 2.0 (by Fredrik Lundh).
+
+world           Script to take a list of Internet addresses and print
+                out where in the world those addresses originate from,
+                based on the top-level domain country code found in
+                the address.
