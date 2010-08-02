@@ -199,7 +199,7 @@ class TypeMetaclass(BaseMetaclass):
         p(template.type_struct_start)
         for s in Slots[:-5]: # XXX
             val = self.__slots.get(s, s.default)
-            ntabs = 4 - (4 + len(val)) / 8
+            ntabs = 4 - (4 + len(val)) // 8
             line = "        %s,%s/* %s */" % (val, "\t" * ntabs, s.name)
             print(line, file=f)
         p(template.type_struct_end)
