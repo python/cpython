@@ -16,7 +16,7 @@ import re
 from Tkinter import *
 from SimpleDialog import SimpleDialog
 
-from configHandler import idleConf
+from idlelib.configHandler import idleConf
 
 try:
     from codecs import BOM_UTF8

@@ -18,8 +18,8 @@ import os
 from Tkinter import *
 import imp
 
-import ZoomHeight
-from configHandler import idleConf
+from idlelib import ZoomHeight
+from idlelib.configHandler import idleConf
 
 ICONDIR = "Icons"
 
@@ -397,7 +397,7 @@ class FileTreeItem(TreeItem):
             names = os.listdir(self.path)
         except os.error:
             return []
-        names.sort(lambda a, b: cmp(os.path.normcase(a), os.path.normcase(b)))
+        names.sort(key = os.path.normcase)
         sublist = []
         for name in names:
             item = FileTreeItem(os.path.join(self.path, name))
@@ -452,7 +452,7 @@ class ScrolledCanvas:
 # Testing functions
 
 def test():
-    import PyShell
+    from idlelib import PyShell
     root = Toplevel(PyShell.root)
     root.configure(bd=0, bg="yellow")
     root.focus_set()

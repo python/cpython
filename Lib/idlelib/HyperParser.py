@@ -10,7 +10,7 @@ structure of code, used by extensions to help the user.
 
 import string
 import keyword
-import PyParse
+from idlelib import PyParse
 
 class HyperParser:
 
@@ -31,7 +31,7 @@ class HyperParser:
         if not editwin.context_use_ps1:
             for context in editwin.num_context_lines:
                 startat = max(lno - context, 1)
-                startatindex = `startat` + ".0"
+                startatindex = repr(startat) + ".0"
                 stopatindex = "%d.end" % lno
                 # We add the newline because PyParse requires a newline at end.
                 # We add a space so that index won't be at end of line, so that

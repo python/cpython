@@ -132,7 +132,7 @@ class GetKeysDialog(Toplevel):
         order is also important: key binding equality depends on it, so
         config-keys.def must use the same ordering.
         """
-        import macosxSupport
+        from idlelib import macosxSupport
         if macosxSupport.runningAsOSXApp():
             self.modifiers = ['Shift', 'Control', 'Option', 'Command']
         else:
@@ -167,7 +167,7 @@ class GetKeysDialog(Toplevel):
 
     def GetModifiers(self):
         modList = [variable.get() for variable in self.modifier_vars]
-        return filter(None, modList)
+        return [mod for mod in modList if mod]
 
     def ClearKeySeq(self):
         self.listKeysFinal.select_clear(0,END)
