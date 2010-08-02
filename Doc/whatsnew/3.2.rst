@@ -66,6 +66,38 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
+* The functools module now includes two new decorators for caching function
+  calls, :func:`functools.lru_cache` and :func:`functools.lfu_cache`. These can
+  save repeated queries to an external resource whenever the results are
+  expected to be the same.
+
+  For example, adding an LFU decorator to a database query function can save
+  database accesses for the most popular searches::
+
+      @functools.lfu_cache(maxsize=50)
+      def get_phone_number(name):
+          c = conn.cursor()
+          c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
+          return c.fetchone()[0]
+
+  The LFU (least-frequently-used) cache gives best results when the distribution
+  of popular queries tends to remain the same over time. In contrast, the LRU
+  (least-recently-used) cache gives best results when the distribution changes
+  over time (for example, the most popular news articles change each day as
+  newer articles are added).
+
+  The two caching decorators can be composed (nested) to handle hybrid cases
+  that have both long-term access patterns and some short-term access trends.
+  For example, music searches can reflect both long-term patterns (popular
+  classics) and short-term trends (new releases)::
+
+      @functools.lfu_cache(maxsize=500)
+      @functools.lru_cache(maxsize=100)
+      def find_music(song):
+          ...
+
+  (Contributed by Raymond Hettinger)
+
 * The previously deprecated :func:`contextlib.nested` function has been
   removed in favor of a plain :keyword:`with` statement which can
   accept multiple context managers.  The latter technique is faster
