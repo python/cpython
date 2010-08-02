@@ -132,7 +132,7 @@ class Callbacks(unittest.TestCase):
         gc.collect()
         live = [x for x in gc.get_objects()
                 if isinstance(x, X)]
-        self.failUnlessEqual(len(live), 0)
+        self.assertEqual(len(live), 0)
 
 try:
     WINFUNCTYPE
@@ -164,7 +164,7 @@ class SampleCallbacksTestCase(unittest.TestCase):
         result = integrate(0.0, 1.0, CALLBACK(func), 10)
         diff = abs(result - 1./3.)
 
-        self.failUnless(diff < 0.01, "%s not less than 0.01" % diff)
+        self.assertTrue(diff < 0.01, "%s not less than 0.01" % diff)
 
 ################################################################
 

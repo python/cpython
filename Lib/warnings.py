@@ -29,7 +29,7 @@ def _show_warning(message, category, filename, lineno, file=None, line=None):
         file.write(formatwarning(message, category, filename, lineno, line))
     except IOError:
         pass # the file (probably stderr) is invalid - this warning gets lost.
-# Keep a worrking version around in case the deprecation of the old API is
+# Keep a working version around in case the deprecation of the old API is
 # triggered.
 showwarning = _show_warning
 
