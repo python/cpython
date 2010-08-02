@@ -30,7 +30,7 @@ class ComparatorTests (unittest.TestCase):
         data = expected_data[:]
 
         import sys
-        if sys.version_info[0] < 3 :
+        if sys.version_info[:3] < (2, 6, 0):
             if sys.version_info[:3] < (2, 4, 0):
                 data.sort(comparator)
             else :
@@ -47,7 +47,7 @@ class ComparatorTests (unittest.TestCase):
                     data2.append(i)
             data = data2
 
-        self.failUnless (data == expected_data,
+        self.assertEqual (data, expected_data,
                          "comparator `%s' is not right: %s vs. %s"
                          % (comparator, expected_data, data))
     def test_lexical_comparator (self):
@@ -115,14 +115,14 @@ class AbstractBtreeKeyCompareTestCase (unittest.TestCase):
             rec = curs.first ()
             while rec:
                 key, ignore = rec
-                self.failUnless (index < len (expected),
+                self.assertTrue (index < len (expected),
                                  "to many values returned from cursor")
-                self.failUnless (expected[index] == key,
+                self.assertEqual (expected[index], key,
                                  "expected value `%s' at %d but got `%s'"
                                  % (expected[index], index, key))
                 index = index + 1
                 rec = curs.next ()
-            self.failUnless (index == len (expected),
+            self.assertEqual (index, len (expected),
                              "not enough values returned from cursor")
         finally:
             curs.close ()

@@ -7,7 +7,7 @@ import pickle, cPickle
 import warnings
 
 from test.test_support import TESTFN, unlink, run_unittest, captured_output
-from test.test_pep352 import ignore_message_warning
+from test.test_pep352 import ignore_deprecation_warnings
 
 # XXX This is not really enough, each *operation* should be tested!
 
@@ -17,6 +17,7 @@ class ExceptionTests(unittest.TestCase):
         # Reloading the built-in exceptions module failed prior to Py2.2, while it
         # should act the same as reloading built-in sys.
         try:
+            from imp import reload
             import exceptions
             reload(exceptions)
         except ImportError, e:
@@ -108,11 +109,11 @@ class ExceptionTests(unittest.TestCase):
         self.assertRaises(ValueError, chr, 10000)
 
         self.raise_catch(ZeroDivisionError, "ZeroDivisionError")
-        try: x = 1/0
+        try: x = 1 // 0
         except ZeroDivisionError: pass
 
         self.raise_catch(Exception, "Exception")
-        try: x = 1/0
+        try: x = 1 // 0
         except Exception, e: pass
 
     def testSyntaxErrorMessage(self):
@@ -197,6 +198,7 @@ class ExceptionTests(unittest.TestCase):
             self.failUnlessEqual(WindowsError(1001, "message").errno, 22)
             self.failUnlessEqual(WindowsError(1001, "message").winerror, 1001)
 
+    @ignore_deprecation_warnings
     def testAttributes(self):
         # test that exception attributes are happy
 
@@ -274,34 +276,32 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
 
-        with warnings.catch_warnings():
-            ignore_message_warning()
-            for exc, args, expected in exceptionList:
-                try:
-                    raise exc(*args)
-                except BaseException, e:
-                    if type(e) is not exc:
-                        raise
-                    # Verify module name
-                    self.assertEquals(type(e).__module__, 'exceptions')
-                    # Verify no ref leaks in Exc_str()
-                    s = str(e)
-                    for checkArgName in expected:
-                        self.assertEquals(repr(getattr(e, checkArgName)),
-                                          repr(expected[checkArgName]),
-                                          'exception "%s", attribute "%s"' %
-                                           (repr(e), checkArgName))
+        for exc, args, expected in exceptionList:
+            try:
+                raise exc(*args)
+            except BaseException, e:
+                if type(e) is not exc:
+                    raise
+                # Verify module name
+                self.assertEquals(type(e).__module__, 'exceptions')
+                # Verify no ref leaks in Exc_str()
+                s = str(e)
+                for checkArgName in expected:
+                    self.assertEquals(repr(getattr(e, checkArgName)),
+                                      repr(expected[checkArgName]),
+                                      'exception "%s", attribute "%s"' %
+                                       (repr(e), checkArgName))
 
-                    # test for pickling support
-                    for p in pickle, cPickle:
-                        for protocol in range(p.HIGHEST_PROTOCOL + 1):
-                            new = p.loads(p.dumps(e, protocol))
-                            for checkArgName in expected:
-                                got = repr(getattr(new, checkArgName))
-                                want = repr(expected[checkArgName])
-                                self.assertEquals(got, want,
-                                                  'pickled "%r", attribute "%s"' %
-                                                  (e, checkArgName))
+                # test for pickling support
+                for p in pickle, cPickle:
+                    for protocol in range(p.HIGHEST_PROTOCOL + 1):
+                        new = p.loads(p.dumps(e, protocol))
+                        for checkArgName in expected:
+                            got = repr(getattr(new, checkArgName))
+                            want = repr(expected[checkArgName])
+                            self.assertEquals(got, want,
+                                              'pickled "%r", attribute "%s"' %
+                                              (e, checkArgName))
 
 
     def testDeprecatedMessageAttribute(self):
@@ -329,6 +329,7 @@ class ExceptionTests(unittest.TestCase):
         del exc.message
         self.assertRaises(AttributeError, getattr, exc, "message")
 
+    @ignore_deprecation_warnings
     def testPickleMessageAttribute(self):
         # Pickling with message attribute must work, as well.
         e = Exception("foo")
@@ -336,18 +337,18 @@ class ExceptionTests(unittest.TestCase):
         f.message = "bar"
         for p in pickle, cPickle:
             ep = p.loads(p.dumps(e))
-            with warnings.catch_warnings():
-                ignore_message_warning()
-                self.assertEqual(ep.message, "foo")
+            self.assertEqual(ep.message, "foo")
             fp = p.loads(p.dumps(f))
             self.assertEqual(fp.message, "bar")
 
+    @ignore_deprecation_warnings
     def testSlicing(self):
         # Test that you can slice an exception directly instead of requiring
         # going through the 'args' attribute.
         args = (1, 2, 3)
         exc = BaseException(*args)
         self.failUnlessEqual(exc[:], args)
+        self.assertEqual(exc.args[:], args)
 
     def testKeywordArgs(self):
         # test that builtin exception don't take keyword args,
