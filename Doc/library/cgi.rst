@@ -324,10 +324,13 @@ algorithms implemented in this module in other circumstances.
    Convert the characters ``'&'``, ``'<'`` and ``'>'`` in string *s* to HTML-safe
    sequences.  Use this if you need to display text that might contain such
    characters in HTML.  If the optional flag *quote* is true, the quotation mark
-   character (``'"'``) is also translated; this helps for inclusion in an HTML
-   attribute value, as in ``<A HREF="...">``.  If the value to be quoted might
-   include single- or double-quote characters, or both, consider using the
-   :func:`quoteattr` function in the :mod:`xml.sax.saxutils` module instead.
+   character (``"``) is also translated; this helps for inclusion in an HTML
+   attribute value delimited by double quotes, as in ``<a href="...">``.  Note
+   that single quotes are never translated.
+
+   If the value to be quoted might include single- or double-quote characters,
+   or both, consider using the :func:`quoteattr` function in the
+   :mod:`xml.sax.saxutils` module instead.
 
 
 .. _cgi-security:
