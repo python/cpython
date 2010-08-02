@@ -38,7 +38,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         for x in letters:
             recno = d.append(x * 60)
-            self.assertIsInstance(recno, int)
+            self.assertTrue(isinstance(recno, int))
             self.assertGreaterEqual(recno, 1)
             if verbose:
                 print recno,
@@ -54,7 +54,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
             if verbose:
                 print data
 
-            self.assertIsInstance(data, str)
+            self.assertTrue(isinstance(data, str))
             self.assertEqual(data, d.get(recno))
 
         try:
@@ -91,18 +91,18 @@ class SimpleRecnoTestCase(unittest.TestCase):
         keys = d.keys()
         if verbose:
             print keys
-        self.assertIsInstance(keys, list)
-        self.assertIsInstance(keys[0], int)
+        self.assertTrue(isinstance(keys, list))
+        self.assertTrue(isinstance(keys[0], int))
         self.assertEqual(len(keys), len(d))
 
         items = d.items()
         if verbose:
             pprint(items)
-        self.assertIsInstance(items, list)
-        self.assertIsInstance(items[0], tuple)
+        self.assertTrue(isinstance(items, list))
+        self.assertTrue(isinstance(items[0], tuple))
         self.assertEqual(len(items[0]), 2)
-        self.assertIsInstance(items[0][0], int)
-        self.assertIsInstance(items[0][1], str)
+        self.assertTrue(isinstance(items[0][0], int))
+        self.assertTrue(isinstance(items[0][1], str))
         self.assertEqual(len(items), len(d))
 
         self.assertTrue(d.has_key(25))
