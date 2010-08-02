@@ -13,13 +13,13 @@ from Tkinter import *
 import tkMessageBox, tkColorChooser, tkFont
 import string
 
-from configHandler import idleConf
-from dynOptionMenuWidget import DynOptionMenu
-from tabbedpages import TabbedPageSet
-from keybindingDialog import GetKeysDialog
-from configSectionNameDialog import GetCfgSectionNameDialog
-from configHelpSourceEdit import GetHelpSourceDialog
-import macosxSupport
+from idlelib.configHandler import idleConf
+from idlelib.dynOptionMenuWidget import DynOptionMenu
+from idlelib.tabbedpages import TabbedPageSet
+from idlelib.keybindingDialog import GetKeysDialog
+from idlelib.configSectionNameDialog import GetCfgSectionNameDialog
+from idlelib.configHelpSourceEdit import GetHelpSourceDialog
+from idlelib import macosxSupport
 
 class ConfigDialog(Toplevel):
 
@@ -988,15 +988,10 @@ class ConfigDialog(Toplevel):
         self.SetThemeType()
         ##load theme element option menu
         themeNames=self.themeElements.keys()
-        themeNames.sort(self.__ThemeNameIndexCompare)
+        themeNames.sort(key=lambda x: self.themeElements[x][1])
         self.optMenuHighlightTarget.SetMenu(themeNames,themeNames[0])
         self.PaintThemeSample()
         self.SetHighlightTarget()
-
-    def __ThemeNameIndexCompare(self,a,b):
-        if self.themeElements[a][1]<self.themeElements[b][1]: return -1
-        elif self.themeElements[a][1]==self.themeElements[b][1]: return 0
-        else: return 1
 
     def LoadKeyCfg(self):
         ##current keys type radiobutton

@@ -6,18 +6,18 @@ from itertools import count
 from Tkinter import *
 import tkSimpleDialog
 import tkMessageBox
-from MultiCall import MultiCallCreator
-
 import webbrowser
-import idlever
-import WindowList
-import SearchDialog
-import GrepDialog
-import ReplaceDialog
-import PyParse
-from configHandler import idleConf
-import aboutDialog, textView, configDialog
-import macosxSupport
+
+from idlelib.MultiCall import MultiCallCreator
+from idlelib import idlever
+from idlelib import WindowList
+from idlelib import SearchDialog
+from idlelib import GrepDialog
+from idlelib import ReplaceDialog
+from idlelib import PyParse
+from idlelib.configHandler import idleConf
+from idlelib import aboutDialog, textView, configDialog
+from idlelib import macosxSupport
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -50,13 +50,13 @@ def _find_module(fullname, path=None):
     return file, filename, descr
 
 class EditorWindow(object):
-    from Percolator import Percolator
-    from ColorDelegator import ColorDelegator
-    from UndoDelegator import UndoDelegator
-    from IOBinding import IOBinding, filesystemencoding, encoding
-    import Bindings
+    from idlelib.Percolator import Percolator
+    from idlelib.ColorDelegator import ColorDelegator
+    from idlelib.UndoDelegator import UndoDelegator
+    from idlelib.IOBinding import IOBinding, filesystemencoding, encoding
+    from idlelib import Bindings
     from Tkinter import Toplevel
-    from MultiStatusBar import MultiStatusBar
+    from idlelib.MultiStatusBar import MultiStatusBar
 
     help_url = None
 
@@ -579,11 +579,11 @@ class EditorWindow(object):
             return None
         head, tail = os.path.split(filename)
         base, ext = os.path.splitext(tail)
-        import ClassBrowser
+        from idlelib import ClassBrowser
         ClassBrowser.ClassBrowser(self.flist, base, [head])
 
     def open_path_browser(self, event=None):
-        import PathBrowser
+        from idlelib import PathBrowser
         PathBrowser.PathBrowser(self.flist)
 
     def gotoline(self, lineno):
@@ -1193,7 +1193,7 @@ class EditorWindow(object):
             if not self.context_use_ps1:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
-                    startatindex = `startat` + ".0"
+                    startatindex = repr(startat) + ".0"
                     rawtext = text.get(startatindex, "insert")
                     y.set_str(rawtext)
                     bod = y.find_good_parse_start(
