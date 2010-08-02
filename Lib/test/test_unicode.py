@@ -511,9 +511,11 @@ class UnicodeTest(
         )
 
         if not sys.platform.startswith('java'):
+            with test_support._check_py3k_warnings():
+                buf = buffer('character buffers are decoded to unicode')
             self.assertEqual(
                 unicode(
-                    buffer('character buffers are decoded to unicode'),
+                    buf,
                     'utf-8',
                     'strict'
                 ),
