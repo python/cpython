@@ -166,9 +166,9 @@ class CgiTests(unittest.TestCase):
                     self.assertEqual(sorted(sd.getlist(key)), sorted(expect_val))
                     if single_value:
                         self.assertEqual(sorted(sd.values()),
-                                         sorted(first_elts(expect.values())))
+                                         first_elts(sorted(expect.values())))
                         self.assertEqual(sorted(sd.items()),
-                                         sorted(first_second_elts(expect.items())))
+                                         first_second_elts(sorted(expect.items())))
 
     def test_weird_formcontentdict(self):
         # Test the weird FormContentDict classes
