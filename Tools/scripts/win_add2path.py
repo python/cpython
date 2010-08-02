@@ -15,7 +15,7 @@ import winreg
 HKCU = winreg.HKEY_CURRENT_USER
 ENV = "Environment"
 PATH = "PATH"
-DEFAULT = u"%PATH%"
+DEFAULT = "%PATH%"
 
 def modify():
     pythonpath = os.path.dirname(os.path.normpath(sys.executable))
