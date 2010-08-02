@@ -405,9 +405,45 @@ class RequestBodyTest(TestCase):
         self.assertEqual("5", message.get("content-length"))
         self.assertEqual(b'body\xc1', f.read())
 
+
+class HTTPResponseTest(TestCase):
+
+    def setUp(self):
+        body = "HTTP/1.1 200 Ok\r\nMy-Header: first-value\r\nMy-Header: \
+                second-value\r\n\r\nText"
+        sock = FakeSocket(body)
+        self.resp = client.HTTPResponse(sock)
+        self.resp.begin()
+
+    def test_getting_header(self):
+        header = self.resp.getheader('My-Header')
+        self.assertEqual(header, 'first-value, second-value')
+
+        header = self.resp.getheader('My-Header', 'some default')
+        self.assertEqual(header, 'first-value, second-value')
+
+    def test_getting_nonexistent_header_with_string_default(self):
+        header = self.resp.getheader('No-Such-Header', 'default-value')
+        self.assertEqual(header, 'default-value')
+
+    def test_getting_nonexistent_header_with_iterable_default(self):
+        header = self.resp.getheader('No-Such-Header', ['default', 'values'])
+        self.assertEqual(header, 'default, values')
+
+        header = self.resp.getheader('No-Such-Header', ('default', 'values'))
+        self.assertEqual(header, 'default, values')
+
+    def test_getting_nonexistent_header_without_default(self):
+        header = self.resp.getheader('No-Such-Header')
+        self.assertEqual(header, None)
+
+    def test_getting_header_defaultint(self):
+        header = self.resp.getheader('No-Such-Header',default=42)
+        self.assertEqual(header, 42)
+
 def test_main(verbose=None):
     support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
-                         HTTPSTimeoutTest, RequestBodyTest)
+                         HTTPSTimeoutTest, RequestBodyTest, HTTPResponseTest)
 
 if __name__ == '__main__':
     test_main()
