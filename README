@@ -53,7 +53,7 @@ What's New
 We try to have a comprehensive overview of the changes in the "What's New in
 Python 3.2" document, found at
 
-    http://docs.python.org/dev/3.2/whatsnew/3.2.html
+    http://docs.python.org/3.2/whatsnew/3.2.html
 
 For a more detailed change log, read Misc/NEWS (though this file, too, is
 incomplete, and also doesn't list anything merged in from the 2.7 release under
@@ -68,7 +68,7 @@ Documentation
 
 Documentation for Python 3.2 is online, updated daily:
 
-    http://docs.python.org/dev/
+    http://docs.python.org/3.2/
 
 It can also be downloaded in many formats for faster access.  The documentation
 is downloadable in HTML, PDF, and reStructuredText formats; the latter version
@@ -86,7 +86,7 @@ backported versions of certain key Python 3.x features.
 A source-to-source translation tool, "2to3", can take care of the mundane task
 of converting large amounts of source code.  It is not a complete solution but
 is complemented by the deprecation warnings in 2.6.  See
-http://docs.python.org/dev/library/2to3.html for more information.
+http://docs.python.org/3.2/library/2to3.html for more information.
 
 
 Testing
