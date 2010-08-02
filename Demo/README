@@ -13,7 +13,7 @@ subdirectories listed here are distributed.  They are listed just
 in case I change my mind about them.
 
 
-cgi             CGI examples (see also ../Tools/faqwiz/.)
+cgi             CGI examples.
 
 classes         Some examples of how to use classes.
 
