@@ -602,7 +602,11 @@ class HTTPResponse(io.RawIOBase):
     def getheader(self, name, default=None):
         if self.headers is None:
             raise ResponseNotReady()
-        return ', '.join(self.headers.get_all(name, default))
+        headers = self.headers.get_all(name) or default
+        if isinstance(headers, str) or not hasattr(headers, '__iter__'):
+            return headers
+        else:
+            return ', '.join(headers)
 
     def getheaders(self):
         """Return list of (header, value) tuples."""
