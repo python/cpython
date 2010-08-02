@@ -7,7 +7,7 @@ import socket
 import urllib
 import sys
 import os
-import mimetools
+mimetools = test_support.import_module("mimetools", deprecated=True)
 import time
 
 
