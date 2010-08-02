@@ -76,7 +76,7 @@ varargs = """\
 
 module_init_start = """\
 PyMODINIT_FUNC
-init%(ModuleName)s(void)
+PyInit_%(ModuleName)s(void)
 {
         PyObject *mod;
 
