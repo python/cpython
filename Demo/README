@@ -15,47 +15,51 @@ in case I change my mind about them.
 
 cgi             CGI examples (see also ../Tools/faqwiz/.)
 
-classes		Some examples of how to use classes.
+classes         Some examples of how to use classes.
 
-comparisons	A set of responses to a really old language-comparison
-		challenge.
+comparisons     A set of responses to a really old language-comparison
+                challenge.
 
-curses		A set of curses demos.
+curses          A set of curses demos.
 
-embed		An example of embedding Python in another application
-		(see also pysvr).
+distutils       Test for using transparent 2to3 conversion in distutils.
 
-imputil		Demonstration subclasses of imputil.Importer.
+embed           An example of embedding Python in another application
+                (see also pysvr).
 
-md5test		Test program for the optional md5 module.
+imputil         Demonstration subclasses of imputil.Importer.
 
-metaclasses	The code from the 1.5 metaclasses paper on the web.
+md5test         Test program for the optional md5 module.
 
-parser		Example using the parser module.
+newmetaclasses  Demonstration of metaclasses.
 
-pdist		Old, unfinished code messing with CVS, RCS and remote
-		files.
+parser          Example using the parser module.
 
-pysvr		An example of embedding Python in a threaded
-		application.
+pdist           Old, unfinished code messing with CVS, RCS and remote
+                files.
 
-rpc		A set of classes for building clients and servers for
-		Sun RPC.
+pysvr           An example of embedding Python in a threaded
+                application.
 
-scripts		Some useful Python scripts that I put in my bin
-		directory.  No optional built-in modules needed.
+rpc             A set of classes for building clients and servers for
+                Sun RPC.
 
-sockets		Examples for the new built-in module 'socket'.
+scripts         Some useful Python scripts that I put in my bin
+                directory.  No optional built-in modules needed.
 
-threads		Demos that use the 'thread' module.  (Currently these
-		only run on SGIs, but this may change in the future.)
+sockets         Examples for the new built-in module 'socket'.
 
-tix		Demos using the Tix widget set addition to Tkinter.
+threads         Demos that use the 'thread' module.  (Currently these
+                only run on SGIs, but this may change in the future.)
 
-tkinter		Demos using the Tk interface (including Matt Conway's
-		excellent set of demos).
+tix             Demos using the Tix widget set addition to Tkinter.
 
-xml		Some XML demos.
+tkinter         Demos using the Tk interface (including Matt Conway's
+                excellent set of demos).
 
-zlib		Some demos for the zlib module (see also the standard
-		library module gzip.py).
+turtle          Demos for the "turtle" module.
+
+xml             Some XML demos.
+
+zlib            Some demos for the zlib module (see also the standard
+                library module gzip.py).
