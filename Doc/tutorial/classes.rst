@@ -64,7 +64,7 @@ Let's begin with some definitions.
 A *namespace* is a mapping from names to objects.  Most namespaces are currently
 implemented as Python dictionaries, but that's normally not noticeable in any
 way (except for performance), and it may change in the future.  Examples of
-namespaces are: the set of built-in names (functions such as :func:`abs`, and
+namespaces are: the set of built-in names (containing functions such as :func:`abs`, and
 built-in exception names); the global names in a module; and the local names in
 a function invocation.  In a sense the set of attributes of an object also form
 a namespace.  The important thing to know about namespaces is that there is

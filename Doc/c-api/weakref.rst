@@ -63,9 +63,16 @@ as much as it can.
 .. cfunction:: PyObject* PyWeakref_GetObject(PyObject *ref)
 
    Return the referenced object from a weak reference, *ref*.  If the referent is
-   no longer live, returns ``None``.
+   no longer live, returns :const:`Py_None`.
 
    .. versionadded:: 2.2
+
+   .. warning::
+
+      This function returns a **borrowed reference** to the referenced object.
+      This means that you should always call :cfunc:`Py_INCREF` on the object
+      except if you know that it cannot be destroyed while you are still
+      using it.
 
 
 .. cfunction:: PyObject* PyWeakref_GET_OBJECT(PyObject *ref)
