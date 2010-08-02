@@ -179,14 +179,14 @@ class bsdTableDB :
 
                 def set_range(self, search) :
                     v = self._dbcursor.set_range(bytes(search, "iso8859-1"))
-                    if v != None :
+                    if v is not None :
                         v = (v[0].decode("iso8859-1"),
                                 v[1].decode("iso8859-1"))
                     return v
 
                 def __next__(self) :
                     v = getattr(self._dbcursor, "next")()
-                    if v != None :
+                    if v is not None :
                         v = (v[0].decode("iso8859-1"),
                                 v[1].decode("iso8859-1"))
                     return v
@@ -204,7 +204,7 @@ class bsdTableDB :
 
                 def put(self, key, value, flags=0, txn=None) :
                     key = bytes(key, "iso8859-1")
-                    if value != None :
+                    if value is not None :
                         value = bytes(value, "iso8859-1")
                     return self._db.put(key, value, flags=flags, txn=txn)
 
@@ -215,7 +215,7 @@ class bsdTableDB :
                 def get(self, key, txn=None, flags=0) :
                     key = bytes(key, "iso8859-1")
                     v = self._db.get(key, txn=txn, flags=flags)
-                    if v != None :
+                    if v is not None :
                         v = v.decode("iso8859-1")
                     return v
 
@@ -540,7 +540,7 @@ class bsdTableDB :
                              # error
                             dataitem = None
                         dataitem = mappings[column](dataitem)
-                        if dataitem <> None:
+                        if dataitem is not None:
                             self.db.put(
                                 _data_key(table, column, rowid),
                                 dataitem, txn=txn)

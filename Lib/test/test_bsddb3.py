@@ -7,8 +7,7 @@ import sys
 import tempfile
 import time
 import unittest
-from test.test_support import (requires, verbose, run_unittest, unlink, rmtree,
-                               import_module)
+from test.test_support import requires, run_unittest, import_module
 
 # Skip test if _bsddb module was not built.
 import_module('_bsddb')

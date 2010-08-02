@@ -342,7 +342,7 @@ class BasicTestCase(unittest.TestCase):
         else:
             if set_raises_error:
                 self.fail("expected exception")
-            if n != None:
+            if n is not None:
                 self.fail("expected None: %r" % (n,))
 
         rec = c.get_both('0404', self.makeData('0404'))
@@ -356,7 +356,7 @@ class BasicTestCase(unittest.TestCase):
         else:
             if get_raises_error:
                 self.fail("expected exception")
-            if n != None:
+            if n is not None:
                 self.fail("expected None: %r" % (n,))
 
         if self.d.get_type() == db.DB_BTREE:
