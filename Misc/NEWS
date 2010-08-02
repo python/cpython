@@ -29,6 +29,9 @@ Extensions
 Library
 -------
 
+- Issue #7372: Fix pstats regression when stripping paths from profile
+  data generated with the profile module.
+
 - Issue #9428: Fix running scripts with the profile/cProfile modules from
   the command line.
 
