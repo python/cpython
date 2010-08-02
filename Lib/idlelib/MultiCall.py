@@ -107,10 +107,9 @@ class _SimpleBinder:
 # a list of the states which are a subset of it. This list is ordered by the
 # number of modifiers is the state - the most specific state comes first.
 _states = range(1 << len(_modifiers))
-_state_names = [reduce(lambda x, y: x + y,
-                       [_modifiers[i][0]+'-' for i in range(len(_modifiers))
-                        if (1 << i) & s],
-                       "")
+_state_names = [''.join(m[0]+'-'
+                        for i, m in enumerate(_modifiers)
+                        if (1 << i) & s)
                 for s in _states]
 _state_subsets = map(lambda i: filter(lambda j: not (j & (~i)), _states),
                       _states)
@@ -119,11 +118,13 @@ for l in _state_subsets:
                                                       range(len(_modifiers)))):
            nummod(b) - nummod(a))
 # _state_codes gives for each state, the portable code to be passed as mc_state
-_state_codes = [reduce(lambda x, y: x | y,
-                       [_modifier_masks[i] for i in range(len(_modifiers))
-                        if (1 << i) & s],
-                       0)
-                for s in _states]
+_state_codes = []
+for s in _states:
+    r = 0
+    for i in range(len(_modifiers)):
+        if (1 << i) & s:
+            r |= _modifier_masks[i]
+    _state_codes.append(r)
 
 class _ComplexBinder:
     # This class binds many functions, and only unbinds them when it is deleted.
