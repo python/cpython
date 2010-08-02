@@ -1,4 +1,4 @@
-#! /usr/bin/env python3.0
+#! /usr/bin/env python3
 
 """Show file statistics by extension."""
 
