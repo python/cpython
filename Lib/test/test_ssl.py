@@ -975,7 +975,8 @@ else:
                 # now fetch the same data from the HTTPS server
                 url = 'https://127.0.0.1:%d/%s' % (
                     server.port, os.path.split(CERTFILE)[1])
-                f = urllib.urlopen(url)
+                with test_support._check_py3k_warnings():
+                    f = urllib.urlopen(url)
                 dlen = f.info().getheader("content-length")
                 if dlen and (int(dlen) > 0):
                     d2 = f.read(int(dlen))

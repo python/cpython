@@ -1,6 +1,6 @@
 # Augmented assignment test.
 
-from test.test_support import run_unittest
+from test.test_support import run_unittest, _check_py3k_warnings
 import unittest
 
 
@@ -321,7 +321,8 @@ __ilshift__ called
 '''.splitlines())
 
 def test_main():
-    run_unittest(AugAssignTest)
+    with _check_py3k_warnings(("classic int division", DeprecationWarning)):
+        run_unittest(AugAssignTest)
 
 if __name__ == '__main__':
     test_main()

@@ -137,12 +137,10 @@ class TestBuffercStringIO(TestcStringIO):
 
 
 def test_main():
-    test_support.run_unittest(
-        TestStringIO,
-        TestcStringIO,
-        TestBufferStringIO,
-        TestBuffercStringIO
-    )
+    test_support.run_unittest(TestStringIO, TestcStringIO)
+    with test_support._check_py3k_warnings(("buffer.. not supported",
+                                             DeprecationWarning)):
+        test_support.run_unittest(TestBufferStringIO, TestBuffercStringIO)
 
 if __name__ == '__main__':
     test_main()

@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
-import warnings
-warnings.filterwarnings("ignore", "the sets module is deprecated",
-                        DeprecationWarning, "test\.test_sets")
-
 import unittest, operator, copy, pickle, random
-from sets import Set, ImmutableSet
 from test import test_support
+
+test_support.import_module("sets", deprecated=True)
+from sets import Set, ImmutableSet
 
 empty_set = Set()
 
@@ -638,6 +636,10 @@ class TestOnlySetsOperator(TestOnlySetsInBinaryOps):
         self.other = operator.add
         self.otherIsIterable = False
 
+    def test_ge_gt_le_lt(self):
+        with test_support._check_py3k_warnings():
+            super(TestOnlySetsOperator, self).test_ge_gt_le_lt()
+
 #------------------------------------------------------------------------------
 
 class TestOnlySetsTuple(TestOnlySetsInBinaryOps):
@@ -679,11 +681,12 @@ class TestCopying(unittest.TestCase):
 
     def test_copy(self):
         dup = self.set.copy()
-        dup_list = list(dup); dup_list.sort()
-        set_list = list(self.set); set_list.sort()
+        self.assertEqual(len(dup), len(self.set))
+        dup_list = sorted(dup)
+        set_list = sorted(self.set)
         self.assertEqual(len(dup_list), len(set_list))
-        for i in range(len(dup_list)):
-            self.failUnless(dup_list[i] is set_list[i])
+        for i, el in enumerate(dup_list):
+            self.assertTrue(el is set_list[i])
 
     def test_deep_copy(self):
         dup = copy.deepcopy(self.set)
@@ -693,6 +696,7 @@ class TestCopying(unittest.TestCase):
         self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
             self.assertEqual(dup_list[i], set_list[i])
+
 
 #------------------------------------------------------------------------------
 
@@ -711,6 +715,10 @@ class TestCopyingSingleton(TestCopying):
 class TestCopyingTriple(TestCopying):
     def setUp(self):
         self.set = Set(["zero", 0, None])
+
+    def test_copy(self):
+        with test_support._check_py3k_warnings():
+            super(TestCopyingTriple, self).test_copy()
 
 #------------------------------------------------------------------------------
 

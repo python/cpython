@@ -4,10 +4,13 @@ import unittest
 import inspect
 import datetime
 
-from test.test_support import TESTFN, run_unittest
+from test.test_support import run_unittest, _check_py3k_warnings
 
-from test import inspect_fodder as mod
-from test import inspect_fodder2 as mod2
+with _check_py3k_warnings(
+        ("tuple parameter unpacking has been removed", SyntaxWarning),
+        quiet=True):
+    from test import inspect_fodder as mod
+    from test import inspect_fodder2 as mod2
 
 # Functions tested in this suite:
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
@@ -26,7 +29,7 @@ if modfile.endswith(('c', 'o')):
 import __builtin__
 
 try:
-    1/0
+    1 // 0
 except:
     tb = sys.exc_traceback
 
@@ -361,11 +364,14 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertArgSpecEquals(A.m, ['self'])
 
     def test_getargspec_sublistofone(self):
-        def sublistOfOne((foo,)): return 1
-        self.assertArgSpecEquals(sublistOfOne, [['foo']])
+        with _check_py3k_warnings(
+                ("tuple parameter unpacking has been removed", SyntaxWarning),
+                ("parenthesized argument names are invalid", SyntaxWarning)):
+            exec 'def sublistOfOne((foo,)): return 1'
+            self.assertArgSpecEquals(sublistOfOne, [['foo']])
 
-        def fakeSublistOfOne((foo)): return 1
-        self.assertArgSpecEquals(fakeSublistOfOne, ['foo'])
+            exec 'def fakeSublistOfOne((foo)): return 1'
+            self.assertArgSpecEquals(fakeSublistOfOne, ['foo'])
 
     def test_classify_oldstyle(self):
         class A:

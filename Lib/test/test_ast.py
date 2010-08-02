@@ -272,7 +272,9 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertRaises(ValueError, ast.literal_eval, 'foo()')
 
 def test_main():
-    test_support.run_unittest(AST_Tests, ASTHelpers_Test)
+    with test_support._check_py3k_warnings(("backquote not supported",
+                                             SyntaxWarning)):
+        test_support.run_unittest(AST_Tests, ASTHelpers_Test)
 
 def main():
     if __name__ != '__main__':

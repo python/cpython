@@ -185,7 +185,7 @@ class TestDecorateSortUndecorate(unittest.TestCase):
     def test_stability(self):
         data = [(random.randrange(100), i) for i in xrange(200)]
         copy = data[:]
-        data.sort(key=lambda (x,y): x)  # sort on the random first field
+        data.sort(key=lambda x: x[0])   # sort on the random first field
         copy.sort()                     # sort using both fields
         self.assertEqual(data, copy)    # should get the same result
 
@@ -207,7 +207,7 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         # Verify that the wrapper has been removed
         data = range(-2,2)
         dup = data[:]
-        self.assertRaises(ZeroDivisionError, data.sort, None, lambda x: 1/x)
+        self.assertRaises(ZeroDivisionError, data.sort, None, lambda x: 1 // x)
         self.assertEqual(data, dup)
 
     def test_key_with_mutation(self):
@@ -274,17 +274,19 @@ def test_main(verbose=None):
         TestBugs,
     )
 
-    test_support.run_unittest(*test_classes)
+    with test_support._check_py3k_warnings(
+            ("the cmp argument is not supported", DeprecationWarning)):
+        test_support.run_unittest(*test_classes)
 
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in xrange(len(counts)):
-            test_support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print counts
+        # verify reference counting
+        if verbose and hasattr(sys, "gettotalrefcount"):
+            import gc
+            counts = [None] * 5
+            for i in xrange(len(counts)):
+                test_support.run_unittest(*test_classes)
+                gc.collect()
+                counts[i] = sys.gettotalrefcount()
+            print counts
 
 if __name__ == "__main__":
     test_main(verbose=True)

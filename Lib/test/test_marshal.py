@@ -129,7 +129,9 @@ class StringTestCase(unittest.TestCase):
 
     def test_buffer(self):
         for s in ["", "Andrè Previn", "abc", " "*10000]:
-            b = buffer(s)
+            with test_support._check_py3k_warnings(("buffer.. not supported",
+                                                     DeprecationWarning)):
+                b = buffer(s)
             new = marshal.loads(marshal.dumps(b))
             self.assertEqual(s, new)
             marshal.dump(b, file(test_support.TESTFN, "wb"))

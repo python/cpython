@@ -1,17 +1,13 @@
 # Python test set -- built-in functions
 
 import platform
-import test.test_support, unittest
-from test.test_support import fcmp, have_unicode, TESTFN, unlink, \
-    run_unittest, run_with_locale, check_warnings
+import unittest
+import warnings
+from test.test_support import (fcmp, have_unicode, TESTFN, unlink,
+                              run_unittest, _check_py3k_warnings, check_warnings)
 from operator import neg
 
-import sys, warnings, cStringIO, random, fractions, UserDict
-warnings.filterwarnings("ignore", "hex../oct.. of negative int",
-                        FutureWarning, __name__)
-warnings.filterwarnings("ignore", "integer argument expected",
-                        DeprecationWarning, "unittest")
-
+import sys, cStringIO, random, UserDict
 # count the number of test runs.
 # used to skip running test_execfile() multiple times
 # and to create unique strings to intern in test_intern()
@@ -419,7 +415,9 @@ class BuiltinTest(unittest.TestCase):
     f.write('z = z+1\n')
     f.write('z = z*2\n')
     f.close()
-    execfile(TESTFN)
+    with _check_py3k_warnings(("execfile.. not supported in 3.x",
+                              DeprecationWarning)):
+        execfile(TESTFN)
 
     def test_execfile(self):
         global numruns
@@ -1073,7 +1071,10 @@ class BuiltinTest(unittest.TestCase):
 
         # Reject floats when it would require PyLongs to represent.
         # (smaller floats still accepted, but deprecated)
-        self.assertRaises(TypeError, range, 1e100, 1e101, 1e101)
+        with check_warnings() as w:
+            warnings.simplefilter("always")
+            self.assertRaises(TypeError, range, 1e100, 1e101, 1e101)
+            self.assertEqual(w.category, DeprecationWarning)
         with check_warnings() as w:
             warnings.simplefilter("always")
             self.assertEqual(range(1.0), [0])
@@ -1119,19 +1120,20 @@ class BuiltinTest(unittest.TestCase):
 
         # Exercise various combinations of bad arguments, to check
         # refcounting logic
-        self.assertRaises(TypeError, range, 1e100)
+        with check_warnings():
+            self.assertRaises(TypeError, range, 1e100)
 
-        self.assertRaises(TypeError, range, 0, 1e100)
-        self.assertRaises(TypeError, range, 1e100, 0)
-        self.assertRaises(TypeError, range, 1e100, 1e100)
+            self.assertRaises(TypeError, range, 0, 1e100)
+            self.assertRaises(TypeError, range, 1e100, 0)
+            self.assertRaises(TypeError, range, 1e100, 1e100)
 
-        self.assertRaises(TypeError, range, 0, 0, 1e100)
-        self.assertRaises(TypeError, range, 0, 1e100, 1)
-        self.assertRaises(TypeError, range, 0, 1e100, 1e100)
-        self.assertRaises(TypeError, range, 1e100, 0, 1)
-        self.assertRaises(TypeError, range, 1e100, 0, 1e100)
-        self.assertRaises(TypeError, range, 1e100, 1e100, 1)
-        self.assertRaises(TypeError, range, 1e100, 1e100, 1e100)
+            self.assertRaises(TypeError, range, 0, 0, 1e100)
+            self.assertRaises(TypeError, range, 0, 1e100, 1)
+            self.assertRaises(TypeError, range, 0, 1e100, 1e100)
+            self.assertRaises(TypeError, range, 1e100, 0, 1)
+            self.assertRaises(TypeError, range, 1e100, 0, 1e100)
+            self.assertRaises(TypeError, range, 1e100, 1e100, 1)
+            self.assertRaises(TypeError, range, 1e100, 1e100, 1e100)
 
     def test_input_and_raw_input(self):
         self.write_testfile()

@@ -207,17 +207,20 @@ def test_main(verbose=None):
     import sys
     from test import test_support
     test_classes = (TestTranforms,)
-    test_support.run_unittest(*test_classes)
 
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in xrange(len(counts)):
-            test_support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print counts
+    with test_support._check_py3k_warnings(
+            ("backquote not supported", SyntaxWarning)):
+        test_support.run_unittest(*test_classes)
+
+        # verify reference counting
+        if verbose and hasattr(sys, "gettotalrefcount"):
+            import gc
+            counts = [None] * 5
+            for i in xrange(len(counts)):
+                test_support.run_unittest(*test_classes)
+                gc.collect()
+                counts[i] = sys.gettotalrefcount()
+            print counts
 
 if __name__ == "__main__":
     test_main(verbose=True)

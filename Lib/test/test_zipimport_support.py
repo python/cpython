@@ -14,6 +14,7 @@ import doctest
 import inspect
 import linecache
 import pdb
+import warnings
 
 verbose = test.test_support.verbose
 
@@ -170,8 +171,15 @@ class ZipSupportTests(ImportHooksBaseTestCase):
                 test_zipped_doctest.test_testfile,
                 test_zipped_doctest.test_unittest_reportflags,
             ]
-            for obj in known_good_tests:
-                _run_object_doctest(obj, test_zipped_doctest)
+            # Needed for test_DocTestParser and test_debug
+            with test.test_support._check_py3k_warnings(
+                    ("backquote not supported", SyntaxWarning),
+                    ("execfile.. not supported", DeprecationWarning)):
+                # Ignore all warnings about the use of class Tester in this module.
+                warnings.filterwarnings("ignore", "class Tester is deprecated",
+                                        DeprecationWarning)
+                for obj in known_good_tests:
+                    _run_object_doctest(obj, test_zipped_doctest)
 
     def test_doctest_main_issue4197(self):
         test_src = textwrap.dedent("""\

@@ -561,11 +561,12 @@ class LongTest(unittest.TestCase):
             def __getslice__(self, i, j):
                 return i, j
 
-        self.assertEqual(X()[-5L:7L], (-5, 7))
-        # use the clamping effect to test the smallest and largest longs
-        # that fit a Py_ssize_t
-        slicemin, slicemax = X()[-2L**100:2L**100]
-        self.assertEqual(X()[slicemin:slicemax], (slicemin, slicemax))
+        with test_support._check_py3k_warnings():
+            self.assertEqual(X()[-5L:7L], (-5, 7))
+            # use the clamping effect to test the smallest and largest longs
+            # that fit a Py_ssize_t
+            slicemin, slicemax = X()[-2L**100:2L**100]
+            self.assertEqual(X()[slicemin:slicemax], (slicemin, slicemax))
 
 # ----------------------------------- tests of auto int->long conversion
 
@@ -605,8 +606,9 @@ class LongTest(unittest.TestCase):
                 checkit(x, '*', y)
 
                 if y:
-                    expected = longx / longy
-                    got = x / y
+                    with test_support._check_py3k_warnings():
+                        expected = longx / longy
+                        got = x / y
                     checkit(x, '/', y)
 
                     expected = longx // longy

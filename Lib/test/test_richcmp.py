@@ -330,7 +330,12 @@ class ListTest(unittest.TestCase):
             self.assertIs(op(x, y), True)
 
 def test_main():
-    test_support.run_unittest(VectorTest, NumberTest, MiscTest, DictTest, ListTest)
+    test_support.run_unittest(VectorTest, NumberTest, MiscTest, ListTest)
+    with test_support._check_py3k_warnings(("dict inequality comparisons "
+                                             "not supported in 3.x",
+                                             DeprecationWarning)):
+        test_support.run_unittest(DictTest)
+
 
 if __name__ == "__main__":
     test_main()
