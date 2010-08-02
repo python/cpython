@@ -150,7 +150,7 @@ class Stats:
         if not arg_list: return self
         if len(arg_list) > 1: self.add(*arg_list[1:])
         other = arg_list[0]
-        if type(self) != type(other):
+        if type(self) != type(other) or self.__class__ != other.__class__:
             other = Stats(other)
         self.files += other.files
         self.total_calls += other.total_calls
@@ -218,7 +218,7 @@ class Stats:
         if not field:
             self.fcn_list = 0
             return self
-        if len(field) == 1 and isinstance(field[0], int):
+        if len(field) == 1 and isinstance(field[0], (int, long)):
             # Be compatible with old profiler
             field = [ {-1: "stdname",
                        0:  "calls",
@@ -300,7 +300,7 @@ class Stats:
 
     def eval_print_amount(self, sel, list, msg):
         new_list = list
-        if isinstance(sel, str):
+        if isinstance(sel, basestring):
             try:
                 rex = re.compile(sel)
             except re.error:
@@ -315,7 +315,7 @@ class Stats:
             if isinstance(sel, float) and 0.0 <= sel < 1.0:
                 count = int(count * sel + .5)
                 new_list = list[:count]
-            elif isinstance(sel, int) and 0 <= sel < count:
+            elif isinstance(sel, (int, long)) and 0 <= sel < count:
                 count = sel
                 new_list = list[:count]
         if len(list) != len(new_list):
@@ -330,7 +330,7 @@ class Stats:
             stat_list = self.fcn_list[:]
             msg = "   Ordered by: " + self.sort_type + '\n'
         else:
-            stat_list = list(self.stats.keys())
+            stat_list = self.stats.keys()
             msg = "   Random listing order was used\n"
 
         for selection in sel_list:
