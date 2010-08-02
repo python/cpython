@@ -494,8 +494,8 @@ class Trace:
         import __main__
         dict = __main__.__dict__
         if not self.donothing:
-            sys.settrace(self.globaltrace)
             threading.settrace(self.globaltrace)
+            sys.settrace(self.globaltrace)
         try:
             exec cmd in dict, dict
         finally:
@@ -507,8 +507,8 @@ class Trace:
         if globals is None: globals = {}
         if locals is None: locals = {}
         if not self.donothing:
-            sys.settrace(self.globaltrace)
             threading.settrace(self.globaltrace)
+            sys.settrace(self.globaltrace)
         try:
             exec cmd in globals, locals
         finally:
