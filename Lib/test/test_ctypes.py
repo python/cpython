@@ -7,7 +7,7 @@ import_module('_ctypes')
 
 def test_main():
     with _check_py3k_warnings(("buffer.. not supported", DeprecationWarning),
-                             ("classic (int|long) division", DeprecationWarning)):
+                              ("classic (int|long) division", DeprecationWarning),):
         import ctypes.test
         skipped, testcases = ctypes.test.get_tests(ctypes.test, "test_*.py", verbosity=0)
         suites = [unittest.makeSuite(t) for t in testcases]

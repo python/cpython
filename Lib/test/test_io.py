@@ -9,7 +9,7 @@ import array
 import threading
 import random
 import unittest
-from itertools import chain, cycle
+from itertools import cycle, count
 from test import test_support
 
 import codecs

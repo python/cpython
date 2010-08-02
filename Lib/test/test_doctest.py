@@ -3,9 +3,9 @@
 Test script for doctest.
 """
 
+import sys
 from test import test_support
 import doctest
-import warnings
 
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
@@ -2511,12 +2511,12 @@ def test_main():
     test_support.run_doctest(doctest, verbosity=True)
 
     from test import test_doctest
-    with test_support._check_py3k_warnings(
-            ("backquote not supported", SyntaxWarning),
-            ("execfile.. not supported", DeprecationWarning)):
-        # Ignore all warnings about the use of class Tester in this module.
-        warnings.filterwarnings("ignore", "class Tester is deprecated",
-                                DeprecationWarning)
+    # Ignore all warnings about the use of class Tester in this module.
+    deprecations = [("class Tester is deprecated", DeprecationWarning)]
+    if sys.py3kwarning:
+        deprecations += [("backquote not supported", SyntaxWarning),
+                         ("execfile.. not supported", DeprecationWarning)]
+    with test_support.check_warnings(*deprecations):
         # Check the doctest cases defined here:
         test_support.run_doctest(test_doctest, verbosity=True)
 

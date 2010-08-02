@@ -3,12 +3,11 @@
 from test import test_support
 import sys
 import unittest
-import warnings
 
 
 class TestUntestedModules(unittest.TestCase):
     def test_at_least_import_untested_modules(self):
-        with warnings.catch_warnings():
+        with test_support.check_warnings(quiet=True):
             import CGIHTTPServer
             import audiodev
             import bdb
