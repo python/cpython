@@ -40,10 +40,8 @@ A small number of constants live in the built-in namespace.  They are:
 
 .. data:: Ellipsis
 
-   The same as ``...``. Special value used mostly in conjunction with extended
-   slicing syntax for user-defined container data types, as in ::
-
-   .. XXX Someone who understands extended slicing should fill in here.
+   The same as ``...``.  Special value used mostly in conjunction with extended
+   slicing syntax for user-defined container data types.
 
 
 .. data:: __debug__
