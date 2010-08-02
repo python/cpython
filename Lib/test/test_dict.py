@@ -549,7 +549,7 @@ class DictTest(unittest.TestCase):
         # Bug #3537: if an empty but presized dict with a size larger
         # than 7 was in the freelist, it triggered an assertion failure
         try:
-            d = {'a': 1/0,  'b': None, 'c': None, 'd': None, 'e': None,
+            d = {'a': 1//0,  'b': None, 'c': None, 'd': None, 'e': None,
                  'f': None, 'g': None, 'h': None}
         except ZeroDivisionError:
             pass
