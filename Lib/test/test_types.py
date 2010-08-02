@@ -1,6 +1,7 @@
 # Python test set -- part 6, built-in types
 
-from test.test_support import run_unittest, have_unicode, run_with_locale
+from test.test_support import run_unittest, have_unicode, run_with_locale, \
+                              _check_py3k_warnings
 import unittest
 import sys
 import locale
@@ -639,7 +640,10 @@ class TypesTests(unittest.TestCase):
 
 
 def test_main():
-    run_unittest(TypesTests)
+    with _check_py3k_warnings(
+            ("buffer.. not supported", DeprecationWarning),
+            ("classic long division", DeprecationWarning)):
+        run_unittest(TypesTests)
 
 if __name__ == '__main__':
     test_main()

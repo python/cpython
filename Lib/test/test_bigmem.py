@@ -97,21 +97,21 @@ class StrTest(unittest.TestCase):
     def test_encode(self, size):
         return self.basic_encode_test(size, 'utf-8')
 
-    @precisionbigmemtest(size=_4G / 6 + 2, memuse=2)
+    @precisionbigmemtest(size=_4G // 6 + 2, memuse=2)
     def test_encode_raw_unicode_escape(self, size):
         try:
             return self.basic_encode_test(size, 'raw_unicode_escape')
         except MemoryError:
             pass # acceptable on 32-bit
 
-    @precisionbigmemtest(size=_4G / 5 + 70, memuse=3)
+    @precisionbigmemtest(size=_4G // 5 + 70, memuse=3)
     def test_encode_utf7(self, size):
         try:
             return self.basic_encode_test(size, 'utf7')
         except MemoryError:
             pass # acceptable on 32-bit
 
-    @precisionbigmemtest(size=_4G / 4 + 5, memuse=6)
+    @precisionbigmemtest(size=_4G // 4 + 5, memuse=6)
     def test_encode_utf32(self, size):
         try:
             return self.basic_encode_test(size, 'utf32', expectedsize=4*size+4)
@@ -122,7 +122,7 @@ class StrTest(unittest.TestCase):
     def test_decodeascii(self, size):
         return self.basic_encode_test(size, 'ascii', c='A')
 
-    @precisionbigmemtest(size=_4G / 5, memuse=6+2)
+    @precisionbigmemtest(size=_4G // 5, memuse=6+2)
     def test_unicode_repr_oflw(self, size):
         try:
             s = u"\uAAAA"*size
@@ -516,7 +516,7 @@ class StrTest(unittest.TestCase):
         self.assertEquals(s.count('\\'), size)
         self.assertEquals(s.count('0'), size * 2)
 
-    @bigmemtest(minsize=2**32 / 5, memuse=6+2)
+    @bigmemtest(minsize=2**32 // 5, memuse=6+2)
     def test_unicode_repr(self, size):
         s = u"\uAAAA" * size
         self.failUnless(len(repr(s)) > size)
@@ -1053,7 +1053,8 @@ class BufferTest(unittest.TestCase):
     @precisionbigmemtest(size=_1G, memuse=4)
     def test_repeat(self, size):
         try:
-            b = buffer("AAAA")*size
+            with test_support._check_py3k_warnings():
+                b = buffer("AAAA")*size
         except MemoryError:
             pass # acceptable on 32-bit
         else:

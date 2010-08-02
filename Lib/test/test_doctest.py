@@ -2222,7 +2222,7 @@ We don't want `-v` in sys.argv for these tests.
     >>> doctest.master = None  # Reset master.
 
 (Note: we'll be clearing doctest.master after each call to
-`doctest.testfile`, to supress warnings about multiple tests with the
+`doctest.testfile`, to suppress warnings about multiple tests with the
 same name.)
 
 Globals may be specified with the `globs` and `extraglobs` parameters:
@@ -2386,12 +2386,6 @@ bothering with the current sys.stdout encoding.
 # that these use the deprecated doctest.Tester, so should go away (or
 # be rewritten) someday.
 
-# Ignore all warnings about the use of class Tester in this module.
-# Note that the name of this module may differ depending on how it's
-# imported, so the use of __name__ is important.
-warnings.filterwarnings("ignore", "class Tester", DeprecationWarning,
-                        __name__, 0)
-
 def old_test1(): r"""
 >>> from doctest import Tester
 >>> t = Tester(globs={'x': 42}, verbose=0)
@@ -2515,9 +2509,16 @@ def old_test4(): """
 def test_main():
     # Check the doctest cases in doctest itself:
     test_support.run_doctest(doctest, verbosity=True)
-    # Check the doctest cases defined here:
+
     from test import test_doctest
-    test_support.run_doctest(test_doctest, verbosity=True)
+    with test_support._check_py3k_warnings(
+            ("backquote not supported", SyntaxWarning),
+            ("execfile.. not supported", DeprecationWarning)):
+        # Ignore all warnings about the use of class Tester in this module.
+        warnings.filterwarnings("ignore", "class Tester is deprecated",
+                                DeprecationWarning)
+        # Check the doctest cases defined here:
+        test_support.run_doctest(test_doctest, verbosity=True)
 
 import trace, sys
 def test_coverage(coverdir):

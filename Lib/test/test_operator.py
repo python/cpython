@@ -192,7 +192,9 @@ class OperatorTestCase(unittest.TestCase):
         class C:
             pass
         def check(self, o, v):
-            self.assert_(operator.isCallable(o) == callable(o) == v)
+            with test_support._check_py3k_warnings():
+                self.assertEqual(operator.isCallable(o), v)
+                self.assertEqual(callable(o), v)
         check(self, 4, 0)
         check(self, operator.isCallable, 1)
         check(self, C, 1)
@@ -302,12 +304,13 @@ class OperatorTestCase(unittest.TestCase):
         self.assertRaises(ValueError, operator.rshift, 2, -1)
 
     def test_contains(self):
-        self.failUnlessRaises(TypeError, operator.contains)
-        self.failUnlessRaises(TypeError, operator.contains, None, None)
-        self.failUnless(operator.contains(range(4), 2))
-        self.failIf(operator.contains(range(4), 5))
-        self.failUnless(operator.sequenceIncludes(range(4), 2))
-        self.failIf(operator.sequenceIncludes(range(4), 5))
+        self.assertRaises(TypeError, operator.contains)
+        self.assertRaises(TypeError, operator.contains, None, None)
+        self.assertTrue(operator.contains(range(4), 2))
+        self.assertFalse(operator.contains(range(4), 5))
+        with test_support._check_py3k_warnings():
+            self.assertTrue(operator.sequenceIncludes(range(4), 2))
+            self.assertFalse(operator.sequenceIncludes(range(4), 5))
 
     def test_setitem(self):
         a = range(3)

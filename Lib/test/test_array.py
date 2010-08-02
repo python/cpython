@@ -728,7 +728,8 @@ class BaseTest(unittest.TestCase):
 
     def test_buffer(self):
         a = array.array(self.typecode, self.example)
-        b = buffer(a)
+        with test_support._check_py3k_warnings():
+            b = buffer(a)
         self.assertEqual(b[0], a.tostring()[0])
 
     def test_weakref(self):

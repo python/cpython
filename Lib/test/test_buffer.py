@@ -23,7 +23,9 @@ class BufferTests(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(BufferTests)
+    with test_support._check_py3k_warnings(("buffer.. not supported",
+                                           DeprecationWarning)):
+        test_support.run_unittest(BufferTests)
 
 if __name__ == "__main__":
     test_main()

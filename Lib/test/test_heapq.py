@@ -358,7 +358,10 @@ class TestErrorHandling(unittest.TestCase):
         for f in (self.module.nlargest, self.module.nsmallest):
             for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
                 for g in (G, I, Ig, L, R):
-                    self.assertEqual(f(2, g(s)), f(2,s))
+                    with test_support._check_py3k_warnings(
+                            ("comparing unequal types not supported",
+                             DeprecationWarning), quiet=True):
+                        self.assertEqual(f(2, g(s)), f(2,s))
                 self.assertEqual(f(2, S(s)), [])
                 self.assertRaises(TypeError, f, 2, X(s))
                 self.assertRaises(TypeError, f, 2, N(s))

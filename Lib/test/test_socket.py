@@ -123,8 +123,9 @@ class ThreadableTest:
         self.server_ready.wait()
         self.client_ready.set()
         self.clientSetUp()
-        if not callable(test_func):
-            raise TypeError, "test_func must be a callable function"
+        with test_support._check_py3k_warnings():
+            if not callable(test_func):
+                raise TypeError("test_func must be a callable function.")
         try:
             test_func()
         except Exception, strerror:
@@ -132,7 +133,7 @@ class ThreadableTest:
         self.clientTearDown()
 
     def clientSetUp(self):
-        raise NotImplementedError, "clientSetUp must be implemented."
+        raise NotImplementedError("clientSetUp must be implemented.")
 
     def clientTearDown(self):
         self.done.set()
@@ -282,8 +283,8 @@ class GeneralModuleTests(unittest.TestCase):
                 orig = sys.getrefcount(__name__)
                 socket.getnameinfo(__name__,0)
             except TypeError:
-                if sys.getrefcount(__name__) <> orig:
-                    self.fail("socket.getnameinfo loses a reference")
+                self.assertEqual(sys.getrefcount(__name__), orig,
+                                 "socket.getnameinfo loses a reference")
 
     def testInterpreterCrash(self):
         # Making sure getnameinfo doesn't crash the interpreter
@@ -1198,7 +1199,8 @@ class BufferIOTest(SocketConnectedTest):
         self.assertEqual(msg, MSG)
 
     def _testRecvInto(self):
-        buf = buffer(MSG)
+        with test_support._check_py3k_warnings():
+            buf = buffer(MSG)
         self.serv_conn.send(buf)
 
     def testRecvFromInto(self):
@@ -1209,7 +1211,8 @@ class BufferIOTest(SocketConnectedTest):
         self.assertEqual(msg, MSG)
 
     def _testRecvFromInto(self):
-        buf = buffer(MSG)
+        with test_support._check_py3k_warnings():
+            buf = buffer(MSG)
         self.serv_conn.send(buf)
 
 

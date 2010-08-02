@@ -1,7 +1,8 @@
 # Test iterators.
 
 import unittest
-from test.test_support import run_unittest, TESTFN, unlink, have_unicode
+from test.test_support import run_unittest, TESTFN, unlink, have_unicode, \
+                              _check_py3k_warnings
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -389,21 +390,24 @@ class TestCase(unittest.TestCase):
 
     # Test map()'s use of iterators.
     def test_builtin_map(self):
-        self.assertEqual(map(None, SequenceClass(5)), range(5))
         self.assertEqual(map(lambda x: x+1, SequenceClass(5)), range(1, 6))
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(map(None, d), d.keys())
         self.assertEqual(map(lambda k, d=d: (k, d[k]), d), d.items())
         dkeys = d.keys()
         expected = [(i < len(d) and dkeys[i] or None,
                      i,
                      i < len(d) and dkeys[i] or None)
                     for i in range(5)]
-        self.assertEqual(map(None, d,
-                                   SequenceClass(5),
-                                   iter(d.iterkeys())),
-                         expected)
+
+        # Deprecated map(None, ...)
+        with _check_py3k_warnings():
+            self.assertEqual(map(None, SequenceClass(5)), range(5))
+            self.assertEqual(map(None, d), d.keys())
+            self.assertEqual(map(None, d,
+                                       SequenceClass(5),
+                                       iter(d.iterkeys())),
+                             expected)
 
         f = open(TESTFN, "w")
         try:
@@ -499,7 +503,11 @@ class TestCase(unittest.TestCase):
                 self.assertEqual(zip(x, y), expected)
 
     # Test reduces()'s use of iterators.
-    def test_builtin_reduce(self):
+    def test_deprecated_builtin_reduce(self):
+        with _check_py3k_warnings():
+            self._test_builtin_reduce()
+
+    def _test_builtin_reduce(self):
         from operator import add
         self.assertEqual(reduce(add, SequenceClass(5)), 10)
         self.assertEqual(reduce(add, SequenceClass(5), 42), 52)
