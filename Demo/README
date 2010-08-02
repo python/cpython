@@ -35,9 +35,6 @@ newmetaclasses  Demonstration of metaclasses.
 
 parser          Example using the parser module.
 
-pdist           Old, unfinished code messing with CVS, RCS and remote
-                files.
-
 pysvr           An example of embedding Python in a threaded
                 application.
 
