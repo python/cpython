@@ -59,7 +59,8 @@ The :mod:`functools` module defines the following functions:
    <http://en.wikipedia.org/wiki/Cache_algorithms#Least-Frequently_Used>`_
    is indicated when the pattern of calls does not change over time, when
    more the most common calls already seen are the best predictors of the
-   most common upcoming calls.
+   most common upcoming calls (for example, a phonelist of popular
+   help-lines may have access patterns that persist over time).
 
    .. versionadded:: 3.2
 
@@ -84,7 +85,9 @@ The :mod:`functools` module defines the following functions:
    A `LRU (least recently used) cache
    <http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used>`_
    is indicated when the pattern of calls changes over time, such as
-   when more recent calls are the best predictors of upcoming calls.
+   when more recent calls are the best predictors of upcoming calls
+   (for example, the most popular articles on a news server tend to
+   change every day).
 
    .. versionadded:: 3.2
 
