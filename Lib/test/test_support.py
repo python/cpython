@@ -457,11 +457,11 @@ def _filterwarnings(filters, quiet=False):
         if not seen and not quiet:
             # This filter caught nothing
             missing.append((msg, cat.__name__))
-    for exc in reraise:
-        raise AssertionError("unhandled warning %r" % exc)
-    for filter in missing:
-        raise AssertionError("filter (%r, %s) did not caught any warning" %
-                             filter)
+    if reraise:
+        raise AssertionError("unhandled warning %r" % reraise[0])
+    if missing:
+        raise AssertionError("filter (%r, %s) did not catch any warning" %
+                             missing[0])
 
 
 @contextlib.contextmanager
@@ -473,14 +473,19 @@ def check_warnings(*filters, **kwargs):
 
     Optional argument:
      - if 'quiet' is True, it does not fail if a filter catches nothing
-        (default False)
+        (default True without argument,
+         default False if some filters are defined)
 
     Without argument, it defaults to:
-        check_warnings(("", Warning), quiet=False)
+        check_warnings(("", Warning), quiet=True)
     """
+    quiet = kwargs.get('quiet')
     if not filters:
         filters = (("", Warning),)
-    return _filterwarnings(filters, kwargs.get('quiet'))
+        # Preserve backward compatibility
+        if quiet is None:
+            quiet = True
+    return _filterwarnings(filters, quiet)
 
 
 @contextlib.contextmanager
