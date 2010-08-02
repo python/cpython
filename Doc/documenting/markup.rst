@@ -205,6 +205,9 @@ The directives are:
 
          Set name of the decorated function to *name*.
 
+   There is no ``deco`` role to link to a decorator that is marked up with
+   this directive; rather, use the ``:func:`` role.
+
 .. describe:: class
 
    Describes a class.  The signature can include parentheses with parameters
@@ -225,6 +228,8 @@ The directives are:
 .. describe:: decoratormethod
 
    Same as ``decorator``, but for decorators that are methods.
+
+   Refer to a decorator method using the ``:meth:`` role.
 
 .. describe:: opcode
 
