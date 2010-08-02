@@ -76,11 +76,13 @@ A :class:`Cmd` instance has the following methods:
    are the beginning and ending indexes of the prefix text, which could be used to
    provide different completion depending upon which position the argument is in.
 
-   All subclasses of :class:`Cmd` inherit a predefined :meth:`do_help`. This
+   All subclasses of :class:`Cmd` inherit a predefined :meth:`do_help`.  This
    method, called with an argument ``'bar'``, invokes the corresponding method
-   :meth:`help_bar`.  With no argument, :meth:`do_help` lists all available help
-   topics (that is, all commands with corresponding :meth:`help_\*` methods), and
-   also lists any undocumented commands.
+   :meth:`help_bar`, and if that is not present, prints the docstring of
+   :meth:`do_bar`, if available.  With no argument, :meth:`do_help` lists all
+   available help topics (that is, all commands with corresponding
+   :meth:`help_\*` methods or commands that have docstrings), and also lists any
+   undocumented commands.
 
 
 .. method:: Cmd.onecmd(str)
