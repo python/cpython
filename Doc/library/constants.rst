@@ -38,8 +38,8 @@ A small number of constants live in the built-in namespace.  They are:
 .. data:: __debug__
 
    This constant is true if Python was not started with an :option:`-O` option.
-   Assignments to :const:`__debug__` are illegal and raise a :exc:`SyntaxError`.
    See also the :keyword:`assert` statement.
+
 
 .. note::
 
