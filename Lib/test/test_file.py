@@ -34,13 +34,16 @@ class AutoFileTests(unittest.TestCase):
     def testAttributes(self):
         # verify expected attributes exist
         f = self.f
-        softspace = f.softspace
+
         f.name     # merely shouldn't blow up
         f.mode     # ditto
         f.closed   # ditto
 
-        # verify softspace is writable
-        f.softspace = softspace    # merely shouldn't blow up
+        with test_support._check_py3k_warnings(
+            ('file.softspace not supported in 3.x', DeprecationWarning)):
+            softspace = f.softspace
+            # verify softspace is writable
+            f.softspace = softspace    # merely shouldn't blow up
 
         # verify the others aren't
         for attr in 'name', 'mode', 'closed':
@@ -111,7 +114,8 @@ class AutoFileTests(unittest.TestCase):
         for methodname in methods:
             method = getattr(self.f, methodname)
             # should raise on closed file
-            self.assertRaises(ValueError, method)
+            with test_support._check_py3k_warnings(quiet=True):
+                self.assertRaises(ValueError, method)
         self.assertRaises(ValueError, self.f.writelines, [])
 
         # file is closed, __exit__ shouldn't do anything
@@ -218,7 +222,7 @@ class OtherFileTests(unittest.TestCase):
         try:
             f = open(TESTFN, bad_mode)
         except ValueError, msg:
-            if msg[0] != 0:
+            if msg.args[0] != 0:
                 s = str(msg)
                 if TESTFN in s or bad_mode not in s:
                     self.fail("bad error message for invalid mode: %s" % s)
