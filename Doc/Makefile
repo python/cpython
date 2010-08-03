@@ -120,7 +120,7 @@ clean:
 	-rm -rf tools/docutils
 
 dist:
-	-rm -rf dist
+	rm -rf dist
 	mkdir -p dist
 
 	# archive the HTML
@@ -142,7 +142,7 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-text.tar
 
 	# archive the A4 latex
-	-rm -r build/latex
+	rm -rf build/latex
 	make latex PAPER=a4
 	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
 	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
@@ -150,7 +150,7 @@ dist:
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 
 	# archive the letter latex
-	rm -r build/latex
+	rm -rf build/latex
 	make latex PAPER=letter
 	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
 	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
