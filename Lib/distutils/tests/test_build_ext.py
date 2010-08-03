@@ -349,6 +349,11 @@ class BuildExtTestCase(support.TempdirManager,
         self.assertEquals(wanted, path)
 
     def test_setuptools_compat(self):
+        try:
+            # on some platforms, it loads the deprecated "dl" module
+            test_support.import_module('setuptools_build_ext', deprecated=True)
+        except test_support.TestSkipped:
+            return
         from setuptools_build_ext import build_ext as setuptools_build_ext
         from setuptools_extension import Extension
 

@@ -157,7 +157,7 @@ class build_py (Command):
 
         if not self.package_dir:
             if path:
-                return apply(os.path.join, path)
+                return os.path.join(*path)
             else:
                 return ''
         else:
@@ -184,7 +184,7 @@ class build_py (Command):
                     tail.insert(0, pdir)
 
                 if tail:
-                    return apply(os.path.join, tail)
+                    return os.path.join(*tail)
                 else:
                     return ''
 
