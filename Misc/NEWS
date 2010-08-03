@@ -89,6 +89,10 @@ C-API
 Library
 -------
 
+- Issue #8447: Make distutils.sysconfig follow symlinks in the path to
+  the interpreter executable.  This fixes a failure of test_httpservers
+  on OS X.
+
 - Issue #7092: Fix the DeprecationWarnings emitted by the standard library
   when using the -3 flag.  Patch by Florent Xicluna.
 
