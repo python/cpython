@@ -133,6 +133,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #8065: Fix memory leak in readline module (from failure to
+  free the result of history_get_history_state()).
+
 - Issue #9450: Fix memory leak in readline.replace_history_item and
   readline.remove_history_item for readline version >= 5.0.
 
