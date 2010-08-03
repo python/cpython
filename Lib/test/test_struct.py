@@ -1,10 +1,11 @@
+import os
 import array
 import unittest
 import struct
-import warnings
 import inspect
-warnings.filterwarnings("ignore", "struct integer overflow masking is deprecated",
-                        DeprecationWarning)
+import warnings
+from test.test_support import run_unittest, check_warnings, _check_py3k_warnings
+
 
 from functools import wraps
 from test.test_support import TestFailed, verbose, run_unittest
@@ -13,6 +14,7 @@ import sys
 ISBIGENDIAN = sys.byteorder == "big"
 IS32BIT = sys.maxsize == 0x7fffffff
 
+testmod_filename = os.path.splitext(__file__)[0] + '.py'
 try:
     import _struct
 except ImportError:
@@ -66,8 +68,10 @@ class StructTest(unittest.TestCase):
         # SF bug 1530559. struct.pack raises TypeError where it used to convert.
         if PY_STRUCT_FLOAT_COERCE == 2:
             # Test for pre-2.5 struct module
-            packed = struct.pack(format, number)
-            floored = struct.unpack(format, packed)[0]
+            with check_warnings((".*integer argument expected, got float",
+                                DeprecationWarning)) as w:
+                packed = struct.pack(format, number)
+                floored = struct.unpack(format, packed)[0]
             self.assertEqual(floored, int(number),
                              "did not correcly coerce float to int")
             return
@@ -488,31 +492,24 @@ class StructTest(unittest.TestCase):
 
     def test_issue4228(self):
         # Packing a long may yield either 32 or 64 bits
-        x = struct.pack('L', -1)[:4]
+        with _check_py3k_warnings(("struct integer overflow masking is deprecated",
+                                  DeprecationWarning)):
+            x = struct.pack('L', -1)[:4]
         self.assertEqual(x, '\xff'*4)
 
-    def test_unpack_from(self):
-        test_string = 'abcd01234'
+    def test_unpack_from(self, cls=str):
+        data = cls('abcd01234')
         fmt = '4s'
         s = struct.Struct(fmt)
-        for cls in (str, buffer):
-            data = cls(test_string)
-            self.assertEqual(s.unpack_from(data), ('abcd',))
-            self.assertEqual(s.unpack_from(data, 2), ('cd01',))
-            self.assertEqual(s.unpack_from(data, 4), ('0123',))
-            for i in xrange(6):
-                self.assertEqual(s.unpack_from(data, i), (data[i:i+4],))
-            for i in xrange(6, len(test_string) + 1):
-                self.assertRaises(struct.error, s.unpack_from, data, i)
-        for cls in (str, buffer):
-            data = cls(test_string)
-            self.assertEqual(struct.unpack_from(fmt, data), ('abcd',))
-            self.assertEqual(struct.unpack_from(fmt, data, 2), ('cd01',))
-            self.assertEqual(struct.unpack_from(fmt, data, 4), ('0123',))
-            for i in xrange(6):
-                self.assertEqual(struct.unpack_from(fmt, data, i), (data[i:i+4],))
-            for i in xrange(6, len(test_string) + 1):
-                self.assertRaises(struct.error, struct.unpack_from, fmt, data, i)
+
+        self.assertEqual(s.unpack_from(data), ('abcd',))
+        self.assertEqual(struct.unpack_from(fmt, data), ('abcd',))
+        for i in xrange(6):
+            self.assertEqual(s.unpack_from(data, i), (data[i:i+4],))
+            self.assertEqual(struct.unpack_from(fmt, data, i), (data[i:i+4],))
+        for i in xrange(6, len(data) + 1):
+            self.assertRaises(struct.error, s.unpack_from, data, i)
+            self.assertRaises(struct.error, struct.unpack_from, fmt, data, i)
 
     def test_pack_into(self):
         test_string = 'Reykjavik rocks, eow!'
@@ -561,17 +558,21 @@ class StructTest(unittest.TestCase):
         self.assertRaises(struct.error, pack_into, small_buf, 2, test_string)
 
     def test_unpack_with_buffer(self):
-        # SF bug 1563759: struct.unpack doens't support buffer protocol objects
-        data1 = array.array('B', '\x12\x34\x56\x78')
-        data2 = buffer('......\x12\x34\x56\x78......', 6, 4)
-        for data in [data1, data2]:
-            value, = struct.unpack('>I', data)
-            self.assertEqual(value, 0x12345678)
+        with _check_py3k_warnings(("buffer.. not supported in 3.x",
+                                  DeprecationWarning)):
+            # SF bug 1563759: struct.unpack doesn't support buffer protocol objects
+            data1 = array.array('B', '\x12\x34\x56\x78')
+            data2 = buffer('......\x12\x34\x56\x78......', 6, 4)
+            for data in [data1, data2]:
+                value, = struct.unpack('>I', data)
+                self.assertEqual(value, 0x12345678)
+
+            self.test_unpack_from(cls=buffer)
 
     def test_bool(self):
         for prefix in tuple("<>!=")+('',):
             false = (), [], [], '', 0
-            true = [1], 'test', 5, -1, 0xffffffffL+1, 0xffffffff/2
+            true = [1], 'test', 5, -1, 0xffffffffL+1, 0xffffffff//2
 
             falseFormat = prefix + '?' * len(false)
             packedFalse = struct.pack(falseFormat, *false)
