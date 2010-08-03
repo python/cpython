@@ -4,10 +4,10 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.6.6 alpha 1?
-===================================
+What's New in Python 2.6.6 rc 1?
+================================
 
-*Release date: XXXX-XX-XX*
+*Release date: 2010-08-03*
 
 Core and Builtins
 -----------------
@@ -58,8 +58,8 @@ Core and Builtins
   small arguments were treated this way; larger arguments (those whose
   __int__ was outside the range of a C long) would produce a TypeError.
 
-- Issue #8417: Raise an OverflowError when an integer larger than sys.maxsize is
-  passed to bytearray.
+- Issue #8417: Raise an OverflowError when an integer larger than sys.maxsize
+  is passed to bytearray.
 
 - Issue #8329: Don't return the same lists from select.select when no fds are
   changed.
