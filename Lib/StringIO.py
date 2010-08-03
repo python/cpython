@@ -128,7 +128,7 @@ class StringIO:
         if self.buflist:
             self.buf += ''.join(self.buflist)
             self.buflist = []
-        if n < 0:
+        if n is None or n < 0:
             newpos = self.len
         else:
             newpos = min(self.pos+n, self.len)

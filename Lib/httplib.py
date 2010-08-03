@@ -707,8 +707,8 @@ class HTTPConnection:
 
         if code != 200:
             self.close()
-            raise socket.error, "Tunnel connection failed: %d %s" % (code,
-                                                                     message.strip())
+            raise socket.error("Tunnel connection failed: %d %s" % (code,
+                                                                    message.strip()))
         while True:
             line = response.fp.readline()
             if line == '\r\n': break
@@ -758,7 +758,7 @@ class HTTPConnection:
             else:
                 self.sock.sendall(str)
         except socket.error, v:
-            if v[0] == 32:      # Broken pipe
+            if v.args[0] == 32:      # Broken pipe
                 self.close()
             raise
 
@@ -914,7 +914,7 @@ class HTTPConnection:
             self._send_request(method, url, body, headers)
         except socket.error, v:
             # trap 'Broken pipe' if we're allowed to automatically reconnect
-            if v[0] != 32 or not self.auto_open:
+            if v.args[0] != 32 or not self.auto_open:
                 raise
             # try one more time
             self._send_request(method, url, body, headers)
