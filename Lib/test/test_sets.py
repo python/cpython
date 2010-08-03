@@ -691,8 +691,9 @@ class TestCopying(unittest.TestCase):
     def test_deep_copy(self):
         dup = copy.deepcopy(self.set)
         ##print type(dup), repr(dup)
-        dup_list = list(dup); dup_list.sort()
-        set_list = list(self.set); set_list.sort()
+        with test_support.check_warnings():
+            dup_list = sorted(dup)
+            set_list = sorted(self.set)
         self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
             self.assertEqual(dup_list[i], set_list[i])
