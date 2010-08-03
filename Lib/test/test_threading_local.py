@@ -1,9 +1,14 @@
 import unittest
 from doctest import DocTestSuite
 from test import support
-import threading
 import weakref
 import gc
+
+# Modules under test
+_thread = support.import_module('_thread')
+threading = support.import_module('threading')
+import _threading_local
+
 
 class Weak(object):
     pass
@@ -13,7 +18,8 @@ def target(local, weaklist):
     local.weak = weak
     weaklist.append(weakref.ref(weak))
 
-class ThreadingLocalTest(unittest.TestCase):
+
+class BaseLocalTest:
 
     def test_local_refs(self):
         self._local_refs(20)
@@ -21,7 +27,7 @@ class ThreadingLocalTest(unittest.TestCase):
         self._local_refs(100)
 
     def _local_refs(self, n):
-        local = threading.local()
+        local = self._local()
         weaklist = []
         for i in range(n):
             t = threading.Thread(target=target, args=(local, weaklist))
@@ -48,7 +54,7 @@ class ThreadingLocalTest(unittest.TestCase):
         # is created but not correctly set on the object.
         # The first member set may be bogus.
         import time
-        class Local(threading.local):
+        class Local(self._local):
             def __init__(self):
                 time.sleep(0.01)
         local = Local()
@@ -69,7 +75,7 @@ class ThreadingLocalTest(unittest.TestCase):
 
     def test_derived_cycle_dealloc(self):
         # http://bugs.python.org/issue6990
-        class Local(threading.local):
+        class Local(self._local):
             pass
         locals = None
         passed = False
@@ -107,10 +113,18 @@ class ThreadingLocalTest(unittest.TestCase):
         self.assertTrue(passed)
 
 
+class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
+    _local = _thread._local
+
+class PyThreadingLocalTest(unittest.TestCase, BaseLocalTest):
+    _local = _threading_local.local
+
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(DocTestSuite('_threading_local'))
-    suite.addTest(unittest.makeSuite(ThreadingLocalTest))
+    suite.addTest(unittest.makeSuite(ThreadLocalTest))
+    suite.addTest(unittest.makeSuite(PyThreadingLocalTest))
 
     try:
         from thread import _local
