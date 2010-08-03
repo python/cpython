@@ -1577,17 +1577,25 @@ class TestSorted(unittest.TestCase):
         data = 'The quick Brown fox Jumped over The lazy Dog'.split()
         self.assertRaises(TypeError, sorted, data, None, lambda x,y: 0)
 
+def _run_unittest(*args):
+    with _check_py3k_warnings(
+            (".+ not supported in 3.x", DeprecationWarning),
+            (".+ is renamed to imp.reload", DeprecationWarning),
+            ("classic int division", DeprecationWarning)):
+        run_unittest(*args)
+
+
 def test_main(verbose=None):
     test_classes = (BuiltinTest, TestSorted)
 
-    run_unittest(*test_classes)
+    _run_unittest(*test_classes)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
         for i in xrange(len(counts)):
-            run_unittest(*test_classes)
+            _run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print counts
