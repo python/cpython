@@ -11,6 +11,7 @@ import httplib
 import socket
 import StringIO
 import os
+from imp import reload
 from test import test_support
 
 try:
