@@ -85,6 +85,12 @@ Library
 
 - Add lfu_cache() and lru_cache() decorators to the functools module.
 
+Tools/Demos
+-----------
+
+- Issue #8867: Fix ``Tools/scripts/serve.py`` to work with files containing
+  non-ASCII content.
+
 
 What's New in Python 3.2 Alpha 1?
 =================================
