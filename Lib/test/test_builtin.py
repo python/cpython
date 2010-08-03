@@ -1074,11 +1074,9 @@ class BuiltinTest(unittest.TestCase):
         with check_warnings() as w:
             warnings.simplefilter("always")
             self.assertRaises(TypeError, range, 1e100, 1e101, 1e101)
-            self.assertEqual(w.category, DeprecationWarning)
         with check_warnings() as w:
             warnings.simplefilter("always")
             self.assertEqual(range(1.0), [0])
-            self.assertEqual(w.category, DeprecationWarning)
 
         self.assertRaises(TypeError, range, 0, "spam")
         self.assertRaises(TypeError, range, 0, 42, "spam")
