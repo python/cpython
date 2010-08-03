@@ -290,12 +290,16 @@ class _fileobject(object):
             write_offset = 0
             try:
                 while write_offset < data_size:
-                    self._sock.sendall(buffer(data, write_offset, buffer_size))
+                    with warnings.catch_warnings():
+                        if sys.py3kwarning:
+                            warnings.filterwarnings("ignore", ".*buffer",
+                                                    DeprecationWarning)
+                        self._sock.sendall(buffer(data, write_offset, buffer_size))
                     write_offset += buffer_size
             finally:
                 if write_offset < data_size:
                     remainder = data[write_offset:]
-                    del data  # explicit free
+                    del view, data  # explicit free
                     self._wbuf.append(remainder)
                     self._wbuf_len = len(remainder)
 
@@ -343,7 +347,7 @@ class _fileobject(object):
                 try:
                     data = self._sock.recv(rbufsize)
                 except error, e:
-                    if e[0] == EINTR:
+                    if e.args[0] == EINTR:
                         continue
                     raise
                 if not data:
@@ -372,7 +376,7 @@ class _fileobject(object):
                 try:
                     data = self._sock.recv(left)
                 except error, e:
-                    if e[0] == EINTR:
+                    if e.args[0] == EINTR:
                         continue
                     raise
                 if not data:
@@ -427,7 +431,7 @@ class _fileobject(object):
                     except error, e:
                         # The try..except to catch EINTR was moved outside the
                         # recv loop to avoid the per byte overhead.
-                        if e[0] == EINTR:
+                        if e.args[0] == EINTR:
                             continue
                         raise
                     break
@@ -439,7 +443,7 @@ class _fileobject(object):
                 try:
                     data = self._sock.recv(self._rbufsize)
                 except error, e:
-                    if e[0] == EINTR:
+                    if e.args[0] == EINTR:
                         continue
                     raise
                 if not data:
@@ -468,7 +472,7 @@ class _fileobject(object):
                 try:
                     data = self._sock.recv(self._rbufsize)
                 except error, e:
-                    if e[0] == EINTR:
+                    if e.args[0] == EINTR:
                         continue
                     raise
                 if not data:

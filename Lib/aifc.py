@@ -409,7 +409,7 @@ class Aifc_read:
         data = self._ssnd_chunk.read(nframes * self._framesize)
         if self._convert and data:
             data = self._convert(data)
-        self._soundpos = self._soundpos + len(data) / (self._nchannels * self._sampwidth)
+        self._soundpos = self._soundpos + len(data) // (self._nchannels * self._sampwidth)
         return data
 
     #
@@ -420,7 +420,7 @@ class Aifc_read:
         import cl
         dummy = self._decomp.SetParam(cl.FRAME_BUFFER_SIZE,
                           len(data) * 2)
-        return self._decomp.Decompress(len(data) / self._nchannels,
+        return self._decomp.Decompress(len(data) // self._nchannels,
                            data)
 
     def _ulaw2lin(self, data):
@@ -439,7 +439,7 @@ class Aifc_read:
     def _read_comm_chunk(self, chunk):
         self._nchannels = _read_short(chunk)
         self._nframes = _read_long(chunk)
-        self._sampwidth = (_read_short(chunk) + 7) / 8
+        self._sampwidth = (_read_short(chunk) + 7) // 8
         self._framerate = int(_read_float(chunk))
         self._framesize = self._nchannels * self._sampwidth
         if self._aifc:
@@ -468,7 +468,7 @@ class Aifc_read:
                         pass
                     else:
                         self._convert = self._adpcm2lin
-                        self._framesize = self._framesize / 4
+                        self._framesize = self._framesize // 4
                         return
                 # for ULAW and ALAW try Compression Library
                 try:
@@ -478,17 +478,17 @@ class Aifc_read:
                         try:
                             import audioop
                             self._convert = self._ulaw2lin
-                            self._framesize = self._framesize / 2
+                            self._framesize = self._framesize // 2
                             return
                         except ImportError:
                             pass
                     raise Error, 'cannot read compressed AIFF-C files'
                 if self._comptype == 'ULAW':
                     scheme = cl.G711_ULAW
-                    self._framesize = self._framesize / 2
+                    self._framesize = self._framesize // 2
                 elif self._comptype == 'ALAW':
                     scheme = cl.G711_ALAW
-                    self._framesize = self._framesize / 2
+                    self._framesize = self._framesize // 2
                 else:
                     raise Error, 'unsupported compression type'
                 self._decomp = cl.OpenDecompressor(scheme)
@@ -706,7 +706,7 @@ class Aifc_write:
 
     def writeframesraw(self, data):
         self._ensure_header_written(len(data))
-        nframes = len(data) / (self._sampwidth * self._nchannels)
+        nframes = len(data) // (self._sampwidth * self._nchannels)
         if self._convert:
             data = self._convert(data)
         self._file.write(data)
@@ -820,17 +820,17 @@ class Aifc_write:
             self._init_compression()
         self._file.write('FORM')
         if not self._nframes:
-            self._nframes = initlength / (self._nchannels * self._sampwidth)
+            self._nframes = initlength // (self._nchannels * self._sampwidth)
         self._datalength = self._nframes * self._nchannels * self._sampwidth
         if self._datalength & 1:
             self._datalength = self._datalength + 1
         if self._aifc:
             if self._comptype in ('ULAW', 'ALAW'):
-                self._datalength = self._datalength / 2
+                self._datalength = self._datalength // 2
                 if self._datalength & 1:
                     self._datalength = self._datalength + 1
             elif self._comptype == 'G722':
-                self._datalength = (self._datalength + 3) / 4
+                self._datalength = (self._datalength + 3) // 4
                 if self._datalength & 1:
                     self._datalength = self._datalength + 1
         self._form_length_pos = self._file.tell()
