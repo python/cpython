@@ -1385,8 +1385,9 @@ class TestCopying(unittest.TestCase):
 
     def test_copy(self):
         dup = self.set.copy()
-        dup_list = list(dup); dup_list.sort()
-        set_list = list(self.set); set_list.sort()
+        with test_support.check_warnings():
+            dup_list = sorted(dup)
+            set_list = sorted(self.set)
         self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
             self.failUnless(dup_list[i] is set_list[i])
@@ -1394,8 +1395,9 @@ class TestCopying(unittest.TestCase):
     def test_deep_copy(self):
         dup = copy.deepcopy(self.set)
         ##print type(dup), repr(dup)
-        dup_list = list(dup); dup_list.sort()
-        set_list = list(self.set); set_list.sort()
+        with test_support.check_warnings():
+            dup_list = sorted(dup)
+            set_list = sorted(self.set)
         self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
             self.assertEqual(dup_list[i], set_list[i])
@@ -1557,8 +1559,9 @@ class TestVariousIteratorArgs(unittest.TestCase):
     def test_constructor(self):
         for cons in (set, frozenset):
             for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
-                for g in (G, I, Ig, S, L, R):
-                    self.assertEqual(sorted(cons(g(s))), sorted(g(s)))
+                with test_support.check_warnings():
+                    for g in (G, I, Ig, S, L, R):
+                        self.assertEqual(sorted(cons(g(s))), sorted(g(s)))
                 self.assertRaises(TypeError, cons , X(s))
                 self.assertRaises(TypeError, cons , N(s))
                 self.assertRaises(ZeroDivisionError, cons , E(s))
@@ -1573,7 +1576,8 @@ class TestVariousIteratorArgs(unittest.TestCase):
                     if isinstance(expected, bool):
                         self.assertEqual(actual, expected)
                     else:
-                        self.assertEqual(sorted(actual), sorted(expected))
+                        with test_support.check_warnings():
+                            self.assertEqual(sorted(actual), sorted(expected))
                 self.assertRaises(TypeError, meth, X(s))
                 self.assertRaises(TypeError, meth, N(s))
                 self.assertRaises(ZeroDivisionError, meth, E(s))
@@ -1587,7 +1591,8 @@ class TestVariousIteratorArgs(unittest.TestCase):
                     t = s.copy()
                     getattr(s, methname)(list(g(data)))
                     getattr(t, methname)(g(data))
-                    self.assertEqual(sorted(s), sorted(t))
+                    with test_support.check_warnings():
+                        self.assertEqual(sorted(s), sorted(t))
 
                 self.assertRaises(TypeError, getattr(set('january'), methname), X(data))
                 self.assertRaises(TypeError, getattr(set('january'), methname), N(data))
