@@ -1,4 +1,4 @@
-from test.test_support import run_unittest, check_warnings
+from test.test_support import run_unittest, check_warnings, _check_py3k_warnings
 import cgi
 import os
 import sys
@@ -179,7 +179,8 @@ class CgiTests(unittest.TestCase):
             self.assertEqual(d[k], v)
         for k, v in d.items():
             self.assertEqual(expect[k], v)
-        self.assertEqual(sorted(expect.values()), sorted(d.values()))
+        with _check_py3k_warnings():
+            self.assertEqual(sorted(expect.values()), sorted(d.values()))
 
     def test_log(self):
         cgi.log("Testing")
