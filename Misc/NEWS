@@ -84,6 +84,10 @@ C-API
 Library
 -------
 
+- Issue #8447: Make distutils.sysconfig follow symlinks in the path to
+  the interpreter executable.  This fixes a failure of test_httpservers
+  on OS X.
+
 - Issue #7372: Fix pstats regression when stripping paths from profile
   data generated with the profile module.
 
