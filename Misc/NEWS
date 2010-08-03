@@ -37,6 +37,9 @@ Extensions
 Library
 -------
 
+- Issue #3196: email header decoding is now forgiving if an RFC2047
+  encoded word encoded in base64 is lacking padding.
+
 - Issue #9444: Argparse now uses the first element of prefix_chars as
   the option character for the added 'h/help' option if prefix_chars
   does not contain a '-', instead of raising an error.
