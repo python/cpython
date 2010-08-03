@@ -204,7 +204,7 @@ def remove_tree (directory, verbose=0, dry_run=0):
     _build_cmdtuple(directory, cmdtuples)
     for cmd in cmdtuples:
         try:
-            apply(cmd[0], (cmd[1],))
+            cmd[0](cmd[1])
             # remove dir from cache if it's already there
             abspath = os.path.abspath(cmd[1])
             if abspath in _path_created:

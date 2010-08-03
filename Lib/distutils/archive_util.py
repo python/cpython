@@ -160,7 +160,7 @@ def make_archive (base_name, format,
     func = format_info[0]
     for (arg,val) in format_info[1]:
         kwargs[arg] = val
-    filename = apply(func, (base_name, base_dir), kwargs)
+    filename = func(base_name, base_dir, **kwargs)
 
     try:
         filename = func(base_name, base_dir, **kwargs)

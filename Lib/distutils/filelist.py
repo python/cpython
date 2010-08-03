@@ -68,7 +68,7 @@ class FileList:
         sortable_files.sort()
         self.files = []
         for sort_tuple in sortable_files:
-            self.files.append(apply(os.path.join, sort_tuple))
+            self.files.append(os.path.join(*sort_tuple))
 
 
     # -- Other miscellaneous utility methods ---------------------------

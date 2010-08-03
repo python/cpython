@@ -5,17 +5,13 @@ the test_suite() function there returns a test suite that's ready to
 be run.
 """
 
+from test import test_support
 import distutils.tests
-import test.test_support
-import warnings
 
 
 def test_main():
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore",
-                                "distutils.sysconfig.\w+ is deprecated",
-                                DeprecationWarning)
-        test.test_support.run_unittest(distutils.tests.test_suite())
+    test_support.run_unittest(distutils.tests.test_suite())
+    test_support.reap_children()
 
 
 if __name__ == "__main__":
