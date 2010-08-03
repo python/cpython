@@ -3,10 +3,7 @@
    Roger E. Masse  revised strategy by Barry Warsaw
 """
 from test.test_support import verbose,TestSkipped, import_module
-import warnings
-warnings.simplefilter('always')
 dl = import_module('dl', deprecated=True)
-warnings.resetwarnings()
 
 sharedlibs = [
     ('/usr/lib/libc.so', 'getpid'),

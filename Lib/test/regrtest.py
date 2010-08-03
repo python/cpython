@@ -483,6 +483,13 @@ STDTESTS = [
     'test_unittest',
     'test_doctest',
     'test_doctest2',
+    # On 2.6, when a C module like dl or linuxaudiodev is imported by some
+    # test, a DeprecationWarning is raised, but test_py3kwarn can not find
+    # it in the __warningregistry__ of the modules in sys.modules.
+    # C modules raise the warning only once, and since there's no way to
+    # find these warnings, test_py3kwarn is executed first to catch them
+    # before the other modules.  This shouldn't affect 2.7+
+    'test_py3kwarn',
    ]
 
 NOTTESTS = [
