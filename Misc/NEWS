@@ -84,6 +84,9 @@ C-API
 Library
 -------
 
+- Issue #3196: email header decoding is now forgiving if an RFC2047
+  encoded word encoded in base64 is lacking padding.
+
 - Issue #8447: Make distutils.sysconfig follow symlinks in the path to
   the interpreter executable.  This fixes a failure of test_httpservers
   on OS X.
