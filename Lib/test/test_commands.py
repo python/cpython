@@ -58,11 +58,7 @@ class CommandTests(unittest.TestCase):
                   /\.          # and end with the name of the file.
                '''
 
-        with check_warnings((".*commands.getstatus.. is deprecated",
-                             DeprecationWarning),
-                            ("in 3.x, mkarg has been removed",
-                             DeprecationWarning),):
-            self.assertTrue(re.match(pat, getstatus("/."), re.VERBOSE))
+        self.assertTrue(re.match(pat, getstatus("/."), re.VERBOSE))
 
 
 def test_main():
