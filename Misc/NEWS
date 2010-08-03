@@ -35,6 +35,10 @@ Extensions
 Library
 -------
 
+- Issue #9444: Argparse now uses the first element of prefix_chars as
+  the option character for the added 'h/help' option if prefix_chars
+  does not contain a '-', instead of raising an error.
+
 - Issue #7372: Fix pstats regression when stripping paths from profile
   data generated with the profile module.
 

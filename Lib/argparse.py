@@ -1561,13 +1561,16 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # add help and version arguments if necessary
         # (using explicit default to override global argument_default)
+        default_prefix = '-' if '-' in prefix_chars else prefix_chars[0]
         if self.add_help:
             self.add_argument(
-                '-h', '--help', action='help', default=SUPPRESS,
+                default_prefix+'h', default_prefix*2+'help',
+                action='help', default=SUPPRESS,
                 help=_('show this help message and exit'))
         if self.version:
             self.add_argument(
-                '-v', '--version', action='version', default=SUPPRESS,
+                default_prefix+'v', default_prefix*2+'version',
+                action='version', default=SUPPRESS,
                 version=self.version,
                 help=_("show program's version number and exit"))
 
