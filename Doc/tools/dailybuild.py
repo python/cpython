@@ -33,10 +33,9 @@ WWWROOT = '/data/ftp.python.org/pub/docs.python.org'
 
 BRANCHES = [
     # checkout, target, isdev
-    (BUILDROOT + '/python26', WWWROOT, False),
+    (BUILDROOT + '/python32', WWWROOT + '/dev', True),
+    (BUILDROOT + '/python27', WWWROOT, False),
     (BUILDROOT + '/python31', WWWROOT + '/py3k', False),
-    (BUILDROOT + '/python27', WWWROOT + '/dev', True),
-    (BUILDROOT + '/python32', WWWROOT + '/dev/py3k', True),
 ]
 
 
@@ -53,7 +52,7 @@ def build_one(checkout, target, isdev):
     print 'Copying HTML files'
     os.system('cp -a Doc/build/html/* %s' % target)
     print 'Copying dist files'
-    os.system('mkdir %s/archives' % target)
+    os.system('mkdir -p %s/archives' % target)
     os.system('cp -a Doc/dist/* %s/archives' % target)
     print 'Finished'
     print '=' * 80
