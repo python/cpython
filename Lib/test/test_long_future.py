@@ -4,7 +4,7 @@ from __future__ import division
 # trick just part of test_long into using future division.
 
 import unittest
-from test.test_support import run_unittest
+from test.test_support import run_unittest, _check_py3k_warnings
 
 class TrueDivisionTests(unittest.TestCase):
     def test(self):
@@ -44,8 +44,9 @@ class TrueDivisionTests(unittest.TestCase):
             self.assertEqual(result, 0.0,
                              "expected underflow to 0 from %r" % underflow)
 
-        for zero in ["huge / 0", "huge / 0L", "mhuge / 0", "mhuge / 0L"]:
-            self.assertRaises(ZeroDivisionError, eval, zero, namespace)
+        with _check_py3k_warnings(('classic long division', DeprecationWarning)):
+            for zero in ["huge / 0", "huge / 0L", "mhuge / 0", "mhuge / 0L"]:
+                self.assertRaises(ZeroDivisionError, eval, zero, namespace)
 
 
 def test_main():
