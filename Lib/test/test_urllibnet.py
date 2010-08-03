@@ -193,7 +193,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
 def test_main():
     test_support.requires('network')
-    with test_support.check_py3k_warnings(
+    with test_support._check_py3k_warnings(
             ("urllib.urlopen.. has been removed", DeprecationWarning)):
         test_support.run_unittest(URLTimeoutTest,
                                   urlopenNetworkTests,
