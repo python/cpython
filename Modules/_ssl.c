@@ -977,6 +977,7 @@ PySSL_test_decode_certificate (PyObject *mod, PyObject *args) {
     }
 
     retval = _decode_certificate(x, verbose);
+    X509_free(x);
 
   fail0:
 
