@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9444: Argparse now uses the first element of prefix_chars as
+  the option character for the added 'h/help' option if prefix_chars
+  does not contain a '-', instead of raising an error.
+
 - Issue #9354: Provide getsockopt() in asyncore's file_wrapper.
 
 - Issue #7781: Fix restricting stats by entry counts in the pstats

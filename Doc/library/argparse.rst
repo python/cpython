@@ -203,8 +203,8 @@ argument to :class:`ArgumentParser`.
 add_help
 ^^^^^^^^
 
-By default, ArgumentParser objects add a ``-h/--help`` option which simply
-displays the parser's help message.  For example, consider a file named
+By default, ArgumentParser objects add an option which simply displays
+the parser's help message. For example, consider a file named
 ``myprogram.py`` containing the following code::
 
    import argparse
@@ -234,12 +234,27 @@ This can be achieved by passing ``False`` as the ``add_help=`` argument to
    optional arguments:
     --foo FOO  foo help
 
+The help option is typically ``-h/--help``. The exception to this is
+if the ``prefix_chars=`` is specified and does not include ``'-'``, in
+which case ``-h`` and ``--help`` are not valid options.  In
+this case, the first character in ``prefix_chars`` is used to prefix
+the help options::
+
+   >>> parser = argparse.ArgumentParser(prog='PROG', prefix_chars='+/')
+   >>> parser.print_help()
+   usage: PROG [+h]
+
+   optional arguments:
+     +h, ++help  show this help message and exit
+
+
 
 prefix_chars
 ^^^^^^^^^^^^
 
 Most command-line options will use ``'-'`` as the prefix, e.g. ``-f/--foo``.
-Parsers that need to support additional prefix characters, e.g. for options
+Parsers that need to support different or additional prefix
+characters, e.g. for options
 like ``+f`` or ``/foo``, may specify them using the ``prefix_chars=`` argument
 to the ArgumentParser constructor::
 
