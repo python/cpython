@@ -8,12 +8,9 @@ This should generate Barry's example, modulo some quotes and newlines.
 """
 
 import unittest, StringIO
-from test.test_support import run_unittest
+from test.test_support import run_unittest, import_module
 
-import warnings
-warnings.filterwarnings("ignore", "the MimeWriter module is deprecated.*",
-                        DeprecationWarning)
-
+import_module("MimeWriter", deprecated=True)
 from MimeWriter import MimeWriter
 
 SELLER = '''\
