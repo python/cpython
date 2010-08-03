@@ -16,7 +16,7 @@ The :mod:`linecache` module defines the following functions:
 
 .. function:: getline(filename, lineno, module_globals=None)
 
-   Get line *lineno* from file named *filename*. This function will never throw an
+   Get line *lineno* from file named *filename*. This function will never raise an
    exception --- it will return ``''`` on errors (the terminating newline character
    will be included for lines that are found).
 

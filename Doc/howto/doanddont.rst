@@ -154,7 +154,7 @@ The following is a very popular anti-idiom ::
 
 Consider the case the file gets deleted between the time the call to
 :func:`os.path.exists` is made and the time :func:`open` is called. That means
-the last line will throw an :exc:`IOError`. The same would happen if *file*
+the last line will raise an :exc:`IOError`. The same would happen if *file*
 exists but has no read permission. Since testing this on a normal machine on
 existing and non-existing files make it seem bugless, that means in testing the
 results will seem fine, and the code will get shipped. Then an unhandled

@@ -114,7 +114,7 @@ New, Improved, and Deprecated Modules
 
   * *ignore_dangling_symlinks*: when ``symlinks=False`` (meaning that the
     function copies the file pointed to by the symlink, not the symlink
-    itself) this option will silence the error thrown if the file doesn't
+    itself) this option will silence the error raised if the file doesn't
     exist.
 
   * *copy_function*: a callable that will be used to copy files.

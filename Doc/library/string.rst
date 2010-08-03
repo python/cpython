@@ -163,7 +163,7 @@ implementation as the built-in :meth:`format` method.
       the format string (integers for positional arguments, and strings for
       named arguments), and a reference to the *args* and *kwargs* that was
       passed to vformat.  The set of unused args can be calculated from these
-      parameters.  :meth:`check_unused_args` is assumed to throw an exception if
+      parameters.  :meth:`check_unused_args` is assumed to raise an exception if
       the check fails.
 
    .. method:: format_field(value, format_spec)
