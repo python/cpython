@@ -749,7 +749,7 @@ def _mac_ver_xml():
     release = pl['ProductVersion']
     versioninfo=('', '', '')
     machine = os.uname()[4]
-    if machine == 'ppc':
+    if machine in ('ppc', 'Power Macintosh'):
         # for compatibility with the gestalt based code
         machine = 'PowerPC'
 
