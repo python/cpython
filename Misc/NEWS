@@ -379,6 +379,8 @@ Library
 Extension Modules
 -----------------
 
+- Fix memory leak in ssl._ssl._test_decode_cert.
+
 - Issue #9422: Fix memory leak when re-initializing a struct.Struct object.
 
 - Issue #7900: The getgroups(2) system call on MacOSX behaves rather oddly
