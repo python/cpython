@@ -514,12 +514,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     if bad:
                         return
         tests = test_forever()
+        test_count = ''
+        test_count_width = 3
     else:
         tests = iter(selected)
+        test_count = '/{}'.format(len(selected))
+        test_count_width = len(test_count) - 1
 
-    tests = list(tests)
-    test_count = len(tests)
-    test_count_width = len(str(test_count))
     if use_mp:
         try:
             from threading import Thread
@@ -578,7 +579,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     finished += 1
                     continue
                 if not quiet:
-                    print("[{1:{0}}/{2:{0}}] {3}".format(
+                    print("[{1:{0}}{2}] {3}".format(
                         test_count_width, test_index, test_count, test))
                 if stdout:
                     print(stdout)
@@ -597,7 +598,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     else:
         for test_index, test in enumerate(tests, 1):
             if not quiet:
-                print("[{1:{0}}/{2:{0}}] {3}".format(
+                print("[{1:{0}}{2}] {3}".format(
                     test_count_width, test_index, test_count, test))
                 sys.stdout.flush()
             if trace:
