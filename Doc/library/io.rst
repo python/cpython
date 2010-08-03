@@ -17,7 +17,7 @@ built-in :func:`open` function is defined in this module.
 At the top of the I/O hierarchy is the abstract base class :class:`IOBase`.  It
 defines the basic interface to a stream.  Note, however, that there is no
 separation between reading and writing to streams; implementations are allowed
-to throw an :exc:`IOError` if they do not support a given operation.
+to raise an :exc:`IOError` if they do not support a given operation.
 
 Extending :class:`IOBase` is :class:`RawIOBase` which deals simply with the
 reading and writing of raw bytes to a stream.  :class:`FileIO` subclasses

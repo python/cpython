@@ -184,7 +184,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       Copy the *count* bytes starting at offset *src* to the destination index
       *dest*.  If the mmap was created with :const:`ACCESS_READ`, then calls to
-      move will throw a :exc:`TypeError` exception.
+      move will raise a :exc:`TypeError` exception.
 
 
    .. method:: read(num)
@@ -210,7 +210,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       Resizes the map and the underlying file, if any. If the mmap was created
       with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
-      throw a :exc:`TypeError` exception.
+      raise a :exc:`TypeError` exception.
 
 
    .. method:: rfind(sub[, start[, end]])
@@ -245,7 +245,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       Write the bytes in *bytes* into memory at the current position of the
       file pointer; the file position is updated to point after the bytes that
       were written. If the mmap was created with :const:`ACCESS_READ`, then
-      writing to it will throw a :exc:`TypeError` exception.
+      writing to it will raise a :exc:`TypeError` exception.
 
 
    .. method:: write_byte(byte)
@@ -253,4 +253,4 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       Write the the integer *byte* into memory at the current
       position of the file pointer; the file position is advanced by ``1``. If
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
-      throw a :exc:`TypeError` exception.
+      raise a :exc:`TypeError` exception.

@@ -114,7 +114,7 @@ and ``'exec'`` forms.
    The :func:`expr` function parses the parameter *source* as if it were an input
    to ``compile(source, 'file.py', 'eval')``.  If the parse succeeds, an ST object
    is created to hold the internal parse tree representation, otherwise an
-   appropriate exception is thrown.
+   appropriate exception is raised.
 
 
 .. function:: suite(source)
@@ -122,7 +122,7 @@ and ``'exec'`` forms.
    The :func:`suite` function parses the parameter *source* as if it were an input
    to ``compile(source, 'file.py', 'exec')``.  If the parse succeeds, an ST object
    is created to hold the internal parse tree representation, otherwise an
-   appropriate exception is thrown.
+   appropriate exception is raised.
 
 
 .. function:: sequence2st(sequence)
@@ -132,9 +132,9 @@ and ``'exec'`` forms.
    to the Python grammar and all nodes are valid node types in the host version of
    Python, an ST object is created from the internal representation and returned
    to the called.  If there is a problem creating the internal representation, or
-   if the tree cannot be validated, a :exc:`ParserError` exception is thrown.  An
+   if the tree cannot be validated, a :exc:`ParserError` exception is raised.  An
    ST object created this way should not be assumed to compile correctly; normal
-   exceptions thrown by compilation may still be initiated when the ST object is
+   exceptions raised by compilation may still be initiated when the ST object is
    passed to :func:`compilest`.  This may indicate problems not related to syntax
    (such as a :exc:`MemoryError` exception), but may also be due to constructs such
    as the result of parsing ``del f(0)``, which escapes the Python parser but is
@@ -259,8 +259,8 @@ function for information about the exceptions it can raise.
 .. exception:: ParserError
 
    Exception raised when a failure occurs within the parser module.  This is
-   generally produced for validation failures rather than the built in
-   :exc:`SyntaxError` thrown during normal parsing. The exception argument is
+   generally produced for validation failures rather than the built-in
+   :exc:`SyntaxError` raised during normal parsing. The exception argument is
    either a string describing the reason of the failure or a tuple containing a
    sequence causing the failure from a parse tree passed to :func:`sequence2st`
    and an explanatory string.  Calls to :func:`sequence2st` need to be able to
@@ -268,7 +268,7 @@ function for information about the exceptions it can raise.
    will only need to be aware of the simple string values.
 
 Note that the functions :func:`compilest`, :func:`expr`, and :func:`suite` may
-throw exceptions which are normally thrown by the parsing and compilation
+raise exceptions which are normally thrown by the parsing and compilation
 process.  These include the built in exceptions :exc:`MemoryError`,
 :exc:`OverflowError`, :exc:`SyntaxError`, and :exc:`SystemError`.  In these
 cases, these exceptions carry all the meaning normally associated with them.

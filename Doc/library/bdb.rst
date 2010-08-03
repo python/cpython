@@ -116,7 +116,7 @@ The :mod:`bdb` module also defines two classes:
       * ``"exception"``: An exception has occurred.
       * ``"c_call"``: A C function is about to be called.
       * ``"c_return"``: A C function has returned.
-      * ``"c_exception"``: A C function has thrown an exception.
+      * ``"c_exception"``: A C function has raised an exception.
 
       For the Python events, specialized functions (see below) are called.  For
       the C events, no action is taken.

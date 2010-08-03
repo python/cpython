@@ -284,9 +284,9 @@ An :class:`SMTP` instance has the following methods:
    and ESMTP options suppressed.
 
    This method will return normally if the mail is accepted for at least one
-   recipient. Otherwise it will throw an exception.  That is, if this method does
-   not throw an exception, then someone should get your mail. If this method does
-   not throw an exception, it returns a dictionary, with one entry for each
+   recipient. Otherwise it will raise an exception.  That is, if this method does
+   not raise an exception, then someone should get your mail. If this method does
+   not raise an exception, it returns a dictionary, with one entry for each
    recipient that was refused.  Each entry contains a tuple of the SMTP error code
    and the accompanying error message sent by the server.
 

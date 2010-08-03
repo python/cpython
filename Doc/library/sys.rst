@@ -843,7 +843,7 @@ always available.
       A C function has returned. *arg* is ``None``.
 
    ``'c_exception'``
-      A C function has thrown an exception.  *arg* is ``None``.
+      A C function has raised an exception.  *arg* is ``None``.
 
    Note that as an exception is propagated down the chain of callers, an
    ``'exception'`` event is generated at each level.
