@@ -32,7 +32,7 @@ import unittest
 from decimal import *
 import numbers
 from test.test_support import (TestSkipped, run_unittest, run_doctest,
-                               is_resource_enabled)
+                               is_resource_enabled, _check_py3k_warnings)
 import random
 try:
     import threading
@@ -219,7 +219,7 @@ class DecimalTest(unittest.TestCase):
         if skip_expected:
             raise TestSkipped
             return
-        for line in open(file).xreadlines():
+        for line in open(file):
             line = line.replace('\r\n', '').replace('\n', '')
             #print line
             try:
@@ -381,8 +381,9 @@ class DecimalTest(unittest.TestCase):
         myexceptions = self.getexceptions()
         self.context.clear_flags()
 
-        myexceptions.sort()
-        theirexceptions.sort()
+        with _check_py3k_warnings(quiet=True):
+            myexceptions.sort()
+            theirexceptions.sort()
 
         self.assertEqual(result, ans,
                          'Incorrect answer for ' + s + ' -- got ' + result)
@@ -637,12 +638,13 @@ class DecimalImplicitConstructionTest(unittest.TestCase):
             ('//', '__floordiv__', '__rfloordiv__'),
             ('**', '__pow__', '__rpow__')
         ]
-        if 1/2 == 0:
-            # testing with classic division, so add __div__
-            oplist.append(('/', '__div__', '__rdiv__'))
-        else:
-            # testing with -Qnew, so add __truediv__
-            oplist.append(('/', '__truediv__', '__rtruediv__'))
+        with _check_py3k_warnings():
+            if 1 / 2 == 0:
+                # testing with classic division, so add __div__
+                oplist.append(('/', '__div__', '__rdiv__'))
+            else:
+                # testing with -Qnew, so add __truediv__
+                oplist.append(('/', '__truediv__', '__rtruediv__'))
 
         for sym, lop, rop in oplist:
             setattr(E, lop, lambda self, other: 'str' + lop + str(other))
@@ -1095,8 +1097,9 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertEqual(a, b)
 
         # with None
-        self.assertFalse(Decimal(1) < None)
-        self.assertTrue(Decimal(1) > None)
+        with _check_py3k_warnings():
+            self.assertFalse(Decimal(1) < None)
+            self.assertTrue(Decimal(1) > None)
 
     def test_copy_and_deepcopy_methods(self):
         d = Decimal('43.24')
@@ -1556,18 +1559,20 @@ class ContextFlags(unittest.TestCase):
                 for flag in extra_flags:
                     if flag not in expected_flags:
                         expected_flags.append(flag)
-                expected_flags.sort()
+                with _check_py3k_warnings(quiet=True):
+                    expected_flags.sort()
 
                 # flags we actually got
                 new_flags = [k for k,v in context.flags.items() if v]
-                new_flags.sort()
+                with _check_py3k_warnings(quiet=True):
+                    new_flags.sort()
 
                 self.assertEqual(ans, new_ans,
                                  "operation produces different answers depending on flags set: " +
                                  "expected %s, got %s." % (ans, new_ans))
                 self.assertEqual(new_flags, expected_flags,
-                                  "operation raises different flags depending on flags set: " +
-                                  "expected %s, got %s" % (expected_flags, new_flags))
+                                 "operation raises different flags depending on flags set: " +
+                                 "expected %s, got %s" % (expected_flags, new_flags))
 
 def test_main(arith=False, verbose=None, todo_tests=None, debug=None):
     """ Execute the tests.
