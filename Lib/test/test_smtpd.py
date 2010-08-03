@@ -1,53 +1,16 @@
-import asynchat
 from unittest import TestCase
+from test import support, mock_socket
 import socket
-from test import support
-import asyncore
 import io
 import smtpd
+import asyncore
 
-# mock-ish socket to sit underneath asyncore
-class DummySocket:
-    def __init__(self):
-        self.output = []
-        self.queue = []
-        self.conn = None
-    def queue_recv(self, line):
-        self.queue.append(line)
-    def recv(self, *args):
-        data = self.queue.pop(0) + b'\r\n'
-        return data
-    def fileno(self):
-        return 0
-    def setsockopt(self, *args):
-        pass
-    def getsockopt(self, *args):
-        return 0
-    def bind(self, *args):
-        pass
-    def accept(self):
-        self.conn = DummySocket()
-        return self.conn, 'c'
-    def listen(self, *args):
-        pass
-    def setblocking(self, *args):
-        pass
-    def send(self, data):
-        self.last = data
-        self.output.append(data)
-        return len(data)
-    def getpeername(self):
-        return 'peer'
-    def close(self):
-        pass
 
 class DummyServer(smtpd.SMTPServer):
     def __init__(self, *args):
         smtpd.SMTPServer.__init__(self, *args)
         self.messages = []
-    def create_socket(self, family, type):
-        self.family_and_type = (socket.AF_INET, socket.SOCK_STREAM)
-        self.set_socket(DummySocket())
+
     def process_message(self, peer, mailfrom, rcpttos, data):
         self.messages.append((peer, mailfrom, rcpttos, data))
         if data == 'return status':
@@ -62,10 +25,14 @@ class BrokenDummyServer(DummyServer):
 
 class SMTPDChannelTest(TestCase):
     def setUp(self):
+        smtpd.socket = asyncore.socket = mock_socket
         self.debug = smtpd.DEBUGSTREAM = io.StringIO()
         self.server = DummyServer('a', 'b')
         conn, addr = self.server.accept()
         self.channel = smtpd.SMTPChannel(self.server, conn, addr)
+
+    def tearDown(self):
+        asyncore.socket = smtpd.socket = socket
 
     def write_line(self, line):
         self.channel.socket.queue_recv(line)
@@ -88,7 +55,7 @@ class SMTPDChannelTest(TestCase):
                          b'502 Error: command "EHLO" not implemented\r\n')
 
     def test_HELO(self):
-        name = socket.getfqdn()
+        name = smtpd.socket.getfqdn()
         self.write_line(b'HELO test.example')
         self.assertEqual(self.channel.socket.last,
                          '250 {}\r\n'.format(name).encode('ascii'))

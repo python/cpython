@@ -9,7 +9,7 @@ import time
 import select
 
 import unittest
-from test import support
+from test import support, mock_socket
 
 try:
     import threading
@@ -48,27 +48,17 @@ def server(evt, buf, serv):
         serv.close()
         evt.set()
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class GeneralTests(unittest.TestCase):
 
     def setUp(self):
-        self._threads = support.threading_setup()
-        self.evt = threading.Event()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(15)
-        self.port = support.bind_port(self.sock)
-        servargs = (self.evt, b"220 Hola mundo\n", self.sock)
-        self.thread = threading.Thread(target=server, args=servargs)
-        self.thread.start()
-        self.evt.wait()
-        self.evt.clear()
+        smtplib.socket = mock_socket
+        self.port = 25
 
     def tearDown(self):
-        self.evt.wait()
-        self.thread.join()
-        support.threading_cleanup(*self._threads)
+        smtplib.socket = socket
 
     def testBasic1(self):
+        mock_socket.reply_with(b"220 Hola mundo")
         # connects
         smtp = smtplib.SMTP(HOST, self.port)
         smtp.close()
@@ -85,12 +75,13 @@ class GeneralTests(unittest.TestCase):
         smtp.close()
 
     def testTimeoutDefault(self):
-        self.assertTrue(socket.getdefaulttimeout() is None)
-        socket.setdefaulttimeout(30)
+        self.assertTrue(mock_socket.getdefaulttimeout() is None)
+        mock_socket.setdefaulttimeout(30)
+        self.assertEqual(mock_socket.getdefaulttimeout(), 30)
         try:
             smtp = smtplib.SMTP(HOST, self.port)
         finally:
-            socket.setdefaulttimeout(None)
+            mock_socket.setdefaulttimeout(None)
         self.assertEqual(smtp.sock.gettimeout(), 30)
         smtp.close()
 
@@ -155,6 +146,8 @@ MSG_END = '------------ END MESSAGE ------------\n'
 class DebuggingServerTests(unittest.TestCase):
 
     def setUp(self):
+        self.real_getfqdn = socket.getfqdn
+        socket.getfqdn = mock_socket.getfqdn
         # temporarily replace sys.stdout to capture DebuggingServer output
         self.old_stdout = sys.stdout
         self.output = io.StringIO()
@@ -176,6 +169,7 @@ class DebuggingServerTests(unittest.TestCase):
         self.serv_evt.clear()
 
     def tearDown(self):
+        socket.getfqdn = self.real_getfqdn
         # indicate that the client is finished
         self.client_evt.set()
         # wait for the server thread to terminate
@@ -251,6 +245,12 @@ class DebuggingServerTests(unittest.TestCase):
 
 class NonConnectingTests(unittest.TestCase):
 
+    def setUp(self):
+        smtplib.socket = mock_socket
+
+    def tearDown(self):
+        smtplib.socket = socket
+
     def testNotConnected(self):
         # Test various operations on an unconnected SMTP object that
         # should raise exceptions (at present the attempt in SMTP.send
@@ -263,9 +263,9 @@ class NonConnectingTests(unittest.TestCase):
 
     def testNonnumericPort(self):
         # check that non-numeric port raises socket.error
-        self.assertRaises(socket.error, smtplib.SMTP,
+        self.assertRaises(mock_socket.error, smtplib.SMTP,
                           "localhost", "bogus")
-        self.assertRaises(socket.error, smtplib.SMTP,
+        self.assertRaises(mock_socket.error, smtplib.SMTP,
                           "localhost:bogus")
 
 
@@ -274,25 +274,15 @@ class NonConnectingTests(unittest.TestCase):
 class BadHELOServerTests(unittest.TestCase):
 
     def setUp(self):
+        smtplib.socket = mock_socket
+        mock_socket.reply_with(b"199 no hello for you!")
         self.old_stdout = sys.stdout
         self.output = io.StringIO()
         sys.stdout = self.output
-
-        self._threads = support.threading_setup()
-        self.evt = threading.Event()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(15)
-        self.port = support.bind_port(self.sock)
-        servargs = (self.evt, b"199 no hello for you!\n", self.sock)
-        self.thread = threading.Thread(target=server, args=servargs)
-        self.thread.start()
-        self.evt.wait()
-        self.evt.clear()
+        self.port = 25
 
     def tearDown(self):
-        self.evt.wait()
-        self.thread.join()
-        support.threading_cleanup(*self._threads)
+        smtplib.socket = socket
         sys.stdout = self.old_stdout
 
     def testFailingHELO(self):
@@ -405,6 +395,8 @@ class SimSMTPServer(smtpd.SMTPServer):
 class SMTPSimTests(unittest.TestCase):
 
     def setUp(self):
+        self.real_getfqdn = socket.getfqdn
+        socket.getfqdn = mock_socket.getfqdn
         self._threads = support.threading_setup()
         self.serv_evt = threading.Event()
         self.client_evt = threading.Event()
@@ -421,6 +413,7 @@ class SMTPSimTests(unittest.TestCase):
         self.serv_evt.clear()
 
     def tearDown(self):
+        socket.getfqdn = self.real_getfqdn
         # indicate that the client is finished
         self.client_evt.set()
         # wait for the server thread to terminate
