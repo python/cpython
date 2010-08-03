@@ -42,17 +42,14 @@ A small number of constants live in the built-in namespace.  They are:
 .. data:: __debug__
 
    This constant is true if Python was not started with an :option:`-O` option.
-   See also the :keyword:`assert` statement.
+   It cannot be reassigned.  See also the :keyword:`assert` statement.
 
 
 .. note::
 
-   The names :data:`None` and :data:`__debug__` cannot be reassigned
-   (assignments to them, even as an attribute name, raise :exc:`SyntaxError`),
-   so they can be considered "true" constants.
-
-   .. versionchanged:: 2.7
-      Assignments to ``__debug__`` as an attribute became illegal.
+   The name :data:`None` cannot be reassigned (assignments to it, even as an
+   attribute name, raise :exc:`SyntaxError`), so it can be considered a "true"
+   constant.
 
 
 Constants added by the :mod:`site` module
