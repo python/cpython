@@ -39,7 +39,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         for x in letters:
             recno = d.append(x * 60)
             self.assertTrue(isinstance(recno, int))
-            self.assertGreaterEqual(recno, 1)
+            self.assertTrue(recno >= 1)
             if verbose:
                 print recno,
 
