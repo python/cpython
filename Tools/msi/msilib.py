@@ -451,6 +451,12 @@ class Directory:
         else:
             self.absolute = physical
             blogical = None
+        # initially assume that all files in this directory are unpackaged
+        # as files from self.absolute get added, this set is reduced
+        self.unpackaged_files = set()
+        for f in os.listdir(self.absolute):
+            if os.path.isfile(os.path.join(self.absolute, f)):
+                self.unpackaged_files.add(f)
         add_data(db, "Directory", [(logical, blogical, default)])
 
     def start_component(self, component = None, feature = None, flags = None, keyfile = None, uuid=None):
@@ -527,6 +533,11 @@ class Directory:
             src = file
             file = os.path.basename(file)
         absolute = os.path.join(self.absolute, src)
+        if absolute.startswith(self.absolute):
+            # mark file as packaged
+            relative = absolute[len(self.absolute)+1:]
+            if relative in self.unpackaged_files:
+                self.unpackaged_files.remove(relative)
         assert not re.search(r'[\?|><:/*]"', file) # restrictions on long names
         if self.keyfiles.has_key(file):
             logical = self.keyfiles[file]
