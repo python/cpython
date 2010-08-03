@@ -493,7 +493,7 @@ class StructTest(unittest.TestCase):
     def test_issue4228(self):
         # Packing a long may yield either 32 or 64 bits
         with _check_py3k_warnings(("struct integer overflow masking is deprecated",
-                                  DeprecationWarning), quite=True):
+                                  DeprecationWarning), quiet=True):
             x = struct.pack('L', -1)[:4]
         self.assertEqual(x, '\xff'*4)
 
