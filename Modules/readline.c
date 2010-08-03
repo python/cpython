@@ -356,6 +356,38 @@ PyDoc_STRVAR(doc_set_completer_delims,
 "set_completer_delims(string) -> None\n\
 set the readline word delimiters for tab-completion");
 
+/* _py_free_history_entry: Utility function to free a history entry. */
+
+#if defined(RL_READLINE_VERSION) && RL_READLINE_VERSION >= 0x0500
+
+/* Readline version >= 5.0 introduced a timestamp field into the history entry
+   structure; this needs to be freed to avoid a memory leak.  This version of
+   readline also introduced the handy 'free_history_entry' function, which
+   takes care of the timestamp. */
+
+static void
+_py_free_history_entry(HIST_ENTRY *entry)
+{
+    histdata_t data = free_history_entry(entry);
+    free(data);
+}
+
+#else
+
+/* No free_history_entry function;  free everything manually. */
+
+static void
+_py_free_history_entry(HIST_ENTRY *entry)
+{
+    if (entry->line)
+        free((void *)entry->line);
+    if (entry->data)
+        free(entry->data);
+    free(entry);
+}
+
+#endif
+
 static PyObject *
 py_remove_history(PyObject *self, PyObject *args)
 {
@@ -377,12 +409,7 @@ py_remove_history(PyObject *self, PyObject *args)
         return NULL;
     }
     /* free memory allocated for the history entry */
-    if (entry->line)
-        free((void *)entry->line);
-    if (entry->data)
-        free(entry->data);
-    free(entry);
-
+    _py_free_history_entry(entry);
     Py_RETURN_NONE;
 }
 
@@ -414,12 +441,7 @@ py_replace_history(PyObject *self, PyObject *args)
         return NULL;
     }
     /* free memory allocated for the old history entry */
-    if (old_entry->line)
-        free((void *)old_entry->line);
-    if (old_entry->data)
-        free(old_entry->data);
-    free(old_entry);
-
+    _py_free_history_entry(old_entry);
     Py_RETURN_NONE;
 }
 
