@@ -500,8 +500,7 @@ class DevNullTests (unittest.TestCase):
 class URandomTests (unittest.TestCase):
     def test_urandom(self):
         try:
-            with test_support._check_py3k_warnings(
-                ('integer argument expected, got float', DeprecationWarning)):
+            with test_support.check_warnings():
                 self.assertEqual(len(os.urandom(1)), 1)
                 self.assertEqual(len(os.urandom(10)), 10)
                 self.assertEqual(len(os.urandom(100)), 100)
