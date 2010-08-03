@@ -902,6 +902,13 @@ class PyDirectory(Directory):
             kw['componentflags'] = 2 #msidbComponentAttributesOptional
         Directory.__init__(self, *args, **kw)
 
+    def check_unpackaged(self):
+        self.unpackaged_files.discard('__pycache__')
+        self.unpackaged_files.discard('.svn')
+        if self.unpackaged_files:
+            print "Warning: Unpackaged files in %s" % self.absolute
+            print self.unpackaged_files
+
 # See "File Table", "Component Table", "Directory Table",
 # "FeatureComponents Table"
 def add_files(db):
@@ -965,13 +972,13 @@ def add_files(db):
         extensions.remove("_ctypes.pyd")
 
     # Add all .py files in Lib, except tkinter, test
-    dirs={}
+    dirs = []
     pydirs = [(root,"Lib")]
     while pydirs:
         # Commit every now and then, or else installer will complain
         db.Commit()
         parent, dir = pydirs.pop()
-        if dir == ".svn" or dir.startswith("plat-"):
+        if dir == ".svn" or dir == '__pycache__' or dir.startswith("plat-"):
             continue
         elif dir in ["tkinter", "idlelib", "Icons"]:
             if not have_tcl:
@@ -989,7 +996,7 @@ def add_files(db):
             default_feature.set_current()
         lib = PyDirectory(db, cab, parent, dir, dir, "%s|%s" % (parent.make_short(dir), dir))
         # Add additional files
-        dirs[dir]=lib
+        dirs.append(lib)
         lib.glob("*.txt")
         if dir=='site-packages':
             lib.add_file("README.txt", src="README")
@@ -999,18 +1006,13 @@ def add_files(db):
         if files:
             # Add an entry to the RemoveFile table to remove bytecode files.
             lib.remove_pyc()
-        if dir.endswith('.egg-info'):
-            lib.add_file('entry_points.txt')
-            lib.add_file('PKG-INFO')
-            lib.add_file('top_level.txt')
-            lib.add_file('zip-safe')
-            continue
+        # package READMEs if present
+        lib.glob("README")
+        if dir=='Lib':
+            lib.add_file('wsgiref.egg-info')
         if dir=='test' and parent.physical=='Lib':
             lib.add_file("185test.db")
             lib.add_file("audiotest.au")
-            lib.add_file("cfgparser.1")
-            lib.add_file("cfgparser.2")
-            lib.add_file("cfgparser.3")
             lib.add_file("sgml_input.html")
             lib.add_file("testtar.tar")
             lib.add_file("test_difflib_expect.html")
@@ -1020,7 +1022,10 @@ def add_files(db):
             lib.glob("*.uue")
             lib.glob("*.pem")
             lib.glob("*.pck")
+            lib.glob("cfgparser.*")
             lib.add_file("zipdir.zip")
+        if dir=='capath':
+            lib.glob("*.0")
         if dir=='tests' and parent.physical=='distutils':
             lib.add_file("Setup.sample")
         if dir=='decimaltestdata':
@@ -1030,19 +1035,26 @@ def add_files(db):
             lib.add_file("test.xml.out")
         if dir=='output':
             lib.glob("test_*")
+        if dir=='sndhdrdata':
+            lib.glob("sndhdr.*")
         if dir=='idlelib':
             lib.glob("*.def")
             lib.add_file("idle.bat")
+            lib.add_file("ChangeLog")
         if dir=="Icons":
             lib.glob("*.gif")
             lib.add_file("idle.icns")
         if dir=="command" and parent.physical=="distutils":
             lib.glob("wininst*.exe")
+            lib.add_file("command_template")
         if dir=="setuptools":
             lib.add_file("cli.exe")
             lib.add_file("gui.exe")
         if dir=="lib2to3":
             lib.removefile("pickle", "*.pickle")
+        if dir=="macholib":
+            lib.add_file("README.ctypes")
+            lib.glob("fetch_macholib*")
         if dir=="data" and parent.physical=="test" and parent.basedir.physical=="email":
             # This should contain all non-.svn files listed in subversion
             for f in os.listdir(lib.absolute):
@@ -1054,6 +1066,8 @@ def add_files(db):
         for f in os.listdir(lib.absolute):
             if os.path.isdir(os.path.join(lib.absolute, f)):
                 pydirs.append((lib, f))
+    for d in dirs:
+        d.check_unpackaged()
     # Add DLLs
     default_feature.set_current()
     lib = DLLs
