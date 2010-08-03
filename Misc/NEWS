@@ -21,6 +21,9 @@ Core and Builtins
 Extensions
 ----------
 
+- Issue #9450: Fix memory leak in readline.replace_history_item and
+  readline.remove_history_item for readline version >= 5.0.
+
 - Issue #8105: Validate file descriptor passed to mmap.mmap on Windows.
 
 - Issue #8046: Add context manager protocol support and .closed property
