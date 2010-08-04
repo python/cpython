@@ -7,8 +7,8 @@ import asyncore
 
 
 class DummyServer(smtpd.SMTPServer):
-    def __init__(self, *args):
-        smtpd.SMTPServer.__init__(self, *args)
+    def __init__(self, localaddr, remoteaddr):
+        smtpd.SMTPServer.__init__(self, localaddr, remoteaddr)
         self.messages = []
 
     def process_message(self, peer, mailfrom, rcpttos, data):
@@ -16,12 +16,37 @@ class DummyServer(smtpd.SMTPServer):
         if data == 'return status':
             return '250 Okish'
 
+
 class DummyDispatcherBroken(Exception):
     pass
+
 
 class BrokenDummyServer(DummyServer):
     def listen(self, num):
         raise DummyDispatcherBroken()
+
+
+class SMTPDServerTest(TestCase):
+    def setUp(self):
+        smtpd.socket = asyncore.socket = mock_socket
+
+    def test_process_message_unimplemented(self):
+        server = smtpd.SMTPServer('a', 'b')
+        conn, addr = server.accept()
+        channel = smtpd.SMTPChannel(server, conn, addr)
+
+        def write_line(line):
+            channel.socket.queue_recv(line)
+            channel.handle_read()
+
+        write_line(b'MAIL From:eggs@example')
+        write_line(b'RCPT To:spam@example')
+        write_line(b'DATA')
+        self.assertRaises(NotImplementedError, write_line, b'spam\r\n.\r\n')
+
+    def tearDown(self):
+        asyncore.socket = smtpd.socket = socket
+
 
 class SMTPDChannelTest(TestCase):
     def setUp(self):
@@ -142,14 +167,21 @@ class SMTPDChannelTest(TestCase):
             b'354 End data with <CR><LF>.<CR><LF>\r\n')
         self.write_line(b'data\r\nmore\r\n.')
         self.assertEqual(self.channel.socket.last, b'250 Ok\r\n')
-        self.assertEqual(self.server.messages[-1],
-            ('peer', 'eggs@example', ['spam@example'], 'data\nmore'))
+        self.assertEqual(self.server.messages,
+            [('peer', 'eggs@example', ['spam@example'], 'data\nmore')])
 
     def test_DATA_syntax(self):
         self.write_line(b'MAIL From:eggs@example')
         self.write_line(b'RCPT To:spam@example')
         self.write_line(b'DATA spam')
         self.assertEqual(self.channel.socket.last, b'501 Syntax: DATA\r\n')
+
+    def test_data_transparency_section_4_5_2(self):
+        self.write_line(b'MAIL From:eggs@example')
+        self.write_line(b'RCPT To:spam@example')
+        self.write_line(b'DATA')
+        self.write_line(b'..\r\n.\r\n')
+        self.assertEqual(self.channel.received_data, '.')
 
     def test_multiple_RCPT(self):
         self.write_line(b'MAIL From:eggs@example')
@@ -161,6 +193,7 @@ class SMTPDChannelTest(TestCase):
             ('peer', 'eggs@example', ['spam@example','ham@example'], 'data'))
 
     def test_manual_status(self):
+        # checks that the Channel is able to return a custom status message
         self.write_line(b'MAIL From:eggs@example')
         self.write_line(b'RCPT To:spam@example')
         self.write_line(b'DATA')
@@ -183,9 +216,54 @@ class SMTPDChannelTest(TestCase):
         self.write_line(b'RSET hi')
         self.assertEqual(self.channel.socket.last, b'501 Syntax: RSET\r\n')
 
+    def test_attribute_deprecations(self):
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__server
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__server = 'spam'
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__line
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__line = 'spam'
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__state
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__state = 'spam'
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__greeting
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__greeting = 'spam'
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__mailfrom
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__mailfrom = 'spam'
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__rcpttos
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__rcpttos = 'spam'
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__data
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__data = 'spam'
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__fqdn
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__fqdn = 'spam'
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__peer
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__peer = 'spam'
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__conn
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__conn = 'spam'
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            spam = self.channel._SMTPChannel__addr
+        with support.check_warnings(('', PendingDeprecationWarning)):
+            self.channel._SMTPChannel__addr = 'spam'
 
 def test_main():
-    support.run_unittest(SMTPDChannelTest)
+    support.run_unittest(SMTPDServerTest, SMTPDChannelTest)
 
 if __name__ == "__main__":
     test_main()
