@@ -53,7 +53,7 @@ class BaseTestCase(unittest.TestCase):
         # In a debug build, stuff like "[6580 refs]" is printed to stderr at
         # shutdown time.  That frustrates tests trying to check stderr produced
         # from a spawned Python process.
-        actual = re.sub("\[\d+ refs\]\r?\n?$", "", stderr.decode()).encode()
+        actual = support.strip_python_stderr(stderr)
         self.assertEqual(actual, expected, msg)
 
 
