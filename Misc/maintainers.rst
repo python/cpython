@@ -229,7 +229,7 @@ uu
 uuid
 warnings            brett.cannon
 wave
-weakref             fdrake
+weakref             fdrake, pitrou
 webbrowser          georg.brandl
 winreg
 winsound            effbot (inactive)
