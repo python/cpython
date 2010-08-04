@@ -37,6 +37,9 @@ Extensions
 Library
 -------
 
+- Issue #4184: Private attributes on smtpd.SMTPChannel made public and
+  deprecate the private attributes. Add tests for smtpd module.
+
 - Issue #3196: email header decoding is now forgiving if an RFC2047
   encoded word encoded in base64 is lacking padding.
 
