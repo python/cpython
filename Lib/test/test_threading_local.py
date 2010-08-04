@@ -137,20 +137,14 @@ def test_main():
     suite.addTest(unittest.makeSuite(ThreadLocalTest))
     suite.addTest(unittest.makeSuite(PyThreadingLocalTest))
 
-    try:
-        from thread import _local
-    except ImportError:
-        pass
-    else:
-        import _threading_local
-        local_orig = _threading_local.local
-        def setUp(test):
-            _threading_local.local = _local
-        def tearDown(test):
-            _threading_local.local = local_orig
-        suite.addTest(DocTestSuite('_threading_local',
-                                   setUp=setUp, tearDown=tearDown)
-                      )
+    local_orig = _threading_local.local
+    def setUp(test):
+        _threading_local.local = _thread._local
+    def tearDown(test):
+        _threading_local.local = local_orig
+    suite.addTest(DocTestSuite('_threading_local',
+                               setUp=setUp, tearDown=tearDown)
+                  )
 
     support.run_unittest(suite)
 
