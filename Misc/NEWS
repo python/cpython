@@ -4,6 +4,18 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.6.6?
+===========================
+
+*Release date: XXXX-XX-XX*
+
+Library
+-------
+
+- Issue #5798: Handle select.poll flag oddities properly on OS X.
+  This fixes test_asynchat and test_smtplib failures on OS X.
+
+
 What's New in Python 2.6.6 rc 1?
 ================================
 
