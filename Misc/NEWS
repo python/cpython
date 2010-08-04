@@ -89,6 +89,8 @@ C-API
 Library
 -------
 
+- Issue #2944: asyncore doesn't handle connection refused correctly.
+
 - Issue #8447: Make distutils.sysconfig follow symlinks in the path to
   the interpreter executable.  This fixes a failure of test_httpservers
   on OS X.
