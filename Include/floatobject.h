@@ -21,12 +21,6 @@ PyAPI_DATA(PyTypeObject) PyFloat_Type;
 #define PyFloat_Check(op) PyObject_TypeCheck(op, &PyFloat_Type)
 #define PyFloat_CheckExact(op) (Py_TYPE(op) == &PyFloat_Type)
 
-/* The str() precision PyFloat_STR_PRECISION is chosen so that in most cases,
-   the rounding noise created by various operations is suppressed, while
-   giving plenty of precision for practical use. */
-
-#define PyFloat_STR_PRECISION 12
-
 #ifdef Py_NAN
 #define Py_RETURN_NAN return PyFloat_FromDouble(Py_NAN)
 #endif

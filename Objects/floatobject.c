@@ -305,30 +305,18 @@ convert_to_double(PyObject **v, double *dbl)
 }
 
 static PyObject *
-float_str_or_repr(PyFloatObject *v, int precision, char format_code)
+float_repr(PyFloatObject *v)
 {
     PyObject *result;
     char *buf = PyOS_double_to_string(PyFloat_AS_DOUBLE(v),
-                                      format_code, precision,
+                                      'r', 0,
                                       Py_DTSF_ADD_DOT_0,
                                       NULL);
     if (!buf)
-    return PyErr_NoMemory();
+        return PyErr_NoMemory();
     result = PyUnicode_FromString(buf);
     PyMem_Free(buf);
     return result;
-}
-
-static PyObject *
-float_repr(PyFloatObject *v)
-{
-    return float_str_or_repr(v, 0, 'r');
-}
-
-static PyObject *
-float_str(PyFloatObject *v)
-{
-    return float_str_or_repr(v, PyFloat_STR_PRECISION, 'g');
 }
 
 /* Comparison is pretty much a nightmare.  When comparing float to float,
@@ -1169,7 +1157,7 @@ float_hex(PyObject *v)
     CONVERT_TO_DOUBLE(v, x);
 
     if (Py_IS_NAN(x) || Py_IS_INFINITY(x))
-        return float_str((PyFloatObject *)v);
+        return float_repr((PyFloatObject *)v);
 
     if (x == 0.0) {
         if (copysign(1.0, x) == -1.0)
@@ -1873,7 +1861,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_as_mapping */
     (hashfunc)float_hash,                       /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)float_str,                        /* tp_str */
+    (reprfunc)float_repr,                       /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */

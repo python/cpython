@@ -598,11 +598,11 @@ def decistmt(s):
 
     The format of the exponent is inherited from the platform C library.
     Known cases are "e-007" (Windows) and "e-07" (not Windows).  Since
-    we're only showing 12 digits, and the 13th isn't close to 5, the
+    we're only showing 11 digits, and the 12th isn't close to 5, the
     rest of the output should be platform-independent.
 
     >>> exec(s) #doctest: +ELLIPSIS
-    -3.21716034272e-0...7
+    -3.2171603427...e-0...7
 
     Output from calculations with Decimal should be identical across all
     platforms.

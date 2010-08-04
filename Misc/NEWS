@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9337: The str() of a float or complex number is now identical
+  to its repr().
+
 - Issue #9416: Fix some issues with complex formatting where the
   output with no type specifier failed to match the str output:
 
