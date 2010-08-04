@@ -1611,6 +1611,15 @@ class TestRFC2047(unittest.TestCase):
                               ('rg', None), ('\xe5', 'iso-8859-1'),
                               ('sbord', None)])
 
+    def test_rfc2047_B_bad_padding(self):
+        s = '=?iso-8859-1?B?%s?='
+        data = [                                # only test complete bytes
+            ('dm==', 'v'), ('dm=', 'v'), ('dm', 'v'),
+            ('dmk=', 'vi'), ('dmk', 'vi')
+          ]
+        for q, a in data:
+            dh = decode_header(s % q)
+            self.assertEqual(dh, [(a, 'iso-8859-1')])
 
 
 # Test the MIMEMessage class
@@ -3064,7 +3073,7 @@ A very long line that must get split to something other than at the
 
     def test_broken_base64_header(self):
         raises = self.assertRaises
-        s = 'Subject: =?EUC-KR?B?CSixpLDtKSC/7Liuvsax4iC6uLmwMcijIKHaILzSwd/H0SC8+LCjwLsgv7W/+Mj3IQ?='
+        s = 'Subject: =?EUC-KR?B?CSixpLDtKSC/7Liuvsax4iC6uLmwMcijIKHaILzSwd/H0SC8+LCjwLsgv7W/+Mj3I ?='
         raises(Errors.HeaderParseError, decode_header, s)
 
 
