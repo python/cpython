@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #2944: asyncore doesn't handle connection refused correctly.
+
 - Issue #3196: email header decoding is now forgiving if an RFC2047
   encoded word encoded in base64 is lacking padding.
 
