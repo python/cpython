@@ -59,7 +59,6 @@ class TestUntestedModules(unittest.TestCase):
             import pdb
             import pstats
             import py_compile
-            import rlcompleter
             import sched
             import sndhdr
             import symbol
