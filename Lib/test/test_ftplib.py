@@ -24,6 +24,7 @@ threading = support.import_module('threading')
 # the dummy data returned by server over the data channel when
 # RETR, LIST and NLST commands are issued
 RETR_DATA = 'abcde12345\r\n' * 1000
+RETR_TEXT = 'abcd\xe912345\r\n' * 1000
 LIST_DATA = 'foo\r\nbar\r\n'
 NLST_DATA = 'foo\r\nbar\r\n'
 
@@ -37,7 +38,7 @@ class DummyDTPHandler(asynchat.async_chat):
         self.baseclass.last_received_data = ''
 
     def handle_read(self):
-        self.baseclass.last_received_data += self.recv(1024).decode('ascii')
+        self.baseclass.last_received_data += self.recv(1024).decode('latin-1')
 
     def handle_close(self):
         # XXX: this method can be called many times in a row for a single
@@ -49,7 +50,7 @@ class DummyDTPHandler(asynchat.async_chat):
             self.dtp_conn_closed = True
 
     def push(self, what):
-        super(DummyDTPHandler, self).push(what.encode('ascii'))
+        super(DummyDTPHandler, self).push(what.encode('latin-1'))
 
     def handle_error(self):
         raise
@@ -68,6 +69,7 @@ class DummyFTPHandler(asynchat.async_chat):
         self.last_received_data = ''
         self.next_response = ''
         self.rest = None
+        self.current_type = 'a'
         self.push('220 welcome')
 
     def collect_incoming_data(self, data):
@@ -175,7 +177,16 @@ class DummyFTPHandler(asynchat.async_chat):
         self.push('257 "pwd ok"')
 
     def cmd_type(self, arg):
-        self.push('200 type ok')
+        # ASCII type
+        if arg.lower() == 'a':
+            self.current_type = 'a'
+            self.push('200 type ok')
+        # Binary type
+        elif arg.lower() == 'i':
+            self.current_type = 'i'
+            self.push('200 type ok')
+        else:
+            self.push('504 unsupported type')
 
     def cmd_quit(self, arg):
         self.push('221 quit ok')
@@ -194,7 +205,10 @@ class DummyFTPHandler(asynchat.async_chat):
             offset = int(self.rest)
         else:
             offset = 0
-        self.dtp.push(RETR_DATA[offset:])
+        if self.current_type == 'i':
+            self.dtp.push(RETR_DATA[offset:])
+        else:
+            self.dtp.push(RETR_TEXT[offset:])
         self.dtp.close_when_done()
         self.rest = None
 
@@ -511,7 +525,7 @@ class TestFTPClass(TestCase):
     def test_retrlines(self):
         received = []
         self.client.retrlines('retr', received.append)
-        self.assertEqual(''.join(received), RETR_DATA.replace('\r\n', ''))
+        self.assertEqual(''.join(received), RETR_TEXT.replace('\r\n', ''))
 
     def test_storbinary(self):
         f = io.BytesIO(RETR_DATA.encode('ascii'))
@@ -530,10 +544,20 @@ class TestFTPClass(TestCase):
             self.client.storbinary('stor', f, rest=r)
             self.assertEqual(self.server.handler_instance.rest, str(r))
 
-    def test_storlines(self):
+    def test_storlines_bytes(self):
         f = io.BytesIO(RETR_DATA.replace('\r\n', '\n').encode('ascii'))
         self.client.storlines('stor', f)
         self.assertEqual(self.server.handler_instance.last_received_data, RETR_DATA)
+        # test new callback arg
+        flag = []
+        f.seek(0)
+        self.client.storlines('stor foo', f, callback=lambda x: flag.append(None))
+        self.assertTrue(flag)
+
+    def test_storlines_str(self):
+        f = io.StringIO(RETR_TEXT.replace('\r\n', '\n'))
+        self.client.storlines('stor', f)
+        self.assertEqual(self.server.handler_instance.last_received_data, RETR_TEXT)
         # test new callback arg
         flag = []
         f.seek(0)
