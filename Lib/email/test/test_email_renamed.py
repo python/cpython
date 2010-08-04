@@ -2958,7 +2958,7 @@ A very long line that must get split to something other than at the
 
     def test_broken_base64_header(self):
         raises = self.assertRaises
-        s = 'Subject: =?EUC-KR?B?CSixpLDtKSC/7Liuvsax4iC6uLmwMcijIKHaILzSwd/H0SC8+LCjwLsgv7W/+Mj3IQ?='
+        s = 'Subject: =?EUC-KR?B?CSixpLDtKSC/7Liuvsax4iC6uLmwMcijIKHaILzSwd/H0SC8+LCjwLsgv7W/+Mj3I ?='
         raises(errors.HeaderParseError, decode_header, s)
 
 

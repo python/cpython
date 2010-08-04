@@ -92,6 +92,9 @@ def decode_header(header):
                 if encoding == 'q':
                     dec = email.quoprimime.header_decode(encoded)
                 elif encoding == 'b':
+                    paderr = len(encoded) % 4   # Postel's law: add missing padding
+                    if paderr:
+                        encoded += '==='[:4 - paderr]
                     try:
                         dec = email.base64mime.decode(encoded)
                     except binascii.Error:
