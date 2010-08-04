@@ -64,17 +64,20 @@ class GeneralTests(unittest.TestCase):
         smtp.close()
 
     def testBasic2(self):
+        mock_socket.reply_with(b"220 Hola mundo")
         # connects, include port in host name
         smtp = smtplib.SMTP("%s:%s" % (HOST, self.port))
         smtp.close()
 
     def testLocalHostName(self):
+        mock_socket.reply_with(b"220 Hola mundo")
         # check that supplied local_hostname is used
         smtp = smtplib.SMTP(HOST, self.port, local_hostname="testhost")
         self.assertEqual(smtp.local_hostname, "testhost")
         smtp.close()
 
     def testTimeoutDefault(self):
+        mock_socket.reply_with(b"220 Hola mundo")
         self.assertTrue(mock_socket.getdefaulttimeout() is None)
         mock_socket.setdefaulttimeout(30)
         self.assertEqual(mock_socket.getdefaulttimeout(), 30)
@@ -86,6 +89,7 @@ class GeneralTests(unittest.TestCase):
         smtp.close()
 
     def testTimeoutNone(self):
+        mock_socket.reply_with(b"220 Hola mundo")
         self.assertTrue(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
@@ -96,6 +100,7 @@ class GeneralTests(unittest.TestCase):
         smtp.close()
 
     def testTimeoutValue(self):
+        mock_socket.reply_with(b"220 Hola mundo")
         smtp = smtplib.SMTP(HOST, self.port, timeout=30)
         self.assertEqual(smtp.sock.gettimeout(), 30)
         smtp.close()
