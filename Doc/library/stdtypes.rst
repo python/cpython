@@ -216,14 +216,15 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
 There are three distinct numeric types: :dfn:`integers`, :dfn:`floating
 point numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a
 subtype of integers.  Integers have unlimited precision.  Floating point
-numbers are implemented using :ctype:`double` in C---all bets on their
-precision are off unless you happen to know the machine you are working
-with. Complex numbers have a real and imaginary part, which are each
-implemented using :ctype:`double` in C.  To extract these parts from a
-complex number *z*, use ``z.real`` and ``z.imag``. (The standard library
-includes additional numeric types, :mod:`fractions` that hold rationals,
-and :mod:`decimal` that hold floating-point numbers with user-definable
-precision.)
+numbers are usually implemented using :ctype:`double` in C; information
+about the precision and internal representation of floating point
+numbers for the machine on which your program is running is available
+in :data:`sys.float_info`.  Complex numbers have a real and imaginary
+part, which are each a floating point number.  To extract these parts
+from a complex number *z*, use ``z.real`` and ``z.imag``. (The standard
+library includes additional numeric types, :mod:`fractions` that hold
+rationals, and :mod:`decimal` that hold floating-point numbers with
+user-definable precision.)
 
 .. index::
    pair: numeric; literals
