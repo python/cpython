@@ -43,7 +43,7 @@ __builtin__
 __future__
 __main__            gvanrossum
 _dummy_thread       brett.cannon
-_thread
+_thread             pitrou
 abc
 aifc                r.david.murray
 argparse            bethard
@@ -211,7 +211,7 @@ tempfile
 termios
 test
 textwrap
-threading
+threading           pitrou
 time                alexander.belopolsky
 timeit
 Tkinter             gpolo
