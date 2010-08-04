@@ -165,9 +165,9 @@ The :mod:`functools` module defines the following functions:
    attributes of the wrapper function are updated with the corresponding attributes
    from the original function. The default values for these arguments are the
    module level constants *WRAPPER_ASSIGNMENTS* (which assigns to the wrapper
-   function's *__name__*, *__module__* and *__doc__*, the documentation string) and
-   *WRAPPER_UPDATES* (which updates the wrapper function's *__dict__*, i.e. the
-   instance dictionary).
+   function's *__name__*, *__module__*, *__annotations__* and *__doc__*, the
+   documentation string) and *WRAPPER_UPDATES* (which updates the wrapper
+   function's *__dict__*, i.e. the instance dictionary).
 
    The main intended use for this function is in :term:`decorator` functions which
    wrap the decorated function and return the wrapper. If the wrapper function is
