@@ -37,8 +37,6 @@ Extensions
 Library
 -------
 
-- Issue #6822: ftplib's storlines method doesn't work with text files.
-
 - Issue #2944: asyncore doesn't handle connection refused correctly.
 
 - Issue #4184: Private attributes on smtpd.SMTPChannel made public and
