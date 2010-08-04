@@ -48,9 +48,11 @@ decimal value 0.1 cannot be represented exactly as a base 2 fraction.  In base
 
    0.0001100110011001100110011001100110011001100110011...
 
-Stop at any finite number of bits, and you get an approximation.  On a typical
-machine, there are 53 bits of precision available, so the value stored
-internally is the binary fraction ::
+Stop at any finite number of bits, and you get an approximation.
+
+On a typical machine running Python, there are 53 bits of precision available
+for a Python float, so the value stored internally when you enter the decimal
+number ``0.1`` is the binary fraction ::
 
    0.00011001100110011001100110011001100110011001100110011010
 
@@ -80,14 +82,14 @@ arithmetic with these values ::
    >>> 0.1 + 0.2
    0.30000000000000004
 
-Note that this is in the very nature of binary floating-point: this is not a bug
-in Python, and it is not a bug in your code either.  You'll see the same kind of
-thing in all languages that support your hardware's floating-point arithmetic
-(although some languages may not *display* the difference by default, or in all
-output modes).
+Note that this is in the very nature of binary floating-point: this is not a
+bug in Python, and it is not a bug in your code either.  You'll see the same
+kind of thing in all languages that support your hardware's floating-point
+arithmetic (although some languages may not *display* the difference by
+default, or in all output modes).
 
-Other surprises follow from this one.  For example, if you try to round the value
-2.675 to two decimal places, you get this ::
+Other surprises follow from this one.  For example, if you try to round the
+value 2.675 to two decimal places, you get this ::
 
    >>> round(2.675, 2)
    2.67
@@ -96,7 +98,7 @@ The documentation for the built-in :func:`round` function says that it rounds
 to the nearest value, rounding ties away from zero.  Since the decimal fraction
 2.675 is exactly halfway between 2.67 and 2.68, you might expect the result
 here to be (a binary approximation to) 2.68.  It's not, because when the
-decimal literal ``2.675`` is converted to a binary floating-point number, it's
+decimal string ``2.675`` is converted to a binary floating-point number, it's
 again replaced with a binary approximation, whose exact value is ::
 
    2.67499999999999982236431605997495353221893310546875
@@ -113,8 +115,8 @@ exact value that's stored in any particular Python float ::
    >>> Decimal(2.675)
    Decimal('2.67499999999999982236431605997495353221893310546875')
 
-Another consequence is that since 0.1 is not exactly 1/10, summing ten values of
-0.1 may not yield exactly 1.0, either::
+Another consequence is that since 0.1 is not exactly 1/10, summing ten values
+of 0.1 may not yield exactly 1.0, either::
 
    >>> sum = 0.0
    >>> for i in range(10):
@@ -137,9 +139,9 @@ that every float operation can suffer a new rounding error.
 
 While pathological cases do exist, for most casual use of floating-point
 arithmetic you'll see the result you expect in the end if you simply round the
-display of your final results to the number of decimal digits you expect.
-:func:`str` usually suffices, and for finer control see the :meth:`str.format`
-method's format specifiers in :ref:`formatstrings`.
+display of your final results to the number of decimal digits you expect.  For
+fine control over how a float is displayed see the :meth:`str.format` method's
+format specifiers in :ref:`formatstrings`.
 
 
 .. _tut-fp-error:
@@ -147,9 +149,9 @@ method's format specifiers in :ref:`formatstrings`.
 Representation Error
 ====================
 
-This section explains the "0.1" example in detail, and shows how you can perform
-an exact analysis of cases like this yourself.  Basic familiarity with binary
-floating-point representation is assumed.
+This section explains the "0.1" example in detail, and shows how you can
+perform an exact analysis of cases like this yourself.  Basic familiarity with
+binary floating-point representation is assumed.
 
 :dfn:`Representation error` refers to the fact that some (most, actually)
 decimal fractions cannot be represented exactly as binary (base 2) fractions.
@@ -176,24 +178,24 @@ and recalling that *J* has exactly 53 bits (is ``>= 2**52`` but ``< 2**53``),
 the best value for *N* is 56::
 
    >>> 2**52
-   4503599627370496L
+   4503599627370496
    >>> 2**53
-   9007199254740992L
+   9007199254740992
    >>> 2**56/10
-   7205759403792793L
+   7205759403792793
 
-That is, 56 is the only value for *N* that leaves *J* with exactly 53 bits.  The
-best possible value for *J* is then that quotient rounded::
+That is, 56 is the only value for *N* that leaves *J* with exactly 53 bits.
+The best possible value for *J* is then that quotient rounded::
 
    >>> q, r = divmod(2**56, 10)
    >>> r
-   6L
+   6
 
 Since the remainder is more than half of 10, the best approximation is obtained
 by rounding up::
 
    >>> q+1
-   7205759403792794L
+   7205759403792794
 
 Therefore the best possible approximation to 1/10 in 754 double precision is
 that over 2\*\*56, or ::
@@ -201,8 +203,8 @@ that over 2\*\*56, or ::
    7205759403792794 / 72057594037927936
 
 Note that since we rounded up, this is actually a little bit larger than 1/10;
-if we had not rounded up, the quotient would have been a little bit smaller than
-1/10.  But in no case can it be *exactly* 1/10!
+if we had not rounded up, the quotient would have been a little bit smaller
+than 1/10.  But in no case can it be *exactly* 1/10!
 
 So the computer never "sees" 1/10:  what it sees is the exact fraction given
 above, the best 754 double approximation it can get::
@@ -213,12 +215,12 @@ above, the best 754 double approximation it can get::
 If we multiply that fraction by 10\*\*30, we can see the (truncated) value of
 its 30 most significant decimal digits::
 
-   >>> 7205759403792794 * 10**30 / 2**56
+   >>> 7205759403792794 * 10**30 // 2**56
    100000000000000005551115123125L
 
 meaning that the exact number stored in the computer is approximately equal to
 the decimal value 0.100000000000000005551115123125.  In versions prior to
 Python 2.7 and Python 3.1, Python rounded this value to 17 significant digits,
-giving '0.10000000000000001'.  In current versions, Python displays a value based
-on the shortest decimal fraction that rounds correctly back to the true binary
-value, resulting simply in '0.1'.
+giving '0.10000000000000001'.  In current versions, Python displays a value
+based on the shortest decimal fraction that rounds correctly back to the true
+binary value, resulting simply in '0.1'.
