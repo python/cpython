@@ -157,7 +157,7 @@ else:
     import time
 
     from pickle import dump, load, HIGHEST_PROTOCOL
-    from ._multiprocessing import win32, Connection, PipeConnection
+    from _multiprocessing import win32, Connection, PipeConnection
     from .util import Finalize
 
     def dump(obj, file, protocol=None):
