@@ -20,6 +20,9 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Terry Reedy was given commit access on Aug 04 2010 by MvL,
+  at suggestion of Nick Coghlan.
+
 - Brian Quinlan was given commit access on Jul 26 2010 by GFB,
   for work related to PEP 3148.
 
