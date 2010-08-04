@@ -437,6 +437,9 @@ Build
 Tests
 -----
 
+- Issue #9496: Provide a test suite for the rlcompleter module.  Patch by
+  Michele Orrù.
+
 - Issue #9251: test_threaded_import didn't fail when run through regrtest
   if the import lock was disabled.
 
