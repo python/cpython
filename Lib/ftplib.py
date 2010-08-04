@@ -493,15 +493,9 @@ class FTP:
         while 1:
             buf = fp.readline()
             if not buf: break
-            if isinstance(buf, str):
-                if not buf.endswith(CRLF):
-                    if buf[-1] in CRLF: buf = buf[:-1]
-                    buf = buf + CRLF
-                buf = bytes(buf, self.encoding)
-            else:
-                if not buf.endswith(B_CRLF):
-                    if buf[-1:] in B_CRLF: buf = buf[:-1]
-                    buf = buf + B_CRLF
+            if buf[-2:] != B_CRLF:
+                if buf[-1] in B_CRLF: buf = buf[:-1]
+                buf = buf + B_CRLF
             conn.sendall(buf)
             if callback: callback(buf)
         conn.close()
@@ -777,15 +771,9 @@ else:
                 while 1:
                     buf = fp.readline()
                     if not buf: break
-                    if isinstance(buf, str):
-                        if not buf.endswith(CRLF):
-                            if buf[-1] in CRLF: buf = buf[:-1]
-                            buf = buf + CRLF
-                        buf = bytes(buf, self.encoding)
-                    else:
-                        if not buf.endswith(B_CRLF):
-                            if buf[-1:] in B_CRLF: buf = buf[:-1]
-                            buf = buf + B_CRLF
+                    if buf[-2:] != B_CRLF:
+                        if buf[-1] in B_CRLF: buf = buf[:-1]
+                        buf = buf + B_CRLF
                     conn.sendall(buf)
                     if callback: callback(buf)
                 # shutdown ssl layer
@@ -794,7 +782,6 @@ else:
             finally:
                 conn.close()
             return self.voidresp()
-
 
     __all__.append('FTP_TLS')
     all_errors = (Error, IOError, EOFError, ssl.SSLError)
