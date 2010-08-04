@@ -108,6 +108,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #9496: Provide a test suite for the rlcompleter module.  Patch by
+  Michele Orrù.
+
 - Issue #8687: provide a test suite for sched.py module.
 
 
