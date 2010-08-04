@@ -426,8 +426,11 @@ class dispatcher:
             self.handle_read()
 
     def handle_connect_event(self):
-        self.connected = True
+        err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+        if err != 0:
+            raise socket.error(err, _strerror(err))
         self.handle_connect()
+        self.connected = True
 
     def handle_write_event(self):
         if self.accepting:
