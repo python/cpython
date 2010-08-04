@@ -36,6 +36,7 @@ class MockSocket:
         self.lines = []
         if _reply_data:
             self.lines.append(_reply_data)
+            _reply_data = None
         self.conn = None
         self.timeout = None
 

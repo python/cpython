@@ -189,8 +189,8 @@ class SMTPDChannelTest(TestCase):
         self.write_line(b'RCPT To:ham@example')
         self.write_line(b'DATA')
         self.write_line(b'data\r\n.')
-        self.assertEqual(self.server.messages[-1],
-            ('peer', 'eggs@example', ['spam@example','ham@example'], 'data'))
+        self.assertEqual(self.server.messages,
+            [('peer', 'eggs@example', ['spam@example','ham@example'], 'data')])
 
     def test_manual_status(self):
         # checks that the Channel is able to return a custom status message
@@ -209,8 +209,8 @@ class SMTPDChannelTest(TestCase):
         self.write_line(b'RCPT To:eggs@example')
         self.write_line(b'DATA')
         self.write_line(b'data\r\n.')
-        self.assertEqual(self.server.messages[0],
-            ('peer', 'foo@example', ['eggs@example'], 'data'))
+        self.assertEqual(self.server.messages,
+            [('peer', 'foo@example', ['eggs@example'], 'data')])
 
     def test_RSET_syntax(self):
         self.write_line(b'RSET hi')
