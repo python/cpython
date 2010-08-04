@@ -950,11 +950,12 @@ format_float_internal(PyObject *value,
     }
 
     if (type == '\0') {
-        /* Omitted type specifier. This is like 'g' but with at least one
-           digit after the decimal point, and different default precision.*/
-        type = 'g';
-        default_precision = PyFloat_STR_PRECISION;
+        /* Omitted type specifier.  Behaves in the same way as repr(x)
+           and str(x) if no precision is given, else like 'g', but with
+           at least one digit after the decimal point. */
         flags |= Py_DTSF_ADD_DOT_0;
+        type = 'r';
+        default_precision = 0;
     }
 
     if (type == 'n')
@@ -974,6 +975,8 @@ format_float_internal(PyObject *value,
 
     if (precision < 0)
         precision = default_precision;
+    else if (type == 'r')
+        type = 'g';
 
     /* Cast "type", because if we're in unicode we need to pass a
        8-bit char. This is safe, because we've restricted what "type"
@@ -1134,8 +1137,8 @@ format_complex_internal(PyObject *value,
 
     if (type == '\0') {
         /* Omitted type specifier. Should be like str(self). */
-        type = 'g';
-        default_precision = PyFloat_STR_PRECISION;
+        type = 'r';
+        default_precision = 0;
         if (re == 0.0 && copysign(1.0, re) == 1.0)
             skip_re = 1;
         else
@@ -1149,6 +1152,8 @@ format_complex_internal(PyObject *value,
 
     if (precision < 0)
         precision = default_precision;
+    else if (type == 'r')
+        type = 'g';
 
     /* Cast "type", because if we're in unicode we need to pass a
        8-bit char. This is safe, because we've restricted what "type"

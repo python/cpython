@@ -617,7 +617,9 @@ class ReprTestCase(unittest.TestCase):
             negs = '-'+s
             self.assertEqual(s, repr(float(s)))
             self.assertEqual(negs, repr(float(negs)))
-
+            # Since Python 3.2, repr and str are identical
+            self.assertEqual(repr(float(s)), str(float(s)))
+            self.assertEqual(repr(float(negs)), str(float(negs)))
 
 @requires_IEEE_754
 class RoundTestCase(unittest.TestCase):

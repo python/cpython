@@ -394,12 +394,6 @@ complex_repr(PyComplexObject *v)
     return complex_format(v, 0, 'r');
 }
 
-static PyObject *
-complex_str(PyComplexObject *v)
-{
-    return complex_format(v, PyFloat_STR_PRECISION, 'g');
-}
-
 static long
 complex_hash(PyComplexObject *v)
 {
@@ -1104,7 +1098,7 @@ PyTypeObject PyComplex_Type = {
     0,                                          /* tp_as_mapping */
     (hashfunc)complex_hash,                     /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)complex_str,                      /* tp_str */
+    (reprfunc)complex_repr,                     /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
