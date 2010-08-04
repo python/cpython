@@ -14,6 +14,8 @@ import pprint
 import urllib, urlparse
 import traceback
 import weakref
+import functools
+import platform
 
 from BaseHTTPServer import HTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
@@ -53,6 +55,28 @@ class BasicTests(unittest.TestCase):
                 pass
             else:
                 raise
+
+# Issue #9415: Ubuntu hijacks their OpenSSL and forcefully disables SSLv2
+def skip_if_broken_ubuntu_ssl(func):
+    # We need to access the lower-level wrapper in order to create an
+    # implicit SSL context without trying to connect or listen.
+    import _ssl
+    @functools.wraps(func)
+    def f(*args, **kwargs):
+        try:
+            s = socket.socket(socket.AF_INET)
+            _ssl.sslwrap(s._sock, 0, None, None,
+                         ssl.CERT_NONE, ssl.PROTOCOL_SSLv2, None, None)
+        except ssl.SSLError as e:
+            if (ssl.OPENSSL_VERSION_INFO == (0, 9, 8, 15, 15) and
+                platform.linux_distribution() == ('debian', 'squeeze/sid', '')
+                and 'Invalid SSL protocol variant specified' in str(e)):
+                raise unittest.SkipTest("Patched Ubuntu OpenSSL breaks behaviour")
+        return func(*args, **kwargs)
+    return f
+
+
+class BasicSocketTests(unittest.TestCase):
 
     def test_constants(self):
         ssl.PROTOCOL_SSLv2
@@ -807,6 +831,7 @@ else:
             finally:
                 t.join()
 
+        @skip_if_broken_ubuntu_ssl
         def test_echo(self):
             """Basic test of an SSL client connecting to a server"""
             if test_support.verbose:
@@ -872,6 +897,7 @@ else:
             bad_cert_test(os.path.join(os.path.dirname(__file__) or os.curdir,
                                        "badkey.pem"))
 
+        @skip_if_broken_ubuntu_ssl
         def test_protocol_sslv2(self):
             """Connecting to an SSLv2 server with various client options"""
             if test_support.verbose:
@@ -883,6 +909,7 @@ else:
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, False)
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_TLSv1, False)
 
+        @skip_if_broken_ubuntu_ssl
         def test_protocol_sslv23(self):
             """Connecting to an SSLv23 server with various client options"""
             if test_support.verbose:
@@ -907,6 +934,7 @@ else:
             try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv23, True, ssl.CERT_REQUIRED)
             try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1, True, ssl.CERT_REQUIRED)
 
+        @skip_if_broken_ubuntu_ssl
         def test_protocol_sslv3(self):
             """Connecting to an SSLv3 server with various client options"""
             if test_support.verbose:
@@ -918,6 +946,7 @@ else:
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23, False)
             try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_TLSv1, False)
 
+        @skip_if_broken_ubuntu_ssl
         def test_protocol_tlsv1(self):
             """Connecting to a TLSv1 server with various client options"""
             if test_support.verbose:
