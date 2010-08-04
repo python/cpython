@@ -16,6 +16,7 @@ import traceback
 import asyncore
 import weakref
 import platform
+import functools
 
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
@@ -64,6 +65,20 @@ def can_clear_options():
 def no_sslv2_implies_sslv3_hello():
     # 0.9.7h or higher
     return ssl.OPENSSL_VERSION_INFO >= (0, 9, 7, 8, 15)
+
+
+# Issue #9415: Ubuntu hijacks their OpenSSL and forcefully disables SSLv2
+def skip_if_broken_ubuntu_ssl(func):
+    @functools.wraps(func)
+    def f(*args, **kwargs):
+        try:
+            ssl.SSLContext(ssl.PROTOCOL_SSLv2)
+        except ssl.SSLError:
+            if (ssl.OPENSSL_VERSION_INFO == (0, 9, 8, 15, 15) and
+                platform.linux_distribution() == ('debian', 'squeeze/sid', '')):
+                raise unittest.SkipTest("Patched Ubuntu OpenSSL breaks behaviour")
+        return func(*args, **kwargs)
+    return f
 
 
 class BasicSocketTests(unittest.TestCase):
@@ -176,6 +191,7 @@ class BasicSocketTests(unittest.TestCase):
 
 class ContextTests(unittest.TestCase):
 
+    @skip_if_broken_ubuntu_ssl
     def test_constructor(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv2)
         ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
@@ -185,6 +201,7 @@ class ContextTests(unittest.TestCase):
         self.assertRaises(ValueError, ssl.SSLContext, -1)
         self.assertRaises(ValueError, ssl.SSLContext, 42)
 
+    @skip_if_broken_ubuntu_ssl
     def test_protocol(self):
         for proto in PROTOCOLS:
             ctx = ssl.SSLContext(proto)
@@ -197,6 +214,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaisesRegexp(ssl.SSLError, "No cipher can be selected"):
             ctx.set_ciphers("^$:,;?*'dorothyx")
 
+    @skip_if_broken_ubuntu_ssl
     def test_options(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         # OP_ALL is the default value
@@ -938,6 +956,7 @@ else:
 
     class ThreadedTests(unittest.TestCase):
 
+        @skip_if_broken_ubuntu_ssl
         def test_echo(self):
             """Basic test of an SSL client connecting to a server"""
             if support.verbose:
@@ -1040,6 +1059,7 @@ else:
             finally:
                 t.join()
 
+        @skip_if_broken_ubuntu_ssl
         def test_protocol_sslv2(self):
             """Connecting to an SSLv2 server with various client options"""
             if support.verbose:
@@ -1060,6 +1080,7 @@ else:
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, True,
                                client_options=ssl.OP_NO_TLSv1)
 
+        @skip_if_broken_ubuntu_ssl
         def test_protocol_sslv23(self):
             """Connecting to an SSLv23 server with various client options"""
             if support.verbose:
@@ -1094,6 +1115,7 @@ else:
                                server_options=ssl.OP_NO_TLSv1)
 
 
+        @skip_if_broken_ubuntu_ssl
         def test_protocol_sslv3(self):
             """Connecting to an SSLv3 server with various client options"""
             if support.verbose:
@@ -1109,6 +1131,7 @@ else:
                 try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23, True,
                                    client_options=ssl.OP_NO_SSLv2)
 
+        @skip_if_broken_ubuntu_ssl
         def test_protocol_tlsv1(self):
             """Connecting to a TLSv1 server with various client options"""
             if support.verbose:
