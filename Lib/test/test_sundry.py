@@ -56,7 +56,6 @@ class TestUntestedModules(unittest.TestCase):
             import os2emxpath
             import pstats
             import py_compile
-            import rlcompleter
             import sndhdr
             import symbol
             import tabnanny
