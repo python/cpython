@@ -478,6 +478,26 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(urlparse.urlparse("x-newscheme://foo.com/stuff"),
                          ('x-newscheme','foo.com','/stuff','','',''))
 
+    def test_withoutscheme(self):
+        # Test urlparse without scheme
+        # Issue 754016: urlparse goes wrong with IP:port without scheme
+        # RFC 1808 specifies that netloc should start with //, urlparse expects
+        # the same, otherwise it classifies the portion of url as path.
+        self.assertEqual(urlparse.urlparse("path"),
+                ('','','path','','',''))
+        self.assertEqual(urlparse.urlparse("//www.python.org:80"),
+                ('','www.python.org:80','','','',''))
+        self.assertEqual(urlparse.urlparse("http://www.python.org:80"),
+                ('http','www.python.org:80','','','',''))
+
+    def test_portseparator(self):
+        # Issue 754016 makes changes for port separator ':' from scheme separator
+        self.assertEqual(urlparse.urlparse("path:80"),
+                ('','','path:80','','',''))
+        self.assertEqual(urlparse.urlparse("http:"),('http','','','','',''))
+        self.assertEqual(urlparse.urlparse("https:"),('https','','','','',''))
+        self.assertEqual(urlparse.urlparse("http://www.python.org:80"),
+                ('http','www.python.org:80','','','',''))
 
 
 def test_main():
