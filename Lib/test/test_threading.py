@@ -1,7 +1,7 @@
 # Very rudimentary test of threading module
 
 import test.support
-from test.support import verbose
+from test.support import verbose, strip_python_stderr
 import random
 import re
 import sys
@@ -350,7 +350,7 @@ class ThreadTests(BaseTestCase):
         stdout, stderr = p.communicate()
         self.assertEqual(stdout.strip(),
             b"Woke up, sleep function is: <built-in function sleep>")
-        stderr = re.sub(br"^\[\d+ refs\]", b"", stderr, re.MULTILINE).strip()
+        stderr = strip_python_stderr(stderr)
         self.assertEqual(stderr, b"")
 
     def test_enumerate_after_join(self):
