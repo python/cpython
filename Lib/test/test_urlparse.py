@@ -424,6 +424,27 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(urllib.parse.urlparse("http://example.com?blahblah=/foo"),
                          ('http', 'example.com', '', '', 'blahblah=/foo', ''))
 
+    def test_withoutscheme(self):
+        # Test urlparse without scheme
+        # Issue 754016: urlparse goes wrong with IP:port without scheme
+        # RFC 1808 specifies that netloc should start with //, urlparse expects
+        # the same, otherwise it classifies the portion of url as path.
+        self.assertEqual(urllib.parse.urlparse("path"),
+                ('','','path','','',''))
+        self.assertEqual(urllib.parse.urlparse("//www.python.org:80"),
+                ('','www.python.org:80','','','',''))
+        self.assertEqual(urllib.parse.urlparse("http://www.python.org:80"),
+                ('http','www.python.org:80','','','',''))
+
+    def test_portseparator(self):
+        # Issue 754016 makes changes for port separator ':' from scheme separator
+        self.assertEqual(urllib.parse.urlparse("path:80"),
+                ('','','path:80','','',''))
+        self.assertEqual(urllib.parse.urlparse("http:"),('http','','','','',''))
+        self.assertEqual(urllib.parse.urlparse("https:"),('https','','','','',''))
+        self.assertEqual(urllib.parse.urlparse("http://www.python.org:80"),
+                ('http','www.python.org:80','','','',''))
+
     def test_usingsys(self):
         # Issue 3314: sys module is used in the error
         self.assertRaises(TypeError, urllib.parse.urlencode, "foo")

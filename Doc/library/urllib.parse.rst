@@ -48,6 +48,23 @@ The :mod:`urllib.parse` module defines the following functions:
       >>> o.geturl()
       'http://www.cwi.nl:80/%7Eguido/Python.html'
 
+   If the scheme value is not specified, urlparse following the syntax
+   specifications from RFC 1808, expects the netloc value to start with '//',
+   Otherwise, it is not possible to distinguish between net_loc and path
+   component and would classify the indistinguishable component as path as in
+   a relative url.
+
+       >>> from urlparse import urlparse
+       >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
+       ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+                  params='', query='', fragment='')
+       >>> urlparse('www.cwi.nl:80/%7Eguido/Python.html')
+       ParseResult(scheme='', netloc='', path='www.cwi.nl:80/%7Eguido/Python.html',
+                  params='', query='', fragment='')
+       >>> urlparse('help/Python.html')
+       ParseResult(scheme='', netloc='', path='help/Python.html', params='',
+                  query='', fragment='')
+
    If the *scheme* argument is specified, it gives the default addressing
    scheme, to be used only if the URL does not specify one.  The default value for
    this argument is the empty string.
