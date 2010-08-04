@@ -65,7 +65,6 @@ class TestUntestedModules(unittest.TestCase):
             import pstats
             import py_compile
             import rexec
-            import rlcompleter
             import sched
             import sndhdr
             import statvfs
