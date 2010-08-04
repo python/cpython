@@ -37,6 +37,8 @@ Extensions
 Library
 -------
 
+- Issue #2944: asyncore doesn't handle connection refused correctly.
+
 - Issue #4184: Private attributes on smtpd.SMTPChannel made public and
   deprecate the private attributes. Add tests for smtpd module.
 
