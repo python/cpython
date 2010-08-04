@@ -37,6 +37,10 @@ Extensions
 Library
 -------
 
+- Issue #8814: function annotations (the ``__annotations__`` attribute)
+  are now included in the set of attributes copied by default by
+  functools.wraps and functools.update_wrapper.  Patch by Terrence Cole.
+
 - Issue #2944: asyncore doesn't handle connection refused correctly.
 
 - Issue #4184: Private attributes on smtpd.SMTPChannel made public and
