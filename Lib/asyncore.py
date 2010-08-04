@@ -103,10 +103,16 @@ def readwrite(obj, flags):
             obj.handle_read_event()
         if flags & select.POLLOUT:
             obj.handle_write_event()
-        if flags & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
-            obj.handle_close()
         if flags & select.POLLPRI:
             obj.handle_expt_event()
+        if flags & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
+            obj.handle_close()
+    except socket.error, e:
+        if e.args[0] not in (EBADF, ECONNRESET, ENOTCONN, ESHUTDOWN,
+ECONNABORTED):
+            obj.handle_error()
+        else:
+            obj.handle_close()
     except _reraised_exceptions:
         raise
     except:
