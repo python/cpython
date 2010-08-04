@@ -185,6 +185,9 @@ Build
 Tests
 -----
 
+- Issue #9496: Provide a test suite for the rlcompleter module.  Patch by
+  Michele Orrù.
+
 - Issue #8605: Skip test_gdb if Python is compiled with optimizations.
 
 Documentation
