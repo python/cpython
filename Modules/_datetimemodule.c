@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include "timefuncs.h"
+#include "_time.h"
 
 /* Differentiate between building the core module and building extension
  * modules.
@@ -4166,37 +4166,10 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, double timestamp,
 static PyObject *
 datetime_best_possible(PyObject *cls, TM_FUNC f, PyObject *tzinfo)
 {
-#ifdef HAVE_GETTIMEOFDAY
-    struct timeval t;
-
-#ifdef GETTIMEOFDAY_NO_TZ
-    gettimeofday(&t);
-#else
-    gettimeofday(&t, (struct timezone *)NULL);
-#endif
+    _PyTime_timeval t;
+    _PyTime_gettimeofday(&t);
     return datetime_from_timet_and_us(cls, f, t.tv_sec, (int)t.tv_usec,
                                       tzinfo);
-
-#else   /* ! HAVE_GETTIMEOFDAY */
-    /* No flavor of gettimeofday exists on this platform.  Python's
-     * time.time() does a lot of other platform tricks to get the
-     * best time it can on the platform, and we're not going to do
-     * better than that (if we could, the better code would belong
-     * in time.time()!)  We're limited by the precision of a double,
-     * though.
-     */
-    PyObject *time;
-    double dtime;
-
-    time = time_time();
-    if (time == NULL)
-        return NULL;
-    dtime = PyFloat_AsDouble(time);
-    Py_DECREF(time);
-    if (dtime == -1.0 && PyErr_Occurred())
-        return NULL;
-    return datetime_from_timestamp(cls, f, dtime, tzinfo);
-#endif  /* ! HAVE_GETTIMEOFDAY */
 }
 
 /* Return best possible local time -- this isn't constrained by the

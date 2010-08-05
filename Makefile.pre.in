@@ -314,6 +314,7 @@ PYTHON_OBJS=	\
 		Python/pymath.o \
 		Python/pystate.o \
 		Python/pythonrun.o \
+		Python/pytime.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
@@ -696,6 +697,7 @@ PYTHON_HEADERS= \
 		Include/pystrtod.h \
 		Include/pythonrun.h \
 		Include/pythread.h \
+		Include/pytime.h \
 		Include/rangeobject.h \
 		Include/setobject.h \
 		Include/sliceobject.h \
