@@ -268,6 +268,8 @@ Py_InitializeEx(int install_sigs)
     /* Initialize _warnings. */
     _PyWarnings_Init();
 
+    _PyTime_Init();
+
     initfsencoding();
 
     if (install_sigs)

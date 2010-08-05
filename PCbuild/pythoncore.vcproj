@@ -876,6 +876,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Include\pytime.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Include\pymem.h"
 				>
 			</File>
@@ -1765,6 +1769,10 @@
 			</File>
 			<File
 				RelativePath="..\Python\pymath.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Python\pytime.c"
 				>
 			</File>
 			<File
