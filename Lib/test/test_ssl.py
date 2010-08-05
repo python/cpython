@@ -60,7 +60,11 @@ class BasicTests(unittest.TestCase):
 def skip_if_broken_ubuntu_ssl(func):
     # We need to access the lower-level wrapper in order to create an
     # implicit SSL context without trying to connect or listen.
-    import _ssl
+    try:
+        import _ssl
+    except ImportError:
+        # The returned function won't get executed, just ignore the error
+        pass
     @functools.wraps(func)
     def f(*args, **kwargs):
         try:
