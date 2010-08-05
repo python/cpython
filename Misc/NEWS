@@ -40,6 +40,10 @@ Extensions
 Library
 -------
 
+- Issue #6683: For SMTP logins we now try all authentication methods advertised
+  by the server. Many servers are buggy and advertise authentication methods they
+  o not support in reality.
+
 - Issue #8814: function annotations (the ``__annotations__`` attribute)
   are now included in the set of attributes copied by default by
   functools.wraps and functools.update_wrapper.  Patch by Terrence Cole.

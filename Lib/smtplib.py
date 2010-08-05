@@ -559,43 +559,44 @@ class SMTP:
         if not self.has_extn("auth"):
             raise SMTPException("SMTP AUTH extension not supported by server.")
 
-        # Authentication methods the server supports:
-        authlist = self.esmtp_features["auth"].split()
+        # Authentication methods the server claims to support
+        advertised_authlist = self.esmtp_features["auth"].split()
 
         # List of authentication methods we support: from preferred to
         # less preferred methods. Except for the purpose of testing the weaker
         # ones, we prefer stronger methods like CRAM-MD5:
         preferred_auths = [AUTH_CRAM_MD5, AUTH_PLAIN, AUTH_LOGIN]
 
-        # Determine the authentication method we'll use
-        authmethod = None
-        for method in preferred_auths:
-            if method in authlist:
-                authmethod = method
-                break
-
-        if authmethod == AUTH_CRAM_MD5:
-            (code, resp) = self.docmd("AUTH", AUTH_CRAM_MD5)
-            if code == 503:
-                # 503 == 'Error: already authenticated'
-                return (code, resp)
-            (code, resp) = self.docmd(encode_cram_md5(resp, user, password))
-        elif authmethod == AUTH_PLAIN:
-            (code, resp) = self.docmd("AUTH",
-                AUTH_PLAIN + " " + encode_plain(user, password))
-        elif authmethod == AUTH_LOGIN:
-            (code, resp) = self.docmd("AUTH",
-                "%s %s" % (AUTH_LOGIN, encode_base64(user.encode('ascii'), eol='')))
-            if code != 334:
-                raise SMTPAuthenticationError(code, resp)
-            (code, resp) = self.docmd(encode_base64(password.encode('ascii'), eol=''))
-        elif authmethod is None:
+        # We try the authentication methods the server advertises, but only the
+        # ones *we* support. And in our preferred order.
+        authlist = [auth for auth in preferred_auths if auth in advertised_authlist]
+        if not authlist:
             raise SMTPException("No suitable authentication method found.")
-        if code not in (235, 503):
+
+        # Some servers advertise authentication methods they don't really
+        # support, so if authentication fails, we continue until we've tried
+        # all methods.
+        for authmethod in authlist:
+            if authmethod == AUTH_CRAM_MD5:
+                (code, resp) = self.docmd("AUTH", AUTH_CRAM_MD5)
+                if code == 334:
+                    (code, resp) = self.docmd(encode_cram_md5(resp, user, password))
+            elif authmethod == AUTH_PLAIN:
+                (code, resp) = self.docmd("AUTH",
+                    AUTH_PLAIN + " " + encode_plain(user, password))
+            elif authmethod == AUTH_LOGIN:
+                (code, resp) = self.docmd("AUTH",
+                    "%s %s" % (AUTH_LOGIN, encode_base64(user.encode('ascii'), eol='')))
+                if code == 334:
+                    (code, resp) = self.docmd(encode_base64(password.encode('ascii'), eol=''))
+
             # 235 == 'Authentication successful'
             # 503 == 'Error: already authenticated'
-            raise SMTPAuthenticationError(code, resp)
-        return (code, resp)
+            if code in (235, 503):
+                return (code, resp)
+
+        # We could not login sucessfully. Return result of last attempt.
+        raise SMTPAuthenticationError(code, resp)
 
     def starttls(self, keyfile = None, certfile = None):
         """Puts the connection to the SMTP server into TLS mode.
