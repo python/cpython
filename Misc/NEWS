@@ -1849,6 +1849,9 @@ Build
 Documentation
 ------------
 
+- Issue #9524: Document that two CTRL* signals are meant for use only
+  with os.kill.
+
 - Issue #9255: Document that the 'test' package is meant for internal Python use
   only.
 
