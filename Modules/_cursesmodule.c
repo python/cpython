@@ -2039,7 +2039,7 @@ PyCursesWindow_NoOutRefresh(PyCursesWindowObject *self, PyObject *args)
                 }
             }
 
-            if (setupterm(termstr,fd,&err) == ERR) {
+            if (!initialised_setupterm && setupterm(termstr,fd,&err) == ERR) {
                 char* s = "setupterm: unknown error";
 
                 if (err == 0) {
