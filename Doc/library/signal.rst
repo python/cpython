@@ -236,6 +236,10 @@ The :mod:`signal` module defines the following functions:
    see the :ref:`description in the type hierarchy <frame-objects>` or see the
    attribute descriptions in the :mod:`inspect` module).
 
+   On Windows, :func:`signal` can only be called with :const:`SIGABRT`,
+   :const:`SIGFPE`, :const:`SIGILL`, :const:`SIGINT`, :const:`SIGSEGV`, or
+   :const:`SIGTERM`. A :exc:`ValueError` will be raised in any other case.
+
 
 .. _signal-example:
 

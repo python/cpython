@@ -9,7 +9,7 @@ import subprocess
 import traceback
 import sys, os, time, errno
 
-if sys.platform[:3] in ('win', 'os2') or sys.platform == 'riscos':
+if sys.platform == 'os2' or sys.platform == 'riscos':
     raise unittest.SkipTest("Can't test signal on %s" % \
                                    sys.platform)
 
@@ -37,6 +37,7 @@ def ignoring_eintr(__func, *args, **kwargs):
         return None
 
 
+@unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class InterProcessSignalTests(unittest.TestCase):
     MAX_DURATION = 20   # Entire test should last at most 20 sec.
 
@@ -186,6 +187,7 @@ class InterProcessSignalTests(unittest.TestCase):
                           self.MAX_DURATION)
 
 
+@unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class BasicSignalTests(unittest.TestCase):
     def trivial_signal_handler(self, *args):
         pass
@@ -208,6 +210,23 @@ class BasicSignalTests(unittest.TestCase):
         self.assertEquals(signal.getsignal(signal.SIGHUP), hup)
 
 
+@unittest.skipUnless(sys.platform == "win32", "Windows specific")
+class WindowsSignalTests(unittest.TestCase):
+    def test_issue9324(self):
+        handler = lambda x, y: None
+        signal.signal(signal.SIGABRT, handler)
+        signal.signal(signal.SIGFPE, handler)
+        signal.signal(signal.SIGILL, handler)
+        signal.signal(signal.SIGINT, handler)
+        signal.signal(signal.SIGSEGV, handler)
+        signal.signal(signal.SIGTERM, handler)
+
+        with self.assertRaises(ValueError):
+            signal.signal(-1, handler)
+            sinal.signal(7, handler)
+
+
+@unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class WakeupSignalTests(unittest.TestCase):
     TIMEOUT_FULL = 10
     TIMEOUT_HALF = 5
@@ -253,14 +272,15 @@ class WakeupSignalTests(unittest.TestCase):
         os.close(self.write)
         signal.signal(signal.SIGALRM, self.alrm)
 
+@unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class SiginterruptTest(unittest.TestCase):
-    signum = signal.SIGUSR1
 
     def setUp(self):
         """Install a no-op signal handler that can be set to allow
         interrupts or not, and arrange for the original signal handler to be
         re-installed when the test is finished.
         """
+        self.signum = signal.SIGUSR1
         oldhandler = signal.signal(self.signum, lambda x,y: None)
         self.addCleanup(signal.signal, self.signum, oldhandler)
 
@@ -354,7 +374,7 @@ class SiginterruptTest(unittest.TestCase):
         self.assertFalse(i)
 
 
-
+@unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class ItimerTest(unittest.TestCase):
     def setUp(self):
         self.hndl_called = False
@@ -463,8 +483,11 @@ class ItimerTest(unittest.TestCase):
         self.assertEqual(self.hndl_called, True)
 
 def test_main():
-    test_support.run_unittest(BasicSignalTests, InterProcessSignalTests,
-        WakeupSignalTests, SiginterruptTest, ItimerTest)
+    if sys.platform == "win32":
+        support.run_unittest(WindowsSignalTests)
+    else:
+        support.run_unittest(BasicSignalTests, InterProcessSignalTests,
+            WakeupSignalTests, SiginterruptTest, ItimerTest)
 
 
 if __name__ == "__main__":
