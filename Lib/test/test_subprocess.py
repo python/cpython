@@ -544,6 +544,26 @@ class ProcessTestCase(BaseTestCase):
         output = subprocess.check_output([sys.executable, '-c', code])
         self.assert_(output.startswith(b'Hello World!'), ascii(output))
 
+    def test_handles_closed_on_exception(self):
+        # If CreateProcess exits with an error, ensure the
+        # duplicate output handles are released
+        ifhandle, ifname = mkstemp()
+        ofhandle, ofname = mkstemp()
+        efhandle, efname = mkstemp()
+        try:
+            subprocess.Popen (["*"], stdin=ifhandle, stdout=ofhandle,
+              stderr=efhandle)
+        except OSError:
+            os.close(ifhandle)
+            os.remove(ifname)
+            os.close(ofhandle)
+            os.remove(ofname)
+            os.close(efhandle)
+            os.remove(efname)
+        self.assertFalse(os.path.exists(ifname))
+        self.assertFalse(os.path.exists(ofname))
+        self.assertFalse(os.path.exists(efname))
+
 
 # context manager
 class _SuppressCoreFiles(object):
