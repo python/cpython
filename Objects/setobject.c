@@ -1855,12 +1855,10 @@ set_contains(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return -1;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
+        tmpkey = make_new_set(&PyFrozenSet_Type, key);
         if (tmpkey == NULL)
             return -1;
-        set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
         rv = set_contains(so, tmpkey);
-        set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
         Py_DECREF(tmpkey);
     }
     return rv;
@@ -1890,12 +1888,10 @@ set_remove(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
+        tmpkey = make_new_set(&PyFrozenSet_Type, key);
         if (tmpkey == NULL)
             return NULL;
-        set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
         rv = set_discard_key(so, tmpkey);
-        set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
         Py_DECREF(tmpkey);
         if (rv == -1)
             return NULL;
@@ -1924,12 +1920,10 @@ set_discard(PySetObject *so, PyObject *key)
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
-        tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
+        tmpkey = make_new_set(&PyFrozenSet_Type, key);
         if (tmpkey == NULL)
             return NULL;
-        set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
         result = set_discard(so, tmpkey);
-        set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
         Py_DECREF(tmpkey);
         return result;
     }
