@@ -583,10 +583,17 @@ class Directory:
         return files
 
     def remove_pyc(self):
-        "Remove .pyc/.pyo files on uninstall"
+        "Remove .pyc/.pyo files from __pycache__ on uninstall"
+        directory = self.logical + "_pycache"
+        add_data(self.db, "Directory", [(directory, self.logical, "__PYCA~1|__pycache__")])
+        flags = 256 if Win64 else 0
+        add_data(self.db, "Component",
+                [(directory, gen_uuid(), directory, flags, None, None)])
+        add_data(self.db, "FeatureComponents", [(current_feature.id, directory)])
+        add_data(self.db, "CreateFolder", [(directory, directory)])
         add_data(self.db, "RemoveFile",
-                 [(self.component+"c", self.component, "*.pyc", self.logical, 2),
-                  (self.component+"o", self.component, "*.pyo", self.logical, 2)])
+                 [(self.component, self.component, "*.*", directory, 2),
+                 ])
 
     def removefile(self, key, pattern):
         "Add a RemoveFile entry"
