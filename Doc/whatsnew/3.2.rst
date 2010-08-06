@@ -71,8 +71,8 @@ New, Improved, and Deprecated Modules
   save repeated queries to an external resource whenever the results are
   expected to be the same.
 
-  For example, adding an LFU decorator to a database query function can save
-  database accesses for the most popular searches::
+  For example, adding a caching decorator to a database query function can save
+  database accesses for popular searches::
 
       @functools.lfu_cache(maxsize=50)
       def get_phone_number(name):
@@ -80,21 +80,32 @@ New, Improved, and Deprecated Modules
           c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
           return c.fetchone()[0]
 
-  The LFU (least-frequently-used) cache gives best results when the distribution
-  of popular queries tends to remain the same over time. In contrast, the LRU
-  (least-recently-used) cache gives best results when the distribution changes
-  over time (for example, the most popular news articles change each day as
-  newer articles are added).
+  The caches support two strategies for limiting their size to *maxsize*. The
+  LFU (least-frequently-used) cache works bests when popular queries remain the
+  same over time.  In contrast, the LRU (least-recently-used) cache works best
+  query popularity changes over time (for example, the most popular news
+  articles change each day as newer articles are added).
 
-  The two caching decorators can be composed (nested) to handle hybrid cases
-  that have both long-term access patterns and some short-term access trends.
+  The two caching decorators can be composed (nested) to handle hybrid cases.
   For example, music searches can reflect both long-term patterns (popular
   classics) and short-term trends (new releases)::
 
-      @functools.lfu_cache(maxsize=500)
-      @functools.lru_cache(maxsize=100)
-      def find_music(song):
-          ...
+        @functools.lfu_cache(maxsize=500)
+        @functools.lru_cache(maxsize=100)
+        def find_lyrics(song):
+            query = 'http://www.example.com/songlist/%s' % urllib.quote(song)
+            page = urllib.urlopen(query).read()
+            return parse_lyrics(page)
+
+   To help with choosing an effective cache size, the wrapped function
+   is instrumented with two attributes 'hits' and 'misses'::
+
+        >>> for song in user_requests:
+        ...     find_lyrics(song)
+        >>> print find_lyrics.hits
+        4805
+        >>> print find_lyrics.misses
+        980
 
   (Contributed by Raymond Hettinger)
 
