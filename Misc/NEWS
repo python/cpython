@@ -932,6 +932,11 @@ Tools/Demos
 C API
 -----
 
+- bpo-30255: PySlice_GetIndicesEx now clips the step to
+  [-PY_SSIZE_T_MAX, PY_SSIZE_T_MAX] instead of
+  [-PY_SSIZE_T_MAX-1, PY_SSIZE_T_MAX].  This makes it safe to do "step = -step"
+  when reversing a slice.
+
 - Issue #26476: Fixed compilation error when use PyErr_BadInternalCall() in C++.
   Patch by Jeroen Demeyer.
 
