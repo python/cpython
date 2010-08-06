@@ -484,9 +484,9 @@ class ItimerTest(unittest.TestCase):
 
 def test_main():
     if sys.platform == "win32":
-        support.run_unittest(WindowsSignalTests)
+        test_support.run_unittest(WindowsSignalTests)
     else:
-        support.run_unittest(BasicSignalTests, InterProcessSignalTests,
+        test_support.run_unittest(BasicSignalTests, InterProcessSignalTests,
             WakeupSignalTests, SiginterruptTest, ItimerTest)
 
 
