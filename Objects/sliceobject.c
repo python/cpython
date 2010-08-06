@@ -131,7 +131,8 @@ PySlice_GetIndices(PySliceObject *r, Py_ssize_t length,
 
 int
 PySlice_GetIndicesEx(PySliceObject *r, Py_ssize_t length,
-                     Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slicelength)
+                     Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step,
+                     Py_ssize_t *slicelength)
 {
     /* this is harder to get right than you might think */
 
@@ -147,6 +148,13 @@ PySlice_GetIndicesEx(PySliceObject *r, Py_ssize_t length,
                             "slice step cannot be zero");
             return -1;
         }
+        /* Here *step might be -PY_SSIZE_T_MAX-1; in this case we replace it
+         * with -PY_SSIZE_T_MAX.  This doesn't affect the semantics, and it
+         * guards against later undefined behaviour resulting from code that
+         * does "step = -step" as part of a slice reversal.
+         */
+        if (*step < -PY_SSIZE_T_MAX)
+            *step = -PY_SSIZE_T_MAX;
     }
 
     defstart = *step < 0 ? length-1 : 0;
