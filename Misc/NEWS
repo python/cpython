@@ -394,6 +394,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9324: Add parameter validation to signal.signal on Windows in order
+  to prevent crashes.
+
 - Issue #9526: Remove some outdated (int) casts that were preventing
   the array module from working correctly with arrays of more than
   2**31 elements.
