@@ -798,7 +798,7 @@ array_iter_extend(arrayobject *self, PyObject *bb)
         return -1;
 
     while ((v = PyIter_Next(it)) != NULL) {
-        if (ins1(self, (int) Py_SIZE(self), v) != 0) {
+        if (ins1(self, Py_SIZE(self), v) != 0) {
             Py_DECREF(v);
             Py_DECREF(it);
             return -1;
@@ -1090,7 +1090,7 @@ the buffer length in bytes.");
 static PyObject *
 array_append(arrayobject *self, PyObject *v)
 {
-    return ins(self, (int) Py_SIZE(self), v);
+    return ins(self, Py_SIZE(self), v);
 }
 
 PyDoc_STRVAR(append_doc,
