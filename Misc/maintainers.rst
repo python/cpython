@@ -230,8 +230,15 @@ winreg              brian.curtin
 winsound            effbot (inactive)
 wsgiref             pje
 xdrlib
-xml
+xml.dom
+xml.dom.minidom
+xml.dom.pulldom
 xml.etree           effbot (inactive)
+xml.parsers.expat
+xml.sax
+xml.sax.handler
+xml.sax.saxutils
+xml.sax.xmlreader
 xmlrpc
 zipfile
 zipimport
