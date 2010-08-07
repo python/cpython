@@ -223,7 +223,9 @@ class WindowsSignalTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             signal.signal(-1, handler)
-            sinal.signal(7, handler)
+
+        with self.assertRaises(ValueError):
+            signal.signal(7, handler)
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
@@ -483,11 +485,9 @@ class ItimerTest(unittest.TestCase):
         self.assertEqual(self.hndl_called, True)
 
 def test_main():
-    if sys.platform == "win32":
-        support.run_unittest(WindowsSignalTests)
-    else:
-        support.run_unittest(BasicSignalTests, InterProcessSignalTests,
-            WakeupSignalTests, SiginterruptTest, ItimerTest)
+    support.run_unittest(BasicSignalTests, InterProcessSignalTests,
+                         WakeupSignalTests, SiginterruptTest,
+                         ItimerTest, WindowsSignalTests)
 
 
 if __name__ == "__main__":
