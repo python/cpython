@@ -97,15 +97,13 @@ New, Improved, and Deprecated Modules
             page = urllib.urlopen(query).read()
             return parse_lyrics(page)
 
-   To help with choosing an effective cache size, the wrapped function
-   is instrumented with two attributes 'hits' and 'misses'::
+  To help with choosing an effective cache size, the wrapped function
+  is instrumented with two attributes *hits* and *misses*::
 
         >>> for song in user_requests:
         ...     find_lyrics(song)
-        >>> print find_lyrics.hits
-        4805
-        >>> print find_lyrics.misses
-        980
+        >>> print(find_lyrics.hits, find_lyrics.misses)
+        4805 980
 
   (Contributed by Raymond Hettinger)
 
