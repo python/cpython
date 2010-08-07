@@ -59,7 +59,6 @@ and if remoteport is not given, then 25 is used.
 #   gets forwarded to a real backend smtpd, as with PureProxy.  Again, errors
 #   are not handled correctly yet.
 #
-# Please note that this script requires Python 2.0
 #
 # Author: Barry Warsaw <barry@python.org>
 #
