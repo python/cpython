@@ -218,8 +218,8 @@ def module_funcs(stdscr):
         if availmask != 0:
             curses.mouseinterval(10)
             # just verify these don't cause errors
+            curses.ungetmouse(0, 0, 0, 0, curses.BUTTON1_PRESSED)
             m = curses.getmouse()
-            curses.ungetmouse(*m)
 
     if hasattr(curses, 'is_term_resized'):
         curses.is_term_resized(*stdscr.getmaxyx())
