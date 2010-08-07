@@ -61,7 +61,7 @@ functions show how to transform them into the standard lookups for sorted
 lists::
 
     def find(a, key):
-        '''Find item with a key-value equal to key.
+        '''Find leftmost item exact equal to the key.
         Raise ValueError if no such item exists.
 
         '''
@@ -71,9 +71,9 @@ lists::
         raise ValueError('No item found with key equal to: %r' % (key,))
 
     def find_le(a, key):
-        '''Find largest item with a key-value less-than or equal to key.
+        '''Find largest item less-than or equal to key.
         Raise ValueError if no such item exists.
-        If multiple key-values are equal, return the leftmost.
+        If multiple keys are equal, return the leftmost.
 
         '''
         i = bisect_left(a, key)
@@ -84,9 +84,9 @@ lists::
         return a[i-1]
 
     def find_ge(a, key):
-        '''Find smallest item with a key-value greater-than or equal to key.
+        '''Find smallest item greater-than or equal to key.
         Raise ValueError if no such item exists.
-        If multiple key-values are equal, return the leftmost.
+        If multiple keys are equal, return the leftmost.
 
         '''
         i = bisect_left(a, key)
