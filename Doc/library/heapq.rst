@@ -151,7 +151,7 @@ for a heap, and it presents several implementation challenges:
 * Tuple comparison breaks for (priority, task) pairs if the priorities are equal
   and the tasks do not have a default comparison order.
 
-* If the priority of a task changes, how do you move it to a new posistion in
+* If the priority of a task changes, how do you move it to a new position in
   the heap?
 
 * Or if a pending task needs to be deleted, how do you find it and remove it
