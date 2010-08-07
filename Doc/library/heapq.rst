@@ -6,6 +6,7 @@
 .. moduleauthor:: Kevin O'Connor
 .. sectionauthor:: Guido van Rossum <guido@python.org>
 .. sectionauthor:: François Pinard
+.. sectionauthor:: Raymond Hettinger
 
 This module provides an implementation of the heap queue algorithm, also known
 as the priority queue algorithm.
@@ -136,6 +137,67 @@ The latter two functions perform best for smaller values of *n*.  For larger
 values, it is more efficient to use the :func:`sorted` function.  Also, when
 ``n==1``, it is more efficient to use the built-in :func:`min` and :func:`max`
 functions.
+
+
+Priority Queue Implementation Notes
+-----------------------------------
+
+A `priority queue <http://en.wikipedia.org/wiki/Priority_queue>`_ is common use
+for a heap, and it presents several implementation challenges:
+
+* Sort stability:  how do you get two tasks with equal priorities to be returned
+  in the order they were originally added?
+
+* Tuple comparison breaks for (priority, task) pairs if the priorities are equal
+  and the tasks do not have a default comparison order.
+
+* If the priority of a task changes, how do you move it to a new posistion in
+  the heap?
+
+* Or if a pending task needs to be deleted, how do you find it and remove it
+  from the queue?
+
+A solution to the first two challenges is to store entries as 3-element list
+including the priority, an entry count, and the task.  The entry count serves as
+a tie-breaker so that two tasks with the same priority are returned in the order
+they were added. And since no two entry counts are the same, the tuple
+comparison will never attempt to directly compare two tasks.
+
+The remaining challenges revolve around finding a pending task and making
+changes to its priority or removing it entirely.  Finding a task can be done
+with a dictionary pointing to an entry in the queue.
+
+Removing the entry or changing its priority is more difficult because it would
+break the heap structure invariants.  So, a possible solution is to mark an
+entry as invalid and optionally add a new entry with the revised priority::
+
+    pq = []                         # the priority queue list
+    counter = itertools.count(1)    # unique sequence count
+    task_finder = {}                # mapping of tasks to entries
+    INVALID = 0                     # mark an entry as deleted
+
+    def add_task(priority, task, count=None):
+        if count is None:
+            count = next(counter)
+        entry = [priority, count, task]
+        task_finder[task] = entry
+        heappush(pq, entry)
+
+    def get_top_priority():
+        while True:
+            priority, count, task = heappop(pq)
+            del task_finder[task]
+            if count is not INVALID:
+                return task
+
+    def delete_task(task):
+        entry = task_finder[task]
+        entry[1] = INVALID
+
+    def reprioritize(priority, task):
+        entry = task_finder[task]
+        add_task(priority, task, entry[1])
+        entry[1] = INVALID
 
 
 Theory
