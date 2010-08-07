@@ -653,6 +653,12 @@ which incur interpreter overhead.
                pending -= 1
                nexts = cycle(islice(nexts, pending))
 
+   def partition(pred, iterable):
+       'Use a predicate to partition entries into false entries and true entries'
+       # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
+       t1, t2 = tee(iterable)
+       return filterfalse(pred, t1), filter(pred, t2)
+
    def powerset(iterable):
        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
        s = list(iterable)
