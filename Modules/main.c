@@ -253,6 +253,28 @@ static int RunMainFromImporter(wchar_t *filename)
     }
 }
 
+static int
+run_command(wchar_t *command, PyCompilerFlags *cf)
+{
+    PyObject *unicode, *bytes;
+    int ret;
+
+    unicode = PyUnicode_FromWideChar(command, -1);
+    if (unicode == NULL)
+        goto error;
+    bytes = PyUnicode_AsUTF8String(unicode);
+    Py_DECREF(unicode);
+    if (bytes == NULL)
+        goto error;
+    ret = PyRun_SimpleStringFlags(PyBytes_AsString(bytes), cf);
+    Py_DECREF(bytes);
+    return ret != 0;
+
+error:
+    PyErr_Print();
+    return 1;
+}
+
 
 /* Main program */
 
@@ -564,22 +586,8 @@ Py_Main(int argc, wchar_t **argv)
     }
 
     if (command) {
-        char *commandStr;
-        PyObject *commandObj = PyUnicode_FromWideChar(
-            command, wcslen(command));
+        sts = run_command(command, &cf);
         free(command);
-        if (commandObj != NULL)
-            commandStr = _PyUnicode_AsString(commandObj);
-        else
-            commandStr = NULL;
-        if (commandStr != NULL) {
-            sts = PyRun_SimpleStringFlags(commandStr, &cf) != 0;
-            Py_DECREF(commandObj);
-        }
-        else {
-            PyErr_Print();
-            sts = 1;
-        }
     } else if (module) {
         sts = RunModule(module, 1);
     }
