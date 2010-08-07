@@ -291,6 +291,11 @@ class ImportTests(unittest.TestCase):
 
     def test_import_by_filename(self):
         path = os.path.abspath(TESTFN)
+        encoding = sys.getfilesystemencoding()
+        try:
+            path.encode(encoding)
+        except UnicodeEncodeError:
+            self.skipTest('path is not encodable to {}'.format(encoding))
         with self.assertRaises(ImportError) as c:
             __import__(path)
         self.assertEqual("Import by filename is not supported.",
