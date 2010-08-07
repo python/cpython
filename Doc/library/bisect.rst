@@ -14,6 +14,8 @@ approach.  The module is called :mod:`bisect` because it uses a basic bisection
 algorithm to do its work.  The source code may be most useful as a working
 example of the algorithm (the boundary conditions are already right!).
 
+.. versionadded:: 2.1
+
 The following functions are provided:
 
 
@@ -26,20 +28,12 @@ The following functions are provided:
    existing entries.  The return value is suitable for use as the first parameter
    to ``list.insert()``.  This assumes that *list* is already sorted.
 
-   .. versionadded:: 2.1
-
 
 .. function:: bisect_right(list, item[, lo[, hi]])
+.. function:: bisect(list, item[, lo[, hi]])
 
    Similar to :func:`bisect_left`, but returns an insertion point which comes after
    (to the right of) any existing entries of *item* in *list*.
-
-   .. versionadded:: 2.1
-
-
-.. function:: bisect(...)
-
-   Alias for :func:`bisect_right`.
 
 
 .. function:: insort_left(list, item[, lo[, hi]])
@@ -48,24 +42,62 @@ The following functions are provided:
    ``list.insert(bisect.bisect_left(list, item, lo, hi), item)``.  This assumes
    that *list* is already sorted.
 
-   .. versionadded:: 2.1
-
+   Also note that while the fast search step is O(log n), the slower insertion
+   step is O(n), so the overall operation is slow.
 
 .. function:: insort_right(list, item[, lo[, hi]])
+              insort(a, x, lo=0, hi=len(a))
 
    Similar to :func:`insort_left`, but inserting *item* in *list* after any
    existing entries of *item*.
 
-   .. versionadded:: 2.1
+   Also note that while the fast search step is O(log n), the slower insertion
+   step is O(n), so the overall operation is slow.
 
+Searching Sorted Lists
+----------------------
 
-.. function:: insort(...)
+The above :func:`bisect` functions are useful for finding insertion points, but
+can be tricky or awkward to use for common searching tasks. The following three
+functions show how to transform them into the standard lookups for sorted
+lists::
 
-   Alias for :func:`insort_right`.
+    def find(a, key):
+        '''Find leftmost item exact equal to the key.
+        Raise ValueError if no such item exists.
 
+        '''
+        i = bisect_left(a, key)
+        if i < len(a) and a[i] == key:
+            return a[i]
+        raise ValueError('No item found with key equal to: %r' % (key,))
 
-Examples
---------
+    def find_le(a, key):
+        '''Find largest item less-than or equal to key.
+        Raise ValueError if no such item exists.
+        If multiple keys are equal, return the leftmost.
+
+        '''
+        i = bisect_left(a, key)
+        if i < len(a) and a[i] == key:
+            return a[i]
+        if i == 0:
+            raise ValueError('No item found with key at or below: %r' % (key,))
+        return a[i-1]
+
+    def find_ge(a, key):
+        '''Find smallest item greater-than or equal to key.
+        Raise ValueError if no such item exists.
+        If multiple keys are equal, return the leftmost.
+
+        '''
+        i = bisect_left(a, key)
+        if i == len(a):
+            raise ValueError('No item found with key at or above: %r' % (key,))
+        return a[i]
+
+Other Examples
+--------------
 
 .. _bisect-example:
 
@@ -104,3 +136,10 @@ of the record in question::
     ('red', 5)
     >>> data[bisect_left(keys, 8)]
     ('yellow', 8)
+
+.. seealso::
+
+   `SortedCollection recipe
+   <http://code.activestate.com/recipes/577197-sortedcollection/>`_ that
+   encapsulates precomputed keys, allowing straight-forward insertion and
+   searching using a *key* function.
