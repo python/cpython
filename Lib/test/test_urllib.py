@@ -232,8 +232,12 @@ class urlretrieve_FileTests(unittest.TestCase):
             except: pass
 
     def constructLocalFileUrl(self, filePath):
-        return "file://%s" % urllib.request.pathname2url(
-            os.path.abspath(filePath))
+        filePath = os.path.abspath(filePath)
+        try:
+            filePath.encode("utf8")
+        except UnicodeEncodeError:
+            raise unittest.SkipTest("filePath is not encodable to utf8")
+        return "file://%s" % urllib.request.pathname2url(filePath)
 
     def createNewTempFile(self, data=b""):
         """Creates a new temporary file containing the specified data,

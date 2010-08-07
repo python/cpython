@@ -13,6 +13,7 @@
 
 import sys
 import cgi
+import unittest
 
 from test import support
 from test.support import findfile
@@ -20,6 +21,10 @@ from test.support import findfile
 from xml.etree import ElementTree as ET
 
 SIMPLE_XMLFILE = findfile("simple.xml", subdir="xmltestdata")
+try:
+    SIMPLE_XMLFILE.encode("utf8")
+except UnicodeEncodeError:
+    raise unittest.SkipTest("filename is not encodable to utf8")
 SIMPLE_NS_XMLFILE = findfile("simple-ns.xml", subdir="xmltestdata")
 
 SAMPLE_XML = """\

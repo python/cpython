@@ -509,8 +509,10 @@ class SysModuleTest(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c", code], stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         self.assertEqual(p.returncode, 1)
-        self.assert_(b"UnicodeEncodeError:" in stderr,
-            "%r not in %s" % (b"UniodeEncodeError:", ascii(stderr)))
+        self.assertIn(
+            br"UnicodeEncodeError: 'utf-8' codec can't encode character "
+            br"'\udcff' in position 7: surrogates not allowed",
+            stderr)
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
