@@ -126,6 +126,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #8433: Fix test_curses failure with newer versions of ncurses.
+
 - Issue #9496: Provide a test suite for the rlcompleter module.  Patch by
   Michele Orrù.
 
