@@ -39,6 +39,9 @@ The following functions are provided:
    ``a.insert(bisect.bisect_left(a, x, lo, hi), x)``.  This assumes that *a* is
    already sorted.
 
+   Also note that while the fast search step is O(log n), the slower insertion
+   step is O(n), so the overall operation is slow.
+
 
 .. function:: insort_right(a, x, lo=0, hi=len(a))
               insort(a, x, lo=0, hi=len(a))
@@ -46,9 +49,53 @@ The following functions are provided:
    Similar to :func:`insort_left`, but inserting *x* in *a* after any existing
    entries of *x*.
 
+   Also note that while the fast search step is O(log n), the slower insertion
+   step is O(n), so the overall operation is slow.
 
-Examples
---------
+Searching Sorted Lists
+----------------------
+
+The above :func:`bisect` functions are useful for finding insertion points, but
+can be tricky or awkward to use for common searching tasks. The following three
+functions show how to transform them into the standard lookups for sorted
+lists::
+
+    def find(a, key):
+        '''Find item with a key-value equal to key.
+        Raise ValueError if no such item exists.
+
+        '''
+        i = bisect_left(a, key)
+        if i < len(a) and a[i] == key:
+            return a[i]
+        raise ValueError('No item found with key equal to: %r' % (key,))
+
+    def find_le(a, key):
+        '''Find largest item with a key-value less-than or equal to key.
+        Raise ValueError if no such item exists.
+        If multiple key-values are equal, return the leftmost.
+
+        '''
+        i = bisect_left(a, key)
+        if i < len(a) and a[i] == key:
+            return a[i]
+        if i == 0:
+            raise ValueError('No item found with key at or below: %r' % (key,))
+        return a[i-1]
+
+    def find_ge(a, key):
+        '''Find smallest item with a key-value greater-than or equal to key.
+        Raise ValueError if no such item exists.
+        If multiple key-values are equal, return the leftmost.
+
+        '''
+        i = bisect_left(a, key)
+        if i == len(a):
+            raise ValueError('No item found with key at or above: %r' % (key,))
+        return a[i]
+
+Other Examples
+--------------
 
 .. _bisect-example:
 
@@ -87,3 +134,10 @@ of the record in question::
     ('red', 5)
     >>> data[bisect_left(keys, 8)]
     ('yellow', 8)
+
+.. seealso::
+
+   `SortedCollection recipe
+   <http://code.activestate.com/recipes/577197-sortedcollection/>`_ that
+   encapsulates precomputed keys, allowing straight-forward insertion and
+   searching using a *key* function.
