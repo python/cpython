@@ -429,7 +429,6 @@ sp_CreateProcess(PyObject* self, PyObject* args)
     PyObject* env_mapping;
     Py_UNICODE* current_directory;
     PyObject* startup_info;
-    DWORD error;
 
     if (! PyArg_ParseTuple(args, "ZZOOiiOZO:CreateProcess",
                            &application_name,
@@ -479,22 +478,8 @@ sp_CreateProcess(PyObject* self, PyObject* args)
 
     Py_XDECREF(environment);
 
-    if (! result) {
-        error = GetLastError();
-        if(si.hStdInput != INVALID_HANDLE_VALUE) {
-            CloseHandle(si.hStdInput);
-            si.hStdInput = INVALID_HANDLE_VALUE;
-        }
-        if(si.hStdOutput != INVALID_HANDLE_VALUE) {
-            CloseHandle(si.hStdOutput);
-            si.hStdOutput = INVALID_HANDLE_VALUE;
-        }
-        if(si.hStdError != INVALID_HANDLE_VALUE) {
-            CloseHandle(si.hStdError);
-            si.hStdError = INVALID_HANDLE_VALUE;
-        }
-        return PyErr_SetFromWindowsErr(error);
-    }
+    if (! result)
+        return PyErr_SetFromWindowsErr(GetLastError());
 
     return Py_BuildValue("NNii",
                          sp_handle_new(pi.hProcess),
