@@ -286,7 +286,7 @@ class Node(Base):
         """Return a pre-order iterator for the tree."""
         yield self
         for child in self.children:
-            for node in child.post_order():
+            for node in child.pre_order():
                 yield node
 
     def _prefix_getter(self):

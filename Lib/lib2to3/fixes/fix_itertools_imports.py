@@ -43,8 +43,8 @@ class FixItertoolsImports(fixer_base.BaseFix):
             else:
                 remove_comma ^= True
 
-        if children[-1].type == token.COMMA:
-            children[-1].remove()
+        while children and children[-1].type == token.COMMA:
+            children.pop().remove()
 
         # If there are no imports left, just get rid of the entire statement
         if (not (imports.children or getattr(imports, 'value', None)) or
