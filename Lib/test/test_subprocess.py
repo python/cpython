@@ -1015,7 +1015,6 @@ class Win32ProcessTestCase(BaseTestCase):
         self._kill_process('terminate')
 
 
-
 # The module says:
 #   "NB This only works (and is only relevant) for UNIX."
 #
@@ -1041,46 +1040,6 @@ class CommandTests(unittest.TestCase):
         finally:
             if dir is not None:
                 os.rmdir(dir)
-
-class CommandsWithSpaces (BaseTestCase):
-
-    def setUp(self):
-        super().setUp()
-        f, fname = mkstemp(".py", "te st")
-        self.fname = fname.lower ()
-        os.write(f, b"import sys;"
-                    b"sys.stdout.write('%d %s' % (len(sys.argv), [a.lower () for a in sys.argv]))"
-        )
-        os.close(f)
-
-    def tearDown(self):
-        os.remove(self.fname)
-        super().tearDown()
-
-    def with_spaces(self, *args, **kwargs):
-        kwargs['stdout'] = subprocess.PIPE
-        p = subprocess.Popen(*args, **kwargs)
-        self.assertEqual(
-          p.stdout.read ().decode("mbcs"),
-          "2 [%r, 'ab cd']" % self.fname
-        )
-
-    def test_shell_string_with_spaces(self):
-        # call() function with string argument with spaces on Windows
-        self.with_spaces('"%s" "%s"' % (self.fname, "ab cd"), shell=1)
-
-    def test_shell_sequence_with_spaces(self):
-        # call() function with sequence argument with spaces on Windows
-        self.with_spaces([self.fname, "ab cd"], shell=1)
-
-    def test_noshell_string_with_spaces(self):
-        # call() function with string argument with spaces on Windows
-        self.with_spaces('"%s" "%s" "%s"' % (sys.executable, self.fname,
-                             "ab cd"))
-
-    def test_noshell_sequence_with_spaces(self):
-        # call() function with sequence argument with spaces on Windows
-        self.with_spaces([sys.executable, self.fname, "ab cd"])
 
 
 @unittest.skipUnless(getattr(subprocess, '_has_poll', False),
@@ -1134,7 +1093,6 @@ def test_main():
                   Win32ProcessTestCase,
                   ProcessTestCasePOSIXPurePython,
                   CommandTests,
-                  CommandsWithSpaces,
                   ProcessTestCaseNoPoll,
                   HelperFunctionTests)
 
