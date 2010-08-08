@@ -63,6 +63,9 @@ Extensions
 Library
 -------
 
+- Issue #6231: Fix xml.etree.ElementInclude to include the tail of the
+  current node.
+
 - Issue #8047: Fix the xml.etree serializer to return bytes by default.  Use
   ``encoding="unicode"`` to generate a Unicode string.
 
