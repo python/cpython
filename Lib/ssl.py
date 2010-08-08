@@ -79,7 +79,6 @@ from _ssl import (
 
 from socket import getnameinfo as _getnameinfo
 from socket import error as socket_error
-from socket import dup as _dup
 from socket import socket, AF_INET, SOCK_STREAM
 import base64        # for DER-to-PEM translation
 import traceback
@@ -148,7 +147,7 @@ class SSLSocket(socket):
                             family=sock.family,
                             type=sock.type,
                             proto=sock.proto,
-                            fileno=_dup(sock.fileno()))
+                            fileno=sock.fileno())
             self.settimeout(sock.gettimeout())
             # see if it's connected
             try:
@@ -158,7 +157,7 @@ class SSLSocket(socket):
                     raise
             else:
                 connected = True
-            sock.close()
+            sock.forget()
         elif fileno is not None:
             socket.__init__(self, fileno=fileno)
         else:

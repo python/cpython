@@ -548,6 +548,14 @@ correspond to Unix system calls applicable to sockets.
    this limitation.
 
 
+.. method:: socket.forget()
+
+   Put the socket object into closed state without actually closing the
+   underlying file descriptor.  This allows the latter to be reused.
+
+   .. versionadded:: 3.2
+
+
 .. method:: socket.getpeername()
 
    Return the remote address to which the socket is connected.  This is useful to
