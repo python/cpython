@@ -655,6 +655,19 @@ class BasicTCPTest(SocketConnectedTest):
         self.serv_conn.send(MSG)
         self.serv_conn.shutdown(2)
 
+    def testForget(self):
+        # Testing forget()
+        f = self.cli_conn.fileno()
+        self.cli_conn.forget()
+        self.assertRaises(socket.error, self.cli_conn.recv, 1024)
+        self.cli_conn.close()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=f)
+        msg = sock.recv(1024)
+        self.assertEqual(msg, MSG)
+
+    def _testForget(self):
+        self.serv_conn.send(MSG)
+
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicUDPTest(ThreadedUDPSocketTest):
 

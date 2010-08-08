@@ -136,6 +136,12 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Tarek Ziadé.)
 
+* Socket objects now have a :meth:`~socket.socket.forget()` method which
+  puts the socket into closed state without actually closing the underlying
+  file descriptor.  The latter can then be reused for other purposes.
+
+  (Added by Antoine Pitrou; :issue:`8524`.)
+
 * The *sqlite3* module has some new features:
 
   * XXX *enable_load_extension*
