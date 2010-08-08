@@ -1,5 +1,5 @@
 import unittest
-from test.support import verbose, run_unittest
+from test.support import verbose, run_unittest, strip_python_stderr
 import sys
 import gc
 import weakref
@@ -465,6 +465,42 @@ class GCTests(unittest.TestCase):
             # If the callback resurrected one of these guys, the instance
             # would be damaged, with an empty __dict__.
             self.assertEqual(x, None)
+
+    def test_garbage_at_shutdown(self):
+        import subprocess
+        code = """if 1:
+            import gc
+            class X:
+                def __init__(self, name):
+                    self.name = name
+                def __repr__(self):
+                    return "<X %%r>" %% self.name
+                def __del__(self):
+                    pass
+
+            x = X('first')
+            x.x = x
+            x.y = X('second')
+            del x
+            if %d:
+                gc.set_debug(gc.DEBUG_UNCOLLECTABLE)
+        """
+        def run_command(code):
+            p = subprocess.Popen([sys.executable, "-c", code],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+            stdout, stderr = p.communicate()
+            self.assertEqual(p.returncode, 0)
+            self.assertEqual(stdout.strip(), b"")
+            return strip_python_stderr(stderr)
+
+        stderr = run_command(code % 0)
+        self.assertIn(b"gc: 2 uncollectable objects at shutdown", stderr)
+        self.assertNotIn(b"[<X 'first'>, <X 'second'>]", stderr)
+        # With DEBUG_UNCOLLECTABLE, the garbage list gets printed
+        stderr = run_command(code % 1)
+        self.assertIn(b"gc: 2 uncollectable objects at shutdown", stderr)
+        self.assertIn(b"[<X 'first'>, <X 'second'>]", stderr)
 
 class GCTogglingTests(unittest.TestCase):
     def setUp(self):

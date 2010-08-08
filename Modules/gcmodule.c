@@ -1295,16 +1295,15 @@ static PyMethodDef GcMethods[] = {
 
 static struct PyModuleDef gcmodule = {
     PyModuleDef_HEAD_INIT,
-    "gc",
-    gc__doc__,
-    -1,
-    GcMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    "gc",              /* m_name */
+    gc__doc__,         /* m_doc */
+    -1,                /* m_size */
+    GcMethods,         /* m_methods */
+    NULL,              /* m_reload */
+    NULL,              /* m_traverse */
+    NULL,              /* m_clear */
+    NULL               /* m_free */
 };
-
 
 PyMODINIT_FUNC
 PyInit_gc(void)
@@ -1362,6 +1361,37 @@ PyGC_Collect(void)
     }
 
     return n;
+}
+
+void
+_PyGC_Fini(void)
+{
+    if (garbage != NULL && PyList_GET_SIZE(garbage) > 0) {
+        PySys_WriteStderr(
+            "gc: "
+            "%" PY_FORMAT_SIZE_T "d uncollectable objects at shutdown:\n",
+            PyList_GET_SIZE(garbage)
+            );
+        if (debug & DEBUG_UNCOLLECTABLE) {
+            PyObject *repr = NULL, *bytes = NULL;
+            repr = PyObject_Repr(garbage);
+            if (!repr || !(bytes = PyUnicode_EncodeFSDefault(repr)))
+                PyErr_WriteUnraisable(garbage);
+            else {
+                PySys_WriteStderr(
+                    "    %s\n",
+                    PyBytes_AS_STRING(bytes)
+                    );
+            }
+            Py_XDECREF(repr);
+            Py_XDECREF(bytes);
+        }
+        else {
+            PySys_WriteStderr(
+                "    Use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them.\n"
+                );
+        }
+    }
 }
 
 /* for debugging */
