@@ -148,20 +148,22 @@ Functions
    arguments.  Returns an element instance.
 
 
-.. function:: tostring(element, encoding=None, method="xml")
+.. function:: tostring(element, encoding="us-ascii", method="xml")
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
-   the output encoding (default is None).  *method* is either ``"xml"``,
+   the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
+   generate a Unicode string.  *method* is either ``"xml"``,
    ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns an (optionally)
    encoded string containing the XML data.
 
 
-.. function:: tostringlist(element, encoding=None, method="xml")
+.. function:: tostringlist(element, encoding="us-ascii", method="xml")
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
-   the output encoding (default is None).   *method* is either ``"xml"``,
+   the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
+   generate a Unicode string.  *method* is either ``"xml"``,
    ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns a list of
    (optionally) encoded strings containing the XML data.  It does not guarantee
    any specific sequence, except that ``"".join(tostringlist(element)) ==
@@ -430,6 +432,7 @@ ElementTree Objects
 
 
    .. method:: getroot()
+
       Returns the root element for this tree.
 
 
@@ -457,15 +460,16 @@ ElementTree Objects
       root element.
 
 
-   .. method:: write(file, encoding=None, xml_declaration=None, method="xml")
+   .. method:: write(file, encoding="us-ascii", xml_declaration=None, method="xml")
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       file object opened for writing.  *encoding* [1]_ is the output encoding
-      (default is None).  *xml_declaration* controls if an XML declaration
+      (default is US-ASCII).  Use ``encoding="unicode"`` to write a Unicode string.
+      *xml_declaration* controls if an XML declaration
       should be added to the file.  Use False for never, True for always, None
-      for only if not US-ASCII or UTF-8 (default is None).  *method* is either
-      ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns an
-      (optionally) encoded string.
+      for only if not US-ASCII or UTF-8 or Unicode (default is None).  *method* is
+      either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
+      Returns an (optionally) encoded string.
 
 This is the XML file that is going to be manipulated::
 

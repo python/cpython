@@ -792,12 +792,13 @@ class ElementTree:
     # @def write(file, **options)
     # @param file A file name, or a file object opened for writing.
     # @param **options Options, given as keyword arguments.
-    # @keyparam encoding Optional output encoding (default is None).
+    # @keyparam encoding Optional output encoding (default is US-ASCII).
+    #     Use "unicode" to return a Unicode string.
     # @keyparam method Optional output method ("xml", "html", "text" or
     #     "c14n"; default is "xml").
     # @keyparam xml_declaration Controls if an XML declaration should
     #     be added to the file.  Use False for never, True for always,
-    #     None for only if not US-ASCII or UTF-8.  None is default.
+    #     None for only if not US-ASCII or UTF-8 or Unicode.  None is default.
 
     def write(self, file_or_filename,
               # keyword arguments
@@ -811,14 +812,23 @@ class ElementTree:
         elif method not in _serialize:
             # FIXME: raise an ImportError for c14n if ElementC14N is missing?
             raise ValueError("unknown method %r" % method)
+        if not encoding:
+            if method == "c14n":
+                encoding = "utf-8"
+            else:
+                encoding = "us-ascii"
+        elif encoding == str:  # lxml.etree compatibility.
+            encoding = "unicode"
+        else:
+            encoding = encoding.lower()
         if hasattr(file_or_filename, "write"):
             file = file_or_filename
         else:
-            if encoding:
+            if encoding != "unicode":
                 file = open(file_or_filename, "wb")
             else:
                 file = open(file_or_filename, "w")
-        if encoding:
+        if encoding != "unicode":
             def write(text):
                 try:
                     return file.write(text.encode(encoding,
@@ -827,20 +837,15 @@ class ElementTree:
                     _raise_serialization_error(text)
         else:
             write = file.write
-        if not encoding:
-            if method == "c14n":
-                encoding = "utf-8"
-            else:
-                encoding = None
-        elif xml_declaration or (xml_declaration is None and
-                                 encoding not in ("utf-8", "us-ascii")):
-            if method == "xml":
-                encoding_ = encoding
-                if not encoding:
-                    # Retrieve the default encoding for the xml declaration
-                    import locale
-                    encoding_ = locale.getpreferredencoding()
-                write("<?xml version='1.0' encoding='%s'?>\n" % encoding_)
+        if method == "xml" and (xml_declaration or
+                (xml_declaration is None and
+                 encoding not in ("utf-8", "us-ascii", "unicode"))):
+            declared_encoding = encoding
+            if encoding == "unicode":
+                # Retrieve the default encoding for the xml declaration
+                import locale
+                declared_encoding = locale.getpreferredencoding()
+            write("<?xml version='1.0' encoding='%s'?>\n" % declared_encoding)
         if method == "text":
             _serialize_text(write, self._root)
         else:
@@ -1127,11 +1132,12 @@ def _escape_attrib_html(text):
 
 ##
 # Generates a string representation of an XML element, including all
-# subelements.  If encoding is None, the return type is a string;
+# subelements.  If encoding is "unicode", the return type is a string;
 # otherwise it is a bytes array.
 #
 # @param element An Element instance.
-# @keyparam encoding Optional output encoding (default is None).
+# @keyparam encoding Optional output encoding (default is US-ASCII).
+#     Use "unicode" to return a Unicode string.
 # @keyparam method Optional output method ("xml", "html", "text" or
 #     "c14n"; default is "xml").
 # @return An (optionally) encoded string containing the XML data.
@@ -1144,17 +1150,20 @@ def tostring(element, encoding=None, method=None):
     file = dummy()
     file.write = data.append
     ElementTree(element).write(file, encoding, method=method)
-    if encoding:
-        return b"".join(data)
-    else:
+    if encoding in (str, "unicode"):
         return "".join(data)
+    else:
+        return b"".join(data)
 
 ##
 # Generates a string representation of an XML element, including all
-# subelements.  The string is returned as a sequence of string fragments.
+# subelements.  If encoding is False, the string is returned as a
+# sequence of string fragments; otherwise it is a sequence of
+# bytestrings.
 #
 # @param element An Element instance.
 # @keyparam encoding Optional output encoding (default is US-ASCII).
+#     Use "unicode" to return a Unicode string.
 # @keyparam method Optional output method ("xml", "html", "text" or
 #     "c14n"; default is "xml").
 # @return A sequence object containing the XML data.
@@ -1184,7 +1193,7 @@ def dump(elem):
     # debugging
     if not isinstance(elem, ElementTree):
         elem = ElementTree(elem)
-    elem.write(sys.stdout)
+    elem.write(sys.stdout, encoding="unicode")
     tail = elem.getroot().tail
     if not tail or tail[-1] != "\n":
         sys.stdout.write("\n")
