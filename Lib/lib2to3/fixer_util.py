@@ -1,6 +1,8 @@
 """Utility functions, node construction macros, etc."""
 # Author: Collin Winter
 
+from itertools import islice
+
 # Local imports
 from .pgen2 import token
 from .pytree import Leaf, Node
@@ -14,7 +16,7 @@ from . import patcomp
 
 def KeywordArg(keyword, value):
     return Node(syms.argument,
-                [keyword, Leaf(token.EQUAL, u'='), value])
+                [keyword, Leaf(token.EQUAL, u"="), value])
 
 def LParen():
     return Leaf(token.LPAR, u"(")
@@ -76,9 +78,9 @@ def Number(n, prefix=None):
 
 def Subscript(index_node):
     """A numeric or string subscript"""
-    return Node(syms.trailer, [Leaf(token.LBRACE, u'['),
+    return Node(syms.trailer, [Leaf(token.LBRACE, u"["),
                                index_node,
-                               Leaf(token.RBRACE, u']')])
+                               Leaf(token.RBRACE, u"]")])
 
 def String(string, prefix=None):
     """A string leaf"""
@@ -120,9 +122,9 @@ def FromImport(package_name, name_leafs):
         # Pull the leaves out of their old tree
         leaf.remove()
 
-    children = [Leaf(token.NAME, u'from'),
+    children = [Leaf(token.NAME, u"from"),
                 Leaf(token.NAME, package_name, prefix=u" "),
-                Leaf(token.NAME, u'import', prefix=u" "),
+                Leaf(token.NAME, u"import", prefix=u" "),
                 Node(syms.import_as_names, name_leafs)]
     imp = Node(syms.import_from, children)
     return imp
@@ -245,6 +247,16 @@ def is_probably_builtin(node):
         return False
     return True
 
+def find_indentation(node):
+    """Find the indentation of *node*."""
+    while node is not None:
+        if node.type == syms.suite and len(node.children) > 2:
+            indent = node.children[1]
+            if indent.type == token.INDENT:
+                return indent.value
+        node = node.parent
+    return u""
+
 ###########################################################
 ### The following functions are to find bindings in a suite
 ###########################################################
@@ -314,11 +326,11 @@ def touch_import(package, name, node):
 
     if package is None:
         import_ = Node(syms.import_name, [
-            Leaf(token.NAME, u'import'),
-            Leaf(token.NAME, name, prefix=u' ')
+            Leaf(token.NAME, u"import"),
+            Leaf(token.NAME, name, prefix=u" ")
         ])
     else:
-        import_ = FromImport(package, [Leaf(token.NAME, name, prefix=u' ')])
+        import_ = FromImport(package, [Leaf(token.NAME, name, prefix=u" ")])
 
     children = [import_, Newline()]
     root.insert_child(insert_pos, Node(syms.simple_stmt, children))
@@ -404,7 +416,7 @@ def _is_import_binding(node, name, package=None):
         if package and unicode(node.children[1]).strip() != package:
             return None
         n = node.children[3]
-        if package and _find(u'as', n):
+        if package and _find(u"as", n):
             # See test_from_import_as for explanation
             return None
         elif n.type == syms.import_as_names and _find(name, n):
