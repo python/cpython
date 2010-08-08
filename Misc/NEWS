@@ -24,7 +24,9 @@ Core and Builtins
 Extensions
 ----------
 
-- Issue #5504 - ctypes should now work with systems where mmap can't
+- Issue #6869: Fix a refcount problem in the _ctypes extension.
+
+- Issue #5504: ctypes should now work with systems where mmap can't
   be PROT_WRITE and PROT_EXEC.
 
 - Issue #9507:  Named tuple repr will now automatically display the right
