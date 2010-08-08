@@ -12,7 +12,7 @@ from _functools import partial, reduce
 # update_wrapper() and wraps() are tools to help write
 # wrapper functions that can handle naive introspection
 
-WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__doc__')
+WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__doc__', '__annotations__')
 WRAPPER_UPDATES = ('__dict__',)
 def update_wrapper(wrapper,
                    wrapped,
@@ -30,7 +30,8 @@ def update_wrapper(wrapper,
        function (defaults to functools.WRAPPER_UPDATES)
     """
     for attr in assigned:
-        setattr(wrapper, attr, getattr(wrapped, attr))
+        if hasattr(wrapped, attr):
+            setattr(wrapper, attr, getattr(wrapped, attr))
     for attr in updated:
         getattr(wrapper, attr).update(getattr(wrapped, attr, {}))
     # Return the wrapper so this can be used as a decorator via partial()

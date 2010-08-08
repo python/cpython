@@ -12,6 +12,10 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #8814: function annotations (the ``__annotations__`` attribute)
+  are now included in the set of attributes copied by default by
+  functools.wraps and functools.update_wrapper.  Patch by Terrence Cole.
+
 - Issue #83755:  Implicit set-to-frozenset conversion was not thread-safe.
 
 - Issue #9416: Fix some issues with complex formatting where the
