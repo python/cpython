@@ -152,6 +152,13 @@ class OtherNetworkTests(unittest.TestCase):
 
 ##             self._test_urls(urls, self._extra_handlers()+[bauth, dauth])
 
+    def test_urlwithfrag(self):
+        urlwith_frag = "http://docs.python.org/glossary.html#glossary"
+        req = urllib.request.Request(urlwith_frag)
+        res = urllib.request.urlopen(req)
+        self.assertEqual(res.geturl(),
+                "http://docs.python.org/glossary.html")
+
     def _test_urls(self, urls, handlers, retry=True):
         import socket
         import time
