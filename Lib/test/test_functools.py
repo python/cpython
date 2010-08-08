@@ -181,17 +181,19 @@ class TestUpdateWrapper(unittest.TestCase):
                 self.assertTrue(wrapped_attr[key] is wrapper_attr[key])
 
     def test_default_update(self):
-        def f():
+        def f(a:'This is a new annotation'):
             """This is a test"""
             pass
         f.attr = 'This is also a test'
-        def wrapper():
+        def wrapper(b:'This is the prior annotation'):
             pass
         functools.update_wrapper(wrapper, f)
         self.check_wrapper(wrapper, f)
         self.assertEqual(wrapper.__name__, 'f')
         self.assertEqual(wrapper.__doc__, 'This is a test')
         self.assertEqual(wrapper.attr, 'This is also a test')
+        self.assertEqual(wrapper.__annotations__['a'], 'This is a new annotation')
+        self.assertNotIn('b', wrapper.__annotations__)
 
     def test_no_update(self):
         def f():
@@ -204,6 +206,7 @@ class TestUpdateWrapper(unittest.TestCase):
         self.check_wrapper(wrapper, f, (), ())
         self.assertEqual(wrapper.__name__, 'wrapper')
         self.assertEqual(wrapper.__doc__, None)
+        self.assertEqual(wrapper.__annotations__, {})
         self.assertFalse(hasattr(wrapper, 'attr'))
 
     def test_selective_update(self):
@@ -230,6 +233,7 @@ class TestUpdateWrapper(unittest.TestCase):
         functools.update_wrapper(wrapper, max)
         self.assertEqual(wrapper.__name__, 'max')
         self.assertTrue(wrapper.__doc__.startswith('max('))
+        self.assertEqual(wrapper.__annotations__, {})
 
 class TestWraps(TestUpdateWrapper):
 
