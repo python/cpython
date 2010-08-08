@@ -181,14 +181,18 @@ class TestNodes(support.TestCase):
     def test_post_order(self):
         l1 = pytree.Leaf(100, "foo")
         l2 = pytree.Leaf(100, "bar")
-        n1 = pytree.Node(1000, [l1, l2])
-        self.assertEqual(list(n1.post_order()), [l1, l2, n1])
+        l3 = pytree.Leaf(100, "fooey")
+        c1 = pytree.Node(1000, [l1, l2])
+        n1 = pytree.Node(1000, [c1, l3])
+        self.assertEqual(list(n1.post_order()), [l1, l2, c1, l3, n1])
 
     def test_pre_order(self):
         l1 = pytree.Leaf(100, "foo")
         l2 = pytree.Leaf(100, "bar")
-        n1 = pytree.Node(1000, [l1, l2])
-        self.assertEqual(list(n1.pre_order()), [n1, l1, l2])
+        l3 = pytree.Leaf(100, "fooey")
+        c1 = pytree.Node(1000, [l1, l2])
+        n1 = pytree.Node(1000, [c1, l3])
+        self.assertEqual(list(n1.pre_order()), [n1, c1, l1, l2, l3])
 
     def test_changed(self):
         l1 = pytree.Leaf(100, "f")

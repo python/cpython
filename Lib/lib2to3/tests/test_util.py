@@ -575,3 +575,20 @@ class Test_touch_import(support.TestCase):
         node = parse('bar()')
         fixer_util.touch_import(None, "cgi", node)
         self.assertEqual(str(node), 'import cgi\nbar()\n\n')
+
+class Test_find_indentation(support.TestCase):
+
+    def test_nothing(self):
+        fi = fixer_util.find_indentation
+        node = parse("node()")
+        self.assertEqual(fi(node), "")
+        node = parse("")
+        self.assertEqual(fi(node), "")
+
+    def test_simple(self):
+        fi = fixer_util.find_indentation
+        node = parse("def f():\n    x()")
+        self.assertEqual(fi(node), "")
+        self.assertEqual(fi(node.children[0].children[4].children[2]), "    ")
+        node = parse("def f():\n    x()\n    y()")
+        self.assertEqual(fi(node.children[0].children[4].children[4]), "    ")

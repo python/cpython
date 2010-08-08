@@ -1818,6 +1818,33 @@ class Test_urllib(FixerTestCase):
             s = "from %s import *" % old
             self.warns_unchanged(s, "Cannot handle star imports")
 
+    def test_indented(self):
+        b = """
+def foo():
+    from urllib import urlencode, urlopen
+"""
+        a = """
+def foo():
+    from urllib.parse import urlencode
+    from urllib.request import urlopen
+"""
+        self.check(b, a)
+
+        b = """
+def foo():
+    other()
+    from urllib import urlencode, urlopen
+"""
+        a = """
+def foo():
+    other()
+    from urllib.parse import urlencode
+    from urllib.request import urlopen
+"""
+        self.check(b, a)
+
+
+
     def test_import_module_usage(self):
         for old, changes in self.modules.items():
             for new, members in changes:
@@ -3623,6 +3650,10 @@ class Test_itertools_imports(FixerTestCase):
         a = "from itertools import bar, foo"
         self.check(b, a)
 
+        b = "from itertools import chain, imap, izip"
+        a = "from itertools import chain"
+        self.check(b, a)
+
     def test_comments(self):
         b = "#foo\nfrom itertools import imap, izip"
         a = "#foo\n"
@@ -4303,13 +4334,89 @@ class Test_operator(FixerTestCase):
         a = "operator.contains(x, y)"
         self.check(b, a)
 
+        b = "operator .sequenceIncludes(x, y)"
+        a = "operator .contains(x, y)"
+        self.check(b, a)
+
+        b = "operator.  sequenceIncludes(x, y)"
+        a = "operator.  contains(x, y)"
+        self.check(b, a)
+
+    def test_operator_isSequenceType(self):
+        b = "operator.isSequenceType(x)"
+        a = "import collections\nisinstance(x, collections.Sequence)"
+        self.check(b, a)
+
+    def test_operator_isMappingType(self):
+        b = "operator.isMappingType(x)"
+        a = "import collections\nisinstance(x, collections.Mapping)"
+        self.check(b, a)
+
+    def test_operator_isNumberType(self):
+        b = "operator.isNumberType(x)"
+        a = "import numbers\nisinstance(x, numbers.Number)"
+        self.check(b, a)
+
+    def test_operator_repeat(self):
+        b = "operator.repeat(x, n)"
+        a = "operator.mul(x, n)"
+        self.check(b, a)
+
+        b = "operator .repeat(x, n)"
+        a = "operator .mul(x, n)"
+        self.check(b, a)
+
+        b = "operator.  repeat(x, n)"
+        a = "operator.  mul(x, n)"
+        self.check(b, a)
+
+    def test_operator_irepeat(self):
+        b = "operator.irepeat(x, n)"
+        a = "operator.imul(x, n)"
+        self.check(b, a)
+
+        b = "operator .irepeat(x, n)"
+        a = "operator .imul(x, n)"
+        self.check(b, a)
+
+        b = "operator.  irepeat(x, n)"
+        a = "operator.  imul(x, n)"
+        self.check(b, a)
+
     def test_bare_isCallable(self):
         s = "isCallable(x)"
-        self.warns_unchanged(s, "You should use hasattr(x, '__call__') here.")
+        t = "You should use 'hasattr(x, '__call__')' here."
+        self.warns_unchanged(s, t)
 
     def test_bare_sequenceIncludes(self):
         s = "sequenceIncludes(x, y)"
-        self.warns_unchanged(s, "You should use operator.contains here.")
+        t = "You should use 'operator.contains(x, y)' here."
+        self.warns_unchanged(s, t)
+
+    def test_bare_operator_isSequenceType(self):
+        s = "isSequenceType(z)"
+        t = "You should use 'isinstance(z, collections.Sequence)' here."
+        self.warns_unchanged(s, t)
+
+    def test_bare_operator_isMappingType(self):
+        s = "isMappingType(x)"
+        t = "You should use 'isinstance(x, collections.Mapping)' here."
+        self.warns_unchanged(s, t)
+
+    def test_bare_operator_isNumberType(self):
+        s = "isNumberType(y)"
+        t = "You should use 'isinstance(y, numbers.Number)' here."
+        self.warns_unchanged(s, t)
+
+    def test_bare_operator_repeat(self):
+        s = "repeat(x, n)"
+        t = "You should use 'operator.mul(x, n)' here."
+        self.warns_unchanged(s, t)
+
+    def test_bare_operator_irepeat(self):
+        s = "irepeat(y, 187)"
+        t = "You should use 'operator.imul(y, 187)' here."
+        self.warns_unchanged(s, t)
 
 
 class Test_exitfunc(FixerTestCase):
