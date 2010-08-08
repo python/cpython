@@ -125,7 +125,7 @@ def include(elem, loader=None):
                         )
                 if i:
                     node = elem[i-1]
-                    node.tail = (node.tail or "") + text
+                    node.tail = (node.tail or "") + text + (e.tail or "")
                 else:
                     elem.text = (elem.text or "") + text + (e.tail or "")
                 del elem[i]
