@@ -140,13 +140,13 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
                     /* got a match! */
                     return i;
                 /* miss: check if previous character is part of pattern */
-                if (!STRINGLIB_BLOOM(mask, s[i-1]))
+                if (i > 0 && !STRINGLIB_BLOOM(mask, s[i-1]))
                     i = i - m;
                 else
                     i = i - skip;
             } else {
                 /* skip: check if previous character is part of pattern */
-                if (!STRINGLIB_BLOOM(mask, s[i-1]))
+                if (i > 0 && !STRINGLIB_BLOOM(mask, s[i-1]))
                     i = i - m;
             }
         }

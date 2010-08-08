@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #8530: Prevent stringlib fastsearch from reading beyond the front
+  of an array.
+
 - Issue #5319: Print an error if flushing stdout fails at interpreter
   shutdown.
 
