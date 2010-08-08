@@ -12,6 +12,11 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #6869: Fix a refcount problem in the _ctypes extension.
+
+- Issue #5504: ctypes should now work with systems where mmap can't
+  be PROT_WRITE and PROT_EXEC.
+
 - Issue #8814: function annotations (the ``__annotations__`` attribute)
   are now included in the set of attributes copied by default by
   functools.wraps and functools.update_wrapper.  Patch by Terrence Cole.
