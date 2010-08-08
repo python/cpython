@@ -93,7 +93,7 @@ static void more_core(void)
 /******************************************************************/
 
 /* put the item back into the free list */
-void _ctypes_free_closure(void *p)
+void ffi_closure_free(void *p)
 {
     ITEM *item = (ITEM *)p;
     item->next = free_list;
@@ -101,7 +101,7 @@ void _ctypes_free_closure(void *p)
 }
 
 /* return one item from the free list, allocating more if needed */
-void *_ctypes_alloc_closure(void)
+void *ffi_closure_alloc(size_t ignored, void** codeloc)
 {
     ITEM *item;
     if (!free_list)
@@ -110,5 +110,7 @@ void *_ctypes_alloc_closure(void)
         return NULL;
     item = free_list;
     free_list = item->next;
-    return item;
+	*codeloc = (void *)item;
+    return (void *)item;
 }
+

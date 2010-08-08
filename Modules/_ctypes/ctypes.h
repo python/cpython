@@ -95,7 +95,8 @@ struct tagCDataObject {
 
 typedef struct {
     PyObject_VAR_HEAD
-    ffi_closure *pcl; /* the C callable */
+    ffi_closure *pcl_write; /* the C callable, writeable */
+    void *pcl_exec;         /* the C callable, executable */
     ffi_cif cif;
     int flags;
     PyObject *converters;
@@ -427,9 +428,6 @@ extern PyObject *PyUnicode_FromWideChar_fixed(const wchar_t *, Py_ssize_t);
 extern Py_ssize_t PyUnicode_AsWideChar_fixed(PyUnicodeObject *, wchar_t *, Py_ssize_t);
 #endif
 #endif
-
-extern void _ctypes_free_closure(void *);
-extern void *_ctypes_alloc_closure(void);
 
 extern void _ctypes_add_traceback(char *, char *, int);
 

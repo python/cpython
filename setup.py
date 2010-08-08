@@ -1867,8 +1867,7 @@ class PyBuildExt(build_ext):
                    '_ctypes/callbacks.c',
                    '_ctypes/callproc.c',
                    '_ctypes/stgdict.c',
-                   '_ctypes/cfield.c',
-                   '_ctypes/malloc_closure.c']
+                   '_ctypes/cfield.c']
         depends = ['_ctypes/ctypes.h']
 
         if sys.platform == 'darwin':
