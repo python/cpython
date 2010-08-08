@@ -377,16 +377,12 @@ empty dictionary, a data structure that we discuss in the next section.
 
 Here is a brief demonstration::
 
-   >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
-   >>> fruit = set(basket)               # create a set without duplicates
-   >>> fruit
-   {'orange', 'pear', 'apple', 'banana'}
-   >>> fruit = {'orange', 'apple'}       # {} syntax is equivalent to [] for lists
-   >>> fruit
-   {'orange', 'apple'}
-   >>> 'orange' in fruit                 # fast membership testing
+   >>> basket = {'apple', 'orange', 'apple', 'pear', 'orange', 'banana'}
+   >>> print(basket)                      # show that duplicates have been removed
+   {'orange', 'bananna', 'pear', 'apple'}
+   >>> 'orange' in basket                 # fast membership testing
    True
-   >>> 'crabgrass' in fruit
+   >>> 'crabgrass' in basket
    False
 
    >>> # Demonstrate set operations on unique letters from two words
