@@ -886,26 +886,25 @@ class Popen(object):
                 # translate errno using _sys_errlist (or simliar), but
                 # how can this be done from Python?
                 raise WindowsError(*e.args)
+            finally:
+                # Child is launched. Close the parent's copy of those pipe
+                # handles that only the child should have open.  You need
+                # to make sure that no handles to the write end of the
+                # output pipe are maintained in this process or else the
+                # pipe will not close when the child process exits and the
+                # ReadFile will hang.
+                if p2cread != -1:
+                    p2cread.Close()
+                if c2pwrite != -1:
+                    c2pwrite.Close()
+                if errwrite != -1:
+                    errwrite.Close()
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
             self._handle = hp
             self.pid = pid
             ht.Close()
-
-            # Child is launched. Close the parent's copy of those pipe
-            # handles that only the child should have open.  You need
-            # to make sure that no handles to the write end of the
-            # output pipe are maintained in this process or else the
-            # pipe will not close when the child process exits and the
-            # ReadFile will hang.
-            if p2cread != -1:
-                p2cread.Close()
-            if c2pwrite != -1:
-                c2pwrite.Close()
-            if errwrite != -1:
-                errwrite.Close()
-
 
         def _internal_poll(self, _deadstate=None,
                 _WaitForSingleObject=_subprocess.WaitForSingleObject,
