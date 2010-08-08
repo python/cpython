@@ -109,7 +109,7 @@ except ImportError:
     from StringIO import StringIO
 
 from urllib import (unwrap, unquote, splittype, splithost, quote,
-     addinfourl, splitport,
+     addinfourl, splitport, splittag,
      splitattr, ftpwrapper, splituser, splitpasswd, splitvalue)
 
 # support for FileHandler, proxies via environment variables
@@ -190,6 +190,7 @@ class Request:
                  origin_req_host=None, unverifiable=False):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self.__original = unwrap(url)
+        self.__original, fragment = splittag(self.__original)
         self.type = None
         # self.__r_type is what's left after doing the splittype
         self.host = None
