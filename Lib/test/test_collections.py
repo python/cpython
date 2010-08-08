@@ -218,6 +218,16 @@ class TestNamedTuple(unittest.TestCase):
         # test __getnewargs__
         self.assertEqual(t.__getnewargs__(), values)
 
+    def test_repr(self):
+        with support.captured_stdout() as template:
+            A = namedtuple('A', 'x', verbose=True)
+        self.assertEqual(repr(A(1)), 'A(x=1)')
+        # repr should show the name of the subclass
+        class B(A):
+            pass
+        self.assertEqual(repr(B(1)), 'B(x=1)')
+
+
 class ABCTestCase(unittest.TestCase):
 
     def validate_abstract_methods(self, abc, *names):

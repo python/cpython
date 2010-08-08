@@ -240,7 +240,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
             return result \n
         def __repr__(self):
             'Return a nicely formatted representation string'
-            return '%(typename)s(%(reprtxt)s)' %% self \n
+            return self.__class__.__name__ + '(%(reprtxt)s)' %% self \n
         def _asdict(self):
             'Return a new OrderedDict which maps field names to their values'
             return OrderedDict(zip(self._fields, self)) \n
