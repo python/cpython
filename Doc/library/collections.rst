@@ -605,7 +605,7 @@ Example:
    <BLANKLINE>
            def __repr__(self):
                'Return a nicely formatted representation string'
-               return 'Point(x=%r, y=%r)' % self
+               return self.__class__.__name__ + '(x=%r, y=%r)' % self
    <BLANKLINE>
            def _asdict(self):
                'Return a new OrderedDict which maps field names to their values'

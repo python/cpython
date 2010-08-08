@@ -24,6 +24,9 @@ Core and Builtins
 Extensions
 ----------
 
+- Issue #9507:  Named tuple repr will now automatically display the right
+  name in a tuple subclass.
+
 - Issue #9324: Add parameter validation to signal.signal on Windows in order
   to prevent crashes.
 
