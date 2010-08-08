@@ -643,9 +643,9 @@ def parseliteral():
     <html><body>text</body></html>
     >>> sequence = ["<html><body>", "text</bo", "dy></html>"]
     >>> element = ET.fromstringlist(sequence)
-    >>> print(ET.tostring(element))
+    >>> ET.tostring(element)
     b'<html><body>text</body></html>'
-    >>> print(b"".join(ET.tostringlist(element)))
+    >>> b"".join(ET.tostringlist(element))
     b'<html><body>text</body></html>'
     >>> ET.tostring(element, "ascii")
     b"<?xml version='1.0' encoding='ascii'?>\\n<html><body>text</body></html>"
