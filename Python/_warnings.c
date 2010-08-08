@@ -498,23 +498,21 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     *filename = PyDict_GetItemString(globals, "__file__");
     if (*filename != NULL) {
         Py_ssize_t len = PyUnicode_GetSize(*filename);
-        const char *file_str = _PyUnicode_AsString(*filename);
-            if (file_str == NULL || (len < 0 && PyErr_Occurred()))
-            goto handle_error;
+        Py_UNICODE *unicode = PyUnicode_AS_UNICODE(*filename);
 
         /* if filename.lower().endswith((".pyc", ".pyo")): */
         if (len >= 4 &&
-            file_str[len-4] == '.' &&
-            tolower(file_str[len-3]) == 'p' &&
-            tolower(file_str[len-2]) == 'y' &&
-            (tolower(file_str[len-1]) == 'c' ||
-                tolower(file_str[len-1]) == 'o'))
+            unicode[len-4] == '.' &&
+            Py_UNICODE_TOLOWER(unicode[len-3]) == 'p' &&
+            Py_UNICODE_TOLOWER(unicode[len-2]) == 'y' &&
+            (Py_UNICODE_TOLOWER(unicode[len-1]) == 'c' ||
+                Py_UNICODE_TOLOWER(unicode[len-1]) == 'o'))
         {
-            *filename = PyUnicode_FromStringAndSize(file_str, len-1);
-                if (*filename == NULL)
-                        goto handle_error;
-            }
-            else
+            *filename = PyUnicode_FromUnicode(unicode, len-1);
+            if (*filename == NULL)
+                goto handle_error;
+        }
+        else
             Py_INCREF(*filename);
     }
     else {
