@@ -7,9 +7,17 @@ get_attribute(termios, 'TIOCGPGRP') #Can't run tests without this feature
 
 try:
     tty = open("/dev/tty", "r")
-    tty.close()
 except IOError:
     raise unittest.SkipTest("Unable to open /dev/tty")
+else:
+    # Skip if another process is in foreground
+    r = fcntl.ioctl(tty, termios.TIOCGPGRP, "    ")
+    tty.close()
+    rpgrp = struct.unpack("i", r)[0]
+    if rpgrp not in (os.getpgrp(), os.getsid(0)):
+        raise unittest.SkipTest("Neither the process group nor the session "
+                                "are attached to /dev/tty")
+    del tty, r, rpgrp
 
 try:
     import pty

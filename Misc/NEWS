@@ -136,6 +136,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #7564: Skip test_ioctl if another process is attached to /dev/tty.
+
 - Issue #8433: Fix test_curses failure with newer versions of ncurses.
 
 - Issue #9496: Provide a test suite for the rlcompleter module.  Patch by
