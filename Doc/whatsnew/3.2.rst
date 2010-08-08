@@ -119,6 +119,11 @@ New, Improved, and Deprecated Modules
 * The :class:`ftplib.FTP` class now supports the context manager protocol
   (Contributed by Tarek Ziadé and Giampaolo Rodolà; :issue:`4972`.)
 
+* A warning message will now get printed at interpreter shutdown if
+  the :data:`gc.garbage` list isn't empty.  This is meant to make the
+  programmer aware that his code contains object finalization issues.
+  (Added by Antoine Pitrou; :issue:`477863`.)
+
 * The :func:`shutil.copytree` function has two new options:
 
   * *ignore_dangling_symlinks*: when ``symlinks=False`` (meaning that the
