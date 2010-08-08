@@ -517,7 +517,7 @@ class RefactoringTool(object):
         try:
             tree = self.parse_block(block, lineno, indent)
         except Exception as err:
-            if self.log.isEnabledFor(logging.DEBUG):
+            if self.logger.isEnabledFor(logging.DEBUG):
                 for line in block:
                     self.log_debug("Source: %s", line.rstrip("\n"))
             self.log_error("Can't parse docstring in %s line %s: %s: %s",
