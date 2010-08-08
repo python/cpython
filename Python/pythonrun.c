@@ -331,7 +331,7 @@ flush_std_files(void)
     if (fout != NULL && fout != Py_None) {
         tmp = PyObject_CallMethod(fout, "flush", "");
         if (tmp == NULL)
-            PyErr_Clear();
+            PyErr_WriteUnraisable(fout);
         else
             Py_DECREF(tmp);
     }
