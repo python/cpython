@@ -90,6 +90,10 @@ C-API
 Library
 -------
 
+- Fix Issue8280 - urllib2's Request method will remove fragements in the url.
+  This is how it is supposed to work, wget and curl do the same.  Previous
+  behavior was wrong.
+
 - Issue #2944: asyncore doesn't handle connection refused correctly.
 
 - Issue #3196: email header decoding is now forgiving if an RFC2047
