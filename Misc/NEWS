@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6869: Fix a refcount problem in the _ctypes extension.
+
 - Issue5504 - ctypes should now work with systems where mmap can't be
   PROT_WRITE and PROT_EXEC.
 
