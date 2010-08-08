@@ -107,14 +107,14 @@ def cmp_to_key(mycmp):
     return K
 
 def lfu_cache(maxsize=100):
-    '''Least-frequently-used cache decorator.
+    """Least-frequently-used cache decorator.
 
     Arguments to the cached function must be hashable.
     Cache performance statistics stored in f.hits and f.misses.
     Clear the cache using f.clear().
     http://en.wikipedia.org/wiki/Cache_algorithms#Least-Frequently_Used
 
-    '''
+    """
     def decorating_function(user_function):
         cache = {}                      # mapping of args to results
         use_count = Counter()           # times each key has been accessed
@@ -142,7 +142,7 @@ def lfu_cache(maxsize=100):
             return result
 
         def clear():
-            'Clear the cache and cache statistics'
+            """Clear the cache and cache statistics"""
             cache.clear()
             use_count.clear()
             wrapper.hits = wrapper.misses = 0
@@ -153,14 +153,14 @@ def lfu_cache(maxsize=100):
     return decorating_function
 
 def lru_cache(maxsize=100):
-    '''Least-recently-used cache decorator.
+    """Least-recently-used cache decorator.
 
     Arguments to the cached function must be hashable.
     Cache performance statistics stored in f.hits and f.misses.
     Clear the cache using f.clear().
     http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
 
-    '''
+    """
     def decorating_function(user_function):
         cache = OrderedDict()           # ordered least recent to most recent
         kwd_mark = object()             # separate positional and keyword args
@@ -182,7 +182,7 @@ def lru_cache(maxsize=100):
             return result
 
         def clear():
-            'Clear the cache and cache statistics'
+            """Clear the cache and cache statistics"""
             cache.clear()
             wrapper.hits = wrapper.misses = 0
 
