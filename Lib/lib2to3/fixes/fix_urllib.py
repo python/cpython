@@ -5,39 +5,40 @@
 # Author: Nick Edds
 
 # Local imports
-from .fix_imports import alternates, FixImports
-from .. import fixer_base
-from ..fixer_util import Name, Comma, FromImport, Newline, attr_chain
+from lib2to3.fixes.fix_imports import alternates, FixImports
+from lib2to3 import fixer_base
+from lib2to3.fixer_util import (Name, Comma, FromImport, Newline,
+                                find_indentation)
 
-MAPPING = {'urllib':  [
-                ('urllib.request',
-                    ['URLOpener', 'FancyURLOpener', 'urlretrieve',
-                     '_urlopener', 'urlopen', 'urlcleanup',
-                     'pathname2url', 'url2pathname']),
-                ('urllib.parse',
-                    ['quote', 'quote_plus', 'unquote', 'unquote_plus',
-                     'urlencode', 'splitattr', 'splithost', 'splitnport',
-                     'splitpasswd', 'splitport', 'splitquery', 'splittag',
-                     'splittype', 'splituser', 'splitvalue', ]),
-                ('urllib.error',
-                    ['ContentTooShortError'])],
-           'urllib2' : [
-                ('urllib.request',
-                    ['urlopen', 'install_opener', 'build_opener',
-                     'Request', 'OpenerDirector', 'BaseHandler',
-                     'HTTPDefaultErrorHandler', 'HTTPRedirectHandler',
-                     'HTTPCookieProcessor', 'ProxyHandler',
-                     'HTTPPasswordMgr',
-                     'HTTPPasswordMgrWithDefaultRealm',
-                     'AbstractBasicAuthHandler',
-                     'HTTPBasicAuthHandler', 'ProxyBasicAuthHandler',
-                     'AbstractDigestAuthHandler',
-                     'HTTPDigestAuthHandler', 'ProxyDigestAuthHandler',
-                     'HTTPHandler', 'HTTPSHandler', 'FileHandler',
-                     'FTPHandler', 'CacheFTPHandler',
-                     'UnknownHandler']),
-                ('urllib.error',
-                    ['URLError', 'HTTPError']),
+MAPPING = {"urllib":  [
+                ("urllib.request",
+                    ["URLOpener", "FancyURLOpener", "urlretrieve",
+                     "_urlopener", "urlopen", "urlcleanup",
+                     "pathname2url", "url2pathname"]),
+                ("urllib.parse",
+                    ["quote", "quote_plus", "unquote", "unquote_plus",
+                     "urlencode", "splitattr", "splithost", "splitnport",
+                     "splitpasswd", "splitport", "splitquery", "splittag",
+                     "splittype", "splituser", "splitvalue", ]),
+                ("urllib.error",
+                    ["ContentTooShortError"])],
+           "urllib2" : [
+                ("urllib.request",
+                    ["urlopen", "install_opener", "build_opener",
+                     "Request", "OpenerDirector", "BaseHandler",
+                     "HTTPDefaultErrorHandler", "HTTPRedirectHandler",
+                     "HTTPCookieProcessor", "ProxyHandler",
+                     "HTTPPasswordMgr",
+                     "HTTPPasswordMgrWithDefaultRealm",
+                     "AbstractBasicAuthHandler",
+                     "HTTPBasicAuthHandler", "ProxyBasicAuthHandler",
+                     "AbstractDigestAuthHandler",
+                     "HTTPDigestAuthHandler", "ProxyDigestAuthHandler",
+                     "HTTPHandler", "HTTPSHandler", "FileHandler",
+                     "FTPHandler", "CacheFTPHandler",
+                     "UnknownHandler"]),
+                ("urllib.error",
+                    ["URLError", "HTTPError"]),
            ]
 }
 
@@ -78,7 +79,7 @@ class FixUrllib(FixImports):
            import name with a comma separated list of its
            replacements.
         """
-        import_mod = results.get('module')
+        import_mod = results.get("module")
         pref = import_mod.prefix
 
         names = []
@@ -94,9 +95,9 @@ class FixUrllib(FixImports):
            the module to be imported from with the appropriate new
            module.
         """
-        mod_member = results.get('mod_member')
+        mod_member = results.get("mod_member")
         pref = mod_member.prefix
-        member = results.get('member')
+        member = results.get("member")
 
         # Simple case with only a single member being imported
         if member:
@@ -111,19 +112,18 @@ class FixUrllib(FixImports):
             if new_name:
                 mod_member.replace(Name(new_name, prefix=pref))
             else:
-                self.cannot_convert(node,
-                                    'This is an invalid module element')
+                self.cannot_convert(node, "This is an invalid module element")
 
         # Multiple members being imported
         else:
             # a dictionary for replacements, order matters
             modules = []
             mod_dict = {}
-            members = results.get('members')
+            members = results["members"]
             for member in members:
                 member = member.value
                 # we only care about the actual members
-                if member != ',':
+                if member != u",":
                     for change in MAPPING[mod_member.value]:
                         if member in change[1]:
                             if change[0] in mod_dict:
@@ -133,13 +133,19 @@ class FixUrllib(FixImports):
                                 modules.append(change[0])
 
             new_nodes = []
+            indentation = find_indentation(node)
+            first = True
             for module in modules:
                 elts = mod_dict[module]
                 names = []
                 for elt in elts[:-1]:
                     names.extend([Name(elt, prefix=pref), Comma()])
                 names.append(Name(elts[-1], prefix=pref))
-                new_nodes.append(FromImport(module, names))
+                new = FromImport(module, names)
+                if not first or node.parent.prefix.endswith(indentation):
+                    new.prefix = indentation
+                new_nodes.append(new)
+                first = False
             if new_nodes:
                 nodes = []
                 for new_node in new_nodes[:-1]:
@@ -147,12 +153,12 @@ class FixUrllib(FixImports):
                 nodes.append(new_nodes[-1])
                 node.replace(nodes)
             else:
-                self.cannot_convert(node, 'All module elements are invalid')
+                self.cannot_convert(node, "All module elements are invalid")
 
     def transform_dot(self, node, results):
         """Transform for calls to module members in code."""
-        module_dot = results.get('bare_with_attr')
-        member = results.get('member')
+        module_dot = results.get("bare_with_attr")
+        member = results.get("member")
         new_name = None
         if isinstance(member, list):
             member = member[0]
@@ -164,17 +170,17 @@ class FixUrllib(FixImports):
             module_dot.replace(Name(new_name,
                                     prefix=module_dot.prefix))
         else:
-            self.cannot_convert(node, 'This is an invalid module element')
+            self.cannot_convert(node, "This is an invalid module element")
 
     def transform(self, node, results):
-        if results.get('module'):
+        if results.get("module"):
             self.transform_import(node, results)
-        elif results.get('mod_member'):
+        elif results.get("mod_member"):
             self.transform_member(node, results)
-        elif results.get('bare_with_attr'):
+        elif results.get("bare_with_attr"):
             self.transform_dot(node, results)
         # Renaming and star imports are not supported for these modules.
-        elif results.get('module_star'):
-            self.cannot_convert(node, 'Cannot handle star imports.')
-        elif results.get('module_as'):
-            self.cannot_convert(node, 'This module is now multiple modules')
+        elif results.get("module_star"):
+            self.cannot_convert(node, "Cannot handle star imports.")
+        elif results.get("module_as"):
+            self.cannot_convert(node, "This module is now multiple modules")
