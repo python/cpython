@@ -2894,7 +2894,7 @@ Library
 
 - Issue #6314: logging: Extra checks on the "level" argument in more places.
 
-- Issue #2622: Fixed an ImportError when importing email.messsage from a
+- Issue #2622: Fixed an ImportError when importing email.message from a
   standalone application built with py2exe or py2app.
 
 - Issue #6455: Fixed test_build_ext under win32.
