@@ -1,5 +1,7 @@
 ffi_sources = """
 src/prep_cif.c
+src/closures.c
+src/dlmalloc.c
 """.split()
 
 ffi_platforms = {

@@ -3353,7 +3353,7 @@ PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->callable = callable;
 
     self->thunk = thunk;
-    *(void **)self->b_ptr = (void *)thunk->pcl;
+    *(void **)self->b_ptr = (void *)thunk->pcl_exec;
 
     Py_INCREF((PyObject *)thunk); /* for KeepRef */
     if (-1 == KeepRef((CDataObject *)self, 0, (PyObject *)thunk)) {
