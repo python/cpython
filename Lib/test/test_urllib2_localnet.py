@@ -308,8 +308,9 @@ def GetRequestHandler(responses):
 
         def do_GET(self):
             body = self.send_head()
-            if body:
-                self.wfile.write(body)
+            while body:
+                done = self.wfile.write(body)
+                body = body[done:]
 
         def do_POST(self):
             content_length = self.headers["Content-Length"]
@@ -500,6 +501,25 @@ class TestUrlopen(BaseTestCase):
                           # parameterize the framework with a mock resolver.
                           urllib.request.urlopen,
                           "http://sadflkjsasf.i.nvali.d./")
+
+    def test_iteration(self):
+        expected_response = b"pycon 2008..."
+        handler = self.start_server([(200, [], expected_response)])
+        data = urllib.request.urlopen("http://localhost:%s" % handler.port)
+        for line in data:
+            self.assertEqual(line, expected_response)
+
+    def test_line_iteration(self):
+        lines = [b"We\n", b"got\n", b"here\n", b"verylong " * 8192 + b"\n"]
+        expected_response = b"".join(lines)
+        handler = self.start_server([(200, [], expected_response)])
+        data = urllib.request.urlopen("http://localhost:%s" % handler.port)
+        for index, line in enumerate(data):
+            self.assertEqual(line, lines[index],
+                             "Fetched line number %s doesn't match expected:\n"
+                             "    Expected length was %s, got %s" %
+                             (index, len(lines[index]), len(line)))
+        self.assertEqual(index + 1, len(lines))
 
 def test_main():
     support.run_unittest(ProxyAuthTests, TestUrlopen)
