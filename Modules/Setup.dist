@@ -113,6 +113,9 @@ _sre _sre.c			# Fredrik Lundh's new regular expressions
 _codecs _codecsmodule.c		# access to the builtin codecs and codec registry
 _weakref _weakref.c		# weak references
 _functools _functoolsmodule.c   # Tools for working with functions and callable objects
+operator operator.c	        # operator.add() and similar goodies
+_collections _collectionsmodule.c # Container types
+itertools itertoolsmodule.c    # Functions creating iterators for efficient looping 
 
 # access to ISO C locale support
 _locale _localemodule.c  # -lintl

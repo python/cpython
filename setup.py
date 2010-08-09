@@ -454,18 +454,12 @@ class PyBuildExt(build_ext):
                                libraries=math_libs) )
         exts.append( Extension('_datetime', ['_datetimemodule.c', '_time.c'],
                                libraries=math_libs) )
-        # fast iterator tools implemented in C
-        exts.append( Extension("itertools", ["itertoolsmodule.c"]) )
         # random number generator implemented in C
         exts.append( Extension("_random", ["_randommodule.c"]) )
-        # high-performance collections
-        exts.append( Extension("_collections", ["_collectionsmodule.c"]) )
         # bisect
         exts.append( Extension("_bisect", ["_bisectmodule.c"]) )
         # heapq
         exts.append( Extension("_heapq", ["_heapqmodule.c"]) )
-        # operator.add() and similar goodies
-        exts.append( Extension('operator', ['operator.c']) )
         # C-optimized pickle replacement
         exts.append( Extension("_pickle", ["_pickle.c"]) )
         # atexit
