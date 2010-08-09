@@ -67,6 +67,9 @@ Extensions
 Library
 -------
 
+- Issue #9452: Add read_file, read_string, and read_dict to the configparser 
+  API; new source attribute to exceptions.
+
 - Issue #6231: Fix xml.etree.ElementInclude to include the tail of the
   current node.
 
