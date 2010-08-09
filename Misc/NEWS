@@ -98,6 +98,9 @@ C-API
 Library
 -------
 
+- Issue #6915: Under Windows, os.listdir() didn't release the Global
+  Interpreter Lock around all system calls.  Original patch by Ryan Kelly.
+
 - Issue #3757: thread-local objects now support cyclic garbage collection.
   Thread-local objects involved in reference cycles will be deallocated
   timely by the cyclic GC, even if the underlying thread is still running.
