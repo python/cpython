@@ -499,19 +499,163 @@ newlockobject(void)
 
 #include "structmember.h"
 
+/* Quick overview:
+
+   We need to be able to reclaim reference cycles as soon as possible
+   (both when a thread is being terminated, or a thread-local object
+    becomes unreachable from user data).  Constraints:
+   - it must not be possible for thread-state dicts to be involved in
+     reference cycles (otherwise the cyclic GC will refuse to consider
+     objects referenced from a reachable thread-state dict, even though
+     local_dealloc would clear them)
+   - the death of a thread-state dict must still imply destruction of the
+     corresponding local dicts in all thread-local objects.
+
+   Our implementation uses small "localdummy" objects in order to break
+   the reference chain. These trivial objects are hashable (using the
+   default scheme of identity hashing) and weakrefable.
+   Each thread-state holds a separate localdummy for each local object
+   (as a /strong reference/),
+   and each thread-local object holds a dict mapping /weak references/
+   of localdummies to local dicts.
+
+   Therefore:
+   - only the thread-state dict holds a strong reference to the dummies
+   - only the thread-local object holds a strong reference to the local dicts
+   - only outside objects (application- or library-level) hold strong
+     references to the thread-local objects
+   - as soon as a thread-state dict is destroyed, the weakref callbacks of all
+     dummies attached to that thread are called, and destroy the corresponding
+     local dicts from thread-local objects
+   - as soon as a thread-local object is destroyed, its local dicts are
+     destroyed and its dummies are manually removed from all thread states
+   - the GC can do its work correctly when a thread-local object is dangling,
+     without any interference from the thread-state dicts
+
+   As an additional optimization, each localdummy holds a borrowed reference
+   to the corresponding localdict.  This borrowed reference is only used
+   by the thread-local object which has created the localdummy, which should
+   guarantee that the localdict still exists when accessed.
+*/
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *localdict;        /* Borrowed reference! */
+    PyObject *weakreflist;      /* List of weak references to self */
+} localdummyobject;
+
+static void
+localdummy_dealloc(localdummyobject *self)
+{
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+static PyTypeObject localdummytype = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    /* tp_name           */ "_thread._localdummy",
+    /* tp_basicsize      */ sizeof(localdummyobject),
+    /* tp_itemsize       */ 0,
+    /* tp_dealloc        */ (destructor)localdummy_dealloc,
+    /* tp_print          */ 0,
+    /* tp_getattr        */ 0,
+    /* tp_setattr        */ 0,
+    /* tp_reserved       */ 0,
+    /* tp_repr           */ 0,
+    /* tp_as_number      */ 0,
+    /* tp_as_sequence    */ 0,
+    /* tp_as_mapping     */ 0,
+    /* tp_hash           */ 0,
+    /* tp_call           */ 0,
+    /* tp_str            */ 0,
+    /* tp_getattro       */ 0,
+    /* tp_setattro       */ 0,
+    /* tp_as_buffer      */ 0,
+    /* tp_flags          */ Py_TPFLAGS_DEFAULT,
+    /* tp_doc            */ "Thread-local dummy",
+    /* tp_traverse       */ 0,
+    /* tp_clear          */ 0,
+    /* tp_richcompare    */ 0,
+    /* tp_weaklistoffset */ offsetof(localdummyobject, weakreflist)
+};
+
+
 typedef struct {
     PyObject_HEAD
     PyObject *key;
     PyObject *args;
     PyObject *kw;
+    /* The current thread's local dict (necessary for tp_dictoffset) */
     PyObject *dict;
+    PyObject *weakreflist;      /* List of weak references to self */
+    /* A {localdummy weakref -> localdict} dict */
+    PyObject *dummies;
+    /* The callback for weakrefs to localdummies */
+    PyObject *wr_callback;
 } localobject;
+
+/* Forward declaration */
+static PyObject *_ldict(localobject *self);
+static PyObject *_localdummy_destroyed(PyObject *meth_self, PyObject *dummyweakref);
+
+/* Create and register the dummy for the current thread, as well as the
+   corresponding local dict */
+static int
+_local_create_dummy(localobject *self)
+{
+    PyObject *tdict, *ldict = NULL, *wr = NULL;
+    localdummyobject *dummy = NULL;
+    int r;
+
+    tdict = PyThreadState_GetDict();
+    if (tdict == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Couldn't get thread-state dictionary");
+        goto err;
+    }
+
+    ldict = PyDict_New();
+    if (ldict == NULL)
+        goto err;
+    dummy = (localdummyobject *) localdummytype.tp_alloc(&localdummytype, 0);
+    if (dummy == NULL)
+        goto err;
+    dummy->localdict = ldict;
+    wr = PyWeakref_NewRef((PyObject *) dummy, self->wr_callback);
+    if (wr == NULL)
+        goto err;
+
+    /* As a side-effect, this will cache the weakref's hash before the
+       dummy gets deleted */
+    r = PyDict_SetItem(self->dummies, wr, ldict);
+    if (r < 0)
+        goto err;
+    Py_CLEAR(wr);
+    r = PyDict_SetItem(tdict, self->key, (PyObject *) dummy);
+    if (r < 0)
+        goto err;
+    Py_CLEAR(dummy);
+
+    Py_CLEAR(self->dict);
+    self->dict = ldict;
+    return 0;
+
+err:
+    Py_XDECREF(ldict);
+    Py_XDECREF(wr);
+    Py_XDECREF(dummy);
+    return -1;
+}
 
 static PyObject *
 local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     localobject *self;
-    PyObject *tdict;
+    PyObject *wr;
+    static PyMethodDef wr_callback_def = {
+        "_localdummy_destroyed", (PyCFunction) _localdummy_destroyed, METH_O
+    };
 
     if (type->tp_init == PyBaseObject_Type.tp_init
         && ((args && PyObject_IsTrue(args))
@@ -529,23 +673,25 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     self->args = args;
     Py_XINCREF(kw);
     self->kw = kw;
-    self->dict = NULL;          /* making sure */
     self->key = PyUnicode_FromFormat("thread.local.%p", self);
     if (self->key == NULL)
         goto err;
 
-    self->dict = PyDict_New();
-    if (self->dict == NULL)
+    self->dummies = PyDict_New();
+    if (self->dummies == NULL)
         goto err;
 
-    tdict = PyThreadState_GetDict();
-    if (tdict == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Couldn't get thread-state dictionary");
+    /* We use a weak reference to self in the callback closure
+       in order to avoid spurious reference cycles */
+    wr = PyWeakref_NewRef((PyObject *) self, NULL);
+    if (wr == NULL)
         goto err;
-    }
+    self->wr_callback = PyCFunction_New(&wr_callback_def, wr);
+    Py_DECREF(wr);
+    if (self->wr_callback == NULL)
+        goto err;
 
-    if (PyDict_SetItem(tdict, self->key, self->dict) < 0)
+    if (_local_create_dummy(self) < 0)
         goto err;
 
     return (PyObject *)self;
@@ -560,6 +706,7 @@ local_traverse(localobject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->args);
     Py_VISIT(self->kw);
+    Py_VISIT(self->dummies);
     Py_VISIT(self->dict);
     return 0;
 }
@@ -567,16 +714,13 @@ local_traverse(localobject *self, visitproc visit, void *arg)
 static int
 local_clear(localobject *self)
 {
+    PyThreadState *tstate;
     Py_CLEAR(self->args);
     Py_CLEAR(self->kw);
+    Py_CLEAR(self->dummies);
     Py_CLEAR(self->dict);
-    return 0;
-}
-
-static void
-local_dealloc(localobject *self)
-{
-    PyThreadState *tstate;
+    Py_CLEAR(self->wr_callback);
+    /* Remove all strong references to dummies from the thread states */
     if (self->key
         && (tstate = PyThreadState_Get())
         && tstate->interp) {
@@ -587,16 +731,29 @@ local_dealloc(localobject *self)
                 PyDict_GetItem(tstate->dict, self->key))
                 PyDict_DelItem(tstate->dict, self->key);
     }
+    return 0;
+}
 
-    Py_XDECREF(self->key);
+static void
+local_dealloc(localobject *self)
+{
+    /* Weakrefs must be invalidated right now, otherwise they can be used
+       from code called below, which is very dangerous since Py_REFCNT(self) == 0 */
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *) self);
+
+    PyObject_GC_UnTrack(self);
+
     local_clear(self);
+    Py_XDECREF(self->key);
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+/* Returns a borrowed reference to the local dict, creating it if necessary */
 static PyObject *
 _ldict(localobject *self)
 {
-    PyObject *tdict, *ldict;
+    PyObject *tdict, *ldict, *dummy;
 
     tdict = PyThreadState_GetDict();
     if (tdict == NULL) {
@@ -605,22 +762,11 @@ _ldict(localobject *self)
         return NULL;
     }
 
-    ldict = PyDict_GetItem(tdict, self->key);
-    if (ldict == NULL) {
-        ldict = PyDict_New(); /* we own ldict */
-
-        if (ldict == NULL)
+    dummy = PyDict_GetItem(tdict, self->key);
+    if (dummy == NULL) {
+        if (_local_create_dummy(self) < 0)
             return NULL;
-        else {
-            int i = PyDict_SetItem(tdict, self->key, ldict);
-            Py_DECREF(ldict); /* now ldict is borrowed */
-            if (i < 0)
-                return NULL;
-        }
-
-        Py_CLEAR(self->dict);
-        Py_INCREF(ldict);
-        self->dict = ldict; /* still borrowed */
+        ldict = self->dict;
 
         if (Py_TYPE(self)->tp_init != PyBaseObject_Type.tp_init &&
             Py_TYPE(self)->tp_init((PyObject*)self,
@@ -631,14 +777,17 @@ _ldict(localobject *self)
             PyDict_DelItem(tdict, self->key);
             return NULL;
         }
-
+    }
+    else {
+        assert(Py_TYPE(dummy) == &localdummytype);
+        ldict = ((localdummyobject *) dummy)->localdict;
     }
 
     /* The call to tp_init above may have caused another thread to run.
        Install our ldict again. */
     if (self->dict != ldict) {
-        Py_CLEAR(self->dict);
         Py_INCREF(ldict);
+        Py_CLEAR(self->dict);
         self->dict = ldict;
     }
 
@@ -660,13 +809,10 @@ local_setattro(localobject *self, PyObject *name, PyObject *v)
 static PyObject *
 local_getdict(localobject *self, void *closure)
 {
-    if (self->dict == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "__dict__");
-        return NULL;
-    }
-
-    Py_INCREF(self->dict);
-    return self->dict;
+    PyObject *ldict;
+    ldict = _ldict(self);
+    Py_XINCREF(ldict);
+    return ldict;
 }
 
 static PyGetSetDef local_getset[] = {
@@ -697,12 +843,13 @@ static PyTypeObject localtype = {
     /* tp_getattro       */ (getattrofunc)local_getattro,
     /* tp_setattro       */ (setattrofunc)local_setattro,
     /* tp_as_buffer      */ 0,
-    /* tp_flags          */ Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    /* tp_flags          */ Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
+                                               | Py_TPFLAGS_HAVE_GC,
     /* tp_doc            */ "Thread-local data",
     /* tp_traverse       */ (traverseproc)local_traverse,
     /* tp_clear          */ (inquiry)local_clear,
     /* tp_richcompare    */ 0,
-    /* tp_weaklistoffset */ 0,
+    /* tp_weaklistoffset */ offsetof(localobject, weakreflist),
     /* tp_iter           */ 0,
     /* tp_iternext       */ 0,
     /* tp_methods        */ 0,
@@ -741,6 +888,36 @@ local_getattro(localobject *self, PyObject *name)
 
     Py_INCREF(value);
     return value;
+}
+
+/* Called when a dummy is destroyed. */
+static PyObject *
+_localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
+{
+    PyObject *obj;
+    localobject *self;
+    assert(PyWeakref_CheckRef(localweakref));
+    obj = PyWeakref_GET_OBJECT(localweakref);
+    if (obj == Py_None)
+        Py_RETURN_NONE;
+    Py_INCREF(obj);
+    assert(PyObject_TypeCheck(obj, &localtype));
+    /* If the thread-local object is still alive and not being cleared,
+       remove the corresponding local dict */
+    self = (localobject *) obj;
+    if (self->dummies != NULL) {
+        PyObject *ldict;
+        ldict = PyDict_GetItem(self->dummies, dummyweakref);
+        if (ldict != NULL) {
+            if (ldict == self->dict)
+                Py_CLEAR(self->dict);
+            PyDict_DelItem(self->dummies, dummyweakref);
+        }
+        if (PyErr_Occurred())
+            PyErr_WriteUnraisable(obj);
+    }
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
 }
 
 /* Module functions */
@@ -1063,6 +1240,8 @@ PyInit__thread(void)
     PyObject *m, *d, *timeout_max;
 
     /* Initialize types: */
+    if (PyType_Ready(&localdummytype) < 0)
+        return NULL;
     if (PyType_Ready(&localtype) < 0)
         return NULL;
     if (PyType_Ready(&Locktype) < 0)
