@@ -697,8 +697,8 @@ Library
 
 - The default size of the re module's compiled regular expression cache has been
   increased from 100 to 500 and the cache replacement policy has changed from
-  simply clearing the entire cache on overflow to randomly forgetting 20% of the
-  existing cached compiled regular expressions.  This is a performance win for
+  simply clearing the entire cache on overflow to forgetting the least recently
+  used cached compiled regular expressions.  This is a performance win for
   applications that use a lot of regular expressions and limits the impact of
   the performance hit anytime the cache is exceeded.
 
