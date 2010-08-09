@@ -2151,7 +2151,7 @@ PyDoc_STRVAR(replace__doc__,
 Return a copy of B with all occurrences of subsection\n\
 old replaced by new.  If the optional argument count is\n\
 positive, only the first count occurrences are replaced. A\n\
-negative value of count replaces all occurences");
+negative value of count replaces all occurrences");
 
 static PyObject *
 bytes_replace(PyBytesObject *self, PyObject *args)
