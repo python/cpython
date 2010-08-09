@@ -30,62 +30,28 @@ class CfgParserTestCaseClass(unittest.TestCase):
     comment_prefixes = (';', '#')
     empty_lines_in_values = True
     dict_type = configparser._default_dict
+    strict = False
 
     def newconfig(self, defaults=None):
         arguments = dict(
+            defaults=defaults,
             allow_no_value=self.allow_no_value,
             delimiters=self.delimiters,
             comment_prefixes=self.comment_prefixes,
             empty_lines_in_values=self.empty_lines_in_values,
             dict_type=self.dict_type,
+            strict=self.strict,
         )
-        if defaults is None:
-            self.cf = self.config_class(**arguments)
-        else:
-            self.cf = self.config_class(defaults,
-                                        **arguments)
-        return self.cf
+        return self.config_class(**arguments)
 
     def fromstring(self, string, defaults=None):
         cf = self.newconfig(defaults)
-        sio = io.StringIO(string)
-        cf.readfp(sio)
+        cf.read_string(string)
         return cf
 
 class BasicTestCase(CfgParserTestCaseClass):
 
-    def test_basic(self):
-        config_string = """\
-[Foo Bar]
-foo{0[0]}bar
-[Spacey Bar]
-foo {0[0]} bar
-[Spacey Bar From The Beginning]
-  foo {0[0]} bar
-  baz {0[0]} qwe
-[Commented Bar]
-foo{0[1]} bar {1[1]} comment
-baz{0[0]}qwe {1[0]}another one
-[Long Line]
-foo{0[1]} this line is much, much longer than my editor
-   likes it.
-[Section\\with$weird%characters[\t]
-[Internationalized Stuff]
-foo[bg]{0[1]} Bulgarian
-foo{0[0]}Default
-foo[en]{0[0]}English
-foo[de]{0[0]}Deutsch
-[Spaces]
-key with spaces {0[1]} value
-another with spaces {0[0]} splat!
-""".format(self.delimiters, self.comment_prefixes)
-        if self.allow_no_value:
-            config_string += (
-                "[NoValue]\n"
-                "option-without-value\n"
-                )
-
-        cf = self.fromstring(config_string)
+    def basic_test(self, cf):
         L = cf.sections()
         L.sort()
         E = ['Commented Bar',
@@ -137,6 +103,125 @@ another with spaces {0[0]} splat!
         eq(cf.get('Long Line', 'foo'),
            'this line is much, much longer than my editor\nlikes it.')
 
+    def test_basic(self):
+        config_string = """\
+[Foo Bar]
+foo{0[0]}bar
+[Spacey Bar]
+foo {0[0]} bar
+[Spacey Bar From The Beginning]
+  foo {0[0]} bar
+  baz {0[0]} qwe
+[Commented Bar]
+foo{0[1]} bar {1[1]} comment
+baz{0[0]}qwe {1[0]}another one
+[Long Line]
+foo{0[1]} this line is much, much longer than my editor
+   likes it.
+[Section\\with$weird%characters[\t]
+[Internationalized Stuff]
+foo[bg]{0[1]} Bulgarian
+foo{0[0]}Default
+foo[en]{0[0]}English
+foo[de]{0[0]}Deutsch
+[Spaces]
+key with spaces {0[1]} value
+another with spaces {0[0]} splat!
+""".format(self.delimiters, self.comment_prefixes)
+        if self.allow_no_value:
+            config_string += (
+                "[NoValue]\n"
+                "option-without-value\n"
+                )
+        cf = self.fromstring(config_string)
+        self.basic_test(cf)
+        if self.strict:
+            with self.assertRaises(configparser.DuplicateOptionError):
+                cf.read_string(textwrap.dedent("""\
+                    [Duplicate Options Here]
+                    option {0[0]} with a value
+                    option {0[1]} with another value
+                """.format(self.delimiters)))
+            with self.assertRaises(configparser.DuplicateSectionError):
+                cf.read_string(textwrap.dedent("""\
+                    [And Now For Something]
+                    completely different {0[0]} True
+                    [And Now For Something]
+                    the larch {0[1]} 1
+                """.format(self.delimiters)))
+        else:
+            cf.read_string(textwrap.dedent("""\
+                [Duplicate Options Here]
+                option {0[0]} with a value
+                option {0[1]} with another value
+            """.format(self.delimiters)))
+
+            cf.read_string(textwrap.dedent("""\
+                [And Now For Something]
+                completely different {0[0]} True
+                [And Now For Something]
+                the larch {0[1]} 1
+            """.format(self.delimiters)))
+
+    def test_basic_from_dict(self):
+        config = {
+            "Foo Bar": {
+                "foo": "bar",
+            },
+            "Spacey Bar": {
+                "foo": "bar",
+            },
+            "Spacey Bar From The Beginning": {
+                "foo": "bar",
+                "baz": "qwe",
+            },
+            "Commented Bar": {
+                "foo": "bar",
+                "baz": "qwe",
+            },
+            "Long Line": {
+                "foo": "this line is much, much longer than my editor\nlikes "
+                       "it.",
+            },
+            "Section\\with$weird%characters[\t": {
+            },
+            "Internationalized Stuff": {
+                "foo[bg]": "Bulgarian",
+                "foo": "Default",
+                "foo[en]": "English",
+                "foo[de]": "Deutsch",
+            },
+            "Spaces": {
+                "key with spaces": "value",
+                "another with spaces": "splat!",
+            }
+        }
+        if self.allow_no_value:
+            config.update({
+                "NoValue": {
+                    "option-without-value": None,
+                }
+            })
+        cf = self.newconfig()
+        cf.read_dict(config)
+        self.basic_test(cf)
+        if self.strict:
+            with self.assertRaises(configparser.DuplicateOptionError):
+                cf.read_dict({
+                    "Duplicate Options Here": {
+                        'option': 'with a value',
+                        'OPTION': 'with another value',
+                    },
+                })
+        else:
+            cf.read_dict({
+                "Duplicate Options Here": {
+                    'option': 'with a value',
+                    'OPTION': 'with another value',
+                },
+            })
+
+
     def test_case_sensitivity(self):
         cf = self.newconfig()
         cf.add_section("A")
@@ -185,25 +270,25 @@ another with spaces {0[0]} splat!
             "could not locate option, expecting case-insensitive defaults")
 
     def test_parse_errors(self):
-        self.newconfig()
-        self.parse_error(configparser.ParsingError,
+        cf = self.newconfig()
+        self.parse_error(cf, configparser.ParsingError,
                          "[Foo]\n"
                          "{}val-without-opt-name\n".format(self.delimiters[0]))
-        self.parse_error(configparser.ParsingError,
+        self.parse_error(cf, configparser.ParsingError,
                          "[Foo]\n"
                          "{}val-without-opt-name\n".format(self.delimiters[1]))
-        e = self.parse_error(configparser.MissingSectionHeaderError,
+        e = self.parse_error(cf, configparser.MissingSectionHeaderError,
                              "No Section!\n")
         self.assertEqual(e.args, ('<???>', 1, "No Section!\n"))
         if not self.allow_no_value:
-            e = self.parse_error(configparser.ParsingError,
+            e = self.parse_error(cf, configparser.ParsingError,
                                 "[Foo]\n  wrong-indent\n")
             self.assertEqual(e.args, ('<???>',))
 
-    def parse_error(self, exc, src):
+    def parse_error(self, cf, exc, src):
         sio = io.StringIO(src)
         with self.assertRaises(exc) as cm:
-            self.cf.readfp(sio)
+            cf.read_file(sio)
         return cm.exception
 
     def test_query_errors(self):
@@ -217,15 +302,15 @@ another with spaces {0[0]} splat!
             cf.options("Foo")
         with self.assertRaises(configparser.NoSectionError):
             cf.set("foo", "bar", "value")
-        e = self.get_error(configparser.NoSectionError, "foo", "bar")
+        e = self.get_error(cf, configparser.NoSectionError, "foo", "bar")
         self.assertEqual(e.args, ("foo",))
         cf.add_section("foo")
-        e = self.get_error(configparser.NoOptionError, "foo", "bar")
+        e = self.get_error(cf, configparser.NoOptionError, "foo", "bar")
         self.assertEqual(e.args, ("bar", "foo"))
 
-    def get_error(self, exc, section, option):
+    def get_error(self, cf, exc, section, option):
         try:
-            self.cf.get(section, option)
+            cf.get(section, option)
         except exc as e:
             return e
         else:
@@ -262,7 +347,31 @@ another with spaces {0[0]} splat!
         cf.add_section("Foo")
         with self.assertRaises(configparser.DuplicateSectionError) as cm:
             cf.add_section("Foo")
-        self.assertEqual(cm.exception.args, ("Foo",))
+        e = cm.exception
+        self.assertEqual(str(e), "Section 'Foo' already exists")
+        self.assertEqual(e.args, ("Foo", None, None))
+
+        if self.strict:
+            with self.assertRaises(configparser.DuplicateSectionError) as cm:
+                cf.read_string(textwrap.dedent("""\
+                    [Foo]
+                    will this be added{equals}True
+                    [Bar]
+                    what about this{equals}True
+                    [Foo]
+                    oops{equals}this won't
+                """.format(equals=self.delimiters[0])), source='<foo-bar>')
+            e = cm.exception
+            self.assertEqual(str(e), "While reading from <foo-bar> [line  5]: "
+                                     "section 'Foo' already exists")
+            self.assertEqual(e.args, ("Foo", '<foo-bar>', 5))
+
+            with self.assertRaises(configparser.DuplicateOptionError) as cm:
+                cf.read_dict({'Bar': {'opt': 'val', 'OPT': 'is really `opt`'}})
+            e = cm.exception
+            self.assertEqual(str(e), "While reading from <dict>: option 'opt' "
+                                     "in section 'Bar' already exists")
+            self.assertEqual(e.args, ("Bar", "opt", "<dict>", None))
 
     def test_write(self):
         config_string = (
@@ -392,6 +501,11 @@ another with spaces {0[0]} splat!
         self.assertEqual(L, expected)
 
 
+class StrictTestCase(BasicTestCase):
+    config_class = configparser.RawConfigParser
+    strict = True
+
+
 class ConfigParserTestCase(BasicTestCase):
     config_class = configparser.ConfigParser
 
@@ -409,7 +523,7 @@ class ConfigParserTestCase(BasicTestCase):
            "something with lots of interpolation (9 steps)")
         eq(cf.get("Foo", "bar10"),
            "something with lots of interpolation (10 steps)")
-        e = self.get_error(configparser.InterpolationDepthError, "Foo", "bar11")
+        e = self.get_error(cf, configparser.InterpolationDepthError, "Foo", "bar11")
         self.assertEqual(e.args, ("bar11", "Foo", rawval[self.config_class]))
 
     def test_interpolation_missing_value(self):
@@ -417,8 +531,8 @@ class ConfigParserTestCase(BasicTestCase):
             configparser.ConfigParser: '%(reference)s',
             configparser.SafeConfigParser: '',
         }
-        self.get_interpolation_config()
-        e = self.get_error(configparser.InterpolationMissingOptionError,
+        cf = self.get_interpolation_config()
+        e = self.get_error(cf, configparser.InterpolationMissingOptionError,
                            "Interpolation Error", "name")
         self.assertEqual(e.reference, "reference")
         self.assertEqual(e.section, "Interpolation Error")
@@ -482,7 +596,7 @@ class MultilineValuesTestCase(BasicTestCase):
         # during performance updates in Python 3.2
         cf_from_file = self.newconfig()
         with open(support.TESTFN) as f:
-            cf_from_file.readfp(f)
+            cf_from_file.read_file(f)
         self.assertEqual(cf_from_file.get('section8', 'lovely_spam4'),
                          self.wonderful_spam.replace('\t\n', '\n'))
 
@@ -645,15 +759,15 @@ class SortedTestCase(RawConfigParserTestCase):
     dict_type = SortedDict
 
     def test_sorted(self):
-        self.fromstring("[b]\n"
-                        "o4=1\n"
-                        "o3=2\n"
-                        "o2=3\n"
-                        "o1=4\n"
-                        "[a]\n"
-                        "k=v\n")
+        cf = self.fromstring("[b]\n"
+                             "o4=1\n"
+                             "o3=2\n"
+                             "o2=3\n"
+                             "o1=4\n"
+                             "[a]\n"
+                             "k=v\n")
         output = io.StringIO()
-        self.cf.write(output)
+        cf.write(output)
         self.assertEquals(output.getvalue(),
                           "[a]\n"
                           "k = v\n\n"
@@ -697,6 +811,7 @@ def test_main():
         SafeConfigParserTestCaseNoValue,
         SafeConfigParserTestCaseTrickyFile,
         SortedTestCase,
+        StrictTestCase,
         CompatibleTestCase,
         )
 

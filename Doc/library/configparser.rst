@@ -27,8 +27,9 @@ customized by end users easily.
    the Windows Registry extended version of INI syntax.
 
 A configuration file consists of sections, each led by a ``[section]`` header,
-followed by name/value entries separated by a specific string (``=`` or ``:`` by
-default).  Note that leading whitespace is removed from values.  Values can be
+followed by key/value entries separated by a specific string (``=`` or ``:`` by
+default). By default, section names are case sensitive but keys are not. Leading
+und trailing whitespace is removed from keys and from values.  Values can be
 ommitted, in which case the key/value delimiter may also be left out.  Values
 can also span multiple lines, as long as they are indented deeper than the first
 line of the value.  Depending on the parser's mode, blank lines may be treated
@@ -101,7 +102,7 @@ that sorts its keys, the sections will be sorted on write-back, as will be the
 keys within each section.
 
 
-.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, empty_lines_in_values=True, allow_no_value=False)
+.. class:: RawConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True)
 
    The basic configuration object.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it
@@ -115,11 +116,14 @@ keys within each section.
    *comment_prefixes* is a special value that indicates that ``;`` and ``#`` can
    start whole line comments while only ``;`` can start inline comments.
 
-   When *empty_lines_in_values* is ``False`` (default: ``True``), each empty
-   line marks the end of an option.  Otherwise, internal empty lines of a
-   multiline option are kept as part of the value.  When *allow_no_value* is
-   true (default: ``False``), options without values are accepted; the value
-   presented for these is ``None``.
+   When *strict* is ``True`` (default: ``False``), the parser won't allow for
+   any section or option duplicates while reading from a single source (file,
+   string or dictionary), raising :exc:`DuplicateSectionError` or
+   :exc:`DuplicateOptionError`. When *empty_lines_in_values* is ``False``
+   (default: ``True``), each empty line marks the end of an option.  Otherwise,
+   internal empty lines of a multiline option are kept as part of the value.
+   When *allow_no_value* is ``True`` (default: ``False``), options without
+   values are accepted; the value presented for these is ``None``.
 
    This class does not support the magical interpolation behavior.
 
@@ -127,11 +131,11 @@ keys within each section.
       The default *dict_type* is :class:`collections.OrderedDict`.
 
    .. versionchanged:: 3.2
-      *delimiters*, *comment_prefixes*, *empty_lines_in_values* and
-      *allow_no_value* were added.
+      *allow_no_value*, *delimiters*, *comment_prefixes*, *strict* and
+      *empty_lines_in_values* were added.
 
 
-.. class:: SafeConfigParser(defaults=None, dict_type=collections.OrderedDict, delimiters=('=', ':'), comment_prefixes=('#', ';'), empty_lines_in_values=True, allow_no_value=False)
+.. class:: SafeConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), strict=False, empty_lines_in_values=True)
 
    Derived class of :class:`ConfigParser` that implements a sane variant of the
    magical interpolation feature.  This implementation is more predictable as it
@@ -147,11 +151,11 @@ keys within each section.
       The default *dict_type* is :class:`collections.OrderedDict`.
 
    .. versionchanged:: 3.2
-      *delimiters*, *comment_prefixes*, *empty_lines_in_values* and
-      *allow_no_value* were added.
+      *allow_no_value*, *delimiters*, *comment_prefixes*, *strict* and
+      *empty_lines_in_values* were added.
 
 
-.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, delimiters=('=', ':'), comment_prefixes=('#', ';'), empty_lines_in_values=True, allow_no_value=False)
+.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), strict=False, empty_lines_in_values=True)
 
    Derived class of :class:`RawConfigParser` that implements the magical
    interpolation feature and adds optional arguments to the :meth:`get` and
@@ -174,8 +178,8 @@ keys within each section.
       The default *dict_type* is :class:`collections.OrderedDict`.
 
    .. versionchanged:: 3.2
-      *delimiters*, *comment_prefixes*, *empty_lines_in_values* and
-      *allow_no_value* were added.
+      *allow_no_value*, *delimiters*, *comment_prefixes*,
+      *strict* and *empty_lines_in_values* were added.
 
 
 .. exception:: Error
@@ -191,12 +195,26 @@ keys within each section.
 .. exception:: DuplicateSectionError
 
    Exception raised if :meth:`add_section` is called with the name of a section
-   that is already present.
+   that is already present or in strict parsers when a section if found more
+   than once in a single input file, string or dictionary.
+
+   .. versionadded:: 3.2
+      Optional ``source`` and ``lineno`` attributes and arguments to
+      :meth:`__init__` were added.
+
+
+.. exception:: DuplicateOptionError
+
+   Exception raised by strict parsers if a single option appears twice during
+   reading from a single file, string or dictionary. This catches misspellings
+   and case sensitivity-related errors, e.g. a dictionary may have two keys
+   representing the same case-insensitive configuration key.
 
 
 .. exception:: NoOptionError
 
-   Exception raised when a specified option is not found in the specified  section.
+   Exception raised when a specified option is not found in the specified
+   section.
 
 
 .. exception:: InterpolationError
@@ -233,6 +251,9 @@ keys within each section.
 
    Exception raised when errors occur attempting to parse a file.
 
+   .. versionchanged:: 3.2
+      The ``filename`` attribute and :meth:`__init__` argument were renamed to
+      ``source`` for consistency.
 
 .. data:: MAX_INTERPOLATION_DEPTH
 
@@ -315,15 +336,41 @@ RawConfigParser Objects
       default encoding for :func:`open`.
 
 
-.. method:: RawConfigParser.readfp(fp, filename=None)
+.. method:: RawConfigParser.read_file(f, source=None)
 
-   Read and parse configuration data from the file or file-like object in *fp*
+   Read and parse configuration data from the file or file-like object in *f*
    (only the :meth:`readline` method is used).  The file-like object must
    operate in text mode, i.e. return strings from :meth:`readline`.
 
-   If *filename* is omitted and *fp* has a :attr:`name` attribute, that is used
-   for *filename*; the default is ``<???>``.
+   Optional argument *source* specifies the name of the file being read. It not
+   given and *f* has a :attr:`name` attribute, that is used for *source*; the
+   default is ``<???>``.
 
+   .. versionadded:: 3.2
+      Renamed from :meth:`readfp` (with the ``filename`` attribute renamed to
+      ``source`` for consistency with other ``read_*`` methods).
+
+
+.. method:: RawConfigParser.read_string(string, source='<string>')
+
+   Parse configuration data from a given string.
+
+   Optional argument *source* specifies a context-specific name of the string
+   passed. If not given, ``<string>`` is used.
+
+   .. versionadded:: 3.2
+
+.. method:: RawConfigParser.read_dict(dictionary, source='<dict>')
+
+   Load configuration from a dictionary. Keys are section names, values are
+   dictionaries with keys and values that should be present in the section. If
+   the used dictionary type preserves order, sections and their keys will be
+   added in order.
+
+   Optional argument *source* specifies a context-specific name of the
+   dictionary passed.  If not given, ``<dict>`` is used.
+
+   .. versionadded:: 3.2
 
 .. method:: RawConfigParser.get(section, option)
 
@@ -408,6 +455,10 @@ RawConfigParser Objects
    Note that when reading configuration files, whitespace around the
    option names are stripped before :meth:`optionxform` is called.
 
+.. method:: RawConfigParser.readfp(fp, filename=None)
+
+   .. deprecated:: 3.2
+      Please use :meth:`read_file` instead.
 
 .. _configparser-objects:
 

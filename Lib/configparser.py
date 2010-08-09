@@ -26,10 +26,10 @@ ConfigParser -- responsible for parsing a list of
 
     __init__(defaults=None, dict_type=_default_dict,
              delimiters=('=', ':'), comment_prefixes=('#', ';'),
-             empty_lines_in_values=True, allow_no_value=False):
+             strict=False, empty_lines_in_values=True, allow_no_value=False):
         Create the parser. When `defaults' is given, it is initialized into the
         dictionary or intrinsic defaults. The keys must be strings, the values
-        must be appropriate for %()s string interpolation.  Note that `__name__'
+        must be appropriate for %()s string interpolation. Note that `__name__'
         is always an intrinsic default; its value is the section's name.
 
         When `dict_type' is given, it will be used to create the dictionary
@@ -41,6 +41,10 @@ ConfigParser -- responsible for parsing a list of
 
         When `comment_prefixes' is given, it will be used as the set of
         substrings that prefix comments in a line.
+
+        When `strict` is True, the parser won't allow for any section or option
+        duplicates while reading from a single source (file, string or
+        dictionary). Default is False.
 
         When `empty_lines_in_values' is False (default: True), each empty line
         marks the end of an option. Otherwise, internal empty lines of
@@ -66,10 +70,19 @@ ConfigParser -- responsible for parsing a list of
         name.  A single filename is also allowed.  Non-existing files
         are ignored.  Return list of successfully read files.
 
-    readfp(fp, filename=None)
+    read_file(f, filename=None)
         Read and parse one configuration file, given as a file object.
-        The filename defaults to fp.name; it is only used in error
-        messages (if fp has no `name' attribute, the string `<???>' is used).
+        The filename defaults to f.name; it is only used in error
+        messages (if f has no `name' attribute, the string `<???>' is used).
+
+    read_string(string)
+        Read configuration from a given string.
+
+    read_dict(dictionary)
+        Read configuration from a dictionary. Keys are section names,
+        values are dictionaries with keys and values that should be present
+        in the section. If the used dictionary type preserves order, sections
+        and their keys will be added in order.
 
     get(section, option, raw=False, vars=None)
         Return a string value for the named option.  All % interpolations are
@@ -114,11 +127,13 @@ except ImportError:
     # fallback for setup.py which hasn't yet built _collections
     _default_dict = dict
 
+import io
 import re
 import sys
+import warnings
 
-__all__ = ["NoSectionError", "DuplicateSectionError", "NoOptionError",
-           "InterpolationError", "InterpolationDepthError",
+__all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
+           "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationSyntaxError", "ParsingError",
            "MissingSectionHeaderError",
            "ConfigParser", "SafeConfigParser", "RawConfigParser",
@@ -147,8 +162,8 @@ class Error(Exception):
         self.__message = value
 
     # BaseException.message has been deprecated since Python 2.6.  To prevent
-    # DeprecationWarning from popping up over this pre-existing attribute, use a
-    # new property that takes lookup precedence.
+    # DeprecationWarning from popping up over this pre-existing attribute, use
+    # a new property that takes lookup precedence.
     message = property(_get_message, _set_message)
 
     def __init__(self, msg=''):
@@ -171,12 +186,56 @@ class NoSectionError(Error):
 
 
 class DuplicateSectionError(Error):
-    """Raised when a section is multiply-created."""
+    """Raised when a section is repeated in an input source.
 
-    def __init__(self, section):
-        Error.__init__(self, "Section %r already exists" % section)
+    Possible repetitions that raise this exception are: multiple creation
+    using the API or in strict parsers when a section is found more than once
+    in a single input file, string or dictionary.
+    """
+
+    def __init__(self, section, source=None, lineno=None):
+        msg = [repr(section), " already exists"]
+        if source is not None:
+            message = ["While reading from ", source]
+            if lineno is not None:
+                message.append(" [line {0:2d}]".format(lineno))
+            message.append(": section ")
+            message.extend(msg)
+            msg = message
+        else:
+            msg.insert(0, "Section ")
+        Error.__init__(self, "".join(msg))
         self.section = section
-        self.args = (section, )
+        self.source = source
+        self.lineno = lineno
+        self.args = (section, source, lineno)
+
+
+class DuplicateOptionError(Error):
+    """Raised by strict parsers when an option is repeated in an input source.
+
+    Current implementation raises this exception only when an option is found
+    more than once in a single file, string or dictionary.
+    """
+
+    def __init__(self, section, option, source=None, lineno=None):
+        msg = [repr(option), " in section ", repr(section),
+               " already exists"]
+        if source is not None:
+            message = ["While reading from ", source]
+            if lineno is not None:
+                message.append(" [line {0:2d}]".format(lineno))
+            message.append(": option ")
+            message.extend(msg)
+            msg = message
+        else:
+            msg.insert(0, "Option ")
+        Error.__init__(self, "".join(msg))
+        self.section = section
+        self.option = option
+        self.source = source
+        self.lineno = lineno
+        self.args = (section, option, source, lineno)
 
 
 class NoOptionError(Error):
@@ -216,8 +275,12 @@ class InterpolationMissingOptionError(InterpolationError):
 
 
 class InterpolationSyntaxError(InterpolationError):
-    """Raised when the source text into which substitutions are made
-    does not conform to the required syntax."""
+    """Raised when the source text contains invalid syntax.
+
+    Current implementation raises this exception only for SafeConfigParser
+    instances when the source text into which substitutions are made
+    does not conform to the required syntax.
+    """
 
 
 class InterpolationDepthError(InterpolationError):
@@ -236,11 +299,40 @@ class InterpolationDepthError(InterpolationError):
 class ParsingError(Error):
     """Raised when a configuration file does not follow legal syntax."""
 
-    def __init__(self, filename):
-        Error.__init__(self, 'File contains parsing errors: %s' % filename)
-        self.filename = filename
+    def __init__(self, source=None, filename=None):
+        # Exactly one of `source'/`filename' arguments has to be given.
+        # `filename' kept for compatibility.
+        if filename and source:
+            raise ValueError("Cannot specify both `filename' and `source'. "
+                             "Use `source'.")
+        elif not filename and not source:
+            raise ValueError("Required argument `source' not given.")
+        elif filename:
+            source = filename
+        Error.__init__(self, 'Source contains parsing errors: %s' % source)
+        self.source = source
         self.errors = []
-        self.args = (filename, )
+        self.args = (source, )
+
+    @property
+    def filename(self):
+        """Deprecated, use `source'."""
+        warnings.warn(
+            "This 'filename' attribute will be removed in future versions.  "
+            "Use 'source' instead.",
+            PendingDeprecationWarning, stacklevel=2
+        )
+        return self.source
+
+    @filename.setter
+    def filename(self, value):
+        """Deprecated, user `source'."""
+        warnings.warn(
+            "The 'filename' attribute will be removed in future versions.  "
+            "Use 'source' instead.",
+            PendingDeprecationWarning, stacklevel=2
+        )
+        self.source = value
 
     def append(self, lineno, line):
         self.errors.append((lineno, line))
@@ -255,7 +347,7 @@ class MissingSectionHeaderError(ParsingError):
             self,
             'File contains no section headers.\nfile: %s, line: %d\n%r' %
             (filename, lineno, line))
-        self.filename = filename
+        self.source = filename
         self.lineno = lineno
         self.line = line
         self.args = (filename, lineno, line)
@@ -302,8 +394,9 @@ class RawConfigParser:
     _COMPATIBLE = object()
 
     def __init__(self, defaults=None, dict_type=_default_dict,
-                 delimiters=('=', ':'), comment_prefixes=_COMPATIBLE,
-                 empty_lines_in_values=True, allow_no_value=False):
+                 allow_no_value=False, *, delimiters=('=', ':'),
+                 comment_prefixes=_COMPATIBLE, strict=False,
+                 empty_lines_in_values=True):
         self._dict = dict_type
         self._sections = self._dict()
         self._defaults = self._dict()
@@ -314,12 +407,12 @@ class RawConfigParser:
         if delimiters == ('=', ':'):
             self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
         else:
-            delim = "|".join(re.escape(d) for d in delimiters)
+            d = "|".join(re.escape(d) for d in delimiters)
             if allow_no_value:
-                self._optcre = re.compile(self._OPT_NV_TMPL.format(delim=delim),
+                self._optcre = re.compile(self._OPT_NV_TMPL.format(delim=d),
                                           re.VERBOSE)
             else:
-                self._optcre = re.compile(self._OPT_TMPL.format(delim=delim),
+                self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
         if comment_prefixes is self._COMPATIBLE:
             self._startonly_comment_prefixes = ('#',)
@@ -327,6 +420,7 @@ class RawConfigParser:
         else:
             self._startonly_comment_prefixes = ()
             self._comment_prefixes = tuple(comment_prefixes or ())
+        self._strict = strict
         self._empty_lines_in_values = empty_lines_in_values
 
     def defaults(self):
@@ -394,20 +488,59 @@ class RawConfigParser:
             read_ok.append(filename)
         return read_ok
 
-    def readfp(self, fp, filename=None):
+    def read_file(self, f, source=None):
         """Like read() but the argument must be a file-like object.
 
-        The `fp' argument must have a `readline' method.  Optional
-        second argument is the `filename', which if not given, is
-        taken from fp.name.  If fp has no `name' attribute, `<???>' is
-        used.
+        The `f' argument must have a `readline' method.  Optional second
+        argument is the `source' specifying the name of the file being read. If
+        not given, it is taken from f.name. If `f' has no `name' attribute,
+        `<???>' is used.
         """
-        if filename is None:
+        if source is None:
             try:
-                filename = fp.name
+                srouce = f.name
             except AttributeError:
-                filename = '<???>'
-        self._read(fp, filename)
+                source = '<???>'
+        self._read(f, source)
+
+    def read_string(self, string, source='<string>'):
+        """Read configuration from a given string."""
+        sfile = io.StringIO(string)
+        self.read_file(sfile, source)
+
+    def read_dict(self, dictionary, source='<dict>'):
+        """Read configuration from a dictionary.
+
+        Keys are section names, values are dictionaries with keys and values
+        that should be present in the section. If the used dictionary type
+        preserves order, sections and their keys will be added in order.
+
+        Optional second argument is the `source' specifying the name of the
+        dictionary being read.
+        """
+        elements_added = set()
+        for section, keys in dictionary.items():
+            try:
+                self.add_section(section)
+            except DuplicateSectionError:
+                if self._strict and section in elements_added:
+                    raise
+                elements_added.add(section)
+            for key, value in keys.items():
+                key = self.optionxform(key)
+                if self._strict and (section, key) in elements_added:
+                    raise DuplicateOptionError(section, key, source)
+                elements_added.add((section, key))
+                self.set(section, key, value)
+
+    def readfp(self, fp, filename=None):
+        """Deprecated, use read_file instead."""
+        warnings.warn(
+            "This method will be removed in future versions.  "
+            "Use 'parser.read_file()' instead.",
+            PendingDeprecationWarning, stacklevel=2
+        )
+        self.read_file(fp, source=filename)
 
     def get(self, section, option):
         opt = self.optionxform(option)
@@ -461,7 +594,6 @@ class RawConfigParser:
 
     def has_option(self, section, option):
         """Check for the existence of a given option in a given section."""
-
         if not section or section == DEFAULTSECT:
             option = self.optionxform(option)
             return option in self._defaults
@@ -474,7 +606,6 @@ class RawConfigParser:
 
     def set(self, section, option, value=None):
         """Set an option."""
-
         if not section or section == DEFAULTSECT:
             sectdict = self._defaults
         else:
@@ -538,21 +669,23 @@ class RawConfigParser:
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
 
-        Each section in a configuration file contains a header, indicated by a
-        name in square brackets (`[]'), plus key/value options, indicated by
+        Each section in a configuration file contains a header, indicated by
+        a name in square brackets (`[]'), plus key/value options, indicated by
         `name' and `value' delimited with a specific substring (`=' or `:' by
         default).
 
-        Values can span multiple lines, as long as they are indented deeper than
-        the first line of the value. Depending on the parser's mode, blank lines
-        may be treated as parts of multiline values or ignored.
+        Values can span multiple lines, as long as they are indented deeper
+        than the first line of the value. Depending on the parser's mode, blank
+        lines may be treated as parts of multiline values or ignored.
 
         Configuration files may include comments, prefixed by specific
-        characters (`#' and `;' by default). Comments may appear on their own in
-        an otherwise empty line or may be entered in lines holding values or
+        characters (`#' and `;' by default). Comments may appear on their own
+        in an otherwise empty line or may be entered in lines holding values or
         section names.
         """
+        elements_added = set()
         cursect = None                        # None, or a dictionary
+        sectname = None
         optname = None
         lineno = 0
         indent_level = 0
@@ -598,13 +731,18 @@ class RawConfigParser:
                 if mo:
                     sectname = mo.group('header')
                     if sectname in self._sections:
+                        if self._strict and sectname in elements_added:
+                            raise DuplicateSectionError(sectname, fpname,
+                                                        lineno)
                         cursect = self._sections[sectname]
+                        elements_added.add(sectname)
                     elif sectname == DEFAULTSECT:
                         cursect = self._defaults
                     else:
                         cursect = self._dict()
                         cursect['__name__'] = sectname
                         self._sections[sectname] = cursect
+                        elements_added.add(sectname)
                     # So sections can't start with a continuation line
                     optname = None
                 # no section header in the file?
@@ -618,6 +756,11 @@ class RawConfigParser:
                         if not optname:
                             e = self._handle_error(e, fpname, lineno, line)
                         optname = self.optionxform(optname.rstrip())
+                        if (self._strict and
+                            (sectname, optname) in elements_added):
+                            raise DuplicateOptionError(sectname, optname,
+                                                       fpname, lineno)
+                        elements_added.add((sectname, optname))
                         # This check is fine because the OPTCRE cannot
                         # match if it would set optval to None
                         if optval is not None:
@@ -692,8 +835,7 @@ class ConfigParser(RawConfigParser):
             return self._interpolate(section, option, value, d)
 
     def items(self, section, raw=False, vars=None):
-        """Return a list of tuples with (name, value) for each option
-        in the section.
+        """Return a list of (name, value) tuples for each option in a section.
 
         All % interpolations are expanded in the return values, based on the
         defaults passed into the constructor, unless the optional argument
@@ -799,7 +941,8 @@ class SafeConfigParser(ConfigParser):
             else:
                 raise InterpolationSyntaxError(
                     option, section,
-                    "'%%' must be followed by '%%' or '(', found: %r" % (rest,))
+                    "'%%' must be followed by '%%' or '(', "
+                    "found: %r" % (rest,))
 
     def set(self, section, option, value=None):
         """Set an option.  Extend ConfigParser.set: check for string values."""
@@ -811,13 +954,11 @@ class SafeConfigParser(ConfigParser):
         if self._optcre is self.OPTCRE or value:
             if not isinstance(value, str):
                 raise TypeError("option values must be strings")
-        # check for bad percent signs:
-        # first, replace all "good" interpolations
-        tmp_value = value.replace('%%', '')
-        tmp_value = self._interpvar_re.sub('', tmp_value)
-        # then, check if there's a lone percent sign left
-        percent_index = tmp_value.find('%')
-        if percent_index != -1:
-            raise ValueError("invalid interpolation syntax in %r at "
-                             "position %d" % (value, percent_index))
+        # check for bad percent signs
+        if value:
+            tmp_value = value.replace('%%', '') # escaped percent signs
+            tmp_value = self._interpvar_re.sub('', tmp_value) # valid syntax
+            if '%' in tmp_value:
+                raise ValueError("invalid interpolation syntax in %r at "
+                                "position %d" % (value, tmp_value.find('%')))
         ConfigParser.set(self, section, option, value)
