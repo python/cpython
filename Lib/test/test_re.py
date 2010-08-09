@@ -875,70 +875,8 @@ def run_re_tests():
                     print('=== Fails on unicode-sensitive match', t)
 
 
-class ReCacheTests(unittest.TestCase):
-    """These tests are specific to the re._shrink_cache implementation."""
-
-    def setUp(self):
-        self._orig_maxcache = re._MAXCACHE
-
-    def tearDown(self):
-        re._MAXCACHE = self._orig_maxcache
-
-    def test_compile_cache_overflow(self):
-        # NOTE: If a profiler or debugger is tracing code and compiling
-        # regular expressions while tracing through this test... expect
-        # the test to fail.  This test is not concurrency safe.
-
-        # Explicitly fill the caches.
-        re._MAXCACHE = 20
-        max_cache = re._MAXCACHE
-        unique_chars = tuple(chr(char_num) for char_num in
-                             range(b'a'[0], b'a'[0]+max_cache))
-        re._cache.clear()
-        for char in unique_chars:
-            re._compile(char, 0)
-        self.assertEqual(max_cache, len(re._cache))
-        re._cache_repl.clear()
-        for char in unique_chars:
-            re._compile_repl(char*2, char)
-        self.assertEqual(max_cache, len(re._cache_repl))
-
-        # Overflow both caches and make sure they have extra room left
-        # afterwards as well as having more than a single entry.
-        re._compile('A', 0)
-        self.assertLess(len(re._cache), max_cache)
-        self.assertGreater(len(re._cache), 1)
-        re._compile_repl('A', 'A')
-        self.assertLess(len(re._cache_repl), max_cache)
-        self.assertGreater(len(re._cache_repl), 1)
-
-    def test_shrink_cache_at_limit(self):
-        cache = dict(zip(range(6), range(6)))
-        re._shrink_cache(cache, 6, divisor=3)
-        self.assertEqual(4, len(cache))
-
-    def test_shrink_cache_empty(self):
-        cache = {}
-        re._shrink_cache(cache, 6, divisor=3)
-        # Cache was empty, make sure we didn't raise an exception.
-        self.assertEqual(0, len(cache))
-
-    def test_shrink_cache_overflowing(self):
-        cache = dict(zip(range(6), range(6)))
-        re._shrink_cache(cache, 4, divisor=2)
-        # Cache was larger than the maximum, be sure we shrunk to smaller.
-        self.assertEqual(2, len(cache))
-
-    def test_shrink_cache_underflow(self):
-        cache = dict(zip(range(6), range(6)))
-        # No shrinking to do.
-        re._shrink_cache(cache, 9, divisor=3)
-        self.assertEqual(6, len(cache))
-
-
 def test_main():
     run_unittest(ReTests)
-    run_unittest(ReCacheTests)
     run_re_tests()
 
 if __name__ == "__main__":
