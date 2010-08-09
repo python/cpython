@@ -336,10 +336,10 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
 
         Arguments:
 
-        qs: URL-encoded query string to be parsed
+        qs: percent-encoded query string to be parsed
 
         keep_blank_values: flag indicating whether blank values in
-            URL encoded queries should be treated as blank strings.
+            percent-encoded queries should be treated as blank strings.
             A true value indicates that blanks should be retained as
             blank strings.  The default false value indicates that
             blank values are to be ignored and treated as if they were
@@ -362,10 +362,10 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
 
     Arguments:
 
-    qs: URL-encoded query string to be parsed
+    qs: percent-encoded query string to be parsed
 
     keep_blank_values: flag indicating whether blank values in
-        URL encoded queries should be treated as blank strings.  A
+        percent-encoded queries should be treated as blank strings.  A
         true value indicates that blanks should be retained as blank
         strings.  The default false value indicates that blank values
         are to be ignored and treated as if they were  not included.
