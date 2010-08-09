@@ -501,6 +501,30 @@ class TestUrlopen(BaseTestCase):
                           # parameterize the framework with a mock resolver.
                           urllib2.urlopen, "http://sadflkjsasf.i.nvali.d./")
 
+    def test_iteration(self):
+        expected_response = "pycon 2008..."
+        handler = self.start_server([(200, [], expected_response)])
+        try:
+            data = urllib2.urlopen("http://localhost:%s" % handler.port)
+            for line in data:
+                self.assertEqual(line, expected_response)
+        finally:
+            self.server.stop()
+
+    def ztest_line_iteration(self):
+        lines = ["We\n", "got\n", "here\n", "verylong " * 8192 + "\n"]
+        expected_response = "".join(lines)
+        handler = self.start_server([(200, [], expected_response)])
+        try:
+            data = urllib2.urlopen("http://localhost:%s" % handler.port)
+            for index, line in enumerate(data):
+                self.assertEqual(line, lines[index],
+                                 "Fetched line number %s doesn't match expected:\n"
+                                 "    Expected length was %s, got %s" %
+                                 (index, len(lines[index]), len(line)))
+        finally:
+            self.server.stop()
+        self.assertEqual(index + 1, len(lines))
 
 def test_main():
     # We will NOT depend on the network resource flag
