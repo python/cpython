@@ -29,6 +29,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3757: thread-local objects now support cyclic garbage collection.
+  Thread-local objects involved in reference cycles will be deallocated
+  timely by the cyclic GC, even if the underlying thread is still running.
+
 - Issue #6231: Fix xml.etree.ElementInclude to include the tail of the
   current node.
 
