@@ -12,6 +12,9 @@ What's New in Python 2.7.1?
 Core and Builtins
 -----------------
 
+- Issue #8530: Prevent stringlib fastsearch from reading beyond the front
+  of an array.
+
 - Issue #83755:  Implicit set-to-frozenset conversion was not thread-safe.
 
 - Issue #9416: Fix some issues with complex formatting where the
@@ -202,6 +205,8 @@ Build
 
 Tests
 -----
+
+- Issue #7564: Skip test_ioctl if another process is attached to /dev/tty.
 
 - Issue #8433: Fix test_curses failure with newer versions of ncurses.
 
