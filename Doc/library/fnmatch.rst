@@ -84,6 +84,13 @@ patterns.
       <_sre.SRE_Match object at 0x...>
 
 
+.. function:: purge()
+
+   Clear the internal pattern cache.
+
+   .. versionadded:: 3.2
+
+
 .. seealso::
 
    Module :mod:`glob`
