@@ -114,7 +114,7 @@ The :mod:`urllib.parse` module defines the following functions:
    values are lists of values for each name.
 
    The optional argument *keep_blank_values* is a flag indicating whether blank
-   values in URL encoded queries should be treated as blank strings.   A true value
+   values in percent-encoded queries should be treated as blank strings. A true value
    indicates that blanks should be retained as  blank strings.  The default false
    value indicates that blank values are to be ignored and treated as if they were
    not included.
@@ -134,7 +134,7 @@ The :mod:`urllib.parse` module defines the following functions:
    name, value pairs.
 
    The optional argument *keep_blank_values* is a flag indicating whether blank
-   values in URL encoded queries should be treated as blank strings.   A true value
+   values in percent-encoded queries should be treated as blank strings. A true value
    indicates that blanks should be retained as  blank strings.  The default false
    value indicates that blank values are to be ignored and treated as if they were
    not included.
@@ -327,7 +327,7 @@ The :mod:`urllib.parse` module defines the following functions:
 .. function:: urlencode(query, doseq=False, safe='', encoding=None, errors=None)
 
    Convert a mapping object or a sequence of two-element tuples, which may
-   either be a :class:`str` or a :class:`bytes`,  to a "url-encoded" string,
+   either be a :class:`str` or a :class:`bytes`,  to a "percent-encoded" string,
    suitable to pass to :func:`urlopen` above as the optional *data* argument.
    This is useful to pass a dictionary of form fields to a ``POST`` request.
    The resulting string is a series of ``key=value`` pairs separated by ``'&'``
