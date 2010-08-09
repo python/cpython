@@ -67,6 +67,10 @@ Extensions
 Library
 -------
 
+- Issue #3757: thread-local objects now support cyclic garbage collection.
+  Thread-local objects involved in reference cycles will be deallocated
+  timely by the cyclic GC, even if the underlying thread is still running.
+
 - Issue #9452: Add read_file, read_string, and read_dict to the configparser 
   API; new source attribute to exceptions.
 
