@@ -118,7 +118,6 @@ This module also defines an exception 'error'.
 import sys
 import sre_compile
 import sre_parse
-import functools
 
 # public symbols
 __all__ = [ "match", "search", "sub", "subn", "split", "findall",
@@ -206,9 +205,9 @@ def compile(pattern, flags=0):
     return _compile(pattern, flags)
 
 def purge():
-    "Clear the regular expression caches"
-    _compile_typed.clear()
-    _compile_repl.clear()
+    "Clear the regular expression cache"
+    _cache.clear()
+    _cache_repl.clear()
 
 def template(pattern, flags=0):
     "Compile a template pattern, returning a pattern object"
@@ -290,12 +289,12 @@ def _shrink_cache(cache_dict, max_length, divisor=5):
             # Ignore problems if the cache changed from another thread.
             pass
 
-def _compile(*args):
-    return _compile_typed(type(args[0]), *args)
-
-@functools.lru_cache(maxsize=_MAXCACHE)
-def _compile_typed(type, *key):
+def _compile(*key):
     # internal: compile pattern
+    cachekey = (type(key[0]),) + key
+    p = _cache.get(cachekey)
+    if p is not None:
+        return p
     pattern, flags = key
     if isinstance(pattern, _pattern_type):
         if flags:
@@ -304,14 +303,23 @@ def _compile_typed(type, *key):
         return pattern
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
-    return sre_compile.compile(pattern, flags)
+    p = sre_compile.compile(pattern, flags)
+    if len(_cache) >= _MAXCACHE:
+        _shrink_cache(_cache, _MAXCACHE)
+    _cache[cachekey] = p
     return p
 
-@functools.lru_cache(maxsize=_MAXCACHE)
 def _compile_repl(*key):
     # internal: compile replacement pattern
+    p = _cache_repl.get(key)
+    if p is not None:
+        return p
     repl, pattern = key
-    return sre_parse.parse_template(repl, pattern)
+    p = sre_parse.parse_template(repl, pattern)
+    if len(_cache_repl) >= _MAXCACHE:
+        _shrink_cache(_cache_repl, _MAXCACHE)
+    _cache_repl[key] = p
+    return p
 
 def _expand(pattern, match, template):
     # internal: match.expand implementation hook
