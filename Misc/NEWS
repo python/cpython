@@ -150,6 +150,8 @@ Library
 Tools/Demos
 -----------
 
+- Fix ``Tools/scripts/checkpyc.py`` after PEP 3147.
+
 - Issue #8867: Fix ``Tools/scripts/serve.py`` to work with files containing
   non-ASCII content.
 
