@@ -30,7 +30,7 @@ Core and Builtins
 Extensions
 ----------
 
-- Issue #8524: Add a forget() method to socket objects, so as to put the
+- Issue #8524: Add a detach() method to socket objects, so as to put the
   socket into the closed state without closing the underlying file
   descriptor.
 

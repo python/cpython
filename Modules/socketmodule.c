@@ -1870,19 +1870,19 @@ PyDoc_STRVAR(close_doc,
 Close the socket.  It cannot be used after this call.");
 
 static PyObject *
-sock_forget(PySocketSockObject *s)
+sock_detach(PySocketSockObject *s)
 {
+    SOCKET_T fd = s->sock_fd;
     s->sock_fd = -1;
-    Py_INCREF(Py_None);
-    return Py_None;
+    return PyLong_FromSocket_t(fd);
 }
 
-PyDoc_STRVAR(forget_doc,
-"forget()\n\
+PyDoc_STRVAR(detach_doc,
+"detach()\n\
 \n\
 Close the socket object without closing the underlying file descriptor.\
 The object cannot be used after this call, but the file descriptor\
-can be reused for other purposes.");
+can be reused for other purposes.  The file descriptor is returned.");
 
 static int
 internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
@@ -2772,10 +2772,10 @@ static PyMethodDef sock_methods[] = {
                       connect_doc},
     {"connect_ex",        (PyCFunction)sock_connect_ex, METH_O,
                       connect_ex_doc},
+    {"detach",            (PyCFunction)sock_detach, METH_NOARGS,
+                      detach_doc},
     {"fileno",            (PyCFunction)sock_fileno, METH_NOARGS,
                       fileno_doc},
-    {"forget",            (PyCFunction)sock_forget, METH_NOARGS,
-                      forget_doc},
 #ifdef HAVE_GETPEERNAME
     {"getpeername",       (PyCFunction)sock_getpeername,
                       METH_NOARGS, getpeername_doc},
