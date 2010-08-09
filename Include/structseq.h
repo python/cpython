@@ -1,5 +1,5 @@
 
-/* Tuple object interface */
+/* Named tuple object interface */
 
 #ifndef Py_STRUCTSEQ_H
 #define Py_STRUCTSEQ_H
