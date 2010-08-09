@@ -30,6 +30,9 @@ Core and Builtins
 Extensions
 ----------
 
+- Issue #6915: Under Windows, os.listdir() didn't release the Global
+  Interpreter Lock around all system calls.  Original patch by Ryan Kelly.
+
 - Issue #8524: Add a detach() method to socket objects, so as to put the
   socket into the closed state without closing the underlying file
   descriptor.
