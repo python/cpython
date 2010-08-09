@@ -3,14 +3,9 @@
 from test import support
 import unittest
 
-from fnmatch import (fnmatch, fnmatchcase, _MAXCACHE, _cache, _cacheb, purge,
-                        translate, filter)
-
+from fnmatch import fnmatch, fnmatchcase, translate, filter
 
 class FnmatchTestCase(unittest.TestCase):
-
-    def tearDown(self):
-        purge()
 
     def check_match(self, filename, pattern, should_match=1, fn=fnmatch):
         if should_match:
@@ -64,22 +59,6 @@ class FnmatchTestCase(unittest.TestCase):
         self.check_match(b'test', b'te*')
         self.check_match(b'test\xff', b'te*\xff')
         self.check_match(b'foo\nbar', b'foo*')
-
-    def test_cache_clearing(self):
-        # check that caches do not grow too large
-        # http://bugs.python.org/issue7846
-
-        # string pattern cache
-        for i in range(_MAXCACHE + 1):
-            fnmatch('foo', '?' * i)
-
-        self.assertLessEqual(len(_cache), _MAXCACHE)
-
-        # bytes pattern cache
-        for i in range(_MAXCACHE + 1):
-            fnmatch(b'foo', b'?' * i)
-        self.assertLessEqual(len(_cacheb), _MAXCACHE)
-
 
 class TranslateTestCase(unittest.TestCase):
 
