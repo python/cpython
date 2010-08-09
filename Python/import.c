@@ -2013,15 +2013,52 @@ find_init_module(char *buf)
 
 static int init_builtin(char *); /* Forward */
 
+static PyObject*
+load_builtin(char *name, char *pathname, int type)
+{
+    PyObject *m, *modules;
+    int err;
+
+    if (pathname != NULL && pathname[0] != '\0')
+        name = pathname;
+
+    if (type == C_BUILTIN)
+        err = init_builtin(name);
+    else
+        err = PyImport_ImportFrozenModule(name);
+    if (err < 0)
+        return NULL;
+    if (err == 0) {
+        PyErr_Format(PyExc_ImportError,
+                "Purported %s module %.200s not found",
+                type == C_BUILTIN ?
+                "builtin" : "frozen",
+                name);
+        return NULL;
+    }
+
+    modules = PyImport_GetModuleDict();
+    m = PyDict_GetItemString(modules, name);
+    if (m == NULL) {
+        PyErr_Format(
+                PyExc_ImportError,
+                "%s module %.200s not properly initialized",
+                type == C_BUILTIN ?
+                "builtin" : "frozen",
+                name);
+        return NULL;
+    }
+    Py_INCREF(m);
+    return m;
+}
+
 /* Load an external module using the default search path and return
    its module object WITH INCREMENTED REFERENCE COUNT */
 
 static PyObject *
 load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
 {
-    PyObject *modules;
     PyObject *m;
-    int err;
 
     /* First check that there's an open file (if we need one)  */
     switch (type) {
@@ -2057,34 +2094,7 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
 
     case C_BUILTIN:
     case PY_FROZEN:
-        if (pathname != NULL && pathname[0] != '\0')
-            name = pathname;
-        if (type == C_BUILTIN)
-            err = init_builtin(name);
-        else
-            err = PyImport_ImportFrozenModule(name);
-        if (err < 0)
-            return NULL;
-        if (err == 0) {
-            PyErr_Format(PyExc_ImportError,
-                         "Purported %s module %.200s not found",
-                         type == C_BUILTIN ?
-                                    "builtin" : "frozen",
-                         name);
-            return NULL;
-        }
-        modules = PyImport_GetModuleDict();
-        m = PyDict_GetItemString(modules, name);
-        if (m == NULL) {
-            PyErr_Format(
-                PyExc_ImportError,
-                "%s module %.200s not properly initialized",
-                type == C_BUILTIN ?
-                    "builtin" : "frozen",
-                name);
-            return NULL;
-        }
-        Py_INCREF(m);
+        m = load_builtin(name, pathname, type);
         break;
 
     case IMP_HOOK: {
