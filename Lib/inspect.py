@@ -1063,7 +1063,7 @@ def getinnerframes(tb, context=1):
     return framelist
 
 def currentframe():
-    """Return the frame or the caller or None if this is not possible."""
+    """Return the frame of the caller or None if this is not possible."""
     return sys._getframe(1) if hasattr(sys, "_getframe") else None
 
 def stack(context=1):
