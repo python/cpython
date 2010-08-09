@@ -538,6 +538,15 @@ correspond to Unix system calls applicable to sockets.
    connects.
 
 
+.. method:: socket.detach()
+
+   Put the socket object into closed state without actually closing the
+   underlying file descriptor.  The file descriptor is returned, and can
+   be reused for other purposes.
+
+   .. versionadded:: 3.2
+
+
 .. method:: socket.fileno()
 
    Return the socket's file descriptor (a small integer).  This is useful with
@@ -546,14 +555,6 @@ correspond to Unix system calls applicable to sockets.
    Under Windows the small integer returned by this method cannot be used where a
    file descriptor can be used (such as :func:`os.fdopen`).  Unix does not have
    this limitation.
-
-
-.. method:: socket.forget()
-
-   Put the socket object into closed state without actually closing the
-   underlying file descriptor.  This allows the latter to be reused.
-
-   .. versionadded:: 3.2
 
 
 .. method:: socket.getpeername()

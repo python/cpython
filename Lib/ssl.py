@@ -157,7 +157,7 @@ class SSLSocket(socket):
                     raise
             else:
                 connected = True
-            sock.forget()
+            sock.detach()
         elif fileno is not None:
             socket.__init__(self, fileno=fileno)
         else:
