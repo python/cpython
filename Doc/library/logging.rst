@@ -2405,7 +2405,7 @@ supports sending logging messages to a Web server, using either ``GET`` or
 
    .. method:: emit(record)
 
-      Sends the record to the Web server as an URL-encoded dictionary.
+      Sends the record to the Web server as a percent-encoded dictionary.
 
 
 .. _formatter:
