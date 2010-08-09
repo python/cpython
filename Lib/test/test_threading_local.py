@@ -38,9 +38,9 @@ class BaseLocalTest:
         gc.collect()
         self.assertEqual(len(weaklist), n)
 
-        # XXX threading.local keeps the local of the last stopped thread alive.
+        # XXX _threading_local keeps the local of the last stopped thread alive.
         deadlist = [weak for weak in weaklist if weak() is None]
-        self.assertEqual(len(deadlist), n-1)
+        self.assertIn(len(deadlist), (n-1, n))
 
         # Assignment to the same thread local frees it sometimes (!)
         local.someothervar = None
@@ -115,6 +115,20 @@ class BaseLocalTest:
 
 class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
     _local = _thread._local
+
+    # Fails for the pure Python implementation
+    def test_cycle_collection(self):
+        class X:
+            pass
+
+        x = X()
+        x.local = self._local()
+        x.local.x = x
+        wr = weakref.ref(x)
+        del x
+        gc.collect()
+        self.assertIs(wr(), None)
+
 
 class PyThreadingLocalTest(unittest.TestCase, BaseLocalTest):
     _local = _threading_local.local

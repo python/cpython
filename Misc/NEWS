@@ -98,6 +98,10 @@ C-API
 Library
 -------
 
+- Issue #3757: thread-local objects now support cyclic garbage collection.
+  Thread-local objects involved in reference cycles will be deallocated
+  timely by the cyclic GC, even if the underlying thread is still running.
+
 - Fix Issue8280 - urllib2's Request method will remove fragements in the url.
   This is how it is supposed to work, wget and curl do the same.  Previous
   behavior was wrong.
