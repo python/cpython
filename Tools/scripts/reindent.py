@@ -42,25 +42,26 @@ you'd prefer. You can always use the --nobackup option to prevent this.
 __version__ = "1"
 
 import tokenize
-import os, shutil
+import os
+import shutil
 import sys
 
-verbose    = 0
-recurse    = 0
-dryrun     = 0
+verbose = False
+recurse = False
+dryrun = False
 makebackup = True
 
+
 def usage(msg=None):
-    if msg is not None:
-        print(msg, file=sys.stderr)
-    print(__doc__, file=sys.stderr)
+    if msg is None:
+        msg = __doc__
+    print(msg, file=sys.stderr)
+
 
 def errprint(*args):
-    sep = ""
-    for arg in args:
-        sys.stderr.write(sep + str(arg))
-        sep = " "
+    sys.stderr.write(" ".join(str(arg) for arg in args))
     sys.stderr.write("\n")
+
 
 def main():
     import getopt
@@ -73,13 +74,13 @@ def main():
         return
     for o, a in opts:
         if o in ('-d', '--dryrun'):
-            dryrun += 1
+            dryrun = True
         elif o in ('-r', '--recurse'):
-            recurse += 1
+            recurse = True
         elif o in ('-n', '--nobackup'):
             makebackup = False
         elif o in ('-v', '--verbose'):
-            verbose += 1
+            verbose = True
         elif o in ('-h', '--help'):
             usage()
             return
@@ -90,6 +91,7 @@ def main():
         return
     for arg in args:
         check(arg)
+
 
 def check(file):
     if os.path.isdir(file) and not os.path.islink(file):
@@ -108,13 +110,12 @@ def check(file):
     if verbose:
         print("checking", file, "...", end=' ')
     try:
-        f = open(file)
+        with open(file) as f:
+            r = Reindenter(f)
     except IOError as msg:
         errprint("%s: I/O Error: %s" % (file, str(msg)))
         return
 
-    r = Reindenter(f)
-    f.close()
     if r.run():
         if verbose:
             print("changed.")
@@ -126,9 +127,8 @@ def check(file):
                 shutil.copyfile(file, bak)
                 if verbose:
                     print("backed up", file, "to", bak)
-            f = open(file, "w")
-            r.write(f)
-            f.close()
+            with open(file, "w") as f:
+                r.write(f)
             if verbose:
                 print("wrote new", file)
         return True
@@ -136,6 +136,7 @@ def check(file):
         if verbose:
             print("unchanged.")
         return False
+
 
 def _rstrip(line, JUNK='\n \t'):
     """Return line stripped of trailing spaces, tabs, newlines.
@@ -146,9 +147,10 @@ def _rstrip(line, JUNK='\n \t'):
     """
 
     i = len(line)
-    while i > 0 and line[i-1] in JUNK:
+    while i > 0 and line[i - 1] in JUNK:
         i -= 1
     return line[:i]
+
 
 class Reindenter:
 
@@ -192,9 +194,9 @@ class Reindenter:
         # we see a line with *something* on it.
         i = stats[0][0]
         after.extend(lines[1:i])
-        for i in range(len(stats)-1):
+        for i in range(len(stats) - 1):
             thisstmt, thislevel = stats[i]
-            nextstmt = stats[i+1][0]
+            nextstmt = stats[i + 1][0]
             have = getlspace(lines[thisstmt])
             want = thislevel * 4
             if want < 0:
@@ -206,7 +208,7 @@ class Reindenter:
                     want = have2want.get(have, -1)
                     if want < 0:
                         # Then it probably belongs to the next real stmt.
-                        for j in range(i+1, len(stats)-1):
+                        for j in range(i + 1, len(stats) - 1):
                             jline, jlevel = stats[j]
                             if jlevel >= 0:
                                 if have == getlspace(lines[jline]):
@@ -216,11 +218,11 @@ class Reindenter:
                                            # comment like this one,
                         # in which case we should shift it like its base
                         # line got shifted.
-                        for j in range(i-1, -1, -1):
+                        for j in range(i - 1, -1, -1):
                             jline, jlevel = stats[j]
                             if jlevel >= 0:
-                                want = have + getlspace(after[jline-1]) - \
-                                       getlspace(lines[jline])
+                                want = have + (getlspace(after[jline - 1]) -
+                                               getlspace(lines[jline]))
                                 break
                     if want < 0:
                         # Still no luck -- leave it alone.
@@ -295,12 +297,14 @@ class Reindenter:
             if line:   # not endmarker
                 self.stats.append((slinecol[0], self.level))
 
+
 # Count number of leading blanks.
 def getlspace(line):
     i, n = 0, len(line)
     while i < n and line[i] == " ":
         i += 1
     return i
+
 
 if __name__ == '__main__':
     main()
