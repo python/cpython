@@ -6,24 +6,21 @@
 
 import sys
 
+
 def main():
     files = sys.argv[1:]
     suffixes = {}
     for filename in files:
         suff = getsuffix(filename)
-        if suff not in suffixes:
-            suffixes[suff] = []
-        suffixes[suff].append(filename)
-    keys = sorted(suffixes.keys())
-    for suff in keys:
-        print(repr(suff), len(suffixes[suff]))
+        suffixes.setdefault(suff, []).append(filename)
+    for suff, filenames in sorted(suffixes.items()):
+        print(repr(suff), len(filenames))
+
 
 def getsuffix(filename):
-    suff = ''
-    for i in range(len(filename)):
-        if filename[i] == '.':
-            suff = filename[i:]
-    return suff
+    name, sep, suff = filename.rpartition('.')
+    return sep + suff if sep else ''
+
 
 if __name__ == '__main__':
     main()
