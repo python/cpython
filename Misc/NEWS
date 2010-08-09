@@ -1129,7 +1129,7 @@ Library
 - Issue #6553: Fixed a crash in cPickle.load(), when given a file-like object
   containing incomplete data.
 
-- Issue #2622: Fixed an ImportError when importing email.messsage from a
+- Issue #2622: Fixed an ImportError when importing email.message from a
   standalone application built with py2exe or py2app.
 
 - Issue #6455: Fixed test_build_ext under win32.
