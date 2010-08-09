@@ -666,7 +666,7 @@ Yes. Here's a simple example that uses urllib.request::
                                 '/cgi-bin/some-cgi-script', data=qs)
    msg, hdrs = req.read(), req.info()
 
-Note that in general for URL-encoded POST operations, query strings must be
+Note that in general for a percent-encoded POST operations, query strings must be
 quoted by using :func:`urllib.parse.urlencode`.  For example to send name="Guy Steele,
 Jr."::
 
