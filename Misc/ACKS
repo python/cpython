@@ -8,7 +8,8 @@ Without you, I would've stopped working on Python long ago!
 
 	--Guido
 
-PS: In the standard Python distribution, this file is encoded in UTF-8.
+PS: In the standard Python distribution, this file is encoded in UTF-8
+and the list is in rough alphabetical order by last names.
 
 David Abrahams
 Jim Ahlstrom
@@ -28,6 +29,7 @@ Ross Andrus
 Éric Araujo
 Jason Asbahr
 David Ascher
+Peter Åstrand
 Chris AtLee
 John Aycock
 Jan-Hein Bührman
@@ -62,7 +64,7 @@ Bill Bedford
 Reimer Behrends
 Ben Bell
 Thomas Bellman
-Alexander Belopolsky
+Alexander “Саша” Belopolsky
 Andrew Bennetts
 Andy Bensky
 Michel Van den Bergh
@@ -434,6 +436,7 @@ Holger Krekel
 Michael Kremer
 Fabian Kreutz
 Hannu Krosing
+Andrej Krpic
 Ivan Krstić
 Andrew Kuchling
 Vladimir Kushnir
@@ -710,6 +713,7 @@ Ian Seyer
 Ha Shao
 Richard Shapiro
 Bruce Sherwood
+Alexander Shigin
 Pete Shinners
 Michael Shiplett
 John W. Shipman
@@ -870,6 +874,3 @@ Mike Zarnstorff
 Siebren van der Zee
 Uwe Zessin
 Tarek Ziadé
-Peter Åstrand
-Andrej Krpic
-Alexander Shigin
