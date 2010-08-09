@@ -1259,6 +1259,14 @@ XINCLUDE["C2.xml"] = """\
 
 XINCLUDE["count.txt"] = "324387"
 
+XINCLUDE["C2b.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>This document has been <em>accessed</em>
+  <xi:include href="count.txt" parse="text"/> times.</p>
+</document>
+"""
+
 XINCLUDE["C3.xml"] = """\
 <?xml version='1.0'?>
 <document xmlns:xi="http://www.w3.org/2001/XInclude">
@@ -1331,6 +1339,16 @@ def xinclude():
     >>> print serialize(document) # C2
     <document>
       <p>This document has been accessed
+      324387 times.</p>
+    </document>
+
+    Textual inclusion after sibling element (based on modified XInclude C.2)
+
+    >>> document = xinclude_loader("C2b.xml")
+    >>> ElementInclude.include(document, xinclude_loader)
+    >>> print(serialize(document)) # C2b
+    <document>
+      <p>This document has been <em>accessed</em>
       324387 times.</p>
     </document>
 
