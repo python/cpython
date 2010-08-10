@@ -58,8 +58,7 @@ struct tagCDataObject {
 
 typedef struct {
     PyObject_VAR_HEAD
-    ffi_closure *pcl_write; /* the C callable, writeable */
-    void *pcl_exec;         /* the C callable, executable */
+    ffi_closure *pcl; /* the C callable */
     ffi_cif cif;
     int flags;
     PyObject *converters;
