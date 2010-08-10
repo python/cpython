@@ -579,13 +579,14 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
     static const char *hexdigits = "0123456789abcdef";
     register PyBytesObject* op = (PyBytesObject*) obj;
     Py_ssize_t length = Py_SIZE(op);
-    size_t newsize = 3 + 4 * length;
+    size_t newsize;
     PyObject *v;
-    if (newsize > PY_SSIZE_T_MAX || (newsize-3) / 4 != length) {
+    if (length > (PY_SSIZE_T_MAX - 3) / 4) {
         PyErr_SetString(PyExc_OverflowError,
             "bytes object is too large to make repr");
         return NULL;
     }
+    newsize = 3 + 4 * length;
     v = PyUnicode_FromUnicode(NULL, newsize);
     if (v == NULL) {
         return NULL;
@@ -732,12 +733,12 @@ bytes_repeat(register PyBytesObject *a, register Py_ssize_t n)
     /* watch out for overflows:  the size can overflow int,
      * and the # of bytes needed can overflow size_t
      */
-    size = Py_SIZE(a) * n;
-    if (n && size / n != Py_SIZE(a)) {
+    if (n > 0 && Py_SIZE(a) > PY_SSIZE_T_MAX / n) {
         PyErr_SetString(PyExc_OverflowError,
             "repeated bytes are too long");
         return NULL;
     }
+    size = Py_SIZE(a) * n;
     if (size == Py_SIZE(a) && PyBytes_CheckExact(a)) {
         Py_INCREF(a);
         return (PyObject *)a;
@@ -1687,30 +1688,28 @@ replace_interleave(PyBytesObject *self,
 {
     char *self_s, *result_s;
     Py_ssize_t self_len, result_len;
-    Py_ssize_t count, i, product;
+    Py_ssize_t count, i;
     PyBytesObject *result;
 
     self_len = PyBytes_GET_SIZE(self);
 
-    /* 1 at the end plus 1 after every character */
-    count = self_len+1;
-    if (maxcount < count)
+    /* 1 at the end plus 1 after every character;
+       count = min(maxcount, self_len + 1) */
+    if (maxcount <= self_len)
         count = maxcount;
+    else
+        /* Can't overflow: self_len + 1 <= maxcount <= PY_SSIZE_T_MAX. */
+        count = self_len + 1;
 
     /* Check for overflow */
     /*   result_len = count * to_len + self_len; */
-    product = count * to_len;
-    if (product / to_len != count) {
+    assert(count > 0);
+    if (to_len > (PY_SSIZE_T_MAX - self_len) / count) {
         PyErr_SetString(PyExc_OverflowError,
                         "replacement bytes are too long");
         return NULL;
     }
-    result_len = product + self_len;
-    if (result_len < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "replacement bytes are too long");
-        return NULL;
-    }
+    result_len = count * to_len + self_len;
 
     if (! (result = (PyBytesObject *)
                      PyBytes_FromStringAndSize(NULL, result_len)) )
@@ -1939,7 +1938,7 @@ replace_single_character(PyBytesObject *self,
     char *self_s, *result_s;
     char *start, *next, *end;
     Py_ssize_t self_len, result_len;
-    Py_ssize_t count, product;
+    Py_ssize_t count;
     PyBytesObject *result;
 
     self_s = PyBytes_AS_STRING(self);
@@ -1953,18 +1952,13 @@ replace_single_character(PyBytesObject *self,
 
     /* use the difference between current and new, hence the "-1" */
     /*   result_len = self_len + count * (to_len-1)  */
-    product = count * (to_len-1);
-    if (product / (to_len-1) != count) {
+    assert(count > 0);
+    if (to_len - 1 > (PY_SSIZE_T_MAX - self_len) / count) {
         PyErr_SetString(PyExc_OverflowError,
                         "replacement bytes are too long");
         return NULL;
     }
-    result_len = self_len + product;
-    if (result_len < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "replacment bytes are too long");
-        return NULL;
-    }
+    result_len = self_len + count * (to_len - 1);
 
     if ( (result = (PyBytesObject *)
           PyBytes_FromStringAndSize(NULL, result_len)) == NULL)
@@ -2007,7 +2001,7 @@ replace_substring(PyBytesObject *self,
     char *self_s, *result_s;
     char *start, *next, *end;
     Py_ssize_t self_len, result_len;
-    Py_ssize_t count, offset, product;
+    Py_ssize_t count, offset;
     PyBytesObject *result;
 
     self_s = PyBytes_AS_STRING(self);
@@ -2024,18 +2018,13 @@ replace_substring(PyBytesObject *self,
 
     /* Check for overflow */
     /*    result_len = self_len + count * (to_len-from_len) */
-    product = count * (to_len-from_len);
-    if (product / (to_len-from_len) != count) {
+    assert(count > 0);
+    if (to_len - from_len > (PY_SSIZE_T_MAX - self_len) / count) {
         PyErr_SetString(PyExc_OverflowError,
                         "replacement bytes are too long");
         return NULL;
     }
-    result_len = self_len + product;
-    if (result_len < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "replacement bytes are too long");
-        return NULL;
-    }
+    result_len = self_len + count * (to_len-from_len);
 
     if ( (result = (PyBytesObject *)
           PyBytes_FromStringAndSize(NULL, result_len)) == NULL)
