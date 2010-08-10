@@ -6,9 +6,9 @@ support.requires('audio')
 import time
 import os
 import subprocess
-import ctypes
 
 winsound = support.import_module('winsound')
+ctypes = support.import_module('ctypes')
 import winreg
 
 def has_sound(sound):
