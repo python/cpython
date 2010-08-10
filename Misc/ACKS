@@ -1,4 +1,5 @@
-
+Acknowledgements
+----------------
 
 This list is not complete and not in any useful order, but I would
 like to thank everybody who contributed in any way, with code, hints,
@@ -7,7 +8,8 @@ Without you, I would've stopped working on Python long ago!
 
 	--Guido
 
-PS: In the standard Python distribution, this file is encoded in UTF-8.
+PS: In the standard Python distribution, this file is encoded in UTF-8
+and the list is in rough alphabetical order by last names.
 
 David Abrahams
 Jim Ahlstrom
@@ -59,7 +61,7 @@ Bill Bedford
 Reimer Behrends
 Ben Bell
 Thomas Bellman
-Alexander Belopolsky
+Alexander “Саша” Belopolsky
 Eli Bendersky
 Andrew Bennetts
 Andy Bensky
@@ -182,6 +184,7 @@ Erik Demaine
 Roger Dev
 Raghuram Devarakonda
 Catherine Devlin
+Scott Dial
 Toby Dickenson
 Mark Dickinson
 Jack Diederich
@@ -194,6 +197,7 @@ Ismail Donmez
 Dima Dorfman
 Cesar Douady
 Dean Draayer
+Fred L. Drake, Jr.
 Derk Drukker
 John DuBois
 Paul Dubois
@@ -346,6 +350,7 @@ Michiel de Hoon
 Brian Hooper
 Randall Hopper
 Nadav Horesh
+Jan Hosang
 Ken Howard
 Brad Howes
 Chih-Hao Huang
@@ -356,6 +361,7 @@ Greg Humphreys
 Eric Huss
 Jeremy Hylton
 Gerhard Häring
+Fredrik Håård
 Mihai Ibanescu
 Lars Immisch
 Meador Inge
@@ -387,7 +393,6 @@ Irmen de Jong
 Lucas de Jonge
 John Jorgensen
 Jens B. Jorgensen
-Fred L. Drake, Jr.
 Andreas Jung
 Tattoo Mabonzo K.
 Bob Kahn
@@ -425,6 +430,8 @@ Holger Krekel
 Michael Kremer
 Fabian Kreutz
 Hannu Krosing
+Andrej Krpic
+Ivan Krstić
 Andrew Kuchling
 Vladimir Kushnir
 Cameron Laird
@@ -484,7 +491,7 @@ Nick Maclaren
 Don MacMillen
 Steve Majewski
 Grzegorz Makarewicz
-Dave Malcolm
+David Malcolm
 Ken Manheimer
 Vladimir Marangozov
 David Marek
@@ -698,6 +705,7 @@ Denis Severson
 Ian Seyer
 Ha Shao
 Bruce Sherwood
+Alexander Shigin
 Pete Shinners
 Michael Shiplett
 John W. Shipman
@@ -746,6 +754,7 @@ Kalle Svensson
 Andrew Svetlov
 Paul Swartz
 Thenault Sylvain
+Péter Szabó
 Arfrever Frehtes Taifersar Arahesis
 Geoff Talvola
 Musashi Tamura
@@ -858,5 +867,3 @@ Siebren van der Zee
 Uwe Zessin
 Tarek Ziadé
 Peter Åstrand
-Fredrik Håård
-Alexander Shigin
