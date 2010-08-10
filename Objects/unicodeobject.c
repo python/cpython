@@ -9965,6 +9965,19 @@ Py_UNICODE_strchr(const Py_UNICODE *s, Py_UNICODE c)
     return NULL;
 }
 
+Py_UNICODE*
+Py_UNICODE_strrchr(const Py_UNICODE *s, Py_UNICODE c)
+{
+    const Py_UNICODE *p;
+    p = s + Py_UNICODE_strlen(s);
+    while (p != s) {
+        p--;
+        if (*p == c)
+            return (Py_UNICODE*)p;
+    }
+    return NULL;
+}
+
 
 #ifdef __cplusplus
 }
