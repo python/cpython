@@ -357,6 +357,7 @@ class TestCaseBase(unittest.TestCase):
 
 class ConfigParserTestCase(TestCaseBase):
     config_class = ConfigParser.ConfigParser
+    allow_no_value = True
 
     def test_interpolation(self):
         rawval = {
@@ -397,6 +398,7 @@ class ConfigParserTestCase(TestCaseBase):
         cf.set('non-string', 'dict', {'pi': 3.14159, '%(': 1,
                                       '%(list)': '%(list)'})
         cf.set('non-string', 'string_with_interpolation', '%(list)s')
+        cf.set('non-string', 'no-value')
         self.assertEqual(cf.get('non-string', 'int', raw=True), 1)
         self.assertRaises(TypeError, cf.get, 'non-string', 'int')
         self.assertEqual(cf.get('non-string', 'list', raw=True),
@@ -409,6 +411,7 @@ class ConfigParserTestCase(TestCaseBase):
                                 raw=True), '%(list)s')
         self.assertRaises(ValueError, cf.get, 'non-string',
                           'string_with_interpolation', raw=False)
+        self.assertEqual(cf.get('non-string', 'no-value'), None)
 
 class MultilineValuesTestCase(TestCaseBase):
     config_class = ConfigParser.ConfigParser

@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9551: Don't raise TypeError when setting the value to None for
+  SafeConfigParser instances constructed with allow_no_value == True.
+
 - Issue #6915: Under Windows, os.listdir() didn't release the Global
   Interpreter Lock around all system calls.  Original patch by Ryan Kelly.
 

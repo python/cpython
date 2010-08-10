@@ -699,13 +699,13 @@ class SafeConfigParser(ConfigParser):
         if self._optcre is self.OPTCRE or value:
             if not isinstance(value, basestring):
                 raise TypeError("option values must be strings")
-        # check for bad percent signs:
-        # first, replace all "good" interpolations
-        tmp_value = value.replace('%%', '')
-        tmp_value = self._interpvar_re.sub('', tmp_value)
-        # then, check if there's a lone percent sign left
-        percent_index = tmp_value.find('%')
-        if percent_index != -1:
-            raise ValueError("invalid interpolation syntax in %r at "
-                             "position %d" % (value, percent_index))
+        if value is not None:
+            # check for bad percent signs:
+            # first, replace all "good" interpolations
+            tmp_value = value.replace('%%', '')
+            tmp_value = self._interpvar_re.sub('', tmp_value)
+            # then, check if there's a lone percent sign left
+            if '%' in tmp_value:
+                raise ValueError("invalid interpolation syntax in %r at "
+                                "position %d" % (value, tmp_value.find('%')))
         ConfigParser.set(self, section, option, value)
