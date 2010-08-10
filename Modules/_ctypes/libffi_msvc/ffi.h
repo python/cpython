@@ -221,15 +221,11 @@ typedef struct {
   void      *user_data;
 } ffi_closure;
 
-void ffi_closure_free(void *);
-void *ffi_closure_alloc (size_t size, void **code);
-
 ffi_status
-ffi_prep_closure_loc (ffi_closure*,
+ffi_prep_closure (ffi_closure*,
 		  ffi_cif *,
 		  void (*fun)(ffi_cif*,void*,void**,void*),
-		  void *user_data,
-		  void *codeloc);
+		  void *user_data);
 
 typedef struct {
   char tramp[FFI_TRAMPOLINE_SIZE];

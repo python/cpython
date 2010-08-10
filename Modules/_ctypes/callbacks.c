@@ -16,8 +16,8 @@ CThunkObject_dealloc(PyObject *_self)
     Py_XDECREF(self->converters);
     Py_XDECREF(self->callable);
     Py_XDECREF(self->restype);
-    if (self->pcl_write)
-        ffi_closure_free(self->pcl_write);
+    if (self->pcl)
+        _ctypes_free_closure(self->pcl);
     PyObject_GC_Del(self);
 }
 
@@ -370,8 +370,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
         return NULL;
     }
 
-    p->pcl_exec = NULL;
-    p->pcl_write = NULL;
+    p->pcl = NULL;
     memset(&p->cif, 0, sizeof(p->cif));
     p->converters = NULL;
     p->callable = NULL;
@@ -401,9 +400,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 
     assert(CThunk_CheckExact((PyObject *)p));
 
-    p->pcl_write = ffi_closure_alloc(sizeof(ffi_closure),
-									 &p->pcl_exec);
-    if (p->pcl_write == NULL) {
+    p->pcl = _ctypes_alloc_closure();
+    if (p->pcl == NULL) {
         PyErr_NoMemory();
         goto error;
     }
@@ -448,9 +446,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
                      "ffi_prep_cif failed with %d", result);
         goto error;
     }
-    result = ffi_prep_closure_loc(p->pcl_write, &p->cif, closure_fcn,
-				  p,
-				  p->pcl_exec);
+    result = ffi_prep_closure(p->pcl, &p->cif, closure_fcn, p);
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,
                      "ffi_prep_closure failed with %d", result);
