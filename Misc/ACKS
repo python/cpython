@@ -1,4 +1,5 @@
-
+Acknowledgements
+----------------
 
 This list is not complete and not in any useful order, but I would
 like to thank everybody who contributed in any way, with code, hints,
@@ -7,7 +8,8 @@ Without you, I would've stopped working on Python long ago!
 
 	--Guido
 
-PS: In the standard Python distribution, this file is encoded in UTF-8.
+PS: In the standard Python distribution, this file is encoded in UTF-8
+and the list is in rough alphabetical order by last names.
 
 David Abrahams
 Jim Ahlstrom
@@ -62,7 +64,7 @@ Bill Bedford
 Reimer Behrends
 Ben Bell
 Thomas Bellman
-Alexander Belopolsky
+Alexander “Саша” Belopolsky
 Eli Bendersky
 Andrew Bennetts
 Andy Bensky
@@ -199,6 +201,7 @@ Roger Dev
 Raghuram Devarakonda
 Caleb Deveraux
 Catherine Devlin
+Scott Dial
 Toby Dickenson
 Mark Dickinson
 Jack Diederich
@@ -366,6 +369,7 @@ Michiel de Hoon
 Brian Hooper
 Randall Hopper
 Nadav Horesh
+Jan Hosang
 Ken Howard
 Brad Howes
 Chih-Hao Huang
@@ -447,6 +451,7 @@ Holger Krekel
 Michael Kremer
 Fabian Kreutz
 Hannu Krosing
+Andrej Krpic
 Ivan Krstić
 Andrew Kuchling
 Vladimir Kushnir
@@ -730,6 +735,7 @@ Ian Seyer
 Ha Shao
 Richard Shapiro
 Bruce Sherwood
+Alexander Shigin
 Pete Shinners
 Michael Shiplett
 John W. Shipman
@@ -778,6 +784,7 @@ Kalle Svensson
 Andrew Svetlov
 Paul Swartz
 Thenault Sylvain
+Péter Szabó
 Arfrever Frehtes Taifersar Arahesis
 Geoff Talvola
 Musashi Tamura
@@ -898,4 +905,3 @@ Siebren van der Zee
 Uwe Zessin
 Tarek Ziadé
 Peter Åstrand
-Alexander Shigin
