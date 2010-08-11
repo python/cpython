@@ -52,12 +52,14 @@ class MockRawIO:
         self._read_stack = list(read_stack)
         self._write_stack = []
         self._reads = 0
+        self._extraneous_reads = 0
 
     def read(self, n=None):
         self._reads += 1
         try:
             return self._read_stack.pop(0)
         except:
+            self._extraneous_reads += 1
             return b""
 
     def write(self, b):
@@ -88,6 +90,7 @@ class MockRawIO:
         try:
             data = self._read_stack[0]
         except IndexError:
+            self._extraneous_reads += 1
             return 0
         if data is None:
             del self._read_stack[0]
@@ -823,6 +826,27 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         bufio = self.tp(rawio)
         self.assertRaises(IOError, bufio.seek, 0)
         self.assertRaises(IOError, bufio.tell)
+
+    def test_no_extraneous_read(self):
+        # Issue #9550; when the raw IO object has satisfied the read request,
+        # we should not issue any additional reads, otherwise it may block
+        # (e.g. socket).
+        bufsize = 16
+        for n in (2, bufsize - 1, bufsize, bufsize + 1, bufsize * 2):
+            rawio = self.MockRawIO([b"x" * n])
+            bufio = self.tp(rawio, bufsize)
+            self.assertEqual(bufio.read(n), b"x" * n)
+            # Simple case: one raw read is enough to satisfy the request.
+            self.assertEqual(rawio._extraneous_reads, 0,
+                             "failed for {}: {} != 0".format(n, rawio._extraneous_reads))
+            # A more complex case where two raw reads are needed to satisfy
+            # the request.
+            rawio = self.MockRawIO([b"x" * (n - 1), b"x"])
+            bufio = self.tp(rawio, bufsize)
+            self.assertEqual(bufio.read(n), b"x" * n)
+            self.assertEqual(rawio._extraneous_reads, 0,
+                             "failed for {}: {} != 0".format(n, rawio._extraneous_reads))
+
 
 class CBufferedReaderTest(BufferedReaderTest):
     tp = io.BufferedReader
