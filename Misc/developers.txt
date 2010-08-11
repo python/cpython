@@ -20,6 +20,9 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Éric Araujo was given commit access on Aug 10 2010 by BAC,
+  at suggestion of Tarek Ziadé.
+
 - Terry Reedy was given commit access on Aug 04 2010 by MvL,
   at suggestion of Nick Coghlan.
 
