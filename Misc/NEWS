@@ -93,6 +93,11 @@ C-API
 Library
 -------
 
+- Issue #9550: a BufferedReader could issue an additional read when the
+  original read request had been satisfied, which could block indefinitely
+  when the underlying raw IO channel was e.g. a socket.  Report and original
+  patch by Jason V. Miller.
+
 - Issue #6915: Under Windows, os.listdir() didn't release the Global
   Interpreter Lock around all system calls.  Original patch by Ryan Kelly.
 
