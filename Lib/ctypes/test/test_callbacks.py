@@ -199,7 +199,6 @@ class SampleCallbacksTestCase(unittest.TestCase):
                 return True #Allow windows to keep enumerating
 
             windll.user32.EnumWindows(EnumWindowsCallbackFunc, 0)
-            self.assertFalse(windowCount == 0)
 
 ################################################################
 
