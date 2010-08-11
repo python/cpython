@@ -853,7 +853,7 @@ class Popen(object):
                 startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
                 startupinfo.wShowWindow = _subprocess.SW_HIDE
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
-                args = comspec + " /c " + args
+                args = '{} /c "{}"'.format (comspec, args)
                 if (_subprocess.GetVersion() >= 0x80000000 or
                         os.path.basename(comspec).lower() == "command.com"):
                     # Win9x, or using command.com on NT. We need to
