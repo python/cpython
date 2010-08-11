@@ -417,6 +417,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9570: Use PEP 383 decoding in os.mknod and os.mkfifo.
+
 - Issue #9324: Add parameter validation to signal.signal on Windows in order
   to prevent crashes.
 

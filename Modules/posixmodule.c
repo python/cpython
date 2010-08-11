@@ -5272,14 +5272,18 @@ Create a FIFO (a POSIX named pipe).");
 static PyObject *
 posix_mkfifo(PyObject *self, PyObject *args)
 {
+    PyObject *opath;
     char *filename;
     int mode = 0666;
     int res;
-    if (!PyArg_ParseTuple(args, "s|i:mkfifo", &filename, &mode))
+    if (!PyArg_ParseTuple(args, "O&|i:mkfifo", PyUnicode_FSConverter, &opath,
+                          &mode))
         return NULL;
+    filename = PyBytes_AS_STRING(opath);
     Py_BEGIN_ALLOW_THREADS
     res = mkfifo(filename, mode);
     Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
     if (res < 0)
         return posix_error();
     Py_INCREF(Py_None);
@@ -5302,15 +5306,19 @@ os.makedev()), otherwise it is ignored.");
 static PyObject *
 posix_mknod(PyObject *self, PyObject *args)
 {
+    PyObject *opath;
     char *filename;
     int mode = 0600;
     int device = 0;
     int res;
-    if (!PyArg_ParseTuple(args, "s|ii:mknod", &filename, &mode, &device))
+    if (!PyArg_ParseTuple(args, "O&|ii:mknod", PyUnicode_FSConverter, &opath,
+                          &mode, &device))
         return NULL;
+    filename = PyBytes_AS_STRING(opath);
     Py_BEGIN_ALLOW_THREADS
     res = mknod(filename, mode, device);
     Py_END_ALLOW_THREADS
+    Py_DECREF(opath);
     if (res < 0)
         return posix_error();
     Py_INCREF(Py_None);
