@@ -70,6 +70,11 @@ Extensions
 Library
 -------
 
+- Issue #9550: a BufferedReader could issue an additional read when the
+  original read request had been satisfied, which could block indefinitely
+  when the underlying raw IO channel was e.g. a socket.  Report and original
+  patch by Jason V. Miller.
+
 - Issue #3757: thread-local objects now support cyclic garbage collection.
   Thread-local objects involved in reference cycles will be deallocated
   timely by the cyclic GC, even if the underlying thread is still running.

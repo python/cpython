@@ -1383,7 +1383,10 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
     self->pos = 0;
     self->raw_pos = 0;
     self->read_end = 0;
-    while (self->read_end < self->buffer_size) {
+    /* NOTE: when the read is satisfied, we avoid issuing any additional
+       reads, which could block indefinitely (e.g. on a socket).
+       See issue #9550. */
+    while (remaining > 0 && self->read_end < self->buffer_size) {
         Py_ssize_t r = _bufferedreader_fill_buffer(self);
         if (r == -1)
             goto error;
