@@ -635,8 +635,8 @@ class ProcessTestCase(unittest.TestCase):
                     sh = os.path.join(prefix, name)
                     if os.path.isfile(sh):
                         shells.append(sh)
-            if not shells: # Will probably work for any shell but csh.
-                self.skipTest("bash or ksh required for this test")
+            if not shells:  # Will probably work for any shell but csh.
+                return  # skip test
             sh = '/bin/sh'
             if os.path.isfile(sh) and not os.path.islink(sh):
                 # Test will fail if /bin/sh is a symlink to csh.
