@@ -1259,6 +1259,12 @@ def parse_http_list(s):
 
     return [part.strip() for part in res]
 
+def _safe_gethostbyname(host):
+    try:
+        return socket.gethostbyname(host)
+    except socket.gaierror:
+        return None
+
 class FileHandler(BaseHandler):
     # Use local file or FTP depending on form of URL
     def file_open(self, req):
@@ -1300,7 +1306,7 @@ class FileHandler(BaseHandler):
             if host:
                 host, port = splitport(host)
             if not host or \
-                (not port and socket.gethostbyname(host) in self.get_names()):
+                (not port and _safe_gethostbyname(host) in self.get_names()):
                 if host:
                     origurl = 'file://' + host + filename
                 else:
