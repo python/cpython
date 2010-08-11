@@ -822,4 +822,14 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #define Py_ULL(x) Py_LL(x##U)
 #endif
 
+#ifdef VA_LIST_IS_ARRAY
+#define Py_VA_COPY(x, y) Py_MEMCPY((x), (y), sizeof(va_list))
+#else
+#ifdef __va_copy
+#define Py_VA_COPY __va_copy
+#else
+#define Py_VA_COPY(x, y) (x) = (y)
+#endif
+#endif
+
 #endif /* Py_PYPORT_H */

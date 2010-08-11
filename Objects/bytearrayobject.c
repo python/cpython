@@ -936,12 +936,12 @@ bytearray_repr(PyByteArrayObject *self)
 static PyObject *
 bytearray_str(PyObject *op)
 {
-	if (Py_BytesWarningFlag) {
-		if (PyErr_WarnEx(PyExc_BytesWarning,
-				 "str() on a bytearray instance", 1))
-			return NULL;
-	}
-	return bytearray_repr((PyByteArrayObject*)op);
+        if (Py_BytesWarningFlag) {
+                if (PyErr_WarnEx(PyExc_BytesWarning,
+                                 "str() on a bytearray instance", 1))
+                        return NULL;
+        }
+        return bytearray_repr((PyByteArrayObject*)op);
 }
 
 static PyObject *
@@ -1458,7 +1458,7 @@ done:
 static PyObject *
 bytearray_maketrans(PyObject *null, PyObject *args)
 {
-	return _Py_bytes_maketrans(args);
+        return _Py_bytes_maketrans(args);
 }
 
 

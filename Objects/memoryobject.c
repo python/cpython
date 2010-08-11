@@ -775,10 +775,10 @@ static PyMappingMethods memory_as_mapping = {
 };
 
 static PySequenceMethods memory_as_sequence = {
-	0,                                  /* sq_length */
-	0,                                  /* sq_concat */
-	0,                                  /* sq_repeat */
-	(ssizeargfunc)memory_item,          /* sq_item */
+        0,                                  /* sq_length */
+        0,                                  /* sq_concat */
+        0,                                  /* sq_repeat */
+        (ssizeargfunc)memory_item,          /* sq_item */
 };
 
 /* Buffer methods */

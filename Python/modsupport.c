@@ -456,15 +456,7 @@ va_build_value(const char *format, va_list va, int flags)
     int n = countformat(f, '\0');
     va_list lva;
 
-#ifdef VA_LIST_IS_ARRAY
-    memcpy(lva, va, sizeof(va_list));
-#else
-#ifdef __va_copy
-    __va_copy(lva, va);
-#else
-    lva = va;
-#endif
-#endif
+        Py_VA_COPY(lva, va);
 
     if (n < 0)
         return NULL;

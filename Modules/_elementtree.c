@@ -2870,15 +2870,15 @@ static PyMethodDef _functions[] = {
 
 
 static struct PyModuleDef _elementtreemodule = {
-	PyModuleDef_HEAD_INIT,
-	"_elementtree",
-	NULL,
-	-1,
-	_functions,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+        PyModuleDef_HEAD_INIT,
+        "_elementtree",
+        NULL,
+        -1,
+        _functions,
+        NULL,
+        NULL,
+        NULL,
+        NULL
 };
 
 PyMODINIT_FUNC
@@ -2890,12 +2890,12 @@ PyInit__elementtree(void)
 
     /* Initialize object types */
     if (PyType_Ready(&TreeBuilder_Type) < 0)
-	return NULL;
+        return NULL;
     if (PyType_Ready(&Element_Type) < 0)
-	return NULL;
+        return NULL;
 #if defined(USE_EXPAT)
     if (PyType_Ready(&XMLParser_Type) < 0)
-	return NULL;
+        return NULL;
 #endif
 
     m = PyModule_Create(&_elementtreemodule);
@@ -2905,8 +2905,8 @@ PyInit__elementtree(void)
     /* The code below requires that the module gets already added
        to sys.modules. */
     PyDict_SetItemString(PyImport_GetModuleDict(),
-			 _elementtreemodule.m_name,
-			 m);
+                         _elementtreemodule.m_name,
+                         m);
 
     /* python glue code */
 

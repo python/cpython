@@ -105,15 +105,7 @@ PyArg_VaParse(PyObject *args, const char *format, va_list va)
 {
     va_list lva;
 
-#ifdef VA_LIST_IS_ARRAY
-    memcpy(lva, va, sizeof(va_list));
-#else
-#ifdef __va_copy
-    __va_copy(lva, va);
-#else
-    lva = va;
-#endif
-#endif
+        Py_VA_COPY(lva, va);
 
     return vgetargs1(args, format, &lva, 0);
 }
@@ -123,15 +115,7 @@ _PyArg_VaParse_SizeT(PyObject *args, char *format, va_list va)
 {
     va_list lva;
 
-#ifdef VA_LIST_IS_ARRAY
-    memcpy(lva, va, sizeof(va_list));
-#else
-#ifdef __va_copy
-    __va_copy(lva, va);
-#else
-    lva = va;
-#endif
-#endif
+        Py_VA_COPY(lva, va);
 
     return vgetargs1(args, format, &lva, FLAG_SIZE_T);
 }
@@ -1376,15 +1360,7 @@ PyArg_VaParseTupleAndKeywords(PyObject *args,
         return 0;
     }
 
-#ifdef VA_LIST_IS_ARRAY
-    memcpy(lva, va, sizeof(va_list));
-#else
-#ifdef __va_copy
-    __va_copy(lva, va);
-#else
-    lva = va;
-#endif
-#endif
+        Py_VA_COPY(lva, va);
 
     retval = vgetargskeywords(args, keywords, format, kwlist, &lva, 0);
     return retval;
@@ -1408,15 +1384,7 @@ _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
         return 0;
     }
 
-#ifdef VA_LIST_IS_ARRAY
-    memcpy(lva, va, sizeof(va_list));
-#else
-#ifdef __va_copy
-    __va_copy(lva, va);
-#else
-    lva = va;
-#endif
-#endif
+        Py_VA_COPY(lva, va);
 
     retval = vgetargskeywords(args, keywords, format,
                               kwlist, &lva, FLAG_SIZE_T);
