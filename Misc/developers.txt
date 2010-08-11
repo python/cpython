@@ -20,6 +20,9 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- George Boutsioukis was given commit access on Aug 10 2010
+  by MvL, for work on 2to3.
+
 - Éric Araujo was given commit access on Aug 10 2010 by BAC,
   at suggestion of Tarek Ziadé.
 
