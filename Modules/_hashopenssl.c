@@ -559,7 +559,7 @@ static struct PyMethodDef EVP_functions[] = {
     CONSTRUCTOR_METH_DEF(sha384),
     CONSTRUCTOR_METH_DEF(sha512),
 #endif
-    {NULL,	NULL}		 /* Sentinel */
+    {NULL,      NULL}            /* Sentinel */
 };
 
 

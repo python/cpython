@@ -63,10 +63,10 @@ Py_UNICODE _PyUnicode_ToTitlecase(register Py_UNICODE ch)
     int delta = ctype->title;
 
     if (ctype->flags & NODELTA_MASK)
-	return delta;
+        return delta;
 
     if (delta >= 32768)
-	    delta -= 65536;
+            delta -= 65536;
 
     return ch + delta;
 }
@@ -114,7 +114,7 @@ int _PyUnicode_ToDecimalDigit(Py_UNICODE ch)
 int _PyUnicode_IsDecimalDigit(Py_UNICODE ch)
 {
     if (_PyUnicode_ToDecimalDigit(ch) < 0)
-	return 0;
+        return 0;
     return 1;
 }
 
@@ -131,7 +131,7 @@ int _PyUnicode_ToDigit(Py_UNICODE ch)
 int _PyUnicode_IsDigit(Py_UNICODE ch)
 {
     if (_PyUnicode_ToDigit(ch) < 0)
-	return 0;
+        return 0;
     return 1;
 }
 
@@ -195,9 +195,9 @@ Py_UNICODE _PyUnicode_ToUppercase(Py_UNICODE ch)
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
     int delta = ctype->upper;
     if (ctype->flags & NODELTA_MASK)
-	return delta;
+        return delta;
     if (delta >= 32768)
-	    delta -= 65536;
+            delta -= 65536;
     return ch + delta;
 }
 
@@ -209,9 +209,9 @@ Py_UNICODE _PyUnicode_ToLowercase(Py_UNICODE ch)
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
     int delta = ctype->lower;
     if (ctype->flags & NODELTA_MASK)
-	return delta;
+        return delta;
     if (delta >= 32768)
-	    delta -= 65536;
+            delta -= 65536;
     return ch + delta;
 }
 

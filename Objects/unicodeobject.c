@@ -755,15 +755,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
     char fmt[61]; /* should be enough for %0width.precisionlld */
     const char *copy;
 
-#ifdef VA_LIST_IS_ARRAY
-    Py_MEMCPY(count, vargs, sizeof(va_list));
-#else
-#ifdef  __va_copy
-    __va_copy(count, vargs);
-#else
-    count = vargs;
-#endif
-#endif
+    Py_VA_COPY(count, vargs); 
     /* step 1: count the number of %S/%R/%A/%s format specifications
      * (we call PyObject_Str()/PyObject_Repr()/PyObject_ASCII()/
      * PyUnicode_DecodeUTF8() for these objects once during step 3 and put the

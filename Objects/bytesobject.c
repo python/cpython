@@ -173,15 +173,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
     char *s;
     PyObject* string;
 
-#ifdef VA_LIST_IS_ARRAY
-    Py_MEMCPY(count, vargs, sizeof(va_list));
-#else
-#ifdef  __va_copy
-    __va_copy(count, vargs);
-#else
-    count = vargs;
-#endif
-#endif
+    Py_VA_COPY(count, vargs);
     /* step 1: figure out how large a buffer we need */
     for (f = format; *f; f++) {
         if (*f == '%') {

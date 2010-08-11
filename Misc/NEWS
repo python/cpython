@@ -583,6 +583,10 @@ Core and Builtins
 C-API
 -----
 
+- Issue #2443: A new macro, `Py_VA_COPY`, copies the state of the
+  variable argument list.  `Py_VA_COPY` is equivalent to C99
+  `va_copy`, but available on all python platforms.
+
 - PySlice_GetIndicesEx now clips the step to [-PY_SSIZE_T_MAX, PY_SSIZE_T_MAX]
   instead of [-PY_SSIZE_T_MAX-1, PY_SSIZE_T_MAX].  This makes it safe to do
   "step = -step" when reversing a slice.
