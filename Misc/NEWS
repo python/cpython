@@ -29,6 +29,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #9550: a BufferedReader could issue an additional read when the
+  original read request had been satisfied, which could block indefinitely
+  when the underlying raw IO channel was e.g. a socket.  Report and original
+  patch by Jason V. Miller.
+
 - Issue #9551: Don't raise TypeError when setting the value to None for
   SafeConfigParser instances constructed with allow_no_value == True.
 
