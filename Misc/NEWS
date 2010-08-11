@@ -30,6 +30,8 @@ Core and Builtins
 Extensions
 ----------
 
+- Issue #9570: Use PEP 383 decoding in os.mknod and os.mkfifo.
+
 - Issue #6915: Under Windows, os.listdir() didn't release the Global
   Interpreter Lock around all system calls.  Original patch by Ryan Kelly.
 
