@@ -5,6 +5,7 @@ except ImportError:
     zlib = None
 
 import os
+import io
 import sys
 import time
 import shutil
@@ -653,6 +654,27 @@ class PyZipFileTests(unittest.TestCase):
 
 
 class OtherTests(unittest.TestCase):
+    zips_with_bad_crc = {
+        zipfile.ZIP_STORED: (
+            b'PK\003\004\024\0\0\0\0\0 \213\212;:r'
+            b'\253\377\f\0\0\0\f\0\0\0\005\0\0\000af'
+            b'ilehello,AworldP'
+            b'K\001\002\024\003\024\0\0\0\0\0 \213\212;:'
+            b'r\253\377\f\0\0\0\f\0\0\0\005\0\0\0\0'
+            b'\0\0\0\0\0\0\0\200\001\0\0\0\000afi'
+            b'lePK\005\006\0\0\0\0\001\0\001\0003\000'
+            b'\0\0/\0\0\0\0\0'),
+        zipfile.ZIP_DEFLATED: (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00n}\x0c=FA'
+            b'KE\x10\x00\x00\x00n\x00\x00\x00\x05\x00\x00\x00af'
+            b'ile\xcbH\xcd\xc9\xc9W(\xcf/\xcaI\xc9\xa0'
+            b'=\x13\x00PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00n'
+            b'}\x0c=FAKE\x10\x00\x00\x00n\x00\x00\x00\x05'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00'
+            b'\x00afilePK\x05\x06\x00\x00\x00\x00\x01\x00'
+            b'\x01\x003\x00\x00\x003\x00\x00\x00\x00\x00'),
+    }
+
     def test_unicode_filenames(self):
         with zipfile.ZipFile(TESTFN, "w") as zf:
             zf.writestr(u"foo.txt", "Test for unicode filename")
@@ -864,6 +886,49 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, mode="r") as zipf:
             self.assertEqual(zipf.comment, comment2)
 
+    def check_testzip_with_bad_crc(self, compression):
+        """Tests that files with bad CRCs return their name from testzip."""
+        zipdata = self.zips_with_bad_crc[compression]
+
+        with zipfile.ZipFile(io.BytesIO(zipdata), mode="r") as zipf:
+            # testzip returns the name of the first corrupt file, or None
+            self.assertEqual('afile', zipf.testzip())
+
+    def test_testzip_with_bad_crc_stored(self):
+        self.check_testzip_with_bad_crc(zipfile.ZIP_STORED)
+
+    @skipUnless(zlib, "requires zlib")
+    def test_testzip_with_bad_crc_deflated(self):
+        self.check_testzip_with_bad_crc(zipfile.ZIP_DEFLATED)
+
+    def check_read_with_bad_crc(self, compression):
+        """Tests that files with bad CRCs raise a BadZipfile exception when read."""
+        zipdata = self.zips_with_bad_crc[compression]
+
+        # Using ZipFile.read()
+        with zipfile.ZipFile(io.BytesIO(zipdata), mode="r") as zipf:
+            self.assertRaises(zipfile.BadZipfile, zipf.read, 'afile')
+
+        # Using ZipExtFile.read()
+        with zipfile.ZipFile(io.BytesIO(zipdata), mode="r") as zipf:
+            with zipf.open('afile', 'r') as corrupt_file:
+                self.assertRaises(zipfile.BadZipfile, corrupt_file.read)
+
+        # Same with small reads (in order to exercise the buffering logic)
+        with zipfile.ZipFile(io.BytesIO(zipdata), mode="r") as zipf:
+            with zipf.open('afile', 'r') as corrupt_file:
+                corrupt_file.MIN_READ_SIZE = 2
+                with self.assertRaises(zipfile.BadZipfile):
+                    while corrupt_file.read(2):
+                        pass
+
+    def test_read_with_bad_crc_stored(self):
+        self.check_read_with_bad_crc(zipfile.ZIP_STORED)
+
+    @skipUnless(zlib, "requires zlib")
+    def test_read_with_bad_crc_deflated(self):
+        self.check_read_with_bad_crc(zipfile.ZIP_DEFLATED)
+
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)
@@ -963,6 +1028,11 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
         for f in (TESTFN2, TemporaryFile(), StringIO()):
             self.zip_test(f, zipfile.ZIP_STORED)
 
+    @skipUnless(zlib, "requires zlib")
+    def test_deflated(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_test(f, zipfile.ZIP_DEFLATED)
+
     def zip_open_test(self, f, compression):
         self.make_test_archive(f, compression)
 
@@ -996,6 +1066,11 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
         for f in (TESTFN2, TemporaryFile(), StringIO()):
             self.zip_open_test(f, zipfile.ZIP_STORED)
 
+    @skipUnless(zlib, "requires zlib")
+    def test_open_deflated(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_open_test(f, zipfile.ZIP_DEFLATED)
+
     def zip_random_open_test(self, f, compression):
         self.make_test_archive(f, compression)
 
@@ -1016,6 +1091,11 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
     def test_random_open_stored(self):
         for f in (TESTFN2, TemporaryFile(), StringIO()):
             self.zip_random_open_test(f, zipfile.ZIP_STORED)
+
+    @skipUnless(zlib, "requires zlib")
+    def test_random_open_deflated(self):
+        for f in (TESTFN2, TemporaryFile(), io.BytesIO()):
+            self.zip_random_open_test(f, zipfile.ZIP_DEFLATED)
 
 
 @skipUnless(zlib, "requires zlib")
