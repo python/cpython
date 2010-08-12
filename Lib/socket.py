@@ -299,7 +299,7 @@ class _fileobject(object):
             finally:
                 if write_offset < data_size:
                     remainder = data[write_offset:]
-                    del view, data  # explicit free
+                    del data  # explicit free
                     self._wbuf.append(remainder)
                     self._wbuf_len = len(remainder)
 
