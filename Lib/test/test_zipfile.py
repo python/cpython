@@ -582,6 +582,27 @@ class PyZipFileTests(unittest.TestCase):
 
 
 class OtherTests(unittest.TestCase):
+    zips_with_bad_crc = {
+        zipfile.ZIP_STORED: (
+            b'PK\003\004\024\0\0\0\0\0 \213\212;:r'
+            b'\253\377\f\0\0\0\f\0\0\0\005\0\0\000af'
+            b'ilehello,AworldP'
+            b'K\001\002\024\003\024\0\0\0\0\0 \213\212;:'
+            b'r\253\377\f\0\0\0\f\0\0\0\005\0\0\0\0'
+            b'\0\0\0\0\0\0\0\200\001\0\0\0\000afi'
+            b'lePK\005\006\0\0\0\0\001\0\001\0003\000'
+            b'\0\0/\0\0\0\0\0'),
+        zipfile.ZIP_DEFLATED: (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00n}\x0c=FA'
+            b'KE\x10\x00\x00\x00n\x00\x00\x00\x05\x00\x00\x00af'
+            b'ile\xcbH\xcd\xc9\xc9W(\xcf/\xcaI\xc9\xa0'
+            b'=\x13\x00PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00n'
+            b'}\x0c=FAKE\x10\x00\x00\x00n\x00\x00\x00\x05'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00'
+            b'\x00afilePK\x05\x06\x00\x00\x00\x00\x01\x00'
+            b'\x01\x003\x00\x00\x003\x00\x00\x00\x00\x00'),
+    }
+
     def testUnicodeFilenames(self):
         zf = zipfile.ZipFile(TESTFN, "w")
         zf.writestr("foo.txt", "Test for unicode filename")
@@ -808,6 +829,55 @@ class OtherTests(unittest.TestCase):
         zipfr = zipfile.ZipFile(TESTFN, mode="r")
         self.assertEqual(zipfr.comment, comment2)
         zipfr.close()
+
+    def check_testzip_with_bad_crc(self, compression):
+        """Tests that files with bad CRCs return their name from testzip."""
+        zipdata = self.zips_with_bad_crc[compression]
+
+        zipf = zipfile.ZipFile(io.BytesIO(zipdata), mode="r")
+        # testzip returns the name of the first corrupt file, or None
+        self.assertEqual('afile', zipf.testzip())
+        zipf.close()
+
+    def test_testzip_with_bad_crc_stored(self):
+        self.check_testzip_with_bad_crc(zipfile.ZIP_STORED)
+
+    if zlib:
+        def test_testzip_with_bad_crc_deflated(self):
+            self.check_testzip_with_bad_crc(zipfile.ZIP_DEFLATED)
+
+    def check_read_with_bad_crc(self, compression):
+        """Tests that files with bad CRCs raise a BadZipfile exception when read."""
+        zipdata = self.zips_with_bad_crc[compression]
+
+        # Using ZipFile.read()
+        zipf = zipfile.ZipFile(io.BytesIO(zipdata), mode="r")
+        self.assertRaises(zipfile.BadZipfile, zipf.read, 'afile')
+        zipf.close()
+
+        # Using ZipExtFile.read()
+        zipf = zipfile.ZipFile(io.BytesIO(zipdata), mode="r")
+        corrupt_file = zipf.open('afile', 'r')
+        self.assertRaises(zipfile.BadZipfile, corrupt_file.read)
+        corrupt_file.close()
+        zipf.close()
+
+        # Same with small reads (in order to exercise the buffering logic)
+        zipf = zipfile.ZipFile(io.BytesIO(zipdata), mode="r")
+        corrupt_file = zipf.open('afile', 'r')
+        corrupt_file.MIN_READ_SIZE = 2
+        with self.assertRaises(zipfile.BadZipfile):
+            while corrupt_file.read(2):
+                pass
+        corrupt_file.close()
+        zipf.close()
+
+    def test_read_with_bad_crc_stored(self):
+        self.check_read_with_bad_crc(zipfile.ZIP_STORED)
+
+    if zlib:
+        def test_read_with_bad_crc_deflated(self):
+            self.check_read_with_bad_crc(zipfile.ZIP_DEFLATED)
 
     def tearDown(self):
         support.unlink(TESTFN)

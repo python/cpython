@@ -93,6 +93,10 @@ C-API
 Library
 -------
 
+- Issue #7467: when reading a file from a ZIP archive, its CRC is checked
+  and a BadZipfile error is raised if it doesn't match (as used to be the
+  case in Python 2.5 and earlier).
+
 - Issue #9550: a BufferedReader could issue an additional read when the
   original read request had been satisfied, which could block indefinitely
   when the underlying raw IO channel was e.g. a socket.  Report and original
