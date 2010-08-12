@@ -94,7 +94,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
 def urlcleanup():
     if _urlopener:
         _urlopener.cleanup()
-    _safe_quoters.clear()
+    _safemaps.clear()
     ftpcache.clear()
 
 # check for SSL
@@ -773,7 +773,7 @@ class FancyURLopener(URLopener):
         else:
             return self.open(newurl, data)
 
-    def get_user_passwd(self, host, realm, clear_cache=0):
+    def get_user_passwd(self, host, realm, clear_cache = 0):
         key = realm + '@' + host.lower()
         if key in self.auth_cache:
             if clear_cache:
@@ -1165,24 +1165,20 @@ def splitvalue(attr):
     return attr, None
 
 _hexdig = '0123456789ABCDEFabcdef'
-_hextochr = dict((a + b, chr(int(a + b, 16)))
-                 for a in _hexdig for b in _hexdig)
+_hextochr = dict((a+b, chr(int(a+b,16))) for a in _hexdig for b in _hexdig)
 
 def unquote(s):
     """unquote('abc%20def') -> 'abc def'."""
     res = s.split('%')
-    # fastpath
-    if len(res) == 1:
-        return s
-    s = res[0]
-    for item in res[1:]:
+    for i in xrange(1, len(res)):
+        item = res[i]
         try:
-            s += _hextochr[item[:2]] + item[2:]
+            res[i] = _hextochr[item[:2]] + item[2:]
         except KeyError:
-            s += '%' + item
+            res[i] = '%' + item
         except UnicodeDecodeError:
-            s += unichr(int(item[:2], 16)) + item[2:]
-    return s
+            res[i] = unichr(int(item[:2], 16)) + item[2:]
+    return "".join(res)
 
 def unquote_plus(s):
     """unquote('%7e/abc+def') -> '~/abc def'"""
@@ -1192,12 +1188,9 @@ def unquote_plus(s):
 always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                'abcdefghijklmnopqrstuvwxyz'
                '0123456789' '_.-')
-_safe_map = {}
-for i, c in zip(xrange(256), str(bytearray(xrange(256)))):
-    _safe_map[c] = c if (i < 128 and c in always_safe) else '%{0:02X}'.format(i)
-_safe_quoters = {}
+_safemaps = {}
 
-def quote(s, safe='/'):
+def quote(s, safe = '/'):
     """quote('abc def') -> 'abc%20def'
 
     Each part of a URL, e.g. the path info, the query, etc., has a
@@ -1218,30 +1211,27 @@ def quote(s, safe='/'):
     called on a path where the existing slash characters are used as
     reserved characters.
     """
-    # fastpath
-    if not s:
-        return s
     cachekey = (safe, always_safe)
     try:
-        (quoter, safe) = _safe_quoters[cachekey]
+        safe_map = _safemaps[cachekey]
     except KeyError:
-        safe_map = _safe_map.copy()
-        safe_map.update([(c, c) for c in safe])
-        quoter = safe_map.__getitem__
-        safe = always_safe + safe
-        _safe_quoters[cachekey] = (quoter, safe)
-    if not s.rstrip(safe):
-        return s
-    return ''.join(map(quoter, s))
+        safe += always_safe
+        safe_map = {}
+        for i in range(256):
+            c = chr(i)
+            safe_map[c] = (c in safe) and c or ('%%%02X' % i)
+        _safemaps[cachekey] = safe_map
+    res = map(safe_map.__getitem__, s)
+    return ''.join(res)
 
-def quote_plus(s, safe=''):
+def quote_plus(s, safe = ''):
     """Quote the query fragment of a URL; replacing ' ' with '+'"""
     if ' ' in s:
         s = quote(s, safe + ' ')
         return s.replace(' ', '+')
     return quote(s, safe)
 
-def urlencode(query, doseq=0):
+def urlencode(query,doseq=0):
     """Encode a sequence of two-element tuples or dictionary into a URL query string.
 
     If any values in the query arg are sequences and doseq is true, each
@@ -1403,6 +1393,7 @@ if sys.platform == 'darwin':
 
         return False
 
+
     def getproxies_macosx_sysconf():
         """Return a dictionary of scheme -> proxy server URL mappings.
 
@@ -1410,6 +1401,8 @@ if sys.platform == 'darwin':
         to fetch the proxy information.
         """
         return _get_proxies()
+
+
 
     def proxy_bypass(host):
         if getproxies_environment():

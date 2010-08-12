@@ -12,8 +12,6 @@ What's New in Python 2.6.6?
 Library
 -------
 
-- Issue #1285086: Speed up urllib.quote and urllib.unquote for simple cases.
-
 - Issue #5798: Handle select.poll flag oddities properly on OS X.
   This fixes test_asynchat and test_smtplib failures on OS X.
 
