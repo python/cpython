@@ -1044,6 +1044,30 @@ class NetworkConnectionBehaviourTest(SocketTCPTest, ThreadableTest):
         self.cli = sock = socket.create_connection((HOST, self.port), timeout=1)
         self.failUnlessRaises(socket.timeout, lambda: sock.recv(5))
 
+class TestIssue9543(SocketTCPTest, NetworkConnectionTest):
+    """
+    This test exercises the code in the _fileobject.flush() method when the
+    whole write buffer hasn't been flushed.
+    See http://bugs.python.org/issue9543
+    """
+    # XXX: this is just a sanity check, proper tests for flush() should still
+    #      be added
+    def setUp(self):
+        SocketTCPTest.setUp(self)
+        NetworkConnectionTest.clientSetUp(self)
+
+    def test_issue9543(self):
+        self.cli.close()
+        file_a = self.serv.makefile('w')
+        file_a.write('x')
+        # flush() will try to send data to self.cli and raise an error because
+        # it's closed
+        self.assertRaises(socket.error, file_a.flush)
+        # close() will raise an error too, because it calls flush() before
+        # closing the file
+        self.assertRaises(socket.error, file_a.close)
+        self.assertTrue(file_a.closed)
+
 
 class Urllib2FileobjectTest(unittest.TestCase):
 
@@ -1311,6 +1335,7 @@ def test_main():
         NetworkConnectionNoServer,
         NetworkConnectionAttributesTest,
         NetworkConnectionBehaviourTest,
+        TestIssue9543,
     ])
     if hasattr(socket, "socketpair"):
         tests.append(BasicSocketPairTest)
