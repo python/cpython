@@ -755,7 +755,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
     char fmt[61]; /* should be enough for %0width.precisionlld */
     const char *copy;
 
-    Py_VA_COPY(count, vargs); 
+    Py_VA_COPY(count, vargs);
     /* step 1: count the number of %S/%R/%A/%s format specifications
      * (we call PyObject_Str()/PyObject_Repr()/PyObject_ASCII()/
      * PyUnicode_DecodeUTF8() for these objects once during step 3 and put the
@@ -1548,12 +1548,13 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
 
     /* If the codec returns a buffer, raise a warning and convert to bytes */
     if (PyByteArray_Check(v)) {
-        char msg[100];
+        int error;
         PyObject *b;
-        PyOS_snprintf(msg, sizeof(msg),
-                      "encoder %s returned buffer instead of bytes",
-                      encoding);
-        if (PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1) < 0) {
+
+        error = PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
+            "encoder %s returned bytearray instead of bytes",
+            encoding);
+        if (error) {
             Py_DECREF(v);
             return NULL;
         }
@@ -2279,7 +2280,7 @@ char utf8_code_length[256] = {
        illegal prefix.  See RFC 3629 for details */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* 00-0F */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
