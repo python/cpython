@@ -990,9 +990,8 @@ def _syscmd_file(target,default=''):
     """ Interface to the system's file command.
 
         The function uses the -b option of the file command to have it
-        ommit the filename in its output and if possible the -L option
-        to have the command follow symlinks. It returns default in
-        case the command should fail.
+        omit the filename in its output. Follow the symlinks. It returns
+        default in case the command should fail.
 
     """
     if sys.platform in ('dos','win32','win16','os2'):
@@ -1000,7 +999,7 @@ def _syscmd_file(target,default=''):
         return default
     target = _follow_symlinks(target).replace('"', '\\"')
     try:
-        f = os.popen('file "%s" 2> %s' % (target, DEV_NULL))
+        f = os.popen('file -b "%s" 2> %s' % (target, DEV_NULL))
     except (AttributeError,os.error):
         return default
     output = f.read().strip()
@@ -1019,8 +1018,6 @@ _default_architecture = {
     'win16': ('','Windows'),
     'dos': ('','MSDOS'),
 }
-
-_architecture_split = re.compile(r'[\s,]').split
 
 def architecture(executable=sys.executable,bits='',linkage=''):
 
@@ -1056,11 +1053,11 @@ def architecture(executable=sys.executable,bits='',linkage=''):
 
     # Get data from the 'file' system command
     if executable:
-        output = _syscmd_file(executable, '')
+        fileout = _syscmd_file(executable, '')
     else:
-        output = ''
+        fileout = ''
 
-    if not output and \
+    if not fileout and \
        executable == sys.executable:
         # "file" command did not return anything; we'll try to provide
         # some sensible defaults then...
@@ -1071,9 +1068,6 @@ def architecture(executable=sys.executable,bits='',linkage=''):
             if l:
                 linkage = l
         return bits,linkage
-
-    # Split the output into a list of strings omitting the filename
-    fileout = _architecture_split(output)[1:]
 
     if 'executable' not in fileout:
         # Format not supported
