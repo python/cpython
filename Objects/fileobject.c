@@ -29,7 +29,7 @@ PyObject *
 PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding,
               char *errors, char *newline, int closefd)
 {
-    PyObject *io, *stream, *nameobj = NULL;
+    PyObject *io, *stream;
 
     io = PyImport_ImportModule("io");
     if (io == NULL)
@@ -40,16 +40,8 @@ PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding,
     Py_DECREF(io);
     if (stream == NULL)
         return NULL;
-    if (name != NULL) {
-        nameobj = PyUnicode_DecodeFSDefault(name);
-        if (nameobj == NULL)
-            PyErr_Clear();
-        else {
-            if (PyObject_SetAttrString(stream, "name", nameobj) < 0)
-                PyErr_Clear();
-            Py_DECREF(nameobj);
-        }
-    }
+    /* ignore name attribute because the name attribute of _BufferedIOMixin
+       and TextIOWrapper is read only */
     return stream;
 }
 
