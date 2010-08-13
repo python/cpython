@@ -408,7 +408,7 @@ else:
         b'\xff'.decode(TESTFN_ENCODING)
     except UnicodeDecodeError:
         # 0xff will be encoded using the surrogate character u+DCFF
-        TESTFN_UNENCODEABLE = TESTFN_UNICODE \
+        TESTFN_UNENCODEABLE = TESTFN
             + b'-\xff'.decode(TESTFN_ENCODING, 'surrogateescape')
     else:
         # File system encoding (eg. ISO-8859-* encodings) can encode
