@@ -525,11 +525,6 @@ class UnicodeTest(
                     return 'G(' + self.x + ')'
                 return object.__format__(self, format_spec)
 
-        # class that returns a bad type from __format__
-        class H:
-            def __format__(self, format_spec):
-                return 1.0
-
         class I(datetime.date):
             def __format__(self, format_spec):
                 return self.strftime(format_spec)
