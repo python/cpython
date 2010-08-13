@@ -921,11 +921,12 @@ if mswindows:
 
         def test_shell_string_with_spaces(self):
             # call() function with string argument with spaces on Windows
-            self.with_spaces('"%s" "%s"' % (self.fname, "ab cd"), shell=1)
+            self.with_spaces('"%s" "%s" "%s"' % (sys.executable, self.fname,
+                                             "ab cd"), shell=1)
 
         def test_shell_sequence_with_spaces(self):
             # call() function with sequence argument with spaces on Windows
-            self.with_spaces([self.fname, "ab cd"], shell=1)
+            self.with_spaces([sys.executable, self.fname, "ab cd"], shell=1)
 
         def test_noshell_string_with_spaces(self):
             # call() function with string argument with spaces on Windows
