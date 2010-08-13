@@ -302,12 +302,12 @@ in various ways.  There is a separate error indicator for each thread.
    use.
 
 
-.. cfunction:: int PyErr_WarnEx(PyObject *category, char *message, int stacklevel)
+.. cfunction:: int PyErr_WarnEx(PyObject *category, char *message, int stack_level)
 
    Issue a warning message.  The *category* argument is a warning category (see
-   below) or *NULL*; the *message* argument is a message string.  *stacklevel* is a
+   below) or *NULL*; the *message* argument is a message string.  *stack_level* is a
    positive number giving a number of stack frames; the warning will be issued from
-   the  currently executing line of code in that stack frame.  A *stacklevel* of 1
+   the  currently executing line of code in that stack frame.  A *stack_level* of 1
    is the function calling :cfunc:`PyErr_WarnEx`, 2 is  the function above that,
    and so forth.
 
@@ -347,6 +347,13 @@ in various ways.  There is a separate error indicator for each thread.
    and *registry* arguments may be set to *NULL* to get the default effect
    described there.
 
+
+.. cfunction:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
+
+   Function similar to :cfunc:`PyErr_WarnEx`, but use
+   :cfunc:`PyUnicode_FromFormatV` to format the warning message.
+
+   .. versionadded:: 3.2
 
 .. cfunction:: int PyErr_CheckSignals()
 

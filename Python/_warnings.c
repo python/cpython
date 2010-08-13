@@ -710,24 +710,58 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 
 
 /* Function to issue a warning message; may raise an exception. */
-int
-PyErr_WarnEx(PyObject *category, const char *text, Py_ssize_t stack_level)
+
+static int
+warn_unicode(PyObject *category, PyObject *message,
+             Py_ssize_t stack_level)
 {
     PyObject *res;
-    PyObject *message = PyUnicode_FromString(text);
-    if (message == NULL)
-        return -1;
 
     if (category == NULL)
         category = PyExc_RuntimeWarning;
 
     res = do_warn(message, category, stack_level);
-    Py_DECREF(message);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
 
     return 0;
+}
+
+int
+PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level,
+                 const char *format, ...)
+{
+    int ret;
+    PyObject *message;
+    va_list vargs;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    message = PyUnicode_FromFormatV(format, vargs);
+    if (message != NULL) {
+        ret = warn_unicode(category, message, stack_level);
+        Py_DECREF(message);
+    }
+    else
+        ret = -1;
+    va_end(vargs);
+    return ret;
+}
+
+int
+PyErr_WarnEx(PyObject *category, const char *text, Py_ssize_t stack_level)
+{
+    int ret;
+    PyObject *message = PyUnicode_FromString(text);
+    if (message == NULL)
+        return -1;
+    ret = warn_unicode(category, message, stack_level);
+    Py_DECREF(message);
+    return ret;
 }
 
 /* PyErr_Warn is only for backwards compatability and will be removed.

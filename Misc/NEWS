@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9425: Create PyErr_WarnFormat() function, similar to PyErr_WarnEx()
+  but use PyUnicode_FromFormatV() to format the warning message.
+
 - Issue #8530: Prevent stringlib fastsearch from reading beyond the front
   of an array.
 
@@ -85,7 +88,7 @@ Library
   Thread-local objects involved in reference cycles will be deallocated
   timely by the cyclic GC, even if the underlying thread is still running.
 
-- Issue #9452: Add read_file, read_string, and read_dict to the configparser 
+- Issue #9452: Add read_file, read_string, and read_dict to the configparser
   API; new source attribute to exceptions.
 
 - Issue #6231: Fix xml.etree.ElementInclude to include the tail of the

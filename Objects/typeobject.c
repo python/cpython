@@ -3892,13 +3892,10 @@ PyType_Ready(PyTypeObject *type)
        tp_reserved) but not tp_richcompare. */
     if (type->tp_reserved && !type->tp_richcompare) {
         int error;
-        char msg[240];
-        PyOS_snprintf(msg, sizeof(msg),
-                      "Type %.100s defines tp_reserved (formerly "
-                      "tp_compare) but not tp_richcompare. "
-                      "Comparisons may not behave as intended.",
-                      type->tp_name);
-        error = PyErr_WarnEx(PyExc_DeprecationWarning, msg, 1);
+        error = PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "Type %.100s defines tp_reserved (formerly tp_compare) "
+            "but not tp_richcompare. Comparisons may not behave as intended.",
+            type->tp_name);
         if (error == -1)
             goto error;
     }

@@ -7,6 +7,7 @@ extern "C" {
 PyAPI_FUNC(PyObject*) _PyWarnings_Init(void);
 
 PyAPI_FUNC(int) PyErr_WarnEx(PyObject *, const char *, Py_ssize_t);
+PyAPI_FUNC(int) PyErr_WarnFormat(PyObject *, Py_ssize_t, const char *, ...);
 PyAPI_FUNC(int) PyErr_WarnExplicit(PyObject *, const char *, const char *, int,
                                     const char *, PyObject *);
 

@@ -56,10 +56,6 @@ PyModule_New(const char *name)
     return NULL;
 }
 
-static char api_version_warning[] =
-"Python C API version mismatch for module %.100s:\
- This Python has API version %d, module %.100s has version %d.";
-
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
@@ -79,12 +75,13 @@ PyModule_Create2(struct PyModuleDef* module, int module_api_version)
     }
     name = module->m_name;
     if (module_api_version != PYTHON_API_VERSION) {
-        char message[512];
-        PyOS_snprintf(message, sizeof(message),
-                      api_version_warning, name,
-                      PYTHON_API_VERSION, name,
-                      module_api_version);
-        if (PyErr_WarnEx(PyExc_RuntimeWarning, message, 1))
+        int err;
+        err = PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
+            "Python C API version mismatch for module %.100s: "
+            "This Python has API version %d, module %.100s has version %d.",
+             name,
+             PYTHON_API_VERSION, name, module_api_version);
+        if (err)
             return NULL;
     }
     /* Make sure name is fully qualified.
