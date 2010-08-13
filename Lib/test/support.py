@@ -383,37 +383,37 @@ TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2"
 TESTFN_ENCODING = sys.getfilesystemencoding()
 
-# TESTFN_UNENCODEABLE is a filename (str type) that should *not* be able to be
+# TESTFN_UNENCODABLE is a filename (str type) that should *not* be able to be
 # encoded by the filesystem encoding (in strict mode). It can be None if we
 # cannot generate such filename.
 if os.name in ('nt', 'ce'):
     if sys.getwindowsversion().platform < 2:
         # win32s (0) or Windows 9x/ME (1)
-        TESTFN_UNENCODEABLE = None
+        TESTFN_UNENCODABLE = None
     else:
         # Japanese characters (I think - from bug 846133)
-        TESTFN_UNENCODEABLE = TESTFN + "-\u5171\u6709\u3055\u308c\u308b"
+        TESTFN_UNENCODABLE = TESTFN + "-\u5171\u6709\u3055\u308c\u308b"
         try:
-            TESTFN_UNENCODEABLE.encode(TESTFN_ENCODING)
+            TESTFN_UNENCODABLE.encode(TESTFN_ENCODING)
         except UnicodeEncodeError:
             pass
         else:
             print('WARNING: The filename %r CAN be encoded by the filesystem encoding (%s). '
                   'Unicode filename tests may not be effective'
-                  % (TESTFN_UNENCODEABLE, TESTFN_ENCODING))
-            TESTFN_UNENCODEABLE = None
+                  % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
+            TESTFN_UNENCODABLE = None
 else:
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(TESTFN_ENCODING)
     except UnicodeDecodeError:
         # 0xff will be encoded using the surrogate character u+DCFF
-        TESTFN_UNENCODEABLE = TESTFN \
+        TESTFN_UNENCODABLE = TESTFN \
             + b'-\xff'.decode(TESTFN_ENCODING, 'surrogateescape')
     else:
         # File system encoding (eg. ISO-8859-* encodings) can encode
         # the byte 0xff. Skip some unicode filename tests.
-        TESTFN_UNENCODEABLE = None
+        TESTFN_UNENCODABLE = None
 
 # Save the initial cwd
 SAVEDCWD = os.getcwd()
