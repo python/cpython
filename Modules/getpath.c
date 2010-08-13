@@ -394,12 +394,35 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home)
         return 1;
     }
 
-    /* Check to see if argv[0] is in the build directory */
+    /* Check to see if argv[0] is in the build directory. "pybuilddir.txt"
+       is written by setup.py and contains the relative path to the location
+       of shared library modules. */
     wcscpy(exec_prefix, argv0_path);
-    joinpath(exec_prefix, L"Modules/Setup");
+    joinpath(exec_prefix, L"pybuilddir.txt");
     if (isfile(exec_prefix)) {
-        reduce(exec_prefix);
-        return -1;
+        FILE *f = _Py_wfopen(exec_prefix, L"rb");
+        if (f == NULL)
+            errno = 0;
+        else {
+            char buf[MAXPATHLEN+1];
+            PyObject *decoded;
+            wchar_t rel_builddir_path[MAXPATHLEN+1];
+            size_t n;
+            n = fread(buf, 1, MAXPATHLEN, f);
+            buf[n] = '\0';
+            fclose(f);
+            decoded = PyUnicode_DecodeUTF8(buf, n, "surrogateescape");
+            if (decoded != NULL) {
+                n = PyUnicode_AsWideChar(decoded, rel_builddir_path, MAXPATHLEN);
+                Py_DECREF(decoded);
+                if (n >= 0) {
+                    rel_builddir_path[n] = L'\0';
+                    wcscpy(exec_prefix, argv0_path);
+                    joinpath(exec_prefix, rel_builddir_path);
+                    return -1;
+                }
+            }
+        }
     }
 
     /* Search from argv0_path, until root is found */

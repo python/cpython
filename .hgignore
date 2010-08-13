@@ -32,6 +32,7 @@ Modules/config.c
 Parser/pgen$
 ^core
 ^python-gdb.py
+^pybuilddir.txt
 
 syntax: glob
 libpython*.a

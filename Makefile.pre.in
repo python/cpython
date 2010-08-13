@@ -1213,6 +1213,7 @@ distclean: clobber
 		Modules/Setup Modules/Setup.local Modules/Setup.config \
 		Misc/python.pc
 	-rm -f python*-gdb.py
+	-rm -f pybuilddir.txt
 	find $(srcdir) '(' -name '*.fdc' -o -name '*~' \
 			   -o -name '[@,#]*' -o -name '*.old' \
 			   -o -name '*.orig' -o -name '*.rej' \
