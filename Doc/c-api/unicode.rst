@@ -682,7 +682,7 @@ These are the UTF-7 codec APIs:
    *s*.  Return *NULL* if an exception was raised by the codec.
 
 
-.. cfunction:: PyObject* PyUnicode_DecodeUTF8Stateful(const char *s, Py_ssize_t size, const char *errors, Py_ssize_t *consumed)
+.. cfunction:: PyObject* PyUnicode_DecodeUTF7Stateful(const char *s, Py_ssize_t size, const char *errors, Py_ssize_t *consumed)
 
    If *consumed* is *NULL*, behave like :cfunc:`PyUnicode_DecodeUTF7`.  If
    *consumed* is not *NULL*, trailing incomplete UTF-7 base-64 sections will not
