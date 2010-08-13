@@ -380,12 +380,24 @@ used, passsing :func:`PyUnicode_FSConverter` as the conversion function:
 
 .. cfunction:: int PyUnicode_FSConverter(PyObject* obj, void* result)
 
-   Convert *obj* into *result*, using :cdata:`Py_FileSystemDefaultEncoding`,
-   and the ``"surrogateescape"`` error handler. *result* must be a
-   ``PyObject*``, return a :func:`bytes` object which must be released if it
-   is no longer used.
+   ParseTuple converter: encode :class:`str` objects to :class:`bytes` using
+   :cfunc:`PyUnicode_EncodeFSDefault`; :class:`bytes` objects are output as-is.
+   *result* must be a :ctype:`PyBytesObject*` which must be released when it is
+   no longer used.
 
    .. versionadded:: 3.1
+
+To decode file names during argument parsing, the ``"O&"`` converter should be
+used, passsing :func:`PyUnicode_FSDecoder` as the conversion function:
+
+.. cfunction:: int PyUnicode_FSDecoder(PyObject* obj, void* result)
+
+   ParseTuple converter: decode :class:`bytes` objects to :class:`str` using
+   :cfunc:`PyUnicode_DecodeFSDefaultAndSize`; :class:`str` objects are output
+   as-is. *result* must be a :ctype:`PyUnicodeObject*` which must be released
+   when it is no longer used.
+
+   .. versionadded:: 3.2
 
 .. cfunction:: PyObject* PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
