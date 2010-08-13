@@ -105,20 +105,21 @@ FILE *
 _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 {
 #ifndef MS_WINDOWS
-    char cpath[PATH_MAX];
+    FILE *f;
+    char *cpath;
     char cmode[10];
     size_t r;
-    r = wcstombs(cpath, path, PATH_MAX);
-    if (r == (size_t)-1 || r >= PATH_MAX) {
-        errno = EINVAL;
-        return NULL;
-    }
     r = wcstombs(cmode, mode, 10);
     if (r == (size_t)-1 || r >= 10) {
         errno = EINVAL;
         return NULL;
     }
-    return fopen(cpath, cmode);
+    cpath = _Py_wchar2char(path);
+    if (cpath == NULL)
+        return NULL;
+    f = fopen(cpath, cmode);
+    PyMem_Free(cpath);
+    return f;
 #else
     return _wfopen(path, mode);
 #endif
@@ -734,6 +735,85 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
 }
 
 
+/* Encode a (wide) character string to the locale encoding with the
+   surrogateescape error handler (characters in range U+DC80..U+DCFF are
+   converted to bytes 0x80..0xFF).
+
+   This function is the reverse of _Py_char2wchar().
+
+   Return a pointer to a newly allocated byte string (use PyMem_Free() to free
+   the memory), or NULL on error (conversion error or memory error). */
+char*
+_Py_wchar2char(const wchar_t *text)
+{
+    const size_t len = wcslen(text);
+    char *result = NULL, *bytes = NULL;
+    size_t i, size, converted;
+    wchar_t c, buf[2];
+
+    /* The function works in two steps:
+       1. compute the length of the output buffer in bytes (size)
+       2. outputs the bytes */
+    size = 0;
+    buf[1] = 0;
+    while (1) {
+        for (i=0; i < len; i++) {
+            c = text[i];
+            if (c >= 0xdc80 && c <= 0xdcff) {
+                /* UTF-8b surrogate */
+                if (bytes != NULL) {
+                    *bytes++ = c - 0xdc00;
+                    size--;
+                }
+                else
+                    size++;
+                continue;
+            }
+            else {
+                buf[0] = c;
+                if (bytes != NULL)
+                    converted = wcstombs(bytes, buf, size);
+                else
+                    converted = wcstombs(NULL, buf, 0);
+                if (converted == (size_t)-1) {
+                    if (result != NULL)
+                        PyMem_Free(result);
+                    return NULL;
+                }
+                if (bytes != NULL) {
+                    bytes += converted;
+                    size -= converted;
+                }
+                else
+                    size += converted;
+            }
+        }
+        if (result != NULL) {
+            *bytes = 0;
+            break;
+        }
+
+        size += 1; /* nul byte at the end */
+        result = PyMem_Malloc(size);
+        if (result == NULL)
+            return NULL;
+        bytes = result;
+    }
+    return result;
+}
+
+
+/* Decode a byte string from the locale encoding with the
+   surrogateescape error handler (undecodable bytes are decoded as characters
+   in range U+DC80..U+DCFF). If a byte sequence can be decoded as a surrogate
+   character, escape the bytes using the surrogateescape error handler instead
+   of decoding them.
+
+   Use _Py_wchar2char() to encode the character string back to a byte string.
+
+   Return a pointer to a newly allocated (wide) character string (use
+   PyMem_Free() to free the memory), or NULL on error (conversion error or
+   memory error). */
 wchar_t*
 _Py_char2wchar(char* arg)
 {

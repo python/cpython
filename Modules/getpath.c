@@ -139,13 +139,16 @@ static wchar_t *lib_python = L"lib/python" VERSION;
 static int
 _wstat(const wchar_t* path, struct stat *buf)
 {
-    char fname[PATH_MAX];
-    size_t res = wcstombs(fname, path, sizeof(fname));
-    if (res == (size_t)-1) {
+    int err;
+    char *fname;
+    fname = _Py_wchar2char(path);
+    if (fname == NULL) {
         errno = EINVAL;
         return -1;
     }
-    return stat(fname, buf);
+    err = stat(fname, buf);
+    PyMem_Free(fname);
+    return err;
 }
 #endif
 
