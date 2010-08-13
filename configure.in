@@ -4124,20 +4124,50 @@ then
    wide chars that would be converted.])
 fi
 
+AC_MSG_CHECKING(whether $CC supports computed gotos)
+AC_CACHE_VAL(ac_cv_computed_gotos,
+AC_RUN_IFELSE([AC_LANG_SOURCE([[[
+int main(int argc, char **argv)
+{
+    static void *targets[1] = { &&LABEL1 };
+    goto LABEL2;
+LABEL1:
+    return 0;
+LABEL2:
+    goto *targets[0];
+    return 1;
+}
+]]])],
+[ac_cv_computed_gotos=yes],
+[ac_cv_computed_gotos=no],
+[ac_cv_computed_gotos=no]))
+AC_MSG_RESULT($ac_cv_computed_gotos)
+if test "$ac_cv_computed_gotos" = yes
+then
+  AC_DEFINE(HAVE_COMPUTED_GOTOS, 1,
+  [Define if the C compiler supports computed gotos.])
+fi
+
 # Check for --with-computed-gotos
 AC_MSG_CHECKING(for --with-computed-gotos)
 AC_ARG_WITH(computed-gotos,
-            AS_HELP_STRING([--with-computed-gotos],
-                           [Use computed gotos / threaded dispatch in evaluation loop (not available on all compilers)]),
+            AS_HELP_STRING([--with(out)-computed-gotos],
+                           [Use computed gotos in evaluation loop (enabled by default on supported compilers)]),
 [
-if test "$withval" != no
+if test "$withval" = yes
 then 
   AC_DEFINE(USE_COMPUTED_GOTOS, 1,
   [Define if you want to use computed gotos in ceval.c.]) 
   AC_MSG_RESULT(yes)
-else AC_MSG_RESULT(no)
-fi],
-[AC_MSG_RESULT(no)])
+fi
+if test "$withval" = no
+then 
+  AC_DEFINE(USE_COMPUTED_GOTOS, 0,
+  [Define if you want to use computed gotos in ceval.c.]) 
+  AC_MSG_RESULT(no)
+fi
+],
+[AC_MSG_RESULT(no value specified)])
 
 
 

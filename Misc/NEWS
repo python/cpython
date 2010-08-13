@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9203: Computed gotos are now enabled by default on supported
+  compilers (which are detected by the configure script).  They can still
+  be disable selectively by specifying --without-computed-gotos.
+
 - Issue #9425: Create PyErr_WarnFormat() function, similar to PyErr_WarnEx()
   but use PyUnicode_FromFormatV() to format the warning message.
 

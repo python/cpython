@@ -840,11 +840,24 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
    -fno-crossjumping).
 */
 
-#if defined(USE_COMPUTED_GOTOS) && defined(DYNAMIC_EXECUTION_PROFILE)
+#ifdef DYNAMIC_EXECUTION_PROFILE
 #undef USE_COMPUTED_GOTOS
+#define USE_COMPUTED_GOTOS 0
 #endif
 
-#ifdef USE_COMPUTED_GOTOS
+#ifdef HAVE_COMPUTED_GOTOS
+    #ifndef USE_COMPUTED_GOTOS
+    #define USE_COMPUTED_GOTOS 1
+    #endif
+#else
+    #if defined(USE_COMPUTED_GOTOS) && USE_COMPUTED_GOTOS
+    #error "Computed gotos are not supported on this compiler."
+    #endif
+    #undef USE_COMPUTED_GOTOS
+    #define USE_COMPUTED_GOTOS 0
+#endif
+
+#if USE_COMPUTED_GOTOS
 /* Import the static jump table */
 #include "opcode_targets.h"
 
@@ -990,7 +1003,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 */
 
-#if defined(DYNAMIC_EXECUTION_PROFILE) || defined(USE_COMPUTED_GOTOS)
+#if defined(DYNAMIC_EXECUTION_PROFILE) || USE_COMPUTED_GOTOS
 #define PREDICT(op)             if (0) goto PRED_##op
 #define PREDICTED(op)           PRED_##op:
 #define PREDICTED_WITH_ARG(op)  PRED_##op:
@@ -2838,7 +2851,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             oparg = oparg<<16 | NEXTARG();
             goto dispatch_opcode;
 
-#ifdef USE_COMPUTED_GOTOS
+#if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #endif
         default:
