@@ -3623,56 +3623,70 @@ typedef struct {
 static int
 NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 {
-    char *path;
-    Py_ssize_t pathlen;
+#ifndef MS_WINDOWS
+    PyObject *path;
+    struct stat statbuf;
+    int rv;
 
     if (!_PyArg_NoKeywords("NullImporter()", kwds))
         return -1;
 
-    if (!PyArg_ParseTuple(args, "es:NullImporter",
-                          Py_FileSystemDefaultEncoding, &path))
+    if (!PyArg_ParseTuple(args, "O&:NullImporter",
+                          PyUnicode_FSConverter, &path))
         return -1;
 
-    pathlen = strlen(path);
-    if (pathlen == 0) {
-        PyMem_Free(path);
+    if (PyBytes_GET_SIZE(path) == 0) {
+        Py_DECREF(path);
         PyErr_SetString(PyExc_ImportError, "empty pathname");
         return -1;
-    } else {
-#ifndef MS_WINDOWS
-        struct stat statbuf;
-        int rv;
-
-        rv = stat(path, &statbuf);
-        PyMem_Free(path);
-        if (rv == 0) {
-            /* it exists */
-            if (S_ISDIR(statbuf.st_mode)) {
-                /* it's a directory */
-                PyErr_SetString(PyExc_ImportError,
-                                "existing directory");
-                return -1;
-            }
-        }
-#else /* MS_WINDOWS */
-        DWORD rv;
-        /* see issue1293 and issue3677:
-         * stat() on Windows doesn't recognise paths like
-         * "e:\\shared\\" and "\\\\whiterab-c2znlh\\shared" as dirs.
-         */
-        rv = GetFileAttributesA(path);
-        PyMem_Free(path);
-        if (rv != INVALID_FILE_ATTRIBUTES) {
-            /* it exists */
-            if (rv & FILE_ATTRIBUTE_DIRECTORY) {
-                /* it's a directory */
-                PyErr_SetString(PyExc_ImportError,
-                                "existing directory");
-                return -1;
-            }
-        }
-#endif
     }
+
+    rv = stat(PyBytes_AS_STRING(path), &statbuf);
+    Py_DECREF(path);
+    if (rv == 0) {
+        /* it exists */
+        if (S_ISDIR(statbuf.st_mode)) {
+            /* it's a directory */
+            PyErr_SetString(PyExc_ImportError, "existing directory");
+            return -1;
+        }
+    }
+#else /* MS_WINDOWS */
+    PyObject *pathobj;
+    DWORD rv;
+    wchar_t path[MAXPATHLEN+1];
+    Py_ssize_t len;
+
+    if (!_PyArg_NoKeywords("NullImporter()", kwds))
+        return -1;
+
+    if (!PyArg_ParseTuple(args, "U:NullImporter",
+                          &pathobj))
+        return -1;
+
+    if (PyUnicode_GET_SIZE(pathobj) == 0) {
+        PyErr_SetString(PyExc_ImportError, "empty pathname");
+        return -1;
+    }
+
+    len = PyUnicode_AsWideChar((PyUnicodeObject*)pathobj,
+                               path, sizeof(path) / sizeof(path[0]));
+    if (len == -1)
+        return -1;
+    /* see issue1293 and issue3677:
+     * stat() on Windows doesn't recognise paths like
+     * "e:\\shared\\" and "\\\\whiterab-c2znlh\\shared" as dirs.
+     */
+    rv = GetFileAttributesW(path);
+    if (rv != INVALID_FILE_ATTRIBUTES) {
+        /* it exists */
+        if (rv & FILE_ATTRIBUTE_DIRECTORY) {
+            /* it's a directory */
+            PyErr_SetString(PyExc_ImportError, "existing directory");
+            return -1;
+        }
+    }
+#endif
     return 0;
 }
 

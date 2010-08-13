@@ -306,11 +306,24 @@ class PEP3147Tests(unittest.TestCase):
                          os.sep.join(('.', 'pep3147', '__init__.py')))
 
 
+class NullImporterTests(unittest.TestCase):
+    @unittest.skipIf(support.TESTFN_UNENCODEABLE is None,
+                     "Need an undecodeable filename")
+    def test_unencodeable(self):
+        name = support.TESTFN_UNENCODEABLE
+        os.mkdir(name)
+        try:
+            self.assertRaises(ImportError, imp.NullImporter, name)
+        finally:
+            os.rmdir(name)
+
+
 def test_main():
     tests = [
         ImportTests,
         PEP3147Tests,
         ReloadTests,
+        NullImporterTests,
         ]
     try:
         import _thread
