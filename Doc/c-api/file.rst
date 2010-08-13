@@ -22,14 +22,18 @@ the :mod:`io` APIs instead.
    Create a Python file object from the file descriptor of an already
    opened file *fd*.  The arguments *name*, *encoding*, *errors* and *newline*
    can be *NULL* to use the defaults; *buffering* can be *-1* to use the
-   default.  Return *NULL* on failure.  For a more comprehensive description of
-   the arguments, please refer to the :func:`io.open` function documentation.
+   default. *name* is ignored and kept for backward compatibility. Return
+   *NULL* on failure. For a more comprehensive description of the arguments,
+   please refer to the :func:`io.open` function documentation.
 
    .. warning::
 
      Since Python streams have their own buffering layer, mixing them with
      OS-level file descriptors can produce various issues (such as unexpected
      ordering of data).
+
+   .. versionchanged:: 3.2
+      Ignore *name* attribute.
 
 
 .. cfunction:: int PyObject_AsFileDescriptor(PyObject *p)
