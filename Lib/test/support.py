@@ -382,29 +382,38 @@ TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 # file system encoding, but *not* with the default (ascii) encoding
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2"
 TESTFN_ENCODING = sys.getfilesystemencoding()
-# TESTFN_UNICODE_UNENCODEABLE is a filename that should *not* be
-# able to be encoded by *either* the default or filesystem encoding.
-# This test really only makes sense on Windows NT platforms
-# which have special Unicode support in posixmodule.
-if (not hasattr(sys, "getwindowsversion") or
-        sys.getwindowsversion()[3] < 2): #  0=win32s or 1=9x/ME
-    TESTFN_UNICODE_UNENCODEABLE = None
-else:
-    # Japanese characters (I think - from bug 846133)
-    TESTFN_UNICODE_UNENCODEABLE = TESTFN + "-\u5171\u6709\u3055\u308c\u308b"
-    try:
-        # XXX - Note - should be using TESTFN_ENCODING here - but for
-        # Windows, "mbcs" currently always operates as if in
-        # errors=ignore' mode - hence we get '?' characters rather than
-        # the exception.  'Latin1' operates as we expect - ie, fails.
-        # See [ 850997 ] mbcs encoding ignores errors
-        TESTFN_UNICODE_UNENCODEABLE.encode("Latin1")
-    except UnicodeEncodeError:
-        pass
+
+# TESTFN_UNENCODEABLE is a filename (str type) that should *not* be able to be
+# encoded by the filesystem encoding (in strict mode). It can be None if we
+# cannot generate such filename.
+if os.name in ('nt', 'ce'):
+    if sys.getwindowsversion().platform < 2:
+        # win32s (0) or Windows 9x/ME (1)
+        TESTFN_UNENCODEABLE = None
     else:
-        print('WARNING: The filename %r CAN be encoded by the filesystem.  '
-              'Unicode filename tests may not be effective'
-              % TESTFN_UNICODE_UNENCODEABLE)
+        # Japanese characters (I think - from bug 846133)
+        TESTFN_UNENCODEABLE = TESTFN + "-\u5171\u6709\u3055\u308c\u308b"
+        try:
+            TESTFN_UNENCODEABLE.encode(TESTFN_ENCODING)
+        except UnicodeEncodeError:
+            pass
+        else:
+            print('WARNING: The filename %r CAN be encoded by the filesystem encoding (%s). '
+                  'Unicode filename tests may not be effective'
+                  % (TESTFN_UNENCODEABLE, TESTFN_ENCODING))
+            TESTFN_UNENCODEABLE = None
+else:
+    try:
+        # ascii and utf-8 cannot encode the byte 0xff
+        b'\xff'.decode(TESTFN_ENCODING)
+    except UnicodeDecodeError:
+        # 0xff will be encoded using the surrogate character u+DCFF
+        TESTFN_UNENCODEABLE = TESTFN_UNICODE \
+            + b'-\xff'.decode(TESTFN_ENCODING, 'surrogateescape')
+    else:
+        # File system encoding (eg. ISO-8859-* encodings) can encode
+        # the byte 0xff. Skip some unicode filename tests.
+        TESTFN_UNENCODEABLE = None
 
 # Save the initial cwd
 SAVEDCWD = os.getcwd()

@@ -5,8 +5,9 @@ import os, glob, time, shutil
 import unicodedata
 
 import unittest
-from test.support import run_unittest, TESTFN_UNICODE, rmtree
-from test.support import TESTFN_ENCODING, TESTFN_UNICODE_UNENCODEABLE
+from test.support import (run_unittest, rmtree,
+    TESTFN_ENCODING, TESTFN_UNICODE, TESTFN_UNENCODEABLE)
+
 try:
     TESTFN_UNICODE.encode(TESTFN_ENCODING)
 except (UnicodeError, TypeError):
@@ -146,8 +147,8 @@ class TestUnicodeFiles(unittest.TestCase):
     # _test functions with each of the filename combinations we wish to test
     def test_single_files(self):
         self._test_single(TESTFN_UNICODE)
-        if TESTFN_UNICODE_UNENCODEABLE is not None:
-            self._test_single(TESTFN_UNICODE_UNENCODEABLE)
+        if TESTFN_UNENCODEABLE is not None:
+            self._test_single(TESTFN_UNENCODEABLE)
 
     def test_directories(self):
         # For all 'equivalent' combinations:
@@ -156,9 +157,9 @@ class TestUnicodeFiles(unittest.TestCase):
         ext = ".dir"
         self._do_directory(TESTFN_UNICODE+ext, TESTFN_UNICODE+ext, False)
         # Our directory name that can't use a non-unicode name.
-        if TESTFN_UNICODE_UNENCODEABLE is not None:
-            self._do_directory(TESTFN_UNICODE_UNENCODEABLE+ext,
-                               TESTFN_UNICODE_UNENCODEABLE+ext,
+        if TESTFN_UNENCODEABLE is not None:
+            self._do_directory(TESTFN_UNENCODEABLE+ext,
+                               TESTFN_UNENCODEABLE+ext,
                                False)
 
 def test_main():
