@@ -11,6 +11,10 @@ final judgement on a feature or bug.  If no active maintainer is listed for
 a given module, then questionable changes should go to python-dev, while
 any other issues can and should be decided by any committer.
 
+Unless a name is followed by a '*', you should never assign an issue to
+that person, only make them nosy.  Names followed by a '*' may be assigned
+issues involving the module or topic for which the name has a '*'.
+
 The Platform and Interest Area tables list broader fields in which various
 people have expertise.  These people can also be contacted for help,
 opinions, and decisions when issues involve their areas.
@@ -88,7 +92,7 @@ dis
 distutils           tarek
 doctest             tim_one (inactive)
 dummy_threading     brett.cannon
-email               barry, r.david.murray
+email               barry, r.david.murray*
 encodings           lemburg
 errno
 exceptions
