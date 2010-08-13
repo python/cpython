@@ -23,6 +23,13 @@ Extension Modules
 
 - Issue #7567: Don't call `setupterm' twice.
 
+Tests
+-----
+
+- Issue #8433: Fix test_curses failure caused by newer versions of
+  ncurses returning ERR from getmouse() when there are no mouse
+  events available.
+
 
 What's New in Python 2.6.6 rc 1?
 ================================
