@@ -101,10 +101,10 @@ PYTHONCASEOK : ignore case in 'import' statements (Windows).\n\
 PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n\
 ";
 
-#ifndef MS_WINDOWS
-static FILE*
-_wfopen(const wchar_t *path, const wchar_t *mode)
+FILE *
+_Py_wfopen(const wchar_t *path, const wchar_t *mode)
 {
+#ifndef MS_WINDOWS
     char cpath[PATH_MAX];
     char cmode[10];
     size_t r;
@@ -119,8 +119,10 @@ _wfopen(const wchar_t *path, const wchar_t *mode)
         return NULL;
     }
     return fopen(cpath, cmode);
-}
+#else
+    return _wfopen(path, mode);
 #endif
+}
 
 
 static int
@@ -640,7 +642,7 @@ Py_Main(int argc, wchar_t **argv)
         }
 
         if (sts==-1 && filename!=NULL) {
-            if ((fp = _wfopen(filename, L"r")) == NULL) {
+            if ((fp = _Py_wfopen(filename, L"r")) == NULL) {
                 char cfilename[PATH_MAX];
                 size_t r = wcstombs(cfilename, filename, PATH_MAX);
                 if (r == PATH_MAX)
