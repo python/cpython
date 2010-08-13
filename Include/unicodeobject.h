@@ -200,6 +200,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_FromUnicode PyUnicodeUCS2_FromUnicode
 # define PyUnicode_FromWideChar PyUnicodeUCS2_FromWideChar
 # define PyUnicode_FSConverter PyUnicodeUCS2_FSConverter
+# define PyUnicode_FSDecoder PyUnicodeUCS2_FSDecoder
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS2_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS2_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS2_GetSize
@@ -300,6 +301,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_FromUnicode PyUnicodeUCS4_FromUnicode
 # define PyUnicode_FromWideChar PyUnicodeUCS4_FromWideChar
 # define PyUnicode_FSConverter PyUnicodeUCS4_FSConverter
+# define PyUnicode_FSDecoder PyUnicodeUCS4_FSDecoder
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS4_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS4_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS4_GetSize
@@ -1239,11 +1241,15 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
 
 /* --- File system encoding ---------------------------------------------- */
 
-/* ParseTuple converter which converts a Unicode object into the file
-   system encoding as a bytes object, using the "surrogateescape" error
-   handler; bytes objects are output as-is. */
+/* ParseTuple converter: encode str objects to bytes using
+   PyUnicode_EncodeFSDefault(); bytes objects are output as-is. */
 
 PyAPI_FUNC(int) PyUnicode_FSConverter(PyObject*, void*);
+
+/* ParseTuple converter: decode bytes objects to unicode using
+   PyUnicode_DecodeFSDefaultAndSize(); str objects are output as-is. */
+
+PyAPI_FUNC(int) PyUnicode_FSDecoder(PyObject*, void*);
 
 /* Decode a null-terminated string using Py_FileSystemDefaultEncoding
    and the "surrogateescape" error handler.

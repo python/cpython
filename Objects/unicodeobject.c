@@ -1652,9 +1652,6 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
     }
 }
 
-/* Convert the argument to a bytes object, according to the file
-   system encoding.  The addr param must be a PyObject**.
-   This is designed to be used with "O&" in PyArg_Parse APIs. */
 
 int
 PyUnicode_FSConverter(PyObject* arg, void* addr)
@@ -1687,6 +1684,47 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
     size = PyBytes_GET_SIZE(output);
     data = PyBytes_AS_STRING(output);
     if (size != strlen(data)) {
+        PyErr_SetString(PyExc_TypeError, "embedded NUL character");
+        Py_DECREF(output);
+        return 0;
+    }
+    *(PyObject**)addr = output;
+    return Py_CLEANUP_SUPPORTED;
+}
+
+
+int
+PyUnicode_FSDecoder(PyObject* arg, void* addr)
+{
+    PyObject *output = NULL;
+    Py_ssize_t size;
+    void *data;
+    if (arg == NULL) {
+        Py_DECREF(*(PyObject**)addr);
+        return 1;
+    }
+    if (PyUnicode_Check(arg)) {
+        output = arg;
+        Py_INCREF(output);
+    }
+    else {
+        arg = PyBytes_FromObject(arg);
+        if (!arg)
+            return 0;
+        output = PyUnicode_DecodeFSDefaultAndSize(PyBytes_AS_STRING(arg),
+                                                  PyBytes_GET_SIZE(arg));
+        Py_DECREF(arg);
+        if (!output)
+            return 0;
+        if (!PyUnicode_Check(output)) {
+            Py_DECREF(output);
+            PyErr_SetString(PyExc_TypeError, "decoder failed to return unicode");
+            return 0;
+        }
+    }
+    size = PyUnicode_GET_SIZE(output);
+    data = PyUnicode_AS_UNICODE(output);
+    if (size != Py_UNICODE_strlen(data)) {
         PyErr_SetString(PyExc_TypeError, "embedded NUL character");
         Py_DECREF(output);
         return 0;
