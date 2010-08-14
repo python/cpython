@@ -103,7 +103,7 @@ per line, regular files (or symlinks to them) only.  If you do supply your own
 :file:`MANIFEST`, you must specify everything: the default set of files
 described above does not apply in this case.
 
-.. versionadded:: 3.2
+.. versionadded:: 3.1
    :file:`MANIFEST` files start with a comment indicated they are generated.
    Files without this comment are not overwritten or removed.
 
@@ -205,7 +205,7 @@ distribution::
 
 :option:`-o` is a shortcut for :option:`--manifest-only`.
 
-.. versionchanged:: 3.2
+.. versionchanged:: 3.1
     An existing generated :file:`MANIFEST` will be regenerated without
     :command:`sdist` comparing its modification time to the one of
     :file:`MANIFEST.in` or :file:`setup.py`.
