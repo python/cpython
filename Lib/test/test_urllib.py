@@ -9,6 +9,7 @@ import unittest
 from test import support
 import os
 import tempfile
+import warnings
 
 def hexescape(char):
     """Escape char as RFC 2396 specifies"""
@@ -569,7 +570,8 @@ class UnquotingTests(unittest.TestCase):
                          "%s" % result)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, None)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, ())
-        with support.check_warnings():
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
             self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, b'')
 
     def test_unquoting_badpercent(self):
