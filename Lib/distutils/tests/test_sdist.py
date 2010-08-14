@@ -29,7 +29,6 @@ class sdistTestCase(PyPIRCCommandTestCase):
         super(sdistTestCase, self).setUp()
         self.old_path = os.getcwd()
         self.temp_pkg = os.path.join(self.mkdtemp(), 'temppkg')
-        self.tmp_dir = self.mkdtemp()
 
     def tearDown(self):
         os.chdir(self.old_path)
@@ -151,67 +150,6 @@ class sdistTestCase(PyPIRCCommandTestCase):
         result.sort()
         self.assertEquals(result,
                 ['fake-1.0.tar', 'fake-1.0.tar.gz'])
-
-    def get_cmd(self, metadata=None):
-        """Returns a cmd"""
-        if metadata is None:
-            metadata = {'name': 'fake', 'version': '1.0',
-                        'url': 'xxx', 'author': 'xxx',
-                        'author_email': 'xxx'}
-        dist = Distribution(metadata)
-        dist.script_name = 'setup.py'
-        dist.packages = ['somecode']
-        dist.include_package_data = True
-        cmd = sdist(dist)
-        cmd.dist_dir = 'dist'
-        def _warn(*args):
-            pass
-        cmd.warn = _warn
-        return dist, cmd
-
-    def test_get_file_list(self):
-        # make sure MANIFEST is recalculated
-        dist, cmd = self.get_cmd()
-
-        os.chdir(self.tmp_dir)
-
-        # filling data_files by pointing files in package_data
-        os.mkdir(os.path.join(self.tmp_dir, 'somecode'))
-        self.write_file((self.tmp_dir, 'somecode', '__init__.py'), '#')
-        self.write_file((self.tmp_dir, 'somecode', 'one.py'), '#')
-        cmd.ensure_finalized()
-        cmd.run()
-
-        f = open(cmd.manifest)
-        try:
-            manifest = [line.strip() for line in f.read().split('\n')
-                        if line.strip() != '']
-        finally:
-            f.close()
-
-        self.assertEquals(len(manifest), 2)
-
-        # adding a file
-        self.write_file((self.tmp_dir, 'somecode', 'two.py'), '#')
-
-        # make sure build_py is reinitinialized, like a fresh run
-        build_py = dist.get_command_obj('build_py')
-        build_py.finalized = False
-        build_py.ensure_finalized()
-
-        cmd.run()
-
-        f = open(cmd.manifest)
-        try:
-            manifest2 = [line.strip() for line in f.read().split('\n')
-                         if line.strip() != '']
-        finally:
-            f.close()
-
-        # do we have the new file in MANIFEST ?
-        self.assertEquals(len(manifest2), 3)
-        self.assert_('two.py' in manifest2[-1])
-
 
 def test_suite():
     return unittest.makeSuite(sdistTestCase)
