@@ -416,7 +416,8 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home)
             fclose(f);
             decoded = PyUnicode_DecodeUTF8(buf, n, "surrogateescape");
             if (decoded != NULL) {
-                n = PyUnicode_AsWideChar(decoded, rel_builddir_path, MAXPATHLEN);
+                n = PyUnicode_AsWideChar((PyUnicodeObject*)decoded,
+                                         rel_builddir_path, MAXPATHLEN);
                 Py_DECREF(decoded);
                 if (n >= 0) {
                     rel_builddir_path[n] = L'\0';
