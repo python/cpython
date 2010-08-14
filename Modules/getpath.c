@@ -493,21 +493,21 @@ calculate_path(void)
 #endif
 
     if (_path) {
-            size_t r = mbstowcs(wpath, _path, MAXPATHLEN+1);
-            path = wpath;
-            if (r == (size_t)-1 || r > MAXPATHLEN) {
-                    /* Could not convert PATH, or it's too long. */
-                    path = NULL;
-            }
+        size_t r = mbstowcs(wpath, _path, MAXPATHLEN+1);
+        path = wpath;
+        if (r == (size_t)-1 || r > MAXPATHLEN) {
+            /* Could not convert PATH, or it's too long. */
+            path = NULL;
+        }
     }
 
-        /* If there is no slash in the argv0 path, then we have to
-         * assume python is on the user's $PATH, since there's no
-         * other way to find a directory to start the search from.  If
-         * $PATH isn't exported, you lose.
-         */
-        if (wcschr(prog, SEP))
-                wcsncpy(progpath, prog, MAXPATHLEN);
+    /* If there is no slash in the argv0 path, then we have to
+     * assume python is on the user's $PATH, since there's no
+     * other way to find a directory to start the search from.  If
+     * $PATH isn't exported, you lose.
+     */
+    if (wcschr(prog, SEP))
+        wcsncpy(progpath, prog, MAXPATHLEN);
 #ifdef __APPLE__
      /* On Mac OS X, if a script uses an interpreter of the form
       * "#!/opt/python2.3/bin/python", the kernel only passes "python"
@@ -519,52 +519,52 @@ calculate_path(void)
       * will fail if a relative path was used. but in that case,
       * absolutize() should help us out below
       */
-        else if(0 == _NSGetExecutablePath(execpath, &nsexeclength) && execpath[0] == SEP) {
-                size_t r = mbstowcs(progpath, execpath, MAXPATHLEN+1);
-                if (r == (size_t)-1 || r > MAXPATHLEN) {
-                        /* Could not convert execpath, or it's too long. */
-                        progpath[0] = '\0';
-                }
+    else if(0 == _NSGetExecutablePath(execpath, &nsexeclength) && execpath[0] == SEP) {
+        size_t r = mbstowcs(progpath, execpath, MAXPATHLEN+1);
+        if (r == (size_t)-1 || r > MAXPATHLEN) {
+            /* Could not convert execpath, or it's too long. */
+            progpath[0] = '\0';
         }
+    }
 #endif /* __APPLE__ */
-        else if (path) {
-                while (1) {
-                        wchar_t *delim = wcschr(path, DELIM);
+    else if (path) {
+        while (1) {
+            wchar_t *delim = wcschr(path, DELIM);
 
-                        if (delim) {
-                                size_t len = delim - path;
-                                if (len > MAXPATHLEN)
-                                        len = MAXPATHLEN;
-                                wcsncpy(progpath, path, len);
-                                *(progpath + len) = '\0';
-                        }
-                        else
-                                wcsncpy(progpath, path, MAXPATHLEN);
+            if (delim) {
+                size_t len = delim - path;
+                if (len > MAXPATHLEN)
+                    len = MAXPATHLEN;
+                wcsncpy(progpath, path, len);
+                *(progpath + len) = '\0';
+            }
+            else
+                wcsncpy(progpath, path, MAXPATHLEN);
 
-                        joinpath(progpath, prog);
-                        if (isxfile(progpath))
-                                break;
+            joinpath(progpath, prog);
+            if (isxfile(progpath))
+                break;
 
-                        if (!delim) {
-                                progpath[0] = L'\0';
-                                break;
-                        }
-                        path = delim + 1;
-                }
+            if (!delim) {
+                progpath[0] = L'\0';
+                break;
+            }
+            path = delim + 1;
         }
-        else
-                progpath[0] = '\0';
-        if (progpath[0] != SEP && progpath[0] != '\0')
-                absolutize(progpath);
-        wcsncpy(argv0_path, progpath, MAXPATHLEN);
-        argv0_path[MAXPATHLEN] = '\0';
+    }
+    else
+        progpath[0] = '\0';
+    if (progpath[0] != SEP && progpath[0] != '\0')
+        absolutize(progpath);
+    wcsncpy(argv0_path, progpath, MAXPATHLEN);
+    argv0_path[MAXPATHLEN] = '\0';
 
 #ifdef WITH_NEXT_FRAMEWORK
-        /* On Mac OS X we have a special case if we're running from a framework.
-        ** This is because the python home should be set relative to the library,
-        ** which is in the framework, not relative to the executable, which may
-        ** be outside of the framework. Except when we're in the build directory...
-        */
+    /* On Mac OS X we have a special case if we're running from a framework.
+    ** This is because the python home should be set relative to the library,
+    ** which is in the framework, not relative to the executable, which may
+    ** be outside of the framework. Except when we're in the build directory...
+    */
     pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
     /* Use dylib functions to find out where the framework was loaded from */
     buf = (wchar_t *)NSLibraryNameForModule(pythonModule);
@@ -582,13 +582,13 @@ calculate_path(void)
         joinpath(argv0_path, lib_python);
         joinpath(argv0_path, LANDMARK);
         if (!ismodule(argv0_path)) {
-                /* We are in the build directory so use the name of the
-                   executable - we know that the absolute path is passed */
-                wcsncpy(argv0_path, progpath, MAXPATHLEN);
+            /* We are in the build directory so use the name of the
+               executable - we know that the absolute path is passed */
+            wcsncpy(argv0_path, progpath, MAXPATHLEN);
         }
         else {
-                /* Use the location of the library as the progpath */
-                wcsncpy(argv0_path, buf, MAXPATHLEN);
+            /* Use the location of the library as the progpath */
+            wcsncpy(argv0_path, buf, MAXPATHLEN);
         }
     }
 #endif
