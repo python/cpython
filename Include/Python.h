@@ -135,6 +135,11 @@ PyAPI_FUNC(wchar_t *) _Py_char2wchar(char *);
 PyAPI_FUNC(char*) _Py_wchar2char(const wchar_t *text);
 PyAPI_FUNC(FILE *) _Py_wfopen(const wchar_t *path, const wchar_t *mode);
 
+/* _Py_stat lives in import.c */
+#ifdef HAVE_STAT
+int _Py_stat(PyObject *unicode, struct stat *statbuf);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -1962,6 +1962,39 @@ case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, char *name)
 
 
 #ifdef HAVE_STAT
+
+/* Call _wstat() on Windows, or stat() otherwise. Only fill st_mode
+   attribute on Windows. Return 0 on success, -1 on stat error or (if
+   PyErr_Occurred()) unicode error. */
+
+int
+_Py_stat(PyObject *unicode, struct stat *statbuf)
+{
+#ifdef MS_WINDOWS
+    wchar_t path[MAXPATHLEN+1];
+    Py_ssize_t len;
+    int err;
+    struct _stat wstatbuf;
+
+    len = PyUnicode_AsWideChar((PyUnicodeObject*)unicode, path,
+                               sizeof(path) / sizeof(path[0]));
+    if (len == -1)
+        return -1;
+    err = _wstat(path, &wstatbuf);
+    if (!err)
+        statbuf->st_mode = wstatbuf.st_mode;
+    return err;
+#else
+    int ret;
+    PyObject *bytes = PyUnicode_EncodeFSDefault(unicode);
+    if (bytes == NULL)
+        return -1;
+    ret = stat(PyBytes_AS_STRING(bytes), statbuf);
+    Py_DECREF(bytes);
+    return ret;
+#endif
+}
+
 /* Helper to look for __init__.py or __init__.py[co] in potential package */
 static int
 find_init_module(char *buf)
