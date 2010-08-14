@@ -93,7 +93,7 @@ distutils           tarek*, eric.araujo*
 doctest             tim_one (inactive)
 dummy_threading     brett.cannon
 email               barry, r.david.murray*
-encodings           lemburg
+encodings           lemburg, loewis
 errno
 exceptions
 fcntl
@@ -108,7 +108,7 @@ functools
 gc                  pitrou
 getopt
 getpass
-gettext
+gettext             loewis
 glob
 grp
 gzip
@@ -129,7 +129,7 @@ json                bob.ippolito (inactive)
 keyword
 lib2to3             benjamin.peterson
 linecache
-locale              lemburg
+locale              loewis, lemburg
 logging             vsajip
 macpath
 mailbox             andrew.kuchling
@@ -139,7 +139,7 @@ math                mark.dickinson, rhettinger
 mimetypes
 mmap
 modulefinder        theller, jvr
-msilib
+msilib              loewis
 msvcrt
 multiprocessing     jnoller
 netrc
@@ -148,7 +148,7 @@ nntplib
 numbers
 operator
 optparse            aronacher
-os
+os                  loewis
 ossaudiodev
 parser
 pdb                 georg.brandl
@@ -221,7 +221,7 @@ traceback           georg.brandl
 tty
 turtle              gregorlingl
 types
-unicodedata         lemburg, ezio.melotti
+unicodedata         loewis, lemburg, ezio.melotti
 unittest            michael.foord
 urllib              orsenthil
 uu
@@ -243,7 +243,7 @@ xml.sax
 xml.sax.handler
 xml.sax.saxutils
 xml.sax.xmlreader
-xmlrpc
+xmlrpc              loewis
 zipfile
 zipimport
 zlib
@@ -288,13 +288,13 @@ GUI
 i18n                lemburg
 import machinery    brett.cannon, ncoghlan
 io                  pitrou, benjamin.peterson
-locale              lemburg
+locale              lemburg, loewis
 mathematics         mark.dickinson, eric.smith, lemburg
 memory management   tim_one, lemburg
 networking          giampaolo.rodola
 packaging           tarek, lemburg
 py3 transition      benjamin.peterson
-release management  tarek, lemburg, benjamin.peterson, barry,
+release management  tarek, lemburg, benjamin.peterson, barry, loewis,
                     gvanrossum, anthonybaxter
 str.format          eric.smith
 time and dates      lemburg
