@@ -181,6 +181,12 @@ class BasicSocketTests(unittest.TestCase):
 
 
 class NetworkedTests(unittest.TestCase):
+    def setUp(self):
+        self.old_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(30)
+
+    def tearDown(self):
+        socket.setdefaulttimeout(self.old_timeout)
 
     def test_connect(self):
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
