@@ -482,6 +482,30 @@ class TestLRU(unittest.TestCase):
         self.assertEqual(f.hits, 0)
         self.assertEqual(f.misses, 1)
 
+        # test size zero (which means "never-cache")
+        f_cnt = 0
+        @functools.lru_cache(0)
+        def f():
+            nonlocal f_cnt
+            f_cnt += 1
+            return 20
+        self.assertEqual(f(), 20)
+        self.assertEqual(f(), 20)
+        self.assertEqual(f(), 20)
+        self.assertEqual(f_cnt, 3)
+
+        # test size one
+        f_cnt = 0
+        @functools.lru_cache(1)
+        def f():
+            nonlocal f_cnt
+            f_cnt += 1
+            return 20
+        self.assertEqual(f(), 20)
+        self.assertEqual(f(), 20)
+        self.assertEqual(f(), 20)
+        self.assertEqual(f_cnt, 1)
+
     def test_lfu(self):
         def orig(x, y):
             return 3*x+y
@@ -502,6 +526,30 @@ class TestLRU(unittest.TestCase):
         f(x, y)
         self.assertEqual(f.hits, 0)
         self.assertEqual(f.misses, 1)
+
+        # test size zero (which means "never-cache")
+        f_cnt = 0
+        @functools.lfu_cache(0)
+        def f():
+            nonlocal f_cnt
+            f_cnt += 1
+            return 20
+        self.assertEqual(f(), 20)
+        self.assertEqual(f(), 20)
+        self.assertEqual(f(), 20)
+        self.assertEqual(f_cnt, 3)
+
+        # test size one
+        f_cnt = 0
+        @functools.lfu_cache(1)
+        def f():
+            nonlocal f_cnt
+            f_cnt += 1
+            return 20
+        self.assertEqual(f(), 20)
+        self.assertEqual(f(), 20)
+        self.assertEqual(f(), 20)
+        self.assertEqual(f_cnt, 1)
 
 def test_main(verbose=None):
     test_classes = (
