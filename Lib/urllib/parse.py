@@ -39,7 +39,7 @@ uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap',
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
                'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
-               'svn', 'svn+ssh', 'sftp', 'nfs',' git', 'git+ssh']
+               'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh']
 non_hierarchical = ['gopher', 'hdl', 'mailto', 'news',
                     'telnet', 'wais', 'imap', 'snews', 'sip', 'sips']
 uses_params = ['ftp', 'hdl', 'prospero', 'http', 'imap',
@@ -61,8 +61,9 @@ MAX_CACHE_SIZE = 20
 _parse_cache = {}
 
 def clear_cache():
-    """Clear the parse cache."""
+    """Clear the parse cache and the quoters cache."""
     _parse_cache.clear()
+    _safe_quoters.clear()
 
 
 class ResultMixin(object):
@@ -302,17 +303,22 @@ def unquote_to_bytes(string):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
     # unescaped non-ASCII characters, which URIs should not.
+    if not string:
+        # Is it a string-like object?
+        string.split
+        return b''
     if isinstance(string, str):
         string = string.encode('utf-8')
     res = string.split(b'%')
-    res[0] = res[0]
-    for i in range(1, len(res)):
-        item = res[i]
+    if len(res) == 1:
+        return string
+    string = res[0]
+    for item in res[1:]:
         try:
-            res[i] = bytes([int(item[:2], 16)]) + item[2:]
+            string += bytes([int(item[:2], 16)]) + item[2:]
         except ValueError:
-            res[i] = b'%' + item
-    return b''.join(res)
+            string += b'%' + item
+    return string
 
 def unquote(string, encoding='utf-8', errors='replace'):
     """Replace %xx escapes by their single-character equivalent. The optional
@@ -324,36 +330,39 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
     unquote('abc%20def') -> 'abc def'.
     """
-    if encoding is None: encoding = 'utf-8'
-    if errors is None: errors = 'replace'
-    # pct_sequence: contiguous sequence of percent-encoded bytes, decoded
-    # (list of single-byte bytes objects)
-    pct_sequence = []
+    if string == '':
+        return string
     res = string.split('%')
-    for i in range(1, len(res)):
-        item = res[i]
+    if len(res) == 1:
+        return string
+    if encoding is None:
+        encoding = 'utf-8'
+    if errors is None:
+        errors = 'replace'
+    # pct_sequence: contiguous sequence of percent-encoded bytes, decoded
+    pct_sequence = b''
+    string = res[0]
+    for item in res[1:]:
         try:
-            if not item: raise ValueError
-            pct_sequence.append(bytes.fromhex(item[:2]))
+            if not item:
+                raise ValueError
+            pct_sequence += bytes.fromhex(item[:2])
             rest = item[2:]
+            if not rest:
+                # This segment was just a single percent-encoded character.
+                # May be part of a sequence of code units, so delay decoding.
+                # (Stored in pct_sequence).
+                continue
         except ValueError:
             rest = '%' + item
-        if not rest:
-            # This segment was just a single percent-encoded character.
-            # May be part of a sequence of code units, so delay decoding.
-            # (Stored in pct_sequence).
-            res[i] = ''
-        else:
-            # Encountered non-percent-encoded characters. Flush the current
-            # pct_sequence.
-            res[i] = b''.join(pct_sequence).decode(encoding, errors) + rest
-            pct_sequence = []
+        # Encountered non-percent-encoded characters. Flush the current
+        # pct_sequence.
+        string += pct_sequence.decode(encoding, errors) + rest
+        pct_sequence = b''
     if pct_sequence:
         # Flush the final pct_sequence
-        # res[-1] will always be empty if pct_sequence != []
-        assert not res[-1], "string=%r, res=%r" % (string, res)
-        res[-1] = b''.join(pct_sequence).decode(encoding, errors)
-    return ''.join(res)
+        string += pct_sequence.decode(encoding, errors)
+    return string
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     """Parse a query given as a string argument.
@@ -434,7 +443,8 @@ _ALWAYS_SAFE = frozenset(b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                          b'abcdefghijklmnopqrstuvwxyz'
                          b'0123456789'
                          b'_.-')
-_safe_quoters= {}
+_ALWAYS_SAFE_BYTES = bytes(_ALWAYS_SAFE)
+_safe_quoters = {}
 
 class Quoter(collections.defaultdict):
     """A mapping from bytes (in range(0,256)) to strings.
@@ -446,7 +456,7 @@ class Quoter(collections.defaultdict):
     # of cached keys don't call Python code at all).
     def __init__(self, safe):
         """safe: bytes object."""
-        self.safe = _ALWAYS_SAFE.union(c for c in safe if c < 128)
+        self.safe = _ALWAYS_SAFE.union(safe)
 
     def __repr__(self):
         # Without this, will just display as a defaultdict
@@ -454,7 +464,7 @@ class Quoter(collections.defaultdict):
 
     def __missing__(self, b):
         # Handle a cache miss. Store quoted string in cache and return.
-        res = b in self.safe and chr(b) or ('%%%02X' % b)
+        res = chr(b) if b in self.safe else '%{:02X}'.format(b)
         self[b] = res
         return res
 
@@ -488,6 +498,8 @@ def quote(string, safe='/', encoding=None, errors=None):
     errors='strict' (unsupported characters raise a UnicodeEncodeError).
     """
     if isinstance(string, str):
+        if not string:
+            return string
         if encoding is None:
             encoding = 'utf-8'
         if errors is None:
@@ -522,18 +534,22 @@ def quote_from_bytes(bs, safe='/'):
     not perform string-to-bytes encoding.  It always returns an ASCII string.
     quote_from_bytes(b'abc def\xab') -> 'abc%20def%AB'
     """
+    if not isinstance(bs, (bytes, bytearray)):
+        raise TypeError("quote_from_bytes() expected bytes")
+    if not bs:
+        return ''
     if isinstance(safe, str):
         # Normalize 'safe' by converting to bytes and removing non-ASCII chars
         safe = safe.encode('ascii', 'ignore')
-    cachekey = bytes(safe)  # In case it was a bytearray
-    if not (isinstance(bs, bytes) or isinstance(bs, bytearray)):
-        raise TypeError("quote_from_bytes() expected a bytes")
+    else:
+        safe = bytes([c for c in safe if c < 128])
+    if not bs.rstrip(_ALWAYS_SAFE_BYTES + safe):
+        return bs.decode()
     try:
-        quoter = _safe_quoters[cachekey]
+        quoter = _safe_quoters[safe]
     except KeyError:
-        quoter = Quoter(safe)
-        _safe_quoters[cachekey] = quoter
-    return ''.join([quoter[char] for char in bs])
+        _safe_quoters[safe] = quoter = Quoter(safe).__getitem__
+    return ''.join([quoter(char) for char in bs])
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
     """Encode a sequence of two-element tuples or dictionary into a URL query string.
