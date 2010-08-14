@@ -232,6 +232,8 @@ Build
 Tests
 -----
 
+- Issue #8857: Provide a test case for socket.getaddrinfo.
+
 - Issue #7564: Skip test_ioctl if another process is attached to /dev/tty.
 
 - Issue #8433: Fix test_curses failure with newer versions of ncurses.
