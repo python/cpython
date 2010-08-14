@@ -16,8 +16,21 @@ import array
 from weakref import proxy
 import signal
 
+def try_address(host, port=0, family=socket.AF_INET):
+    """Try to bind a socket on the given host:port and return True
+    if that has been possible."""
+    try:
+        sock = socket.socket(family, socket.SOCK_STREAM)
+        sock.bind((host, port))
+    except (socket.error, socket.gaierror):
+        return False
+    else:
+        sock.close()
+        return True
+
 HOST = support.HOST
 MSG = b'Michael Gilfix was here\n'
+SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 
 try:
     import _thread as thread
@@ -563,6 +576,44 @@ class GeneralModuleTests(unittest.TestCase):
         s = socket.socket()
         self.assertRaises(ValueError, s.ioctl, -1, None)
         s.ioctl(socket.SIO_KEEPALIVE_VALS, (1, 100, 100))
+
+    def testGetaddrinfo(self):
+        try:
+            socket.getaddrinfo('localhost', 80)
+        except socket.gaierror as err:
+            if err.errno == socket.EAI_SERVICE:
+                # see http://bugs.python.org/issue1282647
+                self.skipTest("buggy libc version")
+            raise
+        # len of every sequence is supposed to be == 5
+        for info in socket.getaddrinfo(HOST, None):
+            self.assertEqual(len(info), 5)
+        # host can be a domain name, a string representation of an
+        # IPv4/v6 address or None
+        socket.getaddrinfo('localhost', 80)
+        socket.getaddrinfo('127.0.0.1', 80)
+        socket.getaddrinfo(None, 80)
+        if SUPPORTS_IPV6:
+            socket.getaddrinfo('::1', 80)
+        # port can be a string service name such as "http", a numeric
+        # port number or None
+        socket.getaddrinfo(HOST, "http")
+        socket.getaddrinfo(HOST, 80)
+        socket.getaddrinfo(HOST, None)
+        # test family and socktype filters
+        infos = socket.getaddrinfo(HOST, None, socket.AF_INET)
+        for family, _, _, _, _ in infos:
+            self.assertEqual(family, socket.AF_INET)
+        infos = socket.getaddrinfo(HOST, None, 0, socket.SOCK_STREAM)
+        for _, socktype, _, _, _ in infos:
+            self.assertEqual(socktype, socket.SOCK_STREAM)
+        # test proto and flags arguments
+        socket.getaddrinfo(HOST, None, 0, 0, socket.AI_CANONNAME)
+        socket.getaddrinfo(HOST, None, 0, 0, 0, socket.AI_PASSIVE)
+        # a server willing to support both IPv4 and IPv6 will
+        # usually do this
+        socket.getaddrinfo(None, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0,
+                           socket.AI_PASSIVE)
 
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
