@@ -12,6 +12,8 @@ What's New in Python 2.6.6?
 Library
 -------
 
+- Issue #9600: Don't use relative import for _multiprocessing on Windows.
+
 - Issue #8688: Revert regression introduced in 2.6.6rc1 (making Distutils
   recalculate MANIFEST every time).
 

@@ -150,7 +150,7 @@ else:
     import _subprocess
     import time
 
-    from ._multiprocessing import win32, Connection, PipeConnection
+    from _multiprocessing import win32, Connection, PipeConnection
     from .util import Finalize
 
     #try:
