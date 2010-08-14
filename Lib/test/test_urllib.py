@@ -261,8 +261,8 @@ class urlretrieve_FileTests(unittest.TestCase):
         result = urllib.request.urlretrieve("file:%s" % support.TESTFN)
         self.assertEqual(result[0], support.TESTFN)
         self.assertTrue(isinstance(result[1], email.message.Message),
-                     "did not get a email.message.Message instance as second "
-                     "returned value")
+                     "did not get a email.message.Message instance "
+                     "as second returned value")
 
     def test_copy(self):
         # Test that setting the filename argument works.
@@ -539,6 +539,7 @@ class QuotingTests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "using quote_plus(): %r != %r" % (expect, result))
 
+
 class UnquotingTests(unittest.TestCase):
     """Tests for unquote() and unquote_plus()
 
@@ -566,6 +567,10 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(result.count('%'), 1,
                          "using unquote(): not all characters escaped: "
                          "%s" % result)
+        self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, None)
+        self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, ())
+        with support.check_warnings():
+            self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, b'')
 
     def test_unquoting_badpercent(self):
         # Test unquoting on bad percent-escapes
@@ -600,6 +605,8 @@ class UnquotingTests(unittest.TestCase):
         result = urllib.parse.unquote_to_bytes(given)
         self.assertEqual(expect, result, "using unquote_to_bytes(): %r != %r"
                          % (expect, result))
+        self.assertRaises((TypeError, AttributeError), urllib.parse.unquote_to_bytes, None)
+        self.assertRaises((TypeError, AttributeError), urllib.parse.unquote_to_bytes, ())
 
     def test_unquoting_mixed_case(self):
         # Test unquoting on mixed-case hex digits in the percent-escapes
@@ -741,7 +748,7 @@ class urlencode_Tests(unittest.TestCase):
         expect_somewhere = ["1st=1", "2nd=2", "3rd=3"]
         result = urllib.parse.urlencode(given)
         for expected in expect_somewhere:
-            self.assertTrue(expected in result,
+            self.assertIn(expected, result,
                          "testing %s: %s not found in %s" %
                          (test_type, expected, result))
         self.assertEqual(result.count('&'), 2,
@@ -788,8 +795,7 @@ class urlencode_Tests(unittest.TestCase):
         result = urllib.parse.urlencode(given, True)
         for value in given["sequence"]:
             expect = "sequence=%s" % value
-            self.assertTrue(expect in result,
-                         "%s not found in %s" % (expect, result))
+            self.assertIn(expect, result)
         self.assertEqual(result.count('&'), 2,
                          "Expected 2 '&'s, got %s" % result.count('&'))
 
