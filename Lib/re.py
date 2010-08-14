@@ -250,53 +250,14 @@ def escape(pattern):
 # --------------------------------------------------------------------
 # internals
 
-_cache = {}
-_cache_repl = {}
-
 _pattern_type = type(sre_compile.compile("", 0))
 
-_MAXCACHE = 500
+def _compile(pattern, flags):
+    return _compile_typed(type(pattern), pattern, flags)
 
-def _shrink_cache(cache_dict, max_length, divisor=5):
-    """Make room in the given cache.
-
-    Args:
-        cache_dict: The cache dictionary to modify.
-        max_length: Maximum # of entries in cache_dict before it is shrunk.
-        divisor: Cache will shrink to max_length - 1/divisor*max_length items.
-    """
-    # Toss out a fraction of the entries at random to make room for new ones.
-    # A random algorithm was chosen as opposed to simply cache_dict.popitem()
-    # as popitem could penalize the same regular expression repeatedly based
-    # on its internal hash value.  Being random should spread the cache miss
-    # love around.
-    cache_keys = tuple(cache_dict.keys())
-    overage = len(cache_keys) - max_length
-    if overage < 0:
-        # Cache is already within limits.  Normally this should not happen
-        # but it could due to multithreading.
-        return
-    number_to_toss = max_length // divisor + overage
-    # The import is done here to avoid a circular depencency.
-    import random
-    if not hasattr(random, 'sample'):
-        # Do nothing while resolving the circular dependency:
-        #  re->random->warnings->tokenize->string->re
-        return
-    for doomed_key in random.sample(cache_keys, number_to_toss):
-        try:
-            del cache_dict[doomed_key]
-        except KeyError:
-            # Ignore problems if the cache changed from another thread.
-            pass
-
-def _compile(*args):
-    return _compile_typed(type(args[0]), *args)
-
-@functools.lru_cache(maxsize=_MAXCACHE)
-def _compile_typed(type, *key):
+@functools.lru_cache(maxsize=500)
+def _compile_typed(text_bytes_type, pattern, flags):
     # internal: compile pattern
-    pattern, flags = key
     if isinstance(pattern, _pattern_type):
         if flags:
             raise ValueError(
@@ -305,12 +266,10 @@ def _compile_typed(type, *key):
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
     return sre_compile.compile(pattern, flags)
-    return p
 
-@functools.lru_cache(maxsize=_MAXCACHE)
-def _compile_repl(*key):
+@functools.lru_cache(maxsize=500)
+def _compile_repl(repl, pattern):
     # internal: compile replacement pattern
-    repl, pattern = key
     return sre_parse.parse_template(repl, pattern)
 
 def _expand(pattern, match, template):
