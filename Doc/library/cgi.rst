@@ -327,7 +327,8 @@ algorithms implemented in this module in other circumstances.
    character (``'"'``) is also translated; this helps for inclusion in an HTML
    attribute value, as in ``<A HREF="...">``.  If the value to be quoted might
    include single- or double-quote characters, or both, consider using the
-   :func:`quoteattr` function in the :mod:`xml.sax.saxutils` module instead.
+   :func:`~xml.sax.saxutils.quoteattr` function in the :mod:`xml.sax.saxutils`
+   module instead.
 
 
 .. _cgi-security:
