@@ -103,6 +103,12 @@ class BasicTests(unittest.TestCase):
 
 
 class NetworkedTests(unittest.TestCase):
+    def setUp(self):
+        self.old_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(30)
+
+    def tearDown(self):
+        socket.setdefaulttimeout(self.old_timeout)
 
     def test_connect(self):
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
@@ -182,8 +188,6 @@ class NetworkedTests(unittest.TestCase):
         pem = ssl.get_server_certificate(("svn.python.org", 443))
         if not pem:
             self.fail("No server certificate on svn.python.org:443!")
-
-        return
 
         try:
             pem = ssl.get_server_certificate(("svn.python.org", 443), ca_certs=CERTFILE)
