@@ -354,7 +354,7 @@ algorithms implemented in this module in other circumstances.
    that single quotes are never translated.
 
    If the value to be quoted might include single- or double-quote characters,
-   or both, consider using the :func:`quoteattr` function in the
+   or both, consider using the :func:`~xml.sax.saxutils.quoteattr` function in the
    :mod:`xml.sax.saxutils` module instead.
 
 
