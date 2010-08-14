@@ -29,6 +29,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8688: MANIFEST files created by distutils now include a magic
+  comment indicating they are generated.  Manually maintained MANIFESTs
+  without this marker will not be overwritten or removed.
+
 - Issue #7467: when reading a file from a ZIP archive, its CRC is checked
   and a BadZipfile error is raised if it doesn't match (as used to be the
   case in Python 2.5 and earlier).

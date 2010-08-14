@@ -162,6 +162,10 @@ This mechanism can be used when the default list of files is not enough.
 Principle
 ---------
 
+.. versionadded:: 2.7
+   :file:`MANIFEST` files start with a comment indicated they are generated.
+   Files without this comment are not overwritten or removed.
+
 The manifest template has one command per line, where each command specifies a
 set of files to include or exclude from the source distribution.  For an
 example, let's look at the Distutils' own manifest template::
@@ -268,3 +272,7 @@ character, and ``[range]`` matches any of the characters in *range* (e.g.,
 character" is platform-specific: on Unix it is anything except slash; on Windows
 anything except backslash or colon.
 
+.. versionchanged:: 2.7
+    An existing generated :file:`MANIFEST` will be regenerated without
+    :command:`sdist` comparing its modification time to the one of
+    :file:`MANIFEST.in` or :file:`setup.py`.
