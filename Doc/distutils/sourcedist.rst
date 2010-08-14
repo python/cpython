@@ -163,7 +163,7 @@ Principle
 ---------
 
 .. versionadded:: 2.7
-   :file:`MANIFEST` files start with a comment indicated they are generated.
+   :file:`MANIFEST` files start with a comment indicating they are generated.
    Files without this comment are not overwritten or removed.
 
 The manifest template has one command per line, where each command specifies a
