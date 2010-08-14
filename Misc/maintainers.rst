@@ -48,6 +48,7 @@ __future__
 __main__            gvanrossum
 _dummy_thread       brett.cannon
 _thread             pitrou
+_winreg             brian.curtin
 abc
 aifc                r.david.murray
 argparse            bethard
@@ -91,7 +92,7 @@ dbm
 decimal             facundobatista, rhettinger, mark.dickinson
 difflib             tim_one
 dis
-distutils           tarek
+distutils           tarek*, eric.araujo*
 doctest             tim_one (inactive)
 dummy_threading     brett.cannon
 email               barry, r.david.murray*
@@ -235,7 +236,6 @@ warnings            brett.cannon
 wave
 weakref             fdrake, pitrou
 webbrowser          georg.brandl
-winreg              brian.curtin
 winsound            effbot (inactive)
 wsgiref             pje
 xdrlib
