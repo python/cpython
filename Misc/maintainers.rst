@@ -299,7 +299,7 @@ release management  tarek, lemburg, benjamin.peterson, barry, loewis,
 str.format          eric.smith
 time and dates      lemburg
 testing             michael.foord, pitrou, giampaolo.rodola
-threads
+threads             pitrou
 bug tracker         ezio.melotti
 unicode             lemburg, ezio.melotti, haypo
 version control
