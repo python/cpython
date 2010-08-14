@@ -733,7 +733,7 @@ pylong = StackObject(
 
 pyinteger_or_bool = StackObject(
                         name='int_or_bool',
-                        obtype=(int, int, bool),
+                        obtype=(int, bool),
                         doc="A Python integer object (short or long), or "
                             "a Python bool.")
 

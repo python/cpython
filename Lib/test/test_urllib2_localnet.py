@@ -172,7 +172,7 @@ class DigestAuthHandler:
             auth_validated = False
 
             # MSIE uses short_path in its validation, but Python's
-            # urllib2 uses the full path, so we're going to see if
+            # urllib.request uses the full path, so we're going to see if
             # either of them works here.
 
             for path in [request_handler.path, request_handler.short_path]:
@@ -298,8 +298,9 @@ def GetRequestHandler(responses):
 
         def do_GET(self):
             body = self.send_head()
-            if body:
-                self.wfile.write(body)
+            while body:
+                done = self.wfile.write(body)
+                body = body[done:]
 
         def do_POST(self):
             content_length = self.headers["Content-Length"]
@@ -330,7 +331,7 @@ def GetRequestHandler(responses):
 
 
 class TestUrlopen(unittest.TestCase):
-    """Tests urllib2.urlopen using the network.
+    """Tests urllib.request.urlopen using the network.
 
     These tests are not exhaustive.  Assuming that testing using files does a
     good job overall of some of the basic interface features.  There are no
@@ -380,8 +381,8 @@ class TestUrlopen(unittest.TestCase):
 
         handler = self.start_server(responses)
         data = self.urlopen("http://localhost:%s/" % handler.port)
-        self.assertEquals(data, expected_response)
-        self.assertEquals(handler.requests, ["/", "/somewhere_else"])
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ["/", "/somewhere_else"])
 
     def test_chunked(self):
         expected_response = b"hello world"
@@ -395,7 +396,7 @@ class TestUrlopen(unittest.TestCase):
         response = [(200, [("Transfer-Encoding", "chunked")], chunked_start)]
         handler = self.start_server(response)
         data = self.urlopen("http://localhost:%s/" % handler.port)
-        self.assertEquals(data, expected_response)
+        self.assertEqual(data, expected_response)
 
     def test_404(self):
         expected_response = b"Bad bad bad..."
@@ -409,23 +410,23 @@ class TestUrlopen(unittest.TestCase):
         else:
             self.fail("404 should raise URLError")
 
-        self.assertEquals(data, expected_response)
-        self.assertEquals(handler.requests, ["/weeble"])
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ["/weeble"])
 
     def test_200(self):
         expected_response = b"pycon 2008..."
         handler = self.start_server([(200, [], expected_response)])
         data = self.urlopen("http://localhost:%s/bizarre" % handler.port)
-        self.assertEquals(data, expected_response)
-        self.assertEquals(handler.requests, ["/bizarre"])
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ["/bizarre"])
 
     def test_200_with_parameters(self):
         expected_response = b"pycon 2008..."
         handler = self.start_server([(200, [], expected_response)])
         data = self.urlopen("http://localhost:%s/bizarre" % handler.port,
                              b"get=with_feeling")
-        self.assertEquals(data, expected_response)
-        self.assertEquals(handler.requests, ["/bizarre", b"get=with_feeling"])
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ["/bizarre", b"get=with_feeling"])
 
     def test_sending_headers(self):
         handler = self.start_server()
@@ -488,6 +489,25 @@ class TestUrlopen(unittest.TestCase):
                           # parameterize the framework with a mock resolver.
                           urllib.request.urlopen,
                           "http://sadflkjsasf.i.nvali.d./")
+
+    def test_iteration(self):
+        expected_response = b"pycon 2008..."
+        handler = self.start_server([(200, [], expected_response)])
+        data = urllib.request.urlopen("http://localhost:%s" % handler.port)
+        for line in data:
+            self.assertEqual(line, expected_response)
+
+    def test_line_iteration(self):
+        lines = [b"We\n", b"got\n", b"here\n", b"verylong " * 8192 + b"\n"]
+        expected_response = b"".join(lines)
+        handler = self.start_server([(200, [], expected_response)])
+        data = urllib.request.urlopen("http://localhost:%s" % handler.port)
+        for index, line in enumerate(data):
+            self.assertEqual(line, lines[index],
+                             "Fetched line number %s doesn't match expected:\n"
+                             "    Expected length was %s, got %s" %
+                             (index, len(lines[index]), len(line)))
+        self.assertEqual(index + 1, len(lines))
 
 def test_main():
     support.run_unittest(ProxyAuthTests, TestUrlopen)
