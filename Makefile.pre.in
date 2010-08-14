@@ -897,7 +897,7 @@ libinstall:	build_all $(srcdir)/Lib/$(PLATDIR)
 		else	true; \
 		fi; \
 	done
-	@for i in $(srcdir)/Lib/*.py $(srcdir)/Lib/*.doc $(srcdir)/Lib/*.egg-info ; \
+	@for i in $(srcdir)/Lib/*.py $(srcdir)/Lib/*.egg-info ; \
 	do \
 		if test -x $$i; then \
 			$(INSTALL_SCRIPT) $$i $(DESTDIR)$(LIBDEST); \
@@ -1232,7 +1232,7 @@ funny:
 		-o -type d \
 		-o -name '*.[chs]' \
 		-o -name '*.py' \
-		-o -name '*.doc' \
+		-o -name '*.pyw' \
 		-o -name '*.dat' \
 		-o -name '*.el' \
 		-o -name '*.fd' \
@@ -1244,20 +1244,18 @@ funny:
 		-o -name '*.xpm' \
 		-o -name '*.uue' \
 		-o -name '*.decTest' \
-		-o -name '*,[vpt]' \
+		-o -name '*.tmCommand' \
+		-o -name '*.tmSnippet' \
 		-o -name 'Setup' \
 		-o -name 'Setup.*' \
 		-o -name regen \
 		-o -name README \
+		-o -name NEWS \
+		-o -name HISTORY \
 		-o -name Makefile \
 		-o -name ChangeLog \
-		-o -name Repository \
-		-o -name Root \
-		-o -name Entries \
-		-o -name Tag \
-		-o -name tags \
-		-o -name TAGS \
-		-o -name .cvsignore \
+		-o -name .hgignore \
+		-o -name .bzrignore \
 		-o -name MANIFEST \
 		-o -print
 
