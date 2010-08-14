@@ -15,6 +15,10 @@ from _functools import partial, reduce
 from collections import OrderedDict, Counter
 from heapq import nsmallest
 from operator import itemgetter
+try:
+    from _thread import allocate_lock as Lock
+except:
+    from _dummy_thread import allocate_lock as Lock
 
 # update_wrapper() and wraps() are tools to help write
 # wrapper functions that can handle naive introspection
@@ -115,37 +119,42 @@ def lfu_cache(maxsize=100):
     http://en.wikipedia.org/wiki/Cache_algorithms#Least-Frequently_Used
 
     """
-    def decorating_function(user_function):
+    def decorating_function(user_function, tuple=tuple, sorted=sorted, len=len):
         cache = {}                      # mapping of args to results
         use_count = Counter()           # times each key has been accessed
         kwd_mark = object()             # separate positional and keyword args
+        lock = Lock()
 
         @wraps(user_function)
         def wrapper(*args, **kwds):
             key = args
             if kwds:
                 key += (kwd_mark,) + tuple(sorted(kwds.items()))
-            use_count[key] += 1         # count a use of this key
             try:
-                result = cache[key]
-                wrapper.hits += 1
+                with lock:
+                    use_count[key] += 1         # count a use of this key
+                    result = cache[key]
+                    wrapper.hits += 1
             except KeyError:
                 result = user_function(*args, **kwds)
-                cache[key] = result
-                wrapper.misses += 1
-                if len(cache) > maxsize:
-                    # purge the 10% least frequently used entries
-                    for key, _ in nsmallest(maxsize // 10,
-                                            use_count.items(),
-                                            key=itemgetter(1)):
-                        del cache[key], use_count[key]
+                with lock:
+                    use_count[key] += 1         # count a use of this key
+                    cache[key] = result
+                    wrapper.misses += 1
+                    if len(cache) > maxsize:
+                        # purge the 10% least frequently used entries
+                        for key, _ in nsmallest(maxsize // 10,
+                                                use_count.items(),
+                                                key=itemgetter(1)):
+                            del cache[key], use_count[key]
             return result
 
         def clear():
             """Clear the cache and cache statistics"""
-            cache.clear()
-            use_count.clear()
-            wrapper.hits = wrapper.misses = 0
+            with lock:
+                cache.clear()
+                use_count.clear()
+                wrapper.hits = wrapper.misses = 0
 
         wrapper.hits = wrapper.misses = 0
         wrapper.clear = clear
@@ -161,9 +170,10 @@ def lru_cache(maxsize=100):
     http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
 
     """
-    def decorating_function(user_function):
+    def decorating_function(user_function, tuple=tuple, sorted=sorted, len=len):
         cache = OrderedDict()           # ordered least recent to most recent
         kwd_mark = object()             # separate positional and keyword args
+        lock = Lock()
 
         @wraps(user_function)
         def wrapper(*args, **kwds):
@@ -171,20 +181,25 @@ def lru_cache(maxsize=100):
             if kwds:
                 key += (kwd_mark,) + tuple(sorted(kwds.items()))
             try:
-                result = cache.pop(key)
-                wrapper.hits += 1
+                with lock:
+                    result = cache[key]
+                    del cache[key]
+                    cache[key] = result         # record recent use of this key
+                    wrapper.hits += 1
             except KeyError:
                 result = user_function(*args, **kwds)
-                wrapper.misses += 1
-                if len(cache) >= maxsize:
-                    cache.popitem(0)    # purge least recently used cache entry
-            cache[key] = result         # record recent use of this key
+                with lock:
+                    cache[key] = result         # record recent use of this key
+                    wrapper.misses += 1
+                    if len(cache) > maxsize:
+                        cache.popitem(0)        # purge least recently used cache entry
             return result
 
         def clear():
             """Clear the cache and cache statistics"""
-            cache.clear()
-            wrapper.hits = wrapper.misses = 0
+            with lock:
+                cache.clear()
+                wrapper.hits = wrapper.misses = 0
 
         wrapper.hits = wrapper.misses = 0
         wrapper.clear = clear
