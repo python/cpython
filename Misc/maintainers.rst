@@ -171,7 +171,7 @@ pydoc
 queue               rhettinger
 quopri
 random              rhettinger
-re                  effbot (inactive), pitrou
+re                  effbot (inactive), pitrou, ezio.melotti
 readline
 reprlib
 resource
@@ -300,7 +300,7 @@ str.format          eric.smith
 time and dates      lemburg
 testing             michael.foord, pitrou, giampaolo.rodola
 threads
-tracker
+bug tracker         ezio.melotti
 unicode             lemburg, ezio.melotti, haypo
 version control
 ==================  ===========
