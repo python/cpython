@@ -314,7 +314,9 @@ def unquote_to_bytes(string):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
     # unescaped non-ASCII characters, which URIs should not.
-    if string in (b'', ''):
+    if not string:
+        # Is it a string-like object?
+        string.split
         return b''
     if isinstance(string, str):
         string = string.encode('utf-8')
