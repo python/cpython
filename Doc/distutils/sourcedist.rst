@@ -103,6 +103,10 @@ per line, regular files (or symlinks to them) only.  If you do supply your own
 :file:`MANIFEST`, you must specify everything: the default set of files
 described above does not apply in this case.
 
+.. versionadded:: 3.2
+   :file:`MANIFEST` files start with a comment indicated they are generated.
+   Files without this comment are not overwritten or removed.
+
 The manifest template has one command per line, where each command specifies a
 set of files to include or exclude from the source distribution.  For an
 example, again we turn to the Distutils' own manifest template::
@@ -187,10 +191,6 @@ The normal course of operations for the :command:`sdist` command is as follows:
 * if neither :file:`MANIFEST` nor :file:`MANIFEST.in` exist, create a manifest
   with just the default file set
 
-* if either :file:`MANIFEST.in` or the setup script (:file:`setup.py`) are more
-  recent than :file:`MANIFEST`, recreate :file:`MANIFEST` by reading
-  :file:`MANIFEST.in`
-
 * use the list of files now in :file:`MANIFEST` (either just generated or read
   in) to create the source distribution archive(s)
 
@@ -205,4 +205,7 @@ distribution::
 
 :option:`-o` is a shortcut for :option:`--manifest-only`.
 
-
+.. versionchanged:: 3.2
+    An existing generated :file:`MANIFEST` will be regenerated without
+    :command:`sdist` comparing its modification time to the one of
+    :file:`MANIFEST.in` or :file:`setup.py`.
