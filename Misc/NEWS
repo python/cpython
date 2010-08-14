@@ -109,7 +109,7 @@ Library
 - Issue #8047: Fix the xml.etree serializer to return bytes by default.  Use
   ``encoding="unicode"`` to generate a Unicode string.
 
-- Fix Issue8280 - urllib2's Request method will remove fragments in the url.
+- Issue #8280: urllib2's Request method will remove fragments in the url.
   This is how it is supposed to work, wget and curl do the same.  Previous
   behavior was wrong.
 
