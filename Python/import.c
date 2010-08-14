@@ -1976,10 +1976,11 @@ _Py_stat(PyObject *unicode, struct stat *statbuf)
     int err;
     struct _stat wstatbuf;
 
-    len = PyUnicode_AsWideChar((PyUnicodeObject*)unicode, path,
-                               sizeof(path) / sizeof(path[0]));
+    len = PyUnicode_AsWideChar((PyUnicodeObject*)unicode, path, MAXPATHLEN);
     if (len == -1)
         return -1;
+    path[len] = L'\0';
+
     err = _wstat(path, &wstatbuf);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
