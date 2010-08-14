@@ -15,16 +15,17 @@ developers.txt	A history of who got developer permissions, and why
 gdbinit		Handy stuff to put in your .gdbinit file, if you use gdb
 HISTORY		News from previous releases -- oldest last
 indent.pro	GNU indent profile approximating my C style
-maintainers.txt	A list of maintainers for library modules
+maintainers.rst	A list of maintainers for library modules
 NEWS		News for this release (for some meaning of "this")
 NEWS.help	How to edit NEWS
 Porting		Mini-FAQ on porting to new platforms
 PURIFY.README	Information for Purify users
 pymemcompat.h	Memory interface compatibility file.
+python-config.in      Python script template for python-config
 python.man	UNIX man page for the python interpreter
 python-mode.el	Emacs mode for editing Python programs
 python.pc.in	Package configuration info template for pkg-config
-python-wing.wpr Wing IDE project file
+python-wing.wpr	Wing IDE project file
 README		The file you're reading now
 README.coverity	Information about running Coverity's Prevent on Python
 README.klocwork	Information about running Klocwork's K7 on Python
