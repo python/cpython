@@ -176,7 +176,7 @@ pydoc
 Queue               rhettinger
 quopri
 random              rhettinger
-re                  effbot (inactive), pitrou
+re                  effbot (inactive), pitrou, ezio.melotti
 readline
 reprlib
 resource
@@ -239,8 +239,15 @@ webbrowser          georg.brandl
 winsound            effbot (inactive)
 wsgiref             pje
 xdrlib
-xml                 loewis
+xml.dom
+xml.dom.minidom
+xml.dom.pulldom
 xml.etree           effbot (inactive)
+xml.parsers.expat
+xml.sax
+xml.sax.handler
+xml.sax.saxutils
+xml.sax.xmlreader
 xmlrpc              loewis
 zipfile
 zipimport
@@ -297,8 +304,8 @@ release management  tarek, lemburg, benjamin.peterson, barry, loewis,
 str.format          eric.smith
 time and dates      lemburg
 testing             michael.foord, pitrou, giampaolo.rodola
-threads
-tracker
+threads             pitrou
+bug tracker         ezio.melotti
 unicode             lemburg, ezio.melotti, haypo
 version control
 ==================  ===========
