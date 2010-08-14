@@ -397,7 +397,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             yield 'true'
         elif o is False:
             yield 'false'
-        elif isinstance(o, (int, int)):
+        elif isinstance(o, int):
             yield str(o)
         elif isinstance(o, float):
             yield _floatstr(o)

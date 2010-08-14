@@ -11,6 +11,10 @@ final judgement on a feature or bug.  If no active maintainer is listed for
 a given module, then questionable changes should go to python-dev, while
 any other issues can and should be decided by any committer.
 
+Unless a name is followed by a '*', you should never assign an issue to
+that person, only make them nosy.  Names followed by a '*' may be assigned
+issues involving the module or topic for which the name has a '*'.
+
 The Platform and Interest Area tables list broader fields in which various
 people have expertise.  These people can also be contacted for help,
 opinions, and decisions when issues involve their areas.
@@ -21,8 +25,8 @@ in this list by placing the word 'inactive' in parenthesis behind their
 tracker id.  They are of course free to remove that inactive mark at
 any time.
 
-Committers should update this table as their areas of expertise widen.
-New topics may be added to the third table at will.
+Committers should update these tables as their areas of expertise widen.
+New topics may be added to the Interest Area table at will.
 
 The existence of this list is not meant to indicate that these people
 *must* be contacted for decisions; it is, rather, a resource to be used
@@ -85,10 +89,10 @@ dbm
 decimal             facundobatista, rhettinger, mark.dickinson
 difflib             tim_one
 dis
-distutils           tarek
+distutils           tarek*, eric.araujo*
 doctest             tim_one (inactive)
 dummy_threading     brett.cannon
-email               barry, r.david.murray
+email               barry, r.david.murray*
 encodings           lemburg, loewis
 errno
 exceptions
@@ -147,7 +151,7 @@ optparse            aronacher
 os                  loewis
 ossaudiodev
 parser
-pdb                 georg.brandl
+pdb                 georg.brandl*
 pickle              alexandre.vassalotti, pitrou
 pickletools         alexandre.vassalotti
 pipes
@@ -157,7 +161,8 @@ plistlib
 poplib
 posix
 pprint              fdrake
-pstats
+profile             georg.brandl
+pstats              georg.brandl
 pty
 pwd
 py_compile
@@ -167,7 +172,7 @@ pydoc
 queue               rhettinger
 quopri
 random              rhettinger
-re                  effbot (inactive), pitrou
+re                  effbot (inactive), pitrou, ezio.melotti
 readline
 reprlib
 resource
@@ -189,7 +194,7 @@ spwd
 sqlite3             ghaering
 ssl                 janssen, pitrou, giampaolo.rodola
 stat
-string
+string              georg.brandl*
 stringprep
 struct              mark.dickinson
 subprocess          astrand (inactive)
@@ -202,18 +207,18 @@ syslog              jafo
 tabnanny            tim_one
 tarfile             lars.gustaebel
 telnetlib
-tempfile
+tempfile            georg.brandl
 termios
 test
-textwrap
+textwrap            georg.brandl
 threading           pitrou
 time                alexander.belopolsky
-timeit
+timeit              georg.brandl
 tkinter             gpolo
 token               georg.brandl
 tokenize
 trace               alexander.belopolsky
-traceback           georg.brandl
+traceback           georg.brandl*
 tty
 turtle              gregorlingl
 types
@@ -226,14 +231,21 @@ warnings            brett.cannon
 wave
 weakref             fdrake, pitrou
 webbrowser          georg.brandl
-winreg
+winreg              brian.curtin
 winsound            effbot (inactive)
 wsgiref             pje
 xdrlib
-xml                 loewis
+xml.dom
+xml.dom.minidom
+xml.dom.pulldom
 xml.etree           effbot (inactive)
+xml.parsers.expat
+xml.sax
+xml.sax.handler
+xml.sax.saxutils
+xml.sax.xmlreader
 xmlrpc              loewis
-zipfile
+zipfile             alanmcintyre
 zipimport
 zlib
 ==================  ===========
@@ -243,6 +255,7 @@ zlib
 Tool                Maintainers
 ------------------  -----------
 pybench             lemburg
+==================  ===========
 
 
 ==================  ===========
@@ -268,6 +281,7 @@ algorithms
 ast/compiler        ncoghlan, benjamin.peterson, brett.cannon, georg.brandl
 autoconf/makefiles
 bsd
+bug tracker         ezio.melotti
 buildbots
 bytecode            pitrou
 data formats        mark.dickinson, georg.brandl
@@ -286,10 +300,9 @@ py3 transition      benjamin.peterson
 release management  tarek, lemburg, benjamin.peterson, barry, loewis,
                     gvanrossum, anthonybaxter
 str.format          eric.smith
+testing             michael.foord, pitrou, giampaolo.rodola
+threads             pitrou
 time and dates      lemburg
-testing             michael.foord, pitrou
-threads
-tracker
 unicode             lemburg, ezio.melotti, haypo
 version control
 ==================  ===========

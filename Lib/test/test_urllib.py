@@ -103,7 +103,7 @@ class urlopen_FileTests(unittest.TestCase):
         self.assertEqual(self.returned_obj.geturl(), self.pathname)
 
     def test_getcode(self):
-        self.assertEqual(self.returned_obj.getcode(), None)
+        self.assertIsNone(self.returned_obj.getcode())
 
     def test_iter(self):
         # Test iterator
@@ -132,7 +132,7 @@ class ProxyTests(unittest.TestCase):
         self.env.set('NO_PROXY', 'localhost')
         proxies = urllib.request.getproxies_environment()
         # getproxies_environment use lowered case truncated (no '_proxy') keys
-        self.assertEquals('localhost', proxies['no'])
+        self.assertEqual('localhost', proxies['no'])
 
 
 class urlopen_HttpTests(unittest.TestCase):

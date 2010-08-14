@@ -14,7 +14,6 @@ import os
 import gc
 import signal
 import array
-import copy
 import socket
 import random
 import logging
@@ -68,10 +67,20 @@ WIN32 = (sys.platform == "win32")
 #
 
 try:
-    from ctypes import Structure, Value, copy, c_int, c_double
+    from ctypes import Structure, c_int, c_double
 except ImportError:
     Structure = object
     c_int = c_double = None
+
+try:
+    from ctypes import Value
+except ImportError:
+    Value = None
+
+try:
+    from ctypes import copy as ctypes_copy
+except ImportError:
+    ctypes_copy = None
 
 #
 # Creates a wrapper for a function which records the time it takes to finish
@@ -1103,11 +1112,9 @@ def baz():
         yield i*i
 
 class IteratorProxy(BaseProxy):
-    _exposed_ = ('next', '__next__')
+    _exposed_ = ('__next__',)
     def __iter__(self):
         return self
-    def __next__(self):
-        return self._callmethod('next')
     def __next__(self):
         return self._callmethod('__next__')
 
@@ -1565,7 +1572,7 @@ class _TestSharedCTypes(BaseTestCase):
         for i in range(len(arr)):
             arr[i] *= 2
 
-    @unittest.skipIf(c_int is None, "requires _ctypes")
+    @unittest.skipIf(Value is None, "requires ctypes.Value")
     def test_sharedctypes(self, lock=False):
         x = Value('i', 7, lock=lock)
         y = Value(ctypes.c_double, 1.0/3.0, lock=lock)
@@ -1586,13 +1593,14 @@ class _TestSharedCTypes(BaseTestCase):
             self.assertAlmostEqual(arr[i], i*2)
         self.assertEqual(string.value, latin('hellohello'))
 
+    @unittest.skipIf(Value is None, "requires ctypes.Value")
     def test_synchronize(self):
         self.test_sharedctypes(lock=True)
 
-    @unittest.skipIf(c_int is None, "requires _ctypes")
+    @unittest.skipIf(ctypes_copy is None, "requires ctypes.copy")
     def test_copy(self):
         foo = _Foo(2, 5.0)
-        bar = copy(foo)
+        bar = ctypes_copy(foo)
         foo.x = 0
         foo.y = 0
         self.assertEqual(bar.x, 2)
