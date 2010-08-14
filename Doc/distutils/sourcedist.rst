@@ -104,7 +104,7 @@ per line, regular files (or symlinks to them) only.  If you do supply your own
 described above does not apply in this case.
 
 .. versionadded:: 3.1
-   :file:`MANIFEST` files start with a comment indicated they are generated.
+   :file:`MANIFEST` files start with a comment indicating they are generated.
    Files without this comment are not overwritten or removed.
 
 The manifest template has one command per line, where each command specifies a
