@@ -1960,6 +1960,39 @@ case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, char *name)
 #endif
 }
 
+/* Call _wfopen() on Windows, or fopen() otherwise. Return the new file
+   object on success, or NULL if the file cannot be open or (if
+   PyErr_Occurred()) on unicode error */
+
+FILE*
+_Py_fopen(PyObject *unicode, const char *mode)
+{
+#ifdef MS_WINDOWS
+    wchar_t path[MAXPATHLEN+1];
+    wchar_t wmode[10];
+    Py_ssize_t len;
+    int usize;
+
+    len = PyUnicode_AsWideChar((PyUnicodeObject*)unicode, path, MAXPATHLEN);
+    if (len == -1)
+        return NULL;
+    path[len] = L'\0';
+
+    usize = MultiByteToWideChar(CP_ACP, 0, mode, -1, wmode, sizeof(wmode));
+    if (usize == 0)
+        return NULL;
+
+    return _wfopen(path, wmode);
+#else
+    FILE *f;
+    PyObject *bytes = PyUnicode_EncodeFSDefault(unicode);
+    if (bytes == NULL)
+        return NULL;
+    f = fopen(PyBytes_AS_STRING(bytes), mode);
+    Py_DECREF(bytes);
+    return f;
+#endif
+}
 
 #ifdef HAVE_STAT
 
