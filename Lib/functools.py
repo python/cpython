@@ -119,7 +119,8 @@ def lfu_cache(maxsize=100):
     http://en.wikipedia.org/wiki/Cache_algorithms#Least-Frequently_Used
 
     """
-    def decorating_function(user_function, tuple=tuple, sorted=sorted, len=len):
+    def decorating_function(user_function, tuple=tuple, sorted=sorted,
+                            len=len, KeyError=KeyError):
         cache = {}                      # mapping of args to results
         use_count = Counter()           # times each key has been accessed
         kwd_mark = object()             # separate positional and keyword args
@@ -170,7 +171,8 @@ def lru_cache(maxsize=100):
     http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
 
     """
-    def decorating_function(user_function, tuple=tuple, sorted=sorted, len=len):
+    def decorating_function(user_function, tuple=tuple, sorted=sorted,
+                            len=len, KeyError=KeyError):
         cache = OrderedDict()           # ordered least recent to most recent
         kwd_mark = object()             # separate positional and keyword args
         lock = Lock()
