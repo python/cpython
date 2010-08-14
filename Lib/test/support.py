@@ -402,7 +402,8 @@ if os.name in ('nt', 'ce'):
                   'Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
             TESTFN_UNENCODABLE = None
-else:
+elif sys.platform != 'darwin':
+    # Mac OS X denies unencodable filenames (invalid utf-8)
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(TESTFN_ENCODING)
