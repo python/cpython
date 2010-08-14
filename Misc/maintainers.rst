@@ -25,8 +25,8 @@ in this list by placing the word 'inactive' in parenthesis behind their
 tracker id.  They are of course free to remove that inactive mark at
 any time.
 
-Committers should update this table as their areas of expertise widen.
-New topics may be added to the third table at will.
+Committers should update these tables as their areas of expertise widen.
+New topics may be added to the Interest Area table at will.
 
 The existence of this list is not meant to indicate that these people
 *must* be contacted for decisions; it is, rather, a resource to be used
@@ -259,6 +259,7 @@ zlib
 Tool                Maintainers
 ------------------  -----------
 pybench             lemburg
+==================  ===========
 
 
 ==================  ===========
@@ -284,6 +285,7 @@ algorithms
 ast/compiler        ncoghlan, benjamin.peterson, brett.cannon, georg.brandl
 autoconf/makefiles
 bsd
+bug tracker         ezio.melotti
 buildbots
 bytecode            pitrou
 data formats        mark.dickinson, georg.brandl
@@ -302,10 +304,9 @@ py3 transition      benjamin.peterson
 release management  tarek, lemburg, benjamin.peterson, barry, loewis,
                     gvanrossum, anthonybaxter
 str.format          eric.smith
-time and dates      lemburg
 testing             michael.foord, pitrou, giampaolo.rodola
 threads             pitrou
-bug tracker         ezio.melotti
+time and dates      lemburg
 unicode             lemburg, ezio.melotti, haypo
 version control
 ==================  ===========
