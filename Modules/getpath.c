@@ -48,7 +48,7 @@
  * argv0_path.  For prefix, the landmark's path is derived from the VPATH
  * preprocessor variable (taking into account that its value is almost, but
  * not quite, what we need).  For exec_prefix, the landmark is
- * Modules/Setup.  If the landmark is found, we're done.
+ * pybuilddir.txt.  If the landmark is found, we're done.
  *
  * For the remaining steps, the prefix landmark will always be
  * lib/python$VERSION/os.py and the exec_prefix will always be
@@ -89,6 +89,8 @@
  * directory).  This seems to make more sense given that currently the only
  * known use of sys.prefix and sys.exec_prefix is for the ILU installation
  * process to find the installed Python tree.
+ *
+ * NOTE: Windows MSVC builds use PC/getpathp.c instead!
  */
 
 #ifdef __cplusplus
@@ -134,7 +136,10 @@ static wchar_t *lib_python = L"lib/python" VERSION;
 /* In principle, this should use HAVE__WSTAT, and _wstat
    should be detected by autoconf. However, no current
    POSIX system provides that function, so testing for
-   it is pointless. */
+   it is pointless.
+   Not sure whether the MS_WINDOWS guards are necessary:
+   perhaps for cygwin/mingw builds?
+*/
 #ifndef MS_WINDOWS
 static int
 _wstat(const wchar_t* path, struct stat *buf)
