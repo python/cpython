@@ -156,7 +156,7 @@ optparse            aronacher
 os                  loewis
 ossaudiodev
 parser
-pdb                 georg.brandl
+pdb                 georg.brandl*
 pickle              alexandre.vassalotti, pitrou
 pickletools         alexandre.vassalotti
 pipes
@@ -166,7 +166,8 @@ plistlib
 poplib
 posix
 pprint              fdrake
-pstats
+profile             georg.brandl
+pstats              georg.brandl
 pty
 pwd
 py_compile
@@ -199,7 +200,7 @@ spwd
 sqlite3             ghaering
 ssl                 janssen, pitrou, giampaolo.rodola
 stat
-string
+string              georg.brandl*
 stringprep
 struct              mark.dickinson
 subprocess          astrand (inactive)
@@ -212,18 +213,18 @@ syslog              jafo
 tabnanny            tim_one
 tarfile             lars.gustaebel
 telnetlib
-tempfile
+tempfile            georg.brandl
 termios
 test
-textwrap
+textwrap            georg.brandl
 threading           pitrou
 time                alexander.belopolsky
-timeit
+timeit              georg.brandl
 Tkinter             gpolo
 token               georg.brandl
 tokenize
 trace               alexander.belopolsky
-traceback           georg.brandl
+traceback           georg.brandl*
 tty
 turtle              gregorlingl
 types
@@ -249,7 +250,7 @@ xml.sax.handler
 xml.sax.saxutils
 xml.sax.xmlreader
 xmlrpc              loewis
-zipfile
+zipfile             alanmcintyre
 zipimport
 zlib
 ==================  ===========
