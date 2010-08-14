@@ -429,8 +429,6 @@ class NetworkedTests(unittest.TestCase):
         if not pem:
             self.fail("No server certificate on svn.python.org:443!")
 
-        return
-
         try:
             pem = ssl.get_server_certificate(("svn.python.org", 443), ca_certs=CERTFILE)
         except ssl.SSLError as x:
