@@ -89,7 +89,7 @@ dbm
 decimal             facundobatista, rhettinger, mark.dickinson
 difflib             tim_one
 dis
-distutils           tarek
+distutils           tarek*, eric.araujo*
 doctest             tim_one (inactive)
 dummy_threading     brett.cannon
 email               barry, r.david.murray*
