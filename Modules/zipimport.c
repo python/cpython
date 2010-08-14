@@ -60,26 +60,29 @@ static PyObject *get_module_code(ZipImporter *self, char *fullname,
 static int
 zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
 {
-    char *path, *p, *prefix, buf[MAXPATHLEN+2];
-    size_t len;
+    PyObject *pathobj, *path_bytes, *files;
+    Py_UNICODE *path, *p, *prefix, buf[MAXPATHLEN+2];
+    Py_ssize_t len;
 
     if (!_PyArg_NoKeywords("zipimporter()", kwds))
         return -1;
 
-    if (!PyArg_ParseTuple(args, "s:zipimporter", &path))
+    if (!PyArg_ParseTuple(args, "O&:zipimporter",
+        PyUnicode_FSDecoder, &pathobj))
         return -1;
 
-    len = strlen(path);
+    /* copy path to buf */
+    len = PyUnicode_GET_SIZE(pathobj);
     if (len == 0) {
         PyErr_SetString(ZipImportError, "archive path is empty");
-        return -1;
+        goto error;
     }
     if (len >= MAXPATHLEN) {
         PyErr_SetString(ZipImportError,
                         "archive path too long");
-        return -1;
+        goto error;
     }
-    strcpy(buf, path);
+    Py_UNICODE_strcpy(buf, PyUnicode_AS_UNICODE(pathobj));
 
 #ifdef ALTSEP
     for (p = buf; *p; p++) {
@@ -94,7 +97,12 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
         struct stat statbuf;
         int rv;
 
-        rv = stat(buf, &statbuf);
+        if (pathobj == NULL) {
+            pathobj = PyUnicode_FromUnicode(buf, len);
+            if (pathobj == NULL)
+                goto error;
+        }
+        rv = _Py_stat(pathobj, &statbuf);
         if (rv == 0) {
             /* it exists */
             if (S_ISREG(statbuf.st_mode))
@@ -102,56 +110,64 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
                 path = buf;
             break;
         }
+        else if (PyErr_Occurred())
+            goto error;
         /* back up one path element */
-        p = strrchr(buf, SEP);
+        p = Py_UNICODE_strrchr(buf, SEP);
         if (prefix != NULL)
             *prefix = SEP;
         if (p == NULL)
             break;
         *p = '\0';
+        len = p - buf;
         prefix = p;
+        Py_CLEAR(pathobj);
     }
-    if (path != NULL) {
-        PyObject *files;
-        files = PyDict_GetItemString(zip_directory_cache, path);
-        if (files == NULL) {
-            files = read_directory(buf);
-            if (files == NULL)
-                return -1;
-            if (PyDict_SetItemString(zip_directory_cache, path,
-                                     files) != 0)
-                return -1;
-        }
-        else
-            Py_INCREF(files);
-        self->files = files;
-    }
-    else {
+    if (path == NULL) {
         PyErr_SetString(ZipImportError, "not a Zip file");
-        return -1;
+        goto error;
     }
 
-    if (prefix == NULL)
-        prefix = "";
-    else {
+    files = PyDict_GetItem(zip_directory_cache, pathobj);
+    if (files == NULL) {
+        path_bytes = PyUnicode_EncodeFSDefault(pathobj);
+        if (path_bytes == NULL)
+            goto error;
+        files = read_directory(PyBytes_AS_STRING(path_bytes));
+        Py_DECREF(path_bytes);
+        if (files == NULL)
+            goto error;
+        if (PyDict_SetItem(zip_directory_cache, pathobj, files) != 0)
+            goto error;
+    }
+    else
+        Py_INCREF(files);
+    self->files = files;
+
+    self->archive = pathobj;
+    pathobj = NULL;
+
+    if (prefix != NULL) {
         prefix++;
-        len = strlen(prefix);
+        len = Py_UNICODE_strlen(prefix);
         if (prefix[len-1] != SEP) {
             /* add trailing SEP */
             prefix[len] = SEP;
             prefix[len + 1] = '\0';
+            len++;
         }
     }
-
-    self->archive = PyUnicode_FromString(buf);
-    if (self->archive == NULL)
-        return -1;
-
-    self->prefix = PyUnicode_FromString(prefix);
+    else
+        len = 0;
+    self->prefix = PyUnicode_FromUnicode(prefix, len);
     if (self->prefix == NULL)
-        return -1;
+        goto error;
 
     return 0;
+
+error:
+    Py_XDECREF(pathobj);
+    return -1;
 }
 
 /* GC support. */
