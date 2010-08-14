@@ -295,12 +295,16 @@ class ContextTests(unittest.TestCase):
 
 
 class NetworkedTests(unittest.TestCase):
-    timeout = 30
+    def setUp(self):
+        self.old_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(30)
+
+    def tearDown(self):
+        socket.setdefaulttimeout(self.old_timeout)
 
     def test_connect(self):
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_NONE)
-        s.settimeout(self.timeout)
         try:
             s.connect(("svn.python.org", 443))
             self.assertEqual({}, s.getpeercert())
@@ -310,7 +314,6 @@ class NetworkedTests(unittest.TestCase):
         # this should fail because we have no verification certs
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_REQUIRED)
-        s.settimeout(self.timeout)
         self.assertRaisesRegexp(ssl.SSLError, "certificate verify failed",
                                 s.connect, ("svn.python.org", 443))
         s.close()
@@ -319,7 +322,6 @@ class NetworkedTests(unittest.TestCase):
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_REQUIRED,
                             ca_certs=SVN_PYTHON_ORG_ROOT_CERT)
-        s.settimeout(self.timeout)
         try:
             s.connect(("svn.python.org", 443))
             self.assertTrue(s.getpeercert())
@@ -330,7 +332,6 @@ class NetworkedTests(unittest.TestCase):
         # Same as test_connect, but with a separately created context
         ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-        s.settimeout(self.timeout)
         s.connect(("svn.python.org", 443))
         try:
             self.assertEqual({}, s.getpeercert())
@@ -339,14 +340,12 @@ class NetworkedTests(unittest.TestCase):
         # This should fail because we have no verification certs
         ctx.verify_mode = ssl.CERT_REQUIRED
         s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-        s.settimeout(self.timeout)
         self.assertRaisesRegexp(ssl.SSLError, "certificate verify failed",
                                 s.connect, ("svn.python.org", 443))
         s.close()
         # This should succeed because we specify the root cert
         ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
         s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-        s.settimeout(self.timeout)
         s.connect(("svn.python.org", 443))
         try:
             cert = s.getpeercert()
@@ -364,7 +363,6 @@ class NetworkedTests(unittest.TestCase):
         ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.load_verify_locations(capath=CAPATH)
         s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-        s.settimeout(self.timeout)
         s.connect(("svn.python.org", 443))
         try:
             cert = s.getpeercert()
@@ -376,7 +374,6 @@ class NetworkedTests(unittest.TestCase):
         ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.load_verify_locations(capath=BYTES_CAPATH)
         s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-        s.settimeout(self.timeout)
         s.connect(("svn.python.org", 443))
         try:
             cert = s.getpeercert()
@@ -390,7 +387,6 @@ class NetworkedTests(unittest.TestCase):
         # delay closing the underlying "real socket" (here tested with its
         # file descriptor, hence skipping the test under Windows).
         ss = ssl.wrap_socket(socket.socket(socket.AF_INET))
-        ss.settimeout(self.timeout)
         ss.connect(("svn.python.org", 443))
         fd = ss.fileno()
         f = ss.makefile()
@@ -406,7 +402,6 @@ class NetworkedTests(unittest.TestCase):
 
     def test_non_blocking_handshake(self):
         s = socket.socket(socket.AF_INET)
-        s.settimeout(self.timeout)
         s.connect(("svn.python.org", 443))
         s.setblocking(False)
         s = ssl.wrap_socket(s,
@@ -463,7 +458,6 @@ class NetworkedTests(unittest.TestCase):
         s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_REQUIRED,
                             ca_certs=sha256_cert,)
-        s.settimeout(self.timeout)
         with support.transient_internet():
             try:
                 s.connect(remote)
