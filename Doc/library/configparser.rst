@@ -322,13 +322,13 @@ RawConfigParser Objects
    configuration files in the list will be read.  If none of the named files
    exist, the :class:`ConfigParser` instance will contain an empty dataset.  An
    application which requires initial values to be loaded from a file should
-   load the required file or files using :meth:`readfp` before calling
+   load the required file or files using :meth:`read_file` before calling
    :meth:`read` for any optional files::
 
       import configparser, os
 
       config = configparser.ConfigParser()
-      config.readfp(open('defaults.cfg'))
+      config.read_file(open('defaults.cfg'))
       config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')], encoding='cp1250')
 
    .. versionadded:: 3.2
@@ -614,7 +614,7 @@ indicate that such values should be accepted:
    ...   skip-innodb # we don't need ACID today
    ... """
    >>> config = configparser.RawConfigParser(allow_no_value=True)
-   >>> config.readfp(io.BytesIO(sample_config))
+   >>> config.read_file(io.BytesIO(sample_config))
 
    >>> # Settings with values are treated as before:
    >>> config.get("mysqld", "user")
