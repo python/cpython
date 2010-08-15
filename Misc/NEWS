@@ -83,6 +83,9 @@ Extensions
 Library
 -------
 
+- Issue #9604: posix.initgroups() encodes the username using the fileystem
+  encoding and surrogateescape error handler. Patch written by David Watson.
+
 - Issue #9603: posix.ttyname() and posix.ctermid() decode the terminal name
   using the filesystem encoding and surrogateescape error handler. Patch
   written by David Watson.
