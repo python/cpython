@@ -31,6 +31,7 @@ Modules/Setup.config
 Modules/Setup.local
 Modules/config.c
 Parser/pgen
+Parser/pgen.stamp
 Lib/test/data/*
 Lib/lib2to3/Grammar*.pickle
 Lib/lib2to3/PatternGrammar*.pickle
