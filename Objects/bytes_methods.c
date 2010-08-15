@@ -246,23 +246,15 @@ Return a copy of B with all ASCII characters converted to lowercase.");
 void
 _Py_bytes_lower(char *result, const char *cptr, Py_ssize_t len)
 {
-        Py_ssize_t i;
+    Py_ssize_t i;
 
-        /*
-        newobj = PyBytes_FromStringAndSize(NULL, len);
-        if (!newobj)
-                return NULL;
+    Py_MEMCPY(result, cptr, len);
 
-        s = PyBytes_AS_STRING(newobj);
-        */
-
-        Py_MEMCPY(result, cptr, len);
-
-        for (i = 0; i < len; i++) {
-                int c = Py_CHARMASK(result[i]);
-                if (Py_ISUPPER(c))
-                        result[i] = Py_TOLOWER(c);
-        }
+    for (i = 0; i < len; i++) {
+        int c = Py_CHARMASK(result[i]);
+        if (Py_ISUPPER(c))
+            result[i] = Py_TOLOWER(c);
+    }
 }
 
 
@@ -274,23 +266,15 @@ Return a copy of B with all ASCII characters converted to uppercase.");
 void
 _Py_bytes_upper(char *result, const char *cptr, Py_ssize_t len)
 {
-        Py_ssize_t i;
+    Py_ssize_t i;
 
-        /*
-        newobj = PyBytes_FromStringAndSize(NULL, len);
-        if (!newobj)
-                return NULL;
+    Py_MEMCPY(result, cptr, len);
 
-        s = PyBytes_AS_STRING(newobj);
-        */
-
-        Py_MEMCPY(result, cptr, len);
-
-        for (i = 0; i < len; i++) {
-                int c = Py_CHARMASK(result[i]);
-                if (Py_ISLOWER(c))
-                        result[i] = Py_TOUPPER(c);
-        }
+    for (i = 0; i < len; i++) {
+        int c = Py_CHARMASK(result[i]);
+        if (Py_ISLOWER(c))
+            result[i] = Py_TOUPPER(c);
+    }
 }
 
 
@@ -303,29 +287,23 @@ characters, all remaining cased characters have lowercase.");
 void
 _Py_bytes_title(char *result, char *s, Py_ssize_t len)
 {
-        Py_ssize_t i;
-        int previous_is_cased = 0;
+    Py_ssize_t i;
+    int previous_is_cased = 0;
 
-        /*
-        newobj = PyBytes_FromStringAndSize(NULL, len);
-        if (newobj == NULL)
-                return NULL;
-        s_new = PyBytes_AsString(newobj);
-        */
-        for (i = 0; i < len; i++) {
-                int c = Py_CHARMASK(*s++);
-                if (Py_ISLOWER(c)) {
-                        if (!previous_is_cased)
-                            c = Py_TOUPPER(c);
-                        previous_is_cased = 1;
-                } else if (Py_ISUPPER(c)) {
-                        if (previous_is_cased)
-                            c = Py_TOLOWER(c);
-                        previous_is_cased = 1;
-                } else
-                        previous_is_cased = 0;
-                *result++ = c;
-        }
+    for (i = 0; i < len; i++) {
+        int c = Py_CHARMASK(*s++);
+        if (Py_ISLOWER(c)) {
+            if (!previous_is_cased)
+                c = Py_TOUPPER(c);
+            previous_is_cased = 1;
+        } else if (Py_ISUPPER(c)) {
+            if (previous_is_cased)
+                c = Py_TOLOWER(c);
+            previous_is_cased = 1;
+        } else
+            previous_is_cased = 0;
+        *result++ = c;
+    }
 }
 
 
@@ -338,30 +316,24 @@ and the rest lower-cased.");
 void
 _Py_bytes_capitalize(char *result, char *s, Py_ssize_t len)
 {
-        Py_ssize_t i;
+    Py_ssize_t i;
 
-        /*
-        newobj = PyBytes_FromStringAndSize(NULL, len);
-        if (newobj == NULL)
-                return NULL;
-        s_new = PyBytes_AsString(newobj);
-        */
-        if (0 < len) {
-                int c = Py_CHARMASK(*s++);
-                if (Py_ISLOWER(c))
-                        *result = Py_TOUPPER(c);
-                else
-                        *result = c;
-                result++;
-        }
-        for (i = 1; i < len; i++) {
-                int c = Py_CHARMASK(*s++);
-                if (Py_ISUPPER(c))
-                        *result = Py_TOLOWER(c);
-                else
-                        *result = c;
-                result++;
-        }
+    if (0 < len) {
+        int c = Py_CHARMASK(*s++);
+        if (Py_ISLOWER(c))
+            *result = Py_TOUPPER(c);
+        else
+            *result = c;
+        result++;
+    }
+    for (i = 1; i < len; i++) {
+        int c = Py_CHARMASK(*s++);
+        if (Py_ISUPPER(c))
+            *result = Py_TOLOWER(c);
+        else
+            *result = c;
+        result++;
+    }
 }
 
 
@@ -374,26 +346,20 @@ to lowercase ASCII and vice versa.");
 void
 _Py_bytes_swapcase(char *result, char *s, Py_ssize_t len)
 {
-        Py_ssize_t i;
+    Py_ssize_t i;
 
-        /*
-        newobj = PyBytes_FromStringAndSize(NULL, len);
-        if (newobj == NULL)
-                return NULL;
-        s_new = PyBytes_AsString(newobj);
-        */
-        for (i = 0; i < len; i++) {
-                int c = Py_CHARMASK(*s++);
-                if (Py_ISLOWER(c)) {
-                        *result = Py_TOUPPER(c);
-                }
-                else if (Py_ISUPPER(c)) {
-                        *result = Py_TOLOWER(c);
-                }
-                else
-                        *result = c;
-                result++;
+    for (i = 0; i < len; i++) {
+        int c = Py_CHARMASK(*s++);
+        if (Py_ISLOWER(c)) {
+            *result = Py_TOUPPER(c);
         }
+        else if (Py_ISUPPER(c)) {
+            *result = Py_TOLOWER(c);
+        }
+        else
+            *result = c;
+        result++;
+    }
 }
 
 
@@ -419,47 +385,47 @@ _getbuffer(PyObject *obj, Py_buffer *view)
     }
 
     if (buffer->bf_getbuffer(obj, view, PyBUF_SIMPLE) < 0)
-            return -1;
+        return -1;
     return view->len;
 }
 
 PyObject *
 _Py_bytes_maketrans(PyObject *args)
 {
-        PyObject *frm, *to, *res = NULL;
-        Py_buffer bfrm, bto;
-        Py_ssize_t i;
-        char *p;
+    PyObject *frm, *to, *res = NULL;
+    Py_buffer bfrm, bto;
+    Py_ssize_t i;
+    char *p;
 
-        bfrm.len = -1;
-        bto.len = -1;
+    bfrm.len = -1;
+    bto.len = -1;
 
-        if (!PyArg_ParseTuple(args, "OO:maketrans", &frm, &to))
-                return NULL;
-        if (_getbuffer(frm, &bfrm) < 0)
-                return NULL;
-        if (_getbuffer(to, &bto) < 0)
-                goto done;
-        if (bfrm.len != bto.len) {
-                PyErr_Format(PyExc_ValueError,
-                             "maketrans arguments must have same length");
-                goto done;
-        }
-        res = PyBytes_FromStringAndSize(NULL, 256);
-        if (!res) {
-                goto done;
-        }
-        p = PyBytes_AS_STRING(res);
-        for (i = 0; i < 256; i++)
-                p[i] = i;
-        for (i = 0; i < bfrm.len; i++) {
-                p[((unsigned char *)bfrm.buf)[i]] = ((char *)bto.buf)[i];
-        }
+    if (!PyArg_ParseTuple(args, "OO:maketrans", &frm, &to))
+        return NULL;
+    if (_getbuffer(frm, &bfrm) < 0)
+        return NULL;
+    if (_getbuffer(to, &bto) < 0)
+        goto done;
+    if (bfrm.len != bto.len) {
+        PyErr_Format(PyExc_ValueError,
+                     "maketrans arguments must have same length");
+        goto done;
+    }
+    res = PyBytes_FromStringAndSize(NULL, 256);
+    if (!res) {
+        goto done;
+    }
+    p = PyBytes_AS_STRING(res);
+    for (i = 0; i < 256; i++)
+        p[i] = i;
+    for (i = 0; i < bfrm.len; i++) {
+        p[((unsigned char *)bfrm.buf)[i]] = ((char *)bto.buf)[i];
+    }
 
-  done:
-        if (bfrm.len != -1)
-                PyBuffer_Release(&bfrm);
-        if (bto.len != -1)
-                PyBuffer_Release(&bto);
-        return res;
+done:
+    if (bfrm.len != -1)
+        PyBuffer_Release(&bfrm);
+    if (bto.len != -1)
+        PyBuffer_Release(&bto);
+    return res;
 }
