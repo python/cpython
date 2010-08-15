@@ -483,73 +483,38 @@ class TestLRU(unittest.TestCase):
         self.assertEqual(f.misses, 1)
 
         # test size zero (which means "never-cache")
-        f_cnt = 0
         @functools.lru_cache(0)
         def f():
             nonlocal f_cnt
             f_cnt += 1
             return 20
-        self.assertEqual(f(), 20)
-        self.assertEqual(f(), 20)
-        self.assertEqual(f(), 20)
-        self.assertEqual(f_cnt, 3)
+        f_cnt = 0
+        for i in range(5):
+            self.assertEqual(f(), 20)
+        self.assertEqual(f_cnt, 5)
 
         # test size one
-        f_cnt = 0
         @functools.lru_cache(1)
         def f():
             nonlocal f_cnt
             f_cnt += 1
             return 20
-        self.assertEqual(f(), 20)
-        self.assertEqual(f(), 20)
-        self.assertEqual(f(), 20)
+        f_cnt = 0
+        for i in range(5):
+            self.assertEqual(f(), 20)
         self.assertEqual(f_cnt, 1)
 
-    def test_lfu(self):
-        def orig(x, y):
-            return 3*x+y
-        f = functools.lfu_cache(maxsize=20)(orig)
-
-        domain = range(5)
-        for i in range(1000):
-            x, y = choice(domain), choice(domain)
-            actual = f(x, y)
-            expected = orig(x, y)
-            self.assertEquals(actual, expected)
-        self.assert_(f.hits > f.misses)
-        self.assertEquals(f.hits + f.misses, 1000)
-
-        f.clear()   # test clearing
-        self.assertEqual(f.hits, 0)
-        self.assertEqual(f.misses, 0)
-        f(x, y)
-        self.assertEqual(f.hits, 0)
-        self.assertEqual(f.misses, 1)
-
-        # test size zero (which means "never-cache")
-        f_cnt = 0
-        @functools.lfu_cache(0)
-        def f():
+        # test size two
+        @functools.lru_cache(2)
+        def f(x):
             nonlocal f_cnt
             f_cnt += 1
-            return 20
-        self.assertEqual(f(), 20)
-        self.assertEqual(f(), 20)
-        self.assertEqual(f(), 20)
-        self.assertEqual(f_cnt, 3)
-
-        # test size one
+            return x*10
         f_cnt = 0
-        @functools.lfu_cache(1)
-        def f():
-            nonlocal f_cnt
-            f_cnt += 1
-            return 20
-        self.assertEqual(f(), 20)
-        self.assertEqual(f(), 20)
-        self.assertEqual(f(), 20)
-        self.assertEqual(f_cnt, 1)
+        for x in 7, 9, 7, 9, 7, 9, 8, 8, 8, 9, 9, 9, 8, 8, 8, 7:
+            #    *  *              *                          *
+            self.assertEqual(f(x), x*10)
+        self.assertEqual(f_cnt, 4)
 
 def test_main(verbose=None):
     test_classes = (
