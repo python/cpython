@@ -93,6 +93,9 @@ C-API
 Library
 -------
 
+- Issue #9605: posix.getlogin() decodes the username with file filesystem
+  encoding and surrogateescape error handler. Patch written by David Watson.
+
 - Issue #9603: posix.ttyname() and posix.ctermid() decode the terminal name
   using the filesystem encoding and surrogateescape error handler. Patch
   written by David Watson.
