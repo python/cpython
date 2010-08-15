@@ -93,6 +93,10 @@ C-API
 Library
 -------
 
+- Issue #9603: posix.ttyname() and posix.ctermid() decode the terminal name
+  using the filesystem encoding and surrogateescape error handler. Patch
+  written by David Watson.
+
 - Issue #8688: MANIFEST files created by distutils now include a magic
   comment indicating they are generated.  Manually maintained MANIFESTs
   without this marker will not be overwritten or removed.
