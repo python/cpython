@@ -153,22 +153,6 @@ class BasicSocketTests(unittest.TestCase):
         self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
                         (s, t))
 
-    def test_ciphers(self):
-        if not support.is_resource_enabled('network'):
-            return
-        remote = ("svn.python.org", 443)
-        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
-                            cert_reqs=ssl.CERT_NONE, ciphers="ALL")
-        s.connect(remote)
-        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
-                            cert_reqs=ssl.CERT_NONE, ciphers="DEFAULT")
-        s.connect(remote)
-        # Error checking can happen at instantiation or when connecting
-        with self.assertRaisesRegexp(ssl.SSLError, "No cipher can be selected"):
-            s = ssl.wrap_socket(socket.socket(socket.AF_INET),
-                                cert_reqs=ssl.CERT_NONE, ciphers="^$:,;?*'dorothyx")
-            s.connect(remote)
-
     @support.cpython_only
     def test_refcycle(self):
         # Issue #7943: an SSL object doesn't create reference cycles with
@@ -443,6 +427,20 @@ class NetworkedTests(unittest.TestCase):
             self.fail("No server certificate on svn.python.org:443!")
         if support.verbose:
             sys.stdout.write("\nVerified certificate for svn.python.org:443 is\n%s\n" % pem)
+
+    def test_ciphers(self):
+        remote = ("svn.python.org", 443)
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_NONE, ciphers="ALL")
+        s.connect(remote)
+        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                            cert_reqs=ssl.CERT_NONE, ciphers="DEFAULT")
+        s.connect(remote)
+        # Error checking can happen at instantiation or when connecting
+        with self.assertRaisesRegexp(ssl.SSLError, "No cipher can be selected"):
+            s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                                cert_reqs=ssl.CERT_NONE, ciphers="^$:,;?*'dorothyx")
+            s.connect(remote)
 
     def test_algorithms(self):
         # Issue #8484: all algorithms should be available when verifying a
