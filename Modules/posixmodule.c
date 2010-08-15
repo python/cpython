@@ -1849,7 +1849,7 @@ posix_ttyname(PyObject *self, PyObject *args)
 #endif
     if (ret == NULL)
         return posix_error();
-    return PyUnicode_FromString(ret);
+    return PyUnicode_DecodeFSDefault(ret);
 }
 #endif
 
@@ -1871,7 +1871,7 @@ posix_ctermid(PyObject *self, PyObject *noargs)
 #endif
     if (ret == NULL)
         return posix_error();
-    return PyUnicode_FromString(buffer);
+    return PyUnicode_DecodeFSDefault(buffer);
 }
 #endif
 
