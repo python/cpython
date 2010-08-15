@@ -4354,13 +4354,12 @@ posix_getlogin(PyObject *self, PyObject *noargs)
     name = getlogin();
     if (name == NULL) {
         if (errno)
-        posix_error();
+            posix_error();
         else
-        PyErr_SetString(PyExc_OSError,
-                        "unable to determine login name");
+            PyErr_SetString(PyExc_OSError, "unable to determine login name");
     }
     else
-        result = PyUnicode_FromString(name);
+        result = PyUnicode_DecodeFSDefault(name);
     errno = old_errno;
 
     return result;

@@ -83,6 +83,9 @@ Extensions
 Library
 -------
 
+- Issue #9605: posix.getlogin() decodes the username with file filesystem
+  encoding and surrogateescape error handler. Patch written by David Watson.
+
 - Issue #9604: posix.initgroups() encodes the username using the fileystem
   encoding and surrogateescape error handler. Patch written by David Watson.
 
@@ -317,7 +320,7 @@ Core and Builtins
   Fix a crash if an empty directory called "encodings" exists in sys.path.
 
 - Issue #8589: Decode PYTHONWARNINGS environment variable with the file system
-  encoding and surrogateespace error handler instead of the locale encoding to
+  encoding and surrogateescape error handler instead of the locale encoding to
   be consistent with os.environ.  Add PySys_AddWarnOptionUnicode() function.
 
 - PyObject_Dump() encodes unicode objects to utf8 with backslashreplace (instead
