@@ -30,6 +30,7 @@ Modules/Setup.config
 Modules/Setup.local
 Modules/config.c
 Parser/pgen$
+Parser/pgen.stamp$
 ^core
 ^python-gdb.py
 ^pybuilddir.txt
