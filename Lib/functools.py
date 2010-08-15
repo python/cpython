@@ -12,9 +12,7 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lfu_cache', 'lru_cache']
 
 from _functools import partial, reduce
-from collections import OrderedDict, Counter
-from heapq import nsmallest
-from operator import itemgetter
+from collections import OrderedDict
 try:
     from _thread import allocate_lock as Lock
 except:
