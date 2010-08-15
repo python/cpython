@@ -143,10 +143,12 @@ A partial list of 3.1 features that were backported to 2.7:
 * The :class:`memoryview` object.
 * A small subset of the :mod:`importlib` module,
   `described below <#importlib-section>`__.
-* Float-to-string and string-to-float conversions now round their
-  results more correctly, and :func:`repr` of a floating-point
-  number *x* returns a result that's guaranteed to round back to the
-  same number when converted back to a float.
+* The :func:`repr` of a float ``x`` is shorter in many cases: it's now
+  based on the shortest decimal string that's guaranteed to round back
+  to ``x``.  As in previous versions of Python, it's guaranteed that
+  ``float(repr(x))`` recovers ``x``.
+* Float-to-string and string-to-float conversions are correctly rounded.
+  The :func:`round` function is also now correctly rounded.
 * The :ctype:`PyCapsule` type, used to provide a C API for extension modules.
 * The :cfunc:`PyLong_AsLongAndOverflow` C API function.
 
