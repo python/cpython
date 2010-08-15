@@ -845,7 +845,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
                             "in range(0, 256)");
             return -1;
         }
-        self->data[i] = v;
+        self->data[i] = (char) v;
         return 0;
     }
     else if (PySlice_Check(item)) {

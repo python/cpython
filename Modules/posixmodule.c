@@ -393,7 +393,7 @@ _PyVerify_fd(int fd)
     const int i1 = fd >> IOINFO_L2E;
     const int i2 = fd & ((1 << IOINFO_L2E) - 1);
 
-    static int sizeof_ioinfo = 0;
+    static size_t sizeof_ioinfo = 0;
 
     /* Determine the actual size of the ioinfo structure,
      * as used by the CRT loaded in memory
@@ -3491,8 +3491,8 @@ posix_spawnve(PyObject *self, PyObject *args)
     char **argvlist;
     char **envlist;
     PyObject *res = NULL;
-    int mode, envc;
-    Py_ssize_t argc, i;
+    int mode;
+    Py_ssize_t argc, i, envc;
     Py_intptr_t spawnval;
     PyObject *(*getitem)(PyObject *, Py_ssize_t);
     Py_ssize_t lastarg = 0;
@@ -3677,7 +3677,8 @@ posix_spawnvpe(PyObject *self, PyObject *args)
     char **argvlist;
     char **envlist;
     PyObject *res=NULL;
-    int mode, i, argc, envc;
+    int mode;
+    Py_ssize_t argc, i, envc;
     Py_intptr_t spawnval;
     PyObject *(*getitem)(PyObject *, Py_ssize_t);
     int lastarg = 0;
