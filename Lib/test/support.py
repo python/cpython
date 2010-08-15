@@ -386,11 +386,10 @@ TESTFN_ENCODING = sys.getfilesystemencoding()
 # TESTFN_UNENCODABLE is a filename (str type) that should *not* be able to be
 # encoded by the filesystem encoding (in strict mode). It can be None if we
 # cannot generate such filename.
+TESTFN_UNENCODABLE = None
 if os.name in ('nt', 'ce'):
-    if sys.getwindowsversion().platform < 2:
-        # win32s (0) or Windows 9x/ME (1)
-        TESTFN_UNENCODABLE = None
-    else:
+    # skip win32s (0) or Windows 9x/ME (1)
+    if sys.getwindowsversion().platform >= 2:
         # Japanese characters (I think - from bug 846133)
         TESTFN_UNENCODABLE = TESTFN + "-\u5171\u6709\u3055\u308c\u308b"
         try:
@@ -402,8 +401,8 @@ if os.name in ('nt', 'ce'):
                   'Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
             TESTFN_UNENCODABLE = None
+# Mac OS X denies unencodable filenames (invalid utf-8)
 elif sys.platform != 'darwin':
-    # Mac OS X denies unencodable filenames (invalid utf-8)
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(TESTFN_ENCODING)
@@ -414,7 +413,7 @@ elif sys.platform != 'darwin':
     else:
         # File system encoding (eg. ISO-8859-* encodings) can encode
         # the byte 0xff. Skip some unicode filename tests.
-        TESTFN_UNENCODABLE = None
+        pass
 
 # Save the initial cwd
 SAVEDCWD = os.getcwd()
