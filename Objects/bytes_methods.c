@@ -417,7 +417,7 @@ _Py_bytes_maketrans(PyObject *args)
     }
     p = PyBytes_AS_STRING(res);
     for (i = 0; i < 256; i++)
-        p[i] = i;
+        p[i] = (char) i;
     for (i = 0; i < bfrm.len; i++) {
         p[((unsigned char *)bfrm.buf)[i]] = ((char *)bto.buf)[i];
     }
