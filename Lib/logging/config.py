@@ -63,7 +63,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True):
 
     cp = configparser.ConfigParser(defaults)
     if hasattr(fname, 'readline'):
-        cp.readfp(fname)
+        cp.read_file(fname)
     else:
         cp.read(fname)
 
