@@ -111,6 +111,10 @@ per line, regular files (or symlinks to them) only.  If you do supply your own
 :file:`MANIFEST`, you must specify everything: the default set of files
 described above does not apply in this case.
 
+.. versionadded:: 2.7
+   :file:`MANIFEST` files start with a comment indicating they are generated.
+   Files without this comment are not overwritten or removed.
+
 See :ref:`manifest_template` section for a syntax reference.
 
 .. _manifest-options:
@@ -161,10 +165,6 @@ This mechanism can be used when the default list of files is not enough.
 
 Principle
 ---------
-
-.. versionadded:: 2.7
-   :file:`MANIFEST` files start with a comment indicating they are generated.
-   Files without this comment are not overwritten or removed.
 
 The manifest template has one command per line, where each command specifies a
 set of files to include or exclude from the source distribution.  For an
