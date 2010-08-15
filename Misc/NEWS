@@ -215,6 +215,11 @@ Tests
 
 - Issue #8687: provide a test suite for sched.py module.
 
+Build
+-----
+
+- Don't run pgen twice when using make -j.
+
 
 What's New in Python 3.2 Alpha 1?
 =================================
