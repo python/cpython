@@ -110,58 +110,6 @@ def cmp_to_key(mycmp):
             raise TypeError('hash not implemented')
     return K
 
-def lfu_cache(maxsize=100):
-    """Least-frequently-used cache decorator.
-
-    Arguments to the cached function must be hashable.
-    Cache performance statistics stored in f.hits and f.misses.
-    Clear the cache using f.clear().
-    http://en.wikipedia.org/wiki/Cache_algorithms#Least-Frequently_Used
-
-    """
-    def decorating_function(user_function, tuple=tuple, sorted=sorted,
-                            len=len, KeyError=KeyError):
-        cache = {}                      # mapping of args to results
-        use_count = Counter()           # times each key has been accessed
-        kwd_mark = object()             # separate positional and keyword args
-        lock = Lock()
-
-        @wraps(user_function)
-        def wrapper(*args, **kwds):
-            key = args
-            if kwds:
-                key += (kwd_mark,) + tuple(sorted(kwds.items()))
-            try:
-                with lock:
-                    use_count[key] += 1         # count a use of this key
-                    result = cache[key]
-                    wrapper.hits += 1
-            except KeyError:
-                result = user_function(*args, **kwds)
-                with lock:
-                    use_count[key] += 1         # count a use of this key
-                    cache[key] = result
-                    wrapper.misses += 1
-                    if len(cache) > maxsize:
-                        # purge the 10% least frequently used entries
-                        for key, _ in nsmallest(maxsize // 10 or 1,
-                                                use_count.items(),
-                                                key=itemgetter(1)):
-                            del cache[key], use_count[key]
-            return result
-
-        def clear():
-            """Clear the cache and cache statistics"""
-            with lock:
-                cache.clear()
-                use_count.clear()
-                wrapper.hits = wrapper.misses = 0
-
-        wrapper.hits = wrapper.misses = 0
-        wrapper.clear = clear
-        return wrapper
-    return decorating_function
-
 def lru_cache(maxsize=100):
     """Least-recently-used cache decorator.
 
