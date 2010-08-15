@@ -1279,9 +1279,17 @@ else:
                 if support.verbose:
                     sys.stdout.write(" client:  closing connection.\n")
                 s.close()
+                if support.verbose:
+                    sys.stdout.write(" client:  connection closed.\n")
             finally:
+                if support.verbose:
+                    sys.stdout.write(" cleanup: stopping server.\n")
                 server.stop()
+                if support.verbose:
+                    sys.stdout.write(" cleanup: joining server thread.\n")
                 server.join()
+                if support.verbose:
+                    sys.stdout.write(" cleanup: successfully joined.\n")
 
         def test_recv_send(self):
             """Test recv(), send() and friends."""
