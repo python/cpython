@@ -653,7 +653,7 @@ binascii_rlecode_hqx(PyObject *self, PyObject *args)
                 /* More than 3 in a row. Output RLE. */
                 *out_data++ = ch;
                 *out_data++ = RUNCHAR;
-                *out_data++ = (unsigned char) inend-in;
+                *out_data++ = (unsigned char) (inend-in);
                 in = inend-1;
             } else {
                 /* Less than 3. Output the byte itself */

@@ -6,10 +6,6 @@ This module provides the low-level underpinnings of a CSV reading/writing
 module.  Users should not use this module directly, but import the csv.py
 module instead.
 
-**** For people modifying this code, please note that as of this writing
-**** (2003-03-23), it is intended that this code should work with Python
-**** 2.2.
-
 */
 
 #define MODULE_VERSION "1.0"
@@ -73,7 +69,7 @@ typedef struct {
     PyObject *fields;           /* field list for current record */
     ParserState state;          /* current CSV parse state */
     Py_UNICODE *field;          /* build current field in here */
-    int field_size;             /* size of allocated buffer */
+    Py_ssize_t field_size;      /* size of allocated buffer */
     Py_ssize_t field_len;       /* length of current field */
     int numeric_field;          /* treat field as numeric */
     unsigned long line_num;     /* Source-file line number */
@@ -91,7 +87,7 @@ typedef struct {
     DialectObj *dialect;    /* parsing dialect */
 
     Py_UNICODE *rec;            /* buffer for parser.join */
-    int rec_size;               /* size of allocated record */
+    Py_ssize_t rec_size;        /* size of allocated record */
     Py_ssize_t rec_len;         /* length of record */
     int num_fields;             /* number of fields in record */
 } WriterObj;
@@ -533,7 +529,7 @@ parse_grow_buff(ReaderObj *self)
         self->field = PyMem_New(Py_UNICODE, self->field_size);
     }
     else {
-        if (self->field_size > INT_MAX / 2) {
+        if (self->field_size > PY_SSIZE_T_MAX / 2) {
             PyErr_NoMemory();
             return 0;
         }
@@ -948,13 +944,13 @@ join_reset(WriterObj *self)
 /* Calculate new record length or append field to record.  Return new
  * record length.
  */
-static int
+static Py_ssize_t
 join_append_data(WriterObj *self, Py_UNICODE *field, int quote_empty,
                  int *quoted, int copy_phase)
 {
     DialectObj *dialect = self->dialect;
     int i;
-    int rec_len;
+    Py_ssize_t rec_len;
     Py_UNICODE *lineterm;
 
 #define ADDCH(c) \
@@ -1040,10 +1036,10 @@ join_append_data(WriterObj *self, Py_UNICODE *field, int quote_empty,
 }
 
 static int
-join_check_rec_size(WriterObj *self, int rec_len)
+join_check_rec_size(WriterObj *self, Py_ssize_t rec_len)
 {
 
-    if (rec_len < 0 || rec_len > INT_MAX - MEM_INCR) {
+    if (rec_len < 0 || rec_len > PY_SSIZE_T_MAX - MEM_INCR) {
         PyErr_NoMemory();
         return 0;
     }
@@ -1075,7 +1071,7 @@ join_check_rec_size(WriterObj *self, int rec_len)
 static int
 join_append(WriterObj *self, Py_UNICODE *field, int *quoted, int quote_empty)
 {
-    int rec_len;
+    Py_ssize_t rec_len;
 
     rec_len = join_append_data(self, field, quote_empty, quoted, 0);
     if (rec_len < 0)
@@ -1094,7 +1090,7 @@ join_append(WriterObj *self, Py_UNICODE *field, int *quoted, int quote_empty)
 static int
 join_append_lineterminator(WriterObj *self)
 {
-    int terminator_len;
+    Py_ssize_t terminator_len;
     Py_UNICODE *terminator;
 
     terminator_len = PyUnicode_GetSize(self->dialect->lineterminator);
@@ -1125,7 +1121,7 @@ static PyObject *
 csv_writerow(WriterObj *self, PyObject *seq)
 {
     DialectObj *dialect = self->dialect;
-    int len, i;
+    Py_ssize_t len, i;
 
     if (!PySequence_Check(seq))
         return PyErr_Format(error_obj, "sequence expected");
