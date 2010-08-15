@@ -770,7 +770,7 @@ bytes_contains(PyObject *self, PyObject *arg)
     Py_ssize_t ival = PyNumber_AsSsize_t(arg, PyExc_ValueError);
     if (ival == -1 && PyErr_Occurred()) {
         Py_buffer varg;
-        int pos;
+        Py_ssize_t pos;
         PyErr_Clear();
         if (_getbuffer(arg, &varg) < 0)
             return -1;
@@ -784,7 +784,7 @@ bytes_contains(PyObject *self, PyObject *arg)
         return -1;
     }
 
-    return memchr(PyBytes_AS_STRING(self), ival, Py_SIZE(self)) != NULL;
+    return memchr(PyBytes_AS_STRING(self), (int) ival, Py_SIZE(self)) != NULL;
 }
 
 static PyObject *
@@ -1654,7 +1654,7 @@ return_self(PyBytesObject *self)
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
-countchar(const char *target, int target_len, char c, Py_ssize_t maxcount)
+countchar(const char *target, Py_ssize_t target_len, char c, Py_ssize_t maxcount)
 {
     Py_ssize_t count=0;
     const char *start=target;
@@ -2609,7 +2609,7 @@ PyBytes_FromObject(PyObject *x)
                 Py_DECREF(new);
                 return NULL;
             }
-            ((PyBytesObject *)new)->ob_sval[i] = value;
+            ((PyBytesObject *)new)->ob_sval[i] = (char) value;
         }
         return new;
     }
@@ -2630,7 +2630,7 @@ PyBytes_FromObject(PyObject *x)
                 Py_DECREF(new);
                 return NULL;
             }
-            ((PyBytesObject *)new)->ob_sval[i] = value;
+            ((PyBytesObject *)new)->ob_sval[i] = (char) value;
         }
         return new;
     }
@@ -2685,7 +2685,7 @@ PyBytes_FromObject(PyObject *x)
             if (_PyBytes_Resize(&new, size) < 0)
                 goto error;
         }
-        ((PyBytesObject *)new)->ob_sval[i] = value;
+        ((PyBytesObject *)new)->ob_sval[i] = (char) value;
     }
     _PyBytes_Resize(&new, i);
 
