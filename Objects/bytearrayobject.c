@@ -1214,7 +1214,7 @@ bytearray_contains(PyObject *self, PyObject *arg)
     Py_ssize_t ival = PyNumber_AsSsize_t(arg, PyExc_ValueError);
     if (ival == -1 && PyErr_Occurred()) {
         Py_buffer varg;
-        int pos;
+        Py_ssize_t pos;
         PyErr_Clear();
         if (_getbuffer(arg, &varg) < 0)
             return -1;
@@ -1228,7 +1228,7 @@ bytearray_contains(PyObject *self, PyObject *arg)
         return -1;
     }
 
-    return memchr(PyByteArray_AS_STRING(self), ival, Py_SIZE(self)) != NULL;
+    return memchr(PyByteArray_AS_STRING(self), (int) ival, Py_SIZE(self)) != NULL;
 }
 
 
