@@ -164,12 +164,9 @@ _symtable symtablemodule.c
 #math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
 #_struct _struct.c	# binary structure packing/unpacking
 #time timemodule.c # -lm # time operations and variables
-#operator operator.c	# operator.add() and similar goodies
 #_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module
 #_random _randommodule.c	# Random number generator
-#_collections _collectionsmodule.c # Container types
-#itertools itertoolsmodule.c	# Functions creating iterators for efficient looping 
 #atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator
