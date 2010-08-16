@@ -31,6 +31,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #9145: Fix test_coercion failure in refleak runs.
+
 - Issue #8433: Fix test_curses failure caused by newer versions of
   ncurses returning ERR from getmouse() when there are no mouse
   events available.
