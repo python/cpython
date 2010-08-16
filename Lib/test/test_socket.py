@@ -602,7 +602,7 @@ class GeneralModuleTests(unittest.TestCase):
         for _, socktype, _, _, _ in infos:
             self.assertEqual(socktype, socket.SOCK_STREAM)
         # test proto and flags arguments
-        socket.getaddrinfo(HOST, None, 0, 0, socket.AI_CANONNAME)
+        socket.getaddrinfo(HOST, None, 0, 0, socket.SOL_TCP)
         socket.getaddrinfo(HOST, None, 0, 0, 0, socket.AI_PASSIVE)
         # a server willing to support both IPv4 and IPv6 will
         # usually do this
