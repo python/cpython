@@ -1221,6 +1221,7 @@ class BuiltinTest(unittest.TestCase):
         class G:
             pass
         self.assertRaises(TypeError, zip, a, G())
+        self.assertRaises(RuntimeError, zip, a, TestFailingIter())
 
         # Make sure zip doesn't try to allocate a billion elements for the
         # result list when one of its arguments doesn't say how long it is.
