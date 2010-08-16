@@ -3,11 +3,10 @@ import marshal
 import os
 import py_compile
 import random
-import shutil
 import stat
 import sys
 import unittest
-from test.test_support import (unlink, TESTFN, unload, run_unittest,
+from test.test_support import (unlink, TESTFN, unload, run_unittest, rmtree,
                                is_jython, check_warnings, EnvironmentVarGuard)
 
 
@@ -134,6 +133,14 @@ class ImportTests(unittest.TestCase):
             self.assertIs(os, new_os)
             self.assertIs(orig_path, new_os.path)
             self.assertIsNot(orig_getenv, new_os.getenv)
+
+    def test_bug7732(self):
+        source = TESTFN + '.py'
+        os.mkdir(source)
+        try:
+            self.assertRaises(IOError, imp.find_module, TESTFN, ["."])
+        finally:
+            rmtree(source)
 
     def test_module_with_large_stack(self, module='longlist'):
         # Regression test for http://bugs.python.org/issue561858.
@@ -290,8 +297,7 @@ func_filename = func.func_code.co_filename
             unload(self.module_name)
         unlink(self.file_name)
         unlink(self.compiled_name)
-        if os.path.exists(self.dir_name):
-            shutil.rmtree(self.dir_name)
+        rmtree(self.dir_name)
 
     def import_module(self):
         ns = globals()
@@ -354,7 +360,7 @@ class PathsTests(unittest.TestCase):
         self.syspath = sys.path[:]
 
     def tearDown(self):
-        shutil.rmtree(self.path)
+        rmtree(self.path)
         sys.path[:] = self.syspath
 
     # Regression test for http://bugs.python.org/issue1293.
@@ -432,16 +438,13 @@ class RelativeImportTests(unittest.TestCase):
         self.assertRaises(ValueError, check_relative)
 
     def test_absolute_import_without_future(self):
-        # If absolute import syntax is used, then do not try to perform
-        # a relative import in the face of failure.
+        # If explicit relative import syntax is used, then do not try
+        # to perform an absolute import in the face of failure.
         # Issue #7902.
-        try:
+        with self.assertRaises(ImportError):
             from .os import sep
-        except ImportError:
-            pass
-        else:
             self.fail("explicit relative import triggered an "
-                      "implicit relative import")
+                      "implicit absolute import")
 
 
 def test_main(verbose=None):
