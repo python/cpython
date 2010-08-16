@@ -761,7 +761,7 @@ class saved_test_environment:
     # the corresponding method names.
 
     resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
-                 'os.environ', 'sys.path')
+                 'os.environ', 'sys.path', 'asyncore.socket_map')
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -801,6 +801,15 @@ class saved_test_environment:
     def restore_sys_path(self, saved_path):
         sys.path = saved_path[1]
         sys.path[:] = saved_path[2]
+
+    def get_asyncore_socket_map(self):
+        asyncore = sys.modules.get('asyncore')
+        return asyncore and asyncore.socket_map or {}
+    def restore_asyncore_socket_map(self, saved_map):
+        asyncore = sys.modules.get('asyncore')
+        if asyncore is not None:
+            asyncore.socket_map.clear()
+            asyncore.socket_map.update(saved_map)
 
     def resource_info(self):
         for name in self.resources:
