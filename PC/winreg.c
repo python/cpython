@@ -1129,7 +1129,7 @@ PyEnumValue(PyObject *self, PyObject *args)
     int index;
     long rc;
     wchar_t *retValueBuf;
-    wchar_t *tmpBuf;
+    BYTE *tmpBuf;
     BYTE *retDataBuf;
     DWORD retValueSize, bufValueSize;
     DWORD retDataSize, bufDataSize;
@@ -1177,7 +1177,7 @@ PyEnumValue(PyObject *self, PyObject *args)
             break;
 
         bufDataSize *= 2;
-        tmpBuf = (wchar_t *)PyMem_Realloc(retDataBuf, bufDataSize);
+        tmpBuf = (BYTE *)PyMem_Realloc(retDataBuf, bufDataSize);
         if (tmpBuf == NULL) {
             PyErr_NoMemory();
             retVal = NULL;
