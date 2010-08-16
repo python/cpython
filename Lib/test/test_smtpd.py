@@ -45,6 +45,7 @@ class SMTPDServerTest(TestCase):
         self.assertRaises(NotImplementedError, write_line, b'spam\r\n.\r\n')
 
     def tearDown(self):
+        asyncore.close_all()
         asyncore.socket = smtpd.socket = socket
 
 
@@ -57,6 +58,7 @@ class SMTPDChannelTest(TestCase):
         self.channel = smtpd.SMTPChannel(self.server, conn, addr)
 
     def tearDown(self):
+        asyncore.close_all()
         asyncore.socket = smtpd.socket = socket
 
     def write_line(self, line):
