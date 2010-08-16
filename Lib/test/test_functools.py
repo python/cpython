@@ -321,10 +321,11 @@ class TestReduce(unittest.TestCase):
                     self.sofar.append(n*n)
                     n += 1
                 return self.sofar[i]
-
-        self.assertEqual(self.func(lambda x, y: x+y, ['a', 'b', 'c'], ''), 'abc')
+        def add(x, y):
+            return x + y
+        self.assertEqual(self.func(add, ['a', 'b', 'c'], ''), 'abc')
         self.assertEqual(
-            self.func(lambda x, y: x+y, [['a', 'c'], [], ['d', 'w']], []),
+            self.func(add, [['a', 'c'], [], ['d', 'w']], []),
             ['a','c','d','w']
         )
         self.assertEqual(self.func(lambda x, y: x*y, range(2,8), 1), 5040)
@@ -332,15 +333,27 @@ class TestReduce(unittest.TestCase):
             self.func(lambda x, y: x*y, range(2,21), 1),
             2432902008176640000
         )
-        self.assertEqual(self.func(lambda x, y: x+y, Squares(10)), 285)
-        self.assertEqual(self.func(lambda x, y: x+y, Squares(10), 0), 285)
-        self.assertEqual(self.func(lambda x, y: x+y, Squares(0), 0), 0)
+        self.assertEqual(self.func(add, Squares(10)), 285)
+        self.assertEqual(self.func(add, Squares(10), 0), 285)
+        self.assertEqual(self.func(add, Squares(0), 0), 0)
         self.assertRaises(TypeError, self.func)
         self.assertRaises(TypeError, self.func, 42, 42)
         self.assertRaises(TypeError, self.func, 42, 42, 42)
         self.assertEqual(self.func(42, "1"), "1") # func is never called with one item
         self.assertEqual(self.func(42, "", "1"), "1") # func is never called with one item
         self.assertRaises(TypeError, self.func, 42, (42, 42))
+        self.assertRaises(TypeError, self.func, add, []) # arg 2 must not be empty sequence with no initial value
+        self.assertRaises(TypeError, self.func, add, "")
+        self.assertRaises(TypeError, self.func, add, ())
+        self.assertRaises(TypeError, self.func, add, object())
+
+        class TestFailingIter:
+            def __iter__(self):
+                raise RuntimeError
+        self.assertRaises(RuntimeError, self.func, add, TestFailingIter())
+
+        self.assertEqual(self.func(add, [], None), None)
+        self.assertEqual(self.func(add, [], 42), 42)
 
         class BadSeq:
             def __getitem__(self, index):
