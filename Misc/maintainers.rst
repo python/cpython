@@ -48,7 +48,7 @@ __future__
 __main__            gvanrossum
 _dummy_thread       brett.cannon
 _thread             pitrou
-_winreg             brian.curtin
+_winreg             brian.curtin*
 abc
 aifc                r.david.murray
 argparse            bethard
@@ -275,7 +275,7 @@ Mac                 ronaldoussoren
 NetBSD1
 OS2/EMX             aimacintyre
 Solaris
-Windows
+Windows             tim.golden, brian.curtin
 ==================  ===========
 
 
