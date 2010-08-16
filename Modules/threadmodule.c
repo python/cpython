@@ -756,7 +756,7 @@ PyDoc_STRVAR(allocate_doc,
 "allocate_lock() -> lock object\n\
 (allocate() is an obsolete synonym)\n\
 \n\
-Create a new lock object.  See LockType.__doc__ for information about locks.");
+Create a new lock object.  See help(LockType) for information about locks.");
 
 static PyObject *
 thread_get_ident(PyObject *self)
