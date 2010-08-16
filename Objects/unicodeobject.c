@@ -9986,6 +9986,23 @@ Py_UNICODE_strcmp(const Py_UNICODE *s1, const Py_UNICODE *s2)
     return 0;
 }
 
+int
+Py_UNICODE_strncmp(const Py_UNICODE *s1, const Py_UNICODE *s2, size_t n)
+{
+    register Py_UNICODE u1, u2;
+    for (; n != 0; n--) {
+        u1 = *s1;
+        u2 = *s2;
+        if (u1 != u2)
+            return (u1 < u2) ? -1 : +1;
+        if (u1 == '\0')
+            return 0;
+        s1++;
+        s2++;
+    }
+    return 0;
+}
+
 Py_UNICODE*
 Py_UNICODE_strchr(const Py_UNICODE *s, Py_UNICODE c)
 {
