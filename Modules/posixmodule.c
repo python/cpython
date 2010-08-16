@@ -263,13 +263,13 @@ extern int lstat(const char *, struct stat *);
 #include <process.h>
 #endif
 #ifndef VOLUME_NAME_DOS
-#define VOLUME_NAME_DOS	0x0
+#define VOLUME_NAME_DOS 0x0
 #endif
 #ifndef VOLUME_NAME_NT
-#define VOLUME_NAME_NT	0x2
+#define VOLUME_NAME_NT  0x2
 #endif
 #ifndef IO_REPARSE_TAG_SYMLINK
-#define IO_REPARSE_TAG_SYMLINK	(0xA000000CL)
+#define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
 #endif
 #include "osdefs.h"
 #include <malloc.h>
@@ -7661,11 +7661,11 @@ static PyMethodDef posix_methods[] = {
     {"readlink",        posix_readlink, METH_VARARGS, posix_readlink__doc__},
 #endif /* HAVE_READLINK */
 #if !defined(HAVE_READLINK) && defined(MS_WINDOWS)
-    {"readlink",	win_readlink, METH_VARARGS, win_readlink__doc__},
+    {"readlink",        win_readlink, METH_VARARGS, win_readlink__doc__},
 #endif /* !defined(HAVE_READLINK) && defined(MS_WINDOWS) */
-    {"rename",	posix_rename, METH_VARARGS, posix_rename__doc__},
-    {"rmdir",	posix_rmdir, METH_VARARGS, posix_rmdir__doc__},
-    {"stat",	posix_stat, METH_VARARGS, posix_stat__doc__},
+    {"rename",          posix_rename, METH_VARARGS, posix_rename__doc__},
+    {"rmdir",           posix_rmdir, METH_VARARGS, posix_rmdir__doc__},
+    {"stat",            posix_stat, METH_VARARGS, posix_stat__doc__},
     {"stat_float_times", stat_float_times, METH_VARARGS, stat_float_times__doc__},
 #ifdef HAVE_SYMLINK
     {"symlink",         posix_symlink, METH_VARARGS, posix_symlink__doc__},
