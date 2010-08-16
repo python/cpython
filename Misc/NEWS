@@ -26,12 +26,12 @@ Library
 Extension Modules
 -----------------
 
-- Issue #9568: Fix test_urllib2_localnet on OS X 10.3.
-
 - Issue #7567: Don't call `setupterm' twice.
 
 Tests
 -----
+
+- Issue #9568: Fix test_urllib2_localnet on OS X 10.3.
 
 - Issue #9145: Fix test_coercion failure in refleak runs.
 
