@@ -4,8 +4,8 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.6.6?
-===========================
+What's New in Python 2.6.6 rc 2?
+================================
 
 *Release date: XXXX-XX-XX*
 
@@ -25,6 +25,8 @@ Library
 
 Extension Modules
 -----------------
+
+- Issue #9568: Fix test_urllib2_localnet on OS X 10.3.
 
 - Issue #7567: Don't call `setupterm' twice.
 
