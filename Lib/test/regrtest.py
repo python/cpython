@@ -814,7 +814,7 @@ class saved_test_environment:
 
     resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
                  'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
-                 'warnings.filters')
+                 'warnings.filters', 'asyncore.socket_map')
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -871,6 +871,15 @@ class saved_test_environment:
     def restore_warnings_filters(self, saved_filters):
         warnings.filters = saved_filters[1]
         warnings.filters[:] = saved_filters[2]
+
+    def get_asyncore_socket_map(self):
+        asyncore = sys.modules.get('asyncore')
+        return asyncore and asyncore.socket_map or {}
+    def restore_asyncore_socket_map(self, saved_map):
+        asyncore = sys.modules.get('asyncore')
+        if asyncore is not None:
+            asyncore.socket_map.clear()
+            asyncore.socket_map.update(saved_map)
 
     def resource_info(self):
         for name in self.resources:
