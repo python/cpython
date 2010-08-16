@@ -1492,12 +1492,9 @@ def test_main(verbose=False):
         if thread_info and support.is_resource_enabled('network'):
             tests.append(ThreadedTests)
 
-    old_verbose = support.verbose
     try:
-        support.verbose = True
         support.run_unittest(*tests)
     finally:
-        support.verbose = old_verbose
         if _have_threads:
             support.threading_cleanup(*thread_info)
 
