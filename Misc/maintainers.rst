@@ -231,7 +231,7 @@ warnings            brett.cannon
 wave
 weakref             fdrake, pitrou
 webbrowser          georg.brandl
-winreg              brian.curtin
+winreg              brian.curtin*
 winsound            effbot (inactive)
 wsgiref             pje
 xdrlib
@@ -270,7 +270,7 @@ Mac                 ronaldoussoren
 NetBSD1
 OS2/EMX             aimacintyre
 Solaris
-Windows             tim.golden
+Windows             tim.golden, brian.curtin
 ==================  ===========
 
 
