@@ -134,14 +134,6 @@ class ImportTests(unittest.TestCase):
             self.assertIs(orig_path, new_os.path)
             self.assertIsNot(orig_getenv, new_os.getenv)
 
-    def test_bug7732(self):
-        source = TESTFN + '.py'
-        os.mkdir(source)
-        try:
-            self.assertRaises(IOError, imp.find_module, TESTFN, ["."])
-        finally:
-            rmtree(source)
-
     def test_module_with_large_stack(self, module='longlist'):
         # Regression test for http://bugs.python.org/issue561858.
         filename = module + os.extsep + 'py'
