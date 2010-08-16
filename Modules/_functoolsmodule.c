@@ -302,8 +302,9 @@ functools_reduce(PyObject *self, PyObject *args)
 
     it = PyObject_GetIter(seq);
     if (it == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-            "reduce() arg 2 must support iteration");
+        if (PyErr_ExceptionMatches(PyExc_TypeError))
+            PyErr_SetString(PyExc_TypeError,
+                            "reduce() arg 2 must support iteration");
         Py_XDECREF(result);
         return NULL;
     }
