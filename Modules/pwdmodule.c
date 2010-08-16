@@ -102,7 +102,7 @@ PyDoc_STRVAR(pwd_getpwuid__doc__,
 "getpwuid(uid) -> (pw_name,pw_passwd,pw_uid,\n\
                   pw_gid,pw_gecos,pw_dir,pw_shell)\n\
 Return the password database entry for the given numeric user ID.\n\
-See pwd.__doc__ for more on password database entries.");
+See help(pwd) for more on password database entries.");
 
 static PyObject *
 pwd_getpwuid(PyObject *self, PyObject *args)
@@ -123,7 +123,7 @@ PyDoc_STRVAR(pwd_getpwnam__doc__,
 "getpwnam(name) -> (pw_name,pw_passwd,pw_uid,\n\
                     pw_gid,pw_gecos,pw_dir,pw_shell)\n\
 Return the password database entry for the given user name.\n\
-See pwd.__doc__ for more on password database entries.");
+See help(pwd) for more on password database entries.");
 
 static PyObject *
 pwd_getpwnam(PyObject *self, PyObject *args)
@@ -156,7 +156,7 @@ PyDoc_STRVAR(pwd_getpwall__doc__,
 "getpwall() -> list_of_entries\n\
 Return a list of all available password database entries, \
 in arbitrary order.\n\
-See pwd.__doc__ for more on password database entries.");
+See help(pwd) for more on password database entries.");
 
 static PyObject *
 pwd_getpwall(PyObject *self)

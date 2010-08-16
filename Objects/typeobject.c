@@ -2505,7 +2505,7 @@ static PyMethodDef type_methods[] = {
     {"__instancecheck__", type___instancecheck__, METH_O,
      PyDoc_STR("__instancecheck__() -> check if an object is an instance")},
     {"__subclasscheck__", type___subclasscheck__, METH_O,
-     PyDoc_STR("__subclasschck__ -> check if an class is a subclass")},
+     PyDoc_STR("__subclasscheck__() -> check if a class is a subclass")},
     {0}
 };
 
@@ -5532,7 +5532,7 @@ static slotdef slotdefs[] = {
            wrap_descr_delete, "descr.__delete__(obj)"),
     FLSLOT("__init__", tp_init, slot_tp_init, (wrapperfunc)wrap_init,
            "x.__init__(...) initializes x; "
-           "see x.__class__.__doc__ for signature",
+           "see help(type(x)) for signature",
            PyWrapperFlag_KEYWORDS),
     TPSLOT("__new__", tp_new, slot_tp_new, NULL, ""),
     TPSLOT("__del__", tp_del, slot_tp_del, NULL, ""),
