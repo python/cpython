@@ -1834,17 +1834,13 @@ PySys_SetArgv(int argc, wchar_t **argv)
    PyErr_CheckSignals(): avoid the call to PyObject_Str(). */
 
 static int
-sys_pyfile_write(const char *text, PyObject *file)
+sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
 {
-    PyObject *unicode = NULL, *writer = NULL, *args = NULL, *result = NULL;
+    PyObject *writer = NULL, *args = NULL, *result = NULL;
     int err;
 
     if (file == NULL)
         return -1;
-
-    unicode = PyUnicode_FromString(text);
-    if (unicode == NULL)
-        goto error;
 
     writer = PyObject_GetAttrString(file, "write");
     if (writer == NULL)
@@ -1865,13 +1861,29 @@ sys_pyfile_write(const char *text, PyObject *file)
 error:
     err = -1;
 finally:
-    Py_XDECREF(unicode);
     Py_XDECREF(writer);
     Py_XDECREF(args);
     Py_XDECREF(result);
     return err;
 }
 
+static int
+sys_pyfile_write(const char *text, PyObject *file)
+{
+    PyObject *unicode = NULL;
+    int err;
+
+    if (file == NULL)
+        return -1;
+
+    unicode = PyUnicode_FromString(text);
+    if (unicode == NULL)
+        return -1;
+
+    err = sys_pyfile_write_unicode(unicode, file);
+    Py_DECREF(unicode);
+    return err;
+}
 
 /* APIs to write to sys.stdout or sys.stderr using a printf-like interface.
    Adapted from code submitted by Just van Rossum.
@@ -1884,8 +1896,8 @@ finally:
       no exceptions are raised.
 
       PyErr_CheckSignals() is not called to avoid the execution of the Python
-      signal handlers: they may raise a new exception whereas mywrite() ignores
-      all exceptions.
+      signal handlers: they may raise a new exception whereas sys_write()
+      ignores all exceptions.
 
       Both take a printf-style format string as their first argument followed
       by a variable length argument list determined by the format string.
@@ -1902,7 +1914,7 @@ finally:
  */
 
 static void
-mywrite(char *name, FILE *fp, const char *format, va_list va)
+sys_write(char *name, FILE *fp, const char *format, va_list va)
 {
     PyObject *file;
     PyObject *error_type, *error_value, *error_traceback;
@@ -1918,10 +1930,8 @@ mywrite(char *name, FILE *fp, const char *format, va_list va)
     }
     if (written < 0 || (size_t)written >= sizeof(buffer)) {
         const char *truncated = "... truncated";
-        if (sys_pyfile_write(truncated, file) != 0) {
-            PyErr_Clear();
+        if (sys_pyfile_write(truncated, file) != 0)
             fputs(truncated, fp);
-        }
     }
     PyErr_Restore(error_type, error_value, error_traceback);
 }
@@ -1932,7 +1942,7 @@ PySys_WriteStdout(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    mywrite("stdout", stdout, format, va);
+    sys_write("stdout", stdout, format, va);
     va_end(va);
 }
 
@@ -1942,6 +1952,48 @@ PySys_WriteStderr(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    mywrite("stderr", stderr, format, va);
+    sys_write("stderr", stderr, format, va);
+    va_end(va);
+}
+
+static void
+sys_format(char *name, FILE *fp, const char *format, va_list va)
+{
+    PyObject *file, *message;
+    PyObject *error_type, *error_value, *error_traceback;
+    char *utf8;
+
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    file = PySys_GetObject(name);
+    message = PyUnicode_FromFormatV(format, va);
+    if (message != NULL) {
+        if (sys_pyfile_write_unicode(message, file) != 0) {
+            PyErr_Clear();
+            utf8 = _PyUnicode_AsString(message);
+            if (utf8 != NULL)
+                fputs(utf8, fp);
+        }
+        Py_DECREF(message);
+    }
+    PyErr_Restore(error_type, error_value, error_traceback);
+}
+
+void
+PySys_FormatStdout(const char *format, ...)
+{
+    va_list va;
+
+    va_start(va, format);
+    sys_format("stdout", stdout, format, va);
+    va_end(va);
+}
+
+void
+PySys_FormatStderr(const char *format, ...)
+{
+    va_list va;
+
+    va_start(va, format);
+    sys_format("stderr", stderr, format, va);
     va_end(va);
 }

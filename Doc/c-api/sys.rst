@@ -109,8 +109,19 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. cfunction:: void PySys_WriteStderr(const char *format, ...)
 
-   As above, but write to :data:`sys.stderr` or *stderr* instead.
+   As :cfunc:`PySys_WriteStdout`, but write to :data:`sys.stderr` or *stderr*
+   instead.
 
+.. cfunction:: void PySys_FormatStdout(const char *format, ...)
+
+   Function similar to PySys_WriteStdout() but format the message using
+   :cfunc:`PyUnicode_FromFormatV` and don't truncate the message to an
+   arbitrary length.
+
+.. cfunction:: void PySys_FormatStderr(const char *format, ...)
+
+   As :cfunc:`PySys_FormatStdout`, but write to :data:`sys.stderr` or *stderr*
+   instead.
 
 .. _processcontrol:
 
