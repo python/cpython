@@ -270,7 +270,7 @@ Mac                 ronaldoussoren
 NetBSD1
 OS2/EMX             aimacintyre
 Solaris
-Windows
+Windows             tim.golden
 ==================  ===========
 
 
