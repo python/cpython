@@ -102,7 +102,7 @@ Example of how to GZIP compress an existing file::
 
    import gzip
    with open('/home/joe/file.txt', 'rb') as f_in:
-       with f_out = gzip.open('/home/joe/file.txt.gz', 'wb') as f_out:
+       with gzip.open('/home/joe/file.txt.gz', 'wb') as f_out:
            f_out.writelines(f_in)
 
 
