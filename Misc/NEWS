@@ -90,6 +90,10 @@ Extensions
 Library
 -------
 
+- Issue #9147: Added dis.code_info() which is similar to show_code()
+  but returns formatted code information in a string rather than
+  displaying on screen.
+
 - Issue #9567: functools.update_wrapper now adds a __wrapped__ attribute
   pointing to the original callable
 
