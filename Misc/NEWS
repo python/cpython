@@ -200,7 +200,7 @@ Library
 
 - Issue #1286: Allow using fileinput.FileInput as a context manager.
 
-- Add lfu_cache() and lru_cache() decorators to the functools module.
+- Add lru_cache() decorator to the functools module.
 
 Tools/Demos
 -----------
