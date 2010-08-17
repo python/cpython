@@ -21,7 +21,7 @@ Permissions History
 -------------------
 
 - Ask Solem was given commit access on Aug 17 2010 by MvL,
-  on recommendation by Jesse Noller, for work on the subprocess
+  on recommendation by Jesse Noller, for work on the multiprocessing
   library.
 
 - George Boutsioukis was given commit access on Aug 10 2010
