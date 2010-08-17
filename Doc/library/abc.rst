@@ -169,6 +169,8 @@ It also provides the following decorators:
           def my_abstract_classmethod(cls, ...):
               ...
 
+   .. versionadded:: 3.2
+
 
 .. decorator:: abstractstaticmethod(function)
 
@@ -181,6 +183,8 @@ It also provides the following decorators:
           @abstractstaticmethod
           def my_abstract_staticmethod(...):
               ...
+
+   .. versionadded:: 3.2
 
 
 .. function:: abstractproperty(fget=None, fset=None, fdel=None, doc=None)
