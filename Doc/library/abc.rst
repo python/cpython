@@ -157,6 +157,32 @@ It also provides the following decorators:
       multiple-inheritance.
 
 
+.. decorator:: abstractclassmethod(function)
+
+   A subclass of the built-in :func:`classmethod`, indicating an abstract
+   classmethod. Otherwise it is similar to :func:`abstractmethod`.
+
+   Usage::
+
+      class C(metaclass=ABCMeta):
+          @abstractclassmethod
+          def my_abstract_classmethod(cls, ...):
+              ...
+
+
+.. decorator:: abstractstaticmethod(function)
+
+   A subclass of the built-in :func:`staticmethod`, indicating an abstract
+   staticmethod. Otherwise it is similar to :func:`abstractmethod`.
+
+   Usage::
+
+      class C(metaclass=ABCMeta):
+          @abstractstaticmethod
+          def my_abstract_staticmethod(...):
+              ...
+
+
 .. function:: abstractproperty(fget=None, fset=None, fdel=None, doc=None)
 
    A subclass of the built-in :func:`property`, indicating an abstract property.

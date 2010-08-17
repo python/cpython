@@ -90,6 +90,8 @@ Extensions
 Library
 -------
 
+- Issue #5867: Add abc.abstractclassmethod and abc.abstractstaticmethod.
+
 - Issue #9605: posix.getlogin() decodes the username with file filesystem
   encoding and surrogateescape error handler. Patch written by David Watson.
 
