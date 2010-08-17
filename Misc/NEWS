@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9612: The set object is now 64-bit clean under Windows.
+
 - Issue #8202: sys.argv[0] is now set to '-m' instead of '-c' when searching
   for the module file to be executed with the -m command  line option.
 
