@@ -181,6 +181,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
    cannot be represented as a :ctype:`long long`, an
    :exc:`OverflowError` is raised and ``-1`` is returned.
 
+
 .. cfunction:: unsigned PY_LONG_LONG PyLong_AsUnsignedLongLong(PyObject *pylong)
 
    .. index::
@@ -192,8 +193,8 @@ All integers are implemented as "long" integer objects of arbitrary size.
    returned.
 
    .. versionchanged:: 3.1
-      A negative *pylong* now raises :exc:`OverflowError`, not
-      :exc:`TypeError`.
+      A negative *pylong* now raises :exc:`OverflowError`, not :exc:`TypeError`.
+
 
 .. cfunction:: unsigned long PyLong_AsUnsignedLongMask(PyObject *io)
 

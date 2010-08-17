@@ -320,8 +320,7 @@ APIs:
       when :const:`HAVE_LONG_LONG` is defined.
 
    .. versionchanged:: 3.2
-      Support for `"%lld"` and `"%llu"` added.
-
+      Support for ``"%lld"`` and ``"%llu"`` added.
 
 
 .. cfunction:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
@@ -387,6 +386,7 @@ used, passsing :func:`PyUnicode_FSConverter` as the conversion function:
 
    .. versionadded:: 3.1
 
+
 To decode file names during argument parsing, the ``"O&"`` converter should be
 used, passsing :func:`PyUnicode_FSDecoder` as the conversion function:
 
@@ -398,6 +398,7 @@ used, passsing :func:`PyUnicode_FSDecoder` as the conversion function:
    when it is no longer used.
 
    .. versionadded:: 3.2
+
 
 .. cfunction:: PyObject* PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 

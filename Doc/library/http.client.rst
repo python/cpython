@@ -394,6 +394,7 @@ HTTPConnection Objects
 
    .. versionadded:: 3.1
 
+
 .. method:: HTTPConnection.set_tunnel(host, port=None, headers=None)
 
    Set the host and the port for HTTP Connect Tunnelling. Normally used when it
@@ -403,6 +404,7 @@ HTTPConnection Objects
    with the CONNECT request.
 
    .. versionadded:: 3.2
+
 
 .. method:: HTTPConnection.connect()
 

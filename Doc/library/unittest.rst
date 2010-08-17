@@ -210,7 +210,7 @@ For a list of all the command line options::
 
    python -m unittest -h
 
-..  versionchanged:: 3.2
+.. versionchanged:: 3.2
    In earlier versions it was only possible to run individual test methods and
    not modules or classes.
 
@@ -861,8 +861,8 @@ Test cases
       Supplying both *delta* and *places* raises a ``TypeError``.
 
       .. versionchanged:: 3.2
-         Objects that compare equal automatically fail.
-         Added the ``delta`` keyword argument.
+         Objects that compare equal automatically fail.  Added the ``delta``
+         keyword argument.
 
       .. deprecated:: 3.1
          :meth:`failIfAlmostEqual`; use :meth:`assertNotAlmostEqual`.
@@ -941,8 +941,8 @@ Test cases
       If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 3.1
-
       .. deprecated:: 3.2
+
 
    .. method:: assertItemsEqual(actual, expected, msg=None)
 
@@ -959,6 +959,7 @@ Test cases
       If specified, *msg* will be used as the error message on failure.
 
       .. versionadded:: 3.2
+
 
    .. method:: assertSetEqual(set1, set2, msg=None)
 
@@ -1683,14 +1684,16 @@ a
       The default implementation appends the test to the instance's
       :attr:`unexpectedSuccesses` attribute.
 
+
 .. class:: TextTestResult(stream, descriptions, verbosity)
 
-    A concrete implementation of :class:`TestResult` used by the
-    :class:`TextTestRunner`.
+   A concrete implementation of :class:`TestResult` used by the
+   :class:`TextTestRunner`.
 
-    .. versionadded:: 3.2
-        This class was previously named ``_TextTestResult``. The old name still
-        exists as an alias but is deprecated.
+   .. versionadded:: 3.2
+      This class was previously named ``_TextTestResult``. The old name still
+      exists as an alias but is deprecated.
+
 
 .. data:: defaultTestLoader
 

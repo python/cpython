@@ -67,23 +67,22 @@ Notes on the availability of these functions:
 File Names, Command Line Arguments, and Environment Variables
 -------------------------------------------------------------
 
-In Python, file names, command line arguments, and environment
-variables are represented using the string type. On some systems,
-decoding these strings to and from bytes is necessary before passing
-them to the operating system. Python uses the file system encoding to
-perform this conversion (see :func:`sys.getfilesystemencoding`).
+In Python, file names, command line arguments, and environment variables are
+represented using the string type. On some systems, decoding these strings to
+and from bytes is necessary before passing them to the operating system. Python
+uses the file system encoding to perform this conversion (see
+:func:`sys.getfilesystemencoding`).
 
 .. versionchanged:: 3.1
-   On some systems, conversion using the file system encoding may
-   fail. In this case, Python uses the ``surrogateescape`` encoding
-   error handler, which means that undecodable bytes are replaced by a
-   Unicode character U+DCxx on decoding, and these are again
-   translated to the original byte on encoding.
+   On some systems, conversion using the file system encoding may fail. In this
+   case, Python uses the ``surrogateescape`` encoding error handler, which means
+   that undecodable bytes are replaced by a Unicode character U+DCxx on
+   decoding, and these are again translated to the original byte on encoding.
 
 
-The file system encoding must guarantee to successfully decode all
-bytes below 128. If the file system encoding fails to provide this
-guarantee, API functions may raise UnicodeErrors.
+The file system encoding must guarantee to successfully decode all bytes
+below 128. If the file system encoding fails to provide this guarantee, API
+functions may raise UnicodeErrors.
 
 
 .. _os-procinfo:
@@ -1744,7 +1743,8 @@ written in Python, such as a mail server's external command delivery program.
    will be set to *sig*. The Windows version of :func:`kill` additionally takes
    process handles to be killed.
 
-   .. versionadded:: 3.2 Windows support
+   .. versionadded:: 3.2
+      Windows support.
 
 
 .. function:: killpg(pgid, sig)

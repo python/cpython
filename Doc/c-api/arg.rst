@@ -305,13 +305,14 @@ Other objects
    the conversion has failed.  When the conversion fails, the *converter* function
    should raise an exception and leave the content of *address* unmodified.
 
-   If the *converter* returns Py_CLEANUP_SUPPORTED, it may get called a second time
-   if the argument parsing eventually fails, giving the converter a chance to release
-   any memory that it had already allocated. In this second call, the *object* parameter
-   will be NULL; *address* will have the same value as in the original call.
+   If the *converter* returns ``Py_CLEANUP_SUPPORTED``, it may get called a
+   second time if the argument parsing eventually fails, giving the converter a
+   chance to release any memory that it had already allocated. In this second
+   call, the *object* parameter will be NULL; *address* will have the same value
+   as in the original call.
 
    .. versionchanged:: 3.1
-      Py_CLEANUP_SUPPORTED was added.
+      ``Py_CLEANUP_SUPPORTED`` was added.
 
 ``(items)`` (:class:`tuple`) [*matching-items*]
    The object must be a Python sequence whose length is the number of format units

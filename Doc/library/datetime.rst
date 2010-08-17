@@ -302,12 +302,11 @@ In addition to the operations listed above :class:`timedelta` objects support
 certain additions and subtractions with :class:`date` and :class:`datetime`
 objects (see below).
 
-.. versionadded:: 3.2
-   Floor division and true division of a :class:`timedelta` object by
-   another :class:`timedelta` object are now supported, as are
-   remainder operations and the :func:`divmod` function.  True
-   division and multiplication of a :class:`timedelta` object by
-   a :class:`float` object are now supported.
+.. versionchanged:: 3.2
+   Floor division and true division of a :class:`timedelta` object by another
+   :class:`timedelta` object are now supported, as are remainder operations and
+   the :func:`divmod` function.  True division and multiplication of a
+   :class:`timedelta` object by a :class:`float` object are now supported.
 
 
 Comparisons of :class:`timedelta` objects are supported with the
@@ -1779,9 +1778,7 @@ Notes:
    For example, if :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``,
    ``%z`` is replaced with the string ``'-0330'``.
 
-.. versionadded:: 3.2
-
-   When the ``%z`` directive is provided to the :meth:`strptime`
-   method, an aware :class:`datetime` object will be produced.  The
-   ``tzinfo`` of the result will be set to a :class:`timezone`
-   instance.
+.. versionchanged:: 3.2
+   When the ``%z`` directive is provided to the :meth:`strptime` method, an
+   aware :class:`datetime` object will be produced.  The ``tzinfo`` of the
+   result will be set to a :class:`timezone` instance.

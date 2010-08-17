@@ -38,26 +38,26 @@ The :mod:`dis` module defines the following functions and constants:
 
 .. function:: code_info(x=None)
 
-   Return a formatted multi-line string with detailed code object
-   information for the supplied function, method, source code string
-   or code object.
+   Return a formatted multi-line string with detailed code object information
+   for the supplied function, method, source code string or code object.
 
-   Note that the exact contents of code info strings are highly
-   implementation dependent and they may change arbitrarily across
-   Python VMs or Python releases.
+   Note that the exact contents of code info strings are highly implementation
+   dependent and they may change arbitrarily across Python VMs or Python
+   releases.
 
    .. versionadded:: 3.2
 
+
 .. function:: dis(x=None)
 
-   Disassemble the *x* object.  *x* can denote either a module, a
-   class, a method, a function, a code object, a string of source code or a
-   byte sequence of raw bytecode.  For a module, it disassembles all
-   functions.  For a class, it disassembles all methods.  For a code object
-   or sequence of raw bytecode, it prints one line per bytecode instruction.
-   Strings are first compiled to code objects with the :func:`compile`
-   built-in function before being disassembled.  If no object is provided,
-   this function disassembles the last traceback.
+   Disassemble the *x* object.  *x* can denote either a module, a class, a
+   method, a function, a code object, a string of source code or a byte sequence
+   of raw bytecode.  For a module, it disassembles all functions.  For a class,
+   it disassembles all methods.  For a code object or sequence of raw bytecode,
+   it prints one line per bytecode instruction.  Strings are first compiled to
+   code objects with the :func:`compile` built-in function before being
+   disassembled.  If no object is provided, this function disassembles the last
+   traceback.
 
 
 .. function:: distb(tb=None)

@@ -266,6 +266,7 @@ counts, but the output will exclude results with counts of zero or less.
 
       .. versionadded:: 3.2
 
+
    .. method:: extend(iterable)
 
       Extend the right side of the deque by appending elements from the iterable
@@ -296,11 +297,13 @@ counts, but the output will exclude results with counts of zero or less.
       Removed the first occurrence of *value*.  If not found, raises a
       :exc:`ValueError`.
 
+
    .. method:: reverse()
 
       Reverse the elements of the deque in-place and then return ``None``.
 
       .. versionadded:: 3.2
+
 
    .. method:: rotate(n)
 
@@ -576,7 +579,7 @@ they add the ability to access fields by name instead of position index.
    lightweight and require no more memory than regular tuples.
 
    .. versionchanged:: 3.1
-      added support for *rename*.
+      Added support for *rename*.
 
 Example:
 

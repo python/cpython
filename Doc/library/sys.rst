@@ -707,9 +707,9 @@ always available.
    every virtual instruction, maximizing responsiveness as well as overhead.
 
    .. deprecated:: 3.2
-      This function doesn't have an effect anymore, as the internal logic
-      for thread switching and asynchronous tasks has been rewritten.
-      Use :func:`setswitchinterval` instead.
+      This function doesn't have an effect anymore, as the internal logic for
+      thread switching and asynchronous tasks has been rewritten.  Use
+      :func:`setswitchinterval` instead.
 
 
 .. function:: setdefaultencoding(name)
@@ -958,7 +958,7 @@ always available.
    and so on.
 
    .. versionchanged:: 3.1
-      Added named component attributes
+      Added named component attributes.
 
 .. data:: warnoptions
 
