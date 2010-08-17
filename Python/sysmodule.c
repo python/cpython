@@ -1723,6 +1723,10 @@ _wrealpath(const wchar_t *path, wchar_t *resolved_path)
 }
 #endif
 
+#define _HAVE_SCRIPT_ARGUMENT(argc, argv) \
+  (argc > 0 && argv0 != NULL && \
+   wcscmp(argv0, L"-c") != 0 && wcscmp(argv0, L"-m") != 0)
+  
 void
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
@@ -1747,7 +1751,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
         wchar_t link[MAXPATHLEN+1];
         wchar_t argv0copy[2*MAXPATHLEN+1];
         int nr = 0;
-        if (argc > 0 && argv0 != NULL && wcscmp(argv0, L"-c") != 0)
+        if (_HAVE_SCRIPT_ARGUMENT(argc, argv))
             nr = _Py_wreadlink(argv0, link, MAXPATHLEN);
         if (nr > 0) {
             /* It's a symlink */
@@ -1772,7 +1776,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
         }
 #endif /* HAVE_READLINK */
 #if SEP == '\\' /* Special case for MS filename syntax */
-        if (argc > 0 && argv0 != NULL && wcscmp(argv0, L"-c") != 0) {
+        if (_HAVE_SCRIPT_ARGUMENT(argc, argv)) {
             wchar_t *q;
 #if defined(MS_WINDOWS) && !defined(MS_WINCE)
             /* This code here replaces the first element in argv with the full
@@ -1798,7 +1802,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
             }
         }
 #else /* All other filename syntaxes */
-        if (argc > 0 && argv0 != NULL && wcscmp(argv0, L"-c") != 0) {
+        if (_HAVE_SCRIPT_ARGUMENT(argc, argv)) {
 #if defined(HAVE_REALPATH)
             if (_wrealpath(argv0, fullpath)) {
                 argv0 = fullpath;
