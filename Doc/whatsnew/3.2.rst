@@ -186,6 +186,13 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Giampaolo Rodolà; :issue:`8866`.)
 
+* :class:`~poplib.POP3_SSL` class now accepts a *context* parameter, which is a
+  :class:`ssl.SSLContext` object allowing bundling SSL configuration options,
+  certificates and private keys into a single (potentially long-lived)
+  structure.
+
+  (Contributed by Giampaolo Rodolà; :issue:`8807`.)
+
 Multi-threading
 ===============
 

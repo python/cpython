@@ -122,6 +122,7 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
         self.active = False
         self.active_lock = threading.Lock()
         self.host, self.port = self.socket.getsockname()[:2]
+        self.handler_instance = None
 
     def start(self):
         assert not self.active
@@ -145,8 +146,7 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
 
     def handle_accept(self):
         conn, addr = self.accept()
-        self.handler = self.handler(conn)
-        self.close()
+        self.handler_instance = self.handler(conn)
 
     def handle_connect(self):
         self.close()
@@ -286,6 +286,23 @@ if hasattr(poplib, 'POP3_SSL'):
 
         def test__all__(self):
             self.assertIn('POP3_SSL', poplib.__all__)
+
+        def test_context(self):
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
+                              self.server.port, keyfile=CERTFILE, context=ctx)
+            self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
+                              self.server.port, certfile=CERTFILE, context=ctx)
+            self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
+                              self.server.port, keyfile=CERTFILE,
+                              certfile=CERTFILE, context=ctx)
+
+            self.client.quit()
+            self.client = poplib.POP3_SSL(self.server.host, self.server.port,
+                                          context=ctx)
+            self.assertIsInstance(self.client.sock, ssl.SSLSocket)
+            self.assertIs(self.client.sock.context, ctx)
+            self.assertTrue(self.client.noop().startswith(b'+OK'))
 
 
 class TestTimeouts(TestCase):
