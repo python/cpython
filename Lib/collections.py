@@ -119,6 +119,18 @@ class OrderedDict(dict, MutableMapping):
     iteritems = MutableMapping.iteritems
     __ne__ = MutableMapping.__ne__
 
+    def viewkeys(self):
+        "od.viewkeys() -> a set-like object providing a view on od's keys"
+        return KeysView(self)
+
+    def viewvalues(self):
+        "od.viewvalues() -> an object providing a view on od's values"
+        return ValuesView(self)
+
+    def viewitems(self):
+        "od.viewitems() -> a set-like object providing a view on od's items"
+        return ItemsView(self)
+
     def popitem(self, last=True):
         '''od.popitem() -> (k, v), return and remove a (key, value) pair.
         Pairs are returned in LIFO order if last is true or FIFO order if false.
