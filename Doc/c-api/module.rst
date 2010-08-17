@@ -64,13 +64,24 @@ There are only a few functions special to module objects.
 
 .. cfunction:: char* PyModule_GetFilename(PyObject *module)
 
+   Similar to :cfunc:`PyModule_GetFilenameObject` but return the filename
+   encoded to 'utf-8'.
+
+   .. deprecated:: 3.2
+      :cfunc:`PyModule_GetFilename` raises :ctype:`UnicodeEncodeError` on
+      unencodable filenames, use :cfunc:`PyModule_GetFilenameObject` instead.
+
+
+.. cfunction:: PyObject* PyModule_GetFilenameObject(PyObject *module)
+
    .. index::
       single: __file__ (module attribute)
       single: SystemError (built-in exception)
 
    Return the name of the file from which *module* was loaded using *module*'s
-   :attr:`__file__` attribute.  If this is not defined, or if it is not a string,
-   raise :exc:`SystemError` and return *NULL*.
+   :attr:`__file__` attribute.  If this is not defined, or if it is not a
+   unicode string, raise :exc:`SystemError` and return *NULL*; otherwise return
+   a reference to a :ctype:`PyUnicodeObject`.
 
 
 .. cfunction:: void* PyModule_GetState(PyObject *module)

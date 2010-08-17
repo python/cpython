@@ -12,6 +12,11 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9425: Create PyModule_GetFilenameObject() function to get the filename
+  as a unicode object, instead of a byte string. Function needed to support
+  unencodable filenames. Deprecate PyModule_GetFilename() in favor on the new
+  function.
+
 - Issue #8063: Call _PyGILState_Init() earlier in Py_InitializeEx().
 
 - Issue #9612: The set object is now 64-bit clean under Windows.

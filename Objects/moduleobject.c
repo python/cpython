@@ -188,8 +188,8 @@ PyModule_GetName(PyObject *m)
     return _PyUnicode_AsString(nameobj);
 }
 
-static PyObject*
-module_getfilename(PyObject *m)
+PyObject*
+PyModule_GetFilenameObject(PyObject *m)
 {
     PyObject *d;
     PyObject *fileobj;
@@ -205,6 +205,7 @@ module_getfilename(PyObject *m)
         PyErr_SetString(PyExc_SystemError, "module filename missing");
         return NULL;
     }
+    Py_INCREF(fileobj);
     return fileobj;
 }
 
@@ -212,10 +213,13 @@ const char *
 PyModule_GetFilename(PyObject *m)
 {
     PyObject *fileobj;
-    fileobj = module_getfilename(m);
+    char *utf8;
+    fileobj = PyModule_GetFilenameObject(m);
     if (fileobj == NULL)
         return NULL;
-    return _PyUnicode_AsString(fileobj);
+    utf8 = _PyUnicode_AsString(fileobj);
+    Py_DECREF(fileobj);
+    return utf8;
 }
 
 PyModuleDef*
@@ -346,19 +350,21 @@ static PyObject *
 module_repr(PyModuleObject *m)
 {
     const char *name;
-    PyObject *filename;
+    PyObject *filename, *repr;
 
     name = PyModule_GetName((PyObject *)m);
     if (name == NULL) {
         PyErr_Clear();
         name = "?";
     }
-    filename = module_getfilename((PyObject *)m);
+    filename = PyModule_GetFilenameObject((PyObject *)m);
     if (filename == NULL) {
         PyErr_Clear();
         return PyUnicode_FromFormat("<module '%s' (built-in)>", name);
     }
-    return PyUnicode_FromFormat("<module '%s' from '%U'>", name, filename);
+    repr = PyUnicode_FromFormat("<module '%s' from '%U'>", name, filename);
+    Py_DECREF(filename);
+    return repr;
 }
 
 static int
