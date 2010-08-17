@@ -114,7 +114,7 @@ called with a non-bytes parameter.
 
 .. cfunction:: PyObject* PyBytes_FromFormatV(const char *format, va_list vargs)
 
-   Identical to :func:`PyBytes_FromFormat` except that it takes exactly two
+   Identical to :cfunc:`PyBytes_FromFormat` except that it takes exactly two
    arguments.
 
 

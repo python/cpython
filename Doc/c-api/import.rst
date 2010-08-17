@@ -124,8 +124,8 @@ Importing Modules
    If *name* points to a dotted name of the form ``package.module``, any package
    structures not already created will still not be created.
 
-   See also :func:`PyImport_ExecCodeModuleEx` and
-   :func:`PyImport_ExecCodeModuleWithPathnames`.
+   See also :cfunc:`PyImport_ExecCodeModuleEx` and
+   :cfunc:`PyImport_ExecCodeModuleWithPathnames`.
 
 
 .. cfunction:: PyObject* PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
@@ -133,7 +133,7 @@ Importing Modules
    Like :cfunc:`PyImport_ExecCodeModule`, but the :attr:`__file__` attribute of
    the module object is set to *pathname* if it is non-``NULL``.
 
-   See also :func:`PyImport_ExecCodeModuleWithPathnames`.
+   See also :cfunc:`PyImport_ExecCodeModuleWithPathnames`.
 
 
 .. cfunction:: PyObject* PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname, char *cpathname)
