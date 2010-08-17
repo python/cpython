@@ -163,13 +163,14 @@ The :mod:`functools` module defines the following functions:
    wrapper function itself is missing any attributes named in *updated*.
 
    .. versionadded:: 3.2
-      Automatic addition of the __wrapped__ attribute
+      Automatic addition of the ``__wrapped__`` attribute.
 
    .. versionadded:: 3.2
-      Copying of the __annotations__ attribute by default
+      Copying of the ``__annotations__`` attribute by default.
 
    .. versionchanged:: 3.2
-      Missing attributes no longer trigger an AttributeError
+      Missing attributes no longer trigger an :exc:`AttributeError`.
+
 
 .. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 
