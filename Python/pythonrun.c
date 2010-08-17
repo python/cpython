@@ -206,6 +206,11 @@ Py_InitializeEx(int install_sigs)
         Py_FatalError("Py_Initialize: can't make first thread");
     (void) PyThreadState_Swap(tstate);
 
+    /* auto-thread-state API, if available */
+#ifdef WITH_THREAD
+    _PyGILState_Init(interp, tstate);
+#endif /* WITH_THREAD */
+
     _Py_ReadyTypes();
 
     if (!_PyFrame_Init())
@@ -287,11 +292,6 @@ Py_InitializeEx(int install_sigs)
     if (initstdio() < 0)
         Py_FatalError(
             "Py_Initialize: can't initialize sys standard streams");
-
-    /* auto-thread-state API, if available */
-#ifdef WITH_THREAD
-    _PyGILState_Init(interp, tstate);
-#endif /* WITH_THREAD */
 
     if (!Py_NoSiteFlag)
         initsite(); /* Module site */
