@@ -329,7 +329,8 @@ gethandle(PyObject* obj, char* name)
 static PyObject*
 getenvironment(PyObject* environment)
 {
-    int i, envsize;
+    int i;
+    Py_ssize_t envsize;
     PyObject* out = NULL;
     PyObject* keys;
     PyObject* values;
@@ -356,7 +357,7 @@ getenvironment(PyObject* environment)
     p = PyUnicode_AS_UNICODE(out);
 
     for (i = 0; i < envsize; i++) {
-        int ksize, vsize, totalsize;
+        Py_ssize_t ksize, vsize, totalsize;
         PyObject* key = PyList_GET_ITEM(keys, i);
         PyObject* value = PyList_GET_ITEM(values, i);
 
@@ -370,7 +371,7 @@ getenvironment(PyObject* environment)
         totalsize = (p - PyUnicode_AS_UNICODE(out)) + ksize + 1 +
                                                      vsize + 1 + 1;
         if (totalsize > PyUnicode_GET_SIZE(out)) {
-            int offset = p - PyUnicode_AS_UNICODE(out);
+            Py_ssize_t offset = p - PyUnicode_AS_UNICODE(out);
             PyUnicode_Resize(&out, totalsize + 1024);
             p = PyUnicode_AS_UNICODE(out) + offset;
         }
