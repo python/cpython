@@ -102,26 +102,22 @@ Examples of usage
 Example of how to read a compressed file::
 
    import gzip
-   f = gzip.open('/home/joe/file.txt.gz', 'rb')
-   file_content = f.read()
-   f.close()
+   with gzip.open('/home/joe/file.txt.gz', 'rb') as f:
+       file_content = f.read()
 
 Example of how to create a compressed GZIP file::
 
    import gzip
-   content = "Lots of content here"
-   f = gzip.open('/home/joe/file.txt.gz', 'wb')
-   f.write(content)
-   f.close()
+   content = b"Lots of content here"
+   with gzip.open('/home/joe/file.txt.gz', 'wb') as f:
+       f.write(content)
 
 Example of how to GZIP compress an existing file::
 
    import gzip
-   f_in = open('/home/joe/file.txt', 'rb')
-   f_out = gzip.open('/home/joe/file.txt.gz', 'wb')
-   f_out.writelines(f_in)
-   f_out.close()
-   f_in.close()
+   with open('/home/joe/file.txt', 'rb') as f_in:
+       with f_out = gzip.open('/home/joe/file.txt.gz', 'wb') as f_out:
+           f_out.writelines(f_in)
 
 Example of how to GZIP compress a binary string::
 
