@@ -36,6 +36,7 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.2
 
+
 .. decorator:: lru_cache(maxsize)
 
    Decorator to wrap a function with a memoizing callable that saves up to the
@@ -67,6 +68,7 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.2
 
+
 .. decorator:: total_ordering
 
    Given a class defining one or more rich comparison ordering methods, this
@@ -89,6 +91,7 @@ The :mod:`functools` module defines the following functions:
                        (other.lastname.lower(), other.firstname.lower()))
 
    .. versionadded:: 3.2
+
 
 .. function:: partial(func, *args, **keywords)
 

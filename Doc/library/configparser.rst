@@ -360,6 +360,7 @@ RawConfigParser Objects
 
    .. versionadded:: 3.2
 
+
 .. method:: RawConfigParser.read_dict(dictionary, source='<dict>')
 
    Load configuration from a dictionary. Keys are section names, values are
@@ -371,6 +372,7 @@ RawConfigParser Objects
    dictionary passed.  If not given, ``<dict>`` is used.
 
    .. versionadded:: 3.2
+
 
 .. method:: RawConfigParser.get(section, option)
 
@@ -455,10 +457,12 @@ RawConfigParser Objects
    Note that when reading configuration files, whitespace around the
    option names are stripped before :meth:`optionxform` is called.
 
+
 .. method:: RawConfigParser.readfp(fp, filename=None)
 
    .. deprecated:: 3.2
       Please use :meth:`read_file` instead.
+
 
 .. _configparser-objects:
 

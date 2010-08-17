@@ -206,6 +206,6 @@ distribution::
 :option:`-o` is a shortcut for :option:`--manifest-only`.
 
 .. versionchanged:: 3.1
-    An existing generated :file:`MANIFEST` will be regenerated without
-    :command:`sdist` comparing its modification time to the one of
-    :file:`MANIFEST.in` or :file:`setup.py`.
+   An existing generated :file:`MANIFEST` will be regenerated without
+   :command:`sdist` comparing its modification time to the one of
+   :file:`MANIFEST.in` or :file:`setup.py`.

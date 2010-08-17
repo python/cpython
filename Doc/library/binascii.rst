@@ -60,7 +60,7 @@ The :mod:`binascii` module defines the following functions:
    *header* is present and true, underscores will be decoded as spaces.
 
    .. versionchanged:: 3.2
-      accept only bytestring or bytearray object as input.
+      Accept only bytestring or bytearray objects as input.
 
 
 .. function:: b2a_qp(data, quotetabs=False, istext=True, header=False)
@@ -92,7 +92,7 @@ The :mod:`binascii` module defines the following functions:
    in which case the :exc:`Incomplete` exception is raised.
 
    .. versionchanged:: 3.2
-      accept only bytestring or bytearray object as input.
+      Accept only bytestring or bytearray objects as input.
 
 
 .. function:: rlecode_hqx(data)
@@ -151,7 +151,7 @@ The :mod:`binascii` module defines the following functions:
    :exc:`TypeError` is raised.
 
    .. versionchanged:: 3.2
-      accept only bytestring or bytearray object as input.
+      Accept only bytestring or bytearray objects as input.
 
 
 .. exception:: Error

@@ -26,7 +26,8 @@ ordinary users of the :mod:`pickle` module probably won't find the
    a short description.  The value of *annotate* is used as a hint for
    the column where annotation should start.
 
-  .. versionadded:: 3.2 the *annotate* argument.
+  .. versionadded:: 3.2
+     The *annotate* argument.
 
 .. function:: genops(pickle)
 

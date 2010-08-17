@@ -574,8 +574,8 @@ doctest decides whether actual output matches an example's expected output:
    changed in Python 2.4 to say "does not" instead of "doesn't".
 
    .. versionchanged:: 3.2
-      :const:`IGNORE_EXCEPTION_DETAIL` now also ignores any information
-      relating to the module containing the exception under test
+      :const:`IGNORE_EXCEPTION_DETAIL` now also ignores any information relating
+      to the module containing the exception under test.
 
 
 .. data:: SKIP

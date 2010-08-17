@@ -179,12 +179,12 @@ value but should not rebind it):
 
    .. versionchanged:: 3.2
       If this list is non-empty at interpreter shutdown, a warning message
-      gets printed:
+      gets printed.
 
    ::
 
-      gc: 2 uncollectable objects at shutdown:
-          Use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them.
+       gc: 2 uncollectable objects at shutdown:
+             Use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them.
 
 The following constants are provided for use with :func:`set_debug`:
 

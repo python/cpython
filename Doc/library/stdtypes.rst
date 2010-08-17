@@ -459,7 +459,7 @@ Additional Methods on Integer Types
 
     .. versionadded:: 3.1
 
-    .. method:: int.to_bytes(length, byteorder, \*, signed=False)
+.. method:: int.to_bytes(length, byteorder, \*, signed=False)
 
     Return an array of bytes representing an integer.
 
@@ -491,7 +491,7 @@ Additional Methods on Integer Types
 
     .. versionadded:: 3.2
 
-    .. classmethod:: int.from_bytes(bytes, byteorder, \*, signed=False)
+.. classmethod:: int.from_bytes(bytes, byteorder, \*, signed=False)
 
     Return the integer represented by the given array of bytes.
 
@@ -996,7 +996,8 @@ functions based on regular expressions.
    list of possible encodings, see section :ref:`standard-encodings`.
 
    .. versionchanged:: 3.1
-      Added support for keyword arguments added.
+      Support for keyword arguments added.
+
 
 .. method:: str.endswith(suffix[, start[, end]])
 

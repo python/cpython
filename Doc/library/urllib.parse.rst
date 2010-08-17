@@ -349,7 +349,7 @@ The :mod:`urllib.parse` module defines the following functions:
    parameters are sent the :func:`quote_plus` for encoding.
 
    .. versionchanged:: 3.2
-      query paramater supports bytes and string.
+      Query parameter supports bytes and string objects.
 
 
 .. seealso::

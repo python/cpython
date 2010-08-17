@@ -66,6 +66,7 @@ The module defines the following items:
    .. versionchanged:: 3.1
       Support for file and file-like objects.
 
+
 .. data:: ZIP_STORED
 
    The numeric constant for an uncompressed archive member.

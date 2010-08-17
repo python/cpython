@@ -166,6 +166,7 @@ This module also defines the following constant:
 
    .. versionadded:: 3.2
 
+
 Detailed interfaces for the objects are documented below.
 
 The design of this module is loosely based on Java's threading model. However,
@@ -385,6 +386,7 @@ All methods are executed atomically.
 
    .. versionchanged:: 3.2
       The *timeout* parameter is new.
+
 
 .. method:: Lock.release()
 

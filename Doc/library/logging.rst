@@ -440,8 +440,6 @@ import mechanisms. Thus, you could use either `handlers.WatchedFileHandler`
 class defined in package `mypackage` and module `mymodule`, where `mypackage`
 is available on the Python import path).
 
-.. versionchanged:: 3.2
-
 In Python 3.2, a new means of configuring logging has been introduced, using
 dictionaries to hold configuration information. This provides a superset of the
 functionality of the config-file-based approach outlined above, and is the
@@ -521,9 +519,8 @@ libraries, then the logger name specified can be "orgname.foo" rather than
 just "foo".
 
 .. versionadded:: 3.1
-
-The :class:`NullHandler` class was not present in previous versions, but is now
-included, so that it need not be defined in library code.
+   The :class:`NullHandler` class was not present in previous versions, but is
+   now included, so that it need not be defined in library code.
 
 
 
@@ -952,6 +949,7 @@ instantiated directly, but always through the module-level function
    rather than a literal string.
 
    .. versionadded:: 3.2
+
 
 .. method:: Logger.debug(msg, *args, **kwargs)
 
@@ -2586,9 +2584,8 @@ methods have the same signatures as their counterparts in :class:`Logger`, so
 you can use the two types of instances interchangeably.
 
 .. versionchanged:: 3.2
-
-The :meth:`isEnabledFor` method was added to :class:`LoggerAdapter`. This method
-delegates to the underlying logger.
+   The :meth:`isEnabledFor` method was added to :class:`LoggerAdapter`.  This
+   method delegates to the underlying logger.
 
 
 Thread Safety

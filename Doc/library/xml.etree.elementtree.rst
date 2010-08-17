@@ -309,13 +309,13 @@ Element Objects
 
    .. method:: getchildren()
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.2
          Use ``list(elem)`` or iteration.
 
 
    .. method:: getiterator(tag=None)
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.2
          Use method :meth:`Element.iter` instead.
 
 
@@ -427,7 +427,7 @@ ElementTree Objects
 
    .. method:: getiterator(tag=None)
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.2
          Use method :meth:`ElementTree.iter` instead.
 
 
@@ -589,7 +589,7 @@ XMLParser Objects
 
    .. method:: doctype(name, pubid, system)
 
-      .. deprecated:: 2.7
+      .. deprecated:: 3.2
          Define the :meth:`TreeBuilder.doctype` method on a custom TreeBuilder
          target.
 

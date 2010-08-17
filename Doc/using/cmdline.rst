@@ -115,6 +115,7 @@ source.
    .. versionchanged:: 3.1
       Supply the package name to run a ``__main__`` submodule.
 
+
 .. describe:: -
 
    Read commands from standard input (:data:`sys.stdin`).  If standard input is

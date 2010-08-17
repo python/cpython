@@ -181,7 +181,6 @@ are always available.  They are listed here in alphabetical order.
       character.  This is to facilitate detection of incomplete and complete
       statements in the :mod:`code` module.
 
-
    .. versionchanged:: 3.2
       Allowed use of Windows and Mac newlines.  Also input in ``'exec'`` mode
       does not have to end in a newline anymore.
@@ -939,8 +938,8 @@ are always available.  They are listed here in alphabetical order.
       []
 
    .. versionchanged:: 3.2
-      Testing integers for membership takes constant time instead of
-      iterating through all items.
+      Testing integers for membership takes constant time instead of iterating
+      through all items.
 
 
 .. function:: repr(object)
