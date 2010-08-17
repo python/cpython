@@ -614,6 +614,28 @@ class GeneralModuleTests(unittest.TestCase):
         # usually do this
         socket.getaddrinfo(None, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0,
                            socket.AI_PASSIVE)
+        # test keyword arguments
+        a = socket.getaddrinfo(HOST, None)
+        b = socket.getaddrinfo(host=HOST, port=None)
+        self.assertEqual(a, b)
+        a = socket.getaddrinfo(HOST, None, socket.AF_INET)
+        b = socket.getaddrinfo(HOST, None, family=socket.AF_INET)
+        self.assertEqual(a, b)
+        a = socket.getaddrinfo(HOST, None, 0, socket.SOCK_STREAM)
+        b = socket.getaddrinfo(HOST, None, type=socket.SOCK_STREAM)
+        self.assertEqual(a, b)
+        a = socket.getaddrinfo(HOST, None, 0, 0, socket.SOL_TCP)
+        b = socket.getaddrinfo(HOST, None, proto=socket.SOL_TCP)
+        self.assertEqual(a, b)
+        a = socket.getaddrinfo(HOST, None, 0, 0, 0, socket.AI_PASSIVE)
+        b = socket.getaddrinfo(HOST, None, flags=socket.AI_PASSIVE)
+        self.assertEqual(a, b)
+        a = socket.getaddrinfo(None, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0,
+                               socket.AI_PASSIVE)
+        b = socket.getaddrinfo(host=None, port=0, family=socket.AF_UNSPEC,
+                               type=socket.SOCK_STREAM, proto=0,
+                               flags=socket.AI_PASSIVE)
+        self.assertEqual(a, b)
 
 
 @unittest.skipUnless(thread, 'Threading required for this test.')

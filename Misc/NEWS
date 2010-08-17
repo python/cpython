@@ -93,6 +93,9 @@ Extensions
 Library
 -------
 
+- Issue #8866: parameters passed to socket.getaddrinfo can now be specified as
+  single keyword arguments.
+
 - Address XXX comment in dis.py by having inspect.py prefer to reuse the
   dis.py compiler flag values over defining its own
 
