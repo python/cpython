@@ -349,7 +349,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
         } else {
             /* ACTIVE */
             --i;
-            set_insert_clean(so, entry->key, entry->hash);
+            set_insert_clean(so, entry->key, (long) entry->hash);
         }
     }
 
@@ -368,7 +368,7 @@ set_add_entry(register PySetObject *so, setentry *entry)
     assert(so->fill <= so->mask);  /* at least one empty slot */
     n_used = so->used;
     Py_INCREF(entry->key);
-    if (set_insert_key(so, entry->key, entry->hash) == -1) {
+    if (set_insert_key(so, entry->key, (long) entry->hash) == -1) {
         Py_DECREF(entry->key);
         return -1;
     }
@@ -409,7 +409,7 @@ set_discard_entry(PySetObject *so, setentry *oldentry)
 {       register setentry *entry;
     PyObject *old_key;
 
-    entry = (so->lookup)(so, oldentry->key, oldentry->hash);
+    entry = (so->lookup)(so, oldentry->key, (long) oldentry->hash);
     if (entry == NULL)
         return -1;
     if (entry->key == NULL  ||  entry->key == dummy)
@@ -660,7 +660,7 @@ set_merge(PySetObject *so, PyObject *otherset)
         if (entry->key != NULL &&
             entry->key != dummy) {
             Py_INCREF(entry->key);
-            if (set_insert_key(so, entry->key, entry->hash) == -1) {
+            if (set_insert_key(so, entry->key, (long) entry->hash) == -1) {
                 Py_DECREF(entry->key);
                 return -1;
             }
@@ -694,7 +694,7 @@ set_contains_entry(PySetObject *so, setentry *entry)
     PyObject *key;
     setentry *lu_entry;
 
-    lu_entry = (so->lookup)(so, entry->key, entry->hash);
+    lu_entry = (so->lookup)(so, entry->key, (long) entry->hash);
     if (lu_entry == NULL)
         return -1;
     key = lu_entry->key;
@@ -769,14 +769,14 @@ frozenset_hash(PyObject *self)
     if (so->hash != -1)
         return so->hash;
 
-    hash *= PySet_GET_SIZE(self) + 1;
+    hash *= (long) PySet_GET_SIZE(self) + 1;
     while (set_next(so, &pos, &entry)) {
         /* Work to increase the bit dispersion for closely spaced hash
            values.  The is important because some use cases have many
            combinations of a small number of elements with nearby
            hashes so that many distinct combinations collapse to only
            a handful of distinct hash values. */
-        h = entry->hash;
+        h = (long) entry->hash;
         hash ^= (h ^ (h << 16) ^ 89869747L)  * 3644798167u;
     }
     hash = hash * 69069L + 907133923L;
@@ -816,7 +816,7 @@ setiter_len(setiterobject *si)
     Py_ssize_t len = 0;
     if (si->si_set != NULL && si->si_used == si->si_set->used)
         len = si->len;
-    return PyLong_FromLong(len);
+    return PyLong_FromSsize_t(len);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
@@ -1547,7 +1547,7 @@ set_difference(PySetObject *so, PyObject *other)
             setentry entrycopy;
             entrycopy.hash = entry->hash;
             entrycopy.key = entry->key;
-            if (!_PyDict_Contains(other, entry->key, entry->hash)) {
+            if (!_PyDict_Contains(other, entry->key, (long) entry->hash)) {
                 if (set_add_entry((PySetObject *)result, &entrycopy) == -1) {
                     Py_DECREF(result);
                     return NULL;
@@ -2309,7 +2309,7 @@ _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, long *hash)
     if (set_next((PySetObject *)set, pos, &entry) == 0)
         return 0;
     *key = entry->key;
-    *hash = entry->hash;
+    *hash = (long) entry->hash;
     return 1;
 }
 

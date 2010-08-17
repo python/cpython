@@ -1035,7 +1035,7 @@ dequeiter_next(dequeiterobject *it)
 static PyObject *
 dequeiter_len(dequeiterobject *it)
 {
-    return PyLong_FromLong(it->counter);
+    return PyLong_FromSsize_t(it->counter);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
