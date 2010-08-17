@@ -1790,22 +1790,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
     return fdp;
 }
 
-/* Helpers for main.c
- *  Find the source file corresponding to a named module
- */
-struct filedescr *
-_PyImport_FindModule(const char *name, PyObject *path, char *buf,
-            size_t buflen, FILE **p_fp, PyObject **p_loader)
-{
-    return find_module((char *) name, (char *) name, path,
-                       buf, buflen, p_fp, p_loader);
-}
-
-PyAPI_FUNC(int) _PyImport_IsScript(struct filedescr * fd)
-{
-    return fd->type == PY_SOURCE || fd->type == PY_COMPILED;
-}
-
 /* case_ok(char* buf, Py_ssize_t len, Py_ssize_t namelen, char* name)
  * The arguments here are tricky, best shown by example:
  *    /a/b/c/d/e/f/g/h/i/j/k/some_long_module_name.py\0
