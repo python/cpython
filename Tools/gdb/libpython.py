@@ -88,6 +88,13 @@ def safe_range(val):
     # threshold in case the data was corrupted
     return xrange(safety_limit(val))
 
+def write_unicode(file, text):
+    # Write a byte or unicode string to file. Unicode strings are encoded to
+    # ENCODING encoding with 'backslashreplace' error handler to avoid
+    # UnicodeEncodeError.
+    if isinstance(text, unicode):
+        text = text.encode(ENCODING, 'backslashreplace')
+    file.write(text)
 
 class StringTruncated(RuntimeError):
     pass
@@ -1360,7 +1367,8 @@ class Frame(object):
         if self.is_evalframeex():
             pyop = self.get_pyop()
             if pyop:
-                sys.stdout.write('#%i %s\n' % (self.get_index(), pyop.get_truncated_repr(MAX_OUTPUT_LEN)))
+                line = pyop.get_truncated_repr(MAX_OUTPUT_LEN)
+                write_unicode(sys.stdout, '#%i %s\n' % (self.get_index(), line))
                 sys.stdout.write(pyop.current_line())
             else:
                 sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
