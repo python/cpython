@@ -1213,7 +1213,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     lltrace = PyDict_GetItemString(f->f_globals, "__lltrace__") != NULL;
 #endif
 #if defined(Py_DEBUG) || defined(LLTRACE)
-    filename = _PyUnicode_AsString(co->co_filename);
+    {
+        PyObject *error_type, *error_value, *error_traceback;
+        PyErr_Fetch(&error_type, &error_value, &error_traceback);
+        filename = _PyUnicode_AsString(co->co_filename);
+        PyErr_Restore(error_type, error_value, error_traceback);
+    }
 #endif
 
     why = WHY_NOT;
