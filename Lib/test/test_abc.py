@@ -98,14 +98,6 @@ class TestABC(unittest.TestCase):
             self.assertRaises(TypeError, F)  # because bar is abstract now
             self.assertTrue(isabstract(F))
 
-    def test_subclass_oldstyle_class(self):
-        class A:
-            __metaclass__ = abc.ABCMeta
-        class OldstyleClass:
-            pass
-        self.assertFalse(issubclass(OldstyleClass, A))
-        self.assertFalse(issubclass(A, OldstyleClass))
-
     def test_registration_basics(self):
         class A(metaclass=abc.ABCMeta):
             pass
