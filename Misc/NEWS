@@ -95,6 +95,9 @@ Extensions
 Library
 -------
 
+- Issue #3488: Provide convenient shorthand functions ``gzip.compress``
+  and ``gzip.decompress``.  Original patch by Anand B. Pillai.
+
 - Issue #8807: poplib.POP3_SSL class now accepts a context parameter, which is a
   ssl.SSLContext object allowing bundling SSL configuration options,
   certificates and private keys into a single (potentially long-lived)

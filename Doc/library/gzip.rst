@@ -82,6 +82,17 @@ The module defines the following items:
    The *filename* argument is required; *mode* defaults to ``'rb'`` and
    *compresslevel* defaults to ``9``.
 
+.. function:: compress(data, compresslevel=9)
+
+   Compress the *data*, returning a :class:`bytes` object containing
+   the compressed data.  *compresslevel* has the same meaning as in
+   the :class:`GzipFile` constructor above.
+
+.. function:: decompress(data)
+
+   Decompress the *data*, returning a :class:`bytes` object containing the
+   uncompressed data.
+
 
 .. _gzip-usage-examples:
 
@@ -112,6 +123,11 @@ Example of how to GZIP compress an existing file::
    f_out.close()
    f_in.close()
 
+Example of how to GZIP compress a binary string::
+
+   import gzip
+   s_in = b"Lots of content here"
+   s_out = gzip.compress(s_in)
 
 .. seealso::
 
