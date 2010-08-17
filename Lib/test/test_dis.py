@@ -213,7 +213,7 @@ class DisTests(unittest.TestCase):
 
 code_info_code_info = """\
 Name:              code_info
-Filename:          {0}
+Filename:          (.*)
 Argument count:    1
 Kw-only arguments: 0
 Number of locals:  1
@@ -239,7 +239,7 @@ Names:
    8: type
    9: __name__
 Variable names:
-   0: x""".format(dis.__file__)
+   0: x"""
 
 @staticmethod
 def tricky(x, y, z=True, *args, c, d, e=[], **kwds):
@@ -247,11 +247,9 @@ def tricky(x, y, z=True, *args, c, d, e=[], **kwds):
         print(x, y, z, c, d, e, f)
     yield x, y, z, c, d, e, f
 
-co_tricky_nested_f = tricky.__func__.__code__.co_consts[1]
-
 code_info_tricky = """\
 Name:              tricky
-Filename:          {0}
+Filename:          (.*)
 Argument count:    3
 Kw-only arguments: 3
 Number of locals:  8
@@ -259,7 +257,7 @@ Stack size:        7
 Flags:             OPTIMIZED, NEWLOCALS, VARARGS, VARKEYWORDS, GENERATOR
 Constants:
    0: None
-   1: <code object f at (.*), file "{0}", line {1}>
+   1: <code object f at (.*), file "(.*)", line (.*)>
 Variable names:
    0: x
    1: y
@@ -275,12 +273,13 @@ Cell variables:
    2: f
    3: y
    4: x
-   5: z""".format(__file__,
-                  co_tricky_nested_f.co_firstlineno)
+   5: z"""
+
+co_tricky_nested_f = tricky.__func__.__code__.co_consts[1]
 
 code_info_tricky_nested_f = """\
 Name:              f
-Filename:          {0}
+Filename:          (.*)
 Argument count:    1
 Kw-only arguments: 0
 Number of locals:  1
@@ -298,7 +297,7 @@ Free variables:
    2: f
    3: y
    4: x
-   5: z""".format(__file__)
+   5: z"""
 
 code_info_expr_str = """\
 Name:              <module>
