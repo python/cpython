@@ -36,6 +36,18 @@ the following command can be used to get the disassembly of :func:`myfunc`::
 The :mod:`dis` module defines the following functions and constants:
 
 
+.. function:: code_info(x=None)
+
+   Return a formatted multi-line string with detailed code object
+   information for the supplied function, method, source code string
+   or code object.
+
+   Note that the exact contents of code info strings are highly
+   implementation dependent and they may change arbitrarily across
+   Python VMs or Python releases.
+
+   .. versionadded:: 3.2
+
 .. function:: dis(x=None)
 
    Disassemble the *x* object.  *x* can denote either a module, a

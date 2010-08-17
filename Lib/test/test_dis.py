@@ -1,6 +1,6 @@
 # Minimal tests for dis module
 
-from test.support import run_unittest
+from test.support import run_unittest, captured_stdout
 import unittest
 import sys
 import dis
@@ -211,8 +211,162 @@ class DisTests(unittest.TestCase):
         self.do_disassembly_test(simple_stmt_str, dis_simple_stmt_str)
         self.do_disassembly_test(compound_stmt_str, dis_compound_stmt_str)
 
+code_info_code_info = """\
+Name:              code_info
+Filename:          {0}
+Argument count:    1
+Kw-only arguments: 0
+Number of locals:  1
+Stack size:        4
+Flags:             OPTIMIZED, NEWLOCALS, NOFREE
+Constants:
+   0: 'Formatted details of methods, functions, or code.'
+   1: '__func__'
+   2: '__code__'
+   3: '<code_info>'
+   4: 'co_code'
+   5: "don't know how to disassemble %s objects"
+   6: None
+Names:
+   0: hasattr
+   1: __func__
+   2: __code__
+   3: isinstance
+   4: str
+   5: _try_compile
+   6: _format_code_info
+   7: TypeError
+   8: type
+   9: __name__
+Variable names:
+   0: x""".format(dis.__file__)
+
+@staticmethod
+def tricky(x, y, z=True, *args, c, d, e=[], **kwds):
+    def f(c=c):
+        print(x, y, z, c, d, e, f)
+    yield x, y, z, c, d, e, f
+
+co_tricky_nested_f = tricky.__func__.__code__.co_consts[1]
+
+code_info_tricky = """\
+Name:              tricky
+Filename:          {0}
+Argument count:    3
+Kw-only arguments: 3
+Number of locals:  8
+Stack size:        7
+Flags:             OPTIMIZED, NEWLOCALS, VARARGS, VARKEYWORDS, GENERATOR
+Constants:
+   0: None
+   1: <code object f at {1}, file "{0}", line {2}>
+Variable names:
+   0: x
+   1: y
+   2: z
+   3: c
+   4: d
+   5: e
+   6: args
+   7: kwds
+Cell variables:
+   0: e
+   1: d
+   2: f
+   3: y
+   4: x
+   5: z""".format(__file__,
+                  hex(id(co_tricky_nested_f)),
+                  co_tricky_nested_f.co_firstlineno)
+
+code_info_tricky_nested_f = """\
+Name:              f
+Filename:          {0}
+Argument count:    1
+Kw-only arguments: 0
+Number of locals:  1
+Stack size:        8
+Flags:             OPTIMIZED, NEWLOCALS, NESTED
+Constants:
+   0: None
+Names:
+   0: print
+Variable names:
+   0: c
+Free variables:
+   0: e
+   1: d
+   2: f
+   3: y
+   4: x
+   5: z""".format(__file__)
+
+code_info_expr_str = """\
+Name:              <module>
+Filename:          <code_info>
+Argument count:    0
+Kw-only arguments: 0
+Number of locals:  0
+Stack size:        2
+Flags:             NOFREE
+Constants:
+   0: 1
+Names:
+   0: x"""
+
+code_info_simple_stmt_str = """\
+Name:              <module>
+Filename:          <code_info>
+Argument count:    0
+Kw-only arguments: 0
+Number of locals:  0
+Stack size:        2
+Flags:             NOFREE
+Constants:
+   0: 1
+   1: None
+Names:
+   0: x"""
+
+code_info_compound_stmt_str = """\
+Name:              <module>
+Filename:          <code_info>
+Argument count:    0
+Kw-only arguments: 0
+Number of locals:  0
+Stack size:        2
+Flags:             NOFREE
+Constants:
+   0: 0
+   1: 1
+   2: None
+Names:
+   0: x"""
+
+class CodeInfoTests(unittest.TestCase):
+    test_pairs = [
+      (dis.code_info, code_info_code_info),
+      (tricky, code_info_tricky),
+      (co_tricky_nested_f, code_info_tricky_nested_f),
+      (expr_str, code_info_expr_str),
+      (simple_stmt_str, code_info_simple_stmt_str),
+      (compound_stmt_str, code_info_compound_stmt_str),
+    ]
+
+    def test_code_info(self):
+        self.maxDiff = 1000
+        for x, expected in self.test_pairs:
+            self.assertEqual(dis.code_info(x), expected)
+
+    def test_show_code(self):
+        self.maxDiff = 1000
+        for x, expected in self.test_pairs:
+            with captured_stdout() as output:
+                dis.show_code(x)
+            self.assertEqual(output.getvalue(), expected+"\n")
+
 def test_main():
-    run_unittest(DisTests)
+    run_unittest(DisTests, CodeInfoTests)
 
 if __name__ == "__main__":
     test_main()

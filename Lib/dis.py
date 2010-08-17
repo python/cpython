@@ -19,9 +19,6 @@ def _try_compile(source, name):
        Utility function to accept strings in functions that otherwise
        expect code objects
     """
-    # ncoghlan: currently only used by dis(), but plan to add an
-    # equivalent for show_code() as well (but one that returns a
-    # string rather than printing directly to the console)
     try:
         c = compile(source, name, 'eval')
     except SyntaxError:
@@ -37,11 +34,11 @@ def dis(x=None):
     if x is None:
         distb()
         return
-    if hasattr(x, '__func__'):
+    if hasattr(x, '__func__'):  # Method
         x = x.__func__
-    if hasattr(x, '__code__'):
+    if hasattr(x, '__code__'):  # Function
         x = x.__code__
-    if hasattr(x, '__dict__'):
+    if hasattr(x, '__dict__'):  # Class or module
         items = sorted(x.__dict__.items())
         for name, x1 in items:
             if isinstance(x1, _have_code):
@@ -51,11 +48,11 @@ def dis(x=None):
                 except TypeError as msg:
                     print("Sorry:", msg)
                 print()
-    elif hasattr(x, 'co_code'):
+    elif hasattr(x, 'co_code'): # Code object
         disassemble(x)
-    elif isinstance(x, (bytes, bytearray)):
+    elif isinstance(x, (bytes, bytearray)): # Raw bytecode
         _disassemble_bytes(x)
-    elif isinstance(x, str):
+    elif isinstance(x, str):    # Source code
         _disassemble_str(x)
     else:
         raise TypeError("don't know how to disassemble %s objects" %
@@ -97,35 +94,54 @@ def pretty_flags(flags):
         names.append(hex(flags))
     return ", ".join(names)
 
+def code_info(x):
+    """Formatted details of methods, functions, or code."""
+    if hasattr(x, '__func__'): # Method
+        x = x.__func__
+    if hasattr(x, '__code__'): # Function
+        x = x.__code__
+    if isinstance(x, str):     # Source code
+        x = _try_compile(x, "<code_info>")
+    if hasattr(x, 'co_code'):  # Code object
+        return _format_code_info(x)
+    else:
+        raise TypeError("don't know how to disassemble %s objects" %
+                        type(x).__name__)
+
+def _format_code_info(co):
+    lines = []
+    lines.append("Name:              %s" % co.co_name)
+    lines.append("Filename:          %s" % co.co_filename)
+    lines.append("Argument count:    %s" % co.co_argcount)
+    lines.append("Kw-only arguments: %s" % co.co_kwonlyargcount)
+    lines.append("Number of locals:  %s" % co.co_nlocals)
+    lines.append("Stack size:        %s" % co.co_stacksize)
+    lines.append("Flags:             %s" % pretty_flags(co.co_flags))
+    if co.co_consts:
+        lines.append("Constants:")
+        for i_c in enumerate(co.co_consts):
+            lines.append("%4d: %r" % i_c)
+    if co.co_names:
+        lines.append("Names:")
+        for i_n in enumerate(co.co_names):
+            lines.append("%4d: %s" % i_n)
+    if co.co_varnames:
+        lines.append("Variable names:")
+        for i_n in enumerate(co.co_varnames):
+            lines.append("%4d: %s" % i_n)
+    if co.co_freevars:
+        lines.append("Free variables:")
+        for i_n in enumerate(co.co_freevars):
+            lines.append("%4d: %s" % i_n)
+    if co.co_cellvars:
+        lines.append("Cell variables:")
+        for i_n in enumerate(co.co_cellvars):
+            lines.append("%4d: %s" % i_n)
+    return "\n".join(lines)
+
 def show_code(co):
     """Show details about a code object."""
-    print("Name:             ", co.co_name)
-    print("Filename:         ", co.co_filename)
-    print("Argument count:   ", co.co_argcount)
-    print("Kw-only arguments:", co.co_kwonlyargcount)
-    print("Number of locals: ", co.co_nlocals)
-    print("Stack size:       ", co.co_stacksize)
-    print("Flags:            ", pretty_flags(co.co_flags))
-    if co.co_consts:
-        print("Constants:")
-        for i_c in enumerate(co.co_consts):
-            print("%4d: %r" % i_c)
-    if co.co_names:
-        print("Names:")
-        for i_n in enumerate(co.co_names):
-            print("%4d: %s" % i_n)
-    if co.co_varnames:
-        print("Variable names:")
-        for i_n in enumerate(co.co_varnames):
-            print("%4d: %s" % i_n)
-    if co.co_freevars:
-        print("Free variables:")
-        for i_n in enumerate(co.co_freevars):
-            print("%4d: %s" % i_n)
-    if co.co_cellvars:
-        print("Cell variables:")
-        for i_n in enumerate(co.co_cellvars):
-            print("%4d: %s" % i_n)
+    print(code_info(co))
 
 def disassemble(co, lasti=-1):
     """Disassemble a code object."""
