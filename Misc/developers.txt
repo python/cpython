@@ -20,6 +20,10 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Ask Solem was given commit access on Aug 17 2010 by MvL,
+  on recommendation by Jesse Noller, for work on the subprocess
+  library.
+
 - George Boutsioukis was given commit access on Aug 10 2010
   by MvL, for work on 2to3.
 
