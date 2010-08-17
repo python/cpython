@@ -1026,8 +1026,8 @@ are always available.  They are listed here in alphabetical order.
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
 
-   Use :func:`functools.cmp_to_key` to convert an
-   old-style *cmp* function to a *key* function.
+   Use :func:`functools.cmp_to_key` to convert an old-style *cmp* function to a
+   *key* function.
 
    For sorting examples and a brief sorting tutorial, see `Sorting HowTo
    <http://wiki.python.org/moin/HowTo/Sorting/>`_\.
