@@ -384,7 +384,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     @unittest.skipIf(support.TESTFN_UNENCODABLE is None,
                      "need an unencodable filename")
-    def testUndecodable(self):
+    def testUnencodable(self):
         filename = support.TESTFN_UNENCODABLE + ".zip"
         z = ZipFile(filename, "w")
         zinfo = ZipInfo(TESTMOD + ".py", time.localtime(NOW))
