@@ -933,6 +933,12 @@ class TestOrderedDict(unittest.TestCase):
         od['a'] = 1
         self.assertEqual(list(od.items()), [('b', 2), ('a', 1)])
 
+    def test_views(self):
+        s = 'the quick brown fox jumped over a lazy dog yesterday before dawn'.split()
+        od = OrderedDict.fromkeys(s)
+        self.assertEqual(list(od.viewkeys()),  s)
+        self.assertEqual(list(od.viewvalues()),  [None for k in s])
+        self.assertEqual(list(od.viewitems()),  [(k, None) for k in s])
 
 
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):

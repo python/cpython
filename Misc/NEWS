@@ -29,6 +29,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9626: the view methods for collections.OrderedDict() were returning
+  the unordered versions inherited from dict.  Those methods are now
+  overridden to provide ordered views.
+
 - Issue #8688: MANIFEST files created by distutils now include a magic
   comment indicating they are generated.  Manually maintained MANIFESTs
   without this marker will not be overwritten or removed.
