@@ -305,10 +305,10 @@ APIs:
    |                   |                     | *NULL*).                       |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%S`        | PyObject\*          | The result of calling          |
-   |                   |                     | :func:`PyObject_Str`.          |
+   |                   |                     | :cfunc:`PyObject_Str`.         |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%R`        | PyObject\*          | The result of calling          |
-   |                   |                     | :func:`PyObject_Repr`.         |
+   |                   |                     | :cfunc:`PyObject_Repr`.        |
    +-------------------+---------------------+--------------------------------+
 
    An unrecognized format character causes all the rest of the format string to be
@@ -325,7 +325,7 @@ APIs:
 
 .. cfunction:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
 
-   Identical to :func:`PyUnicode_FromFormat` except that it takes exactly two
+   Identical to :cfunc:`PyUnicode_FromFormat` except that it takes exactly two
    arguments.
 
 
@@ -375,7 +375,7 @@ To encode and decode file names and other environment strings,
 :cdata:`Py_FileSystemEncoding` should be used as the encoding, and
 ``"surrogateescape"`` should be used as the error handler (:pep:`383`). To
 encode file names during argument parsing, the ``"O&"`` converter should be
-used, passsing :func:`PyUnicode_FSConverter` as the conversion function:
+used, passsing :cfunc:`PyUnicode_FSConverter` as the conversion function:
 
 .. cfunction:: int PyUnicode_FSConverter(PyObject* obj, void* result)
 
@@ -388,7 +388,7 @@ used, passsing :func:`PyUnicode_FSConverter` as the conversion function:
 
 
 To decode file names during argument parsing, the ``"O&"`` converter should be
-used, passsing :func:`PyUnicode_FSDecoder` as the conversion function:
+used, passsing :cfunc:`PyUnicode_FSDecoder` as the conversion function:
 
 .. cfunction:: int PyUnicode_FSDecoder(PyObject* obj, void* result)
 
@@ -407,7 +407,7 @@ used, passsing :func:`PyUnicode_FSDecoder` as the conversion function:
 
    If :cdata:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
 
-   Use :func:`PyUnicode_DecodeFSDefaultAndSize` if you know the string length.
+   Use :cfunc:`PyUnicode_DecodeFSDefaultAndSize` if you know the string length.
 
 
 .. cfunction:: PyObject* PyUnicode_DecodeFSDefault(const char *s)

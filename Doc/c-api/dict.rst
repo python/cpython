@@ -190,8 +190,8 @@ Dictionary Objects
 .. cfunction:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
 
    Iterate over mapping object *b* adding key-value pairs to dictionary *a*.
-   *b* may be a dictionary, or any object supporting :func:`PyMapping_Keys`
-   and :func:`PyObject_GetItem`. If *override* is true, existing pairs in *a*
+   *b* may be a dictionary, or any object supporting :cfunc:`PyMapping_Keys`
+   and :cfunc:`PyObject_GetItem`. If *override* is true, existing pairs in *a*
    will be replaced if a matching key is found in *b*, otherwise pairs will
    only be added if there is not a matching key in *a*. Return ``0`` on
    success or ``-1`` if an exception was raised.
