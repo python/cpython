@@ -265,6 +265,26 @@ class TestGzip(unittest.TestCase):
             d = f.read()
             self.assertEqual(d, data1 * 50, "Incorrect data in file")
 
+    # Testing compress/decompress shortcut functions
+
+    def test_compress(self):
+        for data in [data1, data2]:
+            for args in [(), (1,), (6,), (9,)]:
+                datac = gzip.compress(data, *args)
+                self.assertEqual(type(datac), bytes)
+                with gzip.GzipFile(fileobj=io.BytesIO(datac), mode="rb") as f:
+                    self.assertEqual(f.read(), data)
+
+    def test_decompress(self):
+        for data in (data1, data2):
+            buf = io.BytesIO()
+            with gzip.GzipFile(fileobj=buf, mode="wb") as f:
+                f.write(data)
+            self.assertEqual(gzip.decompress(buf.getvalue()), data)
+            # Roundtrip with compress
+            datac = gzip.compress(data)
+            self.assertEqual(gzip.decompress(datac), data)
+
 def test_main(verbose=None):
     support.run_unittest(TestGzip)
 

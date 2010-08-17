@@ -10,7 +10,7 @@ import zlib
 import builtins
 import io
 
-__all__ = ["GzipFile","open"]
+__all__ = ["GzipFile", "open", "compress", "decompress"]
 
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
@@ -474,6 +474,23 @@ class GzipFile(io.BufferedIOBase):
         if readsize > self.min_readsize:
             self.min_readsize = min(readsize, self.min_readsize * 2, 512)
         return b''.join(bufs) # Return resulting line
+
+
+def compress(data, compresslevel=9):
+    """Compress data in one shot and return the compressed string.
+    Optional argument is the compression level, in range of 1-9.
+    """
+    buf = io.BytesIO()
+    with GzipFile(fileobj=buf, mode='wb', compresslevel=compresslevel) as f:
+        f.write(data)
+    return buf.getvalue()
+
+def decompress(data):
+    """Decompress a gzip compressed string in one shot.
+    Return the decompressed string.
+    """
+    with GzipFile(fileobj=io.BytesIO(data)) as f:
+        return f.read()
 
 
 def _test():
