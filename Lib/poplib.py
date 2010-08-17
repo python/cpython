@@ -331,16 +331,26 @@ else:
         See the methods of the parent class POP3 for more documentation.
         """
 
-        def __init__(self, host, port=POP3_SSL_PORT,
-        keyfile=None, certfile=None,
-        timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+        def __init__(self, host, port=POP3_SSL_PORT, keyfile=None, certfile=None,
+                     timeout=socket._GLOBAL_DEFAULT_TIMEOUT, context=None):
+            if context is not None and keyfile is not None:
+                raise ValueError("context and keyfile arguments are mutually "
+                                 "exclusive")
+            if context is not None and certfile is not None:
+                raise ValueError("context and certfile arguments are mutually "
+                                 "exclusive")
             self.keyfile = keyfile
             self.certfile = certfile
+            self.context = context
             POP3.__init__(self, host, port, timeout)
 
         def _create_socket(self, timeout):
             sock = POP3._create_socket(self, timeout)
-            return ssl.wrap_socket(sock, self.keyfile, self.certfile)
+            if self.context is not None:
+                sock = self.context.wrap_socket(sock)
+            else:
+                sock = ssl.wrap_socket(sock, self.keyfile, self.certfile)
+            return sock
 
     __all__.append("POP3_SSL")
 

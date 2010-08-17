@@ -32,13 +32,19 @@ A single class is provided by the :mod:`poplib` module:
    be used).
 
 
-.. class:: POP3_SSL(host, port=POP3_SSL_PORT, keyfile=None, certfile=None[, timeout])
+.. class:: POP3_SSL(host, port=POP3_SSL_PORT, keyfile=None, certfile=None, timeout=None, context=None)
 
    This is a subclass of :class:`POP3` that connects to the server over an SSL
    encrypted socket.  If *port* is not specified, 995, the standard POP3-over-SSL
    port is used.  *keyfile* and *certfile* are also optional - they can contain a
    PEM formatted private key and certificate chain file for the SSL connection.
-   *timeout* works as in the :class:`POP3` constructor.
+   *timeout* works as in the :class:`POP3` constructor. *context* parameter is a
+   :class:`ssl.SSLContext` object which allows bundling SSL configuration
+   options, certificates and private keys into a single (potentially long-lived)
+   structure.
+
+   .. versionchanged:: 3.2
+      *context* parameter added.
 
 
 One exception is defined as an attribute of the :mod:`poplib` module:

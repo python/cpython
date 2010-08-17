@@ -93,6 +93,11 @@ Extensions
 Library
 -------
 
+- Issue #8807: poplib.POP3_SSL class now accepts a context parameter, which is a
+  ssl.SSLContext object allowing bundling SSL configuration options,
+  certificates and private keys into a single (potentially long-lived)
+  structure.
+
 - Issue #8866: parameters passed to socket.getaddrinfo can now be specified as
   single keyword arguments.
 
