@@ -11,6 +11,7 @@ import time
 import os
 import pwd
 import shutil
+import stat
 import unittest
 import warnings
 
@@ -198,6 +199,28 @@ class PosixTester(unittest.TestCase):
     def test_stat(self):
         if hasattr(posix, 'stat'):
             self.assertTrue(posix.stat(support.TESTFN))
+
+    @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")
+    def test_mkfifo(self):
+        support.unlink(support.TESTFN)
+        posix.mkfifo(support.TESTFN, stat.S_IRUSR | stat.S_IWUSR)
+        self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
+
+    @unittest.skipUnless(hasattr(posix, 'mknod') and hasattr(stat, 'S_IFIFO'),
+                         "don't have mknod()/S_IFIFO")
+    def test_mknod(self):
+        # Test using mknod() to create a FIFO (the only use specified
+        # by POSIX).
+        support.unlink(support.TESTFN)
+        mode = stat.S_IFIFO | stat.S_IRUSR | stat.S_IWUSR
+        try:
+            posix.mknod(support.TESTFN, mode, 0)
+        except OSError as e:
+            # Some old systems don't allow unprivileged users to use
+            # mknod(), or only support creating device nodes.
+            self.assertIn(e.errno, (errno.EPERM, errno.EINVAL))
+        else:
+            self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
 
     def _test_all_chown_common(self, chown_func, first_param):
         """Common code for chown, fchown and lchown tests."""
