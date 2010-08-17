@@ -68,9 +68,10 @@ def distb(tb=None):
         while tb.tb_next: tb = tb.tb_next
     disassemble(tb.tb_frame.f_code, tb.tb_lasti)
 
-# XXX This duplicates information from code.h, also duplicated in inspect.py.
-# XXX Maybe this ought to be put in a central location, like opcode.py?
-flag2name = {
+# The inspect module interrogates this dictionary to build its
+# list of CO_* constants. It is also used by pretty_flags to
+# turn the co_flags field into a human readable list.
+COMPILER_FLAG_NAMES = {
      1: "OPTIMIZED",
      2: "NEWLOCALS",
      4: "VARARGS",
@@ -86,7 +87,7 @@ def pretty_flags(flags):
     for i in range(32):
         flag = 1<<i
         if flags & flag:
-            names.append(flag2name.get(flag, hex(flag)))
+            names.append(COMPILER_FLAG_NAMES.get(flag, hex(flag)))
             flags ^= flag
             if not flags:
                 break
