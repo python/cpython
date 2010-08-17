@@ -55,9 +55,9 @@ The :mod:`functools` module defines the following functions:
    The wrapped function also has a :attr:`clear` attribute which can be
    called (with no arguments) to clear the cache.
 
-   The :attr:`__wrapped__` attribute may be used to access the original
-   function (e.g. to bypass the cache or to apply a different caching
-   strategy)
+   The original underlying function is accessible through the
+   :attr:`__wrapped__` attribute.  This allows introspection, bypassing
+   the cache, or rewrapping the function with a different caching tool.
 
    A `LRU (least recently used) cache
    <http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used>`_
