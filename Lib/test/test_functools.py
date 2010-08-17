@@ -194,6 +194,7 @@ class TestUpdateWrapper(unittest.TestCase):
     def test_default_update(self):
         wrapper, f = self._default_update()
         self.check_wrapper(wrapper, f)
+        self.assertIs(wrapper.__wrapped__, f)
         self.assertEqual(wrapper.__name__, 'f')
         self.assertEqual(wrapper.attr, 'This is also a test')
         self.assertEqual(wrapper.__annotations__['a'], 'This is a new annotation')
@@ -236,6 +237,28 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.attr, 'This is a different test')
         self.assertEqual(wrapper.dict_attr, f.dict_attr)
 
+    def test_missing_attributes(self):
+        def f():
+            pass
+        def wrapper():
+            pass
+        wrapper.dict_attr = {}
+        assign = ('attr',)
+        update = ('dict_attr',)
+        # Missing attributes on wrapped object are ignored
+        functools.update_wrapper(wrapper, f, assign, update)
+        self.assertNotIn('attr', wrapper.__dict__)
+        self.assertEqual(wrapper.dict_attr, {})
+        # Wrapper must have expected attributes for updating
+        del wrapper.dict_attr
+        with self.assertRaises(AttributeError):
+            functools.update_wrapper(wrapper, f, assign, update)
+        wrapper.dict_attr = 1
+        with self.assertRaises(AttributeError):
+            functools.update_wrapper(wrapper, f, assign, update)
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def test_builtin_update(self):
         # Test for bug #1576241
         def wrapper():
@@ -492,6 +515,12 @@ class TestLRU(unittest.TestCase):
         self.assertEqual(f.hits, 0)
         self.assertEqual(f.misses, 0)
         f(x, y)
+        self.assertEqual(f.hits, 0)
+        self.assertEqual(f.misses, 1)
+
+        # Test bypassing the cache
+        self.assertIs(f.__wrapped__, orig)
+        f.__wrapped__(x, y)
         self.assertEqual(f.hits, 0)
         self.assertEqual(f.misses, 1)
 

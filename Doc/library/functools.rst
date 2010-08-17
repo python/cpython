@@ -54,6 +54,10 @@ The :mod:`functools` module defines the following functions:
    The wrapped function also has a :attr:`clear` attribute which can be
    called (with no arguments) to clear the cache.
 
+   The :attr:`__wrapped__` attribute may be used to access the original
+   function (e.g. to bypass the cache or to apply a different caching
+   strategy)
+
    A `LRU (least recently used) cache
    <http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used>`_
    is indicated when the pattern of calls changes over time, such as
@@ -141,12 +145,31 @@ The :mod:`functools` module defines the following functions:
    documentation string) and *WRAPPER_UPDATES* (which updates the wrapper
    function's *__dict__*, i.e. the instance dictionary).
 
+   To allow access to the original function for introspection and other purposes
+   (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
+   automatically adds a __wrapped__ attribute to the the wrapped that refers to
+   the original function.
+
    The main intended use for this function is in :term:`decorator` functions which
    wrap the decorated function and return the wrapper. If the wrapper function is
    not updated, the metadata of the returned function will reflect the wrapper
    definition rather than the original function definition, which is typically less
    than helpful.
 
+   :func:`update_wrapper` may be used with callables other than functions. Any
+   attributes named in *assigned* or *updated* that are missing from the object
+   being wrapped are ignored (i.e. this function will not attempt to set them
+   on the wrapper function). :exc:`AttributeError` is still raised if the
+   wrapper function itself is missing any attributes named in *updated*.
+
+   .. versionadded:: 3.2
+      Automatic addition of the __wrapped__ attribute
+
+   .. versionadded:: 3.2
+      Copying of the __annotations__ attribute by default
+
+   .. versionchanged:: 3.2
+      Missing attributes no longer trigger an AttributeError
 
 .. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 
