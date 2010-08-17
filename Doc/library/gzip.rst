@@ -88,10 +88,14 @@ The module defines the following items:
    the compressed data.  *compresslevel* has the same meaning as in
    the :class:`GzipFile` constructor above.
 
+   .. versionadded:: 3.2
+
 .. function:: decompress(data)
 
    Decompress the *data*, returning a :class:`bytes` object containing the
    uncompressed data.
+
+   .. versionadded:: 3.2
 
 
 .. _gzip-usage-examples:
