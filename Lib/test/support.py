@@ -419,21 +419,32 @@ elif sys.platform != 'darwin':
 SAVEDCWD = os.getcwd()
 
 @contextlib.contextmanager
-def temp_cwd(name='tempcwd', quiet=False):
+def temp_cwd(name='tempcwd', quiet=False, path=None):
     """
-    Context manager that creates a temporary directory and set it as CWD.
+    Context manager that temporarily changes the CWD.
 
-    The new CWD is created in the current directory and it's named *name*.
-    If *quiet* is False (default) and it's not possible to create or change
-    the CWD, an error is raised.  If it's True, only a warning is raised
-    and the original CWD is used.
+    An existing path may be provided as *path*, in which case this
+    function makes no changes to the file system.
+
+    Otherwise, the new CWD is created in the current directory and it's
+    named *name*. If *quiet* is False (default) and it's not possible to
+    create or change the CWD, an error is raised.  If it's True, only a
+    warning is raised and the original CWD is used.
     """
     saved_dir = os.getcwd()
     is_temporary = False
+    if path is None:
+        path = name
+        try:
+            os.mkdir(name)
+            is_temporary = True
+        except OSError:
+            if not quiet:
+                raise
+            warnings.warn('tests may fail, unable to create temp CWD ' + name,
+                          RuntimeWarning, stacklevel=3)
     try:
-        os.mkdir(name)
-        os.chdir(name)
-        is_temporary = True
+        os.chdir(path)
     except OSError:
         if not quiet:
             raise

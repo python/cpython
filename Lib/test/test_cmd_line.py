@@ -1,15 +1,11 @@
 # Tests invocation of the interpreter with various command line arguments
-# All tests are executed with environment variables ignored
+# Most tests are executed with environment variables ignored
 # See test_cmd_line_script.py for testing of script execution
 
 import test.support, unittest
 import os
 import sys
 from test.script_helper import spawn_python, kill_python, python_exit_code
-
-# XXX (ncoghlan): there are assorted gratuitous inconsistencies between the
-# support code in the Py3k version and the 2.x version that unnecessarily
-# complicate test suite merges. See issue 7331
 
 # spawn_python normally enforces use of -E to avoid environmental effects
 # but one test checks PYTHONPATH behaviour explicitly

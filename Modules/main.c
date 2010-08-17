@@ -604,10 +604,9 @@ Py_Main(int argc, wchar_t **argv)
     }
 
     if (module != NULL) {
-        /* Backup _PyOS_optind and force sys.argv[0] = '-c'
-           so that PySys_SetArgv correctly sets sys.path[0] to ''*/
+        /* Backup _PyOS_optind and force sys.argv[0] = '-m'*/
         _PyOS_optind--;
-        argv[_PyOS_optind] = L"-c";
+        argv[_PyOS_optind] = L"-m";
     }
 
     PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);
