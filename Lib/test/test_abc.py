@@ -15,16 +15,16 @@ class TestABC(unittest.TestCase):
     def test_abstractmethod_basics(self):
         @abc.abstractmethod
         def foo(self): pass
-        self.assertEqual(foo.__isabstractmethod__, True)
+        self.assertTrue(foo.__isabstractmethod__)
         def bar(self): pass
-        self.assertEqual(hasattr(bar, "__isabstractmethod__"), False)
+        self.assertFalse(hasattr(bar, "__isabstractmethod__"))
 
     def test_abstractproperty_basics(self):
         @abc.abstractproperty
         def foo(self): pass
-        self.assertEqual(foo.__isabstractmethod__, True)
+        self.assertTrue(foo.__isabstractmethod__)
         def bar(self): pass
-        self.assertEqual(hasattr(bar, "__isabstractmethod__"), False)
+        self.assertFalse(hasattr(bar, "__isabstractmethod__"))
 
         class C(metaclass=abc.ABCMeta):
             @abc.abstractproperty
@@ -37,10 +37,10 @@ class TestABC(unittest.TestCase):
     def test_abstractclassmethod_basics(self):
         @abc.abstractclassmethod
         def foo(cls): pass
-        self.assertEqual(foo.__isabstractmethod__, True)
+        self.assertTrue(foo.__isabstractmethod__)
         @classmethod
         def bar(cls): pass
-        self.assertEqual(hasattr(bar, "__isabstractmethod__"), False)
+        self.assertFalse(hasattr(bar, "__isabstractmethod__"))
 
         class C(metaclass=abc.ABCMeta):
             @abc.abstractclassmethod
@@ -55,10 +55,10 @@ class TestABC(unittest.TestCase):
     def test_abstractstaticmethod_basics(self):
         @abc.abstractstaticmethod
         def foo(): pass
-        self.assertEqual(foo.__isabstractmethod__, True)
+        self.assertTrue(foo.__isabstractmethod__)
         @staticmethod
         def bar(): pass
-        self.assertEqual(hasattr(bar, "__isabstractmethod__"), False)
+        self.assertFalse(hasattr(bar, "__isabstractmethod__"))
 
         class C(metaclass=abc.ABCMeta):
             @abc.abstractstaticmethod
@@ -112,20 +112,20 @@ class TestABC(unittest.TestCase):
         class B(object):
             pass
         b = B()
-        self.assertEqual(issubclass(B, A), False)
-        self.assertEqual(issubclass(B, (A,)), False)
+        self.assertFalse(issubclass(B, A))
+        self.assertFalse(issubclass(B, (A,)))
         self.assertNotIsInstance(b, A)
         self.assertNotIsInstance(b, (A,))
         A.register(B)
-        self.assertEqual(issubclass(B, A), True)
-        self.assertEqual(issubclass(B, (A,)), True)
+        self.assertTrue(issubclass(B, A))
+        self.assertTrue(issubclass(B, (A,)))
         self.assertIsInstance(b, A)
         self.assertIsInstance(b, (A,))
         class C(B):
             pass
         c = C()
-        self.assertEqual(issubclass(C, A), True)
-        self.assertEqual(issubclass(C, (A,)), True)
+        self.assertTrue(issubclass(C, A))
+        self.assertTrue(issubclass(C, (A,)))
         self.assertIsInstance(c, A)
         self.assertIsInstance(c, (A,))
 
@@ -135,11 +135,11 @@ class TestABC(unittest.TestCase):
         class B:
             pass
         b = B()
-        self.assertEqual(isinstance(b, A), False)
-        self.assertEqual(isinstance(b, (A,)), False)
+        self.assertFalse(isinstance(b, A))
+        self.assertFalse(isinstance(b, (A,)))
         A.register(B)
-        self.assertEqual(isinstance(b, A), True)
-        self.assertEqual(isinstance(b, (A,)), True)
+        self.assertTrue(isinstance(b, A))
+        self.assertTrue(isinstance(b, (A,)))
 
     def test_registration_builtins(self):
         class A(metaclass=abc.ABCMeta):
@@ -147,18 +147,18 @@ class TestABC(unittest.TestCase):
         A.register(int)
         self.assertIsInstance(42, A)
         self.assertIsInstance(42, (A,))
-        self.assertEqual(issubclass(int, A), True)
-        self.assertEqual(issubclass(int, (A,)), True)
+        self.assertTrue(issubclass(int, A))
+        self.assertTrue(issubclass(int, (A,)))
         class B(A):
             pass
         B.register(str)
         class C(str): pass
         self.assertIsInstance("", A)
         self.assertIsInstance("", (A,))
-        self.assertEqual(issubclass(str, A), True)
-        self.assertEqual(issubclass(str, (A,)), True)
-        self.assertEqual(issubclass(C, A), True)
-        self.assertEqual(issubclass(C, (A,)), True)
+        self.assertTrue(issubclass(str, A))
+        self.assertTrue(issubclass(str, (A,)))
+        self.assertTrue(issubclass(C, A))
+        self.assertTrue(issubclass(C, (A,)))
 
     def test_registration_edge_cases(self):
         class A(metaclass=abc.ABCMeta):
