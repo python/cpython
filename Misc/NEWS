@@ -90,6 +90,12 @@ Extensions
 Library
 -------
 
+- Issue #9567: functools.update_wrapper now adds a __wrapped__ attribute
+  pointing to the original callable
+
+- Issue #3445: functools.update_wrapper now tolerates missing attributes
+  on wrapped callables
+
 - Issue #5867: Add abc.abstractclassmethod and abc.abstractstaticmethod.
 
 - Issue #9605: posix.getlogin() decodes the username with file filesystem

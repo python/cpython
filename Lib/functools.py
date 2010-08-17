@@ -38,9 +38,14 @@ def update_wrapper(wrapper,
        are updated with the corresponding attribute from the wrapped
        function (defaults to functools.WRAPPER_UPDATES)
     """
+    wrapper.__wrapped__ = wrapped
     for attr in assigned:
-        if hasattr(wrapped, attr):
-            setattr(wrapper, attr, getattr(wrapped, attr))
+        try:
+            value = getattr(wrapped, attr)
+        except AttributeError:
+            pass
+        else:
+            setattr(wrapper, attr, value)
     for attr in updated:
         getattr(wrapper, attr).update(getattr(wrapped, attr, {}))
     # Return the wrapper so this can be used as a decorator via partial()
