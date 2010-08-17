@@ -34,8 +34,46 @@ class TestABC(unittest.TestCase):
             def foo(self): return super().foo
         self.assertEqual(D().foo, 3)
 
+    def test_abstractclassmethod_basics(self):
+        @abc.abstractclassmethod
+        def foo(cls): pass
+        self.assertEqual(foo.__isabstractmethod__, True)
+        @classmethod
+        def bar(cls): pass
+        self.assertEqual(hasattr(bar, "__isabstractmethod__"), False)
+
+        class C(metaclass=abc.ABCMeta):
+            @abc.abstractclassmethod
+            def foo(cls): return cls.__name__
+        self.assertRaises(TypeError, C)
+        class D(C):
+            @classmethod
+            def foo(cls): return super().foo()
+        self.assertEqual(D.foo(), 'D')
+        self.assertEqual(D().foo(), 'D')
+
+    def test_abstractstaticmethod_basics(self):
+        @abc.abstractstaticmethod
+        def foo(): pass
+        self.assertEqual(foo.__isabstractmethod__, True)
+        @staticmethod
+        def bar(): pass
+        self.assertEqual(hasattr(bar, "__isabstractmethod__"), False)
+
+        class C(metaclass=abc.ABCMeta):
+            @abc.abstractstaticmethod
+            def foo(): return 3
+        self.assertRaises(TypeError, C)
+        class D(C):
+            @staticmethod
+            def foo(): return 4
+        self.assertEqual(D.foo(), 4)
+        self.assertEqual(D().foo(), 4)
+
     def test_abstractmethod_integration(self):
-        for abstractthing in [abc.abstractmethod, abc.abstractproperty]:
+        for abstractthing in [abc.abstractmethod, abc.abstractproperty,
+                              abc.abstractclassmethod,
+                              abc.abstractstaticmethod]:
             class C(metaclass=abc.ABCMeta):
                 @abstractthing
                 def foo(self): pass  # abstract
