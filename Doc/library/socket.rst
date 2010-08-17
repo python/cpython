@@ -214,7 +214,7 @@ The module :mod:`socket` exports the following constants and functions:
       *source_address* was added.
 
 
-.. function:: getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0)
+.. function:: getaddrinfo(host, port, family=0, type=0, proto=0, flags=0)
 
    Translate the *host*/*port* argument into a sequence of 5-tuples that contain
    all the necessary arguments for creating a socket connected to that service.
@@ -223,7 +223,7 @@ The module :mod:`socket` exports the following constants and functions:
    port number or ``None``.  By passing ``None`` as the value of *host*
    and *port*, you can pass ``NULL`` to the underlying C API.
 
-   The *family*, *socktype* and *proto* arguments can be optionally specified
+   The *family*, *type* and *proto* arguments can be optionally specified
    in order to narrow the list of addresses returned.  Passing zero as a
    value for each of these arguments selects the full range of results.
    The *flags* argument can be one or several of the ``AI_*`` constants,
@@ -233,9 +233,9 @@ The module :mod:`socket` exports the following constants and functions:
 
    The function returns a list of 5-tuples with the following structure:
 
-   ``(family, socktype, proto, canonname, sockaddr)``
+   ``(family, type, proto, canonname, sockaddr)``
 
-   In these tuples, *family*, *socktype*, *proto* are all integers and are
+   In these tuples, *family*, *type*, *proto* are all integers and are
    meant to be passed to the :func:`socket` function.  *canonname* will be
    a string representing the canonical name of the *host* if
    :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
@@ -249,9 +249,12 @@ The module :mod:`socket` exports the following constants and functions:
    connection to ``www.python.org`` on port 80 (results may differ on your
    system if IPv6 isn't enabled)::
 
-      >>> socket.getaddrinfo("www.python.org", 80, 0, 0, socket.SOL_TCP)
+      >>> socket.getaddrinfo("www.python.org", 80, proto=socket.SOL_TCP)
       [(2, 1, 6, '', ('82.94.164.162', 80)),
        (10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]
+
+   .. versionchanged:: 3.2
+      parameters can now be passed as single keyword arguments.
 
 .. function:: getfqdn([name])
 

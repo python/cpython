@@ -3822,8 +3822,10 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 
 /*ARGSUSED*/
 static PyObject *
-socket_getaddrinfo(PyObject *self, PyObject *args)
+socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 {
+    static char* kwnames[] = {"host", "port", "family", "type", "proto", 
+                              "flags", 0};
     struct addrinfo hints, *res;
     struct addrinfo *res0 = NULL;
     PyObject *hobj = NULL;
@@ -3837,8 +3839,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 
     family = socktype = protocol = flags = 0;
     family = AF_UNSPEC;
-    if (!PyArg_ParseTuple(args, "OO|iiii:getaddrinfo",
-                          &hobj, &pobj, &family, &socktype,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|iiii:getaddrinfo", 
+                          kwnames, &hobj, &pobj, &family, &socktype,
                           &protocol, &flags)) {
         return NULL;
     }
@@ -4105,8 +4107,8 @@ static PyMethodDef socket_methods[] = {
     {"inet_ntop",               socket_inet_ntop,
      METH_VARARGS, inet_ntop_doc},
 #endif
-    {"getaddrinfo",             socket_getaddrinfo,
-     METH_VARARGS, getaddrinfo_doc},
+    {"getaddrinfo",             (PyCFunction)socket_getaddrinfo,
+     METH_VARARGS | METH_KEYWORDS, getaddrinfo_doc},
     {"getnameinfo",             socket_getnameinfo,
      METH_VARARGS, getnameinfo_doc},
     {"getdefaulttimeout",       (PyCFunction)socket_getdefaulttimeout,

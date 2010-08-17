@@ -181,6 +181,10 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Georg Brandl; :issue:`5675`.)
 
+* Parameters passed to :func:`socket.getaddrinfo()` function can now be
+  specified as single keyword arguments.
+
+  (Contributed by Giampaolo Rodolà; :issue:`8866`.)
 
 Multi-threading
 ===============
