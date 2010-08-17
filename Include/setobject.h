@@ -22,7 +22,11 @@ no meaning otherwise.
 #define PySet_MINSIZE 8
 
 typedef struct {
-    long hash;      /* cached hash code for the entry key */
+    /* Cached hash code of the key.  Note that hash codes are C longs.
+     * We have to use Py_ssize_t instead because set_pop() abuses
+     * the hash field to hold a search finger.
+     */
+    Py_ssize_t hash;
     PyObject *key;
 } setentry;
 
