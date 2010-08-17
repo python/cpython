@@ -259,7 +259,7 @@ Stack size:        7
 Flags:             OPTIMIZED, NEWLOCALS, VARARGS, VARKEYWORDS, GENERATOR
 Constants:
    0: None
-   1: <code object f at {1}, file "{0}", line {2}>
+   1: <code object f at (.*), file "{0}", line {1}>
 Variable names:
    0: x
    1: y
@@ -276,7 +276,6 @@ Cell variables:
    3: y
    4: x
    5: z""".format(__file__,
-                  hex(id(co_tricky_nested_f)),
                   co_tricky_nested_f.co_firstlineno)
 
 code_info_tricky_nested_f = """\
@@ -356,14 +355,14 @@ class CodeInfoTests(unittest.TestCase):
     def test_code_info(self):
         self.maxDiff = 1000
         for x, expected in self.test_pairs:
-            self.assertEqual(dis.code_info(x), expected)
+            self.assertRegexpMatches(dis.code_info(x), expected)
 
     def test_show_code(self):
         self.maxDiff = 1000
         for x, expected in self.test_pairs:
             with captured_stdout() as output:
                 dis.show_code(x)
-            self.assertEqual(output.getvalue(), expected+"\n")
+            self.assertRegexpMatches(output.getvalue(), expected+"\n")
 
 def test_main():
     run_unittest(DisTests, CodeInfoTests)
