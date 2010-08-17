@@ -90,6 +90,9 @@ Extensions
 Library
 -------
 
+- Address XXX comment in dis.py by having inspect.py prefer to reuse the
+  dis.py compiler flag values over defining its own
+
 - Issue #9147: Added dis.code_info() which is similar to show_code()
   but returns formatted code information in a string rather than
   displaying on screen.
