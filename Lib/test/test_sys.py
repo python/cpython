@@ -564,6 +564,63 @@ class SysModuleTest(unittest.TestCase):
         p.wait()
         self.assertIn(executable, ["b''", repr(sys.executable.encode("ascii", "backslashreplace"))])
 
+    def test_getfilesystemencoding(self):
+        import codecs
+
+        def check_fsencoding(fs_encoding, expected=None):
+            self.assertIsNotNone(fs_encoding)
+            if sys.platform == 'darwin':
+                self.assertEqual(fs_encoding, 'utf-8')
+            codecs.lookup(fs_encoding)
+            if expected:
+                self.assertEqual(fs_encoding, expected)
+
+        fs_encoding = sys.getfilesystemencoding()
+        check_fsencoding(fs_encoding)
+
+        def get_fsencoding(env):
+            output = subprocess.check_output(
+                [sys.executable, "-c",
+                 "import sys; print(sys.getfilesystemencoding())"],
+                env=env)
+            return output.rstrip().decode('ascii')
+
+        try:
+            sys.executable.encode('ascii')
+        except UnicodeEncodeError:
+            # Python doesn't start with ASCII locale if its path is not ASCII,
+            # see issue #8611
+            pass
+        else:
+            # Even in C locale
+            env = os.environ.copy()
+            env['LANG'] = 'C'
+            try:
+                del env['PYTHONFSENCODING']
+            except KeyError:
+                pass
+            check_fsencoding(get_fsencoding(env), 'ascii')
+
+            # Filesystem encoding is hardcoded on Windows and Mac OS X
+            if sys.platform not in ('win32', 'darwin'):
+                for encoding in ('ascii', 'cp850', 'iso8859-1', 'utf-8'):
+                    env = os.environ.copy()
+                    env['PYTHONFSENCODING'] = encoding
+                    check_fsencoding(get_fsencoding(env), encoding)
+
+
+    def test_setfilesystemencoding(self):
+        old = sys.getfilesystemencoding()
+        try:
+            sys.setfilesystemencoding("iso-8859-1")
+            self.assertEqual(sys.getfilesystemencoding(), "iso-8859-1")
+        finally:
+            sys.setfilesystemencoding(old)
+        try:
+            self.assertRaises(LookupError, sys.setfilesystemencoding, "xxx")
+        finally:
+            sys.setfilesystemencoding(old)
+
 
 class SizeofTest(unittest.TestCase):
 
@@ -863,62 +920,6 @@ class SizeofTest(unittest.TestCase):
         # sys.flags
         check(sys.flags, size(vh) + self.P * len(sys.flags))
 
-    def test_getfilesystemencoding(self):
-        import codecs
-
-        def check_fsencoding(fs_encoding, expected=None):
-            self.assertIsNotNone(fs_encoding)
-            if sys.platform == 'darwin':
-                self.assertEqual(fs_encoding, 'utf-8')
-            codecs.lookup(fs_encoding)
-            if expected:
-                self.assertEqual(fs_encoding, expected)
-
-        fs_encoding = sys.getfilesystemencoding()
-        check_fsencoding(fs_encoding)
-
-        def get_fsencoding(env):
-            output = subprocess.check_output(
-                [sys.executable, "-c",
-                 "import sys; print(sys.getfilesystemencoding())"],
-                env=env)
-            return output.rstrip().decode('ascii')
-
-        try:
-            sys.executable.encode('ascii')
-        except UnicodeEncodeError:
-            # Python doesn't start with ASCII locale if its path is not ASCII,
-            # see issue #8611
-            pass
-        else:
-            # Even in C locale
-            env = os.environ.copy()
-            env['LANG'] = 'C'
-            try:
-                del env['PYTHONFSENCODING']
-            except KeyError:
-                pass
-            check_fsencoding(get_fsencoding(env), 'ascii')
-
-            # Filesystem encoding is hardcoded on Windows and Mac OS X
-            if sys.platform not in ('win32', 'darwin'):
-                for encoding in ('ascii', 'cp850', 'iso8859-1', 'utf-8'):
-                    env = os.environ.copy()
-                    env['PYTHONFSENCODING'] = encoding
-                    check_fsencoding(get_fsencoding(env), encoding)
-
-
-    def test_setfilesystemencoding(self):
-        old = sys.getfilesystemencoding()
-        try:
-            sys.setfilesystemencoding("iso-8859-1")
-            self.assertEqual(sys.getfilesystemencoding(), "iso-8859-1")
-        finally:
-            sys.setfilesystemencoding(old)
-        try:
-            self.assertRaises(LookupError, sys.setfilesystemencoding, "xxx")
-        finally:
-            sys.setfilesystemencoding(old)
 
 def test_main():
     test.support.run_unittest(SysModuleTest, SizeofTest)
