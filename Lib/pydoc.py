@@ -2032,7 +2032,7 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font>'''
     class DocServer(BaseHTTPServer.HTTPServer):
         def __init__(self, port, callback):
             host = 'localhost'
-            self.address = ('', port)
+            self.address = (host, port)
             self.url = 'http://%s:%d/' % (host, port)
             self.callback = callback
             self.base.__init__(self, self.address, self.handler)
