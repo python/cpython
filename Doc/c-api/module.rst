@@ -83,6 +83,8 @@ There are only a few functions special to module objects.
    unicode string, raise :exc:`SystemError` and return *NULL*; otherwise return
    a reference to a :ctype:`PyUnicodeObject`.
 
+   .. versionadded:: 3.2
+
 
 .. cfunction:: void* PyModule_GetState(PyObject *module)
 
