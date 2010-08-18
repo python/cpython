@@ -547,7 +547,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     popen = Popen([sys.executable, '-E', '-m', 'test.regrtest',
                                    '--slaveargs', json.dumps(args_tuple)],
                                    stdout=PIPE, stderr=PIPE,
-                                   universal_newlines=True, close_fds=True)
+                                   universal_newlines=True,
+                                   close_fds=(os.name != 'nt'))
                     stdout, stderr = popen.communicate()
                     # Strip last refcount output line if it exists, since it
                     # comes from the shutdown of the interpreter in the subcommand.
