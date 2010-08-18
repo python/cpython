@@ -57,6 +57,8 @@ Core and Builtins
 Extensions
 ----------
 
+- Restore GIL in nis_cat in case of error.
+
 - Issue #665761: ``functools.reduce()`` will no longer mask exceptions
   other than ``TypeError`` raised by the iterator argument.
 
