@@ -895,29 +895,55 @@ if sys.platform != 'win32':
                         sys.executable, '-c',
                         'import os,sys;os.setregid(-1,-1);sys.exit(0)'])
 
-    @unittest.skipIf(sys.platform == 'darwin', "tests don't apply to OS X")
     class Pep383Tests(unittest.TestCase):
-        filenames = [b'foo\xf6bar', 'foo\xf6bar'.encode("utf-8")]
-
         def setUp(self):
-            self.fsencoding = sys.getfilesystemencoding()
-            sys.setfilesystemencoding("utf-8")
-            self.dir = support.TESTFN
-            self.bdir = self.dir.encode("utf-8", "surrogateescape")
+            def fsdecode(filename):
+                encoding = sys.getfilesystemencoding()
+                if encoding == 'mbcs':
+                    errors = 'strict'
+                else:
+                    errors = 'surrogateescape'
+                return filename.decode(encoding, errors)
+
+            if support.TESTFN_UNENCODABLE:
+                self.dir = support.TESTFN_UNENCODABLE
+            else:
+                self.dir = support.TESTFN
+            self.bdir = os.fsencode(self.dir)
+
+            bytesfn = []
+            def add_filename(fn):
+                try:
+                    fn = os.fsencode(fn)
+                except UnicodeEncodeError:
+                    return
+                bytesfn.append(fn)
+            add_filename(support.TESTFN_UNICODE)
+            if support.TESTFN_UNENCODABLE:
+                add_filename(support.TESTFN_UNENCODABLE)
+            if not bytesfn:
+                self.skipTest("couldn't create any non-ascii filename")
+
+            self.unicodefn = set()
             os.mkdir(self.dir)
-            self.unicodefn = []
-            for fn in self.filenames:
-                f = open(os.path.join(self.bdir, fn), "w")
-                f.close()
-                self.unicodefn.append(fn.decode("utf-8", "surrogateescape"))
+            try:
+                for fn in bytesfn:
+                    f = open(os.path.join(self.bdir, fn), "w")
+                    f.close()
+                    fn = fsdecode(fn)
+                    if fn in self.unicodefn:
+                        raise ValueError("duplicate filename")
+                    self.unicodefn.add(fn)
+            except:
+                shutil.rmtree(self.dir)
+                raise
 
         def tearDown(self):
             shutil.rmtree(self.dir)
-            sys.setfilesystemencoding(self.fsencoding)
 
         def test_listdir(self):
-            expected = set(self.unicodefn)
-            found = set(os.listdir(support.TESTFN))
+            expected = self.unicodefn
+            found = set(os.listdir(self.dir))
             self.assertEquals(found, expected)
 
         def test_open(self):

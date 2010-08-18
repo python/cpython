@@ -377,10 +377,8 @@ else:
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 
 
-# Assuming sys.getfilesystemencoding()!=sys.getdefaultencoding()
-# TESTFN_UNICODE is a filename that can be encoded using the
-# file system encoding, but *not* with the default (ascii) encoding
-TESTFN_UNICODE = TESTFN + "-\xe0\xf2"
+# TESTFN_UNICODE is a non-ascii filename
+TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
 TESTFN_ENCODING = sys.getfilesystemencoding()
 
 # TESTFN_UNENCODABLE is a filename (str type) that should *not* be able to be
