@@ -66,9 +66,9 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
-* The functools module now includes a new decorator for caching function calls.
-  :func:`functools.lru_cache` can save repeated queries to an external resource
-  whenever the results are expected to be the same.
+* The :mod:`functools` module now includes a new decorator for caching
+  function calls. :func:`functools.lru_cache` can save repeated queries to an
+  external resource whenever the results are expected to be the same.
 
   For example, adding a caching decorator to a database query function can save
   database accesses for popular searches::
@@ -133,7 +133,7 @@ New, Improved, and Deprecated Modules
 
   (Added by Antoine Pitrou; :issue:`8524`.)
 
-* The *sqlite3* module has some new features:
+* The :mod:`sqlite3` module has some new features:
 
   * XXX *enable_load_extension*
 
