@@ -2139,8 +2139,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. method:: update([other])
 
-     Update the dictionary with the key/value pairs from *other*, overwriting
-     existing keys.  Return ``None``.
+      Update the dictionary with the key/value pairs from *other*, overwriting
+      existing keys.  Return ``None``.
 
       :meth:`update` accepts either another dictionary object or an iterable of
       key/value pairs (as a tuple or other iterable of length two).  If keyword
