@@ -509,7 +509,10 @@ class SysModuleTest(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c", code], stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         self.assertEqual(p.returncode, 1)
-        self.assertIn(br"UnicodeEncodeError:", stderr)
+        lines = stderr.splitlines()
+        self.assertGreaterEqual(len(lines), 2)
+        self.assertEqual(b"Unable to decode the command from the command line:", lines[0])
+        self.assertIn(br"UnicodeEncodeError:", lines[1])
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
