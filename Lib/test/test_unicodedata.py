@@ -297,8 +297,8 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
     def test_UCS4(self):
         # unicodedata should work with code points outside the BMP
         # even on a narrow Unicode build
-        self.assertEqual(self.db.category(u"\U0001012A"), "No")
-        self.assertEqual(self.db.numeric(u"\U0001012A"), 9000)
+        self.assertEqual(self.db.category("\U0001012A"), "No")
+        self.assertEqual(self.db.numeric("\U0001012A"), 9000)
 
 def test_main():
     test.support.run_unittest(
