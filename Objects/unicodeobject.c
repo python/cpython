@@ -1480,8 +1480,8 @@ PyObject *PyUnicode_EncodeFSDefault(PyObject *unicode)
                                          "surrogateescape");
     } else
         return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
-                                     PyUnicode_GET_SIZE(unicode),
-                                     "surrogateescape");
+                                    PyUnicode_GET_SIZE(unicode),
+                                    "surrogateescape");
 }
 
 PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
