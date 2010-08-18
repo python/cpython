@@ -8169,6 +8169,14 @@ all_ins(PyObject *d)
     if (ins(d, "EX_NOTFOUND", (long)EX_NOTFOUND)) return -1;
 #endif /* EX_NOTFOUND */
 
+	/* statvfs */
+#ifdef ST_RDONLY
+	if (ins(d, "ST_RDONLY", (long)ST_RDONLY)) return -1;
+#endif /* ST_RDONLY */
+#ifdef ST_NOSUID
+	if (ins(d, "ST_NOSUID", (long)ST_NOSUID)) return -1;
+#endif /* ST_NOSUID */
+
 #ifdef HAVE_SPAWNV
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
     if (ins(d, "P_WAIT", (long)P_WAIT)) return -1;

@@ -1342,6 +1342,14 @@ Files and Directories
    :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
    :attr:`f_flag`, :attr:`f_namemax`.
 
+   Two module-level constants are defined for the :attr:`f_flag` attribute's
+   bit-flags: if :const:`ST_RDONLY` is set, the filesystem is mounted
+   read-only, and if :const:`ST_NOSUID` is set, the semantics of
+   setuid/setgid bits are disabled or not supported.
+
+   .. versionchanged:: 3.2
+      The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
+
    Availability: Unix.
 
 

@@ -152,6 +152,9 @@ Library
   using the filesystem encoding and surrogateescape error handler. Patch
   written by David Watson.
 
+- Issue #7647: The posix module now has the ST_RDONLY and ST_NOSUID
+  constants, for use with the statvfs() function.  Patch by Adam Jackson.
+
 - Issue #8688: MANIFEST files created by distutils now include a magic
   comment indicating they are generated.  Manually maintained MANIFESTs
   without this marker will not be overwritten or removed.
