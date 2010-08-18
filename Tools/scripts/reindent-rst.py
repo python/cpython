@@ -6,7 +6,7 @@
 
 import sys, re, shutil
 
-ws_re = re.compile(r'\s+(\r?\n)$')
+ws_re = re.compile(br'\s+(\r?\n)$')
 
 def main(argv=sys.argv):
     rv = 0
@@ -14,7 +14,7 @@ def main(argv=sys.argv):
         try:
             with open(filename, 'rb') as f:
                 lines = f.readlines()
-            new_lines = [ws_re.sub(r'\1', line) for line in lines]
+            new_lines = [ws_re.sub(br'\1', line) for line in lines]
             if new_lines != lines:
                 print('Fixing %s...' % filename)
             shutil.copyfile(filename, filename + '.bak')
