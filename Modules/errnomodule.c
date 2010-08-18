@@ -82,7 +82,8 @@ PyInit_errno(void)
 
     /*
      * The names and comments are borrowed from linux/include/errno.h,
-     * which should be pretty all-inclusive
+     * which should be pretty all-inclusive.  However, the Solaris specific
+     * names and comments are borrowed from sys/errno.h in Solaris.
      */
 
 #ifdef ENODEV
@@ -795,6 +796,26 @@ PyInit_errno(void)
 #endif
 #ifdef WSAN
     inscode(d, ds, de, "WSAN", WSAN, "Error WSAN");
+#endif
+
+    /* Solaris-specific errnos */
+#ifdef ECANCELED
+    inscode(d, ds, de, "ECANCELED", ECANCELED, "Operation canceled");
+#endif
+#ifdef ENOTSUP
+    inscode(d, ds, de, "ENOTSUP", ENOTSUP, "Operation not supported");
+#endif
+#ifdef EOWNERDEAD
+    inscode(d, ds, de, "EOWNERDEAD", EOWNERDEAD, "Process died with the lock");
+#endif
+#ifdef ENOTRECOVERABLE
+    inscode(d, ds, de, "ENOTRECOVERABLE", ENOTRECOVERABLE, "Lock is not recoverable");
+#endif
+#ifdef ELOCKUNMAPPED
+    inscode(d, ds, de, "ELOCKUNMAPPED", ELOCKUNMAPPED, "Locked lock was unmapped");
+#endif
+#ifdef ENOTACTIVE
+    inscode(d, ds, de, "ENOTACTIVE", ENOTACTIVE, "Facility is not active");
 #endif
 
     Py_DECREF(de);
