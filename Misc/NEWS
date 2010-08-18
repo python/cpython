@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #8622: Add PYTHONFSENCODING environment variable to override the
+  filesystem encoding.
+
 - Issue #5127: The C functions that access the Unicode Database now accept and
   return characters from the full Unicode range, even on narrow unicode builds
   (Py_UNICODE_TOLOWER, Py_UNICODE_ISDECIMAL, and others).  A visible difference

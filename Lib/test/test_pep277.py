@@ -43,7 +43,7 @@ if sys.platform != 'darwin':
 
 # Is it Unicode-friendly?
 if not os.path.supports_unicode_filenames:
-    fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
+    fsencoding = sys.getfilesystemencoding()
     try:
         for name in filenames:
             name.encode(fsencoding)

@@ -232,6 +232,15 @@ Major performance enhancements have been added:
 
 * Stub
 
+
+Unicode
+=======
+
+The filesystem encoding can be specified by setting the
+:envvar:`PYTHONFSENCODING` environment variable before running the intepreter.
+The value should be a string in the form ``<encoding>``, e.g. ``utf-8``.
+
+
 IDLE
 ====
 

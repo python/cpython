@@ -442,11 +442,20 @@ These environment variables influence Python's behavior.
    import of source modules.
 
 
+.. envvar:: PYTHONFSENCODING
+
+   If this is set before running the intepreter, it overrides the encoding used
+   for the filesystem encoding (see :func:`sys.getfilesystemencoding`).
+
+   .. versionadded:: 3.2
+
+
 .. envvar:: PYTHONIOENCODING
 
-   Overrides the encoding used for stdin/stdout/stderr, in the syntax
-   ``encodingname:errorhandler``.  The ``:errorhandler`` part is optional and
-   has the same meaning as in :func:`str.encode`.
+   If this is set before running the intepreter, it overrides the encoding used
+   for stdin/stdout/stderr, in the syntax ``encodingname:errorhandler``. The
+   ``:errorhandler`` part is optional and has the same meaning as in
+   :func:`str.encode`.
 
    For stderr, the ``:errorhandler`` part is ignored; the handler will always be
    ``'backslashreplace'``.

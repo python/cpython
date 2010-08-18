@@ -863,16 +863,24 @@ class SizeofTest(unittest.TestCase):
     def test_getfilesystemencoding(self):
         import codecs
 
-        def check_fsencoding(fs_encoding):
+        def check_fsencoding(fs_encoding, expected=None):
             self.assertIsNotNone(fs_encoding)
             if sys.platform == 'darwin':
                 self.assertEqual(fs_encoding, 'utf-8')
             codecs.lookup(fs_encoding)
+            if expected:
+                self.assertEqual(fs_encoding, expected)
 
         fs_encoding = sys.getfilesystemencoding()
         check_fsencoding(fs_encoding)
 
-        # Even in C locale
+        def get_fsencoding(env):
+            output = subprocess.check_output(
+                [sys.executable, "-c",
+                 "import sys; print(sys.getfilesystemencoding())"],
+                env=env)
+            return output.rstrip().decode('ascii')
+
         try:
             sys.executable.encode('ascii')
         except UnicodeEncodeError:
@@ -880,14 +888,22 @@ class SizeofTest(unittest.TestCase):
             # see issue #8611
             pass
         else:
+            # Even in C locale
             env = os.environ.copy()
             env['LANG'] = 'C'
-            output = subprocess.check_output(
-                [sys.executable, "-c",
-                 "import sys; print(sys.getfilesystemencoding())"],
-                env=env)
-            fs_encoding = output.rstrip().decode('ascii')
-            check_fsencoding(fs_encoding)
+            try:
+                del env['PYTHONFSENCODING']
+            except KeyError:
+                pass
+            check_fsencoding(get_fsencoding(env), 'ascii')
+
+            # Filesystem encoding is hardcoded on Windows and Mac OS X
+            if sys.platform not in ('win32', 'darwin'):
+                for encoding in ('ascii', 'cp850', 'iso8859-1', 'utf-8'):
+                    env = os.environ.copy()
+                    env['PYTHONFSENCODING'] = encoding
+                    check_fsencoding(get_fsencoding(env), encoding)
+
 
     def test_setfilesystemencoding(self):
         old = sys.getfilesystemencoding()

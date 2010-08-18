@@ -99,6 +99,7 @@ PYTHONHOME   : alternate <prefix> directory (or <prefix>%c<exec_prefix>).\n\
                The default module search path uses %s.\n\
 PYTHONCASEOK : ignore case in 'import' statements (Windows).\n\
 PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n\
+PYTHONFSENCODING: Encoding used for the filesystem.\n\
 ";
 
 FILE *
