@@ -275,6 +275,7 @@ run_command(wchar_t *command, PyCompilerFlags *cf)
     return ret != 0;
 
 error:
+    PySys_WriteStderr("Unable to decode the command from the command line:\n");
     PyErr_Print();
     return 1;
 }
