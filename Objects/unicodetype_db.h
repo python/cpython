@@ -1980,7 +1980,7 @@ static unsigned char index2[] = {
 /* Returns the numeric value as double for Unicode characters
  * having this property, -1.0 otherwise.
  */
-double _PyUnicode_ToNumeric(Py_UNICODE ch)
+double _PyUnicode_ToNumeric(Py_UCS4 ch)
 {
     switch (ch) {
     case 0x0F33:
@@ -2031,7 +2031,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0xABF0:
     case 0xF9B2:
     case 0xFF10:
-#ifdef Py_UNICODE_WIDE
     case 0x1018A:
     case 0x104A0:
     case 0x1D7CE:
@@ -2041,7 +2040,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x1D7F6:
     case 0x1F100:
     case 0x1F101:
-#endif
         return (double) 0.0;
     case 0x0031:
     case 0x00B9:
@@ -2105,7 +2103,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0xAA51:
     case 0xABF1:
     case 0xFF11:
-#ifdef Py_UNICODE_WIDE
     case 0x10107:
     case 0x10142:
     case 0x10158:
@@ -2135,7 +2132,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x1D7F7:
     case 0x1F102:
     case 0x2092A:
-#endif
         return (double) 1.0;
     case 0x2152:
         return (double) 1.0/10.0;
@@ -2147,46 +2143,36 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x0F2A:
     case 0x2CFD:
     case 0xA831:
-#ifdef Py_UNICODE_WIDE
     case 0x10141:
     case 0x10175:
     case 0x10176:
     case 0x10E7B:
-#endif
         return (double) 1.0/2.0;
     case 0x2153:
-#ifdef Py_UNICODE_WIDE
     case 0x10E7D:
     case 0x1245A:
     case 0x1245D:
-#endif
         return (double) 1.0/3.0;
     case 0x00BC:
     case 0x09F7:
     case 0x0D73:
     case 0xA830:
-#ifdef Py_UNICODE_WIDE
     case 0x10140:
     case 0x10E7C:
     case 0x12460:
     case 0x12462:
-#endif
         return (double) 1.0/4.0;
     case 0x2155:
         return (double) 1.0/5.0;
     case 0x2159:
-#ifdef Py_UNICODE_WIDE
     case 0x12461:
-#endif
         return (double) 1.0/6.0;
     case 0x2150:
         return (double) 1.0/7.0;
     case 0x09F5:
     case 0x215B:
     case 0xA834:
-#ifdef Py_UNICODE_WIDE
     case 0x1245F:
-#endif
         return (double) 1.0/8.0;
     case 0x2151:
         return (double) 1.0/9.0;
@@ -2210,7 +2196,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x62FE:
     case 0xF973:
     case 0xF9FD:
-#ifdef Py_UNICODE_WIDE
     case 0x10110:
     case 0x10149:
     case 0x10150:
@@ -2229,7 +2214,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x10B7C:
     case 0x10E69:
     case 0x1D369:
-#endif
         return (double) 10.0;
     case 0x0BF1:
     case 0x0D71:
@@ -2239,7 +2223,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x4F70:
     case 0x767E:
     case 0x964C:
-#ifdef Py_UNICODE_WIDE
     case 0x10119:
     case 0x1014B:
     case 0x10152:
@@ -2251,7 +2234,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x10B5E:
     case 0x10B7E:
     case 0x10E72:
-#endif
         return (double) 100.0;
     case 0x0BF2:
     case 0x0D72:
@@ -2261,7 +2243,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x4EDF:
     case 0x5343:
     case 0x9621:
-#ifdef Py_UNICODE_WIDE
     case 0x10122:
     case 0x1014D:
     case 0x10154:
@@ -2270,17 +2251,14 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x10A47:
     case 0x10B5F:
     case 0x10B7F:
-#endif
         return (double) 1000.0;
     case 0x137C:
     case 0x2182:
     case 0x4E07:
     case 0x842C:
-#ifdef Py_UNICODE_WIDE
     case 0x1012B:
     case 0x10155:
     case 0x1085F:
-#endif
         return (double) 10000.0;
     case 0x2188:
         return (double) 100000.0;
@@ -2414,7 +2392,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0xABF2:
     case 0xF978:
     case 0xFF12:
-#ifdef Py_UNICODE_WIDE
     case 0x10108:
     case 0x1015B:
     case 0x1015C:
@@ -2445,15 +2422,12 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x1D7F8:
     case 0x1F103:
     case 0x22390:
-#endif
         return (double) 2.0;
     case 0x2154:
-#ifdef Py_UNICODE_WIDE
     case 0x10177:
     case 0x10E7E:
     case 0x1245B:
     case 0x1245E:
-#endif
         return (double) 2.0/3.0;
     case 0x2156:
         return (double) 2.0/5.0;
@@ -2465,7 +2439,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x3039:
     case 0x5344:
     case 0x5EFF:
-#ifdef Py_UNICODE_WIDE
     case 0x10111:
     case 0x103D4:
     case 0x1085C:
@@ -2475,21 +2448,14 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x10B7D:
     case 0x10E6A:
     case 0x1D36A:
-#endif
         return (double) 20.0;
-#ifdef Py_UNICODE_WIDE
     case 0x1011A:
     case 0x10E73:
         return (double) 200.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x10123:
         return (double) 2000.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x1012C:
         return (double) 20000.0;
-#endif
     case 0x3251:
         return (double) 21.0;
     case 0x3252:
@@ -2571,7 +2537,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0xABF3:
     case 0xF96B:
     case 0xFF13:
-#ifdef Py_UNICODE_WIDE
     case 0x10109:
     case 0x104A3:
     case 0x1085A:
@@ -2605,7 +2570,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x20B19:
     case 0x22998:
     case 0x23B1B:
-#endif
         return (double) 3.0;
     case 0x09F6:
     case 0xA835:
@@ -2616,9 +2580,7 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x09F8:
     case 0x0D75:
     case 0xA832:
-#ifdef Py_UNICODE_WIDE
     case 0x10178:
-#endif
         return (double) 3.0/4.0;
     case 0x2157:
         return (double) 3.0/5.0;
@@ -2628,28 +2590,20 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x303A:
     case 0x325A:
     case 0x5345:
-#ifdef Py_UNICODE_WIDE
     case 0x10112:
     case 0x10165:
     case 0x10E6B:
     case 0x1D36B:
     case 0x20983:
-#endif
         return (double) 30.0;
-#ifdef Py_UNICODE_WIDE
     case 0x1011B:
     case 0x1016B:
     case 0x10E74:
         return (double) 300.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x10124:
         return (double) 3000.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x1012D:
         return (double) 30000.0;
-#endif
     case 0x325B:
         return (double) 31.0;
     case 0x325C:
@@ -2724,7 +2678,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0xAA54:
     case 0xABF4:
     case 0xFF14:
-#ifdef Py_UNICODE_WIDE
     case 0x1010A:
     case 0x104A4:
     case 0x10A43:
@@ -2756,34 +2709,25 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x20064:
     case 0x200E2:
     case 0x2626D:
-#endif
         return (double) 4.0;
     case 0x2158:
         return (double) 4.0/5.0;
     case 0x1375:
     case 0x32B5:
     case 0x534C:
-#ifdef Py_UNICODE_WIDE
     case 0x10113:
     case 0x10E6C:
     case 0x1D36C:
     case 0x2098C:
     case 0x2099C:
-#endif
         return (double) 40.0;
-#ifdef Py_UNICODE_WIDE
     case 0x1011C:
     case 0x10E75:
         return (double) 400.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x10125:
         return (double) 4000.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x1012E:
         return (double) 40000.0;
-#endif
     case 0x32B6:
         return (double) 41.0;
     case 0x32B7:
@@ -2858,7 +2802,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0xAA55:
     case 0xABF5:
     case 0xFF15:
-#ifdef Py_UNICODE_WIDE
     case 0x1010B:
     case 0x10143:
     case 0x10148:
@@ -2887,14 +2830,11 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x1D7FB:
     case 0x1F106:
     case 0x20121:
-#endif
         return (double) 5.0;
     case 0x0F2C:
         return (double) 5.0/2.0;
     case 0x215A:
-#ifdef Py_UNICODE_WIDE
     case 0x1245C:
-#endif
         return (double) 5.0/6.0;
     case 0x215D:
         return (double) 5.0/8.0;
@@ -2903,7 +2843,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x217C:
     case 0x2186:
     case 0x32BF:
-#ifdef Py_UNICODE_WIDE
     case 0x10114:
     case 0x10144:
     case 0x1014A:
@@ -2917,11 +2856,9 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x10A7E:
     case 0x10E6D:
     case 0x1D36D:
-#endif
         return (double) 50.0;
     case 0x216E:
     case 0x217E:
-#ifdef Py_UNICODE_WIDE
     case 0x1011D:
     case 0x10145:
     case 0x1014C:
@@ -2932,22 +2869,17 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x1016F:
     case 0x10170:
     case 0x10E76:
-#endif
         return (double) 500.0;
     case 0x2181:
-#ifdef Py_UNICODE_WIDE
     case 0x10126:
     case 0x10146:
     case 0x1014E:
     case 0x10172:
-#endif
         return (double) 5000.0;
     case 0x2187:
-#ifdef Py_UNICODE_WIDE
     case 0x1012F:
     case 0x10147:
     case 0x10156:
-#endif
         return (double) 50000.0;
     case 0x0036:
     case 0x0666:
@@ -3007,7 +2939,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0xF9D1:
     case 0xF9D3:
     case 0xFF16:
-#ifdef Py_UNICODE_WIDE
     case 0x1010C:
     case 0x104A6:
     case 0x10E65:
@@ -3026,28 +2957,19 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x1D7FC:
     case 0x1F107:
     case 0x20AEA:
-#endif
         return (double) 6.0;
     case 0x1377:
-#ifdef Py_UNICODE_WIDE
     case 0x10115:
     case 0x10E6E:
     case 0x1D36E:
-#endif
         return (double) 60.0;
-#ifdef Py_UNICODE_WIDE
     case 0x1011E:
     case 0x10E77:
         return (double) 600.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x10127:
         return (double) 6000.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x10130:
         return (double) 60000.0;
-#endif
     case 0x0037:
     case 0x0667:
     case 0x06F7:
@@ -3104,7 +3026,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0xAA57:
     case 0xABF7:
     case 0xFF17:
-#ifdef Py_UNICODE_WIDE
     case 0x1010D:
     case 0x104A7:
     case 0x10E66:
@@ -3124,32 +3045,23 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x1D7FD:
     case 0x1F108:
     case 0x20001:
-#endif
         return (double) 7.0;
     case 0x0F2D:
         return (double) 7.0/2.0;
     case 0x215E:
         return (double) 7.0/8.0;
     case 0x1378:
-#ifdef Py_UNICODE_WIDE
     case 0x10116:
     case 0x10E6F:
     case 0x1D36F:
-#endif
         return (double) 70.0;
-#ifdef Py_UNICODE_WIDE
     case 0x1011F:
     case 0x10E78:
         return (double) 700.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x10128:
         return (double) 7000.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x10131:
         return (double) 70000.0;
-#endif
     case 0x0038:
     case 0x0668:
     case 0x06F8:
@@ -3204,7 +3116,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0xAA58:
     case 0xABF8:
     case 0xFF18:
-#ifdef Py_UNICODE_WIDE
     case 0x1010E:
     case 0x104A8:
     case 0x10E67:
@@ -3222,28 +3133,19 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x1D7F4:
     case 0x1D7FE:
     case 0x1F109:
-#endif
         return (double) 8.0;
     case 0x1379:
-#ifdef Py_UNICODE_WIDE
     case 0x10117:
     case 0x10E70:
     case 0x1D370:
-#endif
         return (double) 80.0;
-#ifdef Py_UNICODE_WIDE
     case 0x10120:
     case 0x10E79:
         return (double) 800.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x10129:
         return (double) 8000.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x10132:
         return (double) 80000.0;
-#endif
     case 0x0039:
     case 0x0669:
     case 0x06F9:
@@ -3299,7 +3201,6 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0xAA59:
     case 0xABF9:
     case 0xFF19:
-#ifdef Py_UNICODE_WIDE
     case 0x1010F:
     case 0x104A9:
     case 0x10E68:
@@ -3320,32 +3221,23 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
     case 0x1D7FF:
     case 0x1F10A:
     case 0x2F890:
-#endif
         return (double) 9.0;
     case 0x0F2E:
         return (double) 9.0/2.0;
     case 0x137A:
-#ifdef Py_UNICODE_WIDE
     case 0x10118:
     case 0x10341:
     case 0x10E71:
     case 0x1D371:
-#endif
         return (double) 90.0;
-#ifdef Py_UNICODE_WIDE
     case 0x10121:
     case 0x1034A:
     case 0x10E7A:
         return (double) 900.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x1012A:
         return (double) 9000.0;
-#endif
-#ifdef Py_UNICODE_WIDE
     case 0x10133:
         return (double) 90000.0;
-#endif
     }
     return -1.0;
 }
@@ -3353,7 +3245,7 @@ double _PyUnicode_ToNumeric(Py_UNICODE ch)
 /* Returns 1 for Unicode characters having the bidirectional
  * type 'WS', 'B' or 'S' or the category 'Zs', 0 otherwise.
  */
-int _PyUnicode_IsWhitespace(register const Py_UNICODE ch)
+int _PyUnicode_IsWhitespace(register const Py_UCS4 ch)
 {
 #ifdef WANT_WCTYPE_FUNCTIONS
     return iswspace(ch);
@@ -3399,7 +3291,7 @@ int _PyUnicode_IsWhitespace(register const Py_UNICODE ch)
  * property 'BK', 'CR', 'LF' or 'NL' or having bidirectional
  * type 'B', 0 otherwise.
  */
-int _PyUnicode_IsLinebreak(register const Py_UNICODE ch)
+int _PyUnicode_IsLinebreak(register const Py_UCS4 ch)
 {
     switch (ch) {
     case 0x000A:

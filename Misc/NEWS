@@ -12,6 +12,12 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #5127: The C functions that access the Unicode Database now accept and
+  return characters from the full Unicode range, even on narrow unicode builds
+  (Py_UNICODE_TOLOWER, Py_UNICODE_ISDECIMAL, and others).  A visible difference
+  in Python is that unicodedata.numeric() now returns the correct value for
+  large code points, and repr() may consider more characters as printable.
+
 - Issue #9425: Create PyModule_GetFilenameObject() function to get the filename
   as a unicode object, instead of a byte string. Function needed to support
   unencodable filenames. Deprecate PyModule_GetFilename() in favor on the new
