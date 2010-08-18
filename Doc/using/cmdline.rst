@@ -444,7 +444,7 @@ These environment variables influence Python's behavior.
 
 .. envvar:: PYTHONFSENCODING
 
-   If this is set before running the intepreter, it overrides the encoding used
+   If this is set before running the interpreter, it overrides the encoding used
    for the filesystem encoding (see :func:`sys.getfilesystemencoding`).
 
    .. versionadded:: 3.2
@@ -452,7 +452,7 @@ These environment variables influence Python's behavior.
 
 .. envvar:: PYTHONIOENCODING
 
-   If this is set before running the intepreter, it overrides the encoding used
+   If this is set before running the interpreter, it overrides the encoding used
    for stdin/stdout/stderr, in the syntax ``encodingname:errorhandler``. The
    ``:errorhandler`` part is optional and has the same meaning as in
    :func:`str.encode`.

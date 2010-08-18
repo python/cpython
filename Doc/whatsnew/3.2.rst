@@ -241,7 +241,7 @@ Unicode
 =======
 
 The filesystem encoding can be specified by setting the
-:envvar:`PYTHONFSENCODING` environment variable before running the intepreter.
+:envvar:`PYTHONFSENCODING` environment variable before running the interpreter.
 The value should be a string in the form ``<encoding>``, e.g. ``utf-8``.
 
 
