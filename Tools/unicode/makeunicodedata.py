@@ -28,7 +28,7 @@
 import sys
 
 SCRIPT = sys.argv[0]
-VERSION = "2.6"
+VERSION = "3.2"
 
 # The Unicode Database
 UNIDATA_VERSION = "5.2.0"
@@ -479,7 +479,7 @@ def makeunicodetype(unicode, trace):
     print('/* Returns the numeric value as double for Unicode characters', file=fp)
     print(' * having this property, -1.0 otherwise.', file=fp)
     print(' */', file=fp)
-    print('double _PyUnicode_ToNumeric(Py_UNICODE ch)', file=fp)
+    print('double _PyUnicode_ToNumeric(Py_UCS4 ch)', file=fp)
     print('{', file=fp)
     print('    switch (ch) {', file=fp)
     for value, codepoints in numeric_items:
@@ -488,21 +488,10 @@ def makeunicodetype(unicode, trace):
         parts = [repr(float(part)) for part in parts]
         value = '/'.join(parts)
 
-        haswide = False
-        hasnonewide = False
         codepoints.sort()
         for codepoint in codepoints:
-            if codepoint < 0x10000:
-                hasnonewide = True
-            if codepoint >= 0x10000 and not haswide:
-                print('#ifdef Py_UNICODE_WIDE', file=fp)
-                haswide = True
             print('    case 0x%04X:' % (codepoint,), file=fp)
-        if haswide and hasnonewide:
-            print('#endif', file=fp)
         print('        return (double) %s;' % (value,), file=fp)
-        if haswide and not hasnonewide:
-            print('#endif', file=fp)
     print('    }', file=fp)
     print('    return -1.0;', file=fp)
     print('}', file=fp)
@@ -512,27 +501,16 @@ def makeunicodetype(unicode, trace):
     print("/* Returns 1 for Unicode characters having the bidirectional", file=fp)
     print(" * type 'WS', 'B' or 'S' or the category 'Zs', 0 otherwise.", file=fp)
     print(" */", file=fp)
-    print('int _PyUnicode_IsWhitespace(register const Py_UNICODE ch)', file=fp)
+    print('int _PyUnicode_IsWhitespace(register const Py_UCS4 ch)', file=fp)
     print('{', file=fp)
     print('#ifdef WANT_WCTYPE_FUNCTIONS', file=fp)
     print('    return iswspace(ch);', file=fp)
     print('#else', file=fp)
     print('    switch (ch) {', file=fp)
 
-    haswide = False
-    hasnonewide = False
     for codepoint in sorted(spaces):
-        if codepoint < 0x10000:
-            hasnonewide = True
-        if codepoint >= 0x10000 and not haswide:
-            print('#ifdef Py_UNICODE_WIDE', file=fp)
-            haswide = True
         print('    case 0x%04X:' % (codepoint,), file=fp)
-    if haswide and hasnonewide:
-        print('#endif', file=fp)
     print('        return 1;', file=fp)
-    if haswide and not hasnonewide:
-        print('#endif', file=fp)
 
     print('    }', file=fp)
     print('    return 0;', file=fp)
@@ -545,23 +523,12 @@ def makeunicodetype(unicode, trace):
     print(" * property 'BK', 'CR', 'LF' or 'NL' or having bidirectional", file=fp)
     print(" * type 'B', 0 otherwise.", file=fp)
     print(" */", file=fp)
-    print('int _PyUnicode_IsLinebreak(register const Py_UNICODE ch)', file=fp)
+    print('int _PyUnicode_IsLinebreak(register const Py_UCS4 ch)', file=fp)
     print('{', file=fp)
     print('    switch (ch) {', file=fp)
-    haswide = False
-    hasnonewide = False
     for codepoint in sorted(linebreaks):
-        if codepoint < 0x10000:
-            hasnonewide = True
-        if codepoint >= 0x10000 and not haswide:
-            print('#ifdef Py_UNICODE_WIDE', file=fp)
-            haswide = True
         print('    case 0x%04X:' % (codepoint,), file=fp)
-    if haswide and hasnonewide:
-        print('#endif', file=fp)
     print('        return 1;', file=fp)
-    if haswide and not hasnonewide:
-        print('#endif', file=fp)
 
     print('    }', file=fp)
     print('    return 0;', file=fp)
