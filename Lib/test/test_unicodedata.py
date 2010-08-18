@@ -299,6 +299,8 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # even on a narrow Unicode build
         self.assertEqual(self.db.category("\U0001012A"), "No")
         self.assertEqual(self.db.numeric("\U0001012A"), 9000)
+        self.assertEqual(self.db.decimal("\U0001D7FD"), 7)
+        self.assertEqual(self.db.digit("\U0001D7FD"), 7)
 
 def test_main():
     test.support.run_unittest(
