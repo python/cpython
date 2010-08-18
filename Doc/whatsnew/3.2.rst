@@ -111,6 +111,10 @@ New, Improved, and Deprecated Modules
   programmer aware that his code contains object finalization issues.
   (Added by Antoine Pitrou; :issue:`477863`.)
 
+* The :mod:`os` module now has the :const:`ST_RDONLY` and :const:`ST_NOSUID`
+  constants, for use with the :func:`~os.statvfs` function.
+  (Patch by Adam Jackson; :issue:`7647`.)
+
 * The :func:`shutil.copytree` function has two new options:
 
   * *ignore_dangling_symlinks*: when ``symlinks=False`` (meaning that the
