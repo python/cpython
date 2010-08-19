@@ -116,6 +116,9 @@ Extensions
 Library
 -------
 
+- Create os.fsdecode(): decode from the filesystem encoding with
+  surrogateescape error handler, or strict error handler on Windows.
+
 - Issue #3488: Provide convenient shorthand functions ``gzip.compress``
   and ``gzip.decompress``.  Original patch by Anand B. Pillai.
 

@@ -155,13 +155,26 @@ process and user.
    These functions are described in :ref:`os-file-dir`.
 
 
-.. function:: fsencode(value)
+.. function:: fsencode(filename)
 
-   Encode *value* to bytes for use in the file system, environment variables or
-   the command line. Use :func:`sys.getfilesystemencoding` and
-   ``'surrogateescape'`` error handler for strings and return bytes unchanged.
-   On Windows, use ``'strict'`` error handler for strings if the file system
-   encoding is ``'mbcs'`` (which is the default encoding).
+   Encode *filename* to the filesystem encoding with ``'surrogateescape'``
+   error handler, return :class:`bytes` unchanged. On Windows, use ``'strict'``
+   error handler if the filesystem encoding is ``'mbcs'`` (which is the default
+   encoding).
+
+   :func:`fsdencode` is the reverse function.
+
+   .. versionadded:: 3.2
+
+
+.. function:: fsdecode(filename)
+
+   Decode *filename* from the filesystem encoding with ``'surrogateescape'``
+   error handler, return :class:`str` unchanged. On Windows, use ``'strict'``
+   error handler if the filesystem encoding is ``'mbcs'`` (which is the default
+   encoding).
+
+   :func:`fsencode` is the reverse function.
 
    .. versionadded:: 3.2
 
