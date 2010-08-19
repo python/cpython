@@ -674,7 +674,7 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                 if (i + 1 < NCH(n) && TYPE(CHILD(n, i + 1)) == EQUAL) {
                     expression = ast_for_expr(c, CHILD(n, i + 2));
                     if (!expression)
-		      goto error;
+                        goto error;
                     asdl_seq_SET(kwdefaults, j, expression);
                     i += 2; /* '=' and test */
                 }
@@ -873,14 +873,14 @@ ast_for_arguments(struct compiling *c, const node *n)
                 ch = CHILD(n, i+1);  /* tfpdef */
                 assert(TYPE(ch) == tfpdef || TYPE(ch) == vfpdef);
                 kwarg = NEW_IDENTIFIER(CHILD(ch, 0));
+                if (!kwarg)
+                    return NULL;
                 if (NCH(ch) > 1) {
                     /* there is an annotation on the kwarg */
                     kwargannotation = ast_for_expr(c, CHILD(ch, 2));
                     if (!kwargannotation)
                         return NULL;
                 }
-                if (!kwarg)
-                    return NULL;
                 i += 3;
                 break;
             default:

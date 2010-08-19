@@ -476,6 +476,34 @@ Traceback (most recent call last):
    ...
 SyntaxError: keyword argument repeated
 
+Corner-cases that used to fail to raise the correct error:
+
+    >>> def f(*, x=lambda __debug__:0): pass
+    Traceback (most recent call last):
+    SyntaxError: assignment to keyword
+
+    >>> def f(*args:(lambda __debug__:0)): pass
+    Traceback (most recent call last):
+    SyntaxError: assignment to keyword
+
+    >>> def f(**kwargs:(lambda __debug__:0)): pass
+    Traceback (most recent call last):
+    SyntaxError: assignment to keyword
+
+    >>> with (lambda *:0): pass
+    Traceback (most recent call last):
+    SyntaxError: named arguments must follow bare *
+
+Corner-cases that used to crash:
+
+    >>> def f(**__debug__): pass
+    Traceback (most recent call last):
+    SyntaxError: assignment to keyword
+
+    >>> def f(*xx, __debug__): pass
+    Traceback (most recent call last):
+    SyntaxError: assignment to keyword
+
 """
 
 import re
