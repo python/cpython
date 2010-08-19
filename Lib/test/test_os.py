@@ -450,8 +450,12 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
         if os.supports_bytes_environ:
             # env cannot contain 'PATH' and b'PATH' keys
-            self.assertRaises(ValueError,
-                os.get_exec_path, {'PATH': '1', b'PATH': b'2'})
+            try:
+                mixed_env = {'PATH': '1', b'PATH': b'2'}
+            except BytesWarning:
+                pass
+            else:
+                self.assertRaises(ValueError, os.get_exec_path, mixed_env)
 
             # bytes key and/or value
             self.assertSequenceEqual(os.get_exec_path({b'PATH': b'abc'}),
@@ -723,7 +727,10 @@ class ExecTests(unittest.TestCase):
         # os.get_exec_path() reads the 'PATH' variable
         with _execvpe_mockup() as calls:
             env_path = env.copy()
-            env_path['PATH'] = program_path
+            if test_type is bytes:
+                env_path[b'PATH'] = program_path
+            else:
+                env_path['PATH'] = program_path
             self.assertRaises(OSError,
                 os._execvpe, program, arguments, env=env_path)
             self.assertEqual(len(calls), 1)

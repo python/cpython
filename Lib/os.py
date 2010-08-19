@@ -387,13 +387,13 @@ def get_exec_path(env=None):
 
     try:
         path_list = env.get('PATH')
-    except TypeError:
+    except (TypeError, BytesWarning):
         path_list = None
 
     if supports_bytes_environ:
         try:
             path_listb = env[b'PATH']
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, BytesWarning):
             pass
         else:
             if path_list is not None:
