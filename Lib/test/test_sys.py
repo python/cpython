@@ -579,7 +579,7 @@ class SysModuleTest(unittest.TestCase):
             expected = 'mbcs'
         else:
             expected = None
-        self.check_fsencoding(fs_encoding)
+        self.check_fsencoding(fs_encoding, expected)
 
     @unittest.skipIf(sys.platform in ('win32', 'darwin'),
                      'PYTHONFSENCODING is ignored on Windows and Mac OS X')
