@@ -402,8 +402,7 @@ def get_exec_path(env=None):
             path_list = path_listb
 
         if path_list is not None and isinstance(path_list, bytes):
-            path_list = path_list.decode(sys.getfilesystemencoding(),
-                                         'surrogateescape')
+            path_list = fsdecode(path_list)
 
     if path_list is None:
         path_list = defpath
@@ -536,19 +535,39 @@ if supports_bytes_environ:
 
     __all__.extend(("environb", "getenvb"))
 
-def fsencode(value):
-    """Encode value for use in the file system, environment variables
-    or the command line."""
-    if isinstance(value, bytes):
-        return value
-    elif isinstance(value, str):
+def fsencode(filename):
+    """
+    Encode filename to the filesystem encoding with 'surrogateescape' error
+    handler, return bytes unchanged. On Windows, use 'strict' error handler if
+    the file system encoding is 'mbcs' (which is the default encoding).
+    """
+    if isinstance(filename, bytes):
+        return filename
+    elif isinstance(filename, str):
         encoding = sys.getfilesystemencoding()
         if encoding == 'mbcs':
-            return value.encode(encoding)
+            return filename.encode(encoding)
         else:
-            return value.encode(encoding, 'surrogateescape')
+            return filename.encode(encoding, 'surrogateescape')
     else:
-        raise TypeError("expect bytes or str, not %s" % type(value).__name__)
+        raise TypeError("expect bytes or str, not %s" % type(filename).__name__)
+
+def fsdecode(filename):
+    """
+    Decode filename from the filesystem encoding with 'surrogateescape' error
+    handler, return str unchanged. On Windows, use 'strict' error handler if
+    the file system encoding is 'mbcs' (which is the default encoding).
+    """
+    if isinstance(filename, str):
+        return filename
+    elif isinstance(filename, bytes):
+        encoding = sys.getfilesystemencoding()
+        if encoding == 'mbcs':
+            return filename.decode(encoding)
+        else:
+            return filename.decode(encoding, 'surrogateescape')
+    else:
+        raise TypeError("expect bytes or str, not %s" % type(filename).__name__)
 
 def _exists(name):
     return name in globals()

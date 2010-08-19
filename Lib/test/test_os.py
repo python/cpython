@@ -897,14 +897,6 @@ if sys.platform != 'win32':
 
     class Pep383Tests(unittest.TestCase):
         def setUp(self):
-            def fsdecode(filename):
-                encoding = sys.getfilesystemencoding()
-                if encoding == 'mbcs':
-                    errors = 'strict'
-                else:
-                    errors = 'surrogateescape'
-                return filename.decode(encoding, errors)
-
             if support.TESTFN_UNENCODABLE:
                 self.dir = support.TESTFN_UNENCODABLE
             else:
@@ -930,7 +922,7 @@ if sys.platform != 'win32':
                 for fn in bytesfn:
                     f = open(os.path.join(self.bdir, fn), "w")
                     f.close()
-                    fn = fsdecode(fn)
+                    fn = os.fsdecode(fn)
                     if fn in self.unicodefn:
                         raise ValueError("duplicate filename")
                     self.unicodefn.add(fn)
@@ -1139,12 +1131,43 @@ class Win32SymlinkTests(unittest.TestCase):
         self.assertNotEqual(os.lstat(link), os.stat(link))
 
 
-class MiscTests(unittest.TestCase):
+class FSEncodingTests(unittest.TestCase):
+    def test_nop(self):
+        self.assertEquals(os.fsencode(b'abc\xff'), b'abc\xff')
+        self.assertEquals(os.fsdecode('abc\u0141'), 'abc\u0141')
 
-    @unittest.skipIf(os.name == "nt", "POSIX specific test")
-    def test_fsencode(self):
-        self.assertEquals(os.fsencode(b'ab\xff'), b'ab\xff')
-        self.assertEquals(os.fsencode('ab\uDCFF'), b'ab\xff')
+    def test_identity(self):
+        # assert fsdecode(fsencode(x)) == x
+        for fn in ('unicode\u0141', 'latin\xe9', 'ascii'):
+            try:
+                bytesfn = os.fsencode(fn)
+            except UnicodeEncodeError:
+                continue
+            self.assertEquals(os.fsdecode(bytesfn), fn)
+
+    def get_output(self, fs_encoding, func):
+        env = os.environ.copy()
+        env['PYTHONIOENCODING'] = 'utf-8'
+        env['PYTHONFSENCODING'] = fs_encoding
+        code = 'import os; print(%s, end="")' % func
+        process = subprocess.Popen(
+            [sys.executable, "-c", code],
+            stdout=subprocess.PIPE, env=env)
+        stdout, stderr = process.communicate()
+        self.assertEqual(process.returncode, 0)
+        return stdout.decode('utf-8')
+
+    def test_encodings(self):
+        def check(encoding, bytesfn, unicodefn):
+            encoded = self.get_output(encoding, 'repr(os.fsencode(%a))' % unicodefn)
+            self.assertEqual(encoded, repr(bytesfn))
+
+            decoded = self.get_output(encoding, 'repr(os.fsdecode(%a))' % bytesfn)
+            self.assertEqual(decoded, repr(unicodefn))
+
+        check('ascii', b'abc\xff', 'abc\udcff')
+        check('utf-8', b'\xc3\xa9\x80', '\xe9\udc80')
+        check('iso-8859-15', b'\xef\xa4', '\xef\u20ac')
 
 
 def test_main():
@@ -1163,7 +1186,7 @@ def test_main():
         Pep383Tests,
         Win32KillTests,
         Win32SymlinkTests,
-        MiscTests,
+        FSEncodingTests,
     )
 
 if __name__ == "__main__":
