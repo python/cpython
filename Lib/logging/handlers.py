@@ -732,12 +732,6 @@ class SysLogHandler(logging.Handler):
             self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.socket.connect(address)
 
-    # curious: when talking to the unix-domain '/dev/log' socket, a
-    #   zero-terminator seems to be required.  this string is placed
-    #   into a class variable so that it can be overridden if
-    #   necessary.
-    log_format_string = '<%d>%s\000'
-
     def encodePriority(self, facility, priority):
         """
         Encode the facility and priority. You can pass in strings or
@@ -781,14 +775,14 @@ class SysLogHandler(logging.Handler):
         We need to convert record level to lowercase, maybe this will
         change in the future.
         """
-        msg = self.log_format_string % (
-            self.encodePriority(self.facility,
-                                self.mapPriority(record.levelname)),
-                                msg)
+        prio = '<%d>' % self.encodePriority(self.facility,
+                                            self.mapPriority(record.levelname))
+        prio = prio.encode('utf-8')
         #Message is a string. Convert to bytes as required by RFC 5424
         msg = msg.encode('utf-8')
         if codecs:
             msg = codecs.BOM_UTF8 + msg
+        msg = prio + msg
         try:
             if self.unixsocket:
                 try:
