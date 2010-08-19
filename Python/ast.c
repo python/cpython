@@ -673,6 +673,8 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
             case tfpdef:
                 if (i + 1 < NCH(n) && TYPE(CHILD(n, i + 1)) == EQUAL) {
                     expression = ast_for_expr(c, CHILD(n, i + 2));
+                    if (!expression)
+		      goto error;
                     asdl_seq_SET(kwdefaults, j, expression);
                     i += 2; /* '=' and test */
                 }
@@ -682,10 +684,8 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                 if (NCH(ch) == 3) {
                     /* ch is NAME ':' test */
                     annotation = ast_for_expr(c, CHILD(ch, 2));
-                    if (!annotation) {
-                        ast_error(ch, "expected expression");
+                    if (!annotation)
                         goto error;
-                    }
                 }
                 else {
                     annotation = NULL;
@@ -777,22 +777,22 @@ ast_for_arguments(struct compiling *c, const node *n)
     }
     posargs = (nposargs ? asdl_seq_new(nposargs, c->c_arena) : NULL);
     if (!posargs && nposargs)
-        goto error;
+        return NULL;
     kwonlyargs = (nkwonlyargs ?
                    asdl_seq_new(nkwonlyargs, c->c_arena) : NULL);
     if (!kwonlyargs && nkwonlyargs)
-        goto error;
+        return NULL;
     posdefaults = (nposdefaults ?
                     asdl_seq_new(nposdefaults, c->c_arena) : NULL);
     if (!posdefaults && nposdefaults)
-        goto error;
+        return NULL;
     /* The length of kwonlyargs and kwdefaults are same
        since we set NULL as default for keyword only argument w/o default
        - we have sequence data structure, but no dictionary */
     kwdefaults = (nkwonlyargs ?
                    asdl_seq_new(nkwonlyargs, c->c_arena) : NULL);
     if (!kwdefaults && nkwonlyargs)
-        goto error;
+        return NULL;
 
     if (nposargs + nkwonlyargs > 255) {
         ast_error(n, "more than 255 arguments");
@@ -816,7 +816,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (i + 1 < NCH(n) && TYPE(CHILD(n, i + 1)) == EQUAL) {
                     expr_ty expression = ast_for_expr(c, CHILD(n, i + 2));
                     if (!expression)
-                        goto error;
+                        return NULL;
                     assert(posdefaults != NULL);
                     asdl_seq_SET(posdefaults, j++, expression);
                     i += 2;
@@ -825,11 +825,11 @@ ast_for_arguments(struct compiling *c, const node *n)
                 else if (found_default) {
                     ast_error(n,
                              "non-default argument follows default argument");
-                    goto error;
+                    return NULL;
                 }
                 arg = compiler_arg(c, ch);
                 if (!arg)
-                    goto error;
+                    return NULL;
                 asdl_seq_SET(posargs, k++, arg);
                 i += 2; /* the name and the comma */
                 break;
@@ -837,7 +837,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (i+1 >= NCH(n)) {
                     ast_error(CHILD(n, i),
                         "named arguments must follow bare *");
-                    goto error;
+                    return NULL;
                 }
                 ch = CHILD(n, i+1);  /* tfpdef or COMMA */
                 if (TYPE(ch) == COMMA) {
@@ -845,7 +845,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                     i += 2; /* now follows keyword only arguments */
                     res = handle_keywordonly_args(c, n, i,
                                                   kwonlyargs, kwdefaults);
-                    if (res == -1) goto error;
+                    if (res == -1) return NULL;
                     i = res; /* res has new position to process */
                 }
                 else {
@@ -855,6 +855,8 @@ ast_for_arguments(struct compiling *c, const node *n)
                     if (NCH(ch) > 1) {
                         /* there is an annotation on the vararg */
                         varargannotation = ast_for_expr(c, CHILD(ch, 2));
+                        if (!varargannotation)
+                            return NULL;
                     }
                     i += 3;
                     if (i < NCH(n) && (TYPE(CHILD(n, i)) == tfpdef
@@ -862,7 +864,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                         int res = 0;
                         res = handle_keywordonly_args(c, n, i,
                                                       kwonlyargs, kwdefaults);
-                        if (res == -1) goto error;
+                        if (res == -1) return NULL;
                         i = res; /* res has new position to process */
                     }
                 }
@@ -874,24 +876,22 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (NCH(ch) > 1) {
                     /* there is an annotation on the kwarg */
                     kwargannotation = ast_for_expr(c, CHILD(ch, 2));
+                    if (!kwargannotation)
+                        return NULL;
                 }
                 if (!kwarg)
-                    goto error;
+                    return NULL;
                 i += 3;
                 break;
             default:
                 PyErr_Format(PyExc_SystemError,
                              "unexpected node in varargslist: %d @ %d",
                              TYPE(ch), i);
-                goto error;
+                return NULL;
         }
     }
     return arguments(posargs, vararg, varargannotation, kwonlyargs, kwarg,
                     kwargannotation, posdefaults, kwdefaults, c->c_arena);
- error:
-    Py_XDECREF(vararg);
-    Py_XDECREF(kwarg);
-    return NULL;
 }
 
 static expr_ty
@@ -976,9 +976,9 @@ ast_for_decorators(struct compiling *c, const node *n)
 
     for (i = 0; i < NCH(n); i++) {
         d = ast_for_decorator(c, CHILD(n, i));
-            if (!d)
-                return NULL;
-            asdl_seq_SET(decorator_seq, i, d);
+        if (!d)
+            return NULL;
+        asdl_seq_SET(decorator_seq, i, d);
     }
     return decorator_seq;
 }
@@ -1004,7 +1004,7 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     if (TYPE(CHILD(n, name_i+2)) == RARROW) {
         returns = ast_for_expr(c, CHILD(n, name_i + 3));
         if (!returns)
-                return NULL;
+            return NULL;
         name_i += 2;
     }
     body = ast_for_suite(c, CHILD(n, name_i + 3));
@@ -2152,11 +2152,10 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
                 return NULL;
             }
             e = ast_for_testlist(c, ch);
-
-            /* set context to assign */
             if (!e)
               return NULL;
 
+            /* set context to assign */
             if (!set_context(c, e, Store, CHILD(n, i)))
               return NULL;
 
@@ -2957,6 +2956,8 @@ ast_for_with_item(struct compiling *c, const node *n, asdl_seq *content)
 
     REQ(n, with_item);
     context_expr = ast_for_expr(c, CHILD(n, 0));
+    if (!context_expr)
+        return NULL;
     if (NCH(n) == 3) {
         optional_vars = ast_for_expr(c, CHILD(n, 2));
 
