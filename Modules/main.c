@@ -94,13 +94,15 @@ PYTHONSTARTUP: file executed on interactive startup (no default)\n\
 PYTHONPATH   : '%c'-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
 ";
-static char *usage_5 = "\
-PYTHONHOME   : alternate <prefix> directory (or <prefix>%c<exec_prefix>).\n\
-               The default module search path uses %s.\n\
-PYTHONCASEOK : ignore case in 'import' statements (Windows).\n\
-PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n\
-PYTHONFSENCODING: Encoding used for the filesystem.\n\
-";
+static char *usage_5 =
+"PYTHONHOME   : alternate <prefix> directory (or <prefix>%c<exec_prefix>).\n"
+"               The default module search path uses %s.\n"
+"PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
+"PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
+#if !(defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)) && !defined(__APPLE__)
+"PYTHONFSENCODING: Encoding used for the filesystem.\n"
+#endif
+;
 
 FILE *
 _Py_wfopen(const wchar_t *path, const wchar_t *mode)

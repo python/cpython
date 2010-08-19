@@ -242,7 +242,9 @@ Filenames and unicode
 
 The filesystem encoding can be specified by setting the
 :envvar:`PYTHONFSENCODING` environment variable before running the interpreter.
-The value should be a string in the form ``<encoding>``, e.g. ``utf-8``.
+The value is an encoding name, e.g. ``iso-8859-1``. This variable is not
+available (ignored) on Windows and Mac OS X: the filesystem encoding is pinned
+to ``'mbcs'`` on Windows and ``'utf-8'`` on Mac OS X.
 
 The :mod:`os` module has two new functions: :func:`os.fsencode` and
 :func:`os.fsdecode`.
