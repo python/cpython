@@ -1164,6 +1164,8 @@ class FSEncodingTests(unittest.TestCase):
         self.assertEqual(process.returncode, 0)
         return stdout.decode('utf-8')
 
+    @unittest.skipIf(sys.platform in ('win32', 'darwin'),
+                     'PYTHONFSENCODING is ignored on Windows and Mac OS X')
     def test_encodings(self):
         def check(encoding, bytesfn, unicodefn):
             encoded = self.get_output(encoding, 'repr(os.fsencode(%a))' % unicodefn)
