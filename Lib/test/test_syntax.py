@@ -474,6 +474,12 @@ Traceback (most recent call last):
    File "<doctest test.test_syntax[50]>", line 1
 SyntaxError: can't assign to literal
 
+Corner-case that used to crash:
+
+    >>> def f(*xx, **__debug__): pass
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to __debug__
+
 """
 
 import re

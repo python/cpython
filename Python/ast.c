@@ -688,10 +688,10 @@ ast_for_arguments(struct compiling *c, const node *n)
     }
     args = (n_args ? asdl_seq_new(n_args, c->c_arena) : NULL);
     if (!args && n_args)
-        return NULL; /* Don't need to goto error; no objects allocated */
+        return NULL;
     defaults = (n_defaults ? asdl_seq_new(n_defaults, c->c_arena) : NULL);
     if (!defaults && n_defaults)
-        return NULL; /* Don't need to goto error; no objects allocated */
+        return NULL;
 
     /* fpdef: NAME | '(' fplist ')'
        fplist: fpdef (',' fpdef)* [',']
@@ -711,7 +711,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (i + 1 < NCH(n) && TYPE(CHILD(n, i + 1)) == EQUAL) {
                     expr_ty expression = ast_for_expr(c, CHILD(n, i + 2));
                     if (!expression)
-                        goto error;
+                        return NULL;
                     assert(defaults != NULL);
                     asdl_seq_SET(defaults, j++, expression);
                     i += 2;
@@ -722,11 +722,11 @@ ast_for_arguments(struct compiling *c, const node *n)
                        def f((x, (y))): pass will just incur the tuple unpacking warning. */
                     if (parenthesized && !complex_args) {
                         ast_error(n, "parenthesized arg with default");
-                        goto error;
+                        return NULL;
                     }
                     ast_error(n,
                              "non-default argument follows default argument");
-                    goto error;
+                    return NULL;
                 }
                 if (NCH(ch) == 3) {
                     ch = CHILD(ch, 1);
@@ -735,11 +735,11 @@ ast_for_arguments(struct compiling *c, const node *n)
                         /* We have complex arguments, setup for unpacking. */
                         if (Py_Py3kWarningFlag && !ast_warn(c, ch,
                             "tuple parameter unpacking has been removed in 3.x"))
-                            goto error;
+                            return NULL;
                         complex_args = 1;
                         asdl_seq_SET(args, k++, compiler_complex_args(c, ch));
                         if (!asdl_seq_GET(args, k-1))
-                                goto error;
+                                return NULL;
                     } else {
                         /* def foo((x)): setup for checking NAME below. */
                         /* Loop because there can be many parens and tuple
@@ -754,14 +754,14 @@ ast_for_arguments(struct compiling *c, const node *n)
                     PyObject *id;
                     expr_ty name;
                     if (!forbidden_check(c, n, STR(CHILD(ch, 0))))
-                        goto error;
+                        return NULL;
                     id = NEW_IDENTIFIER(CHILD(ch, 0));
                     if (!id)
-                        goto error;
+                        return NULL;
                     name = Name(id, Param, LINENO(ch), ch->n_col_offset,
                                 c->c_arena);
                     if (!name)
-                        goto error;
+                        return NULL;
                     asdl_seq_SET(args, k++, name);
 
                 }
@@ -769,40 +769,35 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (parenthesized && Py_Py3kWarningFlag &&
                     !ast_warn(c, ch, "parenthesized argument names "
                               "are invalid in 3.x"))
-                    goto error;
+                    return NULL;
 
                 break;
             }
             case STAR:
                 if (!forbidden_check(c, CHILD(n, i+1), STR(CHILD(n, i+1))))
-                    goto error;
+                    return NULL;
                 vararg = NEW_IDENTIFIER(CHILD(n, i+1));
                 if (!vararg)
-                    goto error;
+                    return NULL;
                 i += 3;
                 break;
             case DOUBLESTAR:
                 if (!forbidden_check(c, CHILD(n, i+1), STR(CHILD(n, i+1))))
-                    goto error;
+                    return NULL;
                 kwarg = NEW_IDENTIFIER(CHILD(n, i+1));
                 if (!kwarg)
-                    goto error;
+                    return NULL;
                 i += 3;
                 break;
             default:
                 PyErr_Format(PyExc_SystemError,
                              "unexpected node in varargslist: %d @ %d",
                              TYPE(ch), i);
-                goto error;
+                return NULL;
         }
     }
 
     return arguments(args, vararg, kwarg, defaults, c->c_arena);
-
- error:
-    Py_XDECREF(vararg);
-    Py_XDECREF(kwarg);
-    return NULL;
 }
 
 static expr_ty
@@ -887,9 +882,9 @@ ast_for_decorators(struct compiling *c, const node *n)
 
     for (i = 0; i < NCH(n); i++) {
         d = ast_for_decorator(c, CHILD(n, i));
-            if (!d)
-                return NULL;
-            asdl_seq_SET(decorator_seq, i, d);
+        if (!d)
+            return NULL;
+        asdl_seq_SET(decorator_seq, i, d);
     }
     return decorator_seq;
 }
@@ -2247,11 +2242,10 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
                 return NULL;
             }
             e = ast_for_testlist(c, ch);
-
-            /* set context to assign */
             if (!e)
                 return NULL;
 
+            /* set context to assign */
             if (!set_context(c, e, Store, CHILD(n, i)))
                 return NULL;
 
