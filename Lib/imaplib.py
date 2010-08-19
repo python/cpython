@@ -147,8 +147,6 @@ class IMAP4:
     class abort(error): pass        # Service errors - close and retry
     class readonly(abort): pass     # Mailbox status changed to READ-ONLY
 
-    mustquote = re.compile(br"[^\w!#$%&'*+,.:;<=>?^`|~-]", re.ASCII)
-
     def __init__(self, host = '', port = IMAP4_PORT):
         self.debug = Debug
         self.state = 'LOGOUT'
@@ -846,7 +844,6 @@ class IMAP4:
             if arg is None: continue
             if isinstance(arg, str):
                 arg = bytes(arg, "ASCII")
-            #data = data + b' ' + self._checkquote(arg)
             data = data + b' ' + arg
 
         literal = self.literal
@@ -1053,18 +1050,6 @@ class IMAP4:
         self.tagnum = self.tagnum + 1
         self.tagged_commands[tag] = None
         return tag
-
-
-    def _checkquote(self, arg):
-
-        # Must quote command args if non-alphanumeric chars present,
-        # and not already quoted.
-
-        if len(arg) >= 2 and (arg[0],arg[-1]) in (('(',')'),('"','"')):
-            return arg
-        if arg and self.mustquote.search(arg) is None:
-            return arg
-        return self._quote(arg)
 
 
     def _quote(self, arg):
