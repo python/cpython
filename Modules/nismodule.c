@@ -117,8 +117,8 @@ nis_foreach (int instatus, char *inkey, int inkeylen, char *inval,
             if (invallen > 0 && inval[invallen-1] == '\0')
             invallen--;
         }
-        key = PyUnicode_FromStringAndSize(inkey, inkeylen);
-        val = PyUnicode_FromStringAndSize(inval, invallen);
+        key = PyUnicode_DecodeFSDefaultAndSize(inkey, inkeylen);
+        val = PyUnicode_DecodeFSDefaultAndSize(inval, invallen);
         if (key == NULL || val == NULL) {
             /* XXX error -- don't know how to handle */
             PyErr_Clear();
@@ -159,30 +159,40 @@ nis_match (PyObject *self, PyObject *args, PyObject *kwdict)
 {
     char *match;
     char *domain = NULL;
-    int keylen, len;
+    Py_ssize_t keylen;
+    int len;
     char *key, *map;
     int err;
-    PyObject *res;
+    PyObject *ukey, *bkey, *res;
     int fix;
     static char *kwlist[] = {"key", "map", "domain", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict,
-                                     "s#s|s:match", kwlist,
-                                     &key, &keylen, &map, &domain))
+                                     "Us|s:match", kwlist,
+                                     &ukey, &map, &domain))
         return NULL;
-    if (!domain && ((err = yp_get_default_domain(&domain)) != 0))
+    if ((bkey = PyUnicode_EncodeFSDefault(ukey)) == NULL)
+        return NULL;
+    if (PyBytes_AsStringAndSize(bkey, &key, &keylen) == -1) {
+        Py_DECREF(bkey);
+        return NULL;
+    }
+    if (!domain && ((err = yp_get_default_domain(&domain)) != 0)) {
+        Py_DECREF(bkey);
         return nis_error(err);
+    }
     map = nis_mapname (map, &fix);
     if (fix)
         keylen++;
     Py_BEGIN_ALLOW_THREADS
     err = yp_match (domain, map, key, keylen, &match, &len);
     Py_END_ALLOW_THREADS
+    Py_DECREF(bkey);
     if (fix)
         len--;
     if (err != 0)
         return nis_error(err);
-    res = PyUnicode_FromStringAndSize (match, len);
+    res = PyUnicode_DecodeFSDefaultAndSize(match, len);
     free (match);
     return res;
 }

@@ -69,7 +69,8 @@ Extensions
 - Issue #5737: Add Solaris-specific mnemonics in the errno module.  Patch by
   Matthew Ahrens.
 
-- Restore GIL in nis_cat in case of error.
+- Restore GIL in nis_cat in case of error. Decode NIS data to fs encoding,
+  using the surrogate error handler.
 
 - Issue #665761: ``functools.reduce()`` will no longer mask exceptions
   other than ``TypeError`` raised by the iterator argument.
