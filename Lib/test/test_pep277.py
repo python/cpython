@@ -132,7 +132,10 @@ class UnicodeFileTests(unittest.TestCase):
         for name in others:
             if sys.platform == 'darwin' and normalize('NFD', name) in files:
                 # Mac OS X decomposes Unicode names.  See comment above.
-                os.stat(name)
+                try:
+                    os.stat(name)
+                except OSError as err:
+                    raise AssertionError("File %a doesn't exist" % name)
                 continue
             self._apply_failure(open, name, IOError)
             self._apply_failure(os.stat, name, OSError)
