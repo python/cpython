@@ -124,6 +124,7 @@ nis_foreach (int instatus, char *inkey, int inkeylen, char *inval,
             PyErr_Clear();
             Py_XDECREF(key);
             Py_XDECREF(val);
+            indata->state = PyEval_SaveThread();
             return 1;
         }
         err = PyDict_SetItem(indata->dict, key, val);
