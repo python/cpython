@@ -506,7 +506,7 @@ class SysModuleTest(unittest.TestCase):
         else:
             self.skipTest('%r is decodable with encoding %s'
                 % (non_decodable, encoding))
-        code = b'print("' + non_decodable + b'")'
+        code = b'print(ascii("' + non_decodable + b'"))'
         p = subprocess.Popen([sys.executable, "-c", code], stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         self.assertEqual(p.returncode, 1)
