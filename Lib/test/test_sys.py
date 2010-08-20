@@ -495,24 +495,21 @@ class SysModuleTest(unittest.TestCase):
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
 
-    def test_main_invalid_unicode(self):
-        import locale
+    def test_undecodable_code(self):
         non_decodable = b"\xff"
-        encoding = locale.getpreferredencoding()
-        try:
-            non_decodable.decode(encoding)
-        except UnicodeDecodeError:
-            pass
-        else:
-            self.skipTest('%r is decodable with encoding %s'
-                % (non_decodable, encoding))
-        code = b'print(ascii("' + non_decodable + b'"))'
-        p = subprocess.Popen([sys.executable, "-c", code], stderr=subprocess.PIPE)
+        env = os.environ.copy()
+        env['LANG'] = 'C'
+        code = b'import locale; '
+        code += b'print(ascii("' + non_decodable + b'"), locale.getpreferredencoding())'
+        p = subprocess.Popen(
+            [sys.executable, "-c", code],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            env=env)
         stdout, stderr = p.communicate()
-        self.assertEqual(p.returncode, 1)
         pattern = b"Unable to decode the command from the command line:"
-        if not stderr.startswith(pattern):
-            raise AssertionError("%a doesn't start with %a" % (stderr, pattern))
+        if not stdout.startswith(pattern):
+            raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
+        self.assertEqual(p.returncode, 1)
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
