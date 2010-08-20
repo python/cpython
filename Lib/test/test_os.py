@@ -1175,15 +1175,12 @@ class FSEncodingTests(unittest.TestCase):
             self.assertEqual(decoded, repr(unicodefn))
 
         check('utf-8', b'\xc3\xa9\x80', '\xe9\udc80')
-        try:
-            sys.executable.encode("ascii")
-        except UnicodeEncodeError:
-            # Python doesn't start with ASCII locale if its path is not ASCII,
-            # see issue #8611
-            pass
-        else:
-            check('ascii', b'abc\xff', 'abc\udcff')
-            check('iso-8859-15', b'\xef\xa4', '\xef\u20ac')
+
+        # Raise SkipTest() if sys.executable is not encodable to ascii
+        support.workaroundIssue8611()
+
+        check('ascii', b'abc\xff', 'abc\udcff')
+        check('iso-8859-15', b'\xef\xa4', '\xef\u20ac')
 
 
 def test_main():

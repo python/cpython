@@ -496,11 +496,16 @@ class SysModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, sys.intern, S("abc"))
 
     def test_undecodable_code(self):
-        non_decodable = b"\xff"
+        # Raise SkipTest() if sys.executable is not encodable to ascii
+        test.support.workaroundIssue8611()
+
+        undecodable = b"\xff"
         env = os.environ.copy()
         env['LANG'] = 'C'
-        code = b'import locale; '
-        code += b'print(ascii("' + non_decodable + b'"), locale.getpreferredencoding())'
+        code = (
+            b'import locale; '
+            b'print(ascii("' + undecodable + b'"), '
+                b'locale.getpreferredencoding())')
         p = subprocess.Popen(
             [sys.executable, "-c", code],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -587,28 +592,23 @@ class SysModuleTest(unittest.TestCase):
                 env=env)
             return output.rstrip().decode('ascii')
 
+        # Raise SkipTest() if sys.executable is not encodable to ascii
+        test.support.workaroundIssue8611()
+
+        # Even in C locale
+        env = os.environ.copy()
+        env['LANG'] = 'C'
         try:
-            sys.executable.encode('ascii')
-        except UnicodeEncodeError:
-            # Python doesn't start with ASCII locale if its path is not ASCII,
-            # see issue #8611
+            del env['PYTHONFSENCODING']
+        except KeyError:
             pass
-        else:
-            # Even in C locale
+        self.check_fsencoding(get_fsencoding(env), 'ascii')
+
+        # Filesystem encoding is hardcoded on Windows and Mac OS X
+        for encoding in ('ascii', 'cp850', 'iso8859-1', 'utf-8'):
             env = os.environ.copy()
-            env['LANG'] = 'C'
-            try:
-                del env['PYTHONFSENCODING']
-            except KeyError:
-                pass
-            self.check_fsencoding(get_fsencoding(env), 'ascii')
-
-            # Filesystem encoding is hardcoded on Windows and Mac OS X
-            for encoding in ('ascii', 'cp850', 'iso8859-1', 'utf-8'):
-                env = os.environ.copy()
-                env['PYTHONFSENCODING'] = encoding
-                self.check_fsencoding(get_fsencoding(env), encoding)
-
+            env['PYTHONFSENCODING'] = encoding
+            self.check_fsencoding(get_fsencoding(env), encoding)
 
     def test_setfilesystemencoding(self):
         old = sys.getfilesystemencoding()
