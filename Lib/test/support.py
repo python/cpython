@@ -1277,3 +1277,11 @@ def strip_python_stderr(stderr):
     """
     stderr = re.sub(br"\[\d+ refs\]\r?\n?$", b"", stderr).strip()
     return stderr
+
+def workaroundIssue8611():
+    try:
+        sys.executable.encode('ascii')
+    except UnicodeEncodeError:
+        raise unittest.SkipTest(
+            "Issue #8611: Python doesn't support ascii locale encoding "
+            "with an non-ascii path")
