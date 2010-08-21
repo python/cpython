@@ -58,8 +58,6 @@ class HMAC:
         if hasattr(self.inner, 'block_size'):
             blocksize = self.inner.block_size
             if blocksize < 16:
-                # Very low blocksize, most likely a legacy value like
-                # Lib/sha.py and Lib/md5.py have.
                 _warnings.warn('block_size of %d seems too small; using our '
                                'default of %d.' % (blocksize, self.blocksize),
                                RuntimeWarning, 2)
@@ -78,9 +76,6 @@ class HMAC:
         self.inner.update(key.translate(trans_36))
         if msg is not None:
             self.update(msg)
-
-##    def clear(self):
-##        raise NotImplementedError, "clear() method not available in HMAC."
 
     def update(self, msg):
         """Update this hashing object with the string msg.
