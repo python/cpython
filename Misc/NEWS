@@ -117,9 +117,6 @@ Extensions
 Library
 -------
 
-- Issue #9129: smtpd.py module is vulnerable to DoS attacks due to missing 
-  error handling when accepting new connections.
-
 - Issue #843590: Make "macintosh" an alias to the "mac_roman" encoding.
 
 - Create os.fsdecode(): decode from the filesystem encoding with
