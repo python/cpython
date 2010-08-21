@@ -12,10 +12,6 @@ trans_36 = bytes((x ^ 0x36) for x in range(256))
 # hashing module used.  Use digest_size from the instance of HMAC instead.
 digest_size = None
 
-# A unique object passed by HMAC.copy() to the HMAC constructor, in order
-# that the latter return very quickly.  HMAC("") in contrast is quite
-# expensive.
-_secret_backdoor_key = object()
 
 class HMAC:
     """RFC 2104 HMAC class.  Also complies with RFC 4231.
@@ -35,9 +31,6 @@ class HMAC:
 
         Note: key and msg must be bytes objects.
         """
-
-        if key is _secret_backdoor_key: # cheap
-            return
 
         if not isinstance(key, bytes):
             raise TypeError("expected bytes, but got %r" % type(key).__name__)
@@ -89,7 +82,8 @@ class HMAC:
 
         An update to this copy won't affect the original object.
         """
-        other = self.__class__(_secret_backdoor_key)
+        # Call __new__ directly to avoid the expensive __init__.
+        other = self.__class__.__new__(self.__class__)
         other.digest_cons = self.digest_cons
         other.digest_size = self.digest_size
         other.inner = self.inner.copy()
