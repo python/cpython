@@ -15,7 +15,7 @@ digest_size = None
 # A unique object passed by HMAC.copy() to the HMAC constructor, in order
 # that the latter return very quickly.  HMAC("") in contrast is quite
 # expensive.
-_secret_backdoor_key = []
+_secret_backdoor_key = object()
 
 class HMAC:
     """RFC 2104 HMAC class.  Also complies with RFC 4231.
