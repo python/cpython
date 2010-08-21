@@ -117,6 +117,8 @@ Extensions
 Library
 -------
 
+- Issue #843590: Make "macintosh" an alias to the "mac_roman" encoding.
+
 - Create os.fsdecode(): decode from the filesystem encoding with
   surrogateescape error handler, or strict error handler on Windows.
 
