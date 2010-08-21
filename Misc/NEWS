@@ -117,6 +117,9 @@ Extensions
 Library
 -------
 
+- Issue #9617: Signals received during a low-level write operation aren't
+  ignored by the buffered IO layer anymore.
+
 - Issue #843590: Make "macintosh" an alias to the "mac_roman" encoding.
 
 - Create os.fsdecode(): decode from the filesystem encoding with

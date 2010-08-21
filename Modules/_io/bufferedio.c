@@ -1665,6 +1665,11 @@ _bufferedwriter_flush_unlocked(buffered *self, int restore_pos)
         self->write_pos += n;
         self->raw_pos = self->write_pos;
         written += Py_SAFE_DOWNCAST(n, Py_off_t, Py_ssize_t);
+        /* Partial writes can return successfully when interrupted by a
+           signal (see write(2)).  We must run signal handlers before
+           blocking another time, possibly indefinitely. */
+        if (PyErr_CheckSignals() < 0)
+            goto error;
     }
 
     if (restore_pos) {
@@ -1802,6 +1807,11 @@ bufferedwriter_write(buffered *self, PyObject *args)
         }
         written += n;
         remaining -= n;
+        /* Partial writes can return successfully when interrupted by a
+           signal (see write(2)).  We must run signal handlers before
+           blocking another time, possibly indefinitely. */
+        if (PyErr_CheckSignals() < 0)
+            goto error;
     }
     if (self->readable)
         _bufferedreader_reset_buf(self);
