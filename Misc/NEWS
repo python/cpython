@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2521: Use weakrefs on for caching in the abc module, so that classes
+  are not held onto after they are deleted elsewhere.
+
 - Issue #9626: the view methods for collections.OrderedDict() were returning
   the unordered versions inherited from dict.  Those methods are now
   overridden to provide ordered views.
@@ -187,6 +190,9 @@ Library
 
 Extension Modules
 -----------------
+
+- As a result of issue #2521, the _weakref module is now compiled into the
+  interpreter by default.
 
 - Issue #9324: Add parameter validation to signal.signal on Windows in order
   to prevent crashes.
