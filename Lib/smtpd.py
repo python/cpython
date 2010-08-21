@@ -413,8 +413,21 @@ class SMTPServer(asyncore.dispatcher):
                 self.__class__.__name__, time.ctime(time.time()),
                 localaddr, remoteaddr), file=DEBUGSTREAM)
 
-    def handle_accept(self):
-        conn, addr = self.accept()
+    def handle_accept(self)
+        try:
+            conn, addr = self.accept()
+        except TypeError:
+            # sometimes accept() might return None
+            return
+        except socket.error, err:
+            # ECONNABORTED might be thrown
+            if err[0] != errno.ECONNABORTED:
+                raise
+            return
+        else:
+            # sometimes addr == None instead of (ip, port)
+            if addr == None:
+                return
         print('Incoming connection from %s' % repr(addr), file=DEBUGSTREAM)
         channel = self.channel_class(self, conn, addr)
 
