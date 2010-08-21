@@ -26,7 +26,8 @@ The :mod:`urllib.request` module defines the following functions:
    *data* should be a buffer in the standard
    :mimetype:`application/x-www-form-urlencoded` format.  The
    :func:`urllib.parse.urlencode` function takes a mapping or sequence
-   of 2-tuples and returns a string in this format.
+   of 2-tuples and returns a string in this format. urllib.request module uses
+   HTTP/1.1 and includes `Connection:close` header in its HTTP requests.
 
    The optional *timeout* parameter specifies a timeout in seconds for
    blocking operations like the connection attempt (if not specified,
