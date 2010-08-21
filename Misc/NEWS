@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9617: Signals received during a low-level write operation aren't
+  ignored by the buffered IO layer anymore.
+
 - Issue #2521: Use weakrefs on for caching in the abc module, so that classes
   are not held onto after they are deleted elsewhere.
 
