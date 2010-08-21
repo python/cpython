@@ -435,7 +435,7 @@ aliases = {
     'maclatin2'          : 'mac_latin2',
 
     # mac_roman codec
-    'macintosh'          : 'macintosh',
+    'macintosh'          : 'mac_roman',
     'macroman'           : 'mac_roman',
 
     # mac_turkish codec
