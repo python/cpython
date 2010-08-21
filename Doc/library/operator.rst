@@ -333,7 +333,23 @@ expect a function argument.
    attribute is requested, returns a tuple of attributes. After,
    ``f = attrgetter('name')``, the call ``f(b)`` returns ``b.name``.  After,
    ``f = attrgetter('name', 'date')``, the call ``f(b)`` returns ``(b.name,
-   b.date)``.
+   b.date)``.  Equivalent to::
+
+      def attrgetter(*items):
+          if len(items) == 1:
+              attr = items[0]
+              def g(obj):
+                  return resolve_attr(obj, attr)
+          else:
+              def g(obj):
+                  return tuple(resolve_att(obj, attr) for attr in items)
+          return g
+
+      def resolve_attr(obj, attr):
+          for name in attr.split("."):
+              obj = getattr(obj, name)
+          return obj
+
 
    The attribute names can also contain dots; after ``f = attrgetter('date.month')``,
    the call ``f(b)`` returns ``b.date.month``.
@@ -383,7 +399,12 @@ expect a function argument.
    additional arguments and/or keyword arguments are given, they will be given
    to the method as well.  After ``f = methodcaller('name')``, the call ``f(b)``
    returns ``b.name()``.  After ``f = methodcaller('name', 'foo', bar=1)``, the
-   call ``f(b)`` returns ``b.name('foo', bar=1)``.
+   call ``f(b)`` returns ``b.name('foo', bar=1)``.  Equivalent to::
+
+      def methodcaller(name, *args, **kwargs):
+          def caller(obj):
+              return getattr(obj, name)(*args, **kwargs)
+          return caller
 
 
 .. _operator-map:
