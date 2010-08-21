@@ -5,6 +5,7 @@
 
 import types
 
+from _weakrefset import WeakSet
 
 # Instance of old-style class
 class _C: pass
@@ -95,9 +96,9 @@ class ABCMeta(type):
                     abstracts.add(name)
         cls.__abstractmethods__ = frozenset(abstracts)
         # Set up inheritance registry
-        cls._abc_registry = set()
-        cls._abc_cache = set()
-        cls._abc_negative_cache = set()
+        cls._abc_registry = WeakSet()
+        cls._abc_cache = WeakSet()
+        cls._abc_negative_cache = WeakSet()
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
         return cls
 
@@ -128,7 +129,7 @@ class ABCMeta(type):
         """Override for isinstance(instance, cls)."""
         # Inline the cache checking when it's simple.
         subclass = getattr(instance, '__class__', None)
-        if subclass in cls._abc_cache:
+        if subclass is not None and subclass in cls._abc_cache:
             return True
         subtype = type(instance)
         # Old-style instances
@@ -152,7 +153,7 @@ class ABCMeta(type):
         # Check negative cache; may have to invalidate
         if cls._abc_negative_cache_version < ABCMeta._abc_invalidation_counter:
             # Invalidate the negative cache
-            cls._abc_negative_cache = set()
+            cls._abc_negative_cache = WeakSet()
             cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
         elif subclass in cls._abc_negative_cache:
             return False

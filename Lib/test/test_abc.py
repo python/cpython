@@ -3,7 +3,7 @@
 
 """Unit tests for abc.py."""
 
-import unittest
+import unittest, weakref
 from test import test_support
 
 import abc
@@ -208,6 +208,22 @@ class TestABC(unittest.TestCase):
         C()
         self.assertEqual(B.counter, 1)
 
+    def test_cache_leak(self):
+        # See issue #2521.
+        class A(object):
+            __metaclass__ = abc.ABCMeta
+            @abc.abstractmethod
+            def f(self):
+                pass
+        class C(A):
+            def f(self):
+                A.f(self)
+        r = weakref.ref(C)
+        # Trigger cache.
+        C().f()
+        del C
+        test_support.gc_collect()
+        self.assertEqual(r(), None)
 
 def test_main():
     test_support.run_unittest(TestABC)
