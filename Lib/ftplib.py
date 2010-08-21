@@ -38,13 +38,7 @@ python ftplib.py -d localhost -l -p -l
 
 import os
 import sys
-
-# Import SOCKS module if it exists, else standard socket module socket
-try:
-    import SOCKS; socket = SOCKS; del SOCKS # import SOCKS as socket
-    from socket import getfqdn; socket.getfqdn = getfqdn; del getfqdn
-except ImportError:
-    import socket
+import socket
 from socket import _GLOBAL_DEFAULT_TIMEOUT
 
 __all__ = ["FTP","Netrc"]
