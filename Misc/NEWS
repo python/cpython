@@ -95,6 +95,9 @@ C-API
 Library
 -------
 
+- Issue #9617: Signals received during a low-level write operation aren't
+  ignored by the buffered IO layer anymore.
+
 - Issue #9605: posix.getlogin() decodes the username with file filesystem
   encoding and surrogateescape error handler. Patch written by David Watson.
 
