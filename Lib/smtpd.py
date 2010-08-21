@@ -413,7 +413,7 @@ class SMTPServer(asyncore.dispatcher):
                 self.__class__.__name__, time.ctime(time.time()),
                 localaddr, remoteaddr), file=DEBUGSTREAM)
 
-    def handle_accept(self)
+    def handle_accept(self):
         conn, addr = self.accept()
         print('Incoming connection from %s' % repr(addr), file=DEBUGSTREAM)
         channel = self.channel_class(self, conn, addr)
