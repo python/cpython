@@ -174,7 +174,6 @@ GLHACK=-Dclear=__GLclear
 #_struct _struct.c	# binary structure packing/unpacking
 #time timemodule.c # -lm # time operations and variables
 #operator operator.c	# operator.add() and similar goodies
-#_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module
 #_random _randommodule.c	# Random number generator
 #_collections _collectionsmodule.c # Container types
