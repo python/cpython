@@ -344,15 +344,15 @@ expect a function argument.
    operand's :meth:`__getitem__` method.  If multiple items are specified,
    returns a tuple of lookup values.  Equivalent to::
 
-        def itemgetter(*items):
-            if len(items) == 1:
-                item = items[0]
-                def g(obj):
-                    return obj[item]
-            else:
-                def g(obj):
-                    return tuple(obj[item] for item in items)
-            return g
+      def itemgetter(*items):
+          if len(items) == 1:
+              item = items[0]
+              def g(obj):
+                  return obj[item]
+          else:
+              def g(obj):
+                  return tuple(obj[item] for item in items)
+          return g
 
    The items can be any type accepted by the operand's :meth:`__getitem__`
    method.  Dictionaries accept any hashable value.  Lists, tuples, and
