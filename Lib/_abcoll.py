@@ -390,6 +390,10 @@ class MappingView(Sized):
 
 class KeysView(MappingView, Set):
 
+    @classmethod
+    def _from_iterable(self, it):
+        return set(it)
+
     def __contains__(self, key):
         return key in self._mapping
 
@@ -399,6 +403,10 @@ class KeysView(MappingView, Set):
 
 
 class ItemsView(MappingView, Set):
+
+    @classmethod
+    def _from_iterable(self, it):
+        return set(it)
 
     def __contains__(self, item):
         key, value = item
