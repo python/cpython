@@ -7,13 +7,21 @@
 
 import imp
 import sys
+import time
 import unittest
 from test.support import verbose, TestFailed, import_module, run_unittest
 thread = import_module('_thread')
 
 def task(N, done, done_tasks, errors):
     try:
-        import random
+        # We don't use modulefinder but still import it in order to stress
+        # importing of different modules from several threads.
+        if len(done_tasks) % 2:
+            import modulefinder
+            import random
+        else:
+            import random
+            import modulefinder
         # This will fail if random is not completely initialized
         x = random.randrange(1, 3)
     except Exception as e:
@@ -23,6 +31,33 @@ def task(N, done, done_tasks, errors):
         finished = len(done_tasks) == N
         if finished:
             done.release()
+
+
+class Finder:
+    """A dummy finder to detect concurrent access to its find_module()
+    method."""
+
+    def __init__(self):
+        self.numcalls = 0
+        self.x = 0
+        self.lock = thread.allocate_lock()
+
+    def find_module(self, name, path=None):
+        # Simulate some thread-unsafe behaviour. If calls to find_module()
+        # are properly serialized, `x` will end up the same as `numcalls`.
+        # Otherwise not.
+        with self.lock:
+            self.numcalls += 1
+        x = self.x
+        time.sleep(0.1)
+        self.x = x + 1
+
+class FlushingFinder:
+    """A dummy finder which flushes sys.path_importer_cache when it gets
+    called."""
+
+    def find_module(self, name, path=None):
+        sys.path_importer_cache.clear()
 
 
 class ThreadedImportTests(unittest.TestCase):
@@ -37,7 +72,7 @@ class ThreadedImportTests(unittest.TestCase):
         if self.old_random is not None:
             sys.modules['random'] = self.old_random
 
-    def test_parallel_module_init(self):
+    def check_parallel_module_init(self):
         if imp.lock_held():
             # This triggers on, e.g., from test import autotest.
             raise unittest.SkipTest("can't run when import lock is held")
@@ -47,11 +82,12 @@ class ThreadedImportTests(unittest.TestCase):
         for N in (20, 50) * 3:
             if verbose:
                 print("Trying", N, "threads ...", end=' ')
-            # Make sure that random gets reimported freshly
-            try:
-                del sys.modules['random']
-            except KeyError:
-                pass
+            # Make sure that random and modulefinder get reimported freshly
+            for modname in ['random', 'modulefinder']:
+                try:
+                    del sys.modules[modname]
+                except KeyError:
+                    pass
             errors = []
             done_tasks = []
             for i in range(N):
@@ -61,6 +97,42 @@ class ThreadedImportTests(unittest.TestCase):
             if verbose:
                 print("OK.")
         done.release()
+
+    def test_parallel_module_init(self):
+        self.check_parallel_module_init()
+
+    def test_parallel_meta_path(self):
+        finder = Finder()
+        sys.meta_path.append(finder)
+        try:
+            self.check_parallel_module_init()
+            self.assertGreater(finder.numcalls, 0)
+            self.assertEqual(finder.x, finder.numcalls)
+        finally:
+            sys.meta_path.remove(finder)
+
+    def test_parallel_path_hooks(self):
+        # Here the Finder instance is only used to check concurrent calls
+        # to path_hook().
+        finder = Finder()
+        # In order for our path hook to be called at each import, we need
+        # to flush the path_importer_cache, which we do by registering a
+        # dedicated meta_path entry.
+        flushing_finder = FlushingFinder()
+        def path_hook(path):
+            finder.find_module('')
+            raise ImportError
+        sys.path_hooks.append(path_hook)
+        sys.meta_path.append(flushing_finder)
+        try:
+            # Flush the cache a first time
+            flushing_finder.find_module('')
+            numtests = self.check_parallel_module_init()
+            self.assertGreater(finder.numcalls, 0)
+            self.assertEqual(finder.x, finder.numcalls)
+        finally:
+            sys.meta_path.remove(flushing_finder)
+            sys.path_hooks.remove(path_hook)
 
     def test_import_hangers(self):
         # In case this test is run again, make sure the helper module
