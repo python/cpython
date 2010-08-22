@@ -66,7 +66,8 @@ Core and Builtins
 Extensions
 ----------
 
-- Issue #1027206: Support IDNA in gethostbyname, gethostbyname_ex and getaddrinfo.
+- Issue #1027206: Support IDNA in gethostbyname, gethostbyname_ex, 
+  getaddrinfo and gethostbyaddr.
 
 - Issue #9214: Set operations on a KeysView or ItemsView in collections
   now correctly return a set.  (Patch by Eli Bendersky.)

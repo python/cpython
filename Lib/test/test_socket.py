@@ -642,6 +642,7 @@ class GeneralModuleTests(unittest.TestCase):
         socket.gethostbyname('испытание.python.org')
         socket.gethostbyname_ex('испытание.python.org')
         socket.getaddrinfo('испытание.python.org',0)
+        socket.gethostbyaddr('испытание.python.org')
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicTCPTest(SocketConnectedTest):
