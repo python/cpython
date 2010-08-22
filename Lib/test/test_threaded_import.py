@@ -5,12 +5,15 @@
 # complains several times about module random having no attribute
 # randrange, and then Python hangs.
 
+import os
 import imp
 import sys
 import time
+import shutil
 import unittest
-from test.support import verbose, TestFailed, import_module, run_unittest
+from test.support import verbose, import_module, run_unittest, TESTFN
 thread = import_module('_thread')
+threading = import_module('threading')
 
 def task(N, done, done_tasks, errors):
     try:
@@ -32,6 +35,25 @@ def task(N, done, done_tasks, errors):
         if finished:
             done.release()
 
+# Create a circular import structure: A -> C -> B -> D -> A
+# NOTE: `time` is already loaded and therefore doesn't threaten to deadlock.
+
+circular_imports_modules = {
+    'A': """if 1:
+        import time
+        time.sleep(%(delay)s)
+        x = 'a'
+        import C
+        """,
+    'B': """if 1:
+        import time
+        time.sleep(%(delay)s)
+        x = 'b'
+        import D
+        """,
+    'C': """import B""",
+    'D': """import A""",
+}
 
 class Finder:
     """A dummy finder to detect concurrent access to its find_module()
@@ -144,10 +166,46 @@ class ThreadedImportTests(unittest.TestCase):
         import test.threaded_import_hangers
         self.assertFalse(test.threaded_import_hangers.errors)
 
+    def test_circular_imports(self):
+        # The goal of this test is to exercise implementations of the import
+        # lock which use a per-module lock, rather than a global lock.
+        # In these implementations, there is a possible deadlock with
+        # circular imports, for example:
+        # - thread 1 imports A (grabbing the lock for A) which imports B
+        # - thread 2 imports B (grabbing the lock for B) which imports A
+        # Such implementations should be able to detect such situations and
+        # resolve them one way or the other, without freezing.
+        # NOTE: our test constructs a slightly less trivial import cycle,
+        # in order to better stress the deadlock avoidance mechanism.
+        delay = 0.5
+        os.mkdir(TESTFN)
+        self.addCleanup(shutil.rmtree, TESTFN)
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        for name, contents in circular_imports_modules.items():
+            contents = contents % {'delay': delay}
+            with open(os.path.join(TESTFN, name + ".py"), "wb") as f:
+                f.write(contents.encode('utf-8'))
+            self.addCleanup(sys.modules.pop, name, None)
+
+        results = []
+        def import_ab():
+            import A
+            results.append(getattr(A, 'x', None))
+        def import_ba():
+            import B
+            results.append(getattr(B, 'x', None))
+        t1 = threading.Thread(target=import_ab)
+        t2 = threading.Thread(target=import_ba)
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+        self.assertEqual(set(results), {'a', 'b'})
+
 
 def test_main():
     run_unittest(ThreadedImportTests)
-
 
 if __name__ == "__main__":
     test_main()
