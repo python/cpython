@@ -330,14 +330,6 @@ class TestErrorHandling(unittest.TestCase):
             self.assertRaises(TypeError, f, 2, LenOnly())
 
     def test_get_only(self):
-        for f in (self.module.heapify, self.module.heappop):
-            self.assertRaises(TypeError, f, GetOnly())
-        for f in (self.module.heappush, self.module.heapreplace):
-            self.assertRaises(TypeError, f, GetOnly(), 10)
-        for f in (self.module.nlargest, self.module.nsmallest):
-            self.assertRaises(TypeError, f, 2, GetOnly())
-
-    def test_get_only(self):
         seq = [CmpErr(), CmpErr(), CmpErr()]
         for f in (self.module.heapify, self.module.heappop):
             self.assertRaises(ZeroDivisionError, f, seq)
