@@ -637,6 +637,11 @@ class GeneralModuleTests(unittest.TestCase):
                                flags=socket.AI_PASSIVE)
         self.assertEqual(a, b)
 
+    def test_idna(self):
+        # these should all be successful
+        socket.gethostbyname('испытание.python.org')
+        socket.gethostbyname_ex('испытание.python.org')
+        socket.getaddrinfo('испытание.python.org',0)
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicTCPTest(SocketConnectedTest):

@@ -3000,12 +3000,16 @@ socket_gethostbyname(PyObject *self, PyObject *args)
 {
     char *name;
     sock_addr_t addrbuf;
+    PyObject *ret = NULL;
 
-    if (!PyArg_ParseTuple(args, "s:gethostbyname", &name))
+    if (!PyArg_ParseTuple(args, "et:gethostbyname", "idna", &name))
         return NULL;
     if (setipaddr(name, SAS2SA(&addrbuf),  sizeof(addrbuf), AF_INET) < 0)
-        return NULL;
-    return makeipaddr(SAS2SA(&addrbuf), sizeof(struct sockaddr_in));
+        goto finally;
+    ret = makeipaddr(SAS2SA(&addrbuf), sizeof(struct sockaddr_in));
+finally:
+    PyMem_Free(name);
+    return ret;
 }
 
 PyDoc_STRVAR(gethostbyname_doc,
@@ -3156,7 +3160,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     struct sockaddr_in addr;
 #endif
     struct sockaddr *sa;
-    PyObject *ret;
+    PyObject *ret = NULL;
 #ifdef HAVE_GETHOSTBYNAME_R
     struct hostent hp_allocated;
 #ifdef HAVE_GETHOSTBYNAME_R_3_ARG
@@ -3171,10 +3175,10 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 
-    if (!PyArg_ParseTuple(args, "s:gethostbyname_ex", &name))
+    if (!PyArg_ParseTuple(args, "et:gethostbyname_ex", "idna", &name))
         return NULL;
     if (setipaddr(name, (struct sockaddr *)&addr, sizeof(addr), AF_INET) < 0)
-        return NULL;
+        goto finally;
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
@@ -3204,6 +3208,8 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
 #endif
+finally:
+    PyMem_Free(name);
     return ret;
 }
 
@@ -3228,7 +3234,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     struct sockaddr *sa = (struct sockaddr *)&addr;
     char *ip_num;
     struct hostent *h;
-    PyObject *ret;
+    PyObject *ret = NULL;
 #ifdef HAVE_GETHOSTBYNAME_R
     struct hostent hp_allocated;
 #ifdef HAVE_GETHOSTBYNAME_R_3_ARG
@@ -3250,11 +3256,11 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     int al;
     int af;
 
-    if (!PyArg_ParseTuple(args, "s:gethostbyaddr", &ip_num))
+    if (!PyArg_ParseTuple(args, "et:gethostbyaddr", "idna", &ip_num))
         return NULL;
     af = AF_UNSPEC;
     if (setipaddr(ip_num, sa, sizeof(addr), af) < 0)
-        return NULL;
+        goto finally;
     af = sa->sa_family;
     ap = NULL;
     al = 0;
@@ -3271,7 +3277,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 #endif
     default:
         PyErr_SetString(socket_error, "unsupported address family");
-        return NULL;
+        goto finally;
     }
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
@@ -3298,6 +3304,8 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
 #endif
+finally:
+    PyMem_Free(ip_num);
     return ret;
 }
 
