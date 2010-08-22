@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9214: Set operations on KeysView or ItemsView in the collections
+  module now correctly return a set.  (Patch by Eli Bendersky.)
+
 - Issue #9617: Signals received during a low-level write operation aren't
   ignored by the buffered IO layer anymore.
 
