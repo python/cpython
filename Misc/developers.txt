@@ -20,6 +20,9 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Daniel Stutzbach was given commit access on Aug 22 2010 by MvL,
+  for general bug fixing.
+
 - Ask Solem was given commit access on Aug 17 2010 by MvL,
   on recommendation by Jesse Noller, for work on the multiprocessing
   library.
