@@ -123,6 +123,9 @@ Extensions
 Library
 -------
 
+- Issue #9572: Importlib should not raise an exception if a directory it
+  thought it needed to create was done concurrently by another process.
+
 - Issue #9617: Signals received during a low-level write operation aren't
   ignored by the buffered IO layer anymore.
 
