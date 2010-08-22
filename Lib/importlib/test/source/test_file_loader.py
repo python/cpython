@@ -8,6 +8,7 @@ import imp
 import marshal
 import os
 import py_compile
+import shutil
 import stat
 import sys
 import unittest
@@ -112,18 +113,20 @@ class SimpleTest(unittest.TestCase):
     def test_file_from_empty_string_dir(self):
         # Loading a module found from an empty string entry on sys.path should
         # not only work, but keep all attributes relative.
-        with open('_temp.py', 'w') as file:
+        file_path = '_temp.py'
+        with open(file_path, 'w') as file:
             file.write("# test file for importlib")
         try:
             with util.uncache('_temp'):
-                loader = _bootstrap._SourceFileLoader('_temp', '_temp.py')
+                loader = _bootstrap._SourceFileLoader('_temp', file_path)
                 mod = loader.load_module('_temp')
-                self.assertEqual('_temp.py', mod.__file__)
-                self.assertEqual(imp.cache_from_source('_temp.py'),
+                self.assertEqual(file_path, mod.__file__)
+                self.assertEqual(imp.cache_from_source(file_path),
                                  mod.__cached__)
-
         finally:
-            os.unlink('_temp.py')
+            os.unlink(file_path)
+            pycache = os.path.dirname(imp.cache_from_source(file_path))
+            shutil.rmtree(pycache)
 
 
 class BadBytecodeTest(unittest.TestCase):
@@ -380,7 +383,7 @@ def test_main():
     run_unittest(SimpleTest,
                  SourceLoaderBadBytecodeTest,
                  SourcelessLoaderBadBytecodeTest
-                 )
+                )
 
 
 if __name__ == '__main__':
