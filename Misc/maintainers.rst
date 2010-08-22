@@ -130,7 +130,7 @@ keyword
 lib2to3             benjamin.peterson
 linecache
 locale              loewis, lemburg
-logging             vsajip
+logging             vinay.sajip
 macpath
 mailbox             andrew.kuchling
 mailcap
