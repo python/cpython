@@ -1080,7 +1080,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
     /* we have a valid line */
     n = strlen(p);
     if (n > 0) {
-        char *line;
+        const char *line;
         int length = _py_get_history_length();
         if (length > 0)
 #ifdef __APPLE__
@@ -1089,10 +1089,10 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
                  * Libedit's emulation uses 0-based indexes,
                  * the real readline uses 1-based indexes.
                  */
-                line = history_get(length - 1)->line;
+                line = (const char *)history_get(length - 1)->line;
             } else
 #endif /* __APPLE__ */
-            line = history_get(length)->line;
+            line = (const char *)history_get(length)->line;
         else
             line = "";
         if (strcmp(p, line))
