@@ -13,7 +13,7 @@ import re
 from collections import Hashable, Iterable, Iterator
 from collections import Sized, Container, Callable
 from collections import Set, MutableSet
-from collections import Mapping, MutableMapping
+from collections import Mapping, MutableMapping, KeysView, ItemsView, UserDict
 from collections import Sequence, MutableSequence
 from collections import ByteString
 
@@ -515,6 +515,31 @@ class TestCollectionABCs(ABCTestCase):
             self.assertTrue(issubclass(sample, MutableMapping))
         self.validate_abstract_methods(MutableMapping, '__contains__', '__iter__', '__len__',
             '__getitem__', '__setitem__', '__delitem__')
+
+    def test_MutableMapping_subclass(self):
+        # Test issue 9214
+        mymap = UserDict()
+        mymap['red'] = 5
+        self.assert_(isinstance(mymap.keys(), Set))
+        self.assert_(isinstance(mymap.keys(), KeysView))
+        self.assert_(isinstance(mymap.items(), Set))
+        self.assert_(isinstance(mymap.items(), ItemsView))
+
+        mymap = UserDict()
+        mymap['red'] = 5
+        z = mymap.keys() | {'orange'}
+        self.assertEqual(type(z), set)
+        list(z)
+        mymap['blue'] = 7               # Shouldn't affect 'z'
+        self.assertEqual(sorted(z), ['orange', 'red'])
+
+        mymap = UserDict()
+        mymap['red'] = 5
+        z = mymap.items() | {('orange', 3)}
+        self.assertEqual(type(z), set)
+        list(z)
+        mymap['blue'] = 7               # Shouldn't affect 'z'
+        self.assertEqual(sorted(z), [('orange', 3), ('red', 5)])
 
     def test_Sequence(self):
         for sample in [tuple, list, bytes, str]:
