@@ -54,8 +54,8 @@ aifc                r.david.murray
 argparse            bethard
 array
 ast
-asynchat            josiahcarlson, giampaolo.rodola
-asyncore            josiahcarlson, giampaolo.rodola
+asynchat            josiahcarlson, giampaolo.rodola, stutzbach
+asyncore            josiahcarlson, giampaolo.rodola, stutzbach
 atexit
 audioop
 base64
@@ -75,7 +75,7 @@ cmd
 code
 codecs              lemburg, doerwalter
 codeop
-collections         rhettinger
+collections         rhettinger, stutzbach
 colorsys
 compileall
 ConfigParser
@@ -116,7 +116,7 @@ glob
 grp
 gzip
 hashlib
-heapq               rhettinger
+heapq               rhettinger, stutzbach
 hmac
 htmlentitydefs
 htmllib
@@ -128,7 +128,7 @@ imghdr
 imp
 importlib           brett.cannon
 inspect
-io                  pitrou, benjamin.peterson
+io                  pitrou, benjamin.peterson, stutzbach
 itertools           rhettinger
 json                bob.ippolito (inactive)
 keyword
@@ -140,7 +140,7 @@ macpath
 mailbox             andrew.kuchling
 mailcap
 marshal
-math                mark.dickinson, rhettinger
+math                mark.dickinson, rhettinger, stutzbach
 mimetypes
 mmap
 modulefinder        theller, jvr
@@ -237,6 +237,7 @@ warnings            brett.cannon
 wave
 weakref             fdrake, pitrou
 webbrowser          georg.brandl
+winreg              brian.curtin*, stutzbach
 winsound            effbot (inactive)
 wsgiref             pje
 xdrlib
@@ -267,7 +268,7 @@ pybench             lemburg
 Platform            Maintainers
 ------------------  -----------
 AIX
-Cygwin              jlt63
+Cygwin              jlt63, stutzbach
 FreeBSD
 HP-UX
 Linux
@@ -295,9 +296,9 @@ documentation       georg.brandl, ezio.melotti
 GUI
 i18n                lemburg
 import machinery    brett.cannon, ncoghlan
-io                  pitrou, benjamin.peterson
+io                  pitrou, benjamin.peterson, stutzbach
 locale              lemburg, loewis
-mathematics         mark.dickinson, eric.smith, lemburg
+mathematics         mark.dickinson, eric.smith, lemburg, stutzbach
 memory management   tim_one, lemburg
 networking          giampaolo.rodola
 packaging           tarek, lemburg
