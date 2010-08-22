@@ -66,6 +66,9 @@ Core and Builtins
 Extensions
 ----------
 
+- Issue #9214: Set operations on a KeysView or ItemsView in collections
+  now correctly return a set.  (Patch by Eli Bendersky.)
+
 - Issue #5737: Add Solaris-specific mnemonics in the errno module.  Patch by
   Matthew Ahrens.
 
