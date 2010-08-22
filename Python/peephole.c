@@ -159,13 +159,16 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
             return 0;
     }
     if (newconst == NULL) {
-        PyErr_Clear();
+        if(!PyErr_ExceptionMatches(PyExc_KeyboardInterrupt))
+            PyErr_Clear();
         return 0;
     }
     size = PyObject_Size(newconst);
-    if (size == -1)
+    if (size == -1) {
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt))
+            return 0;
         PyErr_Clear();
-    else if (size > 20) {
+    } else if (size > 20) {
         Py_DECREF(newconst);
         return 0;
     }
@@ -219,7 +222,8 @@ fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts)
             return 0;
     }
     if (newconst == NULL) {
-        PyErr_Clear();
+        if(!PyErr_ExceptionMatches(PyExc_KeyboardInterrupt))
+            PyErr_Clear();
         return 0;
     }
 
