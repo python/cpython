@@ -117,6 +117,20 @@ class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
 
     """
 
+    def path_mtime(self, path:str) -> int:
+        """Return the modification time for the path."""
+        raise NotImplementedError
+
+    def set_data(self, path:str, data:bytes) -> None:
+        """Write the bytes to the path (if possible).
+
+        Any needed intermediary directories are to be created. If for some
+        reason the file cannot be written because of permissions, fail
+        silently.
+
+        """
+        raise NotImplementedError
+
 
 class PyLoader(SourceLoader):
 
