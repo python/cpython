@@ -339,7 +339,7 @@ Encoders and decoders
    encoders and decoders.  Otherwise, it will be a :exc:`ValueError` to encode
    such floats.
 
-   If *sort_keys* is ``True`` (the default), then the output of dictionaries
+   If *sort_keys* is ``True`` (default ``False``), then the output of dictionaries
    will be sorted by key; this is useful for regression tests to ensure that
    JSON serializations can be compared on a day-to-day basis.
 
