@@ -617,12 +617,16 @@ def _removeHandlerRef(wr):
     """
     Remove a handler reference from the internal cleanup list.
     """
-    _acquireLock()
-    try:
-        if wr in _handlerList:
-            _handlerList.remove(wr)
-    finally:
-        _releaseLock()
+    # This function can be called during module teardown, when globals are
+    # set to None. If _acquireLock is None, assume this is the case and do
+    # nothing.
+    if _acquireLock is not None:
+        _acquireLock()
+        try:
+            if wr in _handlerList:
+                _handlerList.remove(wr)
+        finally:
+            _releaseLock()
 
 def _addHandlerRef(handler):
     """
@@ -1612,8 +1616,16 @@ def shutdown(handlerList=_handlerList):
         #we just ignore them if raiseExceptions is not set
         try:
             h = wr()
-            h.flush()
-            h.close()
+            if h:
+                try:
+                    h.flush()
+                    h.close()
+                except (IOError, ValueError):
+                    # Ignore errors which might be caused
+                    # because handlers have been closed but
+                    # references to them are still around at
+                    # application exit.
+                    pass
         except:
             if raiseExceptions:
                 raise
