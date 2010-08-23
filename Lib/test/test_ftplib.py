@@ -606,6 +606,18 @@ class TestFTPClass(TestCase):
         self.assertEqual(self.server.handler_instance.last_received_cmd, 'quit')
         self.assertFalse(is_client_connected())
 
+    def test_parse257(self):
+        self.assertEqual(ftplib.parse257('257 "/foo/bar"'), '/foo/bar')
+        self.assertEqual(ftplib.parse257('257 "/foo/bar" created'), '/foo/bar')
+        self.assertEqual(ftplib.parse257('257 ""'), '')
+        self.assertEqual(ftplib.parse257('257 "" created'), '')
+        self.assertRaises(ftplib.error_reply, ftplib.parse257, '250 "/foo/bar"')
+        # The 257 response is supposed to include the directory
+        # name and in case it contains embedded double-quotes
+        # they must be doubled (see RFC-959, chapter 7, appendix 2).
+        self.assertEqual(ftplib.parse257('257 "/foo/b""ar"'), '/foo/b"ar')
+        self.assertEqual(ftplib.parse257('257 "/foo/b""ar" created'), '/foo/b"ar')
+
 
 class TestIPv6Environment(TestCase):
 

@@ -565,7 +565,11 @@ class FTP:
 
     def mkd(self, dirname):
         '''Make a directory, return its full pathname.'''
-        resp = self.sendcmd('MKD ' + dirname)
+        resp = self.voidcmd('MKD ' + dirname)
+        # fix around non-compliant implementations such as IIS shipped
+        # with Windows server 2003
+        if not resp.startswith('257'):
+            return ''
         return parse257(resp)
 
     def rmd(self, dirname):
@@ -574,7 +578,11 @@ class FTP:
 
     def pwd(self):
         '''Return current working directory.'''
-        resp = self.sendcmd('PWD')
+        resp = self.voidcmd('PWD')
+        # fix around non-compliant implementations such as IIS shipped
+        # with Windows server 2003
+        if not resp.startswith('257'):
+            return ''
         return parse257(resp)
 
     def quit(self):
