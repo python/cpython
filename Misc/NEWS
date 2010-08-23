@@ -95,6 +95,9 @@ C-API
 Library
 -------
 
+- Issue #9129: smtpd.py is vulnerable to DoS attacks deriving from missing 
+  error handling when accepting a new connection.
+
 - Issue #658749: asyncore's connect() method now correctly interprets winsock
   errors.
 
