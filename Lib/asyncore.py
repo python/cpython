@@ -51,7 +51,7 @@ import socket
 import sys
 import time
 import os
-from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
+from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
      ENOTCONN, ESHUTDOWN, EINTR, EISCONN, EBADF, ECONNABORTED, errorcode
 
 try:
@@ -333,8 +333,8 @@ class dispatcher:
     def connect(self, address):
         self.connected = False
         err = self.socket.connect_ex(address)
-        # XXX Should interpret Winsock return values
-        if err in (EINPROGRESS, EALREADY, EWOULDBLOCK):
+        if err in (EINPROGRESS, EALREADY, EWOULDBLOCK) \
+        or err == EINVAL and os.name in ('nt', 'ce'):
             return
         if err in (0, EISCONN):
             self.addr = address

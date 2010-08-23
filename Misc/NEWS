@@ -95,6 +95,9 @@ C-API
 Library
 -------
 
+- Issue #658749: asyncore's connect() method now correctly interprets winsock
+  errors.
+
 - Issue #9214: Set operations on KeysView or ItemsView in the collections
   module now correctly return a set.  (Patch by Eli Bendersky.)
 
