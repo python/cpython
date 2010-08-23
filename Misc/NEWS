@@ -123,8 +123,12 @@ Extensions
 Library
 -------
 
+- Issue #9601: ftplib now provides a workaround for non-compliant 
+  implementations such as IIS shipped with Windows server 2003 returning invalid 
+  response codes for MKD and PWD commands.
+
 - Issue #658749: asyncore's connect() method now correctly interprets winsock
-  errors;
+  errors.
 
 - Issue #9501: Fixed logging regressions in cleanup code.
 
@@ -290,6 +294,8 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #9601: Provide a test case for ftplib.parse257.
 
 - Issue #8857: Provide a test case for socket.getaddrinfo.
 
