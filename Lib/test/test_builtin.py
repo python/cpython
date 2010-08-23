@@ -2,12 +2,16 @@
 
 import platform
 import unittest
+import sys
+import warnings
+import collections
+import io
+import types
+import builtins
+import random
 from test.support import fcmp, TESTFN, unlink,  run_unittest, check_warnings
 from operator import neg
 
-import sys, warnings, random, collections, io
-
-import builtins
 
 class Squares:
 
@@ -243,7 +247,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
 
     def test_delattr(self):
-        import sys
         sys.spam = 1
         delattr(sys, 'spam')
         self.assertRaises(TypeError, delattr)
@@ -257,11 +260,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertIn('local_var', dir())
 
         # dir(module)
-        import sys
         self.assertIn('exit', dir(sys))
 
         # dir(module_with_invalid__dict__)
-        import types
         class Foo(types.ModuleType):
             __dict__ = 8
         f = Foo("foo")
@@ -480,7 +481,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, list, filter(42, (1, 2)))
 
     def test_getattr(self):
-        import sys
         self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
         self.assertRaises(TypeError, getattr, sys, 1)
         self.assertRaises(TypeError, getattr, sys, 1, "foo")
@@ -490,7 +490,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(AttributeError, getattr, 1, "\uDAD1\uD51E")
 
     def test_hasattr(self):
-        import sys
         self.assertTrue(hasattr(sys, 'stdout'))
         self.assertRaises(TypeError, hasattr, sys, 1)
         self.assertRaises(TypeError, hasattr)
@@ -1206,7 +1205,6 @@ class BuiltinTest(unittest.TestCase):
 
     def test_vars(self):
         self.assertEqual(set(vars()), set(dir()))
-        import sys
         self.assertEqual(set(vars(sys)), set(dir(sys)))
         self.assertEqual(self.get_vars_f0(), {})
         self.assertEqual(self.get_vars_f2(), {'a': 1, 'b': 2})
