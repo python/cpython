@@ -121,7 +121,15 @@ class SMTPChannel(asynchat.async_chat):
         self.rcpttos = []
         self.received_data = ''
         self.fqdn = socket.getfqdn()
-        self.peer = conn.getpeername()
+        try:
+            self.peer = conn.getpeername()
+        except socket.error as err:
+            # a race condition  may occur if the other end is closing
+            # before we can get the peername
+            self.close()
+            if err.args[0] != errno.ENOTCONN:
+                raise
+            return
         print('Peer:', repr(self.peer), file=DEBUGSTREAM)
         self.push('220 %s %s' % (self.fqdn, __version__))
         self.set_terminator(b'\r\n')
@@ -414,7 +422,20 @@ class SMTPServer(asyncore.dispatcher):
                 localaddr, remoteaddr), file=DEBUGSTREAM)
 
     def handle_accept(self):
-        conn, addr = self.accept()
+        try:
+            conn, addr = self.accept()
+        except TypeError:
+            # sometimes accept() might return None
+            return
+        except socket.error as err:
+            # ECONNABORTED might be thrown
+            if err.args[0] != errno.ECONNABORTED:
+                raise
+            return
+        else:
+            # sometimes addr == None instead of (ip, port)
+            if addr == None:
+                return
         print('Incoming connection from %s' % repr(addr), file=DEBUGSTREAM)
         channel = self.channel_class(self, conn, addr)
 
