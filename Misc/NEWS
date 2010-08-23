@@ -123,6 +123,9 @@ Extensions
 Library
 -------
 
+- Issue #658749: asyncore's connect() method now correctly interprets winsock
+  errors;
+
 - Issue #9501: Fixed logging regressions in cleanup code.
 
 - Fix functools.total_ordering() to actually work.
