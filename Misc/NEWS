@@ -123,6 +123,8 @@ Extensions
 Library
 -------
 
+- Issue #9501: Fixed logging regressions in cleanup code.
+
 - Fix functools.total_ordering() to actually work.
 
 - Issue #9572: Importlib should not raise an exception if a directory it
