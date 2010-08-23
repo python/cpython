@@ -234,7 +234,7 @@ class PyBuildExt(build_ext):
         # will fail.
         with open(_BUILDDIR_COOKIE, "wb") as f:
             f.write(self.build_lib.encode('utf-8', 'surrogateescape'))
-        abs_build_lib = os.path.join(os.path.dirname(__file__), self.build_lib)
+        abs_build_lib = os.path.join(os.getcwd(), self.build_lib)
         if abs_build_lib not in sys.path:
             sys.path.append(abs_build_lib)
 
