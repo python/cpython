@@ -123,6 +123,8 @@ Extensions
 Library
 -------
 
+- Fix functools.total_ordering() to actually work.
+
 - Issue #9572: Importlib should not raise an exception if a directory it
   thought it needed to create was done concurrently by another process.
 
