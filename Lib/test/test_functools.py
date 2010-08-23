@@ -413,14 +413,14 @@ class TestTotalOrdering(unittest.TestCase):
     def test_total_ordering_no_overwrite(self):
         # new methods should not overwrite existing
         @functools.total_ordering
-        class A(int):
+        class A(str):
             pass
-        self.assert_(A(1) < A(2))
-        self.assert_(A(2) > A(1))
-        self.assert_(A(1) <= A(2))
-        self.assert_(A(2) >= A(1))
-        self.assert_(A(2) <= A(2))
-        self.assert_(A(2) >= A(2))
+        self.assert_(A("a") < A("b"))
+        self.assert_(A("b") > A("a"))
+        self.assert_(A("a") <= A("b"))
+        self.assert_(A("b") >= A("a"))
+        self.assert_(A("b") <= A("b"))
+        self.assert_(A("b") >= A("b"))
 
     def test_no_operations_defined(self):
         with self.assertRaises(ValueError):
@@ -434,6 +434,7 @@ def test_main(verbose=None):
         TestPartialSubclass,
         TestPythonPartial,
         TestUpdateWrapper,
+        TestTotalOrdering,
         TestWraps,
         TestReduce,
     )
