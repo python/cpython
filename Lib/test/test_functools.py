@@ -481,7 +481,7 @@ class TestTotalOrdering(unittest.TestCase):
         # new methods should not overwrite existing
         @functools.total_ordering
         class A(int):
-            raise Exception()
+            pass
         self.assert_(A(1) < A(2))
         self.assert_(A(2) > A(1))
         self.assert_(A(1) <= A(2))
@@ -564,6 +564,7 @@ def test_main(verbose=None):
         TestPartialSubclass,
         TestPythonPartial,
         TestUpdateWrapper,
+        TestTotalOrdering,
         TestWraps,
         TestReduce,
         TestLRU,

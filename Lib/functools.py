@@ -65,6 +65,7 @@ def wraps(wrapped,
     return partial(update_wrapper, wrapped=wrapped,
                    assigned=assigned, updated=updated)
 
+_object_defaults = {object.__lt__, object.__le__, object.__gt__, object.__ge__}
 def total_ordering(cls):
     """Class decorator that fills in missing ordering methods"""
     convert = {
@@ -81,7 +82,9 @@ def total_ordering(cls):
                    ('__gt__', lambda self, other: not other >= self),
                    ('__lt__', lambda self, other: not self >= other)]
     }
-    roots = set(dir(cls)) & set(convert)
+    roots = (set(dir(cls)) & set(convert))
+    # Remove default comparison operations defined on object.
+    roots -= {meth for meth in roots if getattr(cls, meth) in _object_defaults}
     if not roots:
         raise ValueError('must define at least one ordering operation: < > <= >=')
     root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
