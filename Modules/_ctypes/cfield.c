@@ -1420,12 +1420,11 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
         return NULL;
     } else
         Py_INCREF(value);
-#ifdef HAVE_USABLE_WCHAR_T
-    /* HAVE_USABLE_WCHAR_T means that Py_UNICODE and wchar_t is the same
-       type.  So we can copy directly.  Hm, are unicode objects always NUL
+#if Py_UNICODE_SIZE == SIZEOF_WCHAR_T
+    /* We can copy directly.  Hm, are unicode objects always NUL
        terminated in Python, internally?
      */
-    *(wchar_t **)ptr = PyUnicode_AS_UNICODE(value);
+    *(wchar_t **)ptr = (wchar_t *) PyUnicode_AS_UNICODE(value);
     return value;
 #else
     {

@@ -289,15 +289,15 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     wchar_t *s, *buf = NULL;
     size_t n1, n2;
     PyObject *result = NULL;
-#ifndef HAVE_USABLE_WCHAR_T
+#if Py_UNICODE_SIZE != SIZEOF_WCHAR_T
     Py_ssize_t i;
 #endif
 
     if (!PyArg_ParseTuple(args, "u#:strxfrm", &s0, &n0))
         return NULL;
 
-#ifdef HAVE_USABLE_WCHAR_T
-    s = s0;
+#if Py_UNICODE_SIZE == SIZEOF_WCHAR_T
+    s = (wchar_t *) s0;
 #else
     s = PyMem_Malloc((n0+1)*sizeof(wchar_t));
     if (!s)
@@ -326,7 +326,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     result = PyUnicode_FromWideChar(buf, n2);
  exit:
     if (buf) PyMem_Free(buf);
-#ifndef HAVE_USABLE_WCHAR_T
+#if Py_UNICODE_SIZE != SIZEOF_WCHAR_T
     PyMem_Free(s);
 #endif
     return result;
