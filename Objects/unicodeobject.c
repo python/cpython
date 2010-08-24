@@ -664,7 +664,7 @@ PyObject *PyUnicode_FromWideChar(register const wchar_t *w,
         return NULL;
 
     /* Copy the wchar_t data into the new object */
-#ifdef HAVE_USABLE_WCHAR_T
+#if Py_UNICODE_SIZE == SIZEOF_WCHAR_T
     memcpy(unicode->str, w, size * sizeof(wchar_t));
 #else
     {
@@ -1167,7 +1167,7 @@ Py_ssize_t PyUnicode_AsWideChar(PyUnicodeObject *unicode,
     if (size > PyUnicode_GET_SIZE(unicode))
         size = PyUnicode_GET_SIZE(unicode) + 1;
 
-#ifdef HAVE_USABLE_WCHAR_T
+#if Py_UNICODE_SIZE == SIZEOF_WCHAR_T
     memcpy(w, unicode->str, size * sizeof(wchar_t));
 #else
     {
