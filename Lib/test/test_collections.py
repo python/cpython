@@ -494,6 +494,21 @@ class TestCollectionABCs(ABCTestCase):
         s = MySet([5,43,2,1])
         self.assertEqual(s.pop(), 1)
 
+    def test_issue8750(self):
+        empty = WithSet()
+        full = WithSet(range(10))
+        s = WithSet(full)
+        s -= s
+        self.assertEqual(s, empty)
+        s = WithSet(full)
+        s ^= s
+        self.assertEqual(s, empty)
+        s = WithSet(full)
+        s &= s
+        self.assertEqual(s, full)
+        s |= s
+        self.assertEqual(s, full)
+
     def test_Mapping(self):
         for sample in [dict]:
             self.assertTrue(isinstance(sample(), Mapping))

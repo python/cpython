@@ -321,18 +321,24 @@ class MutableSet(Set):
         return self
 
     def __ixor__(self, it: Iterable):
-        if not isinstance(it, Set):
-            it = self._from_iterable(it)
-        for value in it:
-            if value in self:
-                self.discard(value)
-            else:
-                self.add(value)
+        if it is self:
+            self.clear()
+        else:
+            if not isinstance(it, Set):
+                it = self._from_iterable(it)
+            for value in it:
+                if value in self:
+                    self.discard(value)
+                else:
+                    self.add(value)
         return self
 
     def __isub__(self, it: Iterable):
-        for value in it:
-            self.discard(value)
+        if it is self:
+            self.clear()
+        else:
+            for value in it:
+                self.discard(value)
         return self
 
 MutableSet.register(set)
