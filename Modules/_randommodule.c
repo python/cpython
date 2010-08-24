@@ -6,7 +6,7 @@
 
    It was modified in 2002 by Raymond Hettinger as follows:
 
-    * the principal computational lines untouched except for tabbing.
+    * the principal computational lines untouched.
 
     * renamed genrand_res53() to random_random() and wrapped
       in python calling/return code.
