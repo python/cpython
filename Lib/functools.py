@@ -82,7 +82,7 @@ def total_ordering(cls):
                    ('__gt__', lambda self, other: not other >= self),
                    ('__lt__', lambda self, other: not self >= other)]
     }
-    roots = (set(dir(cls)) & set(convert))
+    roots = set(dir(cls)) & set(convert)
     # Remove default comparison operations defined on object.
     roots -= {meth for meth in roots if getattr(cls, meth) in _object_defaults}
     if not roots:
