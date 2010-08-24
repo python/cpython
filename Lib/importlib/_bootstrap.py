@@ -499,7 +499,7 @@ class _SourceFileLoader(_FileLoader, SourceLoader):
                     continue
                 # If can't get proper access, then just forget about writing
                 # the data.
-                elif errno == errno.EACCES:
+                elif exc.errno == errno.EACCES:
                     return
                 else:
                     raise
