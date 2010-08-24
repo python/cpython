@@ -126,6 +126,9 @@ Extensions
 Library
 -------
 
+- Issue #8750: Fixed MutableSet's methods to correctly handle
+  reflexive operations, namely x -= x and x ^= x.
+
 - Issue #9129: smtpd.py is vulnerable to DoS attacks deriving from missing 
   error handling when accepting a new connection.
 
