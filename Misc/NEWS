@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9666: Only catch AttributeError in hasattr(). All other exceptions that
+  occur during attribute lookup are now propagated to the caller.
+
 - Issue #8622: Add PYTHONFSENCODING environment variable to override the
   filesystem encoding.
 
