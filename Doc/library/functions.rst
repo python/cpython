@@ -463,10 +463,10 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: hasattr(object, name)
 
-   The arguments are an object and a string.  The result is ``True`` if the string
-   is the name of one of the object's attributes, ``False`` if not. (This is
-   implemented by calling ``getattr(object, name)`` and seeing whether it raises an
-   exception or not.)
+   The arguments are an object and a string.  The result is ``True`` if the
+   string is the name of one of the object's attributes, ``False`` if not. (This
+   is implemented by calling ``getattr(object, name)`` and seeing whether it
+   raises an :exc:`AttributeError` or not.)
 
 
 .. function:: hash(object)

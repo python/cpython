@@ -893,24 +893,21 @@ builtin_hasattr(PyObject *self, PyObject *args)
     }
     v = PyObject_GetAttr(v, name);
     if (v == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_Exception))
-            return NULL;
-        else {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
             PyErr_Clear();
-            Py_INCREF(Py_False);
-            return Py_False;
+            Py_RETURN_FALSE;
         }
+        return NULL;
     }
     Py_DECREF(v);
-    Py_INCREF(Py_True);
-    return Py_True;
+    Py_RETURN_TRUE;
 }
 
 PyDoc_STRVAR(hasattr_doc,
 "hasattr(object, name) -> bool\n\
 \n\
 Return whether the object has an attribute with the given name.\n\
-(This is done by calling getattr(object, name) and catching exceptions.)");
+(This is done by calling getattr(object, name) and catching AttributeError.)");
 
 
 static PyObject *

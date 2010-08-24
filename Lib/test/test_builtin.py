@@ -495,15 +495,16 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, hasattr)
         self.assertEqual(False, hasattr(sys, chr(sys.maxunicode)))
 
-        # Check that hasattr allows SystemExit and KeyboardInterrupts by
+        # Check that hasattr propagates all exceptions outside of
+        # AttributeError.
         class A:
             def __getattr__(self, what):
-                raise KeyboardInterrupt
-        self.assertRaises(KeyboardInterrupt, hasattr, A(), "b")
+                raise SystemExit
+        self.assertRaises(SystemExit, hasattr, A(), "b")
         class B:
             def __getattr__(self, what):
-                raise SystemExit
-        self.assertRaises(SystemExit, hasattr, B(), "b")
+                raise ValueError
+        self.assertRaises(ValueError, hasattr, B(), "b")
 
     def test_hash(self):
         hash(None)
