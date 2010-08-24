@@ -197,12 +197,12 @@ msvcrt_getch(PyObject *self, PyObject *args)
 PyDoc_STRVAR(getch_doc,
 "getch() -> key character\n\
 \n\
-Read a keypress and return the resulting character. Nothing is echoed to\n\
-the console. This call will block if a keypress is not already\n\
-available, but will not wait for Enter to be pressed. If the pressed key\n\
-was a special function key, this will return '\\000' or '\\xe0'; the next\n\
-call will return the keycode. The Control-C keypress cannot be read with\n\
-this function.");
+Read a keypress and return the resulting character as a byte string.\n\
+Nothing is echoed to the console. This call will block if a keypress is\n\
+not already available, but will not wait for Enter to be pressed. If the\n\
+pressed key was a special function key, this will return '\\000' or\n\
+'\\xe0'; the next call will return the keycode. The Control-C keypress\n\
+cannot be read with this function.");
 
 #ifdef _WCONIO_DEFINED
 static PyObject *
@@ -288,7 +288,7 @@ msvcrt_putch(PyObject *self, PyObject *args)
 PyDoc_STRVAR(putch_doc,
 "putch(char) -> None\n\
 \n\
-Print the character char to the console without buffering.");
+Print the byte string char to the console without buffering.");
 
 #ifdef _WCONIO_DEFINED
 static PyObject *
@@ -327,8 +327,9 @@ msvcrt_ungetch(PyObject *self, PyObject *args)
 PyDoc_STRVAR(ungetch_doc,
 "ungetch(char) -> None\n\
 \n\
-Cause the character char to be \"pushed back\" into the console buffer;\n\
-it will be the next character read by getch() or getche().");
+Cause the byte string char to be \"pushed back\" into the\n\
+console buffer; it will be the next character read by\n\
+getch() or getche().");
 
 #ifdef _WCONIO_DEFINED
 static PyObject *
