@@ -511,10 +511,23 @@ class SysModuleTest(unittest.TestCase):
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             env=env)
         stdout, stderr = p.communicate()
-        pattern = b"Unable to decode the command from the command line:"
+        if p.returncode == 1:
+            # _Py_char2wchar() decoded b'\xff' as '\udcff' (b'\xff' is not
+            # decodable from ASCII) and run_command() failed on
+            # PyUnicode_AsUTF8String(). This is the expected behaviour on
+            # Linux.
+            pattern = b"Unable to decode the command from the command line:"
+        elif p.returncode == 0:
+            # _Py_char2wchar() decoded b'\xff' as '\xff' even if the locale is
+            # C and the locale encoding is ASCII. It occurs on FreeBSD, Solaris
+            # and Mac OS X.
+            pattern = b"'\\xff' "
+            # The output is followed by the encoding name, an alias to ASCII.
+            # Examples: "US-ASCII" or "646" (ISO 646, on Solaris).
+        else:
+            raise AssertionError("Unknown exit code: %s, output=%a" % (p.returncode, stdout))
         if not stdout.startswith(pattern):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
-        self.assertEqual(p.returncode, 1)
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
