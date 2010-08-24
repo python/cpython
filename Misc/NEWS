@@ -4,6 +4,22 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.6.7?
+===========================
+
+*Release date: XXXX-XX-XX*
+
+*NOTE: Python 2.6 is in security-fix-only mode.  No non-security bug fixes are
+ allowed.  Python 2.6.7 and beyond will be source only releases.*
+
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+
 What's New in Python 2.6.6?
 ===========================
 
