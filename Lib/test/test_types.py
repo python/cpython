@@ -550,6 +550,11 @@ class TypesTests(unittest.TestCase):
         for code in 'xXobns':
             self.assertRaises(ValueError, format, 0, ',' + code)
 
+    def test_internal_sizes(self):
+        self.assertGreater(object.__basicsize__, 0)
+        self.assertGreater(tuple.__itemsize__, 0)
+
+
 def test_main():
     run_unittest(TypesTests)
 
