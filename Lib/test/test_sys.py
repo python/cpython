@@ -507,7 +507,8 @@ class SysModuleTest(unittest.TestCase):
 
         undecodable = b"\xff"
         env = os.environ.copy()
-        env['LANG'] = 'C'
+        # Use C locale to get ascii for the locale encoding
+        env['LC_ALL'] = 'C'
         code = (
             b'import locale; '
             b'print(ascii("' + undecodable + b'"), '
@@ -614,9 +615,9 @@ class SysModuleTest(unittest.TestCase):
         # Raise SkipTest() if sys.executable is not encodable to ascii
         test.support.workaroundIssue8611()
 
-        # Even in C locale
+        # Use C locale to get ascii for the locale encoding
         env = os.environ.copy()
-        env['LANG'] = 'C'
+        env['LC_ALL'] = 'C'
         try:
             del env['PYTHONFSENCODING']
         except KeyError:
