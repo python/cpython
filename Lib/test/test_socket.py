@@ -637,6 +637,10 @@ class GeneralModuleTests(unittest.TestCase):
                                flags=socket.AI_PASSIVE)
         self.assertEqual(a, b)
 
+    def test_getnameinfo(self):
+        # only IP addresses are allowed
+        self.assertRaises(socket.error, socket.getnameinfo, ('mail.python.org',0), 0)
+
     def test_idna(self):
         # these should all be successful
         socket.gethostbyname('испытание.python.org')
