@@ -495,6 +495,12 @@ class SysModuleTest(unittest.TestCase):
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
 
+    # On Windows, pass bytes to subprocess doesn't test how Python decodes the
+    # command line, but how subprocess does decode bytes to unicode. Python
+    # doesn't decode the command line because Windows provides directly the
+    # arguments as unicode (using wmain() instead of main()).
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows has a native unicode API')
     def test_undecodable_code(self):
         # Raise SkipTest() if sys.executable is not encodable to ascii
         test.support.workaroundIssue8611()
