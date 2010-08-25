@@ -14,8 +14,7 @@ cd ..
 @rem if exist tk8.4.16 rd /s/q tk8.4.16
 @rem if exist tk-8.4.18.1 rd /s/q tk-8.4.18.1
 @rem if exist db-4.4.20 rd /s/q db-4.4.20
-if exist openssl-0.9.8l rd /s/q openssl-0.9.8l
-if exist openssl-1.0.0a rd /s/q openssl-1.0.0a
+@rem if exist openssl-1.0.0a rd /s/q openssl-1.0.0a
 @rem if exist sqlite-3.6.21 rd /s/q sqlite-3.6.21    
 
 @rem bzip
