@@ -2234,6 +2234,19 @@ class TestMiscellaneous(TestEmailBase):
         eq(time.localtime(t)[:6], timetup[:6])
         eq(int(time.strftime('%Y', timetup[:9])), 2003)
 
+    def test_parsedate_y2k(self):
+        """Test for parsing a date with a two-digit year.
+
+        Parsing a date with a two-digit year should return the correct
+        four-digit year. RFC822 allows two-digit years, but RFC2822 (which
+        obsoletes RFC822) requires four-digit years.
+
+        """
+        self.assertEqual(Utils.parsedate_tz('25 Feb 03 13:47:26 -0800'),
+                         Utils.parsedate_tz('25 Feb 2003 13:47:26 -0800'))
+        self.assertEqual(Utils.parsedate_tz('25 Feb 71 13:47:26 -0800'),
+                         Utils.parsedate_tz('25 Feb 1971 13:47:26 -0800'))
+
     def test_parseaddr_empty(self):
         self.assertEqual(Utils.parseaddr('<>'), ('', ''))
         self.assertEqual(Utils.formataddr(Utils.parseaddr('<>')), '')

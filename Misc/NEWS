@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1194222: email.utils.parsedate now returns RFC2822 compliant four
+  character years even if the message contains RFC822 two character years.
+
 - Issue #8750: Fixed MutableSet's methods to correctly handle
   reflexive operations, namely x -= x and x ^= x.
 
