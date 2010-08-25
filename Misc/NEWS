@@ -70,7 +70,8 @@ Extensions
 ----------
 
 - Issue #1027206: Support IDNA in gethostbyname, gethostbyname_ex, 
-  getaddrinfo and gethostbyaddr.
+  getaddrinfo and gethostbyaddr. getnameinfo is now restricted to numeric
+  addresses as input.
 
 - Issue #9214: Set operations on a KeysView or ItemsView in collections
   now correctly return a set.  (Patch by Eli Bendersky.)
