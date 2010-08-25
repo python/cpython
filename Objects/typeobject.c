@@ -188,8 +188,8 @@ assign_version_tag(PyTypeObject *type)
 
 
 static PyMemberDef type_members[] = {
-    {"__basicsize__", T_INT, offsetof(PyTypeObject,tp_basicsize),READONLY},
-    {"__itemsize__", T_INT, offsetof(PyTypeObject, tp_itemsize), READONLY},
+    {"__basicsize__", T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),READONLY},
+    {"__itemsize__", T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize), READONLY},
     {"__flags__", T_LONG, offsetof(PyTypeObject, tp_flags), READONLY},
     {"__weakrefoffset__", T_LONG,
      offsetof(PyTypeObject, tp_weaklistoffset), READONLY},
