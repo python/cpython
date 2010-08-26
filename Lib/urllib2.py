@@ -843,7 +843,10 @@ class AbstractBasicAuthHandler:
             if mo:
                 scheme, quote, realm = mo.groups()
                 if scheme.lower() == 'basic':
-                    return self.retry_http_basic_auth(host, req, realm)
+                    response = self.retry_http_basic_auth(host, req, realm)
+                    if response and response.code != 401:
+                        self.retried = 0
+                    return response
 
     def retry_http_basic_auth(self, host, req, realm):
         user, pw = self.passwd.find_user_password(realm, host)
