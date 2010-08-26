@@ -493,13 +493,16 @@ class _SourceFileLoader(_FileLoader, SourceLoader):
             parent = _path_join(parent, part)
             try:
                 _os.mkdir(parent)
-            except IOError as exc:
+            except OSError as exc:
                 # Probably another Python process already created the dir.
                 if exc.errno == errno.EEXIST:
                     continue
+                else:
+                    raise
+            except IOError as exc:
                 # If can't get proper access, then just forget about writing
                 # the data.
-                elif exc.errno == errno.EACCES:
+                if exc.errno == errno.EACCES:
                     return
                 else:
                     raise
