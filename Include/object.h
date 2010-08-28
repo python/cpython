@@ -492,6 +492,13 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
 
 /* A slot function whose address we need to compare */
 extern int _PyObject_SlotCompare(PyObject *, PyObject *);
+/* Same as PyObject_Generic{Get,Set}Attr, but passing the attributes
+   dict as the last parameter. */
+PyAPI_FUNC(PyObject *)
+_PyObject_GenericGetAttrWithDict(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(int)
+_PyObject_GenericSetAttrWithDict(PyObject *, PyObject *,
+                                 PyObject *, PyObject *);
 
 
 /* PyObject_Dir(obj) acts like Python __builtin__.dir(obj), returning a
