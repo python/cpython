@@ -93,6 +93,14 @@ typedef int SOCKET_T;
 #       define SIZEOF_SOCKET_T SIZEOF_INT
 #endif
 
+#if SIZEOF_SOCKET_T <= SIZEOF_LONG
+#define PyLong_FromSocket_t(fd) PyLong_FromLong((SOCKET_T)(fd))
+#define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLong(fd)
+#else
+#define PyLong_FromSocket_t(fd) PyLong_FromLongLong((SOCKET_T)(fd))
+#define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLongLong(fd)
+#endif
+
 /* Socket address */
 typedef union sock_addr {
     struct sockaddr_in in;
