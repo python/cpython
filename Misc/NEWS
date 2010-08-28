@@ -305,6 +305,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1868: Eliminate subtle timing issues in thread-local objects by
+  getting rid of the cached copy of thread-local attribute dictionary.
+
 - Issue #9125: Add recognition of 'except ... as ...' syntax to parser module.
 
 Extension Modules
