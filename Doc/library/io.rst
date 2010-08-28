@@ -11,6 +11,8 @@
 .. moduleauthor:: Benjamin Peterson <benjamin@python.org>
 .. sectionauthor:: Benjamin Peterson <benjamin@python.org>
 
+.. versionadded:: 2.6
+
 The :mod:`io` module provides the Python interfaces to stream handling.
 Under Python 2.x, this is proposed as an alternative to the built-in
 :class:`file` object, but in Python 3.x it is the default interface to
