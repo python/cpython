@@ -355,7 +355,7 @@ class Wave_write:
             raise Error('cannot change parameters after starting to write')
         if framerate <= 0:
             raise Error('bad frame rate')
-        self._framerate = framerate
+        self._framerate = int(round(framerate))
 
     def getframerate(self):
         if not self._framerate:

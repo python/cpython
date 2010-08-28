@@ -22,11 +22,14 @@ class TestWave(unittest.TestCase):
         except OSError:
             pass
 
-    def test_it(self):
+    def test_it(self, test_rounding=False):
         self.f = wave.open(TESTFN, 'wb')
         self.f.setnchannels(nchannels)
         self.f.setsampwidth(sampwidth)
-        self.f.setframerate(framerate)
+        if test_rounding:
+            self.f.setframerate(framerate - 0.1)
+        else:
+            self.f.setframerate(framerate)
         self.f.setnframes(nframes)
         output = b'\0' * nframes * nchannels * sampwidth
         self.f.writeframes(output)
@@ -38,6 +41,13 @@ class TestWave(unittest.TestCase):
         self.assertEqual(framerate, self.f.getframerate())
         self.assertEqual(nframes, self.f.getnframes())
         self.assertEqual(self.f.readframes(nframes), output)
+
+    def test_fractional_framerate(self):
+        """
+        Addresses [ 1512791 ] module wave does no rounding
+        Floating point framerates should be rounded, rather than truncated.
+        """
+        self.test_it(test_rounding=True)
 
     def test_issue7681(self):
         self.f = wave.open(TESTFN, 'wb')
