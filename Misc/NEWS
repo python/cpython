@@ -132,6 +132,9 @@ Extensions
 Library
 -------
 
+- Issue #1868: Eliminate subtle timing issues in thread-local objects by
+  getting rid of the cached copy of thread-local attribute dictionary.
+
 - Issue #1512791: In setframerate() in the wave module, non-integral
   frame rates are rounded to the nearest integer.
 
