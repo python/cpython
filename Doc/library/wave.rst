@@ -157,6 +157,10 @@ Wave_write objects, as returned by :func:`.open`, have the following methods:
 
    Set the frame rate to *n*.
 
+   .. versionchanged:: 3.2
+      A non-integral input to this method is rounded to the nearest
+      integer.
+
 
 .. method:: Wave_write.setnframes(n)
 
