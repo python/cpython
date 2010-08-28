@@ -97,6 +97,9 @@ C-API
 Library
 -------
 
+- Issue #1868: Eliminate subtle timing issues in thread-local objects by
+  getting rid of the cached copy of thread-local attribute dictionary.
+
 - Issue #8797: urllib2 does a retry for Basic Authentication failure instead of
   falling into recursion.
 

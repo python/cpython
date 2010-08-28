@@ -112,6 +112,67 @@ class BaseLocalTest:
 
         self.assertTrue(passed)
 
+    def _test_one_class(self, c):
+        self._failed = "No error message set or cleared."
+        obj = c()
+        e1 = threading.Event()
+        e2 = threading.Event()
+
+        def f1():
+            obj.x = 'foo'
+            obj.y = 'bar'
+            del obj.y
+            e1.set()
+            e2.wait()
+
+        def f2():
+            try:
+                foo = obj.x
+            except AttributeError:
+                # This is expected -- we haven't set obj.x in this thread yet!
+                self._failed = ""  # passed
+            else:
+                self._failed = ('Incorrectly got value %r from class %r\n' %
+                                (foo, c))
+                sys.stderr.write(self._failed)
+
+        t1 = threading.Thread(target=f1)
+        t1.start()
+        e1.wait()
+        t2 = threading.Thread(target=f2)
+        t2.start()
+        t2.join()
+        # The test is done; just let t1 know it can exit, and wait for it.
+        e2.set()
+        t1.join()
+
+        self.assertFalse(self._failed, self._failed)
+
+    def test_threading_local(self):
+        self._test_one_class(self._local)
+
+    def test_threading_local_subclass(self):
+        class LocalSubclass(self._local):
+            """To test that subclasses behave properly."""
+        self._test_one_class(LocalSubclass)
+
+    def _test_dict_attribute(self, cls):
+        obj = cls()
+        obj.x = 5
+        self.assertEqual(obj.__dict__, {'x': 5})
+        with self.assertRaises(AttributeError):
+            obj.__dict__ = {}
+        with self.assertRaises(AttributeError):
+            del obj.__dict__
+
+    def test_dict_attribute(self):
+        self._test_dict_attribute(self._local)
+
+    def test_dict_attribute_subclass(self):
+        class LocalSubclass(self._local):
+            """To test that subclasses behave properly."""
+        self._test_dict_attribute(LocalSubclass)
+
 
 class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
     _local = _thread._local
@@ -128,7 +189,6 @@ class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
         del x
         gc.collect()
         self.assertIs(wr(), None)
-
 
 class PyThreadingLocalTest(unittest.TestCase, BaseLocalTest):
     _local = _threading_local.local
