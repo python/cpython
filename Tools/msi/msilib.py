@@ -5,7 +5,7 @@ import win32com.client.gencache
 import win32com.client
 import pythoncom, pywintypes
 from win32com.client import constants
-import re, string, os, sets, glob, subprocess, sys, _winreg, struct
+import re, string, os, sets, glob, subprocess, sys, _winreg, struct, _msi
 
 try:
     basestring
@@ -350,7 +350,7 @@ def gen_uuid():
 class CAB:
     def __init__(self, name):
         self.name = name
-        self.file = open(name+".txt", "wt")
+        self.files = []
         self.filenames = sets.Set()
         self.index = 0
 
@@ -369,47 +369,15 @@ class CAB:
         if not logical:
             logical = self.gen_id(dir, file)
         self.index += 1
-        if full.find(" ")!=-1:
-            print >>self.file, '"%s" %s' % (full, logical)
-        else:
-            print >>self.file, '%s %s' % (full, logical)
+        self.files.append((full, logical))
         return self.index, logical
 
     def commit(self, db):
-        self.file.close()
         try:
             os.unlink(self.name+".cab")
         except OSError:
             pass
-        for k, v in [(r"Software\Microsoft\VisualStudio\7.1\Setup\VS", "VS7CommonBinDir"),
-                     (r"Software\Microsoft\VisualStudio\8.0\Setup\VS", "VS7CommonBinDir"),
-                     (r"Software\Microsoft\VisualStudio\9.0\Setup\VS", "VS7CommonBinDir"),
-                     (r"Software\Microsoft\Win32SDK\Directories", "Install Dir"),
-                    ]:
-            try:
-                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, k)
-                dir = _winreg.QueryValueEx(key, v)[0]
-                _winreg.CloseKey(key)
-            except (WindowsError, IndexError):
-                continue
-            cabarc = os.path.join(dir, r"Bin", "cabarc.exe")
-            if not os.path.exists(cabarc):
-                continue
-            break
-        else:
-            print "WARNING: cabarc.exe not found in registry"
-            cabarc = "cabarc.exe"
-        cmd = r'"%s" -m lzx:21 n %s.cab @%s.txt' % (cabarc, self.name, self.name)
-        p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        for line in p.stdout:
-            if line.startswith("  -- adding "):
-                sys.stdout.write(".")
-            else:
-                sys.stdout.write(line)
-            sys.stdout.flush()
-        if not os.path.exists(self.name+".cab"):
-            raise IOError, "cabarc failed"
+        _msi.FCICreate(self.name+".cab", self.files)
         add_data(db, "Media",
                 [(1, self.index, None, "#"+self.name, None, None)])
         add_stream(db, self.name, self.name+".cab")
