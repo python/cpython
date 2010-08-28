@@ -32,15 +32,6 @@ PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
    cleanup to keep the extra information. [CH] */
 #define PyLong_AS_LONG(op) PyLong_AsLong(op)
 
-/* Used by socketmodule.c */
-#if SIZEOF_SOCKET_T <= SIZEOF_LONG
-#define PyLong_FromSocket_t(fd) PyLong_FromLong((SOCKET_T)(fd))
-#define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLong(fd)
-#else
-#define PyLong_FromSocket_t(fd) PyLong_FromLongLong(((SOCKET_T)(fd));
-#define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLongLong(fd)
-#endif
-
 /* Issue #1983: pid_t can be longer than a C long on some systems */
 #if !defined(SIZEOF_PID_T) || SIZEOF_PID_T == SIZEOF_INT
 #define _Py_PARSE_PID "i"

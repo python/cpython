@@ -74,6 +74,10 @@ Core and Builtins
 Extensions
 ----------
 
+- Issue #4835: make PyLong_FromSocket_t() and PyLong_AsSocket_t() private
+  to the socket module, and fix the width of socket descriptors to be
+  correctly detected under 64-bit Windows.
+
 - Issue #1027206: Support IDNA in gethostbyname, gethostbyname_ex, 
   getaddrinfo and gethostbyaddr. getnameinfo is now restricted to numeric
   addresses as input.
