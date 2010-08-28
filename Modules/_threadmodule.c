@@ -13,6 +13,7 @@
 #include "pythread.h"
 
 static PyObject *ThreadError;
+static PyObject *str_dict;
 
 
 /* Lock objects */
@@ -259,8 +260,6 @@ typedef struct {
     PyObject *key;
     PyObject *args;
     PyObject *kw;
-    /* The current thread's local dict (necessary for tp_dictoffset) */
-    PyObject *dict;
     PyObject *weakreflist;      /* List of weak references to self */
     /* A {localdummy weakref -> localdict} dict */
     PyObject *dummies;
@@ -272,9 +271,9 @@ typedef struct {
 static PyObject *_ldict(localobject *self);
 static PyObject *_localdummy_destroyed(PyObject *meth_self, PyObject *dummyweakref);
 
-/* Create and register the dummy for the current thread, as well as the
-   corresponding local dict */
-static int
+/* Create and register the dummy for the current thread.
+   Returns a borrowed reference of the corresponding local dict */
+static PyObject *
 _local_create_dummy(localobject *self)
 {
     PyObject *tdict, *ldict = NULL, *wr = NULL;
@@ -310,15 +309,14 @@ _local_create_dummy(localobject *self)
         goto err;
     Py_CLEAR(dummy);
 
-    Py_CLEAR(self->dict);
-    self->dict = ldict;
-    return 0;
+    Py_DECREF(ldict);
+    return ldict;
 
 err:
     Py_XDECREF(ldict);
     Py_XDECREF(wr);
     Py_XDECREF(dummy);
-    return -1;
+    return NULL;
 }
 
 static PyObject *
@@ -364,7 +362,7 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (self->wr_callback == NULL)
         goto err;
 
-    if (_local_create_dummy(self) < 0)
+    if (_local_create_dummy(self) == NULL)
         goto err;
 
     return (PyObject *)self;
@@ -380,7 +378,6 @@ local_traverse(localobject *self, visitproc visit, void *arg)
     Py_VISIT(self->args);
     Py_VISIT(self->kw);
     Py_VISIT(self->dummies);
-    Py_VISIT(self->dict);
     return 0;
 }
 
@@ -391,7 +388,6 @@ local_clear(localobject *self)
     Py_CLEAR(self->args);
     Py_CLEAR(self->kw);
     Py_CLEAR(self->dummies);
-    Py_CLEAR(self->dict);
     Py_CLEAR(self->wr_callback);
     /* Remove all strong references to dummies from the thread states */
     if (self->key
@@ -437,9 +433,9 @@ _ldict(localobject *self)
 
     dummy = PyDict_GetItem(tdict, self->key);
     if (dummy == NULL) {
-        if (_local_create_dummy(self) < 0)
+        ldict = _local_create_dummy(self);
+        if (ldict == NULL)
             return NULL;
-        ldict = self->dict;
 
         if (Py_TYPE(self)->tp_init != PyBaseObject_Type.tp_init &&
             Py_TYPE(self)->tp_init((PyObject*)self,
@@ -456,14 +452,6 @@ _ldict(localobject *self)
         ldict = ((localdummyobject *) dummy)->localdict;
     }
 
-    /* The call to tp_init above may have caused another thread to run.
-       Install our ldict again. */
-    if (self->dict != ldict) {
-        Py_INCREF(ldict);
-        Py_CLEAR(self->dict);
-        self->dict = ldict;
-    }
-
     return ldict;
 }
 
@@ -471,28 +459,24 @@ static int
 local_setattro(localobject *self, PyObject *name, PyObject *v)
 {
     PyObject *ldict;
+    int r;
 
     ldict = _ldict(self);
     if (ldict == NULL)
         return -1;
 
-    return PyObject_GenericSetAttr((PyObject *)self, name, v);
-}
+    r = PyObject_RichCompareBool(name, str_dict, Py_EQ);
+    if (r == 1) {
+        PyErr_Format(PyExc_AttributeError,
+                     "'%.50s' object attribute '%U' is read-only",
+                     Py_TYPE(self)->tp_name, name);
+        return -1;
+    }
+    if (r == -1)
+        return -1;
 
-static PyObject *
-local_getdict(localobject *self, void *closure)
-{
-    PyObject *ldict;
-    ldict = _ldict(self);
-    Py_XINCREF(ldict);
-    return ldict;
+    return _PyObject_GenericSetAttrWithDict((PyObject *)self, name, v, ldict);
 }
-
-static PyGetSetDef local_getset[] = {
-    {"__dict__", (getter)local_getdict, (setter)NULL,
-     "Local-data dictionary", NULL},
-    {NULL}  /* Sentinel */
-};
 
 static PyObject *local_getattro(localobject *, PyObject *);
 
@@ -527,12 +511,12 @@ static PyTypeObject localtype = {
     /* tp_iternext       */ 0,
     /* tp_methods        */ 0,
     /* tp_members        */ 0,
-    /* tp_getset         */ local_getset,
+    /* tp_getset         */ 0,
     /* tp_base           */ 0,
     /* tp_dict           */ 0, /* internal use */
     /* tp_descr_get      */ 0,
     /* tp_descr_set      */ 0,
-    /* tp_dictoffset     */ offsetof(localobject, dict),
+    /* tp_dictoffset     */ 0,
     /* tp_init           */ 0,
     /* tp_alloc          */ 0,
     /* tp_new            */ local_new,
@@ -544,20 +528,29 @@ static PyObject *
 local_getattro(localobject *self, PyObject *name)
 {
     PyObject *ldict, *value;
+    int r;
 
     ldict = _ldict(self);
     if (ldict == NULL)
         return NULL;
 
+    r = PyObject_RichCompareBool(name, str_dict, Py_EQ);
+    if (r == 1) {
+        Py_INCREF(ldict);
+        return ldict;
+    }
+    if (r == -1)
+        return NULL;
+
     if (Py_TYPE(self) != &localtype)
         /* use generic lookup for subtypes */
-        return PyObject_GenericGetAttr((PyObject *)self, name);
+        return _PyObject_GenericGetAttrWithDict((PyObject *)self, name, ldict);
 
     /* Optimization: just look in dict ourselves */
     value = PyDict_GetItem(ldict, name);
     if (value == NULL)
         /* Fall back on generic to get __class__ and __dict__ */
-        return PyObject_GenericGetAttr((PyObject *)self, name);
+        return _PyObject_GenericGetAttrWithDict((PyObject *)self, name, ldict);
 
     Py_INCREF(value);
     return value;
@@ -582,8 +575,6 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
         PyObject *ldict;
         ldict = PyDict_GetItem(self->dummies, dummyweakref);
         if (ldict != NULL) {
-            if (ldict == self->dict)
-                Py_CLEAR(self->dict);
             PyDict_DelItem(self->dummies, dummyweakref);
         }
         if (PyErr_Occurred())
@@ -929,6 +920,10 @@ PyInit__thread(void)
 
     Py_INCREF(&localtype);
     if (PyModule_AddObject(m, "_local", (PyObject *)&localtype) < 0)
+        return NULL;
+
+    str_dict = PyUnicode_InternFromString("__dict__");
+    if (str_dict == NULL)
         return NULL;
 
     /* Initialize the C thread library */
