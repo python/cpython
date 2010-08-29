@@ -1580,6 +1580,7 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
     PyObject *certfile_bytes = NULL, *keyfile_bytes = NULL;
     int r;
 
+    errno = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
         "O|O:load_cert_chain", kwlist,
         &certfile, &keyfile))
@@ -1601,7 +1602,12 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
         PyBytes_AS_STRING(certfile_bytes));
     PySSL_END_ALLOW_THREADS
     if (r != 1) {
-        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        if (errno != 0) {
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+        else {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+        }
         goto error;
     }
     PySSL_BEGIN_ALLOW_THREADS
@@ -1612,7 +1618,12 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
     Py_XDECREF(keyfile_bytes);
     Py_XDECREF(certfile_bytes);
     if (r != 1) {
-        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        if (errno != 0) {
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+        else {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+        }
         return NULL;
     }
     PySSL_BEGIN_ALLOW_THREADS
@@ -1639,6 +1650,7 @@ load_verify_locations(PySSLContext *self, PyObject *args, PyObject *kwds)
     const char *cafile_buf = NULL, *capath_buf = NULL;
     int r;
 
+    errno = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
         "|OO:load_verify_locations", kwlist,
         &cafile, &capath))
@@ -1673,7 +1685,12 @@ load_verify_locations(PySSLContext *self, PyObject *args, PyObject *kwds)
     Py_XDECREF(cafile_bytes);
     Py_XDECREF(capath_bytes);
     if (r != 1) {
-        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        if (errno != 0) {
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+        else {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+        }
         return NULL;
     }
     Py_RETURN_NONE;

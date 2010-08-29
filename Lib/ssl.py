@@ -122,6 +122,9 @@ class SSLSocket(socket):
         if _context:
             self.context = _context
         else:
+            if server_side and not certfile:
+                raise ValueError("certfile must be specified for server-side "
+                                 "operations")
             if certfile and not keyfile:
                 keyfile = certfile
             self.context = SSLContext(ssl_version)
@@ -138,7 +141,7 @@ class SSLSocket(socket):
             self.ssl_version = ssl_version
             self.ca_certs = ca_certs
             self.ciphers = ciphers
-
+        self.server_side = server_side
         self.do_handshake_on_connect = do_handshake_on_connect
         self.suppress_ragged_eofs = suppress_ragged_eofs
         connected = False
@@ -358,7 +361,8 @@ class SSLSocket(socket):
     def connect(self, addr):
         """Connects to remote ADDR, and then wraps the connection in
         an SSL channel."""
-
+        if self.server_side:
+            raise ValueError("can't connect in server-side mode")
         # Here we assume that the socket is client-side, and not
         # connected at the time of the call.  We connect it, then wrap it.
         if self._sslobj:

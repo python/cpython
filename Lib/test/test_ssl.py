@@ -172,6 +172,19 @@ class BasicSocketTests(unittest.TestCase):
             ss = ssl.wrap_socket(s)
             self.assertEqual(timeout, ss.gettimeout())
 
+    def test_errors(self):
+        sock = socket.socket()
+        with self.assertRaisesRegexp(ValueError, "certfile must be specified"):
+            ssl.wrap_socket(sock, server_side=True)
+            ssl.wrap_socket(sock, server_side=True, certfile="")
+        s = ssl.wrap_socket(sock, server_side=True, certfile=CERTFILE)
+        self.assertRaisesRegexp(ValueError, "can't connect in server-side mode",
+                                s.connect, (HOST, 8080))
+        with self.assertRaisesRegexp(IOError, "No such file"):
+            ssl.wrap_socket(sock, certfile=WRONGCERT)
+            ssl.wrap_socket(sock, keyfile=WRONGCERT)
+            ssl.wrap_socket(sock, certfile=WRONGCERT, keyfile=WRONGCERT)
+
 
 class ContextTests(unittest.TestCase):
 
@@ -240,7 +253,7 @@ class ContextTests(unittest.TestCase):
         ctx.load_cert_chain(CERTFILE)
         ctx.load_cert_chain(CERTFILE, keyfile=CERTFILE)
         self.assertRaises(TypeError, ctx.load_cert_chain, keyfile=CERTFILE)
-        with self.assertRaisesRegexp(ssl.SSLError, "system lib"):
+        with self.assertRaisesRegexp(IOError, "No such file"):
             ctx.load_cert_chain(WRONGCERT)
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
             ctx.load_cert_chain(BADCERT)
@@ -270,7 +283,7 @@ class ContextTests(unittest.TestCase):
         ctx.load_verify_locations(cafile=BYTES_CERTFILE, capath=None)
         self.assertRaises(TypeError, ctx.load_verify_locations)
         self.assertRaises(TypeError, ctx.load_verify_locations, None, None)
-        with self.assertRaisesRegexp(ssl.SSLError, "system lib"):
+        with self.assertRaisesRegexp(IOError, "No such file"):
             ctx.load_verify_locations(WRONGCERT)
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
             ctx.load_verify_locations(BADCERT)
@@ -863,6 +876,9 @@ else:
             except socket.error as x:
                 if support.verbose:
                     sys.stdout.write("\nsocket.error is %s\n" % x[1])
+            except IOError as x:
+                if support.verbose:
+                    sys.stdout.write("\nsocket.error is %s\n" % str(x))
             else:
                 raise AssertionError("Use of invalid cert should have failed!")
         finally:
