@@ -180,10 +180,16 @@ class BasicSocketTests(unittest.TestCase):
         s = ssl.wrap_socket(sock, server_side=True, certfile=CERTFILE)
         self.assertRaisesRegexp(ValueError, "can't connect in server-side mode",
                                 s.connect, (HOST, 8080))
-        with self.assertRaisesRegexp(IOError, "No such file"):
-            ssl.wrap_socket(sock, certfile=WRONGCERT)
-            ssl.wrap_socket(sock, keyfile=WRONGCERT)
-            ssl.wrap_socket(sock, certfile=WRONGCERT, keyfile=WRONGCERT)
+        with self.assertRaises(IOError) as err:
+            ssl.wrap_socket(socket.socket(), certfile=WRONGCERT)
+            self.assertEqual(err.errno, errno.ENOENT)
+        # XXX - temporarily disabled as per issue #9711
+        #with self.assertRaises(IOError) as err:
+        #    ssl.wrap_socket(socket.socket(), keyfile=WRONGCERT)
+        #    self.assertEqual(err.errno, errno.ENOENT)
+        with self.assertRaises(IOError) as err:
+            ssl.wrap_socket(socket.socket(), certfile=WRONGCERT, keyfile=WRONGCERT)
+            self.assertEqual(err.errno, errno.ENOENT)
 
 
 class ContextTests(unittest.TestCase):
@@ -253,8 +259,9 @@ class ContextTests(unittest.TestCase):
         ctx.load_cert_chain(CERTFILE)
         ctx.load_cert_chain(CERTFILE, keyfile=CERTFILE)
         self.assertRaises(TypeError, ctx.load_cert_chain, keyfile=CERTFILE)
-        with self.assertRaisesRegexp(IOError, "No such file"):
+        with self.assertRaises(IOError) as err:
             ctx.load_cert_chain(WRONGCERT)
+            self.assertEqual(err.errno, errno.ENOENT)
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
             ctx.load_cert_chain(BADCERT)
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
@@ -283,8 +290,9 @@ class ContextTests(unittest.TestCase):
         ctx.load_verify_locations(cafile=BYTES_CERTFILE, capath=None)
         self.assertRaises(TypeError, ctx.load_verify_locations)
         self.assertRaises(TypeError, ctx.load_verify_locations, None, None)
-        with self.assertRaisesRegexp(IOError, "No such file"):
+        with self.assertRaises(IOError) as err:
             ctx.load_verify_locations(WRONGCERT)
+            self.assertEqual(err.errno, errno.ENOENT)
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
             ctx.load_verify_locations(BADCERT)
         ctx.load_verify_locations(CERTFILE, CAPATH)
@@ -877,8 +885,10 @@ else:
                 if support.verbose:
                     sys.stdout.write("\nsocket.error is %s\n" % x[1])
             except IOError as x:
+                if x.errno != errno.ENOENT:
+                    raise
                 if support.verbose:
-                    sys.stdout.write("\nsocket.error is %s\n" % str(x))
+                    sys.stdout.write("\IOError is %s\n" % str(x))
             else:
                 raise AssertionError("Use of invalid cert should have failed!")
         finally:
