@@ -264,6 +264,10 @@ class SSLSocket(socket):
     def sendall(self, data, flags=0):
         self._checkClosed()
         if self._sslobj:
+            if flags != 0:
+                raise ValueError(
+                    "non-zero flags not allowed in calls to sendall() on %s" %
+                    self.__class__)
             amount = len(data)
             count = 0
             while (count < amount):
