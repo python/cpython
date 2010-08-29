@@ -136,6 +136,9 @@ Extensions
 Library
 -------
 
+- Issue #9706: ssl module provides a better error handling in various 
+  circumstances.
+
 - Issue #1868: Eliminate subtle timing issues in thread-local objects by
   getting rid of the cached copy of thread-local attribute dictionary.
 
