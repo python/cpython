@@ -180,16 +180,16 @@ class BasicSocketTests(unittest.TestCase):
         s = ssl.wrap_socket(sock, server_side=True, certfile=CERTFILE)
         self.assertRaisesRegexp(ValueError, "can't connect in server-side mode",
                                 s.connect, (HOST, 8080))
-        with self.assertRaises(IOError) as err:
+        with self.assertRaises(IOError) as cm:
             ssl.wrap_socket(socket.socket(), certfile=WRONGCERT)
-            self.assertEqual(err.errno, errno.ENOENT)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
         # XXX - temporarily disabled as per issue #9711
-        #with self.assertRaises(IOError) as err:
+        #with self.assertRaises(IOError) as cm:
         #    ssl.wrap_socket(socket.socket(), keyfile=WRONGCERT)
-        #    self.assertEqual(err.errno, errno.ENOENT)
-        with self.assertRaises(IOError) as err:
+        #self.assertEqual(cm.exception.errno, errno.ENOENT)
+        with self.assertRaises(IOError) as cm:
             ssl.wrap_socket(socket.socket(), certfile=WRONGCERT, keyfile=WRONGCERT)
-            self.assertEqual(err.errno, errno.ENOENT)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
 
 
 class ContextTests(unittest.TestCase):
@@ -259,9 +259,9 @@ class ContextTests(unittest.TestCase):
         ctx.load_cert_chain(CERTFILE)
         ctx.load_cert_chain(CERTFILE, keyfile=CERTFILE)
         self.assertRaises(TypeError, ctx.load_cert_chain, keyfile=CERTFILE)
-        with self.assertRaises(IOError) as err:
+        with self.assertRaises(IOError) as cm:
             ctx.load_cert_chain(WRONGCERT)
-            self.assertEqual(err.errno, errno.ENOENT)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
             ctx.load_cert_chain(BADCERT)
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
@@ -290,9 +290,9 @@ class ContextTests(unittest.TestCase):
         ctx.load_verify_locations(cafile=BYTES_CERTFILE, capath=None)
         self.assertRaises(TypeError, ctx.load_verify_locations)
         self.assertRaises(TypeError, ctx.load_verify_locations, None, None)
-        with self.assertRaises(IOError) as err:
+        with self.assertRaises(IOError) as cm:
             ctx.load_verify_locations(WRONGCERT)
-            self.assertEqual(err.errno, errno.ENOENT)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaisesRegexp(ssl.SSLError, "PEM lib"):
             ctx.load_verify_locations(BADCERT)
         ctx.load_verify_locations(CERTFILE, CAPATH)
