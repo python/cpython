@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 doctests = """
 Tests for the tokenize module.
 
