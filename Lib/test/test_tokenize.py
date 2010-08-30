@@ -533,6 +533,7 @@ pass the '-ucompiler' option to process the full directory.
     True
 
 Evil tabs
+
     >>> dump_tokens("def f():\\n\\tif x\\n        \\tpass")
     ENCODING   'utf-8'       (0, 0) (0, 0)
     NAME       'def'         (1, 0) (1, 3)
@@ -549,6 +550,18 @@ Evil tabs
     NAME       'pass'        (3, 9) (3, 13)
     DEDENT     ''            (4, 0) (4, 0)
     DEDENT     ''            (4, 0) (4, 0)
+
+Non-ascii identifiers
+
+    >>> dump_tokens("Örter = 'places'\\ngrün = 'green'")
+    ENCODING   'utf-8'       (0, 0) (0, 0)
+    NAME       'Örter'       (1, 0) (1, 5)
+    OP         '='           (1, 6) (1, 7)
+    STRING     "'places'"    (1, 8) (1, 16)
+    NEWLINE    '\\n'          (1, 16) (1, 17)
+    NAME       'grün'        (2, 0) (2, 4)
+    OP         '='           (2, 5) (2, 6)
+    STRING     "'green'"     (2, 7) (2, 14)
 """
 
 from test import support
