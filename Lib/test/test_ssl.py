@@ -174,19 +174,24 @@ class BasicSocketTests(unittest.TestCase):
 
     def test_errors(self):
         sock = socket.socket()
-        with self.assertRaisesRegexp(ValueError, "certfile must be specified"):
-            ssl.wrap_socket(sock, server_side=True)
-            ssl.wrap_socket(sock, server_side=True, certfile="")
+        self.assertRaisesRegexp(ValueError,
+                        "certfile must be specified",
+                        ssl.wrap_socket, sock, keyfile=CERTFILE)
+        self.assertRaisesRegexp(ValueError,
+                        "certfile must be specified for server-side operations",
+                        ssl.wrap_socket, sock, server_side=True)
+        self.assertRaisesRegexp(ValueError,
+                        "certfile must be specified for server-side operations",
+                        ssl.wrap_socket, sock, server_side=True, certfile="")
         s = ssl.wrap_socket(sock, server_side=True, certfile=CERTFILE)
         self.assertRaisesRegexp(ValueError, "can't connect in server-side mode",
                                 s.connect, (HOST, 8080))
         with self.assertRaises(IOError) as cm:
             ssl.wrap_socket(socket.socket(), certfile=WRONGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
-        # XXX - temporarily disabled as per issue #9711
-        #with self.assertRaises(IOError) as cm:
-        #    ssl.wrap_socket(socket.socket(), keyfile=WRONGCERT)
-        #self.assertEqual(cm.exception.errno, errno.ENOENT)
+        with self.assertRaises(IOError) as cm:
+            ssl.wrap_socket(socket.socket(), certfile=CERTFILE, keyfile=WRONGCERT)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaises(IOError) as cm:
             ssl.wrap_socket(socket.socket(), certfile=WRONGCERT, keyfile=WRONGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
