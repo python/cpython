@@ -677,51 +677,66 @@ are always available.  They are listed here in alphabetical order.
    Open *file* and return a corresponding stream.  If the file cannot be opened,
    an :exc:`IOError` is raised.
 
-   *file* is either a string or bytes object giving the name (and the path if
-   the file isn't in the current working directory) of the file to be opened or
+   *file* is either a string or bytes object giving the pathname (absolute or
+   relative to the current working directory) of the file to be opened or
    an integer file descriptor of the file to be wrapped.  (If a file descriptor
    is given, it is closed when the returned I/O object is closed, unless
    *closefd* is set to ``False``.)
 
    *mode* is an optional string that specifies the mode in which the file is
-   opened.  The available modes are:
+   opened.  It defaults to ``'r'`` which means open for reading in text mode.
+   Other common values are ``'w'`` for writing (truncating the file if it
+   already exists), and ``'a'`` for appending (which on *some* Unix systems,
+   means that *all* writes append to the end of the file regardless of the
+   current seek position).  In text mode, if *encoding* is not specified the
+   encoding used is platform dependent. (For reading and writing raw bytes use
+   binary mode and leave *encoding* unspecified.)  The available modes are:
 
    ========= ===============================================================
    Character Meaning
    --------- ---------------------------------------------------------------
    ``'r'``   open for reading (default)
-   ``'w'``   open for writing, truncating the file first if it exists
+   ``'w'``   open for writing, truncating the file first
    ``'a'``   open for writing, appending to the end of the file if it exists
-   ========= ===============================================================
-
-   Several characters can be appended that modify the given mode:
-
-   ========= ===============================================================
-   ``'t'``   text mode (default)
    ``'b'``   binary mode
-   ``'+'``   open for updating (reading and writing)
+   ``'t'``   text mode (default)
+   ``'+'``   open a disk file for updating (reading and writing)
    ``'U'``   universal newline mode (for backwards compatibility; should
              not be used in new code)
    ========= ===============================================================
 
-   The mode ``'w+'`` opens and truncates the file to 0 bytes, while ``'r+'``
-   opens the file without truncation.  On *some* Unix systems, append mode means
-   that *all* writes append to the end of the file regardless of the current
-   seek position.
+   The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
+   For binary read-write access, the mode ``'w+b'`` opens and truncates the file
+   to 0 bytes.  ``'r+b'`` opens the file without truncation.
 
-   Python distinguishes between files opened in binary and text modes, even when
-   the underlying operating system doesn't.  Files opened in binary mode
-   (including ``'b'`` in the *mode* argument) return contents as ``bytes``
-   objects without any decoding.  In text mode (the default, or when ``'t'`` is
-   included in the *mode* argument), the contents of the file are returned as
-   strings, the bytes having been first decoded using the specified *encoding*.
-   If *encoding* is not specified, a platform-dependent default encoding is
-   used, see below.
+   As mentioned in the :ref:`io-overview`, Python distinguishes between binary
+   and text I/O.  Files opened in binary mode (including ``'b'`` in the *mode*
+   argument) return contents as :class:`bytes` objects without any decoding.  In
+   text mode (the default, or when ``'t'`` is included in the *mode* argument),
+   the contents of the file are returned as :class:`str`, the bytes having been
+   first decoded using a platform-dependent encoding or using the specified
+   *encoding* if given.
 
-   *buffering* is an optional integer used to set the buffering policy.  By
-   default full buffering is on.  Pass 0 to switch buffering off (only allowed
-   in binary mode), 1 to set line buffering, and an integer > 1 for full
-   buffering.
+   .. note::
+
+      Python doesn't depend on the underlying operating system's notion of text
+      files; all the the processing is done by Python itself, and is therefore
+      platform-independent.
+
+   *buffering* is an optional integer used to set the buffering policy.  Pass 0
+   to switch buffering off (only allowed in binary mode), 1 to select line
+   buffering (only usable in text mode), and an integer > 1 to indicate the size
+   of a fixed-size chunk buffer.  When no *buffering* argument is given, the
+   default buffering policy works as follows:
+
+   * Binary files are buffered in fixed-size chunks; the size of the buffer is
+     chosen using a heuristic trying to determine the underlying device's "block
+     size" and falling back on :attr:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
+     the buffer will typically be 4096 or 8192 bytes long.
+
+   * "Interactive" text files (files for which :meth:`isatty` returns True) use
+     line buffering.  Other text files use the policy described above for binary
+     files.
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
