@@ -514,6 +514,9 @@ Extension Modules
 Build
 -----
 
+- Issue #9700: define HAVE_BROKEN_POSIX_SEMAPHORES under AIX 6.x.  Patch by
+  Sébastien Sablé.
+
 - Issue #3928: os.mknod() now available in Solaris, also.
 
 - Issue #6716: Quote -x arguments of compileall in MSI installer.
