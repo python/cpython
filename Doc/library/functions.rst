@@ -712,36 +712,37 @@ are always available.  They are listed here in alphabetical order.
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
-   For binary read-write access, the mode ``'w+b'`` opens and truncates the
-   file to 0 bytes, while ``'r+b'`` opens the file without truncation.
+   For binary read-write access, the mode ``'w+b'`` opens and truncates the file
+   to 0 bytes.  ``'r+b'`` opens the file without truncation.
 
-   As mentioned in the `overview`_, Python distinguishes between binary
-   and text I/O.  Files opened in binary mode (including ``'b'`` in the
-   *mode* argument) return contents as :class:`bytes` objects without
-   any decoding.  In text mode (the default, or when ``'t'``
-   is included in the *mode* argument), the contents of the file are
-   returned as strings, the bytes having been first decoded using a
-   platform-dependent encoding or using the specified *encoding* if given.
+   As mentioned in the :ref:`io-overview`, Python distinguishes between binary
+   and text I/O.  Files opened in binary mode (including ``'b'`` in the *mode*
+   argument) return contents as :class:`bytes` objects without any decoding.  In
+   text mode (the default, or when ``'t'`` is included in the *mode* argument),
+   the contents of the file are returned as :class:`str`, the bytes having been
+   first decoded using a platform-dependent encoding or using the specified
+   *encoding* if given.
 
    .. note::
-      Python doesn't depend on the underlying operating system's notion
-      of text files; all the the processing is done by Python itself, and
-      is therefore platform-independent.
 
-   *buffering* is an optional integer used to set the buffering policy.
-   Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
-   line buffering (only usable in text mode), and an integer > 1 to indicate
-   the size of a fixed-size chunk buffer.  When no *buffering* argument is
-   given, the default buffering policy works as follows:
+      Python doesn't depend on the underlying operating system's notion of text
+      files; all the the processing is done by Python itself, and is therefore
+      platform-independent.
 
-   * Binary files are buffered in fixed-size chunks; the size of the buffer
-     is chosen using a heuristic trying to determine the underlying device's
-     "block size" and falling back on :attr:`DEFAULT_BUFFER_SIZE`.
-     On many systems, the buffer will typically be 4096 or 8192 bytes long.
+   *buffering* is an optional integer used to set the buffering policy.  Pass 0
+   to switch buffering off (only allowed in binary mode), 1 to select line
+   buffering (only usable in text mode), and an integer > 1 to indicate the size
+   of a fixed-size chunk buffer.  When no *buffering* argument is given, the
+   default buffering policy works as follows:
 
-   * "Interactive" text files (files for which :meth:`isatty` returns True)
-     use line buffering.  Other text files use the policy described above
-     for binary files.
+   * Binary files are buffered in fixed-size chunks; the size of the buffer is
+     chosen using a heuristic trying to determine the underlying device's "block
+     size" and falling back on :attr:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
+     the buffer will typically be 4096 or 8192 bytes long.
+
+   * "Interactive" text files (files for which :meth:`isatty` returns True) use
+     line buffering.  Other text files use the policy described above for binary
+     files.
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
@@ -784,16 +785,17 @@ are always available.  They are listed here in alphabetical order.
    closed.  If a filename is given *closefd* has no effect and must be ``True``
    (the default).
 
-   The type of file object returned by the :func:`.open` function depends on the
-   mode.  When :func:`.open` is used to open a file in a text mode (``'w'``,
+   The type of file object returned by the :func:`open` function depends on the
+   mode.  When :func:`open` is used to open a file in a text mode (``'w'``,
    ``'r'``, ``'wt'``, ``'rt'``, etc.), it returns a subclass of
-   :class:`TextIOBase` (specifically :class:`TextIOWrapper`).  When used to open
-   a file in a binary mode with buffering, the returned class is a subclass of
-   :class:`BufferedIOBase`.  The exact class varies: in read binary mode, it
-   returns a :class:`BufferedReader`; in write binary and append binary modes,
-   it returns a :class:`BufferedWriter`, and in read/write mode, it returns a
-   :class:`BufferedRandom`.  When buffering is disabled, the raw stream, a
-   subclass of :class:`RawIOBase`, :class:`FileIO`, is returned.
+   :class:`io.TextIOBase` (specifically :class:`io.TextIOWrapper`).  When used
+   to open a file in a binary mode with buffering, the returned class is a
+   subclass of :class:`io.BufferedIOBase`.  The exact class varies: in read
+   binary mode, it returns a :class:`io.BufferedReader`; in write binary and
+   append binary modes, it returns a :class:`io.BufferedWriter`, and in
+   read/write mode, it returns a :class:`io.BufferedRandom`.  When buffering is
+   disabled, the raw stream, a subclass of :class:`io.RawIOBase`,
+   :class:`io.FileIO`, is returned.
 
    .. index::
       single: line-buffered I/O
