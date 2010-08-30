@@ -125,6 +125,8 @@ class SSLSocket(socket):
             if server_side and not certfile:
                 raise ValueError("certfile must be specified for server-side "
                                  "operations")
+            if keyfile and not certfile:
+                raise ValueError("certfile must be specified")
             if certfile and not keyfile:
                 keyfile = certfile
             self.context = SSLContext(ssl_version)
