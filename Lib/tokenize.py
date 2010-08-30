@@ -92,7 +92,7 @@ def maybe(*choices): return group(*choices) + '?'
 Whitespace = r'[ \f\t]*'
 Comment = r'#[^\r\n]*'
 Ignore = Whitespace + any(r'\\\r?\n' + Whitespace) + maybe(Comment)
-Name = r'[a-zA-Z_]\w*'
+Name = r'\w+'
 
 Hexnumber = r'0[xX][0-9a-fA-F]+'
 Binnumber = r'0[bB][01]+'
@@ -142,9 +142,12 @@ ContStr = group(r"[bB]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
 PseudoExtras = group(r'\\\r?\n', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
+def _compile(expr):
+    return re.compile(expr, re.UNICODE)
+
 tokenprog, pseudoprog, single3prog, double3prog = map(
-    re.compile, (Token, PseudoToken, Single3, Double3))
-endprogs = {"'": re.compile(Single), '"': re.compile(Double),
+    _compile, (Token, PseudoToken, Single3, Double3))
+endprogs = {"'": _compile(Single), '"': _compile(Double),
             "'''": single3prog, '"""': double3prog,
             "r'''": single3prog, 'r"""': double3prog,
             "b'''": single3prog, 'b"""': double3prog,
@@ -170,6 +173,8 @@ for t in ("'", '"',
           "br'", 'br"', "Br'", 'Br"',
           "bR'", 'bR"', "BR'", 'BR"' ):
     single_quoted[t] = t
+
+del _compile
 
 tabsize = 8
 
@@ -393,7 +398,7 @@ def tokenize(readline):
 
 def _tokenize(readline, encoding):
     lnum = parenlev = continued = 0
-    namechars, numchars = string.ascii_letters + '_', '0123456789'
+    numchars = '0123456789'
     contstr, needcont = '', 0
     contline = None
     indents = [0]
@@ -520,7 +525,7 @@ def _tokenize(readline, encoding):
                         break
                     else:                                  # ordinary string
                         yield TokenInfo(STRING, token, spos, epos, line)
-                elif initial in namechars:                 # ordinary name
+                elif initial.isidentifier():               # ordinary name
                     yield TokenInfo(NAME, token, spos, epos, line)
                 elif initial == '\\':                      # continued stmt
                     continued = 1

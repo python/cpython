@@ -12,6 +12,8 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9712: Fix tokenize on identifiers that start with non-ascii names.
+
 - Issue #9688: __basicsize__ and __itemsize__ must be accessed as Py_ssize_t.
 
 - Issue #9684: Added a definition for SIZEOF_WCHAR_T to PC/pyconfig.h,
