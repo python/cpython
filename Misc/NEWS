@@ -14,6 +14,8 @@ Core and Builtins
 
 - Restore GIL in nis_cat in case of error.
 
+- Issue #9712: Fix tokenize on identifiers that start with non-ascii names.
+
 - Issue #9688: __basicsize__ and __itemsize__ must be accessed as Py_ssize_t.
 
 - Issue #5319: Print an error if flushing stdout fails at interpreter
