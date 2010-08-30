@@ -172,8 +172,28 @@ def _install_handlers(cp, formatters):
         h.setTarget(handlers[t])
     return handlers
 
+def _handle_existing_loggers(existing, child_loggers, disable_existing):
+    """
+    When (re)configuring logging, handle loggers which were in the previous
+    configuration but are not in the new configuration. There's no point
+    deleting them as other threads may continue to hold references to them;
+    and by disabling them, you stop them doing any logging.
 
-def _install_loggers(cp, handlers, disable_existing_loggers):
+    However, don't disable children of named loggers, as that's probably not
+    what was intended by the user. Also, allow existing loggers to NOT be
+    disabled if disable_existing is false.
+    """
+    root = logging.root
+    for log in existing:
+        logger = root.manager.loggerDict[log]
+        if log in child_loggers:
+            logger.level = logging.NOTSET
+            logger.handlers = []
+            logger.propagate = True
+        elif disable_existing:
+            logger.disabled = True
+
+def _install_loggers(cp, handlers, disable_existing):
     """Create and install loggers"""
 
     # configure the root first
@@ -254,15 +274,15 @@ def _install_loggers(cp, handlers, disable_existing_loggers):
     #and by disabling them, you stop them doing any logging.
     #However, don't disable children of named loggers, as that's
     #probably not what was intended by the user.
-    for log in existing:
-        logger = root.manager.loggerDict[log]
-        if log in child_loggers:
-            logger.level = logging.NOTSET
-            logger.handlers = []
-            logger.propagate = 1
-        elif disable_existing_loggers:
-            logger.disabled = 1
-
+    #for log in existing:
+    #    logger = root.manager.loggerDict[log]
+    #    if log in child_loggers:
+    #        logger.level = logging.NOTSET
+    #        logger.handlers = []
+    #        logger.propagate = 1
+    #    elif disable_existing_loggers:
+    #        logger.disabled = 1
+    _handle_existing_loggers(existing, child_loggers, disable_existing)
 
 IDENTIFIER = re.compile('^[a-z_][a-z0-9_]*$', re.I)
 
@@ -617,14 +637,16 @@ class DictConfigurator(BaseConfigurator):
                 #and by disabling them, you stop them doing any logging.
                 #However, don't disable children of named loggers, as that's
                 #probably not what was intended by the user.
-                for log in existing:
-                    logger = root.manager.loggerDict[log]
-                    if log in child_loggers:
-                        logger.level = logging.NOTSET
-                        logger.handlers = []
-                        logger.propagate = True
-                    elif disable_existing:
-                        logger.disabled = True
+                #for log in existing:
+                #    logger = root.manager.loggerDict[log]
+                #    if log in child_loggers:
+                #        logger.level = logging.NOTSET
+                #        logger.handlers = []
+                #        logger.propagate = True
+                #    elif disable_existing:
+                #        logger.disabled = True
+                _handle_existing_loggers(existing, child_loggers,
+                                         disable_existing)
 
                 # And finally, do the root logger
                 root = config.get('root', None)
