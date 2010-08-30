@@ -433,7 +433,11 @@ class Formatter(object):
         traceback.print_exception()
         """
         sio = io.StringIO()
-        traceback.print_exception(ei[0], ei[1], ei[2], None, sio)
+        tb = ei[2]
+        # See issues #9427, #1553375. Commented out for now.
+        #if getattr(self, 'fullstack', False):
+        #    traceback.print_stack(tb.tb_frame.f_back, file=sio)
+        traceback.print_exception(ei[0], ei[1], tb, None, sio)
         s = sio.getvalue()
         sio.close()
         if s[-1:] == "\n":
