@@ -347,6 +347,9 @@ Tests
 Build
 -----
 
+- Issue #9700: define HAVE_BROKEN_POSIX_SEMAPHORES under AIX 6.x.  Patch by
+  Sébastien Sablé.
+
 - Don't run pgen twice when using make -j.
 
 
