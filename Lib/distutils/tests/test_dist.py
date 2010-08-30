@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 """Tests for distutils.dist."""
 import os
 import io
