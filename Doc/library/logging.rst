@@ -321,6 +321,14 @@ order::
 
     "%(asctime)s - %(levelname)s - %(message)s"
 
+Formatters use a user-configurable function to convert the creation time of a
+record to a tuple. By default, :func:`time.localtime` is used; to change this
+for a particular formatter instance, set the ``converter`` attribute of the
+instance to a function with the same signature as :func:`time.localtime` or
+:func:`time.gmtime`. To change it for all formatters, for example if you want
+all logging times to be shown in GMT, set the ``converter`` attribute in the
+Formatter class (to ``time.gmtime`` for GMT display).
+
 
 Configuring Logging
 ^^^^^^^^^^^^^^^^^^^
