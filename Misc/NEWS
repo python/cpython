@@ -523,6 +523,9 @@ Tests
 Build
 -----
 
+- Issue #9700: define HAVE_BROKEN_POSIX_SEMAPHORES under AIX 6.x.  Patch by
+  Sébastien Sablé.
+
 - Display installer warning that Windows 2000 won't be supported in future
   releases.
 
