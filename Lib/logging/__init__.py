@@ -935,16 +935,13 @@ class PlaceHolder(object):
         """
         Initialize with the specified logger being a child of this placeholder.
         """
-        #self.loggers = [alogger]
         self.loggerMap = { alogger : None }
 
     def append(self, alogger):
         """
         Add the specified logger as a child of this placeholder.
         """
-        #if alogger not in self.loggers:
         if alogger not in self.loggerMap:
-            #self.loggers.append(alogger)
             self.loggerMap[alogger] = None
 
 #
@@ -1267,7 +1264,6 @@ class Logger(Filterer):
         Remove the specified handler from this logger.
         """
         if hdlr in self.handlers:
-            #hdlr.close()
             hdlr.acquire()
             try:
                 self.handlers.remove(hdlr)
