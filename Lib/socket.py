@@ -189,7 +189,9 @@ class _socketobject(object):
         for method in _delegate_methods:
             setattr(self, method, getattr(_sock, method))
 
-    def close(self):
+    def close(self, _closedsocket=_closedsocket,
+              _delegate_methods=_delegate_methods, setattr=setattr):
+        # This function should not reference any globals. See issue #808164.
         self._sock = _closedsocket()
         dummy = self._sock._dummy
         for method in _delegate_methods:
