@@ -67,20 +67,19 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertTrue(c_char_p.from_param(a) is a)
 
     def test_cw_strings(self):
-        from ctypes import byref, sizeof
+        from ctypes import byref
         try:
-            from ctypes import c_wchar, c_wchar_p
+            from ctypes import c_wchar_p
         except ImportError:
 ##            print "(No c_wchar_p)"
             return
         s = "123"
         if sys.platform == "win32":
-            unisize = 8 if sys.maxunicode == 1114111 else 4
-            if unisize == sizeof(c_wchar):
-                self.assertIs(c_wchar_p.from_param(s)._obj, s)
-                # new in 0.9.1: convert (decode) ascii to unicode
-                self.assertEqual(c_wchar_p.from_param("123")._obj, "123")
+            self.assertTrue(c_wchar_p.from_param(s)._obj is s)
             self.assertRaises(TypeError, c_wchar_p.from_param, 42)
+
+            # new in 0.9.1: convert (decode) ascii to unicode
+            self.assertEqual(c_wchar_p.from_param("123")._obj, "123")
         self.assertRaises(TypeError, c_wchar_p.from_param, b"123\377")
 
         pa = c_wchar_p.from_param(c_wchar_p("123"))
