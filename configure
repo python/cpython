@@ -638,6 +638,7 @@ SVNVERSION
 ARFLAGS
 AR
 RANLIB
+USE_INLINE
 GNULD
 LINKCC
 RUNSHARED
@@ -4753,6 +4754,55 @@ case `"$ac_prog" -V 2>&1 < /dev/null` in
 esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GNULD" >&5
 $as_echo "$GNULD" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inline" >&5
+$as_echo_n "checking for inline... " >&6; }
+if test "${ac_cv_c_inline+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_c_inline=no
+for ac_kw in inline __inline__ __inline; do
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#ifndef __cplusplus
+typedef int foo_t;
+static $ac_kw foo_t static_foo () {return 0; }
+$ac_kw foo_t foo () {return 0; }
+#endif
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_c_inline=$ac_kw
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  test "$ac_cv_c_inline" != no && break
+done
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_inline" >&5
+$as_echo "$ac_cv_c_inline" >&6; }
+
+case $ac_cv_c_inline in
+  inline | yes) ;;
+  *)
+    case $ac_cv_c_inline in
+      no) ac_val=;;
+      *) ac_val=$ac_cv_c_inline;;
+    esac
+    cat >>confdefs.h <<_ACEOF
+#ifndef __cplusplus
+#define inline $ac_val
+#endif
+_ACEOF
+    ;;
+esac
+
+if test "$ac_cv_c_inline" != no ; then
+        $as_echo "#define USE_INLINE 1" >>confdefs.h
+
+
+fi
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-shared" >&5
 $as_echo_n "checking for --enable-shared... " >&6; }

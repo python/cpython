@@ -266,8 +266,6 @@ typedef Py_intptr_t     Py_ssize_t;
  * should keep using static.
  */
 
-#undef USE_INLINE /* XXX - set via configure? */
-
 #if defined(_MSC_VER)
 #if defined(PY_LOCAL_AGGRESSIVE)
 /* enable more aggressive optimization for visual studio */

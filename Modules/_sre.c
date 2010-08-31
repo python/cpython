@@ -67,9 +67,6 @@ static char copyright[] =
 /* enables fast searching */
 #define USE_FAST_SEARCH
 
-/* enables aggressive inlining (always on for Visual C) */
-#undef USE_INLINE
-
 /* enables copy/deepcopy handling (work in progress) */
 #undef USE_BUILTIN_COPY
 
