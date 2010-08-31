@@ -173,11 +173,11 @@ class socket(_socket.socket):
             self.close()
 
     def _real_close(self, _ss=_socket.socket):
-        # This function should not reference any globals.  See Issue808164
+        # This function should not reference any globals. See issue #808164.
         _ss.close(self)
 
     def close(self):
-        # This function should not reference any globals.  See Issue808164
+        # This function should not reference any globals. See issue #808164.
         self._closed = True
         if self._io_refs <= 0:
             self._real_close()
