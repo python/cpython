@@ -142,6 +142,9 @@ Extensions
 Library
 -------
 
+- Issue #808164: Fixed socket.close to avoid references to globals, to
+  avoid issues when socket.close is called from a __del__ method.
+
 - Issue #9706: ssl module provides a better error handling in various 
   circumstances.
 
