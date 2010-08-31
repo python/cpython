@@ -1043,6 +1043,9 @@
 /* Define to 0 if you don't want to use computed gotos in ceval.c. */
 #undef USE_COMPUTED_GOTOS
 
+/* Define if the compiler supports the inline keyword */
+#undef USE_INLINE
+
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
 # undef _ALL_SOURCE
