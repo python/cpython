@@ -1162,13 +1162,26 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
                                       const char *encoding,
                                       const char *errors)
 {
-    const char *s = NULL;
-    Py_ssize_t len;
+    Py_buffer buffer;
     PyObject *v;
 
     if (obj == NULL) {
         PyErr_BadInternalCall();
         return NULL;
+    }
+
+    /* Decoding bytes objects is the most common case and should be fast */
+    if (PyBytes_Check(obj)) {
+        if (PyBytes_GET_SIZE(obj) == 0) {
+            Py_INCREF(unicode_empty);
+            v = (PyObject *) unicode_empty;
+        }
+        else {
+            v = PyUnicode_Decode(
+                    PyBytes_AS_STRING(obj), PyBytes_GET_SIZE(obj),
+                    encoding, errors);
+        }
+        return v;
     }
 
     if (PyUnicode_Check(obj)) {
@@ -1177,38 +1190,24 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
         return NULL;
     }
 
-    /* Coerce object */
-    if (PyBytes_Check(obj)) {
-        s = PyBytes_AS_STRING(obj);
-        len = PyBytes_GET_SIZE(obj);
-    }
-    else if (PyByteArray_Check(obj)) {
-        s = PyByteArray_AS_STRING(obj);
-        len = PyByteArray_GET_SIZE(obj);
-    }
-    else if (PyObject_AsCharBuffer(obj, &s, &len)) {
-        /* Overwrite the error message with something more useful in
-           case of a TypeError. */
-        if (PyErr_ExceptionMatches(PyExc_TypeError))
-            PyErr_Format(PyExc_TypeError,
-                         "coercing to str: need string or buffer, "
-                         "%.80s found",
-                         Py_TYPE(obj)->tp_name);
-        goto onError;
+    /* Retrieve a bytes buffer view through the PEP 3118 buffer interface */
+    if (PyObject_GetBuffer(obj, &buffer, PyBUF_SIMPLE) < 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "coercing to str: need bytes, bytearray "
+                     "or buffer-like object, %.80s found",
+                     Py_TYPE(obj)->tp_name);
+        return NULL;
     }
 
-    /* Convert to Unicode */
-    if (len == 0) {
+    if (buffer.len == 0) {
         Py_INCREF(unicode_empty);
-        v = (PyObject *)unicode_empty;
+        v = (PyObject *) unicode_empty;
     }
     else
-        v = PyUnicode_Decode(s, len, encoding, errors);
+        v = PyUnicode_Decode((char*) buffer.buf, buffer.len, encoding, errors);
 
+    PyBuffer_Release(&buffer);
     return v;
-
-  onError:
-    return NULL;
 }
 
 PyObject *PyUnicode_Decode(const char *s,
