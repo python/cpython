@@ -29,10 +29,6 @@ if not os.path.isdir(site.USER_SITE):
 
 class HelperFunctionsTests(unittest.TestCase):
     """Tests for helper functions.
-
-    The setting of the encoding (set using sys.setdefaultencoding) used by
-    the Unicode implementation is not tested.
-
     """
 
     def setUp(self):
@@ -332,10 +328,6 @@ class ImportSideEffectTests(unittest.TestCase):
                         break
                 else:
                     self.fail("did not alias mbcs")
-
-    def test_setdefaultencoding_removed(self):
-        # Make sure sys.setdefaultencoding is gone
-        self.assertTrue(not hasattr(sys, "setdefaultencoding"))
 
     def test_sitecustomize_executed(self):
         # If sitecustomize is available, it should have been imported.

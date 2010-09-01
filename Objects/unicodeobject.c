@@ -1784,17 +1784,6 @@ const char *PyUnicode_GetDefaultEncoding(void)
     return unicode_default_encoding;
 }
 
-int PyUnicode_SetDefaultEncoding(const char *encoding)
-{
-    if (strcmp(encoding, unicode_default_encoding) != 0) {
-        PyErr_Format(PyExc_ValueError,
-                     "Can only set default encoding to %s",
-                     unicode_default_encoding);
-        return -1;
-    }
-    return 0;
-}
-
 /* create or adjust a UnicodeDecodeError */
 static void
 make_decode_exception(PyObject **exceptionObject,

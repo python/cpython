@@ -1326,8 +1326,6 @@ setprofile(func)   Sets a profile function for performance profiling.
 exc_info()         traceback return value to a local variable in a
                    function handling an exception will cause a circular
                    reference.
-setdefaultencoding Change default Unicode encoding - defaults to 7-bit ASCII.
-(encoding)
 getrecursionlimit  Retrieve maximum recursion depth.
 ()
 setrecursionlimit  Set maximum recursion depth. (Defaults to 1000.)
