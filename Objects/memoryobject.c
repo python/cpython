@@ -172,9 +172,6 @@ _strided_copy_nd(char *dest, char *src, int nd, Py_ssize_t *shape,
     return;
 }
 
-void _add_one_to_index_F(int nd, Py_ssize_t *index, Py_ssize_t *shape);
-void _add_one_to_index_C(int nd, Py_ssize_t *index, Py_ssize_t *shape);
-
 static int
 _indirect_copy_nd(char *dest, Py_buffer *view, char fort)
 {
@@ -203,10 +200,10 @@ _indirect_copy_nd(char *dest, Py_buffer *view, char fort)
         elements *= view->shape[k];
     }
     if (fort == 'F') {
-        func = _add_one_to_index_F;
+        func = _Py_add_one_to_index_F;
     }
     else {
-        func = _add_one_to_index_C;
+        func = _Py_add_one_to_index_C;
     }
     while (elements--) {
         func(view->ndim, indices, view->shape);
