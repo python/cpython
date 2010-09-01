@@ -114,15 +114,6 @@ static PyUnicodeObject *unicode_empty;
    shared as well. */
 static PyUnicodeObject *unicode_latin1[256];
 
-/* Default encoding to use and assume when NULL is passed as encoding
-   parameter; it is fixed to "utf-8".  Always use the
-   PyUnicode_GetDefaultEncoding() API to access this global.
-
-   Don't forget to alter Py_FileSystemDefaultEncoding if you change the
-   hard coded default!
-*/
-static const char unicode_default_encoding[] = "utf-8";
-
 /* Fast detection of the most frequent whitespace characters */
 const unsigned char _Py_ascii_whitespace[] = {
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -1781,7 +1772,7 @@ Py_ssize_t PyUnicode_GetSize(PyObject *unicode)
 
 const char *PyUnicode_GetDefaultEncoding(void)
 {
-    return unicode_default_encoding;
+    return "utf-8";
 }
 
 /* create or adjust a UnicodeDecodeError */
