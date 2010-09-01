@@ -9951,6 +9951,15 @@ Py_UNICODE_strncpy(Py_UNICODE *s1, const Py_UNICODE *s2, size_t n)
     return s1;
 }
 
+Py_UNICODE*
+Py_UNICODE_strcat(Py_UNICODE *s1, const Py_UNICODE *s2)
+{
+    Py_UNICODE *u1 = s1;
+    u1 += Py_UNICODE_strlen(u1);
+    Py_UNICODE_strcpy(u1, s2);
+    return s1;
+}
+
 int
 Py_UNICODE_strcmp(const Py_UNICODE *s1, const Py_UNICODE *s2)
 {
