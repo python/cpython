@@ -179,7 +179,7 @@ _indirect_copy_nd(char *dest, Py_buffer *view, char fort)
     int k;
     Py_ssize_t elements;
     char *ptr;
-    void (*func)(int, Py_ssize_t *, Py_ssize_t *);
+    void (*func)(int, Py_ssize_t *, const Py_ssize_t *);
 
     if (view->ndim > PY_SSIZE_T_MAX / sizeof(Py_ssize_t)) {
         PyErr_NoMemory();
@@ -629,6 +629,11 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
     if (view->readonly) {
         PyErr_SetString(PyExc_TypeError,
             "cannot modify read-only memory");
+        return -1;
+    }
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "cannot delete memory");
         return -1;
     }
     if (view->ndim != 1) {
