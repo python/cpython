@@ -149,6 +149,11 @@ Extensions
 Library
 -------
 
+- Issue #8990: array.fromstring() and array.tostring() get renamed to
+  frombytes() and tobytes(), respectively, to avoid confusion.  Furthermore,
+  array.frombytes(), array.extend() as well as the array.array()
+  constructor now accept bytearray objects.  Patch by Thomas Jollans.
+
 - Issue #808164: Fixed socket.close to avoid references to globals, to
   avoid issues when socket.close is called from a __del__ method.
 

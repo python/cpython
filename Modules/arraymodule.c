@@ -1175,7 +1175,7 @@ Reverse the order of the items in the array.");
 
 
 /* Forward */
-static PyObject *array_fromstring(arrayobject *self, PyObject *args);
+static PyObject *array_frombytes(arrayobject *self, PyObject *args);
 
 static PyObject *
 array_fromfile(arrayobject *self, PyObject *args)
@@ -1212,7 +1212,7 @@ array_fromfile(arrayobject *self, PyObject *args)
     if (args == NULL)
         return NULL;
 
-    res = array_fromstring(self, args);
+    res = array_frombytes(self, args);
     Py_DECREF(args);
     if (res == NULL)
         return NULL;
@@ -1331,45 +1331,84 @@ PyDoc_STRVAR(tolist_doc,
 \n\
 Convert array to an ordinary list with the same items.");
 
-
 static PyObject *
-array_fromstring(arrayobject *self, PyObject *args)
+frombytes(arrayobject *self, Py_buffer *buffer)
 {
-    char *str;
-    Py_ssize_t n;
     int itemsize = self->ob_descr->itemsize;
-    if (!PyArg_ParseTuple(args, "s#:fromstring", &str, &n))
+    Py_ssize_t n;
+    if (buffer->itemsize != 1) {
+        PyBuffer_Release(buffer);
+        PyErr_SetString(PyExc_TypeError, "string/buffer of bytes required.");
         return NULL;
+    }
+    n = buffer->len;
     if (n % itemsize != 0) {
+        PyBuffer_Release(buffer);
         PyErr_SetString(PyExc_ValueError,
                    "string length not a multiple of item size");
         return NULL;
     }
     n = n / itemsize;
     if (n > 0) {
-    Py_ssize_t old_size = Py_SIZE(self);
+        Py_ssize_t old_size = Py_SIZE(self);
         if ((n > PY_SSIZE_T_MAX - old_size) ||
             ((old_size + n) > PY_SSIZE_T_MAX / itemsize)) {
+                PyBuffer_Release(buffer);
                 return PyErr_NoMemory();
         }
-        if (array_resize(self, old_size + n) == -1)
+        if (array_resize(self, old_size + n) == -1) {
+            PyBuffer_Release(buffer);
             return NULL;
+        }
         memcpy(self->ob_item + old_size * itemsize,
-            str, n * itemsize);
+            buffer->buf, n * itemsize);
     }
+    PyBuffer_Release(buffer);
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+static PyObject *
+array_fromstring(arrayobject *self, PyObject *args)
+{
+    Py_buffer buffer;
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "fromstring() is deprecated. Use frombytes() instead.", 2) != 0)
+        return NULL;
+    if (!PyArg_ParseTuple(args, "s*:fromstring", &buffer))
+        return NULL;
+    else
+        return frombytes(self, &buffer);
 }
 
 PyDoc_STRVAR(fromstring_doc,
 "fromstring(string)\n\
 \n\
 Appends items from the string, interpreting it as an array of machine\n\
+values, as if it had been read from a file using the fromfile() method).\n\
+\n\
+This method is deprecated. Use frombytes instead.");
+
+
+static PyObject *
+array_frombytes(arrayobject *self, PyObject *args)
+{
+    Py_buffer buffer;
+    if (!PyArg_ParseTuple(args, "y*:frombytes", &buffer))
+        return NULL;
+    else
+        return frombytes(self, &buffer);
+}
+
+PyDoc_STRVAR(frombytes_doc,
+"frombytes(bytestring)\n\
+\n\
+Appends items from the string, interpreting it as an array of machine\n\
 values, as if it had been read from a file using the fromfile() method).");
 
 
 static PyObject *
-array_tostring(arrayobject *self, PyObject *unused)
+array_tobytes(arrayobject *self, PyObject *unused)
 {
     if (Py_SIZE(self) <= PY_SSIZE_T_MAX / self->ob_descr->itemsize) {
         return PyBytes_FromStringAndSize(self->ob_item,
@@ -1379,12 +1418,29 @@ array_tostring(arrayobject *self, PyObject *unused)
     }
 }
 
-PyDoc_STRVAR(tostring_doc,
-"tostring() -> string\n\
+PyDoc_STRVAR(tobytes_doc,
+"tobytes() -> bytes\n\
 \n\
-Convert the array to an array of machine values and return the string\n\
+Convert the array to an array of machine values and return the bytes\n\
 representation.");
 
+
+static PyObject *
+array_tostring(arrayobject *self, PyObject *unused)
+{
+    if (PyErr_WarnEx(PyExc_DeprecationWarning, 
+            "tostring() is deprecated. Use tobytes() instead.", 2) != 0)
+        return NULL;
+    return array_tobytes(self, unused);
+}
+
+PyDoc_STRVAR(tostring_doc,
+"tostring() -> bytes\n\
+\n\
+Convert the array to an array of machine values and return the bytes\n\
+representation.\n\
+\n\
+This method is deprecated. Use tobytes instead.");
 
 
 static PyObject *
@@ -1420,7 +1476,7 @@ PyDoc_STRVAR(fromunicode_doc,
 \n\
 Extends this array with data from the unicode string ustr.\n\
 The array must be a unicode type array; otherwise a ValueError\n\
-is raised.  Use array.fromstring(ustr.decode(...)) to\n\
+is raised.  Use array.frombytes(ustr.decode(...)) to\n\
 append Unicode data to an array of some other type.");
 
 
@@ -1927,7 +1983,7 @@ array_reduce_ex(arrayobject *array, PyObject *value)
         return result;
     }
 
-    array_str = array_tostring(array, NULL);
+    array_str = array_tobytes(array, NULL);
     if (array_str == NULL) {
         Py_DECREF(dict);
         return NULL;
@@ -1983,6 +2039,8 @@ static PyMethodDef array_methods[] = {
      fromlist_doc},
     {"fromstring",      (PyCFunction)array_fromstring,  METH_VARARGS,
      fromstring_doc},
+    {"frombytes",       (PyCFunction)array_frombytes,   METH_VARARGS,
+     frombytes_doc},
     {"fromunicode",     (PyCFunction)array_fromunicode, METH_VARARGS,
      fromunicode_doc},
     {"index",           (PyCFunction)array_index,       METH_O,
@@ -2005,6 +2063,8 @@ static PyMethodDef array_methods[] = {
      tolist_doc},
     {"tostring",        (PyCFunction)array_tostring,    METH_NOARGS,
      tostring_doc},
+    {"tobytes",         (PyCFunction)array_tobytes,     METH_NOARGS,
+     tobytes_doc},
     {"tounicode",   (PyCFunction)array_tounicode,       METH_NOARGS,
      tounicode_doc},
     {NULL,              NULL}           /* sentinel */
@@ -2386,7 +2446,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     Py_DECREF(a);
                     return NULL;
                 }
-                v = array_fromstring((arrayobject *)a,
+                v = array_frombytes((arrayobject *)a,
                                          t_initial);
                 Py_DECREF(t_initial);
                 if (v == NULL) {

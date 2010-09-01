@@ -231,7 +231,7 @@ class BaseBytesMemoryTests(AbstractMemoryTests):
 class BaseArrayMemoryTests(AbstractMemoryTests):
     ro_type = None
     rw_type = lambda self, b: array.array('i', list(b))
-    getitem_type = lambda self, b: array.array('i', list(b)).tostring()
+    getitem_type = lambda self, b: array.array('i', list(b)).tobytes()
     itemsize = array.array('i').itemsize
     format = 'i'
 

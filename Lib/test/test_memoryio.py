@@ -425,7 +425,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         a = array.array('b', b"hello world")
         memio = self.ioclass(buf)
         memio.readinto(a)
-        self.assertEqual(a.tostring(), b"1234567890d")
+        self.assertEqual(a.tobytes(), b"1234567890d")
         memio.close()
         self.assertRaises(ValueError, memio.readinto, b)
 

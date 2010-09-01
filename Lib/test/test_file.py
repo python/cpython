@@ -44,7 +44,7 @@ class AutoFileTests(unittest.TestCase):
         a = array('b', b'x'*10)
         self.f = self.open(TESTFN, 'rb')
         n = self.f.readinto(a)
-        self.assertEquals(b'12', a.tostring()[:n])
+        self.assertEquals(b'12', a.tobytes()[:n])
 
     def testReadinto_text(self):
         # verify readinto refuses text files
@@ -281,7 +281,7 @@ class OtherFileTests(unittest.TestCase):
             except ValueError:
                 self.fail("readinto() after next() with supposedly empty "
                           "iteration-buffer failed anyway")
-            line = buf.tostring()
+            line = buf.tobytes()
             if line != testline:
                 self.fail("readinto() after next() with empty buffer "
                           "failed. Got %r, expected %r" % (line, testline))
