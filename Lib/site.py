@@ -460,25 +460,6 @@ def aliasmbcs():
                 encodings._cache[enc] = encodings._unknown
                 encodings.aliases.aliases[enc] = 'mbcs'
 
-def setencoding():
-    """Set the string encoding used by the Unicode implementation.  The
-    default is 'ascii', but if you're willing to experiment, you can
-    change this."""
-    encoding = "ascii" # Default value set by _PyUnicode_Init()
-    if 0:
-        # Enable to support locale aware default string encodings.
-        import locale
-        loc = locale.getdefaultlocale()
-        if loc[1]:
-            encoding = loc[1]
-    if 0:
-        # Enable to switch off string to Unicode coercion and implicit
-        # Unicode to string conversion.
-        encoding = "undefined"
-    if encoding != "ascii":
-        # On Non-Unicode builds this will raise an AttributeError...
-        sys.setdefaultencoding(encoding) # Needs Python Unicode build !
-
 
 def execsitecustomize():
     """Run custom site specific code, if available."""
@@ -527,15 +508,9 @@ def main():
     setcopyright()
     sethelper()
     aliasmbcs()
-    setencoding()
     execsitecustomize()
     if ENABLE_USER_SITE:
         execusercustomize()
-    # Remove sys.setdefaultencoding() so that users cannot change the
-    # encoding after initialization.  The test for presence is needed when
-    # this module is run as a script, because this code is executed twice.
-    if hasattr(sys, "setdefaultencoding"):
-        del sys.setdefaultencoding
 
 main()
 

@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9549: sys.setdefaultencoding() and PyUnicode_SetDefaultEncoding()
+  are now removed, since their effect was inexistent in 3.x (the default
+  encoding is hardcoded to utf-8 and cannot be changed).
+
 - Issue #7415: PyUnicode_FromEncodedObject() now uses the new buffer API
   properly.  Patch by Stefan Behnel.
 

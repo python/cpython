@@ -183,24 +183,6 @@ implementation."
 );
 
 static PyObject *
-sys_setdefaultencoding(PyObject *self, PyObject *args)
-{
-    char *encoding;
-    if (!PyArg_ParseTuple(args, "s:setdefaultencoding", &encoding))
-        return NULL;
-    if (PyUnicode_SetDefaultEncoding(encoding))
-        return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-PyDoc_STRVAR(setdefaultencoding_doc,
-"setdefaultencoding(encoding)\n\
-\n\
-Set the current default string encoding used by the Unicode implementation."
-);
-
-static PyObject *
 sys_getfilesystemencoding(PyObject *self)
 {
     if (Py_FileSystemDefaultEncoding)
@@ -1030,8 +1012,6 @@ static PyMethodDef sys_methods[] = {
 #ifdef USE_MALLOPT
     {"mdebug",          sys_mdebug, METH_VARARGS},
 #endif
-    {"setdefaultencoding", sys_setdefaultencoding, METH_VARARGS,
-     setdefaultencoding_doc},
     {"setfilesystemencoding", sys_setfilesystemencoding, METH_VARARGS,
      setfilesystemencoding_doc},
     {"setcheckinterval",        sys_setcheckinterval, METH_VARARGS,

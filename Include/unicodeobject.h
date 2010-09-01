@@ -212,7 +212,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_Replace PyUnicodeUCS2_Replace
 # define PyUnicode_Resize PyUnicodeUCS2_Resize
 # define PyUnicode_RichCompare PyUnicodeUCS2_RichCompare
-# define PyUnicode_SetDefaultEncoding PyUnicodeUCS2_SetDefaultEncoding
 # define PyUnicode_Split PyUnicodeUCS2_Split
 # define PyUnicode_Splitlines PyUnicodeUCS2_Splitlines
 # define PyUnicode_Tailmatch PyUnicodeUCS2_Tailmatch
@@ -295,7 +294,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_Replace PyUnicodeUCS4_Replace
 # define PyUnicode_Resize PyUnicodeUCS4_Resize
 # define PyUnicode_RichCompare PyUnicodeUCS4_RichCompare
-# define PyUnicode_SetDefaultEncoding PyUnicodeUCS4_SetDefaultEncoding
 # define PyUnicode_Split PyUnicodeUCS4_Split
 # define PyUnicode_Splitlines PyUnicodeUCS4_Splitlines
 # define PyUnicode_Tailmatch PyUnicodeUCS4_Tailmatch
@@ -707,16 +705,6 @@ PyAPI_FUNC(char *) _PyUnicode_AsString(PyObject *unicode);
  */
 
 PyAPI_FUNC(const char*) PyUnicode_GetDefaultEncoding(void);
-
-/* Sets the currently active default encoding.
-
-   Returns 0 on success, -1 in case of an error.
-
- */
-
-PyAPI_FUNC(int) PyUnicode_SetDefaultEncoding(
-    const char *encoding        /* Encoding name in standard form */
-    );
 
 /* --- Generic Codecs ----------------------------------------------------- */
 

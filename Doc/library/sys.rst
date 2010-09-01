@@ -712,18 +712,6 @@ always available.
       :func:`setswitchinterval` instead.
 
 
-.. function:: setdefaultencoding(name)
-
-   Set the current default string encoding used by the Unicode implementation.  If
-   *name* does not match any available encoding, :exc:`LookupError` is raised.
-   This function is only intended to be used by the :mod:`site` module
-   implementation and, where needed, by :mod:`sitecustomize`.  Once used by the
-   :mod:`site` module, it is removed from the :mod:`sys` module's namespace.
-
-   .. Note that :mod:`site` is not imported if the :option:`-S` option is passed
-      to the interpreter, in which case this function will remain available.
-
-
 .. function:: setdlopenflags(n)
 
    Set the flags used by the interpreter for :cfunc:`dlopen` calls, such as when
