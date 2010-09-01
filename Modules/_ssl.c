@@ -1603,6 +1603,7 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
     PySSL_END_ALLOW_THREADS
     if (r != 1) {
         if (errno != 0) {
+            ERR_clear_error();
             PyErr_SetFromErrno(PyExc_IOError);
         }
         else {
@@ -1619,6 +1620,7 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
     Py_XDECREF(certfile_bytes);
     if (r != 1) {
         if (errno != 0) {
+            ERR_clear_error();
             PyErr_SetFromErrno(PyExc_IOError);
         }
         else {
@@ -1686,6 +1688,7 @@ load_verify_locations(PySSLContext *self, PyObject *args, PyObject *kwds)
     Py_XDECREF(capath_bytes);
     if (r != 1) {
         if (errno != 0) {
+            ERR_clear_error();
             PyErr_SetFromErrno(PyExc_IOError);
         }
         else {
