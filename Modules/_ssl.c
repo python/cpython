@@ -1581,6 +1581,7 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
     int r;
 
     errno = 0;
+    ERR_clear_error();
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
         "O|O:load_cert_chain", kwlist,
         &certfile, &keyfile))
