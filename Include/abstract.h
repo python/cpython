@@ -1236,6 +1236,13 @@ PyAPI_FUNC(char *const *) _PySequence_BytesToCharpArray(PyObject* self);
 
 PyAPI_FUNC(void) _Py_FreeCharPArray(char *const array[]);
 
+/* For internal use by buffer API functions */
+PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,
+                                        const Py_ssize_t *shape);
+PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
+                                        const Py_ssize_t *shape);
+
+
 #ifdef __cplusplus
 }
 #endif
