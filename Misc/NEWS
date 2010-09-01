@@ -12,6 +12,9 @@ What's New in Python 2.7.1?
 Core and Builtins
 -----------------
 
+- Issue #9737: Fix a crash when trying to delete a slice or an item from
+  a memoryview object.
+
 - Restore GIL in nis_cat in case of error.
 
 - Issue #9688: __basicsize__ and __itemsize__ must be accessed as Py_ssize_t.
