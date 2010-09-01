@@ -111,6 +111,15 @@ class AbstractMemoryTests:
         m = None
         self.assertEquals(sys.getrefcount(b), oldrefcount)
 
+    def test_delitem(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            with self.assertRaises(TypeError):
+                del m[1]
+            with self.assertRaises(TypeError):
+                del m[1:4]
+
     def test_tobytes(self):
         for tp in self._types:
             m = self._view(tp(self._source))

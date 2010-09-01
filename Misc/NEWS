@@ -12,6 +12,9 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #9737: Fix a crash when trying to delete a slice or an item from
+  a memoryview object.
+
 - Issue #7415: PyUnicode_FromEncodedObject() now uses the new buffer API
   properly.  Patch by Stefan Behnel.
 
