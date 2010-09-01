@@ -1,7 +1,7 @@
 .. _using-index:
 
 ################
-  Using Python
+  Python Setup
 ################
 
 
