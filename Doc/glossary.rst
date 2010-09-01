@@ -140,10 +140,9 @@ Glossary
       For more information about descriptors' methods, see :ref:`descriptors`.
 
    dictionary
-      An associative array, where arbitrary keys are mapped to values.  The use
-      of :class:`dict` closely resembles that for :class:`list`, but the keys can
-      be any object with a :meth:`__hash__` function, not just integers.
-      Called a hash in Perl.
+      An associative array, where arbitrary keys are mapped to values.  The keys
+      can be any object with :meth:`__hash__` function and :meth:`__eq__`
+      methods. Called a hash in Perl.
 
    docstring
       A string literal which appears as the first expression in a class,
@@ -192,9 +191,11 @@ Glossary
       :term:`abstract base class`.
 
    floor division
-      Mathematical division discarding any remainder.  The floor division
-      operator is ``//``.  For example, the expression ``11//4`` evaluates to
-      ``2`` in contrast to the ``2.75`` returned by float true division.
+      Mathematical division that rounds down to nearest integer.  The floor
+      division operator is ``//``.  For example, the expression ``11 // 4``
+      evaluates to ``2`` in contrast to the ``2.75`` returned by float true
+      division.  Note that ``(-11) // 4`` is ``-3`` because that is ``-2.75``
+      rounded *downward*. See :pep:`238`.
 
    function
       A series of statements which returns some value to a caller. It can also
@@ -202,7 +203,7 @@ Glossary
       the body. See also :term:`argument` and :term:`method`.
 
    __future__
-      A pseudo module which programmers can use to enable new language features
+      A pseudo-module which programmers can use to enable new language features
       which are not compatible with the current interpreter.
 
       By importing the :mod:`__future__` module and evaluating its variables,
@@ -222,13 +223,13 @@ Glossary
 
    generator
       A function which returns an iterator.  It looks like a normal function
-      except that values are returned to the caller using a :keyword:`yield`
-      statement instead of a :keyword:`return` statement.  Generator functions
-      often contain one or more :keyword:`for` or :keyword:`while` loops which
-      :keyword:`yield` elements back to the caller.  The function execution is
-      stopped at the :keyword:`yield` keyword (returning the result) and is
-      resumed there when the next element is requested by calling the
-      :meth:`__next__` method of the returned iterator.
+      except that it contains :keyword:`yield` statements for producing a series
+      a values usable in a for-loop or that can be retrieved one at a time with
+      the :func:`next` function. Each :keyword:`yield` temporarily suspends
+      processing, remembering the location execution state (including local
+      variables and pending try-statements).  When the generator resumes, it
+      picks-up where it left-off (in contrast to functions which start fresh on
+      every invocation.
 
       .. index:: single: generator expression
 
@@ -273,9 +274,7 @@ Glossary
    IDLE
       An Integrated Development Environment for Python.  IDLE is a basic editor
       and interpreter environment which ships with the standard distribution of
-      Python.  Good for beginners, it also serves as clear example code for
-      those wanting to implement a moderately sophisticated, multi-platform GUI
-      application.
+      Python.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -377,7 +376,8 @@ Glossary
 
    mapping
       A container object (such as :class:`dict`) which supports arbitrary key
-      lookups using the special method :meth:`__getitem__`.
+      lookups using the special method :meth:`__getitem__`.  Mappings also
+      support :meth:`__len__`, :meth:`__iter__`, and :meth:`__contains__`.
 
    metaclass
       The class of a class.  Class definitions create a class name, a class
