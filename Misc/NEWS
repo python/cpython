@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #7415: PyUnicode_FromEncodedObject() now uses the new buffer API
+  properly.  Patch by Stefan Behnel.
+
 - Issue #5553: The Py_LOCAL_INLINE macro now results in inlining on
   most platforms.  Previously, it online inlined when using Microsoft
   Visual C.
