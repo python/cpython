@@ -631,6 +631,11 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
             "cannot modify read-only memory");
         return -1;
     }
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "cannot delete memory");
+        return -1;
+    }
     if (view->ndim != 1) {
         PyErr_SetNone(PyExc_NotImplementedError);
         return -1;

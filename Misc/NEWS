@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9737: Fix a crash when trying to delete a slice or an item from
+  a memoryview object.
+
 - Issue #9549: sys.setdefaultencoding() and PyUnicode_SetDefaultEncoding()
   are now removed, since their effect was inexistent in 3.x (the default
   encoding is hardcoded to utf-8 and cannot be changed).
