@@ -430,12 +430,12 @@ class StructTest(unittest.TestCase):
 
         # Test without offset
         s.pack_into(writable_buf, 0, test_string)
-        from_buf = writable_buf.tostring()[:len(test_string)]
+        from_buf = writable_buf.tobytes()[:len(test_string)]
         self.assertEqual(from_buf, test_string)
 
         # Test with offset.
         s.pack_into(writable_buf, 10, test_string)
-        from_buf = writable_buf.tostring()[:len(test_string)+10]
+        from_buf = writable_buf.tobytes()[:len(test_string)+10]
         self.assertEqual(from_buf, test_string[:10] + test_string)
 
         # Go beyond boundaries.
@@ -458,12 +458,12 @@ class StructTest(unittest.TestCase):
 
         # Test without offset.
         pack_into(writable_buf, 0, test_string)
-        from_buf = writable_buf.tostring()[:len(test_string)]
+        from_buf = writable_buf.tobytes()[:len(test_string)]
         self.assertEqual(from_buf, test_string)
 
         # Test with offset.
         pack_into(writable_buf, 10, test_string)
-        from_buf = writable_buf.tostring()[:len(test_string)+10]
+        from_buf = writable_buf.tobytes()[:len(test_string)+10]
         self.assertEqual(from_buf, test_string[:10] + test_string)
 
         # Go beyond boundaries.

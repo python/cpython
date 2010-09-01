@@ -248,7 +248,7 @@ class Wave_read:
             chunk = chunk.file
             chunk.size_read = chunk.size_read + nitems * self._sampwidth
             data.byteswap()
-            data = data.tostring()
+            data = data.tobytes()
         else:
             data = self._data_chunk.read(nframes * self._framesize)
         if self._convert and data:

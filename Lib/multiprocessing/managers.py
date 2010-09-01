@@ -32,7 +32,7 @@ from multiprocessing.util import Finalize, info
 #
 
 def reduce_array(a):
-    return array.array, (a.typecode, a.tostring())
+    return array.array, (a.typecode, a.tobytes())
 ForkingPickler.register(array.array, reduce_array)
 
 view_types = [type(getattr({}, name)()) for name in ('items','keys','values')]

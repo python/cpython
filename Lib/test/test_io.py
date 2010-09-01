@@ -480,7 +480,7 @@ class IOTest(unittest.TestCase):
 
     def test_array_writes(self):
         a = array.array('i', range(10))
-        n = len(a.tostring())
+        n = len(a.tobytes())
         with self.open(support.TESTFN, "wb", 0) as f:
             self.assertEqual(f.write(a), n)
         with self.open(support.TESTFN, "wb") as f:
