@@ -220,6 +220,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_AsDefaultEncodedString _PyUnicodeUCS2_AsDefaultEncodedString
 # define _PyUnicode_Fini _PyUnicodeUCS2_Fini
 # define _PyUnicode_Init _PyUnicodeUCS2_Init
+# define PyUnicode_strdup PyUnicodeUCS2_strdup
 
 #else
 
@@ -302,7 +303,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_AsDefaultEncodedString _PyUnicodeUCS4_AsDefaultEncodedString
 # define _PyUnicode_Fini _PyUnicodeUCS4_Fini
 # define _PyUnicode_Init _PyUnicodeUCS4_Init
-
+# define PyUnicode_strdup PyUnicodeUCS4_strdup
 
 #endif
 
@@ -1600,6 +1601,14 @@ PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strchr(
 PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strrchr(
     const Py_UNICODE *s,
     Py_UNICODE c
+    );
+
+/* Create a copy of a unicode string ending with a nul character. Return NULL
+   and raise a MemoryError exception on memory allocation failure, otherwise
+   return a new allocated buffer (use PyMem_Free() to free the buffer). */
+
+PyAPI_FUNC(Py_UNICODE*) PyUnicode_strdup(
+    PyObject *unicode
     );
 
 #ifdef __cplusplus
