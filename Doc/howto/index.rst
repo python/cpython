@@ -21,6 +21,7 @@ Currently, the HOWTOs are:
    functional.rst
    regex.rst
    sockets.rst
+   sorting.rst
    unicode.rst
    urllib2.rst
    webservers.rst
