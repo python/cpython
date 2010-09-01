@@ -1383,6 +1383,13 @@ PyAPI_FUNC(int) _PyObject_RealIsInstance(PyObject *inst, PyObject *cls);
 PyAPI_FUNC(int) _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
 
 
+/* For internal use by buffer API functions */
+PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,
+                                        const Py_ssize_t *shape);
+PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
+                                        const Py_ssize_t *shape);
+
+
 #ifdef __cplusplus
 }
 #endif
