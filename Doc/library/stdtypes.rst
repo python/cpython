@@ -2216,6 +2216,11 @@ available ("other" refers either to another view or a set):
    Return the symmetric difference (all elements either in *dictview* or
    *other*, but not in both) of the dictview and the other object as a new set.
 
+.. method:: dictview.isdisjoint(other)
+
+   Return True if the view has no elements in common with *other*.  Sets are
+   disjoint if and only if their intersection is the empty set.
+
 
 An example of dictionary view usage::
 

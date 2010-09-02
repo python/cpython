@@ -2807,7 +2807,63 @@ static PyNumberMethods dictviews_as_number = {
     (binaryfunc)dictviews_or,           /*nb_or*/
 };
 
+static PyObject*
+dictviews_isdisjoint(PyObject *self, PyObject *other)
+{
+    PyObject *it;
+    PyObject *item = NULL;
+
+    if (self == other) {
+        if (dictview_len((dictviewobject *)self) == 0)
+            Py_RETURN_TRUE;
+        else
+            Py_RETURN_FALSE;
+    }
+
+    /* Iterate over the shorter object (only if other is a set,
+     * because PySequence_Contains may be expensive otherwise): */
+    if (PyAnySet_Check(other) || PyDictViewSet_Check(other)) {
+        Py_ssize_t len_self = dictview_len((dictviewobject *)self);
+        Py_ssize_t len_other = PyObject_Size(other);
+        if (len_other == -1)
+            return NULL;
+
+        if ((len_other > len_self)) {
+            PyObject *tmp = other;
+            other = self;
+            self = tmp;
+        }
+    }
+
+    it = PyObject_GetIter(other);
+    if (it == NULL)
+        return NULL;
+
+    while ((item = PyIter_Next(it)) != NULL) {
+        int contains = PySequence_Contains(self, item);
+        Py_DECREF(item);
+        if (contains == -1) {
+            Py_DECREF(it);
+            return NULL;
+        }
+
+        if (contains) {
+            Py_DECREF(it);
+            Py_RETURN_FALSE;
+        }
+    }
+    Py_DECREF(it);
+    if (PyErr_Occurred())
+        return NULL; /* PyIter_Next raised an exception. */
+    Py_RETURN_TRUE;
+}
+
+PyDoc_STRVAR(isdisjoint_doc,
+"Return True if the view and the given iterable have a null intersection.");
+
 static PyMethodDef dictkeys_methods[] = {
+    {"isdisjoint",      (PyCFunction)dictviews_isdisjoint,  METH_O,
+     isdisjoint_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -2892,6 +2948,8 @@ static PySequenceMethods dictitems_as_sequence = {
 };
 
 static PyMethodDef dictitems_methods[] = {
+    {"isdisjoint",      (PyCFunction)dictviews_isdisjoint,  METH_O,
+     isdisjoint_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
