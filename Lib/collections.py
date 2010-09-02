@@ -173,7 +173,7 @@ class OrderedDict(dict, MutableMapping):
     def __del__(self):
         self.clear()                # eliminate cyclical references
 
-    def _move_to_end(self, key, PREV=0, NEXT=1):
+    def _renew(self, key, PREV=0, NEXT=1):
         'Fast version of self[key]=self.pop(key).   Private method for internal use.'
         link = self.__map[key]
         link_prev = link[PREV]
