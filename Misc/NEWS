@@ -13,7 +13,7 @@ Core and Builtins
 -----------------
 
 - Issue #9212: dict_keys and dict_items now provide the isdisjoint()
-  method, to conform to the Set ABC.
+  method, to conform to the Set ABC.  Patch by Daniel Urban.
 
 - Issue #9737: Fix a crash when trying to delete a slice or an item from
   a memoryview object.
