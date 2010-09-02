@@ -108,6 +108,29 @@ class OrderedDict(dict, MutableMapping):
             pass
         dict.clear(self)
 
+    def popitem(self, last=True, PREV=0, NEXT=1, KEY=2, dict_pop=dict.pop):
+        '''od.popitem() -> (k, v), return and remove a (key, value) pair.
+        Pairs are returned in LIFO order if last is true or FIFO order if false.
+
+        '''
+        if not self:
+            raise KeyError('dictionary is empty')
+        root = self.__root
+        if last:                    # link_prev <--> link <--> root
+            link = root[PREV]
+            link_prev = link[PREV]
+            link_prev[NEXT] = root
+            root[PREV] = link_prev
+        else:                       # root <--> link <--> link_next
+            link = root[NEXT]
+            link_next = link[NEXT]
+            root[NEXT] = link_next
+            link_next[PREV] = root
+        key = link[KEY]
+        del self.__map[key]
+        value = dict_pop(self, key)
+        return key, value
+
     setdefault = MutableMapping.setdefault
     update = MutableMapping.update
     pop = MutableMapping.pop
@@ -115,17 +138,6 @@ class OrderedDict(dict, MutableMapping):
     values = MutableMapping.values
     items = MutableMapping.items
     __ne__ = MutableMapping.__ne__
-
-    def popitem(self, last=True):
-        '''od.popitem() -> (k, v), return and remove a (key, value) pair.
-        Pairs are returned in LIFO order if last is true or FIFO order if false.
-
-        '''
-        if not self:
-            raise KeyError('dictionary is empty')
-        key = next(reversed(self) if last else iter(self))
-        value = self.pop(key)
-        return key, value
 
     def __repr__(self):
         'od.__repr__() <==> repr(od)'
