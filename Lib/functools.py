@@ -128,6 +128,7 @@ def lru_cache(maxsize=100):
     def decorating_function(user_function, tuple=tuple, sorted=sorted,
                             len=len, KeyError=KeyError):
         cache = OrderedDict()           # ordered least recent to most recent
+        cache_popitem, cache_renew = cache.popitem, cache._renew
         kwd_mark = object()             # separate positional and keyword args
         lock = Lock()
 
@@ -139,7 +140,7 @@ def lru_cache(maxsize=100):
             try:
                 with lock:
                     result = cache[key]
-                    cache._move_to_end(key)     # record recent use of this key
+                    cache_renew(key)            # record recent use of this key
                     wrapper.hits += 1
             except KeyError:
                 result = user_function(*args, **kwds)
@@ -147,7 +148,7 @@ def lru_cache(maxsize=100):
                     cache[key] = result         # record recent use of this key
                     wrapper.misses += 1
                     if len(cache) > maxsize:
-                        cache.popitem(0)        # purge least recently used cache entry
+                        cache_popitem(0)        # purge least recently used cache entry
             return result
 
         def clear():
