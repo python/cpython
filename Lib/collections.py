@@ -161,6 +161,19 @@ class OrderedDict(dict, MutableMapping):
     def __del__(self):
         self.clear()                # eliminate cyclical references
 
+    def _move_to_end(self, key, PREV=0, NEXT=1):
+        'Fast version of self[key]=self.pop(key).   Private method for internal use.'
+        link = self.__map[key]
+        link_prev = link[PREV]
+        link_next = link[NEXT]
+        link_prev[NEXT] = link_next
+        link_next[PREV] = link_prev
+        root = self.__root
+        last = root[PREV]
+        link[PREV] = last
+        link[NEXT] = root
+        last[NEXT] = root[PREV] = link
+
 
 ################################################################################
 ### namedtuple
