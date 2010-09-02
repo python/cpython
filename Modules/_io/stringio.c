@@ -809,7 +809,7 @@ stringio_newlines(stringio *self, void *context)
 
 static struct PyMethodDef stringio_methods[] = {
     {"close",    (PyCFunction)stringio_close,    METH_NOARGS,  stringio_close_doc},
-    {"getvalue", (PyCFunction)stringio_getvalue, METH_VARARGS, stringio_getvalue_doc},
+    {"getvalue", (PyCFunction)stringio_getvalue, METH_NOARGS,  stringio_getvalue_doc},
     {"read",     (PyCFunction)stringio_read,     METH_VARARGS, stringio_read_doc},
     {"readline", (PyCFunction)stringio_readline, METH_VARARGS, stringio_readline_doc},
     {"tell",     (PyCFunction)stringio_tell,     METH_NOARGS,  stringio_tell_doc},
