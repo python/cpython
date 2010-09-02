@@ -139,8 +139,7 @@ def lru_cache(maxsize=100):
             try:
                 with lock:
                     result = cache[key]
-                    del cache[key]
-                    cache[key] = result         # record recent use of this key
+                    cache._move_to_end(key)     # record recent use of this key
                     wrapper.hits += 1
             except KeyError:
                 result = user_function(*args, **kwds)
