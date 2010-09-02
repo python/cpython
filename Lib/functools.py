@@ -128,7 +128,8 @@ def lru_cache(maxsize=100):
     def decorating_function(user_function, tuple=tuple, sorted=sorted,
                             len=len, KeyError=KeyError):
         cache = OrderedDict()           # ordered least recent to most recent
-        cache_popitem, cache_renew = cache.popitem, cache._renew
+        cache_popitem = cache.popitem
+        cache_renew = cache._renew
         kwd_mark = object()             # separate positional and keyword args
         lock = Lock()
 
