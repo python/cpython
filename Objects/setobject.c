@@ -1439,7 +1439,7 @@ set_isdisjoint(PySetObject *so, PyObject *other)
     while ((key = PyIter_Next(it)) != NULL) {
         int rv;
         setentry entry;
-        long hash = PyObject_Hash(key);;
+        long hash = PyObject_Hash(key);
 
         if (hash == -1) {
             Py_DECREF(key);
