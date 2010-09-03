@@ -51,8 +51,13 @@
 This article explains the new features in Python 3.2, compared to 3.1.
 
 
-PEP XXX: Stub
-=============
+PEPs
+====
+
+Implemented PEPs:
+
+* :pep:`3147`
+* :pep:`3149`
 
 
 Other Language Changes
