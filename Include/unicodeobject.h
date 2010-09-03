@@ -1607,7 +1607,7 @@ PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strrchr(
    and raise a MemoryError exception on memory allocation failure, otherwise
    return a new allocated buffer (use PyMem_Free() to free the buffer). */
 
-PyAPI_FUNC(Py_UNICODE*) PyUnicode_strdup(
+PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeCopy(
     PyObject *unicode
     );
 
