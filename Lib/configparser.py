@@ -637,7 +637,7 @@ class RawConfigParser:
         for key, value in section_items:
             if key == "__name__":
                 continue
-            if value is not None:
+            if (value is not None) or (self._optcre == self.OPTCRE):
                 value = delimiter + str(value).replace('\n', '\n\t')
             else:
                 value = ""
