@@ -1650,7 +1650,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
             an_entry.key = key;
 
             rv = set_discard_entry(so, &an_entry);
-			if (rv == -1) {
+            if (rv == -1) {
                 Py_DECREF(key);
                 return NULL;
             }
@@ -1660,7 +1660,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
                     return NULL;
                 }
             }
-			Py_DECREF(key);
+            Py_DECREF(key);
         }
         Py_RETURN_NONE;
     }
