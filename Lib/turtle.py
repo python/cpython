@@ -169,9 +169,8 @@ _CFG = {"width" : 0.5,               # Screen
 
 def config_dict(filename):
     """Convert content of config-file into dictionary."""
-    f = open(filename, "r")
-    cfglines = f.readlines()
-    f.close()
+    with open(filename, "r") as f:
+        cfglines = f.readlines()
     cfgdict = {}
     for line in cfglines:
         line = line.strip()

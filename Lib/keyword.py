@@ -61,21 +61,19 @@ def main():
     else: optfile = "Lib/keyword.py"
 
     # scan the source file for keywords
-    fp = open(iptfile)
-    strprog = re.compile('"([^"]+)"')
-    lines = []
-    for line in fp:
-        if '{1, "' in line:
-            match = strprog.search(line)
-            if match:
-                lines.append("        '" + match.group(1) + "',\n")
-    fp.close()
+    with open(iptfile) as fp:
+        strprog = re.compile('"([^"]+)"')
+        lines = []
+        for line in fp:
+            if '{1, "' in line:
+                match = strprog.search(line)
+                if match:
+                    lines.append("        '" + match.group(1) + "',\n")
     lines.sort()
 
     # load the output skeleton from the target
-    fp = open(optfile)
-    format = fp.readlines()
-    fp.close()
+    with open(optfile) as fp:
+        format = fp.readlines()
 
     # insert the lines of keywords
     try:

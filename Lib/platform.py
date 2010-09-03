@@ -200,9 +200,8 @@ def _dist_try_harder(distname,version,id):
     """
     if os.path.exists('/var/adm/inst-log/info'):
         # SuSE Linux stores distribution information in that file
-        info = open('/var/adm/inst-log/info').readlines()
         distname = 'SuSE'
-        for line in info:
+        for line in open('/var/adm/inst-log/info'):
             tv = line.split()
             if len(tv) == 2:
                 tag,value = tv
@@ -217,8 +216,7 @@ def _dist_try_harder(distname,version,id):
 
     if os.path.exists('/etc/.installed'):
         # Caldera OpenLinux has some infos in that file (thanks to Colin Kong)
-        info = open('/etc/.installed').readlines()
-        for line in info:
+        for line in open('/etc/.installed'):
             pkg = line.split('-')
             if len(pkg) >= 2 and pkg[0] == 'OpenLinux':
                 # XXX does Caldera support non Intel platforms ? If yes,
@@ -327,9 +325,8 @@ def linux_distribution(distname='', version='', id='',
         return _dist_try_harder(distname,version,id)
 
     # Read the first line
-    f = open('/etc/'+file, 'r')
-    firstline = f.readline()
-    f.close()
+    with open('/etc/'+file, 'r') as f:
+        firstline = f.readline()
     _distname, _version, _id = _parse_release_file(firstline)
 
     if _distname and full_distribution_name:
