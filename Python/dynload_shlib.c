@@ -30,27 +30,34 @@
 #define LEAD_UNDERSCORE ""
 #endif
 
+/* The .so extension module ABI tag, supplied by the Makefile via
+   Makefile.pre.in and configure.  This is used to discriminate between
+   incompatible .so files so that extensions for different Python builds can
+   live in the same directory.  E.g. foomodule.cpython-32.so
+*/
 
 const struct filedescr _PyImport_DynLoadFiletab[] = {
 #ifdef __CYGWIN__
     {".dll", "rb", C_EXTENSION},
     {"module.dll", "rb", C_EXTENSION},
-#else
+#else  /* !__CYGWIN__ */
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
     {".pyd", "rb", C_EXTENSION},
     {".dll", "rb", C_EXTENSION},
-#else
+#else  /* !(defined(PYOS_OS2) && defined(PYCC_GCC)) */
 #ifdef __VMS
     {".exe", "rb", C_EXTENSION},
     {".EXE", "rb", C_EXTENSION},
     {"module.exe", "rb", C_EXTENSION},
     {"MODULE.EXE", "rb", C_EXTENSION},
-#else
+#else  /* !__VMS */
+    {"." SOABI ".so", "rb", C_EXTENSION},
     {".so", "rb", C_EXTENSION},
+    {"module." SOABI ".so", "rb", C_EXTENSION},
     {"module.so", "rb", C_EXTENSION},
-#endif
-#endif
-#endif
+#endif  /* __VMS */
+#endif  /* defined(PYOS_OS2) && defined(PYCC_GCC) */
+#endif  /* __CYGWIN__ */
     {0, 0}
 };
 

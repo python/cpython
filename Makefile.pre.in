@@ -35,6 +35,7 @@ LINKCC=		@LINKCC@
 AR=		@AR@
 RANLIB=		@RANLIB@
 SVNVERSION=	@SVNVERSION@
+SOABI=          @SOABI@
 
 GNULD=          @GNULD@
 
@@ -558,6 +559,11 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 
 Modules/python.o: $(srcdir)/Modules/python.c
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Modules/python.c
+
+Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
+	$(CC) -c $(PY_CORE_CFLAGS) \
+		-DSOABI='"$(SOABI)"' \
+		-o $@ $(srcdir)/Python/dynload_shlib.c
 
 $(IO_OBJS): $(IO_H)
 
