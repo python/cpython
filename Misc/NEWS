@@ -105,6 +105,9 @@ C-API
 Library
 -------
 
+- Issue #9753: Fixed socket.dup, which did not always work correctly
+  on Windows.
+
 - Issue #1868: Eliminate subtle timing issues in thread-local objects by
   getting rid of the cached copy of thread-local attribute dictionary.
 
