@@ -2,7 +2,7 @@
 
 C implementation derived directly from heapq.py in Py2.3
 which was written by Kevin O'Connor, augmented by Tim Peters,
-annotated by François Pinard, and converted to C by Raymond Hettinger.
+annotated by FranÃ§ois Pinard, and converted to C by Raymond Hettinger.
 
 */
 
