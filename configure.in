@@ -12,7 +12,7 @@ m4_define([version_required],
        [],
        [m4_fatal([Autoconf version $1 is required for Python], 63)])
 ])
-version_required(2.65)
+AC_PREREQ(2.65)
 
 AC_REVISION($Revision$)
 AC_INIT(python, PYTHON_VERSION, http://bugs.python.org/)
@@ -52,6 +52,7 @@ mv confdefs.h.new confdefs.h
 AC_SUBST(VERSION)
 VERSION=PYTHON_VERSION
 
+# Version number or Python's own shared library file.
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
@@ -817,6 +818,9 @@ if test -z "$LN" ; then
 	esac
 fi
 
+# For calculating the .so ABI tag.
+SOABI_QUALIFIERS=""
+
 # Check for --with-pydebug
 AC_MSG_CHECKING(for --with-pydebug)
 AC_ARG_WITH(pydebug, 
@@ -828,6 +832,7 @@ then
   [Define if you want to build an interpreter with many run-time checks.]) 
   AC_MSG_RESULT(yes); 
   Py_DEBUG='true'
+  SOABI_QUALIFIERS="${SOABI_QUALIFIERS}d"
 else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
@@ -1649,34 +1654,6 @@ AC_SUBST(LDCXXSHARED)
 AC_SUBST(BLDSHARED)
 AC_SUBST(CCSHARED)
 AC_SUBST(LINKFORSHARED)
-# SO is the extension of shared libraries `(including the dot!)
-# -- usually .so, .sl on HP-UX, .dll on Cygwin
-AC_MSG_CHECKING(SO)
-if test -z "$SO"
-then
-	case $ac_sys_system in
-	hp*|HP*)
-		case `uname -m` in
-			ia64) SO=.so;;
-	  		*)    SO=.sl;;
-		esac
-		;;
-	CYGWIN*)   SO=.dll;;
-	*)	   SO=.so;;
-	esac
-else
-	# this might also be a termcap variable, see #610332
-        echo
-        echo '====================================================================='
-        echo '+                                                                   +'
-	echo '+ WARNING: You have set SO in your environment.                     +'
-        echo '+ Do you really mean to change the extension for shared libraries?  +'
-        echo '+ Continuing in 10 seconds to let you to ponder.                    +'
-        echo '+                                                                   +'
-        echo '====================================================================='
-	sleep 10
-fi
-AC_MSG_RESULT($SO)
 
 AC_DEFINE_UNQUOTED(SHLIB_EXT, "$SO", [Define this to be extension of shared libraries (including the dot!).])
 # LDSHARED is the ld *command* used to create shared library
@@ -2487,7 +2464,9 @@ AC_ARG_WITH(pymalloc,
             AS_HELP_STRING([--with(out)-pymalloc], [disable/enable specialized mallocs]))
 
 if test -z "$with_pymalloc"
-then with_pymalloc="yes"
+then
+    with_pymalloc="yes"
+    SOABI_QUALIFIERS="${SOABI_QUALIFIERS}m"
 fi
 if test "$with_pymalloc" != "no"
 then
@@ -3595,7 +3574,7 @@ fi
 ],
 [
 case "$have_ucs4_tcl" in
-  yes) unicode_size="4" ;;
+  yes) unicode_size="4";;
   *)   unicode_size="2" ;;
 esac
 ])
@@ -3603,7 +3582,10 @@ esac
 AH_TEMPLATE(Py_UNICODE_SIZE,
   [Define as the size of the unicode type.])
 case "$unicode_size" in
-  4) AC_DEFINE(Py_UNICODE_SIZE, 4) ;;
+  4)
+     AC_DEFINE(Py_UNICODE_SIZE, 4)
+     SOABI_QUALIFIERS="${SOABI_QUALIFIERS}u"
+     ;;
   *) AC_DEFINE(Py_UNICODE_SIZE, 2) ;;
 esac
 
@@ -3635,6 +3617,55 @@ AC_MSG_RESULT($PY_UNICODE_TYPE)
 
 # check for endianness
 AC_C_BIGENDIAN
+
+# ABI version string for Python extension modules.  This appears between the
+# periods in shared library file names, e.g. foo.<SOABI>.so.  It is calculated
+# from the following attributes which affect the ABI of this Python build (in
+# this order):
+#
+# * The Python implementation (always 'cpython-' for us)
+# * The major and minor version numbers
+# * --with-pydebug (adds a 'd')
+# * --with-pymalloc (adds a 'm')
+# * --with-wide-unicode (adds a 'u')
+#
+# Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
+# would get a shared library ABI version tag of 'cpython-32udm' and shared
+# libraries would be named 'foo.cpython-32udm.so'.
+AC_SUBST(SOABI)
+AC_MSG_CHECKING(SOABI)
+SOABI='cpython-'`echo $VERSION | tr -d .`${SOABI_QUALIFIERS}
+AC_MSG_RESULT($SOABI)
+
+# SO is the extension of shared libraries `(including the dot!)
+# -- usually .so, .sl on HP-UX, .dll on Cygwin
+AC_MSG_CHECKING(SO)
+if test -z "$SO"
+then
+	case $ac_sys_system in
+	hp*|HP*)
+		case `uname -m` in
+			ia64) SO=.so;;
+	  		*)    SO=.sl;;
+		esac
+		;;
+	CYGWIN*)   SO=.dll;;
+        Linux*)    SO=.${SOABI}.so;;
+	*)	   SO=.so;;
+	esac
+else
+	# this might also be a termcap variable, see #610332
+        echo
+        echo '====================================================================='
+        echo '+                                                                   +'
+	echo '+ WARNING: You have set SO in your environment.                     +'
+        echo '+ Do you really mean to change the extension for shared libraries?  +'
+        echo '+ Continuing in 10 seconds to let you to ponder.                    +'
+        echo '+                                                                   +'
+        echo '====================================================================='
+	sleep 10
+fi
+AC_MSG_RESULT($SO)
 
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
