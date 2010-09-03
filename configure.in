@@ -52,7 +52,7 @@ mv confdefs.h.new confdefs.h
 AC_SUBST(VERSION)
 VERSION=PYTHON_VERSION
 
-# Version number or Python's own shared library file.
+# Version number of Python's own shared library file.
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
@@ -3630,8 +3630,8 @@ AC_C_BIGENDIAN
 # * --with-wide-unicode (adds a 'u')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
-# would get a shared library ABI version tag of 'cpython-32udm' and shared
-# libraries would be named 'foo.cpython-32udm.so'.
+# would get a shared library ABI version tag of 'cpython-32dmu' and shared
+# libraries would be named 'foo.cpython-32dmu.so'.
 AC_SUBST(SOABI)
 AC_MSG_CHECKING(SOABI)
 SOABI='cpython-'`echo $VERSION | tr -d .`${SOABI_QUALIFIERS}
@@ -3650,19 +3650,19 @@ then
 		esac
 		;;
 	CYGWIN*)   SO=.dll;;
-        Linux*)    SO=.${SOABI}.so;;
+	Linux*)    SO=.${SOABI}.so;;
 	*)	   SO=.so;;
 	esac
 else
 	# this might also be a termcap variable, see #610332
-        echo
-        echo '====================================================================='
-        echo '+                                                                   +'
+	echo
+	echo '====================================================================='
+	echo '+                                                                   +'
 	echo '+ WARNING: You have set SO in your environment.                     +'
-        echo '+ Do you really mean to change the extension for shared libraries?  +'
-        echo '+ Continuing in 10 seconds to let you to ponder.                    +'
-        echo '+                                                                   +'
-        echo '====================================================================='
+	echo '+ Do you really mean to change the extension for shared libraries?  +'
+	echo '+ Continuing in 10 seconds to let you to ponder.                    +'
+	echo '+                                                                   +'
+	echo '====================================================================='
 	sleep 10
 fi
 AC_MSG_RESULT($SO)
