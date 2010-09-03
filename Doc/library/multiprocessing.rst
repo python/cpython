@@ -2221,8 +2221,8 @@ Synchronization types like locks, conditions and queues:
 .. literalinclude:: ../includes/mp_synchronize.py
 
 
-An showing how to use queues to feed tasks to a collection of worker process and
-collect the results:
+An example showing how to use queues to feed tasks to a collection of worker
+process and collect the results:
 
 .. literalinclude:: ../includes/mp_workers.py
 
