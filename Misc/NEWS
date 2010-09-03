@@ -155,6 +155,9 @@ Extensions
 Library
 -------
 
+- Issue #7005: Fixed output of None values for RawConfigParser.write and
+  ConfigParser.write.
+
 - Issue #8990: array.fromstring() and array.tostring() get renamed to
   frombytes() and tobytes(), respectively, to avoid confusion.  Furthermore,
   array.frombytes(), array.extend() as well as the array.array()
