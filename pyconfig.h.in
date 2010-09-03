@@ -1040,7 +1040,8 @@
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
 
-/* Define if you want to use computed gotos in ceval.c. */
+/* Define to 0 if you don't want to use computed gotos in ceval.c.
+   (The default is to use them if HAVE_COMPUTED_GOTOS is defined.) */
 #undef USE_COMPUTED_GOTOS
 
 /* Define if the compiler supports the inline keyword */
