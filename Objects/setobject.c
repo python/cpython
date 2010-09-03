@@ -364,12 +364,13 @@ static int
 set_add_entry(register PySetObject *so, setentry *entry)
 {
     register Py_ssize_t n_used;
+    PyObject *key = entry->key;
 
     assert(so->fill <= so->mask);  /* at least one empty slot */
     n_used = so->used;
-    Py_INCREF(entry->key);
-    if (set_insert_key(so, entry->key, (long) entry->hash) == -1) {
-        Py_DECREF(entry->key);
+    Py_INCREF(key);
+    if (set_insert_key(so, key, (long) entry->hash) == -1) {
+        Py_DECREF(key);
         return -1;
     }
     if (!(so->used > n_used && so->fill*3 >= (so->mask+1)*2))
@@ -637,6 +638,7 @@ static int
 set_merge(PySetObject *so, PyObject *otherset)
 {
     PySetObject *other;
+    PyObject *key;
     register Py_ssize_t i;
     register setentry *entry;
 
@@ -657,11 +659,12 @@ set_merge(PySetObject *so, PyObject *otherset)
     }
     for (i = 0; i <= other->mask; i++) {
         entry = &other->table[i];
-        if (entry->key != NULL &&
-            entry->key != dummy) {
-            Py_INCREF(entry->key);
-            if (set_insert_key(so, entry->key, (long) entry->hash) == -1) {
-                Py_DECREF(entry->key);
+        key = entry->key;
+        if (key != NULL &&
+            key != dummy) {
+            Py_INCREF(key);
+            if (set_insert_key(so, key, (long) entry->hash) == -1) {
+                Py_DECREF(key);
                 return -1;
             }
         }
@@ -1642,15 +1645,22 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
         while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
             setentry an_entry;
 
+            Py_INCREF(key);
             an_entry.hash = hash;
             an_entry.key = key;
+
             rv = set_discard_entry(so, &an_entry);
-            if (rv == -1)
+			if (rv == -1) {
+                Py_DECREF(key);
                 return NULL;
-            if (rv == DISCARD_NOTFOUND) {
-                if (set_add_entry(so, &an_entry) == -1)
-                    return NULL;
             }
+            if (rv == DISCARD_NOTFOUND) {
+                if (set_add_entry(so, &an_entry) == -1) {
+                    Py_DECREF(key);
+                    return NULL;
+                }
+            }
+			Py_DECREF(key);
         }
         Py_RETURN_NONE;
     }
