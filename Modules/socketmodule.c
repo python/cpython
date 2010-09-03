@@ -351,16 +351,13 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 static SOCKET
 dup_socket(SOCKET handle)
 {
-    HANDLE newhandle;
+    WSAPROTOCOL_INFO info;
 
-    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)handle,
-                         GetCurrentProcess(), &newhandle,
-                         0, FALSE, DUPLICATE_SAME_ACCESS))
-    {
-        WSASetLastError(GetLastError());
+    if (WSADuplicateSocket(handle, GetCurrentProcessId(), &info))
         return INVALID_SOCKET;
-    }
-    return (SOCKET)newhandle;
+
+    return WSASocket(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
+                     FROM_PROTOCOL_INFO, &info, 0, 0);
 }
 #define SOCKETCLOSE closesocket
 #else
