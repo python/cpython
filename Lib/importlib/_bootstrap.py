@@ -80,20 +80,6 @@ def _path_absolute(path):
             return _path_join(_os.getcwd(), path)
 
 
-class _closing:
-
-    """Simple replacement for contextlib.closing."""
-
-    def __init__(self, obj):
-        self.obj = obj
-
-    def __enter__(self):
-        return self.obj
-
-    def __exit__(self, *args):
-        self.obj.close()
-
-
 def _wrap(new, old):
     """Simple substitute for functools.wraps."""
     for replace in ['__module__', '__name__', '__doc__']:
@@ -468,7 +454,7 @@ class _FileLoader:
 
     def get_data(self, path):
         """Return the data from path as raw bytes."""
-        with _closing(_io.FileIO(path, 'r')) as file:
+        with _io.FileIO(path, 'r') as file:
             return file.read()
 
 
