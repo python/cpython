@@ -342,6 +342,8 @@ APIs:
    otherwise return a new allocated buffer (use :cfunc:`PyMem_Free` to free the
    buffer).
 
+   .. versionadded:: 3.2
+
 
 .. cfunction:: Py_ssize_t PyUnicode_GetSize(PyObject *unicode)
 
