@@ -162,14 +162,14 @@ class SSLSocket(socket):
 
         self._checkClosed()
         try:
-            if buffer:
-                v = self._sslobj.read(buffer, len)
+            if buffer is not None:
+                v = self._sslobj.read(len, buffer)
             else:
                 v = self._sslobj.read(len or 1024)
             return v
         except SSLError as x:
             if x.args[0] == SSL_ERROR_EOF and self.suppress_ragged_eofs:
-                if buffer:
+                if buffer is not None:
                     return 0
                 else:
                     return b''

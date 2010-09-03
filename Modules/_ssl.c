@@ -1277,11 +1277,9 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 {
     PyObject *dest = NULL;
     Py_buffer buf;
-    int buf_passed = 0;
-    int count = -1;
     char *mem;
-    /* XXX this should use Py_ssize_t */
-    int len = 1024;
+    int len, count;
+    int buf_passed = 0;
     int sockstate;
     int err;
     int nonblocking;
@@ -1295,26 +1293,28 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
     }
     Py_INCREF(sock);
 
-    if (!PyArg_ParseTuple(args, "|Oi:read", &dest, &count))
+    buf.obj = NULL;
+    buf.buf = NULL;
+    if (!PyArg_ParseTuple(args, "i|w*:read", &len, &buf))
         goto error;
 
-    if ((dest == NULL) || (dest == Py_None)) {
-        if (!(dest = PyByteArray_FromStringAndSize((char *) 0, len)))
+    if ((buf.buf == NULL) && (buf.obj == NULL)) {
+        dest = PyBytes_FromStringAndSize(NULL, len);
+        if (dest == NULL)
             goto error;
-        mem = PyByteArray_AS_STRING(dest);
-    } else if (PyLong_Check(dest)) {
-        len = PyLong_AS_LONG(dest);
-        if (!(dest = PyByteArray_FromStringAndSize((char *) 0, len)))
-            goto error;
-        mem = PyByteArray_AS_STRING(dest);
-    } else {
-        if (PyObject_GetBuffer(dest, &buf, PyBUF_CONTIG) < 0)
-            goto error;
-        mem = buf.buf;
-        len = buf.len;
-        if ((count > 0) && (count <= len))
-            len = count;
+        mem = PyBytes_AS_STRING(dest);
+    }
+    else {
         buf_passed = 1;
+        mem = buf.buf;
+        if (len <= 0 || len > buf.len) {
+            len = (int) buf.len;
+            if (buf.len != len) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "maximum length can't fit in a C 'int'");
+                goto error;
+            }
+        }
     }
 
     /* just in case the blocking state of the socket has been changed */
@@ -1375,23 +1375,24 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
         PySSL_SetError(self, count, __FILE__, __LINE__);
         goto error;
     }
-  done:
+
+done:
     Py_DECREF(sock);
     if (!buf_passed) {
-        PyObject *res = PyBytes_FromStringAndSize(mem, count);
-        Py_DECREF(dest);
-        return res;
-    } else {
+        _PyBytes_Resize(&dest, count);
+        return dest;
+    }
+    else {
         PyBuffer_Release(&buf);
         return PyLong_FromLong(count);
     }
-  error:
+
+error:
     Py_DECREF(sock);
-    if (!buf_passed) {
+    if (!buf_passed)
         Py_XDECREF(dest);
-    } else {
+    else
         PyBuffer_Release(&buf);
-    }
     return NULL;
 }
 
