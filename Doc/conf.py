@@ -131,7 +131,7 @@ latex_documents = [
     ('tutorial/index', 'tutorial.tex',
      'Python Tutorial', _stdauthor, 'manual'),
     ('using/index', 'using.tex',
-     'Python Setup', _stdauthor, 'manual'),
+     'Python Setup and Usage', _stdauthor, 'manual'),
     ('whatsnew/' + version, 'whatsnew.tex',
      'What\'s New in Python', 'A. M. Kuchling', 'howto'),
 ]
