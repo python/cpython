@@ -470,7 +470,7 @@ these codecs are directly usable via the following functions.
 
 Many of the following APIs take two arguments encoding and errors. These
 parameters encoding and errors have the same semantics as the ones of the
-built-in :func:`unicode` Unicode object constructor.
+built-in :func:`str` string object constructor.
 
 Setting encoding to *NULL* causes the default encoding to be used
 which is ASCII.  The file system calls should use
