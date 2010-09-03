@@ -708,8 +708,6 @@ class BasicTCPTest(SocketConnectedTest):
 
     def testFromFd(self):
         # Testing fromfd()
-        if not hasattr(socket, "fromfd"):
-            return # On Windows, this doesn't exist
         fd = self.cli_conn.fileno()
         sock = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
         msg = sock.recv(1024)
