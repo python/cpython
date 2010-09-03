@@ -1,12 +1,12 @@
 """Tokenization help for Python programs.
 
-tokenize(readline) is a generator that breaks a stream of
-bytes into Python tokens. It decodes the bytes according to
-PEP-0263 for determining source file encoding.
+tokenize(readline) is a generator that breaks a stream of bytes into
+Python tokens.  It decodes the bytes according to PEP-0263 for
+determining source file encoding.
 
-It accepts a readline-like method which is called
-repeatedly to get the next line of input (or b"" for EOF).  It generates
-5-tuples with these members:
+It accepts a readline-like method which is called repeatedly to get the
+next line of input (or b"" for EOF).  It generates 5-tuples with these
+members:
 
     the token type (see token.py)
     the token (a string)
@@ -16,14 +16,16 @@ repeatedly to get the next line of input (or b"" for EOF).  It generates
 
 It is designed to match the working of the Python tokenizer exactly, except
 that it produces COMMENT tokens for comments and gives type OP for all
-operators. Aditionally, all token lists start with an ENCODING token
-which tells you which encoding was used to decode the bytes stream."""
+operators.  Additionally, all token lists start with an ENCODING token
+which tells you which encoding was used to decode the bytes stream.
+"""
 
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
                'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
                'Michael Foord')
-import re, string, sys
+import re
+import sys
 from token import *
 from codecs import lookup, BOM_UTF8
 cookie_re = re.compile("coding[:=]\s*([-\w.]+)")
@@ -298,17 +300,16 @@ def _get_normal_name(orig_enc):
 def detect_encoding(readline):
     """
     The detect_encoding() function is used to detect the encoding that should
-    be used to decode a Python source file. It requires one argment, readline,
+    be used to decode a Python source file.  It requires one argment, readline,
     in the same way as the tokenize() generator.
 
     It will call readline a maximum of twice, and return the encoding used
-    (as a string) and a list of any lines (left as bytes) it has read
-    in.
+    (as a string) and a list of any lines (left as bytes) it has read in.
 
     It detects the encoding from the presence of a utf-8 bom or an encoding
-    cookie as specified in pep-0263. If both a bom and a cookie are present, but
-    disagree, a SyntaxError will be raised. If the encoding cookie is an invalid
-    charset, raise a SyntaxError.  Note that if a utf-8 bom is found,
+    cookie as specified in pep-0263.  If both a bom and a cookie are present,
+    but disagree, a SyntaxError will be raised.  If the encoding cookie is an
+    invalid charset, raise a SyntaxError.  Note that if a utf-8 bom is found,
     'utf-8-sig' is returned.
 
     If no encoding is specified, then the default of 'utf-8' will be returned.
@@ -372,7 +373,7 @@ def tokenize(readline):
     """
     The tokenize() generator requires one argment, readline, which
     must be a callable object which provides the same interface as the
-    readline() method of built-in file objects. Each call to the function
+    readline() method of built-in file objects.  Each call to the function
     should return one line of input as bytes.  Alternately, readline
     can be a callable function terminating with StopIteration:
         readline = open(myfile, 'rb').__next__  # Example of alternate readline
@@ -381,7 +382,7 @@ def tokenize(readline):
     token string; a 2-tuple (srow, scol) of ints specifying the row and
     column where the token begins in the source; a 2-tuple (erow, ecol) of
     ints specifying the row and column where the token ends in the source;
-    and the line on which the token was found. The line passed is the
+    and the line on which the token was found.  The line passed is the
     logical line; continuation lines are included.
 
     The first token sequence will always be an ENCODING token
