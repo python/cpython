@@ -400,7 +400,7 @@ class RawConfigParser:
             for (key, value) in self._sections[section].items():
                 if key == "__name__":
                     continue
-                if value is not None:
+                if (value is not None) or (self._optcre == self.OPTCRE):
                     key = " = ".join((key, str(value).replace('\n', '\n\t')))
                 fp.write("%s\n" % (key))
             fp.write("\n")

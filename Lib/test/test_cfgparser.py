@@ -530,6 +530,33 @@ class SafeConfigParserTestCaseNoValue(SafeConfigParserTestCase):
     allow_no_value = True
 
 
+class Issue7005TestCase(unittest.TestCase):
+    """Test output when None is set() as a value and allow_no_value == False.
+
+    http://bugs.python.org/issue7005
+
+    """
+
+    expected_output = "[section]\noption = None\n\n"
+
+    def prepare(self, config_class):
+        # This is the default, but that's the point.
+        cp = config_class(allow_no_value=False)
+        cp.add_section("section")
+        cp.set("section", "option", None)
+        sio = StringIO.StringIO()
+        cp.write(sio)
+        return sio.getvalue()
+
+    def test_none_as_value_stringified(self):
+        output = self.prepare(ConfigParser.ConfigParser)
+        self.assertEqual(output, self.expected_output)
+
+    def test_none_as_value_stringified_raw(self):
+        output = self.prepare(ConfigParser.RawConfigParser)
+        self.assertEqual(output, self.expected_output)
+
+
 class SortedTestCase(RawConfigParserTestCase):
     def newconfig(self, defaults=None):
         self.cf = self.config_class(defaults=defaults, dict_type=SortedDict)
@@ -563,6 +590,7 @@ def test_main():
         SafeConfigParserTestCase,
         SafeConfigParserTestCaseNoValue,
         SortedTestCase,
+        Issue7005TestCase,
         )
 
 
