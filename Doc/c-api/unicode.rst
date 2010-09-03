@@ -335,6 +335,14 @@ APIs:
    buffer, *NULL* if *unicode* is not a Unicode object.
 
 
+.. cfunction:: Py_UNICODE* PyUnicode_AsUnicodeCopy(PyObject *unicode)
+
+   Create a copy of a unicode string ending with a nul character. Return *NULL*
+   and raise a :exc:`MemoryError` exception on memory allocation failure,
+   otherwise return a new allocated buffer (use :cfunc:`PyMem_Free` to free the
+   buffer).
+
+
 .. cfunction:: Py_ssize_t PyUnicode_GetSize(PyObject *unicode)
 
    Return the length of the Unicode object.
