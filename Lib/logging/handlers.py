@@ -786,20 +786,19 @@ class SysLogHandler(logging.Handler):
         The record is formatted, and then sent to the syslog server. If
         exception information is present, it is NOT sent to the server.
         """
-        msg = self.format(record)
+        msg = self.format(record) + '\000'
         """
         We need to convert record level to lowercase, maybe this will
         change in the future.
         """
-        msg = self.log_format_string % (
-            self.encodePriority(self.facility,
-                                self.mapPriority(record.levelname)),
-                                msg)
-        # Treat unicode messages as required by RFC 5424
-        if _unicode and type(msg) is unicode:
+        prio = '<%d>' % self.encodePriority(self.facility,
+                                            self.mapPriority(record.levelname))
+        # Message is a string. Convert to bytes as required by RFC 5424
+        if type(msg) is unicode:
             msg = msg.encode('utf-8')
             if codecs:
                 msg = codecs.BOM_UTF8 + msg
+        msg = prio + msg
         try:
             if self.unixsocket:
                 try:
