@@ -35,9 +35,9 @@ LINKCC=		@LINKCC@
 AR=		@AR@
 RANLIB=		@RANLIB@
 SVNVERSION=	@SVNVERSION@
-SOABI=          @SOABI@
+SOABI=		@SOABI@
 
-GNULD=          @GNULD@
+GNULD=		@GNULD@
 
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh
