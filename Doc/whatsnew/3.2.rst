@@ -282,3 +282,7 @@ that may require changes to your code:
   * "t#" format has been removed: use "s#" or "s*" instead
   * "w" and "w#" formats has been removed: use "w*" instead
 
+* The :ctype:`PyCObject` type, deprecated in 3.1, has been removed.  To wrap
+  opaque C pointers in Python objects, the :ctype:`PyCapsule` API should be
+  used instead; the new type has a well defined interface for passing typing
+  safety information and a less complicated signature for calling a destructor.
