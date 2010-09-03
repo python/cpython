@@ -10015,7 +10015,7 @@ Py_UNICODE_strrchr(const Py_UNICODE *s, Py_UNICODE c)
 }
 
 Py_UNICODE*
-PyUnicode_strdup(PyObject *object)
+PyUnicode_AsUnicodeCopy(PyObject *object)
 {
     PyUnicodeObject *unicode = (PyUnicodeObject *)object;
     Py_UNICODE *copy;
