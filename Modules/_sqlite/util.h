@@ -1,6 +1,6 @@
 /* util.h - various utility functions
  *
- * Copyright (C) 2005-2010 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2005-2010 Gerhard HÃ¤ring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *

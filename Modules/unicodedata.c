@@ -6,7 +6,7 @@
 
    Written by Marc-Andre Lemburg (mal@lemburg.com).
    Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
-   Modified by Martin v. Löwis (martin@v.loewis.de)
+   Modified by Martin v. LÃ¶wis (martin@v.loewis.de)
 
    Copyright (c) Corporation for National Research Initiatives.
 

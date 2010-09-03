@@ -1,6 +1,6 @@
 /* module.c - the module itself
  *
- * Copyright (C) 2004-2010 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2010 Gerhard HÃ¤ring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
