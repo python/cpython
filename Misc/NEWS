@@ -381,6 +381,8 @@ Tests
 Build
 -----
 
+- Issue #1303434: Generate ZIP file containing all PDBs.
+
 - Issue #9193: PEP 3149 is accepted.
 
 - Issue #3101: Helper functions _add_one_to_index_C() and
