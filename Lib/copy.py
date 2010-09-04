@@ -51,6 +51,7 @@ __getstate__() and __setstate__().  See the documentation for module
 import types
 import weakref
 from copyreg import dispatch_table
+import builtins
 
 class Error(Exception):
     pass
@@ -109,7 +110,7 @@ t = getattr(types, "CodeType", None)
 if t is not None:
     d[t] = _copy_immutable
 for name in ("complex", "unicode"):
-    t = globals()['__builtins__'].get(name)
+    t = getattr(builtins, name, None)
     if t is not None:
         d[t] = _copy_immutable
 
