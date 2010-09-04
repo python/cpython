@@ -357,10 +357,10 @@ class catch_warnings(object):
 # If either if the compiled regexs are None, match anything.
 _warnings_defaults = False
 try:
-    from _warnings import (filters, default_action, once_registry,
+    from _warnings import (filters, _defaultaction, _onceregistry,
                             warn, warn_explicit)
-    defaultaction = default_action
-    onceregistry = once_registry
+    defaultaction = _defaultaction
+    onceregistry = _onceregistry
     _warnings_defaults = True
 except ImportError:
     filters = []
