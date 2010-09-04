@@ -409,13 +409,7 @@ class PosixGroupsTester(unittest.TestCase):
     def test_initgroups(self):
         # find missing group
 
-        groups = sorted(self.saved_groups)
-        for g1,g2 in zip(groups[:-1], groups[1:]):
-            g = g1 + 1
-            if g < g2:
-                break
-        else:
-            g = g2 + 1
+        g = max(self.saved_groups) + 1
         name = pwd.getpwuid(posix.getuid()).pw_name
         posix.initgroups(name, g)
         self.assertIn(g, posix.getgroups())
@@ -423,7 +417,7 @@ class PosixGroupsTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'setgroups'),
                          "test needs posix.setgroups()")
     def test_setgroups(self):
-        for groups in [[0], range(16)]:
+        for groups in [[0], list(range(16))]:
             posix.setgroups(groups)
             self.assertListEqual(groups, posix.getgroups())
 
