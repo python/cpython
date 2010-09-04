@@ -165,6 +165,10 @@ Extensions
 Library
 -------
 
+- Issue #7451: Improve decoding performance of JSON objects, and reduce
+  the memory consumption of said decoded objects when they use the same
+  strings as keys.
+
 - Issue #1100562: Fix deep-copying of objects derived from the list and
   dict types.  Patch by Michele Orrù and Björn Lindqvist.
 
