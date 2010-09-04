@@ -51,12 +51,65 @@
 This article explains the new features in Python 3.2, compared to 3.1.
 
 
+PEP 3147:  PYC Repository Directories
+=====================================
+
+Python's scheme for caching bytecode in *.pyc* files did not work well in
+environments with multiple python interpreters.  If one interpreter encountered
+a cached file created by another interpreter, it would recompile the source and
+overwrite the cached file, thus losing the benefits of caching.
+
+The issue of "pyc fights" has become more pronounced as it has become
+common-place for Linux distributions to ship with multiple versions of Python.
+These conflicts also arise with CPython alternatives such as Unladen Swallow.
+
+To solve this problem, Python's import machinery has been extended to use
+distinct filenames for each interpreter.  Instead of Python3.2 and Python3.3 and
+UnladenSwallow each competing for a file called "mymodule.pyc", they will now
+look for "mymodule.cpython-32.pyc", "mymodule.cpython-33.pyc", and
+"mymodule.unladen10.pyc".  And to keep prevent all of these new files from
+cluttering source directories, the *pyc* files are now collected in a
+"__pycache__" directory stored under the package directory.
+
+Aside from the filenames and target directories, the new scheme has a few
+aspects that are visible to the programmer:
+
+* Imported modules now have a :attr:`__cached__` attribute which stores the
+  name of the actual file that was imported::
+
+   >>> import collections
+   >>> collections.__cached__
+   'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
+
+* The tag that is unique to each interpreter is accessible from the :mod:`imp`
+  module::
+
+   >>> import imp
+   >>> imp.get_tag()
+   'cpython-32'
+
+* Scripts that try to deduce source filename from the imported file now need to
+  be smarter.  It is no longer sufficient to simply strip the "c" from a ".pyc"
+  filename.  Instead, use the new functions in the :mod:`imp` module:
+
+   >>> imp.source_from_cache('c:/py32/lib/__pycache__/collections.cpython-32.pyc')
+   'c:/py32/lib/collections.py'
+   >>> imp.cache_from_source('c:/py32/lib/collections.py')
+   'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
+
+* The :mod:`py_compile` and :mod:`compileall` modules have been updated to
+  reflect the new naming convention and target directory.
+
+.. seealso::
+
+   :pep:`3147` - PYC Repository Directories
+      PEP written by Barry Warsaw.
+
 PEPs
 ====
 
 Implemented PEPs:
 
-* :pep:`3147`
 * :pep:`3149`
 
 
