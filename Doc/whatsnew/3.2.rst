@@ -85,17 +85,17 @@ New, Improved, and Deprecated Modules
           return c.fetchone()[0]
 
   To help with choosing an effective cache size, the wrapped function is
-  instrumented with two attributes *hits* and *misses*::
+  instrumented with two attributes *cache_hits* and *cache_misses*::
 
         >>> for name in user_requests:
         ...     get_phone_number(name)
-        >>> print(get_phone_number.hits, get_phone_number.misses)
+        >>> print(get_phone_number.cache_hits, get_phone_number.cache_misses)
         4805 980
 
   If the phonelist table gets updated, the outdated contents of the cache can be
   cleared with::
 
-        >>> get_phone_number.clear()
+        >>> get_phone_number.cache_clear()
 
   (Contributed by Raymond Hettinger)
 

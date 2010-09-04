@@ -142,23 +142,23 @@ def lru_cache(maxsize=100):
                 with lock:
                     result = cache[key]
                     cache_renew(key)            # record recent use of this key
-                    wrapper.hits += 1
+                    wrapper.cache_hits += 1
             except KeyError:
                 result = user_function(*args, **kwds)
                 with lock:
                     cache[key] = result         # record recent use of this key
-                    wrapper.misses += 1
+                    wrapper.cache_misses += 1
                     if len(cache) > maxsize:
                         cache_popitem(0)        # purge least recently used cache entry
             return result
 
-        def clear():
+        def cache_clear():
             """Clear the cache and cache statistics"""
             with lock:
                 cache.clear()
-                wrapper.hits = wrapper.misses = 0
+                wrapper.cache_hits = wrapper.cache_misses = 0
 
-        wrapper.hits = wrapper.misses = 0
-        wrapper.clear = clear
+        wrapper.cache_hits = wrapper.cache_misses = 0
+        wrapper.cache_clear = cache_clear
         return wrapper
     return decorating_function
