@@ -532,6 +532,26 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(x.foo, y.foo)
         self.assertTrue(x.foo is not y.foo)
 
+    def test_deepcopy_dict_subclass(self):
+        class C(dict):
+            def __init__(self, d=None):
+                if not d:
+                    d = {}
+                self._keys = list(d.keys())
+                super().__init__(d)
+            def __setitem__(self, key, item):
+                super().__setitem__(key, item)
+                if key not in self._keys:
+                    self._keys.append(key)
+        x = C(d={'foo':0})
+        y = copy.deepcopy(x)
+        self.assertEqual(x, y)
+        self.assertEqual(x._keys, y._keys)
+        self.assertTrue(x is not y)
+        x['bar'] = 1
+        self.assertNotEqual(x, y)
+        self.assertNotEqual(x._keys, y._keys)
+
     def test_copy_list_subclass(self):
         class C(list):
             pass
