@@ -312,6 +312,9 @@ class OtherFileTests(unittest.TestCase):
     def testInvalidFd(self):
         self.assertRaises(ValueError, _FileIO, -10)
         self.assertRaises(OSError, _FileIO, make_bad_fd())
+        if sys.platform == 'win32':
+            import msvcrt
+            self.assertRaises(IOError, msvcrt.get_osfhandle, make_bad_fd())
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
