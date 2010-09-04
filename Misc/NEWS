@@ -100,6 +100,9 @@ Core and Builtins
 Extensions
 ----------
 
+- Issue #8734: Avoid crash in msvcrt.get_osfhandle() when an invalid file
+  descriptor is provided.  Patch by Pascal Chambon.
+
 - Issue #7736: Release the GIL around calls to opendir() and closedir()
   in the posix module.  Patch by Marcin Bachry.
 
