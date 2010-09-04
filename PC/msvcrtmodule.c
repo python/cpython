@@ -141,6 +141,9 @@ msvcrt_get_osfhandle(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args,"i:get_osfhandle", &fd))
         return NULL;
 
+    if (!_PyVerify_fd(fd))
+        return PyErr_SetFromErrno(PyExc_IOError);
+
     handle = _get_osfhandle(fd);
     if (handle == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
