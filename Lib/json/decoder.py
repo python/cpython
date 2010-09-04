@@ -147,10 +147,14 @@ WHITESPACE_STR = ' \t\n\r'
 
 
 def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
-        _w=WHITESPACE.match, _ws=WHITESPACE_STR):
+               memo=None, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
     s, end = s_and_end
     pairs = []
     pairs_append = pairs.append
+    # Backwards compatibility
+    if memo is None:
+        memo = {}
+    memo_get = memo.setdefault
     # Use a slice to prevent IndexError from being raised, the following
     # check will raise a more specific ValueError if the string is empty
     nextchar = s[end:end + 1]
@@ -167,6 +171,7 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
     end += 1
     while True:
         key, end = scanstring(s, end, strict)
+        key = memo_get(key, key)
         # To skip some function call overhead we optimize the fast paths where
         # the JSON key separator is ": " or just ":".
         if s[end:end + 1] != ':':
@@ -214,7 +219,7 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
         pairs = object_hook(pairs)
     return pairs, end
 
-def JSONArray(s_and_end, scan_once, context, _w=WHITESPACE.match):
+def JSONArray(s_and_end, scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
     s, end = s_and_end
     values = []
     nextchar = s[end:end + 1]
@@ -314,6 +319,7 @@ class JSONDecoder(object):
         self.parse_object = JSONObject
         self.parse_array = JSONArray
         self.parse_string = scanstring
+        self.memo = {}
         self.scan_once = make_scanner(self)
 
 

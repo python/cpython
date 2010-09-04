@@ -1,9 +1,24 @@
 import decimal
 from unittest import TestCase
 from io import StringIO
+from contextlib import contextmanager
 
 import json
+import json.decoder
+import json.scanner
 from collections import OrderedDict
+
+
+@contextmanager
+def use_python_scanner():
+    py_scanner = json.scanner.py_make_scanner
+    old_scanner = json.decoder.make_scanner
+    json.decoder.make_scanner = py_scanner
+    try:
+        yield
+    finally:
+        json.decoder.make_scanner = old_scanner
+
 
 class TestDecode(TestCase):
     def test_decimal(self):
@@ -39,3 +54,16 @@ class TestDecode(TestCase):
         # exercise the uncommon cases. The array cases are already covered.
         rval = json.loads('{   "key"    :    "value"    ,  "k":"v"    }')
         self.assertEquals(rval, {"key":"value", "k":"v"})
+
+    def check_keys_reuse(self, source, loads):
+        rval = loads(source)
+        (a, b), (c, d) = sorted(rval[0]), sorted(rval[1])
+        self.assertIs(a, c)
+        self.assertIs(b, d)
+
+    def test_keys_reuse(self):
+        s = '[{"a_key": 1, "b_\xe9": 2}, {"a_key": 3, "b_\xe9": 4}]'
+        self.check_keys_reuse(s, json.loads)
+        # Disabled: the pure Python version of json simply doesn't work
+        with use_python_scanner():
+            self.check_keys_reuse(s, json.decoder.JSONDecoder().decode)
