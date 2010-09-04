@@ -225,6 +225,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #7736: Release the GIL around calls to opendir() and closedir()
+  in the posix module.  Patch by Marcin Bachry.
+
 - As a result of issue #2521, the _weakref module is now compiled into the
   interpreter by default.
 
