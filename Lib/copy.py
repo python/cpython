@@ -51,6 +51,7 @@ __getstate__() and __setstate__().  See the documentation for module
 import types
 import weakref
 from copyreg import dispatch_table
+import builtins
 
 class Error(Exception):
     pass
@@ -109,7 +110,7 @@ t = getattr(types, "CodeType", None)
 if t is not None:
     d[t] = _copy_immutable
 for name in ("complex", "unicode"):
-    t = globals()['__builtins__'].get(name)
+    t = getattr(builtins, name, None)
     if t is not None:
         d[t] = _copy_immutable
 
@@ -279,17 +280,7 @@ def _reconstruct(x, info, deep, memo=None):
         args = deepcopy(args, memo)
     y = callable(*args)
     memo[id(x)] = y
-    if listiter is not None:
-        for item in listiter:
-            if deep:
-                item = deepcopy(item, memo)
-            y.append(item)
-    if dictiter is not None:
-        for key, value in dictiter:
-            if deep:
-                key = deepcopy(key, memo)
-                value = deepcopy(value, memo)
-            y[key] = value
+
     if state:
         if deep:
             state = deepcopy(state, memo)
@@ -305,6 +296,18 @@ def _reconstruct(x, info, deep, memo=None):
             if slotstate is not None:
                 for key, value in slotstate.items():
                     setattr(y, key, value)
+
+    if listiter is not None:
+        for item in listiter:
+            if deep:
+                item = deepcopy(item, memo)
+            y.append(item)
+    if dictiter is not None:
+        for key, value in dictiter:
+            if deep:
+                key = deepcopy(key, memo)
+                value = deepcopy(value, memo)
+            y[key] = value
     return y
 
 del d
@@ -366,6 +369,16 @@ def _test():
     print(map(reprlib.repr, l1))
     print(map(reprlib.repr, l2))
     print(map(reprlib.repr, l3))
+    class odict(dict):
+        def __init__(self, d = {}):
+            self.a = 99
+            dict.__init__(self, d)
+        def __setitem__(self, k, i):
+            dict.__setitem__(self, k, i)
+            self.a
+    o = odict({"A" : "B"})
+    x = deepcopy(o)
+    print(o, x)
 
 if __name__ == '__main__':
     _test()
