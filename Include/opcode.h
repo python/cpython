@@ -12,7 +12,7 @@ extern "C" {
 #define ROT_TWO		2
 #define ROT_THREE	3
 #define DUP_TOP		4
-#define ROT_FOUR	5
+#define DUP_TOP_TWO     5
 #define NOP		9
 
 #define UNARY_POSITIVE	10
@@ -83,7 +83,7 @@ extern "C" {
 #define DELETE_ATTR	96	/* "" */
 #define STORE_GLOBAL	97	/* "" */
 #define DELETE_GLOBAL	98	/* "" */
-#define DUP_TOPX	99	/* number of items to duplicate */
+
 #define LOAD_CONST	100	/* Index in const list */
 #define LOAD_NAME	101	/* Index in name list */
 #define BUILD_TUPLE	102	/* Number of tuple items */

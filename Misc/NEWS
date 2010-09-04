@@ -12,6 +12,10 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9225: Remove the ROT_FOUR and DUP_TOPX opcode, the latter replaced
+  by the new (and simpler) DUP_TOP_TWO.  Performance isn't changed, but
+  our bytecode is a bit simplified.  Patch by Demur Rumed.
+
 - Issue #9766: Rename poorly named variables exposed by _warnings to prevent
   confusion with the proper variables names from 'warnings' itself.
 
