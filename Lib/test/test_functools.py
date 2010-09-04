@@ -508,21 +508,21 @@ class TestLRU(unittest.TestCase):
             actual = f(x, y)
             expected = orig(x, y)
             self.assertEquals(actual, expected)
-        self.assert_(f.hits > f.misses)
-        self.assertEquals(f.hits + f.misses, 1000)
+        self.assert_(f.cache_hits > f.cache_misses)
+        self.assertEquals(f.cache_hits + f.cache_misses, 1000)
 
-        f.clear()   # test clearing
-        self.assertEqual(f.hits, 0)
-        self.assertEqual(f.misses, 0)
+        f.cache_clear()   # test clearing
+        self.assertEqual(f.cache_hits, 0)
+        self.assertEqual(f.cache_misses, 0)
         f(x, y)
-        self.assertEqual(f.hits, 0)
-        self.assertEqual(f.misses, 1)
+        self.assertEqual(f.cache_hits, 0)
+        self.assertEqual(f.cache_misses, 1)
 
         # Test bypassing the cache
         self.assertIs(f.__wrapped__, orig)
         f.__wrapped__(x, y)
-        self.assertEqual(f.hits, 0)
-        self.assertEqual(f.misses, 1)
+        self.assertEqual(f.cache_hits, 0)
+        self.assertEqual(f.cache_misses, 1)
 
         # test size zero (which means "never-cache")
         @functools.lru_cache(0)

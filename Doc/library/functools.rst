@@ -47,12 +47,12 @@ The :mod:`functools` module defines the following functions:
    results, the positional and keyword arguments to the function must be
    hashable.
 
-   The wrapped function is instrumented with two attributes, :attr:`hits`
-   and :attr:`misses` which count the number of successful or unsuccessful
+   The wrapped function is instrumented with two attributes, :attr:`cache_hits`
+   and :attr:`cache_misses` which count the number of successful or unsuccessful
    cache lookups.  These statistics are helpful for tuning the *maxsize*
    parameter and for measuring the cache's effectiveness.
 
-   The wrapped function also has a :attr:`clear` attribute which can be
+   The wrapped function also has a :attr:`cache_clear` attribute which can be
    called (with no arguments) to clear the cache.
 
    The original underlying function is accessible through the

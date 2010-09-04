@@ -207,8 +207,8 @@ def compile(pattern, flags=0):
 
 def purge():
     "Clear the regular expression caches"
-    _compile_typed.clear()
-    _compile_repl.clear()
+    _compile_typed.cache_clear()
+    _compile_repl.cache_clear()
 
 def template(pattern, flags=0):
     "Compile a template pattern, returning a pattern object"
