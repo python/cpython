@@ -24,9 +24,9 @@ ConfigParser -- responsible for parsing a list of
 
     methods:
 
-    __init__(defaults=None, dict_type=_default_dict,
-             delimiters=('=', ':'), comment_prefixes=('#', ';'),
-             strict=False, empty_lines_in_values=True, allow_no_value=False):
+    __init__(defaults=None, dict_type=_default_dict, allow_no_value=False,
+             delimiters=('=', ':'), comment_prefixes=_COMPATIBLE,
+             strict=False, empty_lines_in_values=True):
         Create the parser. When `defaults' is given, it is initialized into the
         dictionary or intrinsic defaults. The keys must be strings, the values
         must be appropriate for %()s string interpolation. Note that `__name__'
@@ -82,22 +82,24 @@ ConfigParser -- responsible for parsing a list of
         Read configuration from a dictionary. Keys are section names,
         values are dictionaries with keys and values that should be present
         in the section. If the used dictionary type preserves order, sections
-        and their keys will be added in order.
+        and their keys will be added in order. Values are automatically
+        converted to strings.
 
-    get(section, option, raw=False, vars=None)
+    get(section, option, raw=False, vars=None, default=_UNSET)
         Return a string value for the named option.  All % interpolations are
         expanded in the return values, based on the defaults passed into the
         constructor and the DEFAULT section.  Additional substitutions may be
         provided using the `vars' argument, which must be a dictionary whose
-        contents override any pre-existing defaults.
+        contents override any pre-existing defaults. If `option' is a key in
+        `vars', the value from `vars' is used.
 
-    getint(section, options)
+    getint(section, options, raw=False, vars=None, default=_UNSET)
         Like get(), but convert value to an integer.
 
-    getfloat(section, options)
+    getfloat(section, options, raw=False, vars=None, default=_UNSET)
         Like get(), but convert value to a float.
 
-    getboolean(section, options)
+    getboolean(section, options, raw=False, vars=None, default=_UNSET)
         Like get(), but convert value to a boolean (currently case
         insensitively defined as 0, false, no, off for False, and 1, true,
         yes, on for True).  Returns False or True.
@@ -353,6 +355,17 @@ class MissingSectionHeaderError(ParsingError):
         self.args = (filename, lineno, line)
 
 
+# Used in parsers to denote selecting a backwards-compatible inline comment
+# character behavior (; and # are comments at the start of a line, but ; only
+# inline)
+_COMPATIBLE = object()
+
+# Used in parser getters to indicate the default behaviour when a specific
+# option is not found it to raise an exception. Created to enable `None' as
+# a valid fallback value.
+_UNSET = object()
+
+
 class RawConfigParser:
     """ConfigParser that does not do interpolation."""
 
@@ -389,9 +402,9 @@ class RawConfigParser:
     OPTCRE_NV = re.compile(_OPT_NV_TMPL.format(delim="=|:"), re.VERBOSE)
     # Compiled regular expression for matching leading whitespace in a line
     NONSPACECRE = re.compile(r"\S")
-    # Select backwards-compatible inline comment character behavior
-    # (; and # are comments at the start of a line, but ; only inline)
-    _COMPATIBLE = object()
+    # Possible boolean values in the configuration.
+    BOOLEAN_STATES = {'1': True, 'yes': True, 'true': True, 'on': True,
+                      '0': False, 'no': False, 'false': False, 'off': False}
 
     def __init__(self, defaults=None, dict_type=_default_dict,
                  allow_no_value=False, *, delimiters=('=', ':'),
@@ -414,7 +427,7 @@ class RawConfigParser:
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        if comment_prefixes is self._COMPATIBLE:
+        if comment_prefixes is _COMPATIBLE:
             self._startonly_comment_prefixes = ('#',)
             self._comment_prefixes = (';',)
         else:
@@ -528,6 +541,8 @@ class RawConfigParser:
                 elements_added.add(section)
             for key, value in keys.items():
                 key = self.optionxform(key)
+                if value is not None:
+                    value = str(value)
                 if self._strict and (section, key) in elements_added:
                     raise DuplicateOptionError(section, key, source)
                 elements_added.add((section, key))
@@ -542,21 +557,29 @@ class RawConfigParser:
         )
         self.read_file(fp, source=filename)
 
-    def get(self, section, option):
-        opt = self.optionxform(option)
-        if section not in self._sections:
-            if section != DEFAULTSECT:
-                raise NoSectionError(section)
-            if opt in self._defaults:
-                return self._defaults[opt]
+    def get(self, section, option, vars=None, default=_UNSET):
+        """Get an option value for a given section.
+
+        If `vars' is provided, it must be a dictionary. The option is looked up
+        in `vars' (if provided), `section', and in `DEFAULTSECT' in that order.
+        If the key is not found and `default' is provided, it is used as
+        a fallback value. `None' can be provided as a `default' value.
+        """
+        try:
+            d = self._unify_values(section, vars)
+        except NoSectionError:
+            if default is _UNSET:
+                raise
             else:
+                return default
+        option = self.optionxform(option)
+        try:
+            return d[option]
+        except KeyError:
+            if default is _UNSET:
                 raise NoOptionError(option, section)
-        elif opt in self._sections[section]:
-            return self._sections[section][opt]
-        elif opt in self._defaults:
-            return self._defaults[opt]
-        else:
-            raise NoOptionError(option, section)
+            else:
+                return default
 
     def items(self, section):
         try:
@@ -571,23 +594,35 @@ class RawConfigParser:
             del d["__name__"]
         return d.items()
 
-    def _get(self, section, conv, option):
-        return conv(self.get(section, option))
+    def _get(self, section, conv, option, *args, **kwargs):
+        return conv(self.get(section, option, *args, **kwargs))
 
-    def getint(self, section, option):
-        return self._get(section, int, option)
+    def getint(self, section, option, vars=None, default=_UNSET):
+        try:
+            return self._get(section, int, option, vars)
+        except (NoSectionError, NoOptionError):
+            if default is _UNSET:
+                raise
+            else:
+                return default
 
-    def getfloat(self, section, option):
-        return self._get(section, float, option)
+    def getfloat(self, section, option, vars=None, default=_UNSET):
+        try:
+            return self._get(section, float, option, vars)
+        except (NoSectionError, NoOptionError):
+            if default is _UNSET:
+                raise
+            else:
+                return default
 
-    _boolean_states = {'1': True, 'yes': True, 'true': True, 'on': True,
-                       '0': False, 'no': False, 'false': False, 'off': False}
-
-    def getboolean(self, section, option):
-        v = self.get(section, option)
-        if v.lower() not in self._boolean_states:
-            raise ValueError('Not a boolean: %s' % v)
-        return self._boolean_states[v.lower()]
+    def getboolean(self, section, option, vars=None, default=_UNSET):
+        try:
+            return self._get(section, self._convert_to_boolean, option, vars)
+        except (NoSectionError, NoOptionError):
+            if default is _UNSET:
+                raise
+            else:
+                return default
 
     def optionxform(self, optionstr):
         return optionstr.lower()
@@ -797,21 +832,10 @@ class RawConfigParser:
         exc.append(lineno, repr(line))
         return exc
 
-
-class ConfigParser(RawConfigParser):
-    """ConfigParser implementing interpolation."""
-
-    def get(self, section, option, raw=False, vars=None):
-        """Get an option value for a given section.
-
-        If `vars' is provided, it must be a dictionary. The option is looked up
-        in `vars' (if provided), `section', and in `defaults' in that order.
-
-        All % interpolations are expanded in the return values, unless the
-        optional argument `raw' is true.  Values for interpolation keys are
-        looked up in the same manner as the option.
-
-        The section DEFAULT is special.
+    def _unify_values(self, section, vars):
+        """Create a copy of the DEFAULTSECT with values from a specific
+        `section' and the `vars' dictionary. If provided, values in `vars'
+        take precendence.
         """
         d = self._defaults.copy()
         try:
@@ -822,17 +846,85 @@ class ConfigParser(RawConfigParser):
         # Update with the entry specific variables
         if vars:
             for key, value in vars.items():
+                if value is not None:
+                    value = str(value)
                 d[self.optionxform(key)] = value
+        return d
+
+    def _convert_to_boolean(self, value):
+        """Return a boolean value translating from other types if necessary.
+        """
+        if value.lower() not in self.BOOLEAN_STATES:
+            raise ValueError('Not a boolean: %s' % value)
+        return self.BOOLEAN_STATES[value.lower()]
+
+
+class ConfigParser(RawConfigParser):
+    """ConfigParser implementing interpolation."""
+
+    def get(self, section, option, raw=False, vars=None, default=_UNSET):
+        """Get an option value for a given section.
+
+        If `vars' is provided, it must be a dictionary. The option is looked up
+        in `vars' (if provided), `section', and in `DEFAULTSECT' in that order.
+        If the key is not found and `default' is provided, it is used as
+        a fallback value. `None' can be provided as a `default' value.
+
+        All % interpolations are expanded in the return values, unless the
+        optional argument `raw' is true.  Values for interpolation keys are
+        looked up in the same manner as the option.
+
+        The section DEFAULT is special.
+        """
+        try:
+            d = self._unify_values(section, vars)
+        except NoSectionError:
+            if default is _UNSET:
+                raise
+            else:
+                return default
         option = self.optionxform(option)
         try:
             value = d[option]
         except KeyError:
-            raise NoOptionError(option, section)
+            if default is _UNSET:
+                raise NoOptionError(option, section)
+            else:
+                return default
 
         if raw or value is None:
             return value
         else:
             return self._interpolate(section, option, value, d)
+
+    def getint(self, section, option, raw=False, vars=None, default=_UNSET):
+        try:
+            return self._get(section, int, option, raw, vars)
+        except (NoSectionError, NoOptionError):
+            if default is _UNSET:
+                raise
+            else:
+                return default
+
+    def getfloat(self, section, option, raw=False, vars=None, default=_UNSET):
+        try:
+            return self._get(section, float, option, raw, vars)
+        except (NoSectionError, NoOptionError):
+            if default is _UNSET:
+                raise
+            else:
+                return default
+
+    def getboolean(self, section, option, raw=False, vars=None,
+                   default=_UNSET):
+        try:
+            return self._get(section, self._convert_to_boolean, option, raw,
+                             vars)
+        except (NoSectionError, NoOptionError):
+            if default is _UNSET:
+                raise
+            else:
+                return default
 
     def items(self, section, raw=False, vars=None):
         """Return a list of (name, value) tuples for each option in a section.
