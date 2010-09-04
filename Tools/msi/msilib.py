@@ -381,7 +381,6 @@ class CAB:
         add_data(db, "Media",
                 [(1, self.index, None, "#"+self.name, None, None)])
         add_stream(db, self.name, self.name+".cab")
-        os.unlink(self.name+".txt")
         os.unlink(self.name+".cab")
         db.Commit()
 
