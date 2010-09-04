@@ -152,7 +152,13 @@ class PyBuildExt(build_ext):
     def build_extensions(self):
 
         # Detect which modules should be compiled
-        missing = self.detect_modules()
+        old_so = self.compiler.shared_lib_extension
+        # Workaround PEP 3149 stuff
+        self.compiler.shared_lib_extension = os.environ.get("SO", ".so")
+        try:
+            missing = self.detect_modules()
+        finally:
+            self.compiler.shared_lib_extension = old_so
 
         # Remove modules that are present on the disabled list
         extensions = [ext for ext in self.extensions
