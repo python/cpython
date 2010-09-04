@@ -497,7 +497,7 @@ unpickler_read(UnpicklerObject *self, char **s, Py_ssize_t n)
     /* XXX: Should bytearray be supported too? */
     if (!PyBytes_Check(data)) {
         PyErr_SetString(PyExc_ValueError,
-                        "read() from the underlying stream did not"
+                        "read() from the underlying stream did not "
                         "return bytes");
         Py_DECREF(data);
         return -1;
@@ -530,7 +530,7 @@ unpickler_readline(UnpicklerObject *self, char **s)
     /* XXX: Should bytearray be supported too? */
     if (!PyBytes_Check(data)) {
         PyErr_SetString(PyExc_ValueError,
-                        "readline() from the underlying stream did not"
+                        "readline() from the underlying stream did not "
                         "return bytes");
         return -1;
     }
