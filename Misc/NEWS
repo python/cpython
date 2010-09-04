@@ -12,6 +12,9 @@ What's New in Python 3.2 Alpha 2?
 Core and Builtins
 -----------------
 
+- Issue #9766: Rename poorly named variables exposed by _warnings to prevent
+  confusion with the proper variables names from 'warnings' itself.
+
 - Issue #9212: dict_keys and dict_items now provide the isdisjoint()
   method, to conform to the Set ABC.  Patch by Daniel Urban.
 

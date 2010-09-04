@@ -945,13 +945,13 @@ _PyWarnings_Init(void)
     if (_once_registry == NULL)
         return NULL;
     Py_INCREF(_once_registry);
-    if (PyModule_AddObject(m, "once_registry", _once_registry) < 0)
+    if (PyModule_AddObject(m, "_onceregistry", _once_registry) < 0)
         return NULL;
 
     _default_action = PyUnicode_FromString("default");
     if (_default_action == NULL)
         return NULL;
-    if (PyModule_AddObject(m, "default_action", _default_action) < 0)
+    if (PyModule_AddObject(m, "_defaultaction", _default_action) < 0)
         return NULL;
     return m;
 }
