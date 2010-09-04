@@ -158,6 +158,9 @@ Extensions
 Library
 -------
 
+- Issue #1100562: Fix deep-copying of objects derived from the list and
+  dict types.  Patch by Michele Orrù and Björn Lindqvist.
+
 - Issue #9753: Fixed socket.dup, which did not always work correctly
   on Windows.
 
