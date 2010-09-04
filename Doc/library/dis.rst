@@ -184,15 +184,15 @@ The Python compiler currently generates the following bytecode instructions.
    three.
 
 
-.. opcode:: ROT_FOUR
-
-   Lifts second, third and forth stack item one position up, moves top down to
-   position four.
-
-
 .. opcode:: DUP_TOP
 
    Duplicates the reference on top of the stack.
+
+
+.. opcode:: DUP_TOP_TWO
+
+   Duplicates the two references on top of the stack, leaving them in the
+   same order.
 
 
 **Unary operations**
@@ -529,12 +529,6 @@ the more significant byte last.
    The low byte of *counts* is the number of values before the list value, the
    high byte of *counts* the number of values after it.  The resulting values
    are put onto the stack right-to-left.
-
-
-.. opcode:: DUP_TOPX (count)
-
-   Duplicate *count* items, keeping them in the same order. Due to implementation
-   limits, *count* should be between 1 and 5 inclusive.
 
 
 .. opcode:: STORE_ATTR (namei)

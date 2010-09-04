@@ -680,8 +680,8 @@ opcode_stack_effect(int opcode, int oparg)
             return 0;
         case DUP_TOP:
             return 1;
-        case ROT_FOUR:
-            return 0;
+        case DUP_TOP_TWO:
+            return 2;
 
         case UNARY_POSITIVE:
         case UNARY_NEGATIVE:
@@ -782,8 +782,6 @@ opcode_stack_effect(int opcode, int oparg)
             return -1;
         case DELETE_GLOBAL:
             return 0;
-        case DUP_TOPX:
-            return oparg;
         case LOAD_CONST:
             return 1;
         case LOAD_NAME:
@@ -3404,7 +3402,7 @@ compiler_handle_subscr(struct compiler *c, const char *kind,
             return 0;
     }
     if (ctx == AugLoad) {
-        ADDOP_I(c, DUP_TOPX, 2);
+        ADDOP(c, DUP_TOP_TWO);
     }
     else if (ctx == AugStore) {
         ADDOP(c, ROT_THREE);

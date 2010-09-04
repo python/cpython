@@ -101,12 +101,14 @@ typedef unsigned short mode_t;
                introduce POP_JUMP_IF_FALSE and POP_JUMP_IF_TRUE)
        Python 3.2a0: 3160 (add SETUP_WITH)
                      tag: cpython-32
+       Python 3.2a1: 3170 (add DUP_TOP_TWO, remove DUP_TOPX and ROT_FOUR)
+                     tag: cpython-32
 */
 
 /* If you change MAGIC, you must change TAG and you must insert the old value
    into _PyMagicNumberTags below.
 */
-#define MAGIC (3160 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3170 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-32"
 #define CACHEDIR "__pycache__"
 /* Current magic word and string tag as globals. */

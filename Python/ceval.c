@@ -1420,50 +1420,21 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             SET_THIRD(v);
             FAST_DISPATCH();
 
-        TARGET(ROT_FOUR)
-            u = TOP();
-            v = SECOND();
-            w = THIRD();
-            x = FOURTH();
-            SET_TOP(v);
-            SET_SECOND(w);
-            SET_THIRD(x);
-            SET_FOURTH(u);
-            FAST_DISPATCH();
-
         TARGET(DUP_TOP)
             v = TOP();
             Py_INCREF(v);
             PUSH(v);
             FAST_DISPATCH();
 
-        TARGET(DUP_TOPX)
-            if (oparg == 2) {
-                x = TOP();
-                Py_INCREF(x);
-                w = SECOND();
-                Py_INCREF(w);
-                STACKADJ(2);
-                SET_TOP(x);
-                SET_SECOND(w);
-                FAST_DISPATCH();
-            } else if (oparg == 3) {
-                x = TOP();
-                Py_INCREF(x);
-                w = SECOND();
-                Py_INCREF(w);
-                v = THIRD();
-                Py_INCREF(v);
-                STACKADJ(3);
-                SET_TOP(x);
-                SET_SECOND(w);
-                SET_THIRD(v);
-                FAST_DISPATCH();
-            }
-            Py_FatalError("invalid argument to DUP_TOPX"
-                          " (bytecode corruption?)");
-            /* Never returns, so don't bother to set why. */
-            break;
+        TARGET(DUP_TOP_TWO)
+            x = TOP();
+            Py_INCREF(x);
+            w = SECOND();
+            Py_INCREF(w);
+            STACKADJ(2);
+            SET_TOP(x);
+            SET_SECOND(w);
+            FAST_DISPATCH();
 
         TARGET(UNARY_POSITIVE)
             v = TOP();
