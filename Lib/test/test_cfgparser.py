@@ -62,9 +62,10 @@ class BasicTestCase(CfgParserTestCaseClass):
              'Spaces',
              'Spacey Bar',
              'Spacey Bar From The Beginning',
+             'Types',
              ]
         if self.allow_no_value:
-            E.append(r'NoValue')
+            E.append('NoValue')
         E.sort()
         eq = self.assertEqual
         eq(L, E)
@@ -80,8 +81,42 @@ class BasicTestCase(CfgParserTestCaseClass):
         eq(cf.get('Commented Bar', 'baz'), 'qwe')
         eq(cf.get('Spaces', 'key with spaces'), 'value')
         eq(cf.get('Spaces', 'another with spaces'), 'splat!')
+        eq(cf.getint('Types', 'int'), 42)
+        eq(cf.get('Types', 'int'), "42")
+        self.assertAlmostEqual(cf.getfloat('Types', 'float'), 0.44)
+        eq(cf.get('Types', 'float'), "0.44")
+        eq(cf.getboolean('Types', 'boolean'), False)
         if self.allow_no_value:
             eq(cf.get('NoValue', 'option-without-value'), None)
+
+        # test vars= and default=
+        eq(cf.get('Foo Bar', 'foo', default='baz'), 'bar')
+        eq(cf.get('Foo Bar', 'foo', vars={'foo': 'baz'}), 'baz')
+        with self.assertRaises(configparser.NoSectionError):
+            cf.get('No Such Foo Bar', 'foo')
+        with self.assertRaises(configparser.NoOptionError):
+            cf.get('Foo Bar', 'no-such-foo')
+        eq(cf.get('No Such Foo Bar', 'foo', default='baz'), 'baz')
+        eq(cf.get('Foo Bar', 'no-such-foo', default='baz'), 'baz')
+        eq(cf.get('Spacey Bar', 'foo', default=None), 'bar')
+        eq(cf.get('No Such Spacey Bar', 'foo', default=None), None)
+        eq(cf.getint('Types', 'int', default=18), 42)
+        eq(cf.getint('Types', 'no-such-int', default=18), 18)
+        eq(cf.getint('Types', 'no-such-int', default="18"), "18") # sic!
+        self.assertAlmostEqual(cf.getfloat('Types', 'float',
+                                           default=0.0), 0.44)
+        self.assertAlmostEqual(cf.getfloat('Types', 'no-such-float',
+                                           default=0.0), 0.0)
+        eq(cf.getfloat('Types', 'no-such-float', default="0.0"), "0.0") # sic!
+        eq(cf.getboolean('Types', 'boolean', default=True), False)
+        eq(cf.getboolean('Types', 'no-such-boolean', default="yes"),
+           "yes") # sic!
+        eq(cf.getboolean('Types', 'no-such-boolean', default=True), True)
+        eq(cf.getboolean('No Such Types', 'boolean', default=True), True)
+        if self.allow_no_value:
+            eq(cf.get('NoValue', 'option-without-value', default=False), None)
+            eq(cf.get('NoValue', 'no-such-option-without-value',
+                      default=False), False)
 
         self.assertNotIn('__name__', cf.options("Foo Bar"),
                          '__name__ "option" should not be exposed by the API!')
@@ -127,6 +162,10 @@ foo[de]{0[0]}Deutsch
 [Spaces]
 key with spaces {0[1]} value
 another with spaces {0[0]} splat!
+[Types]
+int {0[1]} 42
+float {0[0]} 0.44
+boolean {0[0]} NO
 """.format(self.delimiters, self.comment_prefixes)
         if self.allow_no_value:
             config_string += (
@@ -194,7 +233,12 @@ another with spaces {0[0]} splat!
             "Spaces": {
                 "key with spaces": "value",
                 "another with spaces": "splat!",
-            }
+            },
+            "Types": {
+                "int": 42,
+                "float": 0.44,
+                "boolean": False,
+            },
         }
         if self.allow_no_value:
             config.update({
@@ -732,8 +776,11 @@ class SafeConfigParserTestCaseTrickyFile(CfgParserTestCaseClass):
                                          'no values here',
                                          'tricky interpolation',
                                          'more interpolation'])
-        #self.assertEqual(cf.getint('DEFAULT', 'go', vars={'interpolate': '-1'}),
-        #                 -1)
+        self.assertEqual(cf.getint('DEFAULT', 'go',
+                                   vars={'interpolate': '-1'}), -1)
+        with self.assertRaises(ValueError):
+            # no interpolation will happen
+            cf.getint('DEFAULT', 'go', raw=True, vars={'interpolate': '-1'})
         self.assertEqual(len(cf.get('strange', 'other').split('\n')), 4)
         self.assertEqual(len(cf.get('corruption', 'value').split('\n')), 10)
         longname = 'yeah, sections can be indented as well'
@@ -808,7 +855,7 @@ class SortedTestCase(RawConfigParserTestCase):
 
 class CompatibleTestCase(CfgParserTestCaseClass):
     config_class = configparser.RawConfigParser
-    comment_prefixes = configparser.RawConfigParser._COMPATIBLE
+    comment_prefixes = configparser._COMPATIBLE
 
     def test_comment_handling(self):
         config_string = textwrap.dedent("""\

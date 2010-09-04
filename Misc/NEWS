@@ -158,6 +158,9 @@ Library
 - Issue #9753: Fixed socket.dup, which did not always work correctly
   on Windows.
 
+- Issue #9421: Made the get<type> methods consistently accept the vars
+  and default arguments on all parser classes.
+
 - Issue #7005: Fixed output of None values for RawConfigParser.write and
   ConfigParser.write.
 

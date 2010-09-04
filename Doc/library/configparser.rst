@@ -135,7 +135,7 @@ keys within each section.
       *empty_lines_in_values* were added.
 
 
-.. class:: SafeConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), strict=False, empty_lines_in_values=True)
+.. class:: SafeConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True)
 
    Derived class of :class:`ConfigParser` that implements a sane variant of the
    magical interpolation feature.  This implementation is more predictable as it
@@ -155,7 +155,7 @@ keys within each section.
       *empty_lines_in_values* were added.
 
 
-.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), strict=False, empty_lines_in_values=True)
+.. class:: ConfigParser(defaults=None, dict_type=collections.OrderedDict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=_COMPATIBLE, strict=False, empty_lines_in_values=True)
 
    Derived class of :class:`RawConfigParser` that implements the magical
    interpolation feature and adds optional arguments to the :meth:`get` and
@@ -366,39 +366,44 @@ RawConfigParser Objects
    Load configuration from a dictionary. Keys are section names, values are
    dictionaries with keys and values that should be present in the section. If
    the used dictionary type preserves order, sections and their keys will be
-   added in order.
+   added in order. Values are automatically converted to strings.
 
    Optional argument *source* specifies a context-specific name of the
    dictionary passed.  If not given, ``<dict>`` is used.
 
    .. versionadded:: 3.2
 
+.. method:: RawConfigParser.get(section, option, [vars, default])
 
-.. method:: RawConfigParser.get(section, option)
-
-   Get an *option* value for the named *section*.
-
-
-.. method:: RawConfigParser.getint(section, option)
-
-   A convenience method which coerces the *option* in the specified *section* to an
-   integer.
+   Get an *option* value for the named *section*. If *vars* is provided, it
+   must be a dictionary.  The *option* is looked up in *vars* (if provided),
+   *section*, and in *DEFAULTSECT* in that order. If the key is not found and
+   *default* is provided, it is used as a fallback value. ``None`` can be
+   provided as a *default* value.
 
 
-.. method:: RawConfigParser.getfloat(section, option)
+.. method:: RawConfigParser.getint(section, option, [vars, default])
 
-   A convenience method which coerces the *option* in the specified *section* to a
-   floating point number.
+   A convenience method which coerces the *option* in the specified *section* to
+   an integer. See :meth:`get` for explanation of *vars* and *default*.
 
 
-.. method:: RawConfigParser.getboolean(section, option)
+.. method:: RawConfigParser.getfloat(section, option, [vars, default])
 
-   A convenience method which coerces the *option* in the specified *section* to a
-   Boolean value.  Note that the accepted values for the option are ``"1"``,
-   ``"yes"``, ``"true"``, and ``"on"``, which cause this method to return ``True``,
-   and ``"0"``, ``"no"``, ``"false"``, and ``"off"``, which cause it to return
-   ``False``.  These string values are checked in a case-insensitive manner.  Any
-   other value will cause it to raise :exc:`ValueError`.
+   A convenience method which coerces the *option* in the specified *section* to
+   a floating point number.  See :meth:`get` for explanation of *vars* and
+   *default*.
+
+
+.. method:: RawConfigParser.getboolean(section, option, [vars, default])
+
+   A convenience method which coerces the *option* in the specified *section*
+   to a Boolean value.  Note that the accepted values for the option are
+   ``"1"``, ``"yes"``, ``"true"``, and ``"on"``, which cause this method to
+   return ``True``, and ``"0"``, ``"no"``, ``"false"``, and ``"off"``, which
+   cause it to return ``False``.  These string values are checked in
+   a case-insensitive manner.  Any other value will cause it to raise
+   :exc:`ValueError`. See :meth:`get` for explanation of *vars* and *default*.
 
 
 .. method:: RawConfigParser.items(section)
@@ -475,15 +480,42 @@ can, consider using :class:`SafeConfigParser` which adds validation and escaping
 for the interpolation.
 
 
-.. method:: ConfigParser.get(section, option, raw=False, vars=None)
+.. method:: ConfigParser.get(section, option, raw=False, [vars, default])
 
    Get an *option* value for the named *section*.  If *vars* is provided, it
    must be a dictionary.  The *option* is looked up in *vars* (if provided),
-   *section*, and in *defaults* in that order.
+   *section*, and in *DEFAULTSECT* in that order. If the key is not found and
+   *default* is provided, it is used as a fallback value. ``None`` can be
+   provided as a *default* value.
 
    All the ``'%'`` interpolations are expanded in the return values, unless the
    *raw* argument is true.  Values for interpolation keys are looked up in the
    same manner as the option.
+
+
+.. method:: ConfigParser.getint(section, option, raw=False, [vars, default])
+
+   A convenience method which coerces the *option* in the specified *section* to
+   an integer. See :meth:`get` for explanation of *raw*, *vars* and *default*.
+
+
+.. method:: ConfigParser.getfloat(section, option, raw=False, [vars, default])
+
+   A convenience method which coerces the *option* in the specified *section* to
+   a floating point number. See :meth:`get` for explanation of *raw*, *vars*
+   and *default*.
+
+
+.. method:: ConfigParser.getboolean(section, option, raw=False, [vars, default])
+
+   A convenience method which coerces the *option* in the specified *section*
+   to a Boolean value.  Note that the accepted values for the option are
+   ``"1"``, ``"yes"``, ``"true"``, and ``"on"``, which cause this method to
+   return ``True``, and ``"0"``, ``"no"``, ``"false"``, and ``"off"``, which
+   cause it to return ``False``.  These string values are checked in
+   a case-insensitive manner.  Any other value will cause it to raise
+   :exc:`ValueError`. See :meth:`get` for explanation of *raw*, *vars* and
+   *default*.
 
 
 .. method:: ConfigParser.items(section, raw=False, vars=None)
