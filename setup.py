@@ -1657,6 +1657,7 @@ class PyBuildExt(build_ext):
         depends = ['_ctypes/ctypes.h']
 
         if sys.platform == 'darwin':
+            sources.append('_ctypes/malloc_closure.c')
             sources.append('_ctypes/darwin/dlfcn_simple.c')
             extra_compile_args.append('-DMACOSX')
             include_dirs.append('_ctypes/darwin')
