@@ -416,9 +416,13 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
                      "ffi_prep_cif failed with %d", result);
         goto error;
     }
+#if defined(X86_DARWIN) || defined(POWERPC_DARWIN)
+    result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
+#else
     result = ffi_prep_closure_loc(p->pcl_write, &p->cif, closure_fcn,
 				  p,
 				  p->pcl_exec);
+#endif
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,
                      "ffi_prep_closure failed with %d", result);
