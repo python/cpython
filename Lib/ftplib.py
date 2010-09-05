@@ -171,7 +171,7 @@ class FTP:
     def sanitize(self, s):
         if s[:5] == 'pass ' or s[:5] == 'PASS ':
             i = len(s)
-            while i > 5 and s[i-1] in '\r\n':
+            while i > 5 and s[i-1] in {'\r', '\n'}:
                 i = i-1
             s = s[:5] + '*'*(i-5) + s[i:]
         return repr(s)
@@ -221,7 +221,7 @@ class FTP:
         if self.debugging: print('*resp*', self.sanitize(resp))
         self.lastresp = resp[:3]
         c = resp[:1]
-        if c in ('1', '2', '3'):
+        if c in {'1', '2', '3'}:
             return resp
         if c == '4':
             raise error_temp(resp)
@@ -245,7 +245,7 @@ class FTP:
         if self.debugging > 1: print('*put urgent*', self.sanitize(line))
         self.sock.sendall(line, MSG_OOB)
         resp = self.getmultiline()
-        if resp[:3] not in ('426', '225', '226'):
+        if resp[:3] not in {'426', '225', '226'}:
             raise error_proto(resp)
 
     def sendcmd(self, cmd):
@@ -375,7 +375,7 @@ class FTP:
         if not user: user = 'anonymous'
         if not passwd: passwd = ''
         if not acct: acct = ''
-        if user == 'anonymous' and passwd in ('', '-'):
+        if user == 'anonymous' and passwd in {'', '-'}:
             # If there is no anonymous ftp password specified
             # then we'll just use anonymous@
             # We don't send any other thing because:
@@ -534,7 +534,7 @@ class FTP:
     def delete(self, filename):
         '''Delete a file.'''
         resp = self.sendcmd('DELE ' + filename)
-        if resp[:3] in ('250', '200'):
+        if resp[:3] in {'250', '200'}:
             return resp
         else:
             raise error_reply(resp)
@@ -897,9 +897,9 @@ def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
     # transfer request.
     # So: STOR before RETR, because here the target is a "user".
     treply = target.sendcmd('STOR ' + targetname)
-    if treply[:3] not in ('125', '150'): raise error_proto  # RFC 959
+    if treply[:3] not in {'125', '150'}: raise error_proto  # RFC 959
     sreply = source.sendcmd('RETR ' + sourcename)
-    if sreply[:3] not in ('125', '150'): raise error_proto  # RFC 959
+    if sreply[:3] not in {'125', '150'}: raise error_proto  # RFC 959
     source.voidresp()
     target.voidresp()
 
