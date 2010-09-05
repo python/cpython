@@ -36,14 +36,12 @@
    necessary (especially when a final release is some months away).
 
    * Credit the author of a patch or bugfix.   Just the name is
-   sufficient; the e-mail address isn't necessary.
+   sufficient; the e-mail address isn't necessary.  It's helpful to
+   add the issue number:
 
-   * It's helpful to add the bug/patch number as a comment:
-
-   % Patch 12345
    XXX Describe the transmogrify() function added to the socket
    module.
-   (Contributed by P.Y. Developer.)
+   (Contributed by P.Y. Developer; :issue:`12345`.)
 
    This saves the maintainer the effort of going through the SVN log
    when researching a change.
@@ -54,45 +52,45 @@ This article explains the new features in Python 3.2, compared to 3.1.
 PEP 391: Dictionary Based Configuration for Logging
 ===================================================
 
-The :mod:`logging` module had two ways of configuring the module, either
-calling functions for each option or by reading an external file saved
-in a ConfigParser format.  Those options did not provide the flexibility
-to create configurations from JSON or YAML files and they did not support
-incremental configuration which is needed for specifying logger options
-from a command line.
+The :mod:`logging` module had two ways of configuring the module, either calling
+functions for each option or by reading an external file saved in a ConfigParser
+format.  Those options did not provide the flexibility to create configurations
+from JSON or YAML files and they did not support incremental configuration which
+is needed for specifying logger options from a command line.
 
 To support a more flexible style, the module now offers
 :func:`logging.config.dictConfig` to use dictionaries to specify logger
-configurations (including formatters, handlers, filters, and loggers).
-For example::
+configurations (including formatters, handlers, filters, and loggers).  For
+example:
 
-    >>> import logging.config
-    >>> logging.config.dictConfig(json.load(open('log.cfg', 'rb')))
+>>> import logging.config
+>>> logging.config.dictConfig(json.load(open('log.cfg', 'rb')))
 
 The above fragment configures logging from a JSON encoded dictionary stored in
 file called "log.cfg".  Here's a working example of a configuration dictionary::
 
-    {"version": 1,
-     "formatters": {"brief": {"format": "%(levelname)-8s: %(name)-15s: %(message)s"},
-                    "full": {"format": "%(asctime)s %(name)-15s %(levelname)-8s %(message)s"},
-                    },
-     "handlers": {"console": {
-                       "class": "logging.StreamHandler",
-                       "formatter": "brief",
-                       "level": "INFO",
-                       "stream": "ext://sys.stdout"},
-                  "console_priority": {
-                       "class": "logging.StreamHandler",
-                       "formatter": "full",
-                       "level": "ERROR",
-                       "stream": "ext://sys.stderr"},
-                  },
-     "root": {"level": "DEBUG", "handlers": ["console", "console_priority"]}}
+   {"version": 1,
+    "formatters": {"brief": {"format": "%(levelname)-8s: %(name)-15s: %(message)s"},
+                   "full": {"format": "%(asctime)s %(name)-15s %(levelname)-8s %(message)s"},
+                   },
+    "handlers": {"console": {
+                      "class": "logging.StreamHandler",
+                      "formatter": "brief",
+                      "level": "INFO",
+                      "stream": "ext://sys.stdout"},
+                 "console_priority": {
+                      "class": "logging.StreamHandler",
+                      "formatter": "full",
+                      "level": "ERROR",
+                      "stream": "ext://sys.stderr"},
+                 },
+    "root": {"level": "DEBUG", "handlers": ["console", "console_priority"]}}
 
 .. seealso::
 
    :pep:`391` - Dictionary Based Configuration for Logging
       PEP written by Vinay Sajip.
+
 
 PEP 3147:  PYC Repository Directories
 =====================================
@@ -117,28 +115,28 @@ cluttering source directories, the *pyc* files are now collected in a
 Aside from the filenames and target directories, the new scheme has a few
 aspects that are visible to the programmer:
 
-* Imported modules now have a :attr:`__cached__` attribute which stores the
-  name of the actual file that was imported::
+* Imported modules now have a :attr:`__cached__` attribute which stores the name
+  of the actual file that was imported:
 
-   >>> import collections
-   >>> collections.__cached__
-   'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
+  >>> import collections
+  >>> collections.__cached__
+  'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
 
 * The tag that is unique to each interpreter is accessible from the :mod:`imp`
-  module::
+  module:
 
-   >>> import imp
-   >>> imp.get_tag()
-   'cpython-32'
+  >>> import imp
+  >>> imp.get_tag()
+  'cpython-32'
 
 * Scripts that try to deduce source filename from the imported file now need to
   be smarter.  It is no longer sufficient to simply strip the "c" from a ".pyc"
   filename.  Instead, use the new functions in the :mod:`imp` module:
 
-   >>> imp.source_from_cache('c:/py32/lib/__pycache__/collections.cpython-32.pyc')
-   'c:/py32/lib/collections.py'
-   >>> imp.cache_from_source('c:/py32/lib/collections.py')
-   'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
+  >>> imp.source_from_cache('c:/py32/lib/__pycache__/collections.cpython-32.pyc')
+  'c:/py32/lib/collections.py'
+  >>> imp.cache_from_source('c:/py32/lib/collections.py')
+  'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
 
 * The :mod:`py_compile` and :mod:`compileall` modules have been updated to
   reflect the new naming convention and target directory.
@@ -147,6 +145,7 @@ aspects that are visible to the programmer:
 
    :pep:`3147` - PYC Repository Directories
       PEP written by Barry Warsaw.
+
 
 PEP 3149 ABI Version Tagged .so Files
 =====================================
@@ -184,27 +183,27 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
-* The :func:`hasattr` function used to catch and suppress any Exception.
-  Now, it only catches :exc:`AttributeError`.   Under the hood, :func:`hasattr`
-  works by calling :func:`getattr` and throwing away the results.  This is
-  necessary because dynamic attribute creation is possible using
-  :meth:`__getattribute__` or :meth:`__getattr`.  If :func:`hasattr` were to
-  just scan instance and class dictionaries it would miss the dynmaic methods
-  and make it difficult to implement proxy objects.
+* The :func:`hasattr` function used to catch and suppress any Exception.  Now,
+  it only catches :exc:`AttributeError`.  Under the hood, :func:`hasattr` works
+  by calling :func:`getattr` and throwing away the results.  This is necessary
+  because dynamic attribute creation is possible using :meth:`__getattribute__`
+  or :meth:`__getattr`.  If :func:`hasattr` were to just scan instance and class
+  dictionaries it would miss the dynmaic methods and make it difficult to
+  implement proxy objects.
 
   (Discovered by Yury Selivanov and fixed by Benjamin Peterson; :issue:`9666`.)
 
 * The :func:`str` of a float or complex number is now the same as it
   :func:`repr`. Previously, the :func:`str` form was shorter but that just
   caused confusion and is no longer needed now that we the shortest possible
-  :func:`repr` is displayed by default::
+  :func:`repr` is displayed by default:
 
-   >>> repr(math.pi)
-   '3.141592653589793'
-   >>> str(math.pi)
-   '3.141592653589793'
+  >>> repr(math.pi)
+  '3.141592653589793'
+  >>> str(math.pi)
+  '3.141592653589793'
 
-  (Proposed and implemented by Mark Dickinson; :issue:`9337`).
+  (Proposed and implemented by Mark Dickinson; :issue:`9337`.)
 
 * The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
   pointing to the original callable function.  This allows wrapped functions to
@@ -218,68 +217,70 @@ Some smaller changes made to the core Python language are:
 * The :mod:`abc` module now supports :func:`abstractclassmethod` and
   :func:`abstractstaticmethod`.
 
-  (:issue:`5867`)
+  (:issue:`5867`.)
+
 
 New, Improved, and Deprecated Modules
 =====================================
 
-* The :mod:`functools` module now includes a new decorator for caching
-  function calls. :func:`functools.lru_cache` can save repeated queries to an
-  external resource whenever the results are expected to be the same.
+* The :mod:`functools` module now includes a new decorator for caching function
+  calls.  :func:`functools.lru_cache` can save repeated queries to an external
+  resource whenever the results are expected to be the same.
 
   For example, adding a caching decorator to a database query function can save
   database accesses for popular searches::
 
-      @functools.lru_cache(maxsize=300)
-      def get_phone_number(name):
-          c = conn.cursor()
-          c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
-          return c.fetchone()[0]
+     @functools.lru_cache(maxsize=300)
+     def get_phone_number(name):
+         c = conn.cursor()
+         c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
+         return c.fetchone()[0]
 
   To help with choosing an effective cache size, the wrapped function is
-  instrumented with two attributes *cache_hits* and *cache_misses*::
+  instrumented with two attributes *cache_hits* and *cache_misses*:
 
-        >>> for name in user_requests:
-        ...     get_phone_number(name)
-        >>> print(get_phone_number.cache_hits, get_phone_number.cache_misses)
-        4805 980
+  >>> for name in user_requests:
+  ...     get_phone_number(name)
+  >>> print(get_phone_number.cache_hits, get_phone_number.cache_misses)
+  4805 980
 
   If the phonelist table gets updated, the outdated contents of the cache can be
-  cleared with::
+  cleared with:
 
-        >>> get_phone_number.cache_clear()
+  >>> get_phone_number.cache_clear()
 
-  (Contributed by Raymond Hettinger)
+  (Contributed by Raymond Hettinger.)
 
-* The previously deprecated :func:`contextlib.nested` function has been
-  removed in favor of a plain :keyword:`with` statement which can
-  accept multiple context managers.  The latter technique is faster
-  (because it is built-in), and it does a better job finalizing multiple
-  context managers when one of them raises an exception.
+* The previously deprecated :func:`contextlib.nested` function has been removed
+  in favor of a plain :keyword:`with` statement which can accept multiple
+  context managers.  The latter technique is faster (because it is built-in),
+  and it does a better job finalizing multiple context managers when one of them
+  raises an exception.
 
   (Contributed by Georg Brandl and Mattias Brändström;
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
 
-* The :class:`ftplib.FTP` class now supports the context manager protocol
-  to unconditionally consume :exc:`socket.error` exceptions and to close
-  the ftp connection when done::
+* The :class:`ftplib.FTP` class now supports the context manager protocol to
+  unconditionally consume :exc:`socket.error` exceptions and to close the ftp
+  connection when done:
 
-    >>> from ftplib import FTP
-    >>> with FTP("ftp1.at.proftpd.org") as ftp:
-    ...     ftp.login()
-    ...     ftp.dir()
-    ...
-    '230 Anonymous login ok, restrictions apply.'
-    dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
-    dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
-    dr-xr-xr-x   5 ftp      ftp          4096 May  6 10:43 CentOS
-    dr-xr-xr-x   3 ftp      ftp            18 Jul 10  2008 Fedora
+  >>> from ftplib import FTP
+  >>> with FTP("ftp1.at.proftpd.org") as ftp:
+  ...     ftp.login()
+  ...     ftp.dir()
+  ...
+  '230 Anonymous login ok, restrictions apply.'
+  dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
+  dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
+  dr-xr-xr-x   5 ftp      ftp          4096 May  6 10:43 CentOS
+  dr-xr-xr-x   3 ftp      ftp            18 Jul 10  2008 Fedora
 
   (Contributed by Tarek Ziadé and Giampaolo Rodolà; :issue:`4972`.)
 
-* A warning message will now get printed at interpreter shutdown if
-  the :data:`gc.garbage` list isn't empty.  This is meant to make the
-  programmer aware that his code contains object finalization issues.
+* A warning message will now get printed at interpreter shutdown if the
+  :data:`gc.garbage` list isn't empty.  This is meant to make the programmer
+  aware that his code contains object finalization issues.
+
   (Added by Antoine Pitrou; :issue:`477863`.)
 
 * The :mod:`os` module now has the :const:`ST_RDONLY` and :const:`ST_NOSUID`
@@ -289,72 +290,66 @@ New, Improved, and Deprecated Modules
 
 * The :func:`shutil.copytree` function has two new options:
 
-  * *ignore_dangling_symlinks*: when ``symlinks=False`` dp that the
-    function copies the file pointed to by the symlink, not the symlink
-    itself.  This option will silence the error raised if the file doesn't
-    exist.
+  * *ignore_dangling_symlinks*: when ``symlinks=False`` dp that the function
+    copies the file pointed to by the symlink, not the symlink itself.  This
+    option will silence the error raised if the file doesn't exist.
 
   * *copy_function*: is a callable that will be used to copy files.
     :func:`shutil.copy2` is used by default.
 
   (Contributed by Tarek Ziadé.)
 
-* Socket objects now have a :meth:`~socket.socket.detach()` method which
-  puts the socket into closed state without actually closing the underlying
-  file descriptor.  The latter can then be reused for other purposes.
+* Socket objects now have a :meth:`~socket.socket.detach()` method which puts
+  the socket into closed state without actually closing the underlying file
+  descriptor.  The latter can then be reused for other purposes.
 
   (Added by Antoine Pitrou; :issue:`8524`.)
 
 * The :mod:`sqlite3` module has two new capabilities.
 
-  The :attr:`Connection.in_transit` attribute is true if there is an
-  active transaction for uncommitted changes.
+  The :attr:`Connection.in_transit` attribute is true if there is an active
+  transaction for uncommitted changes.
 
   The :meth:`Connection.enable_load_extension` and
   :meth:`Connection.load_extension` methods allows you to load SQLite extensions
   from ".so" files.  One well-known extension is the fulltext-search extension
   distributed with SQLite.
 
-  (Contributed by R. David Murray and Shashwat Anand, :issue:`8845`.)
+  (Contributed by R. David Murray and Shashwat Anand; :issue:`8845`.)
 
-* The :mod:`ssl` module has a new class, :class:`~ssl.SSLContext` which
-  serves as a container for various persistent SSL data, such as protocol
-  settings, certificates, private keys, and various other options.
-  The :meth:`~ssl.SSLContext.wrap_socket` method allows to create an
-  SSL socket from such an SSL context.
-  (Added by Antoine Pitrou; :issue:`8550`.)
+* The :mod:`ssl` module has a new class, :class:`~ssl.SSLContext` which serves
+  as a container for various persistent SSL data, such as protocol settings,
+  certificates, private keys, and various other options.  The
+  :meth:`~ssl.SSLContext.wrap_socket` method allows to create an SSL socket from
+  such an SSL context.  (Added by Antoine Pitrou; :issue:`8550`.)
 
-  The :func:`ssl.wrap_socket` constructor function now takes a
-  *ciphers* argument that's a string listing the encryption algorithms
-  to be allowed; the format of the string is described
-  `in the OpenSSL documentation
-  <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`__.
-  (Added by Antoine Pitrou; :issue:`8322`.)
+  The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
+  argument that's a string listing the encryption algorithms to be allowed; the
+  format of the string is described `in the OpenSSL documentation
+  <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`__.  (Added
+  by Antoine Pitrou; :issue:`8322`.)
 
   Various options have been added to the :mod:`ssl` module, such as
-  :data:`~ssl.OP_NO_SSLv2` which allows to force disabling of the insecure
-  and obsolete SSLv2 protocol.
-  (Added by Antoine Pitrou; :issue:`4870`.)
+  :data:`~ssl.OP_NO_SSLv2` which allows to force disabling of the insecure and
+  obsolete SSLv2 protocol.  (Added by Antoine Pitrou; :issue:`4870`.)
 
-  Another change makes the extension load all of OpenSSL's ciphers and
-  digest algorithms so that they're all available.  Some SSL
-  certificates couldn't be verified, reporting an "unknown algorithm"
-  error.  (Reported by Beda Kosata, and fixed by Antoine Pitrou;
-  :issue:`8484`.)
+  Another change makes the extension load all of OpenSSL's ciphers and digest
+  algorithms so that they're all available.  Some SSL certificates couldn't be
+  verified, reporting an "unknown algorithm" error.  (Reported by Beda Kosata,
+  and fixed by Antoine Pitrou; :issue:`8484`.)
 
-  The version of OpenSSL being used is now available as the module
-  attributes :data:`ssl.OPENSSL_VERSION` (a string),
-  :data:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
-  :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
-  Pitrou; :issue:`8321`.)
+  The version of OpenSSL being used is now available as the module attributes
+  :data:`ssl.OPENSSL_VERSION` (a string), :data:`ssl.OPENSSL_VERSION_INFO` (a
+  5-tuple), and :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by
+  Antoine Pitrou; :issue:`8321`.)
 
-* The previously deprecated :func:`string.maketrans` function has been
-  removed in favor of the static methods, :meth:`bytes.maketrans` and
+* The previously deprecated :func:`string.maketrans` function has been removed
+  in favor of the static methods, :meth:`bytes.maketrans` and
   :meth:`bytearray.maketrans`.  This change solves the confusion around which
-  types were supported by the :mod:`string` module. Now, :class:`str`,
+  types were supported by the :mod:`string` module.  Now, :class:`str`,
   :class:`bytes`, and :class:`bytearray` each have their own **maketrans** and
-  **translate** methods with intermediate translation tables of the
-  appropriate type.
+  **translate** methods with intermediate translation tables of the appropriate
+  type.
 
   (Contributed by Georg Brandl; :issue:`5675`.)
 
@@ -365,44 +360,46 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Giampaolo Rodolà; :issue:`8807`.)
 
+
 Multi-threading
 ===============
 
-* The mechanism for serializing execution of concurrently running Python
-  threads (generally known as the GIL or Global Interpreter Lock) has been
-  rewritten.  Among the objectives were more predictable switching intervals
-  and reduced overhead due to lock contention and the number of ensuing
-  system calls.  The notion of a "check interval" to allow thread switches
-  has been abandoned and replaced by an absolute duration expressed in
-  seconds.  This parameter is tunable through :func:`sys.setswitchinterval()`.
-  It currently defaults to 5 milliseconds.
+* The mechanism for serializing execution of concurrently running Python threads
+  (generally known as the GIL or Global Interpreter Lock) has been rewritten.
+  Among the objectives were more predictable switching intervals and reduced
+  overhead due to lock contention and the number of ensuing system calls.  The
+  notion of a "check interval" to allow thread switches has been abandoned and
+  replaced by an absolute duration expressed in seconds.  This parameter is
+  tunable through :func:`sys.setswitchinterval()`.  It currently defaults to 5
+  milliseconds.
 
   Additional details about the implementation can be read from a `python-dev
   mailing-list message
   <http://mail.python.org/pipermail/python-dev/2009-October/093321.html>`_
-  (however, "priority requests" as exposed in this message have not been
-  kept for inclusion).
+  (however, "priority requests" as exposed in this message have not been kept
+  for inclusion).
 
   (Contributed by Antoine Pitrou.)
 
 * Recursive locks (created with the :func:`threading.RLock` API) now benefit
-  from a C implementation which makes them as fast as regular locks, and
-  between 10x and 15x faster than their previous pure Python implementation.
+  from a C implementation which makes them as fast as regular locks, and between
+  10x and 15x faster than their previous pure Python implementation.
 
   (Contributed by Antoine Pitrou; :issue:`3001`.)
 
-* Regular and recursive locks now accept an optional *timeout* argument
-  to their ``acquire`` method. (Contributed by Antoine Pitrou; :issue:`7316`)
+* Regular and recursive locks now accept an optional *timeout* argument to their
+  ``acquire`` method.  (Contributed by Antoine Pitrou; :issue:`7316`.)
+
   Similarly, :meth:`threading.Semaphore.acquire` also gains a *timeout*
-  argument. (Contributed by Torsten Landschoff; :issue:`850728`.)
+  argument.  (Contributed by Torsten Landschoff; :issue:`850728`.)
 
 
-Optimizations
-=============
+.. Optimizations
+   =============
 
-Major performance enhancements have been added:
+   Major performance enhancements have been added:
 
-* Stub
+   * Stub
 
 
 Filenames and unicode
@@ -418,10 +415,10 @@ The :mod:`os` module has two new functions: :func:`os.fsencode` and
 :func:`os.fsdecode`.
 
 
-IDLE
-====
+.. IDLE
+   ====
 
-* Stub
+   * Stub
 
 
 Build and C API Changes
@@ -429,27 +426,30 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
-* The C functions that access the Unicode Database now accept and
-  return characters from the full Unicode range, even on narrow unicode builds
+* The C functions that access the Unicode Database now accept and return
+  characters from the full Unicode range, even on narrow unicode builds
   (Py_UNICODE_TOLOWER, Py_UNICODE_ISDECIMAL, and others).  A visible difference
-  in Python is that :cfunc:`unicodedata.numeric` now returns the correct value for
-  large code points, and :func:`repr` may consider more characters as printable.
+  in Python is that :func:`unicodedata.numeric` now returns the correct value
+  for large code points, and :func:`repr` may consider more characters as
+  printable.
 
   (Reported by Bupjoe Lee and fixed by Amaury Forgeot D'Arc; :issue:`5127`.)
 
-* Computed gotos are now enabled by default on supported
-  compilers (which are detected by the configure script).  They can still
-  be disable selectively by specifying ``--without-computed-gotos``.
+* Computed gotos are now enabled by default on supported compilers (which are
+  detected by the configure script).  They can still be disable selectively by
+  specifying ``--without-computed-gotos``.
 
-  (:issue:`9203`)
+  (Contributed by Antoine Pitrou; :issue:`9203`.)
+
 
 Porting to Python 3.2
 =====================
 
-This section lists previously described changes and other bugfixes
-that may require changes to your code:
+This section lists previously described changes and other bugfixes that may
+require changes to your code:
 
-* bytearray objects cannot be used anymore as filenames: convert them to bytes
+* :class:`bytearray` objects cannot be used anymore as filenames: convert them
+  to :class:`bytes`.
 
 * PyArg_Parse*() functions:
 
@@ -457,6 +457,6 @@ that may require changes to your code:
   * "w" and "w#" formats has been removed: use "w*" instead
 
 * The :ctype:`PyCObject` type, deprecated in 3.1, has been removed.  To wrap
-  opaque C pointers in Python objects, the :ctype:`PyCapsule` API should be
-  used instead; the new type has a well defined interface for passing typing
-  safety information and a less complicated signature for calling a destructor.
+  opaque C pointers in Python objects, the :ctype:`PyCapsule` API should be used
+  instead; the new type has a well defined interface for passing typing safety
+  information and a less complicated signature for calling a destructor.
