@@ -105,12 +105,35 @@ aspects that are visible to the programmer:
    :pep:`3147` - PYC Repository Directories
       PEP written by Barry Warsaw.
 
-PEPs
-====
+PEP 3149 ABI Version Tagged .so Files
+=====================================
 
-Implemented PEPs:
+The PYC repository directory allows multiple bytecode cache files to be
+co-located.  This PEP implements a similar mechanism for shared object files by
+giving them a common directory and distinct names for each version.
 
-* :pep:`3149`
+The common directory is "pyshared" and the file names are made distinct by
+identifying the Python implementation (such as CPython, PyPy, Jython, etc.), the
+major and minor version numbers, and optional build flags (such as "d" for
+debug, "m" for pymalloc, "u" for wide-unicode).  For an arbtrary package, "foo",
+you may see these files when the distribution package is installed::
+
+   /usr/share/pyshared/foo.cpython-32m.so
+   /usr/share/pyshared/foo.cpython-33md.so
+
+In Python itself, the tags are accessible from functions in the :mod:`sysconfig`
+module::
+
+   >>> import sysconfig
+   >>> sysconfig.get_config_var('SOABI')    # find the version tag
+   'cpython-32mu'
+   >>> sysconfig.get_config_var('SO')       # find the full filename extension
+   'cpython-32mu.so'
+
+.. seealso::
+
+   :pep:`3149` - ABI Version Tagged .so Files
+      PEP written by Barry Warsaw.
 
 
 Other Language Changes
