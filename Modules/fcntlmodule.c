@@ -82,10 +82,10 @@ PyDoc_STRVAR(fcntl_doc,
 Perform the requested operation on file descriptor fd.  The operation\n\
 is defined by op and is operating system dependent.  These constants are\n\
 available from the fcntl module.  The argument arg is optional, and\n\
-defaults to 0; it may be an int or a string. If arg is given as a string,\n\
+defaults to 0; it may be an int or a string.  If arg is given as a string,\n\
 the return value of fcntl is a string of that length, containing the\n\
-resulting value put in the arg buffer by the operating system.The length\n\
-of the arg string is not allowed to exceed 1024 bytes. If the arg given\n\
+resulting value put in the arg buffer by the operating system.  The length\n\
+of the arg string is not allowed to exceed 1024 bytes.  If the arg given\n\
 is an integer or if none is specified, the result value is an integer\n\
 corresponding to the return value of the fcntl call in the C code.");
 
