@@ -2,8 +2,6 @@
 Python News
 +++++++++++
 
-(editors: check NEWS.help for information about editing NEWS using ReST.)
-
 What's New in Python 3.2 Alpha 2?
 =================================
 
@@ -802,8 +800,8 @@ Core and Builtins
 - Issue #7072: isspace(0xa0) is true on Mac OS X.
 
 - Issue #8084: PEP 370 now conforms to system conventions for framework builds
-  on MacOS X. That is, "python setup.py install --user" will install
-    into "~/Library/Python/2.7" instead of "~/.local".
+  on MacOS X. That is, "python setup.py install --user" will install into
+  "~/Library/Python/2.7" instead of "~/.local".
 
 C-API
 -----
@@ -916,7 +914,7 @@ Library
 - Issue #4179: In pdb, allow "list ." as a command to return to the currently
   debugged line.
 
-- Issue #4108: In urllib.robotparser, if there are multiple 'User-agent: *'
+- Issue #4108: In urllib.robotparser, if there are multiple ``User-agent: *``
   entries, consider the first one.
 
 - Issue #6630: Allow customizing regex flags when subclassing the
@@ -2051,7 +2049,7 @@ Extension Modules
 - Issue #7347: winreg: Add CreateKeyEx and DeleteKeyEx, as well as fix a bug in
   the return value of QueryReflectionKey.
 
-- Issue #7567: PyCurses_setupterm: Don't call `setupterm' twice.
+- Issue #7567: PyCurses_setupterm: Don't call ``setupterm`` twice.
 
 Build
 -----
@@ -2138,7 +2136,7 @@ Build
 - Issue #8510: Update to autoconf2.65.
 
 Documentation
-------------
+-------------
 
 - Issue #9524: Document that two CTRL* signals are meant for use only
   with os.kill.
@@ -2681,7 +2679,7 @@ Core and Builtins
 - Issue #2170: refactored xml.dom.minidom.normalize, increasing both
   its clarity and its speed.
 
-- Issue #1113244: Py_XINCREF, Py_DECREF, Py_XDECREF: Add `do { ... } while (0)'
+- Issue #1113244: Py_XINCREF, Py_DECREF, Py_XDECREF: Add ``do { ... } while (0)``
   to avoid compiler warnings.
 
 - Issue #3739: The unicode-internal encoder now reports the number of characters
@@ -3005,7 +3003,7 @@ Core and Builtins
   optional module state data.
 
 - Issue #4910: Rename nb_long slot to nb_reserved, and change its
-  type to (void *).
+  type to ``(void *)``.
 
 - Issue #4935: The overflow checking code in the expandtabs() method common
   to str, bytes and bytearray could be optimized away by the compiler, letting
@@ -3060,8 +3058,8 @@ Core and Builtins
 - Issue #4747: When the terminal does not use utf-8, executing a script with
   non-ascii characters in its name could fail with a "SyntaxError: None" error.
 
-- Issue #4797: IOError.filename was not set when _fileio.FileIO failed to open
-  file with `bytes' filename on Windows.
+- Issue #4797: IOError.filename was not set when ``_fileio.FileIO`` failed
+  to open file with a bytes filename on Windows.
 
 - Issue #3680: Reference cycles created through a dict, set or deque iterator
   did not get collected.
@@ -3312,7 +3310,7 @@ Library
 - Issue #5386: mmap.write_byte didn't check map size, so it could cause buffer
   overrun.
 
-- Issue #1533164: Installed but not listed *.pyo was breaking Distutils
+- Issue #1533164: Installed but not listed ``*.pyo`` was breaking Distutils
   bdist_rpm command.
 
 - Issue #5378: added --quiet option to Distutils bdist_rpm command.
@@ -3465,8 +3463,8 @@ Library
 - Issue #4959: inspect.formatargspec now works for keyword only arguments
   without defaults.
 
-- Issue #3321: _multiprocessing.Connection() doesn't check handle; added checks
-  for *nix machines for negative handles and large int handles. Without this check
+- Issue #3321: ``_multiprocessing.Connection()`` doesn't check handle; added checks
+  for Unix machines for negative handles and large int handles. Without this check
   it is possible to segfault the interpreter.
 
 - Issue #4449: AssertionError in mp_benchmarks.py, caused by an underlying issue
