@@ -1,4 +1,4 @@
-+++++++++++
+﻿+++++++++++
 Python News
 +++++++++++
 
@@ -33,7 +33,7 @@ Core and Builtins
   properly.  Patch by Stefan Behnel.
 
 - Issue #5553: The Py_LOCAL_INLINE macro now results in inlining on
-  most platforms.  Previously, it online inlined when using Microsoft
+  most platforms.  Previously, it inlined when using Microsoft
   Visual C.
 
 - Issue #9712: Fix tokenize on identifiers that start with non-ascii names.
