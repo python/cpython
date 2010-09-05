@@ -154,7 +154,12 @@ Some smaller changes made to the core Python language are:
 * The :func:`str` of a float or complex number is now the same as it
   :func:`repr`. Previously, the :func:`str` form was shorter but that just
   caused confusion and is no longer needed now that we the shortest possible
-  :func:`repr` is displayed by default.
+  :func:`repr` is displayed by default::
+
+   >>> repr(math.pi)
+   '3.141592653589793'
+   >>> str(math.pi)
+   '3.141592653589793'
 
   (Proposed and implemented by Mark Dickinson; :issue:`9337`).
 
