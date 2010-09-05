@@ -299,7 +299,7 @@ process and user.
 .. function:: getresgid()
 
    Return a tuple (rgid, egid, sgid) denoting the current process's
-   real, effective, and saved user ids.
+   real, effective, and saved group ids.
 
    Availability: Unix.
 
