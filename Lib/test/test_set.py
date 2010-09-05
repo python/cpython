@@ -1,4 +1,4 @@
-import unittest
+mport unittest
 from test import support
 import gc
 import weakref
@@ -1677,7 +1677,7 @@ class bad_dict_clear:
     def __hash__(self):
         return 0
 
-class Test_Weird_Bugs(unittest.TestCase):
+class TestWeirdBugs(unittest.TestCase):
     def test_8420_set_merge(self):
         # This used to segfault
         global be_bad, set2, dict2
@@ -1837,7 +1837,7 @@ def test_main(verbose=None):
         TestIdentities,
         TestVariousIteratorArgs,
         TestGraphs,
-        Test_Weird_Bugs,
+        TestWeirdBugs,
         )
 
     support.run_unittest(*test_classes)
