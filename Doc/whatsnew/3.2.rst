@@ -141,7 +141,22 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
-* Stub
+* The :func:`hasattr` function used to catch and suppress any Exception.
+  Now, it only catches :exc:`AttributeError`.   Under the hood, :func:`hasattr`
+  works by calling :func:`getattr` and throwing away the results.  This is
+  necessary because dynamic attribute creation is possible using
+  :meth:`__getattribute__` or :meth:`__getattr`.  If :func:`hasattr` were to
+  just scan instance and class dictionaries it would miss the dynmaic methods
+  and make it difficult to implement proxy objects.
+
+  (Discovered by Yury Selivanov and fixed by Benjamin Peterson; :issue:`9666`.)
+
+* The :func:`str` of a float or complex number is now the same as it
+  :func:`repr`. Previously, the :func:`str` form was shorter but that just
+  caused confusion and is no longer needed now that we the shortest possible
+  :func:`repr` is displayed by default.
+
+  (Proposed and implemented by Mark Dickinson; :issue:`9337`).
 
 
 New, Improved, and Deprecated Modules
@@ -342,8 +357,19 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
-* Stub
+* The C functions that access the Unicode Database now accept and
+  return characters from the full Unicode range, even on narrow unicode builds
+  (Py_UNICODE_TOLOWER, Py_UNICODE_ISDECIMAL, and others).  A visible difference
+  in Python is that :cfunc:`unicodedata.numeric` now returns the correct value for
+  large code points, and :func:`repr` may consider more characters as printable.
 
+  (Reported by Bupjoe Lee and fixed by Amaury Forgeot D'Arc; :issue:`5127`.)
+
+* Computed gotos are now enabled by default on supported
+  compilers (which are detected by the configure script).  They can still
+  be disable selectively by specifying ``--without-computed-gotos``.
+
+  (:issue:`9203`)
 
 Porting to Python 3.2
 =====================
