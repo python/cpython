@@ -243,8 +243,13 @@ class OpenWrapper:
         return open(*args, **kwargs)
 
 
-class UnsupportedOperation(ValueError, IOError):
-    pass
+# In normal operation, both `UnsupportedOperation`s should be bound to the
+# same object.
+try:
+    UnsupportedOperation = io.UnsupportedOperation
+except AttributeError:
+    class UnsupportedOperation(ValueError, IOError):
+        pass
 
 
 class IOBase(metaclass=abc.ABCMeta):
@@ -362,9 +367,8 @@ class IOBase(metaclass=abc.ABCMeta):
         """Internal: raise an IOError if file is not seekable
         """
         if not self.seekable():
-            raise IOError("File or stream is not seekable."
-                          if msg is None else msg)
-
+            raise UnsupportedOperation("File or stream is not seekable."
+                                       if msg is None else msg)
 
     def readable(self) -> bool:
         """Return whether object was opened for reading.
@@ -377,8 +381,8 @@ class IOBase(metaclass=abc.ABCMeta):
         """Internal: raise an IOError if file is not readable
         """
         if not self.readable():
-            raise IOError("File or stream is not readable."
-                          if msg is None else msg)
+            raise UnsupportedOperation("File or stream is not readable."
+                                       if msg is None else msg)
 
     def writable(self) -> bool:
         """Return whether object was opened for writing.
@@ -391,8 +395,8 @@ class IOBase(metaclass=abc.ABCMeta):
         """Internal: raise an IOError if file is not writable
         """
         if not self.writable():
-            raise IOError("File or stream is not writable."
-                          if msg is None else msg)
+            raise UnsupportedOperation("File or stream is not writable."
+                                       if msg is None else msg)
 
     @property
     def closed(self):
@@ -1647,7 +1651,7 @@ class TextIOWrapper(TextIOBase):
 
     def tell(self):
         if not self._seekable:
-            raise IOError("underlying stream is not seekable")
+            raise UnsupportedOperation("underlying stream is not seekable")
         if not self._telling:
             raise IOError("telling position disabled by next() call")
         self.flush()
@@ -1726,17 +1730,17 @@ class TextIOWrapper(TextIOBase):
         if self.closed:
             raise ValueError("tell on closed file")
         if not self._seekable:
-            raise IOError("underlying stream is not seekable")
+            raise UnsupportedOperation("underlying stream is not seekable")
         if whence == 1: # seek relative to current position
             if cookie != 0:
-                raise IOError("can't do nonzero cur-relative seeks")
+                raise UnsupportedOperation("can't do nonzero cur-relative seeks")
             # Seeking to the current position should attempt to
             # sync the underlying buffer with the current position.
             whence = 0
             cookie = self.tell()
         if whence == 2: # seek relative to end of file
             if cookie != 0:
-                raise IOError("can't do nonzero end-relative seeks")
+                raise UnsupportedOperation("can't do nonzero end-relative seeks")
             self.flush()
             position = self.buffer.seek(0, 2)
             self._set_decoded_chars('')

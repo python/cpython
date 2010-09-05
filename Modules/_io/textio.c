@@ -1259,10 +1259,8 @@ textiowrapper_write(textio *self, PyObject *args)
 
     CHECK_CLOSED(self);
 
-    if (self->encoder == NULL) {
-        PyErr_SetString(PyExc_IOError, "not writable");
-        return NULL;
-    }
+    if (self->encoder == NULL)
+        return _unsupported("not writable");
 
     Py_INCREF(text);
 
@@ -1399,7 +1397,7 @@ textiowrapper_read_chunk(textio *self)
      */
 
     if (self->decoder == NULL) {
-        PyErr_SetString(PyExc_IOError, "not readable");
+        _unsupported("not readable");
         return -1;
     }
 
@@ -1489,10 +1487,8 @@ textiowrapper_read(textio *self, PyObject *args)
 
     CHECK_CLOSED(self);
 
-    if (self->decoder == NULL) {
-        PyErr_SetString(PyExc_IOError, "not readable");
-        return NULL;
-    }
+    if (self->decoder == NULL)
+        return _unsupported("not readable");
 
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
@@ -1983,8 +1979,7 @@ textiowrapper_seek(textio *self, PyObject *args)
     Py_INCREF(cookieObj);
 
     if (!self->seekable) {
-        PyErr_SetString(PyExc_IOError,
-                        "underlying stream is not seekable");
+        _unsupported("underlying stream is not seekable");
         goto fail;
     }
 
@@ -1995,8 +1990,7 @@ textiowrapper_seek(textio *self, PyObject *args)
             goto fail;
 
         if (cmp == 0) {
-            PyErr_SetString(PyExc_IOError,
-                            "can't do nonzero cur-relative seeks");
+            _unsupported("can't do nonzero cur-relative seeks");
             goto fail;
         }
 
@@ -2016,8 +2010,7 @@ textiowrapper_seek(textio *self, PyObject *args)
             goto fail;
 
         if (cmp == 0) {
-            PyErr_SetString(PyExc_IOError,
-                            "can't do nonzero end-relative seeks");
+            _unsupported("can't do nonzero end-relative seeks");
             goto fail;
         }
 
@@ -2151,8 +2144,7 @@ textiowrapper_tell(textio *self, PyObject *args)
     CHECK_CLOSED(self);
 
     if (!self->seekable) {
-        PyErr_SetString(PyExc_IOError,
-                        "underlying stream is not seekable");
+        _unsupported("underlying stream is not seekable");
         goto fail;
     }
     if (!self->telling) {
