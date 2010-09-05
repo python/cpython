@@ -9,12 +9,6 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 #include "Python.h"
 
 static int
-cmp_lt(PyObject *x, PyObject *y)
-{
-    return PyObject_RichCompareBool(x, y, Py_LT);
-}
-
-static int
 _siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
     PyObject *newitem, *parent;
@@ -34,7 +28,7 @@ _siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     while (pos > startpos){
         parentpos = (pos - 1) >> 1;
         parent = PyList_GET_ITEM(heap, parentpos);
-        cmp = cmp_lt(newitem, parent);
+        cmp = PyObject_RichCompareBool(newitem, parent, Py_LT);
         if (cmp == -1) {
             Py_DECREF(newitem);
             return -1;
@@ -74,9 +68,10 @@ _siftup(PyListObject *heap, Py_ssize_t pos)
         /* Set childpos to index of smaller child.   */
         rightpos = childpos + 1;
         if (rightpos < endpos) {
-            cmp = cmp_lt(
+            cmp = PyObject_RichCompareBool(
                 PyList_GET_ITEM(heap, childpos),
-                PyList_GET_ITEM(heap, rightpos));
+                PyList_GET_ITEM(heap, rightpos),
+                Py_LT);
             if (cmp == -1) {
                 Py_DECREF(newitem);
                 return -1;
@@ -219,7 +214,7 @@ heappushpop(PyObject *self, PyObject *args)
         return item;
     }
 
-    cmp = cmp_lt(PyList_GET_ITEM(heap, 0), item);
+    cmp = PyObject_RichCompareBool(PyList_GET_ITEM(heap, 0), item, Py_LT);
     if (cmp == -1)
         return NULL;
     if (cmp == 0) {
@@ -318,7 +313,7 @@ nlargest(PyObject *self, PyObject *args)
             else
                 goto sortit;
         }
-        cmp = cmp_lt(sol, elem);
+        cmp = PyObject_RichCompareBool(sol, elem, Py_LT);
         if (cmp == -1) {
             Py_DECREF(elem);
             goto fail;
@@ -373,7 +368,7 @@ _siftdownmax(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     while (pos > startpos){
         parentpos = (pos - 1) >> 1;
         parent = PyList_GET_ITEM(heap, parentpos);
-        cmp = cmp_lt(parent, newitem);
+        cmp = PyObject_RichCompareBool(parent, newitem, Py_LT);
         if (cmp == -1) {
             Py_DECREF(newitem);
             return -1;
@@ -413,9 +408,10 @@ _siftupmax(PyListObject *heap, Py_ssize_t pos)
         /* Set childpos to index of smaller child.   */
         rightpos = childpos + 1;
         if (rightpos < endpos) {
-            cmp = cmp_lt(
+            cmp = PyObject_RichCompareBool(
                 PyList_GET_ITEM(heap, rightpos),
-                PyList_GET_ITEM(heap, childpos));
+                PyList_GET_ITEM(heap, childpos),
+                Py_LT);
             if (cmp == -1) {
                 Py_DECREF(newitem);
                 return -1;
@@ -488,7 +484,7 @@ nsmallest(PyObject *self, PyObject *args)
             else
                 goto sortit;
         }
-        cmp = cmp_lt(elem, los);
+        cmp = PyObject_RichCompareBool(elem, los, Py_LT);
         if (cmp == -1) {
             Py_DECREF(elem);
             goto fail;
