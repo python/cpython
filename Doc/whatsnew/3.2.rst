@@ -216,7 +216,7 @@ Some smaller changes made to the core Python language are:
   :issue:`8814`.)
 
 * The :mod:`abc` module now supports :func:`abstractclassmethod` and
-  :func:`staticmethod`.
+  :func:`abstractstaticmethod`.
 
   (:issue:`5867`)
 
@@ -261,6 +261,20 @@ New, Improved, and Deprecated Modules
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
 
 * The :class:`ftplib.FTP` class now supports the context manager protocol
+  to unconditionally consume :exc:`socket.error` exceptions and to close
+  the ftp connection when done::
+
+    >>> from ftplib import FTP
+    >>> with FTP("ftp1.at.proftpd.org") as ftp:
+    ...     ftp.login()
+    ...     ftp.dir()
+    ...
+    '230 Anonymous login ok, restrictions apply.'
+    dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
+    dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
+    dr-xr-xr-x   5 ftp      ftp          4096 May  6 10:43 CentOS
+    dr-xr-xr-x   3 ftp      ftp            18 Jul 10  2008 Fedora
+
   (Contributed by Tarek Ziadé and Giampaolo Rodolà; :issue:`4972`.)
 
 * A warning message will now get printed at interpreter shutdown if
@@ -270,16 +284,17 @@ New, Improved, and Deprecated Modules
 
 * The :mod:`os` module now has the :const:`ST_RDONLY` and :const:`ST_NOSUID`
   constants, for use with the :func:`~os.statvfs` function.
+
   (Patch by Adam Jackson; :issue:`7647`.)
 
 * The :func:`shutil.copytree` function has two new options:
 
-  * *ignore_dangling_symlinks*: when ``symlinks=False`` (meaning that the
+  * *ignore_dangling_symlinks*: when ``symlinks=False`` dp that the
     function copies the file pointed to by the symlink, not the symlink
-    itself) this option will silence the error raised if the file doesn't
+    itself.  This option will silence the error raised if the file doesn't
     exist.
 
-  * *copy_function*: a callable that will be used to copy files.
+  * *copy_function*: is a callable that will be used to copy files.
     :func:`shutil.copy2` is used by default.
 
   (Contributed by Tarek Ziadé.)
