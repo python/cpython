@@ -663,7 +663,7 @@ AC_MSG_RESULT($GNULD)
 
 AC_C_INLINE
 if test "$ac_cv_c_inline" != no ; then
-        AC_DEFINE(USE_INLINE,1)
+        AC_DEFINE(USE_INLINE, 1, [Define to use the C99 inline keyword.])
         AC_SUBST(USE_INLINE)
 fi
 

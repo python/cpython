@@ -1040,11 +1040,10 @@
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
 
-/* Define to 0 if you don't want to use computed gotos in ceval.c.
-   (The default is to use them if HAVE_COMPUTED_GOTOS is defined.) */
+/* Define if you want to use computed gotos in ceval.c. */
 #undef USE_COMPUTED_GOTOS
 
-/* Define if the compiler supports the inline keyword */
+/* Define to use the C99 inline keyword. */
 #undef USE_INLINE
 
 /* Enable extensions on AIX 3, Interix.  */
@@ -1199,6 +1198,12 @@
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef gid_t
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
 
 /* Define to the type of a signed integer type of width exactly 32 bits if
    such a type exists and the standard includes do not define it. */
