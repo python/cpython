@@ -417,7 +417,8 @@ err_closed(void)
 static PyObject *
 err_mode(char *action)
 {
-    PyErr_Format(PyExc_ValueError, "File not open for %s", action);
+    PyErr_Format(IO_STATE->unsupported_operation,
+                 "File not open for %s", action);
     return NULL;
 }
 

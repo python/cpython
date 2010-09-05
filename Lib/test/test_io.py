@@ -179,6 +179,23 @@ class PyMockFileIO(MockFileIO, pyio.BytesIO):
     pass
 
 
+class MockUnseekableIO:
+    def seekable(self):
+        return False
+
+    def seek(self, *args):
+        raise self.UnsupportedOperation("not seekable")
+
+    def tell(self, *args):
+        raise self.UnsupportedOperation("not seekable")
+
+class CMockUnseekableIO(MockUnseekableIO, io.BytesIO):
+    UnsupportedOperation = io.UnsupportedOperation
+
+class PyMockUnseekableIO(MockUnseekableIO, pyio.BytesIO):
+    UnsupportedOperation = pyio.UnsupportedOperation
+
+
 class MockNonBlockWriterIO:
 
     def __init__(self):
@@ -304,16 +321,26 @@ class IOTest(unittest.TestCase):
 
     def test_invalid_operations(self):
         # Try writing on a file opened in read mode and vice-versa.
+        exc = self.UnsupportedOperation
         for mode in ("w", "wb"):
             with self.open(support.TESTFN, mode) as fp:
-                self.assertRaises(IOError, fp.read)
-                self.assertRaises(IOError, fp.readline)
+                self.assertRaises(exc, fp.read)
+                self.assertRaises(exc, fp.readline)
+        with self.open(support.TESTFN, "wb", buffering=0) as fp:
+            self.assertRaises(exc, fp.read)
+            self.assertRaises(exc, fp.readline)
+        with self.open(support.TESTFN, "rb", buffering=0) as fp:
+            self.assertRaises(exc, fp.write, b"blah")
+            self.assertRaises(exc, fp.writelines, [b"blah\n"])
         with self.open(support.TESTFN, "rb") as fp:
-            self.assertRaises(IOError, fp.write, b"blah")
-            self.assertRaises(IOError, fp.writelines, [b"blah\n"])
+            self.assertRaises(exc, fp.write, b"blah")
+            self.assertRaises(exc, fp.writelines, [b"blah\n"])
         with self.open(support.TESTFN, "r") as fp:
-            self.assertRaises(IOError, fp.write, "blah")
-            self.assertRaises(IOError, fp.writelines, ["blah\n"])
+            self.assertRaises(exc, fp.write, "blah")
+            self.assertRaises(exc, fp.writelines, ["blah\n"])
+            # Non-zero seeking from current or end pos
+            self.assertRaises(exc, fp.seek, 1, self.SEEK_CUR)
+            self.assertRaises(exc, fp.seek, -1, self.SEEK_END)
 
     def test_raw_file_io(self):
         with self.open(support.TESTFN, "wb", buffering=0) as f:
@@ -669,6 +696,11 @@ class CommonBufferedTests:
         b.close()
         b.close()
         self.assertRaises(ValueError, b.flush)
+
+    def test_unseekable(self):
+        bufio = self.tp(self.MockUnseekableIO(b"A" * 10))
+        self.assertRaises(self.UnsupportedOperation, bufio.tell)
+        self.assertRaises(self.UnsupportedOperation, bufio.seek, 0)
 
 
 class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
@@ -1433,6 +1465,9 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
         BufferedReaderTest.test_misbehaved_io(self)
         BufferedWriterTest.test_misbehaved_io(self)
 
+    # You can't construct a BufferedRandom over a non-seekable stream.
+    test_unseekable = None
+
 class CBufferedRandomTest(BufferedRandomTest):
     tp = io.BufferedRandom
 
@@ -2177,6 +2212,11 @@ class TextIOWrapperTest(unittest.TestCase):
         txt.close()
         self.assertRaises(ValueError, txt.flush)
 
+    def test_unseekable(self):
+        txt = self.TextIOWrapper(self.MockUnseekableIO(self.testdata))
+        self.assertRaises(self.UnsupportedOperation, txt.tell)
+        self.assertRaises(self.UnsupportedOperation, txt.seek, 0)
+
 class CTextIOWrapperTest(TextIOWrapperTest):
 
     def test_initialization(self):
@@ -2550,7 +2590,7 @@ def test_main():
     # Put the namespaces of the IO module we are testing and some useful mock
     # classes in the __dict__ of each test.
     mocks = (MockRawIO, MisbehavedRawIO, MockFileIO, CloseFailureIO,
-             MockNonBlockWriterIO)
+             MockNonBlockWriterIO, MockUnseekableIO)
     all_members = io.__all__ + ["IncrementalNewlineDecoder"]
     c_io_ns = {name : getattr(io, name) for name in all_members}
     py_io_ns = {name : getattr(pyio, name) for name in all_members}

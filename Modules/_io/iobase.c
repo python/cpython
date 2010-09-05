@@ -317,7 +317,7 @@ _PyIOBase_check_seekable(PyObject *self, PyObject *args)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        PyErr_SetString(PyExc_IOError, "File or stream is not seekable.");
+        iobase_unsupported("File or stream is not seekable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -346,7 +346,7 @@ _PyIOBase_check_readable(PyObject *self, PyObject *args)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        PyErr_SetString(PyExc_IOError, "File or stream is not readable.");
+        iobase_unsupported("File or stream is not readable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -375,7 +375,7 @@ _PyIOBase_check_writable(PyObject *self, PyObject *args)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        PyErr_SetString(PyExc_IOError, "File or stream is not writable.");
+        iobase_unsupported("File or stream is not writable.");
         return NULL;
     }
     if (args == Py_True) {
