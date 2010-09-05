@@ -39,9 +39,10 @@
    sufficient; the e-mail address isn't necessary.  It's helpful to
    add the issue number:
 
-   XXX Describe the transmogrify() function added to the socket
-   module.
-   (Contributed by P.Y. Developer; :issue:`12345`.)
+     XXX Describe the transmogrify() function added to the socket
+     module.
+
+     (Contributed by P.Y. Developer; :issue:`12345`.)
 
    This saves the maintainer the effort of going through the SVN log
    when researching a change.
@@ -49,24 +50,24 @@
 This article explains the new features in Python 3.2, compared to 3.1.
 
 
-PEP 391: Dictionary Based Configuration for Logging
-===================================================
+PEP 391:  Dictionary Based Configuration for Logging
+====================================================
 
-The :mod:`logging` module had two ways of configuring the module, either calling
-functions for each option or by reading an external file saved in a ConfigParser
+The :mod:`logging` module had two ways of configuring the module, either by calling
+functions for each option or by reading an external file saved in a :mod:`ConfigParser`
 format.  Those options did not provide the flexibility to create configurations
-from JSON or YAML files and they did not support incremental configuration which
+from JSON or YAML files and they did not support incremental configuration, which
 is needed for specifying logger options from a command line.
 
 To support a more flexible style, the module now offers
 :func:`logging.config.dictConfig` to use dictionaries to specify logger
-configurations (including formatters, handlers, filters, and loggers).  For
+configuration (including formatters, handlers, filters, and loggers).  For
 example:
 
 >>> import logging.config
 >>> logging.config.dictConfig(json.load(open('log.cfg', 'rb')))
 
-The above fragment configures logging from a JSON encoded dictionary stored in
+The above fragment configures logging from a JSON-encoded dictionary stored in a
 file called "log.cfg".  Here's a working example of a configuration dictionary::
 
    {"version": 1,
@@ -101,14 +102,14 @@ a cached file created by another interpreter, it would recompile the source and
 overwrite the cached file, thus losing the benefits of caching.
 
 The issue of "pyc fights" has become more pronounced as it has become
-common-place for Linux distributions to ship with multiple versions of Python.
+commonplace for Linux distributions to ship with multiple versions of Python.
 These conflicts also arise with CPython alternatives such as Unladen Swallow.
 
 To solve this problem, Python's import machinery has been extended to use
-distinct filenames for each interpreter.  Instead of Python3.2 and Python3.3 and
-UnladenSwallow each competing for a file called "mymodule.pyc", they will now
+distinct filenames for each interpreter.  Instead of Python 3.2 and Python 3.3 and
+Unladen Swallow each competing for a file called "mymodule.pyc", they will now
 look for "mymodule.cpython-32.pyc", "mymodule.cpython-33.pyc", and
-"mymodule.unladen10.pyc".  And to keep prevent all of these new files from
+"mymodule.unladen10.pyc".  And to prevent all of these new files from
 cluttering source directories, the *pyc* files are now collected in a
 "__pycache__" directory stored under the package directory.
 
@@ -157,7 +158,7 @@ giving them a common directory and distinct names for each version.
 The common directory is "pyshared" and the file names are made distinct by
 identifying the Python implementation (such as CPython, PyPy, Jython, etc.), the
 major and minor version numbers, and optional build flags (such as "d" for
-debug, "m" for pymalloc, "u" for wide-unicode).  For an arbtrary package, "foo",
+debug, "m" for pymalloc, "u" for wide-unicode).  For an arbitrary package "foo",
 you may see these files when the distribution package is installed::
 
    /usr/share/pyshared/foo.cpython-32m.so
@@ -187,15 +188,15 @@ Some smaller changes made to the core Python language are:
   it only catches :exc:`AttributeError`.  Under the hood, :func:`hasattr` works
   by calling :func:`getattr` and throwing away the results.  This is necessary
   because dynamic attribute creation is possible using :meth:`__getattribute__`
-  or :meth:`__getattr`.  If :func:`hasattr` were to just scan instance and class
+  or :meth:`__getattr__`.  If :func:`hasattr` were to just scan instance and class
   dictionaries it would miss the dynmaic methods and make it difficult to
   implement proxy objects.
 
   (Discovered by Yury Selivanov and fixed by Benjamin Peterson; :issue:`9666`.)
 
-* The :func:`str` of a float or complex number is now the same as it
+* The :func:`str` of a float or complex number is now the same as its
   :func:`repr`. Previously, the :func:`str` form was shorter but that just
-  caused confusion and is no longer needed now that we the shortest possible
+  caused confusion and is no longer needed now that the shortest possible
   :func:`repr` is displayed by default:
 
   >>> repr(math.pi)
@@ -223,7 +224,7 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
-* The :mod:`functools` module now includes a new decorator for caching function
+* The :mod:`functools` module includes a new decorator for caching function
   calls.  :func:`functools.lru_cache` can save repeated queries to an external
   resource whenever the results are expected to be the same.
 
@@ -261,7 +262,7 @@ New, Improved, and Deprecated Modules
   `appspot issue 53094 <http://codereview.appspot.com/53094>`_.)
 
 * The :class:`ftplib.FTP` class now supports the context manager protocol to
-  unconditionally consume :exc:`socket.error` exceptions and to close the ftp
+  unconditionally consume :exc:`socket.error` exceptions and to close the FTP
   connection when done:
 
   >>> from ftplib import FTP
@@ -279,7 +280,7 @@ New, Improved, and Deprecated Modules
 
 * A warning message will now get printed at interpreter shutdown if the
   :data:`gc.garbage` list isn't empty.  This is meant to make the programmer
-  aware that his code contains object finalization issues.
+  aware that their code contains object finalization issues.
 
   (Added by Antoine Pitrou; :issue:`477863`.)
 
@@ -290,11 +291,11 @@ New, Improved, and Deprecated Modules
 
 * The :func:`shutil.copytree` function has two new options:
 
-  * *ignore_dangling_symlinks*: when ``symlinks=False`` dp that the function
-    copies the file pointed to by the symlink, not the symlink itself.  This
+  * *ignore_dangling_symlinks*: when ``symlinks=False`` (meaning that the function
+    copies the file pointed to by the symlink, not the symlink itself), this
     option will silence the error raised if the file doesn't exist.
 
-  * *copy_function*: is a callable that will be used to copy files.
+  * *copy_function*: a callable that will be used to copy files.
     :func:`shutil.copy2` is used by default.
 
   (Contributed by Tarek Ziadé.)
@@ -411,8 +412,8 @@ The value is an encoding name, e.g. ``iso-8859-1``. This variable is not
 available (ignored) on Windows and Mac OS X: the filesystem encoding is pinned
 to ``'mbcs'`` on Windows and ``'utf-8'`` on Mac OS X.
 
-The :mod:`os` module has two new functions: :func:`os.fsencode` and
-:func:`os.fsdecode`.
+The :mod:`os` module has two new functions: :func:`~os.fsencode` and
+:func:`~os.fsdecode`.
 
 
 .. IDLE
@@ -458,5 +459,5 @@ require changes to your code:
 
 * The :ctype:`PyCObject` type, deprecated in 3.1, has been removed.  To wrap
   opaque C pointers in Python objects, the :ctype:`PyCapsule` API should be used
-  instead; the new type has a well defined interface for passing typing safety
+  instead; the new type has a well-defined interface for passing typing safety
   information and a less complicated signature for calling a destructor.
