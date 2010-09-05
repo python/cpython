@@ -51,6 +51,49 @@
 This article explains the new features in Python 3.2, compared to 3.1.
 
 
+PEP 391: Dictionary Based Configuration for Logging
+===================================================
+
+The :mod:`logging` module had two ways of configuring the module, either
+calling functions for each option or by reading an external file saved
+in a ConfigParser format.  Those options did not provide the flexibility
+to create configurations from JSON or YAML files and they did not support
+incremental configuration which is needed for specifying logger options
+from a command line.
+
+To support a more flexible style, the module now offers
+:func:`logging.config.dictConfig` to use dictionaries to specify logger
+configurations (including formatters, handlers, filters, and loggers).
+For example::
+
+    >>> import logging.config
+    >>> logging.config.dictConfig(json.load(open('log.cfg', 'rb')))
+
+The above fragment configures logging from a JSON encoded dictionary stored in
+file called "log.cfg".  Here's a working example of a configuration dictionary::
+
+    {"version": 1,
+     "formatters": {"brief": {"format": "%(levelname)-8s: %(name)-15s: %(message)s"},
+                    "full": {"format": "%(asctime)s %(name)-15s %(levelname)-8s %(message)s"},
+                    },
+     "handlers": {"console": {
+                       "class": "logging.StreamHandler",
+                       "formatter": "brief",
+                       "level": "INFO",
+                       "stream": "ext://sys.stdout"},
+                  "console_priority": {
+                       "class": "logging.StreamHandler",
+                       "formatter": "full",
+                       "level": "ERROR",
+                       "stream": "ext://sys.stderr"},
+                  },
+     "root": {"level": "DEBUG", "handlers": ["console", "console_priority"]}}
+
+.. seealso::
+
+   :pep:`391` - Dictionary Based Configuration for Logging
+      PEP written by Vinay Sajip.
+
 PEP 3147:  PYC Repository Directories
 =====================================
 
