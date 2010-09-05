@@ -305,16 +305,17 @@ New, Improved, and Deprecated Modules
 
   (Added by Antoine Pitrou; :issue:`8524`.)
 
-* The :mod:`sqlite3` module has some new features:
+* The :mod:`sqlite3` module has two new capabilities.
 
-  * XXX *enable_load_extension*
+  The :attr:`Connection.in_transit` attribute is true if there is an
+  active transaction for uncommitted changes.
 
-  * XXX *load_extension*
+  The :meth:`Connection.enable_load_extension` and
+  :meth:`Connection.load_extension` methods allows you to load SQLite extensions
+  from ".so" files.  One well-known extension is the fulltext-search extension
+  distributed with SQLite.
 
-  * New :class:`~sqlite3.Connection` attribute
-    :attr:`~sqlite3.Connection.in_transaction` is :const:`True` when there
-    are uncommitted changes, and :const:`False` otherwise.  (Contributed
-    by R. David Murray and Shashwat Anand, :issue:`8845`.)
+  (Contributed by R. David Murray and Shashwat Anand, :issue:`8845`.)
 
 * The :mod:`ssl` module has a new class, :class:`~ssl.SSLContext` which
   serves as a container for various persistent SSL data, such as protocol
