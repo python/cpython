@@ -173,18 +173,29 @@ class OrderedDict(dict, MutableMapping):
     def __del__(self):
         self.clear()                # eliminate cyclical references
 
-    def _renew(self, key, PREV=0, NEXT=1):
-        'Fast version of self[key]=self.pop(key).   Private method for internal use.'
+    def move_to_end(self, key, last=True, PREV=0, NEXT=1):
+        '''Move an existing element to the end (or beginning if last==False).
+
+        Raises KeyError if the element does not exist.
+        When last=True, acts like a fast version of self[key]=self.pop(key).
+
+        '''
         link = self.__map[key]
         link_prev = link[PREV]
         link_next = link[NEXT]
         link_prev[NEXT] = link_next
         link_next[PREV] = link_prev
         root = self.__root
-        last = root[PREV]
-        link[PREV] = last
-        link[NEXT] = root
-        last[NEXT] = root[PREV] = link
+        if last:
+            last = root[PREV]
+            link[PREV] = last
+            link[NEXT] = root
+            last[NEXT] = root[PREV] = link
+        else:
+            first = root[NEXT]
+            link[PREV] = root
+            link[NEXT] = first
+            root[NEXT] = first[PREV] = link
 
 
 ################################################################################

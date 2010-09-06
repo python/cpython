@@ -793,6 +793,23 @@ the items are returned in the order their keys were first added.
       (key, value) pair.  The pairs are returned in LIFO order if *last* is true
       or FIFO order if false.
 
+   .. method:: move_to_end(key, last=True)
+
+      Move an existing *key* to either end of an ordered dictionary.  The item
+      is moved to the right end if *last* is true (the default) or to the
+      beginning if *last* is false.  Raises :exc:`KeyError` if the *key* does
+      not exist::
+
+          >>> d = OrderedDict.fromkeys('abcde')
+          >>> d.move_to_end('b')
+          >>> ''.join(d.keys)
+          'acdeb'
+          >>> d.move_to_end('b', 0)
+          >>> ''.join(d.keys)
+          'bacde'
+
+      .. versionadded:: 3.2
+
 In addition to the usual mapping methods, ordered dictionaries also support
 reverse iteration using :func:`reversed`.
 

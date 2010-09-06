@@ -973,7 +973,19 @@ class TestOrderedDict(unittest.TestCase):
         od['a'] = 1
         self.assertEqual(list(od.items()), [('b', 2), ('a', 1)])
 
-
+    def test_move_to_end(self):
+        od = OrderedDict.fromkeys('abcde')
+        self.assertEqual(list(od), list('abcde'))
+        od.move_to_end('c')
+        self.assertEqual(list(od), list('abdec'))
+        od.move_to_end('c', 0)
+        self.assertEqual(list(od), list('cabde'))
+        od.move_to_end('c', 0)
+        self.assertEqual(list(od), list('cabde'))
+        od.move_to_end('e')
+        self.assertEqual(list(od), list('cabde'))
+        with self.assertRaises(KeyError):
+            od.move_to_end('x')
 
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = OrderedDict

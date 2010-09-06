@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- collections.OrderedDict now supports a new method for repositioning
+  keys to either end.
+
 - Issue #9754: Similarly to assertRaises and assertRaisesRegexp, unittest
   test cases now also have assertWarns and assertWarnsRegexp methods to
   check that a given warning type was triggered by the code under test.
