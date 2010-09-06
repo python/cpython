@@ -292,15 +292,6 @@ class Random(_random.Random):
         large population:   sample(xrange(10000000), 60)
         """
 
-        # XXX Although the documentation says `population` is "a sequence",
-        # XXX attempts are made to cater to any iterable with a __len__
-        # XXX method.  This has had mixed success.  Examples from both
-        # XXX sides:  sets work fine, and should become officially supported;
-        # XXX dicts are much harder, and have failed in various subtle
-        # XXX ways across attempts.  Support for mapping types should probably
-        # XXX be dropped (and users should pass mapping.keys() or .values()
-        # XXX explicitly).
-
         # Sampling without replacement entails tracking either potential
         # selections (the pool) in a list or previous selections in a set.
 
