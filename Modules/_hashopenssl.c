@@ -38,6 +38,8 @@
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
+/* We use the object interface to discover what hashes OpenSSL supports. */
+#include <openssl/objects.h>
 
 #define MUNCH_SIZE INT_MAX
 
@@ -488,6 +490,62 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     return ret_obj;
 }
 
+
+/* State for our callback function so that it can accumulate a result. */
+typedef struct _internal_name_mapper_state {
+    PyObject *set;
+    int error;
+} _InternalNameMapperState;
+
+
+/* A callback function to pass to OpenSSL's OBJ_NAME_do_all(...) */
+static void
+_openssl_hash_name_mapper(const OBJ_NAME *openssl_obj_name, void *arg)
+{
+    _InternalNameMapperState *state = (_InternalNameMapperState *)arg;
+    PyObject *py_name;
+
+    assert(state != NULL);
+    if (openssl_obj_name == NULL)
+        return;
+    /* Ignore aliased names, they pollute the list and OpenSSL appears to
+     * have a its own definition of alias as the resulting list still
+     * contains duplicate and alternate names for several algorithms.     */
+    if (openssl_obj_name->alias)
+        return;
+
+    py_name = PyUnicode_FromString(openssl_obj_name->name);
+    if (py_name == NULL) {
+        state->error = 1;
+    } else {
+        if (PySet_Add(state->set, py_name) != 0) {
+            Py_DECREF(py_name);
+            state->error = 1;
+        }
+    }
+}
+
+
+/* Ask OpenSSL for a list of supported ciphers, filling in a Python set. */
+static PyObject*
+generate_hash_name_list(void)
+{
+    _InternalNameMapperState state;
+    state.set = PyFrozenSet_New(NULL);
+    if (state.set == NULL)
+        return NULL;
+    state.error = 0;
+
+    OBJ_NAME_do_all(OBJ_NAME_TYPE_MD_METH, &_openssl_hash_name_mapper, &state);
+
+    if (state.error) {
+        Py_DECREF(state.set);
+        return NULL;
+    }
+    return state.set;
+}
+
+
 /*
  *  This macro generates constructor function definitions for specific
  *  hash algorithms.  These constructors are much faster than calling
@@ -581,7 +639,7 @@ static struct PyModuleDef _hashlibmodule = {
 PyMODINIT_FUNC
 PyInit__hashlib(void)
 {
-    PyObject *m;
+    PyObject *m, *openssl_md_meth_names;
 
     OpenSSL_add_all_digests();
 
@@ -597,6 +655,16 @@ PyInit__hashlib(void)
     m = PyModule_Create(&_hashlibmodule);
     if (m == NULL)
         return NULL;
+
+    openssl_md_meth_names = generate_hash_name_list();
+    if (openssl_md_meth_names == NULL) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddObject(m, "openssl_md_meth_names", openssl_md_meth_names)) {
+        Py_DECREF(m);
+        return NULL;
+    }
 
 #if HASH_OBJ_CONSTRUCTOR
     Py_INCREF(&EVPtype);

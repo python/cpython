@@ -101,10 +101,14 @@ class HashLibTestCase(unittest.TestCase):
             c = cons(a)
             c.hexdigest()
 
-    def test_algorithms_attribute(self):
-        self.assertEqual(hashlib.algorithms,
+    def test_algorithms_guaranteed(self):
+        self.assertEqual(hashlib.algorithms_guaranteed,
             tuple(_algo for _algo in self.supported_hash_names
                   if _algo.islower()))
+
+    def test_algorithms_available(self):
+        self.assertTrue(set(hashlib.algorithms_guaranteed).
+                            issubset(hashlib.algorithms_available))
 
     def test_unknown_hash(self):
         try:

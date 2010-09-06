@@ -70,10 +70,13 @@ More condensed:
    >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
    'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
 
-A generic :func:`new` constructor that takes the string name of the desired
-algorithm as its first parameter also exists to allow access to the above listed
-hashes as well as any other algorithms that your OpenSSL library may offer.  The
-named constructors are much faster than :func:`new` and should be preferred.
+.. function:: new(name[, data])
+
+   Is a generic constructor that takes the string name of the desired
+   algorithm as its first parameter.  It also exists to allow access to the
+   above listed hashes as well as any other algorithms that your OpenSSL
+   library may offer.  The named constructors are much faster than :func:`new`
+   and should be preferred.
 
 Using :func:`new` with an algorithm provided by OpenSSL:
 
@@ -82,12 +85,22 @@ Using :func:`new` with an algorithm provided by OpenSSL:
    >>> h.hexdigest()
    'cc4a5ce1b3df48aec5d22d1f16b894a0b894eccc'
 
-This module provides the following constant attribute:
+Hashlib provides the following constant attributes:
 
-.. data:: hashlib.algorithms
+.. data:: algorithms_guaranteed
 
-   A tuple providing the names of the hash algorithms guaranteed to be
-   supported by this module.
+   Contains the names of the hash algorithms guaranteed to be supported
+   by this module on all platforms.
+
+   .. versionadded:: 3.2
+
+.. data:: algorithms_available
+
+   Contains the names of the hash algorithms that are available
+   in the running Python interpreter.  These names will be recognized
+   when passed to :func:`new`.  :attr:`algorithms_guaranteed`
+   will always be a subset.  Duplicate algorithms with different
+   name formats may appear in this set (thanks to OpenSSL).
 
    .. versionadded:: 3.2
 
