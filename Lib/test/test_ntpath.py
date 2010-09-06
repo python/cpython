@@ -2,6 +2,7 @@ import ntpath
 import os
 from test.support import TestFailed
 from test import support, test_genericpath
+from tempfile import TemporaryFile
 import unittest
 
 
@@ -236,6 +237,18 @@ class TestNtpath(unittest.TestCase):
         tester('ntpath.relpath("/", "/")', '.')
         tester('ntpath.relpath("/a", "/a")', '.')
         tester('ntpath.relpath("/a/b", "/a/b")', '.')
+
+    def test_sameopenfile(self):
+        with TemporaryFile() as tf1, TemporaryFile() as tf2:
+            # Make sure the same file is really the same
+            self.assertTrue(ntpath.sameopenfile(tf1.fileno(), tf1.fileno()))
+            # Make sure different files are really different
+            self.assertFalse(ntpath.sameopenfile(tf1.fileno(), tf2.fileno()))
+            # Make sure invalid values don't cause issues
+            with self.assertRaises(ValueError):
+                # Invalid file descriptors shouldn't display assert
+                # dialogs (#4804)
+                ntpath.sameopenfile(-1, -1)
 
 
 class NtCommonTest(test_genericpath.CommonTest):
