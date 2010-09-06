@@ -264,7 +264,8 @@ class IOBase(metaclass=abc.ABCMeta):
     Even though IOBase does not declare read, readinto, or write because
     their signatures will vary, implementations and clients should
     consider those methods part of the interface. Also, implementations
-    may raise a IOError when operations they do not support are called.
+    may raise UnsupportedOperation when operations they do not support are
+    called.
 
     The basic type used for binary data read from or written to a file is
     bytes. bytearrays are accepted too, and in some cases (such as
