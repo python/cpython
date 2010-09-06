@@ -427,6 +427,9 @@ def main():
                       action="store", dest="newlines", default='lf',
                       help="line endings for text tests "
                            "(one of: {lf (default), cr, crlf, all})")
+    parser.add_option("-m", "--io-module",
+                      action="store", dest="io_module", default=None,
+                      help="io module to test (default: builtin open())")
     options, args = parser.parse_args()
     if args:
         parser.error("unexpected arguments")
@@ -450,6 +453,9 @@ def main():
 
     if options.encoding:
         TEXT_ENCODING = options.encoding
+
+    if options.io_module:
+        globals()['open'] = __import__(options.io_module, {}, {}, ['open']).open
 
     prepare_files()
     run_all_tests(test_options)
