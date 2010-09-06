@@ -127,7 +127,7 @@ def lru_cache(maxsize=100):
                             len=len, KeyError=KeyError):
         cache = OrderedDict()           # ordered least recent to most recent
         cache_popitem = cache.popitem
-        cache_renew = cache._renew
+        cache_renew = cache.move_to_end
         kwd_mark = object()             # separate positional and keyword args
         lock = Lock()
 
