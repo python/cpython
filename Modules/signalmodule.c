@@ -252,21 +252,20 @@ signal_signal(PyObject *self, PyObject *args)
     int sig_num;
     PyObject *old_handler;
     void (*func)(int);
-#ifdef MS_WINDOWS
-    int cur_sig, num_valid_sigs = 6;
-    static int valid_sigs[] = {SIGABRT, SIGFPE, SIGILL, SIGINT,
-                               SIGSEGV, SIGTERM};
-    BOOL valid_sig = FALSE;
-#endif
     if (!PyArg_ParseTuple(args, "iO:signal", &sig_num, &obj))
         return NULL;
 #ifdef MS_WINDOWS
     /* Validate that sig_num is one of the allowable signals */
-    for (cur_sig = 0; cur_sig < num_valid_sigs; cur_sig++)
-        valid_sig |= (sig_num == valid_sigs[cur_sig]);
-    if (!valid_sig) {
-        PyErr_SetString(PyExc_ValueError, "signal number out of range");
-        return NULL;
+    switch (sig_num) {
+        case SIGABRT: break;
+        case SIGFPE: break;
+        case SIGILL: break;
+        case SIGINT: break;
+        case SIGSEGV: break;
+        case SIGTERM: break;
+        default:
+            PyErr_SetString(PyExc_ValueError, "invalid signal value");
+            return NULL;
     }
 #endif
 #ifdef WITH_THREAD
