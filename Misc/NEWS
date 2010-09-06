@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9754: Similarly to assertRaises and assertRaisesRegexp, unittest
+  test cases now also have assertWarns and assertWarnsRegexp methods to
+  check that a given warning type was triggered by the code under test.
+
 - Issue #5506: BytesIO objects now have a getbuffer() method exporting a
   view of their contents without duplicating them.  The view is both readable
   and writable.

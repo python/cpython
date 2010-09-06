@@ -1083,6 +1083,59 @@ Test cases
       .. versionadded:: 3.1
 
 
+   .. method:: assertWarns(warning, callable, *args, **kwds)
+               assertWarns(warning)
+
+      Test that a warning is triggered when *callable* is called with any
+      positional or keyword arguments that are also passed to
+      :meth:`assertWarns`.  The test passes if *warning* is triggered and
+      fails if it isn't.  Also, any unexpected exception is an error.
+      To catch any of a group of warnings, a tuple containing the warning
+      classes may be passed as *warnings*.
+
+      If only the *warning* argument is given, returns a context manager so
+      that the code under test can be written inline rather than as a function::
+
+         with self.assertWarns(SomeWarning):
+             do_something()
+
+      The context manager will store the caught warning object in its
+      :attr:`warning` attribute, and the source line which triggered the
+      warnings in the :attr:`filename` and :attr:`lineno` attributes.
+      This can be useful if the intention is to perform additional checks
+      on the exception raised::
+
+         with self.assertWarns(SomeWarning) as cm:
+             do_something()
+
+         self.assertIn('myfile.py', cm.filename)
+         self.assertEqual(320, cm.lineno)
+
+      This method works regardless of the warning filters in place when it
+      is called.
+
+      .. versionadded:: 3.2
+
+
+   .. method:: assertWarnsRegexp(warning, regexp[, callable, ...])
+
+      Like :meth:`assertWarns` but also tests that *regexp* matches on the
+      message of the triggered warning.  *regexp* may be a regular expression
+      object or a string containing a regular expression suitable for use
+      by :func:`re.search`.  Example::
+
+         self.assertWarnsRegexp(DeprecationWarning,
+                                r'legacy_function\(\) is deprecated',
+                                legacy_function, 'XYZ')
+
+      or::
+
+         with self.assertWarnsRegexp(RuntimeWarning, 'unsafe frobnicating'):
+             frobnicate('/etc/passwd')
+
+      .. versionadded:: 3.2
+
+
    .. method:: assertIsNone(expr, msg=None)
 
       This signals a test failure if *expr* is not None.
