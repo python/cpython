@@ -2758,6 +2758,33 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
     return result;
 
 } /* end of posix__getfinalpathname */
+
+static PyObject *
+posix__getfileinformation(PyObject *self, PyObject *args)
+{
+    HANDLE hFile;
+    BY_HANDLE_FILE_INFORMATION info;
+    int fd;
+
+    if (!PyArg_ParseTuple(args, "i:_getfileinformation", &fd))
+        return NULL;
+
+    if (!_PyVerify_fd(fd)) {
+        PyErr_SetString(PyExc_ValueError, "received invalid file descriptor");
+        return NULL;
+    }
+
+    hFile = (HANDLE)_get_osfhandle(fd);
+    if (hFile == INVALID_HANDLE_VALUE)
+        return win32_error("_getfileinformation", NULL);
+
+    if (!GetFileInformationByHandle(hFile, &info))
+        return win32_error("_getfileinformation", NULL);
+
+    return Py_BuildValue("iii", info.dwVolumeSerialNumber,
+                                info.nFileIndexHigh,
+                                info.nFileIndexLow);
+}
 #endif /* MS_WINDOWS */
 
 PyDoc_STRVAR(posix_mkdir__doc__,
@@ -7908,6 +7935,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef MS_WINDOWS
     {"_getfullpathname",        posix__getfullpathname, METH_VARARGS, NULL},
     {"_getfinalpathname",       posix__getfinalpathname, METH_VARARGS, NULL},
+    {"_getfileinformation",     posix__getfileinformation, METH_VARARGS, NULL},
 #endif
 #ifdef HAVE_GETLOADAVG
     {"getloadavg",      posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},

@@ -251,7 +251,9 @@ applications should use string objects to access all files.
 
    Return ``True`` if the file descriptors *fp1* and *fp2* refer to the same file.
 
-   Availability: Unix.
+   Availability: Unix, Windows.
+
+   .. versionchanged:: 3.2 Added Windows support.
 
 
 .. function:: samestat(stat1, stat2)

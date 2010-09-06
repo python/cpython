@@ -10,6 +10,7 @@ import sys
 import stat
 import genericpath
 from genericpath import *
+from nt import _getfileinformation
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
@@ -17,7 +18,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "ismount", "expanduser","expandvars","normpath","abspath",
            "splitunc","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
-           "samefile",]
+           "samefile", "sameopenfile",]
 
 # strings representing various path-related bits and pieces
 # These are primarily for export; internally, they are hardcoded.
@@ -652,3 +653,7 @@ def samefile(f1, f2):
         # Also, on other operating systems, fake this method with a
         #  Windows-XP approximation.
         return abspath(f1) == abspath(f2)
+
+def sameopenfile(f1, f2):
+    """Test whether two file objects reference the same file"""
+    return _getfileinformation(f1) == _getfileinformation(f2)
