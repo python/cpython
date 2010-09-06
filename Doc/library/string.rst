@@ -299,11 +299,11 @@ The general form of a *standard format specifier* is:
    precision: `integer`
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
-The *fill* character can be any character other than '}' (which signifies the
-end of the field).  The presence of a fill character is signaled by the *next*
-character, which must be one of the alignment options. If the second character
-of *format_spec* is not a valid alignment option, then it is assumed that both
-the fill character and the alignment option are absent.
+The *fill* character can be any character other than '{' or '}'.  The presence
+of a fill character is signaled by the character following it, which must be
+one of the alignment options.  If the second character of *format_spec* is not
+a valid alignment option, then it is assumed that both the fill character and
+the alignment option are absent.
 
 The meaning of the various alignment options is as follows:
 
