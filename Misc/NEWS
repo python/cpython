@@ -17,6 +17,11 @@ Library
   unsupported operation is attempted (for example, writing to a file open
   only for reading).
 
+- hashlib has two new constant attributes: algorithms_guaranteed and
+  algorithms_avaiable that respectively list the names of hash algorithms
+  guaranteed to exist in all Python implementations and the names of hash
+  algorithms available in the current process.
+
 
 What's New in Python 3.2 Alpha 2?
 =================================
