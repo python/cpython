@@ -169,3 +169,5 @@ extern PyObject *_PyIO_str_write;
 extern PyObject *_PyIO_empty_str;
 extern PyObject *_PyIO_empty_bytes;
 extern PyObject *_PyIO_zero;
+
+extern PyTypeObject _PyBytesIOBuffer_Type;
