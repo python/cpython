@@ -518,6 +518,24 @@ In many situations, buffered I/O streams will provide higher performance
    :class:`BytesIO` provides or overrides these methods in addition to those
    from :class:`BufferedIOBase` and :class:`IOBase`:
 
+   .. method:: getbuffer()
+
+      Return a readable and writable view over the contents of the buffer
+      without copying them.  Also, mutating the view will transparently
+      update the contents of the buffer::
+
+         >>> b = io.BytesIO(b"abcdef")
+         >>> view = b.getbuffer()
+         >>> view[2:4] = b"56"
+         >>> b.getvalue()
+         b'ab56ef'
+
+      .. note::
+         As long as the view exists, the :class:`BytesIO` object cannot be
+         resized.
+
+      .. versionadded:: 3.2
+
    .. method:: getvalue()
 
       Return ``bytes`` containing the entire contents of the buffer.

@@ -710,6 +710,8 @@ PyInit__io(void)
     /* BytesIO */
     PyBytesIO_Type.tp_base = &PyBufferedIOBase_Type;
     ADD_TYPE(&PyBytesIO_Type, "BytesIO");
+    if (PyType_Ready(&_PyBytesIOBuffer_Type) < 0)
+        goto fail;
 
     /* StringIO */
     PyStringIO_Type.tp_base = &PyTextIOBase_Type;

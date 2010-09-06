@@ -384,7 +384,31 @@ class MemoryTestMixin:
         del __main__.PickleTestMemIO
 
 
-class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
+class BytesIOMixin:
+
+    def test_getbuffer(self):
+        memio = self.ioclass(b"1234567890")
+        buf = memio.getbuffer()
+        self.assertEqual(bytes(buf), b"1234567890")
+        memio.seek(5)
+        buf = memio.getbuffer()
+        self.assertEqual(bytes(buf), b"1234567890")
+        # Trying to change the size of the BytesIO while a buffer is exported
+        # raises a BufferError.
+        self.assertRaises(BufferError, memio.write, b'x' * 100)
+        self.assertRaises(BufferError, memio.truncate)
+        # Mutating the buffer updates the BytesIO
+        buf[3:6] = b"abc"
+        self.assertEqual(bytes(buf), b"123abc7890")
+        self.assertEqual(memio.getvalue(), b"123abc7890")
+        # After the buffer gets released, we can resize the BytesIO again
+        del buf
+        support.gc_collect()
+        memio.truncate()
+
+
+class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin,
+                    BytesIOMixin, unittest.TestCase):
 
     UnsupportedOperation = pyio.UnsupportedOperation
 
