@@ -358,13 +358,13 @@ class IOBase(metaclass=abc.ABCMeta):
     def seekable(self) -> bool:
         """Return whether object supports random access.
 
-        If False, seek(), tell() and truncate() will raise IOError.
+        If False, seek(), tell() and truncate() will raise UnsupportedOperation.
         This method may need to do a test seek().
         """
         return False
 
     def _checkSeekable(self, msg=None):
-        """Internal: raise an IOError if file is not seekable
+        """Internal: raise UnsupportedOperation if file is not seekable
         """
         if not self.seekable():
             raise UnsupportedOperation("File or stream is not seekable."
@@ -373,12 +373,12 @@ class IOBase(metaclass=abc.ABCMeta):
     def readable(self) -> bool:
         """Return whether object was opened for reading.
 
-        If False, read() will raise IOError.
+        If False, read() will raise UnsupportedOperation.
         """
         return False
 
     def _checkReadable(self, msg=None):
-        """Internal: raise an IOError if file is not readable
+        """Internal: raise UnsupportedOperation if file is not readable
         """
         if not self.readable():
             raise UnsupportedOperation("File or stream is not readable."
@@ -387,12 +387,12 @@ class IOBase(metaclass=abc.ABCMeta):
     def writable(self) -> bool:
         """Return whether object was opened for writing.
 
-        If False, write() and truncate() will raise IOError.
+        If False, write() and truncate() will raise UnsupportedOperation.
         """
         return False
 
     def _checkWritable(self, msg=None):
-        """Internal: raise an IOError if file is not writable
+        """Internal: raise UnsupportedOperation if file is not writable
         """
         if not self.writable():
             raise UnsupportedOperation("File or stream is not writable."
