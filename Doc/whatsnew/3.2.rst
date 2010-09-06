@@ -56,7 +56,7 @@ PEP 391:  Dictionary Based Configuration for Logging
 The :mod:`logging` module provided two kinds of configuration, one style with
 function calls for each option or another style driven by an external file saved
 in a :mod:`ConfigParser` format.  Those options did not provide the flexibility
-to create configurations from JSON or YAML files, nor did they not support
+to create configurations from JSON or YAML files, nor did they support
 incremental configuration, which is needed for specifying logger options from a
 command line.
 
