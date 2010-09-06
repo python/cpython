@@ -55,9 +55,9 @@ checkout:
 	  svn checkout $(SVNROOT)/external/Pygments-1.3.1/pygments tools/pygments; \
 	fi
 
-update: clean checkout
+update: clean
 
-build: checkout
+build:
 	mkdir -p build/$(BUILDER) build/doctrees
 	$(PYTHON) tools/sphinx-build.py $(ALLSPHINXOPTS)
 	@echo
