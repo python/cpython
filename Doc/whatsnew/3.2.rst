@@ -56,7 +56,7 @@ PEP 391:  Dictionary Based Configuration for Logging
 The :mod:`logging` module provided two kinds of configuration, one style with
 function calls for each option or another style driven by an external file saved
 in a :mod:`ConfigParser` format.  Those options did not provide the flexibility
-to create configurations from JSON or YAML files, nor they did not support
+to create configurations from JSON or YAML files, nor did they not support
 incremental configuration, which is needed for specifying logger options from a
 command line.
 
@@ -220,8 +220,8 @@ Some smaller changes made to the core Python language are:
   (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
   :issue:`8814`.)
 
-* The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
-  :func:`~abc.abstractstaticmethod`.
+* The :mod:`abc` module now supports :func:`abstractclassmethod` and
+  :func:`abstractstaticmethod`.
 
   (Patch submitted by Daniel Urban; :issue:`5867`.)
 
@@ -312,11 +312,11 @@ New, Improved, and Deprecated Modules
 
 * The :func:`shutil.copytree` function has two new options:
 
-  * *ignore_dangling_symlinks*: when ``symlinks=False`` (meaning that the function
-    copies the file pointed to by the symlink, not the symlink itself), this
+  * *ignore_dangling_symlinks*: when ``symlinks=False`` so that the function
+    copies the file pointed to by the symlink, not the symlink itself. This
     option will silence the error raised if the file doesn't exist.
 
-  * *copy_function*: a callable that will be used to copy files.
+  * *copy_function*: is a callable that will be used to copy files.
     :func:`shutil.copy2` is used by default.
 
   (Contributed by Tarek Ziadé.)
@@ -482,7 +482,7 @@ Changes to Python's build process and to the C API include:
   (Reported by Bupjoe Lee and fixed by Amaury Forgeot D'Arc; :issue:`5127`.)
 
 * Computed gotos are now enabled by default on supported compilers (which are
-  detected by the configure script).  They can still be disable selectively by
+  detected by the configure script).  They can still be disabled selectively by
   specifying ``--without-computed-gotos``.
 
   (Contributed by Antoine Pitrou; :issue:`9203`.)
