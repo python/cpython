@@ -1,5 +1,6 @@
 import ntpath
 import os
+import sys
 from test.support import TestFailed
 from test import support, test_genericpath
 from tempfile import TemporaryFile
@@ -244,11 +245,12 @@ class TestNtpath(unittest.TestCase):
             self.assertTrue(ntpath.sameopenfile(tf1.fileno(), tf1.fileno()))
             # Make sure different files are really different
             self.assertFalse(ntpath.sameopenfile(tf1.fileno(), tf2.fileno()))
-            # Make sure invalid values don't cause issues
-            with self.assertRaises(ValueError):
-                # Invalid file descriptors shouldn't display assert
-                # dialogs (#4804)
-                ntpath.sameopenfile(-1, -1)
+            # Make sure invalid values don't cause issues on win32
+            if sys.platform == "win32":
+                with self.assertRaises(ValueError):
+                    # Invalid file descriptors shouldn't display assert
+                    # dialogs (#4804)
+                    ntpath.sameopenfile(-1, -1)
 
 
 class NtCommonTest(test_genericpath.CommonTest):
