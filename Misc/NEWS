@@ -13,6 +13,11 @@ Core and Builtins
 Library
 -------
 
+- Updates to the random module:
+
+  * Document which parts of the module are guaranteed to stay the same
+    across versions and which parts are subject to change.
+
 - collections.OrderedDict now supports a new method for repositioning
   keys to either end.
 

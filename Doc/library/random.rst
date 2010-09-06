@@ -270,3 +270,19 @@ Examples of basic usage::
    <http://code.activestate.com/recipes/576707/>`_ for a compatible alternative
    random number generator with a long period and comparatively simple update
    operations.
+
+Notes on Reproducibility
+========================
+
+Sometimes it is useful to be able to reproduce the sequences given by a pseudo
+random number generator.  By re-using a seed value, the same sequence should be
+reproducible from run to run as long as multiple threads are not running.
+
+Most of the random module's algorithms and seeding functions are subject to
+change across Python versions, but two aspects are guaranteed not to change:
+
+* If a new seeding method is added, then a backward compatible seeder will be
+  offered.
+
+* The generator's :meth:`random` method will continue to produce the same
+  sequence when the compatible seeder is given the same seed.
