@@ -9,9 +9,8 @@ import subprocess
 import traceback
 import sys, os, time, errno
 
-if sys.platform == 'os2' or sys.platform == 'riscos':
-    raise unittest.SkipTest("Can't test signal on %s" % \
-                                   sys.platform)
+if sys.platform in ('os2', 'riscos'):
+    raise unittest.SkipTest("Can't test signal on %s" % sys.platform)
 
 
 class HandlerBCalled(Exception):
