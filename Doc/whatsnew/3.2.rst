@@ -53,22 +53,18 @@ This article explains the new features in Python 3.2, compared to 3.1.
 PEP 391:  Dictionary Based Configuration for Logging
 ====================================================
 
-The :mod:`logging` module had two ways of configuring the module, either by calling
-functions for each option or by reading an external file saved in a :mod:`ConfigParser`
-format.  Those options did not provide the flexibility to create configurations
-from JSON or YAML files and they did not support incremental configuration, which
-is needed for specifying logger options from a command line.
+The :mod:`logging` module provided two kinds of configuration, one style with
+function calls for each option or another style driven by an external file saved
+in a :mod:`ConfigParser` format.  Those options did not provide the flexibility
+to create configurations from JSON or YAML files, nor they did not support
+incremental configuration, which is needed for specifying logger options from a
+command line.
 
 To support a more flexible style, the module now offers
-:func:`logging.config.dictConfig` to use dictionaries to specify logger
-configuration (including formatters, handlers, filters, and loggers).  For
-example:
-
->>> import logging.config
->>> logging.config.dictConfig(json.load(open('log.cfg', 'rb')))
-
-The above fragment configures logging from a JSON-encoded dictionary stored in a
-file called "log.cfg".  Here's a working example of a configuration dictionary::
+:func:`logging.config.dictConfig` for specifying logging configuration with
+plain Python dictionaries.  The configuration options include formatters,
+handlers, filters, and loggers.  Here's a working example of a configuration
+dictionary::
 
    {"version": 1,
     "formatters": {"brief": {"format": "%(levelname)-8s: %(name)-15s: %(message)s"},
@@ -86,6 +82,15 @@ file called "log.cfg".  Here's a working example of a configuration dictionary::
                       "stream": "ext://sys.stderr"},
                  },
     "root": {"level": "DEBUG", "handlers": ["console", "console_priority"]}}
+
+
+If that dictionary is stored in a file called "conf.json", it can loaded
+and called with code like this::
+
+   >>> import logging.config
+   >>> logging.config.dictConfig(json.load(open('conf.json', 'rb')))
+   >>> logging.info("Transaction completed normally")
+   >>> logging.critical("Abnormal termination")
 
 .. seealso::
 
@@ -119,16 +124,16 @@ aspects that are visible to the programmer:
 * Imported modules now have a :attr:`__cached__` attribute which stores the name
   of the actual file that was imported:
 
-  >>> import collections
-  >>> collections.__cached__
-  'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
+   >>> import collections
+   >>> collections.__cached__
+   'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
 
 * The tag that is unique to each interpreter is accessible from the :mod:`imp`
   module:
 
-  >>> import imp
-  >>> imp.get_tag()
-  'cpython-32'
+   >>> import imp
+   >>> imp.get_tag()
+   'cpython-32'
 
 * Scripts that try to deduce source filename from the imported file now need to
   be smarter.  It is no longer sufficient to simply strip the "c" from a ".pyc"
@@ -199,10 +204,10 @@ Some smaller changes made to the core Python language are:
   caused confusion and is no longer needed now that the shortest possible
   :func:`repr` is displayed by default:
 
-  >>> repr(math.pi)
-  '3.141592653589793'
-  >>> str(math.pi)
-  '3.141592653589793'
+   >>> repr(math.pi)
+   '3.141592653589793'
+   >>> str(math.pi)
+   '3.141592653589793'
 
   (Proposed and implemented by Mark Dickinson; :issue:`9337`.)
 
@@ -218,8 +223,22 @@ Some smaller changes made to the core Python language are:
 * The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
   :func:`~abc.abstractstaticmethod`.
 
-  (:issue:`5867`.)
+  (Patch submitted by Daniel Urban; :issue:`5867`.)
 
+* A warning message will now get printed at interpreter shutdown if the
+  :data:`gc.garbage` list isn't empty.  This is meant to make the programmer
+  aware that their code contains object finalization issues.
+
+  (Added by Antoine Pitrou; :issue:`477863`.)
+
+* Mark Dickinson crafted an elegant and efficient scheme for assuring that
+  different numeric datatypes will have the same hash value whenever their
+  actual values are equal::
+
+   >>> assert hash(Fraction(3, 2)) == hash(1.5) == \
+              hash(Decimal("1.5")) == hash(complex(1.5, 0))
+
+  (See :issue:`8188`.)
 
 New, Improved, and Deprecated Modules
 =====================================
@@ -263,26 +282,28 @@ New, Improved, and Deprecated Modules
 
 * The :class:`ftplib.FTP` class now supports the context manager protocol to
   unconditionally consume :exc:`socket.error` exceptions and to close the FTP
-  connection when done:
+  connection when done::
 
-  >>> from ftplib import FTP
-  >>> with FTP("ftp1.at.proftpd.org") as ftp:
-  ...     ftp.login()
-  ...     ftp.dir()
-  ...
-  '230 Anonymous login ok, restrictions apply.'
-  dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
-  dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
-  dr-xr-xr-x   5 ftp      ftp          4096 May  6 10:43 CentOS
-  dr-xr-xr-x   3 ftp      ftp            18 Jul 10  2008 Fedora
+   >>> from ftplib import FTP
+   >>> with FTP("ftp1.at.proftpd.org") as ftp:
+   ...     ftp.login()
+   ...     ftp.dir()
+   ...
+   '230 Anonymous login ok, restrictions apply.'
+   dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
+   dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
+   dr-xr-xr-x   5 ftp      ftp          4096 May  6 10:43 CentOS
+   dr-xr-xr-x   3 ftp      ftp            18 Jul 10  2008 Fedora
 
-  (Contributed by Tarek Ziadé and Giampaolo Rodolà; :issue:`4972`.)
+  Other file-like objects such as :class:`mmap.mmap` and :func:`fileinput.input`
+  also grew auto-closing context managers::
 
-* A warning message will now get printed at interpreter shutdown if the
-  :data:`gc.garbage` list isn't empty.  This is meant to make the programmer
-  aware that their code contains object finalization issues.
+      with fileinput.input(files=('log1.txt', 'log2.txt')) as f:
+          for line in f:
+              process(line)
 
-  (Added by Antoine Pitrou; :issue:`477863`.)
+  (Contributed by Tarek Ziadé and Giampaolo Rodolà in :issue:`4972`, and
+  by Georg Brandl in :issue:`8046` and :issue:`1286`.)
 
 * The :mod:`os` module now has the :const:`ST_RDONLY` and :const:`ST_NOSUID`
   constants, for use with the :func:`~os.statvfs` function.
@@ -395,15 +416,39 @@ Multi-threading
   argument.  (Contributed by Torsten Landschoff; :issue:`850728`.)
 
 
-.. Optimizations
-   =============
+Optimizations
+=============
 
-   Major performance enhancements have been added:
+A number of small performance enhancements have been added:
 
-   * Stub
+* JSON decoding performance is improved and memory consumption is reduced
+  whenever the same string is repeated for multiple keys.
 
+  (Contributed by Antoine Pitrou; :issue:`7451`.)
 
-Filenames and unicode
+- Python's peephole optimizer now recognizes patterns such ``x in {1, 2, 3}`` as
+  being a test for membership in a set of constants.  The optimizer recasts the
+  :class:`set` as a :class:`frozenset` and stores the pre-built constant.
+
+  Now that the speed penalty is gone, it is practical to start writing
+  membership tests using set-notation.  This style is both semantically clear
+  and operationally fast::
+
+      extension = name.rpartition('.')[2]
+      if extension in {'xml', 'html', 'xhtml', 'css'}:
+          handle(name)
+
+  (Patch and additional tests by Dave Malcolm; :issue:`6690`).
+
+* The fast-search algorithm in stringlib is now used by the :meth:`split`,
+  :meth:`rsplit`, :meth:`splitlines` and :meth:`replace` methods on
+  :class:`bytes`, :class:`bytearray` and :class:`str` objects. Likewise, the
+  algorithm is also used by :meth:`rfind`, :meth:`rindex`, :meth:`rsplit` and
+  :meth:`rpartition`.
+
+  (Patch by Florent Xicluna in :issue:`7622` and :issue:`7462`.)
+
+Filenames and Unicode
 =====================
 
 The filesystem encoding can be specified by setting the
