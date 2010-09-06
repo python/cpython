@@ -215,8 +215,8 @@ Some smaller changes made to the core Python language are:
   (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
   :issue:`8814`.)
 
-* The :mod:`abc` module now supports :func:`abstractclassmethod` and
-  :func:`abstractstaticmethod`.
+* The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
+  :func:`~abc.abstractstaticmethod`.
 
   (:issue:`5867`.)
 
