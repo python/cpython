@@ -35,7 +35,8 @@ PyDoc_STRVAR(iobase_doc,
     "Even though IOBase does not declare read, readinto, or write because\n"
     "their signatures will vary, implementations and clients should\n"
     "consider those methods part of the interface. Also, implementations\n"
-    "may raise a IOError when operations they do not support are called.\n"
+    "may raise UnsupportedOperation when operations they do not support are\n"
+    "called.\n"
     "\n"
     "The basic type used for binary data read from or written to a file is\n"
     "bytes. bytearrays are accepted too, and in some cases (such as\n"
@@ -300,7 +301,7 @@ iobase_dealloc(iobase *self)
 PyDoc_STRVAR(iobase_seekable_doc,
     "Return whether object supports random access.\n"
     "\n"
-    "If False, seek(), tell() and truncate() will raise IOError.\n"
+    "If False, seek(), tell() and truncate() will raise UnsupportedOperation.\n"
     "This method may need to do a test seek().");
 
 static PyObject *
@@ -329,7 +330,7 @@ _PyIOBase_check_seekable(PyObject *self, PyObject *args)
 PyDoc_STRVAR(iobase_readable_doc,
     "Return whether object was opened for reading.\n"
     "\n"
-    "If False, read() will raise IOError.");
+    "If False, read() will raise UnsupportedOperation.");
 
 static PyObject *
 iobase_readable(PyObject *self, PyObject *args)
@@ -358,7 +359,7 @@ _PyIOBase_check_readable(PyObject *self, PyObject *args)
 PyDoc_STRVAR(iobase_writable_doc,
     "Return whether object was opened for writing.\n"
     "\n"
-    "If False, read() will raise IOError.");
+    "If False, write() will raise UnsupportedOperation.");
 
 static PyObject *
 iobase_writable(PyObject *self, PyObject *args)
