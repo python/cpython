@@ -174,7 +174,7 @@ class Template(metaclass=_TemplateMetaclass):
 # see PEP 3101 for details and purpose of this class
 
 # The hard parts are reused from the C implementation.  They're exposed as "_"
-# prefixed methods of str and unicode.
+# prefixed methods of str.
 
 # The overall parser is implemented in str._formatter_parser.
 # The field name parser is implemented in str._formatter_field_name_split
@@ -246,7 +246,7 @@ class Formatter:
             return str(value)
         elif conversion is None:
             return value
-        raise ValueError("Unknown converion specifier {0!s}".format(conversion))
+        raise ValueError("Unknown conversion specifier {0!s}".format(conversion))
 
 
     # returns an iterable that contains tuples of the form:
