@@ -983,7 +983,7 @@ class Popen(object):
             elif sig == signal.CTRL_BREAK_EVENT:
                 os.kill(self.pid, signal.CTRL_BREAK_EVENT)
             else:
-                raise ValueError("Only SIGTERM is supported on Windows")
+                raise ValueError("Unsupported signal")
 
         def terminate(self):
             """Terminates the process
