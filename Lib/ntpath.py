@@ -10,7 +10,6 @@ import sys
 import stat
 import genericpath
 from genericpath import *
-from nt import _getfileinformation
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
@@ -656,4 +655,10 @@ def samefile(f1, f2):
 
 def sameopenfile(f1, f2):
     """Test whether two file objects reference the same file"""
-    return _getfileinformation(f1) == _getfileinformation(f2)
+    try:
+        from nt import _getfileinformation
+        return _getfileinformation(f1) == _getfileinformation(f2)
+    except ImportError:
+        # On other operating systems, return True if the file descriptors
+        # are the same.
+        return f1 == f2
