@@ -13,6 +13,7 @@ import queue
 import sys
 import os
 import array
+import contextlib
 from weakref import proxy
 import signal
 
@@ -1203,12 +1204,42 @@ class BasicTCPTest2(NetworkConnectionTest, BasicTCPTest):
 
 class NetworkConnectionNoServer(unittest.TestCase):
 
-    def testWithoutServer(self):
+    class MockSocket(socket.socket):
+        def connect(self, *args):
+            raise socket.timeout('timed out')
+
+    @contextlib.contextmanager
+    def mocked_socket_module(self):
+        """Return a socket which times out on connect"""
+        old_socket = socket.socket
+        socket.socket = self.MockSocket
+        try:
+            yield
+        finally:
+            socket.socket = old_socket
+
+    def test_connect(self):
         port = support.find_unused_port()
-        self.assertRaises(
-            socket.error,
-            lambda: socket.create_connection((HOST, port))
-        )
+        cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        with self.assertRaises(socket.error) as cm:
+            cli.connect((HOST, port))
+        self.assertEqual(cm.exception.errno, errno.ECONNREFUSED)
+
+    def test_create_connection(self):
+        # Issue #9792: errors raised by create_connection() should have
+        # a proper errno attribute.
+        port = support.find_unused_port()
+        with self.assertRaises(socket.error) as cm:
+            socket.create_connection((HOST, port))
+        self.assertEqual(cm.exception.errno, errno.ECONNREFUSED)
+
+    def test_create_connection_timeout(self):
+        # Issue #9792: create_connection() should not recast timeout errors
+        # as generic socket errors.
+        with self.mocked_socket_module():
+            with self.assertRaises(socket.timeout):
+                socket.create_connection((HOST, 1234))
+
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
