@@ -499,7 +499,11 @@ class PyBuildExt(build_ext):
         # supported...)
 
         # fcntl(2) and ioctl(2)
-        exts.append( Extension('fcntl', ['fcntlmodule.c']) )
+        libs = []
+        if (config_h_vars.get('FLOCK_NEEDS_LIBBSD', False)):
+            # May be necessary on AIX for flock function
+            libs = ['bsd']
+        exts.append( Extension('fcntl', ['fcntlmodule.c'], libraries=libs) )
         # pwd(3)
         exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
