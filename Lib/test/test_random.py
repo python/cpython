@@ -244,10 +244,6 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         self.assertEqual([self.gen.random().hex() for i in range(4)],
             ['0x1.ac362300d90d2p-1', '0x1.9d16f74365005p-1',
              '0x1.1ebb4352e4c4dp-1', '0x1.1a7422abf9c11p-1'])
-        self.gen.seed("the quick brown fox", version=1)
-        self.assertEqual([self.gen.random().hex() for i in range(4)],
-            ['0x1.9ee265c177cdep-2', '0x1.bad51092e3c25p-1',
-             '0x1.85ff833f71576p-1', '0x1.87efb37462927p-1'])
         self.gen.seed("the quick brown fox", version=2)
         self.assertEqual([self.gen.random().hex() for i in range(4)],
             ['0x1.1294009b9eda4p-2', '0x1.2ff96171b0010p-1',
