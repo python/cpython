@@ -787,8 +787,18 @@ ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
 def transient_internet(resource_name, *, timeout=30.0, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
     with the Internet connection manifest themselves as exceptions."""
+    default_errnos = [
+        ('ECONNREFUSED', 111),
+        ('ECONNRESET', 104),
+        ('ENETUNREACH', 101),
+        ('ETIMEDOUT', 110),
+    ]
+
     denied = ResourceDenied("Resource '%s' is not available" % resource_name)
-    captured_errnos = errnos or (errno.ETIMEDOUT, errno.ECONNRESET)
+    captured_errnos = errnos
+    if not captured_errnos:
+        captured_errnos = [getattr(errno, name, num)
+                           for (name, num) in default_errnos]
 
     def filter_error(err):
         if (isinstance(err, socket.timeout) or
@@ -803,14 +813,20 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
             socket.setdefaulttimeout(timeout)
         yield
     except IOError as err:
-        # socket.error inherits IOError
+        # urllib can wrap original socket errors multiple times (!), we must
+        # unwrap to get at the original error.
+        while True:
+            a = err.args
+            if len(a) >= 1 and isinstance(a[0], IOError):
+                err = a[0]
+            # The error can also be wrapped as args[1]:
+            #    except socket.error as msg:
+            #        raise IOError('socket error', msg).with_traceback(sys.exc_info()[2])
+            elif len(a) >= 2 and isinstance(a[1], IOError):
+                err = a[1]
+            else:
+                break
         filter_error(err)
-        # urllib.request wraps the original socket.error with IOerror:
-        #
-        #    except socket.error as msg:
-        #        raise IOError('socket error', msg).with_traceback(sys.exc_info()[2])
-        if len(err.args) >= 2 and isinstance(err.args[1], socket.error):
-            filter_error(err.args[1])
         raise
     # XXX should we catch generic exceptions and look for their
     # __cause__ or __context__?

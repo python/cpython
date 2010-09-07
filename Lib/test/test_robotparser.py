@@ -235,23 +235,24 @@ class NetworkTestCase(unittest.TestCase):
 
     def testPasswordProtectedSite(self):
         support.requires('network')
-        # XXX it depends on an external resource which could be unavailable
-        url = 'http://mueblesmoraleda.com'
-        parser = urllib.robotparser.RobotFileParser()
-        parser.set_url(url)
-        try:
-            parser.read()
-        except URLError:
-            self.skipTest('%s is unavailable' % url)
-        self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)
+        with support.transient_internet('mueblesmoraleda.com'):
+            url = 'http://mueblesmoraleda.com'
+            parser = urllib.robotparser.RobotFileParser()
+            parser.set_url(url)
+            try:
+                parser.read()
+            except URLError:
+                self.skipTest('%s is unavailable' % url)
+            self.assertEqual(parser.can_fetch("*", url+"/robots.txt"), False)
 
     def testPythonOrg(self):
         support.requires('network')
-        parser = urllib.robotparser.RobotFileParser(
-            "http://www.python.org/robots.txt")
-        parser.read()
-        self.assertTrue(parser.can_fetch("*",
-                                         "http://www.python.org/robots.txt"))
+        with support.transient_internet('www.python.org'):
+            parser = urllib.robotparser.RobotFileParser(
+                "http://www.python.org/robots.txt")
+            parser.read()
+            self.assertTrue(
+                parser.can_fetch("*", "http://www.python.org/robots.txt"))
 
 def test_main():
     support.run_unittest(NetworkTestCase)
