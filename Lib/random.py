@@ -221,9 +221,8 @@ class Random(_random.Random):
         getrandbits = self.getrandbits
         # Only call self.getrandbits if the original random() builtin method
         # has not been overridden or if a new getrandbits() was supplied.
-        # This assures that the two methods correspond.
         if type(self.random) is BuiltinMethod or type(getrandbits) is Method:
-            r = getrandbits(k)  # 0 <= r < 2**k
+            r = getrandbits(k)          # 0 <= r < 2**k
             while r >= n:
                 r = getrandbits(k)
             return r
@@ -231,11 +230,12 @@ class Random(_random.Random):
         # so we can only use random() from here.
         if k > bpf:
             _warn("Underlying random() generator does not supply \n"
-                "enough bits to choose from a population range this large")
+                "enough bits to choose from a population range this large.\n"
+                "To remove the range limitation, add a getrandbits() method.")
             return int(self.random() * n)
         random = self.random
         N = 1 << k
-        r = int(N * random())
+        r = int(N * random())           # 0 <= r < 2**k
         while r >= n:
             r = int(N * random())
         return r
