@@ -161,13 +161,13 @@ class Random(_random.Random):
 
 ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1, int=int, default=None,
-                  maxwidth=1<<BPF):
+    def randrange(self, start, stop=None, step=1, int=int, maxwidth=1<<BPF):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
         endpoint; in Python this is usually not what you want.
-        Do not supply the 'int', 'default', and 'maxwidth' arguments.
+
+        Do not supply the 'int' and 'maxwidth' arguments.
         """
 
         # This code is a bit messy to make it fast for the
@@ -175,7 +175,7 @@ class Random(_random.Random):
         istart = int(start)
         if istart != start:
             raise ValueError("non-integer arg 1 for randrange()")
-        if stop is default:
+        if stop is None:
             if istart > 0:
                 if istart >= maxwidth:
                     return self._randbelow(istart)
