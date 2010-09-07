@@ -1183,6 +1183,17 @@ class FSEncodingTests(unittest.TestCase):
         check('iso-8859-15', b'\xef\xa4', '\xef\u20ac')
 
 
+class PidTests(unittest.TestCase):
+    @unittest.skipUnless(hasattr(os, 'getppid'), "test needs os.getppid")
+    def test_getppid(self):
+        p = subprocess.Popen([sys.executable, '-c',
+                              'import os; print(os.getppid())'],
+                             stdout=subprocess.PIPE)
+        stdout, _ = p.communicate()
+        # We are the parent of our subprocess
+        self.assertEqual(int(stdout), os.getpid())
+
+
 def test_main():
     support.run_unittest(
         FileTests,
@@ -1200,6 +1211,7 @@ def test_main():
         Win32KillTests,
         Win32SymlinkTests,
         FSEncodingTests,
+        PidTests,
     )
 
 if __name__ == "__main__":

@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6394: os.getppid() is now supported on Windows.  Note that it will
+  still return the id of the parent process after it has exited.  This process
+  id may even have been reused by another unrelated process.
+
 - Issue #9792: In case of connection failure, socket.create_connection()
   would swallow the exception and raise a new one, making it impossible
   to fetch the original errno, or to filter timeout errors.  Now the
