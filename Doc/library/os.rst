@@ -281,10 +281,14 @@ process and user.
 
    .. index:: single: process; id of parent
 
-   Return the parent's process id.
+   Return the parent's process id.  When the parent process has exited, on Unix
+   the id returned is the one of the init process (1), on Windows it is still
+   the same id, which may be already reused by another process.
 
-   Availability: Unix.
+   Availability: Unix, Windows
 
+   .. versionchanged:: 3.2
+      Added support for Windows.
 
 .. function:: getresuid()
 

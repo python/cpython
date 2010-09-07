@@ -121,6 +121,7 @@ corresponding Unix manual entries for more information on calls.");
 #else
 #ifdef _MSC_VER         /* Microsoft compiler */
 #define HAVE_GETCWD     1
+#define HAVE_GETPPID    1
 #define HAVE_SPAWNV     1
 #define HAVE_EXECV      1
 #define HAVE_PIPE       1
@@ -4363,16 +4364,65 @@ posix_setpgrp(PyObject *self, PyObject *noargs)
 #endif /* HAVE_SETPGRP */
 
 #ifdef HAVE_GETPPID
+
+#ifdef MS_WINDOWS
+#include <tlhelp32.h>
+
+static PyObject*
+win32_getppid()
+{
+    HANDLE snapshot;
+    pid_t mypid;
+    PyObject* result = NULL;
+    BOOL have_record;
+    PROCESSENTRY32 pe;
+
+    mypid = getpid(); /* This function never fails */
+
+    snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE)
+        return PyErr_SetFromWindowsErr(GetLastError());
+
+    pe.dwSize = sizeof(pe);
+    have_record = Process32First(snapshot, &pe);
+    while (have_record) {
+        if (mypid == (pid_t)pe.th32ProcessID) {
+            /* We could cache the ulong value in a static variable. */
+            result = PyLong_FromPid((pid_t)pe.th32ParentProcessID);
+            break;
+        }
+
+        have_record = Process32Next(snapshot, &pe);
+    }
+
+    /* If our loop exits and our pid was not found (result will be NULL)
+     * then GetLastError will return ERROR_NO_MORE_FILES. This is an
+     * error anyway, so let's raise it. */
+    if (!result)
+        result = PyErr_SetFromWindowsErr(GetLastError());
+
+    CloseHandle(snapshot);
+
+    return result;
+}
+#endif /*MS_WINDOWS*/
+
 PyDoc_STRVAR(posix_getppid__doc__,
 "getppid() -> ppid\n\n\
-Return the parent's process id.");
+Return the parent's process id.  If the parent process has already exited,\n\
+Windows machines will still return its id; others systems will return the id\n\
+of the 'init' process (1).");
 
 static PyObject *
 posix_getppid(PyObject *self, PyObject *noargs)
 {
+#ifdef MS_WINDOWS
+    return win32_getppid();
+#else
     return PyLong_FromPid(getppid());
-}
 #endif
+}
+#endif /* HAVE_GETPPID */
 
 
 #ifdef HAVE_GETLOGIN

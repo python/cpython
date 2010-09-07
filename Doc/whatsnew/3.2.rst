@@ -312,6 +312,11 @@ New, Improved, and Deprecated Modules
 
   (Patch by Adam Jackson; :issue:`7647`.)
 
+* :func:`os.getppid` is now supported on Windows.  Note that it will continue to
+  return the same pid even after the parent process has exited.
+
+  (Patch by Jon Anglin; :issue:`6394`.)
+
 * The :func:`shutil.copytree` function has two new options:
 
   * *ignore_dangling_symlinks*: when ``symlinks=False`` so that the function
