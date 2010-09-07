@@ -8,9 +8,10 @@
 This module implements pseudo-random number generators for various
 distributions.
 
-For integers, uniform selection from a range. For sequences, uniform selection
-of a random element, a function to generate a random permutation of a list
-in-place, and a function for random sampling without replacement.
+For integers, there is uniform selection from a range. For sequences, there is
+uniform selection of a random element, a function to generate a random
+permutation of a list in-place, and a function for random sampling without
+replacement.
 
 On the real line, there are functions to compute uniform, normal (Gaussian),
 lognormal, negative exponential, gamma, and beta distributions. For generating
@@ -34,15 +35,6 @@ basic generator of your own devising: in that case, override the :meth:`random`,
 :meth:`seed`, :meth:`getstate`, and :meth:`setstate` methods.
 Optionally, a new generator can supply a :meth:`getrandbits` method --- this
 allows :meth:`randrange` to produce selections over an arbitrarily large range.
-
-As an example of subclassing, the :mod:`random` module provides the
-:class:`WichmannHill` class that implements an alternative generator in pure
-Python.  The class provides a backward compatible way to reproduce results from
-earlier versions of Python, which used the Wichmann-Hill algorithm as the core
-generator.  Note that this Wichmann-Hill generator can no longer be recommended:
-its period is too short by contemporary standards, and the sequence generated is
-known to fail some stringent randomness tests.  See the references below for a
-recent variant that repairs these flaws.
 
 The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
