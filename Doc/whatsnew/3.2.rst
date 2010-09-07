@@ -194,7 +194,7 @@ Some smaller changes made to the core Python language are:
   by calling :func:`getattr` and throwing away the results.  This is necessary
   because dynamic attribute creation is possible using :meth:`__getattribute__`
   or :meth:`__getattr__`.  If :func:`hasattr` were to just scan instance and class
-  dictionaries it would miss the dynmaic methods and make it difficult to
+  dictionaries it would miss the dynamic methods and make it difficult to
   implement proxy objects.
 
   (Discovered by Yury Selivanov and fixed by Benjamin Peterson; :issue:`9666`.)
