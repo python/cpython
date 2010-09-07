@@ -212,25 +212,33 @@ class Random(_random.Random):
 
         return self.randrange(a, b+1)
 
-    def _randbelow(self, n, int=int, _maxwidth=1<<BPF, type=type,
-                   _Method=_MethodType, _BuiltinMethod=_BuiltinMethodType):
+    def _randbelow(self, n, int=int, bpf=BPF, type=type,
+                   Method=_MethodType, BuiltinMethod=_BuiltinMethodType):
         """Return a random int in the range [0,n).  Raises ValueError if n==0.
         """
 
+        k = n.bit_length()  # don't use (n-1) here because n can be 1
         getrandbits = self.getrandbits
         # Only call self.getrandbits if the original random() builtin method
         # has not been overridden or if a new getrandbits() was supplied.
         # This assures that the two methods correspond.
-        if type(self.random) is _BuiltinMethod or type(getrandbits) is _Method:
-            k = n.bit_length()  # don't use (n-1) here because n can be 1
+        if type(self.random) is BuiltinMethod or type(getrandbits) is Method:
             r = getrandbits(k)  # 0 <= r < 2**k
             while r >= n:
                 r = getrandbits(k)
             return r
-        if n >= _maxwidth:
+        # There's an overriden random() method but no new getrandbits() method,
+        # so we can only use random() from here.
+        if k > bpf:
             _warn("Underlying random() generator does not supply \n"
                 "enough bits to choose from a population range this large")
-        return int(self.random() * n)
+            return int(self.random() * n)
+        random = self.random
+        N = 1 << k
+        r = int(N * random())
+        while r >= n:
+            r = int(N * random())
+        return r
 
 ## -------------------- sequence methods  -------------------
 
@@ -249,16 +257,11 @@ class Random(_random.Random):
         float in [0.0, 1.0); by default, the standard random.random.
         """
 
-        if random is None:
-            for i in reversed(range(1, len(x))):
-                # pick an element in x[:i+1] with which to exchange x[i]
-                j = self._randbelow(i+1)
-                x[i], x[j] = x[j], x[i]
-        else:
-            for i in reversed(range(1, len(x))):
-                # pick an element in x[:i+1] with which to exchange x[i]
-                j = int(random() * (i+1))
-                x[i], x[j] = x[j], x[i]
+        randbelow = self._randbelow
+        for i in reversed(range(1, len(x))):
+            # pick an element in x[:i+1] with which to exchange x[i]
+            j = randbelow(i+1) if random is None else int(random() * (i+1))
+            x[i], x[j] = x[j], x[i]
 
     def sample(self, population, k):
         """Chooses k unique random elements from a population sequence or set.
@@ -292,7 +295,7 @@ class Random(_random.Random):
             population = tuple(population)
         if not isinstance(population, _collections.Sequence):
             raise TypeError("Population must be a sequence or Set.  For dicts, use list(d).")
-        random = self.random
+        randbelow = self._randbelow
         n = len(population)
         if not 0 <= k <= n:
             raise ValueError("Sample larger than population")
@@ -304,16 +307,16 @@ class Random(_random.Random):
             # An n-length list is smaller than a k-length set
             pool = list(population)
             for i in range(k):         # invariant:  non-selected at [0,n-i)
-                j = self._randbelow(n-i)
+                j = randbelow(n-i)
                 result[i] = pool[j]
                 pool[j] = pool[n-i-1]   # move non-selected item into vacancy
         else:
             selected = set()
             selected_add = selected.add
             for i in range(k):
-                j = self._randbelow(n)
+                j = randbelow(n)
                 while j in selected:
-                    j = self._randbelow(n)
+                    j = randbelow(n)
                 selected_add(j)
                 result[i] = population[j]
         return result
