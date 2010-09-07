@@ -192,7 +192,7 @@ class OtherNetworkTests(unittest.TestCase):
                     raise
             else:
                 try:
-                    with test_support.transient_internet():
+                    with test_support.transient_internet(url):
                         buf = f.read()
                         debug("read %d bytes" % len(buf))
                 except socket.timeout:
