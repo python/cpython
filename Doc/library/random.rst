@@ -55,7 +55,7 @@ Bookkeeping functions:
    If *x* is an int, it is used directly.
 
    With version 2 (the default), a :class:`str`, :class:`bytes`, or :class:`bytearray`
-   object gets converted to a :class:`int` and all of its bits are used.  With version 1,
+   object gets converted to an :class:`int` and all of its bits are used.  With version 1,
    the :func:`hash` of *x* is used instead.
 
    .. versionchanged:: 3.2
