@@ -42,6 +42,13 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, self.gen.seed, 1, 2, 3, 4)
         self.assertRaises(TypeError, type(self.gen), [])
 
+    def test_choice(self):
+        choice = self.gen.choice
+        with self.assertRaises(IndexError):
+            choice([])
+        self.assertEqual(choice([50]), 50)
+        self.assertIn(choice([25, 75]), [25, 75])
+
     def test_sample(self):
         # For the entire allowable range of 0 <= k <= N, validate that
         # the sample is of the correct length and contains only unique items
