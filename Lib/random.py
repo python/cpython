@@ -167,7 +167,7 @@ class Random(_random.Random):
         This fixes the problem with randint() which includes the
         endpoint; in Python this is usually not what you want.
 
-        Do not supply the 'int' and 'maxwidth' arguments.
+        Do not supply the 'int' argument.
         """
 
         # This code is a bit messy to make it fast for the
@@ -186,20 +186,7 @@ class Random(_random.Random):
             raise ValueError("non-integer stop for randrange()")
         width = istop - istart
         if step == 1 and width > 0:
-            # Note that
-            #     int(istart + self.random()*width)
-            # instead would be incorrect.  For example, consider istart
-            # = -2 and istop = 0.  Then the guts would be in
-            # -2.0 to 0.0 exclusive on both ends (ignoring that random()
-            # might return 0.0), and because int() truncates toward 0, the
-            # final result would be -1 or 0 (instead of -2 or -1).
-            #     istart + int(self.random()*width)
-            # would also be incorrect, for a subtler reason:  the RHS
-            # can return a long, and then randrange() would also return
-            # a long, but we're supposed to return an int (for backward
-            # compatibility).
-
-            return int(istart + self._randbelow(width))
+            return istart + self._randbelow(width)
         if step == 1:
             raise ValueError("empty range for randrange() (%d,%d, %d)" % (istart, istop, width))
 
@@ -233,20 +220,16 @@ class Random(_random.Random):
         by a single call to the underlying generator.
         """
 
-        try:
-            getrandbits = self.getrandbits
-        except AttributeError:
-            pass
-        else:
-            # Only call self.getrandbits if the original random() builtin method
-            # has not been overridden or if a new getrandbits() was supplied.
-            # This assures that the two methods correspond.
-            if type(self.random) is _BuiltinMethod or type(getrandbits) is _Method:
-                k = n.bit_length()  # don't use (n-1) here because n can be 1
-                r = getrandbits(k)  # 0 <= r < 2**k
-                while r >= n:
-                    r = getrandbits(k)
-                return r
+        getrandbits = self.getrandbits
+        # Only call self.getrandbits if the original random() builtin method
+        # has not been overridden or if a new getrandbits() was supplied.
+        # This assures that the two methods correspond.
+        if type(self.random) is _BuiltinMethod or type(getrandbits) is _Method:
+            k = n.bit_length()  # don't use (n-1) here because n can be 1
+            r = getrandbits(k)  # 0 <= r < 2**k
+            while r >= n:
+                r = getrandbits(k)
+            return r
         if n >= _maxwidth:
             _warn("Underlying random() generator does not supply \n"
                 "enough bits to choose from a population range this large")
