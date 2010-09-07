@@ -35,7 +35,7 @@ __all__ = [
     "check_warnings", "CleanImport", "EnvironmentVarGuard",
     "TransientResource", "captured_output", "captured_stdout",
     "time_out", "socket_peer_reset", "ioerror_peer_reset",
-    "run_with_locale", 'temp_umask',
+    "run_with_locale", 'temp_umask', "transient_internet",
     "set_memlimit", "bigmemtest", "bigaddrspacetest", "BasicTestRunner",
     "run_unittest", "run_doctest", "threading_setup", "threading_cleanup",
     "reap_children", "cpython_only", "check_impl_detail", "get_attribute",
@@ -775,23 +775,47 @@ class TransientResource(object):
             else:
                 raise ResourceDenied("an optional resource is not available")
 
-
 # Context managers that raise ResourceDenied when various issues
 # with the Internet connection manifest themselves as exceptions.
+# XXX deprecate these and use transient_internet() instead
 time_out = TransientResource(IOError, errno=errno.ETIMEDOUT)
 socket_peer_reset = TransientResource(socket.error, errno=errno.ECONNRESET)
 ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
 
 
 @contextlib.contextmanager
-def transient_internet():
+def transient_internet(resource_name, *, timeout=30.0, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
     with the Internet connection manifest themselves as exceptions."""
-    time_out = TransientResource(IOError, errno=errno.ETIMEDOUT)
-    socket_peer_reset = TransientResource(socket.error, errno=errno.ECONNRESET)
-    ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
-    with time_out, socket_peer_reset, ioerror_peer_reset:
+    denied = ResourceDenied("Resource '%s' is not available" % resource_name)
+    captured_errnos = errnos or (errno.ETIMEDOUT, errno.ECONNRESET)
+
+    def filter_error(err):
+        if (isinstance(err, socket.timeout) or
+            getattr(err, 'errno', None) in captured_errnos):
+            if not verbose:
+                sys.stderr.write(denied.args[0] + "\n")
+            raise denied from err
+
+    old_timeout = socket.getdefaulttimeout()
+    try:
+        if timeout is not None:
+            socket.setdefaulttimeout(timeout)
         yield
+    except IOError as err:
+        # socket.error inherits IOError
+        filter_error(err)
+        # urllib.request wraps the original socket.error with IOerror:
+        #
+        #    except socket.error as msg:
+        #        raise IOError('socket error', msg).with_traceback(sys.exc_info()[2])
+        if len(err.args) >= 2 and isinstance(err.args[1], socket.error):
+            filter_error(err.args[1])
+        raise
+    # XXX should we catch generic exceptions and look for their
+    # __cause__ or __context__?
+    finally:
+        socket.setdefaulttimeout(old_timeout)
 
 
 @contextlib.contextmanager
