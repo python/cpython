@@ -19,7 +19,16 @@ Library
     across versions and which parts are subject to change.
 
   * Update the seed() method to use all of the bits in a string
-    instead of just the hash value.
+    instead of just the hash value.  This makes better use of the
+    seed value and assures the seeding is platform independent.
+    Issue #7889.
+
+  * Improved the random()-->integer algorithm used in choice(),
+    shuffle(), sample(), randrange(), and randint().  Formerly, it
+    used int(n*random()) which has a slight bias whenever n is not
+    a power of two.  Issue #9025.
+
+  * Improved documentation of arguments to randrange().  Issue #9379.
 
 - collections.OrderedDict now supports a new method for repositioning
   keys to either end.

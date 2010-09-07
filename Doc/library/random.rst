@@ -98,6 +98,13 @@ Functions for integers:
    equivalent to ``choice(range(start, stop, step))``, but doesn't actually build a
    range object.
 
+   The positional argument pattern matches that of :func:`range`.  Keyword arguments
+   should not be used because the function may use them in unexpected ways.
+
+   .. versionchanged:: 3.2
+      :meth:`randrange` is more sophisticated about producing equally distributed
+      values.  Formerly it used a style like ``int(random()*n)`` which could produce
+      slightly uneven distributions.
 
 .. function:: randint(a, b)
 

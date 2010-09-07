@@ -161,7 +161,7 @@ class Random(_random.Random):
 
 ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1, int=int, maxwidth=1<<BPF):
+    def randrange(self, start, stop=None, step=1, int=int):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
@@ -177,9 +177,7 @@ class Random(_random.Random):
             raise ValueError("non-integer arg 1 for randrange()")
         if stop is None:
             if istart > 0:
-                if istart >= maxwidth:
-                    return self._randbelow(istart)
-                return int(self.random() * istart)
+                return self._randbelow(istart)
             raise ValueError("empty range for randrange()")
 
         # stop argument supplied.
@@ -201,9 +199,7 @@ class Random(_random.Random):
             # a long, but we're supposed to return an int (for backward
             # compatibility).
 
-            if width >= maxwidth:
-                return int(istart + self._randbelow(width))
-            return int(istart + int(self.random()*width))
+            return int(istart + self._randbelow(width))
         if step == 1:
             raise ValueError("empty range for randrange() (%d,%d, %d)" % (istart, istop, width))
 
@@ -221,9 +217,7 @@ class Random(_random.Random):
         if n <= 0:
             raise ValueError("empty range for randrange()")
 
-        if n >= maxwidth:
-            return istart + istep*self._randbelow(n)
-        return istart + istep*int(self.random() * n)
+        return istart + istep*self._randbelow(n)
 
     def randint(self, a, b):
         """Return random integer in range [a, b], including both end points.
@@ -231,7 +225,7 @@ class Random(_random.Random):
 
         return self.randrange(a, b+1)
 
-    def _randbelow(self, n, _log=_log, int=int, _maxwidth=1<<BPF,
+    def _randbelow(self, n, int=int, _maxwidth=1<<BPF, type=type,
                    _Method=_MethodType, _BuiltinMethod=_BuiltinMethodType):
         """Return a random int in the range [0,n)
 
@@ -248,8 +242,8 @@ class Random(_random.Random):
             # has not been overridden or if a new getrandbits() was supplied.
             # This assures that the two methods correspond.
             if type(self.random) is _BuiltinMethod or type(getrandbits) is _Method:
-                k = int(1.00001 + _log(n-1, 2.0))   # 2**k > n-1 > 2**(k-2)
-                r = getrandbits(k)
+                k = n.bit_length()  # don't use (n-1) here because n can be 1
+                r = getrandbits(k)  # 0 <= r < 2**k
                 while r >= n:
                     r = getrandbits(k)
                 return r
@@ -262,7 +256,7 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        return seq[int(self.random() * len(seq))]  # raises IndexError if seq is empty
+        return seq[self._randbelow(len(seq))]   # raises IndexError if seq is empty
 
     def shuffle(self, x, random=None, int=int):
         """x, random=random.random -> shuffle list x in place; return None.
@@ -272,11 +266,15 @@ class Random(_random.Random):
         """
 
         if random is None:
-            random = self.random
-        for i in reversed(range(1, len(x))):
-            # pick an element in x[:i+1] with which to exchange x[i]
-            j = int(random() * (i+1))
-            x[i], x[j] = x[j], x[i]
+            for i in reversed(range(1, len(x))):
+                # pick an element in x[:i+1] with which to exchange x[i]
+                j = self._randbelow(i+1)
+                x[i], x[j] = x[j], x[i]
+        else:
+            for i in reversed(range(1, len(x))):
+                # pick an element in x[:i+1] with which to exchange x[i]
+                j = int(random() * (i+1))
+                x[i], x[j] = x[j], x[i]
 
     def sample(self, population, k):
         """Chooses k unique random elements from a population sequence or set.
@@ -314,7 +312,6 @@ class Random(_random.Random):
         n = len(population)
         if not 0 <= k <= n:
             raise ValueError("Sample larger than population")
-        _int = int
         result = [None] * k
         setsize = 21        # size of a small set minus size of an empty list
         if k > 5:
@@ -323,16 +320,16 @@ class Random(_random.Random):
             # An n-length list is smaller than a k-length set
             pool = list(population)
             for i in range(k):         # invariant:  non-selected at [0,n-i)
-                j = _int(random() * (n-i))
+                j = self._randbelow(n-i)
                 result[i] = pool[j]
                 pool[j] = pool[n-i-1]   # move non-selected item into vacancy
         else:
             selected = set()
             selected_add = selected.add
             for i in range(k):
-                j = _int(random() * n)
+                j = self._randbelow(n)
                 while j in selected:
-                    j = _int(random() * n)
+                    j = self._randbelow(n)
                 selected_add(j)
                 result[i] = population[j]
         return result

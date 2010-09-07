@@ -121,7 +121,15 @@ class TestBasicOps(unittest.TestCase):
             f = open(support.findfile(file),"rb")
             r = pickle.load(f)
             f.close()
-            self.assertEqual(r.randrange(1000), value)
+            self.assertEqual(int(r.random()*1000), value)
+
+    def test_bug_9025(self):
+        # Had problem with an uneven distribution in int(n*random())
+        # Verify the fix by checking that distributions fall within expectations.
+        n = 100000
+        randrange = self.gen.randrange
+        k = sum(randrange(6755399441055744) % 3 == 2 for i in range(n))
+        self.assertTrue(0.30 < k/n < .37, (k/n))
 
 class SystemRandom_TestBasicOps(TestBasicOps):
     gen = random.SystemRandom()
