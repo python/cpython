@@ -91,13 +91,17 @@ class Random(_random.Random):
         self.seed(x)
         self.gauss_next = None
 
-    def seed(self, a=None):
+    def seed(self, a=None, version=2):
         """Initialize internal state from hashable object.
 
         None or no argument seeds from current time or from an operating
         system specific randomness source if available.
 
-        If a is not None or an int, hash(a) is used instead.
+        For version 2 (the default), all of the bits are used if a is a str,
+        bytes, or bytearray.  For version 1, the hash() of a is used instead.
+
+        If a is an int, all bits are used.
+
         """
 
         if a is None:
@@ -106,6 +110,11 @@ class Random(_random.Random):
             except NotImplementedError:
                 import time
                 a = int(time.time() * 256) # use fractional seconds
+
+        if version == 2 and isinstance(a, (str, bytes, bytearray)):
+            if isinstance(a, str):
+                a = a.encode("utf8")
+            a = int(_hexlify(a), 16)
 
         super().seed(a)
         self.gauss_next = None

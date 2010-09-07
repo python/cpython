@@ -18,6 +18,9 @@ Library
   * Document which parts of the module are guaranteed to stay the same
     across versions and which parts are subject to change.
 
+  * Update the seed() method to use all of the bits in a string
+    instead of just the hash value.
+
 - collections.OrderedDict now supports a new method for repositioning
   keys to either end.
 
