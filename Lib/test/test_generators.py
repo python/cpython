@@ -458,30 +458,30 @@ Subject: Re: PEP 255: Simple Generators
 ...     else:
 ...         break
  A->A B->B C->C D->D E->E F->F G->G H->H I->I J->J K->K L->L M->M
-merged I into A
- A->A B->B C->C D->D E->E F->F G->G H->H I->A J->J K->K L->L M->M
-merged D into C
- A->A B->B C->C D->C E->E F->F G->G H->H I->A J->J K->K L->L M->M
-merged K into H
- A->A B->B C->C D->C E->E F->F G->G H->H I->A J->J K->H L->L M->M
-merged L into A
- A->A B->B C->C D->C E->E F->F G->G H->H I->A J->J K->H L->A M->M
-merged E into A
- A->A B->B C->C D->C E->A F->F G->G H->H I->A J->J K->H L->A M->M
-merged B into G
- A->A B->G C->C D->C E->A F->F G->G H->H I->A J->J K->H L->A M->M
+merged K into B
+ A->A B->B C->C D->D E->E F->F G->G H->H I->I J->J K->B L->L M->M
 merged A into F
- A->F B->G C->C D->C E->F F->F G->G H->H I->F J->J K->H L->F M->M
-merged H into G
- A->F B->G C->C D->C E->F F->F G->G H->G I->F J->J K->G L->F M->M
-merged F into J
- A->J B->G C->C D->C E->J F->J G->G H->G I->J J->J K->G L->J M->M
+ A->F B->B C->C D->D E->E F->F G->G H->H I->I J->J K->B L->L M->M
+merged E into F
+ A->F B->B C->C D->D E->F F->F G->G H->H I->I J->J K->B L->L M->M
+merged D into C
+ A->F B->B C->C D->C E->F F->F G->G H->H I->I J->J K->B L->L M->M
 merged M into C
- A->J B->G C->C D->C E->J F->J G->G H->G I->J J->J K->G L->J M->C
-merged J into G
- A->G B->G C->C D->C E->G F->G G->G H->G I->G J->G K->G L->G M->C
-merged C into G
- A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
+ A->F B->B C->C D->C E->F F->F G->G H->H I->I J->J K->B L->L M->C
+merged J into B
+ A->F B->B C->C D->C E->F F->F G->G H->H I->I J->B K->B L->L M->C
+merged B into C
+ A->F B->C C->C D->C E->F F->F G->G H->H I->I J->C K->C L->L M->C
+merged F into G
+ A->G B->C C->C D->C E->G F->G G->G H->H I->I J->C K->C L->L M->C
+merged L into C
+ A->G B->C C->C D->C E->G F->G G->G H->H I->I J->C K->C L->C M->C
+merged G into I
+ A->I B->C C->C D->C E->I F->I G->I H->H I->I J->C K->C L->C M->C
+merged I into H
+ A->H B->C C->C D->C E->H F->H G->H H->H I->H J->C K->C L->C M->C
+merged C into H
+ A->H B->H C->H D->H E->H F->H G->H H->H I->H J->H K->H L->H M->H
 
 """
 # Emacs turd '

@@ -136,7 +136,7 @@ class Random(_random.Random):
             #   really unsigned 32-bit ints, so we convert negative ints from
             #   version 2 to positive longs for version 3.
             try:
-                internalstate = tuple( x % (2**32) for x in internalstate )
+                internalstate = tuple(x % (2**32) for x in internalstate)
             except ValueError as e:
                 raise TypeError from e
             super(Random, self).setstate(internalstate)
@@ -214,10 +214,7 @@ class Random(_random.Random):
 
     def _randbelow(self, n, int=int, _maxwidth=1<<BPF, type=type,
                    _Method=_MethodType, _BuiltinMethod=_BuiltinMethodType):
-        """Return a random int in the range [0,n)
-
-        Handles the case where n has more bits than returned
-        by a single call to the underlying generator.
+        """Return a random int in the range [0,n).  Raises ValueError if n==0.
         """
 
         getrandbits = self.getrandbits
