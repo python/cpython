@@ -36,6 +36,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9758: When fcntl.ioctl() was called with mutable_flag set to True,
+  and the passed buffer was exactly 1024 bytes long, the buffer wouldn't
+  be updated back after the system call.  Original patch by Brian Brazil.
+
 - Issue #1100562: Fix deep-copying of objects derived from the list and
   dict types.  Patch by Michele Orrù and Björn Lindqvist.
 
