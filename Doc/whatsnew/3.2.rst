@@ -243,6 +243,8 @@ Some smaller changes made to the core Python language are:
 New, Improved, and Deprecated Modules
 =====================================
 
+* XXX mention :mod:`argparse`.
+
 * The :mod:`functools` module includes a new decorator for caching function
   calls.  :func:`functools.lru_cache` can save repeated queries to an external
   resource whenever the results are expected to be the same.
