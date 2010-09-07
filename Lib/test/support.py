@@ -624,16 +624,25 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         ('ENETUNREACH', 101),
         ('ETIMEDOUT', 110),
     ]
+    default_gai_errnos = [
+        ('EAI_NONAME', -2),
+        ('EAI_NODATA', -5),
+    ]
 
     denied = ResourceDenied("Resource '%s' is not available" % resource_name)
     captured_errnos = errnos
+    gai_errnos = []
     if not captured_errnos:
         captured_errnos = [getattr(errno, name, num)
                            for (name, num) in default_errnos]
+        gai_errnos = [getattr(socket, name, num)
+                      for (name, num) in default_gai_errnos]
 
     def filter_error(err):
+        n = getattr(err, 'errno', None)
         if (isinstance(err, socket.timeout) or
-            getattr(err, 'errno', None) in captured_errnos):
+            (isinstance(err, socket.gaierror) and n in gai_errnos) or
+            n in captured_errnos):
             if not verbose:
                 sys.stderr.write(denied.args[0] + "\n")
             raise denied from err
