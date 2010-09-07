@@ -993,7 +993,7 @@ class Popen(object):
             elif sig == signal.CTRL_BREAK_EVENT:
                 os.kill(self.pid, signal.CTRL_BREAK_EVENT)
             else:
-                raise ValueError("Unsupported signal")
+                raise ValueError("Unsupported signal: {}".format(sig))
 
         def terminate(self):
             """Terminates the process
