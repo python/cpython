@@ -184,11 +184,6 @@ class BaseLocalTest:
             """To test that subclasses behave properly."""
         self._test_dict_attribute(LocalSubclass)
 
-
-class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
-    _local = _thread._local
-
-    # Fails for the pure Python implementation
     def test_cycle_collection(self):
         class X:
             pass
@@ -200,6 +195,10 @@ class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
         del x
         gc.collect()
         self.assertIs(wr(), None)
+
+
+class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
+    _local = _thread._local
 
 class PyThreadingLocalTest(unittest.TestCase, BaseLocalTest):
     _local = _threading_local.local

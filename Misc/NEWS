@@ -13,6 +13,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #9707: Rewritten reference implementation of threading.local which
+  is friendlier towards reference cycles.  This change is not normally
+  visible since an optimized C implementation (_thread._local) is used
+  instead.
+
 - Issue #6394: os.getppid() is now supported on Windows.  Note that it will
   still return the id of the parent process after it has exited.  This process
   id may even have been reused by another unrelated process.
