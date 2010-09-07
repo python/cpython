@@ -2642,14 +2642,29 @@ AC_TRY_COMPILE([
 )
 
 AC_MSG_CHECKING(for flock)
+have_flock=no
 AC_TRY_COMPILE([
 #include "confdefs.h" 
 #include <sys/file.h>
-], void* p = flock,
+], void* p = flock, [
   AC_DEFINE(HAVE_FLOCK, 1, Define if you have the 'flock' function.)
-  AC_MSG_RESULT(yes),
-  AC_MSG_RESULT(no)
-)
+  have_flock=yes
+])
+AC_MSG_RESULT($have_flock)
+
+if test "$have_flock" = yes ; then
+  AC_MSG_CHECKING(if flock requires additional libraries.)
+  AC_TRY_LINK([
+  #include "confdefs.h" 
+  #include <sys/file.h>
+  ], [flock(0, 0)],
+    AC_MSG_RESULT(no), [
+    AC_MSG_RESULT(yes)
+    AC_CHECK_LIB(bsd,flock, [
+      AC_DEFINE(FLOCK_NEEDS_LIBBSD, 1, Define if flock needs to be linked with bsd library.)
+      ])
+  ])
+fi
 
 AC_MSG_CHECKING(for getpagesize)
 AC_TRY_COMPILE([

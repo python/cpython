@@ -535,6 +535,9 @@ Extension Modules
 Build
 -----
 
+- Issue #4026: Make the fcntl extension build under AIX.  Patch by Sébastien
+  Sablé.
+
 - Issue #3101: Helper functions _add_one_to_index_C() and
   _add_one_to_index_F() become _Py_add_one_to_index_C() and
   _Py_add_one_to_index_F(), respectively.
