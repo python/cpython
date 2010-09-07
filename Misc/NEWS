@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9758: When fcntl.ioctl() was called with mutable_flag set to True,
+  and the passed buffer was exactly 1024 bytes long, the buffer wouldn't
+  be updated back after the system call.  Original patch by Brian Brazil.
+
 - Updates to the random module:
 
   * Document which parts of the module are guaranteed to stay the same
