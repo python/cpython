@@ -39,7 +39,7 @@ class TestBasicOps(unittest.TestCase):
             self.gen.seed(arg)
         for arg in [list(range(3)), dict(one=1)]:
             self.assertRaises(TypeError, self.gen.seed, arg)
-        self.assertRaises(TypeError, self.gen.seed, 1, 2)
+        self.assertRaises(TypeError, self.gen.seed, 1, 2, 3, 4)
         self.assertRaises(TypeError, type(self.gen), [])
 
     def test_sample(self):
@@ -222,6 +222,21 @@ class SystemRandom_TestBasicOps(TestBasicOps):
 
 class MersenneTwister_TestBasicOps(TestBasicOps):
     gen = random.Random()
+
+    def test_guaranteed_stable(self):
+        # These sequences are guaranteed to stay the same across versions of python
+        self.gen.seed(3456147, version=1)
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.ac362300d90d2p-1', '0x1.9d16f74365005p-1',
+             '0x1.1ebb4352e4c4dp-1', '0x1.1a7422abf9c11p-1'])
+        self.gen.seed("the quick brown fox", version=1)
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.9ee265c177cdep-2', '0x1.bad51092e3c25p-1',
+             '0x1.85ff833f71576p-1', '0x1.87efb37462927p-1'])
+        self.gen.seed("the quick brown fox", version=2)
+        self.assertEqual([self.gen.random().hex() for i in range(4)],
+            ['0x1.1294009b9eda4p-2', '0x1.2ff96171b0010p-1',
+             '0x1.459e0989bd8e0p-5', '0x1.8b5f55892ddcbp-1'])
 
     def test_setstate_first_arg(self):
         self.assertRaises(ValueError, self.gen.setstate, (1, None, None))

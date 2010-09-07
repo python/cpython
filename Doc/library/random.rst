@@ -51,18 +51,23 @@ from sources provided by the operating system.
 Bookkeeping functions:
 
 
-.. function:: seed([x])
+.. function:: seed([x], version=2)
 
-   Initialize the basic random number generator. Optional argument *x* can be any
-   :term:`hashable` object. If *x* is omitted or ``None``, current system time is used;
-   current system time is also used to initialize the generator when the module is
-   first imported.  If randomness sources are provided by the operating system,
-   they are used instead of the system time (see the :func:`os.urandom` function
-   for details on availability).
+   Initialize the random number generator.
 
-   If *x* is not ``None`` or an int, ``hash(x)`` is used instead. If *x* is an
-   int, *x* is used directly.
+   If *x* is omitted or ``None``, the current system time is used.  If
+   randomness sources are provided by the operating system, they are used
+   instead of the system time (see the :func:`os.urandom` function for details
+   on availability).
 
+   If *x* is an int, it is used directly.
+
+   With version 2 (the default), a :class:`str`, :class:`bytes`, or :class:`bytearray`
+   object gets converted to a :class:`int` and all of its bits are used.  With version 1,
+   the :func:`hash` of *x* is used instead.
+
+   .. versionchanged:: 3.2
+      Moved to the version 2 scheme which uses all of the bits in a string seed.
 
 .. function:: getstate()
 
