@@ -52,6 +52,12 @@ Library
   guaranteed to exist in all Python implementations and the names of hash
   algorithms available in the current process.
 
+Build
+-----
+
+- Issue #4026: Make the fcntl extension build under AIX.  Patch by Sébastien
+  Sablé.
+
 
 What's New in Python 3.2 Alpha 2?
 =================================
