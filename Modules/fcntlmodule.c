@@ -157,7 +157,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
         else {
             ret = ioctl(fd, code, arg);
         }
-        if (mutate_arg && (len < IOCTL_BUFSZ)) {
+        if (mutate_arg && (len <= IOCTL_BUFSZ)) {
             memcpy(str, buf, len);
         }
         PyBuffer_Release(&pstr); /* No further access to str below this point */
