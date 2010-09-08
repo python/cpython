@@ -298,7 +298,7 @@ PyThreadState_Delete(PyThreadState *tstate)
         Py_FatalError("PyThreadState_Delete: tstate is still current");
     tstate_delete_common(tstate);
 #ifdef WITH_THREAD
-    if (autoTLSkey && PyThread_get_key_value(autoTLSkey) == tstate)
+    if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
         PyThread_delete_key_value(autoTLSkey);
 #endif /* WITH_THREAD */
 }
@@ -314,7 +314,7 @@ PyThreadState_DeleteCurrent()
             "PyThreadState_DeleteCurrent: no current tstate");
     _PyThreadState_Current = NULL;
     tstate_delete_common(tstate);
-    if (autoTLSkey && PyThread_get_key_value(autoTLSkey) == tstate)
+    if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
         PyThread_delete_key_value(autoTLSkey);
     PyEval_ReleaseLock();
 }
@@ -534,7 +534,6 @@ void
 _PyGILState_Fini(void)
 {
     PyThread_delete_key(autoTLSkey);
-    autoTLSkey = 0;
     autoInterpreterState = NULL;
 }
 
@@ -546,10 +545,10 @@ _PyGILState_Fini(void)
 static void
 _PyGILState_NoteThreadState(PyThreadState* tstate)
 {
-    /* If autoTLSkey is 0, this must be the very first threadstate created
-       in Py_Initialize().  Don't do anything for now (we'll be back here
-       when _PyGILState_Init is called). */
-    if (!autoTLSkey)
+    /* If autoTLSkey isn't initialized, this must be the very first
+       threadstate created in Py_Initialize().  Don't do anything for now
+       (we'll be back here when _PyGILState_Init is called). */
+    if (!autoInterpreterState)
         return;
 
     /* Stick the thread state for this thread in thread local storage.
@@ -577,7 +576,7 @@ _PyGILState_NoteThreadState(PyThreadState* tstate)
 PyThreadState *
 PyGILState_GetThisThreadState(void)
 {
-    if (autoInterpreterState == NULL || autoTLSkey == 0)
+    if (autoInterpreterState == NULL)
         return NULL;
     return (PyThreadState *)PyThread_get_key_value(autoTLSkey);
 }
