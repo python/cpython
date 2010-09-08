@@ -1065,7 +1065,19 @@ def _unichr_is_printable(char):
     if char == u" ":
         return True
     import unicodedata
-    return unicodedata.category(char)[0] not in ("C", "Z")
+    return unicodedata.category(char) not in ("C", "Z")
+
+if sys.maxunicode >= 0x10000:
+    _unichr = unichr
+else:
+    # Needed for proper surrogate support if sizeof(Py_UNICODE) is 2 in gdb
+    def _unichr(x):
+        if x < 0x10000:
+            return unichr(x)
+        x -= 0x10000
+        ch1 = 0xD800 | (x >> 10)
+        ch2 = 0xDC00 | (x & 0x3FF)
+        return unichr(ch1) + unichr(ch2)
 
 
 class PyUnicodeObjectPtr(PyObjectPtr):
@@ -1084,11 +1096,33 @@ class PyUnicodeObjectPtr(PyObjectPtr):
 
         # Gather a list of ints from the Py_UNICODE array; these are either
         # UCS-2 or UCS-4 code points:
-        Py_UNICODEs = [int(field_str[i]) for i in safe_range(field_length)]
+        if self.char_width() > 2:
+            Py_UNICODEs = [int(field_str[i]) for i in safe_range(field_length)]
+        else:
+            # A more elaborate routine if sizeof(Py_UNICODE) is 2 in the
+            # inferior process: we must join surrogate pairs.
+            Py_UNICODEs = []
+            i = 0
+            while i < field_length:
+                ucs = int(field_str[i])
+                i += 1
+                if ucs < 0xD800 or ucs >= 0xDC00 or i == field_length:
+                    Py_UNICODEs.append(ucs)
+                    continue
+                # This could be a surrogate pair.
+                ucs2 = int(field_str[i])
+                if ucs2 < 0xDC00 or ucs2 > 0xDFFF:
+                    continue
+                code = (ucs & 0x03FF) << 10
+                code |= ucs2 & 0x03FF
+                code += 0x00010000
+                Py_UNICODEs.append(code)
+                i += 1
 
         # Convert the int code points to unicode characters, and generate a
-        # local unicode instance:
-        result = u''.join([unichr(ucs) for ucs in Py_UNICODEs])
+        # local unicode instance.
+        # This splits surrogate pairs if sizeof(Py_UNICODE) is 2 here (in gdb).
+        result = u''.join([_unichr(ucs) for ucs in Py_UNICODEs])
         return result
 
     def write_repr(self, out, visited):
@@ -1137,20 +1171,16 @@ class PyUnicodeObjectPtr(PyObjectPtr):
             else:
                 ucs = ch
                 orig_ucs = None
+                ch2 = None
                 if self.char_width() == 2:
-                    # Get code point from surrogate pair
+                    # If sizeof(Py_UNICODE) is 2 here (in gdb), join
+                    # surrogate pairs before calling _unichr_is_printable.
                     if (i < len(proxy)
                     and 0xD800 <= ord(ch) < 0xDC00 \
                     and 0xDC00 <= ord(proxy[i]) <= 0xDFFF):
                         ch2 = proxy[i]
-                        code = (ord(ch) & 0x03FF) << 10
-                        code |= ord(ch2) & 0x03FF
-                        code += 0x00010000
-                        orig_ucs = ucs
-                        ucs = unichr(code)
+                        ucs = ch + ch2
                         i += 1
-                    else:
-                        ch2 = None
 
                 printable = _unichr_is_printable(ucs)
                 if printable:
@@ -1195,7 +1225,7 @@ class PyUnicodeObjectPtr(PyObjectPtr):
                 else:
                     # Copy characters as-is
                     out.write(ch)
-                    if self.char_width() == 2 and (ch2 is not None):
+                    if ch2 is not None:
                         out.write(ch2)
 
         out.write(quote)
