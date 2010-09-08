@@ -212,33 +212,33 @@ class Random(_random.Random):
 
         return self.randrange(a, b+1)
 
-    def _randbelow(self, n, int=int, bpf=BPF, type=type,
+    def _randbelow(self, n, int=int, maxsize=1<<BPF, type=type,
                    Method=_MethodType, BuiltinMethod=_BuiltinMethodType):
-        """Return a random int in the range [0,n).  Raises ValueError if n==0.
-        """
+        "Return a random int in the range [0,n).  Raises ValueError if n==0."
 
-        k = n.bit_length()  # don't use (n-1) here because n can be 1
         getrandbits = self.getrandbits
         # Only call self.getrandbits if the original random() builtin method
         # has not been overridden or if a new getrandbits() was supplied.
         if type(self.random) is BuiltinMethod or type(getrandbits) is Method:
+            k = n.bit_length()  # don't use (n-1) here because n can be 1
             r = getrandbits(k)          # 0 <= r < 2**k
             while r >= n:
                 r = getrandbits(k)
             return r
         # There's an overriden random() method but no new getrandbits() method,
         # so we can only use random() from here.
-        if k > bpf:
+        random = self.random
+        if n >= maxsize:
             _warn("Underlying random() generator does not supply \n"
                 "enough bits to choose from a population range this large.\n"
                 "To remove the range limitation, add a getrandbits() method.")
-            return int(self.random() * n)
-        random = self.random
-        N = 1 << k
-        r = int(N * random())           # 0 <= r < 2**k
-        while r >= n:
-            r = int(N * random())
-        return r
+            return int(random() * n)
+        rem = maxsize % n
+        limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
+        r = random()
+        while r >= limit:
+            r = random()
+        return int(r*maxsize) % n
 
 ## -------------------- sequence methods  -------------------
 
