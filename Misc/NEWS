@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Logging: Added QueueHandler class to facilitate logging usage with
+  multiprocessing.
+
 - Issue #9707: Rewritten reference implementation of threading.local which
   is friendlier towards reference cycles.  This change is not normally
   visible since an optimized C implementation (_thread._local) is used
