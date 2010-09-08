@@ -288,6 +288,13 @@ Extension Modules
 
 - Issue #7567: Don't call `setupterm' twice.
 
+Tools/Demos
+-----------
+
+- Issue #9188: The gdb extension now handles correctly narrow (UCS2) as well
+  as wide (UCS4) unicode builds for both the host interpreter (embedded
+  inside gdb) and the interpreter under test.
+
 Build
 -----
 
