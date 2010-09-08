@@ -1735,8 +1735,10 @@ static PyObject *
 file_write(PyFileObject *f, PyObject *args)
 {
     Py_buffer pbuf;
-    char *s;
+    const char *s;
     Py_ssize_t n, n2;
+    PyObject *encoded = NULL;
+
     if (f->f_fp == NULL)
         return err_closed();
     if (!f->writable)
@@ -1746,14 +1748,41 @@ file_write(PyFileObject *f, PyObject *args)
             return NULL;
         s = pbuf.buf;
         n = pbuf.len;
-    } else
-        if (!PyArg_ParseTuple(args, "t#", &s, &n))
-        return NULL;
+    }
+    else {
+        const char *encoding, *errors;
+        PyObject *text;
+        if (!PyArg_ParseTuple(args, "O", &text))
+            return NULL;
+
+        if (PyString_Check(text)) {
+            s = PyString_AS_STRING(text);
+            n = PyString_GET_SIZE(text);
+        } else if (PyUnicode_Check(text)) {
+            if (f->f_encoding != Py_None)
+                encoding = PyString_AS_STRING(f->f_encoding);
+            else
+                encoding = PyUnicode_GetDefaultEncoding();
+            if (f->f_errors != Py_None)
+                errors = PyString_AS_STRING(f->f_errors);
+            else
+                errors = "strict";
+            encoded = PyUnicode_AsEncodedString(text, encoding, errors);
+            if (encoded == NULL)
+                return NULL;
+            s = PyString_AS_STRING(encoded);
+            n = PyString_GET_SIZE(encoded);
+        } else {
+            if (PyObject_AsCharBuffer(text, &s, &n))
+                return NULL;
+        }
+    }
     f->f_softspace = 0;
     FILE_BEGIN_ALLOW_THREADS(f)
     errno = 0;
     n2 = fwrite(s, 1, n, f->f_fp);
     FILE_END_ALLOW_THREADS(f)
+    Py_XDECREF(encoded);
     if (f->f_binary)
         PyBuffer_Release(&pbuf);
     if (n2 != n) {
