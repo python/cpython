@@ -93,6 +93,13 @@ class socket(_socket.socket):
         self._io_refs = 0
         self._closed = False
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        if not self._closed:
+            self.close()
+
     def __repr__(self):
         """Wrap __repr__() to reveal the real class name."""
         s = _socket.socket.__repr__(self)
