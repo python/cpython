@@ -599,7 +599,7 @@ class Random(_random.Random):
         # Jain, pg. 495
 
         u = 1.0 - self.random()
-        return 1.0 / pow(u, 1.0/alpha)
+        return 1.0 / u ** (1.0/alpha)
 
 ## -------------------- Weibull --------------------
 
