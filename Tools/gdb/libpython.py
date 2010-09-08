@@ -1171,9 +1171,8 @@ class PyUnicodeObjectPtr(PyObjectPtr):
             # Non-ASCII characters
             else:
                 ucs = ch
-                orig_ucs = None
                 ch2 = None
-                if self.char_width() == 2:
+                if sys.maxunicode < 0x10000:
                     # If sizeof(Py_UNICODE) is 2 here (in gdb), join
                     # surrogate pairs before calling _unichr_is_printable.
                     if (i < len(proxy)
@@ -1183,22 +1182,26 @@ class PyUnicodeObjectPtr(PyObjectPtr):
                         ucs = ch + ch2
                         i += 1
 
+                # Unfortuately, Python 2's unicode type doesn't seem
+                # to expose the "isprintable" method
                 printable = _unichr_is_printable(ucs)
                 if printable:
                     try:
                         ucs.encode(ENCODING)
                     except UnicodeEncodeError:
                         printable = False
-                        if orig_ucs is not None:
-                            ucs = orig_ucs
-                            i -= 1
 
                 # Map Unicode whitespace and control characters
                 # (categories Z* and C* except ASCII space)
                 if not printable:
-                    # Unfortuately, Python 2's unicode type doesn't seem
-                    # to expose the "isprintable" method
-                    code = ord(ucs)
+                    if ch2 is not None:
+                        # Match Python 3's representation of non-printable
+                        # wide characters.
+                        code = (ord(ch) & 0x03FF) << 10
+                        code |= ord(ch2) & 0x03FF
+                        code += 0x00010000
+                    else:
+                        code = ord(ucs)
 
                     # Map 8-bit characters to '\\xhh'
                     if code <= 0xff:
