@@ -42,7 +42,6 @@ from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethod
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from os import urandom as _urandom
-from binascii import hexlify as _hexlify
 import collections as _collections
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
@@ -97,16 +96,16 @@ class Random(_random.Random):
         None or no argument seeds from current time or from an operating
         system specific randomness source if available.
 
-        For version 2 (the default), all of the bits are used if a is a str,
-        bytes, or bytearray.  For version 1, the hash() of a is used instead.
+        For version 2 (the default), all of the bits are used if *a *is a str,
+        bytes, or bytearray.  For version 1, the hash() of *a* is used instead.
 
-        If a is an int, all bits are used.
+        If *a* is an int, all bits are used.
 
         """
 
         if a is None:
             try:
-                a = int(_hexlify(_urandom(16)), 16)
+                a = int.from_bytes(_urandom(32), 'big')
             except NotImplementedError:
                 import time
                 a = int(time.time() * 256) # use fractional seconds
@@ -114,7 +113,7 @@ class Random(_random.Random):
         if version == 2 and isinstance(a, (str, bytes, bytearray)):
             if isinstance(a, str):
                 a = a.encode("utf8")
-            a = int(_hexlify(a), 16)
+            a = int.from_bytes(a, 'big')
 
         super().seed(a)
         self.gauss_next = None
@@ -139,7 +138,7 @@ class Random(_random.Random):
                 internalstate = tuple(x % (2**32) for x in internalstate)
             except ValueError as e:
                 raise TypeError from e
-            super(Random, self).setstate(internalstate)
+            super().setstate(internalstate)
         else:
             raise ValueError("state with version %s passed to "
                              "Random.setstate() of version %s" %
@@ -613,7 +612,7 @@ class Random(_random.Random):
         # Jain, pg. 499; bug fix courtesy Bill Arms
 
         u = 1.0 - self.random()
-        return alpha * pow(-_log(u), 1.0/beta)
+        return alpha * (-_log(u)) ** (1.0/beta)
 
 ## --------------- Operating System Random Source  ------------------
 
@@ -627,7 +626,7 @@ class SystemRandom(Random):
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)."""
-        return (int(_hexlify(_urandom(7)), 16) >> 3) * RECIP_BPF
+        return (int.from_bytes(_urandom(7), 'big') >> 3) * RECIP_BPF
 
     def getrandbits(self, k):
         """getrandbits(k) -> x.  Generates a long int with k random bits."""
@@ -636,7 +635,7 @@ class SystemRandom(Random):
         if k != int(k):
             raise TypeError('number of bits should be an integer')
         bytes = (k + 7) // 8                    # bits / 8 and rounded up
-        x = int(_hexlify(_urandom(bytes)), 16)
+        x = int.from_bytes(_urandom(bytes), 'big')
         return x >> (bytes * 8 - k)             # trim excess bits
 
     def seed(self, *args, **kwds):
