@@ -1103,7 +1103,8 @@ class PyUnicodeObjectPtr(PyObjectPtr):
             # inferior process: we must join surrogate pairs.
             Py_UNICODEs = []
             i = 0
-            while i < field_length:
+            limit = safety_limit(field_length)
+            while i < limit:
                 ucs = int(field_str[i])
                 i += 1
                 if ucs < 0xD800 or ucs >= 0xDC00 or i == field_length:
