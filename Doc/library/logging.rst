@@ -594,10 +594,10 @@ Useful Handlers
 In addition to the base :class:`Handler` class, many useful subclasses are
 provided:
 
-#. :class:`StreamHandler` instances send error messages to streams (file-like
+#. :class:`StreamHandler` instances send messages to streams (file-like
    objects).
 
-#. :class:`FileHandler` instances send error messages to disk files.
+#. :class:`FileHandler` instances send messages to disk files.
 
 .. module:: logging.handlers
 
@@ -606,37 +606,40 @@ provided:
    directly. Instead, use :class:`RotatingFileHandler` or
    :class:`TimedRotatingFileHandler`.
 
-#. :class:`RotatingFileHandler` instances send error messages to disk
+#. :class:`RotatingFileHandler` instances send messages to disk
    files, with support for maximum log file sizes and log file rotation.
 
-#. :class:`TimedRotatingFileHandler` instances send error messages to
+#. :class:`TimedRotatingFileHandler` instances send messages to
    disk files, rotating the log file at certain timed intervals.
 
-#. :class:`SocketHandler` instances send error messages to TCP/IP
+#. :class:`SocketHandler` instances send messages to TCP/IP
    sockets.
 
-#. :class:`DatagramHandler` instances send error messages to UDP
+#. :class:`DatagramHandler` instances send messages to UDP
    sockets.
 
-#. :class:`SMTPHandler` instances send error messages to a designated
+#. :class:`SMTPHandler` instances send messages to a designated
    email address.
 
-#. :class:`SysLogHandler` instances send error messages to a Unix
+#. :class:`SysLogHandler` instances send messages to a Unix
    syslog daemon, possibly on a remote machine.
 
-#. :class:`NTEventLogHandler` instances send error messages to a
+#. :class:`NTEventLogHandler` instances send messages to a
    Windows NT/2000/XP event log.
 
-#. :class:`MemoryHandler` instances send error messages to a buffer
+#. :class:`MemoryHandler` instances send messages to a buffer
    in memory, which is flushed whenever specific criteria are met.
 
-#. :class:`HTTPHandler` instances send error messages to an HTTP
+#. :class:`HTTPHandler` instances send messages to an HTTP
    server using either ``GET`` or ``POST`` semantics.
 
 #. :class:`WatchedFileHandler` instances watch the file they are
    logging to. If the file changes, it is closed and reopened using the file
    name. This handler is only useful on Unix-like systems; Windows does not
    support the underlying mechanism used.
+
+#. :class:`QueueHandler` instances send messages to a queue, such as
+   those implemented in the :mod:`queue` or :mod:`multiprocessing` modules.
 
 .. currentmodule:: logging
 
@@ -649,6 +652,10 @@ provided:
 .. versionadded:: 3.1
 
 The :class:`NullHandler` class was not present in previous versions.
+
+.. versionadded:: 3.2
+
+The :class:`QueueHandler` class was not present in previous versions.
 
 The :class:`NullHandler`, :class:`StreamHandler` and :class:`FileHandler`
 classes are defined in the core logging package. The other handlers are
@@ -1506,22 +1513,144 @@ Although logging is thread-safe, and logging to a single file from multiple
 threads in a single process *is* supported, logging to a single file from
 *multiple processes* is *not* supported, because there is no standard way to
 serialize access to a single file across multiple processes in Python. If you
-need to log to a single file from multiple processes, the best way of doing
-this is to have all the processes log to a :class:`SocketHandler`, and have a
-separate process which implements a socket server which reads from the socket
-and logs to file. (If you prefer, you can dedicate one thread in one of the
-existing processes to perform this function.) The following section documents
-this approach in more detail and includes a working socket receiver which can
-be used as a starting point for you to adapt in your own applications.
+need to log to a single file from multiple processes, one way of doing this is
+to have all the processes log to a :class:`SocketHandler`, and have a separate
+process which implements a socket server which reads from the socket and logs
+to file. (If you prefer, you can dedicate one thread in one of the existing
+processes to perform this function.) The following section documents this
+approach in more detail and includes a working socket receiver which can be
+used as a starting point for you to adapt in your own applications.
 
 If you are using a recent version of Python which includes the
-:mod:`multiprocessing` module, you can write your own handler which uses the
+:mod:`multiprocessing` module, you could write your own handler which uses the
 :class:`Lock` class from this module to serialize access to the file from
 your processes. The existing :class:`FileHandler` and subclasses do not make
 use of :mod:`multiprocessing` at present, though they may do so in the future.
 Note that at present, the :mod:`multiprocessing` module does not provide
 working lock functionality on all platforms (see
 http://bugs.python.org/issue3770).
+
+.. currentmodule:: logging.handlers
+
+Alternatively, you can use a ``Queue`` and a :class:`QueueHandler` to send
+all logging events to one of the processes in your multi-process application.
+The following example script demonstrates how you can do this; in the example
+a separate listener process listens for events sent by other processes and logs
+them according to its own logging configuration. Although the example only
+demonstrates one way of doing it (for example, you may want to use a listener
+thread rather than a separate listener process - the implementation would be
+analogous) it does allow for completely different logging configurations for
+the listener and the other processes in your application, and can be used as
+the basis for code meeting your own specific requirements::
+
+    # You'll need these imports in your own code
+    import logging
+    import logging.handlers
+    import multiprocessing
+
+    # Next two import lines for this demo only
+    from random import choice, random
+    import time
+
+    #
+    # Because you'll want to define the logging configurations for listener and workers, the
+    # listener and worker process functions take a configurer parameter which is a callable
+    # for configuring logging for that process. These functions are also passed the queue,
+    # which they use for communication.
+    #
+    # In practice, you can configure the listener however you want, but note that in this
+    # simple example, the listener does not apply level or filter logic to received records.
+    # In practice, you would probably want to do ths logic in the worker processes, to avoid
+    # sending events which would be filtered out between processes.
+    #
+    # The size of the rotated files is made small so you can see the results easily.
+    def listener_configurer():
+        root = logging.getLogger()
+        h = logging.handlers.RotatingFileHandler('/tmp/mptest.log', 'a', 300, 10)
+        f = logging.Formatter('%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s')
+        h.setFormatter(f)
+        root.addHandler(h)
+
+    # This is the listener process top-level loop: wait for logging events
+    # (LogRecords)on the queue and handle them, quit when you get a None for a
+    # LogRecord.
+    def listener_process(queue, configurer):
+        configurer()
+        while True:
+            try:
+                record = queue.get()
+                if record is None: # We send this as a sentinel to tell the listener to quit.
+                    break
+                logger = logging.getLogger(record.name)
+                logger.handle(record) # No level or filter logic applied - just do it!
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except:
+                import sys, traceback
+                print >> sys.stderr, 'Whoops! Problem:'
+                traceback.print_exc(file=sys.stderr)
+
+    # Arrays used for random selections in this demo
+
+    LEVELS = [logging.DEBUG, logging.INFO, logging.WARNING,
+              logging.ERROR, logging.CRITICAL]
+
+    LOGGERS = ['a.b.c', 'd.e.f']
+
+    MESSAGES = [
+        'Random message #1',
+        'Random message #2',
+        'Random message #3',
+    ]
+
+    # The worker configuration is done at the start of the worker process run.
+    # Note that on Windows you can't rely on fork semantics, so each process
+    # will run the logging configuration code when it starts.
+    def worker_configurer(queue):
+        h = logging.handlers.QueueHandler(queue) # Just the one handler needed
+        root = logging.getLogger()
+        root.addHandler(h)
+        root.setLevel(logging.DEBUG) # send all messages, for demo; no other level or filter logic applied.
+
+    # This is the worker process top-level loop, which just logs ten events with
+    # random intervening delays before terminating.
+    # The print messages are just so you know it's doing something!
+    def worker_process(queue, configurer):
+        configurer(queue)
+        name = multiprocessing.current_process().name
+        print('Worker started: %s' % name)
+        for i in range(10):
+            time.sleep(random())
+            logger = logging.getLogger(choice(LOGGERS))
+            level = choice(LEVELS)
+            message = choice(MESSAGES)
+            logger.log(level, message)
+        print('Worker finished: %s' % name)
+
+    # Here's where the demo gets orchestrated. Create the queue, create and start
+    # the listener, create ten workers and start them, wait for them to finish,
+    # then send a None to the queue to tell the listener to finish.
+    def main():
+        queue = multiprocessing.Queue(-1)
+        listener = multiprocessing.Process(target=listener_process,
+                                           args=(queue, listener_configurer))
+        listener.start()
+        workers = []
+        for i in range(10):
+            worker = multiprocessing.Process(target=worker_process,
+                                           args=(queue, worker_configurer))
+            workers.append(worker)
+            worker.start()
+        for w in workers:
+            w.join()
+        queue.put_nowait(None)
+        listener.join()
+
+    if __name__ == '__main__':
+        main()
+
+
+.. currentmodule:: logging
 
 
 .. _network-logging:
@@ -2458,6 +2587,39 @@ supports sending logging messages to a Web server, using either ``GET`` or
       Sends the record to the Web server as a percent-encoded dictionary.
 
 
+.. _queue-handler:
+
+
+QueueHandler
+^^^^^^^^^^^^
+
+The :class:`QueueHandler` class, located in the :mod:`logging.handlers` module,
+supports sending logging messages to a queue, such as those implemented in the
+:mod:`queue` or :mod:`multiprocessing` modules.
+
+
+.. class:: QueueHandler(queue)
+
+   Returns a new instance of the :class:`QueueHandler` class. The instance is
+   initialized with the queue to send messages to.
+
+
+   .. method:: emit(record)
+
+      Sends the record to the handler's queue.
+
+   .. method:: enqueue(record)
+
+      Enqueues the record on the queue using ``put_nowait()``; you may
+      want to override this if you want to use blocking behaviour, or a
+      timeout, or a customised queue implementation.
+
+
+.. versionadded:: 3.2
+
+The :class:`QueueHandler` class was not present in previous versions.
+
+
 .. _formatter-objects:
 
 Formatter Objects
@@ -2527,6 +2689,8 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
 | ``%(threadName)s``      | Thread name (if available).                   |
 +-------------------------+-----------------------------------------------+
 | ``%(process)d``         | Process ID (if available).                    |
++-------------------------+-----------------------------------------------+
+| ``%(processName)s``     | Process name (if available).                  |
 +-------------------------+-----------------------------------------------+
 | ``%(message)s``         | The logged message, computed as ``msg %       |
 |                         | args``.                                       |
