@@ -639,18 +639,23 @@ class StdoutTests(unittest.TestCase):
                 "sys.stdout.flush()")
             self.assertEqual(stdout, expected)
 
-        check_message(u'\u20ac\n', "iso-8859-15", "\xa4\n")
-        check_message(u'\u20ac\n', "utf-16-le", '\xac\x20\n\x00')
-        check_message(u'15\u20ac\n', "iso-8859-1:ignore", "15\n")
-        check_message(u'15\u20ac\n', "iso-8859-1:replace", "15?\n")
-        check_message(u'15\u20ac\n', "iso-8859-1:backslashreplace",
-                      "15\\u20ac\n")
+        # test the encoding
+        check_message(u'15\u20ac', "iso-8859-15", "15\xa4")
+        check_message(u'15\u20ac', "utf-8", '15\xe2\x82\xac')
+        check_message(u'15\u20ac', "utf-16-le", '1\x005\x00\xac\x20')
 
+        # test the error handler
+        check_message(u'15\u20ac', "iso-8859-1:ignore", "15")
+        check_message(u'15\u20ac', "iso-8859-1:replace", "15?")
+        check_message(u'15\u20ac', "iso-8859-1:backslashreplace", "15\\u20ac")
+
+        # test the buffer API
         for objtype in ('buffer', 'bytearray'):
             stdout = get_message('ascii',
                 'import sys',
-                r'sys.stdout.write(%s("\xe9\n"))' % objtype)
-            self.assertEqual(stdout, "\xe9\n")
+                r'sys.stdout.write(%s("\xe9"))' % objtype,
+                'sys.stdout.flush()')
+            self.assertEqual(stdout, "\xe9")
 
 
 def test_main():
