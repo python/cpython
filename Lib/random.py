@@ -634,9 +634,9 @@ class SystemRandom(Random):
             raise ValueError('number of bits must be greater than zero')
         if k != int(k):
             raise TypeError('number of bits should be an integer')
-        bytes = (k + 7) // 8                    # bits / 8 and rounded up
-        x = int.from_bytes(_urandom(bytes), 'big')
-        return x >> (bytes * 8 - k)             # trim excess bits
+        numbytes = (k + 7) // 8                       # bits / 8 and rounded up
+        x = int.from_bytes(_urandom(numbytes), 'big')
+        return x >> (numbytes * 8 - k)                # trim excess bits
 
     def seed(self, *args, **kwds):
         "Stub method.  Not used for a system random number generator."
