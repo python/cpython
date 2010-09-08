@@ -213,6 +213,9 @@ The module :mod:`socket` exports the following constants and functions:
    .. versionchanged:: 3.2
       *source_address* was added.
 
+   .. versionchanged:: 3.2
+      support for the :keyword:`with` statement was added.
+
 
 .. function:: getaddrinfo(host, port, family=0, type=0, proto=0, flags=0)
 
