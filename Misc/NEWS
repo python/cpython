@@ -12,6 +12,10 @@ What's New in Python 2.7.1?
 Core and Builtins
 -----------------
 
+- Issue #4947: The write() method of sys.stdout and sys.stderr uses their
+  encoding and errors attributes instead of using utf-8 in strict mode, to get
+  the same behaviour than the print statement.
+
 - Issue #9737: Fix a crash when trying to delete a slice or an item from
   a memoryview object.
 
@@ -63,7 +67,7 @@ Library
 - Issue #8750: Fixed MutableSet's methods to correctly handle
   reflexive operations, namely x -= x and x ^= x.
 
-- Issue #9129: smtpd.py is vulnerable to DoS attacks deriving from missing 
+- Issue #9129: smtpd.py is vulnerable to DoS attacks deriving from missing
   error handling when accepting a new connection.
 
 - Issue #658749: asyncore's connect() method now correctly interprets winsock

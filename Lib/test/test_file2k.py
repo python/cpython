@@ -619,6 +619,39 @@ class StdoutTests(unittest.TestCase):
         finally:
             sys.stdout = save_stdout
 
+    def test_unicode(self):
+        import subprocess
+
+        def get_message(encoding, *code):
+            code = '\n'.join(code)
+            env = os.environ.copy()
+            env['PYTHONIOENCODING'] = encoding
+            process = subprocess.Popen([sys.executable, "-c", code],
+                                       stdout=subprocess.PIPE, env=env)
+            stdout, stderr = process.communicate()
+            self.assertEqual(process.returncode, 0)
+            return stdout
+
+        def check_message(text, encoding, expected):
+            stdout = get_message(encoding,
+                "import sys",
+                "sys.stdout.write(%r)" % text,
+                "sys.stdout.flush()")
+            self.assertEqual(stdout, expected)
+
+        check_message(u'\u20ac\n', "iso-8859-15", "\xa4\n")
+        check_message(u'\u20ac\n', "utf-16-le", '\xac\x20\n\x00')
+        check_message(u'15\u20ac\n', "iso-8859-1:ignore", "15\n")
+        check_message(u'15\u20ac\n', "iso-8859-1:replace", "15?\n")
+        check_message(u'15\u20ac\n', "iso-8859-1:backslashreplace",
+                      "15\\u20ac\n")
+
+        for objtype in ('buffer', 'bytearray'):
+            stdout = get_message('ascii',
+                'import sys',
+                r'sys.stdout.write(%s("\xe9\n"))' % objtype)
+            self.assertEqual(stdout, "\xe9\n")
+
 
 def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
