@@ -678,6 +678,13 @@ static Py_UNICODE hexdigits[] = {
 
 PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
+#ifndef Py_UNICODE_WIDE
+#define IS_SURROGATE_PAIR(p, end) \
+    (*p >= 0xD800 && *p <= 0xDBFF && (p + 1) < end && \
+     *(p + 1) >= 0xDC00 && *(p + 1) <= 0xDFFF)
+#else
+#define IS_SURROGATE_PAIR(p, end) 0
+#endif
     if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
         PyObject *restuple;
         PyObject *object;
@@ -702,7 +709,12 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
             else
 #endif
             if (*p >= 0x100) {
-                ressize += 1+1+4;
+                if (IS_SURROGATE_PAIR(p, startp+end)) {
+                    ressize += 1+1+8;
+                    ++p;
+                }
+                else
+                    ressize += 1+1+4;
             }
             else
                 ressize += 1+1+2;
@@ -712,9 +724,12 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
             return NULL;
         for (p = startp+start, outp = PyUnicode_AS_UNICODE(res);
             p < startp+end; ++p) {
-            Py_UNICODE c = *p;
+            Py_UCS4 c = (Py_UCS4) *p;
             *outp++ = '\\';
-#ifdef Py_UNICODE_WIDE
+            if (IS_SURROGATE_PAIR(p, startp+end)) {
+                c = ((*p & 0x3FF) << 10) + (*(p + 1) & 0x3FF) + 0x10000;
+                ++p;
+            }
             if (c >= 0x00010000) {
                 *outp++ = 'U';
                 *outp++ = hexdigits[(c>>28)&0xf];
@@ -724,9 +739,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
                 *outp++ = hexdigits[(c>>12)&0xf];
                 *outp++ = hexdigits[(c>>8)&0xf];
             }
-            else
-#endif
-            if (c >= 0x100) {
+            else if (c >= 0x100) {
                 *outp++ = 'u';
                 *outp++ = hexdigits[(c>>12)&0xf];
                 *outp++ = hexdigits[(c>>8)&0xf];
@@ -746,6 +759,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         wrong_exception_type(exc);
         return NULL;
     }
+#undef IS_SURROGATE_PAIR
 }
 
 /* This handler is declared static until someone demonstrates

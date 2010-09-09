@@ -10,6 +10,11 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #9804: ascii() now always represents unicode surrogate pairs as
+  a single ``\UXXXXXXXX``, regardless of whether the character is printable
+  or not.  Also, the "backslashreplace" error handler now joins surrogate
+  pairs into a single character on UCS-2 builds.
+
 - Issue #9757: memoryview objects get a release() method to release the
   underlying buffer (previously this was only done when deallocating the
   memoryview), and gain support for the context management protocol.
