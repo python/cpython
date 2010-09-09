@@ -179,6 +179,28 @@ class BuiltinTest(unittest.TestCase):
         a = {}
         a[0] = a
         self.assertEqual(ascii(a), '{0: {...}}')
+        # Advanced checks for unicode strings
+        def _check_uni(s):
+            self.assertEqual(ascii(s), repr(s))
+        _check_uni("'")
+        _check_uni('"')
+        _check_uni('"\'')
+        _check_uni('\0')
+        _check_uni('\r\n\t .')
+        # Unprintable non-ASCII characters
+        _check_uni('\x85')
+        _check_uni('\u1fff')
+        _check_uni('\U00012fff')
+        # Lone surrogates
+        _check_uni('\ud800')
+        _check_uni('\udfff')
+        # Issue #9804: surrogates should be joined even for printable
+        # wide characters (UCS-2 builds).
+        self.assertEqual(ascii('\U0001d121'), "'\\U0001d121'")
+        # All together
+        s = "'\0\"\n\r\t abcd\x85é\U00012fff\uD800\U0001D121xxx."
+        self.assertEqual(ascii(s),
+            r"""'\'\x00"\n\r\t abcd\x85\xe9\U00012fff\ud800\U0001d121xxx.'""")
 
     def test_neg(self):
         x = -sys.maxsize-1
