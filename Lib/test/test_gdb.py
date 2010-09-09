@@ -234,9 +234,7 @@ class PrettyPrintTests(DebuggerTests):
                 text.encode(encoding)
                 printable = True
             except UnicodeEncodeError:
-                # Workaround ascii() bug on UCS-2 builds: issue #9804
-                asc = "'" + text.encode('unicode-escape').decode('ascii') + "'"
-                self.assertGdbRepr(text, asc)
+                self.assertGdbRepr(text, ascii(text))
             else:
                 self.assertGdbRepr(text)
 
