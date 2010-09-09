@@ -2311,7 +2311,40 @@ is generally interpreted as simple bytes.
 
    Notice how the size of the memoryview object cannot be changed.
 
-   :class:`memoryview` has two methods:
+   :class:`memoryview` has several methods:
+
+   .. method:: release()
+
+      Release the underlying buffer exposed by the memoryview object.  Many
+      objects take special actions when a view is held on them (for example,
+      a :class:`bytearray` would temporarily forbid resizing); therefore,
+      calling release() is handy to remove these restrictions (and free any
+      dangling resources) as soon as possible.
+
+      After this method has been called, any further operation on the view
+      raises a :class:`ValueError` (except :meth:`release()` itself which can
+      be called multiple times)::
+
+         >>> m = memoryview(b'abc')
+         >>> m.release()
+         >>> m[0]
+         Traceback (most recent call last):
+           File "<stdin>", line 1, in <module>
+         ValueError: operation forbidden on released memoryview object
+
+      The context management protocol can be used for a similar effect,
+      using the ``with`` statement::
+
+         >>> with memoryview(b'abc') as m:
+         ...     m[0]
+         ...
+         b'a'
+         >>> m[0]
+         Traceback (most recent call last):
+           File "<stdin>", line 1, in <module>
+         ValueError: operation forbidden on released memoryview object
+
+      .. versionadded:: 3.2
 
    .. method:: tobytes()
 
