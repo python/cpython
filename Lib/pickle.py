@@ -1287,12 +1287,6 @@ def decode_long(data):
     """
     return int.from_bytes(data, byteorder='little', signed=True)
 
-# Use the faster _pickle if possible
-try:
-    from _pickle import *
-except ImportError:
-    Pickler, Unpickler = _Pickler, _Unpickler
-
 # Shorthands
 
 def dump(obj, file, protocol=None, *, fix_imports=True):
@@ -1315,6 +1309,12 @@ def loads(s, *, fix_imports=True, encoding="ASCII", errors="strict"):
     file = io.BytesIO(s)
     return Unpickler(file, fix_imports=fix_imports,
                      encoding=encoding, errors=errors).load()
+
+# Use the faster _pickle if possible
+try:
+    from _pickle import *
+except ImportError:
+    Pickler, Unpickler = _Pickler, _Unpickler
 
 # Doctest
 def _test():

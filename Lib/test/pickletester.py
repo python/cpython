@@ -1068,6 +1068,15 @@ class AbstractPickleTests(unittest.TestCase):
         dumped = self.dumps(set([3]), 2)
         self.assertEqual(dumped, DATA6)
 
+    def test_large_pickles(self):
+        # Test the correctness of internal buffering routines when handling
+        # large data.
+        for proto in protocols:
+            data = (1, b'x' * (256 * 1024))
+            dumped = self.dumps(data, proto)
+            loaded = self.loads(dumped)
+            self.assertEqual(loaded, data)
+
 
 # Test classes for reduce_ex
 
