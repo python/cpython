@@ -35,7 +35,7 @@ saferepr()
 """
 
 import sys as _sys
-
+from collections import OrderedDict as _OrderedDict
 from io import StringIO as _StringIO
 
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
@@ -163,7 +163,7 @@ class PrettyPrinter:
 
         if sepLines:
             r = getattr(typ, "__repr__", None)
-            if issubclass(typ, dict) and r is dict.__repr__:
+            if issubclass(typ, dict):
                 write('{')
                 if self._indent_per_level > 1:
                     write((self._indent_per_level - 1) * ' ')
@@ -171,7 +171,10 @@ class PrettyPrinter:
                 if length:
                     context[objid] = 1
                     indent = indent + self._indent_per_level
-                    items  = sorted(object.items(), key=_safe_tuple)
+                    if issubclass(typ, _OrderedDict):
+                        items = list(object.items())
+                    else:
+                        items = sorted(object.items(), key=_safe_tuple)
                     key, ent = items[0]
                     rep = self._repr(key, context, level)
                     write(rep)

@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- The pprint module now supports printing OrderedDicts in their given
+  order (formerly, it would sort the keys).
+
 - Logging: Added QueueHandler class to facilitate logging usage with
   multiprocessing.
 

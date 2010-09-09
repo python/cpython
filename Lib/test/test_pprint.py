@@ -3,6 +3,8 @@ import test.support
 import unittest
 import test.test_set
 import random
+import collections
+import itertools
 
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
@@ -195,6 +197,20 @@ class QueryTestCase(unittest.TestCase):
         self.assertEqual(pprint.pformat({"xy\tab\n": (3,), 5: [[]], (): {}}),
             r"{5: [[]], 'xy\tab\n': (3,), (): {}}")
 
+    def test_ordered_dict(self):
+        words = 'the quick brown fox jumped over a lazy dog'.split()
+        d = collections.OrderedDict(zip(words, itertools.count()))
+        self.assertEqual(pprint.pformat(d),
+"""\
+{'the': 0,
+ 'quick': 1,
+ 'brown': 2,
+ 'fox': 3,
+ 'jumped': 4,
+ 'over': 5,
+ 'a': 6,
+ 'lazy': 7,
+ 'dog': 8}""")
     def test_subclassing(self):
         o = {'names with spaces': 'should be presented using repr()',
              'others.should.not.be': 'like.this'}
