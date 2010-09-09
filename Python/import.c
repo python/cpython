@@ -25,6 +25,8 @@ extern "C" {
 #ifdef MS_WINDOWS
 /* for stat.st_mode */
 typedef unsigned short mode_t;
+/* for _mkdir */
+#include <direct.h>
 #endif
 
 
@@ -1134,9 +1136,6 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
     time_t mtime = srcstat->st_mtime;
 #ifdef MS_WINDOWS   /* since Windows uses different permissions  */
     mode_t mode = srcstat->st_mode & ~S_IEXEC;
-    mode_t dirmode = srcstat->st_mode | S_IEXEC; /* XXX Is this correct
-                                                    for Windows?
-                                                    2010-04-07 BAW */
 #else
     mode_t mode = srcstat->st_mode & ~S_IXUSR & ~S_IXGRP & ~S_IXOTH;
     mode_t dirmode = (srcstat->st_mode |
@@ -1156,8 +1155,12 @@ write_compiled_module(PyCodeObject *co, char *cpathname, struct stat *srcstat)
     }
     saved = *dirpath;
     *dirpath = '\0';
-    /* XXX call os.mkdir() or maybe CreateDirectoryA() on Windows? */
+
+#ifdef MS_WINDOWS
+    if (_mkdir(cpathname) < 0 && errno != EEXIST) {
+#else
     if (mkdir(cpathname, dirmode) < 0 && errno != EEXIST) {
+#endif
         *dirpath = saved;
         if (Py_VerboseFlag)
             PySys_WriteStderr(
