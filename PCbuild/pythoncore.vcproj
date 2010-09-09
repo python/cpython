@@ -842,7 +842,10 @@
 				RelativePath="..\Include\pyarena.h"
 				>
 			</File>
-                        <File RelativePath="..\Include\pycapsule.h"></File>
+			<File
+				RelativePath="..\Include\pycapsule.h"
+				>
+			</File>
 			<File
 				RelativePath="..\Include\pyctype.h"
 				>
@@ -1391,10 +1394,10 @@
 				RelativePath="..\Objects\bytesobject.c"
 				>
 			</File>
-                        <File
-                                RelativePath="..\Objects\capsule.c"
-                                >
-                        </File>
+			<File
+				RelativePath="..\Objects\capsule.c"
+				>
+			</File>
 			<File
 				RelativePath="..\Objects\cellobject.c"
 				>
