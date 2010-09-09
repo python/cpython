@@ -10,6 +10,10 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #9757: memoryview objects get a release() method to release the
+  underlying buffer (previously this was only done when deallocating the
+  memoryview), and gain support for the context management protocol.
+
 - Issue #9797: pystate.c wrongly assumed that zero couldn't be a valid
   thread-local storage key.
 

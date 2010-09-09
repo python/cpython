@@ -225,6 +225,51 @@ class AbstractMemoryTests:
             gc.collect()
             self.assertTrue(wr() is None, wr())
 
+    def _check_released(self, m, tp):
+        check = self.assertRaisesRegexp(ValueError, "released")
+        with check: bytes(m)
+        with check: m.tobytes()
+        with check: m.tolist()
+        with check: m[0]
+        with check: m[0] = b'x'
+        with check: len(m)
+        with check: m.format
+        with check: m.itemsize
+        with check: m.ndim
+        with check: m.readonly
+        with check: m.shape
+        with check: m.strides
+        with check:
+            with m:
+                pass
+        # str() and repr() still function
+        self.assertIn("released memory", str(m))
+        self.assertIn("released memory", repr(m))
+        self.assertEqual(m, m)
+        self.assertNotEqual(m, memoryview(tp(self._source)))
+        self.assertNotEqual(m, tp(self._source))
+
+    def test_contextmanager(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            with m as cm:
+                self.assertIs(cm, m)
+            self._check_released(m, tp)
+            m = self._view(b)
+            # Can release explicitly inside the context manager
+            with m:
+                m.release()
+
+    def test_release(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            m.release()
+            self._check_released(m, tp)
+            # Can be called a second time (it's a no-op)
+            m.release()
+            self._check_released(m, tp)
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
 # with itemsize > 1.
