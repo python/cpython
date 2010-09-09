@@ -20,6 +20,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9410: Various optimizations to the pickle module, leading to
+  speedups up to 4x (depending on the benchmark).  Mostly ported from
+  Unladen Swallow; initial patch by Alexandre Vassalotti.
+
 - The pprint module now supports printing OrderedDicts in their given
   order (formerly, it would sort the keys).
 

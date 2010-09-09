@@ -37,6 +37,18 @@ class PyPicklerTests(AbstractPickleTests):
         return u.load()
 
 
+class InMemoryPickleTests(AbstractPickleTests):
+
+    pickler = pickle._Pickler
+    unpickler = pickle._Unpickler
+
+    def dumps(self, arg, proto=None):
+        return pickle.dumps(arg, proto)
+
+    def loads(self, buf):
+        return pickle.loads(buf)
+
+
 class PyPersPicklerTests(AbstractPersistentPicklerTests):
 
     pickler = pickle._Pickler
@@ -95,7 +107,8 @@ def test_main():
         tests.extend([CPicklerTests, CPersPicklerTests,
                       CDumpPickle_LoadPickle, DumpPickle_CLoadPickle,
                       PyPicklerUnpicklerObjectTests,
-                      CPicklerUnpicklerObjectTests])
+                      CPicklerUnpicklerObjectTests,
+                      InMemoryPickleTests])
     support.run_unittest(*tests)
     support.run_doctest(pickle)
 
