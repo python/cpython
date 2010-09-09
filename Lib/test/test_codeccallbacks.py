@@ -577,17 +577,31 @@ class CodecCallbackTest(unittest.TestCase):
                 UnicodeEncodeError("ascii", "\uffff", 0, 1, "ouch")),
             ("\\uffff", 1)
         )
-        if sys.maxunicode>0xffff:
-            self.assertEquals(
-                codecs.backslashreplace_errors(
-                    UnicodeEncodeError("ascii", "\U00010000", 0, 1, "ouch")),
-                ("\\U00010000", 1)
-            )
-            self.assertEquals(
-                codecs.backslashreplace_errors(
-                    UnicodeEncodeError("ascii", "\U0010ffff", 0, 1, "ouch")),
-                ("\\U0010ffff", 1)
-            )
+        # 1 on UCS-4 builds, 2 on UCS-2
+        len_wide = len("\U00010000")
+        self.assertEquals(
+            codecs.backslashreplace_errors(
+                UnicodeEncodeError("ascii", "\U00010000",
+                                   0, len_wide, "ouch")),
+            ("\\U00010000", len_wide)
+        )
+        self.assertEquals(
+            codecs.backslashreplace_errors(
+                UnicodeEncodeError("ascii", "\U0010ffff",
+                                   0, len_wide, "ouch")),
+            ("\\U0010ffff", len_wide)
+        )
+        # Lone surrogates (regardless of unicode width)
+        self.assertEquals(
+            codecs.backslashreplace_errors(
+                UnicodeEncodeError("ascii", "\ud800", 0, 1, "ouch")),
+            ("\\ud800", 1)
+        )
+        self.assertEquals(
+            codecs.backslashreplace_errors(
+                UnicodeEncodeError("ascii", "\udfff", 0, 1, "ouch")),
+            ("\\udfff", 1)
+        )
 
     def test_badhandlerresults(self):
         results = ( 42, "foo", (1,2,3), ("foo", 1, 3), ("foo", None), ("foo",), ("foo", 1, 3), ("foo", None), ("foo",) )
