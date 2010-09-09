@@ -133,6 +133,10 @@ SOURCE=..\..\Modules\_csv.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_datetimemodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_functoolsmodule.c
 # End Source File
 # Begin Source File
@@ -182,6 +186,10 @@ SOURCE=..\..\PC\_subprocess.c
 # Begin Source File
 
 SOURCE=..\..\Modules\_threadmodule.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\_time.c
 # End Source File
 # Begin Source File
 
@@ -309,7 +317,7 @@ SOURCE=..\..\Modules\zlib\crc32.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\datetimemodule.c
+SOURCE=..\..\Python\dynamic_annotations.c
 # End Source File
 # Begin Source File
 
@@ -632,6 +640,10 @@ SOURCE=..\python_nt.rc
 # Begin Source File
 
 SOURCE=..\..\Python\pythonrun.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Python\pytime.c
 # End Source File
 # Begin Source File
 
