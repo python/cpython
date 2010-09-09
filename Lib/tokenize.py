@@ -47,9 +47,9 @@ N_TOKENS += 3
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
     def __repr__(self):
-        typ = self.type
-        return 'TokenInfo(type=%s, string=%r, start=%r, end=%r, line=%r)' % \
-               ((('%d (%s)' % (typ, tok_name[typ])),) + self[1:])
+        annotated_type = '%d (%s)' % (self.type, tok_name[self.type])
+        return ('TokenInfo(type=%s, string=%r, start=%r, end=%r, line=%r)' %
+                self._replace(type=annotated_type))
 
 def group(*choices): return '(' + '|'.join(choices) + ')'
 def any(*choices): return group(*choices) + '*'
