@@ -312,10 +312,6 @@ blank lines to repeat commands, and the simple record and playback facility::
     bye     color    goto     home  playback  record  right
     circle  forward  heading  left  position  reset   undo
 
-    Undocumented commands:
-    ======================
-    help
-
     (turtle) help forward
     Move the turtle forward by the specified distance:  FORWARD 10
     (turtle) record spiral.cmd
