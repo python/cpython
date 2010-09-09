@@ -203,3 +203,165 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
    :mod:`readline`, on systems that support it, the interpreter will automatically
    support :program:`Emacs`\ -like line editing  and command-history keystrokes.)
 
+Cmd Example
+===========
+
+.. sectionauthor:: Raymond Hettinger <python at rcn dot com>
+
+The :mod:`cmd` module is mainly useful for building custom shells that let a
+user work with a program interactively.
+
+This section presents a simple example of how to build a shell around a few of
+the commands in the :mod:`turtle` module.
+
+Basic turtle commands such as :meth:`~turtle.forward` are added to a
+:class:`Cmd` subclass with method named :meth:`do_forward`.  The argument is
+converted to a number and dispatched to the turtle module.  The docstring is
+used in the help utility provided by the shell.
+
+The example also includes a basic record and playback facility implemented with
+the :meth:`~Cmd.precmd` method which is responsible for converting the input to
+lowercase and writing the commands to a file.  The :meth:`do_playback` method
+reads the file and adds the recorded commands to the :attr:`cmdqueue` for
+immediate playback::
+
+    import cmd, sys
+    from turtle import *
+
+    class TurtleShell(cmd.Cmd):
+        intro = 'Welcome to the turtle shell.   Type help or ? to list commands.\n'
+        prompt = '(turtle) '
+        file = None
+
+        # ----- basic turtle commands -----
+        def do_forward(self, arg):
+            'Move the turtle forward by the specified distance:  FORWARD 10'
+            forward(*parse(arg))
+        def do_right(self, arg):
+            'Turn turtle right by given number of degrees:  RIGHT 20'
+            right(*parse(arg))
+        def do_left(self, arg):
+            'Turn turtle left by given number of degrees:  LEFT 90'
+            right(*parse(arg))
+        def do_goto(self, arg):
+            'Move turtle to an absolute position with changing orientation.  GOTO 100 200'
+            goto(*parse(arg))
+        def do_home(self, arg):
+            'Return turtle to the home postion:  HOME'
+            home()
+        def do_circle(self, arg):
+            'Draw circle with given radius an options extent and steps:  CIRCLE 50'
+            circle(*parse(arg))
+        def do_position(self, arg):
+            'Print the current turle position:  POSITION'
+            print('Current position is %d %d\n' % position())
+        def do_heading(self, arg):
+            'Print the current turle heading in degrees:  HEADING'
+            print('Current heading is %d\n' % (heading(),))
+        def do_color(self, arg):
+            'Set the color:  COLOR BLUE'
+            color(arg.lower())
+        def do_undo(self, arg):
+            'Undo (repeatedly) the last turtle action(s):  UNDO'
+        def do_reset(self, arg):
+            'Clear the screen and return turtle to center:  RESET'
+            reset()
+        def do_bye(self, arg):
+            'Stop recording, close the turtle window, and exit:  BYE'
+            print('Thank you for using Turtle')
+            self.close()
+            bye()
+            sys.exit(0)
+
+        # ----- record and playback -----
+        def do_record(self, arg):
+            'Save future commands to filename:  RECORD rose.cmd'
+            self.file = open(arg, 'w')
+        def do_playback(self, arg):
+            'Playback commands from a file:  PLAYBACK rose.cmd'
+            self.close()
+            cmds = open(arg).read().splitlines()
+            self.cmdqueue.extend(cmds)
+        def precmd(self, line):
+            line = line.lower()
+            if self.file and 'playback' not in line:
+                print(line, file=self.file)
+            return line
+        def close(self):
+            if self.file:
+                self.file.close()
+                self.file = None
+
+    def parse(arg):
+        'Convert a series of zero or more numbers to an argument tuple'
+        return tuple(map(int, arg.split()))
+
+    if __name__ == '__main__':
+        TurtleShell().cmdloop()
+
+
+Here is a sample session with the turtle shell showing the help functions, using
+blank lines to repeat commands, and the simple record and playback facility::
+
+    Welcome to the turtle shell.   Type help or ? to list commands.
+
+    (turtle) ?
+
+    Documented commands (type help <topic>):
+    ========================================
+    bye     color    goto     home  playback  record  right
+    circle  forward  heading  left  position  reset   undo
+
+    Undocumented commands:
+    ======================
+    help
+
+    (turtle) help forward
+    Move the turtle forward by the specified distance:  FORWARD 10
+    (turtle) record spiral.cmd
+    (turtle) position
+    Current position is 0 0
+
+    (turtle) heading
+    Current heading is 0
+
+    (turtle) reset
+    (turtle) circle 20
+    (turtle) right 30
+    (turtle) circle 40
+    (turtle) right 30
+    (turtle) circle 60
+    (turtle) right 30
+    (turtle) circle 80
+    (turtle) right 30
+    (turtle) circle 100
+    (turtle) right 30
+    (turtle) circle 120
+    (turtle) right 30
+    (turtle) circle 120
+    (turtle) heading
+    Current heading is 180
+
+    (turtle) forward 100
+    (turtle)
+    (turtle) right 90
+    (turtle) forward 100
+    (turtle)
+    (turtle) right 90
+    (turtle) forward 400
+    (turtle) right 90
+    (turtle) forward 500
+    (turtle) right 90
+    (turtle) forward 400
+    (turtle) right 90
+    (turtle) forward 300
+    (turtle) playback spiral.cmd
+    Current position is 0 0
+
+    Current heading is 0
+
+    Current heading is 180
+
+    (turtle) bye
+    Thank you for using Turtle
+
