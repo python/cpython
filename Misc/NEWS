@@ -12,6 +12,11 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #9804: ascii() now always represents unicode surrogate pairs as
+  a single ``\UXXXXXXXX``, regardless of whether the character is printable
+  or not.  Also, the "backslashreplace" error handler now joins surrogate
+  pairs into a single character on UCS-2 builds.
+
 - Issue #9797: pystate.c wrongly assumed that zero couldn't be a valid
   thread-local storage key.
 
