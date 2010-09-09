@@ -642,6 +642,8 @@ class GeneralModuleTests(unittest.TestCase):
         # only IP addresses are allowed
         self.assertRaises(socket.error, socket.getnameinfo, ('mail.python.org',0), 0)
 
+    @unittest.skipUnless(support.is_resource_enabled('network'),
+                         'network is not enabled')
     def test_idna(self):
         support.requires('network')
         # these should all be successful
