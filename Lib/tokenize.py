@@ -28,6 +28,7 @@ import re
 import sys
 from token import *
 from codecs import lookup, BOM_UTF8
+import collections
 cookie_re = re.compile("coding[:=]\s*([-\w.]+)")
 
 import token
@@ -44,48 +45,11 @@ ENCODING = N_TOKENS + 2
 tok_name[ENCODING] = 'ENCODING'
 N_TOKENS += 3
 
-class TokenInfo(tuple):
-    'TokenInfo(type, string, start, end, line)'
-
-    __slots__ = ()
-
-    _fields = ('type', 'string', 'start', 'end', 'line')
-
-    def __new__(cls, type, string, start, end, line):
-        return tuple.__new__(cls, (type, string, start, end, line))
-
-    @classmethod
-    def _make(cls, iterable, new=tuple.__new__, len=len):
-        'Make a new TokenInfo object from a sequence or iterable'
-        result = new(cls, iterable)
-        if len(result) != 5:
-            raise TypeError('Expected 5 arguments, got %d' % len(result))
-        return result
-
+class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
     def __repr__(self):
-        typ = self[0]
+        typ = self.type
         return 'TokenInfo(type=%s, string=%r, start=%r, end=%r, line=%r)' % \
                ((('%d (%s)' % (typ, tok_name[typ])),) + self[1:])
-
-    def _asdict(self):
-        'Return a new dict which maps field names to their values'
-        return dict(zip(self._fields, self))
-
-    def _replace(self, **kwds):
-        'Return a new TokenInfo object replacing specified fields with new values'
-        result = self._make(map(kwds.pop, ('type', 'string', 'start', 'end', 'line'), self))
-        if kwds:
-            raise ValueError('Got unexpected field names: %r' % kwds.keys())
-        return result
-
-    def __getnewargs__(self):
-        return tuple(self)
-
-    type = property(lambda t: t[0])
-    string = property(lambda t: t[1])
-    start = property(lambda t: t[2])
-    end = property(lambda t: t[3])
-    line = property(lambda t: t[4])
 
 def group(*choices): return '(' + '|'.join(choices) + ')'
 def any(*choices): return group(*choices) + '*'
