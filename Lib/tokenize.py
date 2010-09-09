@@ -63,7 +63,9 @@ class TokenInfo(tuple):
         return result
 
     def __repr__(self):
-        return 'TokenInfo(type=%r, string=%r, start=%r, end=%r, line=%r)' % self
+        typ = self[0]
+        return 'TokenInfo(type=%s, string=%r, start=%r, end=%r, line=%r)' % \
+               ((('%d (%s)' % (typ, tok_name[typ])),) + self[1:])
 
     def _asdict(self):
         'Return a new dict which maps field names to their values'
@@ -550,3 +552,28 @@ def _tokenize(readline, encoding):
 # library that expect to be able to use tokenize with strings
 def generate_tokens(readline):
     return _tokenize(readline, None)
+
+if __name__ == "__main__":
+    # Quick sanity check
+    s = b'''def parseline(self, line):
+            """Parse the line into a command name and a string containing
+            the arguments.  Returns a tuple containing (command, args, line).
+            'command' and 'args' may be None if the line couldn't be parsed.
+            """
+            line = line.strip()
+            if not line:
+                return None, None, line
+            elif line[0] == '?':
+                line = 'help ' + line[1:]
+            elif line[0] == '!':
+                if hasattr(self, 'do_shell'):
+                    line = 'shell ' + line[1:]
+                else:
+                    return None, None, line
+            i, n = 0, len(line)
+            while i < n and line[i] in self.identchars: i = i+1
+            cmd, arg = line[:i], line[i:].strip()
+            return cmd, arg, line
+    '''
+    for tok in tokenize(iter(s.splitlines()).__next__):
+        print(tok)

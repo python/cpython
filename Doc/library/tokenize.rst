@@ -111,7 +111,7 @@ function it uses to do this is available:
                 return fp.read()
 
 
-Example of a script re-writer that transforms float literals into Decimal
+Example of a script rewriter that transforms float literals into Decimal
 objects::
 
     from tokenize import tokenize, untokenize, NUMBER, STRING, NAME, OP
