@@ -4394,7 +4394,7 @@ unicode_concatenate(PyObject *v, PyObject *w,
         return NULL;
     }
 
-    if (Py_REFCNF(v) == 2) {
+    if (Py_REFCNT(v) == 2) {
         /* In the common case, there are 2 references to the value
          * stored in 'variable' when the += is performed: one on the
          * value stack (in 'v') and one still stored in the
@@ -4435,7 +4435,7 @@ unicode_concatenate(PyObject *v, PyObject *w,
         }
     }
 
-    if (Py_REFCNF(v) == 1 && !PyUnicode_CHECK_INTERNED(v)) {
+    if (Py_REFCNT(v) == 1 && !PyUnicode_CHECK_INTERNED(v)) {
         /* Now we own the last reference to 'v', so we can resize it
          * in-place.
          */
