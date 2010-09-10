@@ -550,13 +550,13 @@ class SyntaxTestCase(unittest.TestCase):
     def test_global_err_then_warn(self):
         # Bug tickler:  The SyntaxError raised for one global statement
         # shouldn't be clobbered by a SyntaxWarning issued for a later one.
-        source = re.sub('(?m)^ *:', '', """\
-            :def error(a):
-            :    global a  # SyntaxError
-            :def warning():
-            :    b = 1
-            :    global b  # SyntaxWarning
-            :""")
+        source = """if 1:
+            def error(a):
+                global a  # SyntaxError
+            def warning():
+                b = 1
+                global b  # SyntaxWarning
+            """
         warnings.filterwarnings(action='ignore', category=SyntaxWarning)
         self._check_error(source, "global")
         warnings.filters.pop(0)
@@ -565,12 +565,12 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("break", "outside loop")
 
     def test_delete_deref(self):
-        source = re.sub('(?m)^ *:', '', """\
-            :def foo(x):
-            :  def bar():
-            :    print(x)
-            :  del x
-            :""")
+        source = """if 1:
+            def foo(x):
+              def bar():
+                print(x)
+              del x
+            """
         self._check_error(source, "nested scope")
 
     def test_unexpected_indent(self):
