@@ -351,8 +351,9 @@ else:
             sys.getwindowsversion()[3] < 2): #  0=win32s or 1=9x/ME
         TESTFN_UNICODE_UNENCODEABLE = None
     else:
-        # Japanese characters (I think - from bug 846133)
-        TESTFN_UNICODE_UNENCODEABLE = "@test-\u5171\u6709\u3055\u308c\u308b"
+        # Different kinds of characters from various languages to minimize the
+        # probability that the whole name is encodable to MBCS (issue #9819)
+        TESTFN_UNENCODABLE = TESTFN + "-\u5171\u0141\u2661\u0363\uDC80"
         try:
             # XXX - Note - should be using TESTFN_ENCODING here - but for
             # Windows, "mbcs" currently always operates as if in
