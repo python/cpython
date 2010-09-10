@@ -6721,32 +6721,34 @@ posix_confstr(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
     int name;
-    char buffer[256];
-
-    if (PyArg_ParseTuple(args, "O&:confstr", conv_confstr_confname, &name)) {
+    char buffer[255];
         int len;
 
-        errno = 0;
-        len = confstr(name, buffer, sizeof(buffer));
-        if (len == 0) {
-            if (errno) {
-                posix_error();
-            }
-            else {
-                result = Py_None;
-                Py_INCREF(Py_None);
-            }
+    if (!PyArg_ParseTuple(args, "O&:confstr", conv_confstr_confname, &name))
+        return NULL;
+
+    errno = 0;
+    len = confstr(name, buffer, sizeof(buffer));
+    if (len == 0) {
+        if (errno) {
+            posix_error();
+            return NULL;
         }
         else {
-            if ((unsigned int)len >= sizeof(buffer)) {
-                result = PyUnicode_FromStringAndSize(NULL, len-1);
-                if (result != NULL)
-                    confstr(name, _PyUnicode_AsString(result), len);
-            }
-            else
-                result = PyUnicode_FromStringAndSize(buffer, len-1);
+            Py_RETURN_NONE;
         }
     }
+
+    if ((unsigned int)len >= sizeof(buffer)) {
+        char *buf = PyMem_Malloc(len);
+        if (buf == NULL)
+            return PyErr_NoMemory();
+        confstr(name, buf, len);
+        result = PyUnicode_DecodeFSDefaultAndSize(buf, len-1);
+        PyMem_Free(buf);
+    }
+    else
+        result = PyUnicode_DecodeFSDefaultAndSize(buffer, len-1);
     return result;
 }
 #endif
