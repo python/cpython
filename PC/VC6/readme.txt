@@ -1,7 +1,8 @@
 Building Python using VC++ 6.0 or 5.0
 -------------------------------------
 This directory is used to build Python for Win32 platforms, e.g. Windows
-2000 and XP.  It requires Microsoft Visual C++ 6.x or 5.x.
+2000 and XP.  It requires Microsoft Visual C++ 6.x or 5.x and Platform
+SDK February 2003 Edition (Core SDK).
 (For other Windows platforms and compilers, see ../readme.txt.)
 
 All you need to do is open the workspace "pcbuild.dsw" in MSVC++, select
@@ -39,7 +40,6 @@ pythonw
     pythonw.exe, a variant of python.exe that doesn't pop up a DOS box
 _msi
     _msi.c. You need to install Windows Installer SDK to build this module.
-    http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm
 _socket
     socketmodule.c
 _testcapi
