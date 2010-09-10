@@ -16,8 +16,8 @@ interface to the :cfunc:`fcntl` and :cfunc:`ioctl` Unix routines.
 
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
-``sys.stdin.fileno()``, or a file object, such as ``sys.stdin`` itself, which
-provides a :meth:`fileno` which returns a genuine file descriptor.
+``sys.stdin.fileno()``, or a :class:`io.IOBase` object, such as ``sys.stdin``
+itself, which provides a :meth:`fileno` that returns a genuine file descriptor.
 
 The module defines the following functions:
 
