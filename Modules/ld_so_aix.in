@@ -158,7 +158,7 @@ fi
 # Default entry symbol for Python modules = init[modulename]
 # Can be overriden by providing a -e argument.
 if test -z "$entry"; then
-  entry=PyInit_`echo $filename | sed "s/module.*//"`
+  entry=init`echo $filename | sed "s/module.*//"`
 fi
 
 #echo "ld_so_aix: Debug info section"
