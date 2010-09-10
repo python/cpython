@@ -240,6 +240,31 @@ Some smaller changes made to the core Python language are:
 
   (See :issue:`8188`.)
 
+* Previously it was illegal to delete a name from the local namespace if it
+  occurs as a free variable in a nested block::
+
+   >>> def outer(x):
+   ...     def inner():
+   ...        return x
+   ...     inner()
+   ...     del x
+
+  This is now allowed.  Remember that the target of an :keyword:`except` clause
+  is cleared, so this code which used to work with Python 2.6, raised a
+  :exc:`SyntaxError` with Python 3.1 and now works again::
+
+   >>> def f():
+   ...     def print_error():
+   ...        print(e)
+   ...     try:
+   ...        something
+   ...     except Exception as e:
+   ...        print_error()
+   ...        # implicit "del e" here
+
+  (See :issue:`4617`.)
+
+
 New, Improved, and Deprecated Modules
 =====================================
 

@@ -526,6 +526,17 @@ class ExceptionTests(unittest.TestCase):
         obj = wr()
         self.assertTrue(obj is None, "%s" % obj)
 
+    def test_exception_target_in_nested_scope(self):
+        # issue 4617: This used to raise a SyntaxError
+        # "can not delete variable 'e' referenced in nested scope"
+        def print_error():
+            e
+        try:
+            something
+        except Exception as e:
+            print_error()
+            # implicit "del e" here
+
     def test_generator_leaking(self):
         # Test that generator exception state doesn't leak into the calling
         # frame

@@ -218,13 +218,6 @@ class ScopeTests(unittest.TestCase):
             """)
 
         check_syntax_error(self, """if 1:
-            def f(x):
-                def g():
-                    return x
-                del x # can't del name
-            """)
-
-        check_syntax_error(self, """if 1:
             def f():
                 def g():
                     from sys import *
@@ -272,6 +265,28 @@ class ScopeTests(unittest.TestCase):
         self.assertRaises(UnboundLocalError, errorInOuter)
         self.assertRaises(NameError, errorInInner)
 
+    def testUnboundLocal_AfterDel(self):
+        # #4617: It is now legal to delete a cell variable.
+        # The following functions must obviously compile,
+        # and give the correct error when accessing the deleted name.
+        def errorInOuter():
+            y = 1
+            del y
+            print(y)
+            def inner():
+                return y
+
+        def errorInInner():
+            def inner():
+                return y
+            y = 1
+            del y
+            inner()
+
+        self.assertRaises(UnboundLocalError, errorInOuter)
+        self.assertRaises(NameError, errorInInner)
+
+    def testUnboundLocal_AugAssign(self):
         # test for bug #1501934: incorrect LOAD/STORE_GLOBAL generation
         exec("""if 1:
             global_x = 1
