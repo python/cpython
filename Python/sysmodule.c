@@ -199,25 +199,6 @@ operating system filenames."
 );
 
 static PyObject *
-sys_setfilesystemencoding(PyObject *self, PyObject *args)
-{
-    PyObject *new_encoding;
-    if (!PyArg_ParseTuple(args, "U:setfilesystemencoding", &new_encoding))
-        return NULL;
-    if (_Py_SetFileSystemEncoding(new_encoding))
-        return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-PyDoc_STRVAR(setfilesystemencoding_doc,
-"setfilesystemencoding(string) -> None\n\
-\n\
-Set the encoding used to convert Unicode filenames in\n\
-operating system filenames."
-);
-
-static PyObject *
 sys_intern(PyObject *self, PyObject *args)
 {
     PyObject *s;
@@ -1012,8 +993,6 @@ static PyMethodDef sys_methods[] = {
 #ifdef USE_MALLOPT
     {"mdebug",          sys_mdebug, METH_VARARGS},
 #endif
-    {"setfilesystemencoding", sys_setfilesystemencoding, METH_VARARGS,
-     setfilesystemencoding_doc},
     {"setcheckinterval",        sys_setcheckinterval, METH_VARARGS,
      setcheckinterval_doc},
     {"getcheckinterval",        sys_getcheckinterval, METH_NOARGS,
