@@ -7,7 +7,7 @@ from opcode import *
 from opcode import __all__ as _opcodes_all
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
-           "findlinestarts", "findlabels", "show_code"] + _opcodes_all
+           "findlinestarts", "findlabels"] + _opcodes_all
 del _opcodes_all
 
 _have_code = (types.MethodType, types.FunctionType, types.CodeType, type)
@@ -140,6 +140,10 @@ def _format_code_info(co):
             lines.append("%4d: %s" % i_n)
     return "\n".join(lines)
 
+# show_code is deliberately undocumented and left out of __all__,
+# since it doesn't offer any real benefit over code_info() above
+# It is only retained because it already existed and was not
+# marked as private in previous versions of Python
 def show_code(co):
     """Show details about a code object."""
     print(code_info(co))
