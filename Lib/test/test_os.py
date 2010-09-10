@@ -422,7 +422,6 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test___repr__(self):
         """Check that the repr() of os.environ looks like environ({...})."""
         env = os.environ
-        self.assertTrue(isinstance(env.data, dict))
         self.assertEqual(repr(env), 'environ({{{}}})'.format(', '.join(
             '{!r}: {!r}'.format(key, value)
             for key, value in env.items())))
