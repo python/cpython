@@ -488,7 +488,8 @@ Py_Main(int argc, wchar_t **argv)
 #else
     if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0') {
         char *buf, *oldloc;
-        PyObject *warning;
+        wchar_t *wchar;
+        PyObject *unicode;
 
         /* settle for strtok here as there's no one standard
            C89 wcstok */
@@ -500,11 +501,15 @@ Py_Main(int argc, wchar_t **argv)
         oldloc = strdup(setlocale(LC_ALL, NULL));
         setlocale(LC_ALL, "");
         for (p = strtok(buf, ","); p != NULL; p = strtok(NULL, ",")) {
-            warning = PyUnicode_DecodeFSDefault(p);
-            if (warning != NULL) {
-                PySys_AddWarnOptionUnicode(warning);
-                Py_DECREF(warning);
-            }
+            wchar = _Py_char2wchar(p);
+            if (wchar == NULL)
+                continue;
+            unicode = PyUnicode_FromWideChar(wchar, wcslen(wchar));
+            PyMem_Free(wchar);
+            if (unicode == NULL)
+                continue;
+            PySys_AddWarnOptionUnicode(unicode);
+            Py_DECREF(unicode);
         }
         setlocale(LC_ALL, oldloc);
         free(oldloc);
