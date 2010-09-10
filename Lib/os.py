@@ -420,34 +420,34 @@ class _Environ(MutableMapping):
         self.decodevalue = decodevalue
         self.putenv = putenv
         self.unsetenv = unsetenv
-        self.data = data
+        self._data = data
 
     def __getitem__(self, key):
-        value = self.data[self.encodekey(key)]
+        value = self._data[self.encodekey(key)]
         return self.decodevalue(value)
 
     def __setitem__(self, key, value):
         key = self.encodekey(key)
         value = self.encodevalue(value)
         self.putenv(key, value)
-        self.data[key] = value
+        self._data[key] = value
 
     def __delitem__(self, key):
         key = self.encodekey(key)
         self.unsetenv(key)
-        del self.data[key]
+        del self._data[key]
 
     def __iter__(self):
-        for key in self.data:
+        for key in self._data:
             yield self.decodekey(key)
 
     def __len__(self):
-        return len(self.data)
+        return len(self._data)
 
     def __repr__(self):
         return 'environ({{{}}})'.format(', '.join(
             ('{!r}: {!r}'.format(self.decodekey(key), self.decodevalue(value))
-            for key, value in self.data.items())))
+            for key, value in self._data.items())))
 
     def copy(self):
         return dict(self)
@@ -521,7 +521,7 @@ if supports_bytes_environ:
         return value
 
     # bytes environ
-    environb = _Environ(environ.data,
+    environb = _Environ(environ._data,
         _check_bytes, bytes,
         _check_bytes, bytes,
         _putenv, _unsetenv)
