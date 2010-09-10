@@ -552,6 +552,9 @@ Extension Modules
 Build
 -----
 
+- Issue #941346: Improve the build process under AIX and allow Python to
+  be built as a shared library.  Patch by Sébastien Sablé.
+
 - Issue #4026: Make the fcntl extension build under AIX.  Patch by Sébastien
   Sablé.
 
