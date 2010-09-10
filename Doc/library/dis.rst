@@ -723,6 +723,12 @@ the more significant byte last.
    storage.
 
 
+.. opcode:: DELETE_DEREF (i)
+
+   Empties the cell contained in slot *i* of the cell and free variable storage.
+   Used by the :keyword:`del` statement.
+
+
 .. opcode:: SET_LINENO (lineno)
 
    This opcode is obsolete.

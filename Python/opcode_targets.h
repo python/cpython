@@ -137,7 +137,7 @@ static void *opcode_targets[256] = {
     &&TARGET_LOAD_CLOSURE,
     &&TARGET_LOAD_DEREF,
     &&TARGET_STORE_DEREF,
-    &&_unknown_opcode,
+    &&TARGET_DELETE_DEREF,
     &&_unknown_opcode,
     &&TARGET_CALL_FUNCTION_VAR,
     &&TARGET_CALL_FUNCTION_KW,

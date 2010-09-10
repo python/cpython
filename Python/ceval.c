@@ -135,6 +135,7 @@ static PyObject * cmp_outcome(int, PyObject *, PyObject *);
 static PyObject * import_from(PyObject *, PyObject *);
 static int import_all_from(PyObject *, PyObject *);
 static void format_exc_check_arg(PyObject *, const char *, PyObject *);
+static void format_exc_unbound(PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyObject *, PyObject *,
                                       PyFrameObject *, unsigned char *);
 static PyObject * special_lookup(PyObject *, char *, PyObject **);
@@ -2143,6 +2144,16 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 );
             break;
 
+        TARGET(DELETE_DEREF)
+            x = freevars[oparg];
+            if (PyCell_GET(x) != NULL) {
+                PyCell_Set(x, NULL);
+                continue;
+            }
+            err = -1;
+            format_exc_unbound(co, oparg);
+            break;
+
         TARGET(LOAD_CLOSURE)
             x = freevars[oparg];
             Py_INCREF(x);
@@ -2158,22 +2169,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 DISPATCH();
             }
             err = -1;
-            /* Don't stomp existing exception */
-            if (PyErr_Occurred())
-                break;
-            if (oparg < PyTuple_GET_SIZE(co->co_cellvars)) {
-                v = PyTuple_GET_ITEM(co->co_cellvars,
-                                     oparg);
-                format_exc_check_arg(
-                       PyExc_UnboundLocalError,
-                       UNBOUNDLOCAL_ERROR_MSG,
-                       v);
-            } else {
-                v = PyTuple_GET_ITEM(co->co_freevars, oparg -
-                    PyTuple_GET_SIZE(co->co_cellvars));
-                format_exc_check_arg(PyExc_NameError,
-                                     UNBOUNDFREE_ERROR_MSG, v);
-            }
+            format_exc_unbound(co, oparg);
             break;
 
         TARGET(STORE_DEREF)
@@ -4350,6 +4346,28 @@ format_exc_check_arg(PyObject *exc, const char *format_str, PyObject *obj)
         return;
 
     PyErr_Format(exc, format_str, obj_str);
+}
+
+static void
+format_exc_unbound(PyCodeObject *co, int oparg)
+{
+    PyObject *name;
+    /* Don't stomp existing exception */
+    if (PyErr_Occurred())
+        return;
+    if (oparg < PyTuple_GET_SIZE(co->co_cellvars)) {
+        name = PyTuple_GET_ITEM(co->co_cellvars,
+                                oparg);
+        format_exc_check_arg(
+            PyExc_UnboundLocalError,
+            UNBOUNDLOCAL_ERROR_MSG,
+            name);
+    } else {
+        name = PyTuple_GET_ITEM(co->co_freevars, oparg -
+                                PyTuple_GET_SIZE(co->co_cellvars));
+        format_exc_check_arg(PyExc_NameError,
+                             UNBOUNDFREE_ERROR_MSG, name);
+    }
 }
 
 static PyObject *

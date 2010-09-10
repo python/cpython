@@ -161,6 +161,8 @@ def_op('LOAD_DEREF', 136)
 hasfree.append(136)
 def_op('STORE_DEREF', 137)
 hasfree.append(137)
+def_op('DELETE_DEREF', 138)
+hasfree.append(138)
 
 def_op('CALL_FUNCTION_VAR', 140)     # #args + (#kwargs << 8)
 def_op('CALL_FUNCTION_KW', 141)      # #args + (#kwargs << 8)

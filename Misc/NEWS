@@ -10,6 +10,10 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #4617: Previously it was illegal to delete a name from the local
+  namespace if it occurs as a free variable in a nested block.  This limitation
+  of the compiler has been lifted, and a new opcode introduced (DELETE_DEREF).
+
 - Issue #9804: ascii() now always represents unicode surrogate pairs as
   a single ``\UXXXXXXXX``, regardless of whether the character is printable
   or not.  Also, the "backslashreplace" error handler now joins surrogate
