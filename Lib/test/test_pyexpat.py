@@ -221,6 +221,25 @@ class InterningTest(unittest.TestCase):
             # L should have the same string repeated over and over.
             self.assertTrue(tag is entry)
 
+    def test_issue9402(self):
+        # create an ExternalEntityParserCreate with buffer text
+        class ExternalOutputter:
+            def __init__(self, parser):
+                self.parser = parser
+                self.parser_result = None
+
+            def ExternalEntityRefHandler(self, context, base, sysId, pubId):
+                external_parser = self.parser.ExternalEntityParserCreate("")
+                self.parser_result = external_parser.Parse("", 1)
+                return 1
+
+        parser = expat.ParserCreate(namespace_separator='!')
+        parser.buffer_text = 1
+        out = ExternalOutputter(parser)
+        parser.ExternalEntityRefHandler = out.ExternalEntityRefHandler
+        parser.Parse(data, 1)
+        self.assertEquals(out.parser_result, 1)
+
 
 class BufferTextTest(unittest.TestCase):
     def setUp(self):
