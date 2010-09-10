@@ -6,8 +6,8 @@ import types
 from opcode import *
 from opcode import __all__ as _opcodes_all
 
-__all__ = ["dis", "disassemble", "distb", "disco",
-           "findlinestarts", "findlabels"] + _opcodes_all
+__all__ = ["code_info", "dis", "disassemble", "distb", "disco",
+           "findlinestarts", "findlabels", "show_code"] + _opcodes_all
 del _opcodes_all
 
 _have_code = (types.MethodType, types.FunctionType, types.CodeType, type)
