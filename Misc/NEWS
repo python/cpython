@@ -31,7 +31,7 @@ Library
 
 - Issue #9579, #9580: Fix os.confstr() for value longer than 255 bytes and
   encode the value with filesystem encoding and surrogateescape (instead of
-  utf-8 in strict mode).
+  utf-8 in strict mode). Patch written by David Watson.
 
 - Issue #9632: Remove sys.setfilesystemencoding() function: use
   PYTHONFSENCODING environment variable to set the filesystem encoding at
