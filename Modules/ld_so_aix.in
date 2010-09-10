@@ -131,11 +131,14 @@ do
   shift
 done
 
+if test "$objfile" = "libpython@VERSION@.so"; then
+  ldsocoremode="true" 
+fi
 
 if test -z "$objs"; then
   echo "ld_so_aix: No input files; exiting."
   exit 2
-elif test ! -r "$impfile"; then
+elif test ! -r "$impfile" -a -z "$ldsocoremode"; then
   echo "ld_so_aix: Import file '$impfile' not found or not readable; exiting."
   exit 2
 fi
@@ -155,7 +158,7 @@ fi
 # Default entry symbol for Python modules = init[modulename]
 # Can be overriden by providing a -e argument.
 if test -z "$entry"; then
-  entry=init`echo $filename | sed "s/module.*//"`
+  entry=PyInit_`echo $filename | sed "s/module.*//"`
 fi
 
 #echo "ld_so_aix: Debug info section"
@@ -166,11 +169,12 @@ fi
 #echo "  -> object files: $objs"
 #echo "  -> CC arguments: $args"
 
-CCOPT="-Wl,-e$entry -Wl,-bE:$expfile -Wl,-bI:$impfile -Wl,-bhalt:4"
-CCOPT="$CCOPT -Wl,-bM:SRE -Wl,-T512 -Wl,-H512 -lm -o $objfile"
-# Note: to use dynamic libraries like libtcl8.4.so and libtk8.4.so 
-# you may need to replace the second CCOPT line above with the following:
-# CCOPT="$CCOPT -Wl,-bM:SRE -Wl,-T512 -Wl,-H512 -brtl -bnortllib -lm -o $objfile"
+if test -z "$ldsocoremode"; then
+  CCOPT="-Wl,-e$entry -Wl,-bE:$expfile -Wl,-bI:$impfile -Wl,-bhalt:4"
+else
+  CCOPT="-Wl,-bnoentry -Wl,-bE:$expfile -Wl,-bhalt:4"
+fi
+CCOPT="$CCOPT -Wl,-bM:SRE -Wl,-T512 -Wl,-H512 -Wl,-brtl -Wl,-bnortllib -lm -o $objfile"
 
 CCARGS="$args"
 
