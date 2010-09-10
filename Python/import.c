@@ -105,12 +105,13 @@ typedef unsigned short mode_t;
                      tag: cpython-32
        Python 3.2a1: 3170 (add DUP_TOP_TWO, remove DUP_TOPX and ROT_FOUR)
                      tag: cpython-32
+       Python 3.2a2  3180 (add DELETE_DEREF)
 */
 
 /* If you change MAGIC, you must change TAG and you must insert the old value
    into _PyMagicNumberTags below.
 */
-#define MAGIC (3170 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3180 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-32"
 #define CACHEDIR "__pycache__"
 /* Current magic word and string tag as globals. */
