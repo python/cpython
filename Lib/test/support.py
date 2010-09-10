@@ -343,13 +343,13 @@ else:
     # file system encoding, but *not* with the default (ascii) encoding
     TESTFN_UNICODE = "@test-\xe0\xf2"
     TESTFN_ENCODING = sys.getfilesystemencoding()
-    # TESTFN_UNICODE_UNENCODEABLE is a filename that should *not* be
+    # TESTFN_UNENCODABLE is a filename that should *not* be
     # able to be encoded by *either* the default or filesystem encoding.
     # This test really only makes sense on Windows NT platforms
     # which have special Unicode support in posixmodule.
     if (not hasattr(sys, "getwindowsversion") or
             sys.getwindowsversion()[3] < 2): #  0=win32s or 1=9x/ME
-        TESTFN_UNICODE_UNENCODEABLE = None
+        TESTFN_UNENCODABLE = None
     else:
         # Different kinds of characters from various languages to minimize the
         # probability that the whole name is encodable to MBCS (issue #9819)
@@ -360,13 +360,13 @@ else:
             # errors=ignore' mode - hence we get '?' characters rather than
             # the exception.  'Latin1' operates as we expect - ie, fails.
             # See [ 850997 ] mbcs encoding ignores errors
-            TESTFN_UNICODE_UNENCODEABLE.encode("Latin1")
+            TESTFN_UNENCODABLE.encode("Latin1")
         except UnicodeEncodeError:
             pass
         else:
             print('WARNING: The filename %r CAN be encoded by the filesystem.  '
                   'Unicode filename tests may not be effective'
-                  % TESTFN_UNICODE_UNENCODEABLE)
+                  % TESTFN_UNENCODABLE)
 
 if os.path.isdir(TESTFN):
     # a test failed (eg. test_os) without removing TESTFN directory
