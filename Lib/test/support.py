@@ -394,8 +394,9 @@ TESTFN_UNENCODABLE = None
 if os.name in ('nt', 'ce'):
     # skip win32s (0) or Windows 9x/ME (1)
     if sys.getwindowsversion().platform >= 2:
-        # Japanese characters (I think - from bug 846133)
-        TESTFN_UNENCODABLE = TESTFN + "-\u5171\u6709\u3055\u308c\u308b"
+        # Different kinds of characters from various languages to minimize the
+        # probability that the whole name is encodable to MBCS (issue #9819)
+        TESTFN_UNENCODABLE = TESTFN + "-\u5171\u0141\u2661\u0363\uDC80"
         try:
             TESTFN_UNENCODABLE.encode(TESTFN_ENCODING)
         except UnicodeEncodeError:
