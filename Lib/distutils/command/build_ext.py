@@ -753,7 +753,9 @@ class build_ext (Command):
         elif sys.platform == 'darwin':
             # Don't use the default code below
             return ext.libraries
-
+        elif sys.platform[:3] == 'aix':
+            # Don't use the default code below
+            return ext.libraries
         else:
             from distutils import sysconfig
             if sysconfig.get_config_var('Py_ENABLE_SHARED'):
