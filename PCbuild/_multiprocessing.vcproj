@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9,00"
 	Name="_multiprocessing"
-	ProjectGUID="{9e48b300-37d1-11dd-8c41-005056c00008}"
+	ProjectGUID="{9E48B300-37D1-11DD-8C41-005056C00008}"
 	RootNamespace="_multiprocessing"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
