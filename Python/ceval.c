@@ -217,15 +217,23 @@ PyEval_GetCallStats(PyObject *self)
 #endif
 
 
+#ifdef WITH_THREAD
+#define GIL_REQUEST _Py_atomic_load_relaxed(&gil_drop_request)
+#else
+#define GIL_REQUEST 0
+#endif
+
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
    the GIL eventually anyway. */
 #define COMPUTE_EVAL_BREAKER() \
     _Py_atomic_store_relaxed( \
         &eval_breaker, \
-        _Py_atomic_load_relaxed(&gil_drop_request) | \
+        GIL_REQUEST | \
         _Py_atomic_load_relaxed(&pendingcalls_to_do) | \
         pending_async_exc)
+
+#ifdef WITH_THREAD
 
 #define SET_GIL_DROP_REQUEST() \
     do { \
@@ -238,6 +246,8 @@ PyEval_GetCallStats(PyObject *self)
         _Py_atomic_store_relaxed(&gil_drop_request, 0); \
         COMPUTE_EVAL_BREAKER(); \
     } while (0)
+
+#endif
 
 /* Pending calls are only modified under pending_lock */
 #define SIGNAL_PENDING_CALLS() \
@@ -387,7 +397,6 @@ PyEval_ReInitThreads(void)
 
 #else
 static _Py_atomic_int eval_breaker = {0};
-static _Py_atomic_int gil_drop_request = {0};
 static int pending_async_exc = 0;
 #endif /* WITH_THREAD */
 
@@ -1277,8 +1286,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     goto on_error;
                 }
             }
-            if (_Py_atomic_load_relaxed(&gil_drop_request)) {
 #ifdef WITH_THREAD
+            if (_Py_atomic_load_relaxed(&gil_drop_request)) {
                 /* Give another thread a chance */
                 if (PyThreadState_Swap(NULL) != tstate)
                     Py_FatalError("ceval: tstate mix-up");
@@ -1289,8 +1298,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 take_gil(tstate);
                 if (PyThreadState_Swap(tstate) != NULL)
                     Py_FatalError("ceval: orphan tstate");
-#endif
             }
+#endif
             /* Check for asynchronous exceptions. */
             if (tstate->async_exc != NULL) {
                 x = tstate->async_exc;
