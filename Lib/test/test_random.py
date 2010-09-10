@@ -55,8 +55,6 @@ class TestBasicOps(unittest.TestCase):
 
         with test_support.check_py3k_warnings(quiet=True):
             self.assertRaises(TypeError, self.gen.jumpahead)  # needs an arg
-            self.assertRaises(TypeError, self.gen.jumpahead, "ick")  # wrong type
-            self.assertRaises(TypeError, self.gen.jumpahead, 2.3)  # wrong type
             self.assertRaises(TypeError, self.gen.jumpahead, 2, 3)  # too many
 
     def test_sample(self):

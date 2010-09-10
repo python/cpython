@@ -43,6 +43,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9816: random.Random.jumpahead(n) did not produce a sufficiently
+  different internal state for small values of n.  Fixed by salting the 
+  value.
+
 - Issue #9792: In case of connection failure, socket.create_connection()
   would swallow the exception and raise a new one, making it impossible
   to fetch the original errno, or to filter timeout errors.  Now the
