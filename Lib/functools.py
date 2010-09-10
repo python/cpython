@@ -9,7 +9,7 @@
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
-           'total_ordering', 'cmp_to_key', 'lru_cache']
+           'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial']
 
 from _functools import partial, reduce
 from collections import OrderedDict
