@@ -2641,27 +2641,23 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   [AC_MSG_RESULT(no)
 ])
 
-AC_MSG_CHECKING(for flock)
-have_flock=no
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <sys/file.h>
-]], [[void* p = flock]])],
-  [AC_DEFINE(HAVE_FLOCK, 1, Define if you have the 'flock' function.)
-   have_flock=yes
+AC_CACHE_CHECK([for flock declaration], [ac_cv_flock_decl],
+  [AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM(
+      [#include <sys/file.h>],
+      [void* p = flock]
+    )],
+    [ac_cv_flock_decl=yes],
+    [ac_cv_flock_decl=no]
+  )
 ])
-AC_MSG_RESULT($have_flock)
-
-if test "$have_flock" = yes ; then
-  AC_MSG_CHECKING(if flock requires additional libraries.)
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-  #include <sys/file.h>
-  ]], [[void *p = flock; flock(0, 0)]])],
-    [AC_MSG_RESULT(no)],
-    [AC_MSG_RESULT(yes)
-     AC_CHECK_LIB(bsd,flock, [
-      AC_DEFINE(FLOCK_NEEDS_LIBBSD, 1, Define if flock needs to be linked with bsd library.)
-      ])
-  ])
+if test "x${ac_cv_flock_decl}" = xyes; then
+  AC_CHECK_FUNCS(flock,,
+    AC_CHECK_LIB(bsd,flock,
+      [AC_DEFINE(HAVE_FLOCK)
+       AC_DEFINE(FLOCK_NEEDS_LIBBSD, 1, Define if flock needs to be linked with bsd library.)
+    ])
+  )
 fi
 
 AC_MSG_CHECKING(for getpagesize)
