@@ -466,6 +466,9 @@
 			RelativePath="..\..\Objects\boolobject.c">
 		</File>
 		<File
+			RelativePath="..\..\Objects\bytearrayobject.c">
+		</File>
+		<File
 			RelativePath="..\..\Objects\bytes_methods.c">
 		</File>
 		<File
@@ -774,9 +777,6 @@
 		</File>
 		<File
 			RelativePath="..\..\Objects\sliceobject.c">
-		</File>
-		<File
-			RelativePath="..\..\Objects\stringobject.c">
 		</File>
 		<File
 			RelativePath="..\..\Python\structmember.c">
