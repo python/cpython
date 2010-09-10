@@ -2313,6 +2313,24 @@ is generally interpreted as simple bytes.
 
    :class:`memoryview` has several methods:
 
+   .. method:: tobytes()
+
+      Return the data in the buffer as a bytestring.  This is equivalent to
+      calling the :class:`bytes` constructor on the memoryview. ::
+
+         >>> m = memoryview(b"abc")
+         >>> m.tobytes()
+         b'abc'
+         >>> bytes(m)
+         b'abc'
+
+   .. method:: tolist()
+
+      Return the data in the buffer as a list of integers. ::
+
+         >>> memoryview(b'abc').tolist()
+         [97, 98, 99]
+
    .. method:: release()
 
       Release the underlying buffer exposed by the memoryview object.  Many
@@ -2345,24 +2363,6 @@ is generally interpreted as simple bytes.
          ValueError: operation forbidden on released memoryview object
 
       .. versionadded:: 3.2
-
-   .. method:: tobytes()
-
-      Return the data in the buffer as a bytestring.  This is equivalent to
-      calling the :class:`bytes` constructor on the memoryview. ::
-
-         >>> m = memoryview(b"abc")
-         >>> m.tobytes()
-         b'abc'
-         >>> bytes(m)
-         b'abc'
-
-   .. method:: tolist()
-
-      Return the data in the buffer as a list of integers. ::
-
-         >>> memoryview(b'abc').tolist()
-         [97, 98, 99]
 
    There are also several readonly attributes available:
 
