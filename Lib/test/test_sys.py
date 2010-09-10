@@ -630,17 +630,6 @@ class SysModuleTest(unittest.TestCase):
             env['PYTHONFSENCODING'] = encoding
             self.check_fsencoding(get_fsencoding(env), encoding)
 
-    def test_setfilesystemencoding(self):
-        old = sys.getfilesystemencoding()
-        try:
-            sys.setfilesystemencoding("iso-8859-1")
-            self.assertEqual(sys.getfilesystemencoding(), "iso-8859-1")
-        finally:
-            sys.setfilesystemencoding(old)
-        try:
-            self.assertRaises(LookupError, sys.setfilesystemencoding, "xxx")
-        finally:
-            sys.setfilesystemencoding(old)
 
 
 class SizeofTest(unittest.TestCase):

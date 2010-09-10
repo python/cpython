@@ -33,29 +33,6 @@ const char *Py_FileSystemDefaultEncoding = "utf-8";
 int Py_HasFileSystemDefaultEncoding = 1;
 #endif
 
-int
-_Py_SetFileSystemEncoding(PyObject *s)
-{
-    PyObject *defenc, *codec;
-    if (!PyUnicode_Check(s)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    defenc = _PyUnicode_AsDefaultEncodedString(s, NULL);
-    if (!defenc)
-        return -1;
-    codec = _PyCodec_Lookup(PyBytes_AsString(defenc));
-    if (codec == NULL)
-        return -1;
-    Py_DECREF(codec);
-    if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding)
-        /* A file system encoding was set at run-time */
-        free((char*)Py_FileSystemDefaultEncoding);
-    Py_FileSystemDefaultEncoding = strdup(PyBytes_AsString(defenc));
-    Py_HasFileSystemDefaultEncoding = 0;
-    return 0;
-}
-
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 {

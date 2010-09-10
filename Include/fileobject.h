@@ -21,7 +21,6 @@ PyAPI_FUNC(char *) Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
 */
 PyAPI_DATA(const char *) Py_FileSystemDefaultEncoding;
 PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
-PyAPI_FUNC(int) _Py_SetFileSystemEncoding(PyObject *);
 
 /* Internal API
 
