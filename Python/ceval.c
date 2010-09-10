@@ -2148,7 +2148,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             x = freevars[oparg];
             if (PyCell_GET(x) != NULL) {
                 PyCell_Set(x, NULL);
-                continue;
+                DISPATCH();
             }
             err = -1;
             format_exc_unbound(co, oparg);
