@@ -36,7 +36,7 @@ the following command can be used to get the disassembly of :func:`myfunc`::
 The :mod:`dis` module defines the following functions and constants:
 
 
-.. function:: code_info(x=None)
+.. function:: code_info(x)
 
    Return a formatted multi-line string with detailed code object information
    for the supplied function, method, source code string or code object.
@@ -47,6 +47,16 @@ The :mod:`dis` module defines the following functions and constants:
 
    .. versionadded:: 3.2
 
+
+.. function:: show_code(x)
+
+   Print detailed code object information for the supplied function, method,
+   source code string or code object to stdout.
+
+   This is a convenient shorthand for ``print(code_info(x))``, intended for
+   interactive exploration at the interpreter prompt.
+
+   .. versionadded:: 3.2
 
 .. function:: dis(x=None)
 
