@@ -108,6 +108,13 @@ Library
   guaranteed to exist in all Python implementations and the names of hash
   algorithms available in the current process.
 
+C-API
+-----
+
+- Issue #9834: Don't segfault in PySequence_GetSlice, PySequence_SetSlice, or
+  PySequence_DelSlice when the object doesn't have any mapping operations
+  defined.
+
 Tools/Demos
 -----------
 
