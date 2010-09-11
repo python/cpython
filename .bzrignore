@@ -45,6 +45,7 @@ Modules/Setup
 Modules/Setup.config
 Modules/Setup.local
 Modules/config.c
+Modules/ld_so_aix
 Parser/pgen
 Lib/lib2to3/Grammar*.pickle
 Lib/lib2to3/PatternGrammar*.pickle
