@@ -111,30 +111,40 @@ except:
 -------
 
 Python has the ``except:`` clause, which catches all exceptions. Since *every*
-error in Python raises an exception, this makes many programming errors look
-like runtime problems, and hinders the debugging process.
+error in Python raises an exception, using ``except:`` can make many
+programming errors look like runtime problems, which hinders the debugging
+process.
 
-The following code shows a great example::
+The following code shows a great example of why this is bad::
 
    try:
        foo = opne("file") # misspelled "open"
    except:
        sys.exit("could not open file!")
 
-The second line triggers a :exc:`NameError` which is caught by the except
-clause. The program will exit, and you will have no idea that this has nothing
-to do with the readability of ``"file"``.
+The second line triggers a :exc:`NameError`, which is caught by the except
+clause. The program will exit, and the error message the program prints will
+make you think the problem is the readability of ``"file"`` when in fact
+the real error has nothing to do with ``"file"``.
 
-The example above is better written ::
+A better way to write the above is ::
 
    try:
-       foo = opne("file") # will be changed to "open" as soon as we run it
+       foo = opne("file")
    except IOError:
        sys.exit("could not open file")
 
-There are some situations in which the ``except:`` clause is useful: for
-example, in a framework when running callbacks, it is good not to let any
-callback disturb the framework.
+When this is run, Python will produce a traceback showing the :exc:`NameError`,
+and it will be immediately apparent what needs to be fixed.
+
+.. index:: bare except, except; bare
+
+Because ``except:`` catches *all* exceptions, including :exc:`SystemExit`,
+:exc:`KeyboardInterrupt`, and :exc:`GeneratorExit` (which is not an error and
+should not normally be caught by user code), using a bare ``except:`` is almost
+never a good idea.  In situations where you need to catch all "normal" errors,
+such as in a framework that runs callbacks, you can catch the base class for
+all normal exceptions, :exc:`Exception`.
 
 
 Exceptions
@@ -152,51 +162,60 @@ The following is a very popular anti-idiom ::
            sys.exit(1)
        return open(file).readline()
 
-Consider the case the file gets deleted between the time the call to
-:func:`os.path.exists` is made and the time :func:`open` is called. That means
-the last line will raise an :exc:`IOError`. The same would happen if *file*
-exists but has no read permission. Since testing this on a normal machine on
-existing and non-existing files make it seem bugless, that means in testing the
-results will seem fine, and the code will get shipped. Then an unhandled
-:exc:`IOError` escapes to the user, who has to watch the ugly traceback.
+Consider the case where the file gets deleted between the time the call to
+:func:`os.path.exists` is made and the time :func:`open` is called. In that
+case the last line will raise an :exc:`IOError`.  The same thing would happen
+if *file* exists but has no read permission.  Since testing this on a normal
+machine on existent and non-existent files makes it seem bugless, the test
+results will seem fine, and the code will get shipped.  Later an unhandled
+:exc:`IOError` (or perhaps some other :exc:`EnvironmentError`) escapes to the
+user, who gets to watch the ugly traceback.
 
-Here is a better way to do it. ::
+Here is a somewhat better way to do it. ::
 
    def get_status(file):
        try:
            return open(file).readline()
-       except (IOError, OSError):
-           print("file not found")
+       except EnvironmentError as err:
+           print("Unable to open file: {}".format(err))
            sys.exit(1)
 
-In this version, \*either\* the file gets opened and the line is read (so it
-works even on flaky NFS or SMB connections), or the message is printed and the
-application aborted.
+In this version, *either* the file gets opened and the line is read (so it
+works even on flaky NFS or SMB connections), or an error message is printed
+that provides all the available information on why the open failed, and the
+application is aborted.
 
-Still, :func:`get_status` makes too many assumptions --- that it will only be
-used in a short running script, and not, say, in a long running server. Sure,
-the caller could do something like ::
+However, even this version of :func:`get_status` makes too many assumptions ---
+that it will only be used in a short running script, and not, say, in a long
+running server. Sure, the caller could do something like ::
 
    try:
        status = get_status(log)
    except SystemExit:
        status = None
 
-So, try to make as few ``except`` clauses in your code --- those will usually be
-a catch-all in the :func:`main`, or inside calls which should always succeed.
+But there is a better way.  You should try to use as few ``except`` clauses in
+your code as you can --- the ones you do use will usually be inside calls which
+should always succeed, or a catch-all in a main function.
 
-So, the best version is probably ::
+So, an even better version of :func:`get_status()` is probably ::
 
    def get_status(file):
        return open(file).readline()
 
-The caller can deal with the exception if it wants (for example, if it  tries
+The caller can deal with the exception if it wants (for example, if it tries
 several files in a loop), or just let the exception filter upwards to *its*
 caller.
 
-The last version is not very good either --- due to implementation details, the
-file would not be closed when an exception is raised until the handler finishes,
-and perhaps not at all in non-C implementations (e.g., Jython). ::
+But the last version still has a serious problem --- due to implementation
+details in CPython, the file would not be closed when an exception is raised
+until the exception handler finishes; and, worse, in other implementations
+(e.g., Jython) it might not be closed at all regardless of whether or not
+an exception is raised.
+
+The best version of this function uses the ``open()`` call as a context
+manager, which will ensure that the file gets closed as soon as the
+function returns::
 
    def get_status(file):
        with open(file) as fp:
