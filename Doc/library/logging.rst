@@ -730,7 +730,7 @@ functions.
       d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
       logging.warning("Protocol problem: %s", "connection reset", extra=d)
 
-   would print something like  ::
+   would print something like::
 
       2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 
@@ -1679,6 +1679,8 @@ these affect you, you can use an alternative serialization scheme by overriding
 the :meth:`makePickle` method and implementing your alternative there, as
 well as adapting the above script to use your alternative serialization.
 
+.. _arbitrary-object-messages:
+
 Using arbitrary objects as messages
 -----------------------------------
 
@@ -2562,6 +2564,8 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
 +-------------------------+-----------------------------------------------+
 | ``%(process)d``         | Process ID (if available).                    |
 +-------------------------+-----------------------------------------------+
+| ``%(processName)s``     | Process name (if available).                  |
++-------------------------+-----------------------------------------------+
 | ``%(message)s``         | The logged message, computed as ``msg %       |
 |                         | args``.                                       |
 +-------------------------+-----------------------------------------------+
@@ -2573,11 +2577,10 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
 .. class:: Formatter([fmt[, datefmt]])
 
    Returns a new instance of the :class:`Formatter` class. The instance is
-   initialized with a format string for the message as a whole, as well as a format
-   string for the date/time portion of a message. If no *fmt* is specified,
-   ``'%(message)s'`` is used. If no *datefmt* is specified, the ISO8601 date format
-   is used.
-
+   initialized with a format string for the message as a whole, as well as a
+   format string for the date/time portion of a message. If no *fmt* is
+   specified, ``'%(message)s'`` is used. If no *datefmt* is specified, the
+   ISO8601 date format is used.
 
    .. method:: format(record)
 
@@ -2633,7 +2636,7 @@ initialized with the empty string, all events are passed.
 
    Returns an instance of the :class:`Filter` class. If *name* is specified, it
    names a logger which, together with its children, will have its events allowed
-   through the filter. If no name is specified, allows every event.
+   through the filter. If *name* is the empty string, allows every event.
 
 
    .. method:: filter(record)
@@ -2654,35 +2657,71 @@ been applied to those descendant loggers.
 LogRecord Objects
 -----------------
 
-:class:`LogRecord` instances are created every time something is logged. They
-contain all the information pertinent to the event being logged. The main
-information passed in is in msg and args, which are combined using msg % args to
-create the message field of the record. The record also includes information
-such as when the record was created, the source line where the logging call was
-made, and any exception information to be logged.
+:class:`LogRecord` instances are created automatically by the :class:`Logger`
+every time something is logged, and can be created manually via
+:func:`makeLogRecord` (for example, from a pickled event received over the
+wire).
 
 
-.. class:: LogRecord(name, lvl, pathname, lineno, msg, args, exc_info [, func])
+.. class::
+   LogRecord(name, lvl, pathname, lineno, msg, args, exc_info [, func=None])
 
-   Returns an instance of :class:`LogRecord` initialized with interesting
-   information. The *name* is the logger name; *lvl* is the numeric level;
-   *pathname* is the absolute pathname of the source file in which the logging
-   call was made; *lineno* is the line number in that file where the logging
-   call is found; *msg* is the user-supplied message (a format string); *args*
-   is the tuple which, together with *msg*, makes up the user message; and
-   *exc_info* is the exception tuple obtained by calling :func:`sys.exc_info`
-   (or :const:`None`, if no exception information is available). The *func* is
-   the name of the function from which the logging call was made. If not
-   specified, it defaults to ``None``.
+   Contains all the information pertinent to the event being logged.
 
-   .. versionchanged:: 2.5
-      *func* was added.
+   The primary information is passed in :attr:`msg` and :attr:`args`, which
+   are combined using ``msg % args`` to create the :attr:`message` field of the
+   record.
 
+   .. attribute:: args
+
+      Tuple of arguments to be used in formatting :attr:`msg`.
+
+   .. attribute:: exc_info
+
+      Exception tuple (à la `sys.exc_info`) or `None` if no exception
+      information is availble.
+
+   .. attribute:: func
+
+      Name of the function of origin (i.e. in which the logging call was made).
+
+   .. attribute:: lineno
+
+      Line number in the source file of origin.
+
+   .. attribute:: lvl
+
+      Numeric logging level.
+
+   .. attribute:: message
+
+      Bound to the result of :meth:`getMessage` when
+      :meth:`Formatter.format(record)<Formatter.format>` is invoked.
+
+   .. attribute:: msg
+
+      User-supplied :ref:`format string<string-formatting>` or arbitrary object
+      (see :ref:`arbitrary-object-messages`) used in :meth:`getMessage`.
+
+   .. attribute:: name
+
+      Name of the logger that emitted the record.
+
+   .. attribute:: pathname
+
+      Absolute pathname of the source file of origin.
 
    .. method:: getMessage()
 
       Returns the message for this :class:`LogRecord` instance after merging any
-      user-supplied arguments with the message.
+      user-supplied arguments with the message. If the user-supplied message
+      argument to the logging call is not a string, :func:`str` is called on it to
+      convert it to a string. This allows use of user-defined classes as
+      messages, whose ``__str__`` method can return the actual format string to
+      be used.
+
+   .. versionchanged:: 2.5
+      *func* was added.
 
 .. _logger-adapter:
 
