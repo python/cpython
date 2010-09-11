@@ -1612,7 +1612,7 @@ PySequence_GetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
     if (!s) return null_error();
 
     mp = s->ob_type->tp_as_mapping;
-    if (mp->mp_subscript) {
+    if (mp && mp->mp_subscript) {
         PyObject *res;
         PyObject *slice = _PySlice_FromIndices(i1, i2);
         if (!slice)
@@ -1690,7 +1690,7 @@ PySequence_SetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2, PyObject *o)
     }
 
     mp = s->ob_type->tp_as_mapping;
-    if (mp->mp_ass_subscript) {
+    if (mp && mp->mp_ass_subscript) {
         int res;
         PyObject *slice = _PySlice_FromIndices(i1, i2);
         if (!slice)
@@ -1715,7 +1715,7 @@ PySequence_DelSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
     }
 
     mp = s->ob_type->tp_as_mapping;
-    if (mp->mp_ass_subscript) {
+    if (mp && mp->mp_ass_subscript) {
         int res;
         PyObject *slice = _PySlice_FromIndices(i1, i2);
         if (!slice)
