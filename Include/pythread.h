@@ -39,9 +39,9 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
 
 /* In the NT API, the timeout is a DWORD and is expressed in milliseconds */
 #if defined (NT_THREADS)
-#if (0xFFFFFFFFLL * 1000 < PY_TIMEOUT_MAX)
+#if (Py_LL(0xFFFFFFFF) * 1000 < PY_TIMEOUT_MAX)
 #undef PY_TIMEOUT_MAX
-#define PY_TIMEOUT_MAX (0xFFFFFFFFLL * 1000)
+#define PY_TIMEOUT_MAX (Py_LL(0xFFFFFFFF) * 1000)
 #endif
 #endif
 
