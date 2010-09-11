@@ -10,6 +10,9 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #9738: PyUnicode_FromFormat() and PyErr_Format() raise an error on
+  a non-ASCII byte in the format string.
+
 - Issue #4617: Previously it was illegal to delete a name from the local
   namespace if it occurs as a free variable in a nested block.  This limitation
   of the compiler has been lifted, and a new opcode introduced (DELETE_DEREF).

@@ -234,7 +234,7 @@ APIs:
    arguments, calculate the size of the resulting Python unicode string and return
    a string with the values formatted into it.  The variable arguments must be C
    types and must correspond exactly to the format characters in the *format*
-   string.  The following format characters are allowed:
+   ASCII-encoded string. The following format characters are allowed:
 
    .. % This should be exactly the same as the table in PyErr_Format.
    .. % The descriptions for %zd and %zu are wrong, but the truth is complicated

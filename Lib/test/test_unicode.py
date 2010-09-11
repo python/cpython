@@ -1385,6 +1385,20 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEquals("%s" % s, '__str__ overridden')
         self.assertEquals("{}".format(s), '__str__ overridden')
 
+    def test_from_format(self):
+        # Ensure that PyUnicode_FromFormat() raises an error for a non-ascii
+        # format string.
+        from _testcapi import format_unicode
+
+        # ascii format, non-ascii argument
+        text = format_unicode(b'ascii\x7f=%U', 'unicode\xe9')
+        self.assertEqual(text, 'ascii\x7f=unicode\xe9')
+
+        # non-ascii format, ascii argument
+        self.assertRaisesRegexp(ValueError,
+            '^PyUnicode_FromFormatV\(\) expects an ASCII-encoded format '
+            'string, got a non-ascii byte: 0xe9$',
+            format_unicode, b'unicode\xe9=%s', 'ascii')
 
 def test_main():
     support.run_unittest(__name__)
