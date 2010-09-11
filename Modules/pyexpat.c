@@ -258,11 +258,7 @@ trace_frame_exc(PyThreadState *tstate, PyFrameObject *f)
         value = Py_None;
         Py_INCREF(value);
     }
-#if PY_VERSION_HEX < 0x02040000
-    arg = Py_BuildValue("(OOO)", type, value, traceback);
-#else
     arg = PyTuple_Pack(3, type, value, traceback);
-#endif
     if (arg == NULL) {
         PyErr_Restore(type, value, traceback);
         return 0;
@@ -814,11 +810,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
 
     PyTuple_SET_ITEM(arg, 0, bytes);
 
-#if PY_VERSION_HEX < 0x02020000
-    str = PyObject_CallObject(meth, arg);
-#else
     str = PyObject_Call(meth, arg, NULL);
-#endif
     if (str == NULL)
         goto finally;
 
@@ -961,14 +953,7 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
         return NULL;
     }
 
-#ifndef Py_TPFLAGS_HAVE_GC
-    /* Python versions 2.0 and 2.1 */
-    new_parser = PyObject_New(xmlparseobject, &Xmlparsetype);
-#else
-    /* Python versions 2.2 and later */
     new_parser = PyObject_GC_New(xmlparseobject, &Xmlparsetype);
-#endif
-
     if (new_parser == NULL)
         return NULL;
     new_parser->buffer_size = self->buffer_size;
@@ -983,11 +968,7 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     new_parser->handlers = 0;
     new_parser->intern = self->intern;
     Py_XINCREF(new_parser->intern);
-#ifdef Py_TPFLAGS_HAVE_GC
     PyObject_GC_Track(new_parser);
-#else
-    PyObject_GC_Init(new_parser);
-#endif
 
     if (self->buffer != NULL) {
         new_parser->buffer = malloc(new_parser->buffer_size);
@@ -1158,12 +1139,7 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     int i;
     xmlparseobject *self;
 
-#ifdef Py_TPFLAGS_HAVE_GC
-    /* Code for versions 2.2 and later */
     self = PyObject_GC_New(xmlparseobject, &Xmlparsetype);
-#else
-    self = PyObject_New(xmlparseobject, &Xmlparsetype);
-#endif
     if (self == NULL)
         return NULL;
 
@@ -1183,11 +1159,7 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     }
     self->intern = intern;
     Py_XINCREF(self->intern);
-#ifdef Py_TPFLAGS_HAVE_GC
     PyObject_GC_Track(self);
-#else
-    PyObject_GC_Init(self);
-#endif
     if (self->itself == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "XML_ParserCreate failed");
@@ -1216,11 +1188,7 @@ static void
 xmlparse_dealloc(xmlparseobject *self)
 {
     int i;
-#ifdef Py_TPFLAGS_HAVE_GC
     PyObject_GC_UnTrack(self);
-#else
-    PyObject_GC_Fini(self);
-#endif
     if (self->itself != NULL)
         XML_ParserFree(self->itself);
     self->itself = NULL;
@@ -1240,13 +1208,7 @@ xmlparse_dealloc(xmlparseobject *self)
         self->buffer = NULL;
     }
     Py_XDECREF(self->intern);
-#ifndef Py_TPFLAGS_HAVE_GC
-    /* Code for versions 2.0 and 2.1 */
-    PyObject_Del(self);
-#else
-    /* Code for versions 2.2 and later. */
     PyObject_GC_Del(self);
-#endif
 }
 
 static int
@@ -1571,11 +1533,7 @@ static PyTypeObject Xmlparsetype = {
         (getattrofunc)xmlparse_getattro, /* tp_getattro */
         0,              /* tp_setattro */
         0,              /* tp_as_buffer */
-#ifdef Py_TPFLAGS_HAVE_GC
         Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
-#else
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
-#endif
         Xmlparsetype__doc__, /* tp_doc - Documentation string */
         (traverseproc)xmlparse_traverse,        /* tp_traverse */
         (inquiry)xmlparse_clear,                /* tp_clear */
