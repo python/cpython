@@ -105,6 +105,10 @@ Core and Builtins
 C-API
 -----
 
+- Issue #9834: Don't segfault in PySequence_GetSlice, PySequence_SetSlice, or
+  PySequence_DelSlice when the object doesn't have any mapping operations
+  defined.
+
 - Issue #5753: A new C API function, :cfunc:`PySys_SetArgvEx`, allows
   embedders of the interpreter to set sys.argv without also modifying
   sys.path.  This helps fix `CVE-2008-5983
