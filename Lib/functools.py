@@ -123,8 +123,8 @@ def lru_cache(maxsize=100):
     http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
 
     """
-    def decorating_function(user_function, tuple=tuple, sorted=sorted,
-                            len=len, KeyError=KeyError):
+    def decorating_function(user_function,
+                *, tuple=tuple, sorted=sorted, len=len, KeyError=KeyError):
         cache = OrderedDict()           # ordered least recent to most recent
         cache_popitem = cache.popitem
         cache_renew = cache.move_to_end

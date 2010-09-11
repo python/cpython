@@ -47,7 +47,7 @@ class OrderedDict(dict, MutableMapping):
             self.__map = {}
         self.update(*args, **kwds)
 
-    def __setitem__(self, key, value, PREV=0, NEXT=1, dict_setitem=dict.__setitem__):
+    def __setitem__(self, key, value, *, PREV=0, NEXT=1, dict_setitem=dict.__setitem__):
         'od.__setitem__(i, y) <==> od[i]=y'
         # Setting a new item creates a new link which goes at the end of the linked
         # list, and the inherited dictionary is updated with the new key/value pair.
@@ -57,7 +57,7 @@ class OrderedDict(dict, MutableMapping):
             last[NEXT] = root[PREV] = self.__map[key] = [last, root, key]
         dict_setitem(self, key, value)
 
-    def __delitem__(self, key, PREV=0, NEXT=1, dict_delitem=dict.__delitem__):
+    def __delitem__(self, key, *, PREV=0, NEXT=1, dict_delitem=dict.__delitem__):
         'od.__delitem__(y) <==> del od[y]'
         # Deleting an existing item uses self.__map to find the link which is
         # then removed by updating the links in the predecessor and successor nodes.
@@ -68,7 +68,7 @@ class OrderedDict(dict, MutableMapping):
         link_prev[NEXT] = link_next
         link_next[PREV] = link_prev
 
-    def __iter__(self, NEXT=1, KEY=2):
+    def __iter__(self, *, NEXT=1, KEY=2):
         'od.__iter__() <==> iter(od)'
         # Traverse the linked list in order.
         root = self.__root
@@ -77,7 +77,7 @@ class OrderedDict(dict, MutableMapping):
             yield curr[KEY]
             curr = curr[NEXT]
 
-    def __reversed__(self, PREV=0, KEY=2):
+    def __reversed__(self, *, PREV=0, KEY=2):
         'od.__reversed__() <==> reversed(od)'
         # Traverse the linked list in reverse order.
         root = self.__root
@@ -108,7 +108,7 @@ class OrderedDict(dict, MutableMapping):
             pass
         dict.clear(self)
 
-    def popitem(self, last=True, PREV=0, NEXT=1, KEY=2, dict_pop=dict.pop):
+    def popitem(self, last=True, *, PREV=0, NEXT=1, KEY=2, dict_pop=dict.pop):
         '''od.popitem() -> (k, v), return and remove a (key, value) pair.
         Pairs are returned in LIFO order if last is true or FIFO order if false.
 
@@ -173,7 +173,7 @@ class OrderedDict(dict, MutableMapping):
     def __del__(self):
         self.clear()                # eliminate cyclical references
 
-    def move_to_end(self, key, last=True, PREV=0, NEXT=1):
+    def move_to_end(self, key, last=True, *, PREV=0, NEXT=1):
         '''Move an existing element to the end (or beginning if last==False).
 
         Raises KeyError if the element does not exist.
