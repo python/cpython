@@ -8,12 +8,13 @@ import unittest
 from test.support import (run_unittest, rmtree,
     TESTFN_ENCODING, TESTFN_UNICODE, TESTFN_UNENCODABLE)
 
-try:
-    TESTFN_UNICODE.encode(TESTFN_ENCODING)
-except (UnicodeError, TypeError):
-    # Either the file system encoding is None, or the file name
-    # cannot be encoded in the file system encoding.
-    raise unittest.SkipTest("No Unicode filesystem semantics on this platform.")
+if not os.path.supports_unicode_filenames:
+    try:
+        TESTFN_UNICODE.encode(TESTFN_ENCODING)
+    except (UnicodeError, TypeError):
+        # Either the file system encoding is None, or the file name
+        # cannot be encoded in the file system encoding.
+        raise unittest.SkipTest("No Unicode filesystem semantics on this platform.")
 
 def remove_if_exists(filename):
     if os.path.exists(filename):
@@ -90,7 +91,7 @@ class TestUnicodeFiles(unittest.TestCase):
         shutil.copy2(filename1, filename2 + ".new")
         os.unlink(filename1 + ".new")
 
-    def _do_directory(self, make_name, chdir_name, encoded):
+    def _do_directory(self, make_name, chdir_name):
         cwd = os.getcwdb()
         if os.path.isdir(make_name):
             rmtree(make_name)
@@ -98,12 +99,8 @@ class TestUnicodeFiles(unittest.TestCase):
         try:
             os.chdir(chdir_name)
             try:
-                if not encoded:
-                    cwd_result = os.getcwd()
-                    name_result = make_name
-                else:
-                    cwd_result = os.getcwdb().decode(TESTFN_ENCODING)
-                    name_result = make_name.decode(TESTFN_ENCODING)
+                cwd_result = os.getcwd()
+                name_result = make_name
 
                 cwd_result = unicodedata.normalize("NFD", cwd_result)
                 name_result = unicodedata.normalize("NFD", name_result)
@@ -155,12 +152,11 @@ class TestUnicodeFiles(unittest.TestCase):
         #  Make dir with encoded, chdir with unicode, checkdir with encoded
         #  (or unicode/encoded/unicode, etc
         ext = ".dir"
-        self._do_directory(TESTFN_UNICODE+ext, TESTFN_UNICODE+ext, False)
+        self._do_directory(TESTFN_UNICODE+ext, TESTFN_UNICODE+ext)
         # Our directory name that can't use a non-unicode name.
         if TESTFN_UNENCODABLE is not None:
             self._do_directory(TESTFN_UNENCODABLE+ext,
-                               TESTFN_UNENCODABLE+ext,
-                               False)
+                               TESTFN_UNENCODABLE+ext)
 
 def test_main():
     run_unittest(__name__)
