@@ -177,7 +177,7 @@ Because ``except:`` catches *all* exceptions, including :exc:`SystemExit`,
 should not normally be caught by user code), using a bare ``except:`` is almost
 never a good idea.  In situations where you need to catch all "normal" errors,
 such as in a framework that runs callbacks, you can catch the base class for
-all normal exceptions, :exc:`Exception`.  Unfortunately in Python2 it is
+all normal exceptions, :exc:`Exception`.  Unfortunately in Python 2.x it is
 possible for third-party code to raise exceptions that do not inherit from
 :exc:`Exception`, so in Python 2.x there are some cases where you may have to
 use a bare ``except:`` and manually re-raise the exceptions you don't want
