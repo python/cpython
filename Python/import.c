@@ -108,8 +108,11 @@ typedef unsigned short mode_t;
        Python 3.2a2  3180 (add DELETE_DEREF)
 */
 
-/* If you change MAGIC, you must change TAG and you must insert the old value
-   into _PyMagicNumberTags below.
+/* MAGIC must change whenever the bytecode emitted by the compiler may no
+   longer be understood by older implementations of the eval loop (usually
+   due to the addition of new opcodes)
+   TAG must change for each major Python release. The magic number will take
+   care of any bytecode changes that occur during development.
 */
 #define MAGIC (3180 | ((long)'\r'<<16) | ((long)'\n'<<24))
 #define TAG "cpython-32"
