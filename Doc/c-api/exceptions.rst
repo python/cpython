@@ -146,7 +146,7 @@ in various ways.  There is a separate error indicator for each thread.
 .. cfunction:: PyObject* PyErr_Format(PyObject *exception, const char *format, ...)
 
    This function sets the error indicator and returns *NULL*. *exception* should be
-   a Python exception (class, not an instance).  *format* should be a string,
+   a Python exception (class, not an instance). *format* should be an ASCII-encoded string,
    containing format codes, similar to :cfunc:`printf`. The ``width.precision``
    before a format code is parsed, but the width part is ignored.
 

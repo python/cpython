@@ -183,7 +183,11 @@ PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithUnicodeFilename(
     PyObject *, const Py_UNICODE *);
 #endif /* MS_WINDOWS */
 
-PyAPI_FUNC(PyObject *) PyErr_Format(PyObject *, const char *, ...);
+PyAPI_FUNC(PyObject *) PyErr_Format(
+    PyObject *exception,
+    const char *format,   /* ASCII-encoded string  */
+    ...
+    );
 
 #ifdef MS_WINDOWS
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilenameObject(

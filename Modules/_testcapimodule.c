@@ -2193,6 +2193,17 @@ crash_no_current_thread(PyObject *self)
     return NULL;
 }
 
+static PyObject *
+format_unicode(PyObject *self, PyObject *args)
+{
+    const char *format;
+    PyObject *arg;
+    if (!PyArg_ParseTuple(args, "yU", &format, &arg))
+        return NULL;
+    return PyUnicode_FromFormat(format, arg);
+
+}
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -2272,6 +2283,7 @@ static PyMethodDef TestMethods[] = {
     {"make_exception_with_doc", (PyCFunction)make_exception_with_doc,
      METH_VARARGS | METH_KEYWORDS},
     {"crash_no_current_thread", (PyCFunction)crash_no_current_thread, METH_NOARGS},
+    {"format_unicode", format_unicode, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

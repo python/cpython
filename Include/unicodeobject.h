@@ -550,8 +550,14 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromObject(
     register PyObject *obj      /* Object */
     );
 
-PyAPI_FUNC(PyObject *) PyUnicode_FromFormatV(const char*, va_list);
-PyAPI_FUNC(PyObject *) PyUnicode_FromFormat(const char*, ...);
+PyAPI_FUNC(PyObject *) PyUnicode_FromFormatV(
+    const char *format,   /* ASCII-encoded string  */
+    va_list vargs
+    );
+PyAPI_FUNC(PyObject *) PyUnicode_FromFormat(
+    const char *format,   /* ASCII-encoded string  */
+    ...
+    );
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */

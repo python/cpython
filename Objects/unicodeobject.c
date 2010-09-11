@@ -1102,7 +1102,15 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 appendstring(p);
                 goto end;
             }
-        } else
+        }
+        else if (128 <= (unsigned char)*f) {
+            PyErr_Format(PyExc_ValueError,
+                "PyUnicode_FromFormatV() expects an ASCII-encoded format "
+                "string, got a non-ascii byte: 0x%02x",
+                (unsigned char)*f);
+            goto fail;
+        }
+        else
             *s++ = *f;
     }
 
