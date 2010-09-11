@@ -479,13 +479,13 @@ PyObject_Bytes(PyObject *v)
         result = PyObject_CallFunctionObjArgs(func, NULL);
         Py_DECREF(func);
         if (result == NULL)
-        return NULL;
+            return NULL;
         if (!PyBytes_Check(result)) {
-        PyErr_Format(PyExc_TypeError,
-                     "__bytes__ returned non-bytes (type %.200s)",
-                     Py_TYPE(result)->tp_name);
-        Py_DECREF(result);
-        return NULL;
+            PyErr_Format(PyExc_TypeError,
+                         "__bytes__ returned non-bytes (type %.200s)",
+                         Py_TYPE(result)->tp_name);
+            Py_DECREF(result);
+            return NULL;
         }
         return result;
     }
