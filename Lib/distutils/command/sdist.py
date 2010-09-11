@@ -73,7 +73,7 @@ class sdist(Command):
         ('dist-dir=', 'd',
          "directory to put the source distribution archive(s) in "
          "[default: dist]"),
-        ('medata-check', None,
+        ('metadata-check', None,
          "Ensure that all required elements of meta-data "
          "are supplied. Warn if any missing. [default]"),
         ('owner=', 'u',
