@@ -48,7 +48,7 @@ Modules/Setup.local
 Modules/config.c
 Parser/pgen
 core
-
+Modules/ld_so_aix$
 syntax: glob
 libpython*.a
 *.o
