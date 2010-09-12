@@ -622,6 +622,9 @@ Tests
 Documentation
 -------------
 
+- Issue #9817: Add expat COPYING file; add expat, libffi and expat licenses
+  to Doc/license.rst.
+
 - Issue #9255: Document that the 'test' package is meant for interal Python use
   only.
 
