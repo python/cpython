@@ -951,6 +951,13 @@ class TestOrderedDict(unittest.TestCase):
         self.assertEqual(eval(repr(od)), od)
         self.assertEqual(repr(OrderedDict()), "OrderedDict()")
 
+    def test_repr_recursive(self):
+        # See issue #9826
+        od = OrderedDict.fromkeys('abc')
+        od['x'] = od
+        self.assertEqual(repr(od),
+            "OrderedDict([('a', None), ('b', None), ('c', None), ('x', ...)])")
+
     def test_setdefault(self):
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         shuffle(pairs)

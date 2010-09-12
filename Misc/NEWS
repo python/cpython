@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9826: OrderedDict.__repr__ can now handle self-referential
+  values:   d['x'] = d.
+
 - Issue #9825: Using __del__ in the definition of collections.OrderedDict made
   it possible for the user to create self-referencing ordered dictionaries
   which become permanently uncollectable GC garbage. Reinstated the Py3.1

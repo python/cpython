@@ -41,6 +41,7 @@ class OrderedDict(dict, MutableMapping):
         '''
         if len(args) > 1:
             raise TypeError('expected at most 1 arguments, got %d' % len(args))
+        self.__in_repr = False              # detects recursive repr
         try:
             self.__root
         except AttributeError:
@@ -95,10 +96,10 @@ class OrderedDict(dict, MutableMapping):
     def __reduce__(self):
         'Return state information for pickling'
         items = [[k, self[k]] for k in self]
-        tmp = self.__map, self.__root
-        del self.__map, self.__root
+        tmp = self.__map, self.__root, self.__in_repr
+        del self.__map, self.__root, self.__in_repr
         inst_dict = vars(self).copy()
-        self.__map, self.__root = tmp
+        self.__map, self.__root, self.__in_repr = tmp
         if inst_dict:
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
@@ -167,9 +168,16 @@ class OrderedDict(dict, MutableMapping):
 
     def __repr__(self):
         'od.__repr__() <==> repr(od)'
+        if self.__in_repr:
+            return '...'
         if not self:
             return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, list(self.items()))
+        self.__in_repr = True
+        try:
+            result = '%s(%r)' % (self.__class__.__name__, list(self.items()))
+        finally:
+            self.__in_repr = False
+        return result
 
     def copy(self):
         'od.copy() -> a shallow copy of od'
