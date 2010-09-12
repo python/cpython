@@ -32,6 +32,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #9825: Using __del__ in the definition of collections.OrderedDict made
+  it possible for the user to create self-referencing ordered dictionaries
+  which become permanently uncollectable GC garbage. Reinstated the Py3.1
+  approach of using weakref proxies so that reference cycles never get created
+  in the first place.
+
 - Issue #9579, #9580: Fix os.confstr() for value longer than 255 bytes and
   encode the value with filesystem encoding and surrogateescape (instead of
   utf-8 in strict mode). Patch written by David Watson.
