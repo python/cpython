@@ -109,6 +109,11 @@ class msvc9compilerTestCase(support.TempdirManager,
         self.assertTrue('Desktop' in keys)
 
     def test_remove_visual_c_ref(self):
+        from distutils.msvccompiler import get_build_version
+        if get_build_version() < 8.0:
+            # this test is only for MSVC8.0 or above
+            return
+
         from distutils.msvc9compiler import MSVCCompiler
         tempdir = self.mkdtemp()
         manifest = os.path.join(tempdir, 'manifest')
