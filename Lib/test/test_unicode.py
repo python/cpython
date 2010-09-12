@@ -1397,7 +1397,7 @@ class UnicodeTest(string_tests.CommonTest,
         # non-ascii format, ascii argument
         self.assertRaisesRegexp(ValueError,
             '^PyUnicode_FromFormatV\(\) expects an ASCII-encoded format '
-            'string, got a non-ascii byte: 0xe9$',
+            'string, got a non-ASCII byte: 0xe9$',
             format_unicode, b'unicode\xe9=%s', 'ascii')
 
 def test_main():
