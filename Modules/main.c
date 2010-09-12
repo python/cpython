@@ -488,7 +488,6 @@ Py_Main(int argc, wchar_t **argv)
 #else
     if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0') {
         char *buf, *oldloc;
-        wchar_t *wchar;
         PyObject *unicode;
 
         /* settle for strtok here as there's no one standard
@@ -501,11 +500,16 @@ Py_Main(int argc, wchar_t **argv)
         oldloc = strdup(setlocale(LC_ALL, NULL));
         setlocale(LC_ALL, "");
         for (p = strtok(buf, ","); p != NULL; p = strtok(NULL, ",")) {
-            wchar = _Py_char2wchar(p);
+#ifdef __APPLE__
+            /* Use utf-8 on Mac OS X */
+            unicode = PyUnicode_FromString(p);
+#else
+            wchar_t *wchar = _Py_char2wchar(p);
             if (wchar == NULL)
                 continue;
             unicode = PyUnicode_FromWideChar(wchar, wcslen(wchar));
             PyMem_Free(wchar);
+#endif
             if (unicode == NULL)
                 continue;
             PySys_AddWarnOptionUnicode(unicode);
