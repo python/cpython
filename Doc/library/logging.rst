@@ -2550,27 +2550,58 @@ been applied to those descendant loggers.
 LogRecord Objects
 -----------------
 
-:class:`LogRecord` instances are created every time something is logged. They
-contain all the information pertinent to the event being logged. The main
-information passed in is in msg and args, which are combined using msg % args to
-create the message field of the record. The record also includes information
-such as when the record was created, the source line where the logging call was
-made, and any exception information to be logged.
+:class:`LogRecord` instances are created automatically by the :class:`Logger`
+every time something is logged, and can be created manually via
+:func:`makeLogRecord` (for example, from a pickled event received over the
+wire).
 
 
 .. class:: LogRecord(name, lvl, pathname, lineno, msg, args, exc_info, func=None)
 
-   Returns an instance of :class:`LogRecord` initialized with interesting
-   information. The *name* is the logger name; *lvl* is the numeric level;
-   *pathname* is the absolute pathname of the source file in which the logging
-   call was made; *lineno* is the line number in that file where the logging
-   call is found; *msg* is the user-supplied message (a format string); *args*
-   is the tuple which, together with *msg*, makes up the user message; and
-   *exc_info* is the exception tuple obtained by calling :func:`sys.exc_info`
-   (or :const:`None`, if no exception information is available). The *func* is
-   the name of the function from which the logging call was made. If not
-   specified, it defaults to ``None``.
+   Contains all the information pertinent to the event being logged.
 
+   The primary information is passed in :attr:`msg` and :attr:`args`, which
+   are combined using ``msg % args`` to create the :attr:`message` field of the
+   record.
+
+   .. attribute:: args
+
+      Tuple of arguments to be used in formatting :attr:`msg`.
+
+   .. attribute:: exc_info
+
+      Exception tuple (à la `sys.exc_info`) or `None` if no exception
+      information is availble.
+
+   .. attribute:: func
+
+      Name of the function of origin (i.e. in which the logging call was made).
+
+   .. attribute:: lineno
+
+      Line number in the source file of origin.
+
+   .. attribute:: lvl
+
+      Numeric logging level.
+
+   .. attribute:: message
+
+      Bound to the result of :meth:`getMessage` when
+      :meth:`Formatter.format(record)<Formatter.format>` is invoked.
+
+   .. attribute:: msg
+
+      User-supplied :ref:`format string<string-formatting>` or arbitrary object
+      (see :ref:`arbitrary-object-messages`) used in :meth:`getMessage`.
+
+   .. attribute:: name
+
+      Name of the logger that emitted the record.
+
+   .. attribute:: pathname
+
+      Absolute pathname of the source file of origin.
 
    .. method:: getMessage()
 
