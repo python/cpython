@@ -4,7 +4,6 @@ import unittest
 # Skip test if nis module does not exist.
 nis = support.import_module('nis')
 
-raise unittest.SkipTest("test_nis hangs on Solaris")
 
 class NisTests(unittest.TestCase):
     def test_maps(self):
