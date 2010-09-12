@@ -55,4 +55,4 @@ for opt in opt_flags:
         print(' '.join(libs))
 
     elif opt == '--extension-suffix':
-    	print(sysconfig.get_config_var('SO'))
+        print(sysconfig.get_config_var('SO'))
