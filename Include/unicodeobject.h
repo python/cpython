@@ -78,7 +78,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #define Py_UNICODE_WIDE
 #endif
 
-/* Set these flags if the platform has "wchar.h", "wctype.h" and the
+/* Set these flags if the platform has "wchar.h" and the
    wchar_t type is a 16-bit unsigned type */
 /* #define HAVE_WCHAR_H */
 /* #define HAVE_USABLE_WCHAR_T */
@@ -309,39 +309,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
-/* If you want Python to use the compiler's wctype.h functions instead
-   of the ones supplied with Python, define WANT_WCTYPE_FUNCTIONS or
-   configure Python using --with-wctype-functions.  This reduces the
-   interpreter's code size. */
-
-#if defined(Py_UNICODE_WIDE) && defined(HAVE_USABLE_WCHAR_T) && defined(WANT_WCTYPE_FUNCTIONS)
-
-#include <wctype.h>
-
-#define Py_UNICODE_ISSPACE(ch) iswspace(ch)
-
-#define Py_UNICODE_ISLOWER(ch) iswlower(ch)
-#define Py_UNICODE_ISUPPER(ch) iswupper(ch)
-#define Py_UNICODE_ISTITLE(ch) _PyUnicode_IsTitlecase(ch)
-#define Py_UNICODE_ISLINEBREAK(ch) _PyUnicode_IsLinebreak(ch)
-
-#define Py_UNICODE_TOLOWER(ch) towlower(ch)
-#define Py_UNICODE_TOUPPER(ch) towupper(ch)
-#define Py_UNICODE_TOTITLE(ch) _PyUnicode_ToTitlecase(ch)
-
-#define Py_UNICODE_ISDECIMAL(ch) _PyUnicode_IsDecimalDigit(ch)
-#define Py_UNICODE_ISDIGIT(ch) _PyUnicode_IsDigit(ch)
-#define Py_UNICODE_ISNUMERIC(ch) _PyUnicode_IsNumeric(ch)
-#define Py_UNICODE_ISPRINTABLE(ch) _PyUnicode_IsPrintable(ch)
-
-#define Py_UNICODE_TODECIMAL(ch) _PyUnicode_ToDecimalDigit(ch)
-#define Py_UNICODE_TODIGIT(ch) _PyUnicode_ToDigit(ch)
-#define Py_UNICODE_TONUMERIC(ch) _PyUnicode_ToNumeric(ch)
-
-#define Py_UNICODE_ISALPHA(ch) iswalpha(ch)
-
-#else
-
 /* Since splitting on whitespace is an important use case, and
    whitespace in most situations is solely ASCII whitespace, we
    optimize for the common case by using a quick look-up table
@@ -370,8 +337,6 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 #define Py_UNICODE_TONUMERIC(ch) _PyUnicode_ToNumeric(ch)
 
 #define Py_UNICODE_ISALPHA(ch) _PyUnicode_IsAlpha(ch)
-
-#endif
 
 #define Py_UNICODE_ISALNUM(ch) \
        (Py_UNICODE_ISALPHA(ch) || \

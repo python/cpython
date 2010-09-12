@@ -10,6 +10,10 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #9210: Configure option --with-wctype-functions was removed.  Using the
+  functions from the libc caused the methods .upper() and lower() to become
+  locale aware and created subtly wrong results.
+
 - Issue #9738: PyUnicode_FromFormat() and PyErr_Format() raise an error on
   a non-ASCII byte in the format string.
 

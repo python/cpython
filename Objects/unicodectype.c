@@ -163,8 +163,6 @@ int _PyUnicode_IsPrintable(Py_UCS4 ch)
     return (ctype->flags & PRINTABLE_MASK) != 0;
 }
 
-#ifndef WANT_WCTYPE_FUNCTIONS
-
 /* Returns 1 for Unicode characters having the category 'Ll', 0
    otherwise. */
 
@@ -223,34 +221,3 @@ int _PyUnicode_IsAlpha(Py_UCS4 ch)
     return (ctype->flags & ALPHA_MASK) != 0;
 }
 
-#else
-
-/* Export the interfaces using the wchar_t type for portability
-   reasons:  */
-
-int _PyUnicode_IsLowercase(Py_UCS4 ch)
-{
-    return iswlower(ch);
-}
-
-int _PyUnicode_IsUppercase(Py_UCS4 ch)
-{
-    return iswupper(ch);
-}
-
-Py_UCS4 _PyUnicode_ToLowercase(Py_UCS4 ch)
-{
-    return towlower(ch);
-}
-
-Py_UCS4 _PyUnicode_ToUppercase(Py_UCS4 ch)
-{
-    return towupper(ch);
-}
-
-int _PyUnicode_IsAlpha(Py_UCS4 ch)
-{
-    return iswalpha(ch);
-}
-
-#endif

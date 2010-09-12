@@ -2493,21 +2493,6 @@ if test "$with_valgrind" != no; then
     OPT="-DDYNAMIC_ANNOTATIONS_ENABLED=1 $OPT"
 fi
 
-# Check for --with-wctype-functions
-AC_MSG_CHECKING(for --with-wctype-functions)
-AC_ARG_WITH(wctype-functions, 
-            AS_HELP_STRING([--with-wctype-functions], [use wctype.h functions]),
-[
-if test "$withval" != no
-then 
-  AC_DEFINE(WANT_WCTYPE_FUNCTIONS, 1,
-  [Define if you want wctype.h functions to be used instead of the
-   one supplied by Python itself. (see Include/unicodectype.h).]) 
-  AC_MSG_RESULT(yes)
-else AC_MSG_RESULT(no)
-fi],
-[AC_MSG_RESULT(no)])
-
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 AC_SUBST(DLINCLDIR)
 DLINCLDIR=.

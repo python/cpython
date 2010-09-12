@@ -747,7 +747,6 @@ with_doc_strings
 with_tsc
 with_pymalloc
 with_valgrind
-with_wctype_functions
 with_fpectl
 with_libm
 with_libc
@@ -1418,7 +1417,6 @@ Optional Packages:
   --with(out)-tsc         enable/disable timestamp counter profile
   --with(out)-pymalloc    disable/enable specialized mallocs
   --with-valgrind         Enable Valgrind support
-  --with-wctype-functions use wctype.h functions
   --with-fpectl           enable SIGFPE catching
   --with-libm=STRING      math library
   --with-libc=STRING      C library
@@ -9230,28 +9228,6 @@ fi
 
 
     OPT="-DDYNAMIC_ANNOTATIONS_ENABLED=1 $OPT"
-fi
-
-# Check for --with-wctype-functions
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-wctype-functions" >&5
-$as_echo_n "checking for --with-wctype-functions... " >&6; }
-
-# Check whether --with-wctype-functions was given.
-if test "${with_wctype_functions+set}" = set; then :
-  withval=$with_wctype_functions;
-if test "$withval" != no
-then
-
-$as_echo "#define WANT_WCTYPE_FUNCTIONS 1" >>confdefs.h
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 fi
 
 
