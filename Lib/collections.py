@@ -31,7 +31,9 @@ class OrderedDict(dict, MutableMapping):
     # The internal self.__map dictionary maps keys to links in a doubly linked list.
     # The circular doubly linked list starts and ends with a sentinel element.
     # The sentinel element never gets deleted (this simplifies the algorithm).
-    # The back links are weakref proxies (to prevent circular references).
+    # The prev/next links are weakref proxies (to prevent circular references).
+    # Individual links are kept alive by the hard reference in self.__map.
+    # Those hard references disappear when a key is deleted from an OrderedDict.
 
     def __init__(self, *args, **kwds):
         '''Initialize an ordered dictionary.  Signature is the same as for
@@ -60,8 +62,7 @@ class OrderedDict(dict, MutableMapping):
             root = self.__root
             last = root.prev
             link.prev, link.next, link.key = last, root, key
-            last.next = link
-            root.prev = proxy(link)
+            last.next = root.prev = proxy(link)
         dict.__setitem__(self, key, value)
 
     def __delitem__(self, key, dict_delitem=dict.__delitem__):
