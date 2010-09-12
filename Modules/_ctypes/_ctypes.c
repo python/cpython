@@ -5120,6 +5120,7 @@ create_comerror(void)
     PyComError_Type.tp_base = (PyTypeObject*)PyExc_Exception;
     if (PyType_Ready(&PyComError_Type) < 0)
         return -1;
+    Py_INCREF(&PyComError_Type);
     ComError = (PyObject*)&PyComError_Type;
     return 0;
 }
