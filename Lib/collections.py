@@ -173,9 +173,6 @@ class OrderedDict(dict, MutableMapping):
                    all(_imap(_eq, self.iteritems(), other.iteritems()))
         return dict.__eq__(self, other)
 
-    def __del__(self):
-        self.clear()                # eliminate cyclical references
-
 
 ################################################################################
 ### namedtuple

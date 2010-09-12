@@ -43,6 +43,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #9825: removed __del__ from the definition of collections.OrderedDict.
+  This prevents user-created self-referencing ordered dictionaries from
+  becoming permanently uncollectable GC garbage.  The downside is that
+  removing __del__ means that the internal doubly-linked list has to wait for
+  GC collection rather than freeing memory immediately when the refcnt drops
+  to zero.
+
 - Issue #9816: random.Random.jumpahead(n) did not produce a sufficiently
   different internal state for small values of n.  Fixed by salting the 
   value.
