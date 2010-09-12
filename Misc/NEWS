@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9837: The read() method of ZipExtFile objects (as returned by
+  ZipFile.open()) could return more bytes than requested.
+
 - Issue #9825: removed __del__ from the definition of collections.OrderedDict.
   This prevents user-created self-referencing ordered dictionaries from
   becoming permanently uncollectable GC garbage.  The downside is that
