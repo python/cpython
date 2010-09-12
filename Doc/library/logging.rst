@@ -540,10 +540,10 @@ Useful Handlers
 In addition to the base :class:`Handler` class, many useful subclasses are
 provided:
 
-#. :class:`StreamHandler` instances send error messages to streams (file-like
+#. :class:`StreamHandler` instances send messages to streams (file-like
    objects).
 
-#. :class:`FileHandler` instances send error messages to disk files.
+#. :class:`FileHandler` instances send messages to disk files.
 
 .. module:: logging.handlers
 
@@ -552,31 +552,31 @@ provided:
    directly. Instead, use :class:`RotatingFileHandler` or
    :class:`TimedRotatingFileHandler`.
 
-#. :class:`RotatingFileHandler` instances send error messages to disk
+#. :class:`RotatingFileHandler` instances send messages to disk
    files, with support for maximum log file sizes and log file rotation.
 
-#. :class:`TimedRotatingFileHandler` instances send error messages to
+#. :class:`TimedRotatingFileHandler` instances send messages to
    disk files, rotating the log file at certain timed intervals.
 
-#. :class:`SocketHandler` instances send error messages to TCP/IP
+#. :class:`SocketHandler` instances send messages to TCP/IP
    sockets.
 
-#. :class:`DatagramHandler` instances send error messages to UDP
+#. :class:`DatagramHandler` instances send messages to UDP
    sockets.
 
-#. :class:`SMTPHandler` instances send error messages to a designated
+#. :class:`SMTPHandler` instances send messages to a designated
    email address.
 
-#. :class:`SysLogHandler` instances send error messages to a Unix
+#. :class:`SysLogHandler` instances send messages to a Unix
    syslog daemon, possibly on a remote machine.
 
-#. :class:`NTEventLogHandler` instances send error messages to a
+#. :class:`NTEventLogHandler` instances send messages to a
    Windows NT/2000/XP event log.
 
-#. :class:`MemoryHandler` instances send error messages to a buffer
+#. :class:`MemoryHandler` instances send messages to a buffer
    in memory, which is flushed whenever specific criteria are met.
 
-#. :class:`HTTPHandler` instances send error messages to an HTTP
+#. :class:`HTTPHandler` instances send messages to an HTTP
    server using either ``GET`` or ``POST`` semantics.
 
 #. :class:`WatchedFileHandler` instances watch the file they are
@@ -675,7 +675,7 @@ functions.
       d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
       logging.warning("Protocol problem: %s", "connection reset", extra=d)
 
-   would print something like ::
+   would print something like::
 
       2006-02-08 22:20:02,165 192.168.0.1 fbloggs  Protocol problem: connection reset
 
@@ -842,6 +842,7 @@ functions.
       and 2.2.x, which do not include the :mod:`logging` package in the standard
       library.
 
+.. _logger:
 
 Logger Objects
 --------------
@@ -1441,16 +1442,16 @@ Although logging is thread-safe, and logging to a single file from multiple
 threads in a single process *is* supported, logging to a single file from
 *multiple processes* is *not* supported, because there is no standard way to
 serialize access to a single file across multiple processes in Python. If you
-need to log to a single file from multiple processes, the best way of doing
-this is to have all the processes log to a :class:`SocketHandler`, and have a
-separate process which implements a socket server which reads from the socket
-and logs to file. (If you prefer, you can dedicate one thread in one of the
-existing processes to perform this function.) The following section documents
-this approach in more detail and includes a working socket receiver which can
-be used as a starting point for you to adapt in your own applications.
+need to log to a single file from multiple processes, one way of doing this is
+to have all the processes log to a :class:`SocketHandler`, and have a separate
+process which implements a socket server which reads from the socket and logs
+to file. (If you prefer, you can dedicate one thread in one of the existing
+processes to perform this function.) The following section documents this
+approach in more detail and includes a working socket receiver which can be
+used as a starting point for you to adapt in your own applications.
 
 If you are using a recent version of Python which includes the
-:mod:`multiprocessing` module, you can write your own handler which uses the
+:mod:`multiprocessing` module, you could write your own handler which uses the
 :class:`Lock` class from this module to serialize access to the file from
 your processes. The existing :class:`FileHandler` and subclasses do not make
 use of :mod:`multiprocessing` at present, though they may do so in the future.
@@ -1593,6 +1594,8 @@ Note that there are some security issues with pickle in some scenarios. If
 these affect you, you can use an alternative serialization scheme by overriding
 the :meth:`makePickle` method and implementing your alternative there, as
 well as adapting the above script to use your alternative serialization.
+
+.. _arbitrary-object-messages:
 
 Using arbitrary objects as messages
 -----------------------------------
@@ -1957,6 +1960,11 @@ timed intervals.
    The extensions are date-and-time based, using the strftime format
    ``%Y-%m-%d_%H-%M-%S`` or a leading portion thereof, depending on the
    rollover interval.
+
+   When computing the next rollover time for the first time (when the handler
+   is created), the last modification time of an existing log file, or else
+   the current time, is used to compute when the next rotation will occur.
+
    If the *utc* argument is true, times in UTC will be used; otherwise
    local time is used.
 
@@ -2452,6 +2460,8 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
 +-------------------------+-----------------------------------------------+
 | ``%(process)d``         | Process ID (if available).                    |
 +-------------------------+-----------------------------------------------+
+| ``%(processName)s``     | Process name (if available).                  |
++-------------------------+-----------------------------------------------+
 | ``%(message)s``         | The logged message, computed as ``msg %       |
 |                         | args``.                                       |
 +-------------------------+-----------------------------------------------+
@@ -2464,7 +2474,6 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
    format string for the date/time portion of a message.  If no *fmt* is
    specified, ``'%(message)s'`` is used.  If no *datefmt* is specified, the
    ISO8601 date format is used.
-
 
    .. method:: format(record)
 
