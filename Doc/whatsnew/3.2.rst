@@ -544,3 +544,10 @@ require changes to your code:
   opaque C pointers in Python objects, the :ctype:`PyCapsule` API should be used
   instead; the new type has a well-defined interface for passing typing safety
   information and a less complicated signature for calling a destructor.
+
+* mbcs encoding doesn't ignore the error handler argument anymore. By default
+  (strict mode), it raises an UnicodeDecodeError on undecodable byte sequence
+  and UnicodeEncodeError on unencodable character. To get the mbcs encoding of
+  Python 3.1, use ``'ignore'`` error handler to decode and ``'replace'`` error
+  handler to encode. mbcs now supports ``'strict'`` and ``'ignore'`` error
+  handlers for decoding, and ``'strict'`` and ``'replace'`` for encoding.
