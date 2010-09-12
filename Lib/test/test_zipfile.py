@@ -939,6 +939,26 @@ class OtherTests(unittest.TestCase):
     def test_read_with_bad_crc_deflated(self):
         self.check_read_with_bad_crc(zipfile.ZIP_DEFLATED)
 
+    def check_read_return_size(self, compression):
+        # Issue #9837: ZipExtFile.read() shouldn't return more bytes
+        # than requested.
+        for test_size in (1, 4095, 4096, 4097, 16384):
+            file_size = test_size + 1
+            junk = b''.join(struct.pack('B', randint(0, 255))
+                            for x in range(file_size))
+            with zipfile.ZipFile(io.BytesIO(), "w", compression) as zipf:
+                zipf.writestr('foo', junk)
+                with zipf.open('foo', 'r') as fp:
+                    buf = fp.read(test_size)
+                    self.assertEqual(len(buf), test_size)
+
+    def test_read_return_size_stored(self):
+        self.check_read_return_size(zipfile.ZIP_STORED)
+
+    @skipUnless(zlib, "requires zlib")
+    def test_read_return_size_deflated(self):
+        self.check_read_return_size(zipfile.ZIP_DEFLATED)
+
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)
