@@ -767,9 +767,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
          else if (128 <= (unsigned char)*f) {
              PyErr_Format(PyExc_ValueError,
                 "PyUnicode_FromFormatV() expects an ASCII-encoded format "
-                "string, got a non-ascii byte: 0x%02x",
+                "string, got a non-ASCII byte: 0x%02x",
                 (unsigned char)*f);
-             return NULL;
+             goto fail;
          }
     }
     /* step 2: allocate memory for the results of
