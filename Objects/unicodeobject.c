@@ -764,6 +764,13 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
              if (*f == 's')
                  ++callcount;
          }
+         else if (128 <= (unsigned char)*f) {
+             PyErr_Format(PyExc_ValueError,
+                "PyUnicode_FromFormatV() expects an ASCII-encoded format "
+                "string, got a non-ascii byte: 0x%02x",
+                (unsigned char)*f);
+             return NULL;
+         }
     }
     /* step 2: allocate memory for the results of
      * PyObject_Str()/PyObject_Repr()/PyUnicode_DecodeUTF8() calls */
@@ -1102,13 +1109,6 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                 appendstring(p);
                 goto end;
             }
-        }
-        else if (128 <= (unsigned char)*f) {
-            PyErr_Format(PyExc_ValueError,
-                "PyUnicode_FromFormatV() expects an ASCII-encoded format "
-                "string, got a non-ascii byte: 0x%02x",
-                (unsigned char)*f);
-            goto fail;
         }
         else
             *s++ = *f;
