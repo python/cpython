@@ -6,7 +6,7 @@ import sys
 import sysconfig
 
 valid_opts = ['prefix', 'exec-prefix', 'includes', 'libs', 'cflags',
-              'ldflags', 'help']
+              'ldflags', 'extension-suffix', 'help']
 
 def exit_with_usage(code=1):
     print("Usage: {0} [{1}]".format(
@@ -54,3 +54,5 @@ for opt in opt_flags:
             libs.extend(getvar('LINKFORSHARED').split())
         print(' '.join(libs))
 
+    elif opt == '--extension-suffix':
+    	print(sysconfig.get_config_var('SO'))
