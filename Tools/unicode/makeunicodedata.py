@@ -503,9 +503,6 @@ def makeunicodetype(unicode, trace):
     print(" */", file=fp)
     print('int _PyUnicode_IsWhitespace(register const Py_UCS4 ch)', file=fp)
     print('{', file=fp)
-    print('#ifdef WANT_WCTYPE_FUNCTIONS', file=fp)
-    print('    return iswspace(ch);', file=fp)
-    print('#else', file=fp)
     print('    switch (ch) {', file=fp)
 
     for codepoint in sorted(spaces):
@@ -514,7 +511,6 @@ def makeunicodetype(unicode, trace):
 
     print('    }', file=fp)
     print('    return 0;', file=fp)
-    print('#endif', file=fp)
     print('}', file=fp)
     print(file=fp)
 

@@ -3247,9 +3247,6 @@ double _PyUnicode_ToNumeric(Py_UCS4 ch)
  */
 int _PyUnicode_IsWhitespace(register const Py_UCS4 ch)
 {
-#ifdef WANT_WCTYPE_FUNCTIONS
-    return iswspace(ch);
-#else
     switch (ch) {
     case 0x0009:
     case 0x000A:
@@ -3284,7 +3281,6 @@ int _PyUnicode_IsWhitespace(register const Py_UCS4 ch)
         return 1;
     }
     return 0;
-#endif
 }
 
 /* Returns 1 for Unicode characters having the line break
