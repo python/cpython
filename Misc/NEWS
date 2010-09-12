@@ -351,6 +351,9 @@ Tests
 Documentation
 -------------
 
+- Issue #9817: Add expat COPYING file; add expat, libffi and expat licenses
+  to Doc/license.rst.
+
 - Issue #9524: Document that two CTRL* signals are meant for use only
   with os.kill.
 
