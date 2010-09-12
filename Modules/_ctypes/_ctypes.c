@@ -5134,6 +5134,7 @@ create_comerror(void)
     PyComError_Type.tp_base = (PyTypeObject*)PyExc_Exception;
     if (PyType_Ready(&PyComError_Type) < 0)
         return -1;
+    Py_INCREF(&PyComError_Type);
     ComError = (PyObject*)&PyComError_Type;
     return 0;
 }
@@ -5326,36 +5327,42 @@ PyInit__ctypes(void)
     Struct_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&Struct_Type) < 0)
         return NULL;
+    Py_INCREF(&Struct_Type);
     PyModule_AddObject(m, "Structure", (PyObject *)&Struct_Type);
 
     Py_TYPE(&Union_Type) = &UnionType_Type;
     Union_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&Union_Type) < 0)
         return NULL;
+    Py_INCREF(&Union_Type);
     PyModule_AddObject(m, "Union", (PyObject *)&Union_Type);
 
     Py_TYPE(&PyCPointer_Type) = &PyCPointerType_Type;
     PyCPointer_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&PyCPointer_Type) < 0)
         return NULL;
+    Py_INCREF(&PyCPointer_Type);
     PyModule_AddObject(m, "_Pointer", (PyObject *)&PyCPointer_Type);
 
     Py_TYPE(&PyCArray_Type) = &PyCArrayType_Type;
     PyCArray_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&PyCArray_Type) < 0)
         return NULL;
+    Py_INCREF(&PyCArray_Type);
     PyModule_AddObject(m, "Array", (PyObject *)&PyCArray_Type);
 
     Py_TYPE(&Simple_Type) = &PyCSimpleType_Type;
     Simple_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&Simple_Type) < 0)
         return NULL;
+    Py_INCREF(&Simple_Type);
     PyModule_AddObject(m, "_SimpleCData", (PyObject *)&Simple_Type);
 
     Py_TYPE(&PyCFuncPtr_Type) = &PyCFuncPtrType_Type;
     PyCFuncPtr_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&PyCFuncPtr_Type) < 0)
         return NULL;
+    Py_INCREF(&PyCFuncPtr_Type);
     PyModule_AddObject(m, "CFuncPtr", (PyObject *)&PyCFuncPtr_Type);
 
     /*************************************************
