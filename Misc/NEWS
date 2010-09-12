@@ -137,6 +137,10 @@ Tools/Demos
 Build
 -----
 
+- Issue #9806: python-config now has an ``--extension-suffix`` option that
+  outputs the suffix for dynamic libraries including the ABI version name
+  defined by PEP 3149.
+
 - Issue #941346: Improve the build process under AIX and allow Python to
   be built as a shared library.  Patch by Sébastien Sablé.
 
