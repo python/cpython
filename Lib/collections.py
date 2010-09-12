@@ -11,11 +11,15 @@ from operator import itemgetter as _itemgetter
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 import heapq as _heapq
+from weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 
 ################################################################################
 ### OrderedDict
 ################################################################################
+
+class _Link(object):
+    __slots__ = 'prev', 'next', 'key', '__weakref__'
 
 class OrderedDict(dict, MutableMapping):
     'Dictionary that remembers insertion order'
@@ -27,7 +31,7 @@ class OrderedDict(dict, MutableMapping):
     # The internal self.__map dictionary maps keys to links in a doubly linked list.
     # The circular doubly linked list starts and ends with a sentinel element.
     # The sentinel element never gets deleted (this simplifies the algorithm).
-    # Each link is stored as a list of length three:  [PREV, NEXT, KEY].
+    # The back links are weakref proxies (to prevent circular references).
 
     def __init__(self, *args, **kwds):
         '''Initialize an ordered dictionary.  Signature is the same as for
@@ -40,51 +44,53 @@ class OrderedDict(dict, MutableMapping):
         try:
             self.__root
         except AttributeError:
-            self.__root = root = [None, None, None]     # sentinel node
-            PREV = 0
-            NEXT = 1
-            root[PREV] = root[NEXT] = root
+            self.__root = root = _Link()    # sentinel node for the doubly linked list
+            root.prev = root.next = root
             self.__map = {}
         self.update(*args, **kwds)
 
-    def __setitem__(self, key, value, PREV=0, NEXT=1, dict_setitem=dict.__setitem__):
+    def __setitem__(self, key, value,
+                    dict_setitem=dict.__setitem__, proxy=_proxy, Link=_Link):
         'od.__setitem__(i, y) <==> od[i]=y'
         # Setting a new item creates a new link which goes at the end of the linked
         # list, and the inherited dictionary is updated with the new key/value pair.
         if key not in self:
+            self.__map[key] = link = Link()
             root = self.__root
-            last = root[PREV]
-            last[NEXT] = root[PREV] = self.__map[key] = [last, root, key]
-        dict_setitem(self, key, value)
+            last = root.prev
+            link.prev, link.next, link.key = last, root, key
+            last.next = link
+            root.prev = proxy(link)
+        dict.__setitem__(self, key, value)
 
-    def __delitem__(self, key, PREV=0, NEXT=1, dict_delitem=dict.__delitem__):
+    def __delitem__(self, key, dict_delitem=dict.__delitem__):
         'od.__delitem__(y) <==> del od[y]'
         # Deleting an existing item uses self.__map to find the link which is
         # then removed by updating the links in the predecessor and successor nodes.
         dict_delitem(self, key)
         link = self.__map.pop(key)
-        link_prev = link[PREV]
-        link_next = link[NEXT]
-        link_prev[NEXT] = link_next
-        link_next[PREV] = link_prev
+        link_prev = link.prev
+        link_next = link.next
+        link_prev.next = link_next
+        link_next.prev = link_prev
 
-    def __iter__(self, NEXT=1, KEY=2):
+    def __iter__(self):
         'od.__iter__() <==> iter(od)'
         # Traverse the linked list in order.
         root = self.__root
-        curr = root[NEXT]
+        curr = root.next
         while curr is not root:
-            yield curr[KEY]
-            curr = curr[NEXT]
+            yield curr.key
+            curr = curr.next
 
-    def __reversed__(self, PREV=0, KEY=2):
+    def __reversed__(self):
         'od.__reversed__() <==> reversed(od)'
         # Traverse the linked list in reverse order.
         root = self.__root
-        curr = root[PREV]
+        curr = root.prev
         while curr is not root:
-            yield curr[KEY]
-            curr = curr[PREV]
+            yield curr.key
+            curr = curr.prev
 
     def __reduce__(self):
         'Return state information for pickling'
@@ -99,16 +105,12 @@ class OrderedDict(dict, MutableMapping):
 
     def clear(self):
         'od.clear() -> None.  Remove all items from od.'
-        try:
-            for node in self.__map.values():
-                del node[:]
-            self.__root[:] = [self.__root, self.__root, None]
-            self.__map.clear()
-        except AttributeError:
-            pass
+        root = self.__root
+        root.prev = root.next = root
+        self.__map.clear()
         dict.clear(self)
 
-    def popitem(self, last=True, PREV=0, NEXT=1, KEY=2, dict_pop=dict.pop):
+    def popitem(self, last=True):
         '''od.popitem() -> (k, v), return and remove a (key, value) pair.
         Pairs are returned in LIFO order if last is true or FIFO order if false.
 
@@ -116,20 +118,44 @@ class OrderedDict(dict, MutableMapping):
         if not self:
             raise KeyError('dictionary is empty')
         root = self.__root
-        if last:                    # link_prev <--> link <--> root
-            link = root[PREV]
-            link_prev = link[PREV]
-            link_prev[NEXT] = root
-            root[PREV] = link_prev
-        else:                       # root <--> link <--> link_next
-            link = root[NEXT]
-            link_next = link[NEXT]
-            root[NEXT] = link_next
-            link_next[PREV] = root
-        key = link[KEY]
+        if last:
+            link = root.prev
+            link_prev = link.prev
+            link_prev.next = root
+            root.prev = link_prev
+        else:
+            link = root.next
+            link_next = link.next
+            root.next = link_next
+            link_next.prev = root
+        key = link.key
         del self.__map[key]
-        value = dict_pop(self, key)
+        value = dict.pop(self, key)
         return key, value
+
+    def move_to_end(self, key, last=True):
+        '''Move an existing element to the end (or beginning if last==False).
+
+        Raises KeyError if the element does not exist.
+        When last=True, acts like a fast version of self[key]=self.pop(key).
+
+        '''
+        link = self.__map[key]
+        link_prev = link.prev
+        link_next = link.next
+        link_prev.next = link_next
+        link_next.prev = link_prev
+        root = self.__root
+        if last:
+            last = root.prev
+            link.prev = last
+            link.next = root
+            last.next = root.prev = link
+        else:
+            first = root.next
+            link.prev = root
+            link.next = first
+            root.next = first.prev = link
 
     setdefault = MutableMapping.setdefault
     update = MutableMapping.update
@@ -169,33 +195,6 @@ class OrderedDict(dict, MutableMapping):
             return len(self)==len(other) and \
                    all(p==q for p, q in zip(self.items(), other.items()))
         return dict.__eq__(self, other)
-
-    def __del__(self):
-        self.clear()                # eliminate cyclical references
-
-    def move_to_end(self, key, last=True, PREV=0, NEXT=1):
-        '''Move an existing element to the end (or beginning if last==False).
-
-        Raises KeyError if the element does not exist.
-        When last=True, acts like a fast version of self[key]=self.pop(key).
-
-        '''
-        link = self.__map[key]
-        link_prev = link[PREV]
-        link_next = link[NEXT]
-        link_prev[NEXT] = link_next
-        link_next[PREV] = link_prev
-        root = self.__root
-        if last:
-            last = root[PREV]
-            link[PREV] = last
-            link[NEXT] = root
-            last[NEXT] = root[PREV] = link
-        else:
-            first = root[NEXT]
-            link[PREV] = root
-            link[NEXT] = first
-            root[NEXT] = first[PREV] = link
 
 
 ################################################################################
