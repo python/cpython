@@ -1501,7 +1501,13 @@ class _ExpectedSkips:
         return self.expected
 
 if __name__ == '__main__':
-    # Simplification for findtestdir().
+    # findtestdir() gets the dirname out of __file__, so we have to make it
+    # absolute before changing the working directory.
+    # For example __file__ may be relative when running trace or profile.
+    # See issue #9323.
+    __file__ = os.path.abspath(__file__)
+
+    # sanity check
     assert __file__ == os.path.abspath(sys.argv[0])
 
     # When tests are run from the Python build directory, it is best practice
