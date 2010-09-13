@@ -1209,7 +1209,7 @@ class UnicodeTest(
         # format specifiers for user defined type
         self.assertEqual(u'{0:abc}'.format(C()), u'abc')
 
-        # !r and !s coersions
+        # !r and !s coercions
         self.assertEqual(u'{0!s}'.format(u'Hello'), u'Hello')
         self.assertEqual(u'{0!s:}'.format(u'Hello'), u'Hello')
         self.assertEqual(u'{0!s:15}'.format(u'Hello'), u'Hello          ')
@@ -1223,11 +1223,14 @@ class UnicodeTest(
         self.assertEqual(u'{0}'.format([]), u'[]')
         self.assertEqual(u'{0}'.format([1]), u'[1]')
         self.assertEqual(u'{0}'.format(E(u'data')), u'E(data)')
-        self.assertEqual(u'{0:^10}'.format(E(u'data')), u' E(data)  ')
-        self.assertEqual(u'{0:^10s}'.format(E(u'data')), u' E(data)  ')
         self.assertEqual(u'{0:d}'.format(G(u'data')), u'G(data)')
-        self.assertEqual(u'{0:>15s}'.format(G(u'data')), u' string is data')
         self.assertEqual(u'{0!s}'.format(G(u'data')), u'string is data')
+
+        msg = 'object.__format__ with a non-empty format string is deprecated'
+        with test_support.check_warnings((msg, PendingDeprecationWarning)):
+            self.assertEqual(u'{0:^10}'.format(E(u'data')), u' E(data)  ')
+            self.assertEqual(u'{0:^10s}'.format(E(u'data')), u' E(data)  ')
+            self.assertEqual(u'{0:>15s}'.format(G(u'data')), u' string is data')
 
         self.assertEqual(u"{0:date: %Y-%m-%d}".format(I(year=2007,
                                                         month=8,
