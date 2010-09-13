@@ -219,7 +219,7 @@ class TestFuncs(unittest.TestCase):
     def setUp(self):
         self.tracer = Trace(count=0, trace=0, countfuncs=1)
         self.filemod = my_file_and_modname()
-        self.maxDiff = None
+
     def test_simple_caller(self):
         self.tracer.runfunc(traced_func_simple_caller, 1)
 
