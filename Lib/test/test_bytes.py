@@ -9,13 +9,27 @@ import os
 import re
 import sys
 import copy
+import functools
 import pickle
 import tempfile
 import unittest
-import warnings
 import test.test_support
 import test.string_tests
 import test.buffer_tests
+
+
+if sys.flags.bytes_warning:
+    def check_bytes_warnings(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kw):
+            with test.test_support.check_warnings(('', BytesWarning)):
+                return func(*args, **kw)
+        return wrapper
+else:
+    # no-op
+    def check_bytes_warnings(func):
+        return func
+
 
 class Indexable:
     def __init__(self, value=0):
@@ -25,12 +39,6 @@ class Indexable:
 
 
 class BaseBytesTest(unittest.TestCase):
-
-    def setUp(self):
-        self.warning_filters = warnings.filters[:]
-
-    def tearDown(self):
-        warnings.filters = self.warning_filters
 
     def test_basics(self):
         b = self.type2test()
@@ -120,8 +128,8 @@ class BaseBytesTest(unittest.TestCase):
         self.assertFalse(b3 <  b2)
         self.assertFalse(b3 <= b2)
 
+    @check_bytes_warnings
     def test_compare_to_str(self):
-        warnings.simplefilter('ignore', BytesWarning)
         # Byte comparisons with unicode should always fail!
         # Test this for all expected byte orders and Unicode character sizes
         self.assertEqual(self.type2test(b"\0a\0b\0c") == u"abc", False)
@@ -795,14 +803,8 @@ class AssortedBytesTest(unittest.TestCase):
     # Test various combinations of bytes and bytearray
     #
 
-    def setUp(self):
-        self.warning_filters = warnings.filters[:]
-
-    def tearDown(self):
-        warnings.filters = self.warning_filters
-
+    @check_bytes_warnings
     def test_repr_str(self):
-        warnings.simplefilter('ignore', BytesWarning)
         for f in str, repr:
             self.assertEqual(f(bytearray()), "bytearray(b'')")
             self.assertEqual(f(bytearray([0])), "bytearray(b'\\x00')")
@@ -853,8 +855,8 @@ class AssortedBytesTest(unittest.TestCase):
         b = bytearray(buf)
         self.assertEqual(b, bytearray(sample))
 
+    @check_bytes_warnings
     def test_to_str(self):
-        warnings.simplefilter('ignore', BytesWarning)
         self.assertEqual(str(b''), "b''")
         self.assertEqual(str(b'x'), "b'x'")
         self.assertEqual(str(b'\x80'), "b'\\x80'")

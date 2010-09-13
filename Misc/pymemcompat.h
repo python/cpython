@@ -72,7 +72,7 @@
 
    It is possible to support both the 2.0 and 2.2 GC APIs, but it's
    not pretty and this comment block is too narrow to contain a
-   desciption of what's required... */
+   description of what's required... */
 
 #if PY_VERSION_HEX < 0x020200B1
 #define PyObject_GC_New         PyObject_New

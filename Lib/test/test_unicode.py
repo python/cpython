@@ -593,9 +593,9 @@ class UnicodeTest(
         )
 
         # UTF-8 specific decoding tests
-        self.assertEqual(unicode('\xf0\xa3\x91\x96', 'utf-8'), u'\U00023456' )
-        self.assertEqual(unicode('\xf0\x90\x80\x82', 'utf-8'), u'\U00010002' )
-        self.assertEqual(unicode('\xe2\x82\xac', 'utf-8'), u'\u20ac' )
+        self.assertEqual(unicode('\xf0\xa3\x91\x96', 'utf-8'), u'\U00023456')
+        self.assertEqual(unicode('\xf0\x90\x80\x82', 'utf-8'), u'\U00010002')
+        self.assertEqual(unicode('\xe2\x82\xac', 'utf-8'), u'\u20ac')
 
         # Other possible utf-8 test cases:
         # * strict decoding testing for all of the
@@ -1360,8 +1360,8 @@ class UnicodeTest(
             def __unicode__(self):
                 return u'__unicode__ overridden'
         u = U(u'xxx')
-        self.assertEquals("%s" % u, u'__unicode__ overridden')
-        self.assertEquals("{}".format(u), u'__unicode__ overridden')
+        self.assertEqual("%s" % u, u'__unicode__ overridden')
+        self.assertEqual("{}".format(u), u'__unicode__ overridden')
 
 
 def test_main():
