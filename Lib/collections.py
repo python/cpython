@@ -12,6 +12,32 @@ import sys as _sys
 import heapq as _heapq
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap, \
                       ifilter as _ifilter, imap as _imap
+try:
+    from thread import get_ident
+except AttributeError:
+    from dummy_thread import get_ident
+
+def _recursive_repr(user_function):
+    'Decorator to make a repr function return "..." for a recursive call'
+    repr_running = set()
+
+    def wrapper(self):
+        key = id(self), get_ident()
+        if key in repr_running:
+            return '...'
+        repr_running.add(key)
+        try:
+            result = user_function(self)
+        finally:
+            repr_running.discard(key)
+        return result
+
+    # Can't use functools.wraps() here because of bootstrap issues
+    wrapper.__module__ = getattr(user_function, '__module__')
+    wrapper.__doc__ = getattr(user_function, '__doc__')
+    wrapper.__name__ = getattr(user_function, '__name__')
+    return wrapper
+
 
 ################################################################################
 ### OrderedDict
@@ -142,6 +168,7 @@ class OrderedDict(dict, MutableMapping):
         value = self.pop(key)
         return key, value
 
+    @_recursive_repr
     def __repr__(self):
         'od.__repr__() <==> repr(od)'
         if not self:
