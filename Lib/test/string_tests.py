@@ -254,7 +254,7 @@ class CommonTest(unittest.TestCase):
                 r2 = j in i
                 self.assertEqual(r1, r2)
                 if loc != -1:
-                    self.assertEqual(i[loc:loc+len(j)], j)
+                    self.assertEqual(i[loc:loc+len(j)], self.fixtype(j))
 
         # issue 7458
         self.checkequal(-1, 'ab', 'rfind', 'xxx', sys.maxsize + 1, 0)
