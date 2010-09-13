@@ -703,10 +703,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Include\dtoa.h"
-				>
-			</File>			
-			<File
 				RelativePath="..\..\Include\dynamic_annotations.h"
 				>
 			</File>
@@ -847,6 +843,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Include\pycapsule.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Include\pyctype.h"
 				>
 			</File>
@@ -879,7 +879,7 @@
 				>
 			</File>
 			<File
-                                RelativePath="..\..\Include\pytime.h"
+				RelativePath="..\..\Include\pytime.h"
 				>
 			</File>
 			<File
@@ -900,6 +900,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Include\pystrtod.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Include\dtoa.h"
 				>
 			</File>
 			<File
@@ -944,10 +948,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Include\sysmodule.h"
-				>
-			</File>
-			<File
-                                RelativePath="..\..\Include\_time.h"
 				>
 			</File>
 			<File
@@ -998,38 +998,6 @@
 				RelativePath="..\..\Modules\_csv.c"
 				>
 			</File>
-			<Filter
-				Name="_io"
-				>
-				<File
-					RelativePath="..\..\Modules\_io\fileio.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Modules\_io\bytesio.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Modules\_io\stringio.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Modules\_io\bufferedio.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Modules\_io\iobase.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Modules\_io\textio.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Modules\_io\_iomodule.c"
-					>
-				</File>
-			</Filter>
 			<File
 				RelativePath="..\..\Modules\_functoolsmodule.c"
 				>
@@ -1072,6 +1040,14 @@
 			</File>
 			<File
 				RelativePath="..\..\Modules\_struct.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Modules\_time.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Modules\_time.h"
 				>
 			</File>
 			<File
@@ -1175,10 +1151,6 @@
 				>
 			</File>
 			<File
-                                RelativePath="..\..\Modules\_time.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Modules\timemodule.c"
 				>
 			</File>
@@ -1194,6 +1166,42 @@
 				RelativePath="..\..\Modules\zlibmodule.c"
 				>
 			</File>
+			<Filter
+				Name="_io"
+				>
+				<File
+					RelativePath="..\..\Modules\_io\fileio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\bytesio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\stringio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\bufferedio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\iobase.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\textio.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\_iomodule.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Modules\_io\_iomodule.h"
+					>
+				</File>
+			</Filter>
 			<Filter
 				Name="zlib"
 				>
@@ -1671,10 +1679,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Python\dtoa.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Python\dynload_win.c"
 				>
 			</File>
@@ -1771,7 +1775,7 @@
 				>
 			</File>
 			<File
-                                RelativePath="..\..\Python\pytime.c"
+				RelativePath="..\..\Python\pytime.c"
 				>
 			</File>
 			<File
@@ -1784,6 +1788,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Python\pystrtod.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Python\dtoa.c"
 				>
 			</File>
 			<File

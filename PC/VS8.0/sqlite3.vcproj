@@ -22,7 +22,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyd_d.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\debug.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -42,8 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
-				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
+				AdditionalIncludeDirectories=""
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -83,7 +82,7 @@
 		<Configuration
 			Name="Debug|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyd_d.vsprops;.\x64.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\debug.vsprops;.\x64.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -104,8 +103,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
-				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
+				AdditionalIncludeDirectories=""
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -145,7 +143,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyd.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -166,8 +164,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
-				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
+				AdditionalIncludeDirectories=""
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -207,7 +204,7 @@
 		<Configuration
 			Name="Release|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\x64.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -229,8 +226,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
-				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
+				AdditionalIncludeDirectories=""
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -270,7 +266,7 @@
 		<Configuration
 			Name="PGInstrument|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyd.vsprops;.\pginstrument.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\pginstrument.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -291,8 +287,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
-				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
+				AdditionalIncludeDirectories="&quot;..\..\..\sqlite-3.6.21&quot;"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -332,7 +327,7 @@
 		<Configuration
 			Name="PGInstrument|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops;.\pginstrument.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\x64.vsprops;.\pginstrument.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -354,8 +349,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
-				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
+				AdditionalIncludeDirectories=""
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -394,7 +388,7 @@
 		<Configuration
 			Name="PGUpdate|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyd.vsprops;.\pgupdate.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\pgupdate.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -415,8 +409,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
-				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
+				AdditionalIncludeDirectories=""
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -456,7 +449,7 @@
 		<Configuration
 			Name="PGUpdate|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops;.\pgupdate.vsprops"
+			InheritedPropertySheets=".\sqlite3.vsprops;.\x64.vsprops;.\pgupdate.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -478,8 +471,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\sqlite-3.5.9"
-				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
+				AdditionalIncludeDirectories=""
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -523,11 +515,11 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\..\..\sqlite-3.5.9\sqlite3.h"
+				RelativePath="..\..\..\sqlite-3.6.21\sqlite3.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\sqlite-3.5.9\sqlite3ext.h"
+				RelativePath="..\..\..\sqlite-3.6.21\sqlite3ext.h"
 				>
 			</File>
 		</Filter>
@@ -535,7 +527,7 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\..\..\sqlite-3.5.9\sqlite3.c"
+				RelativePath="..\..\..\sqlite-3.6.21\sqlite3.c"
 				>
 			</File>
 		</Filter>
