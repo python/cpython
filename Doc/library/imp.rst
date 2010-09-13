@@ -113,8 +113,7 @@ This module provides an interface to the mechanisms used to implement the
 .. function:: acquire_lock()
 
    Acquire the interpreter's import lock for the current thread.  This lock should
-   be used by import hooks to ensure thread-safety when importing modules. On
-   platforms without threads, this function does nothing.
+   be used by import hooks to ensure thread-safety when importing modules.
 
    Once a thread has acquired the import lock, the same thread may acquire it
    again without blocking; the thread must release it once for each time it has
