@@ -609,12 +609,15 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('{0}'.format({}), '{}')
         self.assertEqual('{0}'.format([]), '[]')
         self.assertEqual('{0}'.format([1]), '[1]')
-        self.assertEqual('{0}'.format(E('data')), 'E(data)')
-        self.assertEqual('{0:^10}'.format(E('data')), ' E(data)  ')
-        self.assertEqual('{0:^10s}'.format(E('data')), ' E(data)  ')
+
         self.assertEqual('{0:d}'.format(G('data')), 'G(data)')
-        self.assertEqual('{0:>15s}'.format(G('data')), ' string is data')
         self.assertEqual('{0!s}'.format(G('data')), 'string is data')
+
+        msg = 'object.__format__ with a non-empty format string is deprecated'
+        with support.check_warnings((msg, PendingDeprecationWarning)):
+            self.assertEqual('{0:^10}'.format(E('data')), ' E(data)  ')
+            self.assertEqual('{0:^10s}'.format(E('data')), ' E(data)  ')
+            self.assertEqual('{0:>15s}'.format(G('data')), ' string is data')
 
         self.assertEqual("{0:date: %Y-%m-%d}".format(I(year=2007,
                                                        month=8,
