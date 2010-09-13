@@ -113,8 +113,7 @@ This module provides an interface to the mechanisms used to implement the
 .. function:: acquire_lock()
 
    Acquire the interpreter's import lock for the current thread.  This lock should
-   be used by import hooks to ensure thread-safety when importing modules. On
-   platforms without threads, this function does nothing.
+   be used by import hooks to ensure thread-safety when importing modules.
 
    Once a thread has acquired the import lock, the same thread may acquire it
    again without blocking; the thread must release it once for each time it has
@@ -189,19 +188,6 @@ This module provides an interface to the mechanisms used to implement the
    If a module instantiates instances of a class, reloading the module that defines
    the class does not affect the method definitions of the instances --- they
    continue to use the old class definition.  The same is true for derived classes.
-
-
-.. function:: acquire_lock()
-
-   Acquires the interpreter's import lock for the current thread.  This lock should
-   be used by import hooks to ensure thread-safety when importing modules. On
-   platforms without threads, this function does nothing.
-
-
-.. function:: release_lock()
-
-   Release the interpreter's import lock. On platforms without threads, this
-   function does nothing.
 
 
 The following constants with integer values, defined in this module, are used to
