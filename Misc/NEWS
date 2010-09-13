@@ -584,6 +584,8 @@ Build
 Tests
 -----
 
+- Issue #9315: Added tests for the trace module.  Patch by Eli Bendersky.
+
 - Issue #7564: Skip test_ioctl if another process is attached to /dev/tty.
 
 - Issue #8857: Provide a test case for socket.getaddrinfo.
@@ -1018,6 +1020,9 @@ Library
 
 - Issue #1068268: The subprocess module now handles EINTR in internal
   os.waitpid and os.read system calls where appropriate.
+
+- Issue #9315: Fix for the trace module to record correct class name
+  for tracing methods.
 
 Extension Modules
 -----------------
