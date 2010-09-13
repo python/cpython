@@ -50,7 +50,7 @@
 	/>
 	<UserMacro
 		Name="sqlite3Dir"
-		Value="$(externalsDir)\sqlite-3.5.9"
+		Value="$(externalsDir)\sqlite-3.6.21"
 	/>
 	<UserMacro
 		Name="bz2Dir"
@@ -58,7 +58,7 @@
 	/>
 	<UserMacro
 		Name="opensslDir"
-		Value="$(externalsDir)\openssl-0.9.8g"
+		Value="$(externalsDir)\openssl-1.0.0a"
 	/>
 	<UserMacro
 		Name="tcltkDir"
