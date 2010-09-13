@@ -60,7 +60,12 @@ _CLEANED_MANIFEST = """\
   </dependency>
 </assembly>"""
 
+if sys.platform=="win32":
+    from distutils.msvccompiler import get_build_version
+
 @unittest.skipUnless(sys.platform=="win32", "These tests are only for win32")
+@unittest.skipUnless(get_build_version()>=8.0, "These tests are only for"
+                                               " MSVC8.0 or above")
 class msvc9compilerTestCase(support.TempdirManager,
                             unittest.TestCase):
 
@@ -68,10 +73,6 @@ class msvc9compilerTestCase(support.TempdirManager,
         # makes sure query_vcvarsall throws
         # a DistutilsPlatformError if the compiler
         # is not found
-        from distutils.msvccompiler import get_build_version
-        if get_build_version() < 8.0:
-            # this test is only for MSVC8.0 or above
-            return
         from distutils.msvc9compiler import query_vcvarsall
         def _find_vcvarsall(version):
             return None
@@ -86,11 +87,6 @@ class msvc9compilerTestCase(support.TempdirManager,
             msvc9compiler.find_vcvarsall = old_find_vcvarsall
 
     def test_reg_class(self):
-        from distutils.msvccompiler import get_build_version
-        if get_build_version() < 8.0:
-            # this test is only for MSVC8.0 or above
-            return
-
         from distutils.msvc9compiler import Reg
         self.assertRaises(KeyError, Reg.get_value, 'xxx', 'xxx')
 
@@ -109,11 +105,6 @@ class msvc9compilerTestCase(support.TempdirManager,
         self.assertTrue('Desktop' in keys)
 
     def test_remove_visual_c_ref(self):
-        from distutils.msvccompiler import get_build_version
-        if get_build_version() < 8.0:
-            # this test is only for MSVC8.0 or above
-            return
-
         from distutils.msvc9compiler import MSVCCompiler
         tempdir = self.mkdtemp()
         manifest = os.path.join(tempdir, 'manifest')
