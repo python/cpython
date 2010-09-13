@@ -104,7 +104,6 @@ class TestLineCounts(unittest.TestCase):
     def setUp(self):
         self.tracer = Trace(count=1, trace=0, countfuncs=0, countcallers=0)
         self.my_py_filename = fix_ext_py(__file__)
-        self.maxDiff = None
 
     def test_traced_func_linear(self):
         result = self.tracer.runfunc(traced_func_linear, 2, 5)
