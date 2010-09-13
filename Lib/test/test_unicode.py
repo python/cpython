@@ -62,7 +62,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(SyntaxError, eval, '\'\\Uffffffff\'')
         self.assertRaises(SyntaxError, eval, '\'\\U%08x\'' % 0x110000)
         # raw strings should not have unicode escapes
-        self.assertNotEquals(r"\u0020", " ")
+        self.assertNotEqual(r"\u0020", " ")
 
     def test_ascii(self):
         if not sys.platform.startswith('java'):
@@ -286,13 +286,7 @@ class UnicodeTest(string_tests.CommonTest,
     def test_comparison(self):
         # Comparisons:
         self.assertEqual('abc', 'abc')
-        self.assertEqual('abc', 'abc')
-        self.assertEqual('abc', 'abc')
         self.assertTrue('abcd' > 'abc')
-        self.assertTrue('abcd' > 'abc')
-        self.assertTrue('abcd' > 'abc')
-        self.assertTrue('abc' < 'abcd')
-        self.assertTrue('abc' < 'abcd')
         self.assertTrue('abc' < 'abcd')
 
         if 0:
@@ -652,8 +646,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(IndexError, '{1}'.format, 'abc')
         self.assertRaises(KeyError,   '{x}'.format)
         self.assertRaises(ValueError, "}{".format)
-        self.assertRaises(ValueError, "{".format)
-        self.assertRaises(ValueError, "}".format)
         self.assertRaises(ValueError, "abc{0:{}".format)
         self.assertRaises(ValueError, "{0".format)
         self.assertRaises(IndexError, "{0.}".format)
@@ -1265,21 +1257,20 @@ class UnicodeTest(string_tests.CommonTest,
         y = x.encode("raw-unicode-escape").decode("raw-unicode-escape")
         self.assertEqual(x, y)
 
-        # FIXME
-        #y = r'\U00100000'
-        #x = y.encode("raw-unicode-escape").decode("raw-unicode-escape")
-        #self.assertEqual(x, y)
-        #y = r'\U00010000'
-        #x = y.encode("raw-unicode-escape").decode("raw-unicode-escape")
-        #self.assertEqual(x, y)
+        y = br'\U00100000'
+        x = y.decode("raw-unicode-escape").encode("raw-unicode-escape")
+        self.assertEqual(x, y)
+        y = br'\U00010000'
+        x = y.decode("raw-unicode-escape").encode("raw-unicode-escape")
+        self.assertEqual(x, y)
 
-        #try:
-        #    '\U11111111'.decode("raw-unicode-escape")
-        #except UnicodeDecodeError as e:
-        #    self.assertEqual(e.start, 0)
-        #    self.assertEqual(e.end, 10)
-        #else:
-        #    self.fail("Should have raised UnicodeDecodeError")
+        try:
+            br'\U11111111'.decode("raw-unicode-escape")
+        except UnicodeDecodeError as e:
+            self.assertEqual(e.start, 0)
+            self.assertEqual(e.end, 10)
+        else:
+            self.fail("Should have raised UnicodeDecodeError")
 
     def test_conversion(self):
         # Make sure __unicode__() works properly
@@ -1382,8 +1373,8 @@ class UnicodeTest(string_tests.CommonTest,
             def __str__(self):
                 return '__str__ overridden'
         s = S('xxx')
-        self.assertEquals("%s" % s, '__str__ overridden')
-        self.assertEquals("{}".format(s), '__str__ overridden')
+        self.assertEqual("%s" % s, '__str__ overridden')
+        self.assertEqual("{}".format(s), '__str__ overridden')
 
     def test_from_format(self):
         # Ensure that PyUnicode_FromFormat() raises an error for a non-ascii

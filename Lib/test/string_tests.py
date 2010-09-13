@@ -1131,7 +1131,7 @@ class MixinStrUnicodeUserStringTest:
             format = '%%.%if' % prec
             value = 0.01
             for x in range(60):
-                value = value * 3.141592655 / 3.0 * 10.0
+                value = value * 3.14159265359 / 3.0 * 10.0
                 self.checkcall(format, "__mod__", value)
 
     def test_inplace_rewrites(self):
