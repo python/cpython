@@ -202,4 +202,4 @@ def realpath(path):
             pass
     return path
 
-supports_unicode_filenames = False
+supports_unicode_filenames = True
