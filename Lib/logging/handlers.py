@@ -977,7 +977,7 @@ class HTTPHandler(logging.Handler):
     A class which sends records to a Web server, using either GET or
     POST semantics.
     """
-    def __init__(self, host, url, method="GET"):
+    def __init__(self, host, url, method="GET", secure=False, credentials=None):
         """
         Initialize the instance with the host, the request URL, and the method
         ("GET" or "POST")
@@ -989,12 +989,14 @@ class HTTPHandler(logging.Handler):
         self.host = host
         self.url = url
         self.method = method
+        self.secure = secure
+        self.credentials = credentials
 
     def mapLogRecord(self, record):
         """
         Default implementation of mapping the log record into a dict
         that is sent as the CGI data. Overwrite in your class.
-        Contributed by Franz  Glasner.
+        Contributed by Franz Glasner.
         """
         return record.__dict__
 
@@ -1007,7 +1009,10 @@ class HTTPHandler(logging.Handler):
         try:
             import http.client, urllib.parse
             host = self.host
-            h = http.client.HTTP(host)
+            if self.secure:
+                h = http.client.HTTPSConnection(host)
+            else:
+                h = http.client.HTTPConnection(host)
             url = self.url
             data = urllib.parse.urlencode(self.mapLogRecord(record))
             if self.method == "GET":
@@ -1027,8 +1032,13 @@ class HTTPHandler(logging.Handler):
                 h.putheader("Content-type",
                             "application/x-www-form-urlencoded")
                 h.putheader("Content-length", str(len(data)))
+            if self.credentials:
+                import base64
+                s = ('u%s:%s' % self.credentials).encode('utf-8')
+                s = 'Basic ' + base64.b64encode(s).strip()
+                h.putheader('Authorization', s)
             h.endheaders(data if self.method == "POST" else None)
-            h.getreply()    #can't do anything with the result
+            h.getresponse()    #can't do anything with the result
         except (KeyboardInterrupt, SystemExit):
             raise
         except:
