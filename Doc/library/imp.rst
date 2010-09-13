@@ -190,19 +190,6 @@ This module provides an interface to the mechanisms used to implement the
    continue to use the old class definition.  The same is true for derived classes.
 
 
-.. function:: acquire_lock()
-
-   Acquires the interpreter's import lock for the current thread.  This lock should
-   be used by import hooks to ensure thread-safety when importing modules. On
-   platforms without threads, this function does nothing.
-
-
-.. function:: release_lock()
-
-   Release the interpreter's import lock. On platforms without threads, this
-   function does nothing.
-
-
 The following functions and data provide conveniences for handling :pep:`3147`
 byte-compiled file paths.
 
