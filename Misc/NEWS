@@ -10,6 +10,10 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #9828: Destroy the GIL in Py_Finalize(), so that it gets properly
+  re-created on a subsequent call to Py_Initialize().  The problem (a crash)
+  wouldn't appear in 3.1 or 2.7 where the GIL's structure is more trivial.
+
 - Issue #9210: Configure option --with-wctype-functions was removed.  Using the
   functions from the libc caused the methods .upper() and lower() to become
   locale aware and created subtly wrong results.

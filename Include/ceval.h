@@ -160,6 +160,7 @@ PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 
 PyAPI_FUNC(int)  PyEval_ThreadsInitialized(void);
 PyAPI_FUNC(void) PyEval_InitThreads(void);
+PyAPI_FUNC(void) _PyEval_FiniThreads(void);
 PyAPI_FUNC(void) PyEval_AcquireLock(void);
 PyAPI_FUNC(void) PyEval_ReleaseLock(void);
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
