@@ -1498,15 +1498,6 @@ def getLogger(name=None):
     else:
         return root
 
-#def getRootLogger():
-#    """
-#    Return the root logger.
-#
-#    Note that getLogger('') now does the same thing, so this function is
-#    deprecated and may disappear in the future.
-#    """
-#    return root
-
 def critical(msg, *args, **kwargs):
     """
     Log a message with severity 'CRITICAL' on the root logger.
