@@ -62,10 +62,14 @@ _CLEANED_MANIFEST = """\
 
 if sys.platform=="win32":
     from distutils.msvccompiler import get_build_version
+    if get_build_version()>=8.0:
+        SKIP_MESSAGE = None
+    else:
+        SKIP_MESSAGE = "These tests are only for MSVC8.0 or above"
+else:
+    SKIP_MESSAGE = "These tests are only for win32"
 
-@unittest.skipUnless(sys.platform=="win32", "These tests are only for win32")
-@unittest.skipUnless(get_build_version()>=8.0, "These tests are only for"
-                                               " MSVC8.0 or above")
+@unittest.skipUnless(SKIP_MESSAGE is None, SKIP_MESSAGE)
 class msvc9compilerTestCase(support.TempdirManager,
                             unittest.TestCase):
 
