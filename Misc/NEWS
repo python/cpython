@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #767645: Set os.path.supports_unicode_filenames to True on Mac OS X
+  (macpath module).
+
 - Issue #9837: The read() method of ZipExtFile objects (as returned by
   ZipFile.open()) could return more bytes than requested.
 
