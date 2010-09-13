@@ -75,7 +75,7 @@ def run(statement, filename=None, sort=-1):
     else:
         return prof.print_stats(sort)
 
-def runctx(statement, globals, locals, filename=None):
+def runctx(statement, globals, locals, filename=None, sort=-1):
     """Run statement under profiler, supplying your own globals and locals,
     optionally saving results in filename.
 
@@ -90,7 +90,7 @@ def runctx(statement, globals, locals, filename=None):
     if filename is not None:
         prof.dump_stats(filename)
     else:
-        return prof.print_stats()
+        return prof.print_stats(sort)
 
 # Backwards compatibility.
 def help():
@@ -589,18 +589,27 @@ def main():
     parser.add_option('-o', '--outfile', dest="outfile",
         help="Save stats to <outfile>", default=None)
     parser.add_option('-s', '--sort', dest="sort",
-        help="Sort order when printing to stdout, based on pstats.Stats class", default=-1)
+        help="Sort order when printing to stdout, based on pstats.Stats class",
+        default=-1)
 
     if not sys.argv[1:]:
         parser.print_usage()
         sys.exit(2)
 
     (options, args) = parser.parse_args()
+    sys.argv[:] = args
 
-    if (len(args) > 0):
-        sys.argv[:] = args
-        sys.path.insert(0, os.path.dirname(sys.argv[0]))
-        run('execfile(%r)' % (sys.argv[0],), options.outfile, options.sort)
+    if len(args) > 0:
+        progname = args[0]
+        sys.path.insert(0, os.path.dirname(progname))
+        with open(progname, 'rb') as fp:
+            code = compile(fp.read(), progname, 'exec')
+        globs = {
+            '__file__': progname,
+            '__name__': '__main__',
+            '__package__': None,
+        }
+        runctx(code, globs, None, options.outfile, options.sort)
     else:
         parser.print_usage()
     return parser

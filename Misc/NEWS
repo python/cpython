@@ -151,6 +151,9 @@ Library
 
 - Issue #9354: Provide getsockopt() in asyncore's file_wrapper.
 
+- Issue #9428: Fix running scripts with the profile/cProfile modules from
+  the command line.
+
 - Issue #7781: Fix restricting stats by entry counts in the pstats
   interactive browser.
 
@@ -340,8 +343,11 @@ Build
 Tests
 -----
 
+- Issue #9323: Make test.regrtest.__file__ absolute, this was not always the
+  case when running profile or trace, for example.
+
 - Issue #9315: Added tests for the trace module.  Patch by Eli Bendersky.
- 
+
 - Strengthen test_unicode with explicit type checking for assertEqual tests.
 
 - Issue #8857: Provide a test case for socket.getaddrinfo.
