@@ -313,6 +313,15 @@ PyEval_InitThreads(void)
 }
 
 void
+_PyEval_FiniThreads(void)
+{
+    if (!gil_created())
+        return;
+    destroy_gil();
+    assert(!gil_created());
+}
+
+void
 PyEval_AcquireLock(void)
 {
     PyThreadState *tstate = PyThreadState_GET();
@@ -368,10 +377,6 @@ PyEval_ReInitThreads(void)
 
     if (!gil_created())
         return;
-    /*XXX Can't use PyThread_free_lock here because it does too
-      much error-checking.  Doing this cleanly would require
-      adding a new function to each thread_*.h.  Instead, just
-      create a new lock and waste a little bit of memory */
     recreate_gil();
     pending_lock = PyThread_allocate_lock();
     take_gil(tstate);

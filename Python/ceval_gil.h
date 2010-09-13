@@ -95,6 +95,9 @@ do { \
 #define MUTEX_INIT(mut) \
     if (pthread_mutex_init(&mut, NULL)) { \
         Py_FatalError("pthread_mutex_init(" #mut ") failed"); };
+#define MUTEX_FINI(mut) \
+    if (pthread_mutex_destroy(&mut)) { \
+        Py_FatalError("pthread_mutex_destroy(" #mut ") failed"); };
 #define MUTEX_LOCK(mut) \
     if (pthread_mutex_lock(&mut)) { \
         Py_FatalError("pthread_mutex_lock(" #mut ") failed"); };
@@ -106,6 +109,9 @@ do { \
 #define COND_INIT(cond) \
     if (pthread_cond_init(&cond, NULL)) { \
         Py_FatalError("pthread_cond_init(" #cond ") failed"); };
+#define COND_FINI(cond) \
+    if (pthread_cond_destroy(&cond)) { \
+        Py_FatalError("pthread_cond_destroy(" #cond ") failed"); };
 #define COND_SIGNAL(cond) \
     if (pthread_cond_signal(&cond)) { \
         Py_FatalError("pthread_cond_signal(" #cond ") failed"); };
@@ -305,9 +311,24 @@ static void create_gil(void)
     _Py_atomic_store_explicit(&gil_locked, 0, _Py_memory_order_release);
 }
 
+static void destroy_gil(void)
+{
+    MUTEX_FINI(gil_mutex);
+#ifdef FORCE_SWITCHING
+    MUTEX_FINI(switch_mutex);
+#endif
+    COND_FINI(gil_cond);
+#ifdef FORCE_SWITCHING
+    COND_FINI(switch_cond);
+#endif
+    _Py_atomic_store_explicit(&gil_locked, -1, _Py_memory_order_release);
+    _Py_ANNOTATE_RWLOCK_DESTROY(&gil_locked);
+}
+
 static void recreate_gil(void)
 {
     _Py_ANNOTATE_RWLOCK_DESTROY(&gil_locked);
+    /* XXX should we destroy the old OS resources here? */
     create_gil();
 }
 
