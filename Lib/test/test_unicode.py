@@ -34,6 +34,16 @@ class UnicodeTest(
     ):
     type2test = unicode
 
+    def assertEqual(self, first, second, msg=None):
+        # strict assertEqual method: reject implicit bytes/unicode equality
+        super(UnicodeTest, self).assertEqual(first, second, msg)
+        if isinstance(first, unicode) or isinstance(second, unicode):
+            self.assertIsInstance(first, unicode)
+            self.assertIsInstance(second, unicode)
+        elif isinstance(first, str) or isinstance(second, str):
+            self.assertIsInstance(first, str)
+            self.assertIsInstance(second, str)
+
     def checkequalnofix(self, result, object, methodname, *args):
         method = getattr(object, methodname)
         realresult = method(*args)
@@ -197,9 +207,9 @@ class UnicodeTest(
 
     def test_comparison(self):
         # Comparisons:
-        self.assertEqual(u'abc', 'abc')
-        self.assertEqual('abc', u'abc')
-        self.assertEqual(u'abc', u'abc')
+        self.assertTrue(u'abc' == 'abc')
+        self.assertTrue('abc' == u'abc')
+        self.assertTrue(u'abc' == u'abc')
         self.assertTrue(u'abcd' > 'abc')
         self.assertTrue('abcd' > u'abc')
         self.assertTrue(u'abcd' > u'abc')
@@ -398,8 +408,10 @@ class UnicodeTest(
 
         for num in range(0x00,0x80):
             char = chr(num)
-            self.assertEqual(u"%c" % char, char)
-            self.assertEqual(u"%c" % num, char)
+            self.assertEqual(u"%c" % char, unicode(char))
+            self.assertEqual(u"%c" % num, unicode(char))
+            self.assertTrue(char == u"%c" % char)
+            self.assertTrue(char == u"%c" % num)
         # Issue 7649
         for num in range(0x80,0x100):
             uchar = unichr(num)
@@ -558,9 +570,11 @@ class UnicodeTest(
         set_o = '!"#$%&*;<=>@[]^_`{|}'
         for c in set_d:
             self.assertEqual(c.encode('utf7'), c.encode('ascii'))
-            self.assertEqual(c.encode('ascii').decode('utf7'), c)
+            self.assertEqual(c.encode('ascii').decode('utf7'), unicode(c))
+            self.assertTrue(c == c.encode('ascii').decode('utf7'))
         for c in set_o:
-            self.assertEqual(c.encode('ascii').decode('utf7'), c)
+            self.assertEqual(c.encode('ascii').decode('utf7'), unicode(c))
+            self.assertTrue(c == c.encode('ascii').decode('utf7'))
 
     def test_codecs_utf8(self):
         self.assertEqual(u''.encode('utf-8'), '')
@@ -1364,7 +1378,7 @@ class UnicodeTest(
                 return u'__unicode__ overridden'
         u = U(u'xxx')
         self.assertEqual("%s" % u, u'__unicode__ overridden')
-        self.assertEqual("{}".format(u), u'__unicode__ overridden')
+        self.assertEqual("{}".format(u), '__unicode__ overridden')
 
 
 def test_main():
