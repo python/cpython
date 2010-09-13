@@ -607,7 +607,7 @@ class Formatter(object):
             return str(value)
         elif conversion is None:
             return value
-        raise ValueError("Unknown converion specifier {0!s}".format(conversion))
+        raise ValueError("Unknown conversion specifier {0!s}".format(conversion))
 
 
     # returns an iterable that contains tuples of the form:

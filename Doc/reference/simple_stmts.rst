@@ -836,7 +836,7 @@ leading dot means the current package where the module making the import
 exists. Two dots means up one package level. Three dots is up two levels, etc.
 So if you execute ``from . import mod`` from a module in the ``pkg`` package
 then you will end up importing ``pkg.mod``. If you execute ``from ..subpkg2
-imprt mod`` from within ``pkg.subpkg1`` you will import ``pkg.subpkg2.mod``.
+import mod`` from within ``pkg.subpkg1`` you will import ``pkg.subpkg2.mod``.
 The specification for relative imports is contained within :pep:`328`.
 
 :func:`importlib.import_module` is provided to support applications that
