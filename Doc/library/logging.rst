@@ -2605,7 +2605,9 @@ supports sending logging messages to a queue, such as those implemented in the
 .. class:: QueueHandler(queue)
 
    Returns a new instance of the :class:`QueueHandler` class. The instance is
-   initialized with the queue to send messages to.
+   initialized with the queue to send messages to. The queue can be any queue-
+   like object; it's passed as-is to the :meth:`enqueue` method, which needs
+   to know how to send messages to it.
 
 
    .. method:: emit(record)
@@ -2622,6 +2624,37 @@ supports sending logging messages to a queue, such as those implemented in the
 .. versionadded:: 3.2
 
 The :class:`QueueHandler` class was not present in previous versions.
+
+.. _zeromq-handlers:
+
+You can use a :class:`QueueHandler` subclass to send messages to other kinds
+of queues, for example a ZeroMQ "publish" socket. In the example below,the
+socket is created separately and passed to the handler (as its 'queue')::
+
+    import zmq # using pyzmq, the Python binding for ZeroMQ
+    import json # for serializing records portably
+
+    ctx = zmq.Context()
+    sock = zmq.Socket(ctx, zmq.PUB) # or zmq.PUSH, or other suitable value
+    sock.bind('tcp://*:5556') # or wherever
+
+    class ZeroMQSocketHandler(QueueHandler):
+        def enqueue(self, record):
+            data = json.dumps(record.__dict__)
+            self.queue.send(data)
+
+Of course there are other ways of organizing this, for example passing in the
+data needed by the handler to create the socket::
+
+    class ZeroMQSocketHandler(QueueHandler):
+        def __init__(self, uri, socktype=zmq.PUB, ctx=None):
+            self.ctx = ctx or zmq.Context()
+            socket = zmq.Socket(self.ctx, socktype)
+            super(ZeroMQSocketHandler, self).__init__(socket)
+
+        def enqueue(self, record):
+            data = json.dumps(record.__dict__)
+            self.queue.send(data)
 
 
 .. _formatter-objects:
