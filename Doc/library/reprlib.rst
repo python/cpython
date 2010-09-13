@@ -34,6 +34,29 @@ This module provides a class, an instance, and a function:
    similar to that returned by the built-in function of the same name, but with
    limits on most sizes.
 
+In addition to size-limiting tools, the module also provides a decorator for
+detecting recursive calls to :meth:`__repr__` and substituting a placeholder
+string instead.
+
+.. decorator:: recursive_repr(fillvalue="...")
+
+   Decorator for :meth:`__repr__` methods to detect recursive calls within the
+   same thread.  If a recursive call is made, the *fillvalue* is returned,
+   otherwise, the usual :meth:`__repr__` call is made.  For example:
+
+        >>> class MyList(list):
+        ...     @recursive_repr()
+        ...      def __repr__(self):
+        ...          return '<' + '|'.join(map(repr, self)) + '>'
+        ...
+        >>> m = MyList('abc')
+        >>> m.append(m)
+        >>> m.append('x')
+        >>> print(m)
+        <'a'|'b'|'c'|...|'x'>
+
+   .. versionadded:: 3.2
+
 
 .. _repr-objects:
 

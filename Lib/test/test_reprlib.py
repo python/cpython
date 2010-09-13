@@ -11,6 +11,7 @@ import unittest
 from test.support import run_unittest
 from reprlib import repr as r # Don't shadow builtin repr
 from reprlib import Repr
+from reprlib import recursive_repr
 
 
 def nestedTuple(nesting):
@@ -301,10 +302,38 @@ class ClassWithFailingRepr:
     def __repr__(self):
         raise Exception("This should be caught by Repr.repr_instance")
 
+class MyContainer:
+    'Helper class for TestRecursiveRepr'
+    def __init__(self, values):
+        self.values = list(values)
+    def append(self, value):
+        self.values.append(value)
+    @recursive_repr()
+    def __repr__(self):
+        return '<' + ', '.join(map(str, self.values)) + '>'
+
+class MyContainer2(MyContainer):
+    @recursive_repr('+++')
+    def __repr__(self):
+        return '<' + ', '.join(map(str, self.values)) + '>'
+
+class TestRecursiveRepr(unittest.TestCase):
+    def test_recursive_repr(self):
+        m = MyContainer(list('abcde'))
+        m.append(m)
+        m.append('x')
+        m.append(m)
+        self.assertEqual(repr(m), '<a, b, c, d, e, ..., x, ...>')
+        m = MyContainer2(list('abcde'))
+        m.append(m)
+        m.append('x')
+        m.append(m)
+        self.assertEqual(repr(m), '<a, b, c, d, e, +++, x, +++>')
 
 def test_main():
     run_unittest(ReprTests)
     run_unittest(LongReprTest)
+    run_unittest(TestRecursiveRepr)
 
 
 if __name__ == "__main__":

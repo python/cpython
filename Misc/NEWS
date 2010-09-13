@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 9840: Added a decorator to reprlib for wrapping __repr__ methods
+  to make them handle recursive calls within the same thread.
+
 - logging: Enhanced HTTPHandler with secure and credentials initializers.
 
 - Issue #767645: Set os.path.supports_unicode_filenames to True on Mac OS X

@@ -13,6 +13,7 @@ import sys as _sys
 import heapq as _heapq
 from weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
+from reprlib import recursive_repr as _recursive_repr
 
 ################################################################################
 ### OrderedDict
@@ -43,7 +44,6 @@ class OrderedDict(dict, MutableMapping):
         '''
         if len(args) > 1:
             raise TypeError('expected at most 1 arguments, got %d' % len(args))
-        self.__in_repr = False              # detects recursive repr
         try:
             self.__root
         except AttributeError:
@@ -97,10 +97,10 @@ class OrderedDict(dict, MutableMapping):
     def __reduce__(self):
         'Return state information for pickling'
         items = [[k, self[k]] for k in self]
-        tmp = self.__map, self.__root, self.__in_repr
-        del self.__map, self.__root, self.__in_repr
+        tmp = self.__map, self.__root
+        del self.__map, self.__root
         inst_dict = vars(self).copy()
-        self.__map, self.__root, self.__in_repr = tmp
+        self.__map, self.__root = tmp
         if inst_dict:
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
@@ -167,18 +167,12 @@ class OrderedDict(dict, MutableMapping):
     items = MutableMapping.items
     __ne__ = MutableMapping.__ne__
 
+    @_recursive_repr()
     def __repr__(self):
         'od.__repr__() <==> repr(od)'
         if not self:
             return '%s()' % (self.__class__.__name__,)
-        if self.__in_repr:
-            return '...'
-        self.__in_repr = True
-        try:
-            result = '%s(%r)' % (self.__class__.__name__, list(self.items()))
-        finally:
-            self.__in_repr = False
-        return result
+        return '%s(%r)' % (self.__class__.__name__, list(self.items()))
 
     def copy(self):
         'od.copy() -> a shallow copy of od'
