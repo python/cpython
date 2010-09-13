@@ -142,6 +142,12 @@ Tools/Demos
   as wide (UCS4) unicode builds for both the host interpreter (embedded
   inside gdb) and the interpreter under test.
 
+Tests
+-----
+
+- Issue #9323: Make test.regrtest.__file__ absolute, this was not always the
+  case when running profile or trace, for example.
+
 Build
 -----
 
