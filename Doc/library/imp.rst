@@ -209,6 +209,7 @@ byte-compiled file paths.
 
    *path* need not exist.
 
+
 .. function:: source_from_cache(path)
 
    Given the *path* to a :pep:`3147` file name, return the associated source code
@@ -216,6 +217,7 @@ byte-compiled file paths.
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
    ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
    to :pep:`3147` format, a ``ValueError`` is raised.
+
 
 .. function:: get_tag()
 
