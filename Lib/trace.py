@@ -56,7 +56,7 @@ import threading
 import time
 import token
 import tokenize
-import types
+import inspect
 import gc
 
 try:
@@ -398,7 +398,7 @@ def find_lines(code, strs):
 
     # and check the constants for references to other code objects
     for c in code.co_consts:
-        if isinstance(c, types.CodeType):
+        if inspect.iscode(c):
             # find another code object, so recurse into it
             linenos.update(find_lines(c, strs))
     return linenos
@@ -545,7 +545,7 @@ class Trace:
             ## use of gc.get_referrers() was suggested by Michael Hudson
             # all functions which refer to this code object
             funcs = [f for f in gc.get_referrers(code)
-                         if hasattr(f, "func_doc")]
+                         if inspect.isfunction(f)]
             # require len(func) == 1 to avoid ambiguity caused by calls to
             # new.function(): "In the face of ambiguity, refuse the
             # temptation to guess."
@@ -557,17 +557,13 @@ class Trace:
                                    if hasattr(c, "__bases__")]
                     if len(classes) == 1:
                         # ditto for new.classobj()
-                        clsname = str(classes[0])
+                        clsname = classes[0].__name__
                         # cache the result - assumption is that new.* is
                         # not called later to disturb this relationship
                         # _caller_cache could be flushed if functions in
                         # the new module get called.
                         self._caller_cache[code] = clsname
         if clsname is not None:
-            # final hack - module name shows up in str(cls), but we've already
-            # computed module name, so remove it
-            clsname = clsname.split(".")[1:]
-            clsname = ".".join(clsname)
             funcname = "%s.%s" % (clsname, funcname)
 
         return filename, modulename, funcname

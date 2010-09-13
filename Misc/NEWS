@@ -255,6 +255,9 @@ Library
 
 - Issue #9164: Ensure sysconfig handles dupblice archs while building on OSX
 
+- Issue #9315: Fix for the trace module to record correct class name
+  for tracing methods.
+
 Extension Modules
 -----------------
 
@@ -337,6 +340,8 @@ Build
 Tests
 -----
 
+- Issue #9315: Added tests for the trace module.  Patch by Eli Bendersky.
+ 
 - Strengthen test_unicode with explicit type checking for assertEqual tests.
 
 - Issue #8857: Provide a test case for socket.getaddrinfo.
