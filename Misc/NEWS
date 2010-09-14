@@ -117,6 +117,9 @@ C-API
 Library
 -------
 
+- Issue #9853: Fix the signature of SSLSocket.recvfrom() and
+  SSLSocket.sendto() to match the corresponding socket methods.
+
 - Issue #9792: In case of connection failure, socket.create_connection()
   would swallow the exception and raise a new one, making it impossible
   to fetch the original errno, or to filter timeout errors.  Now the
