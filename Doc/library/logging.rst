@@ -2660,6 +2660,8 @@ data needed by the handler to create the socket::
             data = json.dumps(record.__dict__)
             self.queue.send(data)
 
+        def close(self):
+            self.queue.close()
 
 .. _formatter-objects:
 
