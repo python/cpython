@@ -361,8 +361,9 @@ I/O Base Classes
 
    .. method:: readinto(b)
 
-      Read up to len(b) bytes into bytearray *b* and return the number of bytes
-      read.
+      Read up to len(b) bytes into bytearray *b* and return the number ofbytes
+      read.  If the object is in non-blocking mode and no bytes are available,
+      ``None`` is returned.
 
    .. method:: write(b)
 
