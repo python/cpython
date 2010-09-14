@@ -815,22 +815,20 @@ class BasicSocketPairTest(SocketPairTest):
     def __init__(self, methodName='runTest'):
         SocketPairTest.__init__(self, methodName=methodName)
 
+    def _check_defaults(self, sock):
+        self.assertIsInstance(sock, socket.socket)
+        if hasattr(socket, 'AF_UNIX'):
+            self.assertEqual(sock.family, socket.AF_UNIX)
+        else:
+            self.assertEqual(sock.family, socket.AF_INET)
+        self.assertEqual(sock.type, socket.SOCK_STREAM)
+        self.assertEqual(sock.proto, 0)
+
     def _testDefaults(self):
-        pass
+        self._check_defaults(self.cli)
 
     def testDefaults(self):
-        self.assertIsInstance(self.cli, socket.socket)
-        self.assertIsInstance(self.serv, socket.socket)
-        if hasattr(socket, 'AF_UNIX'):
-            self.assertEqual(self.cli.family, socket.AF_UNIX)
-            self.assertEqual(self.serv.family, socket.AF_UNIX)
-        else:
-            self.assertEqual(self.cli.family, socket.AF_INET)
-            self.assertEqual(self.serv.family, socket.AF_INET)
-        self.assertEqual(self.cli.type, socket.SOCK_STREAM)
-        self.assertEqual(self.serv.type, socket.SOCK_STREAM)
-        self.assertEqual(self.cli.proto, 0)
-        self.assertEqual(self.serv.proto, 0)
+        self._check_defaults(self.serv)
 
     def testRecv(self):
         msg = self.serv.recv(1024)
