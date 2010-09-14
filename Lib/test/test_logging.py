@@ -31,6 +31,7 @@ import io
 import gc
 import json
 import os
+import queue
 import re
 import select
 import socket
@@ -1760,6 +1761,35 @@ class ChildLoggerTest(BaseTest):
         self.assertTrue(c2 is c3)
 
 
+class QueueHandlerTest(BaseTest):
+    # Do not bother with a logger name group.
+    expected_log_pat = r"^[\w.]+ -> ([\w]+): ([\d]+)$"
+
+    def setUp(self):
+        BaseTest.setUp(self)
+        self.queue = queue.Queue(-1)
+        self.que_hdlr = logging.handlers.QueueHandler(self.queue)
+        self.que_logger = logging.getLogger('que')
+        self.que_logger.propagate = False
+        self.que_logger.setLevel(logging.WARNING)
+        self.que_logger.addHandler(self.que_hdlr)
+
+    def tearDown(self):
+        self.que_hdlr.close()
+        BaseTest.tearDown(self)
+
+    def test_queue_handler(self):
+        self.que_logger.debug(self.next_message())
+        self.assertRaises(queue.Empty, self.queue.get_nowait)
+        self.que_logger.info(self.next_message())
+        self.assertRaises(queue.Empty, self.queue.get_nowait)
+        msg = self.next_message()
+        self.que_logger.warning(msg)
+        data = self.queue.get_nowait()
+        self.assertTrue(isinstance(data, logging.LogRecord))
+        self.assertEqual(data.name, self.que_logger.name)
+        self.assertEqual((data.msg, data.args), (msg, None))
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
@@ -1769,7 +1799,7 @@ def test_main():
                  CustomLevelsAndFiltersTest, MemoryHandlerTest,
                  ConfigFileTest, SocketHandlerTest, MemoryTest,
                  EncodingTest, WarningsTest, ConfigDictTest, ManagerTest,
-                 ChildLoggerTest)
+                 ChildLoggerTest, QueueHandlerTest)
 
 if __name__ == "__main__":
     test_main()
