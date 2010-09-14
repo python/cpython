@@ -43,6 +43,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #9729: Fix the signature of SSLSocket.recvfrom() and
+  SSLSocket.sendto() to match the corresponding socket methods.  Also,
+  fix various SSLSocket methods to raise socket.error rather than an
+  unhelpful TypeError when called on an unconnected socket.  Original patch
+  by Andrew Bennetts.
+
 - Issue #9826: OrderedDict.__repr__ can now handle self-referential
   values:   d['x'] = d.
 

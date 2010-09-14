@@ -179,6 +179,19 @@ class BasicSocketTests(unittest.TestCase):
         del ss
         self.assertEqual(wr(), None)
 
+    def test_wrapped_unconnected(self):
+        # The _delegate_methods in socket.py are correctly delegated to by an
+        # unconnected SSLSocket, so they will raise a socket.error rather than
+        # something unexpected like TypeError.
+        s = socket.socket(socket.AF_INET)
+        ss = ssl.wrap_socket(s)
+        self.assertRaises(socket.error, ss.recv, 1)
+        self.assertRaises(socket.error, ss.recv_into, bytearray(b'x'))
+        self.assertRaises(socket.error, ss.recvfrom, 1)
+        self.assertRaises(socket.error, ss.recvfrom_into, bytearray(b'x'), 1)
+        self.assertRaises(socket.error, ss.send, b'x')
+        self.assertRaises(socket.error, ss.sendto, b'x', ('0.0.0.0', 0))
+
 
 class NetworkedTests(unittest.TestCase):
 
