@@ -47,21 +47,15 @@ def _default_chunk_size():
         return f._CHUNK_SIZE
 
 
-class MockRawIO:
+class MockRawIOWithoutRead:
+    """A RawIO implementation without read(), so as to exercise the default
+    RawIO.read() which calls readinto()."""
 
     def __init__(self, read_stack=()):
         self._read_stack = list(read_stack)
         self._write_stack = []
         self._reads = 0
         self._extraneous_reads = 0
-
-    def read(self, n=None):
-        self._reads += 1
-        try:
-            return self._read_stack.pop(0)
-        except:
-            self._extraneous_reads += 1
-            return b""
 
     def write(self, b):
         self._write_stack.append(bytes(b))
@@ -108,6 +102,23 @@ class MockRawIO:
 
     def truncate(self, pos=None):
         return pos
+
+class CMockRawIOWithoutRead(MockRawIOWithoutRead, io.RawIOBase):
+    pass
+
+class PyMockRawIOWithoutRead(MockRawIOWithoutRead, pyio.RawIOBase):
+    pass
+
+
+class MockRawIO(MockRawIOWithoutRead):
+
+    def read(self, n=None):
+        self._reads += 1
+        try:
+            return self._read_stack.pop(0)
+        except:
+            self._extraneous_reads += 1
+            return b""
 
 class CMockRawIO(MockRawIO, io.RawIOBase):
     pass
@@ -553,6 +564,19 @@ class IOTest(unittest.TestCase):
         f.close()
         f.close()
         self.assertRaises(ValueError, f.flush)
+
+    def test_RawIOBase_read(self):
+        # Exercise the default RawIOBase.read() implementation (which calls
+        # readinto() internally).
+        rawio = self.MockRawIOWithoutRead((b"abc", b"d", None, b"efg", None))
+        self.assertEqual(rawio.read(2), b"ab")
+        self.assertEqual(rawio.read(2), b"c")
+        self.assertEqual(rawio.read(2), b"d")
+        self.assertEqual(rawio.read(2), None)
+        self.assertEqual(rawio.read(2), b"ef")
+        self.assertEqual(rawio.read(2), b"g")
+        self.assertEqual(rawio.read(2), None)
+        self.assertEqual(rawio.read(2), b"")
 
 class CIOTest(IOTest):
     pass
@@ -2557,7 +2581,7 @@ def test_main():
     # Put the namespaces of the IO module we are testing and some useful mock
     # classes in the __dict__ of each test.
     mocks = (MockRawIO, MisbehavedRawIO, MockFileIO, CloseFailureIO,
-             MockNonBlockWriterIO)
+             MockNonBlockWriterIO, MockRawIOWithoutRead)
     all_members = io.__all__ + ["IncrementalNewlineDecoder"]
     c_io_ns = {name : getattr(io, name) for name in all_members}
     py_io_ns = {name : getattr(pyio, name) for name in all_members}
