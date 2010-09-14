@@ -32,6 +32,7 @@ class OrderedDict(dict, MutableMapping):
     # The internal self.__map dictionary maps keys to links in a doubly linked list.
     # The circular doubly linked list starts and ends with a sentinel element.
     # The sentinel element never gets deleted (this simplifies the algorithm).
+    # The sentinel is stored in self.__hardroot with a weakref proxy in self.__root.
     # The prev/next links are weakref proxies (to prevent circular references).
     # Individual links are kept alive by the hard reference in self.__map.
     # Those hard references disappear when a key is deleted from an OrderedDict.
@@ -47,7 +48,8 @@ class OrderedDict(dict, MutableMapping):
         try:
             self.__root
         except AttributeError:
-            self.__root = root = _Link()    # sentinel node for the doubly linked list
+            self.__hardroot = _Link()
+            self.__root = root = _proxy(self.__hardroot)
             root.prev = root.next = root
             self.__map = {}
         self.update(*args, **kwds)
@@ -62,8 +64,9 @@ class OrderedDict(dict, MutableMapping):
             root = self.__root
             last = root.prev
             link.prev, link.next, link.key = last, root, key
-            last.next = root.prev = proxy(link)
-        dict.__setitem__(self, key, value)
+            last.next = link
+            root.prev = proxy(link)
+        dict_setitem(self, key, value)
 
     def __delitem__(self, key, dict_delitem=dict.__delitem__):
         'od.__delitem__(y) <==> del od[y]'
@@ -97,10 +100,10 @@ class OrderedDict(dict, MutableMapping):
     def __reduce__(self):
         'Return state information for pickling'
         items = [[k, self[k]] for k in self]
-        tmp = self.__map, self.__root
-        del self.__map, self.__root
+        tmp = self.__map, self.__root, self.__hardroot
+        del self.__map, self.__root, self.__hardroot
         inst_dict = vars(self).copy()
-        self.__map, self.__root = tmp
+        self.__map, self.__root, self.__hardroot = tmp
         if inst_dict:
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
