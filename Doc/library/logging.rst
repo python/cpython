@@ -2647,6 +2647,9 @@ socket is created separately and passed to the handler (as its 'queue')::
             data = json.dumps(record.__dict__)
             self.queue.send(data)
 
+    handler = ZeroMQSocketHandler(sock)
+
+
 Of course there are other ways of organizing this, for example passing in the
 data needed by the handler to create the socket::
 
@@ -2654,7 +2657,7 @@ data needed by the handler to create the socket::
         def __init__(self, uri, socktype=zmq.PUB, ctx=None):
             self.ctx = ctx or zmq.Context()
             socket = zmq.Socket(self.ctx, socktype)
-            super(ZeroMQSocketHandler, self).__init__(socket)
+            QueueHandler.__init__(self, socket)
 
         def enqueue(self, record):
             data = json.dumps(record.__dict__)
