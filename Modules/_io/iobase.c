@@ -776,9 +776,9 @@ rawiobase_read(PyObject *self, PyObject *args)
         return NULL;
 
     res = PyObject_CallMethodObjArgs(self, _PyIO_str_readinto, b, NULL);
-    if (res == NULL) {
+    if (res == NULL || res == Py_None) {
         Py_DECREF(b);
-        return NULL;
+        return res;
     }
 
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);

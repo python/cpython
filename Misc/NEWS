@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9854: The default read() implementation in io.RawIOBase now
+  handles non-blocking readinto() returning None correctly.
+
 - Issue #9729: Fix the signature of SSLSocket.recvfrom() and
   SSLSocket.sendto() to match the corresponding socket methods.  Also,
   fix various SSLSocket methods to raise socket.error rather than an
