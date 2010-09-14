@@ -82,7 +82,7 @@ def total_ordering(cls):
                    ('__lt__', lambda self, other: not self >= other)]
     }
     # Find comparisons not inherited from object.
-    roots = [op for op in convert if getattr(cls, op) is not getattr(object, op)]
+    roots = [op for op in convert if getattr(cls, op, None) is not getattr(object, op, None)]
     if not roots:
         raise ValueError('must define at least one ordering operation: < > <= >=')
     root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
