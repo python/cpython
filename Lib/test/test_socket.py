@@ -714,6 +714,7 @@ class BasicTCPTest(SocketConnectedTest):
         # Testing fromfd()
         fd = self.cli_conn.fileno()
         sock = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
+        self.assertIsInstance(sock, socket.socket)
         msg = sock.recv(1024)
         self.assertEqual(msg, MSG)
 
@@ -813,6 +814,23 @@ class BasicSocketPairTest(SocketPairTest):
 
     def __init__(self, methodName='runTest'):
         SocketPairTest.__init__(self, methodName=methodName)
+
+    def _testDefaults(self):
+        pass
+
+    def testDefaults(self):
+        self.assertIsInstance(self.cli, socket.socket)
+        self.assertIsInstance(self.serv, socket.socket)
+        if hasattr(socket, 'AF_UNIX'):
+            self.assertEqual(self.cli.family, socket.AF_UNIX)
+            self.assertEqual(self.serv.family, socket.AF_UNIX)
+        else:
+            self.assertEqual(self.cli.family, socket.AF_INET)
+            self.assertEqual(self.serv.family, socket.AF_INET)
+        self.assertEqual(self.cli.type, socket.SOCK_STREAM)
+        self.assertEqual(self.serv.type, socket.SOCK_STREAM)
+        self.assertEqual(self.cli.proto, 0)
+        self.assertEqual(self.serv.proto, 0)
 
     def testRecv(self):
         msg = self.serv.recv(1024)

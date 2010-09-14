@@ -52,6 +52,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #1552: socket.socketpair() now returns regular socket.socket
+  objects supporting the whole socket API (rather than the "raw"
+  _socket.socket objects).
+
 - Issue #9853: Fix the signature of SSLSocket.recvfrom() and
   SSLSocket.sendto() to match the corresponding socket methods.
 

@@ -364,6 +364,10 @@ The module :mod:`socket` exports the following constants and functions:
    if defined on the platform; otherwise, the default is :const:`AF_INET`.
    Availability: Unix.
 
+   .. versionchanged:: 3.2
+      The returned socket objects now support the whole socket API, rather
+      than a subset.
+
 
 .. function:: fromfd(fd, family, type[, proto])
 
