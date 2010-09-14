@@ -2330,7 +2330,7 @@ posix_listdir(PyObject *self, PyObject *args)
         WIN32_FIND_DATAW wFileData;
         Py_UNICODE *wnamebuf, *po_wchars;
         
-        if (po == NULL) { // Default arg: "."
+        if (po == NULL) { /* Default arg: "." */
             po_wchars = L".";
             len = 1;
         } else {
@@ -2577,7 +2577,7 @@ posix_listdir(PyObject *self, PyObject *args)
     oname = NULL;
     if (!PyArg_ParseTuple(args, "|O&:listdir", PyUnicode_FSConverter, &oname))
         return NULL;
-    if (oname == NULL) { // Default arg: "."
+    if (oname == NULL) { /* Default arg: "." */
       oname = PyBytes_FromString(".");
     }
     name = PyBytes_AsString(oname);
