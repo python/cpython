@@ -175,7 +175,9 @@ If your module creates a new type, you may have trouble with this line::
 
    PyObject_HEAD_INIT(&PyType_Type)
 
-Change it to::
+Static type object initializers in extension modules may cause
+compiles to fail with an error message like "initializer not a
+constant".  This shows up when building DLL under MSVC.  Change it to::
 
    PyObject_HEAD_INIT(NULL)
 
@@ -183,8 +185,6 @@ and add the following to the module initialization function::
 
    MyObject_Type.ob_type = &PyType_Type;
 
-Refer to section 3 of the `Python FAQ <http://www.python.org/doc/faq>`_ for
-details on why you must do this.
 
 
 .. _dynamic-linking:
