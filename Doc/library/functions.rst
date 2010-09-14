@@ -634,6 +634,10 @@ are always available.  They are listed here in alphabetical order.
    The optional keyword-only *key* argument specifies a one-argument ordering
    function like that used for :meth:`list.sort`.
 
+   If multiple items are maximal, the function returns the first one encountered.
+   This is consistent with other sort-stability preserving tools such as
+   ``sorted(iterable, key=keyfunc, reverse=True)[0]` and
+   ``heapq.nlargest(1, iterable, key=keyfunc)``.
 
 .. function:: memoryview(obj)
    :noindex:
@@ -651,6 +655,10 @@ are always available.  They are listed here in alphabetical order.
    The optional keyword-only *key* argument specifies a one-argument ordering
    function like that used for :meth:`list.sort`.
 
+   If multiple items are minimal, the function returns the first one encountered.
+   This is consistent with other sort-stability preserving tools such as
+   ``sorted(iterable, key=keyfunc)[0]` and
+   ``heapq.nsmallest(1, iterable, key=keyfunc)``.
 
 .. function:: next(iterator[, default])
 
