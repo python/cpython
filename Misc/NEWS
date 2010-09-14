@@ -117,6 +117,9 @@ C-API
 Library
 -------
 
+- Issue #9854: The default read() implementation in io.RawIOBase now
+  handles non-blocking readinto() returning None correctly.
+
 - Issue #9853: Fix the signature of SSLSocket.recvfrom() and
   SSLSocket.sendto() to match the corresponding socket methods.
 
