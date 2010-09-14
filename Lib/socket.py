@@ -199,6 +199,27 @@ def fromfd(fd, family, type, proto=0):
     return socket(family, type, proto, nfd)
 
 
+if hasattr(_socket, "socketpair"):
+
+    def socketpair(family=None, type=SOCK_STREAM, proto=0):
+        """socketpair([family[, type[, proto]]]) -> (socket object, socket object)
+
+        Create a pair of socket objects from the sockets returned by the platform
+        socketpair() function.
+        The arguments are the same as for socket() except the default family is
+        AF_UNIX if defined on the platform; otherwise, the default is AF_INET.
+        """
+        if family is None:
+            try:
+                family = AF_UNIX
+            except NameError:
+                family = AF_INET
+        a, b = _socket.socketpair(family, type, proto)
+        a = socket(family, type, proto, a.detach())
+        b = socket(family, type, proto, b.detach())
+        return a, b
+
+
 class SocketIO(io.RawIOBase):
 
     """Raw I/O implementation for stream sockets.
