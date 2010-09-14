@@ -183,6 +183,9 @@ Tests
 Build
 -----
 
+- Issue #9848: Stopping trying to build _weakref in setup.py as it is a
+  built-in module.
+
 - Issue #9806: python-config now has an ``--extension-suffix`` option that
   outputs the suffix for dynamic libraries including the ABI version name
   defined by PEP 3149.

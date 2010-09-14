@@ -456,9 +456,6 @@ class PyBuildExt(build_ext):
         # on pretty much any POSIXish platform.
         #
 
-        # Some modules that are normally always on:
-        exts.append( Extension('_weakref', ['_weakref.c']) )
-
         # array objects
         exts.append( Extension('array', ['arraymodule.c']) )
         # complex math library functions
