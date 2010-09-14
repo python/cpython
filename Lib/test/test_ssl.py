@@ -163,6 +163,18 @@ class BasicSocketTests(unittest.TestCase):
         del ss
         self.assertEqual(wr(), None)
 
+    def test_wrapped_unconnected(self):
+        # Methods on an unconnected SSLSocket propagate the original
+        # socket.error raise by the underlying socket object.
+        s = socket.socket(socket.AF_INET)
+        ss = ssl.wrap_socket(s)
+        self.assertRaises(socket.error, ss.recv, 1)
+        self.assertRaises(socket.error, ss.recv_into, bytearray(b'x'))
+        self.assertRaises(socket.error, ss.recvfrom, 1)
+        self.assertRaises(socket.error, ss.recvfrom_into, bytearray(b'x'), 1)
+        self.assertRaises(socket.error, ss.send, b'x')
+        self.assertRaises(socket.error, ss.sendto, b'x', ('0.0.0.0', 0))
+
     def test_timeout(self):
         # Issue #8524: when creating an SSL socket, the timeout of the
         # original socket should be retained.
