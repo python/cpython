@@ -1285,7 +1285,7 @@ def test_main(verbose=False):
         not os.path.exists(SVN_PYTHON_ORG_ROOT_CERT)):
         raise test_support.TestFailed("Can't read certificate files!")
 
-    tests = [BasicTests]
+    tests = [BasicTests, BasicSocketTests]
 
     if test_support.is_resource_enabled('network'):
         tests.append(NetworkedTests)
