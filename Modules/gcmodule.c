@@ -1366,7 +1366,8 @@ PyGC_Collect(void)
 void
 _PyGC_Fini(void)
 {
-    if (garbage != NULL && PyList_GET_SIZE(garbage) > 0) {
+    if (!(debug & DEBUG_SAVEALL)
+        && garbage != NULL && PyList_GET_SIZE(garbage) > 0) {
         PySys_WriteStderr(
             "gc: "
             "%" PY_FORMAT_SIZE_T "d uncollectable objects at shutdown:\n",
