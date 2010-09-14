@@ -546,6 +546,8 @@ class RawIOBase(IOBase):
             return self.readall()
         b = bytearray(n.__index__())
         n = self.readinto(b)
+        if n is None:
+            return None
         del b[n:]
         return bytes(b)
 
@@ -563,7 +565,7 @@ class RawIOBase(IOBase):
         """Read up to len(b) bytes into b.
 
         Returns number of bytes read (0 for EOF), or None if the object
-        is set not to block as has no data to read.
+        is set not to block and has no data to read.
         """
         self._unsupported("readinto")
 
