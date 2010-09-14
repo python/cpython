@@ -221,13 +221,15 @@ class SSLSocket(socket):
         else:
             return socket.send(self, data, flags)
 
-    def sendto(self, data, addr, flags=0):
+    def sendto(self, data, flags_or_addr, addr=None):
         self._checkClosed()
         if self._sslobj:
             raise ValueError("sendto not allowed on instances of %s" %
                              self.__class__)
+        elif addr is None:
+            return socket.sendto(self, data, flags_or_addr)
         else:
-            return socket.sendto(self, data, addr, flags)
+            return socket.sendto(self, data, flags_or_addr, addr)
 
     def sendall(self, data, flags=0):
         self._checkClosed()
@@ -267,13 +269,13 @@ class SSLSocket(socket):
         else:
             return socket.recv_into(self, buffer, nbytes, flags)
 
-    def recvfrom(self, addr, buflen=1024, flags=0):
+    def recvfrom(self, buflen=1024, flags=0):
         self._checkClosed()
         if self._sslobj:
             raise ValueError("recvfrom not allowed on instances of %s" %
                              self.__class__)
         else:
-            return socket.recvfrom(self, addr, buflen, flags)
+            return socket.recvfrom(self, buflen, flags)
 
     def recvfrom_into(self, buffer, nbytes=None, flags=0):
         self._checkClosed()
