@@ -724,23 +724,24 @@ extern int fdatasync(int);
 #               ifdef Py_BUILD_CORE
 #                       define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
 #                       define PyAPI_DATA(RTYPE) extern __declspec(dllexport) RTYPE
-            /* module init functions inside the core need no external linkage */
-            /* except for Cygwin to handle embedding (FIXME: BeOS too?) */
+        /* module init functions inside the core need no external linkage */
+        /* except for Cygwin to handle embedding (FIXME: BeOS too?) */
 #                       if defined(__CYGWIN__)
 #                               define PyMODINIT_FUNC __declspec(dllexport) void
 #                       else /* __CYGWIN__ */
 #                               define PyMODINIT_FUNC void
 #                       endif /* __CYGWIN__ */
 #               else /* Py_BUILD_CORE */
-            /* Building an extension module, or an embedded situation */
-            /* public Python functions and data are imported */
-            /* Under Cygwin, auto-import functions to prevent compilation */
-            /* failures similar to http://python.org/doc/FAQ.html#3.24 */
+        /* Building an extension module, or an embedded situation */
+        /* public Python functions and data are imported */
+        /* Under Cygwin, auto-import functions to prevent compilation */
+        /* failures similar to those described at the bottom of 4.1: */
+        /* http://docs.python.org/extending/windows.html#a-cookbook-approach */
 #                       if !defined(__CYGWIN__)
 #                               define PyAPI_FUNC(RTYPE) __declspec(dllimport) RTYPE
 #                       endif /* !__CYGWIN__ */
 #                       define PyAPI_DATA(RTYPE) extern __declspec(dllimport) RTYPE
-            /* module init functions outside the core must be exported */
+        /* module init functions outside the core must be exported */
 #                       if defined(__cplusplus)
 #                               define PyMODINIT_FUNC extern "C" __declspec(dllexport) void
 #                       else /* __cplusplus */
