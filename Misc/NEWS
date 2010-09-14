@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9853: Fix the signature of SSLSocket.recvfrom() and
+  SSLSocket.sendto() to match the corresponding socket methods.
+
 - Issue 9840: Added a decorator to reprlib for wrapping __repr__ methods
   to make them handle recursive calls within the same thread.
 
