@@ -54,8 +54,6 @@ except ImportError:
     errno = None
 EBADF = getattr(errno, 'EBADF', 9)
 EINTR = getattr(errno, 'EINTR', 4)
-EAGAIN = getattr(errno, 'EAGAIN', 11)
-EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
 __all__ = ["getfqdn", "create_connection"]
 __all__.extend(os._get_exports_list(_socket))
