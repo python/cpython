@@ -56,7 +56,7 @@ import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
      ENOTCONN, ESHUTDOWN, EINTR, EISCONN, EBADF, ECONNABORTED, errorcode
 
-DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED))
+_DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED))
 
 try:
     socket_map
@@ -366,7 +366,7 @@ class dispatcher:
         except socket.error as why:
             if why.args[0] == EWOULDBLOCK:
                 return 0
-            elif why.args[0] in DISCONNECTED:
+            elif why.args[0] in _DISCONNECTED:
                 self.handle_close()
                 return 0
             else:
@@ -384,7 +384,7 @@ class dispatcher:
                 return data
         except socket.error as why:
             # winsock sometimes throws ENOTCONN
-            if why.args[0] in DISCONNECTED:
+            if why.args[0] in _DISCONNECTED:
                 self.handle_close()
                 return b''
             else:
