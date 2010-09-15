@@ -211,6 +211,12 @@ Some smaller changes made to the core Python language are:
 
   (Proposed and implemented by Mark Dickinson; :issue:`9337`.)
 
+* :class:`memoryview` objects now have a :meth:`release()` method and support
+  the context manager protocol.  This allows timely release of any resources
+  that were acquired when requesting a buffer from the original object.
+
+  (Added by Antoine Pitrou; :issue:`9757`.)
+
 * The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
   pointing to the original callable function.  This allows wrapped functions to
   be introspected.  It also copies :attr:`__annotations__` if defined.  And now
@@ -397,6 +403,14 @@ New, Improved, and Deprecated Modules
   5-tuple), and :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by
   Antoine Pitrou; :issue:`8321`.)
 
+* Instances of :class:`unittest.TestCase` have two new methods
+  :meth:`~unittest.TestCase.assertWarns` and :meth:`~unittest.TestCase.assertWarnsRegexp`
+  to check that a given warning type was triggered by the code under test::
+
+      with self.assertWarns(DeprecationWarning):
+          legacy_function('XYZ')
+
+
 * The previously deprecated :func:`string.maketrans` function has been removed
   in favor of the static methods, :meth:`bytes.maketrans` and
   :meth:`bytearray.maketrans`.  This change solves the confusion around which
@@ -464,7 +478,7 @@ A number of small performance enhancements have been added:
 
   (Contributed by Antoine Pitrou; :issue:`7451`.)
 
-- Python's peephole optimizer now recognizes patterns such ``x in {1, 2, 3}`` as
+* Python's peephole optimizer now recognizes patterns such ``x in {1, 2, 3}`` as
   being a test for membership in a set of constants.  The optimizer recasts the
   :class:`set` as a :class:`frozenset` and stores the pre-built constant.
 
@@ -486,6 +500,14 @@ A number of small performance enhancements have been added:
 
   (Patch by Florent Xicluna in :issue:`7622` and :issue:`7462`.)
 
+* Serializing and unserializing data using the :mod:`pickle` module is now
+  up to 4x faster, thanks to various optimizations initially contributed
+  to the Unladen Swalled project.
+
+  (Ported to Python 3 by Alexandre Vassalotti and Antoine Pitrou in
+  :issue:`9410`)
+
+
 Filenames and Unicode
 =====================
 
@@ -497,6 +519,8 @@ to ``'mbcs'`` on Windows and ``'utf-8'`` on Mac OS X.
 
 The :mod:`os` module has two new functions: :func:`~os.fsencode` and
 :func:`~os.fsdecode`.
+
+.. XXX mention Victor's improvements for support of undecodable filenames.
 
 
 .. IDLE
