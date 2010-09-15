@@ -228,6 +228,13 @@ class SocketIO(io.RawIOBase):
     the raw I/O interface on top of a socket object.
     """
 
+    # One might wonder why not let FileIO do the job instead.  There are two
+    # main reasons why FileIO is not adapted:
+    # - it wouldn't work under Windows (where you can't used read() and
+    #   write() on a socket handle)
+    # - it wouldn't work with socket timeouts (FileIO would ignore the
+    #   timeout and consider the socket non-blocking)
+
     # XXX More docs
 
     def __init__(self, sock, mode):
