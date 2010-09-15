@@ -219,7 +219,7 @@ elif os.name == "posix":
             # XXX assuming GLIBC's ldconfig (with option -p)
             expr = r'(\S+)\s+\((%s(?:, OS ABI:[^\)]*)?)\)[^/]*(/[^\(\)\s]*lib%s\.[^\(\)\s]*)' \
                    % (abi_type, re.escape(name))
-            f = os.popen('LANG=C /sbin/ldconfig -p 2>/dev/null')
+            f = os.popen('LC_ALL=C LANG=C /sbin/ldconfig -p 2>/dev/null')
             try:
                 data = f.read()
             finally:
