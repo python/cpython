@@ -526,7 +526,7 @@ process and user.
 File Object Creation
 --------------------
 
-These functions create new file objects. (See also :func:`open`.)
+These functions create new :term:`file objects <file object>`. (See also :func:`open`.)
 
 
 .. function:: fdopen(fd[, mode[, bufsize]])
@@ -562,7 +562,7 @@ is slightly deceptive; on Unix platforms, sockets and pipes are also referenced
 by file descriptors.
 
 The :meth:`~file.fileno` method can be used to obtain the file descriptor
-associated with a file object when required.  Note that using the file
+associated with a :term:`file object` when required.  Note that using the file
 descriptor directly will bypass the file object methods, ignoring aspects such
 as internal buffering of data.
 
@@ -679,9 +679,9 @@ as internal buffering of data.
    Force write of file with filedescriptor *fd* to disk.  On Unix, this calls the
    native :cfunc:`fsync` function; on Windows, the MS :cfunc:`_commit` function.
 
-   If you're starting with a Python file object *f*, first do ``f.flush()``, and
-   then do ``os.fsync(f.fileno())``, to ensure that all internal buffers associated
-   with *f* are written to disk.
+   If you're starting with a buffered Python :term:`file object` *f*, first do
+   ``f.flush()``, and then do ``os.fsync(f.fileno())``, to ensure that all internal
+   buffers associated with *f* are written to disk.
 
    Availability: Unix, and Windows.
 
@@ -738,9 +738,9 @@ as internal buffering of data.
    .. note::
 
       This function is intended for low-level I/O.  For normal usage, use the
-      built-in function :func:`open`, which returns a "file object" with
+      built-in function :func:`open`, which returns a :term:`file object` with
       :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
-      wrap a file descriptor in a "file object", use :func:`fdopen`.
+      wrap a file descriptor in a file object, use :func:`fdopen`.
 
 
 .. function:: openpty()

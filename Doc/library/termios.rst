@@ -17,7 +17,7 @@ I/O control (and then only if configured at installation time).
 
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
-``sys.stdin.fileno()``, or a file object, such as ``sys.stdin`` itself.
+``sys.stdin.fileno()``, or a :term:`file object`, such as ``sys.stdin`` itself.
 
 This module also defines all the constants needed to work with the functions
 provided here; these have the same name as their counterparts in C.  Please

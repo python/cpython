@@ -2441,9 +2441,9 @@ to be provided for a context manager object to define a runtime context:
    the identifier in the :keyword:`as` clause of :keyword:`with` statements using
    this context manager.
 
-   An example of a context manager that returns itself is a file object. File
-   objects return themselves from __enter__() to allow :func:`open` to be used as
-   the context expression in a :keyword:`with` statement.
+   An example of a context manager that returns itself is a :term:`file object`.
+   File objects return themselves from __enter__() to allow :func:`open` to be
+   used as the context expression in a :keyword:`with` statement.
 
    An example of a context manager that returns a related object is the one
    returned by :func:`decimal.localcontext`. These managers set the active

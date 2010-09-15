@@ -143,9 +143,9 @@ indicates an error, the method raises one of the above exceptions.
    *groups* is a list of group names that are new since the given date and time. If
    the *file* parameter is supplied, then the output of the  ``NEWGROUPS`` command
    is stored in a file.  If *file* is a string,  then the method will open a file
-   object with that name, write to it  then close it.  If *file* is a file object,
-   then it will start calling :meth:`write` on it to store the lines of the command
-   output. If *file* is supplied, then the returned *list* is an empty list.
+   object with that name, write to it  then close it.  If *file* is a :term:`file
+   object`, then it will start calling :meth:`write` on it to store the lines of
+   the command output. If *file* is supplied, then the returned *list* is an empty list.
 
 
 .. method:: NNTP.newnews(group, date, time, [file])
@@ -155,9 +155,9 @@ indicates an error, the method raises one of the above exceptions.
    ``(response, articles)`` where *articles* is a list of message ids. If the
    *file* parameter is supplied, then the output of the  ``NEWNEWS`` command is
    stored in a file.  If *file* is a string,  then the method will open a file
-   object with that name, write to it  then close it.  If *file* is a file object,
-   then it will start calling :meth:`write` on it to store the lines of the command
-   output. If *file* is supplied, then the returned *list* is an empty list.
+   object with that name, write to it  then close it.  If *file* is a :term:`file
+   object`, then it will start calling :meth:`write` on it to store the lines of the
+   command output. If *file* is supplied, then the returned *list* is an empty list.
 
 
 .. method:: NNTP.list([file])
@@ -169,9 +169,9 @@ indicates an error, the method raises one of the above exceptions.
    not, and ``'m'`` if the newsgroup is moderated.  (Note the ordering: *last*,
    *first*.) If the *file* parameter is supplied, then the output of the  ``LIST``
    command is stored in a file.  If *file* is a string,  then the method will open
-   a file object with that name, write to it  then close it.  If *file* is a file
-   object, then it will start calling :meth:`write` on it to store the lines of the
-   command output. If *file* is supplied, then the returned *list* is an empty
+   a file with that name, write to it  then close it.  If *file* is a :term:`file
+   object`, then it will start calling :meth:`write` on it to store the lines of
+   the command output. If *file* is supplied, then the returned *list* is an empty
    list.
 
 
@@ -207,8 +207,8 @@ indicates an error, the method raises one of the above exceptions.
    Send a ``HELP`` command.  Return a pair ``(response, list)`` where *list* is a
    list of help strings. If the *file* parameter is supplied, then the output of
    the  ``HELP`` command is stored in a file.  If *file* is a string,  then the
-   method will open a file object with that name, write to it  then close it.  If
-   *file* is a file object, then it will start calling :meth:`write` on it to store
+   method will open a file with that name, write to it  then close it.  If *file*
+   is a :term:`file object`, then it will start calling :meth:`write` on it to store
    the lines of the command output. If *file* is supplied, then the returned *list*
    is an empty list.
 
@@ -243,8 +243,8 @@ indicates an error, the method raises one of the above exceptions.
 
    Send a ``BODY`` command, where *id* has the same meaning as for :meth:`stat`.
    If the *file* parameter is supplied, then the body is stored in a file.  If
-   *file* is a string, then the method will open a file object with that name,
-   write to it then close it. If *file* is a file object, then it will start
+   *file* is a string, then the method will open a file with that name, write
+   to it then close it. If *file* is a :term:`file object`, then it will start
    calling :meth:`write` on it to store the lines of the body. Return as for
    :meth:`head`.  If *file* is supplied, then the returned *list* is an empty list.
 
@@ -270,9 +270,9 @@ indicates an error, the method raises one of the above exceptions.
    text)``, where *id* is an article number (as a string) and *text* is the text of
    the requested header for that article. If the *file* parameter is supplied, then
    the output of the  ``XHDR`` command is stored in a file.  If *file* is a string,
-   then the method will open a file object with that name, write to it  then close
-   it.  If *file* is a file object, then it will start calling :meth:`write` on it
-   to store the lines of the command output. If *file* is supplied, then the
+   then the method will open a file with that name, write to it  then close it.
+   If *file* is a :term:`file object`, then it will start calling :meth:`write` on
+   it to store the lines of the command output. If *file* is supplied, then the
    returned *list* is an empty list.
 
 
@@ -303,8 +303,8 @@ indicates an error, the method raises one of the above exceptions.
    Process an ``XGTITLE`` command, returning a pair ``(response, list)``, where
    *list* is a list of tuples containing ``(name, title)``. If the *file* parameter
    is supplied, then the output of the  ``XGTITLE`` command is stored in a file.
-   If *file* is a string,  then the method will open a file object with that name,
-   write to it  then close it.  If *file* is a file object, then it will start
+   If *file* is a string,  then the method will open a file with that name, write
+   to it  then close it.  If *file* is a :term:`file object`, then it will start
    calling :meth:`write` on it to store the lines of the command output. If *file*
    is supplied, then the returned *list* is an empty list. This is an optional NNTP
    extension, and may not be supported by all servers.
@@ -320,8 +320,8 @@ indicates an error, the method raises one of the above exceptions.
    tuple is of the form ``(article number, subject, poster, date, id, references,
    size, lines)``. If the *file* parameter is supplied, then the output of the
    ``XOVER`` command is stored in a file.  If *file* is a string,  then the method
-   will open a file object with that name, write to it  then close it.  If *file*
-   is a file object, then it will start calling :meth:`write` on it to store the
+   will open a file with that name, write to it  then close it.  If *file* is a
+   :term:`file object`, then it will start calling :meth:`write` on it to store the
    lines of the command output. If *file* is supplied, then the returned *list* is
    an empty list. This is an optional NNTP extension, and may not be supported by
    all servers.

@@ -28,9 +28,9 @@ Here are the public methods of the :class:`Generator` class, imported from the
 
 .. class:: Generator(outfp, mangle_from_=True, maxheaderlen=78)
 
-   The constructor for the :class:`Generator` class takes a file-like object called
-   *outfp* for an argument.  *outfp* must support the :meth:`write` method and be
-   usable as the output file for the :func:`print` function.
+   The constructor for the :class:`Generator` class takes a :term:`file-like object`
+   called *outfp* for an argument.  *outfp* must support the :meth:`write` method
+   and be usable as the output file for the :func:`print` function.
 
    Optional *mangle_from_* is a flag that, when ``True``, puts a ``>`` character in
    front of any line in the body that starts exactly as ``From``, i.e. ``From``
