@@ -184,6 +184,23 @@ Glossary
       A module written in C or C++, using Python's C API to interact with the core and
       with user code.
 
+   file object
+      An object exposing a file-oriented API (with methods such as
+      :meth:`read()` or :meth:`write()`) to an underlying resource.
+      Depending on the way it was created, a file object can mediate access
+      to a real on-disk file or to another other type of storage or
+      communication device (for example standard input/output, in-memory
+      buffers, sockets, pipes, etc.).  File objects are also called
+      :dfn:`file-like objects` or :dfn:`streams`.
+
+      There are actually three categories of file objects: raw binary
+      files, buffered binary files and text files.  Their interfaces are
+      defined in the :mod:`io` module.  The canonical way to create a
+      file object is by using the :func:`open` function.
+
+   file-like object
+      A synonym for :term:`file object`.
+
    finder
       An object that tries to find the :term:`loader` for a module. It must
       implement a method named :meth:`find_module`. See :pep:`302` for
