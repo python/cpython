@@ -92,8 +92,8 @@ Functions
 .. function:: iterparse(source, events=None, parser=None)
 
    Parses an XML section into an element tree incrementally, and reports what's
-   going on to the user.  *source* is a filename or file object containing XML
-   data.  *events* is a list of events to report back.  If omitted, only "end"
+   going on to the user.  *source* is a filename or :term:`file object` containing
+   XML data.  *events* is a list of events to report back.  If omitted, only "end"
    events are reported.  *parser* is an optional parser instance.  If not
    given, the standard :class:`XMLParser` parser is used.  Returns an
    :term:`iterator` providing ``(event, elem)`` pairs.
@@ -455,15 +455,15 @@ ElementTree Objects
    .. method:: parse(source, parser=None)
 
       Loads an external XML section into this element tree.  *source* is a file
-      name or file object.  *parser* is an optional parser instance.  If not
-      given, the standard XMLParser parser is used.  Returns the section
+      name or :term:`file object`.  *parser* is an optional parser instance.
+      If not given, the standard XMLParser parser is used.  Returns the section
       root element.
 
 
    .. method:: write(file, encoding="us-ascii", xml_declaration=None, method="xml")
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
-      file object opened for writing.  *encoding* [1]_ is the output encoding
+      :term:`file object` opened for writing.  *encoding* [1]_ is the output encoding
       (default is US-ASCII).  Use ``encoding="unicode"`` to write a Unicode string.
       *xml_declaration* controls if an XML declaration
       should be added to the file.  Use False for never, True for always, None

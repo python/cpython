@@ -853,10 +853,10 @@ always available.
           stdout
           stderr
 
-   File objects corresponding to the interpreter's standard input, output and error
-   streams.  ``stdin`` is used for all interpreter input except for scripts but
-   including calls to :func:`input`.  ``stdout`` is used for
-   the output of :func:`print` and :term:`expression` statements and for the
+   :term:`File objects <file object>` corresponding to the interpreter's standard
+   input, output and error streams.  ``stdin`` is used for all interpreter input
+   except for scripts but including calls to :func:`input`.  ``stdout`` is used
+   for the output of :func:`print` and :term:`expression` statements and for the
    prompts of :func:`input`. The interpreter's own prompts
    and (almost all of) its error messages go to ``stderr``.  ``stdout`` and
    ``stderr`` needn't be built-in file objects: any object is acceptable as long

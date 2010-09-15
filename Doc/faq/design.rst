@@ -210,8 +210,8 @@ have to remember to change two places in your program -- the second occurrence
 is hidden at the bottom of the loop.
 
 The best approach is to use iterators, making it possible to loop through
-objects using the ``for`` statement.  For example, in the current version of
-Python file objects support the iterator protocol, so you can now write simply::
+objects using the ``for`` statement.  For example, :term:`file objects
+<file object>` support the iterator protocol, so you can write simply::
 
    for line in f:
        ... # do something with line...
