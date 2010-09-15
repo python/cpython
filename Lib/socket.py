@@ -54,6 +54,8 @@ except ImportError:
     errno = None
 EBADF = getattr(errno, 'EBADF', 9)
 EINTR = getattr(errno, 'EINTR', 4)
+EAGAIN = getattr(errno, 'EAGAIN', 11)
+EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
 __all__ = ["getfqdn", "create_connection"]
 __all__.extend(os._get_exports_list(_socket))
@@ -249,6 +251,13 @@ class SocketIO(io.RawIOBase):
         self._writing = "w" in mode
 
     def readinto(self, b):
+        """Read up to len(b) bytes into the writable buffer *b* and return
+        the number of bytes read.  If the socket is non-blocking and no bytes
+        are available, None is returned.
+
+        If *b* is non-empty, a 0 return value indicates that the connection
+        was shutdown at the other end.
+        """
         self._checkClosed()
         self._checkReadable()
         while True:
@@ -260,17 +269,28 @@ class SocketIO(io.RawIOBase):
                 raise
 
     def write(self, b):
+        """Write the given bytes or bytearray object *b* to the socket
+        and return the number of bytes written.  This can be less than
+        len(b) if not all data could be written.  If the socket is
+        non-blocking and no bytes could be written None is returned.
+        """
         self._checkClosed()
         self._checkWritable()
         return self._sock.send(b)
 
     def readable(self):
+        """True if the SocketIO is open for reading.
+        """
         return self._reading and not self.closed
 
     def writable(self):
+        """True if the SocketIO is open for writing.
+        """
         return self._writing and not self.closed
 
     def fileno(self):
+        """Return the file descriptor of the underlying socket.
+        """
         self._checkClosed()
         return self._sock.fileno()
 
@@ -283,6 +303,9 @@ class SocketIO(io.RawIOBase):
         return self._mode
 
     def close(self):
+        """Close the SocketIO object.  This doesn't close the underlying
+        socket, except if all references to it have disappeared.
+        """
         if self.closed:
             return
         io.RawIOBase.close(self)
