@@ -217,20 +217,6 @@ Some smaller changes made to the core Python language are:
 
   (Added by Antoine Pitrou; :issue:`9757`.)
 
-* The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
-  pointing to the original callable function.  This allows wrapped functions to
-  be introspected.  It also copies :attr:`__annotations__` if defined.  And now
-  it also gracefully skips over missing attributes such as :attr:`__doc__` which
-  might not be defined for the wrapped callable.
-
-  (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
-  :issue:`8814`.)
-
-* The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
-  :func:`~abc.abstractstaticmethod`.
-
-  (Patch submitted by Daniel Urban; :issue:`5867`.)
-
 * A warning message will now get printed at interpreter shutdown if the
   :data:`gc.garbage` list isn't empty.  This is meant to make the programmer
   aware that their code contains object finalization issues.
@@ -303,6 +289,20 @@ New, Improved, and Deprecated Modules
   >>> get_phone_number.cache_clear()
 
   (Contributed by Raymond Hettinger.)
+
+* The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
+  pointing to the original callable function.  This allows wrapped functions to
+  be introspected.  It also copies :attr:`__annotations__` if defined.  And now
+  it also gracefully skips over missing attributes such as :attr:`__doc__` which
+  might not be defined for the wrapped callable.
+
+  (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
+  :issue:`8814`.)
+
+* The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
+  :func:`~abc.abstractstaticmethod`.
+
+  (Patch submitted by Daniel Urban; :issue:`5867`.)
 
 * The previously deprecated :func:`contextlib.nested` function has been removed
   in favor of a plain :keyword:`with` statement which can accept multiple
