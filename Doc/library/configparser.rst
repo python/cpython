@@ -298,7 +298,7 @@ RawConfigParser Objects
 
 .. method:: RawConfigParser.write(fileobject)
 
-   Write a representation of the configuration to the specified file object,
+   Write a representation of the configuration to the specified :term:`file object`,
    which must be opened in text mode (accepting strings).  This representation
    can be parsed by a future :meth:`read` call.
 

@@ -89,9 +89,10 @@ Functions
 .. function:: iterparse(source, events=None)
 
    Parses an XML section into an element tree incrementally, and reports what's
-   going on to the user. *source* is a filename or file object containing XML data.
-   *events* is a list of events to report back.  If omitted, only "end" events are
-   reported. Returns an :term:`iterator` providing ``(event, elem)`` pairs.
+   going on to the user.  *source* is a filename or :term:`file object` containing
+   XML data.  *events* is a list of events to report back.  If omitted, only "end"
+   events are reported.  Returns an :term:`iterator` providing ``(event, elem)``
+   pairs.
 
    .. note::
 
@@ -359,16 +360,16 @@ ElementTree Objects
 
    .. method:: parse(source, parser=None)
 
-      Loads an external XML section into this element tree. *source* is a file
-      name or file object. *parser* is an optional parser instance.  If not
-      given, the standard XMLTreeBuilder parser is used. Returns the section
+      Loads an external XML section into this element tree.  *source* is a file
+      name or :term:`file object`.  *parser* is an optional parser instance.
+      If not given, the standard XMLTreeBuilder parser is used.  Returns the section
       root element.
 
 
    .. method:: write(file, encoding=None)
 
-      Writes the element tree to a file, as XML. *file* is a file name, or a
-      file object opened for writing. *encoding* [1]_ is the output encoding
+      Writes the element tree to a file, as XML.  *file* is a file name, or a
+      :term:`file object` opened for writing.  *encoding* [1]_ is the output encoding
       (default is US-ASCII).
 
 This is the XML file that is going to be manipulated::

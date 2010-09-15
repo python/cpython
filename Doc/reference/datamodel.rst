@@ -781,9 +781,9 @@ I/O objects (also known as file objects)
       single: stdout (in module sys)
       single: stderr (in module sys)
 
-   A file object represents an open file.  Various shortcuts are available
-   to create file objects: the :func:`open` built-in function, and also
-   :func:`os.popen`, :func:`os.fdopen`, and the :meth:`makefile` method
+   A :term:`file object` represents an open file.  Various shortcuts are
+   available to create file objects: the :func:`open` built-in function, and
+   also :func:`os.popen`, :func:`os.fdopen`, and the :meth:`makefile` method
    of socket objects (and perhaps by other functions or methods provided
    by extension modules).
 

@@ -142,8 +142,8 @@ The following exceptions are the exceptions that are actually raised.
 .. exception:: IOError
 
    Raised when an I/O operation (such as the built-in :func:`print` or
-   :func:`open` functions or a method of a file object) fails for an I/O-related
-   reason, e.g., "file not found" or "disk full".
+   :func:`open` functions or a method of a :term:`file object`) fails for an
+   I/O-related reason, e.g., "file not found" or "disk full".
 
    This class is derived from :exc:`EnvironmentError`.  See the discussion above
    for more information on exception instance attributes.

@@ -592,7 +592,7 @@ correspond to Unix system calls applicable to sockets.
 
    .. index:: single: I/O control; buffering
 
-   Return a :dfn:`file object` associated with the socket.  The exact
+   Return a :term:`file object` associated with the socket.  The exact
    returned type depends on the arguments given to :meth:`makefile`.  These
    arguments are interpreted the same way as by the built-in :func:`open`
    function.

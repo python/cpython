@@ -48,8 +48,8 @@ This module provides an interface to the mechanisms used to implement the
    If search is successful, the return value is a 3-element tuple ``(file,
    pathname, description)``:
 
-   *file* is an open file object positioned at the beginning, *pathname* is the
-   pathname of the file found, and *description* is a 3-element tuple as
+   *file* is an open :term:`file object` positioned at the beginning, *pathname*
+   is the pathname of the file found, and *description* is a 3-element tuple as
    contained in the list returned by :func:`get_suffixes` describing the kind of
    module found.
 
