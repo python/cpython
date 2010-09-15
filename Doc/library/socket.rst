@@ -597,10 +597,9 @@ correspond to Unix system calls applicable to sockets.
    arguments are interpreted the same way as by the built-in :func:`open`
    function.
 
-   The returned file object references a :cfunc:`dup`\ ped version of the
-   socket file descriptor, so the file object and socket object may be
-   closed or garbage-collected independently.  The socket must be in
-   blocking mode (it can not have a timeout).
+   Closing the file object won't close the socket unless there are no
+   remaining references to the socket.  The socket must be in blocking mode
+   (it can not have a timeout).
 
 
 .. method:: socket.recv(bufsize[, flags])
