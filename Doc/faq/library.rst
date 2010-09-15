@@ -458,7 +458,7 @@ contents, use :func:`shutil.rmtree`.
 
 To rename a file, use ``os.rename(old_path, new_path)``.
 
-To truncate a file, open it using ``f = open(filename, "r+")``, and use
+To truncate a file, open it using ``f = open(filename, "rb+")``, and use
 ``f.truncate(offset)``; offset defaults to the current seek position.  There's
 also ```os.ftruncate(fd, offset)`` for files opened with :func:`os.open`, where
 ``fd`` is the file descriptor (a small integer).
@@ -487,9 +487,9 @@ in big-endian format from a file::
 
    import struct
 
-   f = open(filename, "rb")  # Open in binary mode for portability
-   s = f.read(8)
-   x, y, z = struct.unpack(">hhl", s)
+   with open(filename, "rb") as f:
+      s = f.read(8)
+      x, y, z = struct.unpack(">hhl", s)
 
 The '>' in the format string forces big-endian data; the letter 'h' reads one
 "short integer" (2 bytes), and 'l' reads one "long integer" (4 bytes) from the
@@ -497,6 +497,13 @@ string.
 
 For data that is more regular (e.g. a homogeneous list of ints or thefloats),
 you can also use the :mod:`array` module.
+
+   .. note::
+      To read and write binary data, it is mandatory to open the file in
+      binary mode (here, passing ``"rb"`` to :func:`open`).  If you use
+      ``"r"`` instead (the default), the file will be open in text mode
+      and ``f.read()`` will return :class:`str` objects rather than
+      :class:`bytes` objects.
 
 
 I can't seem to use os.read() on a pipe created with os.popen(); why?
@@ -603,28 +610,29 @@ For Unix, see a Usenet post by Mitch Chapman:
 Why doesn't closing sys.stdout (stdin, stderr) really close it?
 ---------------------------------------------------------------
 
-Python file objects are a high-level layer of abstraction on top of C streams,
-which in turn are a medium-level layer of abstraction on top of (among other
-things) low-level C file descriptors.
+Python :term:`file objects <file object>` are a high-level layer of
+abstraction on low-level C file descriptors.
 
-For most file objects you create in Python via the built-in ``open``
-constructor, ``f.close()`` marks the Python file object as being closed from
-Python's point of view, and also arranges to close the underlying C stream.
-This also happens automatically in ``f``'s destructor, when ``f`` becomes
-garbage.
+For most file objects you create in Python via the built-in :func:`open`
+function, ``f.close()`` marks the Python file object as being closed from
+Python's point of view, and also arranges to close the underlying C file
+descriptor.  This also happens automatically in ``f``'s destructor, when
+``f`` becomes garbage.
 
 But stdin, stdout and stderr are treated specially by Python, because of the
 special status also given to them by C.  Running ``sys.stdout.close()`` marks
 the Python-level file object as being closed, but does *not* close the
-associated C stream.
+associated C file descriptor.
 
-To close the underlying C stream for one of these three, you should first be
-sure that's what you really want to do (e.g., you may confuse extension modules
-trying to do I/O).  If it is, use os.close::
+To close the underlying C file descriptor for one of these three, you should
+first be sure that's what you really want to do (e.g., you may confuse
+extension modules trying to do I/O).  If it is, use :func:`os.close`::
 
-    os.close(0)   # close C's stdin stream
-    os.close(1)   # close C's stdout stream
-    os.close(2)   # close C's stderr stream
+   os.close(stdin.fileno())
+   os.close(stdout.fileno())
+   os.close(stderr.fileno())
+
+Or you can use the numeric constants 0, 1 and 2, respectively.
 
 
 Network/Internet Programming
