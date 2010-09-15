@@ -185,7 +185,7 @@ elif os.name == "posix":
         def _findLib_ldconfig(name):
             # XXX assuming GLIBC's ldconfig (with option -p)
             expr = r'/[^\(\)\s]*lib%s\.[^\(\)\s]*' % re.escape(name)
-            f = os.popen('LANG=C /sbin/ldconfig -p 2>/dev/null')
+            f = os.popen('LC_ALL=C LANG=C /sbin/ldconfig -p 2>/dev/null')
             try:
                 data = f.read()
             finally:
