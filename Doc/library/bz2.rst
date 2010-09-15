@@ -25,8 +25,8 @@ Here is a summary of the features offered by the bz2 module:
 
 * :class:`BZ2File` class implements universal newline support;
 
-* :class:`BZ2File` class offers an optimized line iteration using the readahead
-  algorithm borrowed from file objects;
+* :class:`BZ2File` class offers an optimized line iteration using a readahead
+  algorithm;
 
 * Sequential (de)compression supported by :class:`BZ2Compressor` and
   :class:`BZ2Decompressor` classes;

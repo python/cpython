@@ -154,9 +154,9 @@ in the top-level :mod:`email` package namespace.
 
 .. function:: message_from_file(fp[, _class][, strict])
 
-   Return a message object structure tree from an open file object.  This is
-   exactly equivalent to ``Parser().parse(fp)``.  Optional *_class* and *strict*
-   are interpreted as with the :class:`Parser` class constructor.
+   Return a message object structure tree from an open :term:`file object`.
+   This is exactly equivalent to ``Parser().parse(fp)``.  Optional *_class*
+   and *strict* are interpreted as with the :class:`Parser` class constructor.
 
 Here's an example of how you might use this at an interactive Python prompt::
 

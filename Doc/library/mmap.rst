@@ -5,14 +5,13 @@
    :synopsis: Interface to memory-mapped files for Unix and Windows.
 
 
-Memory-mapped file objects behave like both :class:`bytes` and like file
-objects. Unlike normal :class:`bytes` objects, however, these are mutable.
-You can use mmap objects in most places where :class:`bytes` are expected; for
-example, you can use the :mod:`re` module to search through a memory-mapped file.
-Since they're mutable, you can change a single byte by doing ``obj[index] = 97``,
-or change a subsequence by assigning to a slice: ``obj[i1:i2] = b'...'``.
-You can also read and write data starting at the current file position, and
-:meth:`seek` through the file to different positions.
+Memory-mapped file objects behave like both :class:`bytearray` and like
+:term:`file objects <file object>`.  You can use mmap objects in most places
+where :class:`bytearray` are expected; for example, you can use the :mod:`re`
+module to search through a memory-mapped file.  You can also change a single
+byte by doing ``obj[index] = 97``, or change a subsequence by assigning to a
+slice: ``obj[i1:i2] = b'...'``.  You can also read and write data starting at
+the current file position, and :meth:`seek` through the file to different positions.
 
 A memory-mapped file is created by the :class:`mmap` constructor, which is
 different on Unix and on Windows.  In either case you must provide a file

@@ -143,8 +143,8 @@ process more convenient:
 
 .. function:: dump(obj, file[, protocol, \*, fix_imports=True])
 
-   Write a pickled representation of *obj* to the open file object *file*.  This
-   is equivalent to ``Pickler(file, protocol).dump(obj)``.
+   Write a pickled representation of *obj* to the open :term:`file object` *file*.
+   This is equivalent to ``Pickler(file, protocol).dump(obj)``.
 
    The optional *protocol* argument tells the pickler to use the given protocol;
    supported protocols are 0, 1, 2, 3.  The default protocol is 3; a
@@ -155,8 +155,9 @@ process more convenient:
    Python needed to read the pickle produced.
 
    The *file* argument must have a write() method that accepts a single bytes
-   argument.  It can thus be a file object opened for binary writing, a
-   io.BytesIO instance, or any other custom object that meets this interface.
+   argument.  It can thus be an on-disk file opened for binary writing, a
+   :class:`io.BytesIO` instance, or any other custom object that meets this
+   interface.
 
    If *fix_imports* is True and *protocol* is less than 3, pickle will try to
    map the new Python 3.x names to the old module names used in Python 2.x,
@@ -181,8 +182,8 @@ process more convenient:
 
 .. function:: load(file, [\*, fix_imports=True, encoding="ASCII", errors="strict"])
 
-   Read a pickled object representation from the open file object *file* and
-   return the reconstituted object hierarchy specified therein.  This is
+   Read a pickled object representation from the open :term:`file object` *file*
+   and return the reconstituted object hierarchy specified therein.  This is
    equivalent to ``Unpickler(file).load()``.
 
    The protocol version of the pickle is detected automatically, so no protocol
@@ -191,9 +192,9 @@ process more convenient:
 
    The argument *file* must have two methods, a read() method that takes an
    integer argument, and a readline() method that requires no arguments.  Both
-   methods should return bytes.  Thus *file* can be a binary file object opened
-   for reading, a BytesIO object, or any other custom object that meets this
-   interface.
+   methods should return bytes.  Thus *file* can be an on-disk file opened
+   for binary reading, a :class:`io.BytesIO` object, or any other custom object
+   that meets this interface.
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
    which are used to control compatiblity support for pickle stream generated
@@ -260,8 +261,8 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
    Python needed to read the pickle produced.
 
    The *file* argument must have a write() method that accepts a single bytes
-   argument.  It can thus be a file object opened for binary writing, a
-   io.BytesIO instance, or any other custom object that meets this interface.
+   argument.  It can thus be an on-disk file opened for binary writing, a
+   :class:`io.BytesIO` instance, or any other custom object that meets this interface.
 
    If *fix_imports* is True and *protocol* is less than 3, pickle will try to
    map the new Python 3.x names to the old module names used in Python 2.x,
@@ -304,9 +305,9 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
    The argument *file* must have two methods, a read() method that takes an
    integer argument, and a readline() method that requires no arguments.  Both
-   methods should return bytes.  Thus *file* can be a binary file object opened
-   for reading, a BytesIO object, or any other custom object that meets this
-   interface.
+   methods should return bytes.  Thus *file* can be an on-disk file object opened
+   for binary reading, a :class:`io.BytesIO` object, or any other custom object
+   that meets this interface.
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
    which are used to control compatiblity support for pickle stream generated

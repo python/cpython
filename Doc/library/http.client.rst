@@ -359,7 +359,7 @@ HTTPConnection Objects
    object.  The Content-Length header is set to the length of the
    string.
 
-   The *body* may also be an open file object, in which case the
+   The *body* may also be an open :term:`file object`, in which case the
    contents of the file is sent; this file object should support
    ``fileno()`` and ``read()`` methods. The header Content-Length is
    automatically set to the length of the file as reported by

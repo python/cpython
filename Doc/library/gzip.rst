@@ -9,10 +9,9 @@ like the GNU programs :program:`gzip` and :program:`gunzip` would.
 
 The data compression is provided by the :mod:`zlib` module.
 
-The :mod:`gzip` module provides the :class:`GzipFile` class which is modeled
-after Python's File Object. The :class:`GzipFile` class reads and writes
-:program:`gzip`\ -format files, automatically compressing or decompressing the
-data so that it looks like an ordinary file object.
+The :mod:`gzip` module provides the :class:`GzipFile` class. The :class:`GzipFile`
+class reads and writes :program:`gzip`\ -format files, automatically compressing
+or decompressing the data so that it looks like an ordinary :term:`file object`.
 
 Note that additional file formats which can be decompressed by the
 :program:`gzip` and :program:`gunzip` programs, such  as those produced by
@@ -27,7 +26,7 @@ The module defines the following items:
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the methods
-   of a file object, with the exception of the :meth:`readinto` and
+   of a :term:`file object`, with the exception of the :meth:`readinto` and
    :meth:`truncate` methods.  At least one of *fileobj* and *filename* must be
    given a non-trivial value.
 

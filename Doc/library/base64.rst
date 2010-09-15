@@ -122,9 +122,9 @@ The legacy interface:
 .. function:: decode(input, output)
 
    Decode the contents of the binary *input* file and write the resulting binary
-   data to the *output* file. *input* and *output* must either be file objects
-   or objects that mimic the file object interface working with bytes
-   objects. *input* will be read until ``input.read()`` returns an empty string.
+   data to the *output* file. *input* and *output* must be :term:`file objects
+   <file object>`. *input* will be read until ``input.read()`` returns an empty
+   bytes object.
 
 
 .. function:: decodebytes(s)
@@ -138,11 +138,10 @@ The legacy interface:
 .. function:: encode(input, output)
 
    Encode the contents of the binary *input* file and write the resulting base64
-   encoded data to the *output* file. *input* and *output* must either be file
-   objects or objects that mimic the file object interface working with bytes
-   objects. *input* will be read until ``input.read()`` returns an empty string.
-   :func:`encode` returns the encoded data plus a trailing newline character
-   (``b'\n'``).
+   encoded data to the *output* file. *input* and *output* must be :term:`file
+   objects <file object>`. *input* will be read until ``input.read()`` returns
+   an empty bytes object. :func:`encode` returns the encoded data plus a trailing
+   newline character (``b'\n'``).
 
 
 .. function:: encodebytes(s)
