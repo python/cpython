@@ -1282,3 +1282,66 @@ functionally identical:
    <_sre.SRE_Match object at ...>
    >>> re.match("\\\\", r"\\")
    <_sre.SRE_Match object at ...>
+
+
+Writing a Tokenizer
+^^^^^^^^^^^^^^^^^^^
+
+A `tokenizer or scanner <http://en.wikipedia.org/wiki/Lexical_analysis>`_
+analyzes a string to categorize groups of characters.  This is a useful first
+step in writing a compiler or interpreter.
+
+The text categories are specified with regular expressions.  The technique is
+to combine those into a single master regular expression and to loop over
+successive matches::
+
+    Token = collections.namedtuple('Token', 'typ value line column')
+
+    def tokenize(s):
+        tok_spec = [
+            ('NUMBER', r'\d+(.\d+)?'),  # Integer or decimal number
+            ('ASSIGN', r':='),          # Assignment operator
+            ('END', ';'),               # Statement terminator
+            ('ID', r'[A-Za-z]+'),       # Identifiers
+            ('OP', r'[+*\/\-]'),        # Arithmetic operators
+            ('NEWLINE', r'\n'),         # Line endings
+            ('SKIP', r'[ \t]'),         # Skip over spaces and tabs
+        ]
+        tok_re = '|'.join('(?P<%s>%s)' % pair for pair in tok_spec)
+        gettok = re.compile(tok_re).match
+        line = 1
+        pos = line_start = 0
+        mo = gettok(s)
+        while mo is not None:
+            typ = mo.lastgroup
+            if typ == 'NEWLINE':
+                line_start = pos
+                line += 1
+            elif typ != 'SKIP':
+                yield Token(typ, mo.group(typ), line, mo.start()-line_start)
+            pos = mo.end()
+            mo = gettok(s, pos)
+        if pos != len(s):
+            raise RuntimeError('Unexpected character %r on line %d' %(s[pos], line))
+
+    >>> statements = '''\
+        total := total + price * quantity;
+        tax := price * 0.05;
+    '''
+    >>> for token in tokenize(statements):
+    ...     print(token)
+    ...
+    Token(typ='ID', value='total', line=1, column=8)
+    Token(typ='ASSIGN', value=':=', line=1, column=14)
+    Token(typ='ID', value='total', line=1, column=17)
+    Token(typ='OP', value='+', line=1, column=23)
+    Token(typ='ID', value='price', line=1, column=25)
+    Token(typ='OP', value='*', line=1, column=31)
+    Token(typ='ID', value='quantity', line=1, column=33)
+    Token(typ='END', value=';', line=1, column=41)
+    Token(typ='ID', value='tax', line=2, column=9)
+    Token(typ='ASSIGN', value=':=', line=2, column=13)
+    Token(typ='ID', value='price', line=2, column=16)
+    Token(typ='OP', value='*', line=2, column=22)
+    Token(typ='NUMBER', value='0.05', line=2, column=24)
+    Token(typ='END', value=';', line=2, column=28)
