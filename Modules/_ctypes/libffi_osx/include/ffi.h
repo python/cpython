@@ -264,6 +264,9 @@ ffi_prep_closure(
 	void			(*fun)(ffi_cif*,void*,void**,void*),
 	void*			user_data);
 
+void ffi_closure_free(void *);
+void *ffi_closure_alloc (size_t size, void **code);
+
 typedef struct ffi_raw_closure {
 	char		tramp[FFI_TRAMPOLINE_SIZE];
 	ffi_cif*	cif;
