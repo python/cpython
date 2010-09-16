@@ -495,11 +495,13 @@ class GCTests(unittest.TestCase):
 
         stderr = run_command(code % "0")
         self.assertIn(b"gc: 2 uncollectable objects at shutdown", stderr)
-        self.assertNotIn(b"[<X 'first'>, <X 'second'>]", stderr)
+        self.assertNotIn(b"<X 'first'>", stderr)
         # With DEBUG_UNCOLLECTABLE, the garbage list gets printed
         stderr = run_command(code % "gc.DEBUG_UNCOLLECTABLE")
         self.assertIn(b"gc: 2 uncollectable objects at shutdown", stderr)
-        self.assertIn(b"[<X 'first'>, <X 'second'>]", stderr)
+        self.assertTrue(
+            (b"[<X 'first'>, <X 'second'>]" in stderr) or
+            (b"[<X 'second'>, <X 'first'>]" in stderr), stderr)
         # With DEBUG_SAVEALL, no additional message should get printed
         # (because gc.garbage also contains normally reclaimable cyclic
         # references, and its elements get printed at runtime anyway).
