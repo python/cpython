@@ -70,12 +70,6 @@ def traced_func_calling_generator():
 def traced_doubler(num):
     return num * 2
 
-def traced_caller_list_comprehension():
-    k = 10
-    mylist = [traced_doubler(i) for i in range(k)]
-    return mylist
-
-
 class TracedClass(object):
     def __init__(self, x):
         self.a = x
@@ -155,22 +149,6 @@ class TestLineCounts(unittest.TestCase):
             (self.my_py_filename, firstlineno_gen + 3): 10,
         }
         self.assertEqual(self.tracer.results().counts, expected)
-
-    def test_trace_list_comprehension(self):
-        self.tracer.runfunc(traced_caller_list_comprehension)
-
-        firstlineno_calling = get_firstlineno(traced_caller_list_comprehension)
-        firstlineno_called = get_firstlineno(traced_doubler)
-        expected = {
-            (self.my_py_filename, firstlineno_calling + 1): 1,
-            # List compehentions work differently in 3.x, so the count
-            # below changed compared to 2.x.
-            (self.my_py_filename, firstlineno_calling + 2): 12,
-            (self.my_py_filename, firstlineno_calling + 3): 1,
-            (self.my_py_filename, firstlineno_called + 1): 10,
-        }
-        self.assertEqual(self.tracer.results().counts, expected)
-
 
     def test_linear_methods(self):
         # XXX todo: later add 'static_method_linear' and 'class_method_linear'
