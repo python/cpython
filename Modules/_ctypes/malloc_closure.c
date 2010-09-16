@@ -110,7 +110,6 @@ void *ffi_closure_alloc(size_t ignored, void** codeloc)
         return NULL;
     item = free_list;
     free_list = item->next;
-	*codeloc = (void *)item;
+    *codeloc = (void *)item;
     return (void *)item;
 }
-
