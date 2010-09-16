@@ -183,6 +183,9 @@ Tests
 Build
 -----
 
+- Issue #9810: Compile bzip2 source files in python's project file
+  directly. It used to be built with bzip2's makefile.
+
 - Issue #9848: Stopping trying to build _weakref in setup.py as it is a
   built-in module.
 
