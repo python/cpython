@@ -994,6 +994,12 @@ class TestOrderedDict(unittest.TestCase):
         with self.assertRaises(KeyError):
             od.move_to_end('x')
 
+    def test_sizeof(self):
+        # Wimpy test: Just verify the reported size is larger than a regular dict
+        d = dict(a=1)
+        od = OrderedDict(**d)
+        self.assertGreater(sys.getsizeof(od), sys.getsizeof(d))
+
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = OrderedDict
 
