@@ -306,7 +306,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     try:
         exec(template, namespace)
     except SyntaxError as e:
-        raise SyntaxError(e.msg + ':\n' + template) from e
+        raise SyntaxError(e.msg + ':\n\n' + template)
     result = namespace[typename]
 
     # For pickling to work, the __module__ variable needs to be set to the frame
