@@ -52,6 +52,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9865:  collections.OrderedDict now has a __sizeof__ method.
+
 - Issue #9854: The default read() implementation in io.RawIOBase now
   handles non-blocking readinto() returning None correctly.
 

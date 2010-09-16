@@ -97,17 +97,6 @@ class OrderedDict(dict, MutableMapping):
             yield curr.key
             curr = curr.prev
 
-    def __reduce__(self):
-        'Return state information for pickling'
-        items = [[k, self[k]] for k in self]
-        tmp = self.__map, self.__root, self.__hardroot
-        del self.__map, self.__root, self.__hardroot
-        inst_dict = vars(self).copy()
-        self.__map, self.__root, self.__hardroot = tmp
-        if inst_dict:
-            return (self.__class__, (items,), inst_dict)
-        return self.__class__, (items,)
-
     def clear(self):
         'od.clear() -> None.  Remove all items from od.'
         root = self.__root
@@ -161,6 +150,26 @@ class OrderedDict(dict, MutableMapping):
             link.prev = root
             link.next = first
             root.next = first.prev = link
+
+    def __reduce__(self):
+        'Return state information for pickling'
+        items = [[k, self[k]] for k in self]
+        tmp = self.__map, self.__root, self.__hardroot
+        del self.__map, self.__root, self.__hardroot
+        inst_dict = vars(self).copy()
+        self.__map, self.__root, self.__hardroot = tmp
+        if inst_dict:
+            return (self.__class__, (items,), inst_dict)
+        return self.__class__, (items,)
+
+    def __sizeof__(self):
+        sizeof = _sys.getsizeof
+        n = len(self) + 1                       # number of links including root
+        size = sizeof(self.__dict__)            # instance dictionary
+        size += sizeof(self.__map) * 2          # internal dict and inherited dict
+        size += sizeof(self.__hardroot) * n     # link objects
+        size += sizeof(self.__root) * n         # proxy objects
+        return size
 
     setdefault = MutableMapping.setdefault
     update = MutableMapping.update
