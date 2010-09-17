@@ -589,6 +589,22 @@ decides to actually dispatch an event, the :meth:`emit` method is used to send
 the message to its destination. Most user-defined subclasses of :class:`Handler`
 will need to override this :meth:`emit`.
 
+.. _custom-levels:
+
+Custom Levels
+^^^^^^^^^^^^^
+
+Defining your own levels is possible, but should not be necessary, as the
+existing levels have been chosen on the basis of practical experience.
+However, if you are convinced that you need custom levels, great care should
+be exercised when doing this, and it is possibly *a very bad idea to define
+custom levels if you are developing a library*. That's because if multiple
+library authors all define their own custom levels, there is a chance that
+the logging output from such multiple libraries used together will be
+difficult for the using developer to control and/or interpret, because a
+given numeric value might mean different things for different libraries.
+
+
 Useful Handlers
 ---------------
 
@@ -790,12 +806,19 @@ functions.
    interpreted as for :func:`debug`. Exception info is added to the logging
    message. This function should only be called from an exception handler.
 
-
 .. function:: log(level, msg, *args, **kwargs)
 
    Logs a message with level *level* on the root logger. The other arguments are
    interpreted as for :func:`debug`.
 
+   PLEASE NOTE: The above module-level functions which delegate to the root
+   logger should *not* be used in threads, in versions of Python earlier than
+   2.7.1 and 3.2, unless at least one handler has been added to the root
+   logger *before* the threads are started. These convenience functions call
+   :func:`basicConfig` to ensure that at least one handler is available; in
+   earlier versions of Python, this can (under rare circumstances) lead to
+   handlers being added multiple times to the root logger, which can in turn
+   lead to multiple messages for the same event.
 
 .. function:: disable(lvl)
 
@@ -817,6 +840,8 @@ functions.
    registered using this function, levels should be positive integers and they
    should increase in increasing order of severity.
 
+   NOTE: If you are thinking of defining your own levels, please see the section
+   on :ref:`custom-levels`.
 
 .. function:: getLevelName(lvl)
 
@@ -848,6 +873,13 @@ functions.
    This function does nothing if the root logger already has handlers
    configured for it.
 
+   PLEASE NOTE: This function should be called from the main thread
+   before other threads are started. In versions of Python prior to
+   2.7.1 and 3.2, if this function is called from multiple threads,
+   it is possible (in rare circumstances) that a handler will be added
+   to the root logger more than once, leading to unexpected results
+   such as messages being duplicated in the log.
+
    The following keyword arguments are supported.
 
    +--------------+---------------------------------------------+
@@ -874,7 +906,6 @@ functions.
    |              | incompatible with 'filename' - if both are  |
    |              | present, 'stream' is ignored.               |
    +--------------+---------------------------------------------+
-
 
 .. function:: shutdown()
 
