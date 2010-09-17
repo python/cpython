@@ -30,7 +30,7 @@ set prefix=.\
 set suffix=
 set qmode=
 set dashO=
-set tcltk=
+set tcltk=tcltk
 
 :CheckOpts
 if "%1"=="-O" (set dashO=-O)     & shift & goto CheckOpts
