@@ -68,7 +68,7 @@ def mkpath(name, mode=0o777, verbose=1, dry_run=0):
 
         if not dry_run:
             try:
-                os.mkdir(head)
+                os.mkdir(head, mode)
                 created_dirs.append(head)
             except OSError as exc:
                 raise DistutilsFileError(
