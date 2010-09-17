@@ -26,6 +26,7 @@ import logging.handlers
 import logging.config
 
 import codecs
+import datetime
 import pickle
 import io
 import gc
@@ -1790,6 +1791,81 @@ class QueueHandlerTest(BaseTest):
         self.assertEqual(data.name, self.que_logger.name)
         self.assertEqual((data.msg, data.args), (msg, None))
 
+class BaseFileTest(BaseTest):
+    "Base class for handler tests that write log files"
+
+    def setUp(self):
+        BaseTest.setUp(self)
+        self.fn = tempfile.mktemp(".log")
+        self.rmfiles = []
+
+    def tearDown(self):
+        for fn in self.rmfiles:
+            os.unlink(fn)
+
+    def assertLogFile(self, filename):
+        "Assert a log file is there and register it for deletion"
+        self.assertTrue(os.path.exists(filename),
+                        msg="Log file %r does not exist")
+        self.rmfiles.append(filename)
+
+
+class RotatingFileHandlerTest(BaseFileTest):
+    def next_rec(self):
+        return logging.LogRecord('n', logging.DEBUG, 'p', 1,
+                                 self.next_message(), None, None, None)
+
+    def test_should_not_rollover(self):
+        # If maxbytes is zero rollover never occurs
+        rh = logging.handlers.RotatingFileHandler(self.fn, maxBytes=0)
+        self.assertFalse(rh.shouldRollover(None))
+
+    def test_should_rollover(self):
+        rh = logging.handlers.RotatingFileHandler(self.fn, maxBytes=1)
+        self.assertTrue(rh.shouldRollover(self.next_rec()))
+
+    def test_file_created(self):
+        # checks that the file is created and assumes it was created
+        # by us
+        self.assertFalse(os.path.exists(self.fn))
+        rh = logging.handlers.RotatingFileHandler(self.fn)
+        rh.emit(self.next_rec())
+        self.assertLogFile(self.fn)
+
+    def test_rollover_filenames(self):
+        rh = logging.handlers.RotatingFileHandler(
+            self.fn, backupCount=2, maxBytes=1)
+        rh.emit(self.next_rec())
+        self.assertLogFile(self.fn)
+        rh.emit(self.next_rec())
+        self.assertLogFile(self.fn + ".1")
+        rh.emit(self.next_rec())
+        self.assertLogFile(self.fn + ".2")
+        self.assertFalse(os.path.exists(self.fn + ".3"))
+
+
+class TimedRotatingFileHandlerTest(BaseFileTest):
+    # test methods added below
+    pass
+
+def secs(**kw):
+    return datetime.timedelta(**kw) // datetime.timedelta(seconds=1)
+
+for when, exp in (('S', 1),
+                  ('M', 60),
+                  ('H', 60 * 60),
+                  ('D', 60 * 60 * 24),
+                  ('MIDNIGHT', 60 * 60 * 23),
+                  # current time (epoch start) is a Thursday, W0 means Monday
+                  ('W0', secs(days=4, hours=23)),):
+    def test_compute_rollover(self, when=when, exp=exp):
+        rh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, when=when, interval=1, backupCount=0)
+        self.assertEquals(exp, rh.computeRollover(0.0))
+    setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
+
+
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
@@ -1799,7 +1875,8 @@ def test_main():
                  CustomLevelsAndFiltersTest, MemoryHandlerTest,
                  ConfigFileTest, SocketHandlerTest, MemoryTest,
                  EncodingTest, WarningsTest, ConfigDictTest, ManagerTest,
-                 ChildLoggerTest, QueueHandlerTest)
+                 ChildLoggerTest, QueueHandlerTest,
+                 RotatingFileHandlerTest, TimedRotatingFileHandlerTest)
 
 if __name__ == "__main__":
     test_main()

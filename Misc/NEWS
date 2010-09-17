@@ -52,6 +52,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9441: logging has better coverage for rotating file handlers.
+
 - Issue #9865:  collections.OrderedDict now has a __sizeof__ method.
 
 - Issue #9854: The default read() implementation in io.RawIOBase now
