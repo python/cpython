@@ -1299,7 +1299,7 @@ successive matches::
 
     def tokenize(s):
         tok_spec = [
-            ('NUMBER', r'\d+(.\d+)?'),  # Integer or decimal number
+            ('NUMBER', r'\d+(\.\d*)?'), # Integer or decimal number
             ('ASSIGN', r':='),          # Assignment operator
             ('END', ';'),               # Statement terminator
             ('ID', r'[A-Za-z]+'),       # Identifiers
