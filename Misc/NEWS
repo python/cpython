@@ -74,8 +74,7 @@ Library
 
 - logging: Enhanced HTTPHandler with secure and credentials initializers.
 
-- Issue #767645: Set os.path.supports_unicode_filenames to True on Mac OS X
-  (macpath module).
+- Issue #767645: Set os.path.supports_unicode_filenames to True on Mac OS X.
 
 - Issue #9837: The read() method of ZipExtFile objects (as returned by
   ZipFile.open()) could return more bytes than requested.
