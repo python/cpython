@@ -137,8 +137,8 @@ class ThreadableTest:
         self.done.wait()
 
         if self.queue.qsize():
-            msg = self.queue.get()
-            self.fail(msg)
+            exc = self.queue.get()
+            raise exc
 
     def clientRun(self, test_func):
         self.server_ready.wait()
@@ -148,9 +148,10 @@ class ThreadableTest:
             raise TypeError("test_func must be a callable function")
         try:
             test_func()
-        except Exception as strerror:
-            self.queue.put(strerror)
-        self.clientTearDown()
+        except BaseException as e:
+            self.queue.put(e)
+        finally:
+            self.clientTearDown()
 
     def clientSetUp(self):
         raise NotImplementedError("clientSetUp must be implemented.")
@@ -932,10 +933,13 @@ class FileObjectClassTestCase(SocketConnectedTest):
         SocketConnectedTest.__init__(self, methodName=methodName)
 
     def setUp(self):
+        self.evt1, self.evt2, self.serv_finished, self.cli_finished = [
+            threading.Event() for i in range(4)]
         SocketConnectedTest.setUp(self)
         self.serv_file = self.cli_conn.makefile('rb', self.bufsize)
 
     def tearDown(self):
+        self.serv_finished.set()
         self.serv_file.close()
         self.assertTrue(self.serv_file.closed)
         self.serv_file = None
@@ -943,9 +947,10 @@ class FileObjectClassTestCase(SocketConnectedTest):
 
     def clientSetUp(self):
         SocketConnectedTest.clientSetUp(self)
-        self.cli_file = self.serv_conn.makefile('wb')
+        self.cli_file = self.serv_conn.makefile('wb', self.bufsize)
 
     def clientTearDown(self):
+        self.cli_finished.set()
         self.cli_file.close()
         self.assertTrue(self.cli_file.closed)
         self.cli_file = None
@@ -1195,6 +1200,62 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     def _testMakefileCloseSocketDestroy(self):
         pass
+
+    # Non-blocking ops
+    # NOTE: to set `serv_file` as non-blocking, we must call
+    # `cli_conn.setblocking` and vice-versa (see setUp / clientSetUp).
+
+    def testSmallReadNonBlocking(self):
+        self.cli_conn.setblocking(False)
+        self.assertEqual(self.serv_file.readinto(bytearray(10)), None)
+        self.assertEqual(self.serv_file.read(len(MSG) - 3), None)
+        self.evt1.set()
+        self.evt2.wait(1.0)
+        first_seg = self.serv_file.read(len(MSG) - 3)
+        buf = bytearray(10)
+        n = self.serv_file.readinto(buf)
+        self.assertEqual(n, 3)
+        msg = first_seg + buf[:n]
+        self.assertEqual(msg, MSG)
+        self.assertEqual(self.serv_file.readinto(bytearray(16)), None)
+        self.assertEqual(self.serv_file.read(1), None)
+
+    def _testSmallReadNonBlocking(self):
+        self.evt1.wait(1.0)
+        self.cli_file.write(MSG)
+        self.cli_file.flush()
+        self.evt2.set()
+        # Avoid cloding the socket before the server test has finished,
+        # otherwise system recv() will return 0 instead of EWOULDBLOCK.
+        self.serv_finished.wait(5.0)
+
+    def testWriteNonBlocking(self):
+        self.cli_finished.wait(5.0)
+        # The client thread can't skip directly - the SkipTest exception
+        # would appear as a failure.
+        if self.serv_skipped:
+            self.skipTest(self.serv_skipped)
+
+    def _testWriteNonBlocking(self):
+        self.serv_skipped = None
+        self.serv_conn.setblocking(False)
+        # Try to saturate the socket buffer pipe with repeated large writes.
+        BIG = b"x" * (1024 ** 2)
+        LIMIT = 10
+        # The first write() succeeds since a chunk of data can be buffered
+        n = self.cli_file.write(BIG)
+        self.assertGreater(n, 0)
+        for i in range(LIMIT):
+            n = self.cli_file.write(BIG)
+            if n is None:
+                # Succeeded
+                break
+            self.assertGreater(n, 0)
+        else:
+            # Let us know that this test didn't manage to establish
+            # the expected conditions. This is not a failure in itself but,
+            # if it happens repeatedly, the test should be fixed.
+            self.serv_skipped = "failed to saturate the socket buffer"
 
 
 class LineBufferedFileObjectClassTestCase(FileObjectClassTestCase):

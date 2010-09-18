@@ -52,6 +52,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9854: SocketIO objects now observe the RawIOBase interface in
+  non-blocking mode: they return None when an operation would block (instead
+  of raising an exception).
+
 - Issue #1730136: Fix the comparison between a tk.font.Font and an object of
   another kind.
 
