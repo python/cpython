@@ -54,6 +54,8 @@ except ImportError:
     errno = None
 EBADF = getattr(errno, 'EBADF', 9)
 EINTR = getattr(errno, 'EINTR', 4)
+EAGAIN = getattr(errno, 'EAGAIN', 11)
+EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
 __all__ = ["getfqdn", "create_connection"]
 __all__.extend(os._get_exports_list(_socket))
@@ -220,6 +222,8 @@ if hasattr(_socket, "socketpair"):
         return a, b
 
 
+_blocking_errnos = { EAGAIN, EWOULDBLOCK }
+
 class SocketIO(io.RawIOBase):
 
     """Raw I/O implementation for stream sockets.
@@ -262,8 +266,11 @@ class SocketIO(io.RawIOBase):
             try:
                 return self._sock.recv_into(b)
             except error as e:
-                if e.args[0] == EINTR:
+                n = e.args[0]
+                if n == EINTR:
                     continue
+                if n in _blocking_errnos:
+                    return None
                 raise
 
     def write(self, b):
@@ -274,7 +281,13 @@ class SocketIO(io.RawIOBase):
         """
         self._checkClosed()
         self._checkWritable()
-        return self._sock.send(b)
+        try:
+            return self._sock.send(b)
+        except error as e:
+            # XXX what about EINTR?
+            if e.args[0] in _blocking_errnos:
+                return None
+            raise
 
     def readable(self):
         """True if the SocketIO is open for reading.
