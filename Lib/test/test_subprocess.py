@@ -535,7 +535,7 @@ class ProcessTestCase(BaseTestCase):
                                  stderr=subprocess.PIPE)
             # Windows raises IOError
             except (IOError, OSError) as err:
-                if err.errno != 2:  # ignore "no such file"
+                if err.errno != errno.ENOENT:  # ignore "no such file"
                     raise
 
     def test_issue8780(self):

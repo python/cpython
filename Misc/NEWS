@@ -590,6 +590,8 @@ Build
 Tests
 -----
 
+- Issue #9894: Do not hardcode ENOENT in test_subprocess.
+
 - Issue #9315: Added tests for the trace module.  Patch by Eli Bendersky.
 
 - Issue #7564: Skip test_ioctl if another process is attached to /dev/tty.
