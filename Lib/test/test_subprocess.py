@@ -454,20 +454,40 @@ class ProcessTestCase(BaseTestCase):
 
     def test_no_leaking(self):
         # Make sure we leak no resources
-        if not hasattr(test_support, "is_resource_enabled") \
-               or test_support.is_resource_enabled("subprocess") and not mswindows:
+        if not mswindows:
             max_handles = 1026 # too much for most UNIX systems
         else:
-            max_handles = 65
-        for i in range(max_handles):
-            p = subprocess.Popen([sys.executable, "-c",
-                    "import sys;sys.stdout.write(sys.stdin.read())"],
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE)
-            data = p.communicate("lime")[0]
-            self.assertEqual(data, "lime")
-
+            max_handles = 2050 # too much for (at least some) Windows setups
+        handles = []
+        try:
+            for i in range(max_handles):
+                try:
+                    handles.append(os.open(test_support.TESTFN,
+                                           os.O_WRONLY | os.O_CREAT))
+                except OSError as e:
+                    if e.errno != errno.EMFILE:
+                        raise
+                    break
+            else:
+                self.skipTest("failed to reach the file descriptor limit "
+                    "(tried %d)" % max_handles)
+            # Close a couple of them (should be enough for a subprocess)
+            for i in range(10):
+                os.close(handles.pop())
+            # Loop creating some subprocesses. If one of them leaks some fds,
+            # the next loop iteration will fail by reaching the max fd limit.
+            for i in range(15):
+                p = subprocess.Popen([sys.executable, "-c",
+                                      "import sys;"
+                                      "sys.stdout.write(sys.stdin.read())"],
+                                     stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                data = p.communicate(b"lime")[0]
+                self.assertEqual(data, b"lime")
+        finally:
+            for h in handles:
+                os.close(h)
 
     def test_list2cmdline(self):
         self.assertEqual(subprocess.list2cmdline(['a b c', 'd', 'e']),
