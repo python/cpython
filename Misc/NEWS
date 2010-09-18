@@ -52,6 +52,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1686: Fix string.Template when overriding the pattern attribute.
+
 - Issue #9854: SocketIO objects now observe the RawIOBase interface in
   non-blocking mode: they return None when an operation would block (instead
   of raising an exception).
