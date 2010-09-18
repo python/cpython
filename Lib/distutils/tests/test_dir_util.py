@@ -3,6 +3,7 @@ import unittest
 import os
 import stat
 import shutil
+import sys
 
 from distutils.dir_util import (mkpath, remove_tree, create_tree, copy_tree,
                                 ensure_relative)
@@ -49,6 +50,8 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
         wanted = ["removing '%s' (and everything under it)" % self.root_target]
         self.assertEquals(self._logs, wanted)
 
+    @unittest.skipIf(sys.platform.startswith('win'),
+                        "This test is only appropriate for POSIX-like systems.")
     def test_mkpath_with_custom_mode(self):
         mkpath(self.target, 0o700)
         self.assertEqual(stat.S_IMODE(os.stat(self.target).st_mode), 0o700)
