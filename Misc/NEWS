@@ -565,6 +565,9 @@ Extension Modules
 Build
 -----
 
+- Issue #9810: Compile bzip2 source files in python's project file
+  directly. It used to be built with bzip2's makefile.
+
 - Issue #941346: Improve the build process under AIX and allow Python to
   be built as a shared library.  Patch by Sébastien Sablé.
 
