@@ -17,6 +17,7 @@ some other systems as well (e.g. Windows).  Here's an overview:
    dummy_threading.rst
    _thread.rst
    _dummy_thread.rst
+   concurrent.futures.rst
    multiprocessing.rst
    mmap.rst
    readline.rst
