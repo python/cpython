@@ -125,6 +125,40 @@ class TestTemplate(unittest.TestCase):
         self.assertRaises(ValueError, s.substitute, {})
         self.assertRaises(ValueError, s.safe_substitute, {})
 
+    def test_braced_override(self):
+        class MyTemplate(Template):
+            pattern = r"""
+            \$(?:
+              (?P<escaped>$)                     |
+              (?P<named>[_a-z][_a-z0-9]*)        |
+              @@(?P<braced>[_a-z][_a-z0-9]*)@@   |
+              (?P<invalid>)                      |
+           )
+           """
+
+        tmpl = 'PyCon in $@@location@@'
+        t = MyTemplate(tmpl)
+        self.assertRaises(KeyError, t.substitute, {})
+        val = t.substitute({'location': 'Cleveland'})
+        self.assertEqual(val, 'PyCon in Cleveland')
+
+    def test_braced_override_safe(self):
+        class MyTemplate(Template):
+            pattern = r"""
+            \$(?:
+              (?P<escaped>$)                     |
+              (?P<named>[_a-z][_a-z0-9]*)        |
+              @@(?P<braced>[_a-z][_a-z0-9]*)@@   |
+              (?P<invalid>)                      |
+           )
+           """
+
+        tmpl = 'PyCon in $@@location@@'
+        t = MyTemplate(tmpl)
+        self.assertEqual(t.safe_substitute(), tmpl)
+        val = t.safe_substitute({'location': 'Cleveland'})
+        self.assertEqual(val, 'PyCon in Cleveland')
+
     def test_unicode_values(self):
         s = Template('$who likes $what')
         d = dict(who=u't\xffm', what=u'f\xfe\fed')

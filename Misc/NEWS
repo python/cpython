@@ -34,6 +34,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1686: Fix string.Template when overriding the pattern attribute.
+
 - Issue #11866: Eliminated race condition in the computation of names
   for new threads.
 
