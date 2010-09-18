@@ -1802,6 +1802,7 @@ class BaseFileTest(BaseTest):
     def tearDown(self):
         for fn in self.rmfiles:
             os.unlink(fn)
+        BaseTest.tearDown(self)
 
     def assertLogFile(self, filename):
         "Assert a log file is there and register it for deletion"
