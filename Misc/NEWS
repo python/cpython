@@ -181,6 +181,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #9894: Do not hardcode ENOENT in test_subprocess.
+
 - Issue #9315: Added tests for the trace module.  Patch by Eli Bendersky.
 
 - Issue #9323: Make test.regrtest.__file__ absolute, this was not always the

@@ -530,7 +530,7 @@ class ProcessTestCase(BaseTestCase):
                 subprocess.Popen(['nonexisting_i_hope'],
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
-            if c.exception.errno != 2:  # ignore "no such file"
+            if c.exception.errno != errno.ENOENT:  # ignore "no such file"
                 raise c.exception
 
     def test_issue8780(self):
