@@ -325,6 +325,12 @@ Functions, Constants, and Exceptions
 SSL Sockets
 -----------
 
+SSL sockets provide the basic interface of :ref:`socket-objects`. However,
+not all functionality is supported (for example, passing a non-zero ``flags``
+argument to :meth:`recv()` is not allowed).
+
+SSL sockets also have the following additional methods and attributes:
+
 .. method:: SSLSocket.read(nbytes=1024, buffer=None)
 
    Reads up to ``nbytes`` bytes from the SSL-encrypted channel and returns them.
