@@ -226,8 +226,8 @@ def main():
             if arch == "amd64":
                 create_makefile64(makefile, m32)
             fix_makefile(makefile)
-            shutil.copy(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
-            shutil.copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
+            shutil.copy2(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
+            shutil.copy2(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
 
         # Now run make.
         if arch == "amd64":
@@ -236,8 +236,8 @@ def main():
                 print("ml64 assembler has failed.")
                 sys.exit(rc)
 
-        shutil.copy(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
-        shutil.copy(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
+        shutil.copy2(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
+        shutil.copy2(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
 
         #makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
         makeCommand = "nmake /nologo -f \"%s\"" % makefile
