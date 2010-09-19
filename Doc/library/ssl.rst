@@ -31,10 +31,9 @@ the documents in the "See Also" section at the bottom.
 This module provides a class, :class:`ssl.SSLSocket`, which is derived from the
 :class:`socket.socket` type, and provides a socket-like wrapper that also
 encrypts and decrypts the data going over the socket with SSL.  It supports
-additional :meth:`read` and :meth:`write` methods, along with a method,
-:meth:`getpeercert`, to retrieve the certificate of the other side of the
-connection, and a method, :meth:`cipher`, to retrieve the cipher being used for
-the secure connection.
+additional methods such as :meth:`getpeercert`, which retrieves the
+certificate of the other side of the connection, and :meth:`cipher`,which
+retrieves the cipher being used for the secure connection.
 
 For more sophisticated applications, the :class:`ssl.SSLContext` class
 helps manage settings and certificates, which can then be inherited
@@ -131,10 +130,11 @@ Functions, Constants, and Exceptions
    blocking behavior of the socket I/O involved in the handshake.
 
    The parameter ``suppress_ragged_eofs`` specifies how the
-   :meth:`SSLSocket.read` method should signal unexpected EOF from the other end
+   :meth:`SSLSocket.recv` method should signal unexpected EOF from the other end
    of the connection.  If specified as :const:`True` (the default), it returns a
-   normal EOF in response to unexpected EOF errors raised from the underlying
-   socket; if :const:`False`, it will raise the exceptions back to the caller.
+   normal EOF (an empty bytes object) in response to unexpected EOF errors
+   raised from the underlying socket; if :const:`False`, it will raise the
+   exceptions back to the caller.
 
    .. versionchanged:: 3.2
       New optional argument *ciphers*.
@@ -327,22 +327,9 @@ SSL Sockets
 
 SSL sockets provide the basic interface of :ref:`socket-objects`. However,
 not all functionality is supported (for example, passing a non-zero ``flags``
-argument to :meth:`recv()` is not allowed).
+argument to :meth:`~socket.socket.recv()` is not allowed).
 
 SSL sockets also have the following additional methods and attributes:
-
-.. method:: SSLSocket.read(nbytes=1024, buffer=None)
-
-   Reads up to ``nbytes`` bytes from the SSL-encrypted channel and returns them.
-   If the ``buffer`` is specified, it will attempt to read into the buffer the
-   minimum of the size of the buffer and ``nbytes``, if that is specified.  If
-   no buffer is specified, an immutable buffer is allocated and returned with
-   the data read from the socket.
-
-.. method:: SSLSocket.write(data)
-
-   Writes the ``data`` to the other side of the connection, using the SSL
-   channel to encrypt.  Returns the number of bytes written.
 
 .. method:: SSLSocket.do_handshake()
 
@@ -699,11 +686,11 @@ certificate, sends some bytes, and reads part of the response::
    print(pprint.pformat(ssl_sock.getpeercert()))
 
    # Set a simple HTTP request -- use http.client in actual code.
-   ssl_sock.write(b"GET / HTTP/1.0\r\nHost: www.verisign.com\r\n\r\n")
+   ssl_sock.sendall(b"GET / HTTP/1.0\r\nHost: www.verisign.com\r\n\r\n")
 
    # Read a chunk of data.  Will not necessarily
    # read all the data returned by the server.
-   data = ssl_sock.read()
+   data = ssl_sock.recv()
 
    # note that closing the SSLSocket will also close the underlying socket
    ssl_sock.close()
@@ -761,9 +748,8 @@ host ``linuxfr.org``::
 Now that you are assured of its authenticity, you can proceed to talk with
 the server::
 
-   >>> conn.write(b"HEAD / HTTP/1.0\r\nHost: linuxfr.org\r\n\r\n")
-   38
-   >>> pprint.pprint(conn.read().split(b"\r\n"))
+   >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: linuxfr.org\r\n\r\n")
+   >>> pprint.pprint(conn.recv(1024).split(b"\r\n"))
    [b'HTTP/1.1 302 Found',
     b'Date: Sun, 16 May 2010 13:43:28 GMT',
     b'Server: Apache/2.2',
@@ -812,14 +798,14 @@ Then you'll read data from the ``connstream`` and do something with it till you
 are finished with the client (or the client is finished with you)::
 
    def deal_with_client(connstream):
-      data = connstream.read()
+      data = connstream.recv(1024)
       # empty data means the client is finished with us
       while data:
          if not do_something(connstream, data):
             # we'll assume do_something returns False
             # when we're finished with client
             break
-         data = connstream.read()
+         data = connstream.recv(1024)
       # finished with client
 
 And go back to listening for new client connections (of course, a real server
