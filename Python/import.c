@@ -3044,7 +3044,7 @@ PyImport_ReloadModule(PyObject *m)
    more accurately -- it invokes the __import__() function from the
    builtins of the current globals.  This means that the import is
    done using whatever import hooks are installed in the current
-   environment, e.g. by "rexec".
+   environment.
    A dummy list ["__doc__"] is passed as the 4th argument so that
    e.g. PyImport_Import(PyUnicode_FromString("win32com.client.gencache"))
    will return <module "gencache"> instead of <module "win32com">. */
@@ -3058,6 +3058,7 @@ PyImport_Import(PyObject *module_name)
     PyObject *globals = NULL;
     PyObject *import = NULL;
     PyObject *builtins = NULL;
+    PyObject *modules = NULL;
     PyObject *r = NULL;
 
     /* Initialize constant string objects */
@@ -3068,7 +3069,7 @@ PyImport_Import(PyObject *module_name)
         builtins_str = PyUnicode_InternFromString("__builtins__");
         if (builtins_str == NULL)
             return NULL;
-        silly_list = Py_BuildValue("[s]", "__doc__");
+        silly_list = PyList_New(0);
         if (silly_list == NULL)
             return NULL;
     }
@@ -3104,9 +3105,18 @@ PyImport_Import(PyObject *module_name)
         goto err;
 
     /* Call the __import__ function with the proper argument list
-     * Always use absolute import here. */
+       Always use absolute import here.
+       Calling for side-effect of import. */
     r = PyObject_CallFunction(import, "OOOOi", module_name, globals,
                               globals, silly_list, 0, NULL);
+    if (r == NULL)
+        goto err;
+    Py_DECREF(r);
+
+    modules = PyImport_GetModuleDict();
+    r = PyDict_GetItem(modules, module_name);
+    if (r != NULL)
+        Py_INCREF(r);
 
   err:
     Py_XDECREF(globals);
