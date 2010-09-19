@@ -325,11 +325,27 @@ Functions, Constants, and Exceptions
 SSL Sockets
 -----------
 
-SSL sockets provide the basic interface of :ref:`socket-objects`. However,
-not all functionality is supported (for example, passing a non-zero ``flags``
-argument to :meth:`~socket.socket.recv()` is not allowed).
+SSL sockets provide the following methods of :ref:`socket-objects`:
 
-SSL sockets also have the following additional methods and attributes:
+- :meth:`~socket.socket.accept()`
+- :meth:`~socket.socket.bind()`
+- :meth:`~socket.socket.close()`
+- :meth:`~socket.socket.connect()`
+- :meth:`~socket.socket.detach()`
+- :meth:`~socket.socket.fileno()`
+- :meth:`~socket.socket.getpeername()`, :meth:`~socket.socket.getsockname()`
+- :meth:`~socket.socket.getsockopt()`, :meth:`~socket.socket.setsockopt()`
+- :meth:`~socket.socket.gettimeout()`, :meth:`~socket.socket.settimeout()`,
+  :meth:`~socket.socket.setblocking()`
+- :meth:`~socket.socket.listen()`
+- :meth:`~socket.socket.makefile()`
+- :meth:`~socket.socket.recv()`, :meth:`~socket.socket.recv_into()`
+  (but passing a non-zero ``flags`` argument is not allowed)
+- :meth:`~socket.socket.send()`, :meth:`~socket.socket.sendall()` (with
+  the same limitation)
+- :meth:`~socket.socket.shutdown()`
+
+They also have the following additional methods and attributes:
 
 .. method:: SSLSocket.do_handshake()
 
