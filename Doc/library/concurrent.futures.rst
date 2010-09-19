@@ -7,28 +7,24 @@
 The :mod:`concurrent.futures` module provides a high-level interface for
 asynchronously executing callables.
 
-The asynchronous execution can be be performed by threads using
-:class:`ThreadPoolExecutor` or seperate processes using
+The asynchronous execution can be be performed with threads, using
+:class:`ThreadPoolExecutor`, or seperate processes, using
 :class:`ProcessPoolExecutor`. Both implement the same interface, which is
 defined by the abstract :class:`Executor` class.
 
 Executor Objects
 ^^^^^^^^^^^^^^^^
 
-:class:`Executor` is an abstract class that provides methods to execute calls
-asynchronously. It should not be used directly, but through its two
-subclasses: :class:`ThreadPoolExecutor` and :class:`ProcessPoolExecutor`.
-
-.. class:: Executor()
+.. class:: Executor
 
    An abstract class that provides methods to execute calls asynchronously. It
-   should not be used directly, but through its two subclasses:
-   :class:`ThreadPoolExecutor` and :class:`ProcessPoolExecutor`.
+   should not be used directly, but through its concrete subclasses.
 
     .. method:: submit(fn, *args, **kwargs)
 
-       Schedules the callable to be executed as *fn*(*\*args*, *\*\*kwargs*) and
-       returns a :class:`Future` representing the execution of the callable.
+       Schedules the callable, *fn*, to be executed as ``fn(*args **kwargs)``
+       and returns a :class:`Future` object representing the execution of the
+       callable.
 
        ::
 
@@ -38,14 +34,14 @@ subclasses: :class:`ThreadPoolExecutor` and :class:`ProcessPoolExecutor`.
 
     .. method:: map(func, *iterables, timeout=None)
 
-       Equivalent to `map(*func*, *\*iterables*)` but func is executed
+       Equivalent to ``map(func, *iterables)`` except *func* is executed
        asynchronously and several calls to *func* may be made concurrently. The
        returned iterator raises a :exc:`TimeoutError` if :meth:`__next__()` is
        called and the result isn't available after *timeout* seconds from the
-       original call to :meth:`Executor.map()`. *timeout* can be an int or
-       float. If *timeout* is not specified or ``None`` then there is no limit
-       to the wait time. If a call raises an exception then that exception will
-       be raised when its value is retrieved from the iterator.
+       original call to :meth:`Executor.map`. *timeout* can be an int or a
+       float. If *timeout* is not specified or ``None``, there is no limit to
+       the wait time. If a call raises an exception, then that exception will be
+       raised when its value is retrieved from the iterator.
 
     .. method:: shutdown(wait=True)
 
@@ -54,11 +50,11 @@ subclasses: :class:`ThreadPoolExecutor` and :class:`ProcessPoolExecutor`.
        :meth:`Executor.submit` and :meth:`Executor.map` made after shutdown will
        raise :exc:`RuntimeError`.
 
-       If *wait* is `True` then this method will not return until all the
+       If *wait* is ``True`` then this method will not return until all the
        pending futures are done executing and the resources associated with the
-       executor have been freed. If *wait* is `False` then this method will
-       return immediately and the resources associated with the executor will
-       be freed when all pending futures are done executing. Regardless of the
+       executor have been freed. If *wait* is ``False`` then this method will
+       return immediately and the resources associated with the executor will be
+       freed when all pending futures are done executing. Regardless of the
        value of *wait*, the entire Python program will not exit until all
        pending futures are done executing.
 
@@ -78,10 +74,10 @@ subclasses: :class:`ThreadPoolExecutor` and :class:`ProcessPoolExecutor`.
 ThreadPoolExecutor
 ^^^^^^^^^^^^^^^^^^
 
-The :class:`ThreadPoolExecutor` class is an :class:`Executor` subclass that uses
-a pool of threads to execute calls asynchronously.
+:class:`ThreadPoolExecutor` is a :class:`Executor` subclass that uses a pool of
+threads to execute calls asynchronously.
 
-Deadlock can occur when the callable associated with a :class:`Future` waits on
+Deadlocks can occur when the callable associated with a :class:`Future` waits on
 the results of another :class:`Future`. For example:
 
 ::
@@ -120,9 +116,6 @@ And:
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
-
-   Deadlock can occur when the callable associated with a :class:`Future` waits
-   on the results of another :class:`Future`.
 
 .. _threadpoolexecutor-example:
 
@@ -169,10 +162,9 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
 .. class:: ProcessPoolExecutor(max_workers=None)
 
-   An :class:`Executor` subclass that executes calls asynchronously using a
-   pool of at most *max_workers* processes. If *max_workers* is ``None`` or
-   not given then as many worker processes will be created as the machine has
-   processors.
+   An :class:`Executor` subclass that executes calls asynchronously using a pool
+   of at most *max_workers* processes. If *max_workers* is ``None`` or not
+   given, it will default to the number of processors on the machine.
 
 .. _processpoolexecutor-example:
 
@@ -215,7 +207,7 @@ Future Objects
 The :class:`Future` class encapulates the asynchronous execution of a callable.
 :class:`Future` instances are created by :meth:`Executor.submit`.
 
-.. class:: Future()
+.. class:: Future
 
    Encapulates the asynchronous execution of a callable. :class:`Future`
    instances are created by :meth:`Executor.submit` and should not be created
@@ -223,48 +215,49 @@ The :class:`Future` class encapulates the asynchronous execution of a callable.
 
     .. method:: cancel()
 
-       Attempt to cancel the call. If the call is currently being executed then
-       it cannot be cancelled and the method will return `False`, otherwise the
-       call will be cancelled and the method will return `True`.
+       Attempt to cancel the call. If the call is currently being executed and
+       cannot be cancelled and the method will return ``False``, otherwise the
+       call will be cancelled and the method will return ``True``.
 
     .. method:: cancelled()
 
-       Return `True` if the call was successfully cancelled.
+       Return ``True`` if the call was successfully cancelled.
 
     .. method:: running()
 
-       Return `True` if the call is currently being executed and cannot be
+       Return ``True`` if the call is currently being executed and cannot be
        cancelled.
 
     .. method:: done()
 
-       Return `True` if the call was successfully cancelled or finished running.
+       Return ``True`` if the call was successfully cancelled or finished
+       running.
 
     .. method:: result(timeout=None)
 
        Return the value returned by the call. If the call hasn't yet completed
        then this method will wait up to *timeout* seconds. If the call hasn't
-       completed in *timeout* seconds then a :exc:`TimeoutError` will be
-       raised. *timeout* can be an int or float.If *timeout* is not specified
-       or ``None`` then there is no limit to the wait time.
+       completed in *timeout* seconds, then a :exc:`TimeoutError` will be
+       raised. *timeout* can be an int or float. If *timeout* is not specified
+       or ``None``, there is no limit to the wait time.
 
        If the future is cancelled before completing then :exc:`CancelledError`
        will be raised.
 
-       If the call raised then this method will raise the same exception.
+       If the call raised, this method will raise the same exception.
 
     .. method:: exception(timeout=None)
 
        Return the exception raised by the call. If the call hasn't yet completed
        then this method will wait up to *timeout* seconds. If the call hasn't
-       completed in *timeout* seconds then a :exc:`TimeoutError` will be raised.
-       *timeout* can be an int or float. If *timeout* is not specified or
-       ``None`` then there is no limit to the wait time.
+       completed in *timeout* seconds, then a :exc:`TimeoutError` will be
+       raised.  *timeout* can be an int or float. If *timeout* is not specified
+       or ``None``, there is no limit to the wait time.
 
        If the future is cancelled before completing then :exc:`CancelledError`
        will be raised.
 
-       If the call completed without raising then ``None`` is returned.
+       If the call completed without raising, ``None`` is returned.
 
     .. method:: add_done_callback(fn)
 
@@ -274,11 +267,11 @@ The :class:`Future` class encapulates the asynchronous execution of a callable.
 
        Added callables are called in the order that they were added and are
        always called in a thread belonging to the process that added them. If
-       the callable raises an :exc:`Exception` then it will be logged and
-       ignored. If the callable raises another :exc:`BaseException` then the
-       behavior is not defined.
+       the callable raises a :exc:`Exception` subclass, it will be logged and
+       ignored. If the callable raises a :exc:`BaseException` subclass, the
+       behavior is undefined.
 
-       If the future has already completed or been cancelled then *fn* will be
+       If the future has already completed or been cancelled, *fn* will be
        called immediately.
 
    The following :class:`Future` methods are meant for use in unit tests and
@@ -326,14 +319,14 @@ Module Functions
 .. function:: wait(fs, timeout=None, return_when=ALL_COMPLETED)
 
    Wait for the :class:`Future` instances (possibly created by different
-   :class:`Executor` instances) given by *fs*  to complete. Returns a named
-   2-tuple of sets. The first set, named "done", contains the futures that
+   :class:`Executor` instances) given by *fs* to complete. Returns a named
+   2-tuple of sets. The first set, named ``done``, contains the futures that
    completed (finished or were cancelled) before the wait completed. The second
-   set, named "not_done", contains uncompleted futures.
+   set, named ``not_done``, contains uncompleted futures.
 
    *timeout* can be used to control the maximum number of seconds to wait before
    returning. *timeout* can be an int or float. If *timeout* is not specified or
-   ``None`` then there is no limit to the wait time.
+   ``None``, there is no limit to the wait time.
 
    *return_when* indicates when this function should return. It must be one of
    the following constants:
@@ -348,7 +341,7 @@ Module Functions
       |                             | future finishes by raising an          |
       |                             | exception. If no future raises an      |
       |                             | exception then it is equivalent to     |
-      |                             | `ALL_COMPLETED`.                       |
+      |                             | :const:`ALL_COMPLETED`.                |
       +-----------------------------+----------------------------------------+
       | :const:`ALL_COMPLETED`      | The function will return when all      |
       |                             | futures finish or are cancelled.       |
@@ -356,11 +349,11 @@ Module Functions
 
 .. function:: as_completed(fs, timeout=None)
 
-   Returns an iterator over the :class:`Future` instances  (possibly created
-   by different :class:`Executor` instances) given by *fs* that yields futures
-   as they complete (finished or were cancelled). Any futures that completed
-   before :func:`as_completed()` was called will be yielded first. The returned
-   iterator raises a :exc:`TimeoutError` if :meth:`__next__()` is called and
-   the result isn't available after *timeout* seconds from the original call
-   to :func:`as_completed()`. *timeout* can be an int or float. If *timeout*
-   is not specified or ``None`` then there is no limit to the wait time.
+   Returns an iterator over the :class:`Future` instances (possibly created by
+   different :class:`Executor` instances) given by *fs* that yields futures as
+   they complete (finished or were cancelled). Any futures that completed before
+   :func:`as_completed` is called will be yielded first. The returned iterator
+   raises a :exc:`TimeoutError` if :meth:`__next__` is called and the result
+   isn't available after *timeout* seconds from the original call to
+   :func:`as_completed`. *timeout* can be an int or float. If *timeout* is not
+   specified or ``None``, there is no limit to the wait time.
