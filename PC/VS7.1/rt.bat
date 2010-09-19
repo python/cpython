@@ -27,7 +27,7 @@ setlocal
 set exe=python
 set qmode=
 set dashO=
-PATH %PATH%;..\..\..\tcltk\bin
+PATH %PATH%;%~dp0..\..\..\tcltk\bin
 
 :CheckOpts
 if "%1"=="-O" (set dashO=-O)     & shift & goto CheckOpts
