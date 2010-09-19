@@ -53,10 +53,15 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
     @unittest.skipIf(sys.platform.startswith('win'),
                         "This test is only appropriate for POSIX-like systems.")
     def test_mkpath_with_custom_mode(self):
+        # Get and set the current umask value for testing mode bits.
+        umask = os.umask(0o002)
+        os.umask(umask)
         mkpath(self.target, 0o700)
-        self.assertEqual(stat.S_IMODE(os.stat(self.target).st_mode), 0o700)
+        self.assertEqual(
+            stat.S_IMODE(os.stat(self.target).st_mode), 0o700 & ~umask)
         mkpath(self.target2, 0o555)
-        self.assertEqual(stat.S_IMODE(os.stat(self.target2).st_mode), 0o555)
+        self.assertEqual(
+            stat.S_IMODE(os.stat(self.target2).st_mode), 0o555 & ~umask)
 
     def test_create_tree_verbosity(self):
 
