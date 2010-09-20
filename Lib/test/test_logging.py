@@ -75,8 +75,8 @@ class BaseTest(unittest.TestCase):
         # Set two unused loggers: one non-ASCII and one Unicode.
         # This is to test correct operation when sorting existing
         # loggers in the configuration code. See issue 8201.
-        logging.getLogger("\xab\xd7\xbb")
-        logging.getLogger("\u013f\u00d6\u0047")
+        self.logger1 = logging.getLogger("\xab\xd7\xbb")
+        self.logger2 = logging.getLogger("\u013f\u00d6\u0047")
 
         self.root_logger = logging.getLogger("")
         self.original_logging_level = self.root_logger.getEffectiveLevel()
@@ -86,7 +86,11 @@ class BaseTest(unittest.TestCase):
         self.root_hdlr = logging.StreamHandler(self.stream)
         self.root_formatter = logging.Formatter(self.log_format)
         self.root_hdlr.setFormatter(self.root_formatter)
+        self.assertFalse(self.logger1.hasHandlers())
+        self.assertFalse(self.logger2.hasHandlers())
         self.root_logger.addHandler(self.root_hdlr)
+        self.assertTrue(self.logger1.hasHandlers())
+        self.assertTrue(self.logger2.hasHandlers())
 
     def tearDown(self):
         """Remove our logging stream, and restore the original logging
@@ -1844,7 +1848,6 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertLogFile(self.fn + ".2")
         self.assertFalse(os.path.exists(self.fn + ".3"))
 
-
 class TimedRotatingFileHandlerTest(BaseFileTest):
     # test methods added below
     pass
@@ -1864,8 +1867,6 @@ for when, exp in (('S', 1),
             self.fn, when=when, interval=1, backupCount=0)
         self.assertEquals(exp, rh.computeRollover(0.0))
     setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
-
-
 
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale

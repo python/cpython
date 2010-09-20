@@ -1240,6 +1240,28 @@ class Logger(Filterer):
             finally:
                 hdlr.release()
 
+    def hasHandlers(self):
+        """
+        See if this logger has any handlers configured.
+
+        Loop through all handlers for this logger and its parents in the
+        logger hierarchy. Return True if a handler was found, else False.
+        Stop searching up the hierarchy whenever a logger with the "propagate"
+        attribute set to zero is found - that will be the last logger which
+        is checked for the existence of handlers.
+        """
+        c = self
+        rv = False
+        while c:
+            if c.handlers:
+                rv = True
+                break
+            if not c.propagate:
+                break
+            else:
+                c = c.parent
+        return rv
+
     def callHandlers(self, record):
         """
         Pass a record to all relevant handlers.
