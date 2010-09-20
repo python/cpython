@@ -55,6 +55,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9877: Expose sysconfig.get_makefile_filename()
+
 - logging: Added hasHandlers() method to Logger and LoggerAdapter.
 
 - Issue #1686: Fix string.Template when overriding the pattern attribute.

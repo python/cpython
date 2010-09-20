@@ -234,6 +234,10 @@ class TestSysConfig(unittest.TestCase):
         config_h = sysconfig.get_config_h_filename()
         self.assertTrue(os.path.isfile(config_h), config_h)
 
+    def test_get_makefile_filename(self):
+        makefile = sysconfig.get_makefile_filename()
+        self.assertTrue(os.path.isfile(makefile), makefile)
+
     def test_get_scheme_names(self):
         wanted = ('nt', 'nt_user', 'os2', 'os2_home', 'osx_framework_user',
                   'posix_home', 'posix_prefix', 'posix_user')
