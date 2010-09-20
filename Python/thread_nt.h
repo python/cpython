@@ -315,7 +315,10 @@ _pythread_nt_set_stacksize(size_t size)
 int
 PyThread_create_key(void)
 {
-    return (int) TlsAlloc();
+    DWORD result= TlsAlloc();
+    if (result == TLS_OUT_OF_INDEXES)
+        return -1;
+    return (int)result;
 }
 
 void
