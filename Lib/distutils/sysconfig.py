@@ -56,18 +56,6 @@ def get_python_version():
     """
     return sys.version[:3]
 
-def _get_build_dir(name, plat_specific):
-    # Assume the executable is in the build directory.  The
-    # pyconfig.h file should be in the same directory.  Since
-    # the build directory may not be the source directory, we
-    # must use "srcdir" from the makefile to find the "Include"
-    # directory.
-    base = os.path.dirname(os.path.abspath(sys.executable))
-    if plat_specific:
-        return base
-    else:
-        thedir = os.path.join(get_config_var('srcdir'), name)
-        return os.path.normpath(thedir)
 
 def get_python_inc(plat_specific=0, prefix=None):
     """Return the directory containing installed Python header files.
@@ -84,7 +72,17 @@ def get_python_inc(plat_specific=0, prefix=None):
         prefix = plat_specific and EXEC_PREFIX or PREFIX
     if os.name == "posix":
         if python_build:
-            return _get_build_dir('Include', plat_specific)
+            # Assume the executable is in the build directory.  The
+            # pyconfig.h file should be in the same directory.  Since
+            # the build directory may not be the source directory, we
+            # must use "srcdir" from the makefile to find the "Include"
+            # directory.
+            base = os.path.dirname(os.path.abspath(sys.executable))
+            if plat_specific:
+                return base
+            else:
+                incdir = os.path.join(get_config_var('srcdir'), 'Include')
+                return os.path.normpath(incdir)
         return os.path.join(prefix, "include", "python" + get_python_version())
     elif os.name == "nt":
         return os.path.join(prefix, "include")
@@ -119,8 +117,6 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
         prefix = plat_specific and EXEC_PREFIX or PREFIX
 
     if os.name == "posix":
-        if python_build:
-            return _get_build_dir('Lib', plat_specific)
         libpython = os.path.join(prefix,
                                  "lib", "python" + get_python_version())
         if standard_lib:
