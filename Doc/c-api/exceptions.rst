@@ -294,6 +294,20 @@ in various ways.  There is a separate error indicator for each thread.
    parameter specifying the exception type to be raised. Availability: Windows.
 
 
+.. cfunction:: void PyErr_SyntaxLocationEx(char *filename, int lineno, int col_offset)
+
+   Set file, line, and offset information for the current exception.  If the
+   current exception is not a :exc:`SyntaxError`, then it sets additional
+   attributes, which make the exception printing subsystem think the exception
+   is a :exc:`SyntaxError`.
+
+
+.. cfunction:: void PyErr_SyntaxLocation(char *filename, int lineno)
+
+   Like :cfunc:`PyErr_SyntaxLocationExc`, but the col_offset parameter is
+   omitted.
+
+
 .. cfunction:: void PyErr_BadInternalCall()
 
    This is a shorthand for ``PyErr_SetString(PyExc_SystemError, message)``,

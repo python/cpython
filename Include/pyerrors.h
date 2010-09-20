@@ -229,6 +229,7 @@ int PySignal_SetWakeupFd(int fd);
 
 /* Support for adding program text to SyntaxErrors */
 PyAPI_FUNC(void) PyErr_SyntaxLocation(const char *, int);
+PyAPI_FUNC(void) PyErr_SyntaxLocationEx(const char *, int, int);
 PyAPI_FUNC(PyObject *) PyErr_ProgramText(const char *, int);
 
 /* The following functions are used to create and modify unicode
