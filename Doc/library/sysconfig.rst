@@ -217,6 +217,10 @@ Other functions
 
    Return the path of :file:`pyconfig.h`.
 
+.. function:: get_makefile_filename()
+
+   Return the path of :file:`Makefile`.
+
 Using :mod:`sysconfig` as a script
 ----------------------------------
 

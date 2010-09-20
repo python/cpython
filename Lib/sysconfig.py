@@ -5,9 +5,19 @@ import sys
 import os
 from os.path import pardir, realpath
 
-__all__ = ['parse_config_h', 'get_config_h_filename', 'get_scheme_names',
-           'get_path_names', 'get_paths', 'get_path', 'get_config_vars',
-           'get_config_var', 'get_platform', 'get_python_version']
+__all__ = [
+    'get_config_h_filename',
+    'get_config_var',
+    'get_config_vars',
+    'get_makefile_filename',
+    'get_path',
+    'get_path_names',
+    'get_paths',
+    'get_platform',
+    'get_python_version',
+    'get_scheme_names',
+    'parse_config_h',
+    ]
 
 _INSTALL_SCHEMES = {
     'posix_prefix': {
@@ -291,7 +301,7 @@ def _parse_makefile(filename, vars=None):
     return vars
 
 
-def _get_makefile_filename():
+def get_makefile_filename():
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
     return os.path.join(get_path('stdlib'), "config", "Makefile")
@@ -300,7 +310,7 @@ def _get_makefile_filename():
 def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""
     # load the installed Makefile:
-    makefile = _get_makefile_filename()
+    makefile = get_makefile_filename()
     try:
         _parse_makefile(makefile, vars)
     except IOError as e:
