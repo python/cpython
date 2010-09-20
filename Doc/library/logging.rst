@@ -1129,6 +1129,18 @@ instantiated directly, but always through the module-level function
    This is a factory method which can be overridden in subclasses to create
    specialized :class:`LogRecord` instances.
 
+.. method:: Logger.hasHandlers()
+
+   Checks to see if this logger has any handlers configured. This is done by
+   looking for handlers in this logger and its parents in the logger hierarchy.
+   Returns True if a handler was found, else False. The method stops searching
+   up the hierarchy whenever a logger with the "propagate" attribute set to
+   False is found - that will be the last logger which is checked for the
+   existence of handlers.
+
+.. versionadded:: 3.2
+
+The :meth:`hasHandlers` method was not present in previous versions.
 
 .. _minimal-example:
 
