@@ -123,6 +123,7 @@ struct compiler_unit {
 
     int u_firstlineno; /* the first lineno of the block */
     int u_lineno;          /* the lineno for the current stmt */
+    int u_col_offset;      /* the offset of the current stmt */
     int u_lineno_set;  /* boolean to indicate whether instr
                           has been generated with current lineno */
 };
@@ -486,6 +487,7 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
     u->u_nfblocks = 0;
     u->u_firstlineno = lineno;
     u->u_lineno = 0;
+    u->u_col_offset = 0;
     u->u_lineno_set = 0;
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
@@ -1965,6 +1967,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             return compiler_error(c, "default 'except:' must be last");
         c->u->u_lineno_set = 0;
         c->u->u_lineno = handler->lineno;
+        c->u->u_col_offset = handler->col_offset;
         except = compiler_new_block(c);
         if (except == NULL)
             return 0;
@@ -2247,6 +2250,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 
     /* Always assign a lineno to the next instruction for a stmt. */
     c->u->u_lineno = s->lineno;
+    c->u->u_col_offset = s->col_offset;
     c->u->u_lineno_set = 0;
 
     switch (s->kind) {
@@ -3122,6 +3126,8 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         c->u->u_lineno = e->lineno;
         c->u->u_lineno_set = 0;
     }
+    /* Updating the column offset is always harmless. */
+    c->u->u_col_offset = e->col_offset;
     switch (e->kind) {
     case BoolOp_kind:
         return compiler_boolop(c, e);
@@ -3363,8 +3369,8 @@ compiler_error(struct compiler *c, const char *errstr)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    u = Py_BuildValue("(ziOO)", c->c_filename, c->u->u_lineno,
-                      Py_None, loc);
+    u = Py_BuildValue("(ziiO)", c->c_filename, c->u->u_lineno,
+                      c->u->u_col_offset, loc);
     if (!u)
         goto exit;
     v = Py_BuildValue("(zO)", errstr, u);

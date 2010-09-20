@@ -90,7 +90,7 @@ new_identifier(const char* n, PyArena *arena)
 static int
 ast_error(const node *n, const char *errstr)
 {
-    PyObject *u = Py_BuildValue("zi", errstr, LINENO(n));
+    PyObject *u = Py_BuildValue("zii", errstr, LINENO(n), n->n_col_offset);
     if (!u)
         return 0;
     PyErr_SetObject(PyExc_SyntaxError, u);
@@ -101,7 +101,7 @@ ast_error(const node *n, const char *errstr)
 static void
 ast_error_finish(const char *filename)
 {
-    PyObject *type, *value, *tback, *errstr, *loc, *tmp;
+    PyObject *type, *value, *tback, *errstr, *offset, *loc, *tmp;
     long lineno;
 
     assert(PyErr_Occurred());
@@ -118,6 +118,11 @@ ast_error_finish(const char *filename)
         Py_DECREF(errstr);
         return;
     }
+    offset = PyTuple_GetItem(value, 2);
+    if (!offset) {
+        Py_DECREF(errstr);
+        return;
+    }
     Py_DECREF(value);
 
     loc = PyErr_ProgramText(filename, lineno);
@@ -125,7 +130,7 @@ ast_error_finish(const char *filename)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    tmp = Py_BuildValue("(zlOO)", filename, lineno, Py_None, loc);
+    tmp = Py_BuildValue("(zlOO)", filename, lineno, offset, loc);
     Py_DECREF(loc);
     if (!tmp) {
         Py_DECREF(errstr);
