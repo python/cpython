@@ -123,8 +123,9 @@ _PYTHON_BUILD = is_python_build()
 
 if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
-        _INSTALL_SCHEMES[scheme]['include'] = '{srcdir}/Include'
+        _INSTALL_SCHEMES[scheme]['include'] = '{projectbase}/Include'
         _INSTALL_SCHEMES[scheme]['platinclude'] = '{projectbase}/.'
+        _INSTALL_SCHEMES[scheme]['stdlib'] = '{projectbase}/Lib'
 
 def _subst_vars(s, local_vars):
     try:

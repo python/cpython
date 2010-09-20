@@ -1439,6 +1439,12 @@ class LoggerAdapter(object):
         """
         return self.logger.isEnabledFor(level)
 
+    def hasHandlers(self):
+        """
+        See if the underlying logger has any handlers.
+        """
+        return self.logger.hasHandlers()
+
 root = RootLogger(WARNING)
 Logger.root = root
 Logger.manager = Manager(Logger.root)
