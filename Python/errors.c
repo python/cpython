@@ -780,12 +780,18 @@ PyErr_WriteUnraisable(PyObject *obj)
 extern PyObject *PyModule_GetWarningsModule(void);
 
 
+void
+PyErr_SyntaxLocation(const char *filename, int lineno) {
+    PyErr_SyntaxLocationEx(filename, lineno, -1);
+}
+
+
 /* Set file and line information for the current exception.
    If the exception is not a SyntaxError, also sets additional attributes
    to make printing of exceptions believe it is a syntax error. */
 
 void
-PyErr_SyntaxLocation(const char *filename, int lineno)
+PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 {
     PyObject *exc, *v, *tb, *tmp;
 
@@ -801,6 +807,16 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
         if (PyObject_SetAttrString(v, "lineno", tmp))
             PyErr_Clear();
         Py_DECREF(tmp);
+    }
+    if (col_offset >= 0) {
+        tmp = PyLong_FromLong(col_offset);
+        if (tmp == NULL)
+            PyErr_Clear();
+        else {
+            if (PyObject_SetAttrString(v, "offset", tmp))
+                PyErr_Clear();
+            Py_DECREF(tmp);
+        }
     }
     if (filename != NULL) {
         tmp = PyUnicode_FromString(filename);
