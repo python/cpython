@@ -10,6 +10,10 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #9901: Destroying the GIL in Py_Finalize() can fail if some other
+  threads are still running.  Instead, reinitialize the GIL on a second
+  call to Py_Initialize().
+
 - Issue #9252: PyImport_Import no longer uses a fromlist hack to return the
   module that was imported, but instead gets the module from sys.modules.
 

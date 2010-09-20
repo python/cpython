@@ -217,8 +217,15 @@ Py_InitializeEx(int install_sigs)
         Py_FatalError("Py_Initialize: can't make first thread");
     (void) PyThreadState_Swap(tstate);
 
-    /* auto-thread-state API, if available */
 #ifdef WITH_THREAD
+    /* We can't call _PyEval_FiniThreads() in Py_Finalize because
+       destroying the GIL might fail when it is being referenced from
+       another running thread (see issue #9901).
+       Instead we destroy the previously created GIL here, which ensures
+       that we can call Py_Initialize / Py_Finalize multiple times. */
+    _PyEval_FiniThreads();
+
+    /* Auto-thread-state API */
     _PyGILState_Init(interp, tstate);
 #endif /* WITH_THREAD */
 
@@ -513,10 +520,6 @@ Py_Finalize(void)
     */
 
     PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
-
-#ifdef WITH_THREAD
-    _PyEval_FiniThreads();
-#endif
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
