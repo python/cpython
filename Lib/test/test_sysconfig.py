@@ -234,6 +234,8 @@ class TestSysConfig(unittest.TestCase):
         config_h = sysconfig.get_config_h_filename()
         self.assertTrue(os.path.isfile(config_h), config_h)
 
+    @unittest.skipIf(sys.platform.startswith('win'),
+                     'Test is not Windows compatible')
     def test_get_makefile_filename(self):
         makefile = sysconfig.get_makefile_filename()
         self.assertTrue(os.path.isfile(makefile), makefile)
