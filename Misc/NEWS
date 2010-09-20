@@ -184,6 +184,8 @@ Library
 C-API
 -----
 
+- Add PyErr_SyntaxLocationEx, which supports passing a column offset.
+
 - Issue #9834: Don't segfault in PySequence_GetSlice, PySequence_SetSlice, or
   PySequence_DelSlice when the object doesn't have any mapping operations
   defined.
