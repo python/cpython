@@ -826,26 +826,20 @@ class POSIXProcessTestCase(BaseTestCase):
     def _kill_process(self, method, *args):
         # Do not inherit file handles from the parent.
         # It should fix failures on some platforms.
-        p = subprocess.Popen([sys.executable, "-c", "input()"], close_fds=True,
-                             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        # Let the process initialize (Issue #3137)
-        time.sleep(0.4)
-        # The process should not terminate prematurely
-        self.assertIsNone(p.poll())
-        # Retry if the process do not receive the signal.
-        count, maxcount = 0, 10
-        while count < maxcount and p.poll() is None:
-            getattr(p, method)(*args)
-            time.sleep(0.1)
-            count += 1
-
-        if count == maxcount:
-            self.skipTest("apparently failed to send the signal")
-        self.assertIsNotNone(p.poll(), "the subprocess did not terminate")
-        if count > 1:
-            print("p.{}{} succeeded after "
-                  "{} attempts".format(method, args, count), file=sys.stderr)
+        p = subprocess.Popen([sys.executable, "-c", """if 1:
+                             import sys, time
+                             sys.stdout.write('x\\n')
+                             sys.stdout.flush()
+                             time.sleep(30)
+                             """],
+                             close_fds=True,
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        # Wait for the interpreter to be completely initialized before
+        # sending any signal.
+        p.stdout.read(1)
+        getattr(p, method)(*args)
         return p
 
     def test_send_signal(self):
