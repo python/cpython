@@ -127,7 +127,7 @@ Basic Widgets
    The `ComboBox
    <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixComboBox.htm>`_
    widget is similar to the combo box control in MS Windows. The user can select a
-   choice by either typing in the entry subwdget or selecting from the listbox
+   choice by either typing in the entry subwidget or selecting from the listbox
    subwidget.
 
 .. Python Demo of:

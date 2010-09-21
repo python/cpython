@@ -577,7 +577,7 @@ For more information, see `Registry Key Security and Access
 64-bit Specific
 ***************
 
-For more information, see `Accesing an Alternate Registry View
+For more information, see `Accessing an Alternate Registry View
 <http://msdn.microsoft.com/en-us/library/aa384129(v=VS.85).aspx>`__.
 
 .. data:: KEY_WOW64_64KEY

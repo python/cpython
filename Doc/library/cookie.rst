@@ -173,7 +173,7 @@ Morsel Objects
    * ``version``
    * ``httponly``
 
-   The attribute :attr:`httponly` specifies that the cookie is only transfered
+   The attribute :attr:`httponly` specifies that the cookie is only transferred
    in HTTP requests, and is not accessible through JavaScript. This is intended
    to mitigate some forms of cross-site scripting.
 
