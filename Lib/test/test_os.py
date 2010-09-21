@@ -219,12 +219,12 @@ class StatAttributeTests(unittest.TestCase):
         os.unlink(self.fname)
         os.rmdir(support.TESTFN)
 
-    def test_stat_attributes(self):
+    def check_stat_attributes(self, fname):
         if not hasattr(os, "stat"):
             return
 
         import stat
-        result = os.stat(self.fname)
+        result = os.stat(fname)
 
         # Make sure direct access works
         self.assertEquals(result[stat.ST_SIZE], 3)
@@ -281,6 +281,15 @@ class StatAttributeTests(unittest.TestCase):
         except TypeError:
             pass
 
+    def test_stat_attributes(self):
+        self.check_stat_attributes(self.fname)
+
+    def test_stat_attributes_bytes(self):
+        try:
+            fname = self.fname.encode(sys.getfilesystemencoding())
+        except UnicodeEncodeError:
+            self.skipTest("cannot encode %a for the filesystem" % self.fname)
+        self.check_stat_attributes(fname)
 
     def test_statvfs_attributes(self):
         if not hasattr(os, "statvfs"):

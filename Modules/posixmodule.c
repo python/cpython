@@ -1152,7 +1152,7 @@ win32_stat(const char* path, struct win32_stat *result)
         NULL, /* security attributes */
         OPEN_EXISTING,
         /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-        FILE_FLAG_BACKUP_SEMANTICS,
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
         NULL);
     
     if(hFile == INVALID_HANDLE_VALUE) {
@@ -1175,22 +1175,32 @@ win32_stat(const char* path, struct win32_stat *result)
         }
         code = attribute_data_to_stat(&info, result);
     }
-    
-    buf_size = Py_GetFinalPathNameByHandleA(hFile, 0, 0, VOLUME_NAME_DOS);
-    if(!buf_size) return -1;
-    target_path = (char *)malloc((buf_size+1)*sizeof(char));
-    result_length = Py_GetFinalPathNameByHandleA(hFile, target_path,
-                                                 buf_size, VOLUME_NAME_DOS);
-    
-    if(!result_length)
-        return -1;
+    else {
+        /* We have a good handle to the target, use it to determine the target
+           path name (then we'll call lstat on it). */
+        buf_size = Py_GetFinalPathNameByHandleA(hFile, 0, 0, VOLUME_NAME_DOS);
+        if(!buf_size) return -1;
+        /* Due to a slight discrepancy between GetFinalPathNameByHandleA
+           and GetFinalPathNameByHandleW, we must allocate one more byte
+           than reported. */
+        target_path = (char *)malloc((buf_size+2)*sizeof(char));
+        result_length = Py_GetFinalPathNameByHandleA(hFile, target_path,
+                                                     buf_size+1, VOLUME_NAME_DOS);
 
-    if(!CloseHandle(hFile))
-        return -1;
+        if(!result_length) {
+            free(target_path);
+            return -1;
+        }
 
-    target_path[result_length] = 0;
-    code = win32_lstat(target_path, result);
-    free(target_path);
+        if(!CloseHandle(hFile)) {
+            free(target_path);
+            return -1;
+        }
+
+        target_path[result_length] = 0;
+        code = win32_lstat(target_path, result);
+        free(target_path);
+    }
     
     return code;
 }
@@ -1254,11 +1264,15 @@ win32_stat_w(const wchar_t* path, struct win32_stat *result)
         result_length = Py_GetFinalPathNameByHandleW(hFile, target_path,
                                                 buf_size, VOLUME_NAME_DOS);
         
-        if(!result_length)
+        if(!result_length) {
+            free(target_path);
             return -1;
+        }
 
-        if(!CloseHandle(hFile))
+        if(!CloseHandle(hFile)) {
+            free(target_path);
             return -1;
+        }
 
         target_path[result_length] = 0;
         code = win32_lstat_w(target_path, result);

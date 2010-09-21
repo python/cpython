@@ -58,6 +58,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9908: Fix os.stat() on bytes paths under Windows 7.
+
 - Issue #2643: msync() is not called anymore when deallocating an open mmap
   object, only munmap().
 
