@@ -1379,12 +1379,17 @@ class datetime(date):
     @classmethod
     def utcfromtimestamp(cls, t):
         "Construct a UTC datetime from a POSIX timestamp (like time.time())."
-        if 1 - (t % 1.0) < 0.000001:
-            t = float(int(t)) + 1
-        if t < 0:
-            t -= 1
+        t, frac = divmod(t, 1.0)
+        us = round(frac * 1e6)
+
+        # If timestamp is less than one microsecond smaller than a
+        # full second, us can be rounded up to 1000000.  In this case,
+        # roll over to seconds, otherwise, ValueError is raised
+        # by the constructor.
+        if us == 1000000:
+            t += 1
+            us = 0
         y, m, d, hh, mm, ss, weekday, jday, dst = _time.gmtime(t)
-        us = int((t % 1.0) * 1000000)
         ss = min(ss, 59)    # clamp out leap seconds if the platform has them
         return cls(y, m, d, hh, mm, ss, us)
 
