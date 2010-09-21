@@ -173,12 +173,12 @@ def main():
             #    os.system("perl util\mk1mf.pl debug "+configure+" >"+makefile)
 
             fix_makefile(makefile)
-            shutil.copy2(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
-            shutil.copy2(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
+            shutil.copy(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
+            shutil.copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
 
         # Now run make.
-        shutil.copy2(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
-        shutil.copy2(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
+        shutil.copy(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
+        shutil.copy(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
 
         #makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
         makeCommand = "nmake /nologo -f \"%s\"" % makefile

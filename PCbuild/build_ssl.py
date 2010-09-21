@@ -224,15 +224,15 @@ def main():
             if arch == "amd64":
                 create_makefile64(makefile, m32)
             fix_makefile(makefile)
-            shutil.copy2(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
-            shutil.copy2(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
+            shutil.copy(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
+            shutil.copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
 
         # If the assembler files don't exist in tmpXX, copy them there
         if not os.path.exists("tmp"+dirsuffix):
             os.mkdir("tmp"+dirsuffix)
         for f in os.listdir("asm"+dirsuffix):
             if not f.endswith(".asm"): continue
-            shutil.copy2(r"asm%s\%s" % (dirsuffix, f), "tmp"+dirsuffix)
+            shutil.copy(r"asm%s\%s" % (dirsuffix, f), "tmp"+dirsuffix)
 
         # Now run make.
         if arch == "amd64":
@@ -241,8 +241,8 @@ def main():
                 print("ml64 assembler has failed.")
                 sys.exit(rc)
 
-        shutil.copy2(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
-        shutil.copy2(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
+        shutil.copy(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
+        shutil.copy(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
 
         #makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
         makeCommand = "nmake /nologo -f \"%s\"" % makefile
