@@ -1376,64 +1376,64 @@ class LoggerAdapter(object):
         kwargs["extra"] = self.extra
         return msg, kwargs
 
+    #
+    # Boilerplate convenience methods
+    #
     def debug(self, msg, *args, **kwargs):
         """
-        Delegate a debug call to the underlying logger, after adding
-        contextual information from this adapter instance.
+        Delegate a debug call to the underlying logger.
         """
-        msg, kwargs = self.process(msg, kwargs)
-        self.logger.debug(msg, *args, **kwargs)
+        self.log(DEBUG, msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
         """
-        Delegate an info call to the underlying logger, after adding
-        contextual information from this adapter instance.
+        Delegate an info call to the underlying logger.
         """
-        msg, kwargs = self.process(msg, kwargs)
-        self.logger.info(msg, *args, **kwargs)
+        self.log(INFO, msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
         """
-        Delegate a warning call to the underlying logger, after adding
-        contextual information from this adapter instance.
+        Delegate a warning call to the underlying logger.
         """
-        msg, kwargs = self.process(msg, kwargs)
-        self.logger.warning(msg, *args, **kwargs)
+        self.log(WARNING, msg, *args, **kwargs)
 
     warn = warning
 
     def error(self, msg, *args, **kwargs):
         """
-        Delegate an error call to the underlying logger, after adding
-        contextual information from this adapter instance.
+        Delegate an error call to the underlying logger.
         """
-        msg, kwargs = self.process(msg, kwargs)
-        self.logger.error(msg, *args, **kwargs)
+        self.log(ERROR, msg, *args, **kwargs)
 
     def exception(self, msg, *args, **kwargs):
         """
-        Delegate an exception call to the underlying logger, after adding
-        contextual information from this adapter instance.
+        Delegate an exception call to the underlying logger.
         """
-        msg, kwargs = self.process(msg, kwargs)
         kwargs["exc_info"] = 1
-        self.logger.error(msg, *args, **kwargs)
+        self.log(ERROR, msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
         """
-        Delegate a critical call to the underlying logger, after adding
-        contextual information from this adapter instance.
+        Delegate a critical call to the underlying logger.
         """
-        msg, kwargs = self.process(msg, kwargs)
-        self.logger.critical(msg, *args, **kwargs)
+        self.log(CRITICAL, msg, *args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
         """
         Delegate a log call to the underlying logger, after adding
         contextual information from this adapter instance.
         """
-        msg, kwargs = self.process(msg, kwargs)
-        self.logger.log(level, msg, *args, **kwargs)
+        if self.isEnabledFor(level):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger._log(level, msg, args, **kwargs)
+
+    def isEnabledFor(self, level):
+        """
+        Is this logger enabled for level 'level'?
+        """
+        if self.logger.manager.disable >= level:
+            return False
+        return level >= self.getEffectiveLevel()
 
     def setLevel(self, level):
         """

@@ -58,6 +58,9 @@ Core and Builtins
 Library
 -------
 
+- logging: Changed LoggerAdapter implementation internally, to make it
+  easier to subclass in a useful way.
+
 - logging: hasHandlers method was added to Logger, and isEnabledFor,
   getEffectiveLevel, hasHandlers and setLevel were added to LoggerAdapter.
   LoggerAdapter was introduced into the unit tests for logging.
