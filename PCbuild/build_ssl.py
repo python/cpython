@@ -228,11 +228,13 @@ def main():
             shutil.copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
 
         # If the assembler files don't exist in tmpXX, copy them there
-        if not os.path.exists("tmp"+dirsuffix):
-            os.mkdir("tmp"+dirsuffix)
-        for f in os.listdir("asm"+dirsuffix):
-            if not f.endswith(".asm"): continue
-            shutil.copy(r"asm%s\%s" % (dirsuffix, f), "tmp"+dirsuffix)
+        if perl is None:
+            if not os.path.exists("tmp"+dirsuffix):
+                os.mkdir("tmp"+dirsuffix)
+            for f in os.listdir("asm"+dirsuffix):
+                if not f.endswith(".asm"): continue
+                if os.path.isfile(r"tmp%s\%s" % (dirsuffix, f)): continue
+                shutil.copy(r"asm%s\%s" % (dirsuffix, f), "tmp"+dirsuffix)
 
         # Now run make.
         if arch == "amd64":
