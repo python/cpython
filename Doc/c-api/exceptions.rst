@@ -301,6 +301,8 @@ in various ways.  There is a separate error indicator for each thread.
    attributes, which make the exception printing subsystem think the exception
    is a :exc:`SyntaxError`.
 
+.. versionadded:: 3.2
+
 
 .. cfunction:: void PyErr_SyntaxLocation(char *filename, int lineno)
 
