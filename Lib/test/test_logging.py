@@ -154,7 +154,7 @@ class BuiltinLevelsTest(BaseTest):
 
         ERR = logging.getLogger("ERR")
         ERR.setLevel(logging.ERROR)
-        INF = logging.getLogger("INF")
+        INF = logging.LoggerAdapter(logging.getLogger("INF"), {})
         INF.setLevel(logging.INFO)
         DEB = logging.getLogger("DEB")
         DEB.setLevel(logging.DEBUG)

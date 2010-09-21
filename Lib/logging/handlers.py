@@ -1131,6 +1131,8 @@ class MemoryHandler(BufferingHandler):
         For a MemoryHandler, flushing means just sending the buffered
         records to the target, if there is one. Override if you want
         different behaviour.
+
+        The record buffer is also cleared by this operation.
         """
         if self.target:
             for record in self.buffer:
