@@ -334,8 +334,6 @@ Build
 
 - Issue #1633863: Don't ignore $CC under AIX.
 
-- Issue #9552: Avoid unnecessary rebuild of OpenSSL. (Windows)
-
 - Issue #9810: Compile bzip2 source files in python's project file
   directly. It used to be built with bzip2's makefile.
 
