@@ -639,6 +639,9 @@ class HTTPResponse:
             amt -= len(chunk)
         return ''.join(s)
 
+    def fileno(self):
+        return self.fp.fileno()
+
     def getheader(self, name, default=None):
         if self.msg is None:
             raise ResponseNotReady()
