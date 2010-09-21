@@ -458,6 +458,9 @@ statement.
 
    Return a list of (header, value) tuples.
 
+.. method:: HTTPResponse.fileno()
+
+   Return the ``fileno`` of the underlying socket.
 
 .. attribute:: HTTPResponse.msg
 
