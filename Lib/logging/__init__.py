@@ -1400,6 +1400,8 @@ class LoggerAdapter(object):
         msg, kwargs = self.process(msg, kwargs)
         self.logger.warning(msg, *args, **kwargs)
 
+    warn = warning
+
     def error(self, msg, *args, **kwargs):
         """
         Delegate an error call to the underlying logger, after adding
@@ -1433,11 +1435,23 @@ class LoggerAdapter(object):
         msg, kwargs = self.process(msg, kwargs)
         self.logger.log(level, msg, *args, **kwargs)
 
+    def setLevel(self, level):
+        """
+        Set the specified level on the underlying logger.
+        """
+        self.logger.setLevel(level)
+
     def isEnabledFor(self, level):
         """
         See if the underlying logger is enabled for the specified level.
         """
         return self.logger.isEnabledFor(level)
+
+    def getEffectiveLevel(self):
+        """
+        Get the effective level for the underlying logger.
+        """
+        return self.logger.getEffectiveLevel()
 
     def hasHandlers(self):
         """
