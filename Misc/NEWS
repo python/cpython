@@ -183,6 +183,8 @@ Library
   guaranteed to exist in all Python implementations and the names of hash
   algorithms available in the current process.
 
+- A new package ``concurrent.futures`` as defined by PEP 3148.
+
 C-API
 -----
 
