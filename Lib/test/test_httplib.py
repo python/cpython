@@ -285,6 +285,13 @@ class BasicTest(TestCase):
         self.assertEqual("Basic realm=\"example\"",
                          resp.getheader("www-authenticate"))
 
+    def test_filenoattr(self):
+        # Just test the fileno attribute in the HTTPResponse Object.
+        body = "HTTP/1.1 200 Ok\r\n\r\nText"
+        sock = FakeSocket(body)
+        resp = httplib.HTTPResponse(sock)
+        self.assertTrue(hasattr(resp,'fileno'),
+                'HTTPResponse should expose a fileno attribute')
 
 class OfflineTest(TestCase):
     def test_responses(self):

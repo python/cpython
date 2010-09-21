@@ -161,6 +161,17 @@ class OtherNetworkTests(unittest.TestCase):
         self.assertEqual(res.geturl(),
                 "http://docs.python.org/glossary.html")
 
+    def test_fileno(self):
+        req = urllib2.Request("http://www.python.org")
+        opener = urllib2.build_opener()
+        res = opener.open(req)
+        try:
+            res.fileno()
+        except AttributeError:
+            self.fail("HTTPResponse object should return a valid fileno")
+        finally:
+            res.close()
+
     def _test_urls(self, urls, handlers, retry=True):
         import time
         import logging
