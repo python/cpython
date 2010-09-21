@@ -2904,7 +2904,7 @@ wire).
    .. attribute:: exc_info
 
       Exception tuple (à la `sys.exc_info`) or `None` if no exception
-      information is availble.
+      information is available.
 
    .. attribute:: func
 

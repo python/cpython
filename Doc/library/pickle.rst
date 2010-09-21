@@ -197,7 +197,7 @@ process more convenient:
    that meets this interface.
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
-   which are used to control compatiblity support for pickle stream generated
+   which are used to control compatibility support for pickle stream generated
    by Python 2.x.  If *fix_imports* is True, pickle will try to map the old
    Python 2.x names to the new names used in Python 3.x.  The *encoding* and
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
@@ -213,7 +213,7 @@ process more convenient:
    ignored.
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
-   which are used to control compatiblity support for pickle stream generated
+   which are used to control compatibility support for pickle stream generated
    by Python 2.x.  If *fix_imports* is True, pickle will try to map the old
    Python 2.x names to the new names used in Python 3.x.  The *encoding* and
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
@@ -310,7 +310,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
    that meets this interface.
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
-   which are used to control compatiblity support for pickle stream generated
+   which are used to control compatibility support for pickle stream generated
    by Python 2.x.  If *fix_imports* is True, pickle will try to map the old
    Python 2.x names to the new names used in Python 3.x.  The *encoding* and
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
@@ -429,7 +429,7 @@ implementation of this behaviour::
 
 .. index:: single: __getnewargs__() (copy protocol)
 
-Classes can alter the default behaviour by providing one or severals special
+Classes can alter the default behaviour by providing one or several special
 methods.  In protocol 2 and newer, classes that implements the
 :meth:`__getnewargs__` method can dictate the values passed to the
 :meth:`__new__` method upon unpickling.  This is often needed for classes

@@ -1249,7 +1249,7 @@ This function is called with two Python objects and the operator as arguments,
 where the operator is one of ``Py_EQ``, ``Py_NE``, ``Py_LE``, ``Py_GT``,
 ``Py_LT`` or ``Py_GT``.  It should compare the two objects with respect to the
 specified operator and return ``Py_True`` or ``Py_False`` if the comparison is
-successfull, ``Py_NotImplemented`` to indicate that comparison is not
+successful, ``Py_NotImplemented`` to indicate that comparison is not
 implemented and the other object's comparison method should be tried, or *NULL*
 if an exception was set.
 

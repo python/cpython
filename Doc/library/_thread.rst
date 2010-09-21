@@ -106,7 +106,7 @@ It defines the following constants and functions:
 .. data:: TIMEOUT_MAX
 
    The maximum value allowed for the *timeout* parameter of
-   :meth:`Lock.acquire`. Specifiying a timeout greater than this value will
+   :meth:`Lock.acquire`. Specifying a timeout greater than this value will
    raise an :exc:`OverflowError`.
 
    .. versionadded:: 3.2

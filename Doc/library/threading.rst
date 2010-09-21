@@ -177,7 +177,7 @@ This module also defines the following constant:
 
    The maximum value allowed for the *timeout* parameter of blocking functions
    (:meth:`Lock.acquire`, :meth:`RLock.acquire`, :meth:`Condition.wait`, etc.).
-   Specifiying a timeout greater than this value will raise an
+   Specifying a timeout greater than this value will raise an
    :exc:`OverflowError`.
 
    .. versionadded:: 3.2

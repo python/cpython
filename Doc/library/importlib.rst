@@ -286,7 +286,7 @@ are also provided to help in implementing the core ABCs.
     .. deprecated:: 3.2
         This class has been deprecated in favor of :class:`SourceLoader` and is
         slated for removal in Python 3.4. See below for how to create a
-        subclass that is compatbile with Python 3.1 onwards.
+        subclass that is compatible with Python 3.1 onwards.
 
     If compatibility with Python 3.1 is required, then use the following idiom
     to implement a subclass that will work with Python 3.1 onwards (make sure

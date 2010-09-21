@@ -632,7 +632,7 @@ The following decorators implement test skipping and expected failures:
 
 .. decorator:: skipUnless(condition, reason)
 
-   Skip the decoratored test unless *condition* is true.
+   Skip the decorated test unless *condition* is true.
 
 .. decorator:: expectedFailure
 
@@ -1598,8 +1598,8 @@ a
 
    .. attribute:: expectedFailures
 
-      A list contaning 2-tuples of :class:`TestCase` instances and strings
-      holding formatted tracebacks.  Each tuple represents a expected failures
+      A list containing 2-tuples of :class:`TestCase` instances and strings
+      holding formatted tracebacks.  Each tuple represents an expected failure
       of the test case.
 
    .. attribute:: unexpectedSuccesses
