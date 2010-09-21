@@ -435,7 +435,7 @@ AC_ARG_WITH(gcc,
 		without_gcc=$withval;;
 	esac], [
 	case $ac_sys_system in
-	AIX*)   CC=cc_r
+	AIX*)   CC=${CC:-xlc_r}
 		without_gcc=;;
 	*)	without_gcc=no;;
 	esac])
