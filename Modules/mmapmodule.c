@@ -125,7 +125,6 @@ mmap_object_dealloc(mmap_object *m_obj)
     if (m_obj->fd >= 0)
         (void) close(m_obj->fd);
     if (m_obj->data!=NULL) {
-        msync(m_obj->data, m_obj->size, MS_SYNC);
         munmap(m_obj->data, m_obj->size);
     }
 #endif /* UNIX */
