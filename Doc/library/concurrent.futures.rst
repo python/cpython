@@ -204,12 +204,12 @@ ProcessPoolExecutor Example
 Future Objects
 --------------
 
-The :class:`Future` class encapulates the asynchronous execution of a callable.
+The :class:`Future` class encapsulates the asynchronous execution of a callable.
 :class:`Future` instances are created by :meth:`Executor.submit`.
 
 .. class:: Future
 
-   Encapulates the asynchronous execution of a callable.  :class:`Future`
+   Encapsulates the asynchronous execution of a callable.  :class:`Future`
    instances are created by :meth:`Executor.submit` and should not be created
    directly except for testing.
 
