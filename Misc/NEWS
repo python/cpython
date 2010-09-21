@@ -207,6 +207,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #9899: Fix test_tkinter.test_font on various platforms.  Patch by
+  Ned Deily.
+
 - Issue #9894: Do not hardcode ENOENT in test_subprocess.
 
 - Issue #9315: Added tests for the trace module.  Patch by Eli Bendersky.
