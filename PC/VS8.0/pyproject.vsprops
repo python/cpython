@@ -49,6 +49,14 @@
 		Value="..\..\.."
 	/>
 	<UserMacro
+		Name="bsddb47Dir"
+		Value="$(externalsDir)\db-4.7.25.0\build_windows"
+	/>
+	<UserMacro
+		Name="bsddb47DepLibs"
+		Value="ws2_32.lib"
+	/>
+	<UserMacro
 		Name="bsddbDir"
 		Value="$(bsddb47Dir)"
 	/>
@@ -65,16 +73,8 @@
 		Value=""
 	/>
 	<UserMacro
-		Name="bsddb47Dir"
-		Value="$(externalsDir)\db-4.7.25.0\build_windows"
-	/>
-	<UserMacro
-		Name="bsddb47DepLibs"
-		Value="ws2_32.lib"
-	/>
-	<UserMacro
 		Name="sqlite3Dir"
-		Value="$(externalsDir)\sqlite-3.5.9"
+		Value="$(externalsDir)\sqlite-3.6.21"
 	/>
 	<UserMacro
 		Name="bz2Dir"
@@ -82,7 +82,7 @@
 	/>
 	<UserMacro
 		Name="opensslDir"
-		Value="$(externalsDir)\openssl-0.9.8g"
+		Value="$(externalsDir)\openssl-0.9.8l"
 	/>
 	<UserMacro
 		Name="tcltkDir"

@@ -1419,10 +1419,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Objects\stringobject.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Objects\capsule.c"
 				>
 			</File>
@@ -1548,6 +1544,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Objects\stringlib\split.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Objects\stringobject.c"
 				>
 			</File>
 			<File

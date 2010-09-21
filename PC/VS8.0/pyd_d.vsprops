@@ -19,6 +19,11 @@
 		LinkIncremental="1"
 		ProgramDatabaseFile="$(OutDir)\$(ProjectName)_d.pdb"
 		ImportLibrary="$(OutDir)\$(TargetName).lib"
+		GenerateManifest="false"
+	/>
+	<Tool
+		Name="VCManifestTool"
+		EmbedManifest="false"
 	/>
 	<Tool
 		Name="VCPostBuildEventTool"
