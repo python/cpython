@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="sqlite3"
+	InheritedPropertySheets=".\pyproject.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="..\..\..\sqlite-3.6.21"
+		PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
+		WarningLevel="1"
+	/>
+</VisualStudioPropertySheet>
