@@ -526,6 +526,9 @@ HTTPResponse Objects
 
    .. versionadded:: 2.4
 
+.. method:: HTTPResponse.fileno()
+
+   Returns the ``fileno`` of the underlying socket.
 
 .. attribute:: HTTPResponse.msg
 
