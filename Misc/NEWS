@@ -14,8 +14,8 @@ Core and Builtins
   threads are still running.  Instead, reinitialize the GIL on a second call to
   Py_Initialize().
 
-- All SyntaxErrors now have a column offset and therefore a caret when the error
-  is printed.
+- All SyntaxErrors now have a column offset and therefore a caret when the
+  error is printed.
 
 - Issue #9252: PyImport_Import no longer uses a fromlist hack to return the
   module that was imported, but instead gets the module from sys.modules.
@@ -61,6 +61,8 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #9916: Add some missing errno symbols.
 
 - Issue #9877: Expose sysconfig.get_makefile_filename()
 

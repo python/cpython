@@ -797,6 +797,36 @@ PyInit_errno(void)
 #ifdef WSAN
     inscode(d, ds, de, "WSAN", WSAN, "Error WSAN");
 #endif
+#ifdef ENOMEDIUM
+    inscode(d, ds, de, "ENOMEDIUM", ENOMEDIUM, "No medium found");
+#endif
+#ifdef EMEDIUMTYPE
+    inscode(d, ds, de, "EMEDIUMTYPE", EMEDIUMTYPE, "Wrong medium type");
+#endif
+#ifdef ECANCELED
+    inscode(d, ds, de, "ECANCELED", ECANCELED, "Operation Canceled");
+#endif
+#ifdef ENOKEY
+    inscode(d, ds, de, "ENOKEY", ENOKEY, "Required key not available");
+#endif
+#ifdef EKEYEXPIRED
+    inscode(d, ds, de, "EKEYEXPIRED", EKEYEXPIRED, "Key has expired");
+#endif
+#ifdef EKEYREVOKED
+    inscode(d, ds, de, "EKEYREVOKED", EKEYREVOKED, "Key has been revoked");
+#endif
+#ifdef EKEYREJECTED
+    inscode(d, ds, de, "EKEYREJECTED", EKEYREJECTED, "Key was rejected by service");
+#endif
+#ifdef EOWNERDEAD
+    inscode(d, ds, de, "EOWNERDEAD", EOWNERDEAD, "Owner died");
+#endif
+#ifdef ENOTRECOVERABLE
+    inscode(d, ds, de, "ENOTRECOVERABLE", ENOTRECOVERABLE, "State not recoverable");
+#endif
+#ifdef ERFKILL
+    inscode(d, ds, de, "ERFKILL", ERFKILL, "Operation not possible due to RF-kill");
+#endif
 
     /* Solaris-specific errnos */
 #ifdef ECANCELED
