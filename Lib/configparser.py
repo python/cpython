@@ -493,11 +493,10 @@ class RawConfigParser:
         read_ok = []
         for filename in filenames:
             try:
-                fp = open(filename, encoding=encoding)
+                with open(filename, encoding=encoding) as fp:
+                    self._read(fp, filename)
             except IOError:
                 continue
-            self._read(fp, filename)
-            fp.close()
             read_ok.append(filename)
         return read_ok
 
@@ -511,7 +510,7 @@ class RawConfigParser:
         """
         if source is None:
             try:
-                srouce = f.name
+                source = f.name
             except AttributeError:
                 source = '<???>'
         self._read(f, source)

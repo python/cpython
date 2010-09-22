@@ -328,9 +328,24 @@ boolean {0[0]} NO
             e = self.parse_error(cf, configparser.ParsingError,
                                 "[Foo]\n  wrong-indent\n")
             self.assertEqual(e.args, ('<???>',))
+            # read_file on a real file
+            tricky = support.findfile("cfgparser.3")
+            if self.delimiters[0] == '=':
+                error = configparser.ParsingError
+                expected = (tricky,)
+            else:
+                error = configparser.MissingSectionHeaderError
+                expected = (tricky, 1,
+                            '  # INI with as many tricky parts as possible\n')
+            with open(tricky) as f:
+                e = self.parse_error(cf, error, f)
+            self.assertEqual(e.args, expected)
 
     def parse_error(self, cf, exc, src):
-        sio = io.StringIO(src)
+        if hasattr(src, 'readline'):
+            sio = src
+        else:
+            sio = io.StringIO(src)
         with self.assertRaises(exc) as cm:
             cf.read_file(sio)
         return cm.exception
