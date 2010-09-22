@@ -944,6 +944,7 @@ Loggers have the following attributes and methods. Note that Loggers are never
 instantiated directly, but always through the module-level function
 ``logging.getLogger(name)``.
 
+.. class:: Logger
 
 .. attribute:: Logger.propagate
 
@@ -2661,7 +2662,20 @@ supports sending logging messages to a queue, such as those implemented in the
 
    .. method:: emit(record)
 
-      Sends the record to the handler's queue.
+      Enqueues the result of preparing the LogRecord.
+
+   .. method:: prepare(record)
+
+      Prepares a record for queuing. The object returned by this
+      method is enqueued.
+
+      The base implementation formats the record to merge the message
+      and arguments, and removes unpickleable items from the record
+      in-place.
+
+      You might want to override this method if you want to convert
+      the record to a dict or JSON string, or send a modified copy
+      of the record while leaving the original intact.
 
    .. method:: enqueue(record)
 
