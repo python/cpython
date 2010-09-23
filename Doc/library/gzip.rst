@@ -62,11 +62,12 @@ The module defines the following items:
 
    Calling a :class:`GzipFile` object's :meth:`close` method does not close
    *fileobj*, since you might wish to append more material after the compressed
-   data.  This also allows you to pass a :class:`StringIO` object opened for
+   data.  This also allows you to pass a :class:`io.BytesIO` object opened for
    writing as *fileobj*, and retrieve the resulting memory buffer using the
-   :class:`StringIO` object's :meth:`getvalue` method.
+   :class:`io.BytesIO` object's :meth:`~io.BytesIO.getvalue` method.
 
-   :class:`GzipFile` supports iteration and the :keyword:`with` statement.
+   :class:`GzipFile` supports the whole :class:`io.BufferedIOBase` interface,
+   including iteration and the :keyword:`with` statement.
 
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added.
