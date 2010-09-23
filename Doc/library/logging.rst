@@ -1850,6 +1850,70 @@ computing a string representation altogether - for example, the
 :class:`SocketHandler` emits an event by pickling it and sending it over the
 wire.
 
+Dealing with handlers that block
+--------------------------------
+
+.. currentmodule:: logging.handlers
+
+Sometimes you have to get your logging handlers to do their work without
+blocking the thread you’re logging from. This is common in Web applications,
+though of course it also occurs in other scenarios.
+
+A common culprit which demonstrates sluggish behaviour is the
+:class:`SMTPHandler`: sending emails can take a long time, for a
+number of reasons outside the developer’s control (for example, a poorly
+performing mail or network infrastructure). But almost any network-based
+handler can block: Even a :class:`SocketHandler` operation may do a
+DNS query under the hood which is too slow (and this query can be deep in the
+socket library code, below the Python layer, and outside your control).
+
+One solution is to use a two-part approach. For the first part, attach only a
+:class:`QueueHandler` to those loggers which are accessed from
+performance-critical threads. They simply write to their queue, which can be
+sized to a large enough capacity or initialized with no upper bound to their
+size. The write to the queue will typically be accepted quickly, though you
+will probably need to catch the :ref:`queue.Full` exception as a precaution
+in your code. If you are a library developer who has performance-critical
+threads in their code, be sure to document this (together with a suggestion to
+attach only ``QueueHandlers`` to your loggers) for the benefit of other
+developers who will use your code.
+
+The second part of the solution is :class:`QueueListener`, which has been
+designed as the counterpart to :class:`QueueHandler`.  A
+:class:`QueueListener` is very simple: it’s passed a queue and some handlers,
+and it fires up an internal thread which listens to its queue for LogRecords
+sent from ``QueueHandlers`` (or any other source of ``LogRecords``, for that
+matter). The ``LogRecords`` are removed from the queue and passed to the
+handlers for processing.
+
+The advantage of having a separate :class:`QueueListener` class is that you
+can use the same instance to service multiple ``QueueHandlers``. This is more
+resource-friendly than, say, having threaded versions of the existing handler
+classes, which would eat up one thread per handler for no particular benefit.
+
+An example of using these two classes follows (imports omitted)::
+
+    que = queue.Queue(-1) # no limit on size
+    queue_handler = QueueHandler(que)
+    handler = logging.StreamHandler()
+    listener = QueueListener(que, handler)
+    root = logging.getLogger()
+    root.addHandler(queue_handler)
+    formatter = logging.Formatter('%(threadName)s: %(message)s')
+    handler.setFormatter(formatter)
+    listener.start()
+    # The log output will display the thread which generated
+    # the event (the main thread) rather than the internal
+    # thread which monitors the internal queue. This is what
+    # you want to happen.
+    root.warning('Look out!')
+    listener.stop()
+
+which, when run, will produce::
+
+    MainThread: Look out!
+
+
 Optimization
 ------------
 
