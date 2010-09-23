@@ -10,6 +10,10 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #9930: Remove bogus subtype check that was causing (e.g.)
+  float.__rdiv__(2.0, 3) to return NotImplemented instead of the
+  expected 1.5.
+
 - Issue #9808: Implement os.getlogin for Windows. Patch by Jon Anglin.
 
 - Issue #9901: Destroying the GIL in Py_Finalize() can fail if some other
