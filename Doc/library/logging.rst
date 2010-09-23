@@ -2651,12 +2651,18 @@ The :class:`QueueHandler` class, located in the :mod:`logging.handlers` module,
 supports sending logging messages to a queue, such as those implemented in the
 :mod:`queue` or :mod:`multiprocessing` modules.
 
+Along with the :class:`QueueListener` class, :class:`QueueHandler` can be used
+to let handlers do their work on a separate thread from the one which does the
+logging. This is important in Web applications and also other service
+applications where threads servicing clients need to respond as quickly as
+possible, while any potentially slow operations (such as sending an email via
+:class:`SMTPHandler`) are done on a separate thread.
 
 .. class:: QueueHandler(queue)
 
    Returns a new instance of the :class:`QueueHandler` class. The instance is
    initialized with the queue to send messages to. The queue can be any queue-
-   like object; it's passed as-is to the :meth:`enqueue` method, which needs
+   like object; it's used as-is by the :meth:`enqueue` method, which needs
    to know how to send messages to it.
 
 
@@ -2688,7 +2694,79 @@ supports sending logging messages to a queue, such as those implemented in the
 
 The :class:`QueueHandler` class was not present in previous versions.
 
+.. queue-listener:
+
+QueueListener
+^^^^^^^^^^^^^
+
+The :class:`QueueListener` class, located in the :mod:`logging.handlers`
+module, supports receiving logging messages from a queue, such as those
+implemented in the :mod:`queue` or :mod:`multiprocessing` modules. The
+messages are received from a queue in an internal thread and passed, on
+the same thread, to one or more handlers for processing.
+
+Along with the :class:`QueueHandler` class, :class:`QueueListener` can be used
+to let handlers do their work on a separate thread from the one which does the
+logging. This is important in Web applications and also other service
+applications where threads servicing clients need to respond as quickly as
+possible, while any potentially slow operations (such as sending an email via
+:class:`SMTPHandler`) are done on a separate thread.
+
+.. class:: QueueListener(queue, *handlers)
+
+   Returns a new instance of the :class:`QueueListener` class. The instance is
+   initialized with the queue to send messages to and a list of handlers which
+   will handle entries placed on the queue. The queue can be any queue-
+   like object; it's passed as-is to the :meth:`dequeue` method, which needs
+   to know how to get messages from it.
+
+   .. method:: dequeue(block)
+
+      Dequeues a record and return it, optionally blocking.
+
+      The base implementation uses ``get()``. You may want to override this
+      method if you want to use timeouts or work with custom queue
+      implementations.
+
+   .. method:: prepare(record)
+
+      Prepare a record for handling.
+
+      This implementation just returns the passed-in record. You may want to
+      override this method if you need to do any custom marshalling or
+      manipulation of the record before passing it to the handlers.
+
+   .. method:: handle(record)
+
+      Handle a record.
+
+      This just loops through the handlers offering them the record
+      to handle. The actual object passed to the handlers is that which
+      is returned from :meth:`prepare`.
+
+   .. method:: start()
+
+      Starts the listener.
+
+      This starts up a background thread to monitor the queue for
+      LogRecords to process.
+
+   .. method:: stop()
+
+      Stops the listener.
+
+      This asks the thread to terminate, and then waits for it to do so.
+      Note that if you don't call this before your application exits, there
+      may be some records still left on the queue, which won't be processed.
+
+.. versionadded:: 3.2
+
+The :class:`QueueListener` class was not present in previous versions.
+
 .. _zeromq-handlers:
+
+Subclassing QueueHandler
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can use a :class:`QueueHandler` subclass to send messages to other kinds
 of queues, for example a ZeroMQ "publish" socket. In the example below,the
@@ -2716,6 +2794,7 @@ data needed by the handler to create the socket::
         def __init__(self, uri, socktype=zmq.PUB, ctx=None):
             self.ctx = ctx or zmq.Context()
             socket = zmq.Socket(self.ctx, socktype)
+            socket.bind(uri)
             QueueHandler.__init__(self, socket)
 
         def enqueue(self, record):
@@ -2724,6 +2803,23 @@ data needed by the handler to create the socket::
 
         def close(self):
             self.queue.close()
+
+Subclassing QueueListener
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can also subclass :class:`QueueListener` to get messages from other kinds
+of queues, for example a ZeroMQ "subscribe" socket. Here's an example::
+
+    class ZeroMQSocketListener(QueueListener):
+        def __init__(self, uri, *handlers, **kwargs):
+            self.ctx = kwargs.get('ctx') or zmq.Context()
+            socket = zmq.Socket(self.ctx, zmq.SUB)
+            socket.setsockopt(zmq.SUBSCRIBE, '') # subscribe to everything
+            socket.connect(uri)
+
+        def dequeue(self):
+            msg = self.queue.recv()
+            return logging.makeLogRecord(json.loads(msg))
 
 .. _formatter-objects:
 

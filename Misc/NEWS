@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Logging: Added QueueListener class to facilitate logging usage for
+  performance-critical threads.
+
 - Issue #9916: Add some missing errno symbols.
 
 - Issue #9877: Expose sysconfig.get_makefile_filename()
