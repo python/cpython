@@ -62,6 +62,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9928: Properly initialize the types exported by the bz2 module.
+
 - Issue #1675951: Allow GzipFile to work with unseekable file objects.
   Patch by Florian Festi.
 
