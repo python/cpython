@@ -4049,10 +4049,6 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
     if (!check_num_args(args, 1))
         return NULL;
     other = PyTuple_GET_ITEM(args, 0);
-    if (!PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self))) {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
     return (*func)(other, self);
 }
 

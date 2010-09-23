@@ -12,6 +12,10 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #9930: Remove bogus subtype check that was causing (e.g.)
+  float.__rdiv__(2.0, 3) to return NotImplemented instead of the
+  expected 1.5.
+
 - Issue #9804: ascii() now always represents unicode surrogate pairs as
   a single ``\UXXXXXXXX``, regardless of whether the character is printable
   or not.  Also, the "backslashreplace" error handler now joins surrogate

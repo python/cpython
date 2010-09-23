@@ -289,6 +289,11 @@ class OperatorsTest(unittest.TestCase):
         self.assertEqual(repr(a), "234.5")
         self.assertEqual(a.prec, 12)
 
+    def test_explicit_reverse_methods(self):
+        # see issue 9930
+        self.assertEqual(complex.__radd__(3j, 4.0), complex(4.0, 3.0))
+        self.assertEqual(float.__rsub__(3.0, 1), -2.0)
+
     @support.impl_detail("the module 'xxsubtype' is internal")
     def test_spam_lists(self):
         # Testing spamlist operations...
