@@ -337,7 +337,7 @@ boolean {0[0]} NO
                 error = configparser.MissingSectionHeaderError
                 expected = (tricky, 1,
                             '  # INI with as many tricky parts as possible\n')
-            with open(tricky) as f:
+            with open(tricky, encoding='utf-8') as f:
                 e = self.parse_error(cf, error, f)
             self.assertEqual(e.args, expected)
 
