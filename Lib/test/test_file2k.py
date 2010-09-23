@@ -172,7 +172,7 @@ class AutoFileTests(unittest.TestCase):
 class OtherFileTests(unittest.TestCase):
 
     def testOpenDir(self):
-        this_dir = os.path.dirname(__file__)
+        this_dir = os.path.dirname(__file__) or os.curdir
         for mode in (None, "w"):
             try:
                 if mode:
