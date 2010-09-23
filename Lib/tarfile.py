@@ -410,28 +410,34 @@ class _Stream:
         self.pos      = 0
         self.closed   = False
 
-        if comptype == "gz":
-            try:
-                import zlib
-            except ImportError:
-                raise CompressionError("zlib module is not available")
-            self.zlib = zlib
-            self.crc = zlib.crc32(b"")
-            if mode == "r":
-                self._init_read_gz()
-            else:
-                self._init_write_gz()
+        try:
+            if comptype == "gz":
+                try:
+                    import zlib
+                except ImportError:
+                    raise CompressionError("zlib module is not available")
+                self.zlib = zlib
+                self.crc = zlib.crc32(b"")
+                if mode == "r":
+                    self._init_read_gz()
+                else:
+                    self._init_write_gz()
 
-        if comptype == "bz2":
-            try:
-                import bz2
-            except ImportError:
-                raise CompressionError("bz2 module is not available")
-            if mode == "r":
-                self.dbuf = b""
-                self.cmp = bz2.BZ2Decompressor()
-            else:
-                self.cmp = bz2.BZ2Compressor()
+            if comptype == "bz2":
+                try:
+                    import bz2
+                except ImportError:
+                    raise CompressionError("bz2 module is not available")
+                if mode == "r":
+                    self.dbuf = b""
+                    self.cmp = bz2.BZ2Decompressor()
+                else:
+                    self.cmp = bz2.BZ2Compressor()
+        except:
+            if not self._extfileobj:
+                self.fileobj.close()
+            self.closed = True
+            raise
 
     def __del__(self):
         if hasattr(self, "closed") and not self.closed:
@@ -1729,9 +1735,12 @@ class TarFile(object):
             if filemode not in "rw":
                 raise ValueError("mode must be 'r' or 'w'")
 
-            t = cls(name, filemode,
-                    _Stream(name, filemode, comptype, fileobj, bufsize),
-                    **kwargs)
+            stream = _Stream(name, filemode, comptype, fileobj, bufsize)
+            try:
+                t = cls(name, filemode, stream, **kwargs)
+            except:
+                stream.close()
+                raise
             t._extfileobj = False
             return t
 
