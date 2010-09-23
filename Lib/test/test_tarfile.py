@@ -423,7 +423,8 @@ class DetectReadTest(unittest.TestCase):
 
     def _testfunc_fileobj(self, name, mode):
         try:
-            tar = tarfile.open(name, mode, fileobj=open(name, "rb"))
+            with open(name, "rb") as f:
+                tar = tarfile.open(name, mode, fileobj=f)
         except tarfile.ReadError as e:
             self.fail()
         else:
