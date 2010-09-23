@@ -74,6 +74,9 @@ The module defines the following items:
    .. versionchanged:: 3.2
       Support for zero-padded files was added.
 
+   .. versionchanged:: 3.2
+      Support for unseekable files was added.
+
 
 .. function:: open(filename, mode='rb', compresslevel=9)
 

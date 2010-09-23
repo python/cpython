@@ -22,6 +22,17 @@ data2 = b"""/* zlibmodule.c -- gzip-compatible data compression */
 """
 
 
+class UnseekableIO(io.BytesIO):
+    def seekable(self):
+        return False
+
+    def tell(self):
+        raise io.UnsupportedOperation
+
+    def seek(self, *args):
+        raise io.UnsupportedOperation
+
+
 class TestGzip(unittest.TestCase):
     filename = support.TESTFN
 
@@ -264,6 +275,16 @@ class TestGzip(unittest.TestCase):
         with gzip.GzipFile(self.filename, "rb") as f:
             d = f.read()
             self.assertEqual(d, data1 * 50, "Incorrect data in file")
+
+    def test_non_seekable_file(self):
+        uncompressed = data1 * 50
+        buf = UnseekableIO()
+        with gzip.GzipFile(fileobj=buf, mode="wb") as f:
+            f.write(uncompressed)
+        compressed = buf.getvalue()
+        buf = UnseekableIO(compressed)
+        with gzip.GzipFile(fileobj=buf, mode="rb") as f:
+            self.assertEqual(f.read(), uncompressed)
 
     # Testing compress/decompress shortcut functions
 

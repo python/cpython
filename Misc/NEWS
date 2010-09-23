@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1675951: Allow GzipFile to work with unseekable file objects.
+  Patch by Florian Festi.
+
 - Logging: Added QueueListener class to facilitate logging usage for
   performance-critical threads.
 
