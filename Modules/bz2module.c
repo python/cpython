@@ -2158,9 +2158,12 @@ PyInit_bz2(void)
 {
     PyObject *m;
 
-    Py_TYPE(&BZ2File_Type) = &PyType_Type;
-    Py_TYPE(&BZ2Comp_Type) = &PyType_Type;
-    Py_TYPE(&BZ2Decomp_Type) = &PyType_Type;
+    if (PyType_Ready(&BZ2File_Type) < 0)
+        return NULL;
+    if (PyType_Ready(&BZ2Comp_Type) < 0)
+        return NULL;
+    if (PyType_Ready(&BZ2Decomp_Type) < 0)
+        return NULL;
 
     m = PyModule_Create(&bz2module);
     if (m == NULL)

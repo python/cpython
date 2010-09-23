@@ -117,6 +117,8 @@ C-API
 Library
 -------
 
+- Issue #9928: Properly initialize the types exported by the bz2 module.
+
 - Issue #9854: The default read() implementation in io.RawIOBase now
   handles non-blocking readinto() returning None correctly.
 
