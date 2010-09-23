@@ -641,24 +641,29 @@ def relpath(path, start=curdir):
 
 
 # determine if two files are in fact the same file
+try:
+    from nt import _getfinalpathname
+except (NotImplementedError, ImportError):
+    # On Windows XP and earlier, two files are the same if their absolute
+    # pathnames are the same.
+    # Also, on other operating systems, fake this method with a
+    # Windows-XP approximation.
+    def _getfinalpathname(f):
+        return abspath(f)
+
 def samefile(f1, f2):
     "Test whether two pathnames reference the same actual file"
-    try:
-        from nt import _getfinalpathname
-        return _getfinalpathname(f1) == _getfinalpathname(f2)
-    except (NotImplementedError, ImportError):
-        # On Windows XP and earlier, two files are the same if their
-        #  absolute pathnames are the same.
-        # Also, on other operating systems, fake this method with a
-        #  Windows-XP approximation.
-        return abspath(f1) == abspath(f2)
+    return _getfinalpathname(f1) == _getfinalpathname(f2)
+
+
+try:
+    from nt import _getfileinformation
+except ImportError:
+    # On other operating systems, just return the fd and see that
+    # it compares equal in sameopenfile.
+    def _getfileinformation(fd):
+        return fd
 
 def sameopenfile(f1, f2):
     """Test whether two file objects reference the same file"""
-    try:
-        from nt import _getfileinformation
-        return _getfileinformation(f1) == _getfileinformation(f2)
-    except ImportError:
-        # On other operating systems, return True if the file descriptors
-        # are the same.
-        return f1 == f2
+    return _getfileinformation(f1) == _getfileinformation(f2)
