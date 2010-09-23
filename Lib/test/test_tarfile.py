@@ -25,7 +25,7 @@ except ImportError:
 def md5sum(data):
     return md5(data).hexdigest()
 
-TEMPDIR = os.path.abspath(support.TESTFN)
+TEMPDIR = os.path.abspath(support.TESTFN) + "-tardir"
 tarname = support.findfile("testtar.tar")
 gzipname = os.path.join(TEMPDIR, "testtar.tar.gz")
 bz2name = os.path.join(TEMPDIR, "testtar.tar.bz2")
@@ -538,6 +538,7 @@ class MemberReadTest(ReadTest):
         self._test_member(tarinfo, size=7011, chksum=md5_regtype)
 
     def test_find_pax_umlauts(self):
+        self.tar.close()
         self.tar = tarfile.open(self.tarname, mode=self.mode, encoding="iso8859-1")
         tarinfo = self.tar.getmember("pax/umlauts-\xc4\xd6\xdc\xe4\xf6\xfc\xdf")
         self._test_member(tarinfo, size=7011, chksum=md5_regtype)
@@ -1228,6 +1229,7 @@ class UstarUnicodeTest(unittest.TestCase):
             self.assertEqual(t.gname, "\xe4\xf6\xfc")
 
             if self.format != tarfile.PAX_FORMAT:
+                tar.close()
                 tar = tarfile.open(tmpname, encoding="ascii")
                 t = tar.getmember("foo")
                 self.assertEqual(t.uname, "\udce4\udcf6\udcfc")
