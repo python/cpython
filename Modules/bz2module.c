@@ -2320,9 +2320,12 @@ initbz2(void)
 {
     PyObject *m;
 
-    Py_TYPE(&BZ2File_Type) = &PyType_Type;
-    Py_TYPE(&BZ2Comp_Type) = &PyType_Type;
-    Py_TYPE(&BZ2Decomp_Type) = &PyType_Type;
+    if (PyType_Ready(&BZ2File_Type) < 0)
+        return;
+    if (PyType_Ready(&BZ2Comp_Type) < 0)
+        return;
+    if (PyType_Ready(&BZ2Decomp_Type) < 0)
+        return;
 
     m = Py_InitModule3("bz2", bz2_methods, bz2__doc__);
     if (m == NULL)
