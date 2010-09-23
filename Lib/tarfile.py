@@ -1764,14 +1764,19 @@ class TarFile(object):
 
         if fileobj is None:
             fileobj = bltn_open(name, mode + "b")
+            extfileobj = False
+        else:
+            extfileobj = True
 
         try:
             t = cls.taropen(name, mode,
                 gzip.GzipFile(name, mode, compresslevel, fileobj),
                 **kwargs)
         except IOError:
+            if not extfileobj:
+                fileobj.close()
             raise ReadError("not a gzip file")
-        t._extfileobj = False
+        t._extfileobj = extfileobj
         return t
 
     @classmethod
@@ -1795,6 +1800,7 @@ class TarFile(object):
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
         except (IOError, EOFError):
+            fileobj.close()
             raise ReadError("not a bzip2 file")
         t._extfileobj = False
         return t
