@@ -1202,6 +1202,13 @@ class PidTests(unittest.TestCase):
         self.assertEqual(int(stdout), os.getpid())
 
 
+@unittest.skipUnless(hasattr(os, 'getlogin'), "test needs os.getlogin")
+class LoginTests(unittest.TestCase):
+    def test_getlogin(self):
+        user_name = os.getlogin()
+        self.assertNotEqual(len(user_name), 0)
+
+
 def test_main():
     support.run_unittest(
         FileTests,
@@ -1220,6 +1227,7 @@ def test_main():
         Win32SymlinkTests,
         FSEncodingTests,
         PidTests,
+        LoginTests,
     )
 
 if __name__ == "__main__":

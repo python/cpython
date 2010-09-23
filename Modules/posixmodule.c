@@ -122,6 +122,7 @@ corresponding Unix manual entries for more information on calls.");
 #ifdef _MSC_VER         /* Microsoft compiler */
 #define HAVE_GETCWD     1
 #define HAVE_GETPPID    1
+#define HAVE_GETLOGIN   1 
 #define HAVE_SPAWNV     1
 #define HAVE_EXECV      1
 #define HAVE_PIPE       1
@@ -276,6 +277,7 @@ extern int lstat(const char *, struct stat *);
 #include <malloc.h>
 #include <windows.h>
 #include <shellapi.h>   /* for ShellExecute() */
+#include <lmcons.h>     /* for UNLEN */
 #endif /* _MSC_VER */
 
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
@@ -4380,6 +4382,17 @@ static PyObject *
 posix_getlogin(PyObject *self, PyObject *noargs)
 {
     PyObject *result = NULL;
+#ifdef MS_WINDOWS    
+    wchar_t user_name[UNLEN + 1];
+    DWORD num_chars = sizeof(user_name)/sizeof(user_name[0]);
+
+    if (GetUserNameW(user_name, &num_chars)) {
+        /* num_chars is the number of unicode chars plus null terminator */
+        result = PyUnicode_FromWideChar(user_name, num_chars - 1);
+    } 
+    else 
+        result = PyErr_SetFromWindowsErr(GetLastError());
+#else
     char *name;
     int old_errno = errno;
 
@@ -4394,10 +4407,10 @@ posix_getlogin(PyObject *self, PyObject *noargs)
     else
         result = PyUnicode_DecodeFSDefault(name);
     errno = old_errno;
-
+#endif
     return result;
 }
-#endif
+#endif /* HAVE_GETLOGIN */
 
 #ifdef HAVE_GETUID
 PyDoc_STRVAR(posix_getuid__doc__,
