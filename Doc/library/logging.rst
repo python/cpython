@@ -2410,6 +2410,15 @@ supports sending logging messages to a remote or local Unix syslog.
    opens a UDP socket. To open a TCP socket (for use with the newer syslog
    daemons such as rsyslog), specify a value of :const:`socket.SOCK_STREAM`.
 
+   Note that if your server is not listening on UDP port 514,
+   :class:`SysLogHandler` may appear not to work. In that case, check what
+   address you should be using for a domain socket - it's system dependent.
+   For example, on Linux it's usually "/dev/log" but on OS/X it's
+   "/var/run/syslog". You'll need to check your platform and use the
+   appropriate address (you may need to do this check at runtime if your
+   application needs to run on several platforms). On Windows, you pretty
+   much have to use the UDP option.
+
    .. versionchanged:: 3.2
       *socktype* was added.
 
