@@ -979,8 +979,8 @@ and then convert decimal strings to numeric values using :func:`int` or
 :func:`float`.  ``split()`` supports an optional "sep" parameter which is useful
 if the line uses something other than whitespace as a separator.
 
-For more complicated input parsing, regular expressions more powerful than C's
-:cfunc:`sscanf` and better suited for the task.
+For more complicated input parsing, regular expressions are more powerful
+than C's :cfunc:`sscanf` and better suited for the task.
 
 
 What does 'UnicodeError: ASCII [decoding,encoding] error: ordinal not in range(128)' mean?
