@@ -59,7 +59,7 @@ import token
 import tokenize
 import inspect
 import gc
-
+import dis
 import pickle
 
 def usage(outfile):
@@ -376,13 +376,7 @@ def find_lines_from_code(code, strs):
     """Return dict where keys are lines in the line number table."""
     linenos = {}
 
-    line_increments = code.co_lnotab[1::2]
-    table_length = len(line_increments)
-    docstring = False
-
-    lineno = code.co_firstlineno
-    for li in line_increments:
-        lineno += li
+    for _, lineno in dis.findlinestarts(code):
         if lineno not in strs:
             linenos[lineno] = 1
 
