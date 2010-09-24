@@ -2306,7 +2306,8 @@ class TarFile(object):
                 if os.path.exists(tarinfo._link_target):
                     os.link(tarinfo._link_target, targetpath)
                 else:
-                    self._extract_mem
+                    self._extract_member(self._find_link_target(tarinfo),
+                                         targetpath)
         except symlink_exception:
             if tarinfo.issym():
                 linkpath = os.path.join(os.path.dirname(tarinfo.name),
