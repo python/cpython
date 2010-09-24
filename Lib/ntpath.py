@@ -642,12 +642,17 @@ def relpath(path, start=curdir):
 
 # determine if two files are in fact the same file
 try:
-    from nt import _getfinalpathname
-except (NotImplementedError, ImportError):
+    # GetFinalPathNameByHandle is available starting with Windows 6.0.
+    # Windows XP and non-Windows OS'es will mock _getfinalpathname.
+    if sys.getwindowsversion()[:2] >= (6, 0):
+        from nt import _getfinalpathname
+    else:
+        raise ImportError
+except (AttributeError, ImportError):
     # On Windows XP and earlier, two files are the same if their absolute
     # pathnames are the same.
-    # Also, on other operating systems, fake this method with a
-    # Windows-XP approximation.
+    # Non-Windows operating systems fake this method with an XP
+    # approximation.
     def _getfinalpathname(f):
         return abspath(f)
 
