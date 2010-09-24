@@ -27,7 +27,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -89,7 +88,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -153,7 +151,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -216,7 +213,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -280,7 +276,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -343,7 +338,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -408,7 +402,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -471,7 +464,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd &quot;$(SolutionDir)&quot;&#x0D;&#x0A;&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
