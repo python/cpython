@@ -2655,7 +2655,7 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
     PyObject *result;
     wchar_t *path;
     
-    if (!PyArg_ParseTuple(args, "u|:_getfullpathname", &path)) {
+    if (!PyArg_ParseTuple(args, "u|:_getfinalpathname", &path)) {
         return NULL;
     }
 
