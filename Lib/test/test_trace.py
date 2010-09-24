@@ -166,7 +166,6 @@ class TestLineCounts(unittest.TestCase):
             }
             self.assertEqual(tracer.results().counts, expected)
 
-
 class TestRunExecCounts(unittest.TestCase):
     """A simple sanity test of line-counting, via runctx (exec)"""
     def setUp(self):
@@ -263,8 +262,9 @@ class TestCoverage(unittest.TestCase):
         rmtree(TESTFN)
         unlink(TESTFN)
 
-    def _coverage(self, tracer):
-        tracer.run('from test import test_pprint; test_pprint.test_main()')
+    def _coverage(self, tracer,
+                  cmd='from test import test_pprint; test_pprint.test_main()'):
+        tracer.run(cmd)
         r = tracer.results()
         r.write_results(show_missing=True, summary=True, coverdir=TESTFN)
 
@@ -290,6 +290,25 @@ class TestCoverage(unittest.TestCase):
         if os.path.exists(TESTFN):
             files = os.listdir(TESTFN)
             self.assertEquals(files, [])
+
+    def test_issue9936(self):
+        tracer = trace.Trace(trace=0, count=1)
+        modname = 'test.tracedmodules.testmod'
+        # Ensure that the module is executed in import
+        if modname in sys.modules:
+            del sys.modules[modname]
+        cmd = ("import test.tracedmodules.testmod as t;"
+               "t.func(0); t.func2();")
+        with captured_stdout() as stdout:
+            self._coverage(tracer, cmd)
+        stdout.seek(0)
+        stdout.readline()
+        coverage = {}
+        for line in stdout:
+            lines, cov, module = line.split()[:3]
+            coverage[module] = (int(lines), int(cov[:-1]))
+        self.assertIn(modname, coverage)
+        self.assertEqual(coverage[modname], (5, 100))
 
 
 def test_main():
