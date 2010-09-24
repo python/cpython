@@ -1000,28 +1000,22 @@ class Win32ProcessTestCase(BaseTestCase):
 
     def _kill_process(self, method, *args):
         # Some win32 buildbot raises EOFError if stdin is inherited
-        p = subprocess.Popen([sys.executable, "-c", "input()"],
-                             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        # Let the process initialize (Issue #3137)
-        time.sleep(0.1)
-        # The process should not terminate prematurely
-        self.assertIsNone(p.poll())
-        # Retry if the process do not receive the signal.
-        count, maxcount = 0, 3
-        while count < maxcount and p.poll() is None:
-            getattr(p, method)(*args)
-            time.sleep(0.1)
-            count += 1
-
-        returncode = p.poll()
-        self.assertIsNotNone(returncode, "the subprocess did not terminate")
-        if count > 1:
-            print("p.{}{} succeeded after "
-                  "{} attempts".format(method, args, count), file=sys.stderr)
+        p = subprocess.Popen([sys.executable, "-c", """if 1:
+                             import sys, time
+                             sys.stdout.write('x\\n')
+                             sys.stdout.flush()
+                             time.sleep(30)
+                             """],
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        # Wait for the interpreter to be completely initialized before
+        # sending any signal.
+        p.stdout.read(1)
+        getattr(p, method)(*args)
         _, stderr = p.communicate()
         self.assertStderrEqual(stderr, b'')
-        self.assertEqual(p.wait(), returncode)
+        returncode = p.wait()
         self.assertNotEqual(returncode, 0)
 
     def test_send_signal(self):
