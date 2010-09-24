@@ -329,6 +329,8 @@ class TestCoverage(unittest.TestCase):
         for line in stdout:
             lines, cov, module = line.split()[:3]
             coverage[module] = (int(lines), int(cov[:-1]))
+        # XXX This is needed to run regrtest.py as a script
+        modname = trace.fullmodname(sys.modules[modname].__file__)
         self.assertIn(modname, coverage)
         self.assertEqual(coverage[modname], (5, 100))
 
