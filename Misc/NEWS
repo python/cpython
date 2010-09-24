@@ -43,6 +43,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9936: Fixed executable lines' search in the trace module.
+
 - Issue #9928: Properly initialize the types exported by the bz2 module.
 
 - Issue #9854: The default read() implementation in io.RawIOBase now
