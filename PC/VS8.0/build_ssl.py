@@ -146,6 +146,22 @@ def run_configure(configure, do_script):
     print(do_script)
     os.system(do_script)
 
+def cmp(f1, f2):
+    bufsize = 1024 * 8
+    with open(f1, 'rb') as fp1, open(f2, 'rb') as fp2:
+        while True:
+            b1 = fp1.read(bufsize)
+            b2 = fp2.read(bufsize)
+            if b1 != b2:
+                return False
+            if not b1:
+                return True
+
+def copy(src, dst):
+    if os.path.isfile(dst) and cmp(src, dst):
+        return
+    shutil.copy(src, dst)
+
 def main():
     build_all = "-a" in sys.argv
     if sys.argv[1] == "Release":
@@ -222,8 +238,8 @@ def main():
             if arch == "amd64":
                 create_makefile64(makefile, m32)
             fix_makefile(makefile)
-            shutil.copy(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
-            shutil.copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
+            copy(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
+            copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
 
         # If the assembler files don't exist in tmpXX, copy them there
         if perl is None:
@@ -241,8 +257,8 @@ def main():
                 print("ml64 assembler has failed.")
                 sys.exit(rc)
 
-        shutil.copy(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
-        shutil.copy(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
+        copy(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
+        copy(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
 
         #makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
         makeCommand = "nmake /nologo -f \"%s\"" % makefile
