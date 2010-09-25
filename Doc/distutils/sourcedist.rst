@@ -146,7 +146,7 @@ source distribution::
 
    python setup.py sdist --manifest-only
 
-:option:`-o` is a sortcut for :option:`--manifest-only`.
+:option:`-o` is a shortcut for :option:`--manifest-only`.
 
 .. _manifest_template:
 
