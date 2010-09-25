@@ -162,7 +162,7 @@ process and user.
    error handler if the filesystem encoding is ``'mbcs'`` (which is the default
    encoding).
 
-   :func:`fsdencode` is the reverse function.
+   :func:`fsdecode` is the reverse function.
 
    .. versionadded:: 3.2
 
