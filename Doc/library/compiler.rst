@@ -18,7 +18,7 @@ abstract syntax tree from Python source code and to generate Python
 
 The :mod:`compiler` package is a Python source to bytecode translator written in
 Python.  It uses the built-in parser and standard :mod:`parser` module to
-generated a concrete syntax tree.  This tree is used to generate an abstract
+generate a concrete syntax tree.  This tree is used to generate an abstract
 syntax tree (AST) and then Python bytecode.
 
 The full functionality of the package duplicates the built-in compiler provided
