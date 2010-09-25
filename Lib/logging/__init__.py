@@ -1226,19 +1226,23 @@ class Logger(Filterer):
         """
         Add the specified handler to this logger.
         """
-        if not (hdlr in self.handlers):
-            self.handlers.append(hdlr)
+        _acquireLock()
+        try:
+            if not (hdlr in self.handlers):
+                self.handlers.append(hdlr)
+        finally:
+            _releaseLock()
 
     def removeHandler(self, hdlr):
         """
         Remove the specified handler from this logger.
         """
-        if hdlr in self.handlers:
-            hdlr.acquire()
-            try:
+        _acquireLock()
+        try:
+            if hdlr in self.handlers:
                 self.handlers.remove(hdlr)
-            finally:
-                hdlr.release()
+        finally:
+            _releaseLock()
 
     def hasHandlers(self):
         """

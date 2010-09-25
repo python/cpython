@@ -68,6 +68,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9945: logging: Fixed locking bugs in addHandler/removeHandler.
+
 - Issue #9936: Fixed executable lines' search in the trace module.
 
 - Issue #9790: Rework imports necessary for samefile and sameopenfile
