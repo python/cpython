@@ -68,6 +68,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9947: logging: Fixed locking bug in stopListening.
+
 - Issue #9945: logging: Fixed locking bugs in addHandler/removeHandler.
 
 - Issue #9936: Fixed executable lines' search in the trace module.
