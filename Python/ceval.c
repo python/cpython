@@ -3059,7 +3059,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
                     defcount ? "at most" : "exactly",
                     co->co_argcount,
                     co->co_argcount == 1 ? "" : "s",
-                    argcount);
+                    argcount + kwcount);
                 goto fail;
             }
             n = co->co_argcount;

@@ -15,9 +15,6 @@ Core and Builtins
 - Issue #9797: pystate.c wrongly assumed that zero couldn't be a valid
   thread-local storage key.
 
-- Issue #9943: Improve the TypeError raised for passing too many positional
-  arguments.
-
 - Issue #4947: The write() method of sys.stdout and sys.stderr uses their
   encoding and errors attributes instead of using utf-8 in strict mode, to get
   the same behaviour than the print statement.
