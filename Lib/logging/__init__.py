@@ -1656,8 +1656,14 @@ class NullHandler(Handler):
     a NullHandler and add it to the top-level logger of the library module or
     package.
     """
+    def handle(self, record):
+        pass
+
     def emit(self, record):
         pass
+
+    def createLock(self):
+        self.lock = None
 
 # Warnings integration
 
