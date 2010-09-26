@@ -1713,7 +1713,14 @@ PyNumber_Long(PyObject *o)
     if (m && m->nb_long) { /* This should include subclasses of long */
         /* Classic classes always take this branch. */
         PyObject *res = m->nb_long(o);
-        if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
+        if (res == NULL)
+            return NULL;
+        if (PyInt_Check(res)) {
+            long value = PyInt_AS_LONG(res);
+            Py_DECREF(res);
+            return PyLong_FromLong(value);
+        }
+        else if (!PyLong_Check(res)) {
             PyErr_Format(PyExc_TypeError,
                          "__long__ returned non-long (type %.200s)",
                          res->ob_type->tp_name);
