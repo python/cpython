@@ -513,7 +513,7 @@ class ClassTests(unittest.TestCase):
 
         callLst[:] = []
         as_long = long(mixIntAndLong)
-        self.assertEquals(type(as_long), int)
+        self.assertEquals(type(as_long), long)
         self.assertEquals(as_long, 64)
         self.assertCallStack([('__long__', (mixIntAndLong,))])
 

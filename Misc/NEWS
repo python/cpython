@@ -12,6 +12,11 @@ What's New in Python 2.7.1?
 Core and Builtins
 -----------------
 
+- Issue #9869: Make long() and PyNumber_Long return something of type
+  long for a class whose __long__ method returns a plain int.  This
+  fixes an interpreter crash when initializing an instance of a long
+  subclass from an object whose __long__ method returns a plain int.
+
 - Issue #9797: pystate.c wrongly assumed that zero couldn't be a valid
   thread-local storage key.
 

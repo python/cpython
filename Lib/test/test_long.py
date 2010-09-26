@@ -601,6 +601,22 @@ class LongTest(unittest.TestCase):
             slicemin, slicemax = X()[-2L**100:2L**100]
             self.assertEqual(X()[slicemin:slicemax], (slicemin, slicemax))
 
+    def test_issue9869(self):
+        # Issue 9869: Interpreter crash when initializing an instance
+        # of a long subclass from an object whose __long__ method returns
+        # a plain int.
+        class BadLong(object):
+            def __long__(self):
+                return 1000000
+
+        class MyLong(long):
+            pass
+
+        x = MyLong(BadLong())
+        self.assertIsInstance(x, long)
+        self.assertEqual(x, 1000000)
+
+
 # ----------------------------------- tests of auto int->long conversion
 
     def test_auto_overflow(self):
