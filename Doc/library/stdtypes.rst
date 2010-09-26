@@ -2546,6 +2546,8 @@ the particular object.
 memoryview type
 ===============
 
+.. versionadded:: 2.7
+
 :class:`memoryview` objects allow Python code to access the internal data
 of an object that supports the buffer protocol without copying.  Memory
 is generally interpreted as simple bytes.
