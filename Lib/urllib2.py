@@ -1127,8 +1127,10 @@ class AbstractHTTPHandler(BaseHandler):
         h = http_class(host, timeout=req.timeout) # will parse host:port
         h.set_debuglevel(self._debuglevel)
 
-        headers = dict(req.headers)
-        headers.update(req.unredirected_hdrs)
+        headers = dict(req.unredirected_hdrs)
+        headers.update(dict((k, v) for k, v in req.headers.items()
+                            if k not in headers))
+
         # We want to make an HTTP/1.1 request, but the addinfourl
         # class isn't prepared to deal with a persistent connection.
         # It will try to read all remaining data from the socket,
