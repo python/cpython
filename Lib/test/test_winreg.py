@@ -185,6 +185,16 @@ class BaseWinregTests(unittest.TestCase):
         self._read_test_data(root_key, subkeystr)
         self._delete_test_data(root_key, subkeystr)
 
+    def _test_named_args(self, key, sub_key):
+        with CreateKeyEx(key=key, sub_key=sub_key, reserved=0,
+                         access=KEY_ALL_ACCESS) as ckey:
+            self.assertTrue(ckey.handle != 0)
+
+        with OpenKeyEx(key=key, sub_key=sub_key, reserved=0,
+                       access=KEY_ALL_ACCESS) as okey:
+            self.assertTrue(okey.handle != 0)
+
+
 class LocalWinregTests(BaseWinregTests):
 
     def test_registry_works(self):
@@ -202,6 +212,12 @@ class LocalWinregTests(BaseWinregTests):
         self._read_test_data(HKEY_CURRENT_USER, OpenKey=oke)
 
         self._delete_test_data(HKEY_CURRENT_USER)
+
+    def test_named_arguments(self):
+        self._test_named_args(HKEY_CURRENT_USER, test_key_name)
+        # Use the regular DeleteKey to clean up
+        # DeleteKeyEx takes named args and is tested separately
+        DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
     def test_connect_registry_to_local_machine_works(self):
         # perform minimal ConnectRegistry test which just invokes it
@@ -313,6 +329,12 @@ class RemoteWinregTests(BaseWinregTests):
 
 @unittest.skipUnless(WIN64_MACHINE, "x64 specific registry tests")
 class Win64WinregTests(BaseWinregTests):
+
+    def test_named_arguments(self):
+        self._test_named_args(HKEY_CURRENT_USER, test_key_name)
+        # Clean up and also exercise the named arguments
+        DeleteKeyEx(key=HKEY_CURRENT_USER, sub_key=test_key_name,
+                    access=KEY_ALL_ACCESS, reserved=0)
 
     def test_reflection_functions(self):
         # Test that we can call the query, enable, and disable functions

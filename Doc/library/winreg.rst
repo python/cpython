@@ -60,7 +60,7 @@ This module offers the following functions:
    :exc:`WindowsError` exception is raised.
 
 
-.. function:: CreateKeyEx(key, sub_key[, res[, sam]])
+.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_ALL_ACCESS)
 
    Creates or opens the specified key, returning a
    :ref:`handle object <handle-object>`.
@@ -103,7 +103,7 @@ This module offers the following functions:
    If the method fails, a :exc:`WindowsError` exception is raised.
 
 
-.. function:: DeleteKeyEx(key, sub_key[, sam[, res]])
+.. function:: DeleteKeyEx(key, sub_key, access=KEY_ALL_ACCESS, reserved=0)
 
    Deletes the specified key.
 
@@ -243,7 +243,7 @@ This module offers the following functions:
    specified in *file_name* is relative to the remote computer.
 
 
-.. function:: OpenKey(key, sub_key[, res[, sam]])
+.. function:: OpenKey(key, sub_key, reserved=0, access=KEY_ALL_ACCESS)
 
    Opens the specified key, returning a :ref:`handle object <handle-object>`.
 
@@ -261,6 +261,8 @@ This module offers the following functions:
    The result is a new handle to the specified key.
 
    If the function fails, :exc:`WindowsError` is raised.
+
+   .. versionchanged:: 3.2 Allow the use of named arguments.
 
 
 .. function:: OpenKeyEx()
