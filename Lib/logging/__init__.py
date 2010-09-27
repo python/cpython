@@ -1180,20 +1180,23 @@ class Logger(Filterer):
         """
         Add the specified handler to this logger.
         """
-        if not (hdlr in self.handlers):
-            self.handlers.append(hdlr)
+        _acquireLock()
+        try:
+            if not (hdlr in self.handlers):
+                self.handlers.append(hdlr)
+        finally:
+            _releaseLock()
 
     def removeHandler(self, hdlr):
         """
         Remove the specified handler from this logger.
         """
-        if hdlr in self.handlers:
-            #hdlr.close()
-            hdlr.acquire()
-            try:
+        _acquireLock()
+        try:
+            if hdlr in self.handlers:
                 self.handlers.remove(hdlr)
-            finally:
-                hdlr.release()
+        finally:
+            _releaseLock()
 
     def callHandlers(self, record):
         """
@@ -1389,26 +1392,28 @@ def basicConfig(**kwargs):
     using sys.stdout or sys.stderr), whereas FileHandler closes its stream
     when the handler is closed.
     """
-    if len(root.handlers) == 0:
-        filename = kwargs.get("filename")
-        if filename:
-            mode = kwargs.get("filemode", 'a')
-            hdlr = FileHandler(filename, mode)
-        else:
-            stream = kwargs.get("stream")
-            hdlr = StreamHandler(stream)
-        fs = kwargs.get("format", BASIC_FORMAT)
-        dfs = kwargs.get("datefmt", None)
-        fmt = Formatter(fs, dfs)
-        hdlr.setFormatter(fmt)
-        root.addHandler(hdlr)
-        level = kwargs.get("level")
-        if level is not None:
-            if str(level) == level: # If a string was passed, do more checks
-                if level not in _levelNames:
-                    raise ValueError("Unknown level: %r" % level)
-                level = _levelNames[level]
-            root.setLevel(level)
+    # Add thread safety in case someone mistakenly calls
+    # basicConfig() from multiple threads
+    _acquireLock()
+    try:
+        if len(root.handlers) == 0:
+            filename = kwargs.get("filename")
+            if filename:
+                mode = kwargs.get("filemode", 'a')
+                hdlr = FileHandler(filename, mode)
+            else:
+                stream = kwargs.get("stream")
+                hdlr = StreamHandler(stream)
+            fs = kwargs.get("format", BASIC_FORMAT)
+            dfs = kwargs.get("datefmt", None)
+            fmt = Formatter(fs, dfs)
+            hdlr.setFormatter(fmt)
+            root.addHandler(hdlr)
+            level = kwargs.get("level")
+            if level is not None:
+                root.setLevel(level)
+    finally:
+        _releaseLock()
 
 #---------------------------------------------------------------------------
 # Utility functions at module level.
@@ -1425,15 +1430,6 @@ def getLogger(name=None):
         return Logger.manager.getLogger(name)
     else:
         return root
-
-#def getRootLogger():
-#    """
-#    Return the root logger.
-#
-#    Note that getLogger('') now does the same thing, so this function is
-#    deprecated and may disappear in the future.
-#    """
-#    return root
 
 def critical(msg, *args, **kwargs):
     """
@@ -1543,8 +1539,14 @@ class NullHandler(Handler):
     a NullHandler and add it to the top-level logger of the library module or
     package.
     """
+    def handle(self, record):
+        pass
+
     def emit(self, record):
         pass
+
+    def createLock(self):
+        self.lock = None
 
 # Warnings integration
 
