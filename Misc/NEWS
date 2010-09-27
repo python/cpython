@@ -48,6 +48,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #9950: Fix socket.sendall() crash or misbehaviour when a signal is
+  received.  Now sendall() properly calls signal handlers if necessary,
+  and retries sending if these returned successfully, including on sockets
+  with a timeout.
+
 - Issue #9947: logging: Fixed locking bug in stopListening.
 
 - Issue #9945: logging: Fixed locking bugs in addHandler/removeHandler.
