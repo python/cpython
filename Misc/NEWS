@@ -10,6 +10,9 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #7397: Mention that importlib.import_module() is probably what someone
+  really wants to be using in __import__'s docstring.
+
 - Issue #8521: Allow CreateKeyEx, OpenKeyEx, and DeleteKeyEx functions
   of winreg to use named arguments.
 
