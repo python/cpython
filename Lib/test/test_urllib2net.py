@@ -172,6 +172,18 @@ class OtherNetworkTests(unittest.TestCase):
         finally:
             res.close()
 
+    def test_custom_headers(self):
+        url = "http://www.example.com"
+        opener = urllib2.build_opener()
+        request = urllib2.Request(url)
+        self.assertFalse(request.header_items())
+        opener.open(request)
+        self.assertTrue(request.header_items())
+        self.assertTrue(request.has_header('User-agent'))
+        request.add_header('User-Agent','Test-Agent')
+        opener.open(request)
+        self.assertEqual(request.get_header('User-agent'),'Test-Agent')
+
     def _test_urls(self, urls, handlers, retry=True):
         import time
         import logging
