@@ -27,8 +27,9 @@ Initialization, Finalization, and Threads
 
    Initialize the Python interpreter.  In an application embedding  Python, this
    should be called before using any other Python/C API functions; with the
-   exception of :cfunc:`Py_SetProgramName`, :cfunc:`PyEval_InitThreads`,
-   :cfunc:`PyEval_ReleaseLock`, and :cfunc:`PyEval_AcquireLock`. This initializes
+   exception of :cfunc:`Py_SetProgramName`, :cfunc:`Py_SetPath`,
+   :cfunc:`PyEval_InitThreads`, :cfunc:`PyEval_ReleaseLock`, and
+   :cfunc:`PyEval_AcquireLock`. This initializes
    the table of loaded modules (``sys.modules``), and creates the fundamental
    modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
@@ -256,6 +257,7 @@ Initialization, Finalization, and Threads
    .. index::
       triple: module; search; path
       single: path (in module sys)
+      single: Py_SetPath()
 
    Return the default module search path; this is computed from the program name
    (set by :cfunc:`Py_SetProgramName` above) and some environment variables.
@@ -269,6 +271,25 @@ Initialization, Finalization, and Threads
 
    .. XXX should give the exact rules
 
+
+.. cfunction::  void Py_SetPath(const wchar_t *)
+
+   .. index::
+      triple: module; search; path
+      single: path (in module sys)
+      single: Py_GetPath()
+
+   Set the default module search path.  If this function is called before
+   :cfunc: `Py_Initialize` then :cfunc: Py_GetPath won't attempt to compute
+   a default serarch path but uses the provided one in stead.  This is useful
+   if Python is being embedded by an application that has full knowledge
+   of the location of all modules.  The path components should be separated
+   by semicolons.
+
+   This also causes `sys.executable` to be set only to the raw program name
+   (see :cfunc:`Py_SetProgramName`) and `for sys.prefix` and
+   `sys.exec_prefix` to be empty.  It is up to the caller to modify these if
+   required after calling :cfunc: `Py_Initialize`.
 
 .. cfunction:: const char* Py_GetVersion()
 
