@@ -530,6 +530,14 @@ should have the desired effect. If an organisation produces a number of
 libraries, then the logger name specified can be "orgname.foo" rather than
 just "foo".
 
+**PLEASE NOTE:** It is strongly advised that you *do not add any handlers other
+than* :class:`NullHandler` *to your library's loggers*. This is because the
+configuration of handlers is the prerogative of the application developer who
+uses your library. The application developer knows their target audience and
+what handlers are most appropriate for their application: if you add handlers
+"under the hood", you might well interfere with their ability to carry out
+unit tests and deliver logs which suit their requirements.
+
 .. versionadded:: 2.7
 
 The :class:`NullHandler` class was not present in previous versions, but is now
@@ -1956,6 +1964,16 @@ for use by library developers.
    .. method:: emit(record)
 
       This method does nothing.
+
+   .. method:: handle(record)
+
+      This method does nothing.
+
+   .. method:: createLock()
+
+      This method returns `None` for the lock, since there is no
+      underlying I/O to which access needs to be serialized.
+
 
 See :ref:`library-config` for more information on how to use
 :class:`NullHandler`.
