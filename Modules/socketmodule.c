@@ -2568,7 +2568,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 {
     char *buf;
     Py_ssize_t len, n = -1;
-    int flags = 0, timeout;
+    int flags = 0, timeout, saved_errno;
     Py_buffer pbuf;
 
     if (!PyArg_ParseTuple(args, "y*|i:sendall", &pbuf, &flags))
@@ -2581,42 +2581,44 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         return select_error();
     }
 
-    Py_BEGIN_ALLOW_THREADS
     do {
+        Py_BEGIN_ALLOW_THREADS
         timeout = internal_select(s, 1);
         n = -1;
-        if (timeout)
-            break;
+        if (!timeout) {
 #ifdef __VMS
-        n = sendsegmented(s->sock_fd, buf, len, flags);
+            n = sendsegmented(s->sock_fd, buf, len, flags);
 #else
-        n = send(s->sock_fd, buf, len, flags);
+            n = send(s->sock_fd, buf, len, flags);
 #endif
+        }
+        Py_END_ALLOW_THREADS
+        if (timeout == 1) {
+            PyBuffer_Release(&pbuf);
+            PyErr_SetString(socket_timeout, "timed out");
+            return NULL;
+        }
+        /* PyErr_CheckSignals() might change errno */
+        saved_errno = errno;
+        /* We must run our signal handlers before looping again.
+           send() can return a successful partial write when it is
+           interrupted, so we can't restrict ourselves to EINTR. */
+        if (PyErr_CheckSignals()) {
+            PyBuffer_Release(&pbuf);
+            return NULL;
+        }
         if (n < 0) {
-#ifdef EINTR
-            /* We must handle EINTR here as there is no way for
-             * the caller to know how much was sent otherwise.  */
-            if (errno == EINTR) {
-                /* Run signal handlers.  If an exception was
-                 * raised, abort and leave this socket in
-                 * an unknown state. */
-                if (PyErr_CheckSignals())
-                    return NULL;
+            /* If interrupted, try again */
+            if (saved_errno == EINTR)
                 continue;
-            }
-#endif
-            break;
+            else
+                break;
         }
         buf += n;
         len -= n;
     } while (len > 0);
-    Py_END_ALLOW_THREADS
     PyBuffer_Release(&pbuf);
 
-    if (timeout == 1) {
-        PyErr_SetString(socket_timeout, "timed out");
-        return NULL;
-    }
     if (n < 0)
         return s->errorhandler();
 
