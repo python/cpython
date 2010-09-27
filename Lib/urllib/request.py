@@ -1063,8 +1063,10 @@ class AbstractHTTPHandler(BaseHandler):
             raise URLError('no host given')
 
         h = http_class(host, timeout=req.timeout) # will parse host:port
-        headers = dict(req.headers)
-        headers.update(req.unredirected_hdrs)
+
+        headers = dict(req.unredirected_hdrs)
+        headers.update(dict((k, v) for k, v in req.headers.items()
+                            if k not in headers))
 
         # TODO(jhylton): Should this be redesigned to handle
         # persistent connections?
