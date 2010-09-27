@@ -243,13 +243,13 @@ class CoverageResults:
         other_calledfuncs = other.calledfuncs
         other_callers = other.callers
 
-        for key in other_counts.keys():
+        for key in other_counts:
             counts[key] = counts.get(key, 0) + other_counts[key]
 
-        for key in other_calledfuncs.keys():
+        for key in other_calledfuncs:
             calledfuncs[key] = 1
 
-        for key in other_callers.keys():
+        for key in other_callers:
             callers[key] = 1
 
     def write_results(self, show_missing=True, summary=False, coverdir=None):
@@ -259,7 +259,7 @@ class CoverageResults:
         if self.calledfuncs:
             print()
             print("functions called:")
-            calls = self.calledfuncs.keys()
+            calls = self.calledfuncs
             for filename, modulename, funcname in sorted(calls):
                 print(("filename: %s, modulename: %s, funcname: %s"
                        % (filename, modulename, funcname)))
@@ -269,7 +269,7 @@ class CoverageResults:
             print("calling relationships:")
             lastfile = lastcfile = ""
             for ((pfile, pmod, pfunc), (cfile, cmod, cfunc)) \
-                    in sorted(self.callers.keys()):
+                    in sorted(self.callers):
                 if pfile != lastfile:
                     print()
                     print("***", pfile, "***")
@@ -283,7 +283,7 @@ class CoverageResults:
         # turn the counts data ("(filename, lineno) = count") into something
         # accessible on a per-file basis
         per_file = {}
-        for filename, lineno in self.counts.keys():
+        for filename, lineno in self.counts:
             lines_hit = per_file[filename] = per_file.get(filename, {})
             lines_hit[lineno] = self.counts[(filename, lineno)]
 
@@ -324,7 +324,7 @@ class CoverageResults:
 
         if summary and sums:
             print("lines   cov%   module   (path)")
-            for m in sorted(sums.keys()):
+            for m in sorted(sums):
                 n_lines, percent, modulename, filename = sums[m]
                 print("%5d   %3d%%   %s   (%s)" % sums[m])
 
@@ -348,8 +348,7 @@ class CoverageResults:
 
         n_lines = 0
         n_hits = 0
-        for i, line in enumerate(lines):
-            lineno = i + 1
+        for lineno, line in enumerate(lines, 1):
             # do the blank/comment match to try to mark more lines
             # (help the reader find stuff that hasn't been covered)
             if lineno in lines_hit:
@@ -362,12 +361,12 @@ class CoverageResults:
                 # lines preceded by no marks weren't hit
                 # Highlight them if so indicated, unless the line contains
                 # #pragma: NO COVER
-                if lineno in lnotab and not PRAGMA_NOCOVER in lines[i]:
+                if lineno in lnotab and not PRAGMA_NOCOVER in line:
                     outfile.write(">>>>>> ")
                     n_lines += 1
                 else:
                     outfile.write("       ")
-            outfile.write(lines[i].expandtabs(8))
+            outfile.write(line.expandtabs(8))
         outfile.close()
 
         return n_hits, n_lines
@@ -456,7 +455,6 @@ class Trace:
         self.outfile = outfile
         self.ignore = Ignore(ignoremods, ignoredirs)
         self.counts = {}   # keys are (filename, linenumber)
-        self.blabbed = {} # for debugging
         self.pathtobasename = {} # for memoizing os.path.basename
         self.donothing = 0
         self.trace = trace
@@ -486,15 +484,7 @@ class Trace:
     def run(self, cmd):
         import __main__
         dict = __main__.__dict__
-        if not self.donothing:
-            threading.settrace(self.globaltrace)
-            sys.settrace(self.globaltrace)
-        try:
-            exec(cmd, dict, dict)
-        finally:
-            if not self.donothing:
-                sys.settrace(None)
-                threading.settrace(None)
+        self.runctx(cmd, dict, dict)
 
     def runctx(self, cmd, globals=None, locals=None):
         if globals is None: globals = {}
