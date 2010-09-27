@@ -156,6 +156,18 @@ class OtherNetworkTests(unittest.TestCase):
         self.assertEqual(res.geturl(),
                 "http://docs.python.org/glossary.html")
 
+    def test_custom_headers(self):
+        url = "http://www.example.com"
+        opener = urllib.request.build_opener()
+        request = urllib.request.Request(url)
+        self.assertFalse(request.header_items())
+        opener.open(request)
+        self.assertTrue(request.header_items())
+        self.assertTrue(request.has_header('User-agent'))
+        request.add_header('User-Agent','Test-Agent')
+        opener.open(request)
+        self.assertEqual(request.get_header('User-agent'),'Test-Agent')
+
     def _test_urls(self, urls, handlers, retry=True):
         import time
         import logging
