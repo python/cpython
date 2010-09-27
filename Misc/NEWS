@@ -121,6 +121,11 @@ C-API
 Library
 -------
 
+- Issue #9950: Fix socket.sendall() crash or misbehaviour when a signal is
+  received.  Now sendall() properly calls signal handlers if necessary,
+  and retries sending if these returned successfully, including on sockets
+  with a timeout.
+
 - Issue #9936: Fixed executable lines' search in the trace module.
 
 - Issue #9928: Properly initialize the types exported by the bz2 module.

@@ -17,6 +17,7 @@ import array
 import contextlib
 from weakref import proxy
 import signal
+import math
 
 def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
@@ -605,6 +606,42 @@ class GeneralModuleTests(unittest.TestCase):
         # usually do this
         socket.getaddrinfo(None, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0,
                            socket.AI_PASSIVE)
+
+
+    def check_sendall_interrupted(self, with_timeout):
+        # socketpair() is not stricly required, but it makes things easier.
+        if not hasattr(signal, 'alarm') or not hasattr(socket, 'socketpair'):
+            self.skipTest("signal.alarm and socket.socketpair required for this test")
+        # Our signal handlers clobber the C errno by calling a math function
+        # with an invalid domain value.
+        def ok_handler(*args):
+            self.assertRaises(ValueError, math.acosh, 0)
+        def raising_handler(*args):
+            self.assertRaises(ValueError, math.acosh, 0)
+            1 // 0
+        c, s = socket.socketpair()
+        old_alarm = signal.signal(signal.SIGALRM, raising_handler)
+        try:
+            if with_timeout:
+                # Just above the one second minimum for signal.alarm
+                c.settimeout(1.5)
+            with self.assertRaises(ZeroDivisionError):
+                signal.alarm(1)
+                c.sendall(b"x" * (1024**2))
+            if with_timeout:
+                signal.signal(signal.SIGALRM, ok_handler)
+                signal.alarm(1)
+                self.assertRaises(socket.timeout, c.sendall, b"x" * (1024**2))
+        finally:
+            signal.signal(signal.SIGALRM, old_alarm)
+            c.close()
+            s.close()
+
+    def test_sendall_interrupted(self):
+        self.check_sendall_interrupted(False)
+
+    def test_sendall_interrupted_with_timeout(self):
+        self.check_sendall_interrupted(True)
 
 
 class BasicTCPTest(SocketConnectedTest):
