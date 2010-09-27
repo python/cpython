@@ -113,6 +113,7 @@ PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
 PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetPath(void);
+PyAPI_FUNC(void)      Py_SetPath(const wchar_t *);
 
 /* In their own files */
 PyAPI_FUNC(const char *) Py_GetVersion(void);
