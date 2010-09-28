@@ -650,6 +650,7 @@ Tests
 
 - Issue #8193: Fix test_zlib failure with zlib 1.2.4.
 
+- Issue #9568: Fix test_urllib2_localnet on OS X 10.3.
 
 Documentation
 -------------
