@@ -20,7 +20,7 @@ fi
 # Make sure the directory ${PYTHON_ROOT}/bin is on the users PATH.
 BSH="`basename "${theShell}"`"
 case "${BSH}" in
-bash|ksh|sh|*csh)
+bash|ksh|sh|*csh|zsh)
 	if [ `id -ur` = 0 ]; then
 		P=`su - ${USER} -c 'echo A-X-4-X@@$PATH@@X-4-X-A' | grep 'A-X-4-X@@.*@@X-4-X-A' | sed -e 's/^A-X-4-X@@//g' -e 's/@@X-4-X-A$//g'`
 	else
@@ -76,6 +76,9 @@ bash)
 		PR="${HOME}/.bash_profile"
 	fi
 	;;
+zsh)
+        PR="${HOME}/.zprofile"
+        ;;
 *sh)
 	PR="${HOME}/.profile"
 	;;
