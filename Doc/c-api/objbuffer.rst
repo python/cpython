@@ -1,24 +1,21 @@
 .. highlightlang:: c
 
-Old buffer API
---------------
+Old Buffer Protocol
+-------------------
 
 .. deprecated:: 3.0
 
 These functions were part of the "old buffer protocol" API in Python 2.
-In Python 3, these functions are still exposed for ease of porting code.
-They act as a compatibility wrapper around the :ref:`new buffer API
-<bufferobjects>`, but they don't give you control over the lifetime of
-the resources acquired when a buffer is exported.
+In Python 3, this protocol doesn't exist anymore but the functions are still
+exposed to ease porting 2.x code.  They act as a compatibility wrapper
+around the :ref:`new buffer protocol <bufferobjects>`, but they don't give
+you control over the lifetime of the resources acquired when a buffer is
+exported.
 
 Therefore, it is recommended that you call :cfunc:`PyObject_GetBuffer`
 (or the ``y*`` or ``w*`` :ref:`format codes <arg-parsing>` with the
 :cfunc:`PyArg_ParseTuple` family of functions) to get a buffer view over
 an object, and :cfunc:`PyBuffer_Release` when the buffer view can be released.
-
-
-Buffer Protocol
-===============
 
 
 .. cfunction:: int PyObject_AsCharBuffer(PyObject *obj, const char **buffer, Py_ssize_t *buffer_len)
