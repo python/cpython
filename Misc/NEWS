@@ -260,6 +260,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #9628: fix runtests.sh -x option so more than one test can be excluded.
+
 - Issue #9899: Fix test_tkinter.test_font on various platforms.  Patch by
   Ned Deily.
 
