@@ -74,6 +74,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #3612: Added new types to ctypes.wintypes. (CHAR and pointers)
+
 - Issue #9950: Fix socket.sendall() crash or misbehaviour when a signal is
   received.  Now sendall() properly calls signal handlers if necessary,
   and retries sending if these returned successfully, including on sockets
