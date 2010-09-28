@@ -286,6 +286,10 @@ Build
 - Issue #4026: Make the fcntl extension build under AIX.  Patch by Sébastien
   Sablé.
 
+- Issue #9701: The MacOSX installer can patch the shell profile to ensure that
+  the "bin" directory inside the framework is on the shell's search path. This
+  feature now also supports the ZSH shell.
+
 
 What's New in Python 3.2 Alpha 2?
 =================================
