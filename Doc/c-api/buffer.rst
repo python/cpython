@@ -65,7 +65,7 @@ in its native, in-memory format.
 Contrary to most data types exposed by the Python interpreter, buffers
 are not :ctype:`PyObject` pointers but rather simple C structures.  This
 allows them to be created and copied very simply.  When a generic wrapper
-around a buffer is needed, a :ref:`memoryview <memoryviewobjects>` object
+around a buffer is needed, a :ref:`memoryview <memoryview-objects>` object
 can be created.
 
 
@@ -154,7 +154,7 @@ can be created.
       value.
 
 
-Buffer related functions
+Buffer-related functions
 ========================
 
 
@@ -330,49 +330,3 @@ Buffer related functions
    only share a contiguous chunk of memory of "unsigned bytes" of the given
    length.  Return 0 on success and -1 (with raising an error) on error.
 
-
-.. index::
-   object: memoryview
-
-.. _memoryviewobjects:
-
-MemoryView objects
-==================
-
-A :class:`memoryview` object exposes the C level buffer interface as a
-Python object which can then be passed around like any other object.
-
-
-.. cfunction:: PyObject *PyMemoryView_FromObject(PyObject *obj)
-
-   Create a memoryview object from an object that defines the buffer interface.
-
-
-.. cfunction:: PyObject *PyMemoryView_FromBuffer(Py_buffer *view)
-
-   Create a memoryview object wrapping the given buffer-info structure *view*.
-   The memoryview object then owns the buffer, which means you shouldn't
-   try to release it yourself: it will be released on deallocation of the
-   memoryview object.
-
-
-.. cfunction:: PyObject *PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char order)
-
-   Create a memoryview object to a contiguous chunk of memory (in either
-   'C' or 'F'ortran *order*) from an object that defines the buffer
-   interface. If memory is contiguous, the memoryview object points to the
-   original memory. Otherwise copy is made and the memoryview points to a
-   new bytes object.
-
-
-.. cfunction:: int PyMemoryView_Check(PyObject *obj)
-
-   Return true if the object *obj* is a memoryview object.  It is not
-   currently allowed to create subclasses of :class:`memoryview`.
-
-
-.. cfunction:: Py_buffer *PyMemoryView_GET_BUFFER(PyObject *obj)
-
-   Return a pointer to the buffer-info structure wrapped by the given
-   object.  The object **must** be a memoryview instance; this macro doesn't
-   check its type, you must do it yourself or you will risk crashes.
