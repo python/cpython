@@ -25,6 +25,17 @@ typedef struct {
  */
 PyAPI_FUNC(void) _PyTime_gettimeofday(_PyTime_timeval *tp);
 
+#define _PyTime_ADD_SECONDS(tv, interval) \
+do { \
+    tv.tv_usec += (long) (((long) interval - interval) * 1000000); \
+    tv.tv_sec += (time_t) interval + (time_t) (tv.tv_usec / 1000000); \
+    tv.tv_usec %= 1000000; \
+} while (0)
+
+#define _PyTime_INTERVAL(tv_start, tv_end) \
+    ((tv_end.tv_sec - tv_start.tv_sec) + \
+     (tv_end.tv_usec - tv_start.tv_usec) * 0.000001)
+
 /* Dummy to force linking. */
 PyAPI_FUNC(void) _PyTime_Init(void);
 

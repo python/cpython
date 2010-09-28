@@ -74,6 +74,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #9090: When a socket with a timeout fails with EWOULDBLOCK or EAGAIN,
+  retry the select() loop instead of bailing out.  This is because select()
+  can incorrectly report a socket as ready for reading (for example, if it
+  received some data with an invalid checksum).
+
 - Issue #3612: Added new types to ctypes.wintypes. (CHAR and pointers)
 
 - Issue #9950: Fix socket.sendall() crash or misbehaviour when a signal is
