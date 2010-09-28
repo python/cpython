@@ -405,6 +405,8 @@ Tests
 
 - Issue #8605: Skip test_gdb if Python is compiled with optimizations.
 
+- Issue #9568: Fix test_urllib2_localnet on OS X 10.3.
+
 Documentation
 -------------
 
