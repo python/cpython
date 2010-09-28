@@ -68,7 +68,6 @@ intrinsic to the Python language.
    bytes.rst
    bytearray.rst
    unicode.rst
-   buffer.rst
    tuple.rst
    list.rst
 
