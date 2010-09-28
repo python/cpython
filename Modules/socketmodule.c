@@ -475,6 +475,9 @@ select_error(void)
 }
 
 #ifdef MS_WINDOWS
+#ifndef WSAEAGAIN
+#define WSAEAGAIN WSAEWOULDBLOCK
+#endif
 #define CHECK_ERRNO(expected) \
     (WSAGetLastError() == WSA ## expected)
 #else
