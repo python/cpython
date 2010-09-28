@@ -304,14 +304,45 @@ Buffer related functions
 MemoryView objects
 ==================
 
-A memoryview object is an extended buffer object that could replace the buffer
-object (but doesn't have to as that could be kept as a simple 1-d memoryview
-object).  It, unlike :ctype:`Py_buffer`, is a Python object (exposed as
-:class:`memoryview` in :mod:`builtins`), so it can be used with Python code.
+.. versionadded:: 2.7
 
-.. cfunction:: PyObject* PyMemoryView_FromObject(PyObject *obj)
+A :class:`memoryview` object exposes the new C level buffer interface as a
+Python object which can then be passed around like any other object.
 
-   Return a memoryview object from an object that defines the buffer interface.
+.. cfunction:: PyObject *PyMemoryView_FromObject(PyObject *obj)
+
+   Create a memoryview object from an object that defines the new buffer
+   interface.
+
+
+.. cfunction:: PyObject *PyMemoryView_FromBuffer(Py_buffer *view)
+
+   Create a memoryview object wrapping the given buffer-info structure *view*.
+   The memoryview object then owns the buffer, which means you shouldn't
+   try to release it yourself: it will be released on deallocation of the
+   memoryview object.
+
+
+.. cfunction:: PyObject *PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char order)
+
+   Create a memoryview object to a contiguous chunk of memory (in either
+   'C' or 'F'ortran *order*) from an object that defines the buffer
+   interface. If memory is contiguous, the memoryview object points to the
+   original memory. Otherwise copy is made and the memoryview points to a
+   new bytes object.
+
+
+.. cfunction:: int PyMemoryView_Check(PyObject *obj)
+
+   Return true if the object *obj* is a memoryview object.  It is not
+   currently allowed to create subclasses of :class:`memoryview`.
+
+
+.. cfunction:: Py_buffer *PyMemoryView_GET_BUFFER(PyObject *obj)
+
+   Return a pointer to the buffer-info structure wrapped by the given
+   object.  The object **must** be a memoryview instance; this macro doesn't
+   check its type, you must do it yourself or you will risk crashes.
 
 
 Old-style buffer objects
