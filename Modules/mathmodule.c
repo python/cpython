@@ -1572,12 +1572,14 @@ loghelper(PyObject* arg, double (*func)(double), char *funcname)
                             "math domain error");
             return NULL;
         }
-        /* Special case for log(1), to make sure we get an
-           exact result there. */
-        if (e == 1 && x == 0.5)
-            return PyFloat_FromDouble(0.0);
-        /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
-        x = func(x) + func(2.0) * e;
+        /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e.
+
+           It's slightly better to compute the log as log(2 * x) + log(2) * (e
+           - 1): then when 'arg' is a power of 2, 2**k say, this gives us 0.0 +
+           log(2) * k instead of log(0.5) + log(2)*(k+1), and so marginally
+           increases the chances of log(arg, 2) returning the correct result.
+        */
+        x = func(2.0 * x) + func(2.0) * (e - 1);
         return PyFloat_FromDouble(x);
     }
 
