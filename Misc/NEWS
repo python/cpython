@@ -2201,6 +2201,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9959: Tweak formula used for computing math.log of an integer,
+  making it marginally more accurate for exact powers of 2.
+
 - Issue #9422: Fix memory leak when re-initializing a struct.Struct object.
 
 - Issue #7900: The getgroups(2) system call on MacOSX behaves rather oddly
