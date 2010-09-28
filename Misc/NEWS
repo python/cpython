@@ -605,6 +605,10 @@ Build
   variable anymore.  It also forwards the LDFLAGS settings to the linker
   when building a shared library.
 
+- Issue #9701: The MacOSX installer can patch the shell profile to ensure that
+  the "bin" directory inside the framework is on the shell's search path. This
+  feature now also supports the ZSH shell.
+
 Tests
 -----
 
