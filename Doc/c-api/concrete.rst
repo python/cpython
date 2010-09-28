@@ -99,6 +99,7 @@ Other Objects
    iterator.rst
    descriptor.rst
    slice.rst
+   memoryview.rst
    weakref.rst
    capsule.rst
    cell.rst
