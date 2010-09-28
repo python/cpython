@@ -2,8 +2,8 @@
 
 .. _bufferobjects:
 
-Buffer API
-----------
+Buffer Protocol
+---------------
 
 .. sectionauthor:: Greg Stein <gstein@lyra.org>
 .. sectionauthor:: Benjamin Peterson
@@ -50,21 +50,22 @@ How the buffer interface is exposed by a type object is described in the
 section :ref:`buffer-structs`, under the description for :ctype:`PyBufferProcs`.
 
 
-Buffer objects
-==============
+The buffer structure
+====================
 
-Buffer objects are useful as a way to expose the binary data from another
-object to the Python programmer.  They can also be used as a zero-copy
-slicing mechanism.  Using their ability to reference a block of memory, it is
-possible to expose any data to the Python programmer quite easily.  The memory
-could be a large, constant array in a C extension, it could be a raw block of
-memory for manipulation before passing to an operating system library, or it
-could be used to pass around structured data in its native, in-memory format.
+Buffer structures (or simply "buffers") are useful as a way to expose the
+binary data from another object to the Python programmer.  They can also be
+used as a zero-copy slicing mechanism.  Using their ability to reference a
+block of memory, it is possible to expose any data to the Python programmer
+quite easily.  The memory could be a large, constant array in a C extension,
+it could be a raw block of memory for manipulation before passing to an
+operating system library, or it could be used to pass around structured data
+in its native, in-memory format.
 
-Contrary to most data types exposed by the Python interpreter, buffer objects
+Contrary to most data types exposed by the Python interpreter, buffers
 are not :ctype:`PyObject` pointers but rather simple C structures.  This
 allows them to be created and copied very simply.  When a generic wrapper
-around a buffer object is needed, a :ref:`memoryview <memoryviewobjects>` object
+around a buffer is needed, a :ref:`memoryview <memoryviewobjects>` object
 can be created.
 
 
