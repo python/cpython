@@ -263,6 +263,8 @@ Tests
 - Issue #9323: Make test.regrtest.__file__ absolute, this was not always the
   case when running profile or trace, for example.
 
+- Issue #9568: Fix test_urllib2_localnet on OS X 10.3.
+
 Build
 -----
 
