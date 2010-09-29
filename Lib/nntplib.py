@@ -279,11 +279,12 @@ class _NNTPBase:
     encoding = 'utf-8'
     errors = 'surrogateescape'
 
-    def __init__(self, file, user=None, password=None,
+    def __init__(self, file, host, user=None, password=None,
                  readermode=None, usenetrc=True,
                  timeout=_GLOBAL_DEFAULT_TIMEOUT):
         """Initialize an instance.  Arguments:
         - file: file-like object (open for read/write in binary mode)
+        - host: hostname of the server (used if `usenetrc` is True)
         - user: username to authenticate with
         - password: password to use with username
         - readermode: if true, send 'mode reader' command after
@@ -933,7 +934,7 @@ class NNTP(_NNTPBase):
         self.port = port
         self.sock = socket.create_connection((host, port), timeout)
         file = self.sock.makefile("rwb")
-        _NNTPBase.__init__(self, file, user, password,
+        _NNTPBase.__init__(self, file, host, user, password,
                            readermode, usenetrc, timeout)
 
     def _close(self):
