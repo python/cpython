@@ -3723,7 +3723,6 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
     PyObject *pathobj;
     DWORD rv;
     wchar_t *path;
-    Py_ssize_t len;
 
     if (!_PyArg_NoKeywords("NullImporter()", kwds))
         return -1;
