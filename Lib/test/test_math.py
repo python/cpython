@@ -641,8 +641,12 @@ class MathTests(unittest.TestCase):
         self.ftest('log(32,2)', math.log(32,2), 5)
         self.ftest('log(10**40, 10)', math.log(10**40, 10), 40)
         self.ftest('log(10**40, 10**20)', math.log(10**40, 10**20), 2)
-        self.assertEquals(math.log(INF), INF)
+        self.ftest('log(10**1000)', math.log(10**1000),
+                   2302.5850929940457)
+        self.assertRaises(ValueError, math.log, -1.5)
+        self.assertRaises(ValueError, math.log, -10**1000)
         self.assertRaises(ValueError, math.log, NINF)
+        self.assertEquals(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log(NAN)))
 
     def testLog1p(self):
@@ -655,8 +659,11 @@ class MathTests(unittest.TestCase):
         self.ftest('log10(0.1)', math.log10(0.1), -1)
         self.ftest('log10(1)', math.log10(1), 0)
         self.ftest('log10(10)', math.log10(10), 1)
-        self.assertEquals(math.log(INF), INF)
+        self.ftest('log10(10**1000)', math.log10(10**1000), 1000.0)
+        self.assertRaises(ValueError, math.log10, -1.5)
+        self.assertRaises(ValueError, math.log10, -10**1000)
         self.assertRaises(ValueError, math.log10, NINF)
+        self.assertEquals(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log10(NAN)))
 
     def testModf(self):
