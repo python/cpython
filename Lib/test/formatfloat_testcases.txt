@@ -279,6 +279,11 @@
 %.2g 0.000123 -> 0.00012
 %.2g 0.0000123 -> 1.2e-05
 
+-- bad cases from http://bugs.python.org/issue9980
+%.12g 38210.0 -> 38210
+%.12g 37210.0 -> 37210
+%.12g 36210.0 -> 36210
+
 -- alternate g formatting:  always include decimal point and
 -- exactly <precision> significant digits.
 %#.0g 0 -> 0.
