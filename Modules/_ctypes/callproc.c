@@ -665,24 +665,15 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         pa->keep = obj;
         return 0;
 #else
-        int size = PyUnicode_GET_SIZE(obj);
         pa->ffi_type = &ffi_type_pointer;
-        size += 1; /* terminating NUL */
-        size *= sizeof(wchar_t);
-        pa->value.p = PyMem_Malloc(size);
-        if (!pa->value.p) {
-            PyErr_NoMemory();
+        pa->value.p = PyUnicode_AsWideCharString((PyUnicodeObject *)obj, NULL);
+        if (pa->value.p == NULL)
             return -1;
-        }
-        memset(pa->value.p, 0, size);
         pa->keep = PyCapsule_New(pa->value.p, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
         if (!pa->keep) {
             PyMem_Free(pa->value.p);
             return -1;
         }
-        if (-1 == PyUnicode_AsWideChar((PyUnicodeObject *)obj,
-                                       pa->value.p, PyUnicode_GET_SIZE(obj)))
-            return -1;
         return 0;
 #endif
     }
@@ -1147,7 +1138,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
     }
     for (i = 0; i < argcount; ++i) {
         atypes[i] = args[i].ffi_type;
-        if (atypes[i]->type == FFI_TYPE_STRUCT 
+        if (atypes[i]->type == FFI_TYPE_STRUCT
 #ifdef _WIN64
             && atypes[i]->size <= sizeof(void *)
 #endif

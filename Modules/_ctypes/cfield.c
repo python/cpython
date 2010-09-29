@@ -1433,15 +1433,11 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
         PyObject *keep;
         wchar_t *buffer;
 
-        int size = PyUnicode_GET_SIZE(value);
-        size += 1; /* terminating NUL */
-        size *= sizeof(wchar_t);
-        buffer = (wchar_t *)PyMem_Malloc(size);
+        buffer = PyUnicode_AsWideCharString((PyUnicodeObject *)value, NULL);
         if (!buffer) {
             Py_DECREF(value);
-            return PyErr_NoMemory();
+            return NULL;
         }
-        memset(buffer, 0, size);
         keep = PyCapsule_New(buffer, CTYPES_CFIELD_CAPSULE_NAME_PYMEM, pymem_destructor);
         if (!keep) {
             Py_DECREF(value);
@@ -1449,12 +1445,6 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
             return NULL;
         }
         *(wchar_t **)ptr = (wchar_t *)buffer;
-        if (-1 == PyUnicode_AsWideChar((PyUnicodeObject *)value,
-                                       buffer, PyUnicode_GET_SIZE(value))) {
-            Py_DECREF(value);
-            Py_DECREF(keep);
-            return NULL;
-        }
         Py_DECREF(value);
         return keep;
     }
