@@ -262,7 +262,7 @@ def expanduser(path):
             return path
         userhome = pwent.pw_dir
     if isinstance(path, bytes):
-        userhome = userhome.encode(sys.getfilesystemencoding())
+        userhome = os.fsencode(userhome)
         root = b'/'
     else:
         root = '/'
