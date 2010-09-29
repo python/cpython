@@ -87,7 +87,6 @@ class ImportTests(unittest.TestCase):
 
         # the return encoding could be uppercase or None
         fs_encoding = sys.getfilesystemencoding()
-        fs_encoding = fs_encoding.lower() if fs_encoding else 'ascii'
 
         # covers utf-8 and Windows ANSI code pages
         # one non-space symbol from every page
