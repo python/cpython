@@ -1510,10 +1510,14 @@ PyObject *PyUnicode_EncodeFSDefault(PyObject *unicode)
         return PyUnicode_AsEncodedString(unicode,
                                          Py_FileSystemDefaultEncoding,
                                          "surrogateescape");
-    } else
+    }
+    else {
+        /* if you change the default encoding, update also
+           PyUnicode_DecodeFSDefaultAndSize() and redecode_filenames() */
         return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
                                     PyUnicode_GET_SIZE(unicode),
                                     "surrogateescape");
+    }
 }
 
 PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
@@ -1680,6 +1684,8 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
                                 "surrogateescape");
     }
     else {
+        /* if you change the default encoding, update also
+           PyUnicode_EncodeFSDefault() and redecode_filenames() */
         return PyUnicode_DecodeUTF8(s, size, "surrogateescape");
     }
 }

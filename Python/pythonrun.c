@@ -719,6 +719,259 @@ initmain(void)
     }
 }
 
+/* Redecode a filename from the default filesystem encoding (utf-8) to
+   'new_encoding' encoding with 'errors' error handler */
+static PyObject*
+redecode_filename(PyObject *file, const char *new_encoding,
+                  const char *errors)
+{
+    PyObject *file_bytes = NULL, *new_file = NULL;
+
+    file_bytes = PyUnicode_EncodeFSDefault(file);
+    if (file_bytes == NULL)
+        return NULL;
+    new_file = PyUnicode_Decode(
+        PyBytes_AsString(file_bytes),
+        PyBytes_GET_SIZE(file_bytes),
+        new_encoding,
+        errors);
+    Py_DECREF(file_bytes);
+    return new_file;
+}
+
+/* Redecode a path list */
+static int
+redecode_path_list(PyObject *paths,
+                   const char *new_encoding, const char *errors)
+{
+    PyObject *filename, *new_filename;
+    Py_ssize_t i, size;
+
+    size = PyList_Size(paths);
+    for (i=0; i < size; i++) {
+        filename = PyList_GetItem(paths, i);
+        if (filename == NULL)
+            return -1;
+
+        new_filename = redecode_filename(filename, new_encoding, errors);
+        if (new_filename == NULL)
+            return -1;
+        if (PyList_SetItem(paths, i, new_filename)) {
+            Py_DECREF(new_filename);
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/* Redecode __file__ and __path__ attributes of sys.modules */
+static int
+redecode_sys_modules(const char *new_encoding, const char *errors)
+{
+    PyInterpreterState *interp;
+    PyObject *modules, *values, *file, *new_file, *paths;
+    PyObject *iter = NULL, *module = NULL;
+
+    interp = PyThreadState_GET()->interp;
+    modules = interp->modules;
+
+    values = PyObject_CallMethod(modules, "values", "");
+    if (values == NULL)
+        goto error;
+
+    iter = PyObject_GetIter(values);
+    Py_DECREF(values);
+    if (iter == NULL)
+        goto error;
+
+    while (1)
+    {
+        module = PyIter_Next(iter);
+        if (module == NULL) {
+            if (PyErr_Occurred())
+                goto error;
+            else
+                break;
+        }
+
+        file = PyModule_GetFilenameObject(module);
+        if (file != NULL) {
+            new_file = redecode_filename(file, new_encoding, errors);
+            Py_DECREF(file);
+            if (new_file == NULL)
+                goto error;
+            if (PyObject_SetAttrString(module, "__file__", new_file)) {
+                Py_DECREF(new_file);
+                goto error;
+            }
+            Py_DECREF(new_file);
+        }
+        else
+            PyErr_Clear();
+
+        paths = PyObject_GetAttrString(module, "__path__");
+        if (paths != NULL) {
+            if (redecode_path_list(paths, new_encoding, errors))
+                goto error;
+        }
+        else
+            PyErr_Clear();
+
+        Py_CLEAR(module);
+    }
+    Py_CLEAR(iter);
+    return 0;
+
+error:
+    Py_XDECREF(iter);
+    Py_XDECREF(module);
+    return -1;
+}
+
+/* Redecode sys.path_importer_cache keys */
+static int
+redecode_sys_path_importer_cache(const char *new_encoding, const char *errors)
+{
+    PyObject *path_importer_cache, *items, *item, *path, *importer, *new_path;
+    PyObject *new_cache = NULL, *iter = NULL;
+
+    path_importer_cache = PySys_GetObject("path_importer_cache");
+    if (path_importer_cache == NULL)
+        goto error;
+
+    items = PyObject_CallMethod(path_importer_cache, "items", "");
+    if (items == NULL)
+        goto error;
+
+    iter = PyObject_GetIter(items);
+    Py_DECREF(items);
+    if (iter == NULL)
+        goto error;
+
+    new_cache = PyDict_New();
+    if (new_cache == NULL)
+        goto error;
+
+    while (1)
+    {
+        item = PyIter_Next(iter);
+        if (item == NULL) {
+            if (PyErr_Occurred())
+                goto error;
+            else
+                break;
+        }
+        path = PyTuple_GET_ITEM(item, 0);
+        importer = PyTuple_GET_ITEM(item, 1);
+
+        new_path = redecode_filename(path, new_encoding, errors);
+        if (new_path == NULL)
+            goto error;
+        if (PyDict_SetItem(new_cache, new_path, importer)) {
+            Py_DECREF(new_path);
+            goto error;
+        }
+        Py_DECREF(new_path);
+    }
+    Py_CLEAR(iter);
+    if (PySys_SetObject("path_importer_cache", new_cache))
+        goto error;
+    Py_CLEAR(new_cache);
+    return 0;
+
+error:
+    Py_XDECREF(iter);
+    Py_XDECREF(new_cache);
+    return -1;
+}
+
+/* Redecode co_filename attribute of all code objects */
+static int
+redecode_code_objects(const char *new_encoding, const char *errors)
+{
+    Py_ssize_t i, len;
+    PyCodeObject *co;
+    PyObject *ref, *new_file;
+
+    len = Py_SIZE(_Py_code_object_list);
+    for (i=0; i < len; i++) {
+        ref = PyList_GET_ITEM(_Py_code_object_list, i);
+        co = (PyCodeObject *)PyWeakref_GetObject(ref);
+        if ((PyObject*)co == Py_None)
+            continue;
+        if (co == NULL)
+            return -1;
+
+        new_file = redecode_filename(co->co_filename, new_encoding, errors);
+        if (new_file == NULL)
+            return -1;
+        Py_DECREF(co->co_filename);
+        co->co_filename = new_file;
+    }
+    Py_CLEAR(_Py_code_object_list);
+    return 0;
+}
+
+/* Redecode the filenames of all modules (__file__ and __path__ attributes),
+   all code objects (co_filename attribute), sys.path, sys.meta_path,
+   sys.executable and sys.path_importer_cache (keys) when the filesystem
+   encoding changes from the default encoding (utf-8) to new_encoding */
+static int
+redecode_filenames(const char *new_encoding)
+{
+    char *errors;
+    PyObject *paths, *executable, *new_executable;
+
+    /* PyUnicode_DecodeFSDefault() and PyUnicode_EncodeFSDefault() do already
+       use utf-8 if Py_FileSystemDefaultEncoding is NULL */
+    if (strcmp(new_encoding, "utf-8") == 0)
+        return 0;
+
+    if (strcmp(new_encoding, "mbcs") != 0)
+        errors = "surrogateescape";
+    else
+        errors = NULL;
+
+    /* sys.modules */
+    if (redecode_sys_modules(new_encoding, errors))
+        return -1;
+
+    /* sys.path and sys.meta_path */
+    paths = PySys_GetObject("path");
+    if (paths != NULL) {
+        if (redecode_path_list(paths, new_encoding, errors))
+            return -1;
+    }
+    paths = PySys_GetObject("meta_path");
+    if (paths != NULL) {
+        if (redecode_path_list(paths, new_encoding, errors))
+            return -1;
+    }
+
+    /* sys.executable */
+    executable = PySys_GetObject("executable");
+    if (executable == NULL)
+        return -1;
+    new_executable = redecode_filename(executable, new_encoding, errors);
+    if (new_executable == NULL)
+        return -1;
+    if (PySys_SetObject("executable", new_executable)) {
+        Py_DECREF(new_executable);
+        return -1;
+    }
+    Py_DECREF(new_executable);
+
+    /* sys.path_importer_cache */
+    if (redecode_sys_path_importer_cache(new_encoding, errors))
+        return -1;
+
+    /* code objects */
+    if (redecode_code_objects(new_encoding, errors))
+        return -1;
+
+    return 0;
+}
+
 static void
 initfsencoding(void)
 {
@@ -744,8 +997,11 @@ initfsencoding(void)
             codeset = get_codeset();
         }
         if (codeset != NULL) {
+            if (redecode_filenames(codeset))
+                Py_FatalError("Py_Initialize: can't redecode filenames");
             Py_FileSystemDefaultEncoding = codeset;
             Py_HasFileSystemDefaultEncoding = 0;
+            Py_CLEAR(_Py_code_object_list);
             return;
         } else {
             fprintf(stderr, "Unable to get the locale encoding:\n");
@@ -757,6 +1013,8 @@ initfsencoding(void)
         Py_HasFileSystemDefaultEncoding = 1;
     }
 #endif
+
+    Py_CLEAR(_Py_code_object_list);
 
     /* the encoding is mbcs, utf-8 or ascii */
     codec = _PyCodec_Lookup(Py_FileSystemDefaultEncoding);
