@@ -12,6 +12,7 @@ TIMEOUT = 30
 # TODO:
 # - test the `file` arg to more commands
 # - test error conditions
+# - test auth and `usenetrc`
 
 
 class NetworkedNNTPTestsMixin:
@@ -255,7 +256,7 @@ class MockedNNTPTestsMixin:
         # isn't seekable.
         file = io.BufferedRWPair(self.sio, self.sio)
         kwargs.setdefault('usenetrc', False)
-        self.server = nntplib._NNTPBase(file, *args, **kwargs)
+        self.server = nntplib._NNTPBase(file, 'test.server', *args, **kwargs)
         return self.server
 
 
