@@ -204,7 +204,10 @@ class GzipFile(io.BufferedIOBase):
         return self.name
 
     def __repr__(self):
-        s = repr(self.fileobj)
+        fileobj = self.fileobj
+        if isinstance(fileobj, _PaddedFile):
+            fileobj = fileobj.file
+        s = repr(fileobj)
         return '<gzip ' + s[1:-1] + ' ' + hex(id(self)) + '>'
 
     def _init_write(self, filename):
@@ -335,6 +338,26 @@ class GzipFile(io.BufferedIOBase):
 
         self.offset += size
         return chunk
+
+    def peek(self, n):
+        if self.mode != READ:
+            import errno
+            raise IOError(errno.EBADF, "read() on write-only GzipFile object")
+
+        # Do not return ridiculously small buffers
+        if n < 100:
+            n = 100
+        if self.extrasize == 0:
+            if self.fileobj is None:
+                return b''
+            try:
+                self._read(max(self.max_read_chunk, n))
+            except EOFError:
+                pass
+        offset = self.offset - self.extrastart
+        remaining = self.extrasize
+        assert remaining == len(self.extrabuf) - offset
+        return self.extrabuf[offset:offset + n]
 
     def _unread(self, buf):
         self.extrasize = len(buf) + self.extrasize
