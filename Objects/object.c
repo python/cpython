@@ -1604,6 +1604,10 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PyCode_Type) < 0)
         Py_FatalError("Can't initialize code type");
 
+    _Py_code_object_list = PyList_New(0);
+    if (_Py_code_object_list == NULL)
+        Py_FatalError("Can't initialize code type");
+
     if (PyType_Ready(&PyFrame_Type) < 0)
         Py_FatalError("Can't initialize frame type");
 
