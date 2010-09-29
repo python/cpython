@@ -1562,25 +1562,33 @@ loghelper(PyObject* arg, double (*func)(double), char *funcname)
 {
     /* If it is long, do it ourselves. */
     if (PyLong_Check(arg)) {
-        double x;
+        double x, result;
         Py_ssize_t e;
-        x = _PyLong_Frexp((PyLongObject *)arg, &e);
-        if (x == -1.0 && PyErr_Occurred())
-            return NULL;
-        if (x <= 0.0) {
+
+        /* Negative or zero inputs give a ValueError. */
+        if (Py_SIZE(arg) <= 0) {
             PyErr_SetString(PyExc_ValueError,
                             "math domain error");
             return NULL;
         }
-        /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e.
 
-           It's slightly better to compute the log as log(2 * x) + log(2) * (e
-           - 1): then when 'arg' is a power of 2, 2**k say, this gives us 0.0 +
-           log(2) * k instead of log(0.5) + log(2)*(k+1), and so marginally
-           increases the chances of log(arg, 2) returning the correct result.
-        */
-        x = func(2.0 * x) + func(2.0) * (e - 1);
-        return PyFloat_FromDouble(x);
+        x = PyLong_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            if (!PyErr_ExceptionMatches(PyExc_OverflowError))
+                return NULL;
+            /* Here the conversion to double overflowed, but it's possible
+               to compute the log anyway.  Clear the exception and continue. */
+            PyErr_Clear();
+            x = _PyLong_Frexp((PyLongObject *)arg, &e);
+            if (x == -1.0 && PyErr_Occurred())
+                return NULL;
+            /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
+            result = func(x) + func(2.0) * e;
+        }
+        else
+            /* Successfully converted x to a double. */
+            result = func(x);
+        return PyFloat_FromDouble(result);
     }
 
     /* Else let libm handle it by itself. */
