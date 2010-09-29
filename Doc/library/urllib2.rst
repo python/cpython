@@ -18,6 +18,9 @@ The :mod:`urllib2` module defines functions and classes which help in opening
 URLs (mostly HTTP) in a complex world --- basic and digest authentication,
 redirections, cookies and more.
 
+.. warning:: When opening HTTPS (or FTPS) URLs, it is not attempted to
+   validate the server certificate.  Use at your own risk!
+
 The :mod:`urllib2` module defines the following functions:
 
 
