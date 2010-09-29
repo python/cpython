@@ -53,13 +53,13 @@ The module provides the following classes:
 .. class:: HTTPSConnection(host, port=None, key_file=None, cert_file=None, strict=None[, timeout[, source_address]])
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
-   secure servers.  Default port is ``443``. *key_file* is the name of a PEM
-   formatted file that contains your private key. *cert_file* is a PEM formatted
-   certificate chain file.
+   secure servers.  Default port is ``443``.  *key_file* is the name of a PEM
+   formatted file that contains your private key, and *cert_file* is a PEM
+   formatted certificate chain file; both can be used for authenticating
+   yourself against the server.
 
-   .. note::
-
-      This does not do any certificate verification.
+   .. warning::
+      This does not do any verification of the server's certificate.
 
    .. versionchanged:: 3.2
       *source_address* was added.
