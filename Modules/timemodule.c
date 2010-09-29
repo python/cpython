@@ -394,10 +394,15 @@ time_strftime(PyObject *self, PyObject *args)
     PyObject *tup = NULL;
     struct tm buf;
     const time_char *fmt;
-    PyObject *format, *tmpfmt;
+#ifdef HAVE_WCSFTIME
+    wchar_t *format;
+#else
+    PyObject *format;
+#endif
     size_t fmtlen, buflen;
-    time_char *outbuf = 0;
+    time_char *outbuf = NULL;
     size_t i;
+    PyObject *ret = NULL;
 
     memset((void *) &buf, '\0', sizeof(buf));
 
@@ -482,19 +487,10 @@ time_strftime(PyObject *self, PyObject *args)
         buf.tm_isdst = 1;
 
 #ifdef HAVE_WCSFTIME
-    tmpfmt = PyBytes_FromStringAndSize(NULL,
-                                       sizeof(wchar_t) * (PyUnicode_GetSize(format)+1));
-    if (!tmpfmt)
+    format = PyUnicode_AsWideCharString((PyUnicodeObject*)format, NULL);
+    if (format == NULL)
         return NULL;
-    /* This assumes that PyUnicode_AsWideChar doesn't do any UTF-16
-       expansion. */
-    if (PyUnicode_AsWideChar((PyUnicodeObject*)format,
-                             (wchar_t*)PyBytes_AS_STRING(tmpfmt),
-                             PyUnicode_GetSize(format)+1) == (size_t)-1)
-        /* This shouldn't fail. */
-        Py_FatalError("PyUnicode_AsWideChar failed");
-    format = tmpfmt;
-    fmt = (wchar_t*)PyBytes_AS_STRING(format);
+    fmt = format;
 #else
     /* Convert the unicode string to an ascii one */
     format = PyUnicode_AsEncodedString(format, TZNAME_ENCODING, NULL);
@@ -528,8 +524,8 @@ time_strftime(PyObject *self, PyObject *args)
     for (i = 1024; ; i += i) {
         outbuf = (time_char *)PyMem_Malloc(i*sizeof(time_char));
         if (outbuf == NULL) {
-            Py_DECREF(format);
-            return PyErr_NoMemory();
+            PyErr_NoMemory();
+            break;
         }
         buflen = format_time(outbuf, i, fmt, &buf);
         if (buflen > 0 || i >= 256 * fmtlen) {
@@ -538,7 +534,6 @@ time_strftime(PyObject *self, PyObject *args)
                More likely, the format yields an empty result,
                e.g. an empty format, or %Z when the timezone
                is unknown. */
-            PyObject *ret;
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
@@ -546,19 +541,23 @@ time_strftime(PyObject *self, PyObject *args)
                                    TZNAME_ENCODING, NULL);
 #endif
             PyMem_Free(outbuf);
-            Py_DECREF(format);
-            return ret;
+            break;
         }
         PyMem_Free(outbuf);
 #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
         /* VisualStudio .NET 2005 does this properly */
         if (buflen == 0 && errno == EINVAL) {
             PyErr_SetString(PyExc_ValueError, "Invalid format string");
-            Py_DECREF(format);
-            return 0;
+            break;
         }
 #endif
     }
+#ifdef HAVE_WCSFTIME
+    PyMem_Free(format);
+#else
+    Py_DECREF(format);
+#endif
+    return ret;
 }
 
 #undef time_char
