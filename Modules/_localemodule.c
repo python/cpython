@@ -242,29 +242,16 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
 {
     PyObject *os1, *os2, *result = NULL;
     wchar_t *ws1 = NULL, *ws2 = NULL;
-    Py_ssize_t len1, len2;
 
     if (!PyArg_ParseTuple(args, "UU:strcoll", &os1, &os2))
         return NULL;
     /* Convert the unicode strings to wchar[]. */
-    len1 = PyUnicode_GET_SIZE(os1) + 1;
-    ws1 = PyMem_MALLOC(len1 * sizeof(wchar_t));
-    if (!ws1) {
-        PyErr_NoMemory();
+    ws1 = PyUnicode_AsWideCharString((PyUnicodeObject*)os1, NULL);
+    if (ws1 == NULL)
         goto done;
-    }
-    if (PyUnicode_AsWideChar((PyUnicodeObject*)os1, ws1, len1) == -1)
+    ws2 = PyUnicode_AsWideCharString((PyUnicodeObject*)os2, NULL);
+    if (ws2 == NULL)
         goto done;
-    ws1[len1 - 1] = 0;
-    len2 = PyUnicode_GET_SIZE(os2) + 1;
-    ws2 = PyMem_MALLOC(len2 * sizeof(wchar_t));
-    if (!ws2) {
-        PyErr_NoMemory();
-        goto done;
-    }
-    if (PyUnicode_AsWideChar((PyUnicodeObject*)os2, ws2, len2) == -1)
-        goto done;
-    ws2[len2 - 1] = 0;
     /* Collate the strings. */
     result = PyLong_FromLong(wcscoll(ws1, ws2));
   done:
