@@ -1961,21 +1961,21 @@ FILE*
 _Py_fopen(PyObject *unicode, const char *mode)
 {
 #ifdef MS_WINDOWS
-    wchar_t path[MAXPATHLEN+1];
+    wchar_t *path;
     wchar_t wmode[10];
-    Py_ssize_t len;
     int usize;
-
-    len = PyUnicode_AsWideChar((PyUnicodeObject*)unicode, path, MAXPATHLEN);
-    if (len == -1)
-        return NULL;
-    path[len] = L'\0';
+    FILE *f;
 
     usize = MultiByteToWideChar(CP_ACP, 0, mode, -1, wmode, sizeof(wmode));
     if (usize == 0)
         return NULL;
 
-    return _wfopen(path, wmode);
+    path = PyUnicode_AsWideCharString((PyUnicodeObject*)unicode, NULL);
+    if (path == NULL)
+        return NULL;
+    f = _wfopen(path, wmode);
+    PyMem_Free(path);
+    return f;
 #else
     FILE *f;
     PyObject *bytes = PyUnicode_EncodeFSDefault(unicode);
@@ -1997,17 +1997,15 @@ int
 _Py_stat(PyObject *unicode, struct stat *statbuf)
 {
 #ifdef MS_WINDOWS
-    wchar_t path[MAXPATHLEN+1];
-    Py_ssize_t len;
+    wchar_t *path;
     int err;
     struct _stat wstatbuf;
 
-    len = PyUnicode_AsWideChar((PyUnicodeObject*)unicode, path, MAXPATHLEN);
-    if (len == -1)
+    path = PyUnicode_AsWideCharString((PyUnicodeObject*)unicode, NULL);
+    if (path == NULL)
         return -1;
-    path[len] = L'\0';
-
     err = _wstat(path, &wstatbuf);
+    PyMem_Free(path);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
     return err;
@@ -3724,7 +3722,7 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 #else /* MS_WINDOWS */
     PyObject *pathobj;
     DWORD rv;
-    wchar_t path[MAXPATHLEN+1];
+    wchar_t *path;
     Py_ssize_t len;
 
     if (!_PyArg_NoKeywords("NullImporter()", kwds))
@@ -3739,15 +3737,15 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    len = PyUnicode_AsWideChar((PyUnicodeObject*)pathobj,
-                               path, sizeof(path) / sizeof(path[0]));
-    if (len == -1)
+    path = PyUnicode_AsWideCharString((PyUnicodeObject*)pathobj, NULL);
+    if (path == NULL)
         return -1;
     /* see issue1293 and issue3677:
      * stat() on Windows doesn't recognise paths like
      * "e:\\shared\\" and "\\\\whiterab-c2znlh\\shared" as dirs.
      */
     rv = GetFileAttributesW(path);
+    PyMem_Free(path);
     if (rv != INVALID_FILE_ATTRIBUTES) {
         /* it exists */
         if (rv & FILE_ATTRIBUTE_DIRECTORY) {
