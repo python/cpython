@@ -128,7 +128,7 @@ def updatecache(filename, module_globals=None):
         with open(fullname, 'r', encoding=coding) as fp:
             lines = fp.readlines()
     except IOError:
-        lines = []
+        return []
     if lines and not lines[-1].endswith('\n'):
         lines[-1] += '\n'
     size, mtime = stat.st_size, stat.st_mtime
