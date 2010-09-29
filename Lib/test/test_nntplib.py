@@ -164,7 +164,7 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     def setUp(self):
         support.requires("network")
         with support.transient_internet(self.NNTP_HOST):
-            self.server = NNTP(self.NNTP_HOST, timeout=TIMEOUT)
+            self.server = NNTP(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False)
 
     def tearDown(self):
         if self.server is not None:
@@ -254,6 +254,7 @@ class MockedNNTPTestsMixin:
         # Using BufferedRWPair instead of BufferedRandom ensures the file
         # isn't seekable.
         file = io.BufferedRWPair(self.sio, self.sio)
+        kwargs.setdefault('usenetrc', False)
         self.server = nntplib._NNTPBase(file, *args, **kwargs)
         return self.server
 
