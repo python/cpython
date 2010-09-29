@@ -8,12 +8,12 @@ See http://msdn.microsoft.com/en-us/library/ms685049%28v=VS.85%29.aspx for a
 similar example in C.
 """
 
-from ctypes import wintypes
+from ctypes import wintypes, WINFUNCTYPE
 import signal
 import ctypes
 
 # Function prototype for the handler function. Returns BOOL, takes a DWORD.
-HandlerRoutine = wintypes.WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
+HandlerRoutine = WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
 
 def _ctrl_handler(sig):
     """Handle a sig event and return 0 to terminate the process"""
