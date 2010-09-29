@@ -99,8 +99,8 @@ Copyright (c) Corporation for National Research Initiatives.
 #endif
 
 /* If the compiler provides a wchar_t type we try to support it
-   through the interface functions PyUnicode_FromWideChar() and
-   PyUnicode_AsWideChar(). */
+   through the interface functions PyUnicode_FromWideChar(),
+   PyUnicode_AsWideChar() and PyUnicode_AsWideCharString(). */
 
 #ifdef HAVE_USABLE_WCHAR_T
 # ifndef HAVE_WCHAR_H
@@ -156,6 +156,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_AsUnicode PyUnicodeUCS2_AsUnicode
 # define PyUnicode_AsUnicodeEscapeString PyUnicodeUCS2_AsUnicodeEscapeString
 # define PyUnicode_AsWideChar PyUnicodeUCS2_AsWideChar
+# define PyUnicode_AsWideCharString PyUnicodeUCS2_AsWideCharString
 # define PyUnicode_ClearFreeList PyUnicodeUCS2_ClearFreelist
 # define PyUnicode_Compare PyUnicodeUCS2_Compare
 # define PyUnicode_CompareWithASCII PyUnicodeUCS2_CompareASCII
@@ -239,6 +240,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_AsUnicode PyUnicodeUCS4_AsUnicode
 # define PyUnicode_AsUnicodeEscapeString PyUnicodeUCS4_AsUnicodeEscapeString
 # define PyUnicode_AsWideChar PyUnicodeUCS4_AsWideChar
+# define PyUnicode_AsWideCharString PyUnicodeUCS4_AsWideCharString
 # define PyUnicode_ClearFreeList PyUnicodeUCS4_ClearFreelist
 # define PyUnicode_Compare PyUnicodeUCS4_Compare
 # define PyUnicode_CompareWithASCII PyUnicodeUCS4_CompareWithASCII
@@ -568,6 +570,19 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_AsWideChar(
     PyUnicodeObject *unicode,   /* Unicode object */
     register wchar_t *w,        /* wchar_t buffer */
     Py_ssize_t size             /* size of buffer */
+    );
+
+/* Convert the Unicode object to a wide character string. The output string
+   always ends with a nul character. If size is not NULL, write the number of
+   wide characters (including the nul character) into *size.
+
+   Returns a buffer allocated by PyMem_Alloc() (use PyMem_Free() to free it)
+   on success. On error, returns NULL, *size is undefined and raises a
+   MemoryError. */
+
+PyAPI_FUNC(wchar_t*) PyUnicode_AsWideCharString(
+    PyUnicodeObject *unicode,   /* Unicode object */
+    Py_ssize_t *size            /* number of characters of the result */
     );
 
 #endif

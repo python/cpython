@@ -1153,9 +1153,26 @@ PyUnicode_FromFormat(const char *format, ...)
     return ret;
 }
 
-Py_ssize_t PyUnicode_AsWideChar(PyUnicodeObject *unicode,
-                                wchar_t *w,
-                                Py_ssize_t size)
+static void
+unicode_aswidechar(PyUnicodeObject *unicode,
+                   wchar_t *w,
+                   Py_ssize_t size)
+{
+#if Py_UNICODE_SIZE == SIZEOF_WCHAR_T
+    memcpy(w, unicode->str, size * sizeof(wchar_t));
+#else
+    register Py_UNICODE *u;
+    register Py_ssize_t i;
+    u = PyUnicode_AS_UNICODE(unicode);
+    for (i = size; i > 0; i--)
+        *w++ = *u++;
+#endif
+}
+
+Py_ssize_t
+PyUnicode_AsWideChar(PyUnicodeObject *unicode,
+                     wchar_t *w,
+                     Py_ssize_t size)
 {
     if (unicode == NULL) {
         PyErr_BadInternalCall();
@@ -1166,22 +1183,39 @@ Py_ssize_t PyUnicode_AsWideChar(PyUnicodeObject *unicode,
     if (size > PyUnicode_GET_SIZE(unicode))
         size = PyUnicode_GET_SIZE(unicode) + 1;
 
-#if Py_UNICODE_SIZE == SIZEOF_WCHAR_T
-    memcpy(w, unicode->str, size * sizeof(wchar_t));
-#else
-    {
-        register Py_UNICODE *u;
-        register Py_ssize_t i;
-        u = PyUnicode_AS_UNICODE(unicode);
-        for (i = size; i > 0; i--)
-            *w++ = *u++;
-    }
-#endif
+    unicode_aswidechar(unicode, w, size);
 
     if (size > PyUnicode_GET_SIZE(unicode))
         return PyUnicode_GET_SIZE(unicode);
     else
         return size;
+}
+
+wchar_t*
+PyUnicode_AsWideCharString(PyUnicodeObject *unicode,
+                           Py_ssize_t *size)
+{
+    wchar_t* buffer;
+    Py_ssize_t buflen;
+
+    if (unicode == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    if ((PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) < PyUnicode_GET_SIZE(unicode)) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    buflen = PyUnicode_GET_SIZE(unicode) + 1; /* copy L'\0' */
+    buffer = PyMem_MALLOC(buflen * sizeof(wchar_t));
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    unicode_aswidechar(unicode, buffer, buflen);
+    return buffer;
 }
 
 #endif
