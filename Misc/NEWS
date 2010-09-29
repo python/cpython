@@ -76,6 +76,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9962: GzipFile now has the peek() method.
+
 - Issue #9090: When a socket with a timeout fails with EWOULDBLOCK or EAGAIN,
   retry the select() loop instead of bailing out.  This is because select()
   can incorrectly report a socket as ready for reading (for example, if it

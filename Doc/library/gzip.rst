@@ -25,10 +25,10 @@ The module defines the following items:
 
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 
-   Constructor for the :class:`GzipFile` class, which simulates most of the methods
-   of a :term:`file object`, with the exception of the :meth:`readinto` and
-   :meth:`truncate` methods.  At least one of *fileobj* and *filename* must be
-   given a non-trivial value.
+   Constructor for the :class:`GzipFile` class, which simulates most of the
+   methods of a :term:`file object`, with the exception of the :meth:`truncate`
+   method.  At least one of *fileobj* and *filename* must be given a non-trivial
+   value.
 
    The new class instance is based on *fileobj*, which can be a regular file, a
    :class:`StringIO` object, or any other object which simulates a file.  It
@@ -66,8 +66,9 @@ The module defines the following items:
    writing as *fileobj*, and retrieve the resulting memory buffer using the
    :class:`io.BytesIO` object's :meth:`~io.BytesIO.getvalue` method.
 
-   :class:`GzipFile` supports the whole :class:`io.BufferedIOBase` interface,
-   including iteration and the :keyword:`with` statement.
+   :class:`GzipFile` supports the :class:`io.BufferedIOBase` interface,
+   including iteration and the :keyword:`with` statement.  Only the
+   :meth:`truncate` method isn't implemented.
 
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added.
@@ -77,6 +78,9 @@ The module defines the following items:
 
    .. versionchanged:: 3.2
       Support for unseekable files was added.
+
+   .. versionchanged:: 3.2
+      The :meth:`peek` method was implemented.
 
 
 .. function:: open(filename, mode='rb', compresslevel=9)
