@@ -76,6 +76,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9360: Cleanup and improvements to the nntplib module.  The API
+  now conforms to the philosophy of bytes and unicode separation in Python 3.
+  A test suite has also been added.
+
 - Issue #9962: GzipFile now has the peek() method.
 
 - Issue #9090: When a socket with a timeout fails with EWOULDBLOCK or EAGAIN,
