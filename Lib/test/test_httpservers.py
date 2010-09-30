@@ -10,6 +10,7 @@ from http import server
 
 import os
 import sys
+import re
 import base64
 import shutil
 import urllib.parse
@@ -18,6 +19,8 @@ import tempfile
 import threading
 
 import unittest
+
+from io import BytesIO
 from test import support
 
 class NoLogRequestHandler:
@@ -27,6 +30,22 @@ class NoLogRequestHandler:
 
     def read(self, n=None):
         return ''
+
+
+class SocketlessRequestHandler(BaseHTTPRequestHandler):
+    def __init__(self):
+        self.get_called = False
+        self.protocol_version = "HTTP/1.1"
+
+    def do_GET(self):
+        self.get_called = True
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b'<html><body>Data</body></html>\r\n')
+
+    def log_message(self, format, *args):
+        pass
 
 
 class TestServerThread(threading.Thread):
@@ -63,6 +82,61 @@ class BaseTestCase(unittest.TestCase):
         self.connection = http.client.HTTPConnection('localhost', self.PORT)
         self.connection.request(method, uri, body, headers)
         return self.connection.getresponse()
+
+class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
+    """Test the functionaility of the BaseHTTPServer."""
+
+    HTTPResponseMatch = re.compile(b'HTTP/1.[0-9]+ 200 OK')
+
+    def setUp (self):
+        self.handler = SocketlessRequestHandler()
+
+    def send_typical_request(self, message):
+        input = BytesIO(message)
+        output = BytesIO()
+        self.handler.rfile = input
+        self.handler.wfile = output
+        self.handler.handle_one_request()
+        output.seek(0)
+        return output.readlines()
+
+    def verify_get_called(self):
+        self.assertTrue(self.handler.get_called)
+
+    def verify_expected_headers(self, headers):
+        for fieldName in b'Server: ', b'Date: ', b'Content-Type: ':
+            self.assertEqual(sum(h.startswith(fieldName) for h in headers), 1)
+
+    def verify_http_server_response(self, response):
+        match = self.HTTPResponseMatch.search(response)
+        self.assertTrue(match is not None)
+
+    def test_http_1_1(self):
+        result = self.send_typical_request(b'GET / HTTP/1.1\r\n\r\n')
+        self.verify_http_server_response(result[0])
+        self.verify_expected_headers(result[1:-1])
+        self.verify_get_called()
+        self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+
+    def test_http_1_0(self):
+        result = self.send_typical_request(b'GET / HTTP/1.0\r\n\r\n')
+        self.verify_http_server_response(result[0])
+        self.verify_expected_headers(result[1:-1])
+        self.verify_get_called()
+        self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+
+    def test_http_0_9(self):
+        result = self.send_typical_request(b'GET / HTTP/0.9\r\n\r\n')
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], b'<html><body>Data</body></html>\r\n')
+        self.verify_get_called()
+
+    def test_with_continue_1_0(self):
+        result = self.send_typical_request(b'GET / HTTP/1.0\r\nExpect: 100-continue\r\n\r\n')
+        self.verify_http_server_response(result[0])
+        self.verify_expected_headers(result[1:-1])
+        self.verify_get_called()
+        self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
 
 
 class BaseHTTPServerTestCase(BaseTestCase):
@@ -400,7 +474,8 @@ class CGIHTTPServerTestCase(BaseTestCase):
 def test_main(verbose=None):
     try:
         cwd = os.getcwd()
-        support.run_unittest(BaseHTTPServerTestCase,
+        support.run_unittest(BaseHTTPRequestHandlerTestCase,
+                             BaseHTTPServerTestCase,
                              SimpleHTTPServerTestCase,
                              CGIHTTPServerTestCase
                              )
