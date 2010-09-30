@@ -322,6 +322,30 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         elif (conntype.lower() == 'keep-alive' and
               self.protocol_version >= "HTTP/1.1"):
             self.close_connection = 0
+        # Examine the headers and look for an Expect directive
+        expect = self.headers.get('Expect', "")
+        if (expect.lower() == "100-continue" and
+                self.protocol_version >= "HTTP/1.1" and
+                self.request_version >= "HTTP/1.1"):
+            if not self.handle_expect_100():
+                return False
+        return True
+
+    def handle_expect_100(self):
+        """Decide what to do with an "Expect: 100-continue" header.
+
+        If the client is expecting a 100 Continue response, we must
+        respond with either a 100 Continue or a final response before
+        waiting for the request body. The default is to always respond
+        with a 100 Continue. You can behave differently (for example,
+        reject unauthorized requests) by overriding this method.
+
+        This method should either return True (possibly after sending
+        a 100 Continue response) or send an error response and return
+        False.
+
+        """
+        self.send_response_only(100)
         return True
 
     def handle_one_request(self):
@@ -400,6 +424,12 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         """
         self.log_request(code)
+        self.send_response_only(code, message)
+        self.send_header('Server', self.version_string())
+        self.send_header('Date', self.date_time_string())
+
+    def send_response_only(self, code, message=None):
+        """Send the response header only."""
         if message is None:
             if code in self.responses:
                 message = self.responses[code][0]
@@ -408,9 +438,6 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         if self.request_version != 'HTTP/0.9':
             self.wfile.write(("%s %d %s\r\n" %
                               (self.protocol_version, code, message)).encode('ASCII', 'strict'))
-            # print (self.protocol_version, code, message)
-        self.send_header('Server', self.version_string())
-        self.send_header('Date', self.date_time_string())
 
     def send_header(self, keyword, value):
         """Send a MIME header."""

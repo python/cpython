@@ -10,11 +10,13 @@ from http import server
 
 import os
 import sys
+import re
 import base64
 import shutil
 import urllib.parse
 import http.client
 import tempfile
+from io import BytesIO
 
 import unittest
 from test import support
@@ -403,7 +405,102 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self):
+        self.get_called = False
+        self.protocol_version = "HTTP/1.1"
+
+    def do_GET(self):
+        self.get_called = True
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b'<html><body>Data</body></html>\r\n')
+
+    def log_message(self, format, *args):
         pass
+
+class RejectingSocketlessRequestHandler(SocketlessRequestHandler):
+    def handle_expect_100(self):
+        self.send_error(417)
+        return False
+
+class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
+    """Test the functionaility of the BaseHTTPServer.
+
+       Test the support for the Expect 100-continue header.
+       """
+
+    HTTPResponseMatch = re.compile(b'HTTP/1.[0-9]+ 200 OK')
+
+    def setUp (self):
+        self.handler = SocketlessRequestHandler()
+
+    def send_typical_request(self, message):
+        input = BytesIO(message)
+        output = BytesIO()
+        self.handler.rfile = input
+        self.handler.wfile = output
+        self.handler.handle_one_request()
+        output.seek(0)
+        return output.readlines()
+
+    def verify_get_called(self):
+        self.assertTrue(self.handler.get_called)
+
+    def verify_expected_headers(self, headers):
+        for fieldName in b'Server: ', b'Date: ', b'Content-Type: ':
+            self.assertEqual(sum(h.startswith(fieldName) for h in headers), 1)
+
+    def verify_http_server_response(self, response):
+        match = self.HTTPResponseMatch.search(response)
+        self.assertTrue(match is not None)
+
+    def test_http_1_1(self):
+        result = self.send_typical_request(b'GET / HTTP/1.1\r\n\r\n')
+        self.verify_http_server_response(result[0])
+        self.verify_expected_headers(result[1:-1])
+        self.verify_get_called()
+        self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+
+    def test_http_1_0(self):
+        result = self.send_typical_request(b'GET / HTTP/1.0\r\n\r\n')
+        self.verify_http_server_response(result[0])
+        self.verify_expected_headers(result[1:-1])
+        self.verify_get_called()
+        self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+
+    def test_http_0_9(self):
+        result = self.send_typical_request(b'GET / HTTP/0.9\r\n\r\n')
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], b'<html><body>Data</body></html>\r\n')
+        self.verify_get_called()
+
+    def test_with_continue_1_0(self):
+        result = self.send_typical_request(b'GET / HTTP/1.0\r\nExpect: 100-continue\r\n\r\n')
+        self.verify_http_server_response(result[0])
+        self.verify_expected_headers(result[1:-1])
+        self.verify_get_called()
+        self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+
+    def test_with_continue_1_1(self):
+        result = self.send_typical_request(b'GET / HTTP/1.1\r\nExpect: 100-continue\r\n\r\n')
+        self.assertEqual(result[0], b'HTTP/1.1 100 Continue\r\n')
+        self.assertEqual(result[1], b'HTTP/1.1 200 OK\r\n')
+        self.verify_expected_headers(result[2:-1])
+        self.verify_get_called()
+        self.assertEqual(result[-1], b'<html><body>Data</body></html>\r\n')
+
+    def test_with_continue_rejected(self):
+        usual_handler = self.handler        # Save to avoid breaking any subsequent tests.
+        self.handler = RejectingSocketlessRequestHandler()
+        result = self.send_typical_request(b'GET / HTTP/1.1\r\nExpect: 100-continue\r\n\r\n')
+        self.assertEqual(result[0], b'HTTP/1.1 417 Expectation Failed\r\n')
+        self.verify_expected_headers(result[1:-1])
+        # The expect handler should short circuit the usual get method by
+        # returning false here, so get_called should be false
+        self.assertFalse(self.handler.get_called)
+        self.assertEqual(sum(r == b'Connection: close\r\n' for r in result[1:-1]), 1)
+        self.handler = usual_handler        # Restore to avoid breaking any subsequent tests.
+
 
 class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
     """ Test url parsing """
@@ -431,6 +528,7 @@ def test_main(verbose=None):
     cwd = os.getcwd()
     try:
         support.run_unittest(
+            BaseHTTPRequestHandlerTestCase,
             BaseHTTPServerTestCase,
             SimpleHTTPServerTestCase,
             CGIHTTPServerTestCase,

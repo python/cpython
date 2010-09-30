@@ -76,6 +76,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1491: BaseHTTPServer nows send a 100 Continue response before sending
+  a 200 OK for the Expect: 100-continue request header.
+
 - Issue #9360: Cleanup and improvements to the nntplib module.  The API
   now conforms to the philosophy of bytes and unicode separation in Python 3.
   A test suite has also been added.
