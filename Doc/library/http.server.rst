@@ -155,6 +155,17 @@ of which this module provides three different variants:
       This method will parse and dispatch the request to the appropriate
       :meth:`do_\*` method.  You should never need to override it.
 
+   .. method:: handle_expect_100()
+
+      When a HTTP/1.1 compliant server receives a ``Expect: 100-continue``
+      request header it responds back with a ``100 Continue`` followed by ``200
+      OK`` headers.
+      This method can be overridden to raise an error if the server does not
+      want the client to continue.  For e.g. server can chose to send ``417
+      Expectation Failed`` as a response header and ``return False``.
+
+      .. versionadded:: 3.2
+
    .. method:: send_error(code, message=None)
 
       Sends and logs a complete error reply to the client. The numeric *code*
@@ -173,6 +184,15 @@ of which this module provides three different variants:
 
       Writes a specific HTTP header to the output stream. *keyword* should
       specify the header keyword, with *value* specifying its value.
+
+   .. method:: send_response_only(code, message=None)
+
+      Sends the reponse header only, used for the purposes when ``100
+      Continue`` response is sent by the server to the client. If the *message*
+      is not specified, the HTTP message corresponding the response *code*  is
+      sent.
+
+      .. versionadded:: 3.2
 
    .. method:: end_headers()
 
