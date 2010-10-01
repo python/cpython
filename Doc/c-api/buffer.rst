@@ -190,98 +190,96 @@ Buffer-related functions
       values.  On error, -1 is returned and an exception is raised; the *view*
       is left in an undefined state.
 
-      The following table gives possible values to the *flags* arguments.
+      The following are the possible values to the *flags* arguments.
 
-      +------------------------------+---------------------------------------------------+
-      | Flag                         | Description                                       |
-      +==============================+===================================================+
-      | .. cmacro:: PyBUF_SIMPLE     | This is the default flag.  The returned buffer    |
-      |                              | exposes a read-only memory area.  The format of   |
-      |                              | data is assumed to be raw unsigned bytes, without |
-      |                              | any particular structure.  This is a "stand-alone"|
-      |                              | flag constant. It                                 |
-      |                              | never needs to be '|'d to the others. The exporter|
-      |                              | will raise an error if it cannot provide such a   |
-      |                              | contiguous buffer of bytes.                       |
-      |                              |                                                   |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_WRITABLE   | Like :cmacro:`PyBUF_SIMPLE`, but the returned     |
-      |                              | buffer is writable. If the exporter doesn't       |
-      |                              | support                                           |
-      |                              | writable buffers, an error is raised.             |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_STRIDES    | This implies :cmacro:`PyBUF_ND`. The returned     |
-      |                              | buffer must provide strides information (i.e. the |
-      |                              | strides cannot be NULL). This would be used when  |
-      |                              | the consumer can handle strided, discontiguous    |
-      |                              | arrays.  Handling strides automatically assumes   |
-      |                              | you can handle shape.  The exporter can raise an  |
-      |                              | error if a strided representation of the data is  |
-      |                              | not possible (i.e. without the suboffsets).       |
-      |                              |                                                   |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_ND         | The returned buffer must provide shape            |
-      |                              | information. The memory will be assumed C-style   |
-      |                              | contiguous (last dimension varies the             |
-      |                              | fastest). The exporter may raise an error if it   |
-      |                              | cannot provide this kind of contiguous buffer. If |
-      |                              | this is not given then shape will be *NULL*.      |
-      |                              |                                                   |
-      +------------------------------+---------------------------------------------------+
-      |.. cmacro:: PyBUF_C_CONTIGUOUS| These flags indicate that the contiguity returned |
-      |            PyBUF_F_CONTIGUOUS| buffer must be respectively, C-contiguous (last   |
-      |          PyBUF_ANY_CONTIGUOUS| dimension varies the fastest), Fortran contiguous |
-      |                              | (first dimension varies the fastest) or either    |
-      |                              | one.  All of these flags imply                    |
-      |                              | :cmacro:`PyBUF_STRIDES` and guarantee that the    |
-      |                              | strides buffer info structure will be filled in   |
-      |                              | correctly.                                        |
-      |                              |                                                   |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_INDIRECT   | This flag indicates the returned buffer must have |
-      |                              | suboffsets information (which can be NULL if no   |
-      |                              | suboffsets are needed).  This can be used when    |
-      |                              | the consumer can handle indirect array            |
-      |                              | referencing implied by these suboffsets. This     |
-      |                              | implies :cmacro:`PyBUF_STRIDES`.                  |
-      |                              |                                                   |
-      |                              |                                                   |
-      |                              |                                                   |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_FORMAT     | The returned buffer must have true format         |
-      |                              | information if this flag is provided. This would  |
-      |                              | be used when the consumer is going to be checking |
-      |                              | for what 'kind' of data is actually stored. An    |
-      |                              | exporter should always be able to provide this    |
-      |                              | information if requested. If format is not        |
-      |                              | explicitly requested then the format must be      |
-      |                              | returned as *NULL* (which means ``'B'``, or       |
-      |                              | unsigned bytes)                                   |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_STRIDED    | This is equivalent to ``(PyBUF_STRIDES |          |
-      |                              | PyBUF_WRITABLE)``.                                |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_STRIDED_RO | This is equivalent to ``(PyBUF_STRIDES)``.        |
-      |                              |                                                   |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_RECORDS    | This is equivalent to ``(PyBUF_STRIDES |          |
-      |                              | PyBUF_FORMAT | PyBUF_WRITABLE)``.                 |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_RECORDS_RO | This is equivalent to ``(PyBUF_STRIDES |          |
-      |                              | PyBUF_FORMAT)``.                                  |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_FULL       | This is equivalent to ``(PyBUF_INDIRECT |         |
-      |                              | PyBUF_FORMAT | PyBUF_WRITABLE)``.                 |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_FULL_RO    | This is equivalent to ``(PyBUF_INDIRECT |         |
-      |                              | PyBUF_FORMAT)``.                                  |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_CONTIG     | This is equivalent to ``(PyBUF_ND |               |
-      |                              | PyBUF_WRITABLE)``.                                |
-      +------------------------------+---------------------------------------------------+
-      | .. cmacro:: PyBUF_CONTIG_RO  | This is equivalent to ``(PyBUF_ND)``.             |
-      |                              |                                                   |
-      +------------------------------+---------------------------------------------------+
+      .. cmacro:: PyBUF_SIMPLE
+
+         This is the default flag.  The returned buffer exposes a read-only
+         memory area.  The format of data is assumed to be raw unsigned bytes,
+         without any particular structure.  This is a "stand-alone" flag
+         constant.  It never needs to be '|'d to the others.  The exporter will
+         raise an error if it cannot provide such a contiguous buffer of bytes.
+
+      .. cmacro:: PyBUF_WRITABLE
+
+         Like :cmacro:`PyBUF_SIMPLE`, but the returned buffer is writable.  If
+         the exporter doesn't support writable buffers, an error is raised.
+
+      .. cmacro:: PyBUF_STRIDES
+
+         This implies :cmacro:`PyBUF_ND`.  The returned buffer must provide
+         strides information (i.e. the strides cannot be NULL).  This would be
+         used when the consumer can handle strided, discontiguous arrays.
+         Handling strides automatically assumes you can handle shape.  The
+         exporter can raise an error if a strided representation of the data is
+         not possible (i.e. without the suboffsets).
+
+      .. cmacro:: PyBUF_ND
+
+         The returned buffer must provide shape information.  The memory will be
+         assumed C-style contiguous (last dimension varies the fastest).  The
+         exporter may raise an error if it cannot provide this kind of
+         contiguous buffer.  If this is not given then shape will be *NULL*.
+
+      .. cmacro:: PyBUF_C_CONTIGUOUS
+                  PyBUF_F_CONTIGUOUS
+                  PyBUF_ANY_CONTIGUOUS
+
+         These flags indicate that the contiguity returned buffer must be
+         respectively, C-contiguous (last dimension varies the fastest), Fortran
+         contiguous (first dimension varies the fastest) or either one.  All of
+         these flags imply :cmacro:`PyBUF_STRIDES` and guarantee that the
+         strides buffer info structure will be filled in correctly.
+
+      .. cmacro:: PyBUF_INDIRECT
+
+         This flag indicates the returned buffer must have suboffsets
+         information (which can be NULL if no suboffsets are needed).  This can
+         be used when the consumer can handle indirect array referencing implied
+         by these suboffsets. This implies :cmacro:`PyBUF_STRIDES`.
+
+      .. cmacro:: PyBUF_FORMAT
+
+         The returned buffer must have true format information if this flag is
+         provided.  This would be used when the consumer is going to be checking
+         for what 'kind' of data is actually stored.  An exporter should always
+         be able to provide this information if requested.  If format is not
+         explicitly requested then the format must be returned as *NULL* (which
+         means ``'B'``, or unsigned bytes).
+
+      .. cmacro:: PyBUF_STRIDED
+
+         This is equivalent to ``(PyBUF_STRIDES | PyBUF_WRITABLE)``.
+
+      .. cmacro:: PyBUF_STRIDED_RO
+
+         This is equivalent to ``(PyBUF_STRIDES)``.
+
+      .. cmacro:: PyBUF_RECORDS
+
+         This is equivalent to ``(PyBUF_STRIDES | PyBUF_FORMAT |
+         PyBUF_WRITABLE)``.
+
+      .. cmacro:: PyBUF_RECORDS_RO
+
+         This is equivalent to ``(PyBUF_STRIDES | PyBUF_FORMAT)``.
+
+      .. cmacro:: PyBUF_FULL
+
+         This is equivalent to ``(PyBUF_INDIRECT | PyBUF_FORMAT |
+         PyBUF_WRITABLE)``.
+
+      .. cmacro:: PyBUF_FULL_RO
+
+         This is equivalent to ``(PyBUF_INDIRECT | PyBUF_FORMAT)``.
+
+      .. cmacro:: PyBUF_CONTIG
+
+         This is equivalent to ``(PyBUF_ND | PyBUF_WRITABLE)``.
+
+      .. cmacro:: PyBUF_CONTIG_RO
+
+         This is equivalent to ``(PyBUF_ND)``.
 
 
 .. cfunction:: void PyBuffer_Release(Py_buffer *view)
