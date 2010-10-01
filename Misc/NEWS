@@ -10,6 +10,9 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #10003: Allow handling of SIGBREAK on Windows. Fixes a regression
+  introduced by issue #9324. 
+
 - Issue #9979: Create function PyUnicode_AsWideCharString().
 
 - Issue #7397: Mention that importlib.import_module() is probably what someone

@@ -212,13 +212,13 @@ class BasicSignalTests(unittest.TestCase):
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
 class WindowsSignalTests(unittest.TestCase):
     def test_issue9324(self):
+        # Updated for issue #10003, adding SIGBREAK
         handler = lambda x, y: None
-        signal.signal(signal.SIGABRT, handler)
-        signal.signal(signal.SIGFPE, handler)
-        signal.signal(signal.SIGILL, handler)
-        signal.signal(signal.SIGINT, handler)
-        signal.signal(signal.SIGSEGV, handler)
-        signal.signal(signal.SIGTERM, handler)
+        for sig in (signal.SIGABRT, signal.SIGBREAK, signal.SIGFPE,
+                    signal.SIGILL, signal.SIGINT, signal.SIGSEGV,
+                    signal.SIGTERM):
+            # Set and then reset a handler for signals that work on windows
+            signal.signal(sig, signal.signal(sig, handler))
 
         with self.assertRaises(ValueError):
             signal.signal(-1, handler)
