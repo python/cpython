@@ -410,6 +410,9 @@ Core and Builtins
 Extensions
 ----------
 
+- Issue #6608: time.asctime is now checking struct tm fields its input
+  before passing it to the system asctime.  Patch by MunSic Jeong.
+
 - Issue #8734: Avoid crash in msvcrt.get_osfhandle() when an invalid file
   descriptor is provided.  Patch by Pascal Chambon.
 

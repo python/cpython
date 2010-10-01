@@ -315,6 +315,9 @@ PyDoc_STRVAR(localtime_doc,
 Convert seconds since the Epoch to a time tuple expressing local time.\n\
 When 'seconds' is not passed in, convert the current time instead.");
 
+/* Convert 9-item tuple to tm structure.  Return 1 on success, set
+ * an exception and return 0 on error.
+ */
 static int
 gettmarg(PyObject *args, struct tm *p)
 {
@@ -377,6 +380,76 @@ gettmarg(PyObject *args, struct tm *p)
     return 1;
 }
 
+/* Check values of the struct tm fields before it is passed to strftime() and
+ * asctime().  Return 1 if all values are valid, otherwise set an exception
+ * and returns 0.
+ */
+static int 
+checktm(struct tm* buf) 
+{
+    /* Checks added to make sure strftime() and asctime() does not crash Python by    
+       indexing blindly into some array for a textual representation                  
+       by some bad index (fixes bug #897625 and #6608).                               
+                                                                                      
+       Also support values of zero from Python code for arguments in which            
+       that is out of range by forcing that value to the lowest value that            
+       is valid (fixed bug #1520914).                                                 
+                                                                                      
+       Valid ranges based on what is allowed in struct tm:                            
+                                                                                      
+       - tm_year: [0, max(int)] (1)                                                   
+       - tm_mon: [0, 11] (2)                                                          
+       - tm_mday: [1, 31]                                                             
+       - tm_hour: [0, 23]                                                             
+       - tm_min: [0, 59]                                                              
+       - tm_sec: [0, 60]                                                              
+       - tm_wday: [0, 6] (1)                                                          
+       - tm_yday: [0, 365] (2)                                                        
+       - tm_isdst: [-max(int), max(int)]                                              
+                                                                                      
+       (1) gettmarg() handles bounds-checking.                                        
+       (2) Python's acceptable range is one greater than the range in C,              
+       thus need to check against automatic decrement by gettmarg().
+    */
+    if (buf->tm_mon == -1)
+        buf->tm_mon = 0;
+    else if (buf->tm_mon < 0 || buf->tm_mon > 11) {
+        PyErr_SetString(PyExc_ValueError, "month out of range");
+        return 0;
+    }
+    if (buf->tm_mday == 0)
+        buf->tm_mday = 1;
+    else if (buf->tm_mday < 0 || buf->tm_mday > 31) {
+        PyErr_SetString(PyExc_ValueError, "day of month out of range");
+        return 0;
+    }
+    if (buf->tm_hour < 0 || buf->tm_hour > 23) {
+        PyErr_SetString(PyExc_ValueError, "hour out of range");
+        return 0;
+    }
+    if (buf->tm_min < 0 || buf->tm_min > 59) {
+        PyErr_SetString(PyExc_ValueError, "minute out of range");
+        return 0;
+    }
+    if (buf->tm_sec < 0 || buf->tm_sec > 61) {
+        PyErr_SetString(PyExc_ValueError, "seconds out of range");
+        return 0;
+    }
+    /* tm_wday does not need checking of its upper-bound since taking
+    ``% 7`` in gettmarg() automatically restricts the range. */
+    if (buf->tm_wday < 0) {
+        PyErr_SetString(PyExc_ValueError, "day of week out of range");
+        return 0;
+    }
+    if (buf->tm_yday == -1)
+        buf->tm_yday = 0;
+    else if (buf->tm_yday < 0 || buf->tm_yday > 365) {
+        PyErr_SetString(PyExc_ValueError, "day of year out of range");
+        return 0;
+    }
+    return 1;
+}
+
 #ifdef HAVE_STRFTIME
 #ifdef HAVE_WCSFTIME
 #define time_char wchar_t
@@ -415,69 +488,10 @@ time_strftime(PyObject *self, PyObject *args)
     if (tup == NULL) {
         time_t tt = time(NULL);
         buf = *localtime(&tt);
-    } else if (!gettmarg(tup, &buf))
+    }
+    else if (!gettmarg(tup, &buf) || !checktm(&buf))
         return NULL;
 
-    /* Checks added to make sure strftime() does not crash Python by
-       indexing blindly into some array for a textual representation
-       by some bad index (fixes bug #897625).
-
-        Also support values of zero from Python code for arguments in which
-        that is out of range by forcing that value to the lowest value that
-        is valid (fixed bug #1520914).
-
-        Valid ranges based on what is allowed in struct tm:
-
-        - tm_year: [0, max(int)] (1)
-        - tm_mon: [0, 11] (2)
-        - tm_mday: [1, 31]
-        - tm_hour: [0, 23]
-        - tm_min: [0, 59]
-        - tm_sec: [0, 60]
-        - tm_wday: [0, 6] (1)
-        - tm_yday: [0, 365] (2)
-        - tm_isdst: [-max(int), max(int)]
-
-        (1) gettmarg() handles bounds-checking.
-        (2) Python's acceptable range is one greater than the range in C,
-        thus need to check against automatic decrement by gettmarg().
-    */
-    if (buf.tm_mon == -1)
-        buf.tm_mon = 0;
-    else if (buf.tm_mon < 0 || buf.tm_mon > 11) {
-        PyErr_SetString(PyExc_ValueError, "month out of range");
-            return NULL;
-    }
-    if (buf.tm_mday == 0)
-        buf.tm_mday = 1;
-    else if (buf.tm_mday < 0 || buf.tm_mday > 31) {
-        PyErr_SetString(PyExc_ValueError, "day of month out of range");
-            return NULL;
-    }
-    if (buf.tm_hour < 0 || buf.tm_hour > 23) {
-        PyErr_SetString(PyExc_ValueError, "hour out of range");
-        return NULL;
-    }
-    if (buf.tm_min < 0 || buf.tm_min > 59) {
-        PyErr_SetString(PyExc_ValueError, "minute out of range");
-        return NULL;
-    }
-    if (buf.tm_sec < 0 || buf.tm_sec > 61) {
-        PyErr_SetString(PyExc_ValueError, "seconds out of range");
-        return NULL;
-    }
-    /* tm_wday does not need checking of its upper-bound since taking
-    ``% 7`` in gettmarg() automatically restricts the range. */
-    if (buf.tm_wday < 0) {
-        PyErr_SetString(PyExc_ValueError, "day of week out of range");
-        return NULL;
-    }
-    if (buf.tm_yday == -1)
-        buf.tm_yday = 0;
-    else if (buf.tm_yday < 0 || buf.tm_yday > 365) {
-        PyErr_SetString(PyExc_ValueError, "day of year out of range");
-        return NULL;
-    }
     /* Normalize tm_isdst just in case someone foolishly implements %Z
        based on the assumption that tm_isdst falls within the range of
        [-1, 1] */
@@ -603,7 +617,7 @@ time_asctime(PyObject *self, PyObject *args)
     if (tup == NULL) {
         time_t tt = time(NULL);
         buf = *localtime(&tt);
-    } else if (!gettmarg(tup, &buf))
+    } else if (!gettmarg(tup, &buf) || !checktm(&buf))
         return NULL;
     p = asctime(&buf);
     if (p[24] == '\n')
