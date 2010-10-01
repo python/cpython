@@ -37,56 +37,59 @@ class TimeTestCase(unittest.TestCase):
             except ValueError:
                 self.fail('conversion specifier: %r failed.' % format)
 
-    def test_strftime_bounds_checking(self):
+    def _bounds_checking(self, func=time.strftime):
         # Make sure that strftime() checks the bounds of the various parts
         #of the time tuple (0 is valid for *all* values).
 
         # Check year [1900, max(int)]
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1899, 1, 1, 0, 0, 0, 0, 1, -1))
         if time.accept2dyear:
-            self.assertRaises(ValueError, time.strftime, '',
+            self.assertRaises(ValueError, func,
                                 (-1, 1, 1, 0, 0, 0, 0, 1, -1))
-            self.assertRaises(ValueError, time.strftime, '',
+            self.assertRaises(ValueError, func,
                                 (100, 1, 1, 0, 0, 0, 0, 1, -1))
         # Check month [1, 12] + zero support
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, -1, 1, 0, 0, 0, 0, 1, -1))
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 13, 1, 0, 0, 0, 0, 1, -1))
         # Check day of month [1, 31] + zero support
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, -1, 0, 0, 0, 0, 1, -1))
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, 32, 0, 0, 0, 0, 1, -1))
         # Check hour [0, 23]
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, 1, -1, 0, 0, 0, 1, -1))
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, 1, 24, 0, 0, 0, 1, -1))
         # Check minute [0, 59]
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, 1, 0, -1, 0, 0, 1, -1))
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, 1, 0, 60, 0, 0, 1, -1))
         # Check second [0, 61]
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, 1, 0, 0, -1, 0, 1, -1))
         # C99 only requires allowing for one leap second, but Python's docs say
         # allow two leap seconds (0..61)
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, 1, 0, 0, 62, 0, 1, -1))
         # No check for upper-bound day of week;
         #  value forced into range by a ``% 7`` calculation.
         # Start check at -2 since gettmarg() increments value before taking
         #  modulo.
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, 1, 0, 0, 0, -2, 1, -1))
         # Check day of the year [1, 366] + zero support
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, 1, 0, 0, 0, 0, -1, -1))
-        self.assertRaises(ValueError, time.strftime, '',
+        self.assertRaises(ValueError, func,
                             (1900, 1, 1, 0, 0, 0, 0, 367, -1))
+
+    def test_strftime_bounding_check(self):
+        self._bounds_checking(lambda tup: time.strftime('', tup))
 
     def test_default_values_for_zero(self):
         # Make sure that using all zeros uses the proper default values.
@@ -119,6 +122,9 @@ class TimeTestCase(unittest.TestCase):
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
         self.assertRaises(TypeError, time.asctime, 0)
+
+    def test_asctime_bounding_check(self):
+        self._bounds_checking(time.asctime)
 
     def test_tzset(self):
         if not hasattr(time, "tzset"):
