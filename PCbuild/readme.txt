@@ -55,7 +55,7 @@ PC/VC6/
     Visual C++ 6.0
 PC/VS7.1/
     Visual Studio 2003 (7.1)
-PCbuild8/
+PC/VS8.0/
     Visual Studio 2005 (8.0)
 
 
