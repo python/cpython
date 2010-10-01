@@ -1,4 +1,4 @@
-from __future__ import with_statement
+from __future__ import with_statement, print_function
 # Script for building the _ssl and _hashlib modules for Windows.
 # Uses Perl to setup the OpenSSL environment correctly
 # and build OpenSSL, then invokes a simple nmake session
