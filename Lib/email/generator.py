@@ -270,7 +270,7 @@ class Generator:
 _FMT = '[Non-text (%(type)s) part of message omitted, filename %(filename)s]'
 
 class DecodedGenerator(Generator):
-    """Generator a text representation of a message.
+    """Generates a text representation of a message.
 
     Like the Generator base class, except that non-text parts are substituted
     with a format string representing the part.
