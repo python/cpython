@@ -79,6 +79,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10004: quoprimime no longer generates a traceback when confronted
+  with invalid characters after '=' in a Q-encoded word.
+
 - Issue #1491: BaseHTTPServer nows send a 100 Continue response before sending
   a 200 OK for the Expect: 100-continue request header.
 
