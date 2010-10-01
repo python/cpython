@@ -121,6 +121,9 @@ C-API
 Library
 -------
 
+- Issue #10004: quoprimime no longer generates a traceback when confronted
+  with invalid characters after '=' in a Q-encoded word.
+
 - Issue #9950: Fix socket.sendall() crash or misbehaviour when a signal is
   received.  Now sendall() properly calls signal handlers if necessary,
   and retries sending if these returned successfully, including on sockets
