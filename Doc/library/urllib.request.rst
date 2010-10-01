@@ -11,9 +11,6 @@ The :mod:`urllib.request` module defines functions and classes which help in
 opening URLs (mostly HTTP) in a complex world --- basic and digest
 authentication, redirections, cookies and more.
 
-.. warning:: When opening HTTPS (or FTPS) URLs, it is not attempted to
-   validate the server certificate.  Use at your own risk!
-
 
 The :mod:`urllib.request` module defines the following functions:
 
@@ -22,6 +19,10 @@ The :mod:`urllib.request` module defines the following functions:
 
    Open the URL *url*, which can be either a string or a
    :class:`Request` object.
+
+   .. warning::
+      HTTPS (or FTPS) requests do not do any verification of the server's
+      certificate.
 
    *data* may be a string specifying additional data to send to the
    server, or ``None`` if no such data is needed.  Currently HTTP
