@@ -333,4 +333,4 @@ def header_decode(s):
     the high level email.header class for that functionality.
     """
     s = s.replace('_', ' ')
-    return re.sub(r'=\w{2}', _unquote_match, s)
+    return re.sub(r'=[a-fA-F0-9]{2}', _unquote_match, s)
