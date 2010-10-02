@@ -1499,6 +1499,23 @@ also support these operations. Strings and tuples are immutable sequence types:
 such objects cannot be modified once created. The following operations are
 defined on mutable sequence types (where *x* is an arbitrary object):
 
+.. index::
+   triple: operations on; sequence; types
+   triple: operations on; list; type
+   pair: subscript; assignment
+   pair: slice; assignment
+   pair: extended slice; assignment
+   statement: del
+   single: append() (list method)
+   single: extend() (list method)
+   single: count() (list method)
+   single: index() (list method)
+   single: insert() (list method)
+   single: pop() (list method)
+   single: remove() (list method)
+   single: reverse() (list method)
+   single: sort() (list method)
+
 +------------------------------+--------------------------------+---------------------+
 | Operation                    | Result                         | Notes               |
 +==============================+================================+=====================+
@@ -1543,23 +1560,6 @@ defined on mutable sequence types (where *x* is an arbitrary object):
 | ``s.sort([cmp[, key[,        | sort the items of *s* in place | (7)(8)(9)(10)       |
 | reverse]]])``                |                                |                     |
 +------------------------------+--------------------------------+---------------------+
-
-.. index::
-   triple: operations on; sequence; types
-   triple: operations on; list; type
-   pair: subscript; assignment
-   pair: slice; assignment
-   pair: extended slice; assignment
-   statement: del
-   single: append() (list method)
-   single: extend() (list method)
-   single: count() (list method)
-   single: index() (list method)
-   single: insert() (list method)
-   single: pop() (list method)
-   single: remove() (list method)
-   single: reverse() (list method)
-   single: sort() (list method)
 
 Notes:
 
