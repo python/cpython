@@ -98,6 +98,13 @@ class TestABC(unittest.TestCase):
             self.assertRaises(TypeError, F)  # because bar is abstract now
             self.assertTrue(isabstract(F))
 
+    def test_type_has_no_abstractmethods(self):
+        # type pretends not to have __abstractmethods__.
+        self.assertRaises(AttributeError, getattr, type, "__abstractmethods__")
+        class meta(type):
+            pass
+        self.assertRaises(AttributeError, getattr, meta, "__abstractmethods__")
+
     def test_registration_basics(self):
         class A(metaclass=abc.ABCMeta):
             pass
