@@ -1386,7 +1386,7 @@ test_widechar(PyObject *self)
 }
 
 static PyObject *
-test_aswidechar(PyObject *self, PyObject *args)
+unicode_aswidechar(PyObject *self, PyObject *args)
 {
     PyObject *unicode, *result;
     Py_ssize_t buflen, size;
@@ -1417,7 +1417,7 @@ test_aswidechar(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-test_aswidecharstring(PyObject *self, PyObject *args)
+unicode_aswidecharstring(PyObject *self, PyObject *args)
 {
     PyObject *unicode, *result;
     Py_ssize_t size;
@@ -2321,8 +2321,8 @@ static PyMethodDef TestMethods[] = {
     {"test_u_code",             (PyCFunction)test_u_code,        METH_NOARGS},
     {"test_Z_code",             (PyCFunction)test_Z_code,        METH_NOARGS},
     {"test_widechar",           (PyCFunction)test_widechar,      METH_NOARGS},
-    {"test_aswidechar",         test_aswidechar,                 METH_VARARGS},
-    {"test_aswidecharstring",   test_aswidecharstring,           METH_VARARGS},
+    {"unicode_aswidechar",      unicode_aswidechar,                 METH_VARARGS},
+    {"unicode_aswidecharstring",unicode_aswidecharstring,           METH_VARARGS},
 #ifdef WITH_THREAD
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
