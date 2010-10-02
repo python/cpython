@@ -320,8 +320,11 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 static PyObject *
 type_abstractmethods(PyTypeObject *type, void *context)
 {
-    PyObject *mod = PyDict_GetItemString(type->tp_dict,
-                                         "__abstractmethods__");
+    PyObject *mod = NULL;
+    /* type its self has an __abstractmethods__ descriptor (this). Don't
+       return that. */
+    if (type != &PyType_Type)
+        mod = PyDict_GetItemString(type->tp_dict, "__abstractmethods__");
     if (!mod) {
         PyErr_Format(PyExc_AttributeError, "__abstractmethods__");
         return NULL;
