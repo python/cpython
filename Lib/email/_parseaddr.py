@@ -160,7 +160,12 @@ def mktime_tz(data):
 
 
 def quote(str):
-    """Add quotes around a string."""
+    """Prepare string to be used in a quoted string.
+
+    Turns backslash and double quote characters into quoted pairs.  These
+    are the only characters that need to be quoted inside a quoted string.
+    Does not add the surrounding double quotes.
+    """
     return str.replace('\\', '\\\\').replace('"', '\\"')
 
 
@@ -318,7 +323,7 @@ class AddrlistClass:
                 aslist.append('.')
                 self.pos += 1
             elif self.field[self.pos] == '"':
-                aslist.append('"%s"' % self.getquote())
+                aslist.append('"%s"' % quote(self.getquote()))
             elif self.field[self.pos] in self.atomends:
                 break
             else:
