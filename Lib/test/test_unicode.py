@@ -1419,6 +1419,17 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEquals(size, 7)
         self.assertEquals(wchar, 'abc\0def\0')
 
+        nonbmp = chr(0x10ffff)
+        if sizeof(c_wchar) == 2:
+            buflen = 3
+            nchar = 2
+        else: # sizeof(c_wchar) == 4
+            buflen = 2
+            nchar = 1
+        wchar, size = test_aswidechar(nonbmp, buflen)
+        self.assertEquals(size, nchar)
+        self.assertEquals(wchar, nonbmp + '\0')
+
     # Test PyUnicode_AsWideCharString()
     def test_aswidecharstring(self):
         from _testcapi import test_aswidecharstring
@@ -1431,6 +1442,15 @@ class UnicodeTest(string_tests.CommonTest,
         wchar, size = test_aswidecharstring('abc\0def')
         self.assertEquals(size, 7)
         self.assertEquals(wchar, 'abc\0def\0')
+
+        nonbmp = chr(0x10ffff)
+        if sizeof(c_wchar) == 2:
+            nchar = 2
+        else: # sizeof(c_wchar) == 4
+            nchar = 1
+        wchar, size = test_aswidecharstring(nonbmp)
+        self.assertEquals(size, nchar)
+        self.assertEquals(wchar, nonbmp + '\0')
 
 
 def test_main():

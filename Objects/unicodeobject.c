@@ -1153,19 +1153,112 @@ PyUnicode_FromFormat(const char *format, ...)
     return ret;
 }
 
-static void
+/* Helper function for PyUnicode_AsWideChar() and PyUnicode_AsWideCharString():
+   convert a Unicode object to a wide character string.
+
+   - If w is NULL: return the number of wide characters (including the nul
+     character) required to convert the unicode object. Ignore size argument.
+
+   - Otherwise: return the number of wide characters (excluding the nul
+     character) written into w. Write at most size wide characters (including
+     the nul character). */
+static Py_ssize_t
 unicode_aswidechar(PyUnicodeObject *unicode,
                    wchar_t *w,
                    Py_ssize_t size)
 {
 #if Py_UNICODE_SIZE == SIZEOF_WCHAR_T
-    memcpy(w, unicode->str, size * sizeof(wchar_t));
-#else
-    register Py_UNICODE *u;
-    register Py_ssize_t i;
+    Py_ssize_t res;
+    if (w != NULL) {
+        res = PyUnicode_GET_SIZE(unicode);
+        if (size > res)
+            size = res + 1;
+        else
+            res = size;
+        memcpy(w, unicode->str, size * sizeof(wchar_t));
+        return res;
+    }
+    else
+        return PyUnicode_GET_SIZE(unicode) + 1;
+#elif Py_UNICODE_SIZE == 2 && SIZEOF_WCHAR_T == 4
+    register const Py_UNICODE *u;
+    const Py_UNICODE *uend;
+    const wchar_t *worig, *wend;
+    Py_ssize_t nchar;
+
     u = PyUnicode_AS_UNICODE(unicode);
-    for (i = size; i > 0; i--)
-        *w++ = *u++;
+    uend = u + PyUnicode_GET_SIZE(unicode);
+    if (w != NULL) {
+        worig = w;
+        wend = w + size;
+        while (u != uend && w != wend) {
+            if (0xD800 <= u[0] && u[0] <= 0xDBFF
+                && 0xDC00 <= u[1] && u[1] <= 0xDFFF)
+            {
+                *w = (((u[0] & 0x3FF) << 10) | (u[1] & 0x3FF)) + 0x10000;
+                u += 2;
+            }
+            else {
+                *w = *u;
+                u++;
+            }
+            w++;
+        }
+        if (w != wend)
+            *w = L'\0';
+        return w - worig;
+    }
+    else {
+        nchar = 1; /* nul character at the end */
+        while (u != uend) {
+            if (0xD800 <= u[0] && u[0] <= 0xDBFF
+                && 0xDC00 <= u[1] && u[1] <= 0xDFFF)
+                u += 2;
+            else
+                u++;
+            nchar++;
+        }
+    }
+    return nchar;
+#elif Py_UNICODE_SIZE == 4 && SIZEOF_WCHAR_T == 2
+    register Py_UNICODE *u, *uend, ordinal;
+    register Py_ssize_t i;
+    wchar_t *worig, *wend;
+    Py_ssize_t nchar;
+
+    u = PyUnicode_AS_UNICODE(unicode);
+    uend = u + PyUnicode_GET_SIZE(u);
+    if (w != NULL) {
+        worig = w;
+        wend = w + size;
+        while (u != uend && w != wend) {
+            ordinal = *u;
+            if (ordinal > 0xffff) {
+                ordinal -= 0x10000;
+                *w++ = 0xD800 | (ordinal >> 10);
+                *w++ = 0xDC00 | (ordinal & 0x3FF);
+            }
+            else
+                *w++ = ordinal;
+            u++;
+        }
+        if (w != wend)
+            *w = 0;
+        return w - worig;
+    }
+    else {
+        nchar = 1; /* nul character */
+        while (u != uend) {
+            if (*u > 0xffff)
+                nchar += 2;
+            else
+                nchar++;
+            u++;
+        }
+        return nchar;
+    }
+#else
+#  error "unsupported wchar_t and Py_UNICODE sizes, see issue #8670"
 #endif
 }
 
@@ -1178,17 +1271,7 @@ PyUnicode_AsWideChar(PyUnicodeObject *unicode,
         PyErr_BadInternalCall();
         return -1;
     }
-
-    /* If possible, try to copy the 0-termination as well */
-    if (size > PyUnicode_GET_SIZE(unicode))
-        size = PyUnicode_GET_SIZE(unicode) + 1;
-
-    unicode_aswidechar(unicode, w, size);
-
-    if (size > PyUnicode_GET_SIZE(unicode))
-        return PyUnicode_GET_SIZE(unicode);
-    else
-        return size;
+    return unicode_aswidechar(unicode, w, size);
 }
 
 wchar_t*
@@ -1203,20 +1286,20 @@ PyUnicode_AsWideCharString(PyUnicodeObject *unicode,
         return NULL;
     }
 
-    if ((PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) < PyUnicode_GET_SIZE(unicode)) {
+    buflen = unicode_aswidechar(unicode, NULL, 0);
+    if (PY_SSIZE_T_MAX / sizeof(wchar_t) < buflen) {
         PyErr_NoMemory();
         return NULL;
     }
 
-    buflen = PyUnicode_GET_SIZE(unicode) + 1; /* copy L'\0' */
     buffer = PyMem_MALLOC(buflen * sizeof(wchar_t));
     if (buffer == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    unicode_aswidechar(unicode, buffer, buflen);
-    if (size)
-        *size = buflen - 1;
+    buflen = unicode_aswidechar(unicode, buffer, buflen);
+    if (size != NULL)
+        *size = buflen;
     return buffer;
 }
 
