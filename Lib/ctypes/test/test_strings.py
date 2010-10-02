@@ -74,6 +74,13 @@ else:
             buf[1] = "Z"
             self.assertEqual(buf.value, "xZCD")
 
+        @unittest.skipIf(sizeof(c_wchar) < 4,
+                         "sizeof(wchar_t) is smaller than 4 bytes")
+        def test_nonbmp(self):
+            u = chr(0x10ffff)
+            w = c_wchar(u)
+            self.assertEqual(w.value, u)
+
 class StringTestCase(unittest.TestCase):
     def XX_test_basic_strings(self):
         cs = c_string("abcdef")
