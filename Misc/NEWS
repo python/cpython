@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1050268: parseaddr now correctly quotes double quote and backslash
+  characters that appear inside quoted strings in email addresses.
+
 - Issue #10004: quoprimime no longer generates a traceback when confronted
   with invalid characters after '=' in a Q-encoded word.
 
