@@ -816,6 +816,22 @@ Internal types
       objects, code objects are immutable and contain no references (directly or
       indirectly) to mutable objects.
 
+      .. index::
+         single: co_argcount (code object attribute)
+         single: co_code (code object attribute)
+         single: co_consts (code object attribute)
+         single: co_filename (code object attribute)
+         single: co_firstlineno (code object attribute)
+         single: co_flags (code object attribute)
+         single: co_lnotab (code object attribute)
+         single: co_name (code object attribute)
+         single: co_names (code object attribute)
+         single: co_nlocals (code object attribute)
+         single: co_stacksize (code object attribute)
+         single: co_varnames (code object attribute)
+         single: co_cellvars (code object attribute)
+         single: co_freevars (code object attribute)
+
       Special read-only attributes: :attr:`co_name` gives the function name;
       :attr:`co_argcount` is the number of positional arguments (including arguments
       with default values); :attr:`co_nlocals` is the number of local variables used
@@ -832,22 +848,6 @@ Internal types
       line numbers (for details see the source code of the interpreter);
       :attr:`co_stacksize` is the required stack size (including local variables);
       :attr:`co_flags` is an integer encoding a number of flags for the interpreter.
-
-      .. index::
-         single: co_argcount (code object attribute)
-         single: co_code (code object attribute)
-         single: co_consts (code object attribute)
-         single: co_filename (code object attribute)
-         single: co_firstlineno (code object attribute)
-         single: co_flags (code object attribute)
-         single: co_lnotab (code object attribute)
-         single: co_name (code object attribute)
-         single: co_names (code object attribute)
-         single: co_nlocals (code object attribute)
-         single: co_stacksize (code object attribute)
-         single: co_varnames (code object attribute)
-         single: co_cellvars (code object attribute)
-         single: co_freevars (code object attribute)
 
       .. index:: object: generator
 
