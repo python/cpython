@@ -730,8 +730,8 @@ class HTTPConnection:
             self.__response = None
         self.__state = _CS_IDLE
 
-    def send(self, str):
-        """Send `str' to the server."""
+    def send(self, data):
+        """Send `data' to the server."""
         if self.sock is None:
             if self.auto_open:
                 self.connect()
@@ -739,14 +739,14 @@ class HTTPConnection:
                 raise NotConnected()
 
         if self.debuglevel > 0:
-            print("send:", repr(str))
+            print("send:", repr(data))
         blocksize = 8192
-        if hasattr(str, "read") :
+        if hasattr(data, "read") :
             if self.debuglevel > 0:
                 print("sendIng a read()able")
             encode = False
             try:
-                mode = str.mode
+                mode = data.mode
             except AttributeError:
                 # io.BytesIO and other file-like objects don't have a `mode`
                 # attribute.
@@ -757,14 +757,14 @@ class HTTPConnection:
                     if self.debuglevel > 0:
                         print("encoding file using iso-8859-1")
             while 1:
-                data = str.read(blocksize)
-                if not data:
+                datablock = data.read(blocksize)
+                if not datablock:
                     break
                 if encode:
-                    data = data.encode("iso-8859-1")
-                self.sock.sendall(data)
+                    datablock = datablock.encode("iso-8859-1")
+                self.sock.sendall(datablock)
         else:
-            self.sock.sendall(str)
+            self.sock.sendall(data)
 
     def _output(self, s):
         """Add a line of output to the current request buffer.
