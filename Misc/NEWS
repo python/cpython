@@ -17,6 +17,8 @@ Core and Builtins
   fixes an interpreter crash when initializing an instance of a long
   subclass from an object whose __long__ method returns a plain int.
 
+- Issue #10006: type.__abstractmethods__ now raises an AttributeError.
+
 - Issue #9797: pystate.c wrongly assumed that zero couldn't be a valid
   thread-local storage key.
 
