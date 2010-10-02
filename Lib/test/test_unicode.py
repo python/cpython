@@ -1394,6 +1394,45 @@ class UnicodeTest(string_tests.CommonTest,
             'string, got a non-ASCII byte: 0xe9$',
             format_unicode, b'unicode\xe9=%s', 'ascii')
 
+    # Test PyUnicode_AsWideChar()
+    def test_aswidechar(self):
+        from _testcapi import test_aswidechar
+        from ctypes import c_wchar, sizeof
+
+        wchar, size = test_aswidechar('abcdef', 2)
+        self.assertEquals(size, 2)
+        self.assertEquals(wchar, 'ab')
+
+        wchar, size = test_aswidechar('abc', 3)
+        self.assertEquals(size, 3)
+        self.assertEquals(wchar, 'abc')
+
+        wchar, size = test_aswidechar('abc', 4)
+        self.assertEquals(size, 3)
+        self.assertEquals(wchar, 'abc\0')
+
+        wchar, size = test_aswidechar('abc', 10)
+        self.assertEquals(size, 3)
+        self.assertEquals(wchar, 'abc\0')
+
+        wchar, size = test_aswidechar('abc\0def', 20)
+        self.assertEquals(size, 7)
+        self.assertEquals(wchar, 'abc\0def\0')
+
+    # Test PyUnicode_AsWideCharString()
+    def test_aswidecharstring(self):
+        from _testcapi import test_aswidecharstring
+        from ctypes import c_wchar, sizeof
+
+        wchar, size = test_aswidecharstring('abc')
+        self.assertEquals(size, 3)
+        self.assertEquals(wchar, 'abc\0')
+
+        wchar, size = test_aswidecharstring('abc\0def')
+        self.assertEquals(size, 7)
+        self.assertEquals(wchar, 'abc\0def\0')
+
+
 def test_main():
     support.run_unittest(__name__)
 

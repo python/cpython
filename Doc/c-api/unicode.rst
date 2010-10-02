@@ -466,7 +466,8 @@ wchar_t support for platforms which support it:
 
    Convert the Unicode object to a wide character string. The output string
    always ends with a nul character. If *size* is not *NULL*, write the number
-   of wide characters (including the nul character) into *\*size*.
+   of wide characters (excluding the trailing 0-termination character) into
+   *\*size*.
 
    Returns a buffer allocated by :cfunc:`PyMem_Alloc` (use :cfunc:`PyMem_Free`
    to free it) on success. On error, returns *NULL*, *\*size* is undefined and

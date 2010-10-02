@@ -1386,6 +1386,58 @@ test_widechar(PyObject *self)
 }
 
 static PyObject *
+test_aswidechar(PyObject *self, PyObject *args)
+{
+    PyObject *unicode, *result;
+    Py_ssize_t buflen, size;
+    wchar_t *buffer;
+
+    if (!PyArg_ParseTuple(args, "Un", &unicode, &buflen))
+        return NULL;
+    buffer = PyMem_Malloc(buflen * sizeof(wchar_t));
+    if (buffer == NULL)
+        return PyErr_NoMemory();
+
+    size = PyUnicode_AsWideChar((PyUnicodeObject*)unicode, buffer, buflen);
+    if (size == -1) {
+        PyMem_Free(buffer);
+        return NULL;
+    }
+
+    if (size < buflen)
+        buflen = size + 1;
+    else
+        buflen = size;
+    result = PyUnicode_FromWideChar(buffer, buflen);
+    PyMem_Free(buffer);
+    if (result == NULL)
+        return NULL;
+
+    return Py_BuildValue("(Nn)", result, size);
+}
+
+static PyObject *
+test_aswidecharstring(PyObject *self, PyObject *args)
+{
+    PyObject *unicode, *result;
+    Py_ssize_t size;
+    wchar_t *buffer;
+
+    if (!PyArg_ParseTuple(args, "U", &unicode))
+        return NULL;
+
+    buffer = PyUnicode_AsWideCharString((PyUnicodeObject*)unicode, &size);
+    if (buffer == NULL)
+        return NULL;
+
+    result = PyUnicode_FromWideChar(buffer, size + 1);
+    PyMem_Free(buffer);
+    if (result == NULL)
+        return NULL;
+    return Py_BuildValue("(Nn)", result, size);
+}
+
+static PyObject *
 getargs_w_star(PyObject *self, PyObject *args)
 {
     Py_buffer buffer;
@@ -2262,28 +2314,30 @@ static PyMethodDef TestMethods[] = {
     {"getargs_Z_hash",          getargs_Z_hash,                  METH_VARARGS},
     {"getargs_w_star",          getargs_w_star,                  METH_VARARGS},
     {"codec_incrementalencoder",
-     (PyCFunction)codec_incrementalencoder,      METH_VARARGS},
+     (PyCFunction)codec_incrementalencoder,                      METH_VARARGS},
     {"codec_incrementaldecoder",
-     (PyCFunction)codec_incrementaldecoder,      METH_VARARGS},
+     (PyCFunction)codec_incrementaldecoder,                      METH_VARARGS},
     {"test_s_code",             (PyCFunction)test_s_code,        METH_NOARGS},
     {"test_u_code",             (PyCFunction)test_u_code,        METH_NOARGS},
     {"test_Z_code",             (PyCFunction)test_Z_code,        METH_NOARGS},
     {"test_widechar",           (PyCFunction)test_widechar,      METH_NOARGS},
+    {"test_aswidechar",         test_aswidechar,                 METH_VARARGS},
+    {"test_aswidecharstring",   test_aswidecharstring,           METH_VARARGS},
 #ifdef WITH_THREAD
-    {"_test_thread_state",  test_thread_state,                   METH_VARARGS},
+    {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
 #endif
 #ifdef HAVE_GETTIMEOFDAY
-    {"profile_int",             profile_int,                    METH_NOARGS},
+    {"profile_int",             profile_int,                     METH_NOARGS},
 #endif
-    {"traceback_print", traceback_print,                 METH_VARARGS},
-    {"exception_print", exception_print,                 METH_VARARGS},
-    {"argparsing",     argparsing, METH_VARARGS},
-    {"code_newempty", code_newempty,                     METH_VARARGS},
+    {"traceback_print",         traceback_print,                 METH_VARARGS},
+    {"exception_print",         exception_print,                 METH_VARARGS},
+    {"argparsing",              argparsing,                      METH_VARARGS},
+    {"code_newempty",           code_newempty,                   METH_VARARGS},
     {"make_exception_with_doc", (PyCFunction)make_exception_with_doc,
      METH_VARARGS | METH_KEYWORDS},
     {"crash_no_current_thread", (PyCFunction)crash_no_current_thread, METH_NOARGS},
-    {"format_unicode", format_unicode, METH_VARARGS},
+    {"format_unicode",          format_unicode,                 METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

@@ -1216,7 +1216,7 @@ PyUnicode_AsWideCharString(PyUnicodeObject *unicode,
     }
     unicode_aswidechar(unicode, buffer, buflen);
     if (size)
-        *size = buflen;
+        *size = buflen - 1;
     return buffer;
 }
 
