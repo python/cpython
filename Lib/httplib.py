@@ -752,8 +752,8 @@ class HTTPConnection:
             self.__response = None
         self.__state = _CS_IDLE
 
-    def send(self, str):
-        """Send `str' to the server."""
+    def send(self, data):
+        """Send `data' to the server."""
         if self.sock is None:
             if self.auto_open:
                 self.connect()
@@ -761,16 +761,16 @@ class HTTPConnection:
                 raise NotConnected()
 
         if self.debuglevel > 0:
-            print "send:", repr(str)
+            print "send:", repr(data)
         blocksize = 8192
-        if hasattr(str,'read') and not isinstance(str, array):
+        if hasattr(data,'read') and not isinstance(data, array):
             if self.debuglevel > 0: print "sendIng a read()able"
-            data = str.read(blocksize)
-            while data:
-                self.sock.sendall(data)
-                data = str.read(blocksize)
+            datablock = data.read(blocksize)
+            while datablock:
+                self.sock.sendall(datablock)
+                datablock = data.read(blocksize)
         else:
-            self.sock.sendall(str)
+            self.sock.sendall(data)
 
     def _output(self, s):
         """Add a line of output to the current request buffer.
@@ -842,9 +842,9 @@ class HTTPConnection:
         self._method = method
         if not url:
             url = '/'
-        str = '%s %s %s' % (method, url, self._http_vsn_str)
+        hdr = '%s %s %s' % (method, url, self._http_vsn_str)
 
-        self._output(str)
+        self._output(hdr)
 
         if self._http_vsn == 11:
             # Issue some standard headers for better HTTP/1.1 compliance
@@ -915,8 +915,8 @@ class HTTPConnection:
         if self.__state != _CS_REQ_STARTED:
             raise CannotSendHeader()
 
-        str = '%s: %s' % (header, '\r\n\t'.join(values))
-        self._output(str)
+        hdr = '%s: %s' % (header, '\r\n\t'.join(values))
+        self._output(hdr)
 
     def endheaders(self, message_body=None):
         """Indicate that the last header line has been sent to the server.
