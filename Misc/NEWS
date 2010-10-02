@@ -10,13 +10,14 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #10006: type.__abstractmethods__ now raises an AttributeError.  As a
+  result metaclasses can now be ABCs (see #9533).
+
 - Issue #8670: ctypes.c_wchar supports non-BMP characters with 32 bits wchar_t.
 
 - Issue #8670: PyUnicode_AsWideChar() and PyUnicode_AsWideCharString() replace
   UTF-16 surrogate pairs by single non-BMP characters for 16 bits Py_UNICODE
   and 32 bits wchar_t (eg. Linux in narrow build).
-
-- Issue #10006: type.__abstractmethods__ now raises an AttributeError.
 
 - Issue #10003: Allow handling of SIGBREAK on Windows. Fixes a regression
   introduced by issue #9324.
