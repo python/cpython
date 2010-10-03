@@ -89,7 +89,7 @@ Library
 -------
 
 - Issue #8980: Fixed a failure in distutils.command check that was shadowed
-  by an environment that does not have docutils. Patch by Arferver.
+  by an environment that does not have docutils. Patch by Arfrever.
 
 - Issue #1050268: parseaddr now correctly quotes double quote and backslash
   characters that appear inside quoted strings in email addresses.
