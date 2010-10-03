@@ -1,3 +1,4 @@
+import httplib
 import array
 import httplib
 import StringIO
@@ -64,8 +65,6 @@ class HeaderTests(TestCase):
         # Some headers are added automatically, but should not be added by
         # .request() if they are explicitly set.
 
-        import httplib
-
         class HeaderCountingBuffer(list):
             def __init__(self):
                 self.count = {}
@@ -90,6 +89,13 @@ class HeaderTests(TestCase):
                     headers[header] = str(len(body))
                 conn.request('POST', '/', body, headers)
                 self.assertEqual(conn._buffer.count[header.lower()], 1)
+
+    def test_putheader(self):
+        conn = httplib.HTTPConnection('example.com')
+        conn.sock = FakeSocket(None)
+        conn.putrequest('GET','/')
+        conn.putheader('Content-length',42)
+        self.assertTrue('Content-length: 42' in conn._buffer)
 
 class BasicTest(TestCase):
     def test_status_lines(self):
