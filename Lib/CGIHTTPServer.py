@@ -29,6 +29,7 @@ import urllib
 import BaseHTTPServer
 import SimpleHTTPServer
 import select
+import copy
 
 
 class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -154,7 +155,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         # Reference: http://hoohoo.ncsa.uiuc.edu/cgi/env.html
         # XXX Much of the following could be prepared ahead of time!
-        env = {}
+        env = copy.deepcopy(os.environ)
         env['SERVER_SOFTWARE'] = self.version_string()
         env['SERVER_NAME'] = self.server.server_name
         env['GATEWAY_INTERFACE'] = 'CGI/1.1'
@@ -216,7 +217,6 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
                   'HTTP_USER_AGENT', 'HTTP_COOKIE', 'HTTP_REFERER'):
             env.setdefault(k, "")
-        os.environ.update(env)
 
         self.send_response(200, "Script output follows")
 
@@ -248,7 +248,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     pass
                 os.dup2(self.rfile.fileno(), 0)
                 os.dup2(self.wfile.fileno(), 1)
-                os.execve(scriptfile, args, os.environ)
+                os.execve(scriptfile, args, env)
             except:
                 self.server.handle_error(self.request, self.client_address)
                 os._exit(127)
@@ -274,7 +274,8 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             p = subprocess.Popen(cmdline,
                                  stdin = subprocess.PIPE,
                                  stdout = subprocess.PIPE,
-                                 stderr = subprocess.PIPE
+                                 stderr = subprocess.PIPE,
+                                 env = env
                                 )
             if self.command.lower() == "post" and nbytes > 0:
                 data = self.rfile.read(nbytes)
