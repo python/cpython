@@ -402,6 +402,14 @@ class CGIHTTPServerTestCase(BaseTestCase):
         self.assertEqual((b'Hello World\n', 'text/html', 200),
              (res.read(), res.getheader('Content-type'), res.status))
 
+    def test_os_environ_is_not_altered(self):
+        signature = "Test CGI Server"
+        os.environ['SERVER_SOFTWARE'] = signature
+        res = self.request('/cgi-bin/file1.py')
+        self.assertEqual((b'Hello World\n', 'text/html', 200),
+                (res.read(), res.getheader('Content-type'), res.status))
+        self.assertEqual(os.environ['SERVER_SOFTWARE'], signature)
+
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self):
