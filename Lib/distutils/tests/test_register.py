@@ -224,24 +224,24 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         cmd = self._get_cmd(metadata)
         cmd.ensure_finalized()
         cmd.strict = 1
-        inputs = RawInputs('1', 'tarek', 'y')
-        register_module.raw_input = inputs.__call__
+        inputs = Inputs('1', 'tarek', 'y')
+        register_module.input = inputs.__call__
         # let's run the command
         try:
             cmd.run()
         finally:
-            del register_module.raw_input
+            del register_module.input
 
         # strict is not by default
         cmd = self._get_cmd()
         cmd.ensure_finalized()
-        inputs = RawInputs('1', 'tarek', 'y')
-        register_module.raw_input = inputs.__call__
+        inputs = Inputs('1', 'tarek', 'y')
+        register_module.input = inputs.__call__
         # let's run the command
         try:
             cmd.run()
         finally:
-            del register_module.raw_input
+            del register_module.input
 
     def test_check_metadata_deprecated(self):
         # makes sure make_metadata is deprecated
