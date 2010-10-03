@@ -916,6 +916,8 @@ class HTTPConnection:
         for i, one_value in enumerate(values):
             if hasattr(one_value, 'encode'):
                 values[i] = one_value.encode('ascii')
+            elif isinstance(one_value, int):
+                values[i] = str(one_value).encode('ascii')
         value = b'\r\n\t'.join(values)
         header = header + b': ' + value
         self._output(header)
