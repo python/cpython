@@ -308,8 +308,8 @@ static PyObject *
 type_abstractmethods(PyTypeObject *type, void *context)
 {
     PyObject *mod = NULL;
-    /* type its self has an __abstractmethods__ descriptor (this). Don't
-       return that. */
+    /* type itself has an __abstractmethods__ descriptor (this). Don't return
+       that. */
     if (type != &PyType_Type)
         mod = PyDict_GetItemString(type->tp_dict, "__abstractmethods__");
     if (!mod) {
