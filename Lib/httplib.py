@@ -915,7 +915,7 @@ class HTTPConnection:
         if self.__state != _CS_REQ_STARTED:
             raise CannotSendHeader()
 
-        hdr = '%s: %s' % (header, '\r\n\t'.join(values))
+        hdr = '%s: %s' % (header, '\r\n\t'.join([str(v) for v in values]))
         self._output(hdr)
 
     def endheaders(self, message_body=None):
