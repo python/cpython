@@ -381,6 +381,8 @@ Connection Objects
 
    .. literalinclude:: ../includes/sqlite3/load_extension.py
 
+   Loadable extensions are disabled by default. See [#f1]_
+
 .. method:: Connection.load_extension(path)
 
    This routine loads a SQLite extension from a shared library. You have to
@@ -388,6 +390,8 @@ Connection Objects
    this routine.
 
    .. versionadded:: 3.2
+
+   Loadable extensions are disabled by default. See [#f1]_
 
 .. attribute:: Connection.row_factory
 
@@ -879,4 +883,11 @@ threads. If you still try to do so, you will get an exception at runtime.
 
 The only exception is calling the :meth:`~Connection.interrupt` method, which
 only makes sense to call from a different thread.
+
+.. rubric:: Footnotes
+
+.. [#f1] The sqlite3 module is not built with loadable extension support by
+  default, because some platforms (notably Mac OS X) have SQLite libraries which
+  are compiled without this feature. To get loadable extension support, you must
+  modify setup.py and and remove the line that sets SQLITE_OMIT_LOAD_EXTENSION.
 
