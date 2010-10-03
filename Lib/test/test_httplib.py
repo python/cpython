@@ -90,6 +90,15 @@ class HeaderTests(TestCase):
                 conn.request('POST', '/', body, headers)
                 self.assertEqual(conn._buffer.count[header.lower()], 1)
 
+    def test_putheader(self):
+        conn = client.HTTPConnection('example.com')
+        conn.sock = FakeSocket(None)
+        conn.putrequest('GET','/')
+        conn.putheader('Content-length', 42)
+        print(conn._buffer)
+        self.assertTrue(b'Content-length: 42' in conn._buffer)
+
+
 class BasicTest(TestCase):
     def test_status_lines(self):
         # Test HTTP status lines
