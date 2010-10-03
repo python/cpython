@@ -13,7 +13,7 @@ try:
     from docutils.parsers.rst import Parser
     from docutils import frontend
     from docutils import nodes
-    from StringIO import StringIO
+    from io import StringIO
 
     class SilentReporter(Reporter):
 
