@@ -419,7 +419,7 @@ def translation(domain, localedir=None, languages=None,
     # once.
     result = None
     for mofile in mofiles:
-        key = os.path.abspath(mofile)
+        key = (class_, os.path.abspath(mofile))
         t = _translations.get(key)
         if t is None:
             with open(mofile, 'rb') as fp:
