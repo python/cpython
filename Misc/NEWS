@@ -88,6 +88,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9065: tarfile no longer uses "root" as the default for the uname and
+  gname field.
+
 - Issue #8980: Fixed a failure in distutils.command check that was shadowed
   by an environment that does not have docutils. Patch by Arfrever.
 
