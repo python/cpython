@@ -838,8 +838,7 @@ else:
                 asyncore.dispatcher.__init__(self, sock)
                 self.listen(5)
 
-            def handle_accept(self):
-                sock_obj, addr = self.accept()
+            def handle_accepted(self, sock_obj, addr):
                 if support.verbose:
                     sys.stdout.write(" server:  new connection from %s:%s\n" %addr)
                 self.ConnectionHandler(sock_obj, self.certfile)

@@ -88,6 +88,12 @@ Core and Builtins
 Library
 -------
 
+- Issue 6706: asyncore.dispatcher now provides a handle_accepted() method 
+  returning a (sock, addr) pair which is called when a connection has been
+  established with a new remote endpoint. This is supposed to be used as a 
+  replacement for old handle_accept() and avoids the user to call accept()
+  directly.
+
 - Issue #9065: tarfile no longer uses "root" as the default for the uname and
   gname field.
 
