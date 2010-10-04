@@ -20,6 +20,9 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Tal Einat was given commit access on Oct 4 2010 by MvL,
+  for improving IDLE.
+
 - Lukasz Langa was given commit access on Sep 08 2010 by GFB,
   at suggestion of Antoine Pitrou, for general bug fixing.
 
