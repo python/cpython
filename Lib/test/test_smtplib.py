@@ -379,8 +379,7 @@ class SimSMTPServer(smtpd.SMTPServer):
         self._extra_features = []
         smtpd.SMTPServer.__init__(self, *args, **kw)
 
-    def handle_accept(self):
-        conn, addr = self.accept()
+    def handle_accepted(self, conn, addr):
         self._SMTPchannel = SimSMTPChannel(self._extra_features,
                                            self, conn, addr)
 

@@ -144,8 +144,7 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
         self.active = False
         self.join()
 
-    def handle_accept(self):
-        conn, addr = self.accept()
+    def handle_accepted(self, conn, addr):
         self.handler_instance = self.handler(conn)
 
     def handle_connect(self):
