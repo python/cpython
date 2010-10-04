@@ -94,7 +94,6 @@ class HeaderTests(TestCase):
         conn.sock = FakeSocket(None)
         conn.putrequest('GET','/')
         conn.putheader('Content-length', 42)
-        print(conn._buffer)
         self.assertTrue(b'Content-length: 42' in conn._buffer)
 
 
