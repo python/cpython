@@ -342,16 +342,18 @@ class GzipFile(io.BufferedIOBase):
     def peek(self, n):
         if self.mode != READ:
             import errno
-            raise IOError(errno.EBADF, "read() on write-only GzipFile object")
+            raise IOError(errno.EBADF, "peek() on write-only GzipFile object")
 
-        # Do not return ridiculously small buffers
+        # Do not return ridiculously small buffers, for one common idiom
+        # is to call peek(1) and expect more bytes in return.
         if n < 100:
             n = 100
         if self.extrasize == 0:
             if self.fileobj is None:
                 return b''
             try:
-                self._read(max(self.max_read_chunk, n))
+                # 1024 is the same buffering heuristic used in read()
+                self._read(max(n, 1024))
             except EOFError:
                 pass
         offset = self.offset - self.extrastart

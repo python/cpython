@@ -70,6 +70,17 @@ The module defines the following items:
    including iteration and the :keyword:`with` statement.  Only the
    :meth:`truncate` method isn't implemented.
 
+   :class:`GzipFile` also provides the following method:
+
+   .. method:: peek([n])
+
+      Read *n* uncompressed bytes without advancing the file position.
+      At most one single read on the compressed stream is done to satisfy
+      the call.  The number of bytes returned may be more or less than
+      requested.
+
+      .. versionadded:: 3.2
+
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added.
 
@@ -78,9 +89,6 @@ The module defines the following items:
 
    .. versionchanged:: 3.2
       Support for unseekable files was added.
-
-   .. versionchanged:: 3.2
-      The :meth:`peek` method was implemented.
 
 
 .. function:: open(filename, mode='rb', compresslevel=9)
