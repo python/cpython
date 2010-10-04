@@ -88,6 +88,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9042: Fix interaction of custom translation classes and caching in
+  gettext.
+
 - Issue 6706: asyncore.dispatcher now provides a handle_accepted() method 
   returning a (sock, addr) pair which is called when a connection has been
   established with a new remote endpoint. This is supposed to be used as a 
