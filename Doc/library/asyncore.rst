@@ -147,7 +147,8 @@ any that have been added to the map during asynchronous service) is closed.
       call for the local endpoint. Deprecated in version 3.2; use
       :meth:`handle_accepted` instead.
 
-   .. deprecated:: 3.2
+      .. deprecated:: 3.2
+
 
    .. method:: handle_accepted(sock, addr)
 
@@ -157,7 +158,8 @@ any that have been added to the map during asynchronous service) is closed.
       send and receive data on the connection, and *address* is the address
       bound to the socket on the other end of the connection.
 
-   .. versionadded:: 3.2
+      .. versionadded:: 3.2
+
 
    .. method:: readable()
 
