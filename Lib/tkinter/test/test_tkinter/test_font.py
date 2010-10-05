@@ -15,8 +15,13 @@ class FontTest(unittest.TestCase):
         support.root_withdraw()
 
     def test_font_eq(self):
-        font1 = font.nametofont("TkDefaultFont")
-        font2 = font.nametofont("TkDefaultFont")
+        fontname = "TkDefaultFont"
+        try:
+            f = font.Font(name=fontname, exists=True)
+        except tkinter._tkinter.TclError:
+            f = font.Font(name=fontname, exists=False)
+        font1 = font.nametofont(fontname)
+        font2 = font.nametofont(fontname)
         self.assertIsNot(font1, font2)
         self.assertEqual(font1, font2)
         self.assertNotEqual(font1, font1.copy())
