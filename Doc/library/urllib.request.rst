@@ -36,7 +36,7 @@ The :mod:`urllib.request` module defines the following functions:
    The optional *timeout* parameter specifies a timeout in seconds for
    blocking operations like the connection attempt (if not specified,
    the global default timeout setting will be used).  This actually
-   only works for HTTP, HTTPS, and FTP connections.
+   only works for HTTP, HTTPS and FTP connections.
 
    This function returns a file-like object with two additional methods from
    the :mod:`urllib.response` module
@@ -610,7 +610,7 @@ OpenerDirector Objects
    optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
    timeout setting will be used). The timeout feature actually works only for
-   HTTP, HTTPS, and FTP connections).
+   HTTP, HTTPS and FTP connections).
 
 
 .. method:: OpenerDirector.error(proto, *args)
