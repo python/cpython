@@ -91,9 +91,9 @@ Library
 - Issue #9042: Fix interaction of custom translation classes and caching in
   gettext.
 
-- Issue 6706: asyncore.dispatcher now provides a handle_accepted() method 
+- Issue #6706: asyncore.dispatcher now provides a handle_accepted() method
   returning a (sock, addr) pair which is called when a connection has been
-  established with a new remote endpoint. This is supposed to be used as a 
+  established with a new remote endpoint. This is supposed to be used as a
   replacement for old handle_accept() and avoids the user to call accept()
   directly.
 
