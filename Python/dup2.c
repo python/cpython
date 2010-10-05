@@ -12,6 +12,7 @@
  */
 
 #include <fcntl.h>
+#include <unistd.h>
 
 #define BADEXIT -1
 
