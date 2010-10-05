@@ -18,8 +18,6 @@ The :mod:`urllib2` module defines functions and classes which help in opening
 URLs (mostly HTTP) in a complex world --- basic and digest authentication,
 redirections, cookies and more.
 
-.. warning:: When opening HTTPS (or FTPS) URLs, it is not attempted to
-   validate the server certificate.  Use at your own risk!
 
 The :mod:`urllib2` module defines the following functions:
 
@@ -27,6 +25,9 @@ The :mod:`urllib2` module defines the following functions:
 .. function:: urlopen(url[, data][, timeout])
 
    Open the URL *url*, which can be either a string or a :class:`Request` object.
+
+   .. warning::
+      HTTPS requests do not do any verification of the server's certificate.
 
    *data* may be a string specifying additional data to send to the server, or
    ``None`` if no such data is needed.  Currently HTTP requests are the only ones
@@ -39,8 +40,8 @@ The :mod:`urllib2` module defines the following functions:
 
    The optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
-   timeout setting will be used).  This actually only works for HTTP, HTTPS,
-   FTP and FTPS connections.
+   timeout setting will be used).  This actually only works for HTTP, HTTPS and
+   FTP connections.
 
    This function returns a file-like object with two additional methods:
 
@@ -432,7 +433,7 @@ OpenerDirector Objects
    optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
    timeout setting will be used). The timeout feature actually works only for
-   HTTP, HTTPS, FTP and FTPS connections).
+   HTTP, HTTPS and FTP connections).
 
    .. versionchanged:: 2.6
       *timeout* was added.
