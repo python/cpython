@@ -37,6 +37,7 @@ data = b'''\
 <!-- comment data -->
 <!DOCTYPE quotations SYSTEM "quotations.dtd" [
 <!ELEMENT root ANY>
+<!ATTLIST root attr1 CDATA #REQUIRED attr2 CDATA #IMPLIED>
 <!NOTATION notation SYSTEM "notation.jpeg">
 <!ENTITY acirc "&#226;">
 <!ENTITY external_entity SYSTEM "entity.file">
@@ -50,6 +51,7 @@ data = b'''\
 </myns:subelement>
 <sub2><![CDATA[contents of CDATA section]]></sub2>
 &external_entity;
+&skipped_entity;
 </root>
 '''
 
@@ -98,13 +100,41 @@ class ParseTest(unittest.TestCase):
             entityName, base, systemId, publicId, notationName = args
             self.out.append('Unparsed entity decl: %s' %(args,))
 
-        def NotStandaloneHandler(self, userData):
+        def NotStandaloneHandler(self):
             self.out.append('Not standalone')
             return 1
 
         def ExternalEntityRefHandler(self, *args):
             context, base, sysId, pubId = args
             self.out.append('External entity ref: %s' %(args[1:],))
+            return 1
+
+        def StartDoctypeDeclHandler(self, *args):
+            self.out.append(('Start doctype', args))
+            return 1
+
+        def EndDoctypeDeclHandler(self):
+            self.out.append("End doctype")
+            return 1
+
+        def EntityDeclHandler(self, *args):
+            self.out.append(('Entity declaration', args))
+            return 1
+
+        def XmlDeclHandler(self, *args):
+            self.out.append(('XML declaration', args))
+            return 1
+
+        def ElementDeclHandler(self, *args):
+            self.out.append(('Element declaration', args))
+            return 1
+
+        def AttlistDeclHandler(self, *args):
+            self.out.append(('Attribute list declaration', args))
+            return 1
+
+        def SkippedEntityHandler(self, *args):
+            self.out.append(("Skipped entity", args))
             return 1
 
         def DefaultHandler(self, userData):
@@ -114,36 +144,53 @@ class ParseTest(unittest.TestCase):
             pass
 
     handler_names = [
-        'StartElementHandler', 'EndElementHandler',
-        'CharacterDataHandler', 'ProcessingInstructionHandler',
-        'UnparsedEntityDeclHandler', 'NotationDeclHandler',
-        'StartNamespaceDeclHandler', 'EndNamespaceDeclHandler',
-        'CommentHandler', 'StartCdataSectionHandler',
-        'EndCdataSectionHandler',
-        'DefaultHandler', 'DefaultHandlerExpand',
-        #'NotStandaloneHandler',
-        'ExternalEntityRefHandler'
+        'StartElementHandler', 'EndElementHandler', 'CharacterDataHandler',
+        'ProcessingInstructionHandler', 'UnparsedEntityDeclHandler',
+        'NotationDeclHandler', 'StartNamespaceDeclHandler',
+        'EndNamespaceDeclHandler', 'CommentHandler',
+        'StartCdataSectionHandler', 'EndCdataSectionHandler', 'DefaultHandler',
+        'DefaultHandlerExpand', 'NotStandaloneHandler',
+        'ExternalEntityRefHandler', 'StartDoctypeDeclHandler',
+        'EndDoctypeDeclHandler', 'EntityDeclHandler', 'XmlDeclHandler',
+        'ElementDeclHandler', 'AttlistDeclHandler', 'SkippedEntityHandler',
         ]
 
-    def _verify_parse_output(self, op):
-        self.assertEquals(op[0], 'PI: \'xml-stylesheet\' \'href="stylesheet.css"\'')
-        self.assertEquals(op[1], "Comment: ' comment data '")
-        self.assertEquals(op[2], "Notation declared: ('notation', None, 'notation.jpeg', None)")
-        self.assertEquals(op[3], "Unparsed entity decl: ('unparsed_entity', None, 'entity.file', None, 'notation')")
-        self.assertEquals(op[4], "Start element: 'root' {'attr1': 'value1', 'attr2': 'value2\u1f40'}")
-        self.assertEquals(op[5], "NS decl: 'myns' 'http://www.python.org/namespace'")
-        self.assertEquals(op[6], "Start element: 'http://www.python.org/namespace!subelement' {}")
-        self.assertEquals(op[7], "Character data: 'Contents of subelements'")
-        self.assertEquals(op[8], "End element: 'http://www.python.org/namespace!subelement'")
-        self.assertEquals(op[9], "End of NS decl: 'myns'")
-        self.assertEquals(op[10], "Start element: 'sub2' {}")
-        self.assertEquals(op[11], 'Start of CDATA section')
-        self.assertEquals(op[12], "Character data: 'contents of CDATA section'")
-        self.assertEquals(op[13], 'End of CDATA section')
-        self.assertEquals(op[14], "End element: 'sub2'")
-        self.assertEquals(op[15], "External entity ref: (None, 'entity.file', None)")
-        self.assertEquals(op[16], "End element: 'root'")
-
+    def _verify_parse_output(self, operations):
+        expected_operations = [
+            ('XML declaration', ('1.0', 'iso-8859-1', 0)),
+            'PI: \'xml-stylesheet\' \'href="stylesheet.css"\'',
+            "Comment: ' comment data '",
+            "Not standalone",
+            ("Start doctype", ('quotations', 'quotations.dtd', None, 1)),
+            ('Element declaration', ('root', (2, 0, None, ()))),
+            ('Attribute list declaration', ('root', 'attr1', 'CDATA', None,
+                1)),
+            ('Attribute list declaration', ('root', 'attr2', 'CDATA', None,
+                0)),
+            "Notation declared: ('notation', None, 'notation.jpeg', None)",
+            ('Entity declaration', ('acirc', 0, '\xe2', None, None, None, None)),
+            ('Entity declaration', ('external_entity', 0, None, None,
+                'entity.file', None, None)),
+            "Unparsed entity decl: ('unparsed_entity', None, 'entity.file', None, 'notation')",
+            "Not standalone",
+            "End doctype",
+            "Start element: 'root' {'attr1': 'value1', 'attr2': 'value2\u1f40'}",
+            "NS decl: 'myns' 'http://www.python.org/namespace'",
+            "Start element: 'http://www.python.org/namespace!subelement' {}",
+            "Character data: 'Contents of subelements'",
+            "End element: 'http://www.python.org/namespace!subelement'",
+            "End of NS decl: 'myns'",
+            "Start element: 'sub2' {}",
+            'Start of CDATA section',
+            "Character data: 'contents of CDATA section'",
+            'End of CDATA section',
+            "End element: 'sub2'",
+            "External entity ref: (None, 'entity.file', None)",
+            ('Skipped entity', ('skipped_entity', 0)),
+            "End element: 'root'",
+        ]
+        for operation, expected_operation in zip(operations, expected_operations):
+            self.assertEquals(operation, expected_operation)
 
     def test_unicode(self):
         # Try the parse again, this time producing Unicode output
@@ -154,8 +201,8 @@ class ParseTest(unittest.TestCase):
 
         parser.Parse(data, 1)
 
-        op = out.out
-        self._verify_parse_output(op)
+        operations = out.out
+        self._verify_parse_output(operations)
 
     def test_parse_file(self):
         # Try parsing a file
@@ -167,8 +214,8 @@ class ParseTest(unittest.TestCase):
 
         parser.ParseFile(file)
 
-        op = out.out
-        self._verify_parse_output(op)
+        operations = out.out
+        self._verify_parse_output(operations)
 
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):
