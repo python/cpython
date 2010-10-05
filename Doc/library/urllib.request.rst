@@ -21,8 +21,7 @@ The :mod:`urllib.request` module defines the following functions:
    :class:`Request` object.
 
    .. warning::
-      HTTPS (or FTPS) requests do not do any verification of the server's
-      certificate.
+      HTTPS requests do not do any verification of the server's certificate.
 
    *data* may be a string specifying additional data to send to the
    server, or ``None`` if no such data is needed.  Currently HTTP
@@ -37,7 +36,7 @@ The :mod:`urllib.request` module defines the following functions:
    The optional *timeout* parameter specifies a timeout in seconds for
    blocking operations like the connection attempt (if not specified,
    the global default timeout setting will be used).  This actually
-   only works for HTTP, HTTPS, FTP and FTPS connections.
+   only works for HTTP, HTTPS, and FTP connections.
 
    This function returns a file-like object with two additional methods from
    the :mod:`urllib.response` module
@@ -611,7 +610,7 @@ OpenerDirector Objects
    optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
    timeout setting will be used). The timeout feature actually works only for
-   HTTP, HTTPS, FTP and FTPS connections).
+   HTTP, HTTPS, and FTP connections).
 
 
 .. method:: OpenerDirector.error(proto, *args)
