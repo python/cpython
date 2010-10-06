@@ -895,6 +895,7 @@ instantiated directly, but always through the module-level function
    :const:`NOTSET` is found, and that value is returned.
 
 
+
 .. method:: Logger.debug(msg, *args, **kwargs)
 
    Logs a message with level :const:`DEBUG` on this logger. The *msg* is the
@@ -2637,6 +2638,9 @@ methods of :class:`Logger`, i.e. :meth:`debug`, :meth:`info`, :meth:`warning`,
 :meth:`error`, :meth:`exception`, :meth:`critical` and :meth:`log`. These
 methods have the same signatures as their counterparts in :class:`Logger`, so
 you can use the two types of instances interchangeably.
+
+   The :meth:`isEnabledFor` method was added to :class:`LoggerAdapter`.  This
+   method delegates to the underlying logger.
 
 
 Thread Safety

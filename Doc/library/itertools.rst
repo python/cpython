@@ -207,6 +207,7 @@ loops that truncate the stream.
 
    .. versionadded:: 3.1
 
+
 .. function:: compress(data, selectors)
 
    Make an iterator that filters elements from *data* returning only those that
@@ -240,7 +241,7 @@ loops that truncate the stream.
    for i in count())``.
 
    .. versionchanged:: 3.1
-      added *step* argument and allowed non-integer arguments.
+      Added *step* argument and allowed non-integer arguments.
 
 .. function:: cycle(iterable)
 
