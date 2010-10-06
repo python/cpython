@@ -311,7 +311,6 @@ process and user.
 
 .. function:: setreuid(ruid, euid)
 
-
    Set the current process's real and effective user ids.
 
    Availability: Unix.
