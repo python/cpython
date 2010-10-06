@@ -280,16 +280,16 @@ Initialization, Finalization, and Threads
       single: Py_GetPath()
 
    Set the default module search path.  If this function is called before
-   :c:func: `Py_Initialize` then :c:func: Py_GetPath won't attempt to compute
-   a default serarch path but uses the provided one in stead.  This is useful
-   if Python is being embedded by an application that has full knowledge
-   of the location of all modules.  The path components should be separated
-   by semicolons.
+   :c:func:`Py_Initialize`, then :c:func:`Py_GetPath` won't attempt to compute a
+   default search path but uses the one provided instead.  This is useful if
+   Python is embedded by an application that has full knowledge of the location
+   of all modules.  The path components should be separated by semicolons.
 
-   This also causes `sys.executable` to be set only to the raw program name
-   (see :c:func:`Py_SetProgramName`) and `for sys.prefix` and
-   `sys.exec_prefix` to be empty.  It is up to the caller to modify these if
-   required after calling :c:func:`Py_Initialize`.
+   This also causes :data:`sys.executable` to be set only to the raw program
+   name (see :c:func:`Py_SetProgramName`) and for :data:`sys.prefix` and
+   :data:`sys.exec_prefix` to be empty.  It is up to the caller to modify these
+   if required after calling :c:func:`Py_Initialize`.
+
 
 .. c:function:: const char* Py_GetVersion()
 
