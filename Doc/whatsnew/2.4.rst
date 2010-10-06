@@ -1066,7 +1066,7 @@ complete list of changes, or look through the CVS logs for all the details.
   deprecated APIs and removes support for Python versions earlier than 2.3.  The
   3.0 version of the package uses a new incremental parser for MIME messages,
   available in the :mod:`email.FeedParser` module.  The new parser doesn't require
-  reading the entire message into memory, and doesn't throw exceptions if a
+  reading the entire message into memory, and doesn't raise exceptions if a
   message is malformed; instead it records any problems in the  :attr:`defect`
   attribute of the message.  (Developed by Anthony Baxter, Barry Warsaw, Thomas
   Wouters, and others.)

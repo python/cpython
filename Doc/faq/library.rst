@@ -672,9 +672,8 @@ Yes. Here's a simple example that uses httplib::
    if reply != 200:
        sys.stdout.write(httpobj.getfile().read())
 
-Note that in general for a percent-encoded POST operations, query strings must be
-quoted by using :func:`urllib.quote`.  For example to send name="Guy Steele,
-Jr."::
+Note that in general for percent-encoded POST operations, query strings must be
+quoted using :func:`urllib.quote`.  For example to send name="Guy Steele, Jr."::
 
    >>> from urllib import quote
    >>> x = quote("Guy Steele, Jr.")
