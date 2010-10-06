@@ -313,7 +313,7 @@ process is likely to be screwed up.
 Non-blocking Sockets
 ====================
 
-If you've understood the preceeding, you already know most of what you need to
+If you've understood the preceding, you already know most of what you need to
 know about the mechanics of using sockets. You'll still use the same calls, in
 much the same ways. It's just that, if you do it right, your app will be almost
 inside-out.

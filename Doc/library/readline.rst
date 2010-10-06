@@ -15,6 +15,16 @@ made using  this module affect the behaviour of both the interpreter's
 interactive prompt  and the prompts offered by the built-in :func:`input`
 function.
 
+.. note::
+
+  On MacOS X the :mod:`readline` module can be implemented using
+  the ``libedit`` library instead of GNU readline.
+
+  The configuration file for ``libedit`` is different from that
+  of GNU readline. If you programmatically load configuration strings
+  you can check for the text "libedit" in :const:`readline.__doc__`
+  to differentiate between GNU readline and libedit.
+
 The :mod:`readline` module defines the following functions:
 
 

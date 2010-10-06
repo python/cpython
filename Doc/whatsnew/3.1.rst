@@ -352,7 +352,7 @@ New, Improved, and Deprecated Modules
 *  :class:`functools.partial` objects can now be pickled.
 
   (Suggested by Antoine Pitrou and Jesse Noller.  Implemented by
-  Jack Diedrich; :issue:`5228`.)
+  Jack Diederich; :issue:`5228`.)
 
 * Add :mod:`pydoc` help topics for symbols so that ``help('@')``
   works as expected in the interactive environment.
