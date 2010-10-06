@@ -20,6 +20,25 @@ for details.  When the agreement is signed, please note it in this log.
 Permissions History
 -------------------
 
+- Lukasz Langa was given commit access on Sep 08 2010 by GFB,
+  at suggestion of Antoine Pitrou, for general bug fixing.
+
+- Daniel Stutzbach was given commit access on Aug 22 2010 by MvL,
+  for general bug fixing.
+
+- Ask Solem was given commit access on Aug 17 2010 by MvL,
+  on recommendation by Jesse Noller, for work on the multiprocessing
+  library.
+
+- George Boutsioukis was given commit access on Aug 10 2010
+  by MvL, for work on 2to3.
+
+- Éric Araujo was given commit access on Aug 10 2010 by BAC,
+  at suggestion of Tarek Ziadé.
+
+- Terry Reedy was given commit access on Aug 04 2010 by MvL,
+  at suggestion of Nick Coghlan.
+
 - Brian Quinlan was given commit access on Jul 26 2010 by GFB,
   for work related to PEP 3148.
 

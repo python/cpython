@@ -371,7 +371,7 @@ with no duplicate elements.  Basic uses include membership testing and
 eliminating duplicate entries.  Set objects also support mathematical operations
 like union, intersection, difference, and symmetric difference.
 
-Curly braces or the :func:`set` function can be use to create sets. Note: To
+Curly braces or the :func:`set` function can be used to create sets.  Note: To
 create an empty set you have to use ``set()``, not ``{}``; the latter creates an
 empty dictionary, a data structure that we discuss in the next section.
 
