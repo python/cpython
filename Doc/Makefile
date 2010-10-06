@@ -87,13 +87,14 @@ changes: build
 
 linkcheck: BUILDER = linkcheck
 linkcheck: build
-	@echo "Link check complete; look for any errors in the above output " \
+	@echo "Link check complete; look for any errors in the above output" \
 	      "or in build/$(BUILDER)/output.txt"
 
 suspicious: BUILDER = suspicious
 suspicious: build
-	@echo "Suspicious check complete; look for any errors in the above output " \
-	      "or in build/$(BUILDER)/suspicious.txt"
+	@echo "Suspicious check complete; look for any errors in the above output" \
+	      "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
+	      "positives, append that file to tools/sphinxext/susp-ignored.csv."
 
 coverage: BUILDER = coverage
 coverage: build
@@ -101,12 +102,12 @@ coverage: build
 
 doctest: BUILDER = doctest
 doctest: build
-	@echo "Testing of doctests in the sources finished, look at the " \
+	@echo "Testing of doctests in the sources finished, look at the" \
 	      "results in build/doctest/output.txt"
 
 pydoc-topics: BUILDER = pydoc-topics
 pydoc-topics: build
-	@echo "Building finished; now copy build/pydoc-topics/topics.py " \
+	@echo "Building finished; now copy build/pydoc-topics/topics.py" \
 	      "to Lib/pydoc_data/topics.py"
 
 htmlview: html

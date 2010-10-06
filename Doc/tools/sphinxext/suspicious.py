@@ -41,9 +41,11 @@ Copyright 2009 Gabriel A. Genellina
 
 """
 
-import os, sys
-import csv
+import os
 import re
+import csv
+import sys
+
 from docutils import nodes
 from sphinx.builders import Builder
 
@@ -54,9 +56,10 @@ detect_all = re.compile(ur'''
     (?<!\.)\.\.[ \t]*\w+:  # .. foo: (but NOT ... else:)
     ''', re.UNICODE | re.VERBOSE).finditer
 
+
 class Rule:
     def __init__(self, docname, lineno, issue, line):
-        "A rule for ignoring issues"
+        """A rule for ignoring issues"""
         self.docname = docname # document to which this rule applies
         self.lineno = lineno   # line number in the original source;
                                # this rule matches only near that.
@@ -65,9 +68,15 @@ class Rule:
         self.line = line       # text of the container element (single line only)
 
 
+
+class dialect(csv.excel):
+    """Our dialect: uses only linefeed as newline."""
+    lineterminator = '\n'
+
+
 class CheckSuspiciousMarkupBuilder(Builder):
     """
-    Checks for possibly invalid markup that may leak into the output
+    Checks for possibly invalid markup that may leak into the output.
     """
     name = 'suspicious'
 
@@ -76,7 +85,8 @@ class CheckSuspiciousMarkupBuilder(Builder):
         self.log_file_name = os.path.join(self.outdir, 'suspicious.csv')
         open(self.log_file_name, 'w').close()
         # load database of previously ignored issues
-        self.load_rules(os.path.join(os.path.dirname(__file__), 'susp-ignored.csv'))
+        self.load_rules(os.path.join(os.path.dirname(__file__),
+                                     'susp-ignored.csv'))
 
     def get_outdated_docs(self):
         return self.env.found_docs
@@ -85,14 +95,11 @@ class CheckSuspiciousMarkupBuilder(Builder):
         return ''
 
     def prepare_writing(self, docnames):
-        ### PYTHON PROJECT SPECIFIC ###
-        for name in set(docnames):
-            if name.split('/', 1)[0] == 'documenting':
-                docnames.remove(name)
-        ### PYTHON PROJECT SPECIFIC ###
+        pass
 
     def write_doc(self, docname, doctree):
-        self.any_issue = False # set when any issue is encountered in this document
+        # set when any issue is encountered in this document
+        self.any_issue = False
         self.docname = docname
         visitor = SuspiciousVisitor(doctree, self)
         doctree.walk(visitor)
@@ -105,8 +112,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
             self.report_issue(line, lineno, issue)
 
     def is_ignored(self, line, lineno, issue):
-        """Determine whether this issue should be ignored.
-        """
+        """Determine whether this issue should be ignored."""
         docname = self.docname
         for rule in self.rules:
             if rule.docname != docname: continue
@@ -139,12 +145,11 @@ class CheckSuspiciousMarkupBuilder(Builder):
 
     def write_log_entry(self, lineno, issue, text):
         f = open(self.log_file_name, 'ab')
-        writer = csv.writer(f)
+        writer = csv.writer(f, dialect)
         writer.writerow([self.docname.encode('utf-8'),
-                lineno,
-                issue.encode('utf-8'),
-                text.strip().encode('utf-8')])
-        del writer
+                         lineno,
+                         issue.encode('utf-8'),
+                         text.strip().encode('utf-8')])
         f.close()
 
     def load_rules(self, filename):
@@ -159,7 +164,8 @@ class CheckSuspiciousMarkupBuilder(Builder):
         except IOError: return
         for i, row in enumerate(csv.reader(f)):
             if len(row) != 4:
-                raise ValueError("wrong format in %s, line %d: %s" % (filename, i+1, row))
+                raise ValueError(
+                    "wrong format in %s, line %d: %s" % (filename, i+1, row))
             docname, lineno, issue, text = row
             docname = docname.decode('utf-8')
             if lineno: lineno = int(lineno)
@@ -173,7 +179,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
 
 
 def get_lineno(node):
-    "Obtain line number information for a node"
+    """Obtain line number information for a node."""
     lineno = None
     while lineno is None and node:
         node = node.parent
@@ -198,7 +204,8 @@ def extract_line(text, index):
     """
     p = text.rfind('\n', 0, index) + 1
     q = text.find('\n', index)
-    if q<0: q = len(text)
+    if q < 0:
+        q = len(text)
     return text[p:q]
 
 
@@ -217,7 +224,6 @@ class SuspiciousVisitor(nodes.GenericNodeVisitor):
             self.lastlineno = lineno = max(get_lineno(node) or 0, self.lastlineno)
             seen = set() # don't report the same issue more than only once per line
             for match in detect_all(text):
-                #import pdb; pdb.set_trace()
                 issue = match.group()
                 line = extract_line(text, match.start())
                 if (issue, line) not in seen:
