@@ -40,9 +40,8 @@ _STATE_TO_DESCRIPTION_MAP = {
 
 # Logger for internal use by the futures package.
 LOGGER = logging.getLogger("concurrent.futures")
-_handler = logging.StreamHandler()
-LOGGER.addHandler(_handler)
-del _handler
+STDERR_HANDLER = logging.StreamHandler()
+LOGGER.addHandler(STDERR_HANDLER)
 
 class Error(Exception):
     """Base class for all future-related exceptions."""
