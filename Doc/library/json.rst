@@ -82,12 +82,12 @@ Extending :class:`JSONEncoder`::
     ...             return [obj.real, obj.imag]
     ...         return json.JSONEncoder.default(self, obj)
     ...
-    >>> dumps(2 + 1j, cls=ComplexEncoder)
+    >>> json.dumps(2 + 1j, cls=ComplexEncoder)
     '[2.0, 1.0]'
     >>> ComplexEncoder().encode(2 + 1j)
     '[2.0, 1.0]'
     >>> list(ComplexEncoder().iterencode(2 + 1j))
-    ['[', '2.0', ', ', '1.0', ']']
+    ['[2.0', ', 1.0', ']']
 
 
 .. highlight:: none
@@ -339,7 +339,7 @@ Encoders and decoders
    encoders and decoders.  Otherwise, it will be a :exc:`ValueError` to encode
    such floats.
 
-   If *sort_keys* is ``True`` (the default), then the output of dictionaries
+   If *sort_keys* is ``True`` (default ``False``), then the output of dictionaries
    will be sorted by key; this is useful for regression tests to ensure that
    JSON serializations can be compared on a day-to-day basis.
 
@@ -373,7 +373,7 @@ Encoders and decoders
                 pass
             else:
                 return list(iterable)
-            return JSONEncoder.default(self, o)
+            return json.JSONEncoder.default(self, o)
 
 
    .. method:: encode(o)
@@ -381,7 +381,7 @@ Encoders and decoders
       Return a JSON string representation of a Python data structure, *o*.  For
       example::
 
-        >>> JSONEncoder().encode({"foo": ["bar", "baz"]})
+        >>> json.JSONEncoder().encode({"foo": ["bar", "baz"]})
         '{"foo": ["bar", "baz"]}'
 
 
@@ -390,5 +390,5 @@ Encoders and decoders
       Encode the given object, *o*, and yield each string representation as
       available.  For example::
 
-            for chunk in JSONEncoder().iterencode(bigobject):
+            for chunk in json.JSONEncoder().iterencode(bigobject):
                 mysocket.write(chunk)

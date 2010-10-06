@@ -4,7 +4,6 @@ import os
 import re
 import sys
 import cgi
-import rexec
 from xml.parsers import expat
 
 LEFT, CENTER, RIGHT = "LEFT", "CENTER", "RIGHT"
@@ -33,16 +32,16 @@ class Sheet:
 
     def __init__(self):
         self.cells = {} # {(x, y): cell, ...}
-        self.rexec = rexec.RExec()
-        m = self.rexec.add_module('__main__')
-        m.cell = self.cellvalue
-        m.cells = self.multicellvalue
-        m.sum = sum
+        self.ns = dict(
+            cell = self.cellvalue,
+            cells = self.multicellvalue,
+            sum = sum,
+        )
 
     def cellvalue(self, x, y):
         cell = self.getcell(x, y)
         if hasattr(cell, 'recalc'):
-            return cell.recalc(self.rexec)
+            return cell.recalc(self.ns)
         else:
             return cell
 
@@ -144,7 +143,7 @@ class Sheet:
         self.reset()
         for cell in self.cells.values():
             if hasattr(cell, 'recalc'):
-                cell.recalc(self.rexec)
+                cell.recalc(self.ns)
 
     def display(self):
         maxx, maxy = self.getsize()
@@ -164,7 +163,7 @@ class Sheet:
             if x <= 0 or y <= 0:
                 continue
             if hasattr(cell, 'recalc'):
-                cell.recalc(self.rexec)
+                cell.recalc(self.ns)
             if hasattr(cell, 'format'):
                 text, alignment = cell.format()
                 assert isinstance(text, str)
@@ -317,7 +316,7 @@ class BaseCell:
     Subclasses may but needn't provide the following APIs:
 
     cell.reset() -- prepare for recalculation
-    cell.recalc(rexec) -> value -- recalculate formula
+    cell.recalc(ns) -> value -- recalculate formula
     cell.format() -> (value, alignment) -- return formatted value
     cell.xml() -> string -- return XML
     """
@@ -331,7 +330,7 @@ class NumericCell(BaseCell):
         self.fmt = fmt
         self.alignment = alignment
 
-    def recalc(self, rexec):
+    def recalc(self, ns):
         return self.value
 
     def format(self):
@@ -372,7 +371,7 @@ class StringCell(BaseCell):
         self.fmt = fmt
         self.alignment = alignment
 
-    def recalc(self, rexec):
+    def recalc(self, ns):
         return self.text
 
     def format(self):
@@ -398,13 +397,11 @@ class FormulaCell(BaseCell):
     def reset(self):
         self.value = None
 
-    def recalc(self, rexec):
+    def recalc(self, ns):
         if self.value is None:
             try:
                 # A hack to evaluate expressions using true division
-                rexec.r_exec("from __future__ import division\n" +
-                             "__value__ = eval(%s)" % repr(self.translated))
-                self.value = rexec.r_eval("__value__")
+                self.value = eval(self.translated, ns)
             except:
                 exc = sys.exc_info()[0]
                 if hasattr(exc, "__name__"):
