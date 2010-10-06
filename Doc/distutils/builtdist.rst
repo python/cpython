@@ -146,8 +146,8 @@ commands.
 Creating dumb built distributions
 =================================
 
-**\*\*** Need to document absolute vs. prefix-relative packages here, but first
-I have to implement it! **\*\***
+.. XXX Need to document absolute vs. prefix-relative packages here, but first
+       I have to implement it!
 
 
 .. _creating-rpms:
