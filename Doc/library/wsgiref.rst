@@ -187,9 +187,7 @@ manipulation of WSGI response headers using a mapping-like interface.
 .. class:: Headers(headers)
 
    Create a mapping-like object wrapping *headers*, which must be a list of header
-   name/value tuples as described in :pep:`333`.  Any changes made to the new
-   :class:`Headers` object will directly update the *headers* list it was created
-   with.
+   name/value tuples as described in :pep:`333`.
 
    :class:`Headers` objects support typical mapping operations including
    :meth:`__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,

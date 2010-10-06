@@ -55,7 +55,7 @@ What's New
 We try to have a comprehensive overview of the changes in the "What's New in
 Python 3.1" document, found at
 
-    http://docs.python.org/dev/3.1/whatsnew/3.1.html
+    http://docs.python.org/3.1/whatsnew/3.1.html
 
 For a more detailed change log, read Misc/NEWS (though this file, too,
 is incomplete, and also doesn't list anything merged in from the 2.7
@@ -70,7 +70,7 @@ Documentation
 
 Documentation for Python 3.1 is online, updated twice a day:
 
-    http://docs.python.org/dev/3.1/
+    http://docs.python.org/3.1/
 
 All documentation is also available online at the Python web site
 (http://docs.python.org/, see below).  It is available online for
@@ -91,7 +91,7 @@ used, and backported versions of certain key Python 3.x features.
 A source-to-source translation tool, "2to3", can take care of the mundane task
 of converting large amounts of source code.  It is not a complete solution but
 is complemented by the deprecation warnings in 2.6.  See
-http://docs.python.org/dev/py3k/library/2to3.html for more information.
+http://docs.python.org/py3k/library/2to3.html for more information.
 
 
 Testing
