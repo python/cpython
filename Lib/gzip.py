@@ -210,6 +210,13 @@ class GzipFile(io.BufferedIOBase):
         s = repr(fileobj)
         return '<gzip ' + s[1:-1] + ' ' + hex(id(self)) + '>'
 
+    def _check_closed(self):
+        """Raises a ValueError if the underlying file object has been closed.
+
+        """
+        if self.closed:
+            raise ValueError('I/O operation on closed file.')
+
     def _init_write(self, filename):
         self.name = filename
         self.crc = zlib.crc32(b"") & 0xffffffff
@@ -288,6 +295,7 @@ class GzipFile(io.BufferedIOBase):
             self._add_read_data(uncompress)
 
     def write(self,data):
+        self._check_closed()
         if self.mode != WRITE:
             import errno
             raise IOError(errno.EBADF, "write() on read-only GzipFile object")
@@ -308,6 +316,7 @@ class GzipFile(io.BufferedIOBase):
         return len(data)
 
     def read(self, size=-1):
+        self._check_closed()
         if self.mode != READ:
             import errno
             raise IOError(errno.EBADF, "read() on write-only GzipFile object")
@@ -457,6 +466,7 @@ class GzipFile(io.BufferedIOBase):
             self.myfileobj = None
 
     def flush(self,zlib_mode=zlib.Z_SYNC_FLUSH):
+        self._check_closed()
         if self.mode == WRITE:
             # Ensure the compressor's buffer is flushed
             self.fileobj.write(self.compress.flush(zlib_mode))
