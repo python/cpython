@@ -299,6 +299,13 @@ New, Improved, and Deprecated Modules
   (By Nick Coghlan and Terrence Cole; :issue:`9567`, :issue:`3445`, and
   :issue:`8814`.)
 
+* The :mod:`nntplib` module gets a revamped implementation with better
+  bytes / unicode semantics as well as more practical APIs.  These improvements
+  break compatibility with the nntplib version in Python 3.1, which was
+  partly dysfunctional in itself.
+
+  (Contributed by Antoine Pitrou in :issue:`9360`)
+
 * The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
   :func:`~abc.abstractstaticmethod`.
 
@@ -337,6 +344,19 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Tarek Ziadé and Giampaolo Rodolà in :issue:`4972`, and
   by Georg Brandl in :issue:`8046` and :issue:`1286`.)
+
+* :class:`gzip.GzipFile` now implements the :class:`io.BufferedIOBase` ABC
+  (except for ``truncate()``), has a :meth:`~gzip.GzipFile.peek` method,
+  and supports unseekable as well as zero-padded file objects.
+
+  (Contributed by Antoine Pitrou, Nir Aides and Brian Curtin in :issue:`9962`,
+  :issue:`1675951`, :issue:`7471` and :issue:`2846`.)
+
+  The :mod:`gzip` module also gains the :func:`~gzip.compress` and
+  :func:`~gzip.decompress` functions for easier in-memory compression and
+  decompression.
+
+  (Contributed by Anand B. Pillai in :issue:`3488`.)
 
 * The :mod:`os` module now has the :const:`ST_RDONLY` and :const:`ST_NOSUID`
   constants, for use with the :func:`~os.statvfs` function.
@@ -568,6 +588,9 @@ Porting to Python 3.2
 
 This section lists previously described changes and other bugfixes that may
 require changes to your code:
+
+* The :mod:`nntplib` module was reworked extensively, meaning that its APIs
+  are often incompatible with the 3.1 APIs.
 
 * :class:`bytearray` objects cannot be used anymore as filenames: convert them
   to :class:`bytes`.
