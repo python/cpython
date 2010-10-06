@@ -979,7 +979,7 @@ Instance methods:
    d.toordinal() - date(d.year, 1, 1).toordinal() + 1`` is the day number within
    the current year starting with ``1`` for January 1st. The :attr:`tm_isdst` flag
    of the result is set according to the :meth:`dst` method: :attr:`tzinfo` is
-   ``None`` or :meth:`dst`` returns ``None``, :attr:`tm_isdst` is set to ``-1``;
+   ``None`` or :meth:`dst` returns ``None``, :attr:`tm_isdst` is set to ``-1``;
    else if :meth:`dst` returns a non-zero value, :attr:`tm_isdst` is set to ``1``;
    else :attr:`tm_isdst` is set to ``0``.
 

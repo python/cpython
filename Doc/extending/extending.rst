@@ -162,7 +162,7 @@ information about the cause of the error to be lost: most operations can fail
 for a variety of reasons.)
 
 To ignore an exception set by a function call that failed, the exception
-c:ondition must be cleared explicitly by calling :c:func:`PyErr_Clear`.  The only
+condition must be cleared explicitly by calling :c:func:`PyErr_Clear`.  The only
 time C code should call :c:func:`PyErr_Clear` is if it doesn't want to pass the
 error on to the interpreter but wants to handle it completely by itself
 (possibly by trying something else, or pretending nothing went wrong).
