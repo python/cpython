@@ -136,10 +136,9 @@ This module defines one class called :class:`Popen`:
 
    .. note::
 
-      If specified, *env* must provide any variables required
-      for the program to execute.  On Windows, in order to run a
-      `side-by-side assembly`_ the specified *env* **must** include a valid
-      :envvar:`SystemRoot`.
+      If specified, *env* must provide any variables required for the program to
+      execute.  On Windows, in order to run a `side-by-side assembly`_ the
+      specified *env* **must** include a valid :envvar:`SystemRoot`.
 
    .. _side-by-side assembly: http://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
@@ -188,7 +187,7 @@ This module also defines four shortcut functions:
 
    The arguments are the same as for the Popen constructor.  Example::
 
-      retcode = call(["ls", "-l"])
+      >>> retcode = subprocess.call(["ls", "-l"])
 
    .. warning::
 
@@ -206,7 +205,8 @@ This module also defines four shortcut functions:
 
    The arguments are the same as for the Popen constructor.  Example::
 
-      check_call(["ls", "-l"])
+      >>> subprocess.check_call(["ls", "-l"])
+      0
 
    .. warning::
 
@@ -225,15 +225,15 @@ This module also defines four shortcut functions:
    The arguments are the same as for the :class:`Popen` constructor.  Example::
 
       >>> subprocess.check_output(["ls", "-l", "/dev/null"])
-      'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
+      b'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
 
    The stdout argument is not allowed as it is used internally.
    To capture standard error in the result, use ``stderr=subprocess.STDOUT``::
 
       >>> subprocess.check_output(
-              ["/bin/sh", "-c", "ls non_existent_file ; exit 0"],
-              stderr=subprocess.STDOUT)
-      'ls: non_existent_file: No such file or directory\n'
+      ...     ["/bin/sh", "-c", "ls non_existent_file; exit 0"],
+      ...     stderr=subprocess.STDOUT)
+      b'ls: non_existent_file: No such file or directory\n'
 
    .. versionadded:: 3.1
 
@@ -247,7 +247,6 @@ This module also defines four shortcut functions:
    stripped from the output.  The exit status for the command can be interpreted
    according to the rules for the C function :cfunc:`wait`.  Example::
 
-      >>> import subprocess
       >>> subprocess.getstatusoutput('ls /bin/ls')
       (0, '/bin/ls')
       >>> subprocess.getstatusoutput('cat /bin/junk')
@@ -264,7 +263,6 @@ This module also defines four shortcut functions:
    Like :func:`getstatusoutput`, except the exit status is ignored and the return
    value is a string containing the command's output.  Example::
 
-      >>> import subprocess
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 

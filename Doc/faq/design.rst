@@ -7,7 +7,7 @@ Why does Python use indentation for grouping of statements?
 
 Guido van Rossum believes that using indentation for grouping is extremely
 elegant and contributes a lot to the clarity of the average Python program.
-Most people learn to love this feature after awhile.
+Most people learn to love this feature after a while.
 
 Since there are no begin/end brackets there cannot be a disagreement between
 grouping perceived by the parser and the human reader.  Occasionally C
@@ -48,7 +48,7 @@ Why are floating point calculations so inaccurate?
 
 People are often very surprised by results like this::
 
-   >>> 1.2-1.0
+   >>> 1.2 - 1.0
    0.199999999999999996
 
 and think it is a bug in Python. It's not.  This has nothing to do with Python,
@@ -85,7 +85,7 @@ of some computation to a float with ``==``. Tiny inaccuracies may mean that
 ``==`` fails.  Instead, you have to check that the difference between the two
 numbers is less than a certain threshold::
 
-   epsilon = 0.0000000000001 # Tiny allowed error
+   epsilon = 0.0000000000001  # Tiny allowed error
    expected_result = 0.4
 
    if expected_result-epsilon <= computation() <= expected_result+epsilon:
@@ -131,24 +131,25 @@ still useful in those languages, too.
 Second, it means that no special syntax is necessary if you want to explicitly
 reference or call the method from a particular class.  In C++, if you want to
 use a method from a base class which is overridden in a derived class, you have
-to use the ``::`` operator -- in Python you can write baseclass.methodname(self,
-<argument list>).  This is particularly useful for :meth:`__init__` methods, and
-in general in cases where a derived class method wants to extend the base class
-method of the same name and thus has to call the base class method somehow.
+to use the ``::`` operator -- in Python you can write
+``baseclass.methodname(self, <argument list>)``.  This is particularly useful
+for :meth:`__init__` methods, and in general in cases where a derived class
+method wants to extend the base class method of the same name and thus has to
+call the base class method somehow.
 
 Finally, for instance variables it solves a syntactic problem with assignment:
 since local variables in Python are (by definition!) those variables to which a
-value assigned in a function body (and that aren't explicitly declared global),
-there has to be some way to tell the interpreter that an assignment was meant to
-assign to an instance variable instead of to a local variable, and it should
-preferably be syntactic (for efficiency reasons).  C++ does this through
+value is assigned in a function body (and that aren't explicitly declared
+global), there has to be some way to tell the interpreter that an assignment was
+meant to assign to an instance variable instead of to a local variable, and it
+should preferably be syntactic (for efficiency reasons).  C++ does this through
 declarations, but Python doesn't have declarations and it would be a pity having
-to introduce them just for this purpose.  Using the explicit "self.var" solves
+to introduce them just for this purpose.  Using the explicit ``self.var`` solves
 this nicely.  Similarly, for using instance variables, having to write
-"self.var" means that references to unqualified names inside a method don't have
-to search the instance's directories.  To put it another way, local variables
-and instance variables live in two different namespaces, and you need to tell
-Python which namespace to use.
+``self.var`` means that references to unqualified names inside a method don't
+have to search the instance's directories.  To put it another way, local
+variables and instance variables live in two different namespaces, and you need
+to tell Python which namespace to use.
 
 
 Why can't I use an assignment in an expression?
@@ -271,26 +272,13 @@ a string method, since in that case it is easy to see that ::
    "1, 2, 4, 8, 16".split(", ")
 
 is an instruction to a string literal to return the substrings delimited by the
-given separator (or, by default, arbitrary runs of white space).  In this case a
-Unicode string returns a list of Unicode strings, an ASCII string returns a list
-of ASCII strings, and everyone is happy.
+given separator (or, by default, arbitrary runs of white space).
 
 :meth:`~str.join` is a string method because in using it you are telling the
 separator string to iterate over a sequence of strings and insert itself between
 adjacent elements.  This method can be used with any argument which obeys the
 rules for sequence objects, including any new classes you might define yourself.
-
-Because this is a string method it can work for Unicode strings as well as plain
-ASCII strings.  If ``join()`` were a method of the sequence types then the
-sequence types would have to decide which type of string to return depending on
-the type of the separator.
-
-.. XXX remove next paragraph eventually
-
-If none of these arguments persuade you, then for the moment you can continue to
-use the ``join()`` function from the string module, which allows you to write ::
-
-   string.join(['1', '2', '4', '8', '16'], ", ")
+Similar methods exist for bytes and bytearray objects.
 
 
 How fast are exceptions?
@@ -300,19 +288,19 @@ A try/except block is extremely efficient.  Actually catching an exception is
 expensive.  In versions of Python prior to 2.0 it was common to use this idiom::
 
    try:
-       value = dict[key]
+       value = mydict[key]
    except KeyError:
-       dict[key] = getvalue(key)
-       value = dict[key]
+       mydict[key] = getvalue(key)
+       value = mydict[key]
 
 This only made sense when you expected the dict to have the key almost all the
 time.  If that wasn't the case, you coded it like this::
 
-   if key in dict(key):
-       value = dict[key]
+   if mydict.has_key(key):
+       value = mydict[key]
    else:
-       dict[key] = getvalue(key)
-       value = dict[key]
+       mydict[key] = getvalue(key)
+       value = mydict[key]
 
 For this specific case, you could also use ``value = dict.setdefault(key,
 getvalue(key))``, but only if the ``getvalue()`` call is cheap enough because it
@@ -393,7 +381,7 @@ Can Python be compiled to machine code, C or some other language?
 -----------------------------------------------------------------
 
 Not easily.  Python's high level data types, dynamic typing of objects and
-run-time invocation of the interpreter (using :func:`eval` or :keyword:`exec`)
+run-time invocation of the interpreter (using :func:`eval` or :func:`exec`)
 together mean that a "compiled" Python program would probably consist mostly of
 calls into the Python run-time system, even for seemingly simple operations like
 ``x+1``.
@@ -435,7 +423,7 @@ code in various ways to increase performance.  See, for example, `Psyco
 <http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_, `PyInline
 <http://pyinline.sourceforge.net/>`_, `Py2Cmod
 <http://sourceforge.net/projects/py2cmod/>`_, and `Weave
-<http://www.scipy.org/site_content/weave>`_.
+<http://www.scipy.org/Weave>`_.
 
 
 How does Python manage memory?
@@ -453,19 +441,20 @@ Jython relies on the Java runtime so the JVM's garbage collector is used.  This
 difference can cause some subtle porting problems if your Python code depends on
 the behavior of the reference counting implementation.
 
-Sometimes objects get stuck in tracebacks temporarily and hence are not
-deallocated when you might expect.  Clear the tracebacks with::
+.. XXX relevant for Python 3?
 
-   import sys
-   sys.exc_clear()
-   sys.exc_traceback = sys.last_traceback = None
+   Sometimes objects get stuck in traceback temporarily and hence are not
+   deallocated when you might expect.  Clear the traceback with::
 
-Tracebacks are used for reporting errors, implementing debuggers and related
-things.  They contain a portion of the program state extracted during the
-handling of an exception (usually the most recent exception).
+     import sys
+     sys.last_traceback = None
 
-In the absence of circularities and tracebacks, Python programs need not
-explicitly manage memory.
+   Tracebacks are used for reporting errors, implementing debuggers and related
+   things.  They contain a portion of the program state extracted during the
+   handling of an exception (usually the most recent exception).
+
+In the absence of circularities, Python programs do not need to manage memory
+explicitly.
 
 Why doesn't Python use a more traditional garbage collection scheme?  For one
 thing, this is not a C standard feature and hence it's not portable.  (Yes, we
@@ -484,19 +473,19 @@ implements malloc() and free() properly.
 In Jython, the following code (which is fine in CPython) will probably run out
 of file descriptors long before it runs out of memory::
 
-   for file in <very long list of files>:
+   for file in very_long_list_of_files:
        f = open(file)
        c = f.read(1)
 
 Using the current reference counting and destructor scheme, each new assignment
 to f closes the previous file.  Using GC, this is not guaranteed.  If you want
 to write code that will work with any Python implementation, you should
-explicitly close the file; this will work regardless of GC::
+explicitly close the file or use the :keyword:`with` statement; this will work
+regardless of GC::
 
-   for file in <very long list of files>:
-       f = open(file)
-       c = f.read(1)
-       f.close()
+   for file in very_long_list_of_files:
+       with open(file) as f:
+           c = f.read(1)
 
 
 Why isn't all memory freed when Python exits?
@@ -592,10 +581,10 @@ Some unacceptable solutions that have been proposed:
 - Hash lists by their address (object ID).  This doesn't work because if you
   construct a new list with the same value it won't be found; e.g.::
 
-     d = {[1,2]: '12'}
-     print d[[1,2]]
+     mydict = {[1, 2]: '12'}
+     print(mydict[[1, 2]])
 
-  would raise a KeyError exception because the id of the ``[1,2]`` used in the
+  would raise a KeyError exception because the id of the ``[1, 2]`` used in the
   second line differs from that in the first line.  In other words, dictionary
   keys should be compared using ``==``, not using :keyword:`is`.
 
@@ -616,7 +605,7 @@ Some unacceptable solutions that have been proposed:
 
 There is a trick to get around this if you need to, but use it at your own risk:
 You can wrap a mutable structure inside a class instance which has both a
-:meth:`__cmp_` and a :meth:`__hash__` method.  You must then make sure that the
+:meth:`__eq__` and a :meth:`__hash__` method.  You must then make sure that the
 hash value for all such wrapper objects that reside in a dictionary (or other
 hash based structure), remain fixed while the object is in the dictionary (or
 other structure). ::
@@ -624,15 +613,15 @@ other structure). ::
    class ListWrapper:
        def __init__(self, the_list):
            self.the_list = the_list
-       def __cmp__(self, other):
+       def __eq__(self, other):
            return self.the_list == other.the_list
        def __hash__(self):
            l = self.the_list
            result = 98767 - len(l)*555
-           for i in range(len(l)):
+           for i, el in enumerate(l):
                try:
-                   result = result + (hash(l[i]) % 9999999) * 1001 + i
-               except:
+                   result = result + (hash(el) % 9999999) * 1001 + i
+               except Exception:
                    result = (result % 7777777) + i * 333
            return result
 
@@ -640,8 +629,8 @@ Note that the hash computation is complicated by the possibility that some
 members of the list may be unhashable and also by the possibility of arithmetic
 overflow.
 
-Furthermore it must always be the case that if ``o1 == o2`` (ie ``o1.__cmp__(o2)
-== 0``) then ``hash(o1) == hash(o2)`` (ie, ``o1.__hash__() == o2.__hash__()``),
+Furthermore it must always be the case that if ``o1 == o2`` (ie ``o1.__eq__(o2)
+is True``) then ``hash(o1) == hash(o2)`` (ie, ``o1.__hash__() == o2.__hash__()``),
 regardless of whether the object is in a dictionary or not.  If you fail to meet
 these restrictions dictionaries and other hash based structures will misbehave.
 
@@ -664,8 +653,8 @@ In Python 2.4 a new builtin -- :func:`sorted` -- has been added.  This function
 creates a new list from a provided iterable, sorts it and returns it.  For
 example, here's how to iterate over the keys of a dictionary in sorted order::
 
-   for key in sorted(dict.iterkeys()):
-       ... # do whatever with dict[key]...
+   for key in sorted(mydict):
+       ... # do whatever with mydict[key]...
 
 
 How do you specify and enforce an interface spec in Python?
@@ -714,14 +703,14 @@ Why are default values shared between objects?
 
 This type of bug commonly bites neophyte programmers.  Consider this function::
 
-   def foo(D={}):  # Danger: shared reference to one dict for all calls
+   def foo(mydict={}):  # Danger: shared reference to one dict for all calls
        ... compute something ...
-       D[key] = value
-       return D
+       mydict[key] = value
+       return mydict
 
-The first time you call this function, ``D`` contains a single item.  The second
-time, ``D`` contains two items because when ``foo()`` begins executing, ``D``
-starts out with an item already in it.
+The first time you call this function, ``mydict`` contains a single item.  The
+second time, ``mydict`` contains two items because when ``foo()`` begins
+executing, ``mydict`` starts out with an item already in it.
 
 It is often expected that a function call creates new objects for default
 values. This is not what happens. Default values are created exactly once, when
@@ -737,14 +726,14 @@ objects as default values.  Instead, use ``None`` as the default value and
 inside the function, check if the parameter is ``None`` and create a new
 list/dictionary/whatever if it is.  For example, don't write::
 
-   def foo(dict={}):
+   def foo(mydict={}):
        ...
 
 but::
 
-   def foo(dict=None):
-       if dict is None:
-           dict = {} # create a new dict for local namespace
+   def foo(mydict=None):
+       if mydict is None:
+           mydict = {}  # create a new dict for local namespace
 
 This feature can be useful.  When you have a function that's time-consuming to
 compute, a common technique is to cache the parameters and the resulting value
@@ -773,13 +762,13 @@ function calls.  Many feel that exceptions can conveniently emulate all
 reasonable uses of the "go" or "goto" constructs of C, Fortran, and other
 languages.  For example::
 
-   class label: pass # declare a label
+   class label: pass  # declare a label
 
    try:
         ...
-        if (condition): raise label() # goto label
+        if (condition): raise label()  # goto label
         ...
-   except label: # where to goto
+   except label:  # where to goto
         pass
    ...
 
@@ -804,7 +793,7 @@ r-strings are used for their intended purpose.
 If you're trying to build Windows pathnames, note that all Windows system calls
 accept forward slashes too::
 
-   f = open("/mydir/file.txt") # works fine!
+   f = open("/mydir/file.txt")  # works fine!
 
 If you're trying to build a pathname for a DOS command, try e.g. one of ::
 
@@ -841,7 +830,7 @@ For instance, take the following incomplete snippet::
 
    def foo(a):
        with a:
-           print x
+           print(x)
 
 The snippet assumes that "a" must have a member attribute called "x".  However,
 there is nothing in Python that tells the interpreter this. What should happen
@@ -852,21 +841,20 @@ makes such choices much harder.
 The primary benefit of "with" and similar language features (reduction of code
 volume) can, however, easily be achieved in Python by assignment.  Instead of::
 
-   function(args).dict[index][index].a = 21
-   function(args).dict[index][index].b = 42
-   function(args).dict[index][index].c = 63
+   function(args).mydict[index][index].a = 21
+   function(args).mydict[index][index].b = 42
+   function(args).mydict[index][index].c = 63
 
 write this::
 
-   ref = function(args).dict[index][index]
+   ref = function(args).mydict[index][index]
    ref.a = 21
    ref.b = 42
    ref.c = 63
 
 This also has the side-effect of increasing execution speed because name
 bindings are resolved at run-time in Python, and the second version only needs
-to perform the resolution once.  If the referenced object does not have a, b and
-c attributes, of course, the end result is still a run-time exception.
+to perform the resolution once.
 
 
 Why are colons required for the if/while/def/class statements?
@@ -876,12 +864,12 @@ The colon is required primarily to enhance readability (one of the results of
 the experimental ABC language).  Consider this::
 
    if a == b
-       print a
+       print(a)
 
 versus ::
 
    if a == b:
-       print a
+       print(a)
 
 Notice how the second one is slightly easier to read.  Notice further how a
 colon sets off the example in this FAQ answer; it's a standard usage in English.

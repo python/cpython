@@ -110,7 +110,7 @@ call(*popenargs, **kwargs):
 
     The arguments are the same as for the Popen constructor.  Example:
 
-    retcode = call(["ls", "-l"])
+    >>> retcode = call(["ls", "-l"])
 
 check_call(*popenargs, **kwargs):
     Run command with arguments.  Wait for command to complete.  If the
@@ -120,7 +120,8 @@ check_call(*popenargs, **kwargs):
 
     The arguments are the same as for the Popen constructor.  Example:
 
-    check_call(["ls", "-l"])
+    >>> check_call(["ls", "-l"])
+    0
 
 getstatusoutput(cmd):
     Return (status, output) of executing cmd in a shell.
@@ -131,7 +132,6 @@ getstatusoutput(cmd):
     is stripped from the output. The exit status for the command can be
     interpreted according to the rules for the C function wait().  Example:
 
-    >>> import subprocess
     >>> subprocess.getstatusoutput('ls /bin/ls')
     (0, '/bin/ls')
     >>> subprocess.getstatusoutput('cat /bin/junk')
@@ -145,20 +145,19 @@ getoutput(cmd):
     Like getstatusoutput(), except the exit status is ignored and the return
     value is a string containing the command's output.  Example:
 
-    >>> import subprocess
     >>> subprocess.getoutput('ls /bin/ls')
     '/bin/ls'
 
 check_output(*popenargs, **kwargs):
-   Run command with arguments and return its output as a byte string.
+    Run command with arguments and return its output as a byte string.
 
-   If the exit code was non-zero it raises a CalledProcessError.  The
-   CalledProcessError object will have the return code in the returncode
-   attribute and output in the output attribute.
+    If the exit code was non-zero it raises a CalledProcessError.  The
+    CalledProcessError object will have the return code in the returncode
+    attribute and output in the output attribute.
 
-   The arguments are the same as for the Popen constructor.  Example:
+    The arguments are the same as for the Popen constructor.  Example:
 
-      output = subprocess.check_output(["ls", "-l", "/dev/null"])
+    >>> output = subprocess.check_output(["ls", "-l", "/dev/null"])
 
 
 Exceptions
@@ -437,7 +436,7 @@ def check_call(*popenargs, **kwargs):
 
 
 def check_output(*popenargs, **kwargs):
-    """Run command with arguments and return its output as a byte string.
+    r"""Run command with arguments and return its output as a byte string.
 
     If the exit code was non-zero it raises a CalledProcessError.  The
     CalledProcessError object will have the return code in the returncode
@@ -446,15 +445,15 @@ def check_output(*popenargs, **kwargs):
     The arguments are the same as for the Popen constructor.  Example:
 
     >>> check_output(["ls", "-l", "/dev/null"])
-    'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
+    b'crw-rw-rw- 1 root root 1, 3 Oct 18  2007 /dev/null\n'
 
     The stdout argument is not allowed as it is used internally.
-    To capture standard error in the result, use stderr=subprocess.STDOUT.
+    To capture standard error in the result, use stderr=STDOUT.
 
     >>> check_output(["/bin/sh", "-c",
-                      "ls -l non_existent_file ; exit 0"],
-                     stderr=subprocess.STDOUT)
-    'ls: non_existent_file: No such file or directory\n'
+    ...               "ls -l non_existent_file ; exit 0"],
+    ...              stderr=STDOUT)
+    b'ls: non_existent_file: No such file or directory\n'
     """
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')

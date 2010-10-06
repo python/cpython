@@ -709,7 +709,7 @@ a fixed-width print format:
     Point: x= 3.000  y= 4.000  hypot= 5.000
     Point: x=14.000  y= 0.714  hypot=14.018
 
-The subclass shown above sets ``__slots__`` to an empty tuple.  This keeps
+The subclass shown above sets ``__slots__`` to an empty tuple.  This helps
 keep memory requirements low by preventing the creation of instance dictionaries.
 
 
