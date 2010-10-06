@@ -176,6 +176,9 @@ PyObject *PyExc_BlockingIOError = (PyObject *)&_PyExc_BlockingIOError;
  * The main open() function
  */
 PyDoc_STRVAR(open_doc,
+"open(file, mode='r', buffering=None, encoding=None,\n"
+"     errors=None, newline=None, closefd=True) -> file object\n"
+"\n"
 "Open file and return a stream.  Raise IOError upon failure.\n"
 "\n"
 "file is either a text or byte string giving the name (and the path\n"
