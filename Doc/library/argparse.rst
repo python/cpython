@@ -737,14 +737,14 @@ values are:
 * N (an integer).  N args from the command-line will be gathered together into a
   list.  For example::
 
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--foo', nargs=2)
-    >>> parser.add_argument('bar', nargs=1)
-    >>> parser.parse_args('c --foo a b'.split())
-    Namespace(bar=['c'], foo=['a', 'b'])
+     >>> parser = argparse.ArgumentParser()
+     >>> parser.add_argument('--foo', nargs=2)
+     >>> parser.add_argument('bar', nargs=1)
+     >>> parser.parse_args('c --foo a b'.split())
+     Namespace(bar=['c'], foo=['a', 'b'])
 
-   Note that ``nargs=1`` produces a list of one item.  This is different from
-   the default, in which the item is produced by itself.
+  Note that ``nargs=1`` produces a list of one item.  This is different from
+  the default, in which the item is produced by itself.
 
 * ``'?'``. One arg will be consumed from the command-line if possible, and
   produced as a single item.  If no command-line arg is present, the value from
