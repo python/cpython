@@ -65,7 +65,7 @@ Unless otherwise stated, buffers are not NUL-terminated.
    .. note::
       This format does not accept bytes-like objects.  If you want to accept
       filesystem paths and convert them to C character strings, it is
-      preferrable to use the ``O&`` format with :cfunc:`PyUnicode_FSConverter`
+      preferable to use the ``O&`` format with :cfunc:`PyUnicode_FSConverter`
       as *converter*.
 
 ``s*`` (:class:`str`, :class:`bytes`, :class:`bytearray` or buffer compatible object) [Py_buffer]

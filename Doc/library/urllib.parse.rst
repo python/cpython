@@ -354,7 +354,7 @@ The :mod:`urllib.parse` module defines the following functions:
    :rfc:`3986` - Uniform Resource Identifiers
       This is the current standard (STD66). Any changes to urlparse module
       should conform to this. Certain deviations could be observed, which are
-      mostly due backward compatiblity purposes and for certain to de-facto
+      mostly for backward compatibility purposes and for certain de-facto
       parsing requirements as commonly observed in major browsers.
 
    :rfc:`2396` - Uniform Resource Identifiers (URI): Generic Syntax

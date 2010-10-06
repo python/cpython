@@ -357,7 +357,7 @@ would create a 64bit installation executable on your 32bit version of Windows.
 
 To cross-compile, you must download the Python source code and cross-compile
 Python itself for the platform you are targetting - it is not possible from a
-binary installtion of Python (as the .lib etc file for other platforms are
+binary installation of Python (as the .lib etc file for other platforms are
 not included.)  In practice, this means the user of a 32 bit operating
 system will need to use Visual Studio 2008 to open the
 :file:`PCBuild/PCbuild.sln` solution in the Python source tree and build the

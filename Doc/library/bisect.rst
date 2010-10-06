@@ -125,7 +125,7 @@ a 'B', and so on::
 
 Unlike the :func:`sorted` function, it does not make sense for the :func:`bisect`
 functions to have *key* or *reversed* arguments because that would lead to an
-inefficent design (successive calls to bisect functions would not "remember"
+inefficient design (successive calls to bisect functions would not "remember"
 all of the previous key lookups).
 
 Instead, it is better to search a list of precomputed keys to find the index
