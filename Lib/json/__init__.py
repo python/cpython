@@ -125,14 +125,12 @@ def dump(obj, fp, skipkeys=False, ensure_ascii=True, check_circular=True,
     ``.write()``-supporting file-like object).
 
     If ``skipkeys`` is true then ``dict`` keys that are not basic types
-    (``str``, ``unicode``, ``int``, ``float``, ``bool``, ``None``) will be
-    skipped instead of raising a ``TypeError``.
+    (``str``, ``int``, ``float``, ``bool``, ``None``) will be skipped
+    instead of raising a ``TypeError``.
 
-    If ``ensure_ascii`` is false, then the some chunks written to ``fp``
-    may be ``unicode`` instances, subject to normal Python ``str`` to
-    ``unicode`` coercion rules. Unless ``fp.write()`` explicitly
-    understands ``unicode`` (as in ``codecs.getwriter()``) this is likely
-    to cause an error.
+    If ``ensure_ascii`` is false, then the strings written to ``fp`` can
+    contain non-ASCII characters if they appear in strings contained in
+    ``obj``. Otherwise, all such characters are escaped in JSON strings.
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
@@ -185,12 +183,12 @@ def dumps(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
     """Serialize ``obj`` to a JSON formatted ``str``.
 
     If ``skipkeys`` is false then ``dict`` keys that are not basic types
-    (``str``, ``unicode``, ``int``, ``float``, ``bool``, ``None``) will be
-    skipped instead of raising a ``TypeError``.
+    (``str``, ``int``, ``float``, ``bool``, ``None``) will be skipped
+    instead of raising a ``TypeError``.
 
-    If ``ensure_ascii`` is false, then the return value will be a
-    ``unicode`` instance subject to normal Python ``str`` to ``unicode``
-    coercion rules instead of being escaped to an ASCII ``str``.
+    If ``ensure_ascii`` is false, then the return value can contain non-ASCII
+    characters if they appear in strings contained in ``obj``. Otherwise, all
+    such characters are escaped in JSON strings.
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
