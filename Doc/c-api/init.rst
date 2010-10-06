@@ -285,13 +285,6 @@ Initialization, Finalization, and Threads
    modify its value.  The value is available to Python code as :data:`sys.version`.
 
 
-.. cfunction:: const char* Py_GetBuildNumber()
-
-   Return a string representing the Subversion revision that this Python executable
-   was built from.  This number is a string because it may contain a trailing 'M'
-   if Python was built from a mixed revision source tree.
-
-
 .. cfunction:: const char* Py_GetPlatform()
 
    .. index:: single: platform (in module sys)

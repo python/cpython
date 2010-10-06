@@ -38,7 +38,7 @@ There are (at least) three kinds of modules in Python:
    type::
 
       import sys
-      print sys.builtin_module_names
+      print(sys.builtin_module_names)
 
 
 How do I make a Python script executable on Unix?
@@ -187,8 +187,11 @@ How do I get a single keypress at a time?
 -----------------------------------------
 
 For Unix variants: There are several solutions.  It's straightforward to do this
-using curses, but curses is a fairly large module to learn.  Here's a solution
-without curses::
+using curses, but curses is a fairly large module to learn.
+
+.. XXX this doesn't work out of the box, some IO expert needs to check why
+
+   Here's a solution without curses::
 
    import termios, fcntl, sys, os
    fd = sys.stdin.fileno()
@@ -202,23 +205,24 @@ without curses::
    fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
 
    try:
-       while 1:
+       while True:
            try:
                c = sys.stdin.read(1)
-               print "Got character", `c`
-           except IOError: pass
+               print("Got character", repr(c))
+           except IOError:
+               pass
    finally:
        termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
        fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
 
-You need the :mod:`termios` and the :mod:`fcntl` module for any of this to work,
-and I've only tried it on Linux, though it should work elsewhere.  In this code,
-characters are read and printed one at a time.
+   You need the :mod:`termios` and the :mod:`fcntl` module for any of this to
+   work, and I've only tried it on Linux, though it should work elsewhere.  In
+   this code, characters are read and printed one at a time.
 
-:func:`termios.tcsetattr` turns off stdin's echoing and disables canonical mode.
-:func:`fcntl.fnctl` is used to obtain stdin's file descriptor flags and modify
-them for non-blocking mode.  Since reading stdin when it is empty results in an
-:exc:`IOError`, this error is caught and ignored.
+   :func:`termios.tcsetattr` turns off stdin's echoing and disables canonical
+   mode.  :func:`fcntl.fnctl` is used to obtain stdin's file descriptor flags
+   and modify them for non-blocking mode.  Since reading stdin when it is empty
+   results in an :exc:`IOError`, this error is caught and ignored.
 
 
 Threads
@@ -247,13 +251,13 @@ all the threads to finish::
    import threading, time
 
    def thread_task(name, n):
-       for i in range(n): print name, i
+       for i in range(n): print(name, i)
 
    for i in range(10):
        T = threading.Thread(target=thread_task, args=(str(i), i))
        T.start()
 
-   time.sleep(10) # <----------------------------!
+   time.sleep(10)  # <---------------------------!
 
 But now (on many platforms) the threads don't run in parallel, but appear to run
 sequentially, one at a time!  The reason is that the OS thread scheduler doesn't
@@ -262,8 +266,8 @@ start a new thread until the previous thread is blocked.
 A simple fix is to add a tiny sleep to the start of the run function::
 
    def thread_task(name, n):
-       time.sleep(0.001) # <---------------------!
-       for i in range(n): print name, i
+       time.sleep(0.001)  # <--------------------!
+       for i in range(n): print(name, i)
 
    for i in range(10):
        T = threading.Thread(target=thread_task, args=(str(i), i))
@@ -289,28 +293,28 @@ once.
 
 Here's a trivial example::
 
-   import threading, Queue, time
+   import threading, queue, time
 
    # The worker thread gets jobs off the queue.  When the queue is empty, it
    # assumes there will be no more work and exits.
    # (Realistically workers will run until terminated.)
    def worker ():
-       print 'Running worker'
+       print('Running worker')
        time.sleep(0.1)
        while True:
            try:
                arg = q.get(block=False)
-           except Queue.Empty:
-               print 'Worker', threading.currentThread(),
-               print 'queue empty'
+           except queue.Empty:
+               print('Worker', threading.currentThread(), end=' ')
+               print('queue empty')
                break
            else:
-               print 'Worker', threading.currentThread(),
-               print 'running with argument', arg
+               print('Worker', threading.currentThread(), end=' ')
+               print('running with argument', arg)
                time.sleep(0.5)
 
    # Create queue
-   q = Queue.Queue()
+   q = queue.Queue()
 
    # Start a pool of 5 workers
    for i in range(5):
@@ -322,10 +326,10 @@ Here's a trivial example::
        q.put(i)
 
    # Give threads time to run
-   print 'Main thread sleeping'
+   print('Main thread sleeping')
    time.sleep(5)
 
-When run, this will produce the following output:
+When run, this will produce the following output::
 
    Running worker
    Running worker
@@ -333,12 +337,12 @@ When run, this will produce the following output:
    Running worker
    Running worker
    Main thread sleeping
-   Worker <Thread(worker 1, started)> running with argument 0
-   Worker <Thread(worker 2, started)> running with argument 1
-   Worker <Thread(worker 3, started)> running with argument 2
-   Worker <Thread(worker 4, started)> running with argument 3
-   Worker <Thread(worker 5, started)> running with argument 4
-   Worker <Thread(worker 1, started)> running with argument 5
+   Worker <Thread(worker 1, started 130283832797456)> running with argument 0
+   Worker <Thread(worker 2, started 130283824404752)> running with argument 1
+   Worker <Thread(worker 3, started 130283816012048)> running with argument 2
+   Worker <Thread(worker 4, started 130283807619344)> running with argument 3
+   Worker <Thread(worker 5, started 130283799226640)> running with argument 4
+   Worker <Thread(worker 1, started 130283832797456)> running with argument 5
    ...
 
 Consult the module's documentation for more details; the ``Queue`` class
@@ -351,7 +355,7 @@ What kinds of global value mutation are thread-safe?
 A global interpreter lock (GIL) is used internally to ensure that only one
 thread runs in the Python VM at a time.  In general, Python offers to switch
 among threads only between bytecode instructions; how frequently it switches can
-be set via :func:`sys.setcheckinterval`.  Each bytecode instruction and
+be set via :func:`sys.setswitchinterval`.  Each bytecode instruction and
 therefore all the C implementation code reached from each instruction is
 therefore atomic from the point of view of a Python program.
 
@@ -443,7 +447,7 @@ How do I delete a file? (And other file questions...)
 -----------------------------------------------------
 
 Use ``os.remove(filename)`` or ``os.unlink(filename)``; for documentation, see
-the :mod:`os` module.  The two functions are identical; :func:`unlink` is simply
+the :mod:`os` module.  The two functions are identical; :func:`~os.unlink` is simply
 the name of the Unix system call for this function.
 
 To remove a directory, use :func:`os.rmdir`; use :func:`os.mkdir` to create one.
@@ -512,81 +516,83 @@ to read n bytes from a pipe p created with :func:`os.popen`, you need to use
 ``p.read(n)``.
 
 
-How do I run a subprocess with pipes connected to both input and output?
-------------------------------------------------------------------------
+.. XXX update to use subprocess. See the :ref:`subprocess-replacements` section.
 
-.. XXX update to use subprocess
+   How do I run a subprocess with pipes connected to both input and output?
+   ------------------------------------------------------------------------
 
-Use the :mod:`popen2` module.  For example::
+   Use the :mod:`popen2` module.  For example::
 
-   import popen2
-   fromchild, tochild = popen2.popen2("command")
-   tochild.write("input\n")
-   tochild.flush()
-   output = fromchild.readline()
+      import popen2
+      fromchild, tochild = popen2.popen2("command")
+      tochild.write("input\n")
+      tochild.flush()
+      output = fromchild.readline()
 
-Warning: in general it is unwise to do this because you can easily cause a
-deadlock where your process is blocked waiting for output from the child while
-the child is blocked waiting for input from you.  This can be caused because the
-parent expects the child to output more text than it does, or it can be caused
-by data being stuck in stdio buffers due to lack of flushing.  The Python parent
-can of course explicitly flush the data it sends to the child before it reads
-any output, but if the child is a naive C program it may have been written to
-never explicitly flush its output, even if it is interactive, since flushing is
-normally automatic.
+   Warning: in general it is unwise to do this because you can easily cause a
+   deadlock where your process is blocked waiting for output from the child
+   while the child is blocked waiting for input from you.  This can be caused
+   because the parent expects the child to output more text than it does, or it
+   can be caused by data being stuck in stdio buffers due to lack of flushing.
+   The Python parent can of course explicitly flush the data it sends to the
+   child before it reads any output, but if the child is a naive C program it
+   may have been written to never explicitly flush its output, even if it is
+   interactive, since flushing is normally automatic.
 
-Note that a deadlock is also possible if you use :func:`popen3` to read stdout
-and stderr. If one of the two is too large for the internal buffer (increasing
-the buffer size does not help) and you ``read()`` the other one first, there is
-a deadlock, too.
+   Note that a deadlock is also possible if you use :func:`popen3` to read
+   stdout and stderr. If one of the two is too large for the internal buffer
+   (increasing the buffer size does not help) and you ``read()`` the other one
+   first, there is a deadlock, too.
 
-Note on a bug in popen2: unless your program calls ``wait()`` or ``waitpid()``,
-finished child processes are never removed, and eventually calls to popen2 will
-fail because of a limit on the number of child processes.  Calling
-:func:`os.waitpid` with the :data:`os.WNOHANG` option can prevent this; a good
-place to insert such a call would be before calling ``popen2`` again.
+   Note on a bug in popen2: unless your program calls ``wait()`` or
+   ``waitpid()``, finished child processes are never removed, and eventually
+   calls to popen2 will fail because of a limit on the number of child
+   processes.  Calling :func:`os.waitpid` with the :data:`os.WNOHANG` option can
+   prevent this; a good place to insert such a call would be before calling
+   ``popen2`` again.
 
-In many cases, all you really need is to run some data through a command and get
-the result back.  Unless the amount of data is very large, the easiest way to do
-this is to write it to a temporary file and run the command with that temporary
-file as input.  The standard module :mod:`tempfile` exports a ``mktemp()``
-function to generate unique temporary file names. ::
+   In many cases, all you really need is to run some data through a command and
+   get the result back.  Unless the amount of data is very large, the easiest
+   way to do this is to write it to a temporary file and run the command with
+   that temporary file as input.  The standard module :mod:`tempfile` exports a
+   ``mktemp()`` function to generate unique temporary file names. ::
 
-   import tempfile
-   import os
+      import tempfile
+      import os
 
-   class Popen3:
-       """
-       This is a deadlock-safe version of popen that returns
-       an object with errorlevel, out (a string) and err (a string).
-       (capturestderr may not work under windows.)
-       Example: print Popen3('grep spam','\n\nhere spam\n\n').out
-       """
-       def __init__(self,command,input=None,capturestderr=None):
-           outfile=tempfile.mktemp()
-           command="( %s ) > %s" % (command,outfile)
-           if input:
-               infile=tempfile.mktemp()
-               open(infile,"w").write(input)
-               command=command+" <"+infile
-           if capturestderr:
-               errfile=tempfile.mktemp()
-               command=command+" 2>"+errfile
-           self.errorlevel=os.system(command) >> 8
-           self.out=open(outfile,"r").read()
-           os.remove(outfile)
-           if input:
-               os.remove(infile)
-           if capturestderr:
-               self.err=open(errfile,"r").read()
-               os.remove(errfile)
+      class Popen3:
+          """
+          This is a deadlock-safe version of popen that returns
+          an object with errorlevel, out (a string) and err (a string).
+          (capturestderr may not work under windows.)
+          Example: print(Popen3('grep spam','\n\nhere spam\n\n').out)
+          """
+          def __init__(self,command,input=None,capturestderr=None):
+              outfile=tempfile.mktemp()
+              command="( %s ) > %s" % (command,outfile)
+              if input:
+                  infile=tempfile.mktemp()
+                  open(infile,"w").write(input)
+                  command=command+" <"+infile
+              if capturestderr:
+                  errfile=tempfile.mktemp()
+                  command=command+" 2>"+errfile
+              self.errorlevel=os.system(command) >> 8
+              self.out=open(outfile,"r").read()
+              os.remove(outfile)
+              if input:
+                  os.remove(infile)
+              if capturestderr:
+                  self.err=open(errfile,"r").read()
+                  os.remove(errfile)
 
-Note that many interactive programs (e.g. vi) don't work well with pipes
-substituted for standard input and output.  You will have to use pseudo ttys
-("ptys") instead of pipes. Or you can use a Python interface to Don Libes'
-"expect" library.  A Python extension that interfaces to expect is called "expy"
-and available from http://expectpy.sourceforge.net.  A pure Python solution that
-works like expect is `pexpect <http://pypi.python.org/pypi/pexpect/>`_.
+   Note that many interactive programs (e.g. vi) don't work well with pipes
+   substituted for standard input and output.  You will have to use pseudo ttys
+   ("ptys") instead of pipes. Or you can use a Python interface to Don Libes'
+   "expect" library.  A Python extension that interfaces to expect is called
+   "expy" and available from http://expectpy.sourceforge.net.  A pure Python
+   solution that works like expect is `pexpect
+   <http://pypi.python.org/pypi/pexpect/>`_.
 
 
 How do I access the serial (RS232) port?
@@ -654,41 +660,29 @@ How can I mimic CGI form submission (METHOD=POST)?
 I would like to retrieve web pages that are the result of POSTing a form. Is
 there existing code that would let me do this easily?
 
-Yes. Here's a simple example that uses httplib::
+Yes. Here's a simple example that uses urllib.request::
 
    #!/usr/local/bin/python
 
-   import httplib, sys, time
+   import urllib.request
 
    ### build the query string
    qs = "First=Josephine&MI=Q&Last=Public"
 
    ### connect and send the server a path
-   httpobj = httplib.HTTP('www.some-server.out-there', 80)
-   httpobj.putrequest('POST', '/cgi-bin/some-cgi-script')
-   ### now generate the rest of the HTTP headers...
-   httpobj.putheader('Accept', '*/*')
-   httpobj.putheader('Connection', 'Keep-Alive')
-   httpobj.putheader('Content-type', 'application/x-www-form-urlencoded')
-   httpobj.putheader('Content-length', '%d' % len(qs))
-   httpobj.endheaders()
-   httpobj.send(qs)
-   ### find out what the server said in response...
-   reply, msg, hdrs = httpobj.getreply()
-   if reply != 200:
-       sys.stdout.write(httpobj.getfile().read())
+   req = urllib.request.urlopen('http://www.some-server.out-there'
+                                '/cgi-bin/some-cgi-script', data=qs)
+   msg, hdrs = req.read(), req.info()
 
 Note that in general for a percent-encoded POST operations, query strings must be
-quoted by using :func:`urllib.quote`.  For example to send name="Guy Steele,
+quoted by using :func:`urllib.parse.urlencode`.  For example to send name="Guy Steele,
 Jr."::
 
-   >>> from urllib import quote
-   >>> x = quote("Guy Steele, Jr.")
-   >>> x
-   'Guy%20Steele,%20Jr.'
-   >>> query_string = "name="+x
-   >>> query_string
-   'name=Guy%20Steele,%20Jr.'
+   >>> import urllib.parse
+   >>> urllib.parse.urlencode({'name': 'Guy Steele, Jr.'})
+   'name=Guy+Steele%2C+Jr.'
+
+.. seealso:: :ref:`urllib-howto` for extensive examples.
 
 
 What module should I use to help with generating HTML?
@@ -721,9 +715,9 @@ work on any host that supports an SMTP listener. ::
 
    import sys, smtplib
 
-   fromaddr = raw_input("From: ")
-   toaddrs  = raw_input("To: ").split(',')
-   print "Enter message, end with ^D:"
+   fromaddr = input("From: ")
+   toaddrs  = input("To: ").split(',')
+   print("Enter message, end with ^D:")
    msg = ''
    while True:
        line = sys.stdin.readline()
@@ -741,17 +735,17 @@ varies between systems; sometimes it is ``/usr/lib/sendmail``, sometime
 ``/usr/sbin/sendmail``.  The sendmail manual page will help you out.  Here's
 some sample code::
 
-   SENDMAIL = "/usr/sbin/sendmail" # sendmail location
+   SENDMAIL = "/usr/sbin/sendmail"  # sendmail location
    import os
    p = os.popen("%s -t -i" % SENDMAIL, "w")
    p.write("To: receiver@example.com\n")
    p.write("Subject: test\n")
-   p.write("\n") # blank line separating headers from body
+   p.write("\n")  # blank line separating headers from body
    p.write("Some text\n")
    p.write("some more text\n")
    sts = p.close()
    if sts != 0:
-       print "Sendmail exit status", sts
+       print("Sendmail exit status", sts)
 
 
 How do I avoid blocking in the connect() method of a socket?
@@ -768,7 +762,7 @@ have to check what's returned on your system.
 
 You can use the ``connect_ex()`` method to avoid creating an exception.  It will
 just return the errno value.  To poll, you can call ``connect_ex()`` again later
--- 0 or ``errno.EISCONN`` indicate that you're connected -- or you can pass this
+-- ``0`` or ``errno.EISCONN`` indicate that you're connected -- or you can pass this
 socket to select to check if it's writable.
 
 
@@ -807,21 +801,15 @@ than a third of a second.  This often beats doing something more complex and
 general such as using gdbm with pickle/shelve.
 
 
-Why is cPickle so slow?
------------------------
-
-.. XXX update this, default protocol is 2/3
-
-The default format used by the pickle module is a slow one that results in
-readable pickles.  Making it the default, but it would break backward
-compatibility::
-
-    largeString = 'z' * (100 * 1024)
-    myPickle = cPickle.dumps(largeString, protocol=1)
-
-
 If my program crashes with a bsddb (or anydbm) database open, it gets corrupted. How come?
 ------------------------------------------------------------------------------------------
+
+.. XXX move this FAQ entry elsewhere?
+
+.. note::
+
+   The bsddb module is now available as a standalone package `pybsddb
+   <http://www.jcea.es/programacion/pybsddb.htm>`_.
 
 Databases opened for write access with the bsddb module (and often by the anydbm
 module, since it will preferentially use bsddb) must explicitly be closed using
@@ -835,6 +823,13 @@ encounter an exception the next time the file is opened.
 
 I tried to open Berkeley DB file, but bsddb produces bsddb.error: (22, 'Invalid argument'). Help! How can I restore my data?
 ----------------------------------------------------------------------------------------------------------------------------
+
+.. XXX move this FAQ entry elsewhere?
+
+.. note::
+
+   The bsddb module is now available as a standalone package `pybsddb
+   <http://www.jcea.es/programacion/pybsddb.htm>`_.
 
 Don't panic! Your data is probably intact. The most frequent cause for the error
 is that you tried to open an earlier Berkeley DB file with a later version of

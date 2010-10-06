@@ -31,9 +31,9 @@ random UUID.
       UUID('{12345678-1234-5678-1234-567812345678}')
       UUID('12345678123456781234567812345678')
       UUID('urn:uuid:12345678-1234-5678-1234-567812345678')
-      UUID(bytes='\x12\x34\x56\x78'*4)
-      UUID(bytes_le='\x78\x56\x34\x12\x34\x12\x78\x56' +
-                    '\x12\x34\x56\x78\x12\x34\x56\x78')
+      UUID(bytes=b'\x12\x34\x56\x78'*4)
+      UUID(bytes_le=b'\x78\x56\x34\x12\x34\x12\x78\x56' +
+                    b'\x12\x34\x56\x78\x12\x34\x56\x78')
       UUID(fields=(0x12345678, 0x1234, 0x5678, 0x12, 0x34, 0x567812345678))
       UUID(int=0x12345678123456781234567812345678)
 
@@ -247,7 +247,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
 
    # get the raw 16 bytes of the UUID
    >>> x.bytes
-   '\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f'
+   b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f'
 
    # make a UUID from a 16-byte string
    >>> uuid.UUID(bytes=x.bytes)
