@@ -20,7 +20,7 @@ interactive prompt  and the prompts offered by the :func:`raw_input` and
   the ``libedit`` library instead of GNU readline.
 
   The configuration file for ``libedit`` is different from that
-  of GNU readline. If you programmaticly load configuration strings
+  of GNU readline. If you programmatically load configuration strings
   you can check for the text "libedit" in :const:`readline.__doc__`
   to differentiate between GNU readline and libedit.
 

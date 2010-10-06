@@ -944,7 +944,7 @@ Is there an equivalent to Perl's chomp() for removing trailing newlines from str
 -------------------------------------------------------------------------------------
 
 Starting with Python 2.2, you can use ``S.rstrip("\r\n")`` to remove all
-occurences of any line terminator from the end of the string ``S`` without
+occurrences of any line terminator from the end of the string ``S`` without
 removing other trailing whitespace.  If the string ``S`` represents more than
 one line, with several empty lines at the end, the line terminators for all the
 blank lines will be removed::

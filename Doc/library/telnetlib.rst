@@ -198,8 +198,8 @@ Telnet Objects
    received so far (may be the empty string if a timeout happened).
 
    If a regular expression ends with a greedy match (such as ``.*``) or if more
-   than one expression can match the same input, the results are indeterministic,
-   and may depend on the I/O timing.
+   than one expression can match the same input, the results are
+   non-deterministic, and may depend on the I/O timing.
 
 
 .. method:: Telnet.set_option_negotiation_callback(callback)

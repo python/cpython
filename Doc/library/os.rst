@@ -337,7 +337,7 @@ process and user.
 
    Set the current process's real, effective, and saved user ids.
 
-   Availibility: Unix.
+   Availability: Unix.
 
    .. versionadded:: 2.7
 
