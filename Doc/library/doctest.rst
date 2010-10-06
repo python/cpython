@@ -972,18 +972,17 @@ serious Python testing frameworks build on the :mod:`unittest` module, which
 supplies many flexible ways to combine tests from multiple sources.  So, in
 Python 2.4, :mod:`doctest`'s :class:`Tester` class is deprecated, and
 :mod:`doctest` provides two functions that can be used to create :mod:`unittest`
-test suites from modules and text files containing doctests.  These test suites
-can then be run using :mod:`unittest` test runners::
+test suites from modules and text files containing doctests.  To integrate with
+:mod:`unittest` test discovery, include a :func:`load_tests` function in your
+test module::
 
    import unittest
    import doctest
-   import my_module_with_doctests, and_another
+   import my_module_with_doctests
 
-   suite = unittest.TestSuite()
-   for mod in my_module_with_doctests, and_another:
-       suite.addTest(doctest.DocTestSuite(mod))
-   runner = unittest.TextTestRunner()
-   runner.run(suite)
+   def load_tests(loader, tests, ignore):
+       tests.addTests(doctest.DocTestSuite(my_module_with_doctests))
+       return test
 
 There are two main functions for creating :class:`unittest.TestSuite` instances
 from text files and modules with doctests:

@@ -263,14 +263,14 @@ specified number of bytes.  As a special case, ``'0s'`` means a single, empty
 string (while ``'0c'`` means 0 characters).
 
 The ``'p'`` format character encodes a "Pascal string", meaning a short
-variable-length string stored in a fixed number of bytes. The count is the total
-number of bytes stored.  The first byte stored is the length of the string, or
-255, whichever is smaller.  The bytes of the string follow.  If the string
-passed in to :func:`pack` is too long (longer than the count minus 1), only the
-leading count-1 bytes of the string are stored.  If the string is shorter than
-count-1, it is padded with null bytes so that exactly count bytes in all are
-used.  Note that for :func:`unpack`, the ``'p'`` format character consumes count
-bytes, but that the string returned can never contain more than 255 characters.
+variable-length string stored in a *fixed number of bytes*, given by the count.
+The first byte stored is the length of the string, or 255, whichever is smaller.
+The bytes of the string follow.  If the string passed in to :func:`pack` is too
+long (longer than the count minus 1), only the leading ``count-1`` bytes of the
+string are stored.  If the string is shorter than ``count-1``, it is padded with
+null bytes so that exactly count bytes in all are used.  Note that for
+:func:`unpack`, the ``'p'`` format character consumes count bytes, but that the
+string returned can never contain more than 255 characters.
 
 For the ``'P'`` format character, the return value is a Python integer or long
 integer, depending on the size needed to hold a pointer when it has been cast to
