@@ -196,6 +196,7 @@ normally be executed automatically during interactive sessions from the user's
 :envvar:`PYTHONSTARTUP` file. ::
 
    import os
+   import readline
    histfile = os.path.join(os.environ["HOME"], ".pyhist")
    try:
        readline.read_history_file(histfile)
