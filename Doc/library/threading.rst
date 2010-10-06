@@ -43,6 +43,8 @@ This module defines the following functions and objects:
    variable allows one or more threads to wait until they are notified by another
    thread.
 
+   See :ref:`condition-objects`.
+
 
 .. function:: current_thread()
               currentThread()
@@ -69,6 +71,8 @@ This module defines the following functions and objects:
    with the :meth:`clear` method.  The :meth:`wait` method blocks until the flag
    is true.
 
+   See :ref:`event-objects`.
+
 
 .. class:: local
 
@@ -93,6 +97,8 @@ This module defines the following functions and objects:
    acquired it, subsequent attempts to acquire it block, until it is released; any
    thread may release it.
 
+   See :ref:`lock-objects`.
+
 
 .. function:: RLock()
 
@@ -100,6 +106,8 @@ This module defines the following functions and objects:
    must be released by the thread that acquired it. Once a thread has acquired a
    reentrant lock, the same thread may acquire it again without blocking; the
    thread must release it once for each time it has acquired it.
+
+   See :ref:`rlock-objects`.
 
 
 .. function:: Semaphore([value])
@@ -110,6 +118,8 @@ This module defines the following functions and objects:
    :meth:`acquire` calls, plus an initial value. The :meth:`acquire` method blocks
    if necessary until it can return without making the counter negative.  If not
    given, *value* defaults to 1.
+
+   See :ref:`semaphore-objects`.
 
 
 .. function:: BoundedSemaphore([value])
@@ -122,14 +132,20 @@ This module defines the following functions and objects:
 
 
 .. class:: Thread
+   :noindex:
 
    A class that represents a thread of control.  This class can be safely
    subclassed in a limited fashion.
 
+   See :ref:`thread-objects`.
+
 
 .. class:: Timer
+   :noindex:
 
    A thread that executes a function after a specified interval has passed.
+
+   See :ref:`timer-objects`.
 
 
 .. function:: settrace(func)
