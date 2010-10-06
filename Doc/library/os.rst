@@ -1371,27 +1371,25 @@ Files and Directories
 
 
 .. function:: symlink(source, link_name)
+              symlink(source, link_name, target_is_directory=False)
 
    Create a symbolic link pointing to *source* named *link_name*.
 
-   On Windows, symlink version takes an additional, optional parameter,
-   *target_is_directory*, which defaults to False.
+   On Windows, symlink version takes an additional optional parameter,
+   *target_is_directory*, which defaults to ``False``.
 
-   symlink(source, link_name, target_is_directory=False)
+   On Windows, a symlink represents a file or a directory, and does not morph to
+   the target dynamically.  For this reason, when creating a symlink on Windows,
+   if the target is not already present, the symlink will default to being a
+   file symlink.  If *target_is_directory* is set to ``True``, the symlink will
+   be created as a directory symlink.  This parameter is ignored if the target
+   exists (and the symlink is created with the same type as the target).
 
-   On Windows, a symlink represents a file or a directory, and does not
-   morph to the target dynamically.  For this reason, when creating a
-   symlink on Windows, if the target is not already present, the symlink
-   will default to being a file symlink.  If *target_is_directory* is set to
-   True, the symlink will be created as a directory symlink.  This
-   parameter is ignored if the target exists (and the symlink is created
-   with the same type as the target).
+   Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
+   will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
+   The *SeCreateSymbolicLinkPrivilege* is required in order to create symlinks.
 
-   Symbolic link support was introduced in Windows 6.0 (Vista). *symlink*
-   will raise a NotImplementedError on Windows versions earlier than 6.0. The
-   SeCreateSymbolicLinkPrivilege is required in order to create symlinks.
-
-   Availability:  Unix, Windows
+   Availability: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
