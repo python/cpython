@@ -228,35 +228,45 @@ static int RunModule(wchar_t *modname, int set_argv0)
     return 0;
 }
 
-static int RunMainFromImporter(wchar_t *filename)
+static int
+RunMainFromImporter(wchar_t *filename)
 {
-    PyObject *argv0 = NULL, *importer = NULL;
+    PyObject *argv0 = NULL, *importer, *sys_path;
+    int sts;
 
-    if ((argv0 = PyUnicode_FromWideChar(filename,wcslen(filename))) &&
-        (importer = PyImport_GetImporter(argv0)) &&
-        (importer->ob_type != &PyNullImporter_Type))
-    {
-             /* argv0 is usable as an import source, so
-                    put it in sys.path[0] and import __main__ */
-        PyObject *sys_path = NULL;
-        if ((sys_path = PySys_GetObject("path")) &&
-            !PyList_SetItem(sys_path, 0, argv0))
-        {
-            Py_INCREF(argv0);
-            Py_DECREF(importer);
-            sys_path = NULL;
-            return RunModule(L"__main__", 0) != 0;
-        }
-    }
-    Py_XDECREF(argv0);
-    Py_XDECREF(importer);
-    if (PyErr_Occurred()) {
-        PyErr_Print();
-        return 1;
-    }
-    else {
+    argv0 = PyUnicode_FromWideChar(filename, wcslen(filename));
+    if (argv0 == NULL)
+        goto error;
+
+    importer = PyImport_GetImporter(argv0);
+    if (importer == NULL)
+        goto error;
+
+    if (importer->ob_type == &PyNullImporter_Type) {
+        Py_DECREF(argv0);
+        Py_DECREF(importer);
         return -1;
     }
+    Py_DECREF(importer);
+
+    /* argv0 is usable as an import source, so put it in sys.path[0]
+       and import __main__ */
+    sys_path = PySys_GetObject("path");
+    if (sys_path == NULL)
+        goto error;
+    if (PyList_SetItem(sys_path, 0, argv0)) {
+        argv0 = NULL;
+        goto error;
+    }
+    Py_INCREF(argv0);
+
+    sts = RunModule(L"__main__", 0);
+    return sts != 0;
+
+error:
+    Py_XDECREF(argv0);
+    PyErr_Print();
+    return 1;
 }
 
 static int
