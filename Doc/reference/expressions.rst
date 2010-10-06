@@ -1058,7 +1058,7 @@ and therefore not exactly equal to ``Decimal('1.1')`` which is.  When
 cross-type comparison is not supported, the comparison method returns
 ``NotImplemented``.  This can create the illusion of non-transitivity between
 supported cross-type comparisons and unsupported comparisons.  For example,
-``Decimal(2) == 2`` and `2 == float(2)`` but ``Decimal(2) != float(2)``.
+``Decimal(2) == 2`` and ``2 == float(2)`` but ``Decimal(2) != float(2)``.
 
 .. _membership-test-details:
 

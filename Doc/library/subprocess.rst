@@ -239,6 +239,7 @@ This module also defines four shortcut functions:
 
 
 .. function:: getstatusoutput(cmd)
+
    Return ``(status, output)`` of executing *cmd* in a shell.
 
    Execute the string *cmd* in a shell with :func:`os.popen` and return a 2-tuple
@@ -258,6 +259,7 @@ This module also defines four shortcut functions:
 
 
 .. function:: getoutput(cmd)
+
    Return output (stdout and stderr) of executing *cmd* in a shell.
 
    Like :func:`getstatusoutput`, except the exit status is ignored and the return
