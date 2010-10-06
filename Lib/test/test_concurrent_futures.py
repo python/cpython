@@ -9,6 +9,8 @@ test.support.import_module('multiprocessing.synchronize')
 # without thread support.
 test.support.import_module('threading')
 
+import io
+import logging
 import multiprocessing
 import sys
 import threading
@@ -21,7 +23,8 @@ if sys.platform.startswith('win'):
 
 from concurrent import futures
 from concurrent.futures._base import (
-    PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future, wait)
+    PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future,
+    LOGGER, STDERR_HANDLER, wait)
 import concurrent.futures.process
 
 def create_future(state=PENDING, exception=None, result=None):
@@ -617,24 +620,33 @@ class FutureTests(unittest.TestCase):
         self.assertTrue(was_cancelled)
 
     def test_done_callback_raises(self):
-        raising_was_called = False
-        fn_was_called = False
+        LOGGER.removeHandler(STDERR_HANDLER)
+        logging_stream = io.StringIO()
+        handler = logging.StreamHandler(logging_stream)
+        LOGGER.addHandler(handler)
+        try:
+            raising_was_called = False
+            fn_was_called = False
 
-        def raising_fn(callback_future):
-            nonlocal raising_was_called
-            raising_was_called = True
-            raise Exception('doh!')
+            def raising_fn(callback_future):
+                nonlocal raising_was_called
+                raising_was_called = True
+                raise Exception('doh!')
 
-        def fn(callback_future):
-            nonlocal fn_was_called
-            fn_was_called = True
+            def fn(callback_future):
+                nonlocal fn_was_called
+                fn_was_called = True
 
-        f = Future()
-        f.add_done_callback(raising_fn)
-        f.add_done_callback(fn)
-        f.set_result(5)
-        self.assertTrue(raising_was_called)
-        self.assertTrue(fn_was_called)
+            f = Future()
+            f.add_done_callback(raising_fn)
+            f.add_done_callback(fn)
+            f.set_result(5)
+            self.assertTrue(raising_was_called)
+            self.assertTrue(fn_was_called)
+            self.assertIn('Exception: doh!', logging_stream.getvalue())
+        finally:
+            LOGGER.removeHandler(handler)
+            LOGGER.addHandler(STDERR_HANDLER)
 
     def test_done_callback_already_successful(self):
         callback_result = None
