@@ -129,6 +129,7 @@ class GzipFile:
         self.fileobj = fileobj
         self.offset = 0
         self.mtime = mtime
+        self.closed = False
 
         if self.mode == WRITE:
             self._write_gzip_header()
@@ -144,6 +145,13 @@ class GzipFile:
     def __repr__(self):
         s = repr(self.fileobj)
         return '<gzip ' + s[1:-1] + ' ' + hex(id(self)) + '>'
+
+    def _check_closed(self):
+        """Raises a ValueError if the underlying file object has been closed.
+
+        """
+        if self.closed:
+            raise ValueError('I/O operation on closed file.')
 
     def _init_write(self, filename):
         self.name = filename
@@ -215,6 +223,7 @@ class GzipFile:
 
 
     def write(self,data):
+        self._check_closed()
         if self.mode != WRITE:
             import errno
             raise IOError(errno.EBADF, "write() on read-only GzipFile object")
@@ -228,6 +237,7 @@ class GzipFile:
             self.offset += len(data)
 
     def read(self, size=-1):
+        self._check_closed()
         if self.mode != READ:
             import errno
             raise IOError(errno.EBADF, "read() on write-only GzipFile object")
@@ -349,6 +359,7 @@ class GzipFile:
         if self.myfileobj:
             self.myfileobj.close()
             self.myfileobj = None
+        self.closed = True
 
     def __del__(self):
         try:
@@ -360,6 +371,7 @@ class GzipFile:
         self.close()
 
     def flush(self,zlib_mode=zlib.Z_SYNC_FLUSH):
+        self._check_closed()
         if self.mode == WRITE:
             # Ensure the compressor's buffer is flushed
             self.fileobj.write(self.compress.flush(zlib_mode))
@@ -377,6 +389,7 @@ class GzipFile:
         return False
 
     def tell(self):
+        self._check_closed()
         return self.offset
 
     def rewind(self):
