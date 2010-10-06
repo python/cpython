@@ -222,8 +222,10 @@ Buffer-related functions
          contiguous buffer.  If this is not given then shape will be *NULL*.
 
       .. cmacro:: PyBUF_C_CONTIGUOUS
-                  PyBUF_F_CONTIGUOUS
-                  PyBUF_ANY_CONTIGUOUS
+
+      .. cmacro:: PyBUF_F_CONTIGUOUS
+
+      .. cmacro:: PyBUF_ANY_CONTIGUOUS
 
          These flags indicate that the contiguity returned buffer must be
          respectively, C-contiguous (last dimension varies the fastest), Fortran
