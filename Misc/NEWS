@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9759: GzipFile now raises ValueError when an operation is attempted
+  after the file is closed.  Patch by Jeffrey Finkelstein.
+
 - Issue #9042: Fix interaction of custom translation classes and caching in
   gettext.
 
