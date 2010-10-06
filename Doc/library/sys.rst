@@ -873,7 +873,7 @@ always available.
    and so on.
 
    .. versionchanged:: 3.1
-      Added named component attributes
+      Added named component attributes.
 
 .. data:: warnoptions
 

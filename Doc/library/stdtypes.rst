@@ -829,6 +829,9 @@ functions based on regular expressions.
    :func:`codecs.register_error`, see section :ref:`codec-base-classes`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   .. versionchanged:: 3.1
+      Support for keyword arguments added.
+
 
 .. method:: str.endswith(suffix[, start[, end]])
 

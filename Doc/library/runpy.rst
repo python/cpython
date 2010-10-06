@@ -67,9 +67,8 @@ The :mod:`runpy` module provides a single function:
    It is recommended that the :mod:`sys` module be left alone when invoking this
    function from threaded code.
 
-
    .. versionchanged:: 3.1
-         Added ability to execute packages by looking for a ``__main__`` submodule
+      Added ability to execute packages by looking for a ``__main__`` submodule.
 
 
 .. seealso::

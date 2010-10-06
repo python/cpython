@@ -552,7 +552,7 @@ they add the ability to access fields by name instead of position index.
    lightweight and require no more memory than regular tuples.
 
    .. versionchanged:: 3.1
-      added support for *rename*.
+      Added support for *rename*.
 
 Example:
 
@@ -841,7 +841,6 @@ attribute.
 
       A real dictionary used to store the contents of the :class:`UserDict`
       class.
-
 
 
 :class:`UserList` objects

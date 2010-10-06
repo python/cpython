@@ -369,6 +369,7 @@ used, passsing :func:`PyUnicode_FSConverter` as the conversion function:
 
    .. versionadded:: 3.1
 
+
 .. cfunction:: PyObject* PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
    Decode a null-terminated string using :cdata:`Py_FileSystemDefaultEncoding`

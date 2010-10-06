@@ -234,7 +234,6 @@ Connection Objects
    supplied, this must be a custom cursor class that extends
    :class:`sqlite3.Cursor`.
 
-
 .. method:: Connection.commit()
 
    This method commits the current transaction. If you don't call this method,
