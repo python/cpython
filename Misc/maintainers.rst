@@ -237,7 +237,7 @@ warnings            brett.cannon
 wave
 weakref             fdrake, pitrou
 webbrowser          georg.brandl
-winreg              brian.curtin*, stutzbach
+_winreg             brian.curtin*, stutzbach
 winsound            effbot (inactive)
 wsgiref             pje
 xdrlib
