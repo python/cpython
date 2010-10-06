@@ -1206,7 +1206,7 @@ error message.
 :func:`float` and :func:`complex`, with similar error-handling.
 
 ``"choice"`` options are a subtype of ``"string"`` options.  The
-:attr:`~Option.choices`` option attribute (a sequence of strings) defines the
+:attr:`~Option.choices` option attribute (a sequence of strings) defines the
 set of allowed option arguments.  :func:`optparse.check_choice` compares
 user-supplied option arguments against this master list and raises
 :exc:`OptionValueError` if an invalid string is given.
