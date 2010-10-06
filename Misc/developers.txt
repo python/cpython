@@ -16,6 +16,9 @@ Note, when giving new commit permissions, be sure to get a contributor
 agreement from the committer.  See http://www.python.org/psf/contrib/
 for details.  When the agreement is signed, please note it in this log.
 
+This file is encoded in UTF-8.  If the usual form for a name is not in
+a Latin or extended Latin alphabet, make sure to include an ASCII
+transliteration too.
 
 Permissions History
 -------------------
@@ -23,7 +26,7 @@ Permissions History
 - Tal Einat was given commit access on Oct 4 2010 by MvL,
   for improving IDLE.
 
-- Lukasz Langa was given commit access on Sep 08 2010 by GFB,
+- ≈Åukasz Langa was given commit access on Sep 08 2010 by GFB,
   at suggestion of Antoine Pitrou, for general bug fixing.
 
 - Daniel Stutzbach was given commit access on Aug 22 2010 by MvL,
@@ -36,8 +39,8 @@ Permissions History
 - George Boutsioukis was given commit access on Aug 10 2010
   by MvL, for work on 2to3.
 
-- …ric Araujo was given commit access on Aug 10 2010 by BAC,
-  at suggestion of Tarek ZiadÈ.
+- √âric Araujo was given commit access on Aug 10 2010 by BAC,
+  at suggestion of Tarek Ziad√©.
 
 - Terry Reedy was given commit access on Aug 04 2010 by MvL,
   at suggestion of Nick Coghlan.
@@ -55,7 +58,7 @@ Permissions History
 - Tim Golden was given commit access on April 21 2010 by MvL,
   at suggestion of Michael Foord.
 
-- Giampaolo Rodol‡ was given commit access on April 17 2010 by
+- Giampaolo Rodol√† was given commit access on April 17 2010 by
   MvL, at suggestion of R. David Murray.
 
 - Jean-Paul Calderone was given commit access on April 6 2010 by
@@ -99,7 +102,7 @@ Permissions History
 - Chris Withers was given SVN access on March 8 2009 by MvL,
   after recommendation by GvR.
 
-- Tarek ZiadÈ was given SVN access on December 21 2008 by NCN,
+- Tarek Ziad√© was given SVN access on December 21 2008 by NCN,
   for maintenance of distutils.
 
 - Hirokazu Yamamoto was given SVN access on August 12 2008 by MvL,
@@ -168,7 +171,7 @@ Permissions History
   for his work on the SSL module and other things related to (SSL) sockets.
 
 - Jeffrey Yasskin was given SVN access on 9 August 2007 by NCN,
-  for his work on PEPs and other general patches. 
+  for his work on PEPs and other general patches.
 
 - Mark Summerfield was given SVN access on 1 August 2007 by GFB,
   for work on documentation.
@@ -212,12 +215,12 @@ Permissions History
   have their work reviewed before changes are accepted into the trunk.
 
   - Matt Fleming was added on 25 May 2006 by AMK; he'll be working on
-    enhancing the Python debugger.   
+    enhancing the Python debugger.
 
   - Jackilyn Hoxworth was added on 25 May 2006 by AMK; she'll be adding logging
-    to the standard library.  
+    to the standard library.
 
-  - Mateusz Rukowicz was added on 30 May 2006 by AMK; he'll be 
+  - Mateusz Rukowicz was added on 30 May 2006 by AMK; he'll be
     translating the decimal module into C.
 
 - SVN access granted to the "Need for Speed" Iceland sprint attendees,
@@ -229,7 +232,7 @@ Permissions History
   Christian Tismer
   Jack Diederich
   John Benediktsson
-  Kristj·n V. JÛnsson
+  Kristj√°n V. J√≥nsson
   Martin Blais
   Richard Emslie
   Richard Jones
