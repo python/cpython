@@ -387,7 +387,7 @@ Classes and functions
 
 .. function:: getargspec(func)
 
-   Get the names and default values of a function's arguments. A
+   Get the names and default values of a Python function's arguments. A
    :term:`named tuple` ``ArgSpec(args, varargs, keywords,
    defaults)`` is returned. *args* is a list of
    the argument names. *varargs* and *varkw* are the names of the ``*`` and
@@ -402,8 +402,8 @@ Classes and functions
 
 .. function:: getfullargspec(func)
 
-   Get the names and default values of a function's arguments.  A :term:`named
-   tuple` is returned:
+   Get the names and default values of a Python function's arguments.  A
+   :term:`named tuple` is returned:
 
    ``FullArgSpec(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults,
    annotations)``

@@ -30,7 +30,7 @@ understand the complete implementation and design rationale for a change, refer
 to the PEP for a particular new feature.
 
 
-.. seealso (now defunct)
+.. see also, now defunct
 
    http://www.unixreview.com/documents/s=1356/urm0109h/0109h.htm
       "What's So Special About Python 2.2?" is also about the new 2.2 features, and

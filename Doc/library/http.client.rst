@@ -486,7 +486,7 @@ statement.
 
 .. attribute:: HTTPResponse.debuglevel
 
-   A debugging hook.  If `debuglevel` is greater than zero, messages
+   A debugging hook.  If :attr:`debuglevel` is greater than zero, messages
    will be printed to stdout as the response is read and parsed.
 
 

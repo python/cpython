@@ -359,7 +359,7 @@ always available.
    specific.
 
    If given, *default* will be returned if the object does not provide means to
-   retrieve the size.  Otherwise a `TypeError` will be raised.
+   retrieve the size.  Otherwise a :exc:`TypeError` will be raised.
 
    :func:`getsizeof` calls the object's ``__sizeof__`` method and adds an
    additional garbage collector overhead if the object is managed by the garbage
