@@ -47,12 +47,12 @@ Python 3.0's :func:`str` (``PyString_*`` functions in C) type is equivalent to
 2.x's :func:`unicode` (``PyUnicode_*``).  The old 8-bit string type has become
 :func:`bytes`.  Python 2.6 and later provide a compatibility header,
 :file:`bytesobject.h`, mapping ``PyBytes`` names to ``PyString`` ones.  For best
-c:ompatibility with 3.0, :c:type:`PyUnicode` should be used for textual data and
+compatibility with 3.0, :c:type:`PyUnicode` should be used for textual data and
 :c:type:`PyBytes` for binary data.  It's also important to remember that
 :c:type:`PyBytes` and :c:type:`PyUnicode` in 3.0 are not interchangeable like
-:c:type:`PyString` and :c:type:`PyString` are in 2.x.  The following example shows
-best practices with regards to :c:type:`PyUnicode`, :c:type:`PyString`, and
-:c:type:`PyBytes`. ::
+:c:type:`PyString` and :c:type:`PyString` are in 2.x.  The following example
+shows best practices with regards to :c:type:`PyUnicode`, :c:type:`PyString`,
+and :c:type:`PyBytes`. ::
 
    #include "stdlib.h"
    #include "Python.h"

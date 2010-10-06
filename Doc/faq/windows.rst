@@ -598,7 +598,7 @@ Warning about CTL3D32 version from installer
 
 The Python installer issues a warning like this::
 
-   This version uses ``CTL3D32.DLL`` which is not the correct version.
+   This version uses CTL3D32.DLL which is not the correct version.
    This version is used for windows NT applications only.
 
 Tim Peters:

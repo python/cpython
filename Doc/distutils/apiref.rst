@@ -1845,7 +1845,7 @@ This module supplies the abstract base class :class:`Command`.
 
    to your setup.py, and later::
 
-      cmdclass = {'build_py':build_py}
+      cmdclass = {'build_py': build_py}
 
    to the invocation of setup().
 
