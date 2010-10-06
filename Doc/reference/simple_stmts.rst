@@ -148,9 +148,9 @@ Assignment of an object to a single target is recursively defined as follows.
 
   .. index:: single: destructor
 
-  The name is rebound if it was already bound.  This may cause the reference count
-  for the object previously bound to the name to reach zero, causing the object to
-  be deallocated and its destructor (if it has one) to be called.
+  The name is rebound if it was already bound.  This may cause the reference
+  count for the object previously bound to the name to reach zero, causing the
+  object to be deallocated and its destructor (if it has one) to be called.
 
 * If the target is a target list enclosed in parentheses or in square brackets:
   The object must be an iterable with the same number of items as there are

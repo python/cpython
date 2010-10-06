@@ -111,9 +111,9 @@ are:
   :func:`reduce` function.
 
 Python 3.0 adds several new built-in functions and changes the
-semantics of some existing built-ins.  Functions that are new in 3.0
+semantics of some existing builtins.  Functions that are new in 3.0
 such as :func:`bin` have simply been added to Python 2.6, but existing
-built-ins haven't been changed; instead, the :mod:`future_builtins`
+builtins haven't been changed; instead, the :mod:`future_builtins`
 module has versions with the new 3.0 semantics.  Code written to be
 compatible with 3.0 can do ``from future_builtins import hex, map`` as
 necessary.
@@ -837,7 +837,7 @@ formatted.  It receives a single argument, the format specifier::
        else:
            return str(self)
 
-There's also a :func:`format` built-in that will format a single
+There's also a :func:`format` builtin that will format a single
 value.  It calls the type's :meth:`__format__` method with the
 provided specifier::
 
@@ -1168,7 +1168,7 @@ access protocol.  Abstract Base Classes (or ABCs) are an equivalent
 feature for Python. The ABC support consists of an :mod:`abc` module
 containing a metaclass called :class:`ABCMeta`, special handling of
 this metaclass by the :func:`isinstance` and :func:`issubclass`
-built-ins, and a collection of basic ABCs that the Python developers
+builtins, and a collection of basic ABCs that the Python developers
 think will be widely useful.  Future versions of Python will probably
 add more ABCs.
 
@@ -1322,9 +1322,9 @@ an octal number, but it does add support for "0o" and "0b"::
     >>> 0b101111
     47
 
-The :func:`oct` built-in still returns numbers
+The :func:`oct` builtin still returns numbers
 prefixed with a leading zero, and a new :func:`bin`
-built-in returns the binary representation for a number::
+builtin returns the binary representation for a number::
 
     >>> oct(42)
     '052'
@@ -1333,7 +1333,7 @@ built-in returns the binary representation for a number::
     >>> bin(173)
     '0b10101101'
 
-The :func:`int` and :func:`long` built-ins will now accept the "0o"
+The :func:`int` and :func:`long` builtins will now accept the "0o"
 and "0b" prefixes when base-8 or base-2 are requested, or when the
 *base* argument is zero (signalling that the base used should be
 determined from the string)::
@@ -1419,7 +1419,7 @@ can be shifted left and right with ``<<`` and ``>>``,
 combined using bitwise operations such as ``&`` and ``|``,
 and can be used as array indexes and slice boundaries.
 
-In Python 3.0, the PEP slightly redefines the existing built-ins
+In Python 3.0, the PEP slightly redefines the existing builtins
 :func:`round`, :func:`math.floor`, :func:`math.ceil`, and adds a new
 one, :func:`math.trunc`, that's been backported to Python 2.6.
 :func:`math.trunc` rounds toward zero, returning the closest
@@ -1520,7 +1520,7 @@ Some smaller changes made to the core Python language are:
   Previously this would have been a syntax error.
   (Contributed by Amaury Forgeot d'Arc; :issue:`3473`.)
 
-* A new built-in, ``next(iterator, [default])`` returns the next item
+* A new builtin, ``next(iterator, [default])`` returns the next item
   from the specified iterator.  If the *default* argument is supplied,
   it will be returned if *iterator* has been exhausted; otherwise,
   the :exc:`StopIteration` exception will be raised.  (Backported
@@ -1949,9 +1949,9 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Phil Schwartz; :issue:`1221598`.)
 
 * The :func:`reduce` built-in function is also available in the
-  :mod:`functools` module.  In Python 3.0, the built-in has been
+  :mod:`functools` module.  In Python 3.0, the builtin has been
   dropped and :func:`reduce` is only available from :mod:`functools`;
-  currently there are no plans to drop the built-in in the 2.x series.
+  currently there are no plans to drop the builtin in the 2.x series.
   (Patched by Christian Heimes; :issue:`1739906`.)
 
 * When possible, the :mod:`getpass` module will now use
@@ -2753,7 +2753,7 @@ The functions in this module currently include:
 
 * ``filter(predicate, iterable)``,
   ``map(func, iterable1, ...)``: the 3.0 versions
-  return iterators, unlike the 2.x built-ins which return lists.
+  return iterators, unlike the 2.x builtins which return lists.
 
 * ``hex(value)``, ``oct(value)``: instead of calling the
   :meth:`__hex__` or :meth:`__oct__` methods, these versions will

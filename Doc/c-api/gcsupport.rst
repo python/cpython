@@ -28,7 +28,7 @@ include the :const:`Py_TPFLAGS_HAVE_GC` and provide an implementation of the
 Constructors for container types must conform to two rules:
 
 #. The memory for the object must be allocated using :cfunc:`PyObject_GC_New`
-   or :cfunc:`PyObject_GC_VarNew`.
+   or :cfunc:`PyObject_GC_NewVar`.
 
 #. Once all the fields which may contain references to other containers are
    initialized, it must call :cfunc:`PyObject_GC_Track`.

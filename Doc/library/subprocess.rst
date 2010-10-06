@@ -396,6 +396,9 @@ The following attributes are also available:
 
    The process ID of the child process.
 
+   Note that if you set the *shell* argument to ``True``, this is the process ID
+   of the spawned shell.
+
 
 .. attribute:: Popen.returncode
 

@@ -236,7 +236,7 @@ This version of the module has a number of changes.
 
 We've added an extra include::
 
-   #include "structmember.h"
+   #include <structmember.h>
 
 This include provides declarations that we use to handle attributes, as
 described a bit later.
