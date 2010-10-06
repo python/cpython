@@ -2544,7 +2544,7 @@ Core and builtins
 - Bug #1244610, #1392915, fix build problem on OpenBSD 3.7 and 3.8.
   configure would break checking curses.h.
 
-- Bug #959576: The pwd module is now builtin. This allows Python to be
+- Bug #959576: The pwd module is now built in. This allows Python to be
   built on UNIX platforms without $HOME set.
 
 - Bug #1072182, fix some potential problems if characters are signed.
@@ -2577,7 +2577,7 @@ Core and builtins
   it will now use a default error message in this case.
 
 - Replaced most Unicode charmap codecs with new ones using the
-  new Unicode translate string feature in the builtin charmap
+  new Unicode translate string feature in the built-in charmap
   codec; the codecs were created from the mapping tables available
   at ftp.unicode.org and contain a few updates (e.g. the Mac OS
   encodings now include a mapping for the Apple logo)
@@ -3032,7 +3032,7 @@ Library
   current file number.
 
 - Patch #1349274: gettext.install() now optionally installs additional
-  translation functions other than _() in the builtin namespace.
+  translation functions other than _() in the builtins namespace.
 
 - Patch #1337756: fileinput now accepts Unicode filenames.
 
@@ -3403,7 +3403,7 @@ Build
 - Patch #881820: look for openpty and forkpty also in libbsd.
 
 - The sources of zlib are now part of the Python distribution (zlib 1.2.3).
-  The zlib module is now builtin on Windows.
+  The zlib module is now built in on Windows.
 
 - Use -xcode=pic32 for CCSHARED on Solaris with SunPro.
 
@@ -4238,7 +4238,7 @@ Library
 - Patch #846659.  Fix an error in tarfile.py when using
   GNU longname/longlink creation.
 
-- The obsolete FCNTL.py has been deleted.  The builtin fcntl module
+- The obsolete FCNTL.py has been deleted.  The built-in fcntl module
   has been available (on platforms that support fcntl) since Python
   1.5a3, and all FCNTL.py did is export fcntl's names, after generating
   a deprecation warning telling you to use fcntl directly.
@@ -4492,7 +4492,7 @@ Core and builtins
   segfault in a debug build, but provided less predictable behavior in
   a release build.
 
-- input() builtin function now respects compiler flags such as
+- input() built-in function now respects compiler flags such as
   __future__ statements.  SF patch 876178.
 
 - Removed PendingDeprecationWarning from apply().  apply() remains
@@ -4553,12 +4553,12 @@ Core and builtins
 
 - Compiler flags set in PYTHONSTARTUP are now active in __main__.
 
-- Added two builtin types, set() and frozenset().
+- Added two built-in types, set() and frozenset().
 
-- Added a reversed() builtin function that returns a reverse iterator
+- Added a reversed() built-in function that returns a reverse iterator
   over a sequence.
 
-- Added a sorted() builtin function that returns a new sorted list
+- Added a sorted() built-in function that returns a new sorted list
   from any iterable.
 
 - CObjects are now mutable (on the C level) through PyCObject_SetVoidPtr.
@@ -4597,7 +4597,7 @@ Core and builtins
   When comparing containers with cyclic references to themselves it
   will now just hit the recursion limit.  See SF patch 825639.
 
-- str and unicode builtin types now have an rsplit() method that is
+- str and unicode built-in types now have an rsplit() method that is
   same as split() except that it scans the string from the end
   working towards the beginning.  See SF feature request 801847.
 
@@ -5148,7 +5148,7 @@ Core and builtins
 - A warning about assignments to module attributes that shadow
   builtins, present in earlier releases of 2.3, has been removed.
 
-- It is not possible to create subclasses of builtin types like str
+- It is not possible to create subclasses of built-in types like str
   and tuple that define an itemsize.  Earlier releases of Python 2.3
   allowed this by mistake, leading to crashes and other problems.
 
@@ -5623,13 +5623,13 @@ Core and builtins
 - New format codes B, H, I, k and K have been implemented for
   PyArg_ParseTuple and PyBuild_Value.
 
-- New builtin function sum(seq, start=0) returns the sum of all the
+- New built-in function sum(seq, start=0) returns the sum of all the
   items in iterable object seq, plus start (items are normally numbers,
   and cannot be strings).
 
 - bool() called without arguments now returns False rather than
   raising an exception.  This is consistent with calling the
-  constructors for the other builtin types -- called without argument
+  constructors for the other built-in types -- called without argument
   they all return the false value of that type.  (SF patch #724135)
 
 - In support of PEP 269 (making the pgen parser generator accessible
@@ -6154,7 +6154,7 @@ Library
   internals, and supplies some helpers for working with pickles, such as
   a symbolic pickle disassembler.
 
-- Xmlrpclib.py now supports the builtin boolean type.
+- xmlrpclib.py now supports the built-in boolean type.
 
 - py_compile has a new 'doraise' flag and a new PyCompileError
   exception.
@@ -6405,8 +6405,8 @@ Core and builtins
   trace function to change which line will execute next.  A command to
   exploit this from pdb has been added.  [SF patch #643835]
 
-- The _codecs support module for codecs.py was turned into a builtin
-  module to assure that at least the builtin codecs are available
+- The _codecs support module for codecs.py was turned into a built-in
+  module to assure that at least the built-in codecs are available
   to the Python parser for source code decoding according to PEP 263.
 
 - issubclass now supports a tuple as the second argument, just like
@@ -6564,13 +6564,13 @@ Core and builtins
 - Unicode objects in sys.path are no longer ignored but treated
   as directory names.
 
-- Fixed string.startswith and string.endswith builtin methods
+- Fixed string.startswith and string.endswith built-in methods
   so they accept negative indices.  [SF bug 493951]
 
 - Fixed a bug with a continue inside a try block and a yield in the
   finally clause.  [SF bug 567538]
 
-- Most builtin sequences now support "extended slices", i.e. slices
+- Most built-in sequences now support "extended slices", i.e. slices
   with a third "stride" parameter.  For example, "hello world"[::-1]
   gives "dlrow olleh".
 
@@ -6585,7 +6585,7 @@ Core and builtins
   method no longer exist.  xrange repetition and slicing have been
   removed.
 
-- New builtin function enumerate(x), from PEP 279.  Example:
+- New built-in function enumerate(x), from PEP 279.  Example:
   enumerate("abc") is an iterator returning (0,"a"), (1,"b"), (2,"c").
   The argument can be an arbitrary iterable object.
 
@@ -7134,7 +7134,7 @@ Build
   Presumably 2.3a1 breaks such systems.  If anyone uses such a system, help!
 
 - The configure option --without-doc-strings can be used to remove the
-  doc strings from the builtin functions and modules; this reduces the
+  doc strings from the built-in functions and modules; this reduces the
   size of the executable.
 
 - The universal newlines option (PEP 278) is on by default.  On Unix
@@ -7370,7 +7370,7 @@ Mac
   available for convenience.
 
 - New Carbon modules File (implementing the APIs in Files.h and Aliases.h)
-  and Folder (APIs from Folders.h). The old macfs builtin module is
+  and Folder (APIs from Folders.h). The old macfs built-in module is
   gone, and replaced by a Python wrapper around the new modules.
 
 - Pathname handling should now be fully consistent: MacPython-OSX always uses
@@ -7592,7 +7592,7 @@ Build
 C API
 -----
 
-- New function PyDict_MergeFromSeq2() exposes the builtin dict
+- New function PyDict_MergeFromSeq2() exposes the built-in dict
   constructor's logic for updating a dictionary from an iterable object
   producing key-value pairs.
 
@@ -7643,7 +7643,7 @@ Type/class unification and new-style classes
   using new-style MRO rules if any base class is a new-style class.
   This needs to be documented.
 
-- The new builtin dictionary() constructor, and dictionary type, have
+- The new built-in dictionary() constructor, and dictionary type, have
   been renamed to dict.  This reflects a decade of common usage.
 
 - dict() now accepts an iterable object producing 2-sequences.  For
@@ -8093,9 +8093,9 @@ Type/class unification and new-style classes
   The new class must have the same C-level object layout as the old
   class.
 
-- The builtin file type can be subclassed now.  In the usual pattern,
-  "file" is the name of the builtin type, and file() is a new builtin
-  constructor, with the same signature as the builtin open() function.
+- The built-in file type can be subclassed now.  In the usual pattern,
+  "file" is the name of the built-in type, and file() is a new built-in
+  constructor, with the same signature as the built-in open() function.
   file() is now the preferred way to open a file.
 
 - Previously, __new__ would only see sequential arguments passed to
@@ -8109,7 +8109,7 @@ Type/class unification and new-style classes
 - Previously, an operation on an instance of a subclass of an
   immutable type (int, long, float, complex, tuple, str, unicode),
   where the subtype didn't override the operation (and so the
-  operation was handled by the builtin type), could return that
+  operation was handled by the built-in type), could return that
   instance instead a value of the base type.  For example, if s was of
   a str subclass type, s[:] returned s as-is.  Now it returns a str
   with the same value as s.
@@ -8157,7 +8157,7 @@ Library
   called for each iteration until it returns an empty string).
 
 - The codecs module has grown four new helper APIs to access
-  builtin codecs: getencoder(), getdecoder(), getreader(),
+  built-in codecs: getencoder(), getdecoder(), getreader(),
   getwriter().
 
 - SimpleXMLRPCServer: a new module (based upon SimpleHTMLServer)
@@ -9287,7 +9287,7 @@ Core language, builtins, and interpreter
 
   In all previous version of Python, names were resolved in exactly
   three namespaces -- the local namespace, the global namespace, and
-  the builtin namespace.  According to this old definition, if a
+  the builtins namespace.  According to this old definition, if a
   function A is defined within a function B, the names bound in B are
   not visible in A.  The new rules make names bound in B visible in A,
   unless A contains a name binding that hides the binding in B.
@@ -9308,7 +9308,7 @@ Core language, builtins, and interpreter
         return str.strip()
 
   Under the old rules, the name str in helper() is bound to the
-  builtin function str().  Under the new rules, it will be bound to
+  built-in function str().  Under the new rules, it will be bound to
   the argument named str and an error will occur when helper() is
   called.
 
@@ -9806,7 +9806,7 @@ Core language, builtins, and interpreter
   assignment, e.g. +=, was fixed.
 
 - Raise ZeroDivisionError when raising zero to a negative number,
-  e.g. 0.0 ** -2.0.  Note that math.pow is unrelated to the builtin
+  e.g. 0.0 ** -2.0.  Note that math.pow is unrelated to the built-in
   power operator and the result of math.pow(0.0, -2.0) will vary by
   platform.  On Linux, it raises a ValueError.
 
@@ -14056,7 +14056,7 @@ done to prevent accidental subdirectories with common names from
 overriding modules with the same name.
 
 - Fixed some strange exceptions in __del__ methods in library modules
-(e.g. urllib).  This happens because the builtin names are already
+(e.g. urllib).  This happens because the built-in names are already
 deleted by the time __del__ is called.  The solution (a hack, but it
 works) is to set some instance variables to 0 instead of None.
 
@@ -14759,8 +14759,8 @@ is set to somevalue.__class__, and SomeClass is ignored after that.
 f(a=1,a=2) is now a syntax error.
 
 
-Changes to builtin features
----------------------------
+Changes to built-in features
+----------------------------
 
 - There's a new exception FloatingPointError (used only by Lee Busby's
 patches to catch floating point exceptions, at the moment).
@@ -16060,7 +16060,7 @@ intervention may still be required.) (This has been fixed in 1.4beta3.)
 
 - New modules: errno, operator (XXX).
 
-- Changes for use with Numerical Python: builtin function slice() and
+- Changes for use with Numerical Python: built-in function slice() and
 Ellipses object, and corresponding syntax:
 
 	x[lo:hi:stride]		==	x[slice(lo, hi, stride)]
@@ -16548,7 +16548,7 @@ Complex in the library.
 
 - The functions posix.popen() and posix.fdopen() now have an optional
 third argument to specify the buffer size, and default their second
-(mode) argument to 'r' -- in analogy to the builtin open() function.
+(mode) argument to 'r' -- in analogy to the built-in open() function.
 The same applies to posixfile.open() and the socket method makefile().
 
 - The thread.exit_thread() function now raises SystemExit so that

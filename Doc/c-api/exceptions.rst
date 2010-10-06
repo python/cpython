@@ -446,6 +446,36 @@ Exception Objects
    This steals a reference to *ctx*.
 
 
+Recursion Control
+=================
+
+These two functions provide a way to perform safe recursive calls at the C
+level, both in the core and in extension modules.  They are needed if the
+recursive code does not necessarily invoke Python code (which tracks its
+recursion depth automatically).
+
+.. cfunction:: int Py_EnterRecursiveCall(char *where)
+
+   Marks a point where a recursive C-level call is about to be performed.
+
+   If :const:`USE_STACKCHECK` is defined, this function checks if the the OS
+   stack overflowed using :cfunc:`PyOS_CheckStack`.  In this is the case, it
+   sets a :exc:`MemoryError` and returns a nonzero value.
+
+   The function then checks if the recursion limit is reached.  If this is the
+   case, a :exc:`RuntimeError` is set and a nonzero value is returned.
+   Otherwise, zero is returned.
+
+   *where* should be a string such as ``" in instance check"`` to be
+   concatenated to the :exc:`RuntimeError` message caused by the recursion depth
+   limit.
+
+.. cfunction:: void Py_LeaveRecursiveCall()
+
+   Ends a :cfunc:`Py_EnterRecursiveCall`.  Must be called once for each
+   *successful* invocation of :cfunc:`Py_EnterRecursiveCall`.
+
+
 .. _standardexceptions:
 
 Standard Exceptions

@@ -445,13 +445,15 @@ present, and ``getch()`` which gets one character without echoing it.
 How do I emulate os.kill() in Windows?
 --------------------------------------
 
-Use win32api::
+To terminate a process, you can use ctypes::
+
+   import ctypes
 
    def kill(pid):
        """kill function for Win32"""
-       import win32api
-       handle = win32api.OpenProcess(1, 0, pid)
-       return (0 != win32api.TerminateProcess(handle, 0))
+       kernel32 = ctypes.windll.kernel32
+       handle = kernel32.OpenProcess(1, 0, pid)
+       return (0 != kernel32.TerminateProcess(handle, 0))
 
 
 Why does os.path.isdir() fail on NT shared directories?

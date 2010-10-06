@@ -633,7 +633,7 @@ example.  Use ``+`` to enable the named behavior, or ``-`` to disable it.
 
 For example, this test passes::
 
-   >>> print(range(20)) #doctest: +NORMALIZE_WHITESPACE
+   >>> print(list(range(20))) #doctest: +NORMALIZE_WHITESPACE
    [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
    10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
 
@@ -642,28 +642,28 @@ two blanks before the single-digit list elements, and because the actual output
 is on a single line.  This test also passes, and also requires a directive to do
 so::
 
-   >>> print(range(20)) # doctest: +ELLIPSIS
+   >>> print(list(range(20))) # doctest: +ELLIPSIS
    [0, 1, ..., 18, 19]
 
 Multiple directives can be used on a single physical line, separated by commas::
 
-   >>> print(range(20)) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+   >>> print(list(range(20))) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
    [0,    1, ...,   18,    19]
 
 If multiple directive comments are used for a single example, then they are
 combined::
 
-   >>> print(range(20)) # doctest: +ELLIPSIS
-   ...                 # doctest: +NORMALIZE_WHITESPACE
+   >>> print(list(range(20))) # doctest: +ELLIPSIS
+   ...                        # doctest: +NORMALIZE_WHITESPACE
    [0,    1, ...,   18,    19]
 
 As the previous example shows, you can add ``...`` lines to your example
 containing only directives.  This can be useful when an example is too long for
 a directive to comfortably fit on the same line::
 
-   >>> print(range(5) + range(10,20) + range(30,40) + range(50,60))
+   >>> print(list(range(5)) + list(range(10, 20)) + list(range(30, 40)))
    ... # doctest: +ELLIPSIS
-   [0, ..., 4, 10, ..., 19, 30, ..., 39, 50, ..., 59]
+   [0, ..., 4, 10, ..., 19, 30, ..., 39]
 
 Note that since all options are disabled by default, and directives apply only
 to the example they appear in, enabling options (via ``+`` in a directive) is

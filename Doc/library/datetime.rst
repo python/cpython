@@ -1460,8 +1460,8 @@ Example :class:`tzinfo` classes:
 Note that there are unavoidable subtleties twice per year in a :class:`tzinfo`
 subclass accounting for both standard and daylight time, at the DST transition
 points.  For concreteness, consider US Eastern (UTC -0500), where EDT begins the
-minute after 1:59 (EST) on the first Sunday in April, and ends the minute after
-1:59 (EDT) on the last Sunday in October::
+minute after 1:59 (EST) on the second Sunday in March, and ends the minute after
+1:59 (EDT) on the first Sunday in November::
 
      UTC   3:MM  4:MM  5:MM  6:MM  7:MM  8:MM
      EST  22:MM 23:MM  0:MM  1:MM  2:MM  3:MM
