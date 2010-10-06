@@ -296,7 +296,7 @@ Running the interpreter shows how the function descriptor works in practice::
     <bound method D.f of <__main__.D object at 0x00B18C90>>
 
 The output suggests that bound and unbound methods are two different types.
-While they could have been implemented that way, the actual C implemention of
+While they could have been implemented that way, the actual C implementation of
 :ctype:`PyMethod_Type` in
 `Objects/classobject.c <http://svn.python.org/view/python/trunk/Objects/classobject.c?view=markup>`_
 is a single object with two different representations depending on whether the

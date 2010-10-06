@@ -376,7 +376,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       Otherwise a daemonic process would leave its children orphaned if it gets
       terminated when its parent process exits. Additionally, these are **not**
       Unix daemons or services, they are normal processes that will be
-      terminated (and not joined) if non-dameonic processes have exited.
+      terminated (and not joined) if non-daemonic processes have exited.
 
    In addition to the  :class:`Threading.Thread` API, :class:`Process` objects
    also support the following attributes and methods:

@@ -23,5 +23,5 @@ help ease in transitioning from 2.7 to 3.1.
     specified in relative terms, then the *package* argument must be
     specified to the package which is to act as the anchor for resolving the
     package name (e.g. ``import_module('..mod', 'pkg.subpkg')`` will import
-    ``pkg.mod``). The specified module will be inserted into
+    ``pkg.mod``).  The specified module will be inserted into
     :data:`sys.modules` and returned.
