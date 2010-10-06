@@ -154,7 +154,7 @@ The :class:`XMLReader` interface supports the following methods:
    Allow an application to set the locale for errors and warnings.
 
    SAX parsers are not required to provide localization for errors and warnings; if
-   they cannot support the requested locale, however, they must throw a SAX
+   they cannot support the requested locale, however, they must raise a SAX
    exception.  Applications may request a locale change in the middle of a parse.
 
 

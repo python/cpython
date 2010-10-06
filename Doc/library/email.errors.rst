@@ -17,7 +17,7 @@ The following exception classes are defined in the :mod:`email.errors` module:
 
 .. exception:: MessageParseError()
 
-   This is the base class for exceptions thrown by the :class:`~email.parser.Parser`
+   This is the base class for exceptions raised by the :class:`~email.parser.Parser`
    class.  It is derived from :exc:`MessageError`.
 
 
