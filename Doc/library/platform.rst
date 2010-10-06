@@ -27,8 +27,8 @@ Cross Platform
    returned as strings.
 
    Values that cannot be determined are returned as given by the parameter presets.
-   If bits is given as ``''``, the :cfunc:`sizeof(pointer)` (or
-   :cfunc:`sizeof(long)` on Python version < 1.5.2) is used as indicator for the
+   If bits is given as ``''``, the :c:func:`sizeof(pointer)` (or
+   :c:func:`sizeof(long)` on Python version < 1.5.2) is used as indicator for the
    supported pointer size.
 
    The function relies on the system's :file:`file` command to do the actual work.
@@ -215,7 +215,7 @@ Mac OS Platform
    Entries which cannot be determined are set to ``''``.  All tuple entries are
    strings.
 
-   Documentation for the underlying :cfunc:`gestalt` API is available online at
+   Documentation for the underlying :c:func:`gestalt` API is available online at
    http://www.rgaros.nl/gestalt/.
 
 

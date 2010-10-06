@@ -7,12 +7,12 @@ Iterator Protocol
 
 There are only a couple of functions specifically for working with iterators.
 
-.. cfunction:: int PyIter_Check(PyObject *o)
+.. c:function:: int PyIter_Check(PyObject *o)
 
    Return true if the object *o* supports the iterator protocol.
 
 
-.. cfunction:: PyObject* PyIter_Next(PyObject *o)
+.. c:function:: PyObject* PyIter_Next(PyObject *o)
 
    Return the next value from the iteration *o*.  If the object is an iterator,
    this retrieves the next value from the iteration, and returns *NULL* with no

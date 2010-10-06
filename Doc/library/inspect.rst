@@ -293,7 +293,7 @@ attributes:
    .. impl-detail::
 
       getsets are attributes defined in extension modules via
-      :ctype:`PyGetSetDef` structures.  For Python implementations without such
+      :c:type:`PyGetSetDef` structures.  For Python implementations without such
       types, this method will always return ``False``.
 
 
@@ -304,7 +304,7 @@ attributes:
    .. impl-detail::
 
       Member descriptors are attributes defined in extension modules via
-      :ctype:`PyMemberDef` structures.  For Python implementations without such
+      :c:type:`PyMemberDef` structures.  For Python implementations without such
       types, this method will always return ``False``.
 
 

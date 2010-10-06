@@ -469,7 +469,7 @@ PEP 327: Decimal Data Type
 ==========================
 
 Python has always supported floating-point (FP) numbers, based on the underlying
-C :ctype:`double` type, as a data type.  However, while most programming
+C :c:type:`double` type, as a data type.  However, while most programming
 languages provide a floating-point type, many people (even programmers) are
 unaware that floating-point numbers don't represent certain decimal fractions
 accurately.  The new :class:`Decimal` type can represent these fractions
@@ -498,7 +498,7 @@ mantissa is multiplied by 4 (2 to the power of the exponent 2); 1.25 \* 4 equals
 5.
 
 Modern systems usually provide floating-point support that conforms to a
-standard called IEEE 754.  C's :ctype:`double` type is usually implemented as a
+standard called IEEE 754.  C's :c:type:`double` type is usually implemented as a
 64-bit IEEE 754 number, which uses 52 bits of space for the mantissa.  This
 means that numbers can only be specified to 52 bits of precision.  If you're
 trying to represent numbers whose expansion repeats endlessly, the expansion is
@@ -736,7 +736,7 @@ display conventions that are localized to a particular country or language.
 However, the module was careful to not change the numeric locale because various
 functions in Python's implementation required that the numeric locale remain set
 to the ``'C'`` locale.  Often this was because the code was using the C
-library's :cfunc:`atof` function.
+library's :c:func:`atof` function.
 
 Not setting the numeric locale caused trouble for extensions that used third-
 party C libraries, however, because they wouldn't have the correct locale set.
@@ -746,11 +746,11 @@ numbers in the current locale.
 The solution described in the PEP is to add three new functions to the Python
 API that perform ASCII-only conversions, ignoring the locale setting:
 
-* :cfunc:`PyOS_ascii_strtod(str, ptr)`  and :cfunc:`PyOS_ascii_atof(str, ptr)`
-  both convert a string to a C :ctype:`double`.
+* :c:func:`PyOS_ascii_strtod(str, ptr)`  and :c:func:`PyOS_ascii_atof(str, ptr)`
+  both convert a string to a C :c:type:`double`.
 
-* :cfunc:`PyOS_ascii_formatd(buffer, buf_len, format, d)` converts a
-  :ctype:`double` to an ASCII string.
+* :c:func:`PyOS_ascii_formatd(buffer, buf_len, format, d)` converts a
+  :c:type:`double` to an ASCII string.
 
 The code for these functions came from the GLib library
 (http://library.gnome.org/devel/glib/stable/), whose developers kindly
@@ -938,7 +938,7 @@ Optimizations
 * The machinery for growing and shrinking lists was optimized for speed and for
   space efficiency.  Appending and popping from lists now runs faster due to more
   efficient code paths and less frequent use of the underlying system
-  :cfunc:`realloc`.  List comprehensions also benefit.   :meth:`list.extend` was
+  :c:func:`realloc`.  List comprehensions also benefit.   :meth:`list.extend` was
   also optimized and no longer converts its argument into a temporary list before
   extending the base list.  (Contributed by Raymond Hettinger.)
 
@@ -1445,34 +1445,34 @@ Build and C API Changes
 Some of the changes to Python's build process and to the C API are:
 
 * Three new convenience macros were added for common return values from
-  extension functions: :cmacro:`Py_RETURN_NONE`, :cmacro:`Py_RETURN_TRUE`, and
-  :cmacro:`Py_RETURN_FALSE`. (Contributed by Brett Cannon.)
+  extension functions: :c:macro:`Py_RETURN_NONE`, :c:macro:`Py_RETURN_TRUE`, and
+  :c:macro:`Py_RETURN_FALSE`. (Contributed by Brett Cannon.)
 
-* Another new macro, :cmacro:`Py_CLEAR(obj)`,  decreases the reference count of
+* Another new macro, :c:macro:`Py_CLEAR(obj)`,  decreases the reference count of
   *obj* and sets *obj* to the null pointer.  (Contributed by Jim Fulton.)
 
-* A new function, :cfunc:`PyTuple_Pack(N, obj1, obj2, ..., objN)`, constructs
+* A new function, :c:func:`PyTuple_Pack(N, obj1, obj2, ..., objN)`, constructs
   tuples from a variable length argument list of Python objects.  (Contributed by
   Raymond Hettinger.)
 
-* A new function, :cfunc:`PyDict_Contains(d, k)`, implements fast dictionary
+* A new function, :c:func:`PyDict_Contains(d, k)`, implements fast dictionary
   lookups without masking exceptions raised during the look-up process.
   (Contributed by Raymond Hettinger.)
 
-* The :cmacro:`Py_IS_NAN(X)` macro returns 1 if  its float or double argument
+* The :c:macro:`Py_IS_NAN(X)` macro returns 1 if  its float or double argument
   *X* is a NaN.   (Contributed by Tim Peters.)
 
 * C code can avoid unnecessary locking by using the new
-  :cfunc:`PyEval_ThreadsInitialized` function to tell  if any thread operations
+  :c:func:`PyEval_ThreadsInitialized` function to tell  if any thread operations
   have been performed.  If this function  returns false, no lock operations are
   needed. (Contributed by Nick Coghlan.)
 
-* A new function, :cfunc:`PyArg_VaParseTupleAndKeywords`, is the same as
-  :cfunc:`PyArg_ParseTupleAndKeywords` but takes a  :ctype:`va_list` instead of a
+* A new function, :c:func:`PyArg_VaParseTupleAndKeywords`, is the same as
+  :c:func:`PyArg_ParseTupleAndKeywords` but takes a  :c:type:`va_list` instead of a
   number of arguments. (Contributed by Greg Chapman.)
 
 * A new method flag, :const:`METH_COEXISTS`, allows a function defined in slots
-  to co-exist with a :ctype:`PyCFunction` having the same name.  This can halve
+  to co-exist with a :c:type:`PyCFunction` having the same name.  This can halve
   the access time for a method such as :meth:`set.__contains__`.  (Contributed by
   Raymond Hettinger.)
 
@@ -1486,8 +1486,8 @@ Some of the changes to Python's build process and to the C API are:
   though that processor architecture doesn't call that register "the TSC
   register".  (Contributed by Jeremy Hylton.)
 
-* The :ctype:`tracebackobject` type has been renamed to
-  :ctype:`PyTracebackObject`.
+* The :c:type:`tracebackobject` type has been renamed to
+  :c:type:`PyTracebackObject`.
 
 .. ======================================================================
 

@@ -12,13 +12,13 @@ around the :ref:`new buffer protocol <bufferobjects>`, but they don't give
 you control over the lifetime of the resources acquired when a buffer is
 exported.
 
-Therefore, it is recommended that you call :cfunc:`PyObject_GetBuffer`
+Therefore, it is recommended that you call :c:func:`PyObject_GetBuffer`
 (or the ``y*`` or ``w*`` :ref:`format codes <arg-parsing>` with the
-:cfunc:`PyArg_ParseTuple` family of functions) to get a buffer view over
-an object, and :cfunc:`PyBuffer_Release` when the buffer view can be released.
+:c:func:`PyArg_ParseTuple` family of functions) to get a buffer view over
+an object, and :c:func:`PyBuffer_Release` when the buffer view can be released.
 
 
-.. cfunction:: int PyObject_AsCharBuffer(PyObject *obj, const char **buffer, Py_ssize_t *buffer_len)
+.. c:function:: int PyObject_AsCharBuffer(PyObject *obj, const char **buffer, Py_ssize_t *buffer_len)
 
    Returns a pointer to a read-only memory location usable as character-based
    input.  The *obj* argument must support the single-segment character buffer
@@ -27,7 +27,7 @@ an object, and :cfunc:`PyBuffer_Release` when the buffer view can be released.
    :exc:`TypeError` on error.
 
 
-.. cfunction:: int PyObject_AsReadBuffer(PyObject *obj, const void **buffer, Py_ssize_t *buffer_len)
+.. c:function:: int PyObject_AsReadBuffer(PyObject *obj, const void **buffer, Py_ssize_t *buffer_len)
 
    Returns a pointer to a read-only memory location containing arbitrary data.
    The *obj* argument must support the single-segment readable buffer
@@ -36,13 +36,13 @@ an object, and :cfunc:`PyBuffer_Release` when the buffer view can be released.
    :exc:`TypeError` on error.
 
 
-.. cfunction:: int PyObject_CheckReadBuffer(PyObject *o)
+.. c:function:: int PyObject_CheckReadBuffer(PyObject *o)
 
    Returns ``1`` if *o* supports the single-segment readable buffer interface.
    Otherwise returns ``0``.
 
 
-.. cfunction:: int PyObject_AsWriteBuffer(PyObject *obj, void **buffer, Py_ssize_t *buffer_len)
+.. c:function:: int PyObject_AsWriteBuffer(PyObject *obj, void **buffer, Py_ssize_t *buffer_len)
 
    Returns a pointer to a writable memory location.  The *obj* argument must
    support the single-segment, character buffer interface.  On success,

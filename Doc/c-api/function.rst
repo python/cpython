@@ -10,26 +10,26 @@ Function Objects
 There are a few functions specific to Python functions.
 
 
-.. ctype:: PyFunctionObject
+.. c:type:: PyFunctionObject
 
    The C structure used for functions.
 
 
-.. cvar:: PyTypeObject PyFunction_Type
+.. c:var:: PyTypeObject PyFunction_Type
 
    .. index:: single: MethodType (in module types)
 
-   This is an instance of :ctype:`PyTypeObject` and represents the Python function
+   This is an instance of :c:type:`PyTypeObject` and represents the Python function
    type.  It is exposed to Python programmers as ``types.FunctionType``.
 
 
-.. cfunction:: int PyFunction_Check(PyObject *o)
+.. c:function:: int PyFunction_Check(PyObject *o)
 
-   Return true if *o* is a function object (has type :cdata:`PyFunction_Type`).
+   Return true if *o* is a function object (has type :c:data:`PyFunction_Type`).
    The parameter must not be *NULL*.
 
 
-.. cfunction:: PyObject* PyFunction_New(PyObject *code, PyObject *globals)
+.. c:function:: PyObject* PyFunction_New(PyObject *code, PyObject *globals)
 
    Return a new function object associated with the code object *code*. *globals*
    must be a dictionary with the global variables accessible to the function.
@@ -38,30 +38,30 @@ There are a few functions specific to Python functions.
    object, the argument defaults and closure are set to *NULL*.
 
 
-.. cfunction:: PyObject* PyFunction_GetCode(PyObject *op)
+.. c:function:: PyObject* PyFunction_GetCode(PyObject *op)
 
    Return the code object associated with the function object *op*.
 
 
-.. cfunction:: PyObject* PyFunction_GetGlobals(PyObject *op)
+.. c:function:: PyObject* PyFunction_GetGlobals(PyObject *op)
 
    Return the globals dictionary associated with the function object *op*.
 
 
-.. cfunction:: PyObject* PyFunction_GetModule(PyObject *op)
+.. c:function:: PyObject* PyFunction_GetModule(PyObject *op)
 
    Return the *__module__* attribute of the function object *op*. This is normally
    a string containing the module name, but can be set to any other object by
    Python code.
 
 
-.. cfunction:: PyObject* PyFunction_GetDefaults(PyObject *op)
+.. c:function:: PyObject* PyFunction_GetDefaults(PyObject *op)
 
    Return the argument default values of the function object *op*. This can be a
    tuple of arguments or *NULL*.
 
 
-.. cfunction:: int PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
+.. c:function:: int PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
 
    Set the argument default values for the function object *op*. *defaults* must be
    *Py_None* or a tuple.
@@ -69,13 +69,13 @@ There are a few functions specific to Python functions.
    Raises :exc:`SystemError` and returns ``-1`` on failure.
 
 
-.. cfunction:: PyObject* PyFunction_GetClosure(PyObject *op)
+.. c:function:: PyObject* PyFunction_GetClosure(PyObject *op)
 
    Return the closure associated with the function object *op*. This can be *NULL*
    or a tuple of cell objects.
 
 
-.. cfunction:: int PyFunction_SetClosure(PyObject *op, PyObject *closure)
+.. c:function:: int PyFunction_SetClosure(PyObject *op, PyObject *closure)
 
    Set the closure associated with the function object *op*. *closure* must be
    *Py_None* or a tuple of cell objects.
@@ -83,13 +83,13 @@ There are a few functions specific to Python functions.
    Raises :exc:`SystemError` and returns ``-1`` on failure.
 
 
-.. cfunction:: PyObject *PyFunction_GetAnnotations(PyObject *op)
+.. c:function:: PyObject *PyFunction_GetAnnotations(PyObject *op)
 
    Return the annotations of the function object *op*. This can be a
    mutable dictionary or *NULL*.
 
 
-.. cfunction:: int PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
+.. c:function:: int PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 
    Set the annotations for the function object *op*. *annotations*
    must be a dictionary or *Py_None*.

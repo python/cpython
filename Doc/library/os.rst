@@ -122,7 +122,7 @@ process and user.
 
       On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
       cause memory leaks.  Refer to the system documentation for
-      :cfunc:`putenv`.
+      :c:func:`putenv`.
 
    If :func:`putenv` is not provided, a modified copy of this mapping  may be
    passed to the appropriate process-creation functions to cause  child processes
@@ -394,7 +394,7 @@ process and user.
 
 .. function:: setpgrp()
 
-   Call the system call :cfunc:`setpgrp` or :cfunc:`setpgrp(0, 0)` depending on
+   Call the system call :c:func:`setpgrp` or :c:func:`setpgrp(0, 0)` depending on
    which version is implemented (if any).  See the Unix manual for the semantics.
 
    Availability: Unix.
@@ -402,7 +402,7 @@ process and user.
 
 .. function:: setpgid(pid, pgrp)
 
-   Call the system call :cfunc:`setpgid` to set the process group id of the
+   Call the system call :c:func:`setpgid` to set the process group id of the
    process with id *pid* to the process group with id *pgrp*.  See the Unix manual
    for the semantics.
 
@@ -443,14 +443,14 @@ process and user.
 
 .. function:: getsid(pid)
 
-   Call the system call :cfunc:`getsid`.  See the Unix manual for the semantics.
+   Call the system call :c:func:`getsid`.  See the Unix manual for the semantics.
 
    Availability: Unix.
 
 
 .. function:: setsid()
 
-   Call the system call :cfunc:`setsid`.  See the Unix manual for the semantics.
+   Call the system call :c:func:`setsid`.  See the Unix manual for the semantics.
 
    Availability: Unix.
 
@@ -468,7 +468,7 @@ process and user.
 .. function:: strerror(code)
 
    Return the error message corresponding to the error code in *code*.
-   On platforms where :cfunc:`strerror` returns ``NULL`` when given an unknown
+   On platforms where :c:func:`strerror` returns ``NULL`` when given an unknown
    error number, :exc:`ValueError` is raised.
 
    Availability: Unix, Windows.
@@ -541,7 +541,7 @@ These functions create new :term:`file objects <file object>`. (See also :func:`
    ``'r'``, ``'w'``, or ``'a'``, otherwise a :exc:`ValueError` is raised.
 
    On Unix, when the *mode* argument starts with ``'a'``, the *O_APPEND* flag is
-   set on the file descriptor (which the :cfunc:`fdopen` implementation already
+   set on the file descriptor (which the :c:func:`fdopen` implementation already
    does on most platforms).
 
    Availability: Unix, Windows.
@@ -677,7 +677,7 @@ as internal buffering of data.
 .. function:: fsync(fd)
 
    Force write of file with filedescriptor *fd* to disk.  On Unix, this calls the
-   native :cfunc:`fsync` function; on Windows, the MS :cfunc:`_commit` function.
+   native :c:func:`fsync` function; on Windows, the MS :c:func:`_commit` function.
 
    If you're starting with a buffered Python :term:`file object` *f*, first do
    ``f.flush()``, and then do ``os.fsync(f.fileno())``, to ensure that all internal
@@ -1117,13 +1117,13 @@ Files and Directories
 .. function:: major(device)
 
    Extract the device major number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :ctype:`stat`).
+   :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
 
 
 .. function:: minor(device)
 
    Extract the device minor number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :ctype:`stat`).
+   :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
 
 
 .. function:: makedev(major, minor)
@@ -1271,8 +1271,8 @@ Files and Directories
 
 .. function:: stat(path)
 
-   Perform a :cfunc:`stat` system call on the given path.  The return value is an
-   object whose attributes correspond to the members of the :ctype:`stat`
+   Perform a :c:func:`stat` system call on the given path.  The return value is an
+   object whose attributes correspond to the members of the :c:type:`stat`
    structure, namely: :attr:`st_mode` (protection bits), :attr:`st_ino` (inode
    number), :attr:`st_dev` (device), :attr:`st_nlink` (number of hard links),
    :attr:`st_uid` (user id of owner), :attr:`st_gid` (group id of owner),
@@ -1306,12 +1306,12 @@ Files and Directories
 
    For backward compatibility, the return value of :func:`stat` is also accessible
    as a tuple of at least 10 integers giving the most important (and portable)
-   members of the :ctype:`stat` structure, in the order :attr:`st_mode`,
+   members of the :c:type:`stat` structure, in the order :attr:`st_mode`,
    :attr:`st_ino`, :attr:`st_dev`, :attr:`st_nlink`, :attr:`st_uid`,
    :attr:`st_gid`, :attr:`st_size`, :attr:`st_atime`, :attr:`st_mtime`,
    :attr:`st_ctime`. More items may be added at the end by some implementations.
    The standard module :mod:`stat` defines functions and constants that are useful
-   for extracting information from a :ctype:`stat` structure. (On Windows, some
+   for extracting information from a :c:type:`stat` structure. (On Windows, some
    items are filled with dummy values.)
 
    .. note::
@@ -1352,9 +1352,9 @@ Files and Directories
 
 .. function:: statvfs(path)
 
-   Perform a :cfunc:`statvfs` system call on the given path.  The return value is
+   Perform a :c:func:`statvfs` system call on the given path.  The return value is
    an object whose attributes describe the filesystem on the given path, and
-   correspond to the members of the :ctype:`statvfs` structure, namely:
+   correspond to the members of the :c:type:`statvfs` structure, namely:
    :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
    :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
    :attr:`f_flag`, :attr:`f_namemax`.
@@ -1514,7 +1514,7 @@ The various :func:`exec\*` functions take a list of arguments for the new
 program loaded into the process.  In each case, the first of these arguments is
 passed to the new program as its own name rather than as an argument a user may
 have typed on a command line.  For the C programmer, this is the ``argv[0]``
-passed to a program's :cfunc:`main`.  For example, ``os.execv('/bin/echo',
+passed to a program's :c:func:`main`.  For example, ``os.execv('/bin/echo',
 ['foo', 'bar'])`` will only print ``bar`` on standard output; ``foo`` will seem
 to be ignored.
 
@@ -1918,7 +1918,7 @@ written in Python, such as a mail server's external command delivery program.
    There is no option to wait for the application to close, and no way to retrieve
    the application's exit status.  The *path* parameter is relative to the current
    directory.  If you want to use an absolute path, make sure the first character
-   is not a slash (``'/'``); the underlying Win32 :cfunc:`ShellExecute` function
+   is not a slash (``'/'``); the underlying Win32 :c:func:`ShellExecute` function
    doesn't work if it is.  Use the :func:`os.path.normpath` function to ensure that
    the path is properly encoded for Win32.
 
@@ -1928,13 +1928,13 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: system(command)
 
    Execute the command (a string) in a subshell.  This is implemented by calling
-   the Standard C function :cfunc:`system`, and has the same limitations.
+   the Standard C function :c:func:`system`, and has the same limitations.
    Changes to :data:`sys.stdin`, etc. are not reflected in the environment of the
    executed command.
 
    On Unix, the return value is the exit status of the process encoded in the
    format specified for :func:`wait`.  Note that POSIX does not specify the meaning
-   of the return value of the C :cfunc:`system` function, so the return value of
+   of the return value of the C :c:func:`system` function, so the return value of
    the Python function is system-dependent.
 
    On Windows, the return value is that returned by the system shell after running
