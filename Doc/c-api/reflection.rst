@@ -29,12 +29,6 @@ Reflection
    currently executing.
 
 
-.. cfunction:: int PyEval_GetRestricted()
-
-   If there is a current frame and it is executing in restricted mode, return true,
-   otherwise false.
-
-
 .. cfunction:: const char* PyEval_GetFuncName(PyObject *func)
 
    Return the name of *func* if it is a function, class or instance object, else the

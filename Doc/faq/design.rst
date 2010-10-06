@@ -234,8 +234,10 @@ code breakage.
 
 .. XXX talk about protocols?
 
-Note that for string operations Python has moved from external functions (the
-``string`` module) to methods.  However, ``len()`` is still a function.
+.. note::
+
+   For string operations, Python has moved from external functions (the
+   ``string`` module) to methods.  However, ``len()`` is still a function.
 
 
 Why is join() a string method instead of a list or tuple method?
@@ -306,14 +308,15 @@ expensive.  In versions of Python prior to 2.0 it was common to use this idiom::
 This only made sense when you expected the dict to have the key almost all the
 time.  If that wasn't the case, you coded it like this::
 
-   if dict.has_key(key):
+   if key in dict(key):
        value = dict[key]
    else:
        dict[key] = getvalue(key)
        value = dict[key]
 
-(In Python 2.0 and higher, you can code this as ``value = dict.setdefault(key,
-getvalue(key))``.)
+For this specific case, you could also use ``value = dict.setdefault(key,
+getvalue(key))``, but only if the ``getvalue()`` call is cheap enough because it
+is evaluated in all cases.
 
 
 Why isn't there a switch or case statement in Python?
@@ -750,7 +753,7 @@ requested again.  This is called "memoizing", and can be implemented like this::
 
    # Callers will never provide a third parameter for this function.
    def expensive (arg1, arg2, _cache={}):
-       if _cache.has_key((arg1, arg2)):
+       if (arg1, arg2) in _cache:
            return _cache[(arg1, arg2)]
 
        # Calculate the value

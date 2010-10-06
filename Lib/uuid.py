@@ -13,7 +13,7 @@ Typical usage:
     >>> import uuid
 
     # make a UUID based on the host ID and current time
-    >>> uuid.uuid1()
+    >>> uuid.uuid1()    # doctest: +SKIP
     UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
 
     # make a UUID using an MD5 hash of a namespace UUID and a name
@@ -21,7 +21,7 @@ Typical usage:
     UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')
 
     # make a random UUID
-    >>> uuid.uuid4()
+    >>> uuid.uuid4()    # doctest: +SKIP
     UUID('16fd2706-8baf-433b-82eb-8c7fada847da')
 
     # make a UUID using a SHA-1 hash of a namespace UUID and a name
@@ -237,7 +237,7 @@ class UUID(object):
         bytes = bytearray()
         for shift in range(0, 128, 8):
             bytes.insert(0, (self.int >> shift) & 0xff)
-        return bytes
+        return bytes_(bytes)
 
     @property
     def bytes_le(self):
