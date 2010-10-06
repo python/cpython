@@ -61,15 +61,15 @@ object and then calling its :meth:`~Process.start` method.  :class:`Process`
 follows the API of :class:`threading.Thread`.  A trivial example of a
 multiprocess program is ::
 
-    from multiprocessing import Process
+   from multiprocessing import Process
 
    def f(name):
        print('hello', name)
 
-    if __name__ == '__main__':
-        p = Process(target=f, args=('bob',))
-        p.start()
-        p.join()
+   if __name__ == '__main__':
+       p = Process(target=f, args=('bob',))
+       p.start()
+       p.join()
 
 To show the individual process IDs involved, here is an expanded example::
 

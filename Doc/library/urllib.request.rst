@@ -1058,7 +1058,7 @@ Examples
 --------
 
 This example gets the python.org main page and displays the first 300 bytes of
-it.::
+it. ::
 
    >>> import urllib.request
    >>> f = urllib.request.urlopen('http://www.python.org/')
