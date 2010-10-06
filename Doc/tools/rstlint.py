@@ -169,7 +169,6 @@ Options:  -v       verbose (print all checked file names)
         return 2
 
     count = defaultdict(int)
-    out = sys.stdout
 
     for root, dirs, files in os.walk(path):
         # ignore subdirs controlled by svn
@@ -212,8 +211,7 @@ Options:  -v       verbose (print all checked file names)
                 csev = checker.severity
                 if csev >= severity:
                     for lno, msg in checker(fn, lines):
-                        print('[%d] %s:%d: %s' % (csev, fn, lno, msg),
-                              file=out)
+                        print('[%d] %s:%d: %s' % (csev, fn, lno, msg))
                         count[csev] += 1
     if verbose:
         print()

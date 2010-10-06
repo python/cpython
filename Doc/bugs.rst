@@ -38,10 +38,9 @@ information is needed (in which case you are welcome to provide it if you can!).
 To do this, search the bug database using the search box on the top of the page.
 
 If the problem you're reporting is not already in the bug tracker, go back to
-the Python Bug Tracker.  If you don't already have a tracker account, select the
-"Register" link in the sidebar and undergo the registration procedure.
-Otherwise, if you're not logged in, enter your credentials and select "Login".
-It is not possible to submit a bug report anonymously.
+the Python Bug Tracker and log in.  If you don't already have a tracker account,
+select the "Register" link or, if you use OpenID, one of the OpenID provider
+logos in the sidebar.  It is not possible to submit a bug report anonymously.
 
 Being now logged in, you can submit a bug.  Select the "Create New" link in the
 sidebar to open the bug reporting form.
@@ -58,7 +57,8 @@ were using (including version information as appropriate).
 
 Each bug report will be assigned to a developer who will determine what needs to
 be done to correct the problem.  You will receive an update each time action is
-taken on the bug.
+taken on the bug.  See http://www.python.org/dev/workflow/ for a detailed
+description of the issue workflow.
 
 
 .. seealso::

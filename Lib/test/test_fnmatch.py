@@ -11,13 +11,13 @@ class FnmatchTestCase(unittest.TestCase):
     def tearDown(self):
         _purge()
 
-    def check_match(self, filename, pattern, should_match=1):
+    def check_match(self, filename, pattern, should_match=1, fn=fnmatch):
         if should_match:
-            self.assertTrue(fnmatch(filename, pattern),
+            self.assertTrue(fn(filename, pattern),
                          "expected %r to match pattern %r"
                          % (filename, pattern))
         else:
-            self.assertTrue(not fnmatch(filename, pattern),
+            self.assertTrue(not fn(filename, pattern),
                          "expected %r not to match pattern %r"
                          % (filename, pattern))
 
@@ -53,6 +53,11 @@ class FnmatchTestCase(unittest.TestCase):
         self.assertRaises(TypeError, fnmatch, b'test', '*')
         self.assertRaises(TypeError, fnmatchcase, 'test', b'*')
         self.assertRaises(TypeError, fnmatchcase, b'test', '*')
+
+    def test_fnmatchcase(self):
+        check = self.check_match
+        check('AbC', 'abc', 0, fnmatchcase)
+        check('abc', 'AbC', 0, fnmatchcase)
 
     def test_bytes(self):
         self.check_match(b'test', b'te*')
