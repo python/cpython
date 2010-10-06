@@ -512,13 +512,13 @@ Notes:
 
 (4)
    Individual code units which form parts of a surrogate pair can be encoded using
-   this escape sequence. Unlike in Standard C, exactly two hex digits are required.
+   this escape sequence.  Exactly four hex digits are required.
 
 (5)
    Any Unicode character can be encoded this way, but characters outside the Basic
    Multilingual Plane (BMP) will be encoded using a surrogate pair if Python is
-   compiled to use 16-bit code units (the default).  Individual code units which
-   form parts of a surrogate pair can be encoded using this escape sequence.
+   compiled to use 16-bit code units (the default).  Exactly eight hex digits
+   are required.
 
 
 .. index:: unrecognized escape sequence
@@ -700,4 +700,4 @@ tokens or are otherwise significant to the lexical analyzer::
 The following printing ASCII characters are not used in Python.  Their
 occurrence outside string literals and comments is an unconditional error::
 
-   $       ?
+   $       ?       `
