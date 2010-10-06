@@ -1067,13 +1067,6 @@ else:
 
             self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
 
-
-    def FakeSocket (sock, sslobj):
-        warnings.warn("FakeSocket is deprecated, and won't be in 3.x.  " +
-                      "Use the result of ssl.wrap_socket() directly instead.",
-                      DeprecationWarning, stacklevel=2)
-        return sslobj
-
     __all__.append("HTTPSConnection")
 
 class HTTPException(Exception):
