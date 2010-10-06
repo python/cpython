@@ -152,6 +152,8 @@ _ssl
     You must install the NASM assembler from
         http://nasm.sf.net
     for x86 builds.  Put nasmw.exe anywhere in your PATH.
+    Note: recent releases of nasm only have nasm.exe. Just rename it to 
+    nasmw.exe.
 
     You can also install ActivePerl from
         http://www.activestate.com/Products/ActivePerl/

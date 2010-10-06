@@ -77,9 +77,9 @@ class JSONEncoder(object):
     +-------------------+---------------+
     | list, tuple       | array         |
     +-------------------+---------------+
-    | str, unicode      | string        |
+    | str               | string        |
     +-------------------+---------------+
-    | int, long, float  | number        |
+    | int, float        | number        |
     +-------------------+---------------+
     | True              | true          |
     +-------------------+---------------+
@@ -102,12 +102,12 @@ class JSONEncoder(object):
         """Constructor for JSONEncoder, with sensible defaults.
 
         If skipkeys is false, then it is a TypeError to attempt
-        encoding of keys that are not str, int, long, float or None.  If
+        encoding of keys that are not str, int, float or None.  If
         skipkeys is True, such items are simply skipped.
 
         If ensure_ascii is true, the output is guaranteed to be str
-        objects with all incoming unicode characters escaped.  If
-        ensure_ascii is false, the output will be unicode object.
+        objects with all incoming non-ASCII characters escaped.  If
+        ensure_ascii is false, the output can contain non-ASCII characters.
 
         If check_circular is true, then lists, dicts, and custom encoded
         objects will be checked for circular references during encoding to
