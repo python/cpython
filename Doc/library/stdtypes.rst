@@ -217,7 +217,7 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
 There are three distinct numeric types: :dfn:`integers`, :dfn:`floating
 point numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a
 subtype of integers.  Integers have unlimited precision.  Floating point
-numbers are usually implemented using :ctype:`double` in C; information
+numbers are usually implemented using :c:type:`double` in C; information
 about the precision and internal representation of floating point
 numbers for the machine on which your program is running is available
 in :data:`sys.float_info`.  Complex numbers have a real and imaginary
@@ -1378,7 +1378,7 @@ String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
 Given ``format % values`` (where *format* is a string), ``%`` conversion
 specifications in *format* are replaced with zero or more elements of *values*.
-The effect is similar to the using :cfunc:`sprintf` in the C language.
+The effect is similar to the using :c:func:`sprintf` in the C language.
 
 If *format* requires a single argument, *values* may be a single non-tuple
 object. [#]_  Otherwise, *values* must be a tuple with exactly the number of

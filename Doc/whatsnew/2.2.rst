@@ -754,7 +754,7 @@ Here are the changes 2.2 introduces:
 
 * Classes can define methods called :meth:`__truediv__` and :meth:`__floordiv__`
   to overload the two division operators.  At the C level, there are also slots in
-  the :ctype:`PyNumberMethods` structure so extension types can define the two
+  the :c:type:`PyNumberMethods` structure so extension types can define the two
   operators.
 
 * Python 2.2 supports some command-line arguments for testing whether code will
@@ -983,7 +983,7 @@ New and Improved Modules
   Jun-ichiro "itojun" Hagino.)
 
 * Two new format characters were added to the :mod:`struct` module for 64-bit
-  integers on platforms that support the C :ctype:`long long` type.  ``q`` is for
+  integers on platforms that support the C :c:type:`long long` type.  ``q`` is for
   a signed 64-bit integer, and ``Q`` is for an unsigned one.  The value is
   returned in Python's long integer type.  (Contributed by Tim Peters.)
 
@@ -1057,16 +1057,16 @@ code, none of the changes described here will affect you very much.
   at much higher speeds than Python-based functions and should reduce the overhead
   of profiling and tracing.  This  will be of interest to authors of development
   environments for Python.  Two new C functions were added to Python's API,
-  :cfunc:`PyEval_SetProfile` and :cfunc:`PyEval_SetTrace`. The existing
+  :c:func:`PyEval_SetProfile` and :c:func:`PyEval_SetTrace`. The existing
   :func:`sys.setprofile` and :func:`sys.settrace` functions still exist, and have
   simply been changed to use the new C-level interface.  (Contributed by Fred L.
   Drake, Jr.)
 
 * Another low-level API, primarily of interest to implementors of Python
-  debuggers and development tools, was added. :cfunc:`PyInterpreterState_Head` and
-  :cfunc:`PyInterpreterState_Next` let a caller walk through all the existing
-  interpreter objects; :cfunc:`PyInterpreterState_ThreadHead` and
-  :cfunc:`PyThreadState_Next` allow looping over all the thread states for a given
+  debuggers and development tools, was added. :c:func:`PyInterpreterState_Head` and
+  :c:func:`PyInterpreterState_Next` let a caller walk through all the existing
+  interpreter objects; :c:func:`PyInterpreterState_ThreadHead` and
+  :c:func:`PyThreadState_Next` allow looping over all the thread states for a given
   interpreter.  (Contributed by David Beazley.)
 
 * The C-level interface to the garbage collector has been changed to make it
@@ -1078,19 +1078,19 @@ code, none of the changes described here will affect you very much.
 
   To upgrade an extension module to the new API, perform the following steps:
 
-* Rename :cfunc:`Py_TPFLAGS_GC` to :cfunc:`PyTPFLAGS_HAVE_GC`.
+* Rename :c:func:`Py_TPFLAGS_GC` to :c:func:`PyTPFLAGS_HAVE_GC`.
 
-* Use :cfunc:`PyObject_GC_New` or :cfunc:`PyObject_GC_NewVar` to allocate
-    objects, and :cfunc:`PyObject_GC_Del` to deallocate them.
+* Use :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar` to allocate
+    objects, and :c:func:`PyObject_GC_Del` to deallocate them.
 
-* Rename :cfunc:`PyObject_GC_Init` to :cfunc:`PyObject_GC_Track` and
-    :cfunc:`PyObject_GC_Fini` to :cfunc:`PyObject_GC_UnTrack`.
+* Rename :c:func:`PyObject_GC_Init` to :c:func:`PyObject_GC_Track` and
+    :c:func:`PyObject_GC_Fini` to :c:func:`PyObject_GC_UnTrack`.
 
-* Remove :cfunc:`PyGC_HEAD_SIZE` from object size calculations.
+* Remove :c:func:`PyGC_HEAD_SIZE` from object size calculations.
 
-* Remove calls to :cfunc:`PyObject_AS_GC` and :cfunc:`PyObject_FROM_GC`.
+* Remove calls to :c:func:`PyObject_AS_GC` and :c:func:`PyObject_FROM_GC`.
 
-* A new ``et`` format sequence was added to :cfunc:`PyArg_ParseTuple`; ``et``
+* A new ``et`` format sequence was added to :c:func:`PyArg_ParseTuple`; ``et``
   takes both a parameter and an encoding name, and converts the parameter to the
   given encoding if the parameter turns out to be a Unicode string, or leaves it
   alone if it's an 8-bit string, assuming it to already be in the desired
@@ -1099,10 +1099,10 @@ code, none of the changes described here will affect you very much.
   specified new encoding. (Contributed by M.-A. Lemburg, and used for the MBCS
   support on Windows described in the following section.)
 
-* A different argument parsing function, :cfunc:`PyArg_UnpackTuple`, has been
+* A different argument parsing function, :c:func:`PyArg_UnpackTuple`, has been
   added that's simpler and presumably faster.  Instead of specifying a format
   string, the caller simply gives the minimum and maximum number of arguments
-  expected, and a set of pointers to :ctype:`PyObject\*` variables that will be
+  expected, and a set of pointers to :c:type:`PyObject\*` variables that will be
   filled in with argument values.
 
 * Two new flags :const:`METH_NOARGS` and :const:`METH_O` are available in method
@@ -1111,14 +1111,14 @@ code, none of the changes described here will affect you very much.
   corresponding method that uses :const:`METH_VARARGS`.  Also, the old
   :const:`METH_OLDARGS` style of writing C methods is  now officially deprecated.
 
-* Two new wrapper functions, :cfunc:`PyOS_snprintf` and :cfunc:`PyOS_vsnprintf`
+* Two new wrapper functions, :c:func:`PyOS_snprintf` and :c:func:`PyOS_vsnprintf`
   were added to provide  cross-platform implementations for the relatively new
-  :cfunc:`snprintf` and :cfunc:`vsnprintf` C lib APIs. In contrast to the standard
-  :cfunc:`sprintf` and :cfunc:`vsprintf` functions, the Python versions check the
+  :c:func:`snprintf` and :c:func:`vsnprintf` C lib APIs. In contrast to the standard
+  :c:func:`sprintf` and :c:func:`vsprintf` functions, the Python versions check the
   bounds of the buffer used to protect against buffer overruns. (Contributed by
   M.-A. Lemburg.)
 
-* The :cfunc:`_PyTuple_Resize` function has lost an unused parameter, so now it
+* The :c:func:`_PyTuple_Resize` function has lost an unused parameter, so now it
   takes 2 parameters instead of 3.  The third argument was never used, and can
   simply be discarded when porting code from earlier versions to Python 2.2.
 
@@ -1219,7 +1219,7 @@ Some of the more notable changes are:
   operator, but these features were rarely used and therefore buggy.  The
   :meth:`tolist` method and the :attr:`start`, :attr:`stop`, and :attr:`step`
   attributes are also being deprecated.  At the C level, the fourth argument to
-  the :cfunc:`PyRange_New` function, ``repeat``, has also been deprecated.
+  the :c:func:`PyRange_New` function, ``repeat``, has also been deprecated.
 
 * There were a bunch of patches to the dictionary implementation, mostly to fix
   potential core dumps if a dictionary contains objects that sneakily changed
@@ -1242,8 +1242,8 @@ Some of the more notable changes are:
   up to display the output.  This patch makes it possible to import such scripts,
   in case they're also usable as modules.  (Implemented by David Bolen.)
 
-* On platforms where Python uses the C :cfunc:`dlopen` function  to load
-  extension modules, it's now possible to set the flags used  by :cfunc:`dlopen`
+* On platforms where Python uses the C :c:func:`dlopen` function  to load
+  extension modules, it's now possible to set the flags used  by :c:func:`dlopen`
   using the :func:`sys.getdlopenflags` and :func:`sys.setdlopenflags` functions.
   (Contributed by Bram Stolk.)
 

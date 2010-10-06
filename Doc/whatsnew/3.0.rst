@@ -850,21 +850,21 @@ to the C API.
 
 * :pep:`3121`: Extension Module Initialization & Finalization.
 
-* :pep:`3123`: Making :cmacro:`PyObject_HEAD` conform to standard C.
+* :pep:`3123`: Making :c:macro:`PyObject_HEAD` conform to standard C.
 
 * No more C API support for restricted execution.
 
-* :cfunc:`PyNumber_Coerce`, :cfunc:`PyNumber_CoerceEx`,
-  :cfunc:`PyMember_Get`, and :cfunc:`PyMember_Set` C APIs are removed.
+* :c:func:`PyNumber_Coerce`, :c:func:`PyNumber_CoerceEx`,
+  :c:func:`PyMember_Get`, and :c:func:`PyMember_Set` C APIs are removed.
 
-* New C API :cfunc:`PyImport_ImportModuleNoBlock`, works like
-  :cfunc:`PyImport_ImportModule` but won't block on the import lock
+* New C API :c:func:`PyImport_ImportModuleNoBlock`, works like
+  :c:func:`PyImport_ImportModule` but won't block on the import lock
   (returning an error instead).
 
 * Renamed the boolean conversion C-level slot and method:
   ``nb_nonzero`` is now ``nb_bool``.
 
-* Removed :cmacro:`METH_OLDARGS` and :cmacro:`WITH_CYCLE_GC` from the C API.
+* Removed :c:macro:`METH_OLDARGS` and :c:macro:`WITH_CYCLE_GC` from the C API.
 
 .. ======================================================================
 

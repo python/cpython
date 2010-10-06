@@ -312,7 +312,7 @@ always available.
 
 .. function:: getdlopenflags()
 
-   Return the current value of the flags that are used for :cfunc:`dlopen` calls.
+   Return the current value of the flags that are used for :c:func:`dlopen` calls.
    The flag constants are defined in the :mod:`ctypes` and :mod:`DLFCN` modules.
    Availability: Unix.
 
@@ -457,8 +457,8 @@ always available.
    +---------------------------------------+---------------------------------+
 
 
-   This function wraps the Win32 :cfunc:`GetVersionEx` function; see the
-   Microsoft documentation on :cfunc:`OSVERSIONINFOEX` for more information
+   This function wraps the Win32 :c:func:`GetVersionEx` function; see the
+   Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
    about these fields.
 
    Availability: Windows.
@@ -561,7 +561,7 @@ always available.
 
 .. data:: maxsize
 
-   An integer giving the maximum value a variable of type :ctype:`Py_ssize_t` can
+   An integer giving the maximum value a variable of type :c:type:`Py_ssize_t` can
    take.  It's usually ``2**31 - 1`` on a 32-bit platform and ``2**63 - 1`` on a
    64-bit platform.
 
@@ -714,7 +714,7 @@ always available.
 
 .. function:: setdlopenflags(n)
 
-   Set the flags used by the interpreter for :cfunc:`dlopen` calls, such as when
+   Set the flags used by the interpreter for :c:func:`dlopen` calls, such as when
    the interpreter loads extension modules.  Among other things, this will enable a
    lazy resolving of symbols when importing a module, if called as
    ``sys.setdlopenflags(0)``.  To share symbols across extension modules, call as

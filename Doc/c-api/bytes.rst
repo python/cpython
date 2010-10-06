@@ -11,48 +11,48 @@ called with a non-bytes parameter.
 .. index:: object: bytes
 
 
-.. ctype:: PyBytesObject
+.. c:type:: PyBytesObject
 
-   This subtype of :ctype:`PyObject` represents a Python bytes object.
+   This subtype of :c:type:`PyObject` represents a Python bytes object.
 
 
-.. cvar:: PyTypeObject PyBytes_Type
+.. c:var:: PyTypeObject PyBytes_Type
 
    .. index:: single: BytesType (in module types)
 
-   This instance of :ctype:`PyTypeObject` represents the Python bytes type; it
+   This instance of :c:type:`PyTypeObject` represents the Python bytes type; it
    is the same object as ``bytes`` in the Python layer. .
 
 
-.. cfunction:: int PyBytes_Check(PyObject *o)
+.. c:function:: int PyBytes_Check(PyObject *o)
 
    Return true if the object *o* is a bytes object or an instance of a subtype
    of the bytes type.
 
 
-.. cfunction:: int PyBytes_CheckExact(PyObject *o)
+.. c:function:: int PyBytes_CheckExact(PyObject *o)
 
    Return true if the object *o* is a bytes object, but not an instance of a
    subtype of the bytes type.
 
 
-.. cfunction:: PyObject* PyBytes_FromString(const char *v)
+.. c:function:: PyObject* PyBytes_FromString(const char *v)
 
    Return a new bytes object with a copy of the string *v* as value on success,
    and *NULL* on failure.  The parameter *v* must not be *NULL*; it will not be
    checked.
 
 
-.. cfunction:: PyObject* PyBytes_FromStringAndSize(const char *v, Py_ssize_t len)
+.. c:function:: PyObject* PyBytes_FromStringAndSize(const char *v, Py_ssize_t len)
 
    Return a new bytes object with a copy of the string *v* as value and length
    *len* on success, and *NULL* on failure.  If *v* is *NULL*, the contents of
    the bytes object are uninitialized.
 
 
-.. cfunction:: PyObject* PyBytes_FromFormat(const char *format, ...)
+.. c:function:: PyObject* PyBytes_FromFormat(const char *format, ...)
 
-   Take a C :cfunc:`printf`\ -style *format* string and a variable number of
+   Take a C :c:func:`printf`\ -style *format* string and a variable number of
    arguments, calculate the size of the resulting Python bytes object and return
    a bytes object with the values formatted into it.  The variable arguments
    must be C types and must correspond exactly to the format characters in the
@@ -112,44 +112,44 @@ called with a non-bytes parameter.
    copied as-is to the result string, and any extra arguments discarded.
 
 
-.. cfunction:: PyObject* PyBytes_FromFormatV(const char *format, va_list vargs)
+.. c:function:: PyObject* PyBytes_FromFormatV(const char *format, va_list vargs)
 
-   Identical to :cfunc:`PyBytes_FromFormat` except that it takes exactly two
+   Identical to :c:func:`PyBytes_FromFormat` except that it takes exactly two
    arguments.
 
 
-.. cfunction:: PyObject* PyBytes_FromObject(PyObject *o)
+.. c:function:: PyObject* PyBytes_FromObject(PyObject *o)
 
    Return the bytes representation of object *o* that implements the buffer
    protocol.
 
 
-.. cfunction:: Py_ssize_t PyBytes_Size(PyObject *o)
+.. c:function:: Py_ssize_t PyBytes_Size(PyObject *o)
 
    Return the length of the bytes in bytes object *o*.
 
 
-.. cfunction:: Py_ssize_t PyBytes_GET_SIZE(PyObject *o)
+.. c:function:: Py_ssize_t PyBytes_GET_SIZE(PyObject *o)
 
-   Macro form of :cfunc:`PyBytes_Size` but without error checking.
+   Macro form of :c:func:`PyBytes_Size` but without error checking.
 
 
-.. cfunction:: char* PyBytes_AsString(PyObject *o)
+.. c:function:: char* PyBytes_AsString(PyObject *o)
 
    Return a NUL-terminated representation of the contents of *o*.  The pointer
    refers to the internal buffer of *o*, not a copy.  The data must not be
    modified in any way, unless the string was just created using
    ``PyBytes_FromStringAndSize(NULL, size)``. It must not be deallocated.  If
-   *o* is not a string object at all, :cfunc:`PyBytes_AsString` returns *NULL*
+   *o* is not a string object at all, :c:func:`PyBytes_AsString` returns *NULL*
    and raises :exc:`TypeError`.
 
 
-.. cfunction:: char* PyBytes_AS_STRING(PyObject *string)
+.. c:function:: char* PyBytes_AS_STRING(PyObject *string)
 
-   Macro form of :cfunc:`PyBytes_AsString` but without error checking.
+   Macro form of :c:func:`PyBytes_AsString` but without error checking.
 
 
-.. cfunction:: int PyBytes_AsStringAndSize(PyObject *obj, char **buffer, Py_ssize_t *length)
+.. c:function:: int PyBytes_AsStringAndSize(PyObject *obj, char **buffer, Py_ssize_t *length)
 
    Return a NUL-terminated representation of the contents of the object *obj*
    through the output variables *buffer* and *length*.
@@ -160,11 +160,11 @@ called with a non-bytes parameter.
    The buffer refers to an internal string buffer of *obj*, not a copy. The data
    must not be modified in any way, unless the string was just created using
    ``PyBytes_FromStringAndSize(NULL, size)``.  It must not be deallocated.  If
-   *string* is not a string object at all, :cfunc:`PyBytes_AsStringAndSize`
+   *string* is not a string object at all, :c:func:`PyBytes_AsStringAndSize`
    returns ``-1`` and raises :exc:`TypeError`.
 
 
-.. cfunction:: void PyBytes_Concat(PyObject **bytes, PyObject *newpart)
+.. c:function:: void PyBytes_Concat(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
    appended to *bytes*; the caller will own the new reference.  The reference to
@@ -173,14 +173,14 @@ called with a non-bytes parameter.
    of *\*bytes* will be set to *NULL*; the appropriate exception will be set.
 
 
-.. cfunction:: void PyBytes_ConcatAndDel(PyObject **bytes, PyObject *newpart)
+.. c:function:: void PyBytes_ConcatAndDel(PyObject **bytes, PyObject *newpart)
 
    Create a new string object in *\*bytes* containing the contents of *newpart*
    appended to *bytes*.  This version decrements the reference count of
    *newpart*.
 
 
-.. cfunction:: int _PyBytes_Resize(PyObject **bytes, Py_ssize_t newsize)
+.. c:function:: int _PyBytes_Resize(PyObject **bytes, Py_ssize_t newsize)
 
    A way to resize a bytes object even though it is "immutable". Only use this
    to build up a brand new bytes object; don't use this if the bytes may already

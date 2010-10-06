@@ -497,21 +497,21 @@ Changes to Python's build process and to the C API include:
 
   (Contributed by Mark Dickinson; :issue:`4258`.)
 
-* The :cfunc:`PyLong_AsUnsignedLongLong()` function now handles a negative
+* The :c:func:`PyLong_AsUnsignedLongLong()` function now handles a negative
   *pylong* by raising :exc:`OverflowError` instead of :exc:`TypeError`.
 
   (Contributed by Mark Dickinson and Lisandro Dalcrin; :issue:`5175`.)
 
-* Deprecated :cfunc:`PyNumber_Int`.  Use :cfunc:`PyNumber_Long` instead.
+* Deprecated :c:func:`PyNumber_Int`.  Use :c:func:`PyNumber_Long` instead.
 
   (Contributed by Mark Dickinson; :issue:`4910`.)
 
-* Added a new :cfunc:`PyOS_string_to_double` function to replace the
-  deprecated functions :cfunc:`PyOS_ascii_strtod` and :cfunc:`PyOS_ascii_atof`.
+* Added a new :c:func:`PyOS_string_to_double` function to replace the
+  deprecated functions :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof`.
 
   (Contributed by Mark Dickinson; :issue:`5914`.)
 
-* Added :ctype:`PyCapsule` as a replacement for the :ctype:`PyCObject` API.
+* Added :c:type:`PyCapsule` as a replacement for the :c:type:`PyCObject` API.
   The principal difference is that the new type has a well defined interface
   for passing typing safety information and a less complicated signature
   for calling a destructor.  The old type had a problematic API and is now
