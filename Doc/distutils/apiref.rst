@@ -995,7 +995,7 @@ directories.
    errors are ignored (apart from being reported to ``sys.stdout`` if *verbose* is
    true).
 
-**\*\*** Some of this could be replaced with the shutil module? **\*\***
+.. XXX Some of this could be replaced with the shutil module?
 
 
 :mod:`distutils.file_util` --- Single file operations
@@ -1311,8 +1311,7 @@ provides the following additional features:
   the "negative alias" of :option:`--verbose`, then :option:`--quiet` on the
   command line sets *verbose* to false.
 
-**\*\*** Should be replaced with :mod:`optik` (which is also now known as
-:mod:`optparse` in Python 2.3 and later). **\*\***
+.. XXX Should be replaced with :mod:`optparse`.
 
 
 .. function:: fancy_getopt(options, negative_opt, object, args)
