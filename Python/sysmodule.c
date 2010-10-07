@@ -1742,7 +1742,7 @@ sys_update_path(int argc, wchar_t **argv)
 #else /* All other filename syntaxes */
     if (_HAVE_SCRIPT_ARGUMENT(argc, argv)) {
 #if defined(HAVE_REALPATH)
-        if (_Py_wrealpath(argv0, fullpath)) {
+        if (_Py_wrealpath(argv0, fullpath, PATH_MAX)) {
             argv0 = fullpath;
         }
 #endif
