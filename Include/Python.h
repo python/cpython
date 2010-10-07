@@ -122,6 +122,7 @@
 #include "pystrtod.h"
 #include "pystrcmp.h"
 #include "dtoa.h"
+#include "fileutils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,17 +130,6 @@ extern "C" {
 
 /* _Py_Mangle is defined in compile.c */
 PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
-
-/* These functions live in main.c */
-PyAPI_FUNC(wchar_t *) _Py_char2wchar(char *);
-PyAPI_FUNC(char*) _Py_wchar2char(const wchar_t *text);
-PyAPI_FUNC(FILE *) _Py_wfopen(const wchar_t *path, const wchar_t *mode);
-
-/* These functions live in import.c */
-PyAPI_FUNC(FILE*) _Py_fopen(PyObject *unicode, const char *mode);
-#ifdef HAVE_STAT
-int _Py_stat(PyObject *unicode, struct stat *statbuf);
-#endif
 
 #ifdef __cplusplus
 }

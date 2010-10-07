@@ -136,78 +136,6 @@ static wchar_t progpath[MAXPATHLEN+1];
 static wchar_t *module_search_path = NULL;
 static wchar_t *lib_python = L"lib/python" VERSION;
 
-/* In principle, this should use HAVE__WSTAT, and _wstat
-   should be detected by autoconf. However, no current
-   POSIX system provides that function, so testing for
-   it is pointless.
-   Not sure whether the MS_WINDOWS guards are necessary:
-   perhaps for cygwin/mingw builds?
-*/
-#ifndef MS_WINDOWS
-static int
-_wstat(const wchar_t* path, struct stat *buf)
-{
-    int err;
-    char *fname;
-    fname = _Py_wchar2char(path);
-    if (fname == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-    err = stat(fname, buf);
-    PyMem_Free(fname);
-    return err;
-}
-#endif
-
-#ifndef MS_WINDOWS
-static wchar_t*
-_wgetcwd(wchar_t *buf, size_t size)
-{
-    char fname[PATH_MAX];
-    if (getcwd(fname, PATH_MAX) == NULL)
-        return NULL;
-    if (mbstowcs(buf, fname, size) >= size) {
-        errno = ERANGE;
-        return NULL;
-    }
-    return buf;
-}
-#endif
-
-#ifdef HAVE_READLINK
-int
-_Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
-{
-    char *cpath;
-    char cbuf[PATH_MAX];
-    int res;
-    size_t r1;
-
-    cpath = _Py_wchar2char(path);
-    if (cpath == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-    res = (int)readlink(cpath, cbuf, PATH_MAX);
-    PyMem_Free(cpath);
-    if (res == -1)
-        return -1;
-    if (res == PATH_MAX) {
-        errno = EINVAL;
-        return -1;
-    }
-    cbuf[res] = '\0'; /* buf will be null terminated */
-    r1 = mbstowcs(buf, cbuf, bufsiz);
-    if (r1 == -1) {
-        errno = EINVAL;
-        return -1;
-    }
-    return (int)r1;
-
-}
-#endif
-
 static void
 reduce(wchar_t *dir)
 {
@@ -217,12 +145,11 @@ reduce(wchar_t *dir)
     dir[i] = '\0';
 }
 
-
 static int
 isfile(wchar_t *filename)          /* Is file, not directory */
 {
     struct stat buf;
-    if (_wstat(filename, &buf) != 0)
+    if (_Py_wstat(filename, &buf) != 0)
         return 0;
     if (!S_ISREG(buf.st_mode))
         return 0;
@@ -250,7 +177,7 @@ static int
 isxfile(wchar_t *filename)         /* Is executable file */
 {
     struct stat buf;
-    if (_wstat(filename, &buf) != 0)
+    if (_Py_wstat(filename, &buf) != 0)
         return 0;
     if (!S_ISREG(buf.st_mode))
         return 0;
@@ -264,7 +191,7 @@ static int
 isdir(wchar_t *filename)                   /* Is directory */
 {
     struct stat buf;
-    if (_wstat(filename, &buf) != 0)
+    if (_Py_wstat(filename, &buf) != 0)
         return 0;
     if (!S_ISDIR(buf.st_mode))
         return 0;
@@ -309,7 +236,7 @@ copy_absolute(wchar_t *path, wchar_t *p)
     if (p[0] == SEP)
         wcscpy(path, p);
     else {
-        _wgetcwd(path, MAXPATHLEN);
+        _Py_wgetcwd(path, MAXPATHLEN);
         if (p[0] == '.' && p[1] == SEP)
             p += 2;
         joinpath(path, p);

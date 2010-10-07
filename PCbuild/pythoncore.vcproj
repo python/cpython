@@ -723,6 +723,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Include\fileutils.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Include\floatobject.h"
 				>
 			</File>
@@ -1684,6 +1688,10 @@
 			</File>
 			<File
 				RelativePath="..\Python\errors.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Python\fileutils.c"
 				>
 			</File>
 			<File

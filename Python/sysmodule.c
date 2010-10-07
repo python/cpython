@@ -1657,32 +1657,6 @@ makeargvobject(int argc, wchar_t **argv)
     return av;
 }
 
-#ifdef HAVE_REALPATH
-static wchar_t*
-_wrealpath(const wchar_t *path, wchar_t *resolved_path)
-{
-    char *cpath;
-    char cresolved_path[PATH_MAX];
-    char *res;
-    size_t r;
-    cpath = _Py_wchar2char(path);
-    if (cpath == NULL) {
-        errno = EINVAL;
-        return NULL;
-    }
-    res = realpath(cpath, cresolved_path);
-    PyMem_Free(cpath);
-    if (res == NULL)
-        return NULL;
-    r = mbstowcs(resolved_path, cresolved_path, PATH_MAX);
-    if (r == (size_t)-1 || r >= PATH_MAX) {
-        errno = EINVAL;
-        return NULL;
-    }
-    return resolved_path;
-}
-#endif
-
 #define _HAVE_SCRIPT_ARGUMENT(argc, argv) \
   (argc > 0 && argv0 != NULL && \
    wcscmp(argv0, L"-c") != 0 && wcscmp(argv0, L"-m") != 0)
@@ -1696,7 +1670,6 @@ sys_update_path(int argc, wchar_t **argv)
     PyObject *a;
     PyObject *path;
 #ifdef HAVE_READLINK
-    extern int _Py_wreadlink(const wchar_t *, wchar_t *, size_t);
     wchar_t link[MAXPATHLEN+1];
     wchar_t argv0copy[2*MAXPATHLEN+1];
     int nr = 0;
@@ -1769,7 +1742,7 @@ sys_update_path(int argc, wchar_t **argv)
 #else /* All other filename syntaxes */
     if (_HAVE_SCRIPT_ARGUMENT(argc, argv)) {
 #if defined(HAVE_REALPATH)
-        if (_wrealpath(argv0, fullpath)) {
+        if (_Py_wrealpath(argv0, fullpath)) {
             argv0 = fullpath;
         }
 #endif
