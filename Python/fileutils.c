@@ -194,6 +194,9 @@ _Py_wchar2char(const wchar_t *text)
    perhaps for cygwin/mingw builds?
 */
 #if defined(HAVE_STAT) && !defined(MS_WINDOWS)
+
+/* Get file status. Encode the path to the locale encoding. */
+
 int
 _Py_wstat(const wchar_t* path, struct stat *buf)
 {
@@ -210,9 +213,11 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
 }
 #endif
 
-/* Call _wstat() on Windows, or stat() otherwise. Only fill st_mode
-   attribute on Windows. Return 0 on success, -1 on stat error or (if
-   PyErr_Occurred()) unicode error. */
+/* Call _wstat() on Windows, or encode the path to the filesystem encoding and
+   call stat() otherwise. Only fill st_mode attribute on Windows.
+
+   Return 0 on success, -1 on _wstat() / stat() error or (if PyErr_Occurred())
+   unicode error. */
 
 int
 _Py_stat(PyObject *path, struct stat *statbuf)
@@ -235,6 +240,9 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     return ret;
 #endif
 }
+
+/* Open a file. Use _wfopen() on Windows, encode the path to the locale
+   encoding and use fopen() otherwise. */
 
 FILE *
 _Py_wfopen(const wchar_t *path, const wchar_t *mode)
@@ -260,9 +268,11 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 #endif
 }
 
-/* Call _wfopen() on Windows, or fopen() otherwise. Return the new file
-   object on success, or NULL if the file cannot be open or (if
-   PyErr_Occurred()) on unicode error */
+/* Call _wfopen() on Windows, or encode the path to the filesystem encoding and
+   call fopen() otherwise.
+
+   Return the new file object on success, or NULL if the file cannot be open or
+   (if PyErr_Occurred()) on unicode error */
 
 FILE*
 _Py_fopen(PyObject *path, const char *mode)
@@ -288,6 +298,10 @@ _Py_fopen(PyObject *path, const char *mode)
 }
 
 #ifdef HAVE_READLINK
+
+/* Read value of symbolic link. Encode the path to the locale encoding, decode
+   the result from the locale encoding. */
+
 int
 _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
 {
@@ -320,6 +334,10 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
 #endif
 
 #ifdef HAVE_REALPATH
+
+/* Return the canonicalized absolute pathname. Encode path to the locale
+   encoding, decode the result from the locale encoding. */
+
 wchar_t*
 _Py_wrealpath(const wchar_t *path,
               wchar_t *resolved_path, size_t resolved_path_size)
@@ -345,6 +363,8 @@ _Py_wrealpath(const wchar_t *path,
     return resolved_path;
 }
 #endif
+
+/* Get the current directory. Decode the path from the locale encoding. */
 
 wchar_t*
 _Py_wgetcwd(wchar_t *buf, size_t size)
