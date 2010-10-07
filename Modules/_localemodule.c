@@ -246,10 +246,10 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, "UU:strcoll", &os1, &os2))
         return NULL;
     /* Convert the unicode strings to wchar[]. */
-    ws1 = PyUnicode_AsWideCharString((PyUnicodeObject*)os1, NULL);
+    ws1 = PyUnicode_AsWideCharString(os1, NULL);
     if (ws1 == NULL)
         goto done;
-    ws2 = PyUnicode_AsWideCharString((PyUnicodeObject*)os2, NULL);
+    ws2 = PyUnicode_AsWideCharString(os2, NULL);
     if (ws2 == NULL)
         goto done;
     /* Collate the strings. */

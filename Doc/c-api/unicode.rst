@@ -462,7 +462,7 @@ wchar_t support for platforms which support it:
    required by the application.
 
 
-.. c:function:: wchar_t* PyUnicode_AsWideCharString(PyUnicodeObject *unicode, Py_ssize_t *size)
+.. c:function:: wchar_t* PyUnicode_AsWideCharString(PyObject *unicode, Py_ssize_t *size)
 
    Convert the Unicode object to a wide character string. The output string
    always ends with a nul character. If *size* is not *NULL*, write the number

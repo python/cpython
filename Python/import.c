@@ -1970,7 +1970,7 @@ _Py_fopen(PyObject *unicode, const char *mode)
     if (usize == 0)
         return NULL;
 
-    path = PyUnicode_AsWideCharString((PyUnicodeObject*)unicode, NULL);
+    path = PyUnicode_AsWideCharString(unicode, NULL);
     if (path == NULL)
         return NULL;
     f = _wfopen(path, wmode);
@@ -2001,7 +2001,7 @@ _Py_stat(PyObject *unicode, struct stat *statbuf)
     int err;
     struct _stat wstatbuf;
 
-    path = PyUnicode_AsWideCharString((PyUnicodeObject*)unicode, NULL);
+    path = PyUnicode_AsWideCharString(unicode, NULL);
     if (path == NULL)
         return -1;
     err = _wstat(path, &wstatbuf);
@@ -3736,7 +3736,7 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    path = PyUnicode_AsWideCharString((PyUnicodeObject*)pathobj, NULL);
+    path = PyUnicode_AsWideCharString(pathobj, NULL);
     if (path == NULL)
         return -1;
     /* see issue1293 and issue3677:

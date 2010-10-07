@@ -1275,7 +1275,7 @@ PyUnicode_AsWideChar(PyUnicodeObject *unicode,
 }
 
 wchar_t*
-PyUnicode_AsWideCharString(PyUnicodeObject *unicode,
+PyUnicode_AsWideCharString(PyObject *unicode,
                            Py_ssize_t *size)
 {
     wchar_t* buffer;
@@ -1286,7 +1286,7 @@ PyUnicode_AsWideCharString(PyUnicodeObject *unicode,
         return NULL;
     }
 
-    buflen = unicode_aswidechar(unicode, NULL, 0);
+    buflen = unicode_aswidechar((PyUnicodeObject *)unicode, NULL, 0);
     if (PY_SSIZE_T_MAX / sizeof(wchar_t) < buflen) {
         PyErr_NoMemory();
         return NULL;
@@ -1297,7 +1297,7 @@ PyUnicode_AsWideCharString(PyUnicodeObject *unicode,
         PyErr_NoMemory();
         return NULL;
     }
-    buflen = unicode_aswidechar(unicode, buffer, buflen);
+    buflen = unicode_aswidechar((PyUnicodeObject *)unicode, buffer, buflen);
     if (size != NULL)
         *size = buflen;
     return buffer;
