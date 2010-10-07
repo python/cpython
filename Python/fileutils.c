@@ -1,4 +1,7 @@
 #include "Python.h"
+#ifdef MS_WINDOWS
+#  include <windows.h>
+#endif
 
 #ifdef HAVE_STAT
 
@@ -183,10 +186,6 @@ _Py_wchar2char(const wchar_t *text)
     return result;
 }
 
-#if defined(MS_WINDOWS) || defined(HAVE_STAT)
-int
-_Py_wstat(const wchar_t* path, struct stat *buf)
-{
 /* In principle, this should use HAVE__WSTAT, and _wstat
    should be detected by autoconf. However, no current
    POSIX system provides that function, so testing for
@@ -194,9 +193,10 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
    Not sure whether the MS_WINDOWS guards are necessary:
    perhaps for cygwin/mingw builds?
 */
-#ifdef MS_WINDOWS
-    return _wstat(path, buf);
-#else
+#if defined(HAVE_STAT) && !defined(MS_WINDOWS)
+int
+_Py_wstat(const wchar_t* path, struct stat *buf)
+{
     int err;
     char *fname;
     fname = _Py_wchar2char(path);
@@ -207,7 +207,6 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
     err = stat(fname, buf);
     PyMem_Free(fname);
     return err;
-#endif
 }
 #endif
 
