@@ -384,31 +384,31 @@ gettmarg(PyObject *args, struct tm *p)
  * asctime().  Return 1 if all values are valid, otherwise set an exception
  * and returns 0.
  */
-static int 
-checktm(struct tm* buf) 
+static int
+checktm(struct tm* buf)
 {
-    /* Checks added to make sure strftime() and asctime() does not crash Python by    
-       indexing blindly into some array for a textual representation                  
-       by some bad index (fixes bug #897625 and #6608).                               
-                                                                                      
-       Also support values of zero from Python code for arguments in which            
-       that is out of range by forcing that value to the lowest value that            
-       is valid (fixed bug #1520914).                                                 
-                                                                                      
-       Valid ranges based on what is allowed in struct tm:                            
-                                                                                      
-       - tm_year: [0, max(int)] (1)                                                   
-       - tm_mon: [0, 11] (2)                                                          
-       - tm_mday: [1, 31]                                                             
-       - tm_hour: [0, 23]                                                             
-       - tm_min: [0, 59]                                                              
-       - tm_sec: [0, 60]                                                              
-       - tm_wday: [0, 6] (1)                                                          
-       - tm_yday: [0, 365] (2)                                                        
-       - tm_isdst: [-max(int), max(int)]                                              
-                                                                                      
-       (1) gettmarg() handles bounds-checking.                                        
-       (2) Python's acceptable range is one greater than the range in C,              
+    /* Checks added to make sure strftime() and asctime() does not crash Python by
+       indexing blindly into some array for a textual representation
+       by some bad index (fixes bug #897625 and #6608).
+
+       Also support values of zero from Python code for arguments in which
+       that is out of range by forcing that value to the lowest value that
+       is valid (fixed bug #1520914).
+
+       Valid ranges based on what is allowed in struct tm:
+
+       - tm_year: [0, max(int)] (1)
+       - tm_mon: [0, 11] (2)
+       - tm_mday: [1, 31]
+       - tm_hour: [0, 23]
+       - tm_min: [0, 59]
+       - tm_sec: [0, 60]
+       - tm_wday: [0, 6] (1)
+       - tm_yday: [0, 365] (2)
+       - tm_isdst: [-max(int), max(int)]
+
+       (1) gettmarg() handles bounds-checking.
+       (2) Python's acceptable range is one greater than the range in C,
        thus need to check against automatic decrement by gettmarg().
     */
     if (buf->tm_mon == -1)
@@ -472,6 +472,7 @@ time_strftime(PyObject *self, PyObject *args)
 #else
     PyObject *format;
 #endif
+    PyObject *format_arg;
     size_t fmtlen, buflen;
     time_char *outbuf = NULL;
     size_t i;
@@ -482,7 +483,7 @@ time_strftime(PyObject *self, PyObject *args)
     /* Will always expect a unicode string to be passed as format.
        Given that there's no str type anymore in py3k this seems safe.
     */
-    if (!PyArg_ParseTuple(args, "U|O:strftime", &format, &tup))
+    if (!PyArg_ParseTuple(args, "U|O:strftime", &format_arg, &tup))
         return NULL;
 
     if (tup == NULL) {
@@ -501,13 +502,13 @@ time_strftime(PyObject *self, PyObject *args)
         buf.tm_isdst = 1;
 
 #ifdef HAVE_WCSFTIME
-    format = PyUnicode_AsWideCharString((PyUnicodeObject*)format, NULL);
+    format = PyUnicode_AsWideCharString((PyUnicodeObject*)format_arg, NULL);
     if (format == NULL)
         return NULL;
     fmt = format;
 #else
     /* Convert the unicode string to an ascii one */
-    format = PyUnicode_AsEncodedString(format, TZNAME_ENCODING, NULL);
+    format = PyUnicode_AsEncodedString(format_arg, TZNAME_ENCODING, NULL);
     if (format == NULL)
         return NULL;
     fmt = PyBytes_AS_STRING(format);
