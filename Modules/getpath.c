@@ -236,7 +236,8 @@ copy_absolute(wchar_t *path, wchar_t *p)
     if (p[0] == SEP)
         wcscpy(path, p);
     else {
-        _Py_wgetcwd(path, MAXPATHLEN);
+        if (!_Py_wgetcwd(path, MAXPATHLEN))
+            Py_FatalError("unable to get the current directory");
         if (p[0] == '.' && p[1] == SEP)
             p += 2;
         joinpath(path, p);
