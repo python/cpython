@@ -321,7 +321,8 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
 
 #ifdef HAVE_REALPATH
 wchar_t*
-_Py_wrealpath(const wchar_t *path, wchar_t *resolved_path)
+_Py_wrealpath(const wchar_t *path,
+              wchar_t *resolved_path, size_t resolved_path_size)
 {
     char *cpath;
     char cresolved_path[PATH_MAX];
@@ -336,7 +337,7 @@ _Py_wrealpath(const wchar_t *path, wchar_t *resolved_path)
     PyMem_Free(cpath);
     if (res == NULL)
         return NULL;
-    r = mbstowcs(resolved_path, cresolved_path, PATH_MAX);
+    r = mbstowcs(resolved_path, cresolved_path, resolved_path_size);
     if (r == (size_t)-1 || r >= PATH_MAX) {
         errno = EINVAL;
         return NULL;

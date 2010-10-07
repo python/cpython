@@ -41,7 +41,8 @@ PyAPI_FUNC(int) _Py_wreadlink(
 #ifdef HAVE_REALPATH
 PyAPI_FUNC(wchar_t*) _Py_wrealpath(
     const wchar_t *path,
-    wchar_t *resolved_path);
+    wchar_t *resolved_path,
+    size_t resolved_path_size);
 #endif
 
 PyAPI_FUNC(wchar_t*) _Py_wgetcwd(
