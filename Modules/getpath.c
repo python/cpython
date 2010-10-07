@@ -300,7 +300,11 @@ copy_absolute(wchar_t *path, wchar_t *p)
     if (p[0] == SEP)
         wcscpy(path, p);
     else {
-        _wgetcwd(path, MAXPATHLEN);
+        if (!_wgetcwd(path, MAXPATHLEN)) {
+            /* unable to get the current directory */
+            wcscpy(path, p);
+            return;
+        }
         if (p[0] == '.' && p[1] == SEP)
             p += 2;
         joinpath(path, p);
