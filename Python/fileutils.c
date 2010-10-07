@@ -215,24 +215,19 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
    PyErr_Occurred()) unicode error. */
 
 int
-_Py_stat(PyObject *unicode, struct stat *statbuf)
+_Py_stat(PyObject *path, struct stat *statbuf)
 {
 #ifdef MS_WINDOWS
-    wchar_t *path;
     int err;
     struct _stat wstatbuf;
 
-    path = PyUnicode_AsWideCharString(unicode, NULL);
-    if (path == NULL)
-        return -1;
-    err = _wstat(path, &wstatbuf);
-    PyMem_Free(path);
+    err = _wstat(PyUnicode_AS_UNICODE(path), &wstatbuf);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
     return err;
 #else
     int ret;
-    PyObject *bytes = PyUnicode_EncodeFSDefault(unicode);
+    PyObject *bytes = PyUnicode_EncodeFSDefault(path);
     if (bytes == NULL)
         return -1;
     ret = stat(PyBytes_AS_STRING(bytes), statbuf);
@@ -270,27 +265,20 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
    PyErr_Occurred()) on unicode error */
 
 FILE*
-_Py_fopen(PyObject *unicode, const char *mode)
+_Py_fopen(PyObject *path, const char *mode)
 {
 #ifdef MS_WINDOWS
-    wchar_t *path;
     wchar_t wmode[10];
     int usize;
-    FILE *f;
 
     usize = MultiByteToWideChar(CP_ACP, 0, mode, -1, wmode, sizeof(wmode));
     if (usize == 0)
         return NULL;
 
-    path = PyUnicode_AsWideCharString(unicode, NULL);
-    if (path == NULL)
-        return NULL;
-    f = _wfopen(path, wmode);
-    PyMem_Free(path);
-    return f;
+    return _wfopen(PyUnicode_AS_UNICODE(path), wmode);
 #else
     FILE *f;
-    PyObject *bytes = PyUnicode_EncodeFSDefault(unicode);
+    PyObject *bytes = PyUnicode_EncodeFSDefault(path);
     if (bytes == NULL)
         return NULL;
     f = fopen(PyBytes_AS_STRING(bytes), mode);

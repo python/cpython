@@ -19,7 +19,7 @@ PyAPI_FUNC(int) _Py_wstat(
 
 #ifdef HAVE_STAT
 PyAPI_FUNC(int) _Py_stat(
-    PyObject *unicode,
+    PyObject *path,
     struct stat *statbuf);
 #endif
 
@@ -28,7 +28,7 @@ PyAPI_FUNC(FILE *) _Py_wfopen(
     const wchar_t *mode);
 
 PyAPI_FUNC(FILE*) _Py_fopen(
-    PyObject *unicode,
+    PyObject *path,
     const char *mode);
 
 #ifdef HAVE_READLINK
