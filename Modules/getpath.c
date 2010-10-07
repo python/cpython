@@ -232,7 +232,11 @@ copy_absolute(char *path, char *p)
     if (p[0] == SEP)
         strcpy(path, p);
     else {
-        getcwd(path, MAXPATHLEN);
+        if (!getcwd(path, MAXPATHLEN)) {
+            /* unable to get the current directory */
+            strcpy(path, p);
+            return;
+        }
         if (p[0] == '.' && p[1] == SEP)
             p += 2;
         joinpath(path, p);
