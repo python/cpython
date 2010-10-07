@@ -33,6 +33,12 @@ import multiprocessing.pool
 
 from multiprocessing import util
 
+try:
+    from multiprocessing.sharedctypes import Value, copy
+    HAS_SHAREDCTYPES = True
+except ImportError:
+    HAS_SHAREDCTYPES = False
+
 #
 #
 #
@@ -71,16 +77,6 @@ try:
 except ImportError:
     Structure = object
     c_int = c_double = None
-
-try:
-    from ctypes import Value
-except ImportError:
-    Value = None
-
-try:
-    from ctypes import copy as ctypes_copy
-except ImportError:
-    ctypes_copy = None
 
 #
 # Creates a wrapper for a function which records the time it takes to finish
@@ -800,6 +796,8 @@ class _TestEvent(BaseTestCase):
 #
 #
 
+@unittest.skipUnless(HAS_SHAREDCTYPES,
+                     "requires multiprocessing.sharedctypes")
 class _TestValue(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
@@ -816,7 +814,6 @@ class _TestValue(BaseTestCase):
             sv.value = cv[2]
 
 
-    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_value(self, raw=False):
         if raw:
             values = [self.RawValue(code, value)
@@ -835,11 +832,9 @@ class _TestValue(BaseTestCase):
         for sv, cv in zip(values, self.codes_values):
             self.assertEqual(sv.value, cv[2])
 
-    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_rawvalue(self):
         self.test_value(raw=True)
 
-    @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_getobj_getlock(self):
         val1 = self.Value('i', 5)
         lock1 = val1.get_lock()
@@ -1559,6 +1554,8 @@ class _Foo(Structure):
         ('y', c_double)
         ]
 
+@unittest.skipUnless(HAS_SHAREDCTYPES,
+                     "requires multiprocessing.sharedctypes")
 class _TestSharedCTypes(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
@@ -1572,14 +1569,13 @@ class _TestSharedCTypes(BaseTestCase):
         for i in range(len(arr)):
             arr[i] *= 2
 
-    @unittest.skipIf(Value is None, "requires ctypes.Value")
     def test_sharedctypes(self, lock=False):
         x = Value('i', 7, lock=lock)
-        y = Value(ctypes.c_double, 1.0/3.0, lock=lock)
+        y = Value(c_double, 1.0/3.0, lock=lock)
         foo = Value(_Foo, 3, 2, lock=lock)
-        arr = Array('d', list(range(10)), lock=lock)
-        string = Array('c', 20, lock=lock)
-        string.value = 'hello'
+        arr = self.Array('d', list(range(10)), lock=lock)
+        string = self.Array('c', 20, lock=lock)
+        string.value = latin('hello')
 
         p = self.Process(target=self._double, args=(x, y, foo, arr, string))
         p.start()
@@ -1593,14 +1589,12 @@ class _TestSharedCTypes(BaseTestCase):
             self.assertAlmostEqual(arr[i], i*2)
         self.assertEqual(string.value, latin('hellohello'))
 
-    @unittest.skipIf(Value is None, "requires ctypes.Value")
     def test_synchronize(self):
         self.test_sharedctypes(lock=True)
 
-    @unittest.skipIf(ctypes_copy is None, "requires ctypes.copy")
     def test_copy(self):
         foo = _Foo(2, 5.0)
-        bar = ctypes_copy(foo)
+        bar = copy(foo)
         foo.x = 0
         foo.y = 0
         self.assertEqual(bar.x, 2)
