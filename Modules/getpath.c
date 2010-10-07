@@ -179,15 +179,18 @@ _wgetcwd(wchar_t *buf, size_t size)
 int
 _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
 {
+    char *cpath;
     char cbuf[PATH_MAX];
-    char cpath[PATH_MAX];
     int res;
-    size_t r1 = wcstombs(cpath, path, PATH_MAX);
-    if (r1 == (size_t)-1 || r1 >= PATH_MAX) {
+    size_t r1;
+
+    cpath = _Py_wchar2char(path);
+    if (cpath == NULL) {
         errno = EINVAL;
         return -1;
     }
     res = (int)readlink(cpath, cbuf, PATH_MAX);
+    PyMem_Free(cpath);
     if (res == -1)
         return -1;
     if (res == PATH_MAX) {
