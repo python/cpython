@@ -666,7 +666,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         return 0;
 #else
         pa->ffi_type = &ffi_type_pointer;
-        pa->value.p = PyUnicode_AsWideCharString((PyUnicodeObject *)obj, NULL);
+        pa->value.p = PyUnicode_AsWideCharString(obj, NULL);
         if (pa->value.p == NULL)
             return -1;
         pa->keep = PyCapsule_New(pa->value.p, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);

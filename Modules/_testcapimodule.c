@@ -1426,7 +1426,7 @@ unicode_aswidecharstring(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U", &unicode))
         return NULL;
 
-    buffer = PyUnicode_AsWideCharString((PyUnicodeObject*)unicode, &size);
+    buffer = PyUnicode_AsWideCharString(unicode, &size);
     if (buffer == NULL)
         return NULL;
 

@@ -1434,7 +1434,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
         PyObject *keep;
         wchar_t *buffer;
 
-        buffer = PyUnicode_AsWideCharString((PyUnicodeObject *)value, NULL);
+        buffer = PyUnicode_AsWideCharString(value, NULL);
         if (!buffer) {
             Py_DECREF(value);
             return NULL;

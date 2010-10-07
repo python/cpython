@@ -581,7 +581,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_AsWideChar(
    MemoryError. */
 
 PyAPI_FUNC(wchar_t*) PyUnicode_AsWideCharString(
-    PyUnicodeObject *unicode,   /* Unicode object */
+    PyObject *unicode,          /* Unicode object */
     Py_ssize_t *size            /* number of characters of the result */
     );
 
