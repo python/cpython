@@ -10,6 +10,10 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- ast.literal_eval() can now handle negative numbers.  It is also a little
+  more liberal in what it accepts without compromising the safety of the
+  evaluation.  For example, 3j+4 and 3+4+5 are both accepted.
+
 - Issue #10006: type.__abstractmethods__ now raises an AttributeError.  As a
   result metaclasses can now be ABCs (see #9533).
 

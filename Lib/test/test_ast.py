@@ -288,12 +288,14 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.literal_eval('{1, 2, 3}'), {1, 2, 3})
         self.assertEqual(ast.literal_eval('b"hi"'), b"hi")
         self.assertRaises(ValueError, ast.literal_eval, 'foo()')
+        self.assertEqual(ast.literal_eval('-6'), -6)
+        self.assertEqual(ast.literal_eval('-6j+3'), 3-6j)
+        self.assertEqual(ast.literal_eval('3.25'), 3.25)
 
     def test_literal_eval_issue4907(self):
         self.assertEqual(ast.literal_eval('2j'), 2j)
         self.assertEqual(ast.literal_eval('10 + 2j'), 10 + 2j)
         self.assertEqual(ast.literal_eval('1.5 - 2j'), 1.5 - 2j)
-        self.assertRaises(ValueError, ast.literal_eval, '2 + (3 + 4j)')
 
 
 def test_main():
