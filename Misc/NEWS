@@ -311,6 +311,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #9978: Wait until subprocess completes initialization. (Win32KillTests
+  in test_os)
+
 - Issue #7110: regrtest now sends test failure reports and single-failure
   tracebacks to stderr rather than stdout.
 
