@@ -92,6 +92,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1589: Add ssl.match_hostname(), to help implement server identity
+  verification for higher-level protocols.
+
 - Issue #9759: GzipFile now raises ValueError when an operation is attempted
   after the file is closed.  Patch by Jeffrey Finkelstein.
 

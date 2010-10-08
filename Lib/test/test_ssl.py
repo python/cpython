@@ -208,6 +208,77 @@ class BasicSocketTests(unittest.TestCase):
             ssl.wrap_socket(socket.socket(), certfile=WRONGCERT, keyfile=WRONGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
 
+    def test_match_hostname(self):
+        def ok(cert, hostname):
+            ssl.match_hostname(cert, hostname)
+        def fail(cert, hostname):
+            self.assertRaises(ssl.CertificateError,
+                              ssl.match_hostname, cert, hostname)
+
+        cert = {'subject': ((('commonName', 'example.com'),),)}
+        ok(cert, 'example.com')
+        ok(cert, 'ExAmple.cOm')
+        fail(cert, 'www.example.com')
+        fail(cert, '.example.com')
+        fail(cert, 'example.org')
+        fail(cert, 'exampleXcom')
+
+        cert = {'subject': ((('commonName', '*.a.com'),),)}
+        ok(cert, 'foo.a.com')
+        fail(cert, 'bar.foo.a.com')
+        fail(cert, 'a.com')
+        fail(cert, 'Xa.com')
+        fail(cert, '.a.com')
+
+        cert = {'subject': ((('commonName', 'a.*.com'),),)}
+        ok(cert, 'a.foo.com')
+        fail(cert, 'a..com')
+        fail(cert, 'a.com')
+
+        cert = {'subject': ((('commonName', 'f*.com'),),)}
+        ok(cert, 'foo.com')
+        ok(cert, 'f.com')
+        fail(cert, 'bar.com')
+        fail(cert, 'foo.a.com')
+        fail(cert, 'bar.foo.com')
+
+        # Slightly fake real-world example
+        cert = {'notAfter': 'Jun 26 21:41:46 2011 GMT',
+                'subject': ((('commonName', 'linuxfrz.org'),),),
+                'subjectAltName': (('DNS', 'linuxfr.org'),
+                                   ('DNS', 'linuxfr.com'),
+                                   ('othername', '<unsupported>'))}
+        ok(cert, 'linuxfr.org')
+        ok(cert, 'linuxfr.com')
+        # Not a "DNS" entry
+        fail(cert, '<unsupported>')
+        # When there is a subjectAltName, commonName isn't used
+        fail(cert, 'linuxfrz.org')
+
+        # A pristine real-world example
+        cert = {'notAfter': 'Dec 18 23:59:59 2011 GMT',
+                'subject': ((('countryName', 'US'),),
+                            (('stateOrProvinceName', 'California'),),
+                            (('localityName', 'Mountain View'),),
+                            (('organizationName', 'Google Inc'),),
+                            (('commonName', 'mail.google.com'),))}
+        ok(cert, 'mail.google.com')
+        fail(cert, 'gmail.com')
+        # Only commonName is considered
+        fail(cert, 'California')
+
+        # Neither commonName nor subjectAltName
+        cert = {'notAfter': 'Dec 18 23:59:59 2011 GMT',
+                'subject': ((('countryName', 'US'),),
+                            (('stateOrProvinceName', 'California'),),
+                            (('localityName', 'Mountain View'),),
+                            (('organizationName', 'Google Inc'),))}
+        fail(cert, 'mail.google.com')
+
+        # Empty cert / no cert
+        self.assertRaises(ValueError, ssl.match_hostname, None, 'example.com')
+        self.assertRaises(ValueError, ssl.match_hostname, {}, 'example.com')
+
 
 class ContextTests(unittest.TestCase):
 
