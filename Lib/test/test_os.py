@@ -13,6 +13,8 @@ import time
 import shutil
 from test import support
 import contextlib
+import mmap
+import uuid
 
 # Detect whether we're on a Linux system that uses the (now outdated
 # and unmaintained) linuxthreads threading library.  There's an issue
@@ -1029,13 +1031,23 @@ class Win32KillTests(unittest.TestCase):
         self._kill(100)
 
     def _kill_with_event(self, event, name):
+        tagname = "test_os_%s" % uuid.uuid1()
+        m = mmap.mmap(-1, 1, tagname)
+        m[0] = 0
         # Run a script which has console control handling enabled.
         proc = subprocess.Popen([sys.executable,
                    os.path.join(os.path.dirname(__file__),
-                                "win_console_handler.py")],
+                                "win_console_handler.py"), tagname],
                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         # Let the interpreter startup before we send signals. See #3137.
-        time.sleep(0.5)
+        count, max = 0, 20
+        while count < max and proc.poll() is None:
+            if m[0] == 0:
+                break
+            time.sleep(0.5)
+            count += 1
+        else:
+            self.fail("Subprocess didn't finish initialization")
         os.kill(proc.pid, event)
         # proc.send_signal(event) could also be done here.
         # Allow time for the signal to be passed and the process to exit.
