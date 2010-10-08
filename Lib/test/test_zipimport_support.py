@@ -13,7 +13,7 @@ import doctest
 import inspect
 import linecache
 import pdb
-from test.script_helper import (spawn_python, kill_python, run_python,
+from test.script_helper import (spawn_python, kill_python, assert_python_ok,
                                 temp_dir, make_script, make_zip_script)
 
 verbose = test.support.verbose
@@ -177,22 +177,22 @@ class ZipSupportTests(ImportHooksBaseTestCase):
         pattern = 'File "%s", line 2, in %s'
         with temp_dir() as d:
             script_name = make_script(d, 'script', test_src)
-            exit_code, data = run_python(script_name)
+            rc, out, err = assert_python_ok(script_name)
             expected = pattern % (script_name, "__main__.Test")
             if verbose:
                 print ("Expected line", expected)
                 print ("Got stdout:")
-                print (data)
-            self.assertIn(expected.encode('utf-8'), data)
+                print (out)
+            self.assertIn(expected.encode('utf-8'), out)
             zip_name, run_name = make_zip_script(d, "test_zip",
                                                 script_name, '__main__.py')
-            exit_code, data = run_python(zip_name)
+            rc, out, err = assert_python_ok(zip_name)
             expected = pattern % (run_name, "__main__.Test")
             if verbose:
                 print ("Expected line", expected)
                 print ("Got stdout:")
-                print (data)
-            self.assertIn(expected.encode('utf-8'), data)
+                print (out)
+            self.assertIn(expected.encode('utf-8'), out)
 
     def test_pdb_issue4201(self):
         test_src = textwrap.dedent("""\

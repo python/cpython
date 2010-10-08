@@ -15,12 +15,27 @@ from imp import source_from_cache
 from test.support import make_legacy_pyc
 
 # Executing the interpreter in a subprocess
-def python_exit_code(*args):
+def _assert_python(expected_success, *args):
     cmd_line = [sys.executable, '-E']
     cmd_line.extend(args)
-    with open(os.devnull, 'w') as devnull:
-        return subprocess.call(cmd_line, stdout=devnull,
-                                stderr=subprocess.STDOUT)
+    p = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        out, err = p.communicate()
+    finally:
+        subprocess._cleanup()
+    rc = p.returncode
+    if (rc and expected_success) or (not rc and not expected_success):
+        raise AssertionError(
+            "Process return code is %d, "
+            "stderr follows:\n%s" % (rc, err.decode('ascii', 'ignore')))
+    return rc, out, err
+
+def assert_python_ok(*args):
+    return _assert_python(True, *args)
+
+def assert_python_failure(*args):
+    return _assert_python(False, *args)
 
 def spawn_python(*args):
     cmd_line = [sys.executable, '-E']
@@ -37,14 +52,6 @@ def kill_python(p):
     p.wait()
     subprocess._cleanup()
     return data
-
-def run_python(*args):
-    if __debug__:
-        p = spawn_python(*args)
-    else:
-        p = spawn_python('-O', *args)
-    stdout_data = kill_python(p)
-    return p.wait(), stdout_data
 
 # Script creation utilities
 @contextlib.contextmanager
