@@ -118,7 +118,7 @@ version 5.0:
   convert message bodies that have a :mailheader:`Content-Transfer-Encoding` of
   8bit to instead have a 7bit Content-Transfer-Encoding.
 
-* New function :class:`~email.generator.BytesGenerator` produces bytes
+* New class :class:`~email.generator.BytesGenerator` produces bytes
   as output, preserving any unchanged non-ASCII data that was
   present in the input used to build the model, including message bodies
   with a :mailheader:`Content-Transfer-Encoding` of 8bit.

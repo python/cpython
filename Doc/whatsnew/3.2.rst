@@ -184,6 +184,34 @@ module::
       PEP written by Barry Warsaw.
 
 
+Email 5.1
+=========
+
+The email package is extended to be able to parse and generate email messages
+in bytes format.
+
+* New functions :func:`~email.message_from_bytes` and
+  :func:`~email.message_from_binary_file`, and new classes
+  :class:`~email.parser.BytesFeedParser` and :class:`~email.parser.BytesParser`
+  allow binary message data to be parsed into model objects.
+
+* Given bytes input to the model, :meth:`~email.message.Message.get_payload`
+  will by default decode a message body that has a
+  :mailheader:`Content-Transfer-Encoding` of `8bit` using the charset specified
+  in the MIME headers and return the resulting string.
+
+* Given bytes input to the model, :class:`~email.generator.Generator` will
+  convert message bodies that have a :mailheader:`Content-Transfer-Encoding` of
+  8bit to instead have a 7bit Content-Transfer-Encoding.
+
+* New class :class:`~email.generator.BytesGenerator` produces bytes
+  as output, preserving any unchanged non-ASCII data that was
+  present in the input used to build the model, including message bodies
+  with a :mailheader:`Content-Transfer-Encoding` of 8bit.
+
+  (Proposed and implemented by R. David Murray, :issue:`4661`.)
+
+
 Other Language Changes
 ======================
 
