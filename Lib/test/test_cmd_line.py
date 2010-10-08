@@ -5,7 +5,7 @@
 import test.support, unittest
 import os
 import sys
-from test.script_helper import spawn_python, kill_python, python_exit_code
+from test.script_helper import spawn_python, kill_python, assert_python_ok, assert_python_failure
 
 # spawn_python normally enforces use of -E to avoid environmental effects
 # but one test checks PYTHONPATH behaviour explicitly
@@ -26,25 +26,15 @@ def _kill_python_and_exit_code(p):
     return data, returncode
 
 class CmdLineTest(unittest.TestCase):
-    def start_python(self, *args):
-        p = spawn_python(*args)
-        return kill_python(p)
-
-    def start_python_and_exit_code(self, *args):
-        p = spawn_python(*args)
-        return _kill_python_and_exit_code(p)
-
-    def exit_code(self, *args):
-        return python_exit_code(*args)
-
     def test_directories(self):
-        self.assertNotEqual(self.exit_code('.'), 0)
-        self.assertNotEqual(self.exit_code('< .'), 0)
+        assert_python_failure('.')
+        assert_python_failure('< .')
 
     def verify_valid_flag(self, cmd_line):
-        data = self.start_python(cmd_line)
-        self.assertTrue(data == b'' or data.endswith(b'\n'))
-        self.assertNotIn(b'Traceback', data)
+        rc, out, err = assert_python_ok(*cmd_line)
+        self.assertTrue(out == b'' or out.endswith(b'\n'))
+        self.assertNotIn(b'Traceback', out)
+        self.assertNotIn(b'Traceback', err)
 
     def test_optimize(self):
         self.verify_valid_flag('-O')
@@ -60,40 +50,34 @@ class CmdLineTest(unittest.TestCase):
         self.verify_valid_flag('-S')
 
     def test_usage(self):
-        self.assertIn(b'usage', self.start_python('-h'))
+        rc, out, err = assert_python_ok('-h')
+        self.assertIn(b'usage', out)
 
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
-        self.assertTrue(self.start_python('-V').startswith(version))
+        rc, out, err = assert_python_ok('-V')
+        self.assertTrue(err.startswith(version))
 
     def test_verbose(self):
         # -v causes imports to write to stderr.  If the write to
         # stderr itself causes an import to happen (for the output
         # codec), a recursion loop can occur.
-        data, rc = self.start_python_and_exit_code('-v')
-        self.assertEqual(rc, 0)
-        self.assertNotIn(b'stack overflow', data)
-        data, rc = self.start_python_and_exit_code('-vv')
-        self.assertEqual(rc, 0)
-        self.assertNotIn(b'stack overflow', data)
+        rc, out, err = assert_python_ok('-v')
+        self.assertNotIn(b'stack overflow', err)
+        rc, out, err = assert_python_ok('-vv')
+        self.assertNotIn(b'stack overflow', err)
 
     def test_run_module(self):
         # Test expected operation of the '-m' switch
         # Switch needs an argument
-        self.assertNotEqual(self.exit_code('-m'), 0)
+        assert_python_failure('-m')
         # Check we get an error for a nonexistent module
-        self.assertNotEqual(
-            self.exit_code('-m', 'fnord43520xyz'),
-            0)
+        assert_python_failure('-m', 'fnord43520xyz')
         # Check the runpy module also gives an error for
         # a nonexistent module
-        self.assertNotEqual(
-            self.exit_code('-m', 'runpy', 'fnord43520xyz'),
-            0)
+        assert_python_failure('-m', 'runpy', 'fnord43520xyz'),
         # All good if module is located and run successfully
-        self.assertEqual(
-            self.exit_code('-m', 'timeit', '-n', '1'),
-            0)
+        assert_python_ok('-m', 'timeit', '-n', '1'),
 
     def test_run_module_bug1764407(self):
         # -m and -i need to play well together
@@ -109,22 +93,16 @@ class CmdLineTest(unittest.TestCase):
     def test_run_code(self):
         # Test expected operation of the '-c' switch
         # Switch needs an argument
-        self.assertNotEqual(self.exit_code('-c'), 0)
+        assert_python_failure('-c')
         # Check we get an error for an uncaught exception
-        self.assertNotEqual(
-            self.exit_code('-c', 'raise Exception'),
-            0)
+        assert_python_failure('-c', 'raise Exception')
         # All good if execution is successful
-        self.assertEqual(
-            self.exit_code('-c', 'pass'),
-            0)
+        assert_python_ok('-c', 'pass')
 
         # Test handling of non-ascii data
         if sys.getfilesystemencoding() != 'ascii':
             command = "assert(ord('\xe9') == 0xe9)"
-            self.assertEqual(
-                self.exit_code('-c', command),
-                0)
+            assert_python_ok('-c', command)
 
     def test_unbuffered_output(self):
         # Test expected operation of the '-u' switch
@@ -132,14 +110,14 @@ class CmdLineTest(unittest.TestCase):
             # Binary is unbuffered
             code = ("import os, sys; sys.%s.buffer.write(b'x'); os._exit(0)"
                 % stream)
-            data, rc = self.start_python_and_exit_code('-u', '-c', code)
-            self.assertEqual(rc, 0)
+            rc, out, err = assert_python_ok('-u', '-c', code)
+            data = err if stream == 'stderr' else out
             self.assertEqual(data, b'x', "binary %s not unbuffered" % stream)
             # Text is line-buffered
             code = ("import os, sys; sys.%s.write('x\\n'); os._exit(0)"
                 % stream)
-            data, rc = self.start_python_and_exit_code('-u', '-c', code)
-            self.assertEqual(rc, 0)
+            rc, out, err = assert_python_ok('-u', '-c', code)
+            data = err if stream == 'stderr' else out
             self.assertEqual(data.strip(), b'x',
                 "text %s not line-buffered" % stream)
 
