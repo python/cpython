@@ -36,6 +36,11 @@ HOST = support.HOST
 
 data_file = lambda name: os.path.join(os.path.dirname(__file__), name)
 
+# The custom key and certificate files used in test_ssl are generated
+# using Lib/test/make_ssl_certs.py.
+# Other certificates are simply fetched from the Internet servers they
+# are meant to authenticate.
+
 CERTFILE = data_file("keycert.pem")
 BYTES_CERTFILE = os.fsencode(CERTFILE)
 ONLYCERT = data_file("ssl_cert.pem")
@@ -368,7 +373,7 @@ class ContextTests(unittest.TestCase):
         # Mismatching key and cert
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         with self.assertRaisesRegexp(ssl.SSLError, "key values mismatch"):
-            ctx.load_cert_chain(CERTFILE, ONLYKEY)
+            ctx.load_cert_chain(SVN_PYTHON_ORG_ROOT_CERT, ONLYKEY)
 
     def test_load_verify_locations(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
