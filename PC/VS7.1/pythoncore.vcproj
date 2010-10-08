@@ -436,6 +436,9 @@
 			RelativePath="..\..\Modules\_time.c">
 		</File>
 		<File
+			RelativePath="..\..\Python\_warnings.c">
+		</File>
+		<File
 			RelativePath="..\..\Modules\_weakref.c">
 		</File>
 		<File
@@ -446,9 +449,6 @@
 		</File>
 		<File
 			RelativePath="..\..\Modules\arraymodule.c">
-		</File>
-		<File
-			RelativePath="..\..\Python\_warnings.c">
 		</File>
 		<File
 			RelativePath="..\..\Python\asdl.c">
@@ -545,6 +545,9 @@
 		</File>
 		<File
 			RelativePath="..\..\Objects\fileobject.c">
+		</File>
+		<File
+			RelativePath="..\..\Python\fileutils.c">
 		</File>
 		<File
 			RelativePath="..\..\Parser\firstsets.c">

@@ -369,6 +369,10 @@ SOURCE=..\..\Objects\fileobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Python\fileutils.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Parser\firstsets.c
 # End Source File
 # Begin Source File
