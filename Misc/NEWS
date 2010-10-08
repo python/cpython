@@ -317,6 +317,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #1051: Add a script (Lib/test/make_ssl_certs.py) to generate the
+  custom certificate and private key files used by SSL-related certs.
+
 - Issue #9978: Wait until subprocess completes initialization. (Win32KillTests
   in test_os)
 
