@@ -482,3 +482,10 @@ class FeedParser:
         if lastheader:
             # XXX reconsider the joining of folded lines
             self._cur[lastheader] = EMPTYSTRING.join(lastvalue).rstrip('\r\n')
+
+
+class BytesFeedParser(FeedParser):
+    """Like FeedParser, but feed accepts bytes."""
+
+    def feed(self, data):
+        super().feed(data.decode('ascii', 'surrogateescape'))

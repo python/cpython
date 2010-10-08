@@ -22,6 +22,12 @@ the Generator on a :class:`~email.message.Message` constructed by program may
 result in changes to the :class:`~email.message.Message` object as defaults are
 filled in.
 
+:class:`bytes` output can be generated using the :class:`BytesGenerator` class.
+If the message object structure contains non-ASCII bytes, this generator's
+:meth:`~BytesGenerator.flatten` method will emit the original bytes.  Parsing a
+binary message and then flattening it with :class:`BytesGenerator` should be
+idempotent for standards compliant messages.
+
 Here are the public methods of the :class:`Generator` class, imported from the
 :mod:`email.generator` module:
 
@@ -65,6 +71,13 @@ Here are the public methods of the :class:`Generator` class, imported from the
 
       Note that for subparts, no envelope header is ever printed.
 
+      Messages parsed with a Bytes parser that have a
+      :mailheader:`Content-Transfer-Encoding` of 8bit will be converted to a
+      use a 7bit Content-Transfer-Encoding.  Any other non-ASCII bytes in the
+      message structure will be converted to '?' characters.
+
+      .. versionchanged:: 3.2 added support for re-encoding 8bit message bodies.
+
    .. method:: clone(fp)
 
       Return an independent clone of this :class:`Generator` instance with the
@@ -76,10 +89,26 @@ Here are the public methods of the :class:`Generator` class, imported from the
       :class:`Generator`'s constructor.  This provides just enough file-like API
       for :class:`Generator` instances to be used in the :func:`print` function.
 
-As a convenience, see the methods :meth:`Message.as_string` and
-``str(aMessage)``, a.k.a. :meth:`Message.__str__`, which simplify the generation
-of a formatted string representation of a message object.  For more detail, see
+As a convenience, see the :class:`~email.message.Message` methods
+:meth:`~email.message.Message.as_string` and ``str(aMessage)``, a.k.a.
+:meth:`~email.message.Message.__str__`, which simplify the generation of a
+formatted string representation of a message object.  For more detail, see
 :mod:`email.message`.
+
+.. class:: BytesGenerator(outfp, mangle_from_=True, maxheaderlen=78, fmt=None)
+
+   This class has the same API as the :class:`Generator` class, except that
+   *outfp* must be a file like object that will accept :class`bytes` input to
+   its `write` method.  If the message object structure contains non-ASCII
+   bytes, this generator's :meth:`~BytesGenerator.flatten` method will produce
+   them as-is, including preserving parts with a
+   :mailheader:`Content-Transfer-Encoding` of ``8bit``.
+
+   Note that even the :meth:`write` method API is identical:  it expects
+   strings as input, and converts them to bytes by encoding them using
+   the ASCII codec.
+
+   .. versionadded:: 3.2
 
 The :mod:`email.generator` module also provides a derived class, called
 :class:`DecodedGenerator` which is like the :class:`Generator` base class,
