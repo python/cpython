@@ -403,6 +403,11 @@ New, Improved, and Deprecated Modules
   :meth:`~ssl.SSLContext.wrap_socket` method allows to create an SSL socket from
   such an SSL context.  (Added by Antoine Pitrou; :issue:`8550`.)
 
+  A new function, :func:`ssl.match_hostname`, helps implement server identity
+  verification for higher-level protocols by implementing the rules of
+  HTTPS (from :rfc:`2818`), which are also suitable for other protocols.
+  (Added by Antoine Pitrou, :issue:`1589`).
+
   The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
   argument that's a string listing the encryption algorithms to be allowed; the
   format of the string is described `in the OpenSSL documentation
