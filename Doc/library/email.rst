@@ -6,7 +6,7 @@
               email messages, including MIME documents.
 .. moduleauthor:: Barry A. Warsaw <barry@python.org>
 .. sectionauthor:: Barry A. Warsaw <barry@python.org>
-.. Copyright (C) 2001-2007 Python Software Foundation
+.. Copyright (C) 2001-2010 Python Software Foundation
 
 
 The :mod:`email` package is a library for managing email messages, including
@@ -92,6 +92,44 @@ table also describes the Python compatibility of each version of the package.
 +---------------+------------------------------+-----------------------+
 | :const:`4.0`  | Python 2.5                   | Python 2.3 to 2.5     |
 +---------------+------------------------------+-----------------------+
+| :const:`5.0`  | Python 3.0 and Python 3.1    | Python 3.0 to 3.2     |
++---------------+------------------------------+-----------------------+
+| :const:`5.1`  | Python 3.2                   | Python 3.0 to 3.2     |
++---------------+------------------------------+-----------------------+
+
+Here are the major differences between :mod:`email` version 5.1 and
+version 5.0:
+
+* It is once again possible to parse messages containing non-ASCII bytes,
+  and to reproduce such messages if the data containing the non-ASCII
+  bytes is not modified.
+
+* New functions :func:`message_from_bytes` and :func:`message_from_binary_file`,
+  and new classes :class:`~email.parser.BytesFeedParser` and
+  :class:`~email.parser.BytesParser` allow binary message data to be parsed
+  into model objects.
+
+* Given bytes input to the model, :meth:`~email.message.Message.get_payload`
+  will by default decode a message body that has a
+  :mailheader:`Content-Transfer-Encoding` of `8bit` using the charset specified
+  in the MIME headers and return the resulting string.
+
+* Given bytes input to the model, :class:`~email.generator.Generator` will
+  convert message bodies that have a :mailheader:`Content-Transfer-Encoding` of
+  8bit to instead have a 7bit Content-Transfer-Encoding.
+
+* New function :class:`~email.generator.BytesGenerator` produces bytes
+  as output, preserving any unchanged non-ASCII data that was
+  present in the input used to build the model, including message bodies
+  with a :mailheader:`Content-Transfer-Encoding` of 8bit.
+
+Here are the major differences between :mod:`email` version 5.0 and version 4:
+
+* All operations are on unicode strings.  Text inputs must be strings,
+  text outputs are strings.  Outputs are limited to the ASCII character
+  set and so can be encoded to ASCII for transmission.  Inputs are also
+  limited to ASCII; this is an acknowledged limitation of email 5.0 and
+  means it can only be used to parse email that is 7bit clean.
 
 Here are the major differences between :mod:`email` version 4 and version 3:
 
