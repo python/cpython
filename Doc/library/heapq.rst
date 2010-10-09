@@ -203,9 +203,6 @@ entry as invalid and optionally add a new entry with the revised priority::
 Theory
 ------
 
-(This explanation is due to François Pinard.  The Python code for this module
-was contributed by Kevin O'Connor.)
-
 Heaps are arrays for which ``a[k] <= a[2*k+1]`` and ``a[k] <= a[2*k+2]`` for all
 *k*, counting elements from 0.  For the sake of comparison, non-existing
 elements are considered to be infinite.  The interesting property of a heap is
