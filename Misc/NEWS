@@ -368,6 +368,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #10055: Make json C89-compliant in UCS4 mode.
+
 - Issue #1633863: Don't ignore $CC under AIX.
 
 - Issue #9810: Compile bzip2 source files in python's project file
