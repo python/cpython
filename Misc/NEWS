@@ -346,6 +346,8 @@ Tests
 Build
 -----
 
+- Issue #10055: Make json C89-compliant in UCS4 mode.
+
 - Issue #9552: Avoid unnecessary rebuild of OpenSSL. (Windows)
 
 - Issue #1633863: Don't ignore $CC under AIX.
