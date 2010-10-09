@@ -134,7 +134,7 @@ in various ways.  There is a separate error indicator for each thread.
    This is the most common way to set the error indicator.  The first argument
    specifies the exception type; it is normally one of the standard exceptions,
    e.g. :c:data:`PyExc_RuntimeError`.  You need not increment its reference count.
-   The second argument is an error message; it is converted to a string object.
+   The second argument is an error message; it is decoded from ``'utf-8``'.
 
 
 .. c:function:: void PyErr_SetObject(PyObject *type, PyObject *value)
@@ -261,6 +261,8 @@ in various ways.  There is a separate error indicator for each thread.
    *filename* is not *NULL*, it is passed to the constructor of *type* as a third
    parameter.  In the case of exceptions such as :exc:`IOError` and :exc:`OSError`,
    this is used to define the :attr:`filename` attribute of the exception instance.
+   *filename* is decoded from the filesystem encoding
+   (:func:`sys.getfilesystemencoding`).
 
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
