@@ -1450,8 +1450,8 @@ class PyBuildExt(build_ext):
         # The versions with dots are used on Unix, and the versions without
         # dots on Windows, for detection by cygwin.
         tcllib = tklib = tcl_includes = tk_includes = None
-        for version in ['8.5', '85', '8.4', '84', '8.3', '83', '8.2',
-                        '82', '8.1', '81', '8.0', '80']:
+        for version in ['8.6', '86', '8.5', '85', '8.4', '84', '8.3', '83',
+                        '8.2', '82', '8.1', '81', '8.0', '80']:
             tklib = self.compiler.find_library_file(lib_dirs, 'tk' + version)
             tcllib = self.compiler.find_library_file(lib_dirs, 'tcl' + version)
             if tklib and tcllib:
