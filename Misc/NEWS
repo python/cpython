@@ -600,6 +600,8 @@ Extension Modules
 Build
 -----
 
+- Issue #10055: Make json C89-compliant in UCS4 mode.
+
 - Issue #6244: Allow detect_tkinter to look for Tcl/Tk 8.6.
 
 - Issue #1633863: Don't ignore $CC under AIX.
