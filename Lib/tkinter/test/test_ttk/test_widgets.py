@@ -13,7 +13,7 @@ class WidgetTest(unittest.TestCase):
 
     def setUp(self):
         support.root_deiconify()
-        self.widget = ttk.Button()
+        self.widget = ttk.Button(width=0, text="Text")
         self.widget.pack()
         self.widget.wait_visibility()
 
@@ -24,7 +24,10 @@ class WidgetTest(unittest.TestCase):
 
     def test_identify(self):
         self.widget.update_idletasks()
-        self.assertEqual(self.widget.identify(5, 5), "label")
+        self.assertEqual(self.widget.identify(
+            int(self.widget.winfo_width() / 2),
+            int(self.widget.winfo_height() / 2)
+            ), "label")
         self.assertEqual(self.widget.identify(-1, -1), "")
 
         self.assertRaises(tkinter.TclError, self.widget.identify, None, 5)
@@ -530,7 +533,7 @@ class NotebookTest(unittest.TestCase):
 
     def setUp(self):
         support.root_deiconify()
-        self.nb = ttk.Notebook()
+        self.nb = ttk.Notebook(padding=0)
         self.child1 = ttk.Label()
         self.child2 = ttk.Label()
         self.nb.add(self.child1, text='a')
@@ -717,6 +720,7 @@ class NotebookTest(unittest.TestCase):
         self.nb.tab(self.child1, text='a', underline=0)
         self.nb.enable_traversal()
         self.nb.focus_force()
+        support.simulate_mouse_click(self.nb, 5, 5)
         self.nb.event_generate('<Alt-a>')
         self.assertEqual(self.nb.select(), str(self.child1))
 
@@ -725,7 +729,7 @@ class TreeviewTest(unittest.TestCase):
 
     def setUp(self):
         support.root_deiconify()
-        self.tv = ttk.Treeview()
+        self.tv = ttk.Treeview(padding=0)
 
     def tearDown(self):
         self.tv.destroy()
