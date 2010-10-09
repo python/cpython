@@ -564,8 +564,8 @@ scanstring_str(PyObject *pystr, Py_ssize_t end, char *encoding, int strict, Py_s
                 end += 6;
                 /* Decode 4 hex digits */
                 for (; next < end; next++) {
-                    c2 <<= 4;
                     Py_UNICODE digit = buf[next];
+                    c2 <<= 4;
                     switch (digit) {
                         case '0': case '1': case '2': case '3': case '4':
                         case '5': case '6': case '7': case '8': case '9':
@@ -755,8 +755,8 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                 end += 6;
                 /* Decode 4 hex digits */
                 for (; next < end; next++) {
-                    c2 <<= 4;
                     Py_UNICODE digit = buf[next];
+                    c2 <<= 4;
                     switch (digit) {
                         case '0': case '1': case '2': case '3': case '4':
                         case '5': case '6': case '7': case '8': case '9':
