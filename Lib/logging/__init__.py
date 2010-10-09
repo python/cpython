@@ -1445,12 +1445,6 @@ class LoggerAdapter(object):
         """
         self.logger.setLevel(level)
 
-    def isEnabledFor(self, level):
-        """
-        See if the underlying logger is enabled for the specified level.
-        """
-        return self.logger.isEnabledFor(level)
-
     def getEffectiveLevel(self):
         """
         Get the effective level for the underlying logger.
