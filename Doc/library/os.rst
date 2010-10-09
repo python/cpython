@@ -158,9 +158,7 @@ process and user.
 .. function:: fsencode(filename)
 
    Encode *filename* to the filesystem encoding with ``'surrogateescape'``
-   error handler, return :class:`bytes` unchanged. On Windows, use ``'strict'``
-   error handler if the filesystem encoding is ``'mbcs'`` (which is the default
-   encoding).
+   error handler, or ``'strict'`` on Windows; return :class:`bytes` unchanged.
 
    :func:`fsdecode` is the reverse function.
 
@@ -170,9 +168,7 @@ process and user.
 .. function:: fsdecode(filename)
 
    Decode *filename* from the filesystem encoding with ``'surrogateescape'``
-   error handler, return :class:`str` unchanged. On Windows, use ``'strict'``
-   error handler if the filesystem encoding is ``'mbcs'`` (which is the default
-   encoding).
+   error handler, or ``'strict'`` on Windows; return :class:`str` unchanged.
 
    :func:`fsencode` is the reverse function.
 

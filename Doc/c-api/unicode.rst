@@ -412,26 +412,33 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
+   Decode a string using :c:data:`Py_FileSystemDefaultEncoding` and the
+   ``'surrogateescape'`` error handler, or ``'strict'`` on Windows.
+
+   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
+
+   .. versionchanged:: 3.2
+      Use ``'strict'`` error handler on Windows.
+
+
+.. c:function:: PyObject* PyUnicode_DecodeFSDefault(const char *s)
+
    Decode a null-terminated string using :c:data:`Py_FileSystemDefaultEncoding`
-   and the ``"surrogateescape"`` error handler.
+   and the ``'surrogateescape'`` error handler, or ``'strict'`` on Windows.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
 
    Use :c:func:`PyUnicode_DecodeFSDefaultAndSize` if you know the string length.
 
-
-.. c:function:: PyObject* PyUnicode_DecodeFSDefault(const char *s)
-
-   Decode a string using :c:data:`Py_FileSystemDefaultEncoding` and
-   the ``"surrogateescape"`` error handler.
-
-   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
+   .. versionchanged:: 3.2
+      Use ``'strict'`` error handler on Windows.
 
 
 .. c:function:: PyObject* PyUnicode_EncodeFSDefault(PyObject *unicode)
 
    Encode a Unicode object to :c:data:`Py_FileSystemDefaultEncoding` with the
-   ``'surrogateescape'`` error handler, and return :class:`bytes`.
+   ``'surrogateescape'`` error handler, or ``'strict'`` on Windows, and return
+   :class:`bytes`.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
 
