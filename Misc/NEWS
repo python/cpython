@@ -48,6 +48,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9948: Fixed problem of losing filename case information.
+
 - Issue #9437: Fix building C extensions with non-default LDFLAGS.
 
 - Issue #9759: GzipFile now raises ValueError when an operation is attempted
