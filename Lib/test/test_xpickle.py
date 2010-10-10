@@ -57,7 +57,8 @@ class DumpPickle_LoadCPickle(AbstractPickleTests):
         return cPickle.loads(buf)
 
 def have_python_version(name):
-    """Check whether the given name is a valid Python binary.
+    """Check whether the given name is a valid Python binary and has
+    test.test_support.
 
     This respects your PATH.
 
@@ -67,7 +68,7 @@ def have_python_version(name):
     Returns:
         True if the name is valid, False otherwise.
     """
-    return os.system(name + " -c 'import sys; sys.exit()'") == 0
+    return os.system(name + " -c 'import test.test_support'") == 0
 
 
 class AbstractCompatTests(AbstractPickleTests):
