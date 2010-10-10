@@ -251,6 +251,11 @@ def _parse_makefile(filename, vars=None):
             else:
                 # bogus variable reference; just drop it since we can't deal
                 del notdone[name]
+    # strip spurious spaces
+    for k, v in done.items():
+        if isinstance(v, str):
+            done[k] = v.strip()
+
     # save the results in the global dictionary
     vars.update(done)
     return vars
