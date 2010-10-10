@@ -346,6 +346,8 @@ Tests
 Build
 -----
 
+- Issue #10062: Allow building on platforms which do not have sem_timedwait.
+
 - Issue #10054: Some platforms provide uintptr_t in inttypes.h.  Patch by
   Akira Kitada.
 
