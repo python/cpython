@@ -1220,11 +1220,18 @@ are always available.  They are listed here in alphabetical order.
    iterable argument, it returns an iterator of 1-tuples.  With no arguments,
    it returns an empty iterator.  Equivalent to::
 
-      def zip(*iterables):
-          # zip('ABCD', 'xy') --> Ax By
-          iterables = map(iter, iterables)
-          while iterables:
-              yield tuple(map(next, iterables))
+        def zip(*iterables):
+            # zip('ABCD', 'xy') --> Ax By
+            sentinel = object()
+            iterables = [iter(it) for it in iterables]
+            while iterables:
+                result = []
+                for it in iterables:
+                    elem = next(it, sentinel)
+                    if elem is sentinel:
+                        return
+                    result.append(elem)
+                yield tuple(result)
 
    The left-to-right evaluation order of the iterables is guaranteed. This
    makes possible an idiom for clustering a data series into n-length groups
