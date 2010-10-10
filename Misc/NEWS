@@ -11,11 +11,11 @@ Core and Builtins
 -----------------
 
 - Issue #9738: Document PyErr_SetString() and PyErr_SetFromErrnoWithFilename()
-  encodings
+  encodings.
 
-- ast.literal_eval() can now handle negative numbers.  It is also a little
-  more liberal in what it accepts without compromising the safety of the
-  evaluation.  For example, 3j+4 and 3+4+5 are both accepted.
+- ast.literal_eval() can now handle negative numbers.  It is also a little more
+  liberal in what it accepts without compromising the safety of the evaluation.
+  For example, 3j+4 and 3+4+5 are both accepted.
 
 - Issue #10006: type.__abstractmethods__ now raises an AttributeError.  As a
   result metaclasses can now be ABCs (see #9533).
@@ -23,8 +23,8 @@ Core and Builtins
 - Issue #8670: ctypes.c_wchar supports non-BMP characters with 32 bits wchar_t.
 
 - Issue #8670: PyUnicode_AsWideChar() and PyUnicode_AsWideCharString() replace
-  UTF-16 surrogate pairs by single non-BMP characters for 16 bits Py_UNICODE
-  and 32 bits wchar_t (eg. Linux in narrow build).
+  UTF-16 surrogate pairs by single non-BMP characters for 16 bits Py_UNICODE and
+  32 bits wchar_t (eg. Linux in narrow build).
 
 - Issue #10003: Allow handling of SIGBREAK on Windows. Fixes a regression
   introduced by issue #9324.
@@ -34,12 +34,11 @@ Core and Builtins
 - Issue #7397: Mention that importlib.import_module() is probably what someone
   really wants to be using in __import__'s docstring.
 
-- Issue #8521: Allow CreateKeyEx, OpenKeyEx, and DeleteKeyEx functions
-  of winreg to use named arguments.
+- Issue #8521: Allow CreateKeyEx, OpenKeyEx, and DeleteKeyEx functions of winreg
+  to use named arguments.
 
 - Issue #9930: Remove bogus subtype check that was causing (e.g.)
-  float.__rdiv__(2.0, 3) to return NotImplemented instead of the
-  expected 1.5.
+  float.__rdiv__(2.0, 3) to return NotImplemented instead of the expected 1.5.
 
 - Issue #9808: Implement os.getlogin for Windows. Patch by Jon Anglin.
 
@@ -47,23 +46,21 @@ Core and Builtins
   threads are still running.  Instead, reinitialize the GIL on a second call to
   Py_Initialize().
 
-- All SyntaxErrors now have a column offset and therefore a caret when the
-  error is printed.
+- All SyntaxErrors now have a column offset and therefore a caret when the error
+  is printed.
 
 - Issue #9252: PyImport_Import no longer uses a fromlist hack to return the
   module that was imported, but instead gets the module from sys.modules.
 
-- Issue #9212: The range type_items now provides index() and count()
-  methods, to conform to the Sequence ABC.  Patch by Daniel Urban and
-  Daniel Stutzbach.
+- Issue #9212: The range type_items now provides index() and count() methods, to
+  conform to the Sequence ABC.  Patch by Daniel Urban and Daniel Stutzbach.
 
-- Issue #7994: Issue a PendingDeprecationWarning if object.__format__
-  is called with a non-empty format string. This is an effort to
-  future-proof user code. If a derived class does not currently
-  implement __format__ but later adds its own __format__, it would
-  most likely break user code that had supplied a format string. This
-  will be changed to a DeprecationWaring in Python 3.3 and it will be
-  an error in Python 3.4.
+- Issue #7994: Issue a PendingDeprecationWarning if object.__format__ is called
+  with a non-empty format string.  This is an effort to future-proof user
+  code. If a derived class does not currently implement __format__ but later
+  adds its own __format__, it would most likely break user code that had
+  supplied a format string.  This will be changed to a DeprecationWaring in
+  Python 3.3 and it will be an error in Python 3.4.
 
 - Issue #9828: Destroy the GIL in Py_Finalize(), so that it gets properly
   re-created on a subsequent call to Py_Initialize().  The problem (a crash)
@@ -73,17 +70,17 @@ Core and Builtins
   functions from the libc caused the methods .upper() and lower() to become
   locale aware and created subtly wrong results.
 
-- Issue #9738: PyUnicode_FromFormat() and PyErr_Format() raise an error on
-  a non-ASCII byte in the format string.
+- Issue #9738: PyUnicode_FromFormat() and PyErr_Format() raise an error on a
+  non-ASCII byte in the format string.
 
 - Issue #4617: Previously it was illegal to delete a name from the local
   namespace if it occurs as a free variable in a nested block.  This limitation
   of the compiler has been lifted, and a new opcode introduced (DELETE_DEREF).
 
-- Issue #9804: ascii() now always represents unicode surrogate pairs as
-  a single ``\UXXXXXXXX``, regardless of whether the character is printable
-  or not.  Also, the "backslashreplace" error handler now joins surrogate
-  pairs into a single character on UCS-2 builds.
+- Issue #9804: ascii() now always represents unicode surrogate pairs as a single
+  ``\UXXXXXXXX``, regardless of whether the character is printable or not.
+  Also, the "backslashreplace" error handler now joins surrogate pairs into a
+  single character on UCS-2 builds.
 
 - Issue #9757: memoryview objects get a release() method to release the
   underlying buffer (previously this was only done when deallocating the
@@ -111,42 +108,42 @@ Library
 
 - Issue #6706: asyncore.dispatcher now provides a handle_accepted() method
   returning a (sock, addr) pair which is called when a connection has been
-  established with a new remote endpoint. This is supposed to be used as a
+  established with a new remote endpoint.  This is supposed to be used as a
   replacement for old handle_accept() and avoids the user to call accept()
   directly.
 
 - Issue #9065: tarfile no longer uses "root" as the default for the uname and
   gname field.
 
-- Issue #8980: Fixed a failure in distutils.command check that was shadowed
-  by an environment that does not have docutils. Patch by Arfrever.
+- Issue #8980: Fixed a failure in distutils.command check that was shadowed by
+  an environment that does not have docutils.  Patch by Arfrever.
 
 - Issue #1050268: parseaddr now correctly quotes double quote and backslash
   characters that appear inside quoted strings in email addresses.
 
-- Issue #10004: quoprimime no longer generates a traceback when confronted
-  with invalid characters after '=' in a Q-encoded word.
+- Issue #10004: quoprimime no longer generates a traceback when confronted with
+  invalid characters after '=' in a Q-encoded word.
 
-- Issue #1491: BaseHTTPServer nows send a 100 Continue response before sending
-  a 200 OK for the Expect: 100-continue request header.
+- Issue #1491: BaseHTTPServer nows send a ``100 Continue`` response before
+  sending a 200 OK for the Expect: 100-continue request header.
 
-- Issue #9360: Cleanup and improvements to the nntplib module.  The API
-  now conforms to the philosophy of bytes and unicode separation in Python 3.
-  A test suite has also been added.
+- Issue #9360: Cleanup and improvements to the nntplib module.  The API now
+  conforms to the philosophy of bytes and unicode separation in Python 3.  A
+  test suite has also been added.
 
 - Issue #9962: GzipFile now has the peek() method.
 
 - Issue #9090: When a socket with a timeout fails with EWOULDBLOCK or EAGAIN,
-  retry the select() loop instead of bailing out.  This is because select()
-  can incorrectly report a socket as ready for reading (for example, if it
-  received some data with an invalid checksum).
+  retry the select() loop instead of bailing out.  This is because select() can
+  incorrectly report a socket as ready for reading (for example, if it received
+  some data with an invalid checksum).
 
 - Issue #3612: Added new types to ctypes.wintypes. (CHAR and pointers)
 
 - Issue #9950: Fix socket.sendall() crash or misbehaviour when a signal is
-  received.  Now sendall() properly calls signal handlers if necessary,
-  and retries sending if these returned successfully, including on sockets
-  with a timeout.
+  received.  Now sendall() properly calls signal handlers if necessary, and
+  retries sending if these returned successfully, including on sockets with a
+  timeout.
 
 - Issue #9947: logging: Fixed locking bug in stopListening.
 
@@ -159,8 +156,8 @@ Library
 
 - Issue #9928: Properly initialize the types exported by the bz2 module.
 
-- Issue #1675951: Allow GzipFile to work with unseekable file objects.
-  Patch by Florian Festi.
+- Issue #1675951: Allow GzipFile to work with unseekable file objects.  Patch by
+  Florian Festi.
 
 - Logging: Added QueueListener class to facilitate logging usage for
   performance-critical threads.
@@ -176,8 +173,8 @@ Library
 - Issue #2643: msync() is not called anymore when deallocating an open mmap
   object, only munmap().
 
-- logging: Changed LoggerAdapter implementation internally, to make it
-  easier to subclass in a useful way.
+- logging: Changed LoggerAdapter implementation internally, to make it easier to
+  subclass in a useful way.
 
 - logging: hasHandlers method was added to Logger, and isEnabledFor,
   getEffectiveLevel, hasHandlers and setLevel were added to LoggerAdapter.
@@ -186,28 +183,28 @@ Library
 - Issue #1686: Fix string.Template when overriding the pattern attribute.
 
 - Issue #9854: SocketIO objects now observe the RawIOBase interface in
-  non-blocking mode: they return None when an operation would block (instead
-  of raising an exception).
+  non-blocking mode: they return None when an operation would block (instead of
+  raising an exception).
 
 - Issue #1730136: Fix the comparison between a tk.font.Font and an object of
   another kind.
 
 - Issue #9441: logging has better coverage for rotating file handlers.
 
-- Issue #9865:  collections.OrderedDict now has a __sizeof__ method.
+- Issue #9865: collections.OrderedDict now has a __sizeof__ method.
 
-- Issue #9854: The default read() implementation in io.RawIOBase now
-  handles non-blocking readinto() returning None correctly.
+- Issue #9854: The default read() implementation in io.RawIOBase now handles
+  non-blocking readinto() returning None correctly.
 
-- Issue #1552: socket.socketpair() now returns regular socket.socket
-  objects supporting the whole socket API (rather than the "raw"
-  _socket.socket objects).
+- Issue #1552: socket.socketpair() now returns regular socket.socket objects
+  supporting the whole socket API (rather than the "raw" _socket.socket
+  objects).
 
-- Issue #9853: Fix the signature of SSLSocket.recvfrom() and
-  SSLSocket.sendto() to match the corresponding socket methods.
+- Issue #9853: Fix the signature of SSLSocket.recvfrom() and SSLSocket.sendto()
+  to match the corresponding socket methods.
 
-- Issue 9840: Added a decorator to reprlib for wrapping __repr__ methods
-  to make them handle recursive calls within the same thread.
+- Issue 9840: Added a decorator to reprlib for wrapping __repr__ methods to make
+  them handle recursive calls within the same thread.
 
 - logging: Enhanced HTTPHandler with secure and credentials initializers.
 
@@ -216,85 +213,82 @@ Library
 - Issue #9837: The read() method of ZipExtFile objects (as returned by
   ZipFile.open()) could return more bytes than requested.
 
-- Issue #9826: OrderedDict.__repr__ can now handle self-referential
-  values:   d['x'] = d.
+- Issue #9826: OrderedDict.__repr__ can now handle self-referential values:
+  d['x'] = d.
 
 - Issue #9825: Using __del__ in the definition of collections.OrderedDict made
-  it possible for the user to create self-referencing ordered dictionaries
-  which become permanently uncollectable GC garbage. Reinstated the Py3.1
+  it possible for the user to create self-referencing ordered dictionaries which
+  become permanently uncollectable GC garbage.  Reinstated the Python 3.1
   approach of using weakref proxies so that reference cycles never get created
   in the first place.
 
 - Issue #9579, #9580: Fix os.confstr() for value longer than 255 bytes and
   encode the value with filesystem encoding and surrogateescape (instead of
-  utf-8 in strict mode). Patch written by David Watson.
+  utf-8 in strict mode) . Patch written by David Watson.
 
-- Issue #9632: Remove sys.setfilesystemencoding() function: use
-  PYTHONFSENCODING environment variable to set the filesystem encoding at
-  Python startup. sys.setfilesystemencoding() creates inconsistencies because
-  it is unable to reencode all filenames in all objects.
+- Issue #9632: Remove sys.setfilesystemencoding() function: use PYTHONFSENCODING
+  environment variable to set the filesystem encoding at Python startup.
+  sys.setfilesystemencoding() creates inconsistencies because it is unable to
+  reencode all filenames in all objects.
 
-- Issue #9410: Various optimizations to the pickle module, leading to
-  speedups up to 4x (depending on the benchmark).  Mostly ported from
-  Unladen Swallow; initial patch by Alexandre Vassalotti.
+- Issue #9410: Various optimizations to the pickle module, leading to speedups
+  up to 4x (depending on the benchmark).  Mostly ported from Unladen Swallow;
+  initial patch by Alexandre Vassalotti.
 
-- The pprint module now supports printing OrderedDicts in their given
-  order (formerly, it would sort the keys).
+- The pprint module now supports printing OrderedDicts in their given order
+  (formerly, it would sort the keys).
 
 - Logging: Added QueueHandler class to facilitate logging usage with
   multiprocessing.
 
-- Issue #9707: Rewritten reference implementation of threading.local which
-  is friendlier towards reference cycles.  This change is not normally
-  visible since an optimized C implementation (_thread._local) is used
-  instead.
+- Issue #9707: Rewritten reference implementation of threading.local which is
+  friendlier towards reference cycles.  This change is not normally visible
+  since an optimized C implementation (_thread._local) is used instead.
 
 - Issue #6394: os.getppid() is now supported on Windows.  Note that it will
   still return the id of the parent process after it has exited.  This process
   id may even have been reused by another unrelated process.
 
-- Issue #9792: In case of connection failure, socket.create_connection()
-  would swallow the exception and raise a new one, making it impossible
-  to fetch the original errno, or to filter timeout errors.  Now the
-  original error is re-raised.
+- Issue #9792: In case of connection failure, socket.create_connection() would
+  swallow the exception and raise a new one, making it impossible to fetch the
+  original errno, or to filter timeout errors.  Now the original error is
+  re-raised.
 
-- Issue #9758: When fcntl.ioctl() was called with mutable_flag set to True,
-  and the passed buffer was exactly 1024 bytes long, the buffer wouldn't
-  be updated back after the system call.  Original patch by Brian Brazil.
+- Issue #9758: When fcntl.ioctl() was called with mutable_flag set to True, and
+  the passed buffer was exactly 1024 bytes long, the buffer wouldn't be updated
+  back after the system call.  Original patch by Brian Brazil.
 
 - Updates to the random module:
 
-  * Document which parts of the module are guaranteed to stay the same
-    across versions and which parts are subject to change.
+  * Document which parts of the module are guaranteed to stay the same across
+    versions and which parts are subject to change.
 
-  * Update the seed() method to use all of the bits in a string
-    instead of just the hash value.  This makes better use of the
-    seed value and assures the seeding is platform independent.
-    Issue #7889.
+  * Update the seed() method to use all of the bits in a string instead of just
+    the hash value.  This makes better use of the seed value and assures the
+    seeding is platform independent.  Issue #7889.
 
-  * Improved the random()-->integer algorithm used in choice(),
-    shuffle(), sample(), randrange(), and randint().  Formerly, it
-    used int(n*random()) which has a slight bias whenever n is not
-    a power of two.  Issue #9025.
+  * Improved the random()-->integer algorithm used in choice(), shuffle(),
+    sample(), randrange(), and randint().  Formerly, it used int(n*random())
+    which has a slight bias whenever n is not a power of two.  Issue #9025.
 
   * Improved documentation of arguments to randrange().  Issue #9379.
 
-- collections.OrderedDict now supports a new method for repositioning
-  keys to either end.
+- collections.OrderedDict now supports a new method for repositioning keys to
+  either end.
 
-- Issue #9754: Similarly to assertRaises and assertRaisesRegexp, unittest
-  test cases now also have assertWarns and assertWarnsRegexp methods to
-  check that a given warning type was triggered by the code under test.
+- Issue #9754: Similarly to assertRaises and assertRaisesRegexp, unittest test
+  cases now also have assertWarns and assertWarnsRegexp methods to check that a
+  given warning type was triggered by the code under test.
 
-- Issue #5506: BytesIO objects now have a getbuffer() method exporting a
-  view of their contents without duplicating them.  The view is both readable
-  and writable.
+- Issue #5506: BytesIO objects now have a getbuffer() method exporting a view of
+  their contents without duplicating them.  The view is both readable and
+  writable.
 
 - Issue #7566: Implement os.path.sameopenfile for Windows.
 
 - Issue #9293: I/O streams now raise ``io.UnsupportedOperation`` when an
-  unsupported operation is attempted (for example, writing to a file open
-  only for reading).
+  unsupported operation is attempted (for example, writing to a file open only
+  for reading).
 
 - hashlib has two new constant attributes: algorithms_guaranteed and
   algorithms_avaiable that respectively list the names of hash algorithms
@@ -315,15 +309,15 @@ C-API
 Tools/Demos
 -----------
 
-- Issue #9188: The gdb extension now handles correctly narrow (UCS2) as well
-  as wide (UCS4) unicode builds for both the host interpreter (embedded
-  inside gdb) and the interpreter under test.
+- Issue #9188: The gdb extension now handles correctly narrow (UCS2) as well as
+  wide (UCS4) unicode builds for both the host interpreter (embedded inside gdb)
+  and the interpreter under test.
 
 Tests
 -----
 
-- Issue #1051: Add a script (Lib/test/make_ssl_certs.py) to generate the
-  custom certificate and private key files used by SSL-related certs.
+- Issue #1051: Add a script (Lib/test/make_ssl_certs.py) to generate the custom
+  certificate and private key files used by SSL-related certs.
 
 - Issue #9978: Wait until subprocess completes initialization. (Win32KillTests
   in test_os)
@@ -333,8 +327,8 @@ Tests
 
 - Issue #9628: fix runtests.sh -x option so more than one test can be excluded.
 
-- Issue #9899: Fix test_tkinter.test_font on various platforms.  Patch by
-  Ned Deily.
+- Issue #9899: Fix test_tkinter.test_font on various platforms.  Patch by Ned
+  Deily.
 
 - Issue #9894: Do not hardcode ENOENT in test_subprocess.
 
@@ -350,8 +344,8 @@ Build
 
 - Issue #10062: Allow building on platforms which do not have sem_timedwait.
 
-- Issue #10054: Some platforms provide uintptr_t in inttypes.h.  Patch by
-  Akira Kitada.
+- Issue #10054: Some platforms provide uintptr_t in inttypes.h.  Patch by Akira
+  Kitada.
 
 - Issue #10055: Make json C89-compliant in UCS4 mode.
 
@@ -359,18 +353,18 @@ Build
 
 - Issue #1633863: Don't ignore $CC under AIX.
 
-- Issue #9810: Compile bzip2 source files in python's project file
-  directly. It used to be built with bzip2's makefile.
+- Issue #9810: Compile bzip2 source files in Python's project file directly. It
+  used to be built with bzip2's makefile.
 
-- Issue #9848: Stopping trying to build _weakref in setup.py as it is a
-  built-in module.
+- Issue #9848: Stopping trying to build _weakref in setup.py as it is a built-in
+  module.
 
 - Issue #9806: python-config now has an ``--extension-suffix`` option that
   outputs the suffix for dynamic libraries including the ABI version name
   defined by PEP 3149.
 
-- Issue #941346: Improve the build process under AIX and allow Python to
-  be built as a shared library.  Patch by Sébastien Sablé.
+- Issue #941346: Improve the build process under AIX and allow Python to be
+  built as a shared library.  Patch by Sébastien Sablé.
 
 - Issue #4026: Make the fcntl extension build under AIX.  Patch by Sébastien
   Sablé.
