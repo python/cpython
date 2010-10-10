@@ -95,6 +95,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9437: Fix building C extensions with non-default LDFLAGS.
+
 - Issue #4661: email can now parse bytes input and generate either converted
   7bit output or bytes output.  Email version bumped to 5.1.0.
 
