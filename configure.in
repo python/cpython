@@ -1483,6 +1483,9 @@ AC_CHECK_TYPES(uintptr_t,
    [AC_CHECK_SIZEOF(uintptr_t, 4)], 
    [], [#ifdef HAVE_STDINT_H
         #include <stdint.h>
+        #endif
+        #ifdef HAVE_INTTYPES_H
+        #include <inttypes.h>
         #endif])
 
 AC_CHECK_SIZEOF(off_t, [], [
