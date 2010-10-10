@@ -368,6 +368,9 @@ Tools/Demos
 Build
 -----
 
+- Issue #10054: Some platforms provide uintptr_t in inttypes.h.  Patch by
+  Akira Kitada.
+
 - Issue #10055: Make json C89-compliant in UCS4 mode.
 
 - Issue #1633863: Don't ignore $CC under AIX.
