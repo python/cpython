@@ -1807,14 +1807,14 @@ the client::
    from array import array
 
    address = ('localhost', 6000)     # family is deduced to be 'AF_INET'
-   listener = Listener(address, authkey='secret password')
+   listener = Listener(address, authkey=b'secret password')
 
    conn = listener.accept()
    print('connection accepted from', listener.last_accepted)
 
    conn.send([2.25, None, 'junk', float])
 
-   conn.send_bytes('hello')
+   conn.send_bytes(b'hello')
 
    conn.send_bytes(array('i', [42, 1729]))
 
@@ -1828,7 +1828,7 @@ server::
    from array import array
 
    address = ('localhost', 6000)
-   conn = Client(address, authkey='secret password')
+   conn = Client(address, authkey=b'secret password')
 
    print(conn.recv())                  # => [2.25, None, 'junk', float]
 
