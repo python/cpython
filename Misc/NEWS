@@ -2,6 +2,23 @@
 Python News
 +++++++++++
 
+What's New in Python 3.2 Beta 1?
+=================================
+
+*Release date: XX-XXX-2010*
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #9948: Fixed problem of losing filename case information.
+
+Extensions
+----------
+
+
 What's New in Python 3.2 Alpha 3?
 =================================
 
@@ -91,8 +108,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #9948: Fixed problem of losing filename case information.
 
 - Issue #9437: Fix building C extensions with non-default LDFLAGS.
 
