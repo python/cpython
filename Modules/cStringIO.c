@@ -339,12 +339,12 @@ IO_iternext(Iobject *self)
 
 /* Read-write object methods */
 
-PyDoc_STRVAR(O_seek__doc__,
+PyDoc_STRVAR(IO_seek__doc__,
 "seek(position)       -- set the current position\n"
 "seek(position, mode) -- mode 0: absolute; 1: relative; 2: relative to EOF");
 
 static PyObject *
-O_seek(Oobject *self, PyObject *args) {
+IO_seek(Iobject *self, PyObject *args) {
     Py_ssize_t position;
     int mode = 0;
 
@@ -359,24 +359,9 @@ O_seek(Oobject *self, PyObject *args) {
         position += self->pos;
     }
 
-    if (position > self->buf_size) {
-              char *newbuf;
-              self->buf_size*=2;
-              if (self->buf_size <= position) self->buf_size=position+1;
-              newbuf = (char*) realloc(self->buf,self->buf_size);
-              if (!newbuf) {
-                  free(self->buf);
-                  self->buf = 0;
-                  self->buf_size=self->pos=0;
-                  return PyErr_NoMemory();
-                }
-              self->buf = newbuf;
-      }
-    else if (position < 0) position=0;
+    if (position < 0) position=0;
 
     self->pos=position;
-
-    while (--position >= self->string_size) self->buf[position]=0;
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -413,6 +398,19 @@ O_cwrite(PyObject *self, const char *c, Py_ssize_t  l) {
           }
         oself->buf = newbuf;
       }
+
+    if (oself->string_size < oself->pos) {
+        /* In case of overseek, pad with null bytes the buffer region between
+           the end of stream and the current position.
+
+          0   lo      string_size                           hi
+          |   |<---used--->|<----------available----------->|
+          |   |            <--to pad-->|<---to write--->    |
+          0   buf                   position
+        */
+        memset(oself->buf + oself->string_size, '\0',
+               (oself->pos - oself->string_size) * sizeof(char));
+    }
 
     memcpy(oself->buf+oself->pos,c,l);
 
@@ -497,12 +495,12 @@ static struct PyMethodDef O_methods[] = {
   {"readline",  (PyCFunction)IO_readline, METH_VARARGS, IO_readline__doc__},
   {"readlines", (PyCFunction)IO_readlines,METH_VARARGS, IO_readlines__doc__},
   {"reset",     (PyCFunction)IO_reset,    METH_NOARGS,  IO_reset__doc__},
+  {"seek",      (PyCFunction)IO_seek,     METH_VARARGS, IO_seek__doc__},
   {"tell",      (PyCFunction)IO_tell,     METH_NOARGS,  IO_tell__doc__},
   {"truncate",  (PyCFunction)IO_truncate, METH_VARARGS, IO_truncate__doc__},
 
   /* Read-write StringIO specific  methods: */
   {"close",      (PyCFunction)O_close,      METH_NOARGS,  O_close__doc__},
-  {"seek",       (PyCFunction)O_seek,       METH_VARARGS, O_seek__doc__},
   {"write",      (PyCFunction)O_write,      METH_VARARGS, O_write__doc__},
   {"writelines", (PyCFunction)O_writelines, METH_O,       O_writelines__doc__},
   {NULL,         NULL}          /* sentinel */
@@ -595,26 +593,6 @@ I_close(Iobject *self, PyObject *unused) {
     return Py_None;
 }
 
-static PyObject *
-I_seek(Iobject *self, PyObject *args) {
-    Py_ssize_t position;
-    int mode = 0;
-
-    if (!IO__opencheck(IOOOBJECT(self))) return NULL;
-    if (!PyArg_ParseTuple(args, "n|i:seek", &position, &mode))
-        return NULL;
-
-    if (mode == 2) position += self->string_size;
-    else if (mode == 1) position += self->pos;
-
-    if (position < 0) position=0;
-
-    self->pos=position;
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
 static struct PyMethodDef I_methods[] = {
   /* Common methods: */
   {"flush",     (PyCFunction)IO_flush,    METH_NOARGS,  IO_flush__doc__},
@@ -624,12 +602,12 @@ static struct PyMethodDef I_methods[] = {
   {"readline",  (PyCFunction)IO_readline, METH_VARARGS, IO_readline__doc__},
   {"readlines", (PyCFunction)IO_readlines,METH_VARARGS, IO_readlines__doc__},
   {"reset",     (PyCFunction)IO_reset,    METH_NOARGS,  IO_reset__doc__},
+  {"seek",      (PyCFunction)IO_seek,     METH_VARARGS, IO_seek__doc__},
   {"tell",      (PyCFunction)IO_tell,     METH_NOARGS,  IO_tell__doc__},
   {"truncate",  (PyCFunction)IO_truncate, METH_VARARGS, IO_truncate__doc__},
 
   /* Read-only StringIO specific  methods: */
   {"close",     (PyCFunction)I_close,    METH_NOARGS,  O_close__doc__},
-  {"seek",      (PyCFunction)I_seek,     METH_VARARGS, O_seek__doc__},
   {NULL,        NULL}
 };
 
