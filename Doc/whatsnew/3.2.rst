@@ -562,11 +562,8 @@ A number of small performance enhancements have been added:
   (Patch by Florent Xicluna in :issue:`7622` and :issue:`7462`.)
 
 * Serializing and unserializing data using the :mod:`pickle` module is now
-  up to 4x faster, thanks to various optimizations initially contributed
-  to the Unladen Swalled project.
-
-  (Ported to Python 3 by Alexandre Vassalotti and Antoine Pitrou in
-  :issue:`9410`)
+  several times faster. (Contributed by Alexandre Vassalotti, Antoine Pitrou
+  and the Unladen Swallow team in :issue:`9410` and :issue:`3873`.)
 
 
 Filenames and Unicode
