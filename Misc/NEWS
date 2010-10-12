@@ -37,6 +37,9 @@ What's New in Python 3.2 Alpha 3?
 Core and Builtins
 -----------------
 
+- Issue #10068: Global objects which have reference cycles with their module's
+  dict are now cleared again. This causes issue #7140 to appear again.
+
 - Issue #9738: Document PyErr_SetString() and PyErr_SetFromErrnoWithFilename()
   encodings.
 
