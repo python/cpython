@@ -1716,6 +1716,45 @@ context_wrap_socket(PySSLContext *self, PyObject *args, PyObject *kwds)
     return (PyObject *) newPySSLSocket(self->ctx, sock, server_side);
 }
 
+static PyObject *
+session_stats(PySSLContext *self, PyObject *unused)
+{
+    int r;
+    PyObject *value, *stats = PyDict_New();
+    if (!stats)
+        return NULL;
+
+#define ADD_STATS(SSL_NAME, KEY_NAME) \
+    value = PyLong_FromLong(SSL_CTX_sess_ ## SSL_NAME (self->ctx)); \
+    if (value == NULL) \
+        goto error; \
+    r = PyDict_SetItemString(stats, KEY_NAME, value); \
+    Py_DECREF(value); \
+    if (r < 0) \
+        goto error;
+
+    ADD_STATS(number, "number");
+    ADD_STATS(connect, "connect");
+    ADD_STATS(connect_good, "connect_good");
+    ADD_STATS(connect_renegotiate, "connect_renegotiate");
+    ADD_STATS(accept, "accept");
+    ADD_STATS(accept_good, "accept_good");
+    ADD_STATS(accept_renegotiate, "accept_renegotiate");
+    ADD_STATS(accept, "accept");
+    ADD_STATS(hits, "hits");
+    ADD_STATS(misses, "misses");
+    ADD_STATS(timeouts, "timeouts");
+    ADD_STATS(cache_full, "cache_full");
+
+#undef ADD_STATS
+
+    return stats;
+
+error:
+    Py_DECREF(stats);
+    return NULL;
+}
+
 static PyGetSetDef context_getsetlist[] = {
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
@@ -1733,6 +1772,8 @@ static struct PyMethodDef context_methods[] = {
                         METH_VARARGS | METH_KEYWORDS, NULL},
     {"load_verify_locations", (PyCFunction) load_verify_locations,
                               METH_VARARGS | METH_KEYWORDS, NULL},
+    {"session_stats", (PyCFunction) session_stats,
+                      METH_NOARGS, NULL},
     {NULL, NULL}        /* sentinel */
 };
 
