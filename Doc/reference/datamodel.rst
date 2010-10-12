@@ -739,6 +739,13 @@ Modules
    Special read-only attribute: :attr:`__dict__` is the module's namespace as a
    dictionary object.
 
+   .. impl-detail::
+
+      Because of the way CPython clears module dictionaries, the module
+      dictionary will be cleared when the module falls out of scope even if the
+      dictionary still has live references.  To avoid this, copy the dictionary
+      or keep the module around while using its dictionary directly.
+
    .. index::
       single: __name__ (module attribute)
       single: __doc__ (module attribute)

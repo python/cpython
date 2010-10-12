@@ -175,10 +175,7 @@ module_dealloc(PyModuleObject *m)
 {
     PyObject_GC_UnTrack(m);
     if (m->md_dict != NULL) {
-        /* If we are the only ones holding a reference, we can clear
-           the dictionary. */
-        if (Py_REFCNT(m->md_dict) == 1)
-            _PyModule_Clear((PyObject *)m);
+        _PyModule_Clear((PyObject *)m);
         Py_DECREF(m->md_dict);
     }
     Py_TYPE(m)->tp_free((PyObject *)m);
