@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6612: Fix site and sysconfig to catch os.getcwd() error, eg. if the
+  current directory was deleted. Patch written by W. Trevor King.
+
 - Issue #10045: Improved performance when writing after seeking past the
   end of the "file" in cStringIO.
 
@@ -108,7 +111,7 @@ Library
   to zero.
 
 - Issue #9816: random.Random.jumpahead(n) did not produce a sufficiently
-  different internal state for small values of n.  Fixed by salting the 
+  different internal state for small values of n.  Fixed by salting the
   value.
 
 - Issue #9792: In case of connection failure, socket.create_connection()
@@ -319,7 +322,7 @@ Extension Modules
 -----------------
 
 - Issue #10003: Allow handling of SIGBREAK on Windows. Fixes a regression
-  introduced by issue #9324. 
+  introduced by issue #9324.
 
 - Issue #8734: Avoid crash in msvcrt.get_osfhandle() when an invalid file
   descriptor is provided.  Patch by Pascal Chambon.
