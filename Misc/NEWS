@@ -10,11 +10,11 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
-- Issue #6612: Fix site and sysconfig to catch os.getcwd() error, eg. if the
-  current directory was deleted. Patch written by W. Trevor King.
-
 Library
 -------
+
+- Issue #6612: Fix site and sysconfig to catch os.getcwd() error, eg. if the
+  current directory was deleted. Patch written by W. Trevor King.
 
 - Issue #3873: Speed up unpickling from file objects which have a peek()
   method.
