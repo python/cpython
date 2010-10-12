@@ -391,6 +391,23 @@ class ContextTests(unittest.TestCase):
         ctx.load_verify_locations(CERTFILE, CAPATH)
         ctx.load_verify_locations(CERTFILE, capath=BYTES_CAPATH)
 
+    def test_session_stats(self):
+        for proto in PROTOCOLS:
+            ctx = ssl.SSLContext(proto)
+            self.assertEqual(ctx.session_stats(), {
+                'number': 0,
+                'connect': 0,
+                'connect_good': 0,
+                'connect_renegotiate': 0,
+                'accept': 0,
+                'accept_good': 0,
+                'accept_renegotiate': 0,
+                'hits': 0,
+                'misses': 0,
+                'timeouts': 0,
+                'cache_full': 0,
+            })
+
 
 class NetworkedTests(unittest.TestCase):
 

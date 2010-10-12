@@ -481,13 +481,17 @@ SSL Contexts
 
 .. versionadded:: 3.2
 
+An SSL context holds various data longer-lived than single SSL connections,
+such as SSL configuration options, certificate(s) and private key(s).
+It also manages a cache of SSL sessions for server-side sockets, in order
+to speed up repeated connections from the same clients.
+
 .. class:: SSLContext(protocol)
 
-   An object holding various data longer-lived than single SSL connections,
-   such as SSL configuration options, certificate(s) and private key(s).
-   You must pass *protocol* which must be one of the ``PROTOCOL_*`` constants
-   defined in this module.  :data:`PROTOCOL_SSLv23` is recommended for
-   maximum interoperability.
+   Create a new SSL context.  You must pass *protocol* which must be one
+   of the ``PROTOCOL_*`` constants defined in this module.
+   :data:`PROTOCOL_SSLv23` is recommended for maximum interoperability.
+
 
 :class:`SSLContext` objects have the following methods and attributes:
 
@@ -541,6 +545,18 @@ SSL Contexts
    certificates.  The parameters *server_side*, *do_handshake_on_connect*
    and *suppress_ragged_eofs* have the same meaning as in the top-level
    :func:`wrap_socket` function.
+
+.. method:: SSLContext.session_stats()
+
+   Get statistics about the SSL sessions created or managed by this context.
+   A dictionary is returned which maps the names of each `piece of information
+   <http://www.openssl.org/docs/ssl/SSL_CTX_sess_number.html>`_ to their
+   numeric values.  For example, here is the total number of hits and misses
+   in the session cache since the context was created::
+
+      >>> stats = context.session_stats()
+      >>> stats['hits'], stats['misses']
+      (0, 0)
 
 .. attribute:: SSLContext.options
 
