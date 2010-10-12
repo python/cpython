@@ -122,6 +122,9 @@ C-API
 Library
 -------
 
+- Issue #6612: Fix site and sysconfig to catch os.getcwd() error, eg. if the
+  current directory was deleted. Patch written by W. Trevor King.
+
 - Issue #9759: GzipFile now raises ValueError when an operation is attempted
   after the file is closed.  Patch by Jeffrey Finkelstein.
 
@@ -188,7 +191,7 @@ Library
 - Issue #8750: Fixed MutableSet's methods to correctly handle
   reflexive operations, namely x -= x and x ^= x.
 
-- Issue #9129: smtpd.py is vulnerable to DoS attacks deriving from missing 
+- Issue #9129: smtpd.py is vulnerable to DoS attacks deriving from missing
   error handling when accepting a new connection.
 
 - Issue #658749: asyncore's connect() method now correctly interprets winsock
@@ -543,7 +546,7 @@ Extension Modules
 -----------------
 
 - Issue #10003: Allow handling of SIGBREAK on Windows. Fixes a regression
-  introduced by issue #9324. 
+  introduced by issue #9324.
 
 - Issue #8734: Avoid crash in msvcrt.get_osfhandle() when an invalid file
   descriptor is provided.  Patch by Pascal Chambon.
