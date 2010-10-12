@@ -10,6 +10,9 @@ What's New in Python 2.7.1?
 Core and Builtins
 -----------------
 
+- Issue #10068: Global objects which have reference cycles with their module's
+  dict are now cleared again. This causes issue #7140 to appear again.
+
 - Issue #9869: Make long() and PyNumber_Long return something of type
   long for a class whose __long__ method returns a plain int.  This
   fixes an interpreter crash when initializing an instance of a long
