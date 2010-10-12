@@ -101,6 +101,9 @@ enum {
     /* Maximum size of the write buffer of Pickler when pickling to a
        stream.  This is ignored for in-memory pickling. */
     MAX_WRITE_BUF_SIZE = 64 * 1024,
+
+    /* Prefetch size when unpickling (disabled on unpeekable streams) */
+    PREFETCH = 8192 * 16,
 };
 
 /* Exception classes for pickle. These should override the ones defined in
@@ -355,8 +358,10 @@ typedef struct UnpicklerObject {
     char *input_line;
     Py_ssize_t input_len;
     Py_ssize_t next_read_idx;
+    Py_ssize_t prefetched_idx;  /* index of first prefetched byte */
     PyObject *read;             /* read() method of the input stream. */
     PyObject *readline;         /* readline() method of the input stream. */
+    PyObject *peek;             /* peek() method of the input stream, or NULL */
 
     char *encoding;             /* Name of the encoding to be used for
                                    decoding strings pickled using Python
@@ -859,7 +864,26 @@ _Unpickler_SetStringInput(UnpicklerObject *self, PyObject *input)
     self->input_buffer = self->buffer.buf;
     self->input_len = self->buffer.len;
     self->next_read_idx = 0;
+    self->prefetched_idx = self->input_len;
     return self->input_len;
+}
+
+static int
+_Unpickler_SkipConsumed(UnpicklerObject *self)
+{
+    Py_ssize_t consumed = self->next_read_idx - self->prefetched_idx;
+
+    if (consumed > 0) {
+        PyObject *r;
+        assert(self->peek);  /* otherwise we did something wrong */
+        /* This makes an useless copy... */
+        r = PyObject_CallFunction(self->read, "n", consumed);
+        if (r == NULL)
+            return -1;
+        Py_DECREF(r);
+        self->prefetched_idx = self->next_read_idx;
+    }
+    return 0;
 }
 
 static const Py_ssize_t READ_WHOLE_LINE = -1;
@@ -882,10 +906,12 @@ static Py_ssize_t
 _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
 {
     PyObject *data;
-    Py_ssize_t read_size;
+    Py_ssize_t read_size, prefetched_size = 0;
 
     assert(self->read != NULL);
-    assert(self->next_read_idx == 0);
+    
+    if (_Unpickler_SkipConsumed(self) < 0)
+        return -1;
 
     if (n == READ_WHOLE_LINE)
         data = PyObject_Call(self->readline, empty_tuple, NULL);
@@ -895,13 +921,41 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
             return -1;
         data = _Unpickler_FastCall(self, self->read, len);
     }
-
     if (data == NULL)
         return -1;
 
-    read_size = _Unpickler_SetStringInput(self, data);
-    self->input_len = 0;
+    /* Prefetch some data without advancing the file pointer, if possible */
+    if (self->peek) {
+        PyObject *len, *prefetched;
+        len = PyLong_FromSsize_t(PREFETCH);
+        if (len == NULL) {
+            Py_DECREF(data);
+            return -1;
+        }
+        prefetched = _Unpickler_FastCall(self, self->peek, len);
+        if (prefetched == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_NotImplementedError)) {
+                /* peek() is probably not supported by the given file object */
+                PyErr_Clear();
+                Py_CLEAR(self->peek);
+            }
+            else {
+                Py_DECREF(data);
+                return -1;
+            }
+        }
+        else {
+            assert(PyBytes_Check(prefetched));
+            prefetched_size = PyBytes_GET_SIZE(prefetched);
+            PyBytes_ConcatAndDel(&data, prefetched);
+            if (data == NULL)
+                return -1;
+        }
+    }
+
+    read_size = _Unpickler_SetStringInput(self, data) - prefetched_size;
     Py_DECREF(data);
+    self->prefetched_idx = read_size;
     return read_size;
 }
 
@@ -921,30 +975,31 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
 static Py_ssize_t
 _Unpickler_Read(UnpicklerObject *self, char **s, Py_ssize_t n)
 {
+    Py_ssize_t num_read;
+
     if (n == 0) {
         *s = NULL;
         return 0;
     }
 
-    /* This condition will always be true if self->read. */
-    if (self->next_read_idx + n > self->input_len) {
-        if (self->read) {
-            Py_ssize_t num_read;
-            assert(self->next_read_idx == self->input_len);
-            num_read = _Unpickler_ReadFromFile(self, n);
-            if (n < 0)
-                 return -1;
-            if (num_read == n) {
-                *s = self->input_buffer;
-                return num_read;
-            }
-        }
+    if (self->next_read_idx + n <= self->input_len) {
+        *s = self->input_buffer + self->next_read_idx;
+        self->next_read_idx += n;
+        return n;
+    }
+    if (!self->read) {
         PyErr_Format(PyExc_EOFError, "Ran out of input");
         return -1;
     }
-    assert(self->read == NULL);
-    *s = self->input_buffer + self->next_read_idx;
-    self->next_read_idx += n;
+    num_read = _Unpickler_ReadFromFile(self, n);
+    if (num_read < 0)
+        return -1;
+    if (num_read < n) {
+        PyErr_Format(PyExc_EOFError, "Ran out of input");
+        return -1;
+    }
+    *s = self->input_buffer;
+    self->next_read_idx = n;
     return n;
 }
 
@@ -972,9 +1027,7 @@ _Unpickler_Readline(UnpicklerObject *self, char **result)
 {
     Py_ssize_t i, num_read;
 
-    /* This loop will never be entered if self->read is not NULL. */
     for (i = self->next_read_idx; i < self->input_len; i++) {
-        assert(self->read == NULL);
         if (self->input_buffer[i] == '\n') {
             char *line_start = self->input_buffer + self->next_read_idx;
             num_read = i - self->next_read_idx + 1;
@@ -983,11 +1036,11 @@ _Unpickler_Readline(UnpicklerObject *self, char **result)
         }
     }
     if (self->read) {
-        assert(self->next_read_idx == self->input_len);
         num_read = _Unpickler_ReadFromFile(self, READ_WHOLE_LINE);
         if (num_read < 0)
             return -1;
         *result = self->input_buffer;
+        self->next_read_idx = num_read;
         return num_read;
     }
  
@@ -1106,8 +1159,10 @@ _Unpickler_New(void)
     self->input_line = NULL;
     self->input_len = 0;
     self->next_read_idx = 0;
+    self->prefetched_idx = 0;
     self->read = NULL;
     self->readline = NULL;
+    self->peek = NULL;
     self->encoding = NULL;
     self->errors = NULL;
     self->marks = NULL;
@@ -1124,6 +1179,13 @@ _Unpickler_New(void)
 static int
 _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
 {
+    self->peek = PyObject_GetAttrString(file, "peek");
+    if (self->peek == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+            PyErr_Clear();
+        else
+            return -1;
+    }
     self->read = PyObject_GetAttrString(file, "read");
     self->readline = PyObject_GetAttrString(file, "readline");
     if (self->readline == NULL || self->read == NULL) {
@@ -1132,6 +1194,7 @@ _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
                             "file must have 'read' and 'readline' attributes");
         Py_CLEAR(self->read);
         Py_CLEAR(self->readline);
+        Py_CLEAR(self->peek);
         return -1;
     }
     return 0;
@@ -5207,6 +5270,9 @@ load(UnpicklerObject *self)
         break;                  /* and we are done! */
     }
 
+    if (_Unpickler_SkipConsumed(self) < 0)
+        return NULL;
+
     /* XXX: It is not clear what this is actually for. */
     if ((err = PyErr_Occurred())) {
         if (err == PyExc_EOFError) {
@@ -5356,6 +5422,7 @@ Unpickler_dealloc(UnpicklerObject *self)
     PyObject_GC_UnTrack((PyObject *)self);
     Py_XDECREF(self->readline);
     Py_XDECREF(self->read);
+    Py_XDECREF(self->peek);
     Py_XDECREF(self->stack);
     Py_XDECREF(self->pers_func);
     Py_XDECREF(self->arg);
@@ -5378,6 +5445,7 @@ Unpickler_traverse(UnpicklerObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->readline);
     Py_VISIT(self->read);
+    Py_VISIT(self->peek);
     Py_VISIT(self->stack);
     Py_VISIT(self->pers_func);
     Py_VISIT(self->arg);
@@ -5389,6 +5457,7 @@ Unpickler_clear(UnpicklerObject *self)
 {
     Py_CLEAR(self->readline);
     Py_CLEAR(self->read);
+    Py_CLEAR(self->peek);
     Py_CLEAR(self->stack);
     Py_CLEAR(self->pers_func);
     Py_CLEAR(self->arg);
