@@ -448,7 +448,7 @@ The available presentation types for floating point and decimal values are:
    |         | from the significand, and the decimal point is also      |
    |         | removed if there are no remaining digits following it.   |
    |         |                                                          |
-   |         | Postive and negative infinity, positive and negative     |
+   |         | Positive and negative infinity, positive and negative    |
    |         | zero, and nans, are formatted as ``inf``, ``-inf``,      |
    |         | ``0``, ``-0`` and ``nan`` respectively, regardless of    |
    |         | the precision.                                           |
