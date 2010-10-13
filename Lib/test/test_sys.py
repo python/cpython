@@ -602,35 +602,6 @@ class SysModuleTest(unittest.TestCase):
             expected = None
         self.check_fsencoding(fs_encoding, expected)
 
-    @unittest.skipIf(sys.platform in ('win32', 'darwin'),
-                     'PYTHONFSENCODING is ignored on Windows and Mac OS X')
-    def test_pythonfsencoding(self):
-        def get_fsencoding(env):
-            output = subprocess.check_output(
-                [sys.executable, "-c",
-                 "import sys; print(sys.getfilesystemencoding())"],
-                env=env)
-            return output.rstrip().decode('ascii')
-
-        # Raise SkipTest() if sys.executable is not encodable to ascii
-        test.support.workaroundIssue8611()
-
-        # Use C locale to get ascii for the locale encoding
-        env = os.environ.copy()
-        env['LC_ALL'] = 'C'
-        try:
-            del env['PYTHONFSENCODING']
-        except KeyError:
-            pass
-        self.check_fsencoding(get_fsencoding(env), 'ascii')
-
-        # Filesystem encoding is hardcoded on Windows and Mac OS X
-        for encoding in ('ascii', 'cp850', 'iso8859-1', 'utf-8'):
-            env = os.environ.copy()
-            env['PYTHONFSENCODING'] = encoding
-            self.check_fsencoding(get_fsencoding(env), encoding)
-
-
 
 class SizeofTest(unittest.TestCase):
 

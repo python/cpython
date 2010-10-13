@@ -980,22 +980,12 @@ initfsencoding(void)
     char *codeset = NULL;
 
     if (Py_FileSystemDefaultEncoding == NULL) {
-        const char *env_encoding = Py_GETENV("PYTHONFSENCODING");
-        if (env_encoding != NULL) {
-            codeset = get_codec_name(env_encoding);
-            if (!codeset) {
-                fprintf(stderr, "PYTHONFSENCODING is not a valid encoding:\n");
-                PyErr_Print();
-            }
-        }
-        if (!codeset) {
-            /* On Unix, set the file system encoding according to the
-               user's preference, if the CODESET names a well-known
-               Python codec, and Py_FileSystemDefaultEncoding isn't
-               initialized by other means. Also set the encoding of
-               stdin and stdout if these are terminals.  */
-            codeset = get_codeset();
-        }
+        /* On Unix, set the file system encoding according to the
+           user's preference, if the CODESET names a well-known
+           Python codec, and Py_FileSystemDefaultEncoding isn't
+           initialized by other means. Also set the encoding of
+           stdin and stdout if these are terminals.  */
+        codeset = get_codeset();
         if (codeset != NULL) {
             if (redecode_filenames(codeset))
                 Py_FatalError("Py_Initialize: can't redecode filenames");

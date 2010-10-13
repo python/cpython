@@ -442,18 +442,6 @@ These environment variables influence Python's behavior.
    import of source modules.
 
 
-.. envvar:: PYTHONFSENCODING
-
-   If this is set before running the interpreter, it overrides the encoding used
-   for the filesystem encoding (see :func:`sys.getfilesystemencoding`).
-
-   This variable is not available (ignored) on Windows and Mac OS X: the
-   filesystem encoding is pinned to ``'mbcs'`` on Windows and ``'utf-8'`` on
-   Mac OS X.
-
-   .. versionadded:: 3.2
-
-
 .. envvar:: PYTHONIOENCODING
 
    If this is set before running the interpreter, it overrides the encoding used
