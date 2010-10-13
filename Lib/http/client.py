@@ -1067,7 +1067,7 @@ else:
                 raise ValueError("check_hostname needs a SSL context with "
                                  "either CERT_OPTIONAL or CERT_REQUIRED")
             if key_file or cert_file:
-                context.load_cert_chain(certfile, keyfile)
+                context.load_cert_chain(cert_file, key_file)
             self._context = context
             self._check_hostname = check_hostname
 
