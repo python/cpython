@@ -552,7 +552,7 @@ _get_peer_alt_names (X509 *certificate) {
     X509_EXTENSION *ext = NULL;
     GENERAL_NAMES *names = NULL;
     GENERAL_NAME *name;
-    X509V3_EXT_METHOD *method;
+    const X509V3_EXT_METHOD *method;
     BIO *biobuf = NULL;
     char buf[2048];
     char *vptr;
@@ -923,7 +923,7 @@ return the certificate even if it wasn't validated.");
 static PyObject *PySSL_cipher (PySSLSocket *self) {
 
     PyObject *retval, *v;
-    SSL_CIPHER *current;
+    const SSL_CIPHER *current;
     char *cipher_name;
     char *cipher_protocol;
 
