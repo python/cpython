@@ -703,6 +703,12 @@ Documentation
 
 - Issue #7829: Document in dis that bytecode is an implementation detail.
 
+Tools/Demos
+-----------
+
+- Issue #7287: Demo/imputil/knee.py was removed.
+
+
 
 What's New in Python 3.1.2?
 ===========================
