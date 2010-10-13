@@ -1478,6 +1478,11 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     SSL_CTX_set_verify(self->ctx, SSL_VERIFY_NONE, NULL);
     SSL_CTX_set_options(self->ctx, SSL_OP_ALL);
 
+#define SID_CTX "Python"
+    SSL_CTX_set_session_id_context(self->ctx, (const unsigned char *) SID_CTX,
+                                   sizeof(SID_CTX));
+#undef SID_CTX
+
     return (PyObject *)self;
 }
 
