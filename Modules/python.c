@@ -41,7 +41,15 @@ main(int argc, char **argv)
     oldloc = strdup(setlocale(LC_ALL, NULL));
     setlocale(LC_ALL, "");
     for (i = 0; i < argc; i++) {
-        argv_copy2[i] = argv_copy[i] = _Py_char2wchar(argv[i]);
+#ifdef __APPLE__
+        /* Use utf-8 on Mac OS X */
+        PyObject *unicode = PyUnicode_FromString(argv[i]);
+        argv_copy[i] = PyUnicode_AsWideCharString(unicode, NULL);
+        Py_DECREF(unicode);
+#else
+        argv_copy[i] = _Py_char2wchar(argv[i]);
+#endif
+        argv_copy2[i] = argv_copy[i];
         if (!argv_copy[i])
             return 1;
     }
