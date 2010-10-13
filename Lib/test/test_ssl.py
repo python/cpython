@@ -18,17 +18,12 @@ import weakref
 import platform
 import functools
 
-# Optionally test SSL support, if we have it in the tested platform
-skip_expected = False
-try:
-    import ssl
-except ImportError:
-    skip_expected = True
-else:
-    PROTOCOLS = [
-        ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3,
-        ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1
-    ]
+ssl = support.import_module("ssl")
+
+PROTOCOLS = [
+    ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3,
+    ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1
+]
 
 HOST = support.HOST
 
@@ -1489,9 +1484,6 @@ else:
 
 
 def test_main(verbose=False):
-    if skip_expected:
-        raise unittest.SkipTest("No SSL support")
-
     if support.verbose:
         plats = {
             'Linux': platform.linux_distribution,
