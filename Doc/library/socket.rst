@@ -588,7 +588,7 @@ correspond to Unix system calls applicable to sockets.
    is system-dependent (usually 5).
 
 
-.. method:: socket.makefile(mode='r', buffering=None, *, encoding=None, newline=None)
+.. method:: socket.makefile(mode='r', buffering=None, *, encoding=None, errors=None, newline=None)
 
    .. index:: single: I/O control; buffering
 
