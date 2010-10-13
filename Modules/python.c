@@ -44,6 +44,8 @@ main(int argc, char **argv)
 #ifdef __APPLE__
         /* Use utf-8 on Mac OS X */
         PyObject *unicode = PyUnicode_FromString(argv[i]);
+        if (!unicode)
+            return 1;
         argv_copy[i] = PyUnicode_AsWideCharString(unicode, NULL);
         Py_DECREF(unicode);
 #else
