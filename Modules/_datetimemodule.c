@@ -241,16 +241,10 @@ days_before_year(int year)
     int y = year - 1;
     /* This is incorrect if year <= 0; we really want the floor
      * here.  But so long as MINYEAR is 1, the smallest year this
-     * can see is 0 (this can happen in some normalization endcases),
-     * so we'll just special-case that.
+     * can see is 1.
      */
-    assert (year >= 0);
-    if (y >= 0)
-        return y*365 + y/4 - y/100 + y/400;
-    else {
-        assert(y == -1);
-        return -366;
-    }
+    assert (year >= 1);
+    return y*365 + y/4 - y/100 + y/400;
 }
 
 /* Number of days in 4, 100, and 400 year cycles.  That these have
@@ -509,20 +503,10 @@ normalize_y_m_d(int *y, int *m, int *d)
 {
     int dim;            /* # of days in month */
 
-    /* This gets muddy:  the proper range for day can't be determined
-     * without knowing the correct month and year, but if day is, e.g.,
-     * plus or minus a million, the current month and year values make
-     * no sense (and may also be out of bounds themselves).
-     * Saying 12 months == 1 year should be non-controversial.
+    /* In actual use, m is always the month component extracted from a
+     * date/datetime object.  Therefore it is always in [1, 12] range.
      */
-    if (*m < 1 || *m > 12) {
-        --*m;
-        normalize_pair(y, m, 12);
-        ++*m;
-        /* |y| can't be bigger than about
-         * |original y| + |original m|/12 now.
-         */
-    }
+
     assert(1 <= *m && *m <= 12);
 
     /* Now only day can be out of bounds (year may also be out of bounds
