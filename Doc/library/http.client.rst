@@ -17,8 +17,8 @@ HTTPS protocols.  It is normally not used directly --- the module
 
 .. note::
 
-   HTTPS support is only available if the Python was compiled with SSL
-   support (through the :mod:`ssl` module).
+   HTTPS support is only available if Python was compiled with SSL support
+   (through the :mod:`ssl` module).
 
 The module provides the following classes:
 
