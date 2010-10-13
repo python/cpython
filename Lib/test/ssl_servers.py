@@ -2,6 +2,7 @@ import os
 import sys
 import ssl
 import pprint
+import socket
 import threading
 import urllib.parse
 # Rename HTTPServer to _HTTPServer so as to avoid confusion with HTTPSServer.
@@ -31,8 +32,14 @@ class HTTPSServer(_HTTPServer):
 
     def get_request(self):
         # override this to wrap socket with SSL
-        sock, addr = self.socket.accept()
-        sslconn = self.context.wrap_socket(sock, server_side=True)
+        try:
+            sock, addr = self.socket.accept()
+            sslconn = self.context.wrap_socket(sock, server_side=True)
+        except socket.error as e:
+            # socket errors are silenced by the caller, print them here
+            if support.verbose:
+                sys.stderr.write("Got an error:\n%s\n" % e)
+            raise
         return sslconn, addr
 
 class RootedHTTPRequestHandler(SimpleHTTPRequestHandler):
