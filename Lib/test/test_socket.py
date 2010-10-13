@@ -31,7 +31,7 @@ def try_address(host, port=0, family=socket.AF_INET):
         return True
 
 HOST = support.HOST
-MSG = b'Michael Gilfix was here\n'
+MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf8') ## test unicode string and carriage return
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 
 try:
@@ -955,16 +955,24 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 class FileObjectClassTestCase(SocketConnectedTest):
     """Unit tests for the object returned by socket.makefile()
 
-    self.serv_file is the io object returned by makefile() on
+    self.read_file is the io object returned by makefile() on
     the client connection.  You can read from this file to
     get output from the server.
 
-    self.cli_file is the io object returned by makefile() on the
+    self.write_file is the io object returned by makefile() on the
     server connection.  You can write to this file to send output
     to the client.
     """
 
     bufsize = -1 # Use default buffer size
+    encoding = 'utf8'
+    errors = 'strict'
+    newline = None
+
+    read_mode = 'rb'
+    read_msg = MSG
+    write_mode = 'wb'
+    write_msg = MSG
 
     def __init__(self, methodName='runTest'):
         SocketConnectedTest.__init__(self, methodName=methodName)
@@ -973,106 +981,116 @@ class FileObjectClassTestCase(SocketConnectedTest):
         self.evt1, self.evt2, self.serv_finished, self.cli_finished = [
             threading.Event() for i in range(4)]
         SocketConnectedTest.setUp(self)
-        self.serv_file = self.cli_conn.makefile('rb', self.bufsize)
+        self.read_file = self.cli_conn.makefile(
+            self.read_mode, self.bufsize,
+            encoding = self.encoding,
+            errors = self.errors,
+            newline = self.newline)
 
     def tearDown(self):
         self.serv_finished.set()
-        self.serv_file.close()
-        self.assertTrue(self.serv_file.closed)
-        self.serv_file = None
+        self.read_file.close()
+        self.assertTrue(self.read_file.closed)
+        self.read_file = None
         SocketConnectedTest.tearDown(self)
 
     def clientSetUp(self):
         SocketConnectedTest.clientSetUp(self)
-        self.cli_file = self.serv_conn.makefile('wb', self.bufsize)
+        self.write_file = self.serv_conn.makefile(
+            self.write_mode, self.bufsize,
+            encoding = self.encoding,
+            errors = self.errors,
+            newline = self.newline)
 
     def clientTearDown(self):
         self.cli_finished.set()
-        self.cli_file.close()
-        self.assertTrue(self.cli_file.closed)
-        self.cli_file = None
+        self.write_file.close()
+        self.assertTrue(self.write_file.closed)
+        self.write_file = None
         SocketConnectedTest.clientTearDown(self)
 
     def testSmallRead(self):
         # Performing small file read test
-        first_seg = self.serv_file.read(len(MSG)-3)
-        second_seg = self.serv_file.read(3)
+        first_seg = self.read_file.read(len(self.read_msg)-3)
+        second_seg = self.read_file.read(3)
         msg = first_seg + second_seg
-        self.assertEqual(msg, MSG)
+        self.assertEqual(msg, self.read_msg)
 
     def _testSmallRead(self):
-        self.cli_file.write(MSG)
-        self.cli_file.flush()
+        self.write_file.write(self.write_msg)
+        self.write_file.flush()
 
     def testFullRead(self):
         # read until EOF
-        msg = self.serv_file.read()
-        self.assertEqual(msg, MSG)
+        msg = self.read_file.read()
+        self.assertEqual(msg, self.read_msg)
 
     def _testFullRead(self):
-        self.cli_file.write(MSG)
-        self.cli_file.close()
+        self.write_file.write(self.write_msg)
+        self.write_file.close()
 
     def testUnbufferedRead(self):
         # Performing unbuffered file read test
-        buf = b''
+        buf = type(self.read_msg)()
         while 1:
-            char = self.serv_file.read(1)
+            char = self.read_file.read(1)
             if not char:
                 break
             buf += char
-        self.assertEqual(buf, MSG)
+        self.assertEqual(buf, self.read_msg)
 
     def _testUnbufferedRead(self):
-        self.cli_file.write(MSG)
-        self.cli_file.flush()
+        self.write_file.write(self.write_msg)
+        self.write_file.flush()
 
     def testReadline(self):
         # Performing file readline test
-        line = self.serv_file.readline()
-        self.assertEqual(line, MSG)
+        line = self.read_file.readline()
+        self.assertEqual(line, self.read_msg)
 
     def _testReadline(self):
-        self.cli_file.write(MSG)
-        self.cli_file.flush()
+        self.write_file.write(self.write_msg)
+        self.write_file.flush()
 
     def testCloseAfterMakefile(self):
         # The file returned by makefile should keep the socket open.
         self.cli_conn.close()
         # read until EOF
-        msg = self.serv_file.read()
-        self.assertEqual(msg, MSG)
+        msg = self.read_file.read()
+        self.assertEqual(msg, self.read_msg)
 
     def _testCloseAfterMakefile(self):
-        self.cli_file.write(MSG)
-        self.cli_file.flush()
+        self.write_file.write(self.write_msg)
+        self.write_file.flush()
 
     def testMakefileAfterMakefileClose(self):
-        self.serv_file.close()
+        self.read_file.close()
         msg = self.cli_conn.recv(len(MSG))
-        self.assertEqual(msg, MSG)
+        if isinstance(self.read_msg, str):
+            msg = msg.decode()
+        self.assertEqual(msg, self.read_msg)
 
     def _testMakefileAfterMakefileClose(self):
-        self.cli_file.write(MSG)
-        self.cli_file.flush()
+        self.write_file.write(self.write_msg)
+        self.write_file.flush()
 
     def testClosedAttr(self):
-        self.assertTrue(not self.serv_file.closed)
+        self.assertTrue(not self.read_file.closed)
 
     def _testClosedAttr(self):
-        self.assertTrue(not self.cli_file.closed)
+        self.assertTrue(not self.write_file.closed)
 
     def testAttributes(self):
-        self.assertEqual(self.serv_file.mode, 'rb')
-        self.assertEqual(self.serv_file.name, self.cli_conn.fileno())
+        self.assertEqual(self.read_file.mode, self.read_mode)
+        self.assertEqual(self.read_file.name, self.cli_conn.fileno())
 
     def _testAttributes(self):
-        self.assertEqual(self.cli_file.mode, 'wb')
-        self.assertEqual(self.cli_file.name, self.serv_conn.fileno())
+        self.assertEqual(self.write_file.mode, self.write_mode)
+        self.assertEqual(self.write_file.name, self.serv_conn.fileno())
 
     def testRealClose(self):
-        self.serv_file.close()
-        self.assertRaises(ValueError, self.serv_file.fileno)
+        self.read_file.close()
+        self.assertRaises(ValueError, self.read_file.fileno)
         self.cli_conn.close()
         self.assertRaises(socket.error, self.cli_conn.getsockname)
 
@@ -1205,33 +1223,33 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     def testUnbufferedReadline(self):
         # Read a line, create a new file object, read another line with it
-        line = self.serv_file.readline() # first line
-        self.assertEqual(line, b"A. " + MSG) # first line
-        self.serv_file = self.cli_conn.makefile('rb', 0)
-        line = self.serv_file.readline() # second line
-        self.assertEqual(line, b"B. " + MSG) # second line
+        line = self.read_file.readline() # first line
+        self.assertEqual(line, b"A. " + self.write_msg) # first line
+        self.read_file = self.cli_conn.makefile('rb', 0)
+        line = self.read_file.readline() # second line
+        self.assertEqual(line, b"B. " + self.write_msg) # second line
 
     def _testUnbufferedReadline(self):
-        self.cli_file.write(b"A. " + MSG)
-        self.cli_file.write(b"B. " + MSG)
-        self.cli_file.flush()
+        self.write_file.write(b"A. " + self.write_msg)
+        self.write_file.write(b"B. " + self.write_msg)
+        self.write_file.flush()
 
     def testMakefileClose(self):
         # The file returned by makefile should keep the socket open...
         self.cli_conn.close()
         msg = self.cli_conn.recv(1024)
-        self.assertEqual(msg, MSG)
+        self.assertEqual(msg, self.read_msg)
         # ...until the file is itself closed
-        self.serv_file.close()
+        self.read_file.close()
         self.assertRaises(socket.error, self.cli_conn.recv, 1024)
 
     def _testMakefileClose(self):
-        self.cli_file.write(MSG)
-        self.cli_file.flush()
+        self.write_file.write(self.write_msg)
+        self.write_file.flush()
 
     def testMakefileCloseSocketDestroy(self):
         refcount_before = sys.getrefcount(self.cli_conn)
-        self.serv_file.close()
+        self.read_file.close()
         refcount_after = sys.getrefcount(self.cli_conn)
         self.assertEqual(refcount_before - 1, refcount_after)
 
@@ -1239,28 +1257,28 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         pass
 
     # Non-blocking ops
-    # NOTE: to set `serv_file` as non-blocking, we must call
+    # NOTE: to set `read_file` as non-blocking, we must call
     # `cli_conn.setblocking` and vice-versa (see setUp / clientSetUp).
 
     def testSmallReadNonBlocking(self):
         self.cli_conn.setblocking(False)
-        self.assertEqual(self.serv_file.readinto(bytearray(10)), None)
-        self.assertEqual(self.serv_file.read(len(MSG) - 3), None)
+        self.assertEqual(self.read_file.readinto(bytearray(10)), None)
+        self.assertEqual(self.read_file.read(len(self.read_msg) - 3), None)
         self.evt1.set()
         self.evt2.wait(1.0)
-        first_seg = self.serv_file.read(len(MSG) - 3)
+        first_seg = self.read_file.read(len(self.read_msg) - 3)
         buf = bytearray(10)
-        n = self.serv_file.readinto(buf)
+        n = self.read_file.readinto(buf)
         self.assertEqual(n, 3)
         msg = first_seg + buf[:n]
-        self.assertEqual(msg, MSG)
-        self.assertEqual(self.serv_file.readinto(bytearray(16)), None)
-        self.assertEqual(self.serv_file.read(1), None)
+        self.assertEqual(msg, self.read_msg)
+        self.assertEqual(self.read_file.readinto(bytearray(16)), None)
+        self.assertEqual(self.read_file.read(1), None)
 
     def _testSmallReadNonBlocking(self):
         self.evt1.wait(1.0)
-        self.cli_file.write(MSG)
-        self.cli_file.flush()
+        self.write_file.write(self.write_msg)
+        self.write_file.flush()
         self.evt2.set()
         # Avoid cloding the socket before the server test has finished,
         # otherwise system recv() will return 0 instead of EWOULDBLOCK.
@@ -1280,10 +1298,10 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         BIG = b"x" * (1024 ** 2)
         LIMIT = 10
         # The first write() succeeds since a chunk of data can be buffered
-        n = self.cli_file.write(BIG)
+        n = self.write_file.write(BIG)
         self.assertGreater(n, 0)
         for i in range(LIMIT):
-            n = self.cli_file.write(BIG)
+            n = self.write_file.write(BIG)
             if n is None:
                 # Succeeded
                 break
@@ -1303,6 +1321,36 @@ class LineBufferedFileObjectClassTestCase(FileObjectClassTestCase):
 class SmallBufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     bufsize = 2 # Exercise the buffering code
+
+
+class UnicodeReadFileObjectClassTestCase(FileObjectClassTestCase):
+    """Tests for socket.makefile() in text mode (rather than binary)"""
+
+    read_mode = 'r'
+    read_msg = MSG.decode('utf8')
+    write_mode = 'wb'
+    write_msg = MSG
+    newline = ''
+
+
+class UnicodeWriteFileObjectClassTestCase(FileObjectClassTestCase):
+    """Tests for socket.makefile() in text mode (rather than binary)"""
+
+    read_mode = 'rb'
+    read_msg = MSG
+    write_mode = 'w'
+    write_msg = MSG.decode('utf8')
+    newline = ''
+
+
+class UnicodeReadWriteFileObjectClassTestCase(FileObjectClassTestCase):
+    """Tests for socket.makefile() in text mode (rather than binary)"""
+
+    read_mode = 'r'
+    read_msg = MSG.decode('utf8')
+    write_mode = 'w'
+    write_msg = MSG.decode('utf8')
+    newline = ''
 
 
 class NetworkConnectionTest(object):
@@ -1765,6 +1813,9 @@ def test_main():
         UnbufferedFileObjectClassTestCase,
         LineBufferedFileObjectClassTestCase,
         SmallBufferedFileObjectClassTestCase,
+        UnicodeReadFileObjectClassTestCase,
+        UnicodeWriteFileObjectClassTestCase,
+        UnicodeReadWriteFileObjectClassTestCase,
         NetworkConnectionNoServer,
         NetworkConnectionAttributesTest,
         NetworkConnectionBehaviourTest,
