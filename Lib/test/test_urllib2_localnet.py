@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import email
 import urllib.parse
 import urllib.request
@@ -8,6 +9,13 @@ import unittest
 import hashlib
 from test import support
 threading = support.import_module('threading')
+
+
+here = os.path.dirname(__file__)
+# Self-signed cert file for 'localhost'
+CERT_localhost = os.path.join(here, 'keycert.pem')
+# Self-signed cert file for 'fakehostname'
+CERT_fakehostname = os.path.join(here, 'keycert2.pem')
 
 # Loopback http server infrastructure
 
@@ -23,7 +31,7 @@ class LoopbackHttpServer(http.server.HTTPServer):
 
         # Set the timeout of our listening socket really low so
         # that we can stop the server easily.
-        self.socket.settimeout(1.0)
+        self.socket.settimeout(0.1)
 
     def get_request(self):
         """HTTPServer method, overridden."""
@@ -221,15 +229,7 @@ class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
 
 # Test cases
 
-class BaseTestCase(unittest.TestCase):
-    def setUp(self):
-        self._threads = support.threading_setup()
-
-    def tearDown(self):
-        support.threading_cleanup(*self._threads)
-
-
-class ProxyAuthTests(BaseTestCase):
+class ProxyAuthTests(unittest.TestCase):
     URL = "http://localhost"
 
     USER = "tester"
@@ -340,7 +340,7 @@ def GetRequestHandler(responses):
     return FakeHTTPRequestHandler
 
 
-class TestUrlopen(BaseTestCase):
+class TestUrlopen(unittest.TestCase):
     """Tests urllib.request.urlopen using the network.
 
     These tests are not exhaustive.  Assuming that testing using files does a
@@ -358,9 +358,9 @@ class TestUrlopen(BaseTestCase):
             self.server.stop()
         super(TestUrlopen, self).tearDown()
 
-    def urlopen(self, url, data=None):
+    def urlopen(self, url, data=None, **kwargs):
         l = []
-        f = urllib.request.urlopen(url, data)
+        f = urllib.request.urlopen(url, data, **kwargs)
         try:
             # Exercise various methods
             l.extend(f.readlines(200))
@@ -381,6 +381,17 @@ class TestUrlopen(BaseTestCase):
         self.server.ready.wait()
         port = self.server.port
         handler.port = port
+        return handler
+
+    def start_https_server(self, responses=None, certfile=CERT_localhost):
+        if not hasattr(urllib.request, 'HTTPSHandler'):
+            self.skipTest('ssl support required')
+        from test.ssl_servers import make_https_server
+        if responses is None:
+            responses = [(200, [], b"we care a bit")]
+        handler = GetRequestHandler(responses)
+        server = make_https_server(self, certfile=certfile, handler_class=handler)
+        handler.port = server.port
         return handler
 
     def test_redirection(self):
@@ -439,6 +450,28 @@ class TestUrlopen(BaseTestCase):
                              b"get=with_feeling")
         self.assertEqual(data, expected_response)
         self.assertEqual(handler.requests, ["/bizarre", b"get=with_feeling"])
+
+    def test_https(self):
+        handler = self.start_https_server()
+        data = self.urlopen("https://localhost:%s/bizarre" % handler.port)
+        self.assertEqual(data, b"we care a bit")
+
+    def test_https_with_cafile(self):
+        handler = self.start_https_server(certfile=CERT_localhost)
+        import ssl
+        # Good cert
+        data = self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                            cafile=CERT_localhost)
+        self.assertEqual(data, b"we care a bit")
+        # Bad cert
+        with self.assertRaises(urllib.error.URLError) as cm:
+            self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                         cafile=CERT_fakehostname)
+        # Good cert, but mismatching hostname
+        handler = self.start_https_server(certfile=CERT_fakehostname)
+        with self.assertRaises(ssl.CertificateError) as cm:
+            self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                         cafile=CERT_fakehostname)
 
     def test_sending_headers(self):
         handler = self.start_server()
@@ -521,6 +554,8 @@ class TestUrlopen(BaseTestCase):
                              (index, len(lines[index]), len(line)))
         self.assertEqual(index + 1, len(lines))
 
+
+@support.reap_threads
 def test_main():
     support.run_unittest(ProxyAuthTests, TestUrlopen)
 
