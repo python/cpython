@@ -133,7 +133,7 @@ class socket(_socket.socket):
         return socket(self.family, self.type, self.proto, fileno=fd), addr
 
     def makefile(self, mode="r", buffering=None, *,
-                 encoding=None, newline=None):
+                 encoding=None, errors=None, newline=None):
         """makefile(...) -> an I/O stream connected to the socket
 
         The arguments are as for io.open() after the filename,
@@ -171,7 +171,7 @@ class socket(_socket.socket):
             buffer = io.BufferedWriter(raw, buffering)
         if binary:
             return buffer
-        text = io.TextIOWrapper(buffer, encoding, newline)
+        text = io.TextIOWrapper(buffer, encoding, errors, newline)
         text.mode = mode
         return text
 
