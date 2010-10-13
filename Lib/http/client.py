@@ -1047,13 +1047,29 @@ else:
 
         default_port = HTTPS_PORT
 
+        # XXX Should key_file and cert_file be deprecated in favour of context?
+
         def __init__(self, host, port=None, key_file=None, cert_file=None,
                      strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                     source_address=None):
+                     source_address=None, *, context=None, check_hostname=None):
             super(HTTPSConnection, self).__init__(host, port, strict, timeout,
                                                   source_address)
             self.key_file = key_file
             self.cert_file = cert_file
+            if context is None:
+                # Some reasonable defaults
+                context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                context.options |= ssl.OP_NO_SSLv2
+            will_verify = context.verify_mode != ssl.CERT_NONE
+            if check_hostname is None:
+                check_hostname = will_verify
+            elif check_hostname and not will_verify:
+                raise ValueError("check_hostname needs a SSL context with "
+                                 "either CERT_OPTIONAL or CERT_REQUIRED")
+            if key_file or cert_file:
+                context.load_cert_chain(certfile, keyfile)
+            self._context = context
+            self._check_hostname = check_hostname
 
         def connect(self):
             "Connect to a host on a given (SSL) port."
@@ -1065,7 +1081,14 @@ else:
                 self.sock = sock
                 self._tunnel()
 
-            self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
+            self.sock = self._context.wrap_socket(sock)
+            try:
+                if self._check_hostname:
+                    ssl.match_hostname(self.sock.getpeercert(), self.host)
+            except Exception:
+                self.sock.shutdown(socket.SHUT_RDWR)
+                self.sock.close()
+                raise
 
     __all__.append("HTTPSConnection")
 

@@ -15,13 +15,10 @@ authentication, redirections, cookies and more.
 The :mod:`urllib.request` module defines the following functions:
 
 
-.. function:: urlopen(url, data=None[, timeout])
+.. function:: urlopen(url, data=None[, timeout], *, cafile=None, capath=None)
 
    Open the URL *url*, which can be either a string or a
    :class:`Request` object.
-
-   .. warning::
-      HTTPS requests do not do any verification of the server's certificate.
 
    *data* may be a string specifying additional data to send to the
    server, or ``None`` if no such data is needed.  Currently HTTP
@@ -37,6 +34,16 @@ The :mod:`urllib.request` module defines the following functions:
    blocking operations like the connection attempt (if not specified,
    the global default timeout setting will be used).  This actually
    only works for HTTP, HTTPS and FTP connections.
+
+   The optional *cafile* and *capath* parameters specify a set of trusted
+   CA certificates for HTTPS requests.  *cafile* should point to a single
+   file containing a bundle of CA certificates, whereas *capath* should
+   point to a directory of hashed certificate files.  More information can
+   be found in :meth:`ssl.SSLContext.load_verify_locations`.
+
+   .. warning::
+      If neither *cafile* nor *capath* is specified, an HTTPS request
+      will not do any verification of the server's certificate.
 
    This function returns a file-like object with two additional methods from
    the :mod:`urllib.response` module
@@ -61,6 +68,9 @@ The :mod:`urllib.request` module defines the following functions:
    discontinued; :func:`urlopen` corresponds to the old ``urllib2.urlopen``.
    Proxy handling, which was done by passing a dictionary parameter to
    ``urllib.urlopen``, can be obtained by using :class:`ProxyHandler` objects.
+
+   .. versionchanged:: 3.2
+      *cafile* and *capath* were added.
 
 .. function:: install_opener(opener)
 
@@ -421,9 +431,13 @@ The following classes are provided:
    A class to handle opening of HTTP URLs.
 
 
-.. class:: HTTPSHandler()
+.. class:: HTTPSHandler(debuglevel=0, context=None, check_hostname=None)
 
-   A class to handle opening of HTTPS URLs.
+   A class to handle opening of HTTPS URLs.  *context* and *check_hostname*
+   have the same meaning as in :class:`http.client.HTTPSConnection`.
+
+   .. versionchanged:: 3.2
+      *context* and *check_hostname* were added.
 
 
 .. class:: FileHandler()

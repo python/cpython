@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #9003: http.client.HTTPSConnection, urllib.request.HTTPSHandler and
+  urllib.request.urlopen now take optional arguments to allow for
+  server certificate checking, as recommended in public uses of HTTPS.
+
 - Issue #6612: Fix site and sysconfig to catch os.getcwd() error, eg. if the
   current directory was deleted. Patch written by W. Trevor King.
 

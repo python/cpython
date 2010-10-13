@@ -57,3 +57,8 @@ if __name__ == '__main__':
     with open('keycert.pem', 'w') as f:
         f.write(key)
         f.write(cert)
+    # For certificate matching tests
+    cert, key = make_cert_key('fakehostname')
+    with open('keycert2.pem', 'w') as f:
+        f.write(key)
+        f.write(cert)
