@@ -502,9 +502,6 @@ class SysModuleTest(unittest.TestCase):
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows has a native unicode API')
     def test_undecodable_code(self):
-        # Raise SkipTest() if sys.executable is not encodable to ascii
-        test.support.workaroundIssue8611()
-
         undecodable = b"\xff"
         env = os.environ.copy()
         # Use C locale to get ascii for the locale encoding
