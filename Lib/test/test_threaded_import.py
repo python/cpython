@@ -33,7 +33,7 @@ def task(N, done, done_tasks, errors):
         done_tasks.append(thread.get_ident())
         finished = len(done_tasks) == N
         if finished:
-            done.release()
+            done.set()
 
 # Create a circular import structure: A -> C -> B -> D -> A
 # NOTE: `time` is already loaded and therefore doesn't threaten to deadlock.
@@ -99,8 +99,7 @@ class ThreadedImportTests(unittest.TestCase):
             # This triggers on, e.g., from test import autotest.
             raise unittest.SkipTest("can't run when import lock is held")
 
-        done = thread.allocate_lock()
-        done.acquire()
+        done = threading.Event()
         for N in (20, 50) * 3:
             if verbose:
                 print("Trying", N, "threads ...", end=' ')
@@ -112,13 +111,13 @@ class ThreadedImportTests(unittest.TestCase):
                     pass
             errors = []
             done_tasks = []
+            done.clear()
             for i in range(N):
                 thread.start_new_thread(task, (N, done, done_tasks, errors,))
-            done.acquire()
+            done.wait(60)
             self.assertFalse(errors)
             if verbose:
                 print("OK.")
-        done.release()
 
     def test_parallel_module_init(self):
         self.check_parallel_module_init()
