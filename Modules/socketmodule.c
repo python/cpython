@@ -379,7 +379,7 @@ dup_socket(SOCKET handle)
 #define SOCKETCLOSE close
 #endif
 
-#if defined(HAVE_BLUETOOTH_H) || defined(HAVE_BLUETOOTH_BLUETOOTH_H) &&  !defined(__NetBSD__)
+#if (defined(HAVE_BLUETOOTH_H) || defined(HAVE_BLUETOOTH_BLUETOOTH_H)) && !defined(__NetBSD__)
 #define USE_BLUETOOTH 1
 #if defined(__FreeBSD__)
 #define BTPROTO_L2CAP BLUETOOTH_PROTO_L2CAP
