@@ -36,6 +36,11 @@ Extensions
 
 - The Unicode database was updated to 6.0.0.
 
+Tools/Demos
+-----------
+
+- Issue #7287: Demo/imputil/knee.py was removed.
+
 
 What's New in Python 3.2 Alpha 3?
 =================================
