@@ -11,16 +11,10 @@ class HelperMixin:
         new = marshal.loads(marshal.dumps(sample, *extra))
         self.assertEqual(sample, new)
         try:
-            f = open(support.TESTFN, "wb")
-            try:
+            with open(support.TESTFN, "wb") as f:
                 marshal.dump(sample, f, *extra)
-            finally:
-                f.close()
-            f = open(support.TESTFN, "rb")
-            try:
+            with open(support.TESTFN, "rb") as f:
                 new = marshal.load(f)
-            finally:
-                f.close()
             self.assertEqual(sample, new)
         finally:
             support.unlink(support.TESTFN)
