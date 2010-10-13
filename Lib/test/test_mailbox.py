@@ -586,12 +586,10 @@ class TestMaildir(TestMailbox):
         # Remove old files from 'tmp'
         foo_path = os.path.join(self._path, 'tmp', 'foo')
         bar_path = os.path.join(self._path, 'tmp', 'bar')
-        f = open(foo_path, 'w')
-        f.write("@")
-        f.close()
-        f = open(bar_path, 'w')
-        f.write("@")
-        f.close()
+        with open(foo_path, 'w') as f:
+            f.write("@")
+        with open(bar_path, 'w') as f:
+            f.write("@")
         self._box.clean()
         self.assertTrue(os.path.exists(foo_path))
         self.assertTrue(os.path.exists(bar_path))
@@ -816,7 +814,8 @@ class _TestMboxMMDF(TestMailbox):
         self._box._file.seek(0)
         contents = self._box._file.read()
         self._box.close()
-        self.assertEqual(contents, open(self._path, 'r', newline='').read())
+        with open(self._path, 'r', newline='') as f:
+            self.assertEqual(contents, f.read())
         self._box = self._factory(self._path)
 
     def test_lock_conflict(self):
@@ -1077,13 +1076,12 @@ class TestMessage(TestBase):
 
     def test_initialize_with_file(self):
         # Initialize based on contents of file
-        f = open(self._path, 'w+')
-        f.write(_sample_message)
-        f.seek(0)
-        msg = self._factory(f)
-        self._post_initialize_hook(msg)
-        self._check_sample(msg)
-        f.close()
+        with open(self._path, 'w+') as f:
+            f.write(_sample_message)
+            f.seek(0)
+            msg = self._factory(f)
+            self._post_initialize_hook(msg)
+            self._check_sample(msg)
 
     def test_initialize_with_nothing(self):
         # Initialize without arguments
@@ -1807,18 +1805,16 @@ class MaildirTestCase(unittest.TestCase):
         filename = ".".join((str(t), str(pid), "myhostname", "mydomain"))
         tmpname = os.path.join(self._dir, "tmp", filename)
         newname = os.path.join(self._dir, dir, filename)
-        fp = open(tmpname, "w")
-        self._msgfiles.append(tmpname)
-        if mbox:
-            fp.write(FROM_)
-        fp.write(DUMMY_MESSAGE)
-        fp.close()
+        with open(tmpname, "w") as fp:
+            self._msgfiles.append(tmpname)
+            if mbox:
+                fp.write(FROM_)
+            fp.write(DUMMY_MESSAGE)
         if hasattr(os, "link"):
             os.link(tmpname, newname)
         else:
-            fp = open(newname, "w")
-            fp.write(DUMMY_MESSAGE)
-            fp.close()
+            with open(newname, "w") as fp:
+                fp.write(DUMMY_MESSAGE)
         self._msgfiles.append(newname)
         return tmpname
 
