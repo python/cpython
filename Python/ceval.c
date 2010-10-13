@@ -1232,6 +1232,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         PyObject *error_type, *error_value, *error_traceback;
         PyErr_Fetch(&error_type, &error_value, &error_traceback);
         filename = _PyUnicode_AsString(co->co_filename);
+        if (filename == NULL && tstate->overflowed) {
+            /* maximum recursion depth exceeded */
+            goto exit_eval_frame;
+        }
         PyErr_Restore(error_type, error_value, error_traceback);
     }
 #endif
