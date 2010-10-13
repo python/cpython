@@ -261,7 +261,7 @@ def run_path(path_name, init_globals=None, run_name=None):
                  _ModifiedArgv0(path_name):
                 mod_globals = temp_module.module.__dict__
                 return _run_code(code, mod_globals, init_globals,
-                                    run_name, fname, loader, pkg_name)
+                                    run_name, fname, loader, pkg_name).copy()
         finally:
             try:
                 sys.path.remove(path_name)
