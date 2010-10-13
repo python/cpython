@@ -99,9 +99,6 @@ static char *usage_5 =
 "               The default module search path uses %s.\n"
 "PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
-#if !(defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)) && !defined(__APPLE__)
-"PYTHONFSENCODING: Encoding used for the filesystem.\n"
-#endif
 ;
 
 static int

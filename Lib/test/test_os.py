@@ -1172,36 +1172,6 @@ class FSEncodingTests(unittest.TestCase):
                 continue
             self.assertEquals(os.fsdecode(bytesfn), fn)
 
-    def get_output(self, fs_encoding, func):
-        env = os.environ.copy()
-        env['PYTHONIOENCODING'] = 'utf-8'
-        env['PYTHONFSENCODING'] = fs_encoding
-        code = 'import os; print(%s, end="")' % func
-        process = subprocess.Popen(
-            [sys.executable, "-c", code],
-            stdout=subprocess.PIPE, env=env)
-        stdout, stderr = process.communicate()
-        self.assertEqual(process.returncode, 0)
-        return stdout.decode('utf-8')
-
-    @unittest.skipIf(sys.platform in ('win32', 'darwin'),
-                     'PYTHONFSENCODING is ignored on Windows and Mac OS X')
-    def test_encodings(self):
-        def check(encoding, bytesfn, unicodefn):
-            encoded = self.get_output(encoding, 'repr(os.fsencode(%a))' % unicodefn)
-            self.assertEqual(encoded, repr(bytesfn))
-
-            decoded = self.get_output(encoding, 'repr(os.fsdecode(%a))' % bytesfn)
-            self.assertEqual(decoded, repr(unicodefn))
-
-        check('utf-8', b'\xc3\xa9\x80', '\xe9\udc80')
-
-        # Raise SkipTest() if sys.executable is not encodable to ascii
-        support.workaroundIssue8611()
-
-        check('ascii', b'abc\xff', 'abc\udcff')
-        check('iso-8859-15', b'\xef\xa4', '\xef\u20ac')
-
 
 class PidTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'getppid'), "test needs os.getppid")
