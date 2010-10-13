@@ -1,10 +1,12 @@
 import os
 import sys
 import ssl
+import pprint
 import threading
 import urllib.parse
 # Rename HTTPServer to _HTTPServer so as to avoid confusion with HTTPSServer.
-from http.server import HTTPServer as _HTTPServer, SimpleHTTPRequestHandler
+from http.server import (HTTPServer as _HTTPServer,
+    SimpleHTTPRequestHandler, BaseHTTPRequestHandler)
 
 from test import support
 
@@ -73,6 +75,36 @@ class RootedHTTPRequestHandler(SimpleHTTPRequestHandler):
                               self.log_date_time_string(),
                               format%args))
 
+
+class StatsRequestHandler(BaseHTTPRequestHandler):
+    """Example HTTP request handler which returns SSL statistics on GET
+    requests.
+    """
+
+    server_version = "StatsHTTPS/1.0"
+
+    def do_GET(self, send_body=True):
+        """Serve a GET request."""
+        sock = self.rfile.raw._sock
+        context = sock.context
+        body = pprint.pformat(context.session_stats())
+        body = body.encode('utf-8')
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if send_body:
+            self.wfile.write(body)
+
+    def do_HEAD(self):
+        """Serve a HEAD request."""
+        self.do_GET(send_body=False)
+
+    def log_request(self, format, *args):
+        if support.verbose:
+            BaseHTTPRequestHandler.log_request(self, format, *args)
+
+
 class HTTPSServerThread(threading.Thread):
 
     def __init__(self, context, host=HOST, handler_class=None):
@@ -117,3 +149,29 @@ def make_https_server(case, certfile=CERTFILE, host=HOST, handler_class=None):
         server.join()
     case.addCleanup(cleanup)
     return server
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(
+        description='Run a test HTTPS server. '
+                    'By default, the current directory is served.')
+    parser.add_argument('-p', '--port', type=int, default=4433,
+                        help='port to listen on (default: %(default)s)')
+    parser.add_argument('-q', '--quiet', dest='verbose', default=True,
+                        action='store_false', help='be less verbose')
+    parser.add_argument('-s', '--stats', dest='use_stats_handler', default=False,
+                        action='store_true', help='always return stats page')
+    args = parser.parse_args()
+
+    support.verbose = args.verbose
+    if args.use_stats_handler:
+        handler_class = StatsRequestHandler
+    else:
+        handler_class = RootedHTTPRequestHandler
+        handler_class.root = os.getcwd()
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    context.load_cert_chain(CERTFILE)
+
+    server = HTTPSServer(("", args.port), handler_class, context)
+    server.serve_forever(0.1)
