@@ -125,6 +125,10 @@ C-API
 Library
 -------
 
+- Issue #10041: The signature of optional arguments in socket.makefile()
+  didn't match that of io.open(), and they also didn't get forwarded
+  properly to TextIOWrapper in text mode.  Patch by Kai Zhu.
+
 - Issue #6612: Fix site and sysconfig to catch os.getcwd() error, eg. if the
   current directory was deleted. Patch written by W. Trevor King.
 
