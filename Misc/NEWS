@@ -15,6 +15,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #1710703: Write structures for an empty ZIP archive when a ZipFile is
+  created in modes 'a' or 'w' and then closed without adding any files. Raise
+  BadZipfile (rather than IOError) when opening small non-ZIP files.
+
 - Issue #10041: The signature of optional arguments in socket.makefile()
   didn't match that of io.open(), and they also didn't get forwarded
   properly to TextIOWrapper in text mode.  Patch by Kai Zhu.
