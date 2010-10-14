@@ -1724,7 +1724,7 @@ def test_pdb_set_trace():
       ... >>> import pdb; pdb.set_trace()
       ... '''
       >>> parser = doctest.DocTestParser()
-      >>> test = parser.get_doctest(doc, {}, "foo", "foo.py", 0)
+      >>> test = parser.get_doctest(doc, {}, "foo-bär@baz", "foo-bär@baz.py", 0)
       >>> runner = doctest.DocTestRunner(verbose=False)
 
     To demonstrate this, we'll create a fake standard input that
@@ -1740,7 +1740,7 @@ def test_pdb_set_trace():
       >>> try: runner.run(test)
       ... finally: sys.stdin = real_stdin
       --Return--
-      > <doctest foo[1]>(1)<module>()->None
+      > <doctest foo-bär@baz[1]>(1)<module>()->None
       -> import pdb; pdb.set_trace()
       (Pdb) print x
       42
@@ -1757,7 +1757,7 @@ def test_pdb_set_trace():
       ... >>> x=1
       ... >>> calls_set_trace()
       ... '''
-      >>> test = parser.get_doctest(doc, globals(), "foo", "foo.py", 0)
+      >>> test = parser.get_doctest(doc, globals(), "foo-bär@baz", "foo-bär@baz.py", 0)
       >>> real_stdin = sys.stdin
       >>> sys.stdin = _FakeInput([
       ...    'print y',  # print data defined in the function
@@ -1776,7 +1776,7 @@ def test_pdb_set_trace():
       (Pdb) print y
       2
       (Pdb) up
-      > <doctest foo[1]>(1)<module>()
+      > <doctest foo-bär@baz[1]>(1)<module>()
       -> calls_set_trace()
       (Pdb) print x
       1
@@ -1794,7 +1794,7 @@ def test_pdb_set_trace():
       ... ...     import pdb; pdb.set_trace()
       ... >>> f(3)
       ... '''
-      >>> test = parser.get_doctest(doc, globals(), "foo", "foo.py", 0)
+      >>> test = parser.get_doctest(doc, globals(), "foo-bär@baz", "foo-bär@baz.py", 0)
       >>> real_stdin = sys.stdin
       >>> sys.stdin = _FakeInput([
       ...    'list',     # list source from example 2
@@ -1808,7 +1808,7 @@ def test_pdb_set_trace():
       ... finally: sys.stdin = real_stdin
       ... # doctest: +NORMALIZE_WHITESPACE
       --Return--
-      > <doctest foo[1]>(3)g()->None
+      > <doctest foo-bär@baz[1]>(3)g()->None
       -> import pdb; pdb.set_trace()
       (Pdb) list
         1     def g(x):
@@ -1817,7 +1817,7 @@ def test_pdb_set_trace():
       [EOF]
       (Pdb) next
       --Return--
-      > <doctest foo[0]>(2)f()->None
+      > <doctest foo-bär@baz[0]>(2)f()->None
       -> g(x*2)
       (Pdb) list
         1     def f(x):
@@ -1825,14 +1825,14 @@ def test_pdb_set_trace():
       [EOF]
       (Pdb) next
       --Return--
-      > <doctest foo[2]>(1)<module>()->None
+      > <doctest foo-bär@baz[2]>(1)<module>()->None
       -> f(3)
       (Pdb) list
         1  -> f(3)
       [EOF]
       (Pdb) continue
       **********************************************************************
-      File "foo.py", line 7, in foo
+      File "foo-bär@baz.py", line 7, in foo-bär@baz
       Failed example:
           f(3)
       Expected nothing
@@ -1866,7 +1866,7 @@ def test_pdb_set_trace_nested():
     ... '''
     >>> parser = doctest.DocTestParser()
     >>> runner = doctest.DocTestRunner(verbose=False)
-    >>> test = parser.get_doctest(doc, globals(), "foo", "foo.py", 0)
+    >>> test = parser.get_doctest(doc, globals(), "foo-bär@baz", "foo-bär@baz.py", 0)
     >>> real_stdin = sys.stdin
     >>> sys.stdin = _FakeInput([
     ...    'print y',  # print data defined in the function
@@ -1918,7 +1918,7 @@ def test_pdb_set_trace_nested():
     (Pdb) print y
     1
     (Pdb) up
-    > <doctest foo[1]>(1)<module>()
+    > <doctest foo-bär@baz[1]>(1)<module>()
     -> calls_set_trace()
     (Pdb) print foo
     *** NameError: name 'foo' is not defined
