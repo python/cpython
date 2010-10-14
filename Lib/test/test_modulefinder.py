@@ -204,11 +204,17 @@ def open_file(path):
 
 def create_package(source):
     ofi = None
-    for line in source.splitlines():
-        if line.startswith(" ") or line.startswith("\t"):
-            ofi.write(line.strip() + "\n")
-        else:
-            ofi = open_file(os.path.join(TEST_DIR, line.strip()))
+    try:
+        for line in source.splitlines():
+            if line.startswith(" ") or line.startswith("\t"):
+                ofi.write(line.strip() + "\n")
+            else:
+                if ofi:
+                    ofi.close()
+                ofi = open_file(os.path.join(TEST_DIR, line.strip()))
+    finally:
+        if ofi:
+            ofi.close()
 
 class ModuleFinderTest(unittest.TestCase):
     def _do_test(self, info, report=False):
