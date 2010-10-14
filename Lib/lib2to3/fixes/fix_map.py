@@ -26,6 +26,7 @@ from ..fixer_util import Name, Call, ListComp, in_special_context
 from ..pygram import python_symbols as syms
 
 class FixMap(fixer_base.ConditionalFix):
+    BM_compatible = True
 
     PATTERN = """
     map_none=power<

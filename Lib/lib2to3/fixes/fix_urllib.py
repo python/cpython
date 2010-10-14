@@ -8,7 +8,7 @@
 from lib2to3.fixes.fix_imports import alternates, FixImports
 from lib2to3 import fixer_base
 from lib2to3.fixer_util import (Name, Comma, FromImport, Newline,
-                                find_indentation)
+                                find_indentation, Node, syms)
 
 MAPPING = {"urllib":  [
                 ("urllib.request",
@@ -121,26 +121,37 @@ class FixUrllib(FixImports):
             mod_dict = {}
             members = results["members"]
             for member in members:
-                member = member.value
                 # we only care about the actual members
-                if member != ",":
+                if member.type == syms.import_as_name:
+                    as_name = member.children[2].value
+                    member_name = member.children[0].value
+                else:
+                    member_name = member.value
+                    as_name = None
+                if member_name != ",":
                     for change in MAPPING[mod_member.value]:
-                        if member in change[1]:
-                            if change[0] in mod_dict:
-                                mod_dict[change[0]].append(member)
-                            else:
-                                mod_dict[change[0]] = [member]
+                        if member_name in change[1]:
+                            if change[0] not in mod_dict:
                                 modules.append(change[0])
+                            mod_dict.setdefault(change[0], []).append(member)
 
             new_nodes = []
             indentation = find_indentation(node)
             first = True
+            def handle_name(name, prefix):
+                if name.type == syms.import_as_name:
+                    kids = [Name(name.children[0].value, prefix=prefix),
+                            name.children[1].clone(),
+                            name.children[2].clone()]
+                    return [Node(syms.import_as_name, kids)]
+                return [Name(name.value, prefix=prefix)]
             for module in modules:
                 elts = mod_dict[module]
                 names = []
                 for elt in elts[:-1]:
-                    names.extend([Name(elt, prefix=pref), Comma()])
-                names.append(Name(elts[-1], prefix=pref))
+                    names.extend(handle_name(elt, pref))
+                    names.append(Comma())
+                names.extend(handle_name(elts[-1], pref))
                 new = FromImport(module, names)
                 if not first or node.parent.prefix.endswith(indentation):
                     new.prefix = indentation

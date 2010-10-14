@@ -52,7 +52,7 @@ _TYPE_MAPPING = {
 _pats = ["power< 'types' trailer< '.' name='%s' > >" % t for t in _TYPE_MAPPING]
 
 class FixTypes(fixer_base.BaseFix):
-
+    BM_compatible = True
     PATTERN = '|'.join(_pats)
 
     def transform(self, node, results):

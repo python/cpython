@@ -12,6 +12,8 @@ from ..fixer_util import Name, Attr, touch_import
 
 
 class FixIntern(fixer_base.BaseFix):
+    BM_compatible = True
+    order = "pre"
 
     PATTERN = """
     power< 'intern'
