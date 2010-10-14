@@ -73,11 +73,9 @@ import bdb
 import dis
 import os
 import re
-import code
 import pprint
 import traceback
 import inspect
-import types
 
 
 class Restart(Exception):
@@ -528,7 +526,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             arg = arg[colon+1:].lstrip()
             try:
                 lineno = int(arg)
-            except ValueError as msg:
+            except ValueError:
                 self.error('Bad lineno: %s' % arg)
                 return
         else:
