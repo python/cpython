@@ -61,6 +61,11 @@ Tools/Demos
 
 - Issue #7287: Demo/imputil/knee.py was removed.
 
+Build
+-----
+
+- Issue #10094: Use versioned .so files on GNU/kfreeBSD and the GNU Hurd.
+
 
 What's New in Python 3.2 Alpha 3?
 =================================
