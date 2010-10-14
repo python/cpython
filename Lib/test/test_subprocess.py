@@ -885,7 +885,9 @@ class POSIXProcessTestCase(BaseTestCase):
             script = "import os; print(ascii(os.getenv(%s)))" % repr(key)
             env = os.environ.copy()
             env[key] = value
-            # Use C locale to get ascii for the locale encoding
+            # Use C locale to get ascii for the locale encoding to force
+            # surrogate-escaping of \xFF in the child process; otherwise it can
+            # be decoded as-is if the default locale is latin-1.
             env['LC_ALL'] = 'C'
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
@@ -899,8 +901,6 @@ class POSIXProcessTestCase(BaseTestCase):
             script = "import os; print(ascii(os.getenvb(%s)))" % repr(key)
             env = os.environ.copy()
             env[key] = value
-            # Use C locale to get ascii for the locale encoding
-            env['LC_ALL'] = 'C'
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
