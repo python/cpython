@@ -133,11 +133,7 @@ resources to test.  Currently only the following are defined:
     decimal -   Test the decimal module against a large suite that
                 verifies compliance with standards.
 
-    compiler -  Test the compiler package by compiling all the source
-                in the standard library and test suite.  This takes
-                a long time.  Enabling this resource also allows
-                test_tokenize to verify round-trip lexing on every
-                file in the test library.
+    cpu -       Used for certain CPU-heavy tests.
 
     subprocess  Run all tests for the subprocess module.
 
@@ -215,7 +211,7 @@ INTERRUPTED = -4
 from test import test_support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
-                  'decimal', 'compiler', 'subprocess', 'urlfetch', 'gui',
+                  'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui',
                   'xpickle')
 
 TEMPDIR = os.path.abspath(tempfile.gettempdir())

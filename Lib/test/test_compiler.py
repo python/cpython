@@ -310,7 +310,7 @@ from math import *
 
 def test_main():
     global TEST_ALL
-    TEST_ALL = test.test_support.is_resource_enabled("compiler")
+    TEST_ALL = test.test_support.is_resource_enabled("cpu")
     test.test_support.run_unittest(CompilerTest)
 
 if __name__ == "__main__":
