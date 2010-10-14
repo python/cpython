@@ -17,6 +17,10 @@ import contextlib
 from weakref import proxy
 import signal
 import math
+try:
+    import fcntl
+except ImportError:
+    fcntl = False
 
 def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
@@ -901,6 +905,26 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def _testSetBlocking(self):
         pass
+
+    if hasattr(socket, "SOCK_NONBLOCK"):
+        def testInitNonBlocking(self):
+            # reinit server socket
+            self.serv.close()
+            self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
+                                                  socket.SOCK_NONBLOCK)
+            self.port = support.bind_port(self.serv)
+            self.serv.listen(1)
+            # actual testing
+            start = time.time()
+            try:
+                self.serv.accept()
+            except socket.error:
+                pass
+            end = time.time()
+            self.assertTrue((end - start) < 1.0, "Error creating with non-blocking mode.")
+
+        def _testInitNonBlocking(self):
+            pass
 
     def testAccept(self):
         # Testing non-blocking accept
@@ -1801,6 +1825,56 @@ class ContextManagersTest(ThreadedTCPSocketTest):
         self.assertTrue(sock._closed)
         self.assertRaises(socket.error, sock.sendall, b'foo')
 
+@unittest.skipUnless(hasattr(socket, "SOCK_CLOEXEC"),
+                     "SOCK_CLOEXEC not defined")
+@unittest.skipUnless(fcntl, "module fcntl not available")
+class CloexecConstantTest(unittest.TestCase):
+    def test_SOCK_CLOEXEC(self):
+        s = socket.socket(socket.AF_INET,
+                          socket.SOCK_STREAM | socket.SOCK_CLOEXEC)
+        self.assertTrue(s.type & socket.SOCK_CLOEXEC)
+        self.assertTrue(fcntl.fcntl(s, fcntl.F_GETFD) & fcntl.FD_CLOEXEC)
+
+
+@unittest.skipUnless(hasattr(socket, "SOCK_NONBLOCK"),
+                     "SOCK_NONBLOCK not defined")
+class NonblockConstantTest(unittest.TestCase):
+    def checkNonblock(self, s, nonblock=True, timeout=0.0):
+        if nonblock:
+            self.assertTrue(s.type & socket.SOCK_NONBLOCK)
+            self.assertEqual(s.gettimeout(), timeout)
+        else:
+            self.assertFalse(s.type & socket.SOCK_NONBLOCK)
+            self.assertEqual(s.gettimeout(), None)
+
+    def test_SOCK_NONBLOCK(self):
+        # a lot of it seems silly and redundant, but I wanted to test that
+        # changing back and forth worked ok
+        s = socket.socket(socket.AF_INET,
+                          socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+        self.checkNonblock(s)
+        s.setblocking(1)
+        self.checkNonblock(s, False)
+        s.setblocking(0)
+        self.checkNonblock(s)
+        s.settimeout(None)
+        self.checkNonblock(s, False)
+        s.settimeout(2.0)
+        self.checkNonblock(s, timeout=2.0)
+        s.setblocking(1)
+        self.checkNonblock(s, False)
+        # defaulttimeout
+        t = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(0.0)
+        self.checkNonblock(socket.socket())
+        socket.setdefaulttimeout(None)
+        self.checkNonblock(socket.socket(), False)
+        socket.setdefaulttimeout(2.0)
+        self.checkNonblock(socket.socket(), timeout=2.0)
+        socket.setdefaulttimeout(None)
+        self.checkNonblock(socket.socket(), False)
+        socket.setdefaulttimeout(t)
+
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
@@ -1820,6 +1894,8 @@ def test_main():
         NetworkConnectionAttributesTest,
         NetworkConnectionBehaviourTest,
         ContextManagersTest,
+        CloexecConstantTest,
+        NonblockConstantTest
     ])
     if hasattr(socket, "socketpair"):
         tests.append(BasicSocketPairTest)

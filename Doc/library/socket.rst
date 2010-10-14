@@ -157,6 +157,21 @@ The module :mod:`socket` exports the following constants and functions:
    :func:`socket`. (Only :const:`SOCK_STREAM` and :const:`SOCK_DGRAM` appear to be
    generally useful.)
 
+.. data:: SOCK_CLOEXEC
+          SOCK_NONBLOCK
+
+   These two constants, if defined, can be combined with the socket types and
+   allow you to set some flags atomically (thus avoiding possible race
+   conditions and the need for separate calls).
+
+   .. seealso::
+
+      `Secure File Descriptor Handling <http://udrepper.livejournal.com/20407.html>`_
+      for a more thorough explanation.
+
+   Availability: Linux >= 2.6.27.
+
+   .. versionadded:: 3.2
 
 .. data:: SO_*
           SOMAXCONN
