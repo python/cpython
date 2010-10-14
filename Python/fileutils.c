@@ -364,7 +364,8 @@ _Py_wrealpath(const wchar_t *path,
 }
 #endif
 
-/* Get the current directory. Decode the path from the locale encoding. */
+/* Get the current directory. size is the buffer size in wide characters
+   including the null character. Decode the path from the locale encoding. */
 
 wchar_t*
 _Py_wgetcwd(wchar_t *buf, size_t size)
@@ -373,12 +374,19 @@ _Py_wgetcwd(wchar_t *buf, size_t size)
     return _wgetcwd(buf, size);
 #else
     char fname[PATH_MAX];
+    wchar_t *wname;
+
     if (getcwd(fname, PATH_MAX) == NULL)
         return NULL;
-    if (mbstowcs(buf, fname, size) >= size) {
-        errno = ERANGE;
+    wname = _Py_char2wchar(fname);
+    if (wname == NULL)
+        return NULL;
+    if (size <= wcslen(wname)) {
+        PyMem_Free(wname);
         return NULL;
     }
+    wcsncpy(buf, wname, size);
+    PyMem_Free(wname);
     return buf;
 #endif
 }
