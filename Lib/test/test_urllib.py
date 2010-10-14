@@ -121,7 +121,7 @@ class ProxyTests(unittest.TestCase):
         self.env = support.EnvironmentVarGuard()
         # Delete all proxy related env vars
         for k in os.environ.keys():
-            if 'proxy' in k.lower():
+            if k == 'NO_PROXY':
                 self.env.unset(k)
 
     def tearDown(self):
