@@ -462,17 +462,20 @@ static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
     PyObject *readline = NULL, *stream = NULL, *io = NULL;
+    int fd;
 
     io = PyImport_ImportModuleNoBlock("io");
     if (io == NULL)
         goto cleanup;
 
-    if (tok->filename)
-        stream = PyObject_CallMethod(io, "open", "ssis",
-                                     tok->filename, "r", -1, enc);
-    else
-        stream = PyObject_CallMethod(io, "open", "isisOOO",
-                        fileno(tok->fp), "r", -1, enc, Py_None, Py_None, Py_False);
+    fd = fileno(tok->fp);
+    if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, NULL);
+        goto cleanup;
+    }
+
+    stream = PyObject_CallMethod(io, "open", "isisOOO",
+                    fd, "r", -1, enc, Py_None, Py_None, Py_False);
     if (stream == NULL)
         goto cleanup;
 

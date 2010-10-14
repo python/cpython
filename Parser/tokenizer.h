@@ -53,7 +53,7 @@ struct tok_state {
     int cont_line;          /* whether we are in a continuation line. */
     const char* line_start;     /* pointer to start of current line */
 #ifndef PGEN
-    PyObject *decoding_readline; /* codecs.open(...).readline */
+    PyObject *decoding_readline; /* open(...).readline */
     PyObject *decoding_buffer;
 #endif
     const char* enc;        /* Encoding for the current str. */
