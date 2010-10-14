@@ -82,7 +82,7 @@ class DummyFTPHandler(asynchat.async_chat):
         addr = list(map(int, arg.split(',')))
         ip = '%d.%d.%d.%d' %tuple(addr[:4])
         port = (addr[4] * 256) + addr[5]
-        s = socket.create_connection((ip, port), timeout=2)
+        s = socket.create_connection((ip, port), timeout=10)
         self.dtp = DummyDTPHandler(s, baseclass=self)
         self.push('200 active data connection established')
 
@@ -90,7 +90,7 @@ class DummyFTPHandler(asynchat.async_chat):
         sock = socket.socket()
         sock.bind((self.socket.getsockname()[0], 0))
         sock.listen(5)
-        sock.settimeout(2)
+        sock.settimeout(10)
         ip, port = sock.getsockname()[:2]
         ip = ip.replace('.', ','); p1 = port / 256; p2 = port % 256
         self.push('227 entering passive mode (%s,%d,%d)' %(ip, p1, p2))
@@ -100,7 +100,7 @@ class DummyFTPHandler(asynchat.async_chat):
     def cmd_eprt(self, arg):
         af, ip, port = arg.split(arg[0])[1:-1]
         port = int(port)
-        s = socket.create_connection((ip, port), timeout=2)
+        s = socket.create_connection((ip, port), timeout=10)
         self.dtp = DummyDTPHandler(s, baseclass=self)
         self.push('200 active data connection established')
 
@@ -108,7 +108,7 @@ class DummyFTPHandler(asynchat.async_chat):
         sock = socket.socket(socket.AF_INET6)
         sock.bind((self.socket.getsockname()[0], 0))
         sock.listen(5)
-        sock.settimeout(2)
+        sock.settimeout(10)
         port = sock.getsockname()[1]
         self.push('229 entering extended passive mode (|||%d|)' %port)
         conn, addr = sock.accept()
@@ -232,7 +232,7 @@ class TestFTPClass(TestCase):
     def setUp(self):
         self.server = DummyFTPServer((HOST, 0))
         self.server.start()
-        self.client = ftplib.FTP(timeout=2)
+        self.client = ftplib.FTP(timeout=10)
         self.client.connect(self.server.host, self.server.port)
 
     def tearDown(self):
@@ -360,7 +360,7 @@ class TestFTPClass(TestCase):
 
     def test_makepasv(self):
         host, port = self.client.makepasv()
-        conn = socket.create_connection((host, port), 2)
+        conn = socket.create_connection((host, port), 10)
         conn.close()
         # IPv4 is in use, just make sure send_epsv has not been used
         self.assertEqual(self.server.handler.last_received_cmd, 'pasv')
@@ -387,7 +387,7 @@ class TestIPv6Environment(TestCase):
 
     def test_makepasv(self):
         host, port = self.client.makepasv()
-        conn = socket.create_connection((host, port), 2)
+        conn = socket.create_connection((host, port), 10)
         conn.close()
         self.assertEqual(self.server.handler.last_received_cmd, 'epsv')
 
