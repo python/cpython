@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #9418: Moved private string methods ``_formatter_parser`` and
+  ``_formatter_field_name_split`` into a new ``_string`` module.
+
 - Issue #9992: Remove PYTHONFSENCODING environment variable.
 
 Library

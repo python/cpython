@@ -8968,8 +8968,6 @@ static PyMethodDef unicode_methods[] = {
     {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
     {"format", (PyCFunction) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
     {"__format__", (PyCFunction) unicode__format__, METH_VARARGS, p_format__doc__},
-    {"_formatter_field_name_split", (PyCFunction) formatter_field_name_split, METH_NOARGS},
-    {"_formatter_parser", (PyCFunction) formatter_parser, METH_NOARGS},
     {"maketrans", (PyCFunction) unicode_maketrans,
      METH_VARARGS | METH_STATIC, maketrans__doc__},
     {"__sizeof__", (PyCFunction) unicode__sizeof__, METH_NOARGS, sizeof__doc__},
@@ -10169,6 +10167,36 @@ PyUnicode_AsUnicodeCopy(PyObject *object)
     memcpy(copy, PyUnicode_AS_UNICODE(unicode), size);
     return copy;
 }
+
+/* A _string module, to export formatter_parser and formatter_field_name_split
+   to the string.Formatter class implemented in Python. */
+
+static PyMethodDef _string_methods[] = {
+    {"formatter_field_name_split", (PyCFunction) formatter_field_name_split,
+     METH_O, PyDoc_STR("split the argument as a field name")},
+    {"formatter_parser", (PyCFunction) formatter_parser,
+     METH_O, PyDoc_STR("parse the argument as a format string")},
+    {NULL, NULL}
+};
+
+static struct PyModuleDef _string_module = {
+    PyModuleDef_HEAD_INIT,
+    "_string",
+    PyDoc_STR("string helper module"),
+    0,
+    _string_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit__string(void)
+{
+    return PyModule_Create(&_string_module);
+}
+
 
 #ifdef __cplusplus
 }
