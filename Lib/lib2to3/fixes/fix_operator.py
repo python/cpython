@@ -10,10 +10,18 @@ operator.irepeat(obj, n)       -> operator.imul(obj, n)
 """
 
 import collections
+from functools import wraps
 
 # Local imports
 from lib2to3 import fixer_base
 from lib2to3.fixer_util import Call, Name, String, touch_import
+
+def useinstead(what):
+    """Make sure __doc__ is assigned even under -OO."""
+    def deco(f):
+        f.__doc__ = what
+        return f
+    return deco
 
 
 class FixOperator(fixer_base.BaseFix):
@@ -36,34 +44,34 @@ class FixOperator(fixer_base.BaseFix):
         if method is not None:
             return method(node, results)
 
+    @useinstead("operator.contains(%s)")
     def _sequenceIncludes(self, node, results):
-        """operator.contains(%s)"""
         return self._handle_rename(node, results, "contains")
 
+    @useinstead("hasattr(%s, '__call__')")
     def _isCallable(self, node, results):
-        """hasattr(%s, '__call__')"""
         obj = results["obj"]
         args = [obj.clone(), String(", "), String("'__call__'")]
         return Call(Name("hasattr"), args, prefix=node.prefix)
 
+    @useinstead("operator.mul(%s)")
     def _repeat(self, node, results):
-        """operator.mul(%s)"""
         return self._handle_rename(node, results, "mul")
 
+    @useinstead("operator.imul(%s)")
     def _irepeat(self, node, results):
-        """operator.imul(%s)"""
         return self._handle_rename(node, results, "imul")
 
+    @useinstead("isinstance(%s, collections.Sequence)")
     def _isSequenceType(self, node, results):
-        """isinstance(%s, collections.Sequence)"""
         return self._handle_type2abc(node, results, "collections", "Sequence")
 
+    @useinstead("isinstance(%s, collections.Mapping)")
     def _isMappingType(self, node, results):
-        """isinstance(%s, collections.Mapping)"""
         return self._handle_type2abc(node, results, "collections", "Mapping")
 
+    @useinstead("isinstance(%s, numbers.Number)")
     def _isNumberType(self, node, results):
-        """isinstance(%s, numbers.Number)"""
         return self._handle_type2abc(node, results, "numbers", "Number")
 
     def _handle_rename(self, node, results, name):
