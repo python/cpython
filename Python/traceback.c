@@ -208,6 +208,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     PyObject *binary;
     PyObject *fob = NULL;
     PyObject *lineobj = NULL;
+    PyObject *res;
     char buf[MAXPATHLEN+1];
     Py_UNICODE *u, *p;
     Py_ssize_t len;
@@ -253,6 +254,11 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
             break;
         }
     }
+    res = PyObject_CallMethod(fob, "close", "");
+    if (res)
+        Py_DECREF(res);
+    else
+        PyErr_Clear();
     Py_DECREF(fob);
     if (!lineobj || !PyUnicode_Check(lineobj)) {
         Py_XDECREF(lineobj);
