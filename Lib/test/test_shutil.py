@@ -217,7 +217,8 @@ class TestShutil(unittest.TestCase):
 
                 os.link(src, dst)
                 self.assertRaises(shutil.Error, shutil.copyfile, src, dst)
-                self.assertEqual(open(src,'r').read(), 'cheddar')
+                with open(src, 'r') as f:
+                    self.assertEqual(f.read(), 'cheddar')
                 os.remove(dst)
 
                 # Using `src` here would mean we end up with a symlink pointing
@@ -225,7 +226,8 @@ class TestShutil(unittest.TestCase):
                 # TESTFN/cheese.
                 os.symlink('cheese', dst)
                 self.assertRaises(shutil.Error, shutil.copyfile, src, dst)
-                self.assertEqual(open(src,'r').read(), 'cheddar')
+                with open(src, 'r') as f:
+                    self.assertEqual(f.read(), 'cheddar')
                 os.remove(dst)
             finally:
                 try:
@@ -307,9 +309,11 @@ class TestMove(unittest.TestCase):
                 pass
 
     def _check_move_file(self, src, dst, real_dst):
-        contents = open(src, "rb").read()
+        with open(src, "rb") as f:
+            contents = f.read()
         shutil.move(src, dst)
-        self.assertEqual(contents, open(real_dst, "rb").read())
+        with open(real_dst, "rb") as f:
+            self.assertEqual(contents, f.read())
         self.assertFalse(os.path.exists(src))
 
     def _check_move_dir(self, src, dst, real_dst):

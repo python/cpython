@@ -277,7 +277,7 @@ class TestBase_Mapping(unittest.TestCase):
     def __init__(self, *args, **kw):
         unittest.TestCase.__init__(self, *args, **kw)
         try:
-            self.open_mapping_file() # test it to report the error early
+            self.open_mapping_file().close() # test it to report the error early
         except IOError:
             self.skipTest("Could not retrieve "+self.mapfileurl)
 
@@ -294,36 +294,38 @@ class TestBase_Mapping(unittest.TestCase):
         unichrs = lambda s: ''.join(map(chr, map(eval, s.split('+'))))
         urt_wa = {}
 
-        for line in self.open_mapping_file():
-            if not line:
-                break
-            data = line.split('#')[0].strip().split()
-            if len(data) != 2:
-                continue
+        with self.open_mapping_file() as f:
+            for line in f:
+                if not line:
+                    break
+                data = line.split('#')[0].strip().split()
+                if len(data) != 2:
+                    continue
 
-            csetval = eval(data[0])
-            if csetval <= 0x7F:
-                csetch = bytes([csetval & 0xff])
-            elif csetval >= 0x1000000:
-                csetch = bytes([(csetval >> 24), ((csetval >> 16) & 0xff),
-                                ((csetval >> 8) & 0xff), (csetval & 0xff)])
-            elif csetval >= 0x10000:
-                csetch = bytes([(csetval >> 16), ((csetval >> 8) & 0xff),
-                                (csetval & 0xff)])
-            elif csetval >= 0x100:
-                csetch = bytes([(csetval >> 8), (csetval & 0xff)])
-            else:
-                continue
+                csetval = eval(data[0])
+                if csetval <= 0x7F:
+                    csetch = bytes([csetval & 0xff])
+                elif csetval >= 0x1000000:
+                    csetch = bytes([(csetval >> 24), ((csetval >> 16) & 0xff),
+                                    ((csetval >> 8) & 0xff), (csetval & 0xff)])
+                elif csetval >= 0x10000:
+                    csetch = bytes([(csetval >> 16), ((csetval >> 8) & 0xff),
+                                    (csetval & 0xff)])
+                elif csetval >= 0x100:
+                    csetch = bytes([(csetval >> 8), (csetval & 0xff)])
+                else:
+                    continue
 
-            unich = unichrs(data[1])
-            if ord(unich) == 0xfffd or unich in urt_wa:
-                continue
-            urt_wa[unich] = csetch
+                unich = unichrs(data[1])
+                if ord(unich) == 0xfffd or unich in urt_wa:
+                    continue
+                urt_wa[unich] = csetch
 
-            self._testpoint(csetch, unich)
+                self._testpoint(csetch, unich)
 
     def _test_mapping_file_ucm(self):
-        ucmdata = self.open_mapping_file().read()
+        with self.open_mapping_file() as f:
+            ucmdata = f.read()
         uc = re.findall('<a u="([A-F0-9]{4})" b="([0-9A-F ]+)"/>', ucmdata)
         for uni, coded in uc:
             unich = chr(int(uni, 16))
