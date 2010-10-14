@@ -1261,6 +1261,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except AttributeError:
             self.error('No help for %r' % arg)
         else:
+            if sys.flags.optimize >= 2:
+                self.error('No help for %r; please do not run Python with -OO '
+                           'if you need command help' % arg)
+                return
             self.message(command.__doc__.rstrip())
 
     do_h = do_help
@@ -1275,7 +1279,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         (Pdb) global list_options; list_options = ['-l']
         (Pdb)
         """
-        self.message(self.help_exec.__doc__.strip())
+        self.message((self.help_exec.__doc__ or '').strip())
 
     def help_pdb(self):
         help()
@@ -1332,23 +1336,24 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                         (fp.read(), self.mainpyfile)
         self.run(statement)
 
-# Collect all command help into docstring
+# Collect all command help into docstring, if not run with -OO
 
-# unfortunately we can't guess this order from the class definition
-_help_order = [
-    'help', 'where', 'down', 'up', 'break', 'tbreak', 'clear', 'disable',
-    'enable', 'ignore', 'condition', 'commands', 'step', 'next', 'until',
-    'jump', 'return', 'retval', 'run', 'continue', 'list', 'longlist',
-    'args', 'print', 'pp', 'whatis', 'source', 'alias', 'unalias',
-    'debug', 'quit',
-]
+if __doc__ is not None:
+    # unfortunately we can't guess this order from the class definition
+    _help_order = [
+        'help', 'where', 'down', 'up', 'break', 'tbreak', 'clear', 'disable',
+        'enable', 'ignore', 'condition', 'commands', 'step', 'next', 'until',
+        'jump', 'return', 'retval', 'run', 'continue', 'list', 'longlist',
+        'args', 'print', 'pp', 'whatis', 'source', 'alias', 'unalias',
+        'debug', 'quit',
+    ]
 
-docs = set()
-for _command in _help_order:
-    __doc__ += getattr(Pdb, 'do_' + _command).__doc__.strip() + '\n\n'
-__doc__ += Pdb.help_exec.__doc__
+    for _command in _help_order:
+        __doc__ += getattr(Pdb, 'do_' + _command).__doc__.strip() + '\n\n'
+    __doc__ += Pdb.help_exec.__doc__
 
-del _help_order, _command
+    del _help_order, _command
+
 
 # Simplified interface
 
