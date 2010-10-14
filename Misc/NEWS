@@ -21,11 +21,13 @@ Core and Builtins
 Library
 -------
 
-- Issue #Issue10063: file:// scheme will stop accessing remote hosts via ftp
+- Issue #7523: Add SOCK_CLOEXEC and SOCK_NONBLOCK to the socket module,
+  where supported by the system.  Patch by Nikita Vetoshkin.
+
+- Issue #10063: file:// scheme will stop accessing remote hosts via ftp
   protocol. file:// urls had fallback to access remote hosts via ftp. This was
   not correct, change is made to raise a URLError when a remote host is tried
   to access via file:// scheme.
-
 
 - Issue #1710703: Write structures for an empty ZIP archive when a ZipFile is
   created in modes 'a' or 'w' and then closed without adding any files. Raise

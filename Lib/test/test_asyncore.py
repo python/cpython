@@ -692,7 +692,8 @@ class BaseTestAPI(unittest.TestCase):
         s = asyncore.dispatcher()
         s.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.assertEqual(s.socket.family, socket.AF_INET)
-        self.assertEqual(s.socket.type, socket.SOCK_STREAM)
+        SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
+        self.assertEqual(s.socket.type, socket.SOCK_STREAM | SOCK_NONBLOCK)
 
     def test_bind(self):
         s1 = asyncore.dispatcher()

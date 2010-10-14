@@ -615,6 +615,12 @@ internal_setblocking(PySocketSockObject *s, int block)
 #ifndef MS_WINDOWS
     int delay_flag;
 #endif
+#ifdef SOCK_NONBLOCK
+    if (block)
+        s->sock_type &= (~SOCK_NONBLOCK);
+    else
+        s->sock_type |= SOCK_NONBLOCK;
+#endif
 
     Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
@@ -764,12 +770,18 @@ init_sockobject(PySocketSockObject *s,
     s->sock_family = family;
     s->sock_type = type;
     s->sock_proto = proto;
-    s->sock_timeout = defaulttimeout;
 
     s->errorhandler = &set_error;
-
-    if (defaulttimeout >= 0.0)
-        internal_setblocking(s, 0);
+#ifdef SOCK_NONBLOCK
+    if (type & SOCK_NONBLOCK)
+        s->sock_timeout = 0.0;
+    else
+#endif
+    {
+        s->sock_timeout = defaulttimeout;
+        if (defaulttimeout >= 0.0)
+            internal_setblocking(s, 0);
+    }
 
 }
 
@@ -1645,7 +1657,9 @@ sock_accept(PySocketSockObject *s)
     PyObject *addr = NULL;
     PyObject *res = NULL;
     int timeout;
-
+#ifdef HAVE_ACCEPT4
+    int flags = 0;
+#endif
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
     memset(&addrbuf, 0, addrlen);
@@ -1656,8 +1670,15 @@ sock_accept(PySocketSockObject *s)
     BEGIN_SELECT_LOOP(s)
     Py_BEGIN_ALLOW_THREADS
     timeout = internal_select_ex(s, 0, interval);
-    if (!timeout)
+    if (!timeout) {
+#ifdef HAVE_ACCEPT4
+        /* inherit socket flags and use accept4 call */
+        flags = s->sock_type & (SOCK_CLOEXEC | SOCK_NONBLOCK);
+        newfd = accept4(s->sock_fd, SAS2SA(&addrbuf), &addrlen, flags);
+#else
         newfd = accept(s->sock_fd, SAS2SA(&addrbuf), &addrlen);
+#endif /* HAVE_ACCEPT4  */
+    }
     Py_END_ALLOW_THREADS
 
     if (timeout == 1) {
@@ -4598,6 +4619,12 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "SOCK_SEQPACKET", SOCK_SEQPACKET);
 #if defined(SOCK_RDM)
     PyModule_AddIntConstant(m, "SOCK_RDM", SOCK_RDM);
+#endif
+#ifdef SOCK_CLOEXEC
+    PyModule_AddIntConstant(m, "SOCK_CLOEXEC", SOCK_CLOEXEC);
+#endif
+#ifdef SOCK_NONBLOCK
+    PyModule_AddIntConstant(m, "SOCK_NONBLOCK", SOCK_NONBLOCK);
 #endif
 
 #ifdef  SO_DEBUG
