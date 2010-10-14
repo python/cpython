@@ -1210,6 +1210,7 @@ def args_from_interpreter_flags():
         'no_user_site': 's',
         'no_site': 'S',
         'optimize': 'O',
+        'py3k_warning': '3',
         'verbose': 'v',
     }
     args = []
