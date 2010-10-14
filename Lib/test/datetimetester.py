@@ -176,7 +176,9 @@ class TestTimeZone(unittest.TestCase):
 
 
     def test_constructor(self):
-        self.assertEqual(timezone.utc, timezone(timedelta(0)))
+        self.assertIs(timezone.utc, timezone(timedelta(0)))
+        self.assertIsNot(timezone.utc, timezone(timedelta(0), 'UTC'))
+        self.assertEqual(timezone.utc, timezone(timedelta(0), 'UTC'))
         # invalid offsets
         for invalid in [timedelta(microseconds=1), timedelta(1, 1),
                         timedelta(seconds=1), timedelta(1), -timedelta(1)]:

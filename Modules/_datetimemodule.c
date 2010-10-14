@@ -767,14 +767,15 @@ typedef struct
     PyObject *name;
 } PyDateTime_TimeZone;
 
-PyObject *PyDateTime_TimeZone_UTC;
+/* The interned UTC timezone instance */ 
+static PyObject *PyDateTime_TimeZone_UTC;
 
 /* Create new timezone instance checking offset range.  This
    function does not check the name argument.  Caller must assure
    that offset is a timedelta instance and name is either NULL
    or a unicode object. */
 static PyObject *
-new_timezone(PyObject *offset, PyObject *name)
+create_timezone(PyObject *offset, PyObject *name)
 {
     PyDateTime_TimeZone *self;
     PyTypeObject *type = &PyDateTime_TimeZoneType;
@@ -783,6 +784,30 @@ new_timezone(PyObject *offset, PyObject *name)
     assert(PyDelta_Check(offset));
     assert(name == NULL || PyUnicode_Check(name));
 
+    self = (PyDateTime_TimeZone *)(type->tp_alloc(type, 0));
+    if (self == NULL) {
+        return NULL;
+    }
+    Py_INCREF(offset);
+    self->offset = offset;
+    Py_XINCREF(name);
+    self->name = name;
+    return (PyObject *)self;
+}
+
+static int delta_bool(PyDateTime_Delta *self);
+
+static PyObject *
+new_timezone(PyObject *offset, PyObject *name)
+{
+    assert(offset != NULL);
+    assert(PyDelta_Check(offset));
+    assert(name == NULL || PyUnicode_Check(name));
+
+    if (name == NULL && delta_bool((PyDateTime_Delta *)offset) == 0) {
+        Py_INCREF(PyDateTime_TimeZone_UTC);
+        return PyDateTime_TimeZone_UTC;
+    }
     if (GET_TD_MICROSECONDS(offset) != 0 || GET_TD_SECONDS(offset) % 60 != 0) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                      " representing a whole number of minutes");
@@ -796,15 +821,7 @@ new_timezone(PyObject *offset, PyObject *name)
         return NULL;
     }
 
-    self = (PyDateTime_TimeZone *)(type->tp_alloc(type, 0));
-    if (self == NULL) {
-        return NULL;
-    }
-    Py_INCREF(offset);
-    self->offset = offset;
-    Py_XINCREF(name);
-    self->name = name;
-    return (PyObject *)self;
+    return create_timezone(offset, name);
 }
 
 /* ---------------------------------------------------------------------------
@@ -5156,7 +5173,7 @@ PyInit__datetime(void)
     delta = new_delta(0, 0, 0, 0);
     if (delta == NULL)
         return NULL;
-    x = new_timezone(delta, NULL);
+    x = create_timezone(delta, NULL);
     Py_DECREF(delta);
     if (x == NULL || PyDict_SetItemString(d, "utc", x) < 0)
         return NULL;
@@ -5165,7 +5182,7 @@ PyInit__datetime(void)
     delta = new_delta(-1, 60, 0, 1); /* -23:59 */
     if (delta == NULL)
         return NULL;
-    x = new_timezone(delta, NULL);
+    x = create_timezone(delta, NULL);
     Py_DECREF(delta);
     if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
         return NULL;
@@ -5174,7 +5191,7 @@ PyInit__datetime(void)
     delta = new_delta(0, (23 * 60 + 59) * 60, 0, 0); /* +23:59 */
     if (delta == NULL)
         return NULL;
-    x = new_timezone(delta, NULL);
+    x = create_timezone(delta, NULL);
     Py_DECREF(delta);
     if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
         return NULL;
