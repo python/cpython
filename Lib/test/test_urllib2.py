@@ -731,11 +731,11 @@ class HandlerTests(unittest.TestCase):
         # file:///blah.txt (a file)
         # file://ftp.example.com/blah.txt (an ftp URL)
         for url, ftp in [
-            ("file://ftp.example.com//foo.txt", True),
+            ("file://ftp.example.com//foo.txt", False),
             ("file://ftp.example.com///foo.txt", False),
 # XXXX bug: fails with OSError, should be URLError
             ("file://ftp.example.com/foo.txt", False),
-            ("file://somehost//foo/something.txt", True),
+            ("file://somehost//foo/something.txt", False),
             ("file://localhost//foo/something.txt", False),
             ]:
             req = Request(url)
