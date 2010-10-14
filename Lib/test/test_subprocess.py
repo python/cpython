@@ -885,6 +885,8 @@ class POSIXProcessTestCase(BaseTestCase):
             script = "import os; print(ascii(os.getenv(%s)))" % repr(key)
             env = os.environ.copy()
             env[key] = value
+            # Use C locale to get ascii for the locale encoding
+            env['LC_ALL'] = 'C'
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
@@ -897,6 +899,8 @@ class POSIXProcessTestCase(BaseTestCase):
             script = "import os; print(ascii(os.getenvb(%s)))" % repr(key)
             env = os.environ.copy()
             env[key] = value
+            # Use C locale to get ascii for the locale encoding
+            env['LC_ALL'] = 'C'
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
