@@ -14,6 +14,8 @@ printable -- a string containing all ASCII characters considered printable
 
 """
 
+import _string
+
 # Some strings for ctype-style character classification
 whitespace = ' \t\n\r\v\f'
 ascii_lowercase = 'abcdefghijklmnopqrstuvwxyz'
@@ -170,8 +172,8 @@ class Template(metaclass=_TemplateMetaclass):
 # The hard parts are reused from the C implementation.  They're exposed as "_"
 # prefixed methods of str.
 
-# The overall parser is implemented in str._formatter_parser.
-# The field name parser is implemented in str._formatter_field_name_split
+# The overall parser is implemented in _string.formatter_parser.
+# The field name parser is implemented in _string.formatter_field_name_split
 
 class Formatter:
     def format(self, format_string, *args, **kwargs):
@@ -251,7 +253,7 @@ class Formatter:
     # if field_name is not None, it is looked up, formatted
     #  with format_spec and conversion and then used
     def parse(self, format_string):
-        return format_string._formatter_parser()
+        return _string.formatter_parser(format_string)
 
 
     # given a field_name, find the object it references.
@@ -260,7 +262,7 @@ class Formatter:
     #  used_args:    a set of which args have been used
     #  args, kwargs: as passed in to vformat
     def get_field(self, field_name, args, kwargs):
-        first, rest = field_name._formatter_field_name_split()
+        first, rest = _string.formatter_field_name_split(field_name)
 
         obj = self.get_value(first, args, kwargs)
 

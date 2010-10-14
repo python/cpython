@@ -62,6 +62,7 @@ extern PyObject* PyInit__io(void);
 extern PyObject* PyInit__pickle(void);
 extern PyObject* PyInit_atexit(void);
 extern PyObject* _PyWarnings_Init(void);
+extern PyObject* PyInit__string(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -147,6 +148,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"builtins", NULL},
     {"sys", NULL},
     {"_warnings", _PyWarnings_Init},
+    {"_string", PyInit__string},
 
     {"_io", PyInit__io},
     {"_pickle", PyInit__pickle},
