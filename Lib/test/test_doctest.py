@@ -1697,6 +1697,9 @@ def test_pdb_set_trace():
 
       >>> doc = '''
       ... >>> x = 42
+      ... >>> raise Exception('clé')
+      ... Traceback (most recent call last):
+      ... Exception: clé
       ... >>> import pdb; pdb.set_trace()
       ... '''
       >>> parser = doctest.DocTestParser()
@@ -1716,12 +1719,12 @@ def test_pdb_set_trace():
       >>> try: runner.run(test)
       ... finally: sys.stdin = real_stdin
       --Return--
-      > <doctest foo-bär@baz[1]>(1)<module>()->None
+      > <doctest foo-bär@baz[2]>(1)<module>()->None
       -> import pdb; pdb.set_trace()
       (Pdb) print(x)
       42
       (Pdb) continue
-      TestResults(failed=0, attempted=2)
+      TestResults(failed=0, attempted=3)
 
       You can also put pdb.set_trace in a function called from a test:
 
