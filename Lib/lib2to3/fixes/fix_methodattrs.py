@@ -13,6 +13,7 @@ MAP = {
     }
 
 class FixMethodattrs(fixer_base.BaseFix):
+    BM_compatible = True
     PATTERN = """
     power< any+ trailer< '.' attr=('im_func' | 'im_self' | 'im_class') > any* >
     """

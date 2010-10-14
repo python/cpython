@@ -11,6 +11,7 @@ from lib2to3.fixer_util import token, syms
 
 class FixSetLiteral(fixer_base.BaseFix):
 
+    BM_compatible = True
     explicit = True
 
     PATTERN = """power< 'set' trailer< '('

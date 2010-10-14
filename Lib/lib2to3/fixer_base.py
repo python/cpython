@@ -24,6 +24,7 @@ class BaseFix(object):
 
     PATTERN = None  # Most subclasses should override with a string literal
     pattern = None  # Compiled pattern, set by compile_pattern()
+    pattern_tree = None # Tree representation of the pattern
     options = None  # Options object passed to initializer
     filename = None # The filename (set by set_filename)
     logger = None   # A logger (set by set_filename)
@@ -35,6 +36,12 @@ class BaseFix(object):
                     # Lower numbers will be run first.
     _accept_type = None # [Advanced and not public] This tells RefactoringTool
                         # which node type to accept when there's not a pattern.
+
+    keep_line_order = False # For the bottom matcher: match with the
+                            # original line order
+    BM_compatible = False # Compatibility with the bottom matching
+                          # module; every fixer should set this
+                          # manually
 
     # Shortcut for access to Python grammar symbols
     syms = pygram.python_symbols
@@ -58,7 +65,9 @@ class BaseFix(object):
         self.{pattern,PATTERN} in .match().
         """
         if self.PATTERN is not None:
-            self.pattern = PatternCompiler().compile_pattern(self.PATTERN)
+            PC = PatternCompiler()
+            self.pattern, self.pattern_tree = PC.compile_pattern(self.PATTERN,
+                                                                 with_tree=True)
 
     def set_filename(self, filename):
         """Set the filename, and a logger derived from it.
