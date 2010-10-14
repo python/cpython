@@ -637,19 +637,19 @@ Py_Main(int argc, wchar_t **argv)
         }
 
         if (sts==-1 && filename!=NULL) {
-            if ((fp = _Py_wfopen(filename, L"r")) == NULL) {
-                char cfilename[PATH_MAX];
-                size_t r = wcstombs(cfilename, filename, PATH_MAX);
-                if (r == PATH_MAX)
-                    /* cfilename is not null-terminated;
-                     * forcefully null-terminating it
-                     * might break the shift state */
-                    strcpy(cfilename, "<file name too long>");
-                if (r == ((size_t)-1))
-                    strcpy(cfilename, "<unprintable file name>");
+            fp = _Py_wfopen(filename, L"r");
+            if (fp == NULL) {
+                char *cfilename_buffer;
+                const char *cfilename;
+                cfilename_buffer = _Py_wchar2char(filename);
+                if (cfilename_buffer != NULL)
+                    cfilename = cfilename_buffer;
+                else
+                    cfilename = "<unprintable file name>";
                 fprintf(stderr, "%ls: can't open file '%s': [Errno %d] %s\n",
                     argv[0], cfilename, errno, strerror(errno));
-
+                if (cfilename_buffer)
+                    PyMem_Free(cfilename_buffer);
                 return 2;
             }
             else if (skipfirstline) {
