@@ -3652,7 +3652,8 @@ then
 		esac
 		;;
 	CYGWIN*)   SO=.dll;;
-	Linux*)    SO=.${SOABI}.so;;
+	Linux*|GNU*)
+		   SO=.${SOABI}.so;;
 	*)	   SO=.so;;
 	esac
 else
