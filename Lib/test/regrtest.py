@@ -391,9 +391,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         usage("-T and -j don't go together!")
     if use_mp and findleaks:
         usage("-l and -j don't go together!")
-    if use_mp and max(sys.flags):
-        # TODO: inherit the environment and the flags
-        print("Warning: flags and environment variables are ignored with -j option")
 
     good = []
     bad = []
@@ -534,6 +531,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 )
                 yield (test, args_tuple)
         pending = tests_and_args()
+        opt_args = support.args_from_interpreter_flags()
+        base_cmd = [sys.executable] + opt_args + ['-m', 'test.regrtest']
         def work():
             # A worker thread.
             try:
@@ -544,8 +543,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                         output.put((None, None, None, None))
                         return
                     # -E is needed by some tests, e.g. test_import
-                    popen = Popen([sys.executable, '-E', '-m', 'test.regrtest',
-                                   '--slaveargs', json.dumps(args_tuple)],
+                    popen = Popen(base_cmd + ['--slaveargs', json.dumps(args_tuple)],
                                    stdout=PIPE, stderr=PIPE,
                                    universal_newlines=True,
                                    close_fds=(os.name != 'nt'))
