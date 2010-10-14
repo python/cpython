@@ -586,10 +586,13 @@ def parsefile():
        <ns0:empty-element />
     </ns0:root>
 
+    >>> with open(SIMPLE_XMLFILE) as f:
+    ...     data = f.read()
+
     >>> parser = ET.XMLParser()
     >>> parser.version  # doctest: +ELLIPSIS
     'Expat ...'
-    >>> parser.feed(open(SIMPLE_XMLFILE).read())
+    >>> parser.feed(data)
     >>> print serialize(parser.close())
     <root>
        <element key="value">text</element>
@@ -598,7 +601,7 @@ def parsefile():
     </root>
 
     >>> parser = ET.XMLTreeBuilder() # 1.2 compatibility
-    >>> parser.feed(open(SIMPLE_XMLFILE).read())
+    >>> parser.feed(data)
     >>> print serialize(parser.close())
     <root>
        <element key="value">text</element>
@@ -608,7 +611,7 @@ def parsefile():
 
     >>> target = ET.TreeBuilder()
     >>> parser = ET.XMLParser(target=target)
-    >>> parser.feed(open(SIMPLE_XMLFILE).read())
+    >>> parser.feed(data)
     >>> print serialize(parser.close())
     <root>
        <element key="value">text</element>
@@ -711,7 +714,8 @@ def iterparse():
     end-ns None
 
     >>> events = ("start", "end", "bogus")
-    >>> context = iterparse(SIMPLE_XMLFILE, events)
+    >>> with open(SIMPLE_XMLFILE, "rb") as f:
+    ...     iterparse(f, events)
     Traceback (most recent call last):
     ValueError: unknown event 'bogus'
 
@@ -763,6 +767,8 @@ def custom_builder():
     """
     Test parser w. custom builder.
 
+    >>> with open(SIMPLE_XMLFILE) as f:
+    ...     data = f.read()
     >>> class Builder:
     ...     def start(self, tag, attrib):
     ...         print "start", tag
@@ -772,7 +778,7 @@ def custom_builder():
     ...         pass
     >>> builder = Builder()
     >>> parser = ET.XMLParser(target=builder)
-    >>> parser.feed(open(SIMPLE_XMLFILE, "r").read())
+    >>> parser.feed(data)
     start root
     start element
     end element
@@ -782,6 +788,8 @@ def custom_builder():
     end empty-element
     end root
 
+    >>> with open(SIMPLE_NS_XMLFILE) as f:
+    ...     data = f.read()
     >>> class Builder:
     ...     def start(self, tag, attrib):
     ...         print "start", tag
@@ -795,7 +803,7 @@ def custom_builder():
     ...         print "comment", repr(data)
     >>> builder = Builder()
     >>> parser = ET.XMLParser(target=builder)
-    >>> parser.feed(open(SIMPLE_NS_XMLFILE, "r").read())
+    >>> parser.feed(data)
     pi pi 'data'
     comment ' comment '
     start {namespace}root
@@ -813,7 +821,8 @@ def getchildren():
     """
     Test Element.getchildren()
 
-    >>> tree = ET.parse(open(SIMPLE_XMLFILE, "r"))
+    >>> with open(SIMPLE_XMLFILE, "r") as f:
+    ...     tree = ET.parse(f)
     >>> for elem in tree.getroot().iter():
     ...     summarize_list(elem.getchildren())
     ['element', 'element', 'empty-element']

@@ -289,7 +289,8 @@ def _init_posix(vars):
     # load the installed pyconfig.h:
     config_h = get_config_h_filename()
     try:
-        parse_config_h(open(config_h), vars)
+        with open(config_h) as f:
+            parse_config_h(f, vars)
     except IOError, e:
         msg = "invalid Python installation: unable to open %s" % config_h
         if hasattr(e, "strerror"):
