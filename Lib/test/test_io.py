@@ -812,6 +812,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertEquals(b"abcdefg", bufio.read())
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.requires_resource('cpu')
     def test_threads(self):
         try:
             # Write out many bytes with exactly the same number of 0's,
@@ -1081,6 +1082,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
             self.assertEqual(f.read(), b"abc")
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.requires_resource('cpu')
     def test_threads(self):
         try:
             # Write out many bytes from many threads and test they were
