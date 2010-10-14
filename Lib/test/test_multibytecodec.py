@@ -46,12 +46,9 @@ class Test_MultibyteCodec(unittest.TestCase):
                           'apple\x92ham\x93spam', 'test.cjktest')
 
     def test_codingspec(self):
-        try:
-            for enc in ALL_CJKENCODINGS:
-                print >> open(TESTFN, 'w'), '# coding:', enc
-                exec open(TESTFN)
-        finally:
-            os.unlink(TESTFN)
+        for enc in ALL_CJKENCODINGS:
+            code = '# coding: {}\n'.format(enc)
+            exec code
 
     def test_init_segfault(self):
         # bug #3305: this used to segfault

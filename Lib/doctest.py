@@ -216,7 +216,8 @@ def _load_testfile(filename, package, module_relative):
                 # get_data() opens files as 'rb', so one must do the equivalent
                 # conversion as universal newlines would do.
                 return file_contents.replace(os.linesep, '\n'), filename
-    return open(filename).read(), filename
+    with open(filename) as f:
+        return f.read(), filename
 
 # Use sys.stdout encoding for ouput.
 _encoding = getattr(sys.__stdout__, 'encoding', None) or 'utf-8'

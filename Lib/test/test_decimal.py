@@ -224,14 +224,15 @@ class DecimalTest(unittest.TestCase):
         if skip_expected:
             raise unittest.SkipTest
             return
-        for line in open(file):
-            line = line.replace('\r\n', '').replace('\n', '')
-            #print line
-            try:
-                t = self.eval_line(line)
-            except DecimalException, exception:
-                #Exception raised where there shoudn't have been one.
-                self.fail('Exception "'+exception.__class__.__name__ + '" raised on line '+line)
+        with open(file) as f:
+            for line in f:
+                line = line.replace('\r\n', '').replace('\n', '')
+                #print line
+                try:
+                    t = self.eval_line(line)
+                except DecimalException as exception:
+                    #Exception raised where there shoudn't have been one.
+                    self.fail('Exception "'+exception.__class__.__name__ + '" raised on line '+line)
 
         return
 
