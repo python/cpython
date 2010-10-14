@@ -14,6 +14,7 @@ from ..fixer_util import Attr, Call, Name, Number, Subscript, Node, syms
 class FixSysExc(fixer_base.BaseFix):
     # This order matches the ordering of sys.exc_info().
     exc_info = ["exc_type", "exc_value", "exc_traceback"]
+    BM_compatible = True
     PATTERN = """
               power< 'sys' trailer< dot='.' attribute=(%s) > >
               """ % '|'.join("'%s'" % e for e in exc_info)

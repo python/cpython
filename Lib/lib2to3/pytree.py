@@ -16,7 +16,6 @@ import sys
 import warnings
 from io import StringIO
 
-
 HUGE = 0x7FFFFFFF  # maximum repeat count, default max
 
 _type_reprs = {}
@@ -29,7 +28,6 @@ def type_repr(type_num):
         for name, val in python_symbols.__dict__.items():
             if type(val) == int: _type_reprs[val] = name
     return _type_reprs.setdefault(type_num, type_num)
-
 
 class Base(object):
 
@@ -47,6 +45,7 @@ class Base(object):
     parent = None  # Parent node pointer, or None
     children = ()  # Tuple of subnodes
     was_changed = False
+    was_checked = False
 
     def __new__(cls, *args, **kwds):
         """Constructor that prevents Base from being instantiated."""
@@ -213,6 +212,16 @@ class Base(object):
                     return None
                 return self.parent.children[i-1]
 
+    def leaves(self):
+        for child in self.children:
+            for x in child.leaves():
+                yield x
+
+    def depth(self):
+        if self.parent is None:
+            return 0
+        return 1 + self.parent.depth()
+
     def get_suffix(self):
         """
         Return the string immediately following the invocant node. This is
@@ -227,12 +236,14 @@ class Base(object):
         def __str__(self):
             return str(self).encode("ascii")
 
-
 class Node(Base):
 
     """Concrete implementation for interior nodes."""
 
-    def __init__(self, type, children, context=None, prefix=None):
+    def __init__(self,type, children,
+                 context=None,
+                 prefix=None,
+                 fixers_applied=None):
         """
         Initializer.
 
@@ -249,6 +260,10 @@ class Node(Base):
             ch.parent = self
         if prefix is not None:
             self.prefix = prefix
+        if fixers_applied:
+            self.fixers_applied = fixers_applied[:]
+        else:
+            self.fixers_applied = None
 
     def __repr__(self):
         """Return a canonical string representation."""
@@ -273,7 +288,8 @@ class Node(Base):
 
     def clone(self):
         """Return a cloned (deep) copy of self."""
-        return Node(self.type, [ch.clone() for ch in self.children])
+        return Node(self.type, [ch.clone() for ch in self.children],
+                    fixers_applied=self.fixers_applied)
 
     def post_order(self):
         """Return a post-order iterator for the tree."""
@@ -341,7 +357,10 @@ class Leaf(Base):
     lineno = 0    # Line where this token starts in the input
     column = 0    # Column where this token tarts in the input
 
-    def __init__(self, type, value, context=None, prefix=None):
+    def __init__(self, type, value,
+                 context=None,
+                 prefix=None,
+                 fixers_applied=[]):
         """
         Initializer.
 
@@ -355,6 +374,7 @@ class Leaf(Base):
         self.value = value
         if prefix is not None:
             self._prefix = prefix
+        self.fixers_applied = fixers_applied[:]
 
     def __repr__(self):
         """Return a canonical string representation."""
@@ -380,7 +400,11 @@ class Leaf(Base):
     def clone(self):
         """Return a cloned (deep) copy of self."""
         return Leaf(self.type, self.value,
-                    (self.prefix, (self.lineno, self.column)))
+                    (self.prefix, (self.lineno, self.column)),
+                    fixers_applied=self.fixers_applied)
+
+    def leaves(self):
+        yield self
 
     def post_order(self):
         """Return a post-order iterator for the tree."""

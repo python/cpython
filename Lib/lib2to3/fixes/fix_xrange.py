@@ -10,7 +10,7 @@ from .. import patcomp
 
 
 class FixXrange(fixer_base.BaseFix):
-
+    BM_compatible = True
     PATTERN = """
               power<
                  (name='range'|name='xrange') trailer< '(' args=any ')' >

@@ -9,6 +9,7 @@ from ..fixer_util import Name
 
 
 class FixXreadlines(fixer_base.BaseFix):
+    BM_compatible = True
     PATTERN = """
     power< call=any+ trailer< '.' 'xreadlines' > trailer< '(' ')' > >
     |
