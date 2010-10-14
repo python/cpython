@@ -383,7 +383,8 @@ def main():
         if o == '-u': func = decode
         if o == '-t': test(); return
     if args and args[0] != '-':
-        func(open(args[0], 'rb'), sys.stdout.buffer)
+        with open(args[0], 'rb') as f:
+            func(f, sys.stdout.buffer)
     else:
         func(sys.stdin.buffer, sys.stdout.buffer)
 
