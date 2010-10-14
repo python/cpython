@@ -1,6 +1,7 @@
 # tests command line execution of scripts
 
 import unittest
+import sys
 import os
 import os.path
 import py_compile
@@ -97,6 +98,8 @@ class CmdLineTest(unittest.TestCase):
                             expected_argv0, expected_path0,
                             expected_package,
                             *cmd_line_switches):
+        if not __debug__:
+            cmd_line_switches += ('-' + 'O' * sys.flags.optimize,)
         run_args = cmd_line_switches + (script_name,)
         rc, out, err = assert_python_ok(*run_args)
         self._check_output(script_name, rc, out + err, expected_file,
