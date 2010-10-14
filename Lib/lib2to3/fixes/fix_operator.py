@@ -14,7 +14,16 @@ from lib2to3 import fixer_base
 from lib2to3.fixer_util import Call, Name, String, touch_import
 
 
+def invocation(s):
+    def dec(f):
+        f.invocation = s
+        return f
+    return dec
+
+
 class FixOperator(fixer_base.BaseFix):
+    BM_compatible = True
+    order = "pre"
 
     methods = """
               method=('isCallable'|'sequenceIncludes'
@@ -34,34 +43,34 @@ class FixOperator(fixer_base.BaseFix):
         if method is not None:
             return method(node, results)
 
+    @invocation("operator.contains(%s)")
     def _sequenceIncludes(self, node, results):
-        """operator.contains(%s)"""
         return self._handle_rename(node, results, u"contains")
 
+    @invocation("hasattr(%s, '__call__')")
     def _isCallable(self, node, results):
-        """hasattr(%s, '__call__')"""
         obj = results["obj"]
         args = [obj.clone(), String(u", "), String(u"'__call__'")]
         return Call(Name(u"hasattr"), args, prefix=node.prefix)
 
+    @invocation("operator.mul(%s)")
     def _repeat(self, node, results):
-        """operator.mul(%s)"""
         return self._handle_rename(node, results, u"mul")
 
+    @invocation("operator.imul(%s)")
     def _irepeat(self, node, results):
-        """operator.imul(%s)"""
         return self._handle_rename(node, results, u"imul")
 
+    @invocation("isinstance(%s, collections.Sequence)")
     def _isSequenceType(self, node, results):
-        """isinstance(%s, collections.Sequence)"""
         return self._handle_type2abc(node, results, u"collections", u"Sequence")
 
+    @invocation("isinstance(%s, collections.Mapping)")
     def _isMappingType(self, node, results):
-        """isinstance(%s, collections.Mapping)"""
         return self._handle_type2abc(node, results, u"collections", u"Mapping")
 
+    @invocation("isinstance(%s, numbers.Number)")
     def _isNumberType(self, node, results):
-        """isinstance(%s, numbers.Number)"""
         return self._handle_type2abc(node, results, u"numbers", u"Number")
 
     def _handle_rename(self, node, results, name):
@@ -82,6 +91,6 @@ class FixOperator(fixer_base.BaseFix):
                 return method
             else:
                 sub = (unicode(results["obj"]),)
-                invocation_str = unicode(method.__doc__) % sub
+                invocation_str = unicode(method.invocation) % sub
                 self.warning(node, u"You should use '%s' here." % invocation_str)
         return None

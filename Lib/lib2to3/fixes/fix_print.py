@@ -28,6 +28,8 @@ parend_expr = patcomp.compile_pattern(
 
 class FixPrint(fixer_base.BaseFix):
 
+    BM_compatible = True
+
     PATTERN = """
               simple_stmt< any* bare='print' any* > | print_stmt
               """

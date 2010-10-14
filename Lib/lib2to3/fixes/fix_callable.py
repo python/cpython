@@ -11,6 +11,9 @@ from lib2to3 import fixer_base
 from lib2to3.fixer_util import Call, Name, String, Attr, touch_import
 
 class FixCallable(fixer_base.BaseFix):
+    BM_compatible = True
+
+    order = "pre"
 
     # Ignore callable(*args) or use of keywords.
     # Either could be a hint that the builtin callable() is not being used.

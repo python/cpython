@@ -36,6 +36,7 @@ def traverse_imports(names):
 
 
 class FixImport(fixer_base.BaseFix):
+    BM_compatible = True
 
     PATTERN = """
     import_from< 'from' imp=any 'import' ['('] any [')'] >

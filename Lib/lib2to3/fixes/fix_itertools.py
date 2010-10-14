@@ -12,6 +12,7 @@ from .. import fixer_base
 from ..fixer_util import Name
 
 class FixItertools(fixer_base.BaseFix):
+    BM_compatible = True
     it_funcs = "('imap'|'ifilter'|'izip'|'ifilterfalse')"
     PATTERN = """
               power< it='itertools'

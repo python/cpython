@@ -14,7 +14,7 @@ from ..fixer_util import token
 
 
 class FixIsinstance(fixer_base.BaseFix):
-
+    BM_compatible = True
     PATTERN = """
     power<
         'isinstance'

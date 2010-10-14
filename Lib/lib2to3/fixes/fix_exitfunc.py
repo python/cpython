@@ -9,6 +9,8 @@ from lib2to3.fixer_util import Name, Attr, Call, Comma, Newline, syms
 
 
 class FixExitfunc(fixer_base.BaseFix):
+    keep_line_order = True
+    BM_compatible = True
 
     PATTERN = """
               (

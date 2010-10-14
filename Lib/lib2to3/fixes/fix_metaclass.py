@@ -143,6 +143,7 @@ def fixup_indent(suite):
 
 
 class FixMetaclass(fixer_base.BaseFix):
+    BM_compatible = True
 
     PATTERN = """
     classdef<any*>

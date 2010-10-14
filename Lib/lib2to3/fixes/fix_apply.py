@@ -12,6 +12,7 @@ from .. import fixer_base
 from ..fixer_util import Call, Comma, parenthesize
 
 class FixApply(fixer_base.BaseFix):
+    BM_compatible = True
 
     PATTERN = """
     power< 'apply'

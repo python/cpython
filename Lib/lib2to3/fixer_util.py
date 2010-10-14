@@ -295,8 +295,8 @@ def touch_import(package, name, node):
     """ Works like `does_tree_import` but adds an import statement
         if it was not imported. """
     def is_import_stmt(node):
-        return node.type == syms.simple_stmt and node.children and \
-               is_import(node.children[0])
+        return (node.type == syms.simple_stmt and node.children and
+                is_import(node.children[0]))
 
     root = find_root(node)
 
@@ -319,8 +319,8 @@ def touch_import(package, name, node):
     # if that also fails, we stick to the beginning of the file
     if insert_pos == 0:
         for idx, node in enumerate(root.children):
-            if node.type == syms.simple_stmt and node.children and \
-               node.children[0].type == token.STRING:
+            if (node.type == syms.simple_stmt and node.children and
+               node.children[0].type == token.STRING):
                 insert_pos = idx + 1
                 break
 

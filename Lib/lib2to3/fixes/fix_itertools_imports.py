@@ -6,6 +6,7 @@ from lib2to3.fixer_util import BlankLine, syms, token
 
 
 class FixItertoolsImports(fixer_base.BaseFix):
+    BM_compatible = True
     PATTERN = """
               import_from< 'from' 'itertools' 'import' imports=any >
               """ %(locals())

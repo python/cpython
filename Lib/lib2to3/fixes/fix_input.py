@@ -11,7 +11,7 @@ context = patcomp.compile_pattern("power< 'eval' trailer< '(' any ')' > >")
 
 
 class FixInput(fixer_base.BaseFix):
-
+    BM_compatible = True
     PATTERN = """
               power< 'input' args=trailer< '(' [any] ')' > >
               """

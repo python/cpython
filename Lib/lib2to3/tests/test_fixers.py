@@ -868,6 +868,11 @@ class Test_raise(FixerTestCase):
                     raise Exception(5).with_traceback(6) # foo"""
         self.check(b, a)
 
+    def test_None_value(self):
+        b = """raise Exception(5), None, tb"""
+        a = """raise Exception(5).with_traceback(tb)"""
+        self.check(b, a)
+
     def test_tuple_value(self):
         b = """raise Exception, (5, 6, 7)"""
         a = """raise Exception(5, 6, 7)"""
@@ -1811,6 +1816,9 @@ class Test_urllib(FixerTestCase):
                 for member in members:
                     b = "from %s import %s as foo_bar" % (old, member)
                     a = "from %s import %s as foo_bar" % (new, member)
+                    self.check(b, a)
+                    b = "from %s import %s as blah, %s" % (old, member, member)
+                    a = "from %s import %s as blah, %s" % (new, member, member)
                     self.check(b, a)
 
     def test_star(self):

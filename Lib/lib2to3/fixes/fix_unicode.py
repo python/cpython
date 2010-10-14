@@ -10,7 +10,7 @@ _mapping = {u"unichr" : u"chr", u"unicode" : u"str"}
 _literal_re = re.compile(ur"[uU][rR]?[\'\"]")
 
 class FixUnicode(fixer_base.BaseFix):
-
+    BM_compatible = True
     PATTERN = "STRING | 'unicode' | 'unichr'"
 
     def transform(self, node, results):

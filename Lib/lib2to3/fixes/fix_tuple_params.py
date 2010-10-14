@@ -29,6 +29,10 @@ def is_docstring(stmt):
            stmt.children[0].type == token.STRING
 
 class FixTupleParams(fixer_base.BaseFix):
+    run_order = 4 #use a lower order since lambda is part of other
+                  #patterns
+    BM_compatible = True
+
     PATTERN = """
               funcdef< 'def' any parameters< '(' args=any ')' >
                        ['->' any] ':' suite=any+ >
