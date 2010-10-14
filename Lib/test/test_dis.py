@@ -19,8 +19,8 @@ dis_f = """\
 
  %-4d        10 LOAD_CONST               1 (1)
              13 RETURN_VALUE
-"""%(_f.__code__.co_firstlineno + 1,
-     _f.__code__.co_firstlineno + 2)
+""" % (_f.__code__.co_firstlineno + 1,
+       _f.__code__.co_firstlineno + 2)
 
 
 def bug708901():
@@ -43,9 +43,9 @@ dis_bug708901 = """\
         >>   25 POP_BLOCK
         >>   26 LOAD_CONST               0 (None)
              29 RETURN_VALUE
-"""%(bug708901.__code__.co_firstlineno + 1,
-     bug708901.__code__.co_firstlineno + 2,
-     bug708901.__code__.co_firstlineno + 3)
+""" % (bug708901.__code__.co_firstlineno + 1,
+       bug708901.__code__.co_firstlineno + 2,
+       bug708901.__code__.co_firstlineno + 3)
 
 
 def bug1333982(x=[]):
@@ -74,9 +74,9 @@ dis_bug1333982 = """\
 
  %-4d        40 LOAD_CONST               0 (None)
              43 RETURN_VALUE
-"""%(bug1333982.__code__.co_firstlineno + 1,
-     bug1333982.__code__.co_firstlineno + 2,
-     bug1333982.__code__.co_firstlineno + 3)
+""" % (bug1333982.__code__.co_firstlineno + 1,
+       bug1333982.__code__.co_firstlineno + 2,
+       bug1333982.__code__.co_firstlineno + 3)
 
 _BIG_LINENO_FORMAT = """\
 %3d           0 LOAD_GLOBAL              0 (spam)
@@ -220,14 +220,13 @@ Number of locals:  1
 Stack size:        4
 Flags:             OPTIMIZED, NEWLOCALS, NOFREE
 Constants:
-   0: 'Formatted details of methods, functions, or code.'
+   0: %r
    1: '__func__'
    2: '__code__'
    3: '<code_info>'
    4: 'co_code'
-   5: "don't know how to disassemble %s objects"
-   6: None
-Names:
+   5: "don't know how to disassemble %%s objects"
+%sNames:
    0: hasattr
    1: __func__
    2: __code__
@@ -239,7 +238,8 @@ Names:
    8: type
    9: __name__
 Variable names:
-   0: x"""
+   0: x""" % (('Formatted details of methods, functions, or code.', '   6: None\n')
+              if sys.flags.optimize < 2 else (None, ''))
 
 @staticmethod
 def tricky(x, y, z=True, *args, c, d, e=[], **kwds):
