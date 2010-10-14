@@ -51,6 +51,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 9409: Fix the regex to match all kind of filenames, for interactive
+  debugging in doctests.
+
 - Issue #6612: Fix site and sysconfig to catch os.getcwd() error, eg. if the
   current directory was deleted. Patch written by W. Trevor King.
 
