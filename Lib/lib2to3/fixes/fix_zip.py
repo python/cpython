@@ -13,6 +13,7 @@ from ..fixer_util import Name, Call, in_special_context
 
 class FixZip(fixer_base.ConditionalFix):
 
+    BM_compatible = True
     PATTERN = """
     power< 'zip' args=trailer< '(' [any] ')' >
     >

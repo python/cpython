@@ -178,6 +178,27 @@ class TestNodes(support.TestCase):
         self.assertEqual(str(n1), "foo**bar")
         self.assertTrue(isinstance(n1.children, list))
 
+    def test_leaves(self):
+        l1 = pytree.Leaf(100, "foo")
+        l2 = pytree.Leaf(100, "bar")
+        l3 = pytree.Leaf(100, "fooey")
+        n2 = pytree.Node(1000, [l1, l2])
+        n3 = pytree.Node(1000, [l3])
+        n1 = pytree.Node(1000, [n2, n3])
+
+        self.assertEqual(list(n1.leaves()), [l1, l2, l3])
+
+    def test_depth(self):
+        l1 = pytree.Leaf(100, "foo")
+        l2 = pytree.Leaf(100, "bar")
+        n2 = pytree.Node(1000, [l1, l2])
+        n3 = pytree.Node(1000, [])
+        n1 = pytree.Node(1000, [n2, n3])
+
+        self.assertEqual(l1.depth(), 2)
+        self.assertEqual(n3.depth(), 1)
+        self.assertEqual(n1.depth(), 0)
+
     def test_post_order(self):
         l1 = pytree.Leaf(100, "foo")
         l2 = pytree.Leaf(100, "bar")

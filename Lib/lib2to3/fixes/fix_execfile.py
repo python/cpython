@@ -13,6 +13,7 @@ from ..fixer_util import (Comma, Name, Call, LParen, RParen, Dot, Node,
 
 
 class FixExecfile(fixer_base.BaseFix):
+    BM_compatible = True
 
     PATTERN = """
     power< 'execfile' trailer< '(' arglist< filename=any [',' globals=any [',' locals=any ] ] > ')' > >

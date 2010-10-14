@@ -14,6 +14,9 @@ from lib2to3.fixer_util import touch_import
 
 class FixReduce(fixer_base.BaseFix):
 
+    BM_compatible = True
+    order = "pre"
+
     PATTERN = """
     power< 'reduce'
         trailer< '('

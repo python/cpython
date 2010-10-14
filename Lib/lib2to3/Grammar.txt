@@ -128,7 +128,7 @@ atom: ('(' [yield_expr|testlist_gexp] ')' |
        '`' testlist1 '`' |
        NAME | NUMBER | STRING+ | '.' '.' '.')
 listmaker: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
-testlist_gexp: test ( comp_for | (',' (test|star_expr))* [','] )
+testlist_gexp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']

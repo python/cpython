@@ -52,14 +52,17 @@ class PatternCompiler(object):
         self.pysyms = pygram.python_symbols
         self.driver = driver.Driver(self.grammar, convert=pattern_convert)
 
-    def compile_pattern(self, input, debug=False):
+    def compile_pattern(self, input, debug=False, with_tree=False):
         """Compiles a pattern string to a nested pytree.*Pattern object."""
         tokens = tokenize_wrapper(input)
         try:
             root = self.driver.parse_tokens(tokens, debug=debug)
-        except parse.ParseError, e:
+        except parse.ParseError as e:
             raise PatternSyntaxError(str(e))
-        return self.compile_node(root)
+        if with_tree:
+            return self.compile_node(root), root
+        else:
+            return self.compile_node(root)
 
     def compile_node(self, node):
         """Compiles a node, recursively.
