@@ -231,12 +231,12 @@ joinpath(wchar_t *buffer, wchar_t *stuff)
 /* copy_absolute requires that path be allocated at least
    MAXPATHLEN + 1 bytes and that p be no more than MAXPATHLEN bytes. */
 static void
-copy_absolute(wchar_t *path, wchar_t *p)
+copy_absolute(wchar_t *path, wchar_t *p, size_t pathlen)
 {
     if (p[0] == SEP)
         wcscpy(path, p);
     else {
-        if (!_Py_wgetcwd(path, MAXPATHLEN)) {
+        if (!_Py_wgetcwd(path, pathlen)) {
             /* unable to get the current directory */
             wcscpy(path, p);
             return;
@@ -251,11 +251,11 @@ copy_absolute(wchar_t *path, wchar_t *p)
 static void
 absolutize(wchar_t *path)
 {
-    wchar_t buffer[MAXPATHLEN + 1];
+    wchar_t buffer[MAXPATHLEN+1];
 
     if (path[0] == SEP)
         return;
-    copy_absolute(buffer, path);
+    copy_absolute(buffer, path, MAXPATHLEN+1);
     wcscpy(path, buffer);
 }
 
@@ -295,7 +295,7 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home)
     }
 
     /* Search from argv0_path, until root is found */
-    copy_absolute(prefix, argv0_path);
+    copy_absolute(prefix, argv0_path, MAXPATHLEN+1);
     do {
         n = wcslen(prefix);
         joinpath(prefix, lib_python);
@@ -372,7 +372,7 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home)
     }
 
     /* Search from argv0_path, until root is found */
-    copy_absolute(exec_prefix, argv0_path);
+    copy_absolute(exec_prefix, argv0_path, MAXPATHLEN+1);
     do {
         n = wcslen(exec_prefix);
         joinpath(exec_prefix, lib_python);
