@@ -1784,24 +1784,31 @@ class timezone(tzinfo):
 
     # Sentinel value to disallow None
     _Omitted = object()
-    def __init__(self, offset, name=_Omitted):
-        if name is self._Omitted:
+    def __new__(cls, offset, name=_Omitted):
+        if not isinstance(offset, timedelta):
+            raise TypeError("offset must be a timedelta")
+        if name is cls._Omitted:
+            if not offset:
+                return cls.utc
             name = None
         elif not isinstance(name, str):
             raise TypeError("name must be a string")
-        if isinstance(offset, timedelta):
-            if self._minoffset <= offset <= self._maxoffset:
-                if (offset.microseconds != 0 or
-                    offset.seconds % 60 != 0):
-                    raise ValueError("offset must be whole"
-                                    " number of minutes")
-                self._offset = offset
-            else:
-                raise ValueError("offset out of range")
-        else:
-            raise TypeError("offset must be timedelta")
+        if not cls._minoffset <= offset <= cls._maxoffset:
+            raise ValueError("offset must be a timedelta"
+                             " strictly between -timedelta(hours=24) and"
+                             " timedelta(hours=24).")
+        if (offset.microseconds != 0 or
+            offset.seconds % 60 != 0):
+            raise ValueError("offset must be a timedelta"
+                             " representing a whole number of minutes")
+        return cls._create(offset, name)
 
+    @classmethod
+    def _create(cls, offset, name=None):
+        self = tzinfo.__new__(cls)
+        self._offset = offset
         self._name = name
+        return self
 
     def __getinitargs__(self):
         """pickle support"""
@@ -1879,9 +1886,9 @@ class timezone(tzinfo):
         minutes = rest // timedelta(minutes=1)
         return 'UTC{}{:02d}:{:02d}'.format(sign, hours, minutes)
 
-timezone.utc = timezone(timedelta(0))
-timezone.min = timezone(timezone._minoffset)
-timezone.max = timezone(timezone._maxoffset)
+timezone.utc = timezone._create(timedelta(0))
+timezone.min = timezone._create(timezone._minoffset)
+timezone.max = timezone._create(timezone._maxoffset)
 
 """
 Some time zone algebra.  For a datetime x, let

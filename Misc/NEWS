@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 9183: ``datetime.timezone(datetime.timedelta(0))`` will now
+  return the same instance as ``datetime.timezone.utc``.
+
 - Issue #7523: Add SOCK_CLOEXEC and SOCK_NONBLOCK to the socket module,
   where supported by the system.  Patch by Nikita Vetoshkin.
 
