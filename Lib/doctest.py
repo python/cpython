@@ -214,7 +214,8 @@ def _load_testfile(filename, package, module_relative, encoding):
                 # get_data() opens files as 'rb', so one must do the equivalent
                 # conversion as universal newlines would do.
                 return file_contents.replace(os.linesep, '\n'), filename
-    return open(filename, encoding=encoding).read(), filename
+    with open(filename, encoding=encoding) as f:
+        return f.read(), filename
 
 def _indent(s, indent=4):
     """
@@ -2523,7 +2524,8 @@ def debug_script(src, pm=False, globs=None):
 
         if pm:
             try:
-                exec(open(srcfilename).read(), globs, globs)
+                with open(srcfilename) as f:
+                    exec(f.read(), globs, globs)
             except:
                 print(sys.exc_info()[1])
                 pdb.post_mortem(sys.exc_info()[2])
