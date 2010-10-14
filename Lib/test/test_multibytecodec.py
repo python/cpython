@@ -49,8 +49,8 @@ class Test_MultibyteCodec(unittest.TestCase):
     def test_codingspec(self):
         try:
             for enc in ALL_CJKENCODINGS:
-                print('# coding:', enc, file=io.open(TESTFN, 'w'))
-                exec(open(TESTFN).read())
+                code = '# coding: {}\n'.format(enc)
+                exec(code)
         finally:
             support.unlink(TESTFN)
 
