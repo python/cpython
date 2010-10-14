@@ -1046,7 +1046,7 @@ def _id(obj):
     return obj
 
 def requires_resource(resource):
-    if resource_is_enabled(resource):
+    if is_resource_enabled(resource):
         return _id
     else:
         return unittest.skip("resource {0!r} is not enabled".format(resource))

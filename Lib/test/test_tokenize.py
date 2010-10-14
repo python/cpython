@@ -514,13 +514,13 @@ Two string literals on the same line
     True
 
 Test roundtrip on random python modules.
-pass the '-ucompiler' option to process the full directory.
+pass the '-ucpu' option to process the full directory.
 
     >>> import random
     >>> tempdir = os.path.dirname(f) or os.curdir
     >>> testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
 
-    >>> if not support.is_resource_enabled("compiler"):
+    >>> if not support.is_resource_enabled("cpu"):
     ...     testfiles = random.sample(testfiles, 10)
     ...
     >>> for testfile in testfiles:
