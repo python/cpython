@@ -10,6 +10,8 @@ from ..fixer_util import LParen, RParen
 
 # XXX This doesn't support nested for loops like [x for x in 1, 2 for x in 1, 2]
 class FixParen(fixer_base.BaseFix):
+    BM_compatible = True
+
     PATTERN = """
         atom< ('[' | '(')
             (listmaker< any

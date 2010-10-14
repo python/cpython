@@ -9,7 +9,7 @@ from ..fixer_util import Name
 
 
 class FixStandarderror(fixer_base.BaseFix):
-
+    BM_compatible = True
     PATTERN = """
               'StandardError'
               """

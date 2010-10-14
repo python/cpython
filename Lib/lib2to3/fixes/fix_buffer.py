@@ -9,6 +9,7 @@ from ..fixer_util import Name
 
 
 class FixBuffer(fixer_base.BaseFix):
+    BM_compatible = True
 
     explicit = True # The user must ask for this fixer
 

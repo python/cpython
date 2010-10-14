@@ -6,6 +6,7 @@ from .. import fixer_base
 from ..fixer_util import Name, syms
 
 class FixNonzero(fixer_base.BaseFix):
+    BM_compatible = True
     PATTERN = """
     classdef< 'class' any+ ':'
               suite< any*

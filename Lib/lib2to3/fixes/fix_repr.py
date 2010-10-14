@@ -10,6 +10,7 @@ from ..fixer_util import Call, Name, parenthesize
 
 class FixRepr(fixer_base.BaseFix):
 
+    BM_compatible = True
     PATTERN = """
               atom < '`' expr=any '`' >
               """
