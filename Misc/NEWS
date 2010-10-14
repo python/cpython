@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 9409: Fix the regex to match all kind of filenames, for interactive
+  debugging in doctests.
+
 - Issue 9183: ``datetime.timezone(datetime.timedelta(0))`` will now
   return the same instance as ``datetime.timezone.utc``.
 

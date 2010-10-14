@@ -1319,7 +1319,7 @@ class DocTestRunner:
         self.tries += t
 
     __LINECACHE_FILENAME_RE = re.compile(r'<doctest '
-                                         r'(?P<name>[\w\.]+)'
+                                         r'(?P<name>.+)'
                                          r'\[(?P<examplenum>\d+)\]>$')
     def __patched_linecache_getlines(self, filename, module_globals=None):
         m = self.__LINECACHE_FILENAME_RE.match(filename)
