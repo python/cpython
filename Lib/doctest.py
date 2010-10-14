@@ -1333,7 +1333,9 @@ class DocTestRunner:
         m = self.__LINECACHE_FILENAME_RE.match(filename)
         if m and m.group('name') == self.test.name:
             example = self.test.examples[int(m.group('examplenum'))]
-            source = example.source.encode('ascii', 'backslashreplace')
+            source = example.source
+            if isinstance(source, unicode):
+                source = source.encode('ascii', 'backslashreplace')
             return source.splitlines(True)
         else:
             return self.save_linecache_getlines(filename, module_globals)
