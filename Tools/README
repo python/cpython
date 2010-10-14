@@ -26,8 +26,9 @@ pybench         Comprehensive Python benchmarking suite.
 pynche          A Tkinter-based color editor.
 
 scripts         A number of useful single-file programs, e.g. tabnanny.py
-                (by Tim Peters), which checks for inconsistent mixing
-                of tabs and spaces.
+                by Tim Peters, which checks for inconsistent mixing of
+                tabs and spaces, and 2to3, which converts Python 2 code
+                to Python 3 code.
 
 ssl             Currently, a tool to fetch server certificates.
 
