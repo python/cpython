@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 PyAPI_FUNC(wchar_t *) _Py_char2wchar(
-    char *arg);
+    const char *arg);
 
 PyAPI_FUNC(char*) _Py_wchar2char(
     const wchar_t *text);

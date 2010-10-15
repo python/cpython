@@ -17,7 +17,7 @@
    PyMem_Free() to free the memory), or NULL on error (conversion error or
    memory error). */
 wchar_t*
-_Py_char2wchar(char* arg)
+_Py_char2wchar(const char* arg)
 {
     wchar_t *res;
 #ifdef HAVE_BROKEN_MBSTOWCS
