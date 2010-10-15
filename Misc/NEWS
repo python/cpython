@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5762: Fix AttributeError raised by ``xml.dom.minidom`` when an empty
+  XML namespace attribute is encountered.
+
 - Issue #2830: Add the ``html.escape()`` function, which quotes all problematic
   characters by default.  Deprecate ``cgi.escape()``.  
 

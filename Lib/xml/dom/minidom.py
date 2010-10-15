@@ -301,9 +301,10 @@ def _in_document(node):
 
 def _write_data(writer, data):
     "Writes datachars to writer."
-    data = data.replace("&", "&amp;").replace("<", "&lt;")
-    data = data.replace("\"", "&quot;").replace(">", "&gt;")
-    writer.write(data)
+    if data:
+        data = data.replace("&", "&amp;").replace("<", "&lt;"). \
+                    replace("\"", "&quot;").replace(">", "&gt;")
+        writer.write(data)
 
 def _get_elements_by_tagName_helper(parent, name, rc):
     for node in parent.childNodes:
