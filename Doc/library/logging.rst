@@ -443,10 +443,11 @@ noncoders to easily modify the logging properties.
 
 Note that the class names referenced in config files need to be either relative
 to the logging module, or absolute values which can be resolved using normal
-import mechanisms. Thus, you could use either `handlers.WatchedFileHandler`
-(relative to the logging module) or `mypackage.mymodule.MyHandler` (for a
-class defined in package `mypackage` and module `mymodule`, where `mypackage`
-is available on the Python import path).
+import mechanisms. Thus, you could use either
+:class:`handlers.WatchedFileHandler` (relative to the logging module) or
+``mypackage.mymodule.MyHandler`` (for a class defined in package ``mypackage``
+and module ``mymodule``, where ``mypackage`` is available on the Python import
+path).
 
 In Python 3.2, a new means of configuring logging has been introduced, using
 dictionaries to hold configuration information. This provides a superset of the
@@ -2155,7 +2156,7 @@ for use by library developers.
 
    .. method:: createLock()
 
-      This method returns `None` for the lock, since there is no
+      This method returns ``None`` for the lock, since there is no
       underlying I/O to which access needs to be serialized.
 
 
@@ -3104,7 +3105,7 @@ wire).
 
    .. attribute:: exc_info
 
-      Exception tuple (à la `sys.exc_info`) or `None` if no exception
+      Exception tuple (à la :func:`sys.exc_info`) or ``None`` if no exception
       information is available.
 
    .. attribute:: func
@@ -3212,12 +3213,12 @@ with the :mod:`warnings` module.
    This function is used to turn the capture of warnings by logging on and
    off.
 
-   If `capture` is `True`, warnings issued by the :mod:`warnings` module
-   will be redirected to the logging system. Specifically, a warning will be
+   If *capture* is ``True``, warnings issued by the :mod:`warnings` module will
+   be redirected to the logging system. Specifically, a warning will be
    formatted using :func:`warnings.formatwarning` and the resulting string
    logged to a logger named "py.warnings" with a severity of `WARNING`.
 
-   If `capture` is `False`, the redirection of warnings to the logging system
+   If *capture* is ``False``, the redirection of warnings to the logging system
    will stop, and warnings will be redirected to their original destinations
    (i.e. those in effect before `captureWarnings(True)` was called).
 
@@ -3333,7 +3334,7 @@ Dictionary Schema Details
 The dictionary passed to :func:`dictConfig` must contain the following
 keys:
 
-* `version` - to be set to an integer value representing the schema
+* *version* - to be set to an integer value representing the schema
   version.  The only valid value at present is 1, but having this key
   allows the schema to evolve while still preserving backwards
   compatibility.
@@ -3345,7 +3346,7 @@ custom instantiation is required.  If so, the mechanism described in
 :ref:`logging-config-dict-userdef` below is used to create an instance;
 otherwise, the context is used to determine what to instantiate.
 
-* `formatters` - the corresponding value will be a dict in which each
+* *formatters* - the corresponding value will be a dict in which each
   key is a formatter id and each value is a dict describing how to
   configure the corresponding Formatter instance.
 
@@ -3353,7 +3354,7 @@ otherwise, the context is used to determine what to instantiate.
   (with defaults of ``None``) and these are used to construct a
   :class:`logging.Formatter` instance.
 
-* `filters` - the corresponding value will be a dict in which each key
+* *filters* - the corresponding value will be a dict in which each key
   is a filter id and each value is a dict describing how to configure
   the corresponding Filter instance.
 
@@ -3361,7 +3362,7 @@ otherwise, the context is used to determine what to instantiate.
   empty string) and this is used to construct a :class:`logging.Filter`
   instance.
 
-* `handlers` - the corresponding value will be a dict in which each
+* *handlers* - the corresponding value will be a dict in which each
   key is a handler id and each value is a dict describing how to
   configure the corresponding Handler instance.
 
@@ -3401,7 +3402,7 @@ otherwise, the context is used to determine what to instantiate.
   :class:`logging.handlers.RotatingFileHandler` with the keyword arguments
   ``filename='logconfig.log', maxBytes=1024, backupCount=3``.
 
-* `loggers` - the corresponding value will be a dict in which each key
+* *loggers* - the corresponding value will be a dict in which each key
   is a logger name and each value is a dict describing how to
   configure the corresponding Logger instance.
 
@@ -3420,11 +3421,11 @@ otherwise, the context is used to determine what to instantiate.
   The specified loggers will be configured according to the level,
   propagation, filters and handlers specified.
 
-* `root` - this will be the configuration for the root logger.
+* *root* - this will be the configuration for the root logger.
   Processing of the configuration will be as for any logger, except
   that the ``propagate`` setting will not be applicable.
 
-* `incremental` - whether the configuration is to be interpreted as
+* *incremental* - whether the configuration is to be interpreted as
   incremental to the existing configuration.  This value defaults to
   ``False``, which means that the specified configuration replaces the
   existing configuration with the same semantics as used by the
@@ -3433,10 +3434,10 @@ otherwise, the context is used to determine what to instantiate.
   If the specified value is ``True``, the configuration is processed
   as described in the section on :ref:`logging-config-dict-incremental`.
 
-* `disable_existing_loggers` - whether any existing loggers are to be
+* *disable_existing_loggers* - whether any existing loggers are to be
   disabled. This setting mirrors the parameter of the same name in
   :func:`fileConfig`. If absent, this parameter defaults to ``True``.
-  This value is ignored if `incremental` is ``True``.
+  This value is ignored if *incremental* is ``True``.
 
 .. _logging-config-dict-incremental:
 
