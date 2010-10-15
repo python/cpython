@@ -403,6 +403,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #9308: Added tests for importing encoded modules that do not
+  depend on specific stdlib modules being encoded in a certain way.
+
 - Issue #1051: Add a script (Lib/test/make_ssl_certs.py) to generate the custom
   certificate and private key files used by SSL-related certs.
 

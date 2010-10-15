@@ -5,7 +5,7 @@ import shutil
 import sys
 import unittest
 from test import support
-
+import importlib
 
 class LockTests(unittest.TestCase):
 
@@ -42,18 +42,32 @@ class LockTests(unittest.TestCase):
                             "RuntimeError")
 
 class ImportTests(unittest.TestCase):
+    def setUp(self):
+        mod = importlib.import_module('test.encoded_modules')
+        self.test_strings = mod.test_strings
+        self.test_path = mod.__path__
+
+    def test_import_encoded_module(self):
+        for modname, encoding, teststr in self.test_strings:
+            mod = importlib.import_module('test.encoded_modules.'
+                                          'module_' + modname)
+            self.assertEqual(teststr, mod.test)
 
     def test_find_module_encoding(self):
-        fd = imp.find_module("pydoc")[0]
-        self.assertEqual(fd.encoding, "iso-8859-1")
+        for mod, encoding, _ in self.test_strings:
+            fd = imp.find_module('module_' + mod, self.test_path)[0]
+            self.assertEqual(fd.encoding, encoding)
 
     def test_issue1267(self):
-        fp, filename, info  = imp.find_module("pydoc")
-        self.assertNotEqual(fp, None)
-        self.assertEqual(fp.encoding, "iso-8859-1")
-        self.assertEqual(fp.tell(), 0)
-        self.assertEqual(fp.readline(), '#!/usr/bin/env python3\n')
-        fp.close()
+        for mod, encoding, _ in self.test_strings:
+            fp, filename, info  = imp.find_module('module_' + mod,
+                                                  self.test_path)
+            self.assertNotEqual(fp, None)
+            self.assertEqual(fp.encoding, encoding)
+            self.assertEqual(fp.tell(), 0)
+            self.assertEqual(fp.readline(), '# test %s encoding\n'
+                             % encoding)
+            fp.close()
 
         fp, filename, info = imp.find_module("tokenize")
         self.assertNotEqual(fp, None)
