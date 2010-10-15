@@ -3380,16 +3380,16 @@ imp_load_module(PyObject *self, PyObject *args)
 {
     char *name;
     PyObject *fob;
-    char *pathname;
+    PyObject *pathname;
     PyObject * ret;
     char *suffix; /* Unused */
     char *mode;
     int type;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "sOes(ssi):load_module",
+    if (!PyArg_ParseTuple(args, "sOO&(ssi):load_module",
                           &name, &fob,
-                          Py_FileSystemDefaultEncoding, &pathname,
+                          PyUnicode_FSConverter, &pathname,
                           &suffix, &mode, &type))
         return NULL;
     if (*mode) {
@@ -3400,7 +3400,7 @@ imp_load_module(PyObject *self, PyObject *args)
         if (!(*mode == 'r' || *mode == 'U') || strchr(mode, '+')) {
             PyErr_Format(PyExc_ValueError,
                          "invalid file open mode %.200s", mode);
-            PyMem_Free(pathname);
+            Py_DECREF(pathname);
             return NULL;
         }
     }
@@ -3409,12 +3409,12 @@ imp_load_module(PyObject *self, PyObject *args)
     else {
         fp = get_file(NULL, fob, mode);
         if (fp == NULL) {
-            PyMem_Free(pathname);
+            Py_DECREF(pathname);
             return NULL;
         }
     }
-    ret = load_module(name, fp, pathname, type, NULL);
-    PyMem_Free(pathname);
+    ret = load_module(name, fp, PyBytes_AS_STRING(pathname), type, NULL);
+    Py_DECREF(pathname);
     if (fp)
         fclose(fp);
     return ret;
