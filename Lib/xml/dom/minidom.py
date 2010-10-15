@@ -1371,11 +1371,9 @@ class Notation(Identified, Childless, Node):
 class DOMImplementation(DOMImplementationLS):
     _features = [("core", "1.0"),
                  ("core", "2.0"),
-                 ("core", "3.0"),
                  ("core", None),
                  ("xml", "1.0"),
                  ("xml", "2.0"),
-                 ("xml", "3.0"),
                  ("xml", None),
                  ("ls-load", "3.0"),
                  ("ls-load", None),
