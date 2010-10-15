@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Use locale encoding instead of UTF-8 to encode and decode filenames if
+  Py_FileSystemDefaultEncoding is not set.
+
 - Issue #10095: fp_setreadl() doesn't reopen the file, reuse instead the file
   descriptor.
 

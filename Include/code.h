@@ -72,7 +72,7 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
 	int, int, int, int, int, PyObject *, PyObject *,
 	PyObject *, PyObject *, PyObject *, PyObject *,
-	PyObject *, PyObject *, int, PyObject *); 
+	PyObject *, PyObject *, int, PyObject *);
         /* same as struct above */
 
 /* Creates a new empty code object with the specified source location. */
@@ -98,13 +98,6 @@ PyAPI_FUNC(int) _PyCode_CheckLineNumber(PyCodeObject* co,
 
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lineno_obj);
-
-/* List of weak references to all code objects. The list is used by
-   initfsencoding() to redecode code filenames at startup if the filesystem
-   encoding changes. At initfsencoding() exit, the list is set to NULL and it
-   is no more used. */
-
-extern PyObject *_Py_code_object_list;
 
 #ifdef __cplusplus
 }
