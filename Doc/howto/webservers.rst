@@ -293,7 +293,7 @@ following WSGI-application::
     # -*- coding: UTF-8 -*-
 
     import sys, os
-    from cgi import escape
+    from html import escape
     from flup.server.fcgi import WSGIServer
 
     def app(environ, start_response):

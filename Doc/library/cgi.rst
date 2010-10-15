@@ -328,9 +328,9 @@ algorithms implemented in this module in other circumstances.
    attribute value delimited by double quotes, as in ``<a href="...">``.  Note
    that single quotes are never translated.
 
-   If the value to be quoted might include single- or double-quote characters,
-   or both, consider using the :func:`~xml.sax.saxutils.quoteattr` function in the
-   :mod:`xml.sax.saxutils` module instead.
+   .. deprecated:: 3.2
+      This function is unsafe because *quote* is false by default, and therefore
+      deprecated.  Use :func:`html.escape` instead.
 
 
 .. _cgi-security:
@@ -508,8 +508,8 @@ Common problems and solutions
 
 .. rubric:: Footnotes
 
-.. [#] Note that some recent versions of the HTML specification do state what order the
-   field values should be supplied in, but knowing whether a request was
-   received from a conforming browser, or even from a browser at all, is tedious
-   and error-prone.
+.. [#] Note that some recent versions of the HTML specification do state what
+   order the field values should be supplied in, but knowing whether a request
+   was received from a conforming browser, or even from a browser at all, is
+   tedious and error-prone.
 

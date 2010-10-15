@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2830: Add the ``html.escape()`` function, which quotes all problematic
+  characters by default.  Deprecate ``cgi.escape()``.  
+
 - Issue 9409: Fix the regex to match all kind of filenames, for interactive
   debugging in doctests.
 

@@ -84,7 +84,7 @@ __version__ = "0.6"
 
 __all__ = ["HTTPServer", "BaseHTTPRequestHandler"]
 
-import cgi
+import html
 import email.message
 import email.parser
 import http.client
@@ -705,7 +705,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             return None
         list.sort(key=lambda a: a.lower())
         r = []
-        displaypath = cgi.escape(urllib.parse.unquote(self.path))
+        displaypath = html.escape(urllib.parse.unquote(self.path))
         r.append('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
         r.append("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
         r.append("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
@@ -721,7 +721,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
             r.append('<li><a href="%s">%s</a>\n'
-                    % (urllib.parse.quote(linkname), cgi.escape(displayname)))
+                    % (urllib.parse.quote(linkname), html.escape(displayname)))
         r.append("</ul>\n<hr>\n</body>\n</html>\n")
         enc = sys.getfilesystemencoding()
         encoded = ''.join(r).encode(enc)

@@ -12,7 +12,7 @@
 # except if the test is specific to the Python implementation.
 
 import sys
-import cgi
+import html
 import unittest
 
 from test import support
@@ -1328,7 +1328,7 @@ XINCLUDE["default.xml"] = """\
   <p>Example.</p>
   <xi:include href="{}"/>
 </document>
-""".format(cgi.escape(SIMPLE_XMLFILE, True))
+""".format(html.escape(SIMPLE_XMLFILE, True))
 
 def xinclude_loader(href, parse="xml", encoding=None):
     try:
