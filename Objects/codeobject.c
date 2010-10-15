@@ -111,10 +111,6 @@ PyCode_New(int argcount, int kwonlyargcount,
         co->co_weakreflist = NULL;
     }
     return co;
-
-error:
-    Py_DECREF(co);
-    return NULL;
 }
 
 PyCodeObject *
