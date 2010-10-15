@@ -1597,11 +1597,22 @@ PyObject *PyUnicode_EncodeFSDefault(PyObject *unicode)
                                          "surrogateescape");
     }
     else {
-        /* if you change the default encoding, update also
-           PyUnicode_DecodeFSDefaultAndSize() and redecode_filenames() */
-        return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
-                                    PyUnicode_GET_SIZE(unicode),
-                                    "surrogateescape");
+        /* locale encoding with surrogateescape */
+        wchar_t *wchar;
+        char *bytes;
+        PyObject *bytes_obj;
+
+        wchar = PyUnicode_AsWideCharString(unicode, NULL);
+        if (wchar == NULL)
+            return NULL;
+        bytes = _Py_wchar2char(wchar);
+        PyMem_Free(wchar);
+        if (bytes == NULL)
+            return NULL;
+
+        bytes_obj = PyBytes_FromString(bytes);
+        PyMem_Free(bytes);
+        return bytes_obj;
     }
 }
 
@@ -1769,9 +1780,22 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
                                 "surrogateescape");
     }
     else {
-        /* if you change the default encoding, update also
-           PyUnicode_EncodeFSDefault() and redecode_filenames() */
-        return PyUnicode_DecodeUTF8(s, size, "surrogateescape");
+        /* locale encoding with surrogateescape */
+        wchar_t *wchar;
+        PyObject *unicode;
+
+        if (s[size] != '\0' || size != strlen(s)) {
+            PyErr_SetString(PyExc_TypeError, "embedded NUL character");
+            return NULL;
+        }
+
+        wchar = _Py_char2wchar(s);
+        if (wchar == NULL)
+            return NULL;
+
+        unicode = PyUnicode_FromWideChar(wchar, -1);
+        PyMem_Free(wchar);
+        return unicode;
     }
 }
 

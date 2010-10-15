@@ -5,8 +5,6 @@
 #define NAME_CHARS \
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 
-PyObject *_Py_code_object_list = NULL;
-
 /* all_name_chars(s): true iff all chars in s are valid NAME_CHARS */
 
 static int
@@ -111,17 +109,6 @@ PyCode_New(int argcount, int kwonlyargcount,
         co->co_lnotab = lnotab;
         co->co_zombieframe = NULL;
         co->co_weakreflist = NULL;
-
-        if (_Py_code_object_list != NULL) {
-            int err;
-            PyObject *ref = PyWeakref_NewRef((PyObject*)co, NULL);
-            if (ref == NULL)
-                goto error;
-            err = PyList_Append(_Py_code_object_list, ref);
-            Py_DECREF(ref);
-            if (err)
-                goto error;
-        }
     }
     return co;
 

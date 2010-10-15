@@ -1193,7 +1193,8 @@ PyAPI_FUNC(int) PyUnicode_FSDecoder(PyObject*, void*);
 /* Decode a null-terminated string using Py_FileSystemDefaultEncoding
    and the "surrogateescape" error handler.
 
-   If Py_FileSystemDefaultEncoding is not set, fall back to UTF-8.
+   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
+   encoding.
 
    Use PyUnicode_DecodeFSDefaultAndSize() if the string length is known.
 */
@@ -1205,7 +1206,8 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefault(
 /* Decode a string using Py_FileSystemDefaultEncoding
    and the "surrogateescape" error handler.
 
-   If Py_FileSystemDefaultEncoding is not set, fall back to UTF-8.
+   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
+   encoding.
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
@@ -1216,7 +1218,8 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
 /* Encode a Unicode object to Py_FileSystemDefaultEncoding with the
    "surrogateescape" error handler, and return bytes.
 
-   If Py_FileSystemDefaultEncoding is not set, fall back to UTF-8.
+   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
+   encoding.
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeFSDefault(

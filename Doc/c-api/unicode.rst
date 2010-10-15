@@ -415,7 +415,8 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
    Decode a string using :c:data:`Py_FileSystemDefaultEncoding` and the
    ``'surrogateescape'`` error handler, or ``'strict'`` on Windows.
 
-   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
+   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
+   locale encoding.
 
    .. versionchanged:: 3.2
       Use ``'strict'`` error handler on Windows.
@@ -426,7 +427,8 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
    Decode a null-terminated string using :c:data:`Py_FileSystemDefaultEncoding`
    and the ``'surrogateescape'`` error handler, or ``'strict'`` on Windows.
 
-   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
+   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
+   locale encoding.
 
    Use :c:func:`PyUnicode_DecodeFSDefaultAndSize` if you know the string length.
 
@@ -440,7 +442,8 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
    ``'surrogateescape'`` error handler, or ``'strict'`` on Windows, and return
    :class:`bytes`.
 
-   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to UTF-8.
+   If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
+   locale encoding.
 
    .. versionadded:: 3.2
 
