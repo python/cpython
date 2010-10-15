@@ -27,10 +27,10 @@ Library
 - Issue #2830: Add the ``html.escape()`` function, which quotes all problematic
   characters by default.  Deprecate ``cgi.escape()``.  
 
-- Issue 9409: Fix the regex to match all kind of filenames, for interactive
+- Issue #9409: Fix the regex to match all kind of filenames, for interactive
   debugging in doctests.
 
-- Issue 9183: ``datetime.timezone(datetime.timedelta(0))`` will now
+- Issue #9183: ``datetime.timezone(datetime.timedelta(0))`` will now
   return the same instance as ``datetime.timezone.utc``.
 
 - Issue #7523: Add SOCK_CLOEXEC and SOCK_NONBLOCK to the socket module,
