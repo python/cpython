@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: latin-1 -*-
 """Generate Python documentation in HTML or text for interactive use.
 
 In the Python interpreter, do "from pydoc import help" to provide online

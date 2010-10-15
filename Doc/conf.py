@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Python documentation build configuration file
 #

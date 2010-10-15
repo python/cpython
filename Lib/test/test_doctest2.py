@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """A module to test whether doctest recognizes some 2.2 features,
 like static and class methods.
 
