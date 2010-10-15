@@ -257,10 +257,9 @@ Running the ``check`` command will display some warnings::
              (maintainer and maintainer_email) must be supplied
 
 
-If you use the reStructuredText syntax in the `long_description` field and
-`docutils <http://docutils.sourceforge.net/>`_ is installed you can check if
-the syntax is fine with the ``check`` command, using the `restructuredtext`
-option.
+If you use the reStructuredText syntax in the ``long_description`` field and
+`docutils`_  is installed you can check if the syntax is fine with the
+``check`` command, using the ``restructuredtext`` option.
 
 For example, if the :file:`setup.py` script is changed like this::
 
@@ -278,7 +277,7 @@ For example, if the :file:`setup.py` script is changed like this::
         url='http://example.com', long_description=desc)
 
 Where the long description is broken, ``check`` will be able to detect it
-by using the `docutils` parser::
+by using the :mod:`docutils` parser::
 
     $ pythontrunk setup.py check --restructuredtext
     running check
@@ -291,3 +290,4 @@ by using the `docutils` parser::
 .. % \section{Putting it all together}
 
 
+.. _docutils: http://docutils.sourceforge.net

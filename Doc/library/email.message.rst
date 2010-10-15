@@ -118,10 +118,11 @@ Here are the methods of the :class:`Message` class:
       When *decode* is ``False`` (the default) the body is returned as a string
       without decoding the :mailheader:`Content-Transfer-Encoding`.  However,
       for a :mailheader:`Content-Transfer-Encoding` of 8bit, an attempt is made
-      to decode the original bytes using the `charset` specified by the
-      :mailheader:`Content-Type` header, using the `replace` error handler.  If
-      no `charset` is specified, or if the `charset` given is not recognized by
-      the email package, the body is decoded using the default ASCII charset.
+      to decode the original bytes using the ``charset`` specified by the
+      :mailheader:`Content-Type` header, using the ``replace`` error handler.
+      If no ``charset`` is specified, or if the ``charset`` given is not
+      recognized by the email package, the body is decoded using the default
+      ASCII charset.
 
 
    .. method:: set_payload(payload, charset=None)
