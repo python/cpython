@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #9862: Compensate for broken PIPE_BUF in AIX by hard coding
+  its value as the default 512 when compiling on AIX.
+
 - Use locale encoding instead of UTF-8 to encode and decode filenames if
   Py_FileSystemDefaultEncoding is not set.
 

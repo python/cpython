@@ -1786,6 +1786,10 @@ PyInit_select(void)
     PyModule_AddObject(m, "error", SelectError);
 
 #ifdef PIPE_BUF
+#ifdef HAVE_BROKEN_PIPE_BUF
+#undef PIPE_BUF
+#define PIPE_BUF 512
+#endif
     PyModule_AddIntConstant(m, "PIPE_BUF", PIPE_BUF);
 #endif
 
