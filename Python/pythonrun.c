@@ -725,7 +725,7 @@ static PyObject*
 redecode_filename(PyObject *file, const char *new_encoding,
                   const char *errors)
 {
-    PyObject *file_bytes = NULL, *new_file = NULL;
+    PyObject *file_bytes, *new_file;
 
     file_bytes = PyUnicode_EncodeFSDefault(file);
     if (file_bytes == NULL)
