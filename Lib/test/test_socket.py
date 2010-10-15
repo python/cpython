@@ -1905,11 +1905,6 @@ def test_main():
         tests.append(TIPCTest)
         tests.append(TIPCThreadableTest)
 
-    if support.verbose:
-        import pprint
-        print("== Errno map:")
-        pprint.pprint(errno.errorcode)
-
     thread_info = support.threading_setup()
     support.run_unittest(*tests)
     support.threading_cleanup(*thread_info)
