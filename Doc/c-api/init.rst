@@ -413,6 +413,7 @@ Thread State and the Global Interpreter Lock
 ============================================
 
 .. index::
+   single: GIL
    single: global interpreter lock
    single: interpreter lock
    single: lock, interpreter

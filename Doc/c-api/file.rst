@@ -63,7 +63,7 @@ change in future releases of Python.
    Return the file object associated with *p* as a :ctype:`FILE\*`.
 
    If the caller will ever use the returned :ctype:`FILE\*` object while
-   the GIL is released it must also call the :cfunc:`PyFile_IncUseCount` and
+   the :term:`GIL` is released it must also call the :cfunc:`PyFile_IncUseCount` and
    :cfunc:`PyFile_DecUseCount` functions described below as appropriate.
 
 
@@ -76,10 +76,19 @@ change in future releases of Python.
    finished with the :ctype:`FILE\*`.  Otherwise the file object will
    never be closed by Python.
 
-   The GIL must be held while calling this function.
+   The :term:`GIL` must be held while calling this function.
 
-   The suggested use is to call this after :cfunc:`PyFile_AsFile` just before
-   you release the GIL.
+   The suggested use is to call this after :cfunc:`PyFile_AsFile` and before
+   you release the GIL::
+
+      FILE *fp = PyFile_AsFile(p);
+      PyFile_IncUseCount(p);
+      /* ... */
+      Py_BEGIN_ALLOW_THREADS
+      do_something(fp);
+      Py_END_ALLOW_THREADS
+      /* ... */
+      PyFile_DecUseCount(p);
 
    .. versionadded:: 2.6
 
@@ -90,7 +99,8 @@ change in future releases of Python.
    indicate that the caller is done with its own use of the :ctype:`FILE\*`.
    This may only be called to undo a prior call to :cfunc:`PyFile_IncUseCount`.
 
-   The GIL must be held while calling this function.
+   The :term:`GIL` must be held while calling this function (see the example
+   above).
 
    .. versionadded:: 2.6
 
