@@ -66,6 +66,9 @@ Library
 Extensions
 ----------
 
+- Issue #9054: Fix a crash occurring when using the pyexpat module
+  with expat version 2.0.1.
+
 - Issue #5355: Provide mappings from Expat error numbers to string
   descriptions and backwards, in order to actually make it possible
   to analyze error codes provided by ExpatError.
