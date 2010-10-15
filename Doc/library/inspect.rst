@@ -422,19 +422,19 @@ Classes and functions
 
    Get information about arguments passed into a particular frame.  A
    :term:`named tuple` ``ArgInfo(args, varargs, keywords, locals)`` is
-   returned. *args* is a list of the argument names (it may contain nested
-   lists). *varargs* and *varkw* are the names of the ``*`` and ``**`` arguments
-   or ``None``. *locals* is the locals dictionary of the given frame.
+   returned. *args* is a list of the argument names.  *varargs* and *varkw* are
+   the names of the ``*`` and ``**`` arguments or ``None``.  *locals* is the
+   locals dictionary of the given frame.
 
 
-.. function:: formatargspec(args[, varargs, varkw, defaults, formatarg, formatvarargs, formatvarkw, formatvalue, join])
+.. function:: formatargspec(args[, varargs, varkw, defaults, formatarg, formatvarargs, formatvarkw, formatvalue])
 
    Format a pretty argument spec from the four values returned by
    :func:`getargspec`.  The format\* arguments are the corresponding optional
    formatting functions that are called to turn names and values into strings.
 
 
-.. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue, join])
+.. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])
 
    Format a pretty argument spec from the four values returned by
    :func:`getargvalues`.  The format\* arguments are the corresponding optional
