@@ -262,7 +262,7 @@ The :mod:`test.support` module defines the following functions:
    path to the file.
 
 
-.. function:: run_unittest(*classes)
+.. function:: run_unittest(\*classes)
 
    Execute :class:`unittest.TestCase` subclasses passed to the function. The
    function scans the classes for methods starting with the prefix ``test_``
@@ -279,7 +279,7 @@ The :mod:`test.support` module defines the following functions:
    This will run all tests defined in the named module.
 
 
-.. function:: check_warnings(*filters, quiet=True)
+.. function:: check_warnings(\*filters, quiet=True)
 
    A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
    easier to test that a warning was correctly raised.  It is approximately
