@@ -111,8 +111,8 @@ version 5.0:
 
 * Given bytes input to the model, :meth:`~email.message.Message.get_payload`
   will by default decode a message body that has a
-  :mailheader:`Content-Transfer-Encoding` of `8bit` using the charset specified
-  in the MIME headers and return the resulting string.
+  :mailheader:`Content-Transfer-Encoding` of ``8bit`` using the charset
+  specified in the MIME headers and return the resulting string.
 
 * Given bytes input to the model, :class:`~email.generator.Generator` will
   convert message bodies that have a :mailheader:`Content-Transfer-Encoding` of

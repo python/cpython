@@ -284,9 +284,9 @@ as the start directory.
 
 .. caution::
 
-    Test discovery loads tests by importing them. Once test discovery has
-    found all the test files from the start directory you specify it turns the
-    paths into package names to import. For example `foo/bar/baz.py` will be
+    Test discovery loads tests by importing them. Once test discovery has found
+    all the test files from the start directory you specify it turns the paths
+    into package names to import. For example :file:`foo/bar/baz.py` will be
     imported as ``foo.bar.baz``.
 
     If you have a package installed globally and attempt test discovery on

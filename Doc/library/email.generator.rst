@@ -99,7 +99,7 @@ formatted string representation of a message object.  For more detail, see
 
    This class has the same API as the :class:`Generator` class, except that
    *outfp* must be a file like object that will accept :class`bytes` input to
-   its `write` method.  If the message object structure contains non-ASCII
+   its ``write`` method.  If the message object structure contains non-ASCII
    bytes, this generator's :meth:`~BytesGenerator.flatten` method will produce
    them as-is, including preserving parts with a
    :mailheader:`Content-Transfer-Encoding` of ``8bit``.
