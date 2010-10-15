@@ -450,9 +450,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         print("==  ", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
         print("==  ", os.getcwd())
-        import pprint, errno
-        print("== Errno map:")
-        pprint.pprint(errno.errorcode)
 
     alltests = findtests(testdir, stdtests, nottests)
     selected = tests or args or alltests
