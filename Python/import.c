@@ -3326,24 +3326,24 @@ static PyObject *
 imp_load_dynamic(PyObject *self, PyObject *args)
 {
     char *name;
+    PyObject *pathbytes;
     char *pathname;
     PyObject *fob = NULL;
     PyObject *m;
     FILE *fp = NULL;
-    if (!PyArg_ParseTuple(args, "ses|O:load_dynamic",
-                          &name,
-                          Py_FileSystemDefaultEncoding, &pathname,
-                          &fob))
+    if (!PyArg_ParseTuple(args, "sO&|O:load_dynamic",
+                          &name, PyUnicode_FSConverter, &pathbytes, &fob))
         return NULL;
+    pathname = PyBytes_AS_STRING(pathbytes);
     if (fob) {
         fp = get_file(pathname, fob, "r");
         if (fp == NULL) {
-            PyMem_Free(pathname);
+            Py_DECREF(pathbytes);
             return NULL;
         }
     }
     m = _PyImport_LoadDynamicModule(name, pathname, fp);
-    PyMem_Free(pathname);
+    Py_DECREF(pathbytes);
     if (fp)
         fclose(fp);
     return m;
