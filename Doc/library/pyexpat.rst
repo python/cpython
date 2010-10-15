@@ -169,7 +169,7 @@ XMLParser Objects
    This method can only be called before the :meth:`Parse` or :meth:`ParseFile`
    methods are called; calling it after either of those have been called causes
    :exc:`ExpatError` to be raised with the :attr:`code` attribute set to
-   :const:`errors.XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING`.
+   ``errors.codes[errors.XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING]``.
 
 :class:`xmlparser` objects have the following attributes:
 
@@ -467,8 +467,21 @@ ExpatError Exceptions
 
 .. attribute:: ExpatError.code
 
-   Expat's internal error number for the specific error.  This will match one of
-   the constants defined in the ``errors`` object from this module.
+   Expat's internal error number for the specific error.  The
+   :data:`errors.messages` dictionary maps these error numbers to Expat's error
+   messages.  For example::
+
+      from xml.parsers.expat import ParserCreate, ExpatError, errors
+
+      p = ParserCreate()
+      try:
+          p.Parse(some_xml_document)
+      except ExpatError as err:
+          print("Error:", errors.messages[err.code])
+
+   The :mod:`errors` module also provides error message constants and a
+   dictionary :data:`~errors.codes` mapping these messages back to the error
+   codes, see below.
 
 
 .. attribute:: ExpatError.lineno
@@ -530,15 +543,16 @@ The output from this program is::
 Content Model Descriptions
 --------------------------
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
+.. module:: xml.parsers.expat.model
 
+.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 Content modules are described using nested tuples.  Each tuple contains four
 values: the type, the quantifier, the name, and a tuple of children.  Children
 are simply additional content module descriptions.
 
-The values of the first two fields are constants defined in the ``model`` object
-of the :mod:`xml.parsers.expat` module.  These constants can be collected in two
+The values of the first two fields are constants defined in the
+:mod:`xml.parsers.expat.model` module.  These constants can be collected in two
 groups: the model type group and the quantifier group.
 
 The constants in the model type group are:
@@ -610,143 +624,139 @@ The constants in the quantifier group are:
 Expat error constants
 ---------------------
 
-The following constants are provided in the ``errors`` object of the
-:mod:`xml.parsers.expat` module.  These constants are useful in interpreting
-some of the attributes of the :exc:`ExpatError` exception objects raised when an
-error has occurred.
+.. module:: xml.parsers.expat.errors
 
-The ``errors`` object has the following attributes:
+The following constants are provided in the :mod:`xml.parsers.expat.errors`
+module.  These constants are useful in interpreting some of the attributes of
+the :exc:`ExpatError` exception objects raised when an error has occurred.
+Since for backwards compatibility reasons, the constants' value is the error
+*message* and not the numeric error *code*, you do this by comparing its
+:attr:`code` attribute with
+:samp:`errors.codes[errors.XML_ERROR_{CONSTANT_NAME}]`.
+
+The ``errors`` module has the following attributes:
+
+.. data:: codes
+
+   A dictionary mapping numeric error codes to their string descriptions.
+
+   .. versionadded:: 3.2
+
+
+.. data:: messages
+
+   A dictionary mapping string descriptions to their error codes.
+
+   .. versionadded:: 3.2
 
 
 .. data:: XML_ERROR_ASYNC_ENTITY
-   :noindex:
 
 
 .. data:: XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF
-   :noindex:
 
    An entity reference in an attribute value referred to an external entity instead
    of an internal entity.
 
 
 .. data:: XML_ERROR_BAD_CHAR_REF
-   :noindex:
 
    A character reference referred to a character which is illegal in XML (for
    example, character ``0``, or '``&#0;``').
 
 
 .. data:: XML_ERROR_BINARY_ENTITY_REF
-   :noindex:
 
    An entity reference referred to an entity which was declared with a notation, so
    cannot be parsed.
 
 
 .. data:: XML_ERROR_DUPLICATE_ATTRIBUTE
-   :noindex:
 
    An attribute was used more than once in a start tag.
 
 
 .. data:: XML_ERROR_INCORRECT_ENCODING
-   :noindex:
 
 
 .. data:: XML_ERROR_INVALID_TOKEN
-   :noindex:
 
    Raised when an input byte could not properly be assigned to a character; for
    example, a NUL byte (value ``0``) in a UTF-8 input stream.
 
 
 .. data:: XML_ERROR_JUNK_AFTER_DOC_ELEMENT
-   :noindex:
 
    Something other than whitespace occurred after the document element.
 
 
 .. data:: XML_ERROR_MISPLACED_XML_PI
-   :noindex:
 
    An XML declaration was found somewhere other than the start of the input data.
 
 
 .. data:: XML_ERROR_NO_ELEMENTS
-   :noindex:
 
    The document contains no elements (XML requires all documents to contain exactly
    one top-level element)..
 
 
 .. data:: XML_ERROR_NO_MEMORY
-   :noindex:
 
    Expat was not able to allocate memory internally.
 
 
 .. data:: XML_ERROR_PARAM_ENTITY_REF
-   :noindex:
 
    A parameter entity reference was found where it was not allowed.
 
 
 .. data:: XML_ERROR_PARTIAL_CHAR
-   :noindex:
 
    An incomplete character was found in the input.
 
 
 .. data:: XML_ERROR_RECURSIVE_ENTITY_REF
-   :noindex:
 
    An entity reference contained another reference to the same entity; possibly via
    a different name, and possibly indirectly.
 
 
 .. data:: XML_ERROR_SYNTAX
-   :noindex:
 
    Some unspecified syntax error was encountered.
 
 
 .. data:: XML_ERROR_TAG_MISMATCH
-   :noindex:
 
    An end tag did not match the innermost open start tag.
 
 
 .. data:: XML_ERROR_UNCLOSED_TOKEN
-   :noindex:
 
    Some token (such as a start tag) was not closed before the end of the stream or
    the next token was encountered.
 
 
 .. data:: XML_ERROR_UNDEFINED_ENTITY
-   :noindex:
 
    A reference was made to a entity which was not defined.
 
 
 .. data:: XML_ERROR_UNKNOWN_ENCODING
-   :noindex:
 
    The document encoding is not supported by Expat.
 
 
 .. data:: XML_ERROR_UNCLOSED_CDATA_SECTION
-   :noindex:
 
    A CDATA marked section was not closed.
 
 
 .. data:: XML_ERROR_EXTERNAL_ENTITY_HANDLING
-   :noindex:
 
 
 .. data:: XML_ERROR_NOT_STANDALONE
-   :noindex:
 
    The parser determined that the document was not "standalone" though it declared
    itself to be in the XML declaration, and the :attr:`NotStandaloneHandler` was
@@ -754,15 +764,12 @@ The ``errors`` object has the following attributes:
 
 
 .. data:: XML_ERROR_UNEXPECTED_STATE
-   :noindex:
 
 
 .. data:: XML_ERROR_ENTITY_DECLARED_IN_PE
-   :noindex:
 
 
 .. data:: XML_ERROR_FEATURE_REQUIRES_XML_DTD
-   :noindex:
 
    An operation was requested that requires DTD support to be compiled in, but
    Expat was configured without DTD support.  This should never be reported by a
@@ -770,7 +777,6 @@ The ``errors`` object has the following attributes:
 
 
 .. data:: XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING
-   :noindex:
 
    A behavioral change was requested after parsing started that can only be changed
    before parsing has started.  This is (currently) only raised by
@@ -778,63 +784,53 @@ The ``errors`` object has the following attributes:
 
 
 .. data:: XML_ERROR_UNBOUND_PREFIX
-   :noindex:
 
    An undeclared prefix was found when namespace processing was enabled.
 
 
 .. data:: XML_ERROR_UNDECLARING_PREFIX
-   :noindex:
 
    The document attempted to remove the namespace declaration associated with a
    prefix.
 
 
 .. data:: XML_ERROR_INCOMPLETE_PE
-   :noindex:
 
    A parameter entity contained incomplete markup.
 
 
 .. data:: XML_ERROR_XML_DECL
-   :noindex:
 
    The document contained no document element at all.
 
 
 .. data:: XML_ERROR_TEXT_DECL
-   :noindex:
 
    There was an error parsing a text declaration in an external entity.
 
 
 .. data:: XML_ERROR_PUBLICID
-   :noindex:
 
    Characters were found in the public id that are not allowed.
 
 
 .. data:: XML_ERROR_SUSPENDED
-   :noindex:
 
    The requested operation was made on a suspended parser, but isn't allowed.  This
    includes attempts to provide additional input or to stop the parser.
 
 
 .. data:: XML_ERROR_NOT_SUSPENDED
-   :noindex:
 
    An attempt to resume the parser was made when the parser had not been suspended.
 
 
 .. data:: XML_ERROR_ABORTED
-   :noindex:
 
    This should not be reported to Python applications.
 
 
 .. data:: XML_ERROR_FINISHED
-   :noindex:
 
    The requested operation was made on a parser which was finished parsing input,
    but isn't allowed.  This includes attempts to provide additional input or to
@@ -842,7 +838,6 @@ The ``errors`` object has the following attributes:
 
 
 .. data:: XML_ERROR_SUSPEND_PE
-   :noindex:
 
 
 .. rubric:: Footnotes

@@ -1685,8 +1685,12 @@ MODULE_INITFUNC(void)
     PyObject *modelmod_name;
     PyObject *model_module;
     PyObject *sys_modules;
+    PyObject *tmpnum, *tmpstr;
+    PyObject *codes_dict;
+    PyObject *rev_codes_dict;
+    int res;
     static struct PyExpat_CAPI capi;
-    PyObject* capi_object;
+    PyObject *capi_object;
 
     if (errmod_name == NULL)
         return NULL;
@@ -1789,9 +1793,29 @@ MODULE_INITFUNC(void)
     }
 #endif
 
+    codes_dict = PyDict_New();
+    rev_codes_dict = PyDict_New();
+    if (codes_dict == NULL || rev_codes_dict == NULL) {
+        Py_XDECREF(codes_dict);
+        Py_XDECREF(rev_codes_dict);
+        return NULL;
+    }
+    
 #define MYCONST(name) \
-    PyModule_AddStringConstant(errors_module, #name, \
-                               (char*)XML_ErrorString(name))
+    if (PyModule_AddStringConstant(errors_module, #name,               \
+                                   (char *)XML_ErrorString(name)) < 0) \
+        return NULL;                                                   \
+    tmpnum = PyLong_FromLong(name);                                    \
+    if (tmpnum == NULL) return NULL;                                   \
+    res = PyDict_SetItemString(codes_dict,                             \
+                               XML_ErrorString(name), tmpnum);         \
+    if (res < 0) return NULL;                                          \
+    tmpstr = PyUnicode_FromString(XML_ErrorString(name));              \
+    if (tmpstr == NULL) return NULL;                                   \
+    res = PyDict_SetItem(rev_codes_dict, tmpnum, tmpstr);              \
+    Py_DECREF(tmpstr);                                                 \
+    Py_DECREF(tmpnum);                                                 \
+    if (res < 0) return NULL;                                          \
 
     MYCONST(XML_ERROR_NO_MEMORY);
     MYCONST(XML_ERROR_SYNTAX);
@@ -1833,9 +1857,16 @@ MODULE_INITFUNC(void)
     MYCONST(XML_ERROR_FINISHED);
     MYCONST(XML_ERROR_SUSPEND_PE);
 
-    PyModule_AddStringConstant(errors_module, "__doc__",
-                               "Constants used to describe error conditions.");
+    if (PyModule_AddStringConstant(errors_module, "__doc__",
+                                   "Constants used to describe "
+                                   "error conditions.") < 0)
+        return NULL;
 
+    if (PyModule_AddObject(errors_module, "codes", codes_dict) < 0)
+        return NULL;
+    if (PyModule_AddObject(errors_module, "messages", rev_codes_dict) < 0)
+        return NULL;
+    
 #undef MYCONST
 
 #define MYCONST(c) PyModule_AddIntConstant(m, #c, c)
