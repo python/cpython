@@ -4213,6 +4213,10 @@ fi
 ],
 [AC_MSG_RESULT(no value specified)])
 
+case $ac_sys_system in
+AIX*)   
+  AC_DEFINE(HAVE_BROKEN_PIPE_BUF, 1, [Define if the system reports an invalid PIPE_BUF value.]) ;;
+esac
 
 
 case $ac_sys_system in
