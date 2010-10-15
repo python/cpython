@@ -394,7 +394,6 @@ The module :mod:`socket` exports the following constants and functions:
    This function is rarely needed, but can be used to get or set socket options on
    a socket passed to a program as standard input or output (such as a server
    started by the Unix inet daemon).  The socket is assumed to be in blocking mode.
-   Availability: Unix.
 
 
 .. function:: ntohl(x)
