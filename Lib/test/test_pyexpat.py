@@ -2,10 +2,10 @@
 # handler, are obscure and unhelpful.
 
 from io import BytesIO
-import sys
 import unittest
 
 from xml.parsers import expat
+from xml.parsers.expat import errors
 
 from test.support import sortdict, run_unittest
 
@@ -575,7 +575,7 @@ class ChardataBufferTest(unittest.TestCase):
         parser.Parse(xml2, 1)
         self.assertEquals(self.n, 4)
 
-class MalformedInputText(unittest.TestCase):
+class MalformedInputTest(unittest.TestCase):
     def test1(self):
         xml = "\0\r\n"
         parser = expat.ParserCreate()
@@ -594,6 +594,23 @@ class MalformedInputText(unittest.TestCase):
         except expat.ExpatError as e:
             self.assertEquals(str(e), 'XML declaration not well-formed: line 1, column 14')
 
+class ErrorMessageTest(unittest.TestCase):
+    def test_codes(self):
+        # verify mapping of errors.codes and errors.messages
+        self.assertEqual(errors.XML_ERROR_SYNTAX,
+                         errors.messages[errors.codes[errors.XML_ERROR_SYNTAX]])
+
+    def test_expaterror(self):
+        xml = '<'
+        parser = expat.ParserCreate()
+        try:
+            parser.Parse(xml, True)
+            self.fail()
+        except expat.ExpatError as e:
+            self.assertEquals(e.code,
+                              errors.codes[errors.XML_ERROR_UNCLOSED_TOKEN])
+
+
 def test_main():
     run_unittest(SetAttributeTest,
                  ParseTest,
@@ -604,7 +621,8 @@ def test_main():
                  PositionTest,
                  sf1296433Test,
                  ChardataBufferTest,
-                 MalformedInputText)
+                 MalformedInputTest,
+                 ErrorMessageTest)
 
 if __name__ == "__main__":
     test_main()
