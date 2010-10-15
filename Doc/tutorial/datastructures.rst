@@ -481,8 +481,8 @@ using a non-existent key.
 
 The :meth:`keys` method of a dictionary object returns a list of all the keys
 used in the dictionary, in arbitrary order (if you want it sorted, just apply
-the :meth:`sort` method to the list of keys).  To check whether a single key is
-in the dictionary, use the :keyword:`in` keyword.
+the :func:`sorted` function to it).  To check whether a single key is in the
+dictionary, use the :keyword:`in` keyword.
 
 Here is a small example using a dictionary::
 
