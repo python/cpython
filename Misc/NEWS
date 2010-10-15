@@ -63,6 +63,10 @@ Library
 Extensions
 ----------
 
+- Issue #5355: Provide mappings from Expat error numbers to string
+  descriptions and backwards, in order to actually make it possible
+  to analyze error codes provided by ExpatError.
+
 - The Unicode database was updated to 6.0.0.
 
 Tools/Demos
