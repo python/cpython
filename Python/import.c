@@ -3460,21 +3460,24 @@ imp_cache_from_source(PyObject *self, PyObject *args, PyObject *kws)
     static char *kwlist[] = {"path", "debug_override", NULL};
 
     char buf[MAXPATHLEN+1];
-    char *pathname, *cpathname;
+    PyObject *pathbytes;
+    char *cpathname;
     PyObject *debug_override = Py_None;
     int debug = !Py_OptimizeFlag;
 
     if (!PyArg_ParseTupleAndKeywords(
-                args, kws, "es|O", kwlist,
-                Py_FileSystemDefaultEncoding, &pathname, &debug_override))
+                args, kws, "O&|O", kwlist,
+                PyUnicode_FSConverter, &pathbytes, &debug_override))
         return NULL;
 
     if (debug_override != Py_None)
         if ((debug = PyObject_IsTrue(debug_override)) < 0)
             return NULL;
 
-    cpathname = make_compiled_pathname(pathname, buf, MAXPATHLEN+1, debug);
-    PyMem_Free(pathname);
+    cpathname = make_compiled_pathname(
+        PyBytes_AS_STRING(pathbytes),
+        buf, MAXPATHLEN+1, debug);
+    Py_DECREF(pathbytes);
 
     if (cpathname == NULL) {
         PyErr_Format(PyExc_SystemError, "path buffer too short");
