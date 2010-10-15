@@ -3483,7 +3483,7 @@ imp_cache_from_source(PyObject *self, PyObject *args, PyObject *kws)
         PyErr_Format(PyExc_SystemError, "path buffer too short");
         return NULL;
     }
-    return PyUnicode_FromString(buf);
+    return PyUnicode_DecodeFSDefault(buf);
 }
 
 PyDoc_STRVAR(doc_cache_from_source,
