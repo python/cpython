@@ -752,7 +752,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # args is a string
         fd, fname = mkstemp()
         # reopen in text mode
-        with open(fd, "w") as fobj:
+        with open(fd, "w", errors="surrogateescape") as fobj:
             fobj.write("#!/bin/sh\n")
             fobj.write("exec '%s' -c 'import sys; sys.exit(47)'\n" %
                        sys.executable)
@@ -795,7 +795,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # call() function with string argument on UNIX
         fd, fname = mkstemp()
         # reopen in text mode
-        with open(fd, "w") as fobj:
+        with open(fd, "w", errors="surrogateescape") as fobj:
             fobj.write("#!/bin/sh\n")
             fobj.write("exec '%s' -c 'import sys; sys.exit(47)'\n" %
                        sys.executable)
