@@ -1521,6 +1521,10 @@ _PySys_Init(void)
     SET_SYS_FROM_STRING("winver",
                         PyUnicode_FromString(PyWin_DLLVersionString));
 #endif
+#ifdef ABIFLAGS
+    SET_SYS_FROM_STRING("abiflags",
+                        PyUnicode_FromString(ABIFLAGS));
+#endif
     if (warnoptions == NULL) {
         warnoptions = PyList_New(0);
     }

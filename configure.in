@@ -602,18 +602,23 @@ AC_MSG_RESULT($LIBRARY)
 #
 # INSTSONAME is the name of the shared library that will be use to install
 # on the system - some systems like version suffix, others don't
+#
+# LDVERSION is the shared library version number, normally the Python version
+# with the ABI build flags appended.
 AC_SUBST(LDLIBRARY)
 AC_SUBST(DLLLIBRARY)
 AC_SUBST(BLDLIBRARY)
 AC_SUBST(LDLIBRARYDIR)
 AC_SUBST(INSTSONAME)
 AC_SUBST(RUNSHARED)
+AC_SUBST(LDVERSION)
 LDLIBRARY="$LIBRARY"
 BLDLIBRARY='$(LDLIBRARY)'
 INSTSONAME='$(LDLIBRARY)'
 DLLLIBRARY=''
 LDLIBRARYDIR=''
 RUNSHARED=''
+LDVERSION="$(VERSION)"
 
 # LINKCC is the command that links the python executable -- default is $(CC).
 # If CXX is set, and if it is needed to link a main function that was
@@ -724,18 +729,18 @@ if test $enable_shared = "yes"; then
   AC_DEFINE(Py_ENABLE_SHARED, 1, [Defined if Python is built as a shared library.])
   case $ac_sys_system in
     CYGWIN*)
-          LDLIBRARY='libpython$(VERSION).dll.a'
-          DLLLIBRARY='libpython$(VERSION).dll'
+          LDLIBRARY='libpython$(LDVERSION).dll.a'
+          DLLLIBRARY='libpython$(LDVERSION).dll'
           ;;
     SunOS*)
-	  LDLIBRARY='libpython$(VERSION).so'
-	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(VERSION)'
+	  LDLIBRARY='libpython$(LDVERSION).so'
+	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
           ;;
     Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*)
-	  LDLIBRARY='libpython$(VERSION).so'
-	  BLDLIBRARY='-L. -lpython$(VERSION)'
+	  LDLIBRARY='libpython$(LDVERSION).so'
+	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
 	  case $ac_sys_system in
 	      FreeBSD*)
@@ -747,27 +752,27 @@ if test $enable_shared = "yes"; then
     hp*|HP*)
 	  case `uname -m` in
 		ia64)
-			LDLIBRARY='libpython$(VERSION).so'
+			LDLIBRARY='libpython$(LDVERSION).so'
 			;;
 		*)
-			LDLIBRARY='libpython$(VERSION).sl'
+			LDLIBRARY='libpython$(LDVERSION).sl'
 			;;
 	  esac
-	  BLDLIBRARY='-Wl,+b,$(LIBDIR) -L. -lpython$(VERSION)'
+	  BLDLIBRARY='-Wl,+b,$(LIBDIR) -L. -lpython$(LDVERSION)'
 	  RUNSHARED=SHLIB_PATH=`pwd`:${SHLIB_PATH}
 	  ;;
     OSF*)
-	  LDLIBRARY='libpython$(VERSION).so'
-	  BLDLIBRARY='-rpath $(LIBDIR) -L. -lpython$(VERSION)'
+	  LDLIBRARY='libpython$(LDVERSION).so'
+	  BLDLIBRARY='-rpath $(LIBDIR) -L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
 	  ;;
     Darwin*)
-    	LDLIBRARY='libpython$(VERSION).dylib'
-	BLDLIBRARY='-L. -lpython$(VERSION)'
+    	LDLIBRARY='libpython$(LDVERSION).dylib'
+	BLDLIBRARY='-L. -lpython$(LDVERSION)'
 	RUNSHARED='DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}'
 	;;
     AIX*)
-	LDLIBRARY='libpython$(VERSION).so'
+	LDLIBRARY='libpython$(LDVERSION).so'
 	RUNSHARED=LIBPATH=`pwd`:${LIBPATH}
 	;;
 
@@ -776,7 +781,7 @@ else # shared is disabled
   case $ac_sys_system in
     CYGWIN*)
           BLDLIBRARY='$(LIBRARY)'
-          LDLIBRARY='libpython$(VERSION).dll.a'
+          LDLIBRARY='libpython$(LDVERSION).dll.a'
           ;;
   esac
 fi
@@ -823,7 +828,8 @@ if test -z "$LN" ; then
 fi
 
 # For calculating the .so ABI tag.
-SOABI_QUALIFIERS=""
+AC_SUBST(ABIFLAGS)
+ABIFLAGS=""
 
 # Check for --with-pydebug
 AC_MSG_CHECKING(for --with-pydebug)
@@ -836,7 +842,7 @@ then
   [Define if you want to build an interpreter with many run-time checks.]) 
   AC_MSG_RESULT(yes); 
   Py_DEBUG='true'
-  SOABI_QUALIFIERS="${SOABI_QUALIFIERS}d"
+  ABIFLAGS="${ABIFLAGS}d"
 else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
@@ -2473,7 +2479,7 @@ AC_ARG_WITH(pymalloc,
 if test -z "$with_pymalloc"
 then
     with_pymalloc="yes"
-    SOABI_QUALIFIERS="${SOABI_QUALIFIERS}m"
+    ABIFLAGS="${ABIFLAGS}m"
 fi
 if test "$with_pymalloc" != "no"
 then
@@ -3586,7 +3592,7 @@ AH_TEMPLATE(Py_UNICODE_SIZE,
 case "$unicode_size" in
   4)
      AC_DEFINE(Py_UNICODE_SIZE, 4)
-     SOABI_QUALIFIERS="${SOABI_QUALIFIERS}u"
+     ABIFLAGS="${ABIFLAGS}u"
      ;;
   *) AC_DEFINE(Py_UNICODE_SIZE, 2) ;;
 esac
@@ -3635,9 +3641,15 @@ AC_C_BIGENDIAN
 # would get a shared library ABI version tag of 'cpython-32dmu' and shared
 # libraries would be named 'foo.cpython-32dmu.so'.
 AC_SUBST(SOABI)
+AC_MSG_CHECKING(ABIFLAGS)
+AC_MSG_RESULT($ABIFLAGS)
 AC_MSG_CHECKING(SOABI)
-SOABI='cpython-'`echo $VERSION | tr -d .`${SOABI_QUALIFIERS}
+SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}
 AC_MSG_RESULT($SOABI)
+
+AC_MSG_CHECKING(LDVERSION)
+LDVERSION='$(VERSION)$(ABIFLAGS)'
+AC_MSG_RESULT($LDVERSION)
 
 # SO is the extension of shared libraries `(including the dot!)
 # -- usually .so, .sl on HP-UX, .dll on Cygwin
