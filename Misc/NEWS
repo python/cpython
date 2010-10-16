@@ -10,6 +10,9 @@ What's New in Python 2.7.1?
 Core and Builtins
 -----------------
 
+- Issue #9862: Compensate for broken PIPE_BUF in AIX by hard coding
+  its value as the default 512 when compiling on AIX.
+
 - Issue #10068: Global objects which have reference cycles with their module's
   dict are now cleared again. This causes issue #7140 to appear again.
 

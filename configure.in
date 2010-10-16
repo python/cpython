@@ -4261,6 +4261,12 @@ AC_CHECK_TYPE(socklen_t,,
 #endif
 ])
 
+case $ac_sys_system in
+AIX*)
+  AC_DEFINE(HAVE_BROKEN_PIPE_BUF, 1, [Define if the system reports an invalid PIPE_BUF value.]) ;;
+esac
+
+
 AC_SUBST(THREADHEADERS)
 
 for h in `(cd $srcdir;echo Python/thread_*.h)`
