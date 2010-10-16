@@ -48,7 +48,7 @@ __future__
 __main__            gvanrossum
 _dummy_thread       brett.cannon
 _thread             pitrou
-_winreg             brian.curtin*
+_winreg             brian.curtin*, stutzbach
 abc
 aifc                r.david.murray
 argparse            bethard
@@ -237,7 +237,6 @@ warnings            brett.cannon
 wave
 weakref             fdrake, pitrou
 webbrowser          georg.brandl
-_winreg             brian.curtin*, stutzbach
 winsound            effbot (inactive)
 wsgiref             pje
 xdrlib
