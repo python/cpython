@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9807 (part 1): Expose the ABI flags in sys.abiflags.  Add --abiflags
+  switch to python-config for command line access.
+
 - Issue #6098: Don't claim DOM level 3 conformance in minidom.
 
 - Issue #5762: Fix AttributeError raised by ``xml.dom.minidom`` when an empty
