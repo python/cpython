@@ -3462,7 +3462,7 @@ imp_cache_from_source(PyObject *self, PyObject *args, PyObject *kws)
     char buf[MAXPATHLEN+1];
     PyObject *pathbytes;
     char *cpathname;
-    PyObject *debug_override = Py_None;
+    PyObject *debug_override = NULL;
     int debug = !Py_OptimizeFlag;
 
     if (!PyArg_ParseTupleAndKeywords(
@@ -3470,9 +3470,11 @@ imp_cache_from_source(PyObject *self, PyObject *args, PyObject *kws)
                 PyUnicode_FSConverter, &pathbytes, &debug_override))
         return NULL;
 
-    if (debug_override != Py_None)
-        if ((debug = PyObject_IsTrue(debug_override)) < 0)
-            return NULL;
+    if (debug_override != NULL &&
+        (debug = PyObject_IsTrue(debug_override)) < 0) {
+        Py_DECREF(pathbytes);
+        return NULL;
+    }
 
     cpathname = make_compiled_pathname(
         PyBytes_AS_STRING(pathbytes),
