@@ -131,7 +131,12 @@ ast_error_finish(const char *filename)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    filename_obj = PyUnicode_DecodeFSDefault(filename);
+    if (filename != NULL)
+        filename_obj = PyUnicode_DecodeFSDefault(filename);
+    else {
+        Py_INCREF(Py_None);
+        filename_obj = Py_None;
+    }
     if (filename_obj != NULL)
         tmp = Py_BuildValue("(NlOO)", filename_obj, lineno, offset, loc);
     else

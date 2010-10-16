@@ -2054,7 +2054,12 @@ err_input(perrdetail *err)
         errtext = PyUnicode_DecodeUTF8(err->text, strlen(err->text),
                                        "replace");
     }
-    filename = PyUnicode_DecodeFSDefault(err->filename);
+    if (err->filename != NULL)
+        filename = PyUnicode_DecodeFSDefault(err->filename);
+    else {
+        Py_INCREF(Py_None);
+        filename = Py_None;
+    }
     if (filename != NULL)
         v = Py_BuildValue("(NiiN)", filename,
                           err->lineno, err->offset, errtext);
