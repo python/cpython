@@ -6,7 +6,7 @@ import sys
 import sysconfig
 
 valid_opts = ['prefix', 'exec-prefix', 'includes', 'libs', 'cflags',
-              'ldflags', 'extension-suffix', 'help']
+              'ldflags', 'extension-suffix', 'help', 'abiflags']
 
 def exit_with_usage(code=1):
     print("Usage: {0} [{1}]".format(
@@ -56,3 +56,6 @@ for opt in opt_flags:
 
     elif opt == '--extension-suffix':
         print(sysconfig.get_config_var('SO'))
+
+    elif opt == '--abiflags':
+        print(sys.abiflags)

@@ -36,6 +36,7 @@ AR=		@AR@
 RANLIB=		@RANLIB@
 SVNVERSION=	@SVNVERSION@
 SOABI=		@SOABI@
+LDVERSION=	@LDVERSION@
 
 GNULD=		@GNULD@
 
@@ -102,6 +103,7 @@ MANDIR=		@mandir@
 INCLUDEDIR=	@includedir@
 CONFINCLUDEDIR=	$(exec_prefix)/include
 SCRIPTDIR=	$(prefix)/lib
+ABIFLAGS=	@ABIFLAGS@
 
 # Detailed destination directories
 BINLIBDEST=	$(LIBDIR)/python$(VERSION)
@@ -445,7 +447,7 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	$(AR) $(ARFLAGS) $@ $(MODOBJS)
 	$(RANLIB) $@
 
-libpython$(VERSION).so: $(LIBRARY_OBJS)
+libpython$(LDVERSION).so: $(LIBRARY_OBJS)
 	if test $(INSTSONAME) != $(LDLIBRARY); then \
 		$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST); \
 		$(LN) -f $(INSTSONAME) $@; \
@@ -565,6 +567,11 @@ Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DSOABI='"$(SOABI)"' \
 		-o $@ $(srcdir)/Python/dynload_shlib.c
+
+Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile
+	$(CC) -c $(PY_CORE_CFLAGS) \
+		-DABIFLAGS='"$(ABIFLAGS)"' \
+		-o $@ $(srcdir)/Python/sysmodule.c
 
 $(IO_OBJS): $(IO_H)
 

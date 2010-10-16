@@ -955,6 +955,11 @@ always available.
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python. Availability: Windows.
 
+.. data:: abiflags
+
+   On POSIX systems where Python is build with the standard ``configure``
+   script, this contains the ABI flags as specified by :pep:`3149`.
+
 .. rubric:: Citations
 
 .. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf .
