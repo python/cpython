@@ -10,6 +10,9 @@ What's New in Python 2.7.1?
 Core and Builtins
 -----------------
 
+- Issue #9997: Don't let the name "top" have special significance in scope
+  resolution.
+
 - Issue #9862: Compensate for broken PIPE_BUF in AIX by hard coding
   its value as the default 512 when compiling on AIX.
 
