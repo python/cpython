@@ -326,6 +326,10 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
     }
     cbuf[res] = '\0'; /* buf will be null terminated */
     wbuf = _Py_char2wchar(cbuf);
+    if (wbuf == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
     r1 = wcslen(wbuf);
     if (bufsiz <= r1) {
         PyMem_Free(wbuf);
