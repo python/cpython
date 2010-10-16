@@ -41,7 +41,7 @@ main(int argc, char **argv)
     oldloc = strdup(setlocale(LC_ALL, NULL));
     setlocale(LC_ALL, "");
     for (i = 0; i < argc; i++) {
-        argv_copy[i] = _Py_char2wchar(argv[i]);
+        argv_copy[i] = _Py_char2wchar(argv[i], NULL);
         if (!argv_copy[i])
             return 1;
         argv_copy2[i] = argv_copy[i];

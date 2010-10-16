@@ -1783,17 +1783,18 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
         /* locale encoding with surrogateescape */
         wchar_t *wchar;
         PyObject *unicode;
+        size_t len;
 
         if (s[size] != '\0' || size != strlen(s)) {
             PyErr_SetString(PyExc_TypeError, "embedded NUL character");
             return NULL;
         }
 
-        wchar = _Py_char2wchar(s);
+        wchar = _Py_char2wchar(s, &len);
         if (wchar == NULL)
             return NULL;
 
-        unicode = PyUnicode_FromWideChar(wchar, -1);
+        unicode = PyUnicode_FromWideChar(wchar, len);
         PyMem_Free(wchar);
         return unicode;
     }

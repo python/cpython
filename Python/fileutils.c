@@ -13,11 +13,12 @@
 
    Use _Py_wchar2char() to encode the character string back to a byte string.
 
-   Return a pointer to a newly allocated (wide) character string (use
-   PyMem_Free() to free the memory), or NULL on error (conversion error or
-   memory error). */
+   Return a pointer to a newly allocated wide character string (use
+   PyMem_Free() to free the memory) and write the number of written wide
+   characters excluding the null character into *size if size is not NULL, or
+   NULL on error (conversion error or memory error). */
 wchar_t*
-_Py_char2wchar(const char* arg)
+_Py_char2wchar(const char* arg, size_t *size)
 {
     wchar_t *res;
 #ifdef HAVE_BROKEN_MBSTOWCS
@@ -47,8 +48,11 @@ _Py_char2wchar(const char* arg)
             for (tmp = res; *tmp != 0 &&
                          (*tmp < 0xd800 || *tmp > 0xdfff); tmp++)
                 ;
-            if (*tmp == 0)
+            if (*tmp == 0) {
+                if (size != NULL)
+                    *size = count;
                 return res;
+            }
         }
         PyMem_Free(res);
     }
@@ -113,6 +117,8 @@ _Py_char2wchar(const char* arg)
             *out++ = 0xdc00 + *in++;
     *out = 0;
 #endif
+    if (size != NULL)
+        *size = out - res;
     return res;
 oom:
     fprintf(stderr, "out of memory\n");
@@ -325,12 +331,11 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
         return -1;
     }
     cbuf[res] = '\0'; /* buf will be null terminated */
-    wbuf = _Py_char2wchar(cbuf);
+    wbuf = _Py_char2wchar(cbuf, &r1);
     if (wbuf == NULL) {
         errno = EINVAL;
         return -1;
     }
-    r1 = wcslen(wbuf);
     if (bufsiz <= r1) {
         PyMem_Free(wbuf);
         errno = EINVAL;
@@ -366,12 +371,11 @@ _Py_wrealpath(const wchar_t *path,
     if (res == NULL)
         return NULL;
 
-    wresolved_path = _Py_char2wchar(cresolved_path);
+    wresolved_path = _Py_char2wchar(cresolved_path, &r);
     if (wresolved_path == NULL) {
         errno = EINVAL;
         return NULL;
     }
-    r = wcslen(wresolved_path);
     if (resolved_path_size <= r) {
         PyMem_Free(wresolved_path);
         errno = EINVAL;
@@ -394,13 +398,14 @@ _Py_wgetcwd(wchar_t *buf, size_t size)
 #else
     char fname[PATH_MAX];
     wchar_t *wname;
+    size_t len;
 
     if (getcwd(fname, PATH_MAX) == NULL)
         return NULL;
-    wname = _Py_char2wchar(fname);
+    wname = _Py_char2wchar(fname, &len);
     if (wname == NULL)
         return NULL;
-    if (size <= wcslen(wname)) {
+    if (size <= len) {
         PyMem_Free(wname);
         return NULL;
     }
