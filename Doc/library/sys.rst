@@ -10,6 +10,13 @@ interpreter and to functions that interact strongly with the interpreter. It is
 always available.
 
 
+.. data:: abiflags
+
+   On POSIX systems where Python is build with the standard ``configure``
+   script, this contains the ABI flags as specified by :pep:`3149`.
+
+   .. versionadded:: 3.2
+
 .. data:: argv
 
    The list of command line arguments passed to a Python script. ``argv[0]`` is the
@@ -954,11 +961,6 @@ always available.
    first three characters of :const:`version`.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python. Availability: Windows.
-
-.. data:: abiflags
-
-   On POSIX systems where Python is build with the standard ``configure``
-   script, this contains the ABI flags as specified by :pep:`3149`.
 
 .. rubric:: Citations
 
