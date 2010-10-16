@@ -142,16 +142,19 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     Py_ssize_t npath;
     size_t taillen;
     PyObject *syspath;
-    const char* path;
+    PyObject *path;
     const char* tail;
+    PyObject *filebytes;
     const char* filepath;
     Py_ssize_t len;
+    PyObject* result;
 
-    filepath = _PyUnicode_AsString(filename);
-    if (filepath == NULL) {
+    filebytes = PyUnicode_EncodeFSDefault(filename);
+    if (filebytes == NULL) {
         PyErr_Clear();
         return NULL;
     }
+    filepath = PyBytes_AS_STRING(filebytes);
 
     /* Search tail of filename in sys.path before giving up */
     tail = strrchr(filepath, SEP);
@@ -163,7 +166,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
 
     syspath = PySys_GetObject("path");
     if (syspath == NULL || !PyList_Check(syspath))
-        return NULL;
+        goto error;
     npath = PyList_Size(syspath);
 
     for (i = 0; i < npath; i++) {
@@ -174,14 +177,18 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
         }
         if (!PyUnicode_Check(v))
             continue;
-        path = _PyUnicode_AsStringAndSize(v, &len);
+        path = PyUnicode_EncodeFSDefault(v);
         if (path == NULL) {
             PyErr_Clear();
             continue;
         }
-        if (len + 1 + (Py_ssize_t)taillen >= (Py_ssize_t)namelen - 1)
+        len = PyBytes_GET_SIZE(path);
+        if (len + 1 + (Py_ssize_t)taillen >= (Py_ssize_t)namelen - 1) {
+            Py_DECREF(path);
             continue; /* Too long */
-        strcpy(namebuf, path);
+        }
+        strcpy(namebuf, PyBytes_AS_STRING(path));
+        Py_DECREF(path);
         if (strlen(namebuf) != len)
             continue; /* v contains '\0' */
         if (len > 0 && namebuf[len-1] != SEP)
@@ -189,11 +196,19 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
         strcpy(namebuf+len, tail);
 
         binary = PyObject_CallMethod(io, "open", "ss", namebuf, "rb");
-        if (binary != NULL)
-            return binary;
+        if (binary != NULL) {
+            result = binary;
+            goto finally;
+        }
         PyErr_Clear();
     }
-    return NULL;
+    goto error;
+
+error:
+    result = NULL;
+finally:
+    Py_DECREF(filebytes);
+    return result;
 }
 
 int

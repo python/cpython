@@ -1213,7 +1213,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     d = PyModule_GetDict(m);
     if (PyDict_GetItemString(d, "__file__") == NULL) {
         PyObject *f;
-        f = PyUnicode_FromString(filename);
+        f = PyUnicode_DecodeFSDefault(filename);
         if (f == NULL)
             return -1;
         if (PyDict_SetItemString(d, "__file__", f) < 0) {
@@ -1968,7 +1968,9 @@ err_input(perrdetail *err)
 {
     PyObject *v, *w, *errtype, *errtext;
     PyObject *msg_obj = NULL;
+    PyObject *filename;
     char *msg = NULL;
+
     errtype = PyExc_SyntaxError;
     switch (err->error) {
     case E_ERROR:
@@ -2052,8 +2054,12 @@ err_input(perrdetail *err)
         errtext = PyUnicode_DecodeUTF8(err->text, strlen(err->text),
                                        "replace");
     }
-    v = Py_BuildValue("(ziiN)", err->filename,
-                      err->lineno, err->offset, errtext);
+    filename = PyUnicode_DecodeFSDefault(err->filename);
+    if (filename != NULL)
+        v = Py_BuildValue("(NiiN)", filename,
+                          err->lineno, err->offset, errtext);
+    else
+        v = NULL;
     if (v != NULL) {
         if (msg_obj)
             w = Py_BuildValue("(OO)", msg_obj, v);
