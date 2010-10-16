@@ -10,6 +10,9 @@ What's New in Python 2.7.1?
 Core and Builtins
 -----------------
 
+- Issue #10125: Don't segfault when the iterator passed to ``file.writelines()``
+  closes the file.
+
 - Issue #9997: Don't let the name "top" have special significance in scope
   resolution.
 

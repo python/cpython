@@ -1849,6 +1849,11 @@ file_writelines(PyFileObject *f, PyObject *seq)
                 }
                 PyList_SetItem(list, j, line);
             }
+            /* The iterator might have closed the file on us. */
+            if (f->f_fp == NULL) {
+                err_closed();
+                goto error;
+            }
         }
         if (j == 0)
             break;
