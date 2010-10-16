@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #10006: type.__abstractmethods__ now raises an AttributeError.  As a
   result metaclasses can now be ABCs (see #9533).
 
+- Issue #9997: Don't let the name "top" have special significance in scope
+  resolution.
+
 - Issue #9930: Remove bogus subtype check that was causing (e.g.)
   float.__rdiv__(2.0, 3) to return NotImplemented instead of the
   expected 1.5.

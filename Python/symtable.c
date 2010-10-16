@@ -923,7 +923,7 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
     st->st_cur = ste_new(st, name, block, ast, lineno);
     if (st->st_cur == NULL)
         return 0;
-    if (name == GET_IDENTIFIER(top))
+    if (block == ModuleBlock)
         st->st_global = st->st_cur->ste_symbols;
     if (prev) {
         if (PyList_Append(prev->ste_children,
