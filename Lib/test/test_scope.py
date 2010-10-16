@@ -705,6 +705,14 @@ class ScopeTests(unittest.TestCase):
         h = g()
         self.assertEqual(h(), 3)
 
+    def testTopIsNotSignificant(self):
+        # See #9997.
+        def top(a):
+            pass
+        def b():
+            global a
+
+
 
 def test_main():
     run_unittest(ScopeTests)
