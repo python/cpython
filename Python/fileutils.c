@@ -353,6 +353,7 @@ _Py_wrealpath(const wchar_t *path,
 {
     char *cpath;
     char cresolved_path[PATH_MAX];
+    wchar_t *wresolved_path;
     char *res;
     size_t r;
     cpath = _Py_wchar2char(path);
@@ -364,11 +365,20 @@ _Py_wrealpath(const wchar_t *path,
     PyMem_Free(cpath);
     if (res == NULL)
         return NULL;
-    r = mbstowcs(resolved_path, cresolved_path, resolved_path_size);
-    if (r == (size_t)-1 || r >= PATH_MAX) {
+
+    wresolved_path = _Py_char2wchar(cresolved_path);
+    if (wresolved_path == NULL) {
         errno = EINVAL;
         return NULL;
     }
+    r = wcslen(wresolved_path);
+    if (resolved_path_size <= r) {
+        PyMem_Free(wresolved_path);
+        errno = EINVAL;
+        return NULL;
+    }
+    wcsncpy(resolved_path, wresolved_path, resolved_path_size);
+    PyMem_Free(wresolved_path);
     return resolved_path;
 }
 #endif
