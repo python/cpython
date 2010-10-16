@@ -307,6 +307,7 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
 {
     char *cpath;
     char cbuf[PATH_MAX];
+    wchar_t *wbuf;
     int res;
     size_t r1;
 
@@ -324,11 +325,15 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
         return -1;
     }
     cbuf[res] = '\0'; /* buf will be null terminated */
-    r1 = mbstowcs(buf, cbuf, bufsiz);
-    if (r1 == -1) {
+    wbuf = _Py_char2wchar(cbuf);
+    r1 = wcslen(wbuf);
+    if (bufsiz <= r1) {
+        PyMem_Free(wbuf);
         errno = EINVAL;
         return -1;
     }
+    wcsncpy(buf, wbuf, bufsiz);
+    PyMem_Free(wbuf);
     return (int)r1;
 }
 #endif
