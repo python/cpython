@@ -9,6 +9,7 @@
 
 #define CTYPES_CFIELD_CAPSULE_NAME_PYMEM "_ctypes/cfield.c pymem"
 
+#if Py_UNICODE_SIZE != SIZEOF_WCHAR_T
 static void pymem_destructor(PyObject *ptr)
 {
     void *p = PyCapsule_GetPointer(ptr, CTYPES_CFIELD_CAPSULE_NAME_PYMEM);
@@ -16,6 +17,7 @@ static void pymem_destructor(PyObject *ptr)
         PyMem_Free(p);
     }
 }
+#endif
 
 
 /******************************************************************/
