@@ -647,6 +647,13 @@ result2 = h()
         self.assertEqual(2, global_ns["result2"])
         self.assertEqual(9, global_ns["result9"])
 
+    def testTopIsNotSignificant(self):
+        # See #9997.
+        def top(a):
+            pass
+        def b():
+            global a
+
 
 def test_main():
     with check_warnings(("import \* only allowed at module level",
