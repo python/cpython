@@ -10,6 +10,10 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #9713, #10114: Parser functions (eg. PyParser_ASTFromFile) expects
+  filenames encoded to the filesystem encoding with surrogateescape error
+  handler (to support undecodable bytes), instead of UTF-8 in strict mode.
+
 - Issue #9997: Don't let the name "top" have special significance in scope
   resolution.
 
@@ -39,7 +43,7 @@ Library
   XML namespace attribute is encountered.
 
 - Issue #2830: Add the ``html.escape()`` function, which quotes all problematic
-  characters by default.  Deprecate ``cgi.escape()``.  
+  characters by default.  Deprecate ``cgi.escape()``.
 
 - Issue #9409: Fix the regex to match all kind of filenames, for interactive
   debugging in doctests.
