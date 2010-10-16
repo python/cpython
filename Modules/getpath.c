@@ -407,6 +407,7 @@ calculate_path(void)
     wchar_t rtpypath[MAXPATHLEN+1];
     wchar_t *home = Py_GetPythonHome();
     char *_path = getenv("PATH");
+    wchar_t *path_buffer = NULL;
     wchar_t *path = NULL;
     wchar_t *prog = Py_GetProgramName();
     wchar_t argv0_path[MAXPATHLEN+1];
@@ -428,8 +429,10 @@ calculate_path(void)
         char execpath[MAXPATHLEN+1];
 #endif
 
-    if (_path)
-        path = _Py_char2wchar(_path, NULL);
+    if (_path) {
+        path_buffer = _Py_char2wchar(_path, NULL);
+        path = path_buffer;
+    }
 
     /* If there is no slash in the argv0 path, then we have to
      * assume python is on the user's $PATH, since there's no
@@ -484,8 +487,8 @@ calculate_path(void)
     }
     else
         progpath[0] = '\0';
-    if (path != NULL)
-        PyMem_Free(path);
+    if (path_buffer != NULL)
+        PyMem_Free(path_buffer);
     if (progpath[0] != SEP && progpath[0] != '\0')
         absolutize(progpath);
     wcsncpy(argv0_path, progpath, MAXPATHLEN);
