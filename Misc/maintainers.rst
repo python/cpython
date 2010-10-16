@@ -75,7 +75,7 @@ codeop
 collections         rhettinger, stutzbach
 colorsys
 compileall
-concurrent.futures  bquinlan
+concurrent.futures  brian.quinlan
 configparser
 contextlib
 copy                alexandre.vassalotti
