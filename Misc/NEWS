@@ -98,6 +98,12 @@ Tools/Demos
 
 - Issue #7287: Demo/imputil/knee.py was removed.
 
+Tests
+-----
+
+- Issue #10123: Don't use non-ascii filenames in test_doctest tests. Add a
+  new test specific to unicode (non-ascii name and filename).
+
 Build
 -----
 
