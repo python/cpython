@@ -361,15 +361,16 @@ traceback.
 
 .. index:: single: PyErr_Occurred()
 
-For C programmers, however, error checking always has to be explicit.   All
-functions in the Python/C API can raise exceptions, unless an  explicit claim is
-made otherwise in a function's documentation.  In  general, when a function
-encounters an error, it sets an exception,  discards any object references that
-it owns, and returns an  error indicator --- usually *NULL* or ``-1``.  A few
-functions  return a Boolean true/false result, with false indicating an error.
-Very few functions return no explicit error indicator or have an  ambiguous
-return value, and require explicit testing for errors with
-:c:func:`PyErr_Occurred`.
+For C programmers, however, error checking always has to be explicit.  All
+functions in the Python/C API can raise exceptions, unless an explicit claim is
+made otherwise in a function's documentation.  In general, when a function
+encounters an error, it sets an exception, discards any object references that
+it owns, and returns an error indicator.  If not documented otherwise, this
+indicator is either *NULL* or ``-1``, depending on the function's return type.
+A few functions return a Boolean true/false result, with false indicating an
+error.  Very few functions return no explicit error indicator or have an
+ambiguous return value, and require explicit testing for errors with
+:c:func:`PyErr_Occurred`.  These exceptions are always explicitly documented.
 
 .. index::
    single: PyErr_SetString()
