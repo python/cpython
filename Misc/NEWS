@@ -9,6 +9,12 @@ What's New in Python 2.5.6c1?
 
 *Release date: XX-XXX-2010*
 
+Library
+-------
+
+- Issue #8674: Fixed a number of incorrect or undefined-behaviour-inducing
+  overflow checks in the audioop module (CVE-2010-1634).
+
 
 What's New in Python 2.5.5?
 ===========================
