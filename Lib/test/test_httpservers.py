@@ -321,12 +321,12 @@ class CGIHTTPServerTestCase(BaseTestCase):
                 "Python executable path is not encodable to utf-8")
 
         self.file1_path = os.path.join(self.cgi_dir, 'file1.py')
-        with open(self.file1_path, 'w') as file1:
+        with open(self.file1_path, 'w', encoding='utf-8') as file1:
             file1.write(cgi_file1 % self.pythonexe)
         os.chmod(self.file1_path, 0o777)
 
         self.file2_path = os.path.join(self.cgi_dir, 'file2.py')
-        with open(self.file2_path, 'w') as file2:
+        with open(self.file2_path, 'w', encoding='utf-8') as file2:
             file2.write(cgi_file2 % self.pythonexe)
         os.chmod(self.file2_path, 0o777)
 
