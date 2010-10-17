@@ -310,15 +310,18 @@ class CGIHTTPServerTestCase(BaseTestCase):
         else:
             self.pythonexe = sys.executable
 
+        try:
+            # The python executable path is written as the first line of the
+            # CGI Python script. The encoding cookie cannot be used, and so the
+            # path should be encodable to the default script encoding (utf-8)
+            self.pythonexe.encode('utf-8')
+        except UnicodeEncodeError:
+            self.tearDown()
+            raise self.skipTest(
+                "Python executable path is not encodable to utf-8")
+
         self.file1_path = os.path.join(self.cgi_dir, 'file1.py')
         with open(self.file1_path, 'w') as file1:
-            try:
-                self.pythonexe.encode(file1.encoding)
-            except UnicodeEncodeError:
-                self.tearDown()
-                raise self.skipTest(
-                    "Python executable path is not encodable to %s"
-                    % file1.encoding)
             file1.write(cgi_file1 % self.pythonexe)
         os.chmod(self.file1_path, 0o777)
 
