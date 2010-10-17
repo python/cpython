@@ -444,7 +444,7 @@ Pickling and unpickling normal class instances
    instance's dictionary.  If there is no :meth:`__getstate__` method, the
    instance's :attr:`__dict__` is pickled.
 
-.. method:: object.__setstate__()
+.. method:: object.__setstate__(state)
 
    Upon unpickling, if the class also defines the method :meth:`__setstate__`,
    it is called with the unpickled state. [#]_ If there is no
