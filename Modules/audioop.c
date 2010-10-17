@@ -1150,25 +1150,16 @@ audioop_ratecv(PyObject *self, PyObject *args)
                    ceiling(len*outrate/inrate) output frames, and each frame
                    requires bytes_per_frame bytes.  Computing this
                    without spurious overflow is the challenge; we can
-                   settle for a reasonable upper bound, though. */
-                int ceiling;   /* the number of output frames */
-                int nbytes;    /* the number of output bytes needed */
-                int q = len / inrate;
-                /* Now len = q * inrate + r exactly (with r = len % inrate),
-                   and this is less than q * inrate + inrate = (q+1)*inrate.
-                   So a reasonable upper bound on len*outrate/inrate is
-                   ((q+1)*inrate)*outrate/inrate =
-                   (q+1)*outrate.
-                */
-                ceiling = (q+1) * outrate;
-                nbytes = ceiling * bytes_per_frame;
-                /* See whether anything overflowed; if not, get the space. */
-                if (q+1 < 0 ||
-                    ceiling / outrate != q+1 ||
-                    nbytes / bytes_per_frame != ceiling)
+		   settle for a reasonable upper bound, though, in this
+		   case ceiling(len/inrate) * outrate. */
+
+	    /* compute ceiling(len/inrate) without overflow */
+	    int q = len > 0 ? 1 + (len - 1) / inrate : 0;
+	    if (outrate > INT_MAX / q / bytes_per_frame)
                         str = NULL;
                 else
-                        str = PyString_FromStringAndSize(NULL, nbytes);
+		    str = PyString_FromStringAndSize(NULL,
+						     q * outrate * bytes_per_frame);
 
                 if (str == NULL) {
                         PyErr_SetString(PyExc_MemoryError,
