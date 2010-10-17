@@ -121,7 +121,7 @@ typedef unsigned short mode_t;
 static long pyc_magic = MAGIC;
 static const char *pyc_tag = TAG;
 
-/* See _PyImport_FixupExtension() below */
+/* See _PyImport_FixupExtensionUnicode() below */
 static PyObject *extensions = NULL;
 
 /* This table is defined in config.c: */
@@ -561,10 +561,10 @@ PyImport_GetMagicTag(void)
    once, we keep a static dictionary 'extensions' keyed by module name
    (for built-in modules) or by filename (for dynamically loaded
    modules), containing these modules.  A copy of the module's
-   dictionary is stored by calling _PyImport_FixupExtension()
+   dictionary is stored by calling _PyImport_FixupExtensionUnicode()
    immediately after the module initialization function succeeds.  A
    copy can be retrieved from there by calling
-   _PyImport_FindExtension().
+   _PyImport_FindExtensionUnicode().
 
    Modules which do support multiple initialization set their m_size
    field to a non-negative number (indicating the size of the
@@ -573,7 +573,7 @@ PyImport_GetMagicTag(void)
 */
 
 int
-_PyImport_FixupExtension(PyObject *mod, char *name, char *filename)
+_PyImport_FixupExtensionUnicode(PyObject *mod, char *name, PyObject *filename)
 {
     PyObject *modules, *dict;
     struct PyModuleDef *def;
@@ -613,18 +613,31 @@ _PyImport_FixupExtension(PyObject *mod, char *name, char *filename)
         if (def->m_base.m_copy == NULL)
             return -1;
     }
-    PyDict_SetItemString(extensions, filename, (PyObject*)def);
+    PyDict_SetItem(extensions, filename, (PyObject*)def);
     return 0;
 }
 
+int
+_PyImport_FixupBuiltin(PyObject *mod, char *name)
+{
+    int res;
+    PyObject *filename;
+    filename = PyUnicode_FromString(name);
+    if (filename == NULL)
+        return -1;
+    res = _PyImport_FixupExtensionUnicode(mod, name, filename);
+    Py_DECREF(filename);
+    return res;
+}
+
 PyObject *
-_PyImport_FindExtension(char *name, char *filename)
+_PyImport_FindExtensionUnicode(char *name, PyObject *filename)
 {
     PyObject *mod, *mdict;
     PyModuleDef* def;
     if (extensions == NULL)
         return NULL;
-    def = (PyModuleDef*)PyDict_GetItemString(extensions, filename);
+    def = (PyModuleDef*)PyDict_GetItem(extensions, filename);
     if (def == NULL)
         return NULL;
     if (def->m_size == -1) {
@@ -655,12 +668,23 @@ _PyImport_FindExtension(char *name, char *filename)
         return NULL;
     }
     if (Py_VerboseFlag)
-        PySys_WriteStderr("import %s # previously loaded (%s)\n",
+        PySys_FormatStderr("import %s # previously loaded (%U)\n",
                           name, filename);
     return mod;
 
 }
 
+PyObject *
+_PyImport_FindBuiltin(char *name)
+{
+    PyObject *res, *filename;
+    filename = PyUnicode_FromString(name);
+    if (filename == NULL)
+        return NULL;
+    res = _PyImport_FindExtensionUnicode(name, filename);
+    Py_DECREF(filename);
+    return res;
+}
 
 /* Get the module object corresponding to a module name.
    First check the modules dictionary if there's one there,
@@ -2121,7 +2145,7 @@ init_builtin(char *name)
 {
     struct _inittab *p;
 
-    if (_PyImport_FindExtension(name, name) != NULL)
+    if (_PyImport_FindBuiltin(name) != NULL)
         return 1;
 
     for (p = PyImport_Inittab; p->name != NULL; p++) {
@@ -2138,7 +2162,7 @@ init_builtin(char *name)
             mod = (*p->initfunc)();
             if (mod == 0)
                 return -1;
-            if (_PyImport_FixupExtension(mod, name, name) < 0)
+            if (_PyImport_FixupBuiltin(mod, name) < 0)
                 return -1;
             /* FixupExtension has put the module into sys.modules,
                so we can release our own reference. */
