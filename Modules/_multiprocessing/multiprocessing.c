@@ -256,8 +256,19 @@ init_multiprocessing(void)
     if (PyType_Ready(&SemLockType) < 0)
         return;
     Py_INCREF(&SemLockType);
-    PyDict_SetItemString(SemLockType.tp_dict, "SEM_VALUE_MAX",
-                         Py_BuildValue("i", SEM_VALUE_MAX));
+    {
+        PyObject *py_sem_value_max;
+        /* Some systems define SEM_VALUE_MAX as an unsigned value that
+         * causes it to be negative when used as an int (NetBSD). */
+        if ((int)(SEM_VALUE_MAX) < 0)
+            py_sem_value_max = PyLong_FromLong(INT_MAX);
+        else
+            py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
+        if (py_sem_value_max == NULL)
+            return NULL;
+        PyDict_SetItemString(SemLockType.tp_dict, "SEM_VALUE_MAX",
+                             py_sem_value_max);
+    }
     PyModule_AddObject(module, "SemLock", (PyObject*)&SemLockType);
 #endif
 
