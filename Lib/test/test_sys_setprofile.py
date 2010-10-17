@@ -13,14 +13,14 @@ class TestGetProfile(unittest.TestCase):
         sys.setprofile(None)
 
     def test_empty(self):
-        assert sys.getprofile() is None
+        self.assertIsNone(sys.getprofile())
 
     def test_setget(self):
         def fn(*args):
             pass
 
         sys.setprofile(fn)
-        assert sys.getprofile() == fn
+        self.assertIs(sys.getprofile(), fn)
 
 class HookWatcher:
     def __init__(self):
