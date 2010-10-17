@@ -2046,12 +2046,12 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    values are added as items to the dictionary.  If a key is specified both in
    the positional argument and as a keyword argument, the value associated with
    the keyword is retained in the dictionary.  For example, these all return a
-   dictionary equal to ``{"one": 2, "two": 3}``:
+   dictionary equal to ``{"one": 1, "two": 2}``:
 
-   * ``dict(one=2, two=3)``
-   * ``dict({'one': 2, 'two': 3})``
-   * ``dict(zip(('one', 'two'), (2, 3)))``
-   * ``dict([['two', 3], ['one', 2]])``
+   * ``dict(one=1, two=2)``
+   * ``dict({'one': 1, 'two': 2})``
+   * ``dict(zip(('one', 'two'), (1, 2)))``
+   * ``dict([['two', 2], ['one', 1]])``
 
    The first example only works for keys that are valid Python identifiers; the
    others work with any valid keys.
