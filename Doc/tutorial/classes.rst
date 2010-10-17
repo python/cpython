@@ -4,26 +4,26 @@
 Classes
 *******
 
-Python's class mechanism adds classes to the language with a minimum of new
-syntax and semantics.  It is a mixture of the class mechanisms found in C++ and
-Modula-3.  As is true for modules, classes in Python do not put an absolute
-barrier between definition and user, but rather rely on the politeness of the
-user not to "break into the definition."  The most important features of classes
-are retained with full power, however: the class inheritance mechanism allows
+Compared with other programming languages, Python's class mechanism adds classes
+with a minimum of new syntax and semantics.  It is a mixture of the class
+mechanisms found in C++ and Modula-3.  Python classes provide all the standard
+features of Object Oriented Programming: the class inheritance mechanism allows
 multiple base classes, a derived class can override any methods of its base
 class or classes, and a method can call the method of a base class with the same
-name.  Objects can contain an arbitrary amount of data.
+name.  Objects can contain arbitrary amounts and kinds of data.  As is true for
+modules, classes partake of the dynamic nature of Python: they are created at
+runtime, and can be modified further after creation.
 
 In C++ terminology, normally class members (including the data members) are
-*public* (except see below :ref:`tut-private`),
-and all member functions are *virtual*.  As in Modula-3, there are no shorthands
-for referencing the object's members from its methods: the method function is
-declared with an explicit first argument representing the object, which is
-provided implicitly by the call.  As in Smalltalk, classes themselves are
-objects.  This provides semantics for importing and renaming.  Unlike C++ and
-Modula-3, built-in types can be used as base classes for extension by the user.
-Also, like in C++, most built-in operators with special syntax (arithmetic
-operators, subscripting etc.) can be redefined for class instances.
+*public* (except see below :ref:`tut-private`), and all member functions are
+*virtual*.  As in Modula-3, there are no shorthands for referencing the object's
+members from its methods: the method function is declared with an explicit first
+argument representing the object, which is provided implicitly by the call.  As
+in Smalltalk, classes themselves are objects.  This provides semantics for
+importing and renaming.  Unlike C++ and Modula-3, built-in types can be used as
+base classes for extension by the user.  Also, like in C++, most built-in
+operators with special syntax (arithmetic operators, subscripting etc.) can be
+redefined for class instances.
 
 (Lacking universally accepted terminology to talk about classes, I will make
 occasional use of Smalltalk and C++ terms.  I would use Modula-3 terms, since
