@@ -638,6 +638,9 @@ PyLong_AsDouble:PyObject*:pylong:0:
 PyLong_AsLong:long:::
 PyLong_AsLong:PyObject*:pylong:0:
 
+PyLong_AsSsize_t:ssize_t:::
+PyLong_AsSsize_t:PyObject*:pylong:0:
+
 PyLong_AsUnsignedLong:unsigned long:::
 PyLong_AsUnsignedLong:PyObject*:pylong:0:
 
@@ -655,6 +658,12 @@ PyLong_FromLongLong:long long:v::
 
 PyLong_FromUnsignedLongLong:PyObject*::+1:
 PyLong_FromUnsignedLongLong:unsigned long long:v::
+
+PyLong_FromSize_t:PyObject*::+1:
+PyLong_FromSize_t:size_t:v::
+
+PyLong_FromSsize_t:PyObject*::+1:
+PyLong_FromSsize_t:ssize_t:v::
 
 PyLong_FromString:PyObject*::+1:
 PyLong_FromString:char*:str::
@@ -1472,6 +1481,21 @@ PyUnicode_FromEncodedObject:PyObject*::+1:
 PyUnicode_FromEncodedObject:PyObject*:*obj:0:
 PyUnicode_FromEncodedObject:const char*:encoding::
 PyUnicode_FromEncodedObject:const char*:errors::
+
+PyUnicode_FromFormat:PyObject*::+1:
+PyUnicode_FromFormat:const char*:format::
+PyUnicode_FromFormat::...::
+
+PyUnicode_FromFormatV:PyObject*::+1:
+PyUnicode_FromFormatV:const char*:format::
+PyUnicode_FromFormatV:va_list:vargs::
+
+PyUnicode_FromString:PyObject*::+1:
+PyUnicode_FromString:const char*:u::
+
+PyUnicode_FromStringAndSize:PyObject*::+1:
+PyUnicode_FromStringAndSize:const char*:u::
+PyUnicode_FromStringAndSize:ssize_t:size::
 
 PyUnicode_FromWideChar:PyObject*::+1:
 PyUnicode_FromWideChar:const wchar_t*:w::
