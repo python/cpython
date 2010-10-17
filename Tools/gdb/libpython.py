@@ -96,6 +96,23 @@ def write_unicode(file, text):
         text = text.encode(ENCODING, 'backslashreplace')
     file.write(text)
 
+def os_fsencode(filename):
+    if not isinstance(filename, unicode):
+        return filename
+    encoding = sys.getfilesystemencoding()
+    if encoding == 'mbcs':
+        # mbcs doesn't support surrogateescape
+        return filename.encode(encoding)
+    encoded = []
+    for char in filename:
+        # surrogateescape error handler
+        if 0xDC80 <= ord(char) <= 0xDCFF:
+            byte = chr(ord(char) - 0xDC00)
+        else:
+            byte = char.encode(encoding)
+        encoded.append(byte)
+    return ''.join(encoded)
+
 class StringTruncated(RuntimeError):
     pass
 
@@ -887,7 +904,8 @@ class PyFrameObjectPtr(PyObjectPtr):
         newline character'''
         if self.is_optimized_out():
             return '(frame information optimized out)'
-        with open(self.filename(), 'r') as f:
+        filename = self.filename()
+        with open(os_fsencode(filename), 'r') as f:
             all_lines = f.readlines()
             # Convert from 1-based current_line_num to 0-based list offset:
             return all_lines[self.current_line_num()-1]
@@ -1463,7 +1481,7 @@ class PyList(gdb.Command):
         if start<1:
             start = 1
 
-        with open(filename, 'r') as f:
+        with open(os_fsencode(filename), 'r') as f:
             all_lines = f.readlines()
             # start and end are 1-based, all_lines is 0-based;
             # so [start-1:end] as a python slice gives us [start, end] as a
