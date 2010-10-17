@@ -109,6 +109,8 @@ Build
 
 - Issue #10094: Use versioned .so files on GNU/kfreeBSD and the GNU Hurd.
 
+- Accept Oracle Berkeley DB 5.0 and 5.1 as backend for the dbm extension.
+
 
 What's New in Python 3.2 Alpha 3?
 =================================
