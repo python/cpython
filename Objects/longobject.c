@@ -2552,7 +2552,7 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     return v;
 }
 
-static long
+static Py_hash_t
 long_hash(PyLongObject *v)
 {
     unsigned long x;
@@ -2606,7 +2606,7 @@ long_hash(PyLongObject *v)
     x = x * sign;
     if (x == (unsigned long)-1)
         x = (unsigned long)-2;
-    return (long)x;
+    return (Py_hash_t)x;
 }
 
 

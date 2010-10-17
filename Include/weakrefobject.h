@@ -27,7 +27,7 @@ struct _PyWeakReference {
     /* A cache for wr_object's hash code.  As usual for hashes, this is -1
      * if the hash code isn't known yet.
      */
-    long hash;
+    Py_hash_t hash;
 
     /* If wr_object is weakly referenced, wr_object has a doubly-linked NULL-
      * terminated list of weak references to it.  These are the list pointers.

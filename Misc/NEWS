@@ -93,6 +93,12 @@ Extensions
 
 - The Unicode database was updated to 6.0.0.
 
+C-API
+-----
+
+- Issue #9778: Hash values are now always the size of pointers. A new Py_hash_t
+  type has been introduced.
+
 Tools/Demos
 -----------
 

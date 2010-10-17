@@ -312,10 +312,10 @@ Done:
      1330111, 1412633, 1165069, 1247599, 1495177, 1577699
 */
 
-static long
+static Py_hash_t
 tuplehash(PyTupleObject *v)
 {
-    register long x, y;
+    register Py_hash_t x, y;
     register Py_ssize_t len = Py_SIZE(v);
     register PyObject **p;
     long mult = 1000003L;

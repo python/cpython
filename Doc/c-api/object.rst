@@ -247,15 +247,20 @@ is considered sufficient for this determination.
    *NULL* on failure.
 
 
-.. c:function:: long PyObject_Hash(PyObject *o)
+.. c:function:: Py_hash_t PyObject_Hash(PyObject *o)
 
    .. index:: builtin: hash
 
    Compute and return the hash value of an object *o*.  On failure, return ``-1``.
    This is the equivalent of the Python expression ``hash(o)``.
 
+   .. versionchanged:: 3.2
 
-.. c:function:: long PyObject_HashNotImplemented(PyObject *o)
+      The return type is now Py_hash_t.  This is a signed integer the same size
+      as Py_ssize_t.
+
+
+.. c:function:: Py_hash_t PyObject_HashNotImplemented(PyObject *o)
 
    Set a :exc:`TypeError` indicating that ``type(o)`` is not hashable and return ``-1``.
    This function receives special treatment when stored in a ``tp_hash`` slot,

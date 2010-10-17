@@ -868,12 +868,12 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
     return result;
 }
 
-static long
+static Py_hash_t
 bytes_hash(PyBytesObject *a)
 {
     register Py_ssize_t len;
     register unsigned char *p;
-    register long x;
+    register Py_hash_t x;
 
     if (a->ob_shash != -1)
         return a->ob_shash;

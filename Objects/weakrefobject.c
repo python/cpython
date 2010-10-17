@@ -139,7 +139,7 @@ weakref_call(PyWeakReference *self, PyObject *args, PyObject *kw)
 }
 
 
-static long
+static Py_hash_t
 weakref_hash(PyWeakReference *self)
 {
     if (self->hash != -1)

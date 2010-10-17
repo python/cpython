@@ -1148,12 +1148,12 @@ Delete a named attribute on an object; delattr(x, 'y') is equivalent to\n\
 static PyObject *
 builtin_hash(PyObject *self, PyObject *v)
 {
-    long x;
+    Py_hash_t x;
 
     x = PyObject_Hash(v);
     if (x == -1)
         return NULL;
-    return PyLong_FromLong(x);
+    return PyLong_FromSsize_t(x);
 }
 
 PyDoc_STRVAR(hash_doc,

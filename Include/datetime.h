@@ -34,7 +34,7 @@ extern "C" {
 typedef struct
 {
     PyObject_HEAD
-    long hashcode;              /* -1 when unknown */
+    Py_hash_t hashcode;         /* -1 when unknown */
     int days;                   /* -MAX_DELTA_DAYS <= days <= MAX_DELTA_DAYS */
     int seconds;                /* 0 <= seconds < 24*3600 is invariant */
     int microseconds;           /* 0 <= microseconds < 1000000 is invariant */
@@ -51,7 +51,7 @@ typedef struct
  */
 #define _PyTZINFO_HEAD          \
     PyObject_HEAD               \
-    long hashcode;              \
+    Py_hash_t hashcode;         \
     char hastzinfo;             /* boolean flag */
 
 /* No _PyDateTime_BaseTZInfo is allocated; it's just to have something

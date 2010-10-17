@@ -916,10 +916,10 @@ wrapper_richcompare(PyObject *a, PyObject *b, int op)
     return v;
 }
 
-static long
+static Py_hash_t
 wrapper_hash(wrapperobject *wp)
 {
-    int x, y;
+    Py_hash_t x, y;
     x = _Py_HashPointer(wp->descr);
     if (x == -1)
         return -1;
