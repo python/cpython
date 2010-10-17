@@ -606,6 +606,12 @@ Changes to Python's build process and to the C API include:
 
   (Contributed by Amaury Forgeot D'Arc; :issue:`9210`.)
 
+* Hash values are now values of a new type, Py_hash_t, which is defined to
+  be the same size as a pointer.  Previously they were of type long, which
+  on some 64-bit operating systems is still only 32 bits long.
+
+  (Contributed by Benjamin Peterson; :issue:`9778`.)
+
 
 Porting to Python 3.2
 =====================
