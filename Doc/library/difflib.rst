@@ -495,16 +495,11 @@ The :class:`SequenceMatcher` class has this constructor:
 
       Return an upper bound on :meth:`ratio` relatively quickly.
 
-      This isn't defined beyond that it is an upper bound on :meth:`ratio`, and
-      is faster to compute.
-
 
    .. method:: real_quick_ratio()
 
       Return an upper bound on :meth:`ratio` very quickly.
 
-      This isn't defined beyond that it is an upper bound on :meth:`ratio`, and
-      is faster to compute than either :meth:`ratio` or :meth:`quick_ratio`.
 
 The three methods that return the ratio of matching to total characters can give
 different results due to differing levels of approximation, although
