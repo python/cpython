@@ -280,14 +280,14 @@ run_file(FILE *fp, const wchar_t *filename, PyCompilerFlags *p_cf)
     if (filename) {
         unicode = PyUnicode_FromWideChar(filename, wcslen(filename));
         if (unicode != NULL) {
-            bytes = PyUnicode_AsUTF8String(unicode);
+            bytes = PyUnicode_EncodeFSDefault(unicode);
             Py_DECREF(unicode);
         }
         if (bytes != NULL)
             filename_str = PyBytes_AsString(bytes);
         else {
             PyErr_Clear();
-            filename_str = "<decoding error>";
+            filename_str = "<encoding error>";
         }
     }
     else
