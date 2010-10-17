@@ -930,16 +930,15 @@ static char Nav_module_documentation[] =
 void
 initNav(void)
 {
-    PyObject *m, *d;
-
-    if (PyErr_WarnPy3k("In 3.x, the Nav module is removed.", 1))
-        return;
-
 #ifdef __LP64__
     PyErr_SetString(PyExc_ImportError, "Navigation Services not available in 64-bit mode");
     return;
 
 #else   /* !__LP64__ */
+    PyObject *m, *d;
+
+    if (PyErr_WarnPy3k("In 3.x, the Nav module is removed.", 1))
+        return;
 
     /* Test that we have NavServices */
     if ( !NavServicesAvailable() ) {
