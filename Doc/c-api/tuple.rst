@@ -15,10 +15,8 @@ Tuple Objects
 
 .. c:var:: PyTypeObject PyTuple_Type
 
-   .. index:: single: TupleType (in module types)
-
-   This instance of :c:type:`PyTypeObject` represents the Python tuple type; it is
-   the same object as ``tuple`` and ``types.TupleType`` in the Python layer..
+   This instance of :c:type:`PyTypeObject` represents the Python tuple type; it
+   is the same object as :class:`tuple` in the Python layer.
 
 
 .. c:function:: int PyTuple_Check(PyObject *p)

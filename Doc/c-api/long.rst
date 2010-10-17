@@ -18,7 +18,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
 .. c:var:: PyTypeObject PyLong_Type
 
    This instance of :c:type:`PyTypeObject` represents the Python integer type.
-   This is the same object as ``int``.
+   This is the same object as :class:`int` in the Python layer.
 
 
 .. c:function:: int PyLong_Check(PyObject *p)
