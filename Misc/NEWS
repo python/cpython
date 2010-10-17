@@ -107,6 +107,8 @@ Tests
 Build
 -----
 
+- Drop -OPT:Olimit compiler option.
+
 - Issue #10094: Use versioned .so files on GNU/kfreeBSD and the GNU Hurd.
 
 - Accept Oracle Berkeley DB 5.0 and 5.1 as backend for the dbm extension.
