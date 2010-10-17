@@ -12,8 +12,7 @@
 #
 # NOTE: If you have gdb 7 or later, it supports debugging of Python directly
 # with embedded macros that you may find superior to what is in here.
-# See https://fedoraproject.org/wiki/Features/EasierPythonDebugging
-# and http://bugs.python.org/issue8032 for more gdb 7 python information.
+# See Tools/gdb/libpython.py and http://bugs.python.org/issue8032.
 
 # Prints a representation of the object to stderr, along with the
 # number of reference counts it current has and the hex address the
