@@ -15,15 +15,6 @@
 # See https://fedoraproject.org/wiki/Features/EasierPythonDebugging
 # and http://bugs.python.org/issue8032 for more gdb 7 python information.
 
-# gdb version of Py_DECREF(obj) macro
-define py_decref
-    set $__obj = $arg0
-    set $__obj->ob_refcnt -= 1
-    if ($__obj->ob_refcnt == 0)
-        set $__obj = _Py_Dealloc($__obj)
-    end
-end
-
 # Prints a representation of the object to stderr, along with the
 # number of reference counts it current has and the hex address the
 # object is allocated at.  The argument must be a PyObject*
@@ -49,7 +40,6 @@ define pylocals
 	    set $_names = co->co_varnames
 	    set $_name = PyString_AsString(PyTuple_GetItem($_names, $_i))
 	    printf "%s:\n", $_name
-            py_decref $_name
             pyo f->f_localsplus[$_i]
 	end
         set $_i = $_i + 1
