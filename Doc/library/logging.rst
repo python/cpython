@@ -2626,6 +2626,9 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
 .. versionchanged:: 2.5
    *funcName* was added.
 
+.. versionchanged:: 2.6
+   *processName* was added.
+
 
 .. class:: Formatter([fmt[, datefmt]])
 
