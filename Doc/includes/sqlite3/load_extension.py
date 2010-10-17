@@ -23,4 +23,4 @@ con.executescript("""
     insert into recipe (name, ingredients) values ('pumpkin pie', 'pumpkin sugar flour butter');
     """)
 for row in con.execute("select rowid, name, ingredients from recipe where name match 'pie'"):
-    print row
+    print(row)
