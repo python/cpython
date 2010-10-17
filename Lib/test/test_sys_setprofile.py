@@ -352,14 +352,6 @@ protect_ident = ident(protect)
 
 
 def capture_events(callable, p=None):
-    try:
-        sys.setprofile()
-    except TypeError:
-        pass
-    else:
-        raise support.TestFailed(
-            'sys.setprofile() did not raise TypeError')
-
     if p is None:
         p = HookWatcher()
     sys.setprofile(p.callback)
