@@ -23,6 +23,12 @@ into an object hierarchy.  Pickling (and unpickling) is alternatively known as
 "serialization", "marshalling," [#]_ or "flattening", however, to avoid
 confusion, the terms used here are "pickling" and "unpickling"..
 
+.. warning::
+
+   The :mod:`pickle` module is not intended to be secure against erroneous or
+   maliciously constructed data.  Never unpickle data received from an untrusted
+   or unauthenticated source.
+
 
 Relationship to other Python modules
 ------------------------------------
@@ -62,12 +68,6 @@ The :mod:`pickle` module differs from :mod:`marshal` several significant ways:
   serialization format in non-backwards compatible ways should the need arise.
   The :mod:`pickle` serialization format is guaranteed to be backwards compatible
   across Python releases.
-
-.. warning::
-
-   The :mod:`pickle` module is not intended to be secure against erroneous or
-   maliciously constructed data.  Never unpickle data received from an untrusted
-   or unauthenticated source.
 
 Note that serialization is a more primitive notion than persistence; although
 :mod:`pickle` reads and writes file objects, it does not handle the issue of
