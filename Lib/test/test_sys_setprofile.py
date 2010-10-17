@@ -1,3 +1,4 @@
+import gc
 import pprint
 import sys
 import unittest
@@ -12,14 +13,14 @@ class TestGetProfile(unittest.TestCase):
         sys.setprofile(None)
 
     def test_empty(self):
-        assert sys.getprofile() is None
+        self.assertIsNone(sys.getprofile())
 
     def test_setget(self):
         def fn(*args):
             pass
 
         sys.setprofile(fn)
-        assert sys.getprofile() == fn
+        self.assertIs(sys.getprofile(), fn)
 
 class HookWatcher:
     def __init__(self):
@@ -352,19 +353,19 @@ protect_ident = ident(protect)
 
 
 def capture_events(callable, p=None):
-    try:
-        sys.setprofile()
-    except TypeError:
-        pass
-    else:
-        raise test_support.TestFailed(
-            'sys.setprofile() did not raise TypeError')
-
     if p is None:
         p = HookWatcher()
-    sys.setprofile(p.callback)
-    protect(callable, p)
-    sys.setprofile(None)
+    # Disable the garbage collector. This prevents __del__s from showing up in
+    # traces.
+    old_gc = gc.isenabled()
+    gc.disable()
+    try:
+        sys.setprofile(p.callback)
+        protect(callable, p)
+        sys.setprofile(None)
+    finally:
+        if old_gc:
+            gc.enable()
     return p.get_events()[1:-1]
 
 
