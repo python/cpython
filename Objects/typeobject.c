@@ -4918,13 +4918,12 @@ slot_tp_str(PyObject *self)
     }
 }
 
-static long
+static Py_hash_t
 slot_tp_hash(PyObject *self)
 {
     PyObject *func, *res;
     static PyObject *hash_str;
-    long h;
-    int overflow;
+    Py_ssize_t h;
 
     func = lookup_method(self, "__hash__", &hash_str);
 
@@ -4947,20 +4946,20 @@ slot_tp_hash(PyObject *self)
                         "__hash__ method should return an integer");
         return -1;
     }
-    /* Transform the PyLong `res` to a C long `h`.  For an existing
-       hashable Python object x, hash(x) will always lie within the range
-       of a C long.  Therefore our transformation must preserve values
-       that already lie within this range, to ensure that if x.__hash__()
-       returns hash(y) then hash(x) == hash(y). */
-    h = PyLong_AsLongAndOverflow(res, &overflow);
-    if (overflow)
-        /* res was not within the range of a C long, so we're free to
+    /* Transform the PyLong `res` to a Py_hash_t `h`.  For an existing
+       hashable Python object x, hash(x) will always lie within the range of
+       Py_hash_t.  Therefore our transformation must preserve values that
+       already lie within this range, to ensure that if x.__hash__() returns
+       hash(y) then hash(x) == hash(y). */
+    h = PyLong_AsSsize_t(res);
+    if (h == -1 && PyErr_Occurred()) {
+        /* res was not within the range of a Py_hash_t, so we're free to
            use any sufficiently bit-mixing transformation;
            long.__hash__ will do nicely. */
+        PyErr_Clear();
         h = PyLong_Type.tp_hash(res);
+    }
     Py_DECREF(res);
-    if (h == -1 && !PyErr_Occurred())
-        h = -2;
     return h;
 }
 

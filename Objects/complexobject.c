@@ -394,7 +394,7 @@ complex_repr(PyComplexObject *v)
     return complex_format(v, 0, 'r');
 }
 
-static long
+static Py_hash_t
 complex_hash(PyComplexObject *v)
 {
     unsigned long hashreal, hashimag, combined;
@@ -413,7 +413,7 @@ complex_hash(PyComplexObject *v)
     combined = hashreal + _PyHASH_IMAG * hashimag;
     if (combined == (unsigned long)-1)
         combined = (unsigned long)-2;
-    return (long)combined;
+    return (Py_hash_t)combined;
 }
 
 /* This macro may return! */

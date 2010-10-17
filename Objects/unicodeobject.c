@@ -7444,12 +7444,12 @@ unicode_getitem(PyUnicodeObject *self, Py_ssize_t index)
 
 /* Believe it or not, this produces the same value for ASCII strings
    as string_hash(). */
-static long
+static Py_hash_t
 unicode_hash(PyUnicodeObject *self)
 {
     Py_ssize_t len;
     Py_UNICODE *p;
-    long x;
+    Py_hash_t x;
 
     if (self->hash != -1)
         return self->hash;

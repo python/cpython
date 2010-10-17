@@ -687,7 +687,7 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
 
    */
 
-long
+Py_hash_t
 _Py_HashDouble(double v)
 {
     int e, sign;
@@ -730,24 +730,24 @@ _Py_HashDouble(double v)
     x = x * sign;
     if (x == (unsigned long)-1)
         x = (unsigned long)-2;
-    return (long)x;
+    return (Py_hash_t)x;
 }
 
-long
+Py_hash_t
 _Py_HashPointer(void *p)
 {
-    long x;
+    Py_hash_t x;
     size_t y = (size_t)p;
     /* bottom 3 or 4 bits are likely to be 0; rotate y by 4 to avoid
        excessive hash collisions for dicts and sets */
     y = (y >> 4) | (y << (8 * SIZEOF_VOID_P - 4));
-    x = (long)y;
+    x = (Py_hash_t)y;
     if (x == -1)
         x = -2;
     return x;
 }
 
-long
+Py_hash_t
 PyObject_HashNotImplemented(PyObject *v)
 {
     PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
@@ -755,7 +755,7 @@ PyObject_HashNotImplemented(PyObject *v)
     return -1;
 }
 
-long
+Py_hash_t
 PyObject_Hash(PyObject *v)
 {
     PyTypeObject *tp = Py_TYPE(v);

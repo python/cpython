@@ -417,10 +417,10 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     return res;
 }
 
-static long
+static Py_hash_t
 code_hash(PyCodeObject *co)
 {
-    long h, h0, h1, h2, h3, h4, h5, h6;
+    Py_hash_t h, h0, h1, h2, h3, h4, h5, h6;
     h0 = PyObject_Hash(co->co_name);
     if (h0 == -1) return -1;
     h1 = PyObject_Hash(co->co_code);

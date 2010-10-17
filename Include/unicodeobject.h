@@ -372,7 +372,7 @@ typedef struct {
     PyObject_HEAD
     Py_ssize_t length;          /* Length of raw Unicode data in buffer */
     Py_UNICODE *str;            /* Raw Unicode buffer */
-    long hash;                  /* Hash value; -1 if not set */
+    Py_hash_t hash;             /* Hash value; -1 if not set */
     int state;                  /* != 0 if interned. In this case the two
                                  * references from the dictionary to this object
                                  * are *not* counted in ob_refcnt. */

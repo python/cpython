@@ -263,10 +263,10 @@ method_repr(PyMethodObject *a)
     return result;
 }
 
-static long
+static Py_hash_t
 method_hash(PyMethodObject *a)
 {
-    long x, y;
+    Py_hash_t x, y;
     if (a->im_self == NULL)
         x = PyObject_Hash(Py_None);
     else

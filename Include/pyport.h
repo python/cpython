@@ -130,7 +130,7 @@ Used in:  PY_LONG_LONG
    _PyHash_Double in Objects/object.c.  Numeric hashes are based on
    reduction modulo the prime 2**_PyHASH_BITS - 1. */
 
-#if SIZEOF_LONG >= 8
+#if SIZEOF_VOID_P >= 8
 #define _PyHASH_BITS 61
 #else
 #define _PyHASH_BITS 31
@@ -176,6 +176,9 @@ typedef Py_intptr_t     Py_ssize_t;
 #else
 #   error "Python needs a typedef for Py_ssize_t in pyport.h."
 #endif
+
+/* Py_hash_t is the same size as a pointer. */
+typedef Py_ssize_t Py_hash_t;
 
 /* Largest possible value of size_t.
    SIZE_MAX is part of C99, so it might be defined on some

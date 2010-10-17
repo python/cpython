@@ -2102,7 +2102,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 /* Inline the PyDict_GetItem() calls.
                    WARNING: this is an extreme speed hack.
                    Do not try this at home. */
-                long hash = ((PyUnicodeObject *)w)->hash;
+                Py_hash_t hash = ((PyUnicodeObject *)w)->hash;
                 if (hash != -1) {
                     PyDictObject *d;
                     PyDictEntry *e;

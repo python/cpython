@@ -1843,7 +1843,7 @@ delta_richcompare(PyObject *self, PyObject *other, int op)
 
 static PyObject *delta_getstate(PyDateTime_Delta *self);
 
-static long
+static Py_hash_t
 delta_hash(PyDateTime_Delta *self)
 {
     if (self->hashcode == -1) {
@@ -2777,11 +2777,11 @@ date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 /*
     Borrowed from stringobject.c, originally it was string_hash()
 */
-static long
+static Py_hash_t
 generic_hash(unsigned char *data, int len)
 {
     register unsigned char *p;
-    register long x;
+    register Py_hash_t x;
 
     p = (unsigned char *) data;
     x = *p << 7;
@@ -2797,7 +2797,7 @@ generic_hash(unsigned char *data, int len)
 
 static PyObject *date_getstate(PyDateTime_Date *self);
 
-static long
+static Py_hash_t
 date_hash(PyDateTime_Date *self)
 {
     if (self->hashcode == -1)
@@ -3246,7 +3246,7 @@ timezone_richcompare(PyDateTime_TimeZone *self,
     return delta_richcompare(self->offset, other->offset, op);
 }
 
-static long
+static Py_hash_t
 timezone_hash(PyDateTime_TimeZone *self)
 {
     return delta_hash((PyDateTime_Delta *)self->offset);
@@ -3751,7 +3751,7 @@ time_richcompare(PyObject *self, PyObject *other, int op)
     return result;
 }
 
-static long
+static Py_hash_t
 time_hash(PyDateTime_Time *self)
 {
     if (self->hashcode == -1) {
@@ -4640,7 +4640,7 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
     return result;
 }
 
-static long
+static Py_hash_t
 datetime_hash(PyDateTime_DateTime *self)
 {
     if (self->hashcode == -1) {

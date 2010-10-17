@@ -224,10 +224,10 @@ meth_richcompare(PyObject *self, PyObject *other, int op)
     return res;
 }
 
-static long
+static Py_hash_t
 meth_hash(PyCFunctionObject *a)
 {
-    long x,y;
+    Py_hash_t x, y;
     if (a->m_self == NULL)
         x = 0;
     else {

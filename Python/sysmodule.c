@@ -567,7 +567,7 @@ get_hash_info(void)
     if (hash_info == NULL)
         return NULL;
     PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(8*sizeof(long)));
+                              PyLong_FromLong(8*sizeof(Py_hash_t)));
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(_PyHASH_MODULUS));
     PyStructSequence_SET_ITEM(hash_info, field++,

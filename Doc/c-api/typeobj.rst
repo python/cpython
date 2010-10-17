@@ -306,10 +306,10 @@ type objects) *must* have the :attr:`ob_size` field.
    An optional pointer to a function that implements the built-in function
    :func:`hash`.
 
-   The signature is the same as for :c:func:`PyObject_Hash`; it must return a C
-   long.  The value ``-1`` should not be returned as a normal return value; when an
-   error occurs during the computation of the hash value, the function should set
-   an exception and return ``-1``.
+   The signature is the same as for :c:func:`PyObject_Hash`; it must return a
+   value of the type Py_hash_t.  The value ``-1`` should not be returned as a
+   normal return value; when an error occurs during the computation of the hash
+   value, the function should set an exception and return ``-1``.
 
    This field can be set explicitly to :c:func:`PyObject_HashNotImplemented` to
    block inheritance of the hash method from a parent type. This is interpreted
