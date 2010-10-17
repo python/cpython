@@ -110,7 +110,7 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
       argp += z;
     }
 
-  if (argp - stack > ecif->cif->bytes) 
+  if (argp >= stack && (unsigned)(argp - stack) > ecif->cif->bytes) 
     {
       Py_FatalError("FFI BUG: not enough stack space for arguments");
     }
