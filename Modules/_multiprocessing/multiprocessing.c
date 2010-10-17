@@ -265,7 +265,7 @@ init_multiprocessing(void)
         else
             py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
         if (py_sem_value_max == NULL)
-            return NULL;
+            return;
         PyDict_SetItemString(SemLockType.tp_dict, "SEM_VALUE_MAX",
                              py_sem_value_max);
     }
