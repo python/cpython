@@ -3361,7 +3361,7 @@ compiler_in_loop(struct compiler *c) {
 static int
 compiler_error(struct compiler *c, const char *errstr)
 {
-    PyObject *loc;
+    PyObject *loc, *filename;
     PyObject *u = NULL, *v = NULL;
 
     loc = PyErr_ProgramText(c->c_filename, c->u->u_lineno);
@@ -3369,7 +3369,16 @@ compiler_error(struct compiler *c, const char *errstr)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    u = Py_BuildValue("(ziiO)", c->c_filename, c->u->u_lineno,
+    if (c->c_filename != NULL) {
+        filename = PyUnicode_DecodeFSDefault(c->c_filename);
+        if (!filename)
+            goto exit;
+    }
+    else {
+        Py_INCREF(Py_None);
+        filename = Py_None;
+    }
+    u = Py_BuildValue("(NiiO)", filename, c->u->u_lineno,
                       c->u->u_col_offset, loc);
     if (!u)
         goto exit;
