@@ -4959,6 +4959,9 @@ slot_tp_hash(PyObject *self)
         PyErr_Clear();
         h = PyLong_Type.tp_hash(res);
     }
+    /* -1 is reserved for errors. */
+    if (h == -1)
+        h = -2;
     Py_DECREF(res);
     return h;
 }
