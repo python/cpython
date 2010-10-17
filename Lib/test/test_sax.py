@@ -170,9 +170,31 @@ class XmlgenTest(unittest.TestCase):
 
         self.assertEquals(result.getvalue(), start + "<doc></doc>")
 
+    def test_xmlgen_basic_empty(self):
+        result = StringIO()
+        gen = XMLGenerator(result, short_empty_elements=True)
+        gen.startDocument()
+        gen.startElement("doc", {})
+        gen.endElement("doc")
+        gen.endDocument()
+
+        self.assertEquals(result.getvalue(), start + "<doc/>")
+
     def test_xmlgen_content(self):
         result = StringIO()
         gen = XMLGenerator(result)
+
+        gen.startDocument()
+        gen.startElement("doc", {})
+        gen.characters("huhei")
+        gen.endElement("doc")
+        gen.endDocument()
+
+        self.assertEquals(result.getvalue(), start + "<doc>huhei</doc>")
+
+    def test_xmlgen_content_empty(self):
+        result = StringIO()
+        gen = XMLGenerator(result, short_empty_elements=True)
 
         gen.startDocument()
         gen.startElement("doc", {})
@@ -239,6 +261,18 @@ class XmlgenTest(unittest.TestCase):
 
         self.assertEquals(result.getvalue(), start + "<doc> </doc>")
 
+    def test_xmlgen_ignorable_empty(self):
+        result = StringIO()
+        gen = XMLGenerator(result, short_empty_elements=True)
+
+        gen.startDocument()
+        gen.startElement("doc", {})
+        gen.ignorableWhitespace(" ")
+        gen.endElement("doc")
+        gen.endDocument()
+
+        self.assertEquals(result.getvalue(), start + "<doc> </doc>")
+
     def test_xmlgen_ns(self):
         result = StringIO()
         gen = XMLGenerator(result)
@@ -257,6 +291,24 @@ class XmlgenTest(unittest.TestCase):
            ('<ns1:doc xmlns:ns1="%s"><udoc></udoc></ns1:doc>' %
                                          ns_uri))
 
+    def test_xmlgen_ns_empty(self):
+        result = StringIO()
+        gen = XMLGenerator(result, short_empty_elements=True)
+
+        gen.startDocument()
+        gen.startPrefixMapping("ns1", ns_uri)
+        gen.startElementNS((ns_uri, "doc"), "ns1:doc", {})
+        # add an unqualified name
+        gen.startElementNS((None, "udoc"), None, {})
+        gen.endElementNS((None, "udoc"), None)
+        gen.endElementNS((ns_uri, "doc"), "ns1:doc")
+        gen.endPrefixMapping("ns1")
+        gen.endDocument()
+
+        self.assertEquals(result.getvalue(), start + \
+           ('<ns1:doc xmlns:ns1="%s"><udoc/></ns1:doc>' %
+                                         ns_uri))
+
     def test_1463026_1(self):
         result = StringIO()
         gen = XMLGenerator(result)
@@ -267,6 +319,17 @@ class XmlgenTest(unittest.TestCase):
         gen.endDocument()
 
         self.assertEquals(result.getvalue(), start+'<a b="c"></a>')
+
+    def test_1463026_1_empty(self):
+        result = StringIO()
+        gen = XMLGenerator(result, short_empty_elements=True)
+
+        gen.startDocument()
+        gen.startElementNS((None, 'a'), 'a', {(None, 'b'):'c'})
+        gen.endElementNS((None, 'a'), 'a')
+        gen.endDocument()
+
+        self.assertEquals(result.getvalue(), start+'<a b="c"/>')
 
     def test_1463026_2(self):
         result = StringIO()
@@ -281,6 +344,19 @@ class XmlgenTest(unittest.TestCase):
 
         self.assertEquals(result.getvalue(), start+'<a xmlns="qux"></a>')
 
+    def test_1463026_2_empty(self):
+        result = StringIO()
+        gen = XMLGenerator(result, short_empty_elements=True)
+
+        gen.startDocument()
+        gen.startPrefixMapping(None, 'qux')
+        gen.startElementNS(('qux', 'a'), 'a', {})
+        gen.endElementNS(('qux', 'a'), 'a')
+        gen.endPrefixMapping(None)
+        gen.endDocument()
+
+        self.assertEquals(result.getvalue(), start+'<a xmlns="qux"/>')
+
     def test_1463026_3(self):
         result = StringIO()
         gen = XMLGenerator(result)
@@ -294,6 +370,20 @@ class XmlgenTest(unittest.TestCase):
 
         self.assertEquals(result.getvalue(),
             start+'<my:a xmlns:my="qux" b="c"></my:a>')
+
+    def test_1463026_3_empty(self):
+        result = StringIO()
+        gen = XMLGenerator(result, short_empty_elements=True)
+
+        gen.startDocument()
+        gen.startPrefixMapping('my', 'qux')
+        gen.startElementNS(('qux', 'a'), 'a', {(None, 'b'):'c'})
+        gen.endElementNS(('qux', 'a'), 'a')
+        gen.endPrefixMapping('my')
+        gen.endDocument()
+
+        self.assertEquals(result.getvalue(),
+            start+'<my:a xmlns:my="qux" b="c"/>')
 
 
 class XMLFilterBaseTest(unittest.TestCase):

@@ -78,7 +78,7 @@ def quoteattr(data, entities={}):
 
 class XMLGenerator(handler.ContentHandler):
 
-    def __init__(self, out=None, encoding="iso-8859-1"):
+    def __init__(self, out=None, encoding="iso-8859-1", short_empty_elements=False):
         if out is None:
             import sys
             out = sys.stdout
@@ -88,6 +88,8 @@ class XMLGenerator(handler.ContentHandler):
         self._current_context = self._ns_contexts[-1]
         self._undeclared_ns_maps = []
         self._encoding = encoding
+        self._short_empty_elements = short_empty_elements
+        self._pending_start_element = False
 
     def _write(self, text):
         if isinstance(text, str):
@@ -106,6 +108,11 @@ class XMLGenerator(handler.ContentHandler):
         # Return the unqualified name
         return name[1]
 
+    def _finish_pending_start_element(self,endElement=False):
+        if self._pending_start_element:
+            self._write('>')
+            self._pending_start_element = False
+
     # ContentHandler methods
 
     def startDocument(self):
@@ -122,15 +129,24 @@ class XMLGenerator(handler.ContentHandler):
         del self._ns_contexts[-1]
 
     def startElement(self, name, attrs):
+        self._finish_pending_start_element()
         self._write('<' + name)
         for (name, value) in attrs.items():
             self._write(' %s=%s' % (name, quoteattr(value)))
-        self._write('>')
+        if self._short_empty_elements:
+            self._pending_start_element = True
+        else:
+            self._write(">")
 
     def endElement(self, name):
-        self._write('</%s>' % name)
+        if self._pending_start_element:
+            self._write('/>')
+            self._pending_start_element = False
+        else:
+            self._write('</%s>' % name)
 
     def startElementNS(self, name, qname, attrs):
+        self._finish_pending_start_element()
         self._write('<' + self._qname(name))
 
         for prefix, uri in self._undeclared_ns_maps:
@@ -142,18 +158,30 @@ class XMLGenerator(handler.ContentHandler):
 
         for (name, value) in attrs.items():
             self._write(' %s=%s' % (self._qname(name), quoteattr(value)))
-        self._write('>')
+        if self._short_empty_elements:
+            self._pending_start_element = True
+        else:
+            self._write(">")
 
     def endElementNS(self, name, qname):
-        self._write('</%s>' % self._qname(name))
+        if self._pending_start_element:
+            self._write('/>')
+            self._pending_start_element = False
+        else:
+            self._write('</%s>' % self._qname(name))
 
     def characters(self, content):
-        self._write(escape(content))
+        if content:
+            self._finish_pending_start_element()
+            self._write(escape(content))
 
     def ignorableWhitespace(self, content):
-        self._write(content)
+        if content:
+            self._finish_pending_start_element()
+            self._write(content)
 
     def processingInstruction(self, target, data):
+        self._finish_pending_start_element()
         self._write('<?%s %s?>' % (target, data))
 
 
