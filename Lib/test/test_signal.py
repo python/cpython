@@ -438,8 +438,8 @@ class ItimerTest(unittest.TestCase):
         self.assertEqual(self.hndl_called, True)
 
     # Issue 3864. Unknown if this affects earlier versions of freebsd also.
-    @unittest.skipIf(sys.platform=='freebsd6',
-        'itimer not reliable (does not mix well with threading) on freebsd6')
+    @unittest.skipIf(sys.platform in ('freebsd6', 'netbsd5'),
+        'itimer not reliable (does not mix well with threading) on some BSDs.')
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
         signal.signal(signal.SIGVTALRM, self.sig_vtalrm)
