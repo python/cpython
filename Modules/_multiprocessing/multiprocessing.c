@@ -122,7 +122,7 @@ multiprocessing_sendfd(PyObject *self, PyObject *args)
     cmsg->cmsg_type = SCM_RIGHTS;
     cmsg->cmsg_len = CMSG_LEN(sizeof(int));
     msg.msg_controllen = cmsg->cmsg_len;
-    *(int*)CMSG_DATA(cmsg) = fd;
+    *CMSG_DATA(cmsg) = fd;
 
     Py_BEGIN_ALLOW_THREADS
     res = sendmsg(conn, &msg, 0);
@@ -165,7 +165,7 @@ multiprocessing_recvfd(PyObject *self, PyObject *args)
     if (res < 0)
         return PyErr_SetFromErrno(PyExc_OSError);
 
-    fd = *(int*)CMSG_DATA(cmsg);
+    fd = *CMSG_DATA(cmsg);
     return Py_BuildValue("i", fd);
 }
 
