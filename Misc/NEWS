@@ -15,6 +15,9 @@ Library
 - Issue #8674: Fixed a number of incorrect or undefined-behaviour-inducing
   overflow checks in the audioop module (CVE-2010-1634).
 
+- Issue #7673: Fix security vulnerability (CVE-2010-2089) in the audioop
+  module, ensure that the input string length is a multiple of the frame size.
+
 
 What's New in Python 2.5.5?
 ===========================
