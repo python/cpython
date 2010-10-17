@@ -1236,6 +1236,70 @@
 				<File
 					RelativePath="..\Modules\zlib\gzio.c"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="PGInstrument|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="PGInstrument|Win64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="PGUpdate|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="PGUpdate|Win64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\Modules\zlib\infback.c"
