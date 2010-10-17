@@ -204,7 +204,7 @@ APIs:
 
 .. c:function:: PyObject* PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
 
-   Create a Unicode Object from the Py_UNICODE buffer *u* of the given size. *u*
+   Create a Unicode object from the Py_UNICODE buffer *u* of the given size. *u*
    may be *NULL* which causes the contents to be undefined. It is the user's
    responsibility to fill in the needed data.  The buffer is copied into the new
    object. If the buffer is not *NULL*, the return value might be a shared object.
@@ -214,7 +214,7 @@ APIs:
 
 .. c:function:: PyObject* PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 
-   Create a Unicode Object from the char buffer *u*.  The bytes will be interpreted
+   Create a Unicode object from the char buffer *u*.  The bytes will be interpreted
    as being UTF-8 encoded.  *u* may also be *NULL* which
    causes the contents to be undefined. It is the user's responsibility to fill in
    the needed data.  The buffer is copied into the new object. If the buffer is not
