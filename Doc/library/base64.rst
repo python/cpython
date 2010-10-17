@@ -10,21 +10,23 @@
    single: MIME; base64 encoding
 
 This module provides data encoding and decoding as specified in :rfc:`3548`.
-This standard defines the Base16, Base32, and Base64 algorithms for encoding and
-decoding arbitrary binary strings into text strings that can be safely sent by
-email, used as parts of URLs, or included as part of an HTTP POST request.  The
-encoding algorithm is not the same as the :program:`uuencode` program.
+This standard defines the Base16, Base32, and Base64 algorithms for encoding
+and decoding arbitrary binary strings into ASCII-only byte strings that can be
+safely sent by email, used as parts of URLs, or included as part of an HTTP
+POST request.  The encoding algorithm is not the same as the
+:program:`uuencode` program.
 
-There are two interfaces provided by this module.  The modern interface supports
-encoding and decoding string objects using all three alphabets.  The legacy
-interface provides for encoding and decoding to and from file-like objects as
-well as strings, but only using the Base64 standard alphabet.
+There are two interfaces provided by this module.  The modern interface
+supports encoding and decoding ASCII byte string objects using all three
+alphabets.  The legacy interface provides for encoding and decoding to and from
+file-like objects as well as byte strings, but only using the Base64 standard
+alphabet.
 
 The modern interface provides:
 
 .. function:: b64encode(s, altchars=None)
 
-   Encode a byte string use Base64.
+   Encode a byte string using Base64.
 
    *s* is the string to encode.  Optional *altchars* must be a string of at least
    length 2 (additional characters are ignored) which specifies an alternative
@@ -39,9 +41,9 @@ The modern interface provides:
 
    Decode a Base64 encoded byte string.
 
-   *s* is the string to decode.  Optional *altchars* must be a string of at least
-   length 2 (additional characters are ignored) which specifies the alternative
-   alphabet used instead of the ``+`` and ``/`` characters.
+   *s* is the byte string to decode.  Optional *altchars* must be a string of
+   at least length 2 (additional characters are ignored) which specifies the
+   alternative alphabet used instead of the ``+`` and ``/`` characters.
 
    The decoded byte string is returned.  A :exc:`TypeError` is raised if *s* were
    incorrectly padded or if there are non-alphabet characters present in the
@@ -81,9 +83,9 @@ The modern interface provides:
 
    Decode a Base32 encoded byte string.
 
-   *s* is the string to decode.  Optional *casefold* is a flag specifying whether a
-   lowercase alphabet is acceptable as input.  For security purposes, the default
-   is ``False``.
+   *s* is the byte string to decode.  Optional *casefold* is a flag specifying
+   whether a lowercase alphabet is acceptable as input.  For security purposes,
+   the default is ``False``.
 
    :rfc:`3548` allows for optional mapping of the digit 0 (zero) to the letter O
    (oh), and for optional mapping of the digit 1 (one) to either the letter I (eye)
@@ -130,8 +132,8 @@ The legacy interface:
 .. function:: decodebytes(s)
               decodestring(s)
 
-   Decode the bytestring *s*, which must contain one or more lines of base64
-   encoded data, and return a bytestring containing the resulting binary data.
+   Decode the byte string *s*, which must contain one or more lines of base64
+   encoded data, and return a byte string containing the resulting binary data.
    ``decodestring`` is a deprecated alias.
 
 
@@ -147,8 +149,8 @@ The legacy interface:
 .. function:: encodebytes(s)
               encodestring(s)
 
-   Encode the bytestring *s*, which can contain arbitrary binary data, and
-   return a bytestring containing one or more lines of base64-encoded data.
+   Encode the byte string *s*, which can contain arbitrary binary data, and
+   return a byte string containing one or more lines of base64-encoded data.
    :func:`encodebytes` returns a string containing one or more lines of
    base64-encoded data always including an extra trailing newline (``b'\n'``).
    ``encodestring`` is a deprecated alias.
