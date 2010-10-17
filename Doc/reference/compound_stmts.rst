@@ -555,9 +555,8 @@ A class definition defines a class object (see section :ref:`types`):
 
 .. productionlist::
    classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
-   inheritance: "(" [`argument_list` [","] ] ")"
+   inheritance: "(" [`argument_list` [","] | `comprehension`] ")"
    classname: `identifier`
-
 
 A class definition is an executable statement.  The inheritance list usually
 gives a list of base classes (see :ref:`metaclasses` for more advanced uses), so
@@ -575,7 +574,7 @@ namespace.
 
 Class creation can be customized heavily using :ref:`metaclasses <metaclasses>`.
 
-Classes can also be decorated; as with functions, ::
+Classes can also be decorated: just like when decorating functions, ::
 
    @f1(arg)
    @f2
@@ -585,6 +584,10 @@ is equivalent to ::
 
    class Foo: pass
    Foo = f1(arg)(f2(Foo))
+
+The evaluation rules for the decorator expressions are the same as for function
+decorators.  The result must be a class object, which is then bound to the class
+name.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
