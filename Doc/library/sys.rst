@@ -55,6 +55,13 @@ always available.
    ``modules.keys()`` only lists the imported modules.)
 
 
+.. function:: call_tracing(func, args)
+
+   Call ``func(*args)``, while tracing is enabled.  The tracing state is saved,
+   and restored afterwards.  This is intended to be called from a debugger from
+   a checkpoint, to recursively debug some other code.
+
+
 .. data:: copyright
 
    A string containing the copyright pertaining to the Python interpreter.
