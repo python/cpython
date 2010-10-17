@@ -1,5 +1,3 @@
-# -*- ksh -*-
-#
 # If you use the GNU debugger gdb to debug the Python C runtime, you
 # might find some of the following commands useful.  Copy this to your
 # ~/.gdbinit file and it'll get loaded into gdb automatically when you
@@ -11,19 +9,36 @@
 #    address    : 84a7a2c
 #    $1 = void
 #    (gdb)
+#
+# NOTE: If you have gdb 7 or later, it supports debugging of Python directly
+# with embedded macros that you may find superior to what is in here.
+# See https://fedoraproject.org/wiki/Features/EasierPythonDebugging
+# and http://bugs.python.org/issue8032 for more gdb 7 python information.
+
+# gdb version of Py_DECREF(obj) macro
+define py_decref
+    set $__obj = $arg0
+    set $__obj->ob_refcnt -= 1
+    if ($__obj->ob_refcnt == 0)
+        set $__obj = _Py_Dealloc($__obj)
+    end
+end
 
 # Prints a representation of the object to stderr, along with the
 # number of reference counts it current has and the hex address the
 # object is allocated at.  The argument must be a PyObject*
 define pyo
-print _PyObject_Dump($arg0)
+    # side effect of calling _PyObject_Dump is to dump the object's
+    # info - assigning just prevents gdb from printing the
+    # NULL return value
+    set $_unused_void = _PyObject_Dump($arg0)
 end
 
 # Prints a representation of the object to stderr, along with the
 # number of reference counts it current has and the hex address the
 # object is allocated at.  The argument must be a PyGC_Head*
 define pyg
-print _PyGC_Dump($arg0)
+    print _PyGC_Dump($arg0)
 end
 
 # print the local variables of the current frame
@@ -34,10 +49,8 @@ define pylocals
 	    set $_names = co->co_varnames
 	    set $_name = PyString_AsString(PyTuple_GetItem($_names, $_i))
 	    printf "%s:\n", $_name
-	    # side effect of calling _PyObject_Dump is to dump the object's
-	    # info - assigning just prevents gdb from printing the
-	    # NULL return value
-	    set $_val = _PyObject_Dump(f->f_localsplus[$_i])
+            py_decref $_name
+            pyo f->f_localsplus[$_i]
 	end
         set $_i = $_i + 1
     end
