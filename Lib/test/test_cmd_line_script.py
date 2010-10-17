@@ -30,17 +30,17 @@ f()
 assertEqual(result, ['Top level assignment', 'Lower level reference'])
 # Check population of magic variables
 assertEqual(__name__, '__main__')
-print('__file__==%r' % __file__)
+print('__file__==%a' % __file__)
 assertEqual(__cached__, None)
 print('__package__==%r' % __package__)
 # Check the sys module
 import sys
 assertIdentical(globals(), sys.modules[__name__].__dict__)
-print('sys.argv[0]==%r' % sys.argv[0])
-print('sys.path[0]==%r' % sys.path[0])
+print('sys.argv[0]==%a' % sys.argv[0])
+print('sys.path[0]==%a' % sys.path[0])
 # Check the working directory
 import os
-print('cwd==%r' % os.getcwd())
+print('cwd==%a' % os.getcwd())
 """
 
 def _make_test_script(script_dir, script_basename, source=test_source):
@@ -77,11 +77,11 @@ class CmdLineTest(unittest.TestCase):
             print("Output from test script %r:" % script_name)
             print(data)
         self.assertEqual(exit_code, 0)
-        printed_file = '__file__==%r' % expected_file
+        printed_file = '__file__==%a' % expected_file
         printed_package = '__package__==%r' % expected_package
-        printed_argv0 = 'sys.argv[0]==%r' % expected_argv0
-        printed_path0 = 'sys.path[0]==%r' % expected_path0
-        printed_cwd = 'cwd==%r' % os.getcwd()
+        printed_argv0 = 'sys.argv[0]==%a' % expected_argv0
+        printed_path0 = 'sys.path[0]==%a' % expected_path0
+        printed_cwd = 'cwd==%a' % os.getcwd()
         if verbose > 1:
             print('Expected output:')
             print(printed_file)
