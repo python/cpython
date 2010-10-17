@@ -951,7 +951,7 @@ PyOS_InitInterrupts(void)
 {
     PyObject *m = PyInit_signal();
     if (m) {
-        _PyImport_FixupExtension(m, "signal", "signal");
+        _PyImport_FixupBuiltin(m, "signal");
         Py_DECREF(m);
     }
 }

@@ -27,10 +27,16 @@ _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
     dl_funcptr p0;
     PyObject* (*p)(void);
     struct PyModuleDef *def;
+    PyObject *result;
 
-    if ((m = _PyImport_FindExtension(name, pathname)) != NULL) {
+    path = PyUnicode_DecodeFSDefault(pathname);
+    if (path == NULL)
+        return NULL;
+
+    if ((m = _PyImport_FindExtensionUnicode(name, path)) != NULL) {
         Py_INCREF(m);
-        return m;
+        result = m;
+        goto finally;
     }
     lastdot = strrchr(name, '.');
     if (lastdot == NULL) {
@@ -45,26 +51,26 @@ _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
     p0 = _PyImport_GetDynLoadFunc(name, shortname, pathname, fp);
     p = (PyObject*(*)(void))p0;
     if (PyErr_Occurred())
-        return NULL;
+        goto error;
     if (p == NULL) {
         PyErr_Format(PyExc_ImportError,
            "dynamic module does not define init function (PyInit_%.200s)",
                      shortname);
-        return NULL;
+        goto error;
     }
     oldcontext = _Py_PackageContext;
     _Py_PackageContext = packagecontext;
     m = (*p)();
     _Py_PackageContext = oldcontext;
     if (m == NULL)
-        return NULL;
+        goto error;
 
     if (PyErr_Occurred()) {
         Py_DECREF(m);
         PyErr_Format(PyExc_SystemError,
                      "initialization of %s raised unreported exception",
                      shortname);
-        return NULL;
+        goto error;
     }
 
     /* Remember pointer to module init function. */
@@ -72,17 +78,25 @@ _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
     def->m_base.m_init = p;
 
     /* Remember the filename as the __file__ attribute */
-    path = PyUnicode_DecodeFSDefault(pathname);
     if (PyModule_AddObject(m, "__file__", path) < 0)
         PyErr_Clear(); /* Not important enough to report */
+    else
+        Py_INCREF(path);
 
-    if (_PyImport_FixupExtension(m, name, pathname) < 0)
-        return NULL;
+    if (_PyImport_FixupExtensionUnicode(m, name, path) < 0)
+        goto error;
     if (Py_VerboseFlag)
         PySys_WriteStderr(
             "import %s # dynamically loaded from %s\n",
             name, pathname);
-    return m;
+    result = m;
+    goto finally;
+
+error:
+    result = NULL;
+finally:
+    Py_DECREF(path);
+    return result;
 }
 
 #endif /* HAVE_DYNAMIC_LOADING */
