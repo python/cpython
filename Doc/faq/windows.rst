@@ -297,7 +297,7 @@ Embedding the Python interpreter in a Windows app can be summarized as follows:
    You can link to Python in two different ways.  Load-time linking means
    linking against :file:`python{NN}.lib`, while run-time linking means linking
    against :file:`python{NN}.dll`.  (General note: :file:`python{NN}.lib` is the
-   so-called "import lib" corresponding to :file:`python.dll`.  It merely
+   so-called "import lib" corresponding to :file:`python{NN}.dll`.  It merely
    defines symbols for the linker.)
 
    Run-time linking greatly simplifies link options; everything happens at run
