@@ -15,10 +15,8 @@ Type Objects
 
 .. c:var:: PyObject* PyType_Type
 
-   .. index:: single: TypeType (in module types)
-
-   This is the type object for type objects; it is the same object as ``type`` and
-   ``types.TypeType`` in the Python layer.
+   This is the type object for type objects; it is the same object as
+   :class:`type` in the Python layer.
 
 
 .. c:function:: int PyType_Check(PyObject *o)

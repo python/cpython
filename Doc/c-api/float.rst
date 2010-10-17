@@ -15,10 +15,8 @@ Floating Point Objects
 
 .. c:var:: PyTypeObject PyFloat_Type
 
-   .. index:: single: FloatType (in modules types)
-
    This instance of :c:type:`PyTypeObject` represents the Python floating point
-   type.  This is the same object as ``float`` and ``types.FloatType``.
+   type.  This is the same object as :class:`float` in the Python layer.
 
 
 .. c:function:: int PyFloat_Check(PyObject *p)

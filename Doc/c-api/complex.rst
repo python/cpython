@@ -82,7 +82,7 @@ Complex Numbers as Python Objects
 .. c:var:: PyTypeObject PyComplex_Type
 
    This instance of :c:type:`PyTypeObject` represents the Python complex number
-   type. It is the same object as ``complex`` and ``types.ComplexType``.
+   type. It is the same object as :class:`complex` in the Python layer.
 
 
 .. c:function:: int PyComplex_Check(PyObject *p)
