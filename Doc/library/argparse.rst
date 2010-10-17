@@ -1663,7 +1663,6 @@ printing it:
    information about the arguments registered with the :class:`ArgumentParser`.
 
 
-
 Partial parsing
 ^^^^^^^^^^^^^^^
 
@@ -1707,6 +1706,20 @@ Customizing file parsing
             if not arg.strip():
                 continue
             yield arg
+
+
+Exiting methods
+^^^^^^^^^^^^^^^
+
+.. method:: ArgumentParser.exit(status=0, message=None)
+
+   This method terminates the program, exiting with the specified *status*
+   and, if given, it prints a *message* before that.
+
+.. method:: ArgumentParser.error(message)
+
+   This method prints a usage message including the *message* to the
+   standard output and terminates the program with a status code of 2.
 
 
 Upgrading optparse code
