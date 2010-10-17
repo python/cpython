@@ -148,7 +148,7 @@ _PyDict_Dummy(void)
 
 /* forward declarations */
 static PyDictEntry *
-lookdict_unicode(PyDictObject *mp, PyObject *key, long hash);
+lookdict_unicode(PyDictObject *mp, PyObject *key, Py_hash_t hash);
 
 #ifdef SHOW_CONVERSION_COUNTS
 static long created = 0L;
