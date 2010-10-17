@@ -261,23 +261,22 @@ Connection Objects
 .. method:: Connection.execute(sql, [parameters])
 
    This is a nonstandard shortcut that creates an intermediate cursor object by
-   calling the cursor method, then calls the cursor's
-   :meth:`execute<Cursor.execute>` method with the parameters given.
+   calling the cursor method, then calls the cursor's :meth:`execute
+   <Cursor.execute>` method with the parameters given.
 
 
 .. method:: Connection.executemany(sql, [parameters])
 
    This is a nonstandard shortcut that creates an intermediate cursor object by
-   calling the cursor method, then calls the cursor's
-   :meth:`executemany<Cursor.executemany>` method with the parameters given.
+   calling the cursor method, then calls the cursor's :meth:`executemany
+   <Cursor.executemany>` method with the parameters given.
 
 
 .. method:: Connection.executescript(sql_script)
 
    This is a nonstandard shortcut that creates an intermediate cursor object by
-   calling the cursor method, then calls the cursor's
-   :meth:`executescript<Cursor.executescript>` method with the parameters
-   given.
+   calling the cursor method, then calls the cursor's :meth:`executescript
+   <Cursor.executescript>` method with the parameters given.
 
 
 .. method:: Connection.create_function(name, num_params, func)
@@ -374,24 +373,24 @@ Connection Objects
 
    This routine allows/disallows the SQLite engine to load SQLite extensions
    from shared libraries.  SQLite extensions can define new functions,
-   aggregates or whole new virtual table implementations. One well-known
+   aggregates or whole new virtual table implementations.  One well-known
    extension is the fulltext-search extension distributed with SQLite.
 
    .. versionadded:: 3.2
 
    .. literalinclude:: ../includes/sqlite3/load_extension.py
 
-   Loadable extensions are disabled by default. See [#f1]_
+   Loadable extensions are disabled by default. See [#f1]_.
 
 .. method:: Connection.load_extension(path)
 
-   This routine loads a SQLite extension from a shared library. You have to
-   enable extension loading with ``enable_load_extension`` before you can use
-   this routine.
+   This routine loads a SQLite extension from a shared library.  You have to
+   enable extension loading with :meth:`enable_load_extension` before you can
+   use this routine.
 
    .. versionadded:: 3.2
 
-   Loadable extensions are disabled by default. See [#f1]_
+   Loadable extensions are disabled by default. See [#f1]_.
 
 .. attribute:: Connection.row_factory
 
@@ -462,9 +461,9 @@ Connection Objects
 Cursor Objects
 --------------
 
-A :class:`Cursor` instance has the following attributes and methods:
+.. class:: Cursor
 
-   A SQLite database cursor has the following attributes and methods:
+   A :class:`Cursor` instance has the following attributes and methods.
 
 .. method:: Cursor.execute(sql, [parameters])
 
@@ -890,4 +889,3 @@ only makes sense to call from a different thread.
   default, because some platforms (notably Mac OS X) have SQLite libraries which
   are compiled without this feature. To get loadable extension support, you must
   modify setup.py and and remove the line that sets SQLITE_OMIT_LOAD_EXTENSION.
-
