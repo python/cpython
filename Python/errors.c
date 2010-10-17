@@ -819,7 +819,7 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
         }
     }
     if (filename != NULL) {
-        tmp = PyUnicode_FromString(filename);
+        tmp = PyUnicode_DecodeFSDefault(filename);
         if (tmp == NULL)
             PyErr_Clear();
         else {
