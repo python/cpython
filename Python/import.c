@@ -1736,14 +1736,16 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
                 return &fd_package;
             }
             else {
-                char warnstr[MAXPATHLEN+80];
-                sprintf(warnstr, "Not importing directory "
-                    "'%.*s': missing __init__.py",
-                    MAXPATHLEN, buf);
-                if (PyErr_WarnEx(PyExc_ImportWarning,
-                                 warnstr, 1)) {
+                int err;
+                PyObject *unicode = PyUnicode_DecodeFSDefault(buf);
+                if (unicode == NULL)
                     return NULL;
-                }
+                err = PyErr_WarnFormat(PyExc_ImportWarning, 1,
+                    "Not importing directory '%U': missing __init__.py",
+                    unicode);
+                Py_DECREF(unicode);
+                if (err)
+                    return NULL;
             }
         }
 #endif
