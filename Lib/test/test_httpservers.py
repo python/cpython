@@ -295,9 +295,12 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
     def setUp(self):
         BaseTestCase.setUp(self)
+        self.cwd = os.getcwd()
         self.parent_dir = tempfile.mkdtemp()
         self.cgi_dir = os.path.join(self.parent_dir, 'cgi-bin')
         os.mkdir(self.cgi_dir)
+        self.file1_path = None
+        self.file2_path = None
 
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
@@ -309,6 +312,13 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
         self.file1_path = os.path.join(self.cgi_dir, 'file1.py')
         with open(self.file1_path, 'w') as file1:
+            try:
+                self.pythonexe.encode(file1.encoding)
+            except UnicodeEncodeError:
+                self.tearDown()
+                raise self.skipTest(
+                    "Python executable path is not encodable to %s"
+                    % file1.encoding)
             file1.write(cgi_file1 % self.pythonexe)
         os.chmod(self.file1_path, 0o777)
 
@@ -317,7 +327,6 @@ class CGIHTTPServerTestCase(BaseTestCase):
             file2.write(cgi_file2 % self.pythonexe)
         os.chmod(self.file2_path, 0o777)
 
-        self.cwd = os.getcwd()
         os.chdir(self.parent_dir)
 
     def tearDown(self):
@@ -325,8 +334,10 @@ class CGIHTTPServerTestCase(BaseTestCase):
             os.chdir(self.cwd)
             if self.pythonexe != sys.executable:
                 os.remove(self.pythonexe)
-            os.remove(self.file1_path)
-            os.remove(self.file2_path)
+            if self.file1_path:
+                os.remove(self.file1_path)
+            if self.file2_path:
+                os.remove(self.file2_path)
             os.rmdir(self.cgi_dir)
             os.rmdir(self.parent_dir)
         finally:
