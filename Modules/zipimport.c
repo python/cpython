@@ -35,7 +35,8 @@ typedef struct _zipimporter ZipImporter;
 
 struct _zipimporter {
     PyObject_HEAD
-    PyObject *archive;  /* pathname of the Zip archive */
+    PyObject *archive;  /* pathname of the Zip archive,
+                           decoded from the filesystem encoding */
     PyObject *prefix;   /* file prefix: "a/sub/directory/",
                            encoded to the filesystem encoding */
     PyObject *files;    /* dict with file info {path: toc_entry} */
@@ -70,7 +71,7 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (!PyArg_ParseTuple(args, "O&:zipimporter",
-        PyUnicode_FSDecoder, &pathobj))
+                          PyUnicode_FSDecoder, &pathobj))
         return -1;
 
     /* copy path to buf */
@@ -385,7 +386,7 @@ zipimporter_get_filename(PyObject *obj, PyObject *args)
     int ispackage;
 
     if (!PyArg_ParseTuple(args, "s:zipimporter.get_filename",
-                         &fullname))
+                          &fullname))
         return NULL;
 
     /* Deciding the filename requires working out where the code
