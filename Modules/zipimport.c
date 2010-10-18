@@ -1137,24 +1137,23 @@ get_code_from_data(ZipImporter *self, int ispackage, int isbytecode,
                    time_t mtime, PyObject *toc_entry)
 {
     PyObject *data, *code;
-    char *modpath;
+    PyObject *modpath;
 
     data = get_data(self->archive, toc_entry);
     if (data == NULL)
         return NULL;
 
-    modpath = _PyUnicode_AsString(PyTuple_GetItem(toc_entry, 0));
+    modpath = PyUnicode_EncodeFSDefault(PyTuple_GetItem(toc_entry, 0));
     if (modpath == NULL) {
         Py_DECREF(data);
         return NULL;
     }
 
-    if (isbytecode) {
-        code = unmarshal_code(modpath, data, mtime);
-    }
-    else {
-        code = compile_source(modpath, data);
-    }
+    if (isbytecode)
+        code = unmarshal_code(PyBytes_AS_STRING(modpath), data, mtime);
+    else
+        code = compile_source(PyBytes_AS_STRING(modpath), data);
+    Py_DECREF(modpath);
     Py_DECREF(data);
     return code;
 }
