@@ -309,7 +309,7 @@ static PyObject *
 zipimporter_load_module(PyObject *obj, PyObject *args)
 {
     ZipImporter *self = (ZipImporter *)obj;
-    PyObject *code, *mod, *dict;
+    PyObject *code = NULL, *mod, *dict;
     char *fullname, *modpath;
     int ispackage;
 
@@ -319,13 +319,11 @@ zipimporter_load_module(PyObject *obj, PyObject *args)
 
     code = get_module_code(self, fullname, &ispackage, &modpath);
     if (code == NULL)
-        return NULL;
+        goto error;
 
     mod = PyImport_AddModule(fullname);
-    if (mod == NULL) {
-        Py_DECREF(code);
-        return NULL;
-    }
+    if (mod == NULL)
+        goto error;
     dict = PyModule_GetDict(mod);
 
     /* mod.__loader__ = self */
@@ -355,14 +353,16 @@ zipimporter_load_module(PyObject *obj, PyObject *args)
             goto error;
     }
     mod = PyImport_ExecCodeModuleEx(fullname, code, modpath);
-    Py_DECREF(code);
+    Py_CLEAR(code);
+    if (mod == NULL)
+        goto error;
+
     if (Py_VerboseFlag)
         PySys_WriteStderr("import %s # loaded from Zip %s\n",
                           fullname, modpath);
     return mod;
 error:
-    Py_DECREF(code);
-    Py_DECREF(mod);
+    Py_XDECREF(code);
     return NULL;
 }
 
