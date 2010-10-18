@@ -1,4 +1,5 @@
 #!@EXENAME@
+# -*- python -*-
 
 import getopt
 import os
@@ -45,7 +46,7 @@ for opt in opt_flags:
 
     elif opt in ('--libs', '--ldflags'):
         libs = getvar('LIBS').split() + getvar('SYSLIBS').split()
-        libs.append('-lpython'+pyver)
+        libs.append('-lpython' + pyver + sys.abiflags)
         # add the prefix/lib/pythonX.Y/config dir, but only if there is no
         # shared library in prefix/lib/.
         if opt == '--ldflags':
