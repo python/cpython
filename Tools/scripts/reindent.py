@@ -109,8 +109,10 @@ def check(file):
 
     if verbose:
         print("checking", file, "...", end=' ')
+    with  open(file, 'rb') as f:
+        encoding, _ = tokenize.detect_encoding(f.readline)
     try:
-        with open(file) as f:
+        with open(file, encoding=encoding) as f:
             r = Reindenter(f)
     except IOError as msg:
         errprint("%s: I/O Error: %s" % (file, str(msg)))
@@ -127,7 +129,7 @@ def check(file):
                 shutil.copyfile(file, bak)
                 if verbose:
                     print("backed up", file, "to", bak)
-            with open(file, "w") as f:
+            with open(file, "w", encoding=encoding) as f:
                 r.write(f)
             if verbose:
                 print("wrote new", file)
