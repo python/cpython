@@ -216,7 +216,7 @@ get_subname(char *fullname)
    archive (without extension) to the path buffer. Return the
    length of the resulting string. */
 static int
-make_filename(PyObject *prefix_obj, char *name, char *path)
+make_filename(PyObject *prefix_obj, char *name, char *path, size_t pathsize)
 {
     size_t len;
     char *p;
@@ -228,7 +228,7 @@ make_filename(PyObject *prefix_obj, char *name, char *path)
     len = PyBytes_GET_SIZE(prefix);
 
     /* self.prefix + name [+ SEP + "__init__"] + ".py[co]" */
-    if (len + strlen(name) + 13 >= MAXPATHLEN) {
+    if (len + strlen(name) + 13 >= pathsize - 1) {
         PyErr_SetString(ZipImportError, "path too long");
         Py_DECREF(prefix);
         return -1;
@@ -263,7 +263,7 @@ get_module_info(ZipImporter *self, char *fullname)
 
     subname = get_subname(fullname);
 
-    len = make_filename(self->prefix, subname, path);
+    len = make_filename(self->prefix, subname, path, sizeof(path));
     if (len < 0)
         return MI_ERROR;
 
@@ -507,7 +507,7 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
     }
     subname = get_subname(fullname);
 
-    len = make_filename(self->prefix, subname, path);
+    len = make_filename(self->prefix, subname, path, sizeof(path));
     if (len < 0)
         return NULL;
 
@@ -1171,7 +1171,7 @@ get_module_code(ZipImporter *self, char *fullname,
 
     subname = get_subname(fullname);
 
-    len = make_filename(self->prefix, subname, path);
+    len = make_filename(self->prefix, subname, path, sizeof(path));
     if (len < 0)
         return NULL;
 
