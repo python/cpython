@@ -2114,7 +2114,7 @@ PyTypeObject PySet_Type = {
     &set_as_number,                     /* tp_as_number */
     &set_as_sequence,                   /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
-    (hashfunc)PyObject_HashNotImplemented,      /* tp_hash */
+    PyObject_HashNotImplemented,        /* tp_hash */
     0,                                  /* tp_call */
     0,                                  /* tp_str */
     PyObject_GenericGetAttr,            /* tp_getattro */
@@ -2126,8 +2126,8 @@ PyTypeObject PySet_Type = {
     (traverseproc)set_traverse,         /* tp_traverse */
     (inquiry)set_clear_internal,        /* tp_clear */
     (richcmpfunc)set_richcompare,       /* tp_richcompare */
-    offsetof(PySetObject, weakreflist),         /* tp_weaklistoffset */
-    (getiterfunc)set_iter,      /* tp_iter */
+    offsetof(PySetObject, weakreflist), /* tp_weaklistoffset */
+    (getiterfunc)set_iter,              /* tp_iter */
     0,                                  /* tp_iternext */
     set_methods,                        /* tp_methods */
     0,                                  /* tp_members */
