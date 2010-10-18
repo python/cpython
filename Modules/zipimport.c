@@ -255,13 +255,13 @@ enum zi_module_info {
 
 /* Return some information about a module. */
 static enum zi_module_info
-get_module_info(ZipImporter *self, char *fullname)
+get_module_info(ZipImporter *self, PyObject *fullname)
 {
     char *subname, path[MAXPATHLEN + 1];
     int len;
     struct st_zip_searchorder *zso;
 
-    subname = get_subname(fullname);
+    subname = get_subname(PyBytes_AS_STRING(fullname));
 
     len = make_filename(self->prefix, subname, path, sizeof(path));
     if (len < 0)
@@ -286,14 +286,15 @@ zipimporter_find_module(PyObject *obj, PyObject *args)
 {
     ZipImporter *self = (ZipImporter *)obj;
     PyObject *path = NULL;
-    char *fullname;
+    PyObject *fullname;
     enum zi_module_info mi;
 
-    if (!PyArg_ParseTuple(args, "s|O:zipimporter.find_module",
-                          &fullname, &path))
+    if (!PyArg_ParseTuple(args, "O&|O:zipimporter.find_module",
+                          PyUnicode_FSConverter, &fullname, &path))
         return NULL;
 
     mi = get_module_info(self, fullname);
+    Py_DECREF(fullname);
     if (mi == MI_ERROR)
         return NULL;
     if (mi == MI_NOT_FOUND) {
@@ -403,22 +404,27 @@ static PyObject *
 zipimporter_is_package(PyObject *obj, PyObject *args)
 {
     ZipImporter *self = (ZipImporter *)obj;
-    char *fullname;
+    PyObject *fullname;
     enum zi_module_info mi;
 
-    if (!PyArg_ParseTuple(args, "s:zipimporter.is_package",
-                          &fullname))
+    if (!PyArg_ParseTuple(args, "O&:zipimporter.is_package",
+                          PyUnicode_FSConverter, &fullname))
         return NULL;
 
     mi = get_module_info(self, fullname);
     if (mi == MI_ERROR)
-        return NULL;
+        goto error;
     if (mi == MI_NOT_FOUND) {
-        PyErr_Format(ZipImportError, "can't find module '%.200s'",
+        PyErr_Format(ZipImportError, "can't find module '%.200U'",
                      fullname);
-        return NULL;
+        goto error;
     }
+    Py_DECREF(fullname);
     return PyBool_FromLong(mi == MI_PACKAGE);
+
+error:
+    Py_DECREF(fullname);
+    return NULL;
 }
 
 static PyObject *
@@ -490,24 +496,30 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
 {
     ZipImporter *self = (ZipImporter *)obj;
     PyObject *toc_entry;
-    char *fullname, *subname, path[MAXPATHLEN+1];
+    PyObject *fullname;
+    char *subname, path[MAXPATHLEN+1];
     int len;
     enum zi_module_info mi;
 
-    if (!PyArg_ParseTuple(args, "s:zipimporter.get_source", &fullname))
+    if (!PyArg_ParseTuple(args, "O&:zipimporter.get_source",
+                          PyUnicode_FSConverter, &fullname))
         return NULL;
 
     mi = get_module_info(self, fullname);
-    if (mi == MI_ERROR)
-        return NULL;
-    if (mi == MI_NOT_FOUND) {
-        PyErr_Format(ZipImportError, "can't find module '%.200s'",
-                     fullname);
+    if (mi == MI_ERROR) {
+        Py_DECREF(fullname);
         return NULL;
     }
-    subname = get_subname(fullname);
+    if (mi == MI_NOT_FOUND) {
+        PyErr_Format(ZipImportError, "can't find module '%.200U'",
+                     fullname);
+        Py_DECREF(fullname);
+        return NULL;
+    }
+    subname = get_subname(PyBytes_AS_STRING(fullname));
 
     len = make_filename(self->prefix, subname, path, sizeof(path));
+    Py_DECREF(fullname);
     if (len < 0)
         return NULL;
 
