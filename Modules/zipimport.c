@@ -36,7 +36,8 @@ typedef struct _zipimporter ZipImporter;
 struct _zipimporter {
     PyObject_HEAD
     PyObject *archive;  /* pathname of the Zip archive */
-    PyObject *prefix;   /* file prefix: "a/sub/directory/" */
+    PyObject *prefix;   /* file prefix: "a/sub/directory/",
+                           encoded to the filesystem encoding */
     PyObject *files;    /* dict with file info {path: toc_entry} */
 };
 
@@ -215,20 +216,26 @@ get_subname(char *fullname)
    archive (without extension) to the path buffer. Return the
    length of the resulting string. */
 static int
-make_filename(char *prefix, char *name, char *path)
+make_filename(PyObject *prefix_obj, char *name, char *path)
 {
     size_t len;
     char *p;
+    PyObject *prefix;
 
-    len = strlen(prefix);
+    prefix = PyUnicode_EncodeFSDefault(prefix_obj);
+    if (prefix == NULL)
+        return -1;
+    len = PyBytes_GET_SIZE(prefix);
 
     /* self.prefix + name [+ SEP + "__init__"] + ".py[co]" */
     if (len + strlen(name) + 13 >= MAXPATHLEN) {
         PyErr_SetString(ZipImportError, "path too long");
+        Py_DECREF(prefix);
         return -1;
     }
 
-    strcpy(path, prefix);
+    strcpy(path, PyBytes_AS_STRING(prefix));
+    Py_DECREF(prefix);
     strcpy(path + len, name);
     for (p = path + len; *p; p++) {
         if (*p == '.')
@@ -256,7 +263,7 @@ get_module_info(ZipImporter *self, char *fullname)
 
     subname = get_subname(fullname);
 
-    len = make_filename(_PyUnicode_AsString(self->prefix), subname, path);
+    len = make_filename(self->prefix, subname, path);
     if (len < 0)
         return MI_ERROR;
 
@@ -491,7 +498,7 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
     }
     subname = get_subname(fullname);
 
-    len = make_filename(_PyUnicode_AsString(self->prefix), subname, path);
+    len = make_filename(self->prefix, subname, path);
     if (len < 0)
         return NULL;
 
@@ -1148,7 +1155,7 @@ get_module_code(ZipImporter *self, char *fullname,
 
     subname = get_subname(fullname);
 
-    len = make_filename(_PyUnicode_AsString(self->prefix), subname, path);
+    len = make_filename(self->prefix, subname, path);
     if (len < 0)
         return NULL;
 
@@ -1158,7 +1165,7 @@ get_module_code(ZipImporter *self, char *fullname,
         strcpy(path + len, zso->suffix);
         if (Py_VerboseFlag > 1)
             PySys_FormatStderr("# trying %U%c%s\n",
-                              self->archive, (int)SEP, path);
+                               self->archive, (int)SEP, path);
         toc_entry = PyDict_GetItemString(self->files, path);
         if (toc_entry != NULL) {
             time_t mtime = 0;
