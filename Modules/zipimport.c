@@ -399,6 +399,20 @@ zipimporter_get_filename(PyObject *obj, PyObject *args)
     return modpath;
 }
 
+static void
+cant_find_module(PyObject *bytes)
+{
+    PyObject *unicode = PyUnicode_DecodeFSDefaultAndSize(
+        PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes));
+    if (unicode != NULL) {
+        PyErr_Format(ZipImportError, "can't find module %U",
+                     unicode);
+        Py_DECREF(unicode);
+    }
+    else
+        PyErr_Format(ZipImportError, "can't find module");
+}
+
 /* Return a bool signifying whether the module is a package or not. */
 static PyObject *
 zipimporter_is_package(PyObject *obj, PyObject *args)
@@ -415,8 +429,7 @@ zipimporter_is_package(PyObject *obj, PyObject *args)
     if (mi == MI_ERROR)
         goto error;
     if (mi == MI_NOT_FOUND) {
-        PyErr_Format(ZipImportError, "can't find module '%.200U'",
-                     fullname);
+        cant_find_module(fullname);
         goto error;
     }
     Py_DECREF(fullname);
@@ -511,8 +524,7 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
         return NULL;
     }
     if (mi == MI_NOT_FOUND) {
-        PyErr_Format(ZipImportError, "can't find module '%.200U'",
-                     fullname);
+        cant_find_module(fullname);
         Py_DECREF(fullname);
         return NULL;
     }
