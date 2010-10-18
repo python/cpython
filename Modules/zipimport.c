@@ -714,6 +714,7 @@ read_directory(PyObject *archive_obj)
     /* FIXME: work on Py_UNICODE* instead of char* */
     PyObject *files = NULL;
     FILE *fp;
+    unsigned short flags;
     long compress, crc, data_size, file_size, file_offset, date, time;
     long header_offset, name_size, header_size, header_position;
     long i, l, count;
@@ -724,6 +725,7 @@ read_directory(PyObject *archive_obj)
     char *p, endof_central_dir[22];
     long arc_offset; /* offset from beginning of file to start of zip-archive */
     PyObject *pathobj;
+    const char *charset;
 
     if (PyUnicode_GET_SIZE(archive_obj) > MAXPATHLEN) {
         PyErr_SetString(PyExc_OverflowError,
@@ -776,7 +778,8 @@ read_directory(PyObject *archive_obj)
         l = PyMarshal_ReadLongFromFile(fp);
         if (l != 0x02014B50)
             break;              /* Bad: Central Dir File Header */
-        fseek(fp, header_offset + 10, 0);
+        fseek(fp, header_offset + 8, 0);
+        flags = (unsigned short)PyMarshal_ReadShortFromFile(fp);
         compress = PyMarshal_ReadShortFromFile(fp);
         time = PyMarshal_ReadShortFromFile(fp);
         date = PyMarshal_ReadShortFromFile(fp);
@@ -802,7 +805,11 @@ read_directory(PyObject *archive_obj)
         *p = 0;         /* Add terminating null byte */
         header_offset += header_size;
 
-        nameobj = PyUnicode_DecodeFSDefaultAndSize(name, name_size);
+        if (flags & 0x0800)
+            charset = "utf-8";
+        else
+            charset = "cp437";
+        nameobj = PyUnicode_Decode(name, name_size, charset, NULL);
         if (nameobj == NULL)
             goto error;
         Py_UNICODE_strncpy(path + length + 1, PyUnicode_AS_UNICODE(nameobj), MAXPATHLEN - length - 1);
