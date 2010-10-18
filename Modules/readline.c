@@ -64,10 +64,11 @@ static int using_libedit_emulation = 0;
 static const char libedit_version_tag[] = "EditLine wrapper";
 #endif /* __APPLE__ */
 
+#ifdef HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
 static void
 on_completion_display_matches_hook(char **matches,
                                    int num_matches, int max_length);
-
+#endif
 
 /* Exported function to send one line to readline's init file parser */
 
@@ -774,6 +775,7 @@ on_pre_input_hook(void)
 
 /* C function to call the Python completion_display_matches */
 
+#ifdef HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
 static void
 on_completion_display_matches_hook(char **matches,
                                    int num_matches, int max_length)
@@ -853,6 +855,7 @@ on_completion(const char *text, int state)
     }
     return result;
 }
+#endif
 
 
 /* A more flexible constructor that saves the "begidx" and "endidx"
