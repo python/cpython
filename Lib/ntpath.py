@@ -488,8 +488,8 @@ def relpath(path, start=curdir):
 
     if not path:
         raise ValueError("no path specified")
-    start_list = abspath(start).split(sep)
-    path_list = abspath(path).split(sep)
+    start_list = [x for x in abspath(start).split(sep) if x]
+    path_list = [x for x in abspath(path).split(sep) if x]
     if start_list[0].lower() != path_list[0].lower():
         unc_path, rest = splitunc(path)
         unc_start, rest = splitunc(start)
