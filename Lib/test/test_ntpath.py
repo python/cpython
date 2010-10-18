@@ -178,6 +178,16 @@ class TestNtpath(unittest.TestCase):
         tester('ntpath.relpath("a", "b/c")', '..\\..\\a')
         tester('ntpath.relpath("//conky/mountpoint/a", "//conky/mountpoint/b/c")', '..\\..\\a')
         tester('ntpath.relpath("a", "a")', '.')
+        tester('ntpath.relpath("/foo/bar/bat", "/x/y/z")', '..\\..\\..\\foo\\bar\\bat')
+        tester('ntpath.relpath("/foo/bar/bat", "/foo/bar")', 'bat')
+        tester('ntpath.relpath("/foo/bar/bat", "/")', 'foo\\bar\\bat')
+        tester('ntpath.relpath("/", "/foo/bar/bat")', '..\\..\\..')
+        tester('ntpath.relpath("/foo/bar/bat", "/x")', '..\\foo\\bar\\bat')
+        tester('ntpath.relpath("/x", "/foo/bar/bat")', '..\\..\\..\\x')
+        tester('ntpath.relpath("/", "/")', '.')
+        tester('ntpath.relpath("/a", "/a")', '.')
+        tester('ntpath.relpath("/a/b", "/a/b")', '.')
+        tester('ntpath.relpath("c:/foo", "C:/FOO")', '.')
 
 
 class NtCommonTest(test_genericpath.CommonTest):

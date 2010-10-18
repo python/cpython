@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5117: Fixed root directory related issue on posixpath.relpath() and
+  ntpath.relpath().
+
 - Issue 9409: Fix the regex to match all kind of filenames, for interactive
   debugging in doctests.
 
