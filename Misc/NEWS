@@ -111,6 +111,10 @@ C-API
 Tools/Demos
 -----------
 
+- Issue #10117: Tools/scripts/reindent.py now accepts source files
+  that use encoding other than ASCII or UTF-8.  Source encoding is
+  preserved when reindented code is written to a file.
+
 - Issue #7287: Demo/imputil/knee.py was removed.
 
 Tests

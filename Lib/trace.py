@@ -493,6 +493,7 @@ class Trace:
             threading.settrace(self.globaltrace)
             sys.settrace(self.globaltrace)
         try:
+            del sys.modules['pickle']
             exec(cmd, globals, locals)
         finally:
             if not self.donothing:
