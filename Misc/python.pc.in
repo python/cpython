@@ -8,6 +8,6 @@ Description: Python library
 Requires: 
 Version: @VERSION@
 Libs.private: @LIBS@
-Libs: -L${libdir} -lpython@VERSION@
+Libs: -L${libdir} -lpython@VERSION@@ABIFLAGS@
 Cflags: -I${includedir}/python@VERSION@ 
 
