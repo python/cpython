@@ -569,6 +569,10 @@ mmap_flush_method(mmap_object *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "flush values out of range");
         return NULL;
     }
+
+    if (self->access == ACCESS_READ || self->access == ACCESS_COPY)
+        return PyLong_FromLong(0);
+
 #ifdef MS_WINDOWS
     return PyLong_FromLong((long) FlushViewOfFile(self->data+offset, size));
 #elif defined(UNIX)

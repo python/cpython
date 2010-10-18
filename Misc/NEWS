@@ -87,6 +87,8 @@ Library
 Extensions
 ----------
 
+- Issue #678250: Make mmap flush a noop on ACCESS_READ and ACCESS_COPY.
+
 - Issue #9054: Fix a crash occurring when using the pyexpat module
   with expat version 2.0.1.
 
