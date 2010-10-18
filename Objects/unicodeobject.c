@@ -1074,6 +1074,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             }
             case 'S':
             case 'R':
+            case 'A':
             {
                 Py_UNICODE *ucopy;
                 Py_ssize_t usize;
