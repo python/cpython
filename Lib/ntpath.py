@@ -600,7 +600,7 @@ def relpath(path, start=curdir):
     path_abs = abspath(normpath(path))
     start_drive, start_rest = splitdrive(start_abs)
     path_drive, path_rest = splitdrive(path_abs)
-    if start_drive != path_drive:
+    if normcase(start_drive) != normcase(path_drive):
         error = "path is on mount '{0}', start on mount '{1}'".format(
             path_drive, start_drive)
         raise ValueError(error)
@@ -610,7 +610,7 @@ def relpath(path, start=curdir):
     # Work out how much of the filepath is shared by start and path.
     i = 0
     for e1, e2 in zip(start_list, path_list):
-        if e1 != e2:
+        if normcase(e1) != normcase(e2):
             break
         i += 1
 

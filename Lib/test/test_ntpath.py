@@ -236,6 +236,7 @@ class TestNtpath(unittest.TestCase):
         tester('ntpath.relpath("/", "/")', '.')
         tester('ntpath.relpath("/a", "/a")', '.')
         tester('ntpath.relpath("/a/b", "/a/b")', '.')
+        tester('ntpath.relpath("c:/foo", "C:/FOO")', '.')
 
 
 def test_main():
