@@ -1016,24 +1016,24 @@ static PyTypeObject deque_type = {
     0,                                  /* tp_as_number */
     &deque_as_sequence,                 /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
-    (hashfunc)PyObject_HashNotImplemented,      /* tp_hash */
+    PyObject_HashNotImplemented,        /* tp_hash */
     0,                                  /* tp_call */
     0,                                  /* tp_str */
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-                                    /* tp_flags */
+                                        /* tp_flags */
     deque_doc,                          /* tp_doc */
     (traverseproc)deque_traverse,       /* tp_traverse */
     (inquiry)deque_clear,               /* tp_clear */
     (richcmpfunc)deque_richcompare,     /* tp_richcompare */
-    offsetof(dequeobject, weakreflist),         /* tp_weaklistoffset*/
+    offsetof(dequeobject, weakreflist), /* tp_weaklistoffset*/
     (getiterfunc)deque_iter,            /* tp_iter */
     0,                                  /* tp_iternext */
     deque_methods,                      /* tp_methods */
     0,                                  /* tp_members */
-    deque_getset,       /* tp_getset */
+    deque_getset,                       /* tp_getset */
     0,                                  /* tp_base */
     0,                                  /* tp_dict */
     0,                                  /* tp_descr_get */
