@@ -166,7 +166,7 @@ static PyObject* pysqlite_iter(pysqlite_Row* self)
     return PyObject_GetIter(self->data);
 }
 
-static long pysqlite_row_hash(pysqlite_Row *self)
+static Py_hash_t pysqlite_row_hash(pysqlite_Row *self)
 {
     return PyObject_Hash(self->description) ^ PyObject_Hash(self->data);
 }
