@@ -194,10 +194,10 @@ zipimporter_repr(ZipImporter *self)
     if (self->archive == NULL)
         return PyUnicode_FromString("<zipimporter object \"???\">");
     else if (self->prefix != NULL && PyUnicode_GET_SIZE(self->prefix) != 0)
-        return PyUnicode_FromFormat("<zipimporter object \"%.300U%c%.150U\">",
+        return PyUnicode_FromFormat("<zipimporter object \"%U%c%U\">",
                                     self->archive, SEP, self->prefix);
     else
-        return PyUnicode_FromFormat("<zipimporter object \"%.300U\">",
+        return PyUnicode_FromFormat("<zipimporter object \"%U\">",
                                     self->archive);
 }
 
@@ -415,8 +415,7 @@ zipimporter_is_package(PyObject *obj, PyObject *args)
     if (mi == MI_ERROR)
         return NULL;
     if (mi == MI_NOT_FOUND) {
-        PyErr_Format(ZipImportError, "can't find module '%.200s'",
-                     fullname);
+        PyErr_Format(ZipImportError, "can't find module '%s'", fullname);
         return NULL;
     }
     return PyBool_FromLong(mi == MI_PACKAGE);
@@ -502,8 +501,7 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
     if (mi == MI_ERROR)
         return NULL;
     if (mi == MI_NOT_FOUND) {
-        PyErr_Format(ZipImportError, "can't find module '%.200s'",
-                     fullname);
+        PyErr_Format(ZipImportError, "can't find module '%s'", fullname);
         return NULL;
     }
     subname = get_subname(fullname);
@@ -737,23 +735,20 @@ read_directory(PyObject *archive_obj)
 
     fp = _Py_fopen(archive_obj, "rb");
     if (fp == NULL) {
-        PyErr_Format(ZipImportError, "can't open Zip file: "
-                     "'%.200U'", archive_obj);
+        PyErr_Format(ZipImportError, "can't open Zip file: '%U'", archive_obj);
         return NULL;
     }
     fseek(fp, -22, SEEK_END);
     header_position = ftell(fp);
     if (fread(endof_central_dir, 1, 22, fp) != 22) {
         fclose(fp);
-        PyErr_Format(ZipImportError, "can't read Zip file: "
-                     "'%.200U'", archive_obj);
+        PyErr_Format(ZipImportError, "can't read Zip file: '%U'", archive_obj);
         return NULL;
     }
     if (get_long((unsigned char *)endof_central_dir) != 0x06054B50) {
         /* Bad: End of Central Dir signature */
         fclose(fp);
-        PyErr_Format(ZipImportError, "not a Zip file: "
-                     "'%.200U'", archive_obj);
+        PyErr_Format(ZipImportError, "not a Zip file: '%U'", archive_obj);
         return NULL;
     }
 
@@ -1021,7 +1016,7 @@ unmarshal_code(char *pathname, PyObject *data, time_t mtime)
     if (!PyCode_Check(code)) {
         Py_DECREF(code);
         PyErr_Format(PyExc_TypeError,
-             "compiled module %.200s is not a code object",
+             "compiled module %s is not a code object",
              pathname);
         return NULL;
     }
@@ -1209,7 +1204,7 @@ get_module_code(ZipImporter *self, char *fullname,
             return code;
         }
     }
-    PyErr_Format(ZipImportError, "can't find module '%.200s'", fullname);
+    PyErr_Format(ZipImportError, "can't find module '%s'", fullname);
     return NULL;
 }
 
