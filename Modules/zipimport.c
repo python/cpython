@@ -1157,9 +1157,8 @@ get_module_code(ZipImporter *self, char *fullname,
 
         strcpy(path + len, zso->suffix);
         if (Py_VerboseFlag > 1)
-            PySys_WriteStderr("# trying %s%c%s\n",
-                              _PyUnicode_AsString(self->archive),
-                              (int)SEP, path);
+            PySys_FormatStderr("# trying %U%c%s\n",
+                              self->archive, (int)SEP, path);
         toc_entry = PyDict_GetItemString(self->files, path);
         if (toc_entry != NULL) {
             time_t mtime = 0;
