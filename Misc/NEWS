@@ -34,6 +34,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5117: Case normalization was needed on ntpath.relpath(). And
+  fixed root directory issue on posixpath.relpath(). (Ported working fixes
+  from ntpath)
+
 - Issue #1343: xml.sax.saxutils.XMLGenerator now has an option
   short_empty_elements to direct it to use self-closing tags when appropriate.
 
