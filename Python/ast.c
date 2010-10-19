@@ -102,6 +102,7 @@ static void
 ast_error_finish(const char *filename)
 {
     PyObject *type, *value, *tback, *errstr, *loc, *tmp;
+    PyObject *filename_obj;
     long lineno;
 
     assert(PyErr_Occurred());
@@ -125,7 +126,16 @@ ast_error_finish(const char *filename)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    tmp = Py_BuildValue("(zlOO)", filename, lineno, Py_None, loc);
+    if (filename != NULL)
+        filename_obj = PyUnicode_DecodeFSDefault(filename);
+    else {
+        Py_INCREF(Py_None);
+        filename_obj = Py_None;
+    }
+    if (filename_obj != NULL)
+        tmp = Py_BuildValue("(NlOO)", filename_obj, lineno, Py_None, loc);
+    else
+        tmp = NULL;
     Py_DECREF(loc);
     if (!tmp) {
         Py_DECREF(errstr);

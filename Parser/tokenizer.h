@@ -40,7 +40,7 @@ struct tok_state {
     int level;          /* () [] {} Parentheses nesting level */
             /* Used to allow free continuations inside them */
     /* Stuff for checking on different tab sizes */
-    const char *filename;       /* For error messages */
+    const char *filename;   /* encoded to the filesystem encoding */
     int altwarning;     /* Issue warning if alternate tabs don't match */
     int alterror;       /* Issue error if alternate tabs don't match */
     int alttabsize;     /* Alternate tab spacing */

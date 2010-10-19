@@ -4046,7 +4046,7 @@ makecode(struct compiler *c, struct assembler *a)
     freevars = dict_keys_inorder(c->u->u_freevars, PyTuple_Size(cellvars));
     if (!freevars)
         goto error;
-    filename = PyUnicode_FromString(c->c_filename);
+    filename = PyUnicode_DecodeFSDefault(c->c_filename);
     if (!filename)
         goto error;
 
