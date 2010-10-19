@@ -309,6 +309,35 @@ class BasicFilterTest(BaseTest):
         finally:
             handler.removeFilter(filter_)
 
+    def test_callable_filter(self):
+        # Only messages satisfying the specified criteria pass through the
+        #  filter.
+
+        def filterfunc(record):
+            parts = record.name.split('.')
+            prefix = '.'.join(parts[:2])
+            return prefix == 'spam.eggs'
+
+        handler = self.root_logger.handlers[0]
+        try:
+            handler.addFilter(filterfunc)
+            spam = logging.getLogger("spam")
+            spam_eggs = logging.getLogger("spam.eggs")
+            spam_eggs_fish = logging.getLogger("spam.eggs.fish")
+            spam_bakedbeans = logging.getLogger("spam.bakedbeans")
+
+            spam.info(self.next_message())
+            spam_eggs.info(self.next_message())  # Good.
+            spam_eggs_fish.info(self.next_message())  # Good.
+            spam_bakedbeans.info(self.next_message())
+
+            self.assert_log_lines([
+                ('spam.eggs', 'INFO', '2'),
+                ('spam.eggs.fish', 'INFO', '3'),
+            ])
+        finally:
+            handler.removeFilter(filterfunc)
+
 
 #
 #   First, we define our levels. There can be as many as you want - the only

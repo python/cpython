@@ -604,10 +604,23 @@ class Filterer(object):
         The default is to allow the record to be logged; any filter can veto
         this and the record is then dropped. Returns a zero value if a record
         is to be dropped, else non-zero.
+
+        .. versionchanged: 3.2
+
+           Allow filters to be just callables.
         """
         rv = 1
         for f in self.filters:
-            if not f.filter(record):
+            if hasattr(f, 'filter'):
+                result = f.filter(record)
+            elif hasattr(f, '__call__'):
+                try:
+                    result = f(record)
+                except Exception:
+                    result = True # filter failed, assume a pass
+            else:
+                result = False # we don't know what f is
+            if not result:
                 rv = 0
                 break
         return rv
