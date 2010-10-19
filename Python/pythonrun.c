@@ -730,21 +730,14 @@ initfsencoding(void)
         /* On Unix, set the file system encoding according to the
            user's preference, if the CODESET names a well-known
            Python codec, and Py_FileSystemDefaultEncoding isn't
-           initialized by other means. Also set the encoding of
-           stdin and stdout if these are terminals.  */
+           initialized by other means. */
         codeset = get_codeset();
-        if (codeset != NULL) {
-            Py_FileSystemDefaultEncoding = codeset;
-            Py_HasFileSystemDefaultEncoding = 0;
-            return;
-        } else {
-            fprintf(stderr, "Unable to get the locale encoding:\n");
-            PyErr_Print();
-        }
+        if (codeset == NULL)
+            Py_FatalError("Py_Initialize: Unable to get the locale encoding");
 
-        fprintf(stderr, "Unable to get the filesystem encoding: fallback to utf-8\n");
-        Py_FileSystemDefaultEncoding = "utf-8";
-        Py_HasFileSystemDefaultEncoding = 1;
+        Py_FileSystemDefaultEncoding = codeset;
+        Py_HasFileSystemDefaultEncoding = 0;
+        return;
     }
 #endif
 
