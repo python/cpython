@@ -483,27 +483,38 @@ realpath = abspath
 supports_unicode_filenames = (hasattr(sys, "getwindowsversion") and
                               sys.getwindowsversion()[3] >= 2)
 
+def _abspath_split(path):
+    abs = abspath(normpath(path))
+    prefix, rest = splitunc(abs)
+    is_unc = bool(prefix)
+    if not is_unc:
+        prefix, rest = splitdrive(abs)
+    return is_unc, prefix, [x for x in rest.split(sep) if x]
+
 def relpath(path, start=curdir):
     """Return a relative version of a path"""
 
     if not path:
         raise ValueError("no path specified")
-    start_list = [x for x in abspath(start).split(sep) if x]
-    path_list = [x for x in abspath(path).split(sep) if x]
-    if start_list[0].lower() != path_list[0].lower():
-        unc_path, rest = splitunc(path)
-        unc_start, rest = splitunc(start)
-        if bool(unc_path) ^ bool(unc_start):
-            raise ValueError("Cannot mix UNC and non-UNC paths (%s and %s)"
-                                                                % (path, start))
+
+    start_is_unc, start_prefix, start_list = _abspath_split(start)
+    path_is_unc, path_prefix, path_list = _abspath_split(path)
+
+    if path_is_unc ^ start_is_unc:
+        raise ValueError("Cannot mix UNC and non-UNC paths (%s and %s)"
+                                                            % (path, start))
+    if path_prefix.lower() != start_prefix.lower():
+        if path_is_unc:
+            raise ValueError("path is on UNC root %s, start on UNC root %s"
+                                                % (path_prefix, start_prefix))
         else:
             raise ValueError("path is on drive %s, start on drive %s"
-                                                % (path_list[0], start_list[0]))
+                                                % (path_prefix, start_prefix))
     # Work out how much of the filepath is shared by start and path.
-    for i in range(min(len(start_list), len(path_list))):
-        if start_list[i].lower() != path_list[i].lower():
+    i = 0
+    for e1, e2 in zip(start_list, path_list):
+        if e1.lower() != e2.lower():
             break
-    else:
         i += 1
 
     rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
