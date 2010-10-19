@@ -95,7 +95,7 @@ As a convenience, see the :class:`~email.message.Message` methods
 formatted string representation of a message object.  For more detail, see
 :mod:`email.message`.
 
-.. class:: BytesGenerator(outfp, mangle_from_=True, maxheaderlen=78, fmt=None)
+.. class:: BytesGenerator(outfp, mangle_from_=True, maxheaderlen=78)
 
    This class has the same API as the :class:`Generator` class, except that
    *outfp* must be a file like object that will accept :class`bytes` input to
