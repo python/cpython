@@ -613,13 +613,8 @@ class Filterer(object):
         for f in self.filters:
             if hasattr(f, 'filter'):
                 result = f.filter(record)
-            elif hasattr(f, '__call__'):
-                try:
-                    result = f(record)
-                except Exception:
-                    result = True # filter failed, assume a pass
             else:
-                result = False # we don't know what f is
+                result = f(record) # assume callable - will raise if not
             if not result:
                 rv = 0
                 break
