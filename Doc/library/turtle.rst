@@ -58,7 +58,7 @@ The object-oriented interface uses essentially two+two classes:
    or TurtleScreen as argument, so the RawTurtle objects know where to draw.
 
    Derived from RawTurtle is the subclass :class:`Turtle` (alias: :class:`Pen`),
-   which draws on "the" :class:`Screen` - instance which is automatically
+   which draws on "the" :class:`Screen` instance which is automatically
    created, if not already present.
 
    All methods of RawTurtle/Turtle also exist as functions, i.e. part of the
@@ -71,7 +71,7 @@ function derived from a Screen method is called.  An (unnamed) turtle object is
 automatically created whenever any of the functions derived from a Turtle method
 is called.
 
-To use multiple turtles an a screen one has to use the object-oriented interface.
+To use multiple turtles on a screen one has to use the object-oriented interface.
 
 .. note::
    In the following documentation the argument list for functions is given.
@@ -79,7 +79,7 @@ To use multiple turtles an a screen one has to use the object-oriented interface
    omitted here.
 
 
-Overview over available Turtle and Screen methods
+Overview of available Turtle and Screen methods
 =================================================
 
 Turtle methods
@@ -1456,7 +1456,7 @@ Special Turtle methods
 
 .. _compoundshapes:
 
-Excursus about the use of compound shapes
+Compound shapes
 -----------------------------------------
 
 To use compound turtle shapes, which consist of several polygons of different
@@ -1548,7 +1548,7 @@ Window control
 
    .. note::
       This TurtleScreen method is available as a global function only under the
-      name ``clearscreen``.  The global function ``clear`` is another one
+      name ``clearscreen``.  The global function ``clear`` is a different one
       derived from the Turtle method ``clear``.
 
 
@@ -1643,10 +1643,12 @@ Animation control
    :param n: nonnegative integer
    :param delay: nonnegative integer
 
-   Turn turtle animation on/off and set delay for update drawings.  If *n* is
-   given, only each n-th regular screen update is really performed.  (Can be
-   used to accelerate the drawing of complex graphics.)  Second argument sets
-   delay value (see :func:`delay`).
+   Turn turtle animation on/off and set delay for update drawings.  If
+   *n* is given, only each n-th regular screen update is really
+   performed.  (Can be used to accelerate the drawing of complex
+   graphics.)  When called without arguments, returns the currently
+   stored value of n. Second argument sets delay value (see
+   :func:`delay`).
 
    .. doctest::
 
@@ -1790,8 +1792,8 @@ Input methods
    :param title: string
    :param prompt: string
    :param default: number (optional)
-   :param prompt: number (optional)
-   :param prompt: number (optional)
+   :param minval: number (optional)
+   :param maxval: number (optional)
 
    Pop up a dialog window for input of a number. title is the title of the
    dialog window, prompt is a text mostly describing what numerical information
