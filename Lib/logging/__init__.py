@@ -31,7 +31,8 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'StreamHandler', 'WARN', 'WARNING', 'addLevelName', 'basicConfig',
            'captureWarnings', 'critical', 'debug', 'disable', 'error',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
-           'info', 'log', 'makeLogRecord', 'setLoggerClass', 'warn', 'warning']
+           'info', 'log', 'makeLogRecord', 'setLoggerClass', 'warn', 'warning',
+           'getLogRecordClass', 'setLogRecordClass']
 
 try:
     import codecs
@@ -316,6 +317,25 @@ class LogRecord(object):
             msg = msg % self.args
         return msg
 
+#
+#   Determine which class to use when instantiating log records.
+#
+_logRecordClass = LogRecord
+
+def setLogRecordClass(cls):
+    """
+    Set the class to be used when instantiating a log record.
+    """
+    global _logRecordClass
+    _logRecordClass = cls
+
+def getLogRecordClass():
+    """
+    Return the class to be used when instantiating a log record.
+    """
+
+    return _logRecordClass
+
 def makeLogRecord(dict):
     """
     Make a LogRecord whose attributes are defined by the specified dictionary,
@@ -323,7 +343,7 @@ def makeLogRecord(dict):
     a socket connection (which is sent as a dictionary) into a LogRecord
     instance.
     """
-    rv = LogRecord(None, None, "", 0, "", (), None, None)
+    rv = _logRecordClass(None, None, "", 0, "", (), None, None)
     rv.__dict__.update(dict)
     return rv
 
@@ -1183,7 +1203,7 @@ class Logger(Filterer):
         A factory method which can be overridden in subclasses to create
         specialized LogRecords.
         """
-        rv = LogRecord(name, level, fn, lno, msg, args, exc_info, func)
+        rv = _logRecordClass(name, level, fn, lno, msg, args, exc_info, func)
         if extra is not None:
             for key in extra:
                 if (key in ["message", "asctime"]) or (key in rv.__dict__):
