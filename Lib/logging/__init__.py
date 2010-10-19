@@ -973,6 +973,7 @@ class Manager(object):
         self.emittedNoHandlerWarning = 0
         self.loggerDict = {}
         self.loggerClass = None
+        self.logRecordClass = None
 
     def getLogger(self, name):
         """
@@ -1015,6 +1016,13 @@ class Manager(object):
                 raise TypeError("logger not derived from logging.Logger: "
                                 + klass.__name__)
         self.loggerClass = klass
+
+    def setLogRecordClass(self, cls):
+        """
+        Set the class to be used when instantiating a log record with this
+        Manager.
+        """
+        self.logRecordClass = cls
 
     def _fixupParents(self, alogger):
         """

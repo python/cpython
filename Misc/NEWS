@@ -34,6 +34,8 @@ Core and Builtins
 Library
 -------
 
+- logging: Added tests for _logRecordClass changes.
+
 - Issue #10092: Properly reset locale in calendar.Locale*Calendar classes.
 
 - logging: Added _logRecordClass, getLogRecordClass, setLogRecordClass to

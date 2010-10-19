@@ -127,7 +127,8 @@ class BaseTest(unittest.TestCase):
         except AttributeError:
             # StringIO.StringIO lacks a reset() method.
             actual_lines = stream.getvalue().splitlines()
-        self.assertEquals(len(actual_lines), len(expected_values))
+        self.assertEquals(len(actual_lines), len(expected_values),
+                          '%s vs. %s' % (actual_lines, expected_values))
         for actual, expected in zip(actual_lines, expected_values):
             match = pat.search(actual)
             if not match:
@@ -1766,6 +1767,44 @@ class ChildLoggerTest(BaseTest):
         self.assertTrue(c2 is c3)
 
 
+class DerivedLogRecord(logging.LogRecord):
+    pass
+
+class LogRecordClassTest(BaseTest):
+
+    def setUp(self):
+        class CheckingFilter(logging.Filter):
+            def __init__(self, cls):
+                self.cls = cls
+
+            def filter(self, record):
+                t = type(record)
+                if t is not self.cls:
+                    msg = 'Unexpected LogRecord type %s, expected %s' % (t,
+                            self.cls)
+                    raise TypeError(msg)
+                return True
+
+        BaseTest.setUp(self)
+        self.filter = CheckingFilter(DerivedLogRecord)
+        self.root_logger.addFilter(self.filter)
+        self.orig_cls = logging.getLogRecordClass()
+
+    def tearDown(self):
+        self.root_logger.removeFilter(self.filter)
+        BaseTest.tearDown(self)
+        logging.setLogRecordClass(self.orig_cls)
+
+    def test_logrecord_class(self):
+        self.assertRaises(TypeError, self.root_logger.warning,
+                          self.next_message())
+        logging.setLogRecordClass(DerivedLogRecord)
+        self.root_logger.error(self.next_message())
+        self.assert_log_lines([
+           ('root', 'ERROR', '2'),
+        ])
+
+
 class QueueHandlerTest(BaseTest):
     # Do not bother with a logger name group.
     expected_log_pat = r"^[\w.]+ -> ([\w]+): ([\d]+)$"
@@ -1877,7 +1916,7 @@ def test_main():
                  CustomLevelsAndFiltersTest, MemoryHandlerTest,
                  ConfigFileTest, SocketHandlerTest, MemoryTest,
                  EncodingTest, WarningsTest, ConfigDictTest, ManagerTest,
-                 ChildLoggerTest, QueueHandlerTest,
+                 LogRecordClassTest, ChildLoggerTest, QueueHandlerTest,
                  RotatingFileHandlerTest,
                  #TimedRotatingFileHandlerTest
                 )
