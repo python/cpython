@@ -437,7 +437,7 @@ Thread State and the Global Interpreter Lock
    single: interpreter lock
    single: lock, interpreter
 
-The Python interpreter is not fully thread safe.  In order to support
+The Python interpreter is not fully thread-safe.  In order to support
 multi-threaded Python programs, there's a global lock, called the :dfn:`global
 interpreter lock` or :dfn:`GIL`, that must be held by the current thread before
 it can safely access Python objects. Without the lock, even the simplest
