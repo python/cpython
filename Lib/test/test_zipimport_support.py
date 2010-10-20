@@ -182,7 +182,7 @@ class ZipSupportTests(ImportHooksBaseTestCase):
             if verbose:
                 print ("Expected line", expected)
                 print ("Got stdout:")
-                print (out)
+                print (ascii(out))
             self.assertIn(expected.encode('utf-8'), out)
             zip_name, run_name = make_zip_script(d, "test_zip",
                                                 script_name, '__main__.py')
@@ -191,7 +191,7 @@ class ZipSupportTests(ImportHooksBaseTestCase):
             if verbose:
                 print ("Expected line", expected)
                 print ("Got stdout:")
-                print (out)
+                print (ascii(out))
             self.assertIn(expected.encode('utf-8'), out)
 
     def test_pdb_issue4201(self):
