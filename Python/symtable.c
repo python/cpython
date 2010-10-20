@@ -67,6 +67,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_varkeywords = 0;
     ste->ste_opt_lineno = 0;
     ste->ste_tmpname = 0;
+    ste->ste_tmpname = 0;
     ste->ste_lineno = lineno;
 
     if (st->st_cur != NULL &&
