@@ -141,6 +141,9 @@ Build
 
 - Accept Oracle Berkeley DB 5.0 and 5.1 as backend for the dbm extension.
 
+- Issue #7473: avoid link errors when building a framework with a different
+  set of architectures than the one that is currently installed.
+
 
 What's New in Python 3.2 Alpha 3?
 =================================
