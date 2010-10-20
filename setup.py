@@ -378,7 +378,12 @@ class PyBuildExt(build_ext):
                     for directory in reversed(options.dirs):
                         add_dir_to_list(dir_list, directory)
 
-        if os.path.normpath(sys.prefix) != '/usr':
+        if os.path.normpath(sys.prefix) != '/usr' \
+                and not sysconfig.get_config_var('PYTHONFRAMEWORK'):
+            # OSX note: Don't add LIBDIR and INCLUDEDIR to building a framework
+            # (PYTHONFRAMEWORK is set) to avoid # linking problems when
+            # building a framework with different architectures than
+            # the one that is currently installed (issue #7473)
             add_dir_to_list(self.compiler.library_dirs,
                             sysconfig.get_config_var("LIBDIR"))
             add_dir_to_list(self.compiler.include_dirs,
