@@ -34,6 +34,8 @@ Core and Builtins
 Library
 -------
 
+- logging: Made StreamHandler terminator configurable.
+
 - logging: Allowed filters to be just callables.
 
 - logging: Added tests for _logRecordClass changes.
