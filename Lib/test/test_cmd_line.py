@@ -99,14 +99,16 @@ class CmdLineTest(unittest.TestCase):
         # All good if execution is successful
         assert_python_ok('-c', 'pass')
 
+    @unittest.skipIf(sys.getfilesystemencoding() == 'ascii',
+                     'need a filesystem encoding different than ASCII')
+    def test_non_ascii(self):
         # Test handling of non-ascii data
-        if sys.getfilesystemencoding() != 'ascii':
-            if test.support.verbose:
-                import locale
-                print('locale encoding = %s, filesystem encoding = %s'
-                      % (locale.getpreferredencoding(), sys.getfilesystemencoding()))
-            command = "assert(ord('\xe9') == 0xe9)"
-            assert_python_ok('-c', command)
+        if test.support.verbose:
+            import locale
+            print('locale encoding = %s, filesystem encoding = %s'
+                  % (locale.getpreferredencoding(), sys.getfilesystemencoding()))
+        command = "assert(ord('\xe9') == 0xe9)"
+        assert_python_ok('-c', command)
 
     # On Windows, pass bytes to subprocess doesn't test how Python decodes the
     # command line, but how subprocess does decode bytes to unicode. Python
