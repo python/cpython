@@ -854,7 +854,7 @@ def patchFile(inPath, outPath):
     data = data.replace('$FULL_VERSION', getFullVersion())
     data = data.replace('$VERSION', getVersion())
     data = data.replace('$MACOSX_DEPLOYMENT_TARGET', ''.join((DEPTARGET, ' or later')))
-    data = data.replace('$ARCHITECTURES', "i386, ppc")
+    data = data.replace('$ARCHITECTURES', ", ".join(universal_opts_map[UNIVERSALARCHS]))
     data = data.replace('$INSTALL_SIZE', installSize())
 
     # This one is not handy as a template variable
