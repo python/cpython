@@ -2100,6 +2100,11 @@ and :meth:`flush` methods).
       :meth:`close` method is inherited from :class:`Handler` and so does
       no output, so an explicit :meth:`flush` call may be needed at times.
 
+.. versionchanged:: 3.2
+   The ``StreamHandler`` class now has a ``terminator`` attribute, default
+   value ``"\n"``, which is used as the terminator when writing a formatted
+   record to a stream. If you don't want this newline termination, you can
+   set the handler instance's ``terminator`` attribute to the empty string.
 
 .. _file-handler:
 
@@ -3072,14 +3077,14 @@ You don't actually need to subclass ``Filter``: you can pass any instance
 which has a ``filter`` method with the same semantics.
 
 .. versionchanged:: 3.2
-
-You don't need to create specialized ``Filter`` classes, or use other classes
-with a ``filter`` method: you can use a function (or other callable) as a
-filter. The filtering logic will check to see if the filter object has a
-``filter`` attribute: if it does, it's assumed to be a ``Filter`` and its
-:meth:`~Filter.filter` method is called. Otherwise, it's assumed to be a
-callable and called with the record as the single parameter. The returned
-value should conform to that returned by :meth:`~Filter.filter`.
+   You don't need to create specialized ``Filter`` classes, or use other
+   classes with a ``filter`` method: you can use a function (or other
+   callable) as a filter. The filtering logic will check to see if the filter
+   object has a ``filter`` attribute: if it does, it's assumed to be a
+   ``Filter`` and its :meth:`~Filter.filter` method is called. Otherwise, it's
+   assumed to be a callable and called with the record as the single
+   parameter. The returned value should conform to that returned by
+   :meth:`~Filter.filter`.
 
 Other uses for filters
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -3159,9 +3164,6 @@ wire).
       convert it to a string. This allows use of user-defined classes as
       messages, whose ``__str__`` method can return the actual format string to
       be used.
-
-   .. versionchanged:: 2.5
-      *func* was added.
 
 .. _logger-adapter:
 
