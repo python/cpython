@@ -10,6 +10,12 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #4388: On Mac OS X, decode command line arguments from UTF-8, instead
+  of the locale encoding. If the LANG (and LC_ALL and LC_CTYPE) environment
+  variable is not set, the locale encoding is ISO-8859-1, whereas most programs
+  (including Python) expect UTF-8. Python already uses UTF-8 for the filesystem
+  encoding and to encode command line arguments on this OS.
+
 - Issue #9713, #10114: Parser functions (eg. PyParser_ASTFromFile) expects
   filenames encoded to the filesystem encoding with surrogateescape error
   handler (to support undecodable bytes), instead of UTF-8 in strict mode.
