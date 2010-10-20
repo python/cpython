@@ -359,7 +359,7 @@ class Formatter(object):
     responsible for converting a LogRecord to (usually) a string which can
     be interpreted by either a human or an external system. The base Formatter
     allows a formatting string to be specified. If none is supplied, the
-    default value of "%s(message)\\n" is used.
+    default value of "%s(message)" is used.
 
     The Formatter can be initialized with a format string which makes use of
     knowledge of the LogRecord attributes - e.g. the default value mentioned
@@ -823,6 +823,8 @@ class StreamHandler(Handler):
     sys.stdout or sys.stderr may be used.
     """
 
+    terminator = '\n'
+
     def __init__(self, stream=None):
         """
         Initialize the handler.
@@ -855,8 +857,8 @@ class StreamHandler(Handler):
         try:
             msg = self.format(record)
             stream = self.stream
-            fs = "%s\n"
-            stream.write(fs % msg)
+            stream.write(msg)
+            stream.write(self.terminator)
             self.flush()
         except (KeyboardInterrupt, SystemExit):
             raise
