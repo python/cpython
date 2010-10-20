@@ -148,6 +148,38 @@ class CmdLineTest(unittest.TestCase):
         if not stdout.startswith(pattern):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
+    @unittest.skipUnless(sys.platform == 'darwin', 'test specific to Mac OS X')
+    def test_osx_utf8(self):
+        def check_output(text):
+            decoded = text.decode('utf8', 'surrogateescape')
+            expected = ascii(decoded).encode('ascii') + b'\n'
+
+            env = os.environ.copy()
+            # C locale gives ASCII locale encoding, but Python uses UTF-8
+            # to parse the command line arguments on Mac OS X
+            env['LC_ALL'] = 'C'
+
+            p = subprocess.Popen(
+                (sys.executable, "-c", "import sys; print(ascii(sys.argv[1]))", text),
+                stdout=subprocess.PIPE,
+                env=env)
+            stdout, stderr = p.communicate()
+            self.assertEqual(stdout, expected)
+            self.assertEqual(p.returncode, 0)
+
+        # test valid utf-8
+        text = 'e:\xe9, euro:\u20ac, non-bmp:\U0010ffff'.encode('utf-8')
+        check_output(text)
+
+        # test invalid utf-8
+        text = (
+            b'\xff'         # invalid byte
+            b'\xc3\xa9'     # valid utf-8 character
+            b'\xc3\xff'     # invalid byte sequence
+            b'\xed\xa0\x80' # lone surrogate character (invalid)
+        )
+        check_output(text)
+
     def test_unbuffered_output(self):
         # Test expected operation of the '-u' switch
         for stream in ('stdout', 'stderr'):

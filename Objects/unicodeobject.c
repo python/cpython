@@ -2716,6 +2716,120 @@ PyObject *PyUnicode_DecodeUTF8Stateful(const char *s,
 
 #undef ASCII_CHAR_MASK
 
+#ifdef __APPLE__
+
+/* Simplified UTF-8 decoder using surrogateescape error handler,
+   used to decode the command line arguments on Mac OS X. */
+
+wchar_t*
+_Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
+{
+    int n;
+    const char *e;
+    wchar_t *unicode, *p;
+
+    /* Note: size will always be longer than the resulting Unicode
+       character count */
+    if (PY_SSIZE_T_MAX / sizeof(wchar_t) < (size + 1)) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    unicode = PyMem_Malloc((size + 1) * sizeof(wchar_t));
+    if (!unicode)
+        return NULL;
+
+    /* Unpack UTF-8 encoded data */
+    p = unicode;
+    e = s + size;
+    while (s < e) {
+        Py_UCS4 ch = (unsigned char)*s;
+
+        if (ch < 0x80) {
+            *p++ = (wchar_t)ch;
+            s++;
+            continue;
+        }
+
+        n = utf8_code_length[ch];
+        if (s + n > e) {
+            goto surrogateescape;
+        }
+
+        switch (n) {
+        case 0:
+        case 1:
+            goto surrogateescape;
+
+        case 2:
+            if ((s[1] & 0xc0) != 0x80)
+                goto surrogateescape;
+            ch = ((s[0] & 0x1f) << 6) + (s[1] & 0x3f);
+            assert ((ch > 0x007F) && (ch <= 0x07FF));
+            *p++ = (wchar_t)ch;
+            break;
+
+        case 3:
+            /* Decoding UTF-8 sequences in range \xed\xa0\x80-\xed\xbf\xbf
+               will result in surrogates in range d800-dfff. Surrogates are
+               not valid UTF-8 so they are rejected.
+               See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
+               (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt */
+            if ((s[1] & 0xc0) != 0x80 ||
+                (s[2] & 0xc0) != 0x80 ||
+                ((unsigned char)s[0] == 0xE0 &&
+                 (unsigned char)s[1] < 0xA0) ||
+                ((unsigned char)s[0] == 0xED &&
+                 (unsigned char)s[1] > 0x9F)) {
+
+                goto surrogateescape;
+            }
+            ch = ((s[0] & 0x0f) << 12) + ((s[1] & 0x3f) << 6) + (s[2] & 0x3f);
+            assert ((ch > 0x07FF) && (ch <= 0xFFFF));
+            *p++ = (Py_UNICODE)ch;
+            break;
+
+        case 4:
+            if ((s[1] & 0xc0) != 0x80 ||
+                (s[2] & 0xc0) != 0x80 ||
+                (s[3] & 0xc0) != 0x80 ||
+                ((unsigned char)s[0] == 0xF0 &&
+                 (unsigned char)s[1] < 0x90) ||
+                ((unsigned char)s[0] == 0xF4 &&
+                 (unsigned char)s[1] > 0x8F)) {
+                goto surrogateescape;
+            }
+            ch = ((s[0] & 0x7) << 18) + ((s[1] & 0x3f) << 12) +
+                 ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
+            assert ((ch > 0xFFFF) && (ch <= 0x10ffff));
+
+#if SIZEOF_WCHAR_T == 4
+            *p++ = (wchar_t)ch;
+#else
+            /*  compute and append the two surrogates: */
+
+            /*  translate from 10000..10FFFF to 0..FFFF */
+            ch -= 0x10000;
+
+            /*  high surrogate = top 10 bits added to D800 */
+            *p++ = (wchar_t)(0xD800 + (ch >> 10));
+
+            /*  low surrogate = bottom 10 bits added to DC00 */
+            *p++ = (wchar_t)(0xDC00 + (ch & 0x03FF));
+#endif
+            break;
+        }
+        s += n;
+        continue;
+
+      surrogateescape:
+        *p++ = 0xDC00 + ch;
+        s++;
+    }
+    *p = L'\0';
+    return unicode;
+}
+
+#endif /* __APPLE__ */
 
 /* Allocation strategy:  if the string is short, convert into a stack buffer
    and allocate exactly as much space needed at the end.  Else allocate the
