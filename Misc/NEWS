@@ -434,6 +434,8 @@ Build
   the "bin" directory inside the framework is on the shell's search path. This
   feature now also supports the ZSH shell.
 
+- Issue #7473: avoid link errors when building a framework with a different
+  set of architectures than the one that is currently installed.
 
 Tests
 -----
