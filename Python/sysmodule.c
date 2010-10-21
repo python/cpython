@@ -1086,6 +1086,61 @@ PySys_HasWarnOptions(void)
     return (warnoptions != NULL && (PyList_Size(warnoptions) > 0)) ? 1 : 0;
 }
 
+static PyObject *xoptions = NULL;
+
+static PyObject *
+get_xoptions(void)
+{
+    if (xoptions == NULL || !PyDict_Check(xoptions)) {
+        Py_XDECREF(xoptions);
+        xoptions = PyDict_New();
+    }
+    return xoptions;
+}
+
+void
+PySys_AddXOption(const wchar_t *s)
+{
+    PyObject *opts;
+    PyObject *name = NULL, *value = NULL;
+    const wchar_t *name_end;
+    int r;
+
+    opts = get_xoptions();
+    if (opts == NULL)
+        goto error;
+
+    name_end = wcschr(s, L'=');
+    if (!name_end) {
+        name = PyUnicode_FromWideChar(s, -1);
+        value = Py_True;
+        Py_INCREF(value);
+    }
+    else {
+        name = PyUnicode_FromWideChar(s, name_end - s);
+        value = PyUnicode_FromWideChar(name_end + 1, -1);
+    }
+    if (name == NULL || value == NULL)
+        goto error;
+    r = PyDict_SetItem(opts, name, value);
+    Py_DECREF(name);
+    Py_DECREF(value);
+    return;
+
+error:
+    Py_XDECREF(name);
+    Py_XDECREF(value);
+    /* No return value, therefore clear error state if possible */
+    if (_Py_atomic_load_relaxed(&_PyThreadState_Current))
+        PyErr_Clear();
+}
+
+PyObject *
+PySys_GetXOptions(void)
+{
+    return get_xoptions();
+}
+
 /* XXX This doc string is too long to be a single string literal in VC++ 5.0.
    Two literals concatenated works just fine.  If you have a K&R compiler
    or other abomination that however *does* understand longer strings,
@@ -1533,6 +1588,11 @@ _PySys_Init(void)
     }
     if (warnoptions != NULL) {
         PyDict_SetItemString(sysdict, "warnoptions", warnoptions);
+    }
+
+    v = get_xoptions();
+    if (v != NULL) {
+        PyDict_SetItemString(sysdict, "_xoptions", v);
     }
 
     /* version_info */

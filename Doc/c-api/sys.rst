@@ -127,6 +127,21 @@ accessible to C code.  They all work with the current interpreter thread's
 
    .. versionadded:: 3.2
 
+.. c:function:: void PySys_AddXOption(const wchar_t *s)
+
+   Parse *s* as a set of :option:`-X` options and add them to the current
+   options mapping as returned by :c:func:`PySys_GetXOptions`.
+
+   .. versionadded:: 3.2
+
+.. c:function:: PyObject *PySys_GetXOptions()
+
+   Return the current dictionary of :option:`-X` options, similarly to
+   :data:`sys._xoptions`.  On error, *NULL* is returned and an exception is
+   set.
+
+   .. versionadded:: 3.2
+
 
 .. _processcontrol:
 

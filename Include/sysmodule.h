@@ -27,6 +27,9 @@ PyAPI_FUNC(void) PySys_AddWarnOption(const wchar_t *);
 PyAPI_FUNC(void) PySys_AddWarnOptionUnicode(PyObject *);
 PyAPI_FUNC(int) PySys_HasWarnOptions(void);
 
+PyAPI_FUNC(void) PySys_AddXOption(const wchar_t *);
+PyAPI_FUNC(PyObject *) PySys_GetXOptions(void);
+
 #ifdef __cplusplus
 }
 #endif

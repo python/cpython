@@ -47,7 +47,7 @@ static wchar_t **orig_argv;
 static int  orig_argc;
 
 /* command line options */
-#define BASE_OPTS L"bBc:dEhiJm:OsStuvVW:xX?"
+#define BASE_OPTS L"bBc:dEhiJm:OsStuvVW:xX:?"
 
 #define PROGRAM_OPTS BASE_OPTS
 
@@ -84,6 +84,7 @@ static char *usage_3 = "\
 -W arg : warning control; arg is action:message:category:module:lineno\n\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
+-X opt : set implementation-specific option\n\
 ";
 static char *usage_4 = "\
 file   : program read from script file\n\
@@ -407,8 +408,6 @@ Py_Main(int argc, wchar_t **argv)
             skipfirstline = 1;
             break;
 
-        /* case 'X': reserved for implementation-specific arguments */
-
         case 'h':
         case '?':
             help++;
@@ -420,6 +419,10 @@ Py_Main(int argc, wchar_t **argv)
 
         case 'W':
             PySys_AddWarnOption(_PyOS_optarg);
+            break;
+
+        case 'X':
+            PySys_AddXOption(_PyOS_optarg);
             break;
 
         /* This space reserved for other options */
