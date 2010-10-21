@@ -257,18 +257,19 @@ class MimeTypes:
         with _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT,
                              r'MIME\Database\Content Type') as mimedb:
             for ctype in enum_types(mimedb):
-                with _winreg.OpenKey(mimedb, ctype) as key:
-                    try:
-                        suffix, datatype = _winreg.QueryValueEx(key, 'Extension')
-                    except EnvironmentError:
-                        continue
-                    if datatype != _winreg.REG_SZ:
-                        continue
-                    try:
-                        suffix = suffix.encode(default_encoding) # omit in 3.x!
-                    except UnicodeEncodeError:
-                        continue
-                    self.add_type(ctype, suffix, strict)
+                try:
+                    with _winreg.OpenKey(mimedb, ctype) as key:
+                        suffix, datatype = _winreg.QueryValueEx(key,
+                                                                'Extension')
+                except EnvironmentError:
+                    continue
+                if datatype != _winreg.REG_SZ:
+                    continue
+                try:
+                    suffix = suffix.encode(default_encoding) # omit in 3.x!
+                except UnicodeEncodeError:
+                    continue
+                self.add_type(ctype, suffix, strict)
 
 
 def guess_type(url, strict=True):
