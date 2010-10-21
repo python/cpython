@@ -2325,7 +2325,7 @@ The demoscripts are:
 +----------------+------------------------------+-----------------------+
 | round_dance    | dancing turtles rotating     | compound shapes, clone|
 |                | pairwise in opposite         | shapesize, tilt,      |
-|                | direction                    | get_polyshape, update |
+|                | direction                    | get_shapepoly, update |
 +----------------+------------------------------+-----------------------+
 | tree           | a (graphical) breadth        | :func:`clone`         |
 |                | first tree (using generators)|                       |
