@@ -87,7 +87,7 @@ def pytify(body):
     for p in ignores:
         body = p.sub(' ', body)
     # replace char literals by ord(...)
-    body = p_char.sub('ord(\\0)', body)
+    body = p_char.sub("ord('\\1')", body)
     # Compute negative hexadecimal constants
     start = 0
     UMAX = 2*(sys.maxsize+1)
