@@ -255,8 +255,7 @@ class MimeTypes:
             for ctype in enum_types(mimedb):
                 try:
                     with _winreg.OpenKey(mimedb, ctype) as key:
-                        try:
-                            suffix, datatype = _winreg.QueryValueEx(key,
+                        suffix, datatype = _winreg.QueryValueEx(key,
                                                                 'Extension')
                 except EnvironmentError:
                     continue
