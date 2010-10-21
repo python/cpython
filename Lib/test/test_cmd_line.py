@@ -67,6 +67,15 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-vv')
         self.assertNotIn(b'stack overflow', err)
 
+    def test_xoptions(self):
+        rc, out, err = assert_python_ok('-c', 'import sys; print(sys._xoptions)')
+        opts = eval(out.splitlines()[0])
+        self.assertEqual(opts, {})
+        rc, out, err = assert_python_ok(
+            '-Xa', '-Xb=c,d=e', '-c', 'import sys; print(sys._xoptions)')
+        opts = eval(out.splitlines()[0])
+        self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
+
     def test_run_module(self):
         # Test expected operation of the '-m' switch
         # Switch needs an argument

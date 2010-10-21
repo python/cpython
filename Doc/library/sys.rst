@@ -975,6 +975,30 @@ always available.
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python. Availability: Windows.
 
+
+.. data:: _xoptions
+
+   A dictionary of the various implementation-specific flags passed through
+   the :option:`-X` command-line option.  Option names are either mapped to
+   their values, if given explicitly, or to :const:`True`.  Example::
+
+      $ ./python -Xa=b -Xc
+      Python 3.2a3+ (py3k, Oct 16 2010, 20:14:50)
+      [GCC 4.4.3] on linux2
+      Type "help", "copyright", "credits" or "license" for more information.
+      >>> import sys
+      >>> sys._xoptions
+      {'a': 'b', 'c': True}
+
+   .. impl-detail::
+
+      This is a CPython-specific way of accessing options passed through
+      :option:`-X`.  Other implementations may export them through other
+      means, or not at all.
+
+   .. versionadded:: 3.2
+
+
 .. rubric:: Citations
 
 .. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf .

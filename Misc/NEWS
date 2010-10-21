@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #10089: Add support for arbitrary -X options on the command-line.
+  They can be retrieved through a new attribute ``sys._xoptions``.
+
 - Issue #4388: On Mac OS X, decode command line arguments from UTF-8, instead
   of the locale encoding. If the LANG (and LC_ALL and LC_CTYPE) environment
   variable is not set, the locale encoding is ISO-8859-1, whereas most programs

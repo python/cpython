@@ -321,6 +321,17 @@ Miscellaneous options
 
    .. note:: The line numbers in error messages will be off by one.
 
+
+.. cmdoption:: -X
+
+   Reserved for various implementation-specific options.  CPython currently
+   defines none of them, but allows to pass arbitrary values and retrieve
+   them through the :data:`sys._xoptions` dictionary.
+
+   .. versionchanged:: 3.2
+      It is now allowed to pass :option:`-X` with CPython.
+
+
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -329,11 +340,6 @@ Options you shouldn't use
    Reserved for use by Jython_.
 
 .. _Jython: http://jython.org
-
-.. cmdoption:: -X
-
-    Reserved for alternative implementations of Python to use for their own
-    purposes.
 
 .. _using-on-envvars:
 
