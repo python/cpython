@@ -25,7 +25,7 @@ def main():
         process(filename, tabsize)
 
 
-def process(filename, tabsize):
+def process(filename, tabsize, verbose=True):
     try:
         with open(filename) as f:
             text = f.read()
@@ -46,7 +46,8 @@ def process(filename, tabsize):
         pass
     with open(filename, "w") as f:
         f.write(newtext)
-    print(filename)
+    if verbose:
+        print(filename)
 
 
 if __name__ == '__main__':
