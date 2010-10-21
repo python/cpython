@@ -1457,7 +1457,7 @@ Special Turtle methods
 .. _compoundshapes:
 
 Compound shapes
------------------------------------------
+---------------
 
 To use compound turtle shapes, which consist of several polygons of different
 color, you must use the helper class :class:`Shape` explicitly as described
