@@ -60,8 +60,12 @@ class BuildExtTestCase(support.TempdirManager,
         # Extension() instance because that doesn't get plumbed through to the
         # final compiler command.
         if not sys.platform.startswith('win'):
-            library_dir = sysconfig.get_config_var('srcdir')
-            cmd.library_dirs = [('.' if library_dir is None else library_dir)]
+            runshared = sysconfig.get_config_var('RUNSHARED')
+            if runshared is None:
+                cmd.library_dirs = ['.']
+            else:
+                name, equals, value = runshared.partition('=')
+                cmd.library_dirs = value.split(os.pathsep)
 
     @unittest.skipIf(not os.path.exists(_XX_MODULE_PATH),
                      'xxmodule.c not found')
@@ -265,6 +269,7 @@ class BuildExtTestCase(support.TempdirManager,
         dist = Distribution({'name': 'xx',
                              'ext_modules': [ext]})
         cmd = build_ext(dist)
+        self._fixup_command(cmd)
         cmd.ensure_finalized()
         self.assertEquals(len(cmd.get_outputs()), 1)
 
