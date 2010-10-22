@@ -3010,14 +3010,19 @@ static PyObject *
 import_copyreg(void)
 {
     static PyObject *copyreg_str;
+    static PyObject *mod_copyreg = NULL;
 
     if (!copyreg_str) {
         copyreg_str = PyUnicode_InternFromString("copyreg");
         if (copyreg_str == NULL)
             return NULL;
     }
+    if (!mod_copyreg) {
+        mod_copyreg = PyImport_Import(copyreg_str);
+    }
 
-    return PyImport_Import(copyreg_str);
+    Py_XINCREF(mod_copyreg);
+    return mod_copyreg;
 }
 
 static PyObject *
@@ -3026,14 +3031,16 @@ slotnames(PyObject *cls)
     PyObject *clsdict;
     PyObject *copyreg;
     PyObject *slotnames;
+    static PyObject *str_slotnames;
 
-    if (!PyType_Check(cls)) {
-        Py_INCREF(Py_None);
-        return Py_None;
+    if (str_slotnames == NULL) {
+        str_slotnames = PyUnicode_InternFromString("__slotnames__");
+        if (str_slotnames == NULL)
+            return NULL;
     }
 
     clsdict = ((PyTypeObject *)cls)->tp_dict;
-    slotnames = PyDict_GetItemString(clsdict, "__slotnames__");
+    slotnames = PyDict_GetItem(clsdict, str_slotnames);
     if (slotnames != NULL && PyList_Check(slotnames)) {
         Py_INCREF(slotnames);
         return slotnames;
@@ -3067,12 +3074,20 @@ reduce_2(PyObject *obj)
     PyObject *slots = NULL, *listitems = NULL, *dictitems = NULL;
     PyObject *copyreg = NULL, *newobj = NULL, *res = NULL;
     Py_ssize_t i, n;
+    static PyObject *str_getnewargs = NULL, *str_getstate = NULL,
+                    *str_newobj = NULL;
 
-    cls = PyObject_GetAttrString(obj, "__class__");
-    if (cls == NULL)
-        return NULL;
+    if (str_getnewargs == NULL) {
+        str_getnewargs = PyUnicode_InternFromString("__getnewargs__");
+        str_getstate = PyUnicode_InternFromString("__getstate__");
+        str_newobj = PyUnicode_InternFromString("__newobj__");
+        if (!str_getnewargs || !str_getstate || !str_newobj)
+            return NULL;
+    }
 
-    getnewargs = PyObject_GetAttrString(obj, "__getnewargs__");
+    cls = (PyObject *) Py_TYPE(obj);
+
+    getnewargs = PyObject_GetAttr(obj, str_getnewargs);
     if (getnewargs != NULL) {
         args = PyObject_CallObject(getnewargs, NULL);
         Py_DECREF(getnewargs);
@@ -3090,7 +3105,7 @@ reduce_2(PyObject *obj)
     if (args == NULL)
         goto end;
 
-    getstate = PyObject_GetAttrString(obj, "__getstate__");
+    getstate = PyObject_GetAttr(obj, str_getstate);
     if (getstate != NULL) {
         state = PyObject_CallObject(getstate, NULL);
         Py_DECREF(getstate);
@@ -3098,17 +3113,18 @@ reduce_2(PyObject *obj)
             goto end;
     }
     else {
+        PyObject **dict;
         PyErr_Clear();
-        state = PyObject_GetAttrString(obj, "__dict__");
-        if (state == NULL) {
-            PyErr_Clear();
+        dict = _PyObject_GetDictPtr(obj);
+        if (dict && *dict)
+            state = *dict;
+        else
             state = Py_None;
-            Py_INCREF(state);
-        }
+        Py_INCREF(state);
         names = slotnames(cls);
         if (names == NULL)
             goto end;
-        if (names != Py_None) {
+        if (names != Py_None && PyList_GET_SIZE(names) > 0) {
             assert(PyList_Check(names));
             slots = PyDict_New();
             if (slots == NULL)
@@ -3167,7 +3183,7 @@ reduce_2(PyObject *obj)
     copyreg = import_copyreg();
     if (copyreg == NULL)
         goto end;
-    newobj = PyObject_GetAttrString(copyreg, "__newobj__");
+    newobj = PyObject_GetAttr(copyreg, str_newobj);
     if (newobj == NULL)
         goto end;
 
@@ -3175,8 +3191,8 @@ reduce_2(PyObject *obj)
     args2 = PyTuple_New(n+1);
     if (args2 == NULL)
         goto end;
+    Py_INCREF(cls);
     PyTuple_SET_ITEM(args2, 0, cls);
-    cls = NULL;
     for (i = 0; i < n; i++) {
         PyObject *v = PyTuple_GET_ITEM(args, i);
         Py_INCREF(v);
@@ -3186,7 +3202,6 @@ reduce_2(PyObject *obj)
     res = PyTuple_Pack(5, newobj, args2, state, listitems, dictitems);
 
   end:
-    Py_XDECREF(cls);
     Py_XDECREF(args);
     Py_XDECREF(args2);
     Py_XDECREF(slots);
@@ -3246,31 +3261,34 @@ object_reduce(PyObject *self, PyObject *args)
 static PyObject *
 object_reduce_ex(PyObject *self, PyObject *args)
 {
+    static PyObject *str_reduce = NULL, *objreduce;
     PyObject *reduce, *res;
     int proto = 0;
 
     if (!PyArg_ParseTuple(args, "|i:__reduce_ex__", &proto))
         return NULL;
 
-    reduce = PyObject_GetAttrString(self, "__reduce__");
+    if (str_reduce == NULL) {
+        str_reduce = PyUnicode_InternFromString("__reduce__");
+        objreduce = PyDict_GetItemString(PyBaseObject_Type.tp_dict,
+                                         "__reduce__");
+        if (str_reduce == NULL || objreduce == NULL)
+            return NULL;
+    }
+
+    reduce = PyObject_GetAttr(self, str_reduce);
     if (reduce == NULL)
         PyErr_Clear();
     else {
-        PyObject *cls, *clsreduce, *objreduce;
+        PyObject *cls, *clsreduce;
         int override;
-        cls = PyObject_GetAttrString(self, "__class__");
-        if (cls == NULL) {
-            Py_DECREF(reduce);
-            return NULL;
-        }
-        clsreduce = PyObject_GetAttrString(cls, "__reduce__");
-        Py_DECREF(cls);
+
+        cls = (PyObject *) Py_TYPE(self);
+        clsreduce = PyObject_GetAttr(cls, str_reduce);
         if (clsreduce == NULL) {
             Py_DECREF(reduce);
             return NULL;
         }
-        objreduce = PyDict_GetItemString(PyBaseObject_Type.tp_dict,
-                                         "__reduce__");
         override = (clsreduce != objreduce);
         Py_DECREF(clsreduce);
         if (override) {
