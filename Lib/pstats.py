@@ -93,15 +93,12 @@ class Stats:
         self.stats = {}
         self.sort_arg_dict = {}
         self.load_stats(arg)
-        trouble = 1
         try:
             self.get_top_level_stats()
-            trouble = 0
-        finally:
-            if trouble:
-                print("Invalid timing data", end=' ', file=self.stream)
-                if self.files: print(self.files[-1], end=' ', file=self.stream)
-                print(file=self.stream)
+        except Exception:
+            print("Invalid timing data %s" %
+                  (self.files[-1] if self.files else ''), file=self.stream)
+            raise
 
     def load_stats(self, arg):
         if arg is None:
@@ -271,7 +268,8 @@ class Stats:
         return self
 
     def calc_callees(self):
-        if self.all_callees: return
+        if self.all_callees:
+            return
         self.all_callees = all_callees = {}
         for func, (cc, nc, tt, ct, callers) in self.stats.items():
             if not func in all_callees:
@@ -341,7 +339,8 @@ class Stats:
     def print_stats(self, *amount):
         for filename in self.files:
             print(filename, file=self.stream)
-        if self.files: print(file=self.stream)
+        if self.files:
+            print(file=self.stream)
         indent = ' ' * 8
         for func in self.top_level:
             print(indent, func_get_function_name(func), file=self.stream)
@@ -427,7 +426,7 @@ class Stats:
         print('   ncalls  tottime  percall  cumtime  percall', end=' ', file=self.stream)
         print('filename:lineno(function)', file=self.stream)
 
-    def print_line(self, func):  # hack : should print percentages
+    def print_line(self, func):  # hack: should print percentages
         cc, nc, tt, ct, callers = self.stats[func]
         c = str(nc)
         if nc != cc:
