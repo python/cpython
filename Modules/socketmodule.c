@@ -1676,9 +1676,6 @@ sock_accept(PySocketSockObject *s)
     PyObject *addr = NULL;
     PyObject *res = NULL;
     int timeout;
-#ifdef HAVE_ACCEPT4
-    int flags = 0;
-#endif
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
     memset(&addrbuf, 0, addrlen);
@@ -1690,13 +1687,7 @@ sock_accept(PySocketSockObject *s)
     Py_BEGIN_ALLOW_THREADS
     timeout = internal_select_ex(s, 0, interval);
     if (!timeout) {
-#ifdef HAVE_ACCEPT4
-        /* inherit socket flags and use accept4 call */
-        flags = s->sock_type & (SOCK_CLOEXEC | SOCK_NONBLOCK);
-        newfd = accept4(s->sock_fd, SAS2SA(&addrbuf), &addrlen, flags);
-#else
         newfd = accept(s->sock_fd, SAS2SA(&addrbuf), &addrlen);
-#endif /* HAVE_ACCEPT4  */
     }
     Py_END_ALLOW_THREADS
 
