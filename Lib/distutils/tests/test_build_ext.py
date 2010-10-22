@@ -51,7 +51,8 @@ class BuildExtTestCase(TempdirManager,
         # To further add to the fun, we can't just add library_dirs to the
         # Extension() instance because that doesn't get plumbed through to the
         # final compiler command.
-        if not sys.platform.startswith('win'):
+        if (sysconfig.get_config_var('Py_ENABLE_SHARED') and
+            not sys.platform.startswith('win')):
             runshared = sysconfig.get_config_var('RUNSHARED')
             if runshared is None:
                 cmd.library_dirs = ['.']
