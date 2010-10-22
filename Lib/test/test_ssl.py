@@ -89,6 +89,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.CERT_NONE
         ssl.CERT_OPTIONAL
         ssl.CERT_REQUIRED
+        self.assertIn(ssl.HAS_SNI, {True, False})
 
     def test_random(self):
         v = ssl.RAND_status()
@@ -277,6 +278,12 @@ class BasicSocketTests(unittest.TestCase):
         self.assertRaises(ValueError, ssl.match_hostname, None, 'example.com')
         self.assertRaises(ValueError, ssl.match_hostname, {}, 'example.com')
 
+    def test_server_side(self):
+        # server_hostname doesn't work for server sockets
+        ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        sock = socket.socket()
+        self.assertRaises(ValueError, ctx.wrap_socket, sock, True,
+                          server_hostname="some.hostname")
 
 class ContextTests(unittest.TestCase):
 
@@ -441,6 +448,14 @@ class NetworkedTests(unittest.TestCase):
                 self.assertEqual({}, s.getpeercert())
             finally:
                 s.close()
+            # Same with a server hostname
+            s = ctx.wrap_socket(socket.socket(socket.AF_INET),
+                                server_hostname="svn.python.org")
+            if ssl.HAS_SNI:
+                s.connect(("svn.python.org", 443))
+                s.close()
+            else:
+                self.assertRaises(ValueError, s.connect, ("svn.python.org", 443))
             # This should fail because we have no verification certs
             ctx.verify_mode = ssl.CERT_REQUIRED
             s = ctx.wrap_socket(socket.socket(socket.AF_INET))
@@ -1500,6 +1515,7 @@ def test_main(verbose=False):
         print("test_ssl: testing with %r %r" %
             (ssl.OPENSSL_VERSION, ssl.OPENSSL_VERSION_INFO))
         print("          under %s" % plat)
+        print("          HAS_SNI = %r" % ssl.HAS_SNI)
 
     for filename in [
         CERTFILE, SVN_PYTHON_ORG_ROOT_CERT, BYTES_CERTFILE,

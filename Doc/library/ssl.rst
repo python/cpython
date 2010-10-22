@@ -338,6 +338,15 @@ Constants
 
    .. versionadded:: 3.2
 
+.. data:: HAS_SNI
+
+   Whether the OpenSSL library has built-in support for the *Server Name
+   Indication* extension to the SSLv3 and TLSv1 protocols (as defined in
+   :rfc:`4366`).  When true, you can use the *server_hostname* argument to
+   :meth:`SSLContext.wrap_socket`.
+
+   .. versionadded:: 3.2
+
 .. data:: OPENSSL_VERSION
 
    The version string of the OpenSSL library loaded by the interpreter::
@@ -538,13 +547,24 @@ to speed up repeated connections from the same clients.
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       give the currently selected cipher.
 
-.. method:: SSLContext.wrap_socket(sock, server_side=False, do_handshake_on_connect=True, suppress_ragged_eofs=True)
+.. method:: SSLContext.wrap_socket(sock, server_side=False, \
+      do_handshake_on_connect=True, suppress_ragged_eofs=True, \
+      server_hostname=None)
 
    Wrap an existing Python socket *sock* and return an :class:`SSLSocket`
    object.  The SSL socket is tied to the context, its settings and
    certificates.  The parameters *server_side*, *do_handshake_on_connect*
    and *suppress_ragged_eofs* have the same meaning as in the top-level
    :func:`wrap_socket` function.
+
+   On client connections, the optional parameter *server_hostname* specifies
+   the hostname of the service which we are connecting to.  This allows a
+   single server to host multiple SSL-based services with distinct certificates,
+   quite similarly to HTTP virtual hosts.  Specifying *server_hostname*
+   will raise a :exc:`ValueError` if the OpenSSL library doesn't have support
+   for it (that is, if :data:`HAS_SNI` is :const:`False`).  Specifying
+   *server_hostname* will also raise a :exc:`ValueError` if *server_side*
+   is true.
 
 .. method:: SSLContext.session_stats()
 
@@ -937,3 +957,6 @@ not SSLv2.
 
    `RFC 3280: Internet X.509 Public Key Infrastructure Certificate and CRL Profile <http://www.ietf.org/rfc/rfc3280>`_
        Housley et. al.
+
+   `RFC 4366: Transport Layer Security (TLS) Extensions <http://www.ietf.org/rfc/rfc4366>`_
+       Blake-Wilson et. al.

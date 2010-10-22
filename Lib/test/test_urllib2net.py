@@ -9,6 +9,10 @@ import socket
 import urllib.error
 import urllib.request
 import sys
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 TIMEOUT = 60  # seconds
 
@@ -278,13 +282,34 @@ class TimeoutTest(unittest.TestCase):
         self.assertEqual(u.fp.fp.raw._sock.gettimeout(), 60)
 
 
+@unittest.skipUnless(ssl, "requires SSL support")
+class HTTPSTests(unittest.TestCase):
+
+    def test_sni(self):
+        # Checks that Server Name Indication works, if supported by the
+        # OpenSSL linked to.
+        # The ssl module itself doesn't have server-side support for SNI,
+        # so we rely on a third-party test site.
+        expect_sni = ssl.HAS_SNI
+        with support.transient_internet("bob.sni.velox.ch"):
+            u = urllib.request.urlopen("https://bob.sni.velox.ch/")
+            contents = u.readall()
+            if expect_sni:
+                self.assertIn(b"Great", contents)
+                self.assertNotIn(b"Unfortunately", contents)
+            else:
+                self.assertNotIn(b"Great", contents)
+                self.assertIn(b"Unfortunately", contents)
+
+
 def test_main():
     support.requires("network")
     support.run_unittest(AuthTests,
-                              OtherNetworkTests,
-                              CloseSocketTest,
-                              TimeoutTest,
-                              )
+                         HTTPSTests,
+                         OtherNetworkTests,
+                         CloseSocketTest,
+                         TimeoutTest,
+                         )
 
 if __name__ == "__main__":
     test_main()
