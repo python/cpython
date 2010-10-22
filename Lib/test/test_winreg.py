@@ -261,7 +261,8 @@ class LocalWinregTests(BaseWinregTests):
         finally:
             done = True
             thread.join()
-            DeleteKey(HKEY_CURRENT_USER, test_key_name+'\\changing_value')
+            with OpenKey(HKEY_CURRENT_USER, test_key_name, 0, KEY_ALL_ACCESS) as key:
+                DeleteKey(key, 'changing_value')
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
     def test_long_key(self):
@@ -275,7 +276,8 @@ class LocalWinregTests(BaseWinregTests):
                 num_subkeys, num_values, t = QueryInfoKey(key)
                 EnumKey(key, 0)
         finally:
-            DeleteKey(HKEY_CURRENT_USER, '\\'.join((test_key_name, name)))
+            with OpenKey(HKEY_CURRENT_USER, test_key_name, 0, KEY_ALL_ACCESS) as key:
+                DeleteKey(key, name)
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
     def test_dynamic_key(self):
