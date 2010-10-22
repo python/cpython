@@ -77,6 +77,7 @@ from _ssl import (
     SSL_ERROR_EOF,
     SSL_ERROR_INVALID_ERROR_CODE,
     )
+from _ssl import HAS_SNI
 
 from socket import getnameinfo as _getnameinfo
 from socket import error as socket_error
@@ -158,10 +159,12 @@ class SSLContext(_SSLContext):
 
     def wrap_socket(self, sock, server_side=False,
                     do_handshake_on_connect=True,
-                    suppress_ragged_eofs=True):
+                    suppress_ragged_eofs=True,
+                    server_hostname=None):
         return SSLSocket(sock=sock, server_side=server_side,
                          do_handshake_on_connect=do_handshake_on_connect,
                          suppress_ragged_eofs=suppress_ragged_eofs,
+                         server_hostname=server_hostname,
                          _context=self)
 
 
@@ -176,6 +179,7 @@ class SSLSocket(socket):
                  do_handshake_on_connect=True,
                  family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None,
                  suppress_ragged_eofs=True, ciphers=None,
+                 server_hostname=None,
                  _context=None):
 
         if _context:
@@ -202,7 +206,11 @@ class SSLSocket(socket):
             self.ssl_version = ssl_version
             self.ca_certs = ca_certs
             self.ciphers = ciphers
+        if server_side and server_hostname:
+            raise ValueError("server_hostname can only be specified "
+                             "in client mode")
         self.server_side = server_side
+        self.server_hostname = server_hostname
         self.do_handshake_on_connect = do_handshake_on_connect
         self.suppress_ragged_eofs = suppress_ragged_eofs
         connected = False
@@ -232,7 +240,8 @@ class SSLSocket(socket):
         if connected:
             # create the SSL object
             try:
-                self._sslobj = self.context._wrap_socket(self, server_side)
+                self._sslobj = self.context._wrap_socket(self, server_side,
+                                                         server_hostname)
                 if do_handshake_on_connect:
                     timeout = self.gettimeout()
                     if timeout == 0.0:
@@ -431,7 +440,7 @@ class SSLSocket(socket):
         if self._sslobj:
             raise ValueError("attempt to connect already-connected SSLSocket!")
         socket.connect(self, addr)
-        self._sslobj = self.context._wrap_socket(self, False)
+        self._sslobj = self.context._wrap_socket(self, False, self.server_hostname)
         try:
             if self.do_handshake_on_connect:
                 self.do_handshake()

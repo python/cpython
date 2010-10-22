@@ -72,6 +72,10 @@ The :mod:`urllib.request` module defines the following functions:
    .. versionchanged:: 3.2
       *cafile* and *capath* were added.
 
+   .. versionchanged:: 3.2
+      HTTPS virtual hosts are now supported if possible (that is, if
+      :data:`ssl.HAS_SNI` is true).
+
 .. function:: install_opener(opener)
 
    Install an :class:`OpenerDirector` instance as the default global opener.

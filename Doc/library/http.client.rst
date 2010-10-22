@@ -76,6 +76,10 @@ The module provides the following classes:
    .. versionchanged:: 3.2
       *source_address*, *context* and *check_hostname* were added.
 
+   .. versionchanged:: 3.2
+      This class now supports HTTPS virtual hosts if possible (that is,
+      if :data:`ssl.HAS_SNI` is true).
+
 
 .. class:: HTTPResponse(sock, debuglevel=0, strict=0, method=None, url=None)
 

@@ -281,7 +281,8 @@ _setSSLError (char *errstr, int errcode, char *filename, int lineno) {
 
 static PySSLSocket *
 newPySSLSocket(SSL_CTX *ctx, PySocketSockObject *sock,
-               enum py_ssl_server_or_client socket_type)
+               enum py_ssl_server_or_client socket_type,
+               char *server_hostname)
 {
     PySSLSocket *self;
 
@@ -303,6 +304,11 @@ newPySSLSocket(SSL_CTX *ctx, PySocketSockObject *sock,
     SSL_set_fd(self->ssl, sock->sock_fd);
 #ifdef SSL_MODE_AUTO_RETRY
     SSL_set_mode(self->ssl, SSL_MODE_AUTO_RETRY);
+#endif
+
+#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
+    if (server_hostname != NULL)
+        SSL_set_tlsext_host_name(self->ssl, server_hostname);
 #endif
 
     /* If the socket is in non-blocking mode or timeout mode, set the BIO
@@ -1711,16 +1717,37 @@ load_verify_locations(PySSLContext *self, PyObject *args, PyObject *kwds)
 static PyObject *
 context_wrap_socket(PySSLContext *self, PyObject *args, PyObject *kwds)
 {
-    char *kwlist[] = {"sock", "server_side", NULL};
+    char *kwlist[] = {"sock", "server_side", "server_hostname", NULL};
     PySocketSockObject *sock;
     int server_side = 0;
+    char *hostname = NULL;
+    PyObject *hostname_obj, *res;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!i:_wrap_socket", kwlist,
+    /* server_hostname is either None (or absent), or to be encoded
+       using the idna encoding. */
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!i|O!:_wrap_socket", kwlist,
                                      PySocketModule.Sock_Type,
-                                     &sock, &server_side))
+                                     &sock, &server_side,
+                                     Py_TYPE(Py_None), &hostname_obj)) {
+        PyErr_Clear();
+        if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!iet:_wrap_socket", kwlist,
+            PySocketModule.Sock_Type,
+            &sock, &server_side,
+            "idna", &hostname))
+            return NULL;
+#ifndef SSL_CTRL_SET_TLSEXT_HOSTNAME
+        PyMem_Free(hostname);
+        PyErr_SetString(PyExc_ValueError, "server_hostname is not supported "
+                        "by your OpenSSL library");
         return NULL;
+#endif
+    }
 
-    return (PyObject *) newPySSLSocket(self->ctx, sock, server_side);
+    res = (PyObject *) newPySSLSocket(self->ctx, sock, server_side,
+                                      hostname);
+    if (hostname != NULL)
+        PyMem_Free(hostname);
+    return res;
 }
 
 static PyObject *
@@ -2089,6 +2116,14 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "OP_NO_SSLv2", SSL_OP_NO_SSLv2);
     PyModule_AddIntConstant(m, "OP_NO_SSLv3", SSL_OP_NO_SSLv3);
     PyModule_AddIntConstant(m, "OP_NO_TLSv1", SSL_OP_NO_TLSv1);
+
+#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
+    r = Py_True;
+#else
+    r = Py_False;
+#endif
+    Py_INCREF(r);
+    PyModule_AddObject(m, "HAS_SNI", r);
 
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,
