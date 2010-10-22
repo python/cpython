@@ -52,9 +52,14 @@ class BuildExtTestCase(TempdirManager,
         # To further add to the fun, we can't just add library_dirs to the
         # Extension() instance because that doesn't get plumbed through to the
         # final compiler command.
-        if not sys.platform.startswith('win'):
-            library_dir = sysconfig.get_config_var('srcdir')
-            cmd.library_dirs = [('.' if library_dir is None else library_dir)]
+        if (sysconfig.get_config_var('Py_ENABLE_SHARED') and
+            not sys.platform.startswith('win')):
+            runshared = sysconfig.get_config_var('RUNSHARED')
+            if runshared is None:
+                cmd.library_dirs = ['.']
+            else:
+                name, equals, value = runshared.partition('=')
+                cmd.library_dirs = value.split(os.pathsep)
 
     def test_build_ext(self):
         global ALREADY_TESTED
@@ -317,6 +322,7 @@ class BuildExtTestCase(TempdirManager,
         dist = Distribution({'name': 'xx',
                              'ext_modules': [ext]})
         cmd = build_ext(dist)
+        self._fixup_command(cmd)
         cmd.ensure_finalized()
         self.assertEquals(len(cmd.get_outputs()), 1)
 
