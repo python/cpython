@@ -104,7 +104,9 @@ class Stats:
                 print(file=self.stream)
 
     def load_stats(self, arg):
-        if not arg:  self.stats = {}
+        if arg is None:
+            self.stats = {}
+            return
         elif isinstance(arg, str):
             f = open(arg, 'rb')
             self.stats = marshal.load(f)
@@ -114,13 +116,13 @@ class Stats:
                 arg = time.ctime(file_stats.st_mtime) + "    " + arg
             except:  # in case this is not unix
                 pass
-            self.files = [ arg ]
+            self.files = [arg]
         elif hasattr(arg, 'create_stats'):
             arg.create_stats()
             self.stats = arg.stats
             arg.stats = {}
         if not self.stats:
-            raise TypeError("Cannot create or construct a %r object from '%r''"
+            raise TypeError("Cannot create or construct a %r object from %r"
                             % (self.__class__, arg))
         return
 
@@ -135,29 +137,29 @@ class Stats:
                 self.max_name_len = len(func_std_string(func))
 
     def add(self, *arg_list):
-        if not arg_list: return self
-        if len(arg_list) > 1: self.add(*arg_list[1:])
-        other = arg_list[0]
-        if type(self) != type(other):
-            other = Stats(other)
-        self.files += other.files
-        self.total_calls += other.total_calls
-        self.prim_calls += other.prim_calls
-        self.total_tt += other.total_tt
-        for func in other.top_level:
-            self.top_level[func] = None
+        if not arg_list:
+            return self
+        for item in reversed(arg_list):
+            if type(self) != type(item):
+                item = Stats(item)
+            self.files += item.files
+            self.total_calls += item.total_calls
+            self.prim_calls += item.prim_calls
+            self.total_tt += item.total_tt
+            for func in item.top_level:
+                self.top_level[func] = None
 
-        if self.max_name_len < other.max_name_len:
-            self.max_name_len = other.max_name_len
+            if self.max_name_len < item.max_name_len:
+                self.max_name_len = item.max_name_len
 
-        self.fcn_list = None
+            self.fcn_list = None
 
-        for func, stat in other.stats.items():
-            if func in self.stats:
-                old_func_stat = self.stats[func]
-            else:
-                old_func_stat = (0, 0, 0, 0, {},)
-            self.stats[func] = add_func_stats(old_func_stat, stat)
+            for func, stat in item.stats.items():
+                if func in self.stats:
+                    old_func_stat = self.stats[func]
+                else:
+                    old_func_stat = (0, 0, 0, 0, {},)
+                self.stats[func] = add_func_stats(old_func_stat, stat)
         return self
 
     def dump_stats(self, filename):
