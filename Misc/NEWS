@@ -43,6 +43,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10166: Avoid recursion in pstats Stats.add() for many stats items.
+
 - Issue #10163: Skip unreadable registry keys during mimetypes
   initialization.
 
