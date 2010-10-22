@@ -43,8 +43,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #9935: Speed up pickling of instances of user-defined classes.
-
 - Issue #5639: Add a *server_hostname* argument to ``SSLContext.wrap_socket``
   in order to support the TLS SNI extension.  ``HTTPSConnection`` and
   ``urlopen()`` also use this argument, so that HTTPS virtual hosts are now
