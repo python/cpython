@@ -89,7 +89,7 @@ class Stats:
         self.total_calls = 0
         self.prim_calls = 0
         self.max_name_len = 0
-        self.top_level = {}
+        self.top_level = set()
         self.stats = {}
         self.sort_arg_dict = {}
         self.load_stats(arg)
@@ -132,7 +132,7 @@ class Stats:
             self.prim_calls  += cc
             self.total_tt    += tt
             if ("jprofile", 0, "profiler") in callers:
-                self.top_level[func] = None
+                self.top_level.add(func)
             if len(func_std_string(func)) > self.max_name_len:
                 self.max_name_len = len(func_std_string(func))
 
@@ -147,7 +147,7 @@ class Stats:
             self.prim_calls += item.prim_calls
             self.total_tt += item.total_tt
             for func in item.top_level:
-                self.top_level[func] = None
+                self.top_level.add(func)
 
             if self.max_name_len < item.max_name_len:
                 self.max_name_len = item.max_name_len
@@ -260,9 +260,9 @@ class Stats:
             else:
                 newstats[newfunc] = (cc, nc, tt, ct, newcallers)
         old_top = self.top_level
-        self.top_level = new_top = {}
+        self.top_level = new_top = set()
         for func in old_top:
-            new_top[func_strip_path(func)] = None
+            new_top.add(func_strip_path(func))
 
         self.max_name_len = max_name_len
 
