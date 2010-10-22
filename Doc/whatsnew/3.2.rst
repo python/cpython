@@ -563,7 +563,8 @@ A number of small performance enhancements have been added:
 
 * Serializing and unserializing data using the :mod:`pickle` module is now
   several times faster. (Contributed by Alexandre Vassalotti, Antoine Pitrou
-  and the Unladen Swallow team in :issue:`9410` and :issue:`3873`.)
+  and the Unladen Swallow team in :issue:`9410`, :issue:`3873` and
+  :issue:`9935`.)
 
 
 Filenames and Unicode
