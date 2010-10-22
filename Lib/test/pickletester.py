@@ -3,7 +3,6 @@ import unittest
 import pickle
 import pickletools
 import copyreg
-import weakref
 from http.cookies import SimpleCookie
 
 from test.support import TestFailed, TESTFN, run_with_locale
@@ -843,25 +842,6 @@ class AbstractPickleTests(unittest.TestCase):
                 self.assertEqual(B(x), B(y), detail)
                 self.assertEqual(x.__dict__, y.__dict__, detail)
 
-    def test_newobj_proxies(self):
-        # NEWOBJ should use the __class__ rather than the raw type
-        classes = myclasses[:]
-        # Cannot create weakproxies to these classes
-        for c in (MyInt, MyTuple):
-            classes.remove(c)
-        for proto in protocols:
-            for C in classes:
-                B = C.__base__
-                x = C(C.sample)
-                x.foo = 42
-                p = weakref.proxy(x)
-                s = self.dumps(p, proto)
-                y = self.loads(s)
-                self.assertEqual(type(y), type(x))  # rather than type(p)
-                detail = (proto, C, B, x, y, type(y))
-                self.assertEqual(B(x), B(y), detail)
-                self.assertEqual(x.__dict__, y.__dict__, detail)
-
     # Register a type with copyreg, with extension code extcode.  Pickle
     # an object of that type.  Check that the resulting pickle uses opcode
     # (EXT[124]) under proto 2, and not in proto 1.
@@ -1028,6 +1008,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertRaises(RuntimeError, self.dumps, x, proto)
         # protocol 2 don't raise a RuntimeError.
         d = self.dumps(x, 2)
+        self.assertRaises(RuntimeError, self.loads, d)
 
     def test_reduce_bad_iterator(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()

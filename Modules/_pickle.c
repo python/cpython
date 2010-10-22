@@ -2840,28 +2840,6 @@ save_pers(PicklerObject *self, PyObject *obj, PyObject *func)
     return status;
 }
 
-static PyObject *
-get_class(PyObject *obj)
-{
-    PyObject *cls;
-    static PyObject *str_class;
-
-    if (str_class == NULL) {
-        str_class = PyUnicode_InternFromString("__class__");
-        if (str_class == NULL)
-            return NULL;
-    }
-    cls = PyObject_GetAttr(obj, str_class);
-    if (cls == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            cls = (PyObject *) Py_TYPE(obj);
-            Py_INCREF(cls);
-        }
-    }
-    return cls;
-}
-
 /* We're saving obj, and args is the 2-thru-5 tuple returned by the
  * appropriate __reduce__ method for obj.
  */
@@ -2927,18 +2905,17 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     /* Protocol 2 special case: if callable's name is __newobj__, use
        NEWOBJ. */
     if (use_newobj) {
-        static PyObject *newobj_str = NULL, *name_str = NULL;
-        PyObject *name;
+        static PyObject *newobj_str = NULL;
+        PyObject *name_str;
 
         if (newobj_str == NULL) {
             newobj_str = PyUnicode_InternFromString("__newobj__");
-            name_str = PyUnicode_InternFromString("__name__");
-            if (newobj_str == NULL || name_str == NULL)
+            if (newobj_str == NULL)
                 return -1;
         }
 
-        name = PyObject_GetAttr(callable, name_str);
-        if (name == NULL) {
+        name_str = PyObject_GetAttrString(callable, "__name__");
+        if (name_str == NULL) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError))
                 PyErr_Clear();
             else
@@ -2946,9 +2923,9 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             use_newobj = 0;
         }
         else {
-            use_newobj = PyUnicode_Check(name) &&
-                         PyUnicode_Compare(name, newobj_str) == 0;
-            Py_DECREF(name);
+            use_newobj = PyUnicode_Check(name_str) && 
+                PyUnicode_Compare(name_str, newobj_str) == 0;
+            Py_DECREF(name_str);
         }
     }
     if (use_newobj) {
@@ -2964,14 +2941,20 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         }
 
         cls = PyTuple_GET_ITEM(argtup, 0);
-        if (!PyType_Check(cls)) {
+        if (!PyObject_HasAttrString(cls, "__new__")) {
             PyErr_SetString(PicklingError, "args[0] from "
-                            "__newobj__ args is not a type");
+                            "__newobj__ args has no __new__");
             return -1;
         }
 
         if (obj != NULL) {
-            obj_class = get_class(obj);
+            obj_class = PyObject_GetAttrString(obj, "__class__");
+            if (obj_class == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_AttributeError))
+                    PyErr_Clear();
+                else
+                    return -1;
+            }
             p = obj_class != cls;    /* true iff a problem */
             Py_DECREF(obj_class);
             if (p) {
