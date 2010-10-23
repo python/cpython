@@ -214,7 +214,7 @@ static int
 set_insert_key(register PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     register setentry *entry;
-    typedef setentry *(*lookupfunc)(PySetObject *, PyObject *, long);
+    typedef setentry *(*lookupfunc)(PySetObject *, PyObject *, Py_hash_t);
 
     assert(so->lookup != NULL);
     entry = so->lookup(so, key, hash);
@@ -663,7 +663,7 @@ set_merge(PySetObject *so, PyObject *otherset)
         if (key != NULL &&
             key != dummy) {
             Py_INCREF(key);
-            if (set_insert_key(so, key, (long) entry->hash) == -1) {
+            if (set_insert_key(so, key, entry->hash) == -1) {
                 Py_DECREF(key);
                 return -1;
             }
@@ -772,14 +772,14 @@ frozenset_hash(PyObject *self)
     if (so->hash != -1)
         return so->hash;
 
-    hash *= (long) PySet_GET_SIZE(self) + 1;
+    hash *= PySet_GET_SIZE(self) + 1;
     while (set_next(so, &pos, &entry)) {
         /* Work to increase the bit dispersion for closely spaced hash
            values.  The is important because some use cases have many
            combinations of a small number of elements with nearby
            hashes so that many distinct combinations collapse to only
            a handful of distinct hash values. */
-        h = (long) entry->hash;
+        h = entry->hash;
         hash ^= (h ^ (h << 16) ^ 89869747L)  * 3644798167u;
     }
     hash = hash * 69069L + 907133923L;
@@ -1116,7 +1116,7 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     setentry *u;
     setentry *(*f)(PySetObject *so, PyObject *key, Py_ssize_t hash);
     setentry tab[PySet_MINSIZE];
-    long h;
+    Py_hash_t h;
 
     t = a->fill;     a->fill   = b->fill;        b->fill  = t;
     t = a->used;     a->used   = b->used;        b->used  = t;
@@ -1550,7 +1550,7 @@ set_difference(PySetObject *so, PyObject *other)
             setentry entrycopy;
             entrycopy.hash = entry->hash;
             entrycopy.key = entry->key;
-            if (!_PyDict_Contains(other, entry->key, (long) entry->hash)) {
+            if (!_PyDict_Contains(other, entry->key, entry->hash)) {
                 if (set_add_entry((PySetObject *)result, &entrycopy) == -1) {
                     Py_DECREF(result);
                     return NULL;

@@ -452,7 +452,7 @@ PyHKEY_compareFunc(PyObject *ob1, PyObject *ob2)
          (pyhkey1 < pyhkey2 ? -1 : 1);
 }
 
-static long
+static Py_hash_t
 PyHKEY_hashFunc(PyObject *ob)
 {
     /* Just use the address.

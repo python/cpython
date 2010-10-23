@@ -124,15 +124,6 @@ masked); and the PyDictObject struct required a member to hold the table's
 polynomial.  In Tim's experiments the current scheme ran faster, produced
 equally good collision statistics, needed less code & used less memory.
 
-Theoretical Python 2.5 headache:  hash codes are only C "long", but
-sizeof(Py_ssize_t) > sizeof(long) may be possible.  In that case, and if a
-dict is genuinely huge, then only the slots directly reachable via indexing
-by a C long can be the first slot in a probe sequence.  The probe sequence
-will still eventually reach every slot in the table, but the collision rate
-on initial probes may be much higher than this scheme was designed for.
-Getting a hash code as fat as Py_ssize_t is the only real cure.  But in
-practice, this probably won't make a lick of difference for many years (at
-which point everyone will have terabytes of RAM on 64-bit boxes).
 */
 
 /* Object used as dummy key to fill deleted entries */
@@ -531,7 +522,7 @@ insertdict(register PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *v
 {
     PyObject *old_value;
     register PyDictEntry *ep;
-    typedef PyDictEntry *(*lookupfunc)(PyDictObject *, PyObject *, long);
+    typedef PyDictEntry *(*lookupfunc)(PyDictObject *, PyObject *, Py_hash_t);
 
     assert(mp->ma_lookup != NULL);
     ep = mp->ma_lookup(mp, key, hash);

@@ -827,7 +827,7 @@ class SizeofTest(unittest.TestCase):
         # we need to test for both sizes, because we don't know if the string
         # has been cached
         for s in samples:
-            basicsize =  size(h + 'PPliP') + usize * (len(s) + 1)
+            basicsize =  size(h + 'PPPiP') + usize * (len(s) + 1)
             check(s, basicsize)
         # weakref
         import weakref
