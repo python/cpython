@@ -215,7 +215,7 @@ def _parse_makefile(filename, vars=None):
     done = {}
     notdone = {}
 
-    with open(filename) as f:
+    with open(filename, errors="surrogateescape") as f:
         lines = f.readlines()
 
     for line in lines:

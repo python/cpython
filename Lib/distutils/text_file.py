@@ -58,6 +58,8 @@ class TextFile:
          collapse_join [default: false]
            strip leading whitespace from lines that are joined to their
            predecessor; only matters if (join_lines and not lstrip_ws)
+         errors [default: 'strict']
+           error handler used to decode the file content
 
        Note that since 'rstrip_ws' can strip the trailing newline, the
        semantics of 'readline()' must differ from those of the builtin file
@@ -72,6 +74,7 @@ class TextFile:
                         'rstrip_ws':      1,
                         'join_lines':     0,
                         'collapse_join':  0,
+                        'errors':         'strict',
                       }
 
     def __init__(self, filename=None, file=None, **options):
@@ -111,7 +114,7 @@ class TextFile:
         """Open a new file named 'filename'.  This overrides both the
            'filename' and 'file' arguments to the constructor."""
         self.filename = filename
-        self.file = io.open(self.filename, 'r')
+        self.file = io.open(self.filename, 'r', errors=self.errors)
         self.current_line = 0
 
     def close(self):
