@@ -285,13 +285,16 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home)
     joinpath(prefix, L"Modules/Setup");
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
-        vpath = L"" VPATH;
-        wcscpy(prefix, argv0_path);
-        joinpath(prefix, vpath);
-        joinpath(prefix, L"Lib");
-        joinpath(prefix, LANDMARK);
-        if (ismodule(prefix))
-            return -1;
+        vpath = _Py_char2wchar(VPATH, NULL);
+        if (vpath != NULL) {
+            wcscpy(prefix, argv0_path);
+            joinpath(prefix, vpath);
+            PyMem_Free(vpath);
+            joinpath(prefix, L"Lib");
+            joinpath(prefix, LANDMARK);
+            if (ismodule(prefix))
+                return -1;
+        }
     }
 
     /* Search from argv0_path, until root is found */
