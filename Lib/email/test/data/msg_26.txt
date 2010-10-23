@@ -24,7 +24,8 @@ Simple email with attachment.
 
 
 --1618492860--2051301190--113853680
-Content-Type: application/riscos; name="clock.bmp,69c"; type=BMP; load=&fff69c4b; exec=&355dd4d1; access=&03
+Content-Type: application/riscos; name="clock.bmp,69c"; type=BMP;
+	load=&fff69c4b; exec=&355dd4d1; access=&03
 Content-Disposition: attachment; filename="clock.bmp"
 Content-Transfer-Encoding: base64
 

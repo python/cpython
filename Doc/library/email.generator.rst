@@ -56,7 +56,7 @@ Here are the public methods of the :class:`Generator` class, imported from the
    The other public :class:`Generator` methods are:
 
 
-   .. method:: flatten(msg, unixfrom=False)
+   .. method:: flatten(msg, unixfrom=False, linesep='\\n')
 
       Print the textual representation of the message object structure rooted at
       *msg* to the output file specified when the :class:`Generator` instance
@@ -71,12 +71,20 @@ Here are the public methods of the :class:`Generator` class, imported from the
 
       Note that for subparts, no envelope header is ever printed.
 
+      Optional *linesep* specifies the line separator character used to
+      terminate lines in the output.  It defaults to ``\n`` because that is
+      the most useful value for Python application code (other library packages
+      expect ``\n`` separated lines).  ``linesep=\r\n`` can be used to
+      generate output with RFC-compliant line separators.
+
       Messages parsed with a Bytes parser that have a
       :mailheader:`Content-Transfer-Encoding` of 8bit will be converted to a
       use a 7bit Content-Transfer-Encoding.  Any other non-ASCII bytes in the
       message structure will be converted to '?' characters.
 
-      .. versionchanged:: 3.2 added support for re-encoding 8bit message bodies.
+      .. versionchanged:: 3.2
+         added support for re-encoding 8bit message bodies, and the linesep
+         argument
 
    .. method:: clone(fp)
 
@@ -97,16 +105,70 @@ formatted string representation of a message object.  For more detail, see
 
 .. class:: BytesGenerator(outfp, mangle_from_=True, maxheaderlen=78)
 
-   This class has the same API as the :class:`Generator` class, except that
-   *outfp* must be a file like object that will accept :class`bytes` input to
-   its ``write`` method.  If the message object structure contains non-ASCII
-   bytes, this generator's :meth:`~BytesGenerator.flatten` method will produce
-   them as-is, including preserving parts with a
-   :mailheader:`Content-Transfer-Encoding` of ``8bit``.
+   The constructor for the :class:`BytesGenerator` class takes a binary
+   :term:`file-like object` called *outfp* for an argument.  *outfp* must
+   support a :meth:`write` method that accepts binary data.
 
-   Note that even the :meth:`write` method API is identical:  it expects
-   strings as input, and converts them to bytes by encoding them using
-   the ASCII codec.
+   Optional *mangle_from_* is a flag that, when ``True``, puts a ``>``
+   character in front of any line in the body that starts exactly as ``From``,
+   i.e. ``From`` followed by a space at the beginning of the line.  This is the
+   only guaranteed portable way to avoid having such lines be mistaken for a
+   Unix mailbox format envelope header separator (see `WHY THE CONTENT-LENGTH
+   FORMAT IS BAD <http://www.jwz.org/doc/content-length.html>`_ for details).
+   *mangle_from_* defaults to ``True``, but you might want to set this to
+   ``False`` if you are not writing Unix mailbox format files.
+
+   Optional *maxheaderlen* specifies the longest length for a non-continued
+   header.  When a header line is longer than *maxheaderlen* (in characters,
+   with tabs expanded to 8 spaces), the header will be split as defined in the
+   :class:`~email.header.Header` class.  Set to zero to disable header
+   wrapping.  The default is 78, as recommended (but not required) by
+   :rfc:`2822`.
+
+   The other public :class:`BytesGenerator` methods are:
+
+
+   .. method:: flatten(msg, unixfrom=False, linesep='\n')
+
+      Print the textual representation of the message object structure rooted
+      at *msg* to the output file specified when the :class:`BytesGenerator`
+      instance was created.  Subparts are visited depth-first and the resulting
+      text will be properly MIME encoded.  If the input that created the *msg*
+      contained bytes with the high bit set and those bytes have not been
+      modified, they will be copied faithfully to the output, even if doing so
+      is not strictly RFC compliant.  (To produce strictly RFC compliant
+      output, use the :class:`Generator` class.)
+
+      Messages parsed with a Bytes parser that have a
+      :mailheader:`Content-Transfer-Encoding` of 8bit will be reconstructed
+      as 8bit if they have not been modified.
+
+      Optional *unixfrom* is a flag that forces the printing of the envelope
+      header delimiter before the first :rfc:`2822` header of the root message
+      object.  If the root object has no envelope header, a standard one is
+      crafted.  By default, this is set to ``False`` to inhibit the printing of
+      the envelope delimiter.
+
+      Note that for subparts, no envelope header is ever printed.
+
+      Optional *linesep* specifies the line separator character used to
+      terminate lines in the output.  It defaults to ``\n`` because that is
+      the most useful value for Python application code (other library packages
+      expect ``\n`` separated lines).  ``linesep=\r\n`` can be used to
+      generate output with RFC-compliant line separators.
+
+   .. method:: clone(fp)
+
+      Return an independent clone of this :class:`BytesGenerator` instance with
+      the exact same options.
+
+   .. method:: write(s)
+
+      Write the string *s* to the underlying file object.  *s* is encoded using
+      the ``ASCII`` codec and written to the *write* method of the  *outfp*
+      *outfp* passed to the :class:`BytesGenerator`'s constructor.  This
+      provides just enough file-like API for :class:`BytesGenerator` instances
+      to be used in the :func:`print` function.
 
    .. versionadded:: 3.2
 

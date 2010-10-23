@@ -272,7 +272,7 @@ class Header:
         output_string = input_bytes.decode(output_charset, errors)
         self._chunks.append((output_string, charset))
 
-    def encode(self, splitchars=';, \t', maxlinelen=None):
+    def encode(self, splitchars=';, \t', maxlinelen=None, linesep='\n'):
         """Encode a message header into an RFC-compliant format.
 
         There are many issues involved in converting a given string for use in
@@ -293,6 +293,11 @@ class Header:
         Optional splitchars is a string containing characters to split long
         ASCII lines on, in rough support of RFC 2822's `highest level
         syntactic breaks'.  This doesn't affect RFC 2047 encoded lines.
+
+        Optional linesep is a string to be used to separate the lines of
+        the value.  The default value is the most useful for typical
+        Python applications, but it can be set to \r\n to produce RFC-compliant
+        line separators when needed.
         """
         self._normalize()
         if maxlinelen is None:
@@ -311,7 +316,7 @@ class Header:
                 if len(lines) > 1:
                     formatter.newline()
             formatter.add_transition()
-        return str(formatter)
+        return formatter._str(linesep)
 
     def _normalize(self):
         # Step 1: Normalize the chunks so that all runs of identical charsets
@@ -342,9 +347,12 @@ class _ValueFormatter:
         self._lines = []
         self._current_line = _Accumulator(headerlen)
 
-    def __str__(self):
+    def _str(self, linesep):
         self.newline()
-        return NL.join(self._lines)
+        return linesep.join(self._lines)
+
+    def __str__(self):
+        return self._str(NL)
 
     def newline(self):
         end_of_line = self._current_line.pop()

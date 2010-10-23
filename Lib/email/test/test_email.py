@@ -77,7 +77,7 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.get_all('cc'), ['ccc@zzz.org', 'ddd@zzz.org', 'eee@zzz.org'])
         eq(msg.get_all('xx', 'n/a'), 'n/a')
 
-    def test_getset_charset(self):
+    def TEst_getset_charset(self):
         eq = self.assertEqual
         msg = Message()
         eq(msg.get_charset(), None)
@@ -2600,6 +2600,18 @@ Here's the message body
         part2 = msg.get_payload(1)
         eq(part2.get_content_type(), 'application/riscos')
 
+    def test_crlf_flatten(self):
+        # Using newline='\n' preserves the crlfs in this input file.
+        with openfile('msg_26.txt', newline='\n') as fp:
+            text = fp.read()
+        msg = email.message_from_string(text)
+        s = StringIO()
+        g = Generator(s)
+        g.flatten(msg, linesep='\r\n')
+        self.assertEqual(s.getvalue(), text)
+
+    maxDiff = None
+
     def test_multipart_digest_with_extra_mime_headers(self):
         eq = self.assertEqual
         neq = self.ndiffAssertEqual
@@ -2930,6 +2942,16 @@ class Test8BitBytesHandling(unittest.TestCase):
             bfp.feed(self.latin_bin_msg[i:i+10])
         m = bfp.close()
         self.assertEqual(str(m), self.latin_bin_msg_as7bit)
+
+    def test_crlf_flatten(self):
+        with openfile('msg_26.txt', 'rb') as fp:
+            text = fp.read()
+        msg = email.message_from_bytes(text)
+        s = BytesIO()
+        g = email.generator.BytesGenerator(s)
+        g.flatten(msg, linesep='\r\n')
+        self.assertEqual(s.getvalue(), text)
+    maxDiff = None
 
 
 class TestBytesGeneratorIdempotent(TestIdempotent):
