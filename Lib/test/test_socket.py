@@ -13,6 +13,7 @@ import queue
 import sys
 import os
 import array
+import platform
 import contextlib
 from weakref import proxy
 import signal
@@ -1827,11 +1828,24 @@ class ContextManagersTest(ThreadedTCPSocketTest):
         self.assertTrue(sock._closed)
         self.assertRaises(socket.error, sock.sendall, b'foo')
 
+
+def linux_version():
+    try:
+        # platform.release() is something like '2.6.33.7-desktop-2mnb'
+        version_string = platform.release().split('-')[0]
+        return tuple(map(int, version_string.split('.')))
+    except ValueError:
+        return 0, 0, 0
+
 @unittest.skipUnless(hasattr(socket, "SOCK_CLOEXEC"),
                      "SOCK_CLOEXEC not defined")
 @unittest.skipUnless(fcntl, "module fcntl not available")
 class CloexecConstantTest(unittest.TestCase):
     def test_SOCK_CLOEXEC(self):
+        v = linux_version()
+        if v < (2, 6, 28):
+            self.skipTest("Linux kernel 2.6.28 or higher required, not %s"
+                          % ".".join(map(str, v)))
         s = socket.socket(socket.AF_INET,
                           socket.SOCK_STREAM | socket.SOCK_CLOEXEC)
         self.assertTrue(s.type & socket.SOCK_CLOEXEC)
@@ -1850,6 +1864,10 @@ class NonblockConstantTest(unittest.TestCase):
             self.assertEqual(s.gettimeout(), None)
 
     def test_SOCK_NONBLOCK(self):
+        v = linux_version()
+        if v < (2, 6, 28):
+            self.skipTest("Linux kernel 2.6.28 or higher required, not %s"
+                          % ".".join(map(str, v)))
         # a lot of it seems silly and redundant, but I wanted to test that
         # changing back and forth worked ok
         s = socket.socket(socket.AF_INET,
