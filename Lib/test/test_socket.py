@@ -35,6 +35,14 @@ def try_address(host, port=0, family=socket.AF_INET):
         sock.close()
         return True
 
+def linux_version():
+    try:
+        # platform.release() is something like '2.6.33.7-desktop-2mnb'
+        version_string = platform.release().split('-')[0]
+        return tuple(map(int, version_string.split('.')))
+    except ValueError:
+        return 0, 0, 0
+
 HOST = support.HOST
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf8') ## test unicode string and carriage return
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
@@ -911,10 +919,14 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     if hasattr(socket, "SOCK_NONBLOCK"):
         def testInitNonBlocking(self):
+            v = linux_version()
+            if v < (2, 6, 28):
+                self.skipTest("Linux kernel 2.6.28 or higher required, not %s"
+                              % ".".join(map(str, v)))
             # reinit server socket
             self.serv.close()
             self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
-                                                  socket.SOCK_NONBLOCK)
+                                                      socket.SOCK_NONBLOCK)
             self.port = support.bind_port(self.serv)
             self.serv.listen(1)
             # actual testing
@@ -1828,14 +1840,6 @@ class ContextManagersTest(ThreadedTCPSocketTest):
         self.assertTrue(sock._closed)
         self.assertRaises(socket.error, sock.sendall, b'foo')
 
-
-def linux_version():
-    try:
-        # platform.release() is something like '2.6.33.7-desktop-2mnb'
-        version_string = platform.release().split('-')[0]
-        return tuple(map(int, version_string.split('.')))
-    except ValueError:
-        return 0, 0, 0
 
 @unittest.skipUnless(hasattr(socket, "SOCK_CLOEXEC"),
                      "SOCK_CLOEXEC not defined")
