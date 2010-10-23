@@ -48,6 +48,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1349106: Generator (and BytesGenerator) flatten method and Header
+  encode method now support a 'linesep' argument.
+
 - Issue #5639: Add a *server_hostname* argument to ``SSLContext.wrap_socket``
   in order to support the TLS SNI extension.  ``HTTPSConnection`` and
   ``urlopen()`` also use this argument, so that HTTPS virtual hosts are now

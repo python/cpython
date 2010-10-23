@@ -104,7 +104,7 @@ Here is the :class:`Header` class description:
       :func:`ustr.encode` call, and defaults to "strict".
 
 
-   .. method:: encode(splitchars=';, \\t', maxlinelen=None)
+   .. method:: encode(splitchars=';, \\t', maxlinelen=None, linesep='\\n')
 
       Encode a message header into an RFC-compliant format, possibly wrapping
       long lines and encapsulating non-ASCII parts in base64 or quoted-printable
@@ -114,6 +114,13 @@ Here is the :class:`Header` class description:
 
       *maxlinelen*, if given, overrides the instance's value for the maximum
       line length.
+
+      *linesep* specifies the characters used to separate the lines of the
+      folded header.  It defaults to the most useful value for Python
+      application code (``\n``), but ``\r\n`` can be specified in order
+      to produce headers with RFC-compliant line separators.
+
+      .. versionchanged:: 3.2 added the linesep argument
 
 
    The :class:`Header` class also provides a number of methods to support
