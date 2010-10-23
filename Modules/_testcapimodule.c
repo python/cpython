@@ -225,7 +225,7 @@ test_lazy_hash_inheritance(PyObject* self)
 {
     PyTypeObject *type;
     PyObject *obj;
-    long hash;
+    Py_hash_t hash;
 
     type = &_HashInheritanceTester_Type;
 
