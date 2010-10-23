@@ -10,6 +10,11 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #6011: sysconfig and distutils.sysconfig use the surrogateescape error
+  handler to parse the Makefile file. Avoid a UnicodeDecodeError if the source
+  code directory name contains a non-ASCII character and the locale encoding is
+  ASCII.
+
 - Issue #10089: Add support for arbitrary -X options on the command-line.
   They can be retrieved through a new attribute ``sys._xoptions``.
 
