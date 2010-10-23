@@ -4314,14 +4314,14 @@ static PyObject *
 wrap_hashfunc(PyObject *self, PyObject *args, void *wrapped)
 {
     hashfunc func = (hashfunc)wrapped;
-    long res;
+    Py_hash_t res;
 
     if (!check_num_args(args, 0))
         return NULL;
     res = (*func)(self);
     if (res == -1 && PyErr_Occurred())
         return NULL;
-    return PyLong_FromLong(res);
+    return PyLong_FromSsize_t(res);
 }
 
 static PyObject *

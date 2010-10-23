@@ -135,7 +135,7 @@ Used in:  PY_LONG_LONG
 #else
 #define _PyHASH_BITS 31
 #endif
-#define _PyHASH_MODULUS ((1UL << _PyHASH_BITS) - 1)
+#define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
 #define _PyHASH_INF 314159
 #define _PyHASH_NAN 0
 #define _PyHASH_IMAG 1000003UL
@@ -179,6 +179,8 @@ typedef Py_intptr_t     Py_ssize_t;
 
 /* Py_hash_t is the same size as a pointer. */
 typedef Py_ssize_t Py_hash_t;
+/* Py_uhash_t is the unsigned equivalent needed to calculate numeric hash. */
+typedef size_t Py_uhash_t;
 
 /* Largest possible value of size_t.
    SIZE_MAX is part of C99, so it might be defined on some

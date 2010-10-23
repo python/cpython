@@ -397,12 +397,12 @@ complex_repr(PyComplexObject *v)
 static Py_hash_t
 complex_hash(PyComplexObject *v)
 {
-    unsigned long hashreal, hashimag, combined;
-    hashreal = (unsigned long)_Py_HashDouble(v->cval.real);
-    if (hashreal == (unsigned long)-1)
+    Py_uhash_t hashreal, hashimag, combined;
+    hashreal = (Py_uhash_t)_Py_HashDouble(v->cval.real);
+    if (hashreal == (Py_uhash_t)-1)
         return -1;
-    hashimag = (unsigned long)_Py_HashDouble(v->cval.imag);
-    if (hashimag == (unsigned long)-1)
+    hashimag = (Py_uhash_t)_Py_HashDouble(v->cval.imag);
+    if (hashimag == (Py_uhash_t)-1)
         return -1;
     /* Note:  if the imaginary part is 0, hashimag is 0 now,
      * so the following returns hashreal unchanged.  This is
@@ -411,8 +411,8 @@ complex_hash(PyComplexObject *v)
      * hash(x + 0*j) must equal hash(x).
      */
     combined = hashreal + _PyHASH_IMAG * hashimag;
-    if (combined == (unsigned long)-1)
-        combined = (unsigned long)-2;
+    if (combined == (Py_uhash_t)-1)
+        combined = (Py_uhash_t)-2;
     return (Py_hash_t)combined;
 }
 

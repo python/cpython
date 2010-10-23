@@ -692,7 +692,7 @@ _Py_HashDouble(double v)
 {
     int e, sign;
     double m;
-    unsigned long x, y;
+    Py_uhash_t x, y;
 
     if (!Py_IS_FINITE(v)) {
         if (Py_IS_INFINITY(v))
@@ -716,7 +716,7 @@ _Py_HashDouble(double v)
         x = ((x << 28) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - 28);
         m *= 268435456.0;  /* 2**28 */
         e -= 28;
-        y = (unsigned long)m;  /* pull out integer part */
+        y = (Py_uhash_t)m;  /* pull out integer part */
         m -= y;
         x += y;
         if (x >= _PyHASH_MODULUS)
@@ -728,8 +728,8 @@ _Py_HashDouble(double v)
     x = ((x << e) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - e);
 
     x = x * sign;
-    if (x == (unsigned long)-1)
-        x = (unsigned long)-2;
+    if (x == (Py_uhash_t)-1)
+        x = (Py_uhash_t)-2;
     return (Py_hash_t)x;
 }
 
