@@ -721,14 +721,17 @@ initsite(void)
         if (f == NULL || f == Py_None)
             return;
         if (Py_VerboseFlag) {
+            PyObject *type, *value, *traceback;
+            PyErr_Fetch(&type, &value, &traceback);
             PyFile_WriteString(
                 "'import site' failed; traceback:\n", f);
+            PyErr_Restore(type, value, traceback);
             PyErr_Print();
         }
         else {
+            PyErr_Clear();
             PyFile_WriteString(
               "'import site' failed; use -v for traceback\n", f);
-            PyErr_Clear();
         }
     }
     else {
