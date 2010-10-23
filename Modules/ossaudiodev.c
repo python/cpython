@@ -470,6 +470,23 @@ oss_close(oss_audio_t *self, PyObject *unused)
 }
 
 static PyObject *
+oss_self(PyObject *self)
+{
+    Py_INCREF(self);
+    return self;
+}
+
+static PyObject * 
+oss_exit(PyObject *self, PyObject *unused)
+{
+    PyObject *ret = PyObject_CallMethod(self, "close", NULL);
+    if (!ret)
+        return NULL;
+    Py_DECREF(ret);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 oss_fileno(oss_audio_t *self, PyObject *unused)
 {
     return PyLong_FromLong(self->fd);
@@ -782,6 +799,10 @@ static PyMethodDef oss_methods[] = {
     /* Aliases for backwards compatibility */
     { "flush",          (PyCFunction)oss_sync, METH_VARARGS },
 
+    /* Support for the context manager protocol */
+    { "__enter__",      oss_self, METH_NOARGS },
+    { "__exit__",       oss_exit, METH_VARARGS },
+
     { NULL,             NULL}           /* sentinel */
 };
 
@@ -789,6 +810,10 @@ static PyMethodDef oss_mixer_methods[] = {
     /* Regular file method - OSS mixers are ioctl-only interface */
     { "close",          (PyCFunction)oss_mixer_close, METH_NOARGS },
     { "fileno",         (PyCFunction)oss_mixer_fileno, METH_NOARGS },
+
+    /* Support for the context manager protocol */
+    { "__enter__",      oss_self, METH_NOARGS },
+    { "__exit__",       oss_exit, METH_VARARGS },
 
     /* Simple ioctl wrappers */
     { "controls",       (PyCFunction)oss_mixer_controls, METH_VARARGS },
