@@ -159,6 +159,11 @@ and (read-only) attributes:
    is only useful in non-blocking mode.  Has no return value, since the amount of
    data written is always equal to the amount of data supplied.
 
+.. versionchanged:: 3.2
+   Audio device objects also support the context manager protocol, i.e. they can
+   be used in a :keyword:`with` statement.
+
+
 The following methods each map to exactly one :func:`ioctl` system call.  The
 correspondence is obvious: for example, :meth:`setfmt` corresponds to the
 ``SNDCTL_DSP_SETFMT`` ioctl, and :meth:`sync` to ``SNDCTL_DSP_SYNC`` (this can
@@ -345,6 +350,10 @@ The mixer object provides two file-like methods:
 .. method:: oss_mixer_device.fileno()
 
    Returns the file handle number of the open mixer device file.
+
+.. versionchanged:: 3.2
+   Mixer objects also support the context manager protocol.
+
 
 The remaining methods are specific to audio mixing:
 
