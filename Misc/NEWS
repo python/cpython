@@ -51,6 +51,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5178: Added tempfile.TemporaryDirectory class that can be used
+  as a context manager.
+
 - Issue #1349106: Generator (and BytesGenerator) flatten method and Header
   encode method now support a 'linesep' argument.
 
