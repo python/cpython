@@ -912,7 +912,7 @@ else:
                     sys.stdout.write("\nSSLError is %s\n" % x.args[1])
             except socket.error as x:
                 if support.verbose:
-                    sys.stdout.write("\nsocket.error is %s\n" % x[1])
+                    sys.stdout.write("\nsocket.error is %s\n" % x.args[1])
             except IOError as x:
                 if x.errno != errno.ENOENT:
                     raise
