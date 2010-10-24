@@ -496,6 +496,13 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Giampaolo Rodolà; :issue:`6706`.)
 
+* The :mod:`tempfile` module has a new context manager,
+  :class:`~tempfile.TemporaryDirectory` which provides easy deterministic
+  cleanup of temporary directories.
+
+  (Contributed by Neil Schemenauer and Nick Coghlan; :issue:`5178`.)
+
+
 Multi-threading
 ===============
 

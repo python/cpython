@@ -85,7 +85,8 @@ class test_exports(TC):
             "gettempdir" : 1,
             "tempdir" : 1,
             "template" : 1,
-            "SpooledTemporaryFile" : 1
+            "SpooledTemporaryFile" : 1,
+            "TemporaryDirectory" : 1,
         }
 
         unexp = []
@@ -888,6 +889,107 @@ class test_TemporaryFile(TC):
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
     test_classes.append(test_TemporaryFile)
+
+
+# Helper for test_del_on_shutdown
+class NulledModules:
+    def __init__(self, *modules):
+        self.refs = [mod.__dict__ for mod in modules]
+        self.contents = [ref.copy() for ref in self.refs]
+
+    def __enter__(self):
+        for d in self.refs:
+            for key in d:
+                d[key] = None
+
+    def __exit__(self, *exc_info):
+        for d, c in zip(self.refs, self.contents):
+            d.clear()
+            d.update(c)
+
+class test_TemporaryDirectory(TC):
+    """Test TemporaryDirectory()."""
+
+    def do_create(self, dir=None, pre="", suf="", recurse=1):
+        if dir is None:
+            dir = tempfile.gettempdir()
+        try:
+            tmp = tempfile.TemporaryDirectory(dir=dir, prefix=pre, suffix=suf)
+        except:
+            self.failOnException("TemporaryDirectory")
+        self.nameCheck(tmp.name, dir, pre, suf)
+        # Create a subdirectory and some files
+        if recurse:
+            self.do_create(tmp.name, pre, suf, recurse-1)
+        with open(os.path.join(tmp.name, "test.txt"), "wb") as f:
+            f.write(b"Hello world!")
+        return tmp
+
+    def test_explicit_cleanup(self):
+        # A TemporaryDirectory is deleted when cleaned up
+        dir = tempfile.mkdtemp()
+        try:
+            d = self.do_create(dir=dir)
+            self.assertTrue(os.path.exists(d.name),
+                            "TemporaryDirectory %s does not exist" % d.name)
+            d.cleanup()
+            self.assertFalse(os.path.exists(d.name),
+                        "TemporaryDirectory %s exists after cleanup" % d.name)
+        finally:
+            os.rmdir(dir)
+
+    @support.cpython_only
+    def test_del_on_collection(self):
+        # A TemporaryDirectory is deleted when garbage collected
+        dir = tempfile.mkdtemp()
+        try:
+            d = self.do_create(dir=dir)
+            name = d.name
+            del d # Rely on refcounting to invoke __del__
+            self.assertFalse(os.path.exists(name),
+                        "TemporaryDirectory %s exists after __del__" % name)
+        finally:
+            os.rmdir(dir)
+
+    @unittest.expectedFailure # See issue #10188
+    def test_del_on_shutdown(self):
+        # A TemporaryDirectory may be cleaned up during shutdown
+        # Make sure it works with the relevant modules nulled out
+        dir = tempfile.mkdtemp()
+        try:
+            d = self.do_create(dir=dir)
+            # Mimic the nulling out of modules that
+            # occurs during system shutdown
+            modules = [os, os.path]
+            if has_stat:
+                modules.append(stat)
+            with NulledModules(*modules):
+                d.cleanup()
+            self.assertFalse(os.path.exists(d.name),
+                        "TemporaryDirectory %s exists after cleanup" % d.name)
+        finally:
+            os.rmdir(dir)
+
+    def test_multiple_close(self):
+        # Can be cleaned-up many times without error
+        d = self.do_create()
+        d.cleanup()
+        try:
+            d.cleanup()
+            d.cleanup()
+        except:
+            self.failOnException("cleanup")
+
+    def test_context_manager(self):
+        # Can be used as a context manager
+        d = self.do_create()
+        with d as name:
+            self.assertTrue(os.path.exists(name))
+            self.assertEqual(name, d.name)
+        self.assertFalse(os.path.exists(name))
+
+
+test_classes.append(test_TemporaryDirectory)
 
 def test_main():
     support.run_unittest(*test_classes)
