@@ -410,9 +410,19 @@ module for more information.
 
    Base class for warnings related to Unicode.
 
+
 .. exception:: BytesWarning
 
    Base class for warnings related to :class:`bytes` and :class:`buffer`.
+
+
+.. exception:: ResourceWarning
+
+   Base class for warnings related to resource usage.
+
+   .. versionadded:: 3.2
+
+
 
 Exception hierarchy
 -------------------

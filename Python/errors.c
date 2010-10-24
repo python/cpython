@@ -767,8 +767,10 @@ PyErr_WriteUnraisable(PyObject *obj)
             }
             Py_XDECREF(moduleName);
         }
-        PyFile_WriteString(" in ", f);
-        PyFile_WriteObject(obj, f, 0);
+        if (obj) {
+            PyFile_WriteString(" in ", f);
+            PyFile_WriteObject(obj, f, 0);
+        }
         PyFile_WriteString(" ignored\n", f);
         PyErr_Clear(); /* Just in case */
     }
