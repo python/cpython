@@ -539,7 +539,7 @@ if supports_bytes_environ:
 def _fscodec():
     encoding = sys.getfilesystemencoding()
     if encoding == 'mbcs':
-        errors = None   # strict
+        errors = 'strict'
     else:
         errors = 'surrogateescape'
 
