@@ -345,6 +345,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9054: Fix a crash occurring when using the pyexpat module
+  with expat version 2.0.1.
+
 - Issue #10003: Allow handling of SIGBREAK on Windows. Fixes a regression
   introduced by issue #9324.
 
