@@ -154,7 +154,7 @@ class UnicodeFileTests(unittest.TestCase):
             sf0 = set(normalize('NFD', f) for f in self.files)
             f2 = [normalize('NFD', f) for f in f2]
         sf2 = set(os.path.join(support.TESTFN, f) for f in f2)
-        self.assertEqual(sf0, sf2)
+        self.assertEqual(sf0, sf2, "%a != %a" % (sf0, sf2))
         self.assertEqual(len(f1), len(f2))
 
     def test_rename(self):
