@@ -83,8 +83,8 @@ Here are the public methods of the :class:`Generator` class, imported from the
       message structure will be converted to '?' characters.
 
       .. versionchanged:: 3.2
-         added support for re-encoding 8bit message bodies, and the linesep
-         argument
+         Added support for re-encoding 8bit message bodies, and the *linesep*
+         argument.
 
    .. method:: clone(fp)
 
