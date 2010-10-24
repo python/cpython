@@ -568,6 +568,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #9054: Fix a crash occurring when using the pyexpat module
+  with expat version 2.0.1.
+
 - Issue #10003: Allow handling of SIGBREAK on Windows. Fixes a regression
   introduced by issue #9324.
 
@@ -669,6 +672,7 @@ Build
 
 Tests
 -----
+
 - Issue #9628: fix runtests.sh -x option so more than one test can be excluded.
 
 - Issue #9894: Do not hardcode ENOENT in test_subprocess.
