@@ -1363,11 +1363,8 @@ print_error_text(PyObject *f, int offset, const char *text)
     if (offset == -1)
         return;
     PyFile_WriteString("    ", f);
-    offset--;
-    while (offset > 0) {
+    while (--offset)
         PyFile_WriteString(" ", f);
-        offset--;
-    }
     PyFile_WriteString("^\n", f);
 }
 
