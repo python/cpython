@@ -94,9 +94,6 @@ User code can define additional warning categories by subclassing one of the
 standard warning categories.  A warning category must always be a subclass of
 the :exc:`Warning` class.
 
-.. versionchanged:: 3.2
-   :exc:`DeprecationWarning` is ignored by default.
-
 
 .. _warning-filter:
 
@@ -155,6 +152,27 @@ interpreter command line.  The interpreter saves the arguments for all
 :option:`-W` options without interpretation in ``sys.warnoptions``; the
 :mod:`warnings` module parses these when it is first imported (invalid options
 are ignored, after printing a message to ``sys.stderr``).
+
+
+Default Warning Filters
+~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, Python installs several warning filters, which can be overridden by
+the command-line options passed to :option:`-W` and calls to
+:func:`filterwarnings`.
+
+* :exc:`DeprecationWarning` and :exc:`PendingDeprecationWarning`, and
+  :exc:`ImportWarning` are ignored.
+
+* :exc:`BytesWarning` is ignored unless the :option:`-b` option is given once or
+  twice; in this case this warning is either printed (``-b``) or turned into an
+  exception (``-bb`).
+
+* :exc:`ResourceWarning` is ignored unless Python was built in debug mode.
+
+.. versionchanged:: 3.2
+   :exc:`DeprecationWarning` is now ignored by default in addition to
+   :exc:`PendingDeprecationWarning`.
 
 
 .. _warning-suppress:
