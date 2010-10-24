@@ -835,6 +835,7 @@ create_filter(PyObject *category, const char *action)
     static PyObject *ignore_str = NULL;
     static PyObject *error_str = NULL;
     static PyObject *default_str = NULL;
+    static PyObject *always_str = NULL;
     PyObject *action_obj = NULL;
     PyObject *lineno, *result;
 
@@ -862,6 +863,14 @@ create_filter(PyObject *category, const char *action)
         }
         action_obj = default_str;
     }
+    else if (!strcmp(action, "always")) {
+        if (always_str == NULL) {
+            always_str = PyUnicode_InternFromString("always");
+            if (always_str == NULL)
+                return NULL;
+        }
+        action_obj = always_str;
+    }
     else {
         Py_FatalError("unknown action");
     }
@@ -879,10 +888,10 @@ static PyObject *
 init_filters(void)
 {
     /* Don't silence DeprecationWarning if -3 was used. */
-    PyObject *filters = PyList_New(4);
+    PyObject *filters = PyList_New(5);
     unsigned int pos = 0;  /* Post-incremented in each use. */
     unsigned int x;
-    const char *bytes_action;
+    const char *bytes_action, *resource_action;
 
     if (filters == NULL)
         return NULL;
@@ -901,7 +910,14 @@ init_filters(void)
         bytes_action = "ignore";
     PyList_SET_ITEM(filters, pos++, create_filter(PyExc_BytesWarning,
                     bytes_action));
-
+    /* resource usage warnings are enabled by default in pydebug mode */
+#ifdef Py_DEBUG
+    resource_action = "always";
+#else
+    resource_action = "ignore";
+#endif
+    PyList_SET_ITEM(filters, pos++, create_filter(PyExc_ResourceWarning,
+                    resource_action));
     for (x = 0; x < pos; x += 1) {
         if (PyList_GET_ITEM(filters, x) == NULL) {
             Py_DECREF(filters);

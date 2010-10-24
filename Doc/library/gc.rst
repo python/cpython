@@ -174,17 +174,15 @@ value but should not rebind it):
    with :meth:`__del__` methods, and *garbage* can be examined in that case to
    verify that no such cycles are being created.
 
-   If :const:`DEBUG_SAVEALL` is set, then all unreachable objects will be added to
-   this list rather than freed.
+   If :const:`DEBUG_SAVEALL` is set, then all unreachable objects will be added
+   to this list rather than freed.
 
    .. versionchanged:: 3.2
-      If this list is non-empty at interpreter shutdown, a warning message
-      gets printed.
+      If this list is non-empty at interpreter shutdown, a
+      :exc:`ResourceWarning` is emitted, which is silent by default.  If
+      :const:`DEBUG_UNCOLLECTABLE` is set, in addition all uncollectable objects
+      are printed.
 
-   ::
-
-       gc: 2 uncollectable objects at shutdown:
-             Use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them.
 
 The following constants are provided for use with :func:`set_debug`:
 
@@ -203,12 +201,12 @@ The following constants are provided for use with :func:`set_debug`:
 .. data:: DEBUG_UNCOLLECTABLE
 
    Print information of uncollectable objects found (objects which are not
-   reachable but cannot be freed by the collector).  These objects will be added to
-   the ``garbage`` list.
+   reachable but cannot be freed by the collector).  These objects will be added
+   to the ``garbage`` list.
 
    .. versionchanged:: 3.2
       Also print the contents of the :data:`garbage` list at interpreter
-      shutdown (rather than just its length), if it isn't empty.
+      shutdown, if it isn't empty.
 
 .. data:: DEBUG_SAVEALL
 

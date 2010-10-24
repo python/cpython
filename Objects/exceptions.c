@@ -1852,12 +1852,20 @@ SimpleExtendsException(PyExc_Warning, UnicodeWarning,
     "Base class for warnings about Unicode related problems, mostly\n"
     "related to conversion problems.");
 
+
 /*
  *    BytesWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, BytesWarning,
     "Base class for warnings about bytes and buffer related problems, mostly\n"
     "related to conversion from str or comparing to str.");
+
+
+/*
+ *    ResourceWarning extends Warning
+ */
+SimpleExtendsException(PyExc_Warning, ResourceWarning,
+    "Base class for warnings about resource usage.");
 
 
 
@@ -1939,6 +1947,7 @@ _PyExc_Init(void)
     PRE_INIT(ImportWarning)
     PRE_INIT(UnicodeWarning)
     PRE_INIT(BytesWarning)
+    PRE_INIT(ResourceWarning)
 
     bltinmod = PyImport_ImportModule("builtins");
     if (bltinmod == NULL)
@@ -2001,6 +2010,7 @@ _PyExc_Init(void)
     POST_INIT(ImportWarning)
     POST_INIT(UnicodeWarning)
     POST_INIT(BytesWarning)
+    POST_INIT(ResourceWarning)
 
     PyExc_MemoryErrorInst = BaseException_new(&_PyExc_MemoryError, NULL, NULL);
     if (!PyExc_MemoryErrorInst)

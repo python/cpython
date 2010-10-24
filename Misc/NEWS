@@ -691,7 +691,7 @@ Extensions
 - Issue #8524: Add a detach() method to socket objects, so as to put the socket
   into the closed state without closing the underlying file descriptor.
 
-- Issue #477863: Print a warning at shutdown if gc.garbage is not empty.
+- Issue #477863: Emit a ResourceWarning at shutdown if gc.garbage is not empty.
 
 - Issue #6869: Fix a refcount problem in the _ctypes extension.
 

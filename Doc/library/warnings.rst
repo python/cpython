@@ -82,6 +82,9 @@ following warnings category classes are currently defined:
 | :exc:`BytesWarning`              | Base category for warnings related to         |
 |                                  | :class:`bytes` and :class:`buffer`.           |
 +----------------------------------+-----------------------------------------------+
+| :exc:`ResourceWarning`           | Base category for warnings related to         |
+|                                  | resource usage.                               |
++----------------------------------+-----------------------------------------------+
 
 
 While these are technically built-in exceptions, they are documented here,

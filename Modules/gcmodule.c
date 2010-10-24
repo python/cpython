@@ -1368,11 +1368,16 @@ _PyGC_Fini(void)
 {
     if (!(debug & DEBUG_SAVEALL)
         && garbage != NULL && PyList_GET_SIZE(garbage) > 0) {
-        PySys_WriteStderr(
-            "gc: "
-            "%" PY_FORMAT_SIZE_T "d uncollectable objects at shutdown:\n",
-            PyList_GET_SIZE(garbage)
-            );
+        char *message;
+        if (debug & DEBUG_UNCOLLECTABLE)
+            message = "gc: %" PY_FORMAT_SIZE_T "d uncollectable objects at " \
+                "shutdown";
+        else
+            message = "gc: %" PY_FORMAT_SIZE_T "d uncollectable objects at " \
+                "shutdown; use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them";
+        if (PyErr_WarnFormat(PyExc_ResourceWarning, 0, message,
+                             PyList_GET_SIZE(garbage)) < 0)
+            PyErr_WriteUnraisable(NULL);
         if (debug & DEBUG_UNCOLLECTABLE) {
             PyObject *repr = NULL, *bytes = NULL;
             repr = PyObject_Repr(garbage);
@@ -1386,11 +1391,6 @@ _PyGC_Fini(void)
             }
             Py_XDECREF(repr);
             Py_XDECREF(bytes);
-        }
-        else {
-            PySys_WriteStderr(
-                "    Use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them.\n"
-                );
         }
     }
 }
