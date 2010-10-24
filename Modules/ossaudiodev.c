@@ -470,7 +470,7 @@ oss_close(oss_audio_t *self, PyObject *unused)
 }
 
 static PyObject *
-oss_self(PyObject *self)
+oss_self(PyObject *self, PyObject *unused)
 {
     Py_INCREF(self);
     return self;
@@ -800,8 +800,8 @@ static PyMethodDef oss_methods[] = {
     { "flush",          (PyCFunction)oss_sync, METH_VARARGS },
 
     /* Support for the context manager protocol */
-    { "__enter__",      (PyCFunction)oss_self, METH_NOARGS },
-    { "__exit__",       (PyCFunction)oss_exit, METH_VARARGS },
+    { "__enter__",      oss_self, METH_NOARGS },
+    { "__exit__",       oss_exit, METH_VARARGS },
 
     { NULL,             NULL}           /* sentinel */
 };
@@ -812,8 +812,8 @@ static PyMethodDef oss_mixer_methods[] = {
     { "fileno",         (PyCFunction)oss_mixer_fileno, METH_NOARGS },
 
     /* Support for the context manager protocol */
-    { "__enter__",      (PyCFunction)oss_self, METH_NOARGS },
-    { "__exit__",       (PyCFunction)oss_exit, METH_VARARGS },
+    { "__enter__",      oss_self, METH_NOARGS },
+    { "__exit__",       oss_exit, METH_VARARGS },
 
     /* Simple ioctl wrappers */
     { "controls",       (PyCFunction)oss_mixer_controls, METH_VARARGS },
