@@ -296,6 +296,12 @@ class BaseExceptionReportingTests:
         self.assertTrue('inner_raise() # Marker' in blocks[2])
         self.check_zero_div(blocks[2])
 
+    def test_syntax_error_offset_at_eol(self):
+        # See #10186.
+        def e():
+            raise SyntaxError('', ('', 0, 5, 'hello'))
+        msg = self.get_report(e).splitlines()
+        self.assertEqual(msg[-2], "        ^")
 
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):

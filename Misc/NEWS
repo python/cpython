@@ -12,6 +12,9 @@ Core and Builtins
 
 - Issue #10077: Fix logging of site module errors at startup.
 
+- Issue #10186: Fix the SyntaxError caret when the offset is equal to the length
+  of the offending line.
+
 - Issue #9713, #10114: Parser functions (eg. PyParser_ASTFromFile) expects
   filenames encoded to the filesystem encoding with surrogateescape error
   handler (to support undecodable bytes), instead of UTF-8 in strict mode.
