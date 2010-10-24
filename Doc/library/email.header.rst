@@ -120,7 +120,8 @@ Here is the :class:`Header` class description:
       application code (``\n``), but ``\r\n`` can be specified in order
       to produce headers with RFC-compliant line separators.
 
-      .. versionchanged:: 3.2 added the linesep argument
+      .. versionchanged:: 3.2
+         Added the *linesep* argument.
 
 
    The :class:`Header` class also provides a number of methods to support
