@@ -10,6 +10,9 @@ What's New in Python 3.2 Beta 1?
 Core and Builtins
 -----------------
 
+- Issue #10186: Fix the SyntaxError caret when the offset is equal to the length
+  of the offending line.
+
 - Issue #6011: sysconfig and distutils.sysconfig use the surrogateescape error
   handler to parse the Makefile file. Avoid a UnicodeDecodeError if the source
   code directory name contains a non-ASCII character and the locale encoding is
