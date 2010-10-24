@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #10125: Don't segfault when the iterator passed to ``file.writelines()``
   closes the file.
 
+- Issue #10186: Fix the SyntaxError caret when the offset is equal to the length
+  of the offending line.
+
 - Issue #9997: Don't let the name "top" have special significance in scope
   resolution.
 
