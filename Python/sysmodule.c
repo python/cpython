@@ -1748,8 +1748,6 @@ sys_update_path(int argc, wchar_t **argv)
     if (path == NULL)
         return;
 
-    if (argc == 0)
-        return;
     argv0 = argv[0];
 
 #ifdef HAVE_READLINK
