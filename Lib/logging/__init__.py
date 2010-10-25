@@ -395,18 +395,33 @@ class Formatter(object):
 
     converter = time.localtime
 
-    def __init__(self, fmt=None, datefmt=None):
+    def __init__(self, fmt=None, datefmt=None, style='%'):
         """
         Initialize the formatter with specified format strings.
 
         Initialize the formatter either with the specified format string, or a
         default as described above. Allow for specialized date formatting with
         the optional datefmt argument (if omitted, you get the ISO8601 format).
+
+        Use a style parameter of '%', '{' or '$' to specify that you want to
+        use one of %-formatting, :meth:`str.format` (``{}``) formatting or
+        :class:`string.Template` formatting in your format string.
+
+        .. versionchanged: 3.2
+           Added the ``style`` parameter.
         """
+        if style not in ('%', '$', '{'):
+            style = '%'
+        self._style = style
         if fmt:
             self._fmt = fmt
         else:
-            self._fmt = "%(message)s"
+            if style == '%':
+                self._fmt = "%(message)s"
+            elif style == '{':
+                self._fmt = '{message}'
+            else:
+                self._fmt = '${message}'
         self.datefmt = datefmt
 
     def formatTime(self, record, datefmt=None):
@@ -432,7 +447,7 @@ class Formatter(object):
             s = time.strftime(datefmt, ct)
         else:
             t = time.strftime("%Y-%m-%d %H:%M:%S", ct)
-            s = "%s,%03d" % (t, record.msecs)
+            s = "%s,%03d" % (t, record.msecs) # the use of % here is internal
         return s
 
     def formatException(self, ei):
@@ -458,7 +473,14 @@ class Formatter(object):
         """
         Check if the format uses the creation time of the record.
         """
-        return self._fmt.find("%(asctime)") >= 0
+        if self._style == '%':
+            result = self._fmt.find("%(asctime)") >= 0
+        elif self._style == '$':
+            result = self._fmt.find("{asctime}") >= 0
+        else:
+            result = self._fmt.find("$asctime") >= 0 or \
+                     self._fmt.find("${asctime}") >= 0
+        return result
 
     def format(self, record):
         """
@@ -476,7 +498,14 @@ class Formatter(object):
         record.message = record.getMessage()
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
-        s = self._fmt % record.__dict__
+        style = self._style
+        if style == '%':
+            s = self._fmt % record.__dict__
+        elif style == '{':
+            s = self._fmt.format(**record.__dict__)
+        else:
+            from string import Template
+            s = Template(self._fmt).substitute(**record.__dict__)
         if record.exc_info:
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
