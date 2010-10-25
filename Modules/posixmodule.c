@@ -6437,6 +6437,39 @@ static struct constdef  posix_constants_pathconf[] = {
 #ifdef _PC_VDISABLE
     {"PC_VDISABLE",     _PC_VDISABLE},
 #endif
+#ifdef _PC_ACL_ENABLED
+    {"PC_ACL_ENABLED",  _PC_ACL_ENABLED},
+#endif
+#ifdef _PC_MIN_HOLE_SIZE
+    {"PC_MIN_HOLE_SIZE",    _PC_MIN_HOLE_SIZE},
+#endif
+#ifdef _PC_ALLOC_SIZE_MIN
+    {"PC_ALLOC_SIZE_MIN",   _PC_ALLOC_SIZE_MIN},
+#endif
+#ifdef _PC_REC_INCR_XFER_SIZE
+    {"PC_REC_INCR_XFER_SIZE",   _PC_REC_INCR_XFER_SIZE},
+#endif
+#ifdef _PC_REC_MAX_XFER_SIZE
+    {"PC_REC_MAX_XFER_SIZE",    _PC_REC_MAX_XFER_SIZE},
+#endif
+#ifdef _PC_REC_MIN_XFER_SIZE
+    {"PC_REC_MIN_XFER_SIZE",    _PC_REC_MIN_XFER_SIZE},
+#endif
+#ifdef _PC_REC_XFER_ALIGN
+    {"PC_REC_XFER_ALIGN",   _PC_REC_XFER_ALIGN},
+#endif
+#ifdef _PC_SYMLINK_MAX
+    {"PC_SYMLINK_MAX",  _PC_SYMLINK_MAX},
+#endif
+#ifdef _PC_XATTR_ENABLED
+    {"PC_XATTR_ENABLED",    _PC_XATTR_ENABLED},
+#endif
+#ifdef _PC_XATTR_EXISTS
+    {"PC_XATTR_EXISTS", _PC_XATTR_EXISTS},
+#endif
+#ifdef _PC_TIMESTAMP_RESOLUTION
+    {"PC_TIMESTAMP_RESOLUTION", _PC_TIMESTAMP_RESOLUTION},
+#endif
 };
 
 static int
