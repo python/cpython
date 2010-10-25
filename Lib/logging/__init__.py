@@ -482,6 +482,17 @@ class Formatter(object):
                      self._fmt.find("${asctime}") >= 0
         return result
 
+    def formatMessage(self, record):
+        style = self._style
+        if style == '%':
+            s = self._fmt % record.__dict__
+        elif style == '{':
+            s = self._fmt.format(**record.__dict__)
+        else:
+            from string import Template
+            s = Template(self._fmt).substitute(**record.__dict__)
+        return s
+
     def format(self, record):
         """
         Format the specified record as text.
@@ -498,14 +509,7 @@ class Formatter(object):
         record.message = record.getMessage()
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
-        style = self._style
-        if style == '%':
-            s = self._fmt % record.__dict__
-        elif style == '{':
-            s = self._fmt.format(**record.__dict__)
-        else:
-            from string import Template
-            s = Template(self._fmt).substitute(**record.__dict__)
+        s = self.formatMessage(record)
         if record.exc_info:
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
