@@ -120,7 +120,7 @@ class Dialog:
                 cl = self.classes[c]
             except KeyError:
                 cl = 'unknown'
-            if type(cl) == tuple:
+            if type(cl) is tuple:
                 cl = self.enumoption
             elif cl == 'boolean':
                 cl = self.booleanoption
@@ -435,12 +435,11 @@ def remotetest(root, app):
     list.app = app                  # Pass it on to handler
 
 def opendialogs(e):
-    import string
     list = e.widget
     sel = list.curselection()
     for i in sel:
         item = list.get(i)
-        widget = string.split(item)[0]
+        widget = item.split()[0]
         RemoteWidgetDialog(list, list.app, widget)
         if widget == '.': continue
         try:

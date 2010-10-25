@@ -7,8 +7,6 @@ from tkinter import *
 if TkVersion < 4.0:
     raise ImportError("This version of svkill requires Tk 4.0 or later")
 
-from string import splitfields
-from string import split
 import subprocess
 import os
 
@@ -40,14 +38,14 @@ class Kill(Frame):
             ]
     def kill(self, selected):
         c = self.format_list[self.format.get()][2]
-        pid = split(selected)[c]
+        pid = selected.split()[c]
         os.system('kill -9 ' + pid)
         self.do_update()
     def do_update(self):
         format = self.format_list[self.format.get()][1]
         view = self.view_list[self.view.get()][1]
         s = subprocess.getoutput('ps %s %s' % (view, format))
-        list = splitfields(s, '\n')
+        list = s.split('\n')
         self.header.set(list[0] + '          ')
         del list[0]
         self.frame.list.delete(0, AtEnd())
@@ -97,14 +95,12 @@ class Kill(Frame):
         self.header = StringVar(self)
         self.frame.label = Label(
                 self.frame, relief=FLAT, anchor=NW, borderwidth=0,
-                font='*-Courier-Bold-R-Normal-*-120-*',
                 textvariable=self.header)
         self.frame.label.pack(fill=Y, anchor=W)
         self.frame.vscroll = Scrollbar(self.frame, orient=VERTICAL)
         self.frame.list = Listbox(
                 self.frame,
                 relief=SUNKEN,
-                font='*-Courier-Medium-R-Normal-*-120-*',
                 width=40, height=10,
                 selectbackground='#eed5b7',
                 selectborderwidth=0,

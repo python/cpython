@@ -1,6 +1,5 @@
 import os
 import sys
-import string
 from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 from tkinter.dialog import Dialog
@@ -17,7 +16,7 @@ class ShellWindow(ScrolledText):
             except KeyError:
                 shell = '/bin/sh'
             shell = shell + ' -i'
-        args = string.split(shell)
+        args = shell.split()
         shell = args[0]
 
         ScrolledText.__init__(self, master, **cnf)
@@ -33,7 +32,7 @@ class ShellWindow(ScrolledText):
                                   self.outputhandler)
 
     def outputhandler(self, file, mask):
-        data = os.read(file, BUFSIZE)
+        data = os.read(file, BUFSIZE).decode()
         if not data:
             self.tk.deletefilehandler(file)
             pid, sts = os.waitpid(self.pid, 0)
@@ -65,7 +64,7 @@ class ShellWindow(ScrolledText):
         self.insert(END, "\n")
         line = self.get(self.pos, "end - 1 char")
         self.pos = self.index(END)
-        os.write(self.tochild, line)
+        os.write(self.tochild, line.encode())
         return "break"
 
     def sendeof(self, *args):
@@ -132,7 +131,7 @@ def spawn(prog, args):
     return pid, c2pread, p2cwrite
 
 def test():
-    shell = string.join(sys.argv[1:])
+    shell = ' '.join(sys.argv[1: ])
     root = Tk()
     root.minsize(1, 1)
     if shell:
