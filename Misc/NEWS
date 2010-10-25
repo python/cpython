@@ -1,4 +1,4 @@
-﻿+++++++++++
++++++++++++
 Python News
 +++++++++++
 
@@ -134,6 +134,8 @@ Library
 
 Extensions
 ----------
+
+- Issue #10143: Update "os.pathconf" values.
 
 - Issue #6518: Support context manager protcol for ossaudiodev types.
 
