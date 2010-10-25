@@ -1269,6 +1269,7 @@ _expectations = {
         test_curses
         test_epoll
         test_dbm_gnu
+        test_gdb
         test_largefile
         test_locale
         test_minidom
