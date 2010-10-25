@@ -1252,6 +1252,7 @@ _expectations = {
         test_bsddb3
         test_curses
         test_epoll
+        test_gdb
         test_gdbm
         test_largefile
         test_locale
