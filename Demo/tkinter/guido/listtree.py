@@ -1,7 +1,6 @@
 # List a remote app's widget tree (names and classes only)
 
 import sys
-import string
 
 from tkinter import *
 
@@ -13,8 +12,6 @@ def listtree(master, app):
 
 def listnodes(list, app, widget, level):
     klass = list.send(app, 'winfo', 'class', widget)
-##      i = string.rindex(widget, '.')
-##      list.insert(END, '%s%s (%s)' % ((level-1)*'.   ', widget[i:], klass))
     list.insert(END, '%s (%s)' % (widget, klass))
     children = list.tk.splitlist(
             list.send(app, 'winfo', 'children', widget))

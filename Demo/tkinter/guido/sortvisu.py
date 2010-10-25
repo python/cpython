@@ -20,7 +20,6 @@ stand-alone application.
 
 
 from tkinter import *
-from Canvas import Line, Rectangle
 import random
 
 
@@ -30,6 +29,9 @@ WIDTH = 6
 
 
 class Array:
+
+    class Cancelled(BaseException):
+        pass
 
     def __init__(self, master, data=None):
         self.master = master
@@ -41,9 +43,9 @@ class Array:
         self.canvas.pack()
         self.report = Label(self.frame)
         self.report.pack()
-        self.left = Line(self.canvas, 0, 0, 0, 0)
-        self.right = Line(self.canvas, 0, 0, 0, 0)
-        self.pivot = Line(self.canvas, 0, 0, 0, 0)
+        self.left = self.canvas.create_line(0, 0, 0, 0)
+        self.right = self.canvas.create_line(0, 0, 0, 0)
+        self.pivot = self.canvas.create_line(0, 0, 0, 0)
         self.items = []
         self.size = self.maxvalue = 0
         if data:
@@ -82,8 +84,6 @@ class Array:
         if self.in_mainloop:
             self.master.quit()
 
-    Cancelled = "Array.Cancelled"       # Exception
-
     def wait(self, msecs):
         if self.speed == "fastest":
             msecs = 0
@@ -110,15 +110,15 @@ class Array:
         for i in range(self.size):
             item = self.items[i]
             if first <= i < last:
-                item.item.config(fill='red')
+                self.canvas.itemconfig(item, fill='red')
             else:
-                item.item.config(fill='orange')
+                self.canvas.itemconfig(item, fill='orange')
         self.hide_left_right_pivot()
 
     def hide_partition(self):
         for i in range(self.size):
             item = self.items[i]
-            item.item.config(fill='red')
+            self.canvas.itemconfig(item, fill='red')
         self.hide_left_right_pivot()
 
     def show_left(self, left):
@@ -127,7 +127,7 @@ class Array:
             return
         x1, y1, x2, y2 = self.items[left].position()
 ##      top, bot = HIRO
-        self.left.coords([(x1-2, 0), (x1-2, 9999)])
+        self.canvas.coords(self.left, (x1 - 2, 0, x1 - 2, 9999))
         self.master.update()
 
     def show_right(self, right):
@@ -135,7 +135,7 @@ class Array:
             self.hide_right()
             return
         x1, y1, x2, y2 = self.items[right].position()
-        self.right.coords(((x2+2, 0), (x2+2, 9999)))
+        self.canvas.coords(self.right, (x2 + 2, 0, x2 + 2, 9999))
         self.master.update()
 
     def hide_left_right_pivot(self):
@@ -144,17 +144,17 @@ class Array:
         self.hide_pivot()
 
     def hide_left(self):
-        self.left.coords(((0, 0), (0, 0)))
+        self.canvas.coords(self.left, (0, 0, 0, 0))
 
     def hide_right(self):
-        self.right.coords(((0, 0), (0, 0)))
+        self.canvas.coords(self.right, (0, 0, 0, 0))
 
     def show_pivot(self, pivot):
         x1, y1, x2, y2 = self.items[pivot].position()
-        self.pivot.coords(((0, y1-2), (9999, y1-2)))
+        self.canvas.coords(self.pivot, (0, y1 - 2, 9999, y1 - 2))
 
     def hide_pivot(self):
-        self.pivot.coords(((0, 0), (0, 0)))
+        self.canvas.coords(self.pivot, (0, 0, 0, 0))
 
     def swap(self, i, j):
         if i == j: return
@@ -199,12 +199,13 @@ class ArrayItem:
         self.array = array
         self.index = index
         self.value = value
+        self.canvas = array.canvas
         x1, y1, x2, y2 = self.position()
-        self.item = Rectangle(array.canvas, x1, y1, x2, y2,
-                              fill='red', outline='black', width=1)
-        self.item.bind('<Button-1>', self.mouse_down)
-        self.item.bind('<Button1-Motion>', self.mouse_move)
-        self.item.bind('<ButtonRelease-1>', self.mouse_up)
+        self.item = array.canvas.create_rectangle(x1, y1, x2, y2,
+            fill='red', outline='black', width=1)
+        array.canvas.tag_bind(self.item, '<Button-1>', self.mouse_down)
+        array.canvas.tag_bind(self.item, '<Button1-Motion>', self.mouse_move)
+        array.canvas.tag_bind(self.item, '<ButtonRelease-1>', self.mouse_up)
 
     def delete(self):
         item = self.item
@@ -235,7 +236,7 @@ class ArrayItem:
         self.array.items[here], self.array.items[i] = other, self
         self.index = i
         x1, y1, x2, y2 = self.position()
-        self.item.coords(((x1, y1), (x2, y2)))
+        self.canvas.coords(self.item, (x1, y1, x2, y2))
         other.setindex(here)
 
     def setindex(self, index):
@@ -249,7 +250,7 @@ class ArrayItem:
         trajectory = interpolate(oldpts, newpts, nsteps)
         self.item.tkraise()
         for pts in trajectory:
-            self.item.coords((pts[:2], pts[2:]))
+            self.canvas.coords(self.item, pts)
             self.array.wait(50)
 
     def swapwith(self, other):
@@ -262,61 +263,63 @@ class ArrayItem:
         self.index, other.index = other.index, self.index
         mynewpts = self.position()
         othernewpts = other.position()
-        myfill = self.item['fill']
-        otherfill = other.item['fill']
-        self.item.config(fill='green')
-        other.item.config(fill='yellow')
+        myfill = self.canvas.itemcget(self.item, 'fill')
+        otherfill = self.canvas.itemcget(other.item, 'fill')
+        self.canvas.itemconfig(self.item, fill='green')
+        self.canvas.itemconfig(other.item, fill='yellow')
         self.array.master.update()
         if self.array.speed == "single-step":
-            self.item.coords((mynewpts[:2], mynewpts[2:]))
-            other.item.coords((othernewpts[:2], othernewpts[2:]))
+            self.canvas.coords(self.item, mynewpts)
+            self.canvas.coords(other.item, othernewpts)
             self.array.master.update()
-            self.item.config(fill=myfill)
-            other.item.config(fill=otherfill)
+            self.canvas.itemconfig(self.item, fill=myfill)
+            self.canvas.itemconfig(other.item, fill=otherfill)
             self.array.wait(0)
             return
         mytrajectory = interpolate(myoldpts, mynewpts, nsteps)
         othertrajectory = interpolate(otheroldpts, othernewpts, nsteps)
         if self.value > other.value:
-            self.item.tkraise()
-            other.item.tkraise()
+            self.canvas.tag_raise(self.item)
+            self.canvas.tag_raise(other.item)
         else:
-            other.item.tkraise()
-            self.item.tkraise()
+            self.canvas.tag_raise(other.item)
+            self.canvas.tag_raise(self.item)
         try:
             for i in range(len(mytrajectory)):
                 mypts = mytrajectory[i]
                 otherpts = othertrajectory[i]
-                self.item.coords((mypts[:2], mypts[2:]))
-                other.item.coords((otherpts[:2], otherpts[2:]))
+                self.canvas.coords(self.item, mypts)
+                self.canvas.coords(other.item, otherpts)
                 self.array.wait(50)
         finally:
             mypts = mytrajectory[-1]
             otherpts = othertrajectory[-1]
-            self.item.coords((mypts[:2], mypts[2:]))
-            other.item.coords((otherpts[:2], otherpts[2:]))
-            self.item.config(fill=myfill)
-            other.item.config(fill=otherfill)
+            self.canvas.coords(self.item, mypts)
+            self.canvas.coords(other.item, otherpts)
+            self.canvas.itemconfig(self.item, fill=myfill)
+            self.canvas.itemconfig(other.item, fill=otherfill)
 
     def compareto(self, other):
-        myfill = self.item['fill']
-        otherfill = other.item['fill']
-        outcome = cmp(self.value, other.value)
-        if outcome < 0:
+        myfill = self.canvas.itemcget(self.item, 'fill')
+        otherfill = self.canvas.itemcget(other.item, 'fill')
+        if self.value < other.value:
             myflash = 'white'
             otherflash = 'black'
-        elif outcome > 0:
+            outcome = -1
+        elif self.value > other.value:
             myflash = 'black'
             otherflash = 'white'
+            outcome = 1
         else:
             myflash = otherflash = 'grey'
+            outcome = 0
         try:
-            self.item.config(fill=myflash)
-            other.item.config(fill=otherflash)
+            self.canvas.itemconfig(self.item, fill=myflash)
+            self.canvas.itemconfig(other.item, fill=otherflash)
             self.array.wait(500)
         finally:
-            self.item.config(fill=myfill)
-            other.item.config(fill=otherfill)
+            self.canvas.itemconfig(self.item, fill=myfill)
+            self.canvas.itemconfig(other.item, fill=otherfill)
         return outcome
 
     def position(self):
@@ -429,7 +432,7 @@ def quicksort(array):
                         j = j-1
                 continue
             array.message("Choosing pivot")
-            j, i, k = first, (first+last)//2, last-1
+            j, i, k = first, (first+last) // 2, last-1
             if array.compare(k, i) < 0:
                 array.swap(k, i)
             if array.compare(k, j) < 0:
@@ -519,7 +522,7 @@ class SortDemo:
 
         self.v_size = MyIntVar(self.master, self)
         self.v_size.set(size)
-        sizes = [1, 2, 3, 4] + range(5, 55, 5)
+        sizes = [1, 2, 3, 4] + list(range(5, 55, 5))
         if self.size not in sizes:
             sizes.append(self.size)
             sizes.sort()
