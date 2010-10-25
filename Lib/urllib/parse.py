@@ -31,8 +31,8 @@ import sys
 import collections
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
-           "urlsplit", "urlunsplit", "parse_qs", "parse_qsl",
-           "quote", "quote_plus", "quote_from_bytes",
+           "urlsplit", "urlunsplit", "urlencode", "parse_qs",
+           "parse_qsl", "quote", "quote_plus", "quote_from_bytes",
            "unquote", "unquote_plus", "unquote_to_bytes"]
 
 # A classification of schemes ('' means apply by default)
