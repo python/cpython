@@ -301,17 +301,29 @@ Formatters
 Formatter objects configure the final order, structure, and contents of the log
 message.  Unlike the base :class:`logging.Handler` class, application code may
 instantiate formatter classes, although you could likely subclass the formatter
-if your application needs special behavior.  The constructor takes two optional
-arguments: a message format string and a date format string.  If there is no
-message format string, the default is to use the raw message.  If there is no
-date format string, the default date format is::
+if your application needs special behavior.  The constructor takes three
+optional arguments -- a message format string, a date format string and a style
+indicator.
+
+.. method:: logging.Formatter.__init__(fmt=None, datefmt=None, style='%')
+
+If there is no message format string, the default is to use the
+raw message.  If there is no date format string, the default date format is::
 
     %Y-%m-%d %H:%M:%S
 
-with the milliseconds tacked on at the end.
+with the milliseconds tacked on at the end. The ``style`` is one of `%`, '{'
+or '$'. If one of these is not specified, then '%' will be used.
 
-The message format string uses ``%(<dictionary key>)s`` styled string
-substitution; the possible keys are documented in :ref:`formatter-objects`.
+If the ``style`` is '%', the message format string uses
+``%(<dictionary key>)s`` styled string substitution; the possible keys are
+documented in :ref:`formatter-objects`. If the style is '{', the message format
+string is assumed to be compatible with :meth:`str.format` (using keyword
+arguments), while if the style is '$' then the message format string should
+conform to what is expected by :meth:`string.Template.substitute`.
+
+.. versionchanged:: 3.2
+   Added the ``style`` parameter.
 
 The following message format string will log the time in a human-readable
 format, the severity of the message, and the contents of the message, in that

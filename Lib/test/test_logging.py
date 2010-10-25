@@ -1863,6 +1863,53 @@ class QueueHandlerTest(BaseTest):
         self.assertEqual(data.name, self.que_logger.name)
         self.assertEqual((data.msg, data.args), (msg, None))
 
+class FormatterTest(unittest.TestCase):
+    def setUp(self):
+        self.common = {
+            'name': 'formatter.test',
+            'level': logging.DEBUG,
+            'pathname': os.path.join('path', 'to', 'dummy.ext'),
+            'lineno': 42,
+            'exc_info': None,
+            'func': None,
+            'msg': 'Message with %d %s',
+            'args': (2, 'placeholders'),
+        }
+        self.variants = {
+        }
+
+    def get_record(self, name=None):
+        result = dict(self.common)
+        if name is not None:
+            result.update(self.variants[name])
+        return logging.makeLogRecord(result)
+
+    def test_percent(self):
+        "Test %-formatting"
+        r = self.get_record()
+        f = logging.Formatter('${%(message)s}')
+        self.assertEqual(f.format(r), '${Message with 2 placeholders}')
+        f = logging.Formatter('%(random)s')
+        self.assertRaises(KeyError, f.format, r)
+
+    def test_braces(self):
+        "Test {}-formatting"
+        r = self.get_record()
+        f = logging.Formatter('$%{message}%$', style='{')
+        self.assertEqual(f.format(r), '$%Message with 2 placeholders%$')
+        f = logging.Formatter('{random}', style='{')
+        self.assertRaises(KeyError, f.format, r)
+
+    def test_dollars(self):
+        "Test $-formatting"
+        r = self.get_record()
+        f = logging.Formatter('$message', style='$')
+        self.assertEqual(f.format(r), 'Message with 2 placeholders')
+        f = logging.Formatter('$$%${message}%$$', style='$')
+        self.assertEqual(f.format(r), '$%Message with 2 placeholders%$')
+        f = logging.Formatter('${random}', style='$')
+        self.assertRaises(KeyError, f.format, r)
+
 class BaseFileTest(BaseTest):
     "Base class for handler tests that write log files"
 
@@ -1945,6 +1992,7 @@ def test_main():
                  CustomLevelsAndFiltersTest, MemoryHandlerTest,
                  ConfigFileTest, SocketHandlerTest, MemoryTest,
                  EncodingTest, WarningsTest, ConfigDictTest, ManagerTest,
+                 FormatterTest,
                  LogRecordClassTest, ChildLoggerTest, QueueHandlerTest,
                  RotatingFileHandlerTest,
                  #TimedRotatingFileHandlerTest
