@@ -166,7 +166,7 @@ the command-line options passed to :option:`-W` and calls to
 
 * :exc:`BytesWarning` is ignored unless the :option:`-b` option is given once or
   twice; in this case this warning is either printed (``-b``) or turned into an
-  exception (``-bb`).
+  exception (``-bb``).
 
 * :exc:`ResourceWarning` is ignored unless Python was built in debug mode.
 
