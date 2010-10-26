@@ -51,6 +51,8 @@ Core and Builtins
 Library
 -------
 
+- #7761: telnetlib.interact failures on Windows fixed.
+
 - logging: Added style option to Formatter to allow %, {} or $-formatting.
 
 - Issue #5178: Added tempfile.TemporaryDirectory class that can be used
