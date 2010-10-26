@@ -192,7 +192,7 @@ def open_message(e=None):
         num = int(m.group(1))
         m = mhf.get_message(num)
         if viewer: viewer.destroy()
-        from MimeViewer import MimeViewer
+        from mimeviewer import MimeViewer
         viewer = MimeViewer(bot, '+%s/%d' % (folder, num), m)
         viewer.pack()
         viewer.show()

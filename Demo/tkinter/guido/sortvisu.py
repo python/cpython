@@ -18,7 +18,6 @@ stand-alone application.
 
 """
 
-
 from tkinter import *
 import random
 
@@ -201,27 +200,28 @@ class ArrayItem:
         self.value = value
         self.canvas = array.canvas
         x1, y1, x2, y2 = self.position()
-        self.item = array.canvas.create_rectangle(x1, y1, x2, y2,
+        self.item_id = array.canvas.create_rectangle(x1, y1, x2, y2,
             fill='red', outline='black', width=1)
-        array.canvas.tag_bind(self.item, '<Button-1>', self.mouse_down)
-        array.canvas.tag_bind(self.item, '<Button1-Motion>', self.mouse_move)
-        array.canvas.tag_bind(self.item, '<ButtonRelease-1>', self.mouse_up)
+        self.canvas.tag_bind(self.item_id, '<Button-1>', self.mouse_down)
+        self.canvas.tag_bind(self.item_id, '<Button1-Motion>', self.mouse_move)
+        self.canvas.tag_bind(self.item_id, '<ButtonRelease-1>', self.mouse_up)
 
     def delete(self):
-        item = self.item
+        item_id = self.item_id
         self.array = None
-        self.item = None
-        item.delete()
+        self.item_id = None
+        self.canvas.delete(item_id)
 
     def mouse_down(self, event):
         self.lastx = event.x
         self.lasty = event.y
         self.origx = event.x
         self.origy = event.y
-        self.item.tkraise()
+        self.canvas.tag_raise(self.item_id)
 
     def mouse_move(self, event):
-        self.item.move(event.x - self.lastx, event.y - self.lasty)
+        self.canvas.move(self.item_id,
+                         event.x - self.lastx, event.y - self.lasty)
         self.lastx = event.x
         self.lasty = event.y
 
@@ -236,7 +236,7 @@ class ArrayItem:
         self.array.items[here], self.array.items[i] = other, self
         self.index = i
         x1, y1, x2, y2 = self.position()
-        self.canvas.coords(self.item, (x1, y1, x2, y2))
+        self.canvas.coords(self.item_id, (x1, y1, x2, y2))
         other.setindex(here)
 
     def setindex(self, index):
@@ -248,9 +248,9 @@ class ArrayItem:
         self.index = index
         newpts = self.position()
         trajectory = interpolate(oldpts, newpts, nsteps)
-        self.item.tkraise()
+        self.canvas.tag_raise(self.item_id)
         for pts in trajectory:
-            self.canvas.coords(self.item, pts)
+            self.canvas.coords(self.item_id, pts)
             self.array.wait(50)
 
     def swapwith(self, other):
@@ -263,45 +263,45 @@ class ArrayItem:
         self.index, other.index = other.index, self.index
         mynewpts = self.position()
         othernewpts = other.position()
-        myfill = self.canvas.itemcget(self.item, 'fill')
-        otherfill = self.canvas.itemcget(other.item, 'fill')
-        self.canvas.itemconfig(self.item, fill='green')
-        self.canvas.itemconfig(other.item, fill='yellow')
+        myfill = self.canvas.itemcget(self.item_id, 'fill')
+        otherfill = self.canvas.itemcget(other.item_id, 'fill')
+        self.canvas.itemconfig(self.item_id, fill='green')
+        self.canvas.itemconfig(other.item_id, fill='yellow')
         self.array.master.update()
         if self.array.speed == "single-step":
-            self.canvas.coords(self.item, mynewpts)
-            self.canvas.coords(other.item, othernewpts)
+            self.canvas.coords(self.item_id, mynewpts)
+            self.canvas.coords(other.item_id, othernewpts)
             self.array.master.update()
-            self.canvas.itemconfig(self.item, fill=myfill)
-            self.canvas.itemconfig(other.item, fill=otherfill)
+            self.canvas.itemconfig(self.item_id, fill=myfill)
+            self.canvas.itemconfig(other.item_id, fill=otherfill)
             self.array.wait(0)
             return
         mytrajectory = interpolate(myoldpts, mynewpts, nsteps)
         othertrajectory = interpolate(otheroldpts, othernewpts, nsteps)
         if self.value > other.value:
-            self.canvas.tag_raise(self.item)
-            self.canvas.tag_raise(other.item)
+            self.canvas.tag_raise(self.item_id)
+            self.canvas.tag_raise(other.item_id)
         else:
-            self.canvas.tag_raise(other.item)
-            self.canvas.tag_raise(self.item)
+            self.canvas.tag_raise(other.item_id)
+            self.canvas.tag_raise(self.item_id)
         try:
             for i in range(len(mytrajectory)):
                 mypts = mytrajectory[i]
                 otherpts = othertrajectory[i]
-                self.canvas.coords(self.item, mypts)
-                self.canvas.coords(other.item, otherpts)
+                self.canvas.coords(self.item_id, mypts)
+                self.canvas.coords(other.item_id, otherpts)
                 self.array.wait(50)
         finally:
             mypts = mytrajectory[-1]
             otherpts = othertrajectory[-1]
-            self.canvas.coords(self.item, mypts)
-            self.canvas.coords(other.item, otherpts)
-            self.canvas.itemconfig(self.item, fill=myfill)
-            self.canvas.itemconfig(other.item, fill=otherfill)
+            self.canvas.coords(self.item_id, mypts)
+            self.canvas.coords(other.item_id, otherpts)
+            self.canvas.itemconfig(self.item_id, fill=myfill)
+            self.canvas.itemconfig(other.item_id, fill=otherfill)
 
     def compareto(self, other):
-        myfill = self.canvas.itemcget(self.item, 'fill')
-        otherfill = self.canvas.itemcget(other.item, 'fill')
+        myfill = self.canvas.itemcget(self.item_id, 'fill')
+        otherfill = self.canvas.itemcget(other.item_id, 'fill')
         if self.value < other.value:
             myflash = 'white'
             otherflash = 'black'
@@ -314,12 +314,12 @@ class ArrayItem:
             myflash = otherflash = 'grey'
             outcome = 0
         try:
-            self.canvas.itemconfig(self.item, fill=myflash)
-            self.canvas.itemconfig(other.item, fill=otherflash)
+            self.canvas.itemconfig(self.item_id, fill=myflash)
+            self.canvas.itemconfig(other.item_id, fill=otherflash)
             self.array.wait(500)
         finally:
-            self.canvas.itemconfig(self.item, fill=myfill)
-            self.canvas.itemconfig(other.item, fill=otherfill)
+            self.canvas.itemconfig(self.item_id, fill=myfill)
+            self.canvas.itemconfig(other.item_id, fill=otherfill)
         return outcome
 
     def position(self):

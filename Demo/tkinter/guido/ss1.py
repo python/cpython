@@ -3,7 +3,7 @@
 import os
 import re
 import sys
-import cgi
+import html
 from xml.parsers import expat
 
 LEFT, CENTER, RIGHT = "LEFT", "CENTER", "RIGHT"
@@ -201,7 +201,7 @@ class Sheet:
             if hasattr(cell, 'xml'):
                 cellxml = cell.xml()
             else:
-                cellxml = '<value>%s</value>' % cgi.escape(cell)
+                cellxml = '<value>%s</value>' % html.escape(cell)
             out.append('<cell row="%s" col="%s">\n  %s\n</cell>' %
                        (y, x, cellxml))
         out.append('</spreadsheet>')
@@ -216,7 +216,7 @@ class Sheet:
         f.close()
 
     def load(self, filename):
-        f = open(filename, 'r')
+        f = open(filename, 'rb')
         SheetParser(self).parsefile(f)
         f.close()
 
@@ -382,7 +382,7 @@ class StringCell(BaseCell):
         return s % (
             align2xml[self.alignment],
             self.fmt,
-            cgi.escape(self.text))
+            html.escape(self.text))
 
 class FormulaCell(BaseCell):
 

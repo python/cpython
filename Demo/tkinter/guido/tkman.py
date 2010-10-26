@@ -7,10 +7,10 @@ import re
 import sys
 from tkinter import *
 
-from ManPage import ManPage
+from manpage import ManPage
 
-MANNDIRLIST = ['/depot/sundry/man/mann','/usr/local/man/mann']
-MAN3DIRLIST = ['/depot/sundry/man/man3','/usr/local/man/man3']
+MANNDIRLIST = ['/usr/local/man/mann', '/usr/share/man/mann']
+MAN3DIRLIST = ['/usr/local/man/man3', '/usr/share/man/man3']
 
 foundmanndir = 0
 for dir in MANNDIRLIST:
@@ -197,7 +197,7 @@ class SelectionBox:
 
     def show_page(self, name):
         file = '%s/%s.?' % (self.chaptervar.get(), name)
-        fp = os.popen('nroff -man %s | ul -i' % file, 'r')
+        fp = os.popen('nroff -man -c %s | ul -i' % file, 'r')
         self.text.kill()
         self.title['text'] = name
         self.text.parsefile(fp)

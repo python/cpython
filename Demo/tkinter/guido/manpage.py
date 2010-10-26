@@ -1,13 +1,12 @@
 # Widget to display a man page
 
+import os
 import re
-from tkinter import *
-from tkinter import _tkinter
-from tkinter.scrolledtext import ScrolledText
+import sys
 
-# XXX These fonts may have to be changed to match your system
-BOLDFONT = '*-Courier-Bold-R-Normal-*-120-*'
-ITALICFONT = '*-Courier-Medium-O-Normal-*-120-*'
+from tkinter import *
+from tkinter.font import Font
+from tkinter.scrolledtext import ScrolledText
 
 # XXX Recognizing footers is system dependent
 # (This one works for IRIX 5.2 and Solaris 2.2)
@@ -16,64 +15,64 @@ footerprog = re.compile(
 emptyprog = re.compile('^[ \t]*\n')
 ulprog = re.compile('^[ \t]*[Xv!_][Xv!_ \t]*\n')
 
-# Basic Man Page class -- does not disable editing
-class EditableManPage(ScrolledText):
 
-    # Initialize instance
+class EditableManPage(ScrolledText):
+    """Basic Man Page class -- does not disable editing."""
+
     def __init__(self, master=None, **cnf):
-        # Initialize base class
         ScrolledText.__init__(self, master, **cnf)
+
+        bold = Font(font=self['font']).copy()
+        bold.config(weight='bold')
+        italic = Font(font=self['font']).copy()
+        italic.config(slant='italic')
 
         # Define tags for formatting styles
         self.tag_config('X', underline=1)
-        self.tag_config('!', font=BOLDFONT)
-        self.tag_config('_', font=ITALICFONT)
+        self.tag_config('!', font=bold)
+        self.tag_config('_', font=italic)
 
         # Set state to idle
         self.fp = None
         self.lineno = 0
 
-    # Test whether we are busy parsing a file
     def busy(self):
+        """Test whether we are busy parsing a file."""
         return self.fp != None
 
-    # Ensure we're not busy
     def kill(self):
+        """Ensure we're not busy."""
         if self.busy():
             self._endparser()
 
-    # Parse a file, in the background
     def asyncparsefile(self, fp):
+        """Parse a file, in the background."""
         self._startparser(fp)
-        self.tk.createfilehandler(fp, _tkinter.READABLE,
+        self.tk.createfilehandler(fp, READABLE,
                                   self._filehandler)
 
-    parsefile = asyncparsefile      # Alias
+    parsefile = asyncparsefile   # Alias
 
-    # I/O handler used by background parsing
     def _filehandler(self, fp, mask):
+        """I/O handler used by background parsing."""
         nextline = self.fp.readline()
         if not nextline:
             self._endparser()
             return
         self._parseline(nextline)
 
-    # Parse a file, now (cannot be aborted)
     def syncparsefile(self, fp):
-        from select import select
-        def avail(fp=fp, tout=0.0, select=select):
-            return select([fp], [], [], tout)[0]
-        height = self.getint(self['height'])
+        """Parse a file, now (cannot be aborted)."""
         self._startparser(fp)
-        while 1:
+        while True:
             nextline = fp.readline()
             if not nextline:
                 break
             self._parseline(nextline)
         self._endparser()
 
-    # Initialize parsing from a particular file -- must not be busy
     def _startparser(self, fp):
+        """Initialize parsing from a particular file -- must not be busy."""
         if self.busy():
             raise RuntimeError('startparser: still busy')
         fp.fileno()             # Test for file-ness
@@ -87,22 +86,22 @@ class EditableManPage(ScrolledText):
         self.delete('1.0', END)
         self['state'] = savestate
 
-    # End parsing -- must be busy, need not be at EOF
     def _endparser(self):
+        """End parsing -- must be busy, need not be at EOF."""
         if not self.busy():
             raise RuntimeError('endparser: not busy')
         if self.buffer:
             self._parseline('')
         try:
             self.tk.deletefilehandler(self.fp)
-        except TclError as msg:
+        except TclError:
             pass
         self.fp.close()
         self.fp = None
         del self.ok, self.empty, self.buffer
 
-    # Parse a single line
     def _parseline(self, nextline):
+        """Parse a single line."""
         if not self.buffer:
             # Save this line -- we need one line read-ahead
             self.buffer = nextline
@@ -161,8 +160,8 @@ class EditableManPage(ScrolledText):
         self.lineno = self.lineno + 1
         self['state'] = savestate
 
-    # Insert a string at the end, with at most one property (tag)
     def _insert_prop(self, str, prop = ' '):
+        """Insert a string at the end, with at most one property (tag)."""
         here = self.index(AtInsert())
         self.insert(AtInsert(), str)
         if TkVersion <= 4.0:
@@ -172,10 +171,10 @@ class EditableManPage(ScrolledText):
         if prop != ' ':
             self.tag_add(prop, here, AtInsert())
 
-# Readonly Man Page class -- disables editing, otherwise the same
-class ReadonlyManPage(EditableManPage):
 
-    # Initialize instance
+class ReadonlyManPage(EditableManPage):
+    """Readonly Man Page class -- disables editing, otherwise the same."""
+
     def __init__(self, master=None, **cnf):
         cnf['state'] = DISABLED
         EditableManPage.__init__(self, master, **cnf)
@@ -183,12 +182,9 @@ class ReadonlyManPage(EditableManPage):
 # Alias
 ManPage = ReadonlyManPage
 
-# Test program.
 # usage: ManPage [manpage]; or ManPage [-f] file
 # -f means that the file is nroff -man output run through ul -i
-def test():
-    import os
-    import sys
+def main():
     # XXX This directory may be different on your system
     MANDIR = ''
     DEFAULTPAGE = 'Tcl'
@@ -211,10 +207,9 @@ def test():
     if formatted:
         fp = open(name, 'r')
     else:
-        fp = os.popen('nroff -man %s | ul -i' % name, 'r')
+        fp = os.popen('nroff -man -c %s | ul -i' % name, 'r')
     manpage.parsefile(fp)
     root.mainloop()
 
-# Run the test program when called as a script
 if __name__ == '__main__':
-    test()
+    main()
