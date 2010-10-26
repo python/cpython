@@ -31,7 +31,7 @@ class Chooser:
         if dbfile != self.__databasefile:
             colordb = ColorDB.get_colordb(dbfile)
         if not self.__master:
-            from Tkinter import Tk
+            from tkinter import Tk
             self.__master = Tk()
         if not self.__pw:
             self.__pw, self.__sb = \
@@ -92,7 +92,7 @@ def save():
 
 # test stuff
 if __name__ == '__main__':
-    from Tkinter import *
+    from tkinter import *
 
     class Tester:
         def __init__(self):
