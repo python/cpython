@@ -1,8 +1,7 @@
 CGI Examples
 ------------
 
-Here are some example CGI programs.  For a larger example, see
-../../Tools/faqwiz/.
+Here are some example CGI programs.
 
 cgi0.sh -- A shell script to test your server is configured for CGI
 cgi1.py -- A Python script to test your server is configured for CGI
