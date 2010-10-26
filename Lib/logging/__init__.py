@@ -24,6 +24,7 @@ To use, simply 'import logging' and log away!
 """
 
 import sys, os, time, io, traceback, warnings, weakref
+from string import Template
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -351,6 +352,49 @@ def makeLogRecord(dict):
 #   Formatter classes and functions
 #---------------------------------------------------------------------------
 
+class PercentStyle(object):
+
+    default_format = '%(message)s'
+    asctime_format = '%(asctime)s'
+
+    def __init__(self, fmt):
+        self._fmt = fmt or self.default_format
+
+    def usesTime(self):
+        return self._fmt.find(self.asctime_format) >= 0
+
+    def format(self, record):
+        return self._fmt % record.__dict__
+
+class StrFormatStyle(PercentStyle):
+    default_format = '{message}'
+    asctime_format = '{asctime}'
+
+    def format(self, record):
+        return self._fmt.format(**record.__dict__)
+
+
+class StringTemplateStyle(PercentStyle):
+    default_format = '${message}'
+    asctime_format = '${asctime}'
+
+    def __init__(self, fmt):
+        self._fmt = fmt or self.default_format
+        self._tpl = Template(self._fmt)
+
+    def usesTime(self):
+        fmt = self._fmt
+        return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_format) >= 0
+
+    def format(self, record):
+        return self._tpl.substitute(**record.__dict__)
+
+_STYLES = {
+    '%': PercentStyle,
+    '{': StrFormatStyle,
+    '$': StringTemplateStyle
+}
+
 class Formatter(object):
     """
     Formatter instances are used to convert a LogRecord to text.
@@ -410,18 +454,11 @@ class Formatter(object):
         .. versionchanged: 3.2
            Added the ``style`` parameter.
         """
-        if style not in ('%', '$', '{'):
-            style = '%'
-        self._style = style
-        if fmt:
-            self._fmt = fmt
-        else:
-            if style == '%':
-                self._fmt = "%(message)s"
-            elif style == '{':
-                self._fmt = '{message}'
-            else:
-                self._fmt = '${message}'
+        if style not in _STYLES:
+            raise ValueError('Style must be one of: %s' % ','.join(
+                             _STYLES.keys()))
+        self._style = _STYLES[style](fmt)
+        self._fmt = self._style._fmt
         self.datefmt = datefmt
 
     def formatTime(self, record, datefmt=None):
@@ -473,25 +510,10 @@ class Formatter(object):
         """
         Check if the format uses the creation time of the record.
         """
-        if self._style == '%':
-            result = self._fmt.find("%(asctime)") >= 0
-        elif self._style == '$':
-            result = self._fmt.find("{asctime}") >= 0
-        else:
-            result = self._fmt.find("$asctime") >= 0 or \
-                     self._fmt.find("${asctime}") >= 0
-        return result
+        return self._style.usesTime()
 
     def formatMessage(self, record):
-        style = self._style
-        if style == '%':
-            s = self._fmt % record.__dict__
-        elif style == '{':
-            s = self._fmt.format(**record.__dict__)
-        else:
-            from string import Template
-            s = Template(self._fmt).substitute(**record.__dict__)
-        return s
+        return self._style.format(record)
 
     def format(self, record):
         """

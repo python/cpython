@@ -1891,6 +1891,11 @@ class FormatterTest(unittest.TestCase):
         self.assertEqual(f.format(r), '${Message with 2 placeholders}')
         f = logging.Formatter('%(random)s')
         self.assertRaises(KeyError, f.format, r)
+        self.assertFalse(f.usesTime())
+        f = logging.Formatter('%(asctime)s')
+        self.assertTrue(f.usesTime())
+        f = logging.Formatter('asctime')
+        self.assertFalse(f.usesTime())
 
     def test_braces(self):
         "Test {}-formatting"
@@ -1899,6 +1904,11 @@ class FormatterTest(unittest.TestCase):
         self.assertEqual(f.format(r), '$%Message with 2 placeholders%$')
         f = logging.Formatter('{random}', style='{')
         self.assertRaises(KeyError, f.format, r)
+        self.assertFalse(f.usesTime())
+        f = logging.Formatter('{asctime}', style='{')
+        self.assertTrue(f.usesTime())
+        f = logging.Formatter('asctime', style='{')
+        self.assertFalse(f.usesTime())
 
     def test_dollars(self):
         "Test $-formatting"
@@ -1909,6 +1919,13 @@ class FormatterTest(unittest.TestCase):
         self.assertEqual(f.format(r), '$%Message with 2 placeholders%$')
         f = logging.Formatter('${random}', style='$')
         self.assertRaises(KeyError, f.format, r)
+        self.assertFalse(f.usesTime())
+        f = logging.Formatter('${asctime}', style='$')
+        self.assertTrue(f.usesTime())
+        f = logging.Formatter('$asctime', style='$')
+        self.assertTrue(f.usesTime())
+        f = logging.Formatter('asctime', style='$')
+        self.assertFalse(f.usesTime())
 
 class BaseFileTest(BaseTest):
     "Base class for handler tests that write log files"
