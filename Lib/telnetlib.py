@@ -552,7 +552,7 @@ class Telnet:
             line = sys.stdin.readline()
             if not line:
                 break
-            self.write(line)
+            self.write(line.encode('ascii'))
 
     def listener(self):
         """Helper for mt_interact() -- this executes in the other thread."""
@@ -563,7 +563,7 @@ class Telnet:
                 print('*** Connection closed by remote host ***')
                 return
             if data:
-                sys.stdout.write(data)
+                sys.stdout.write(data.decode('ascii'))
             else:
                 sys.stdout.flush()
 
