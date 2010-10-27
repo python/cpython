@@ -100,6 +100,12 @@ class XMLGenerator(handler.ContentHandler):
     def _qname(self, name):
         """Builds a qualified name from a (ns_url, localname) pair"""
         if name[0]:
+            # Per http://www.w3.org/XML/1998/namespace, The 'xml' prefix is
+            # bound by definition to http://www.w3.org/XML/1998/namespace.  It
+            # does not need to be declared and will not usually be found in
+            # self._current_context.
+            if 'http://www.w3.org/XML/1998/namespace' == name[0]:
+                return 'xml:' + name[1]
             # The name is in a non-empty namespace
             prefix = self._current_context[name[0]]
             if prefix:

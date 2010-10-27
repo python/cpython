@@ -51,6 +51,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5027: The standard ``xml`` namespace is now understood by
+  xml.sax.saxutils.XMLGenerator as being bound to
+  http://www.w3.org/XML/1998/namespace.  Patch by Troy J. Farrell.
+
 - Issue #5975: Add csv.unix_dialect class.
 
 - Issue #7761: telnetlib.interact failures on Windows fixed.
