@@ -1,4 +1,3 @@
-# -*- coding: iso-8859-1 -*-
 """ Test script for the Unicode implementation.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
@@ -415,11 +414,11 @@ class UnicodeTest(
         self.assertTrue("b0".isidentifier())
         self.assertTrue("bc".isidentifier())
         self.assertTrue("b_".isidentifier())
-        self.assertTrue("µ".isidentifier())
+        self.assertTrue("Âµ".isidentifier())
 
         self.assertFalse(" ".isidentifier())
         self.assertFalse("[".isidentifier())
-        self.assertFalse("©".isidentifier())
+        self.assertFalse("Â©".isidentifier())
         self.assertFalse("0".isidentifier())
 
     def test_isprintable(self):
