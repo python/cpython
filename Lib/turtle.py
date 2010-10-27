@@ -109,6 +109,7 @@ import types
 import math
 import time
 import os
+import inspect
 
 from os.path import isfile, split, join
 from copy import deepcopy
@@ -3889,31 +3890,35 @@ except:
 
 
 def getmethparlist(ob):
-    "Get strings describing the arguments for the given object"
-    argText1 = argText2 = ""
+    """Get strings describing the arguments for the given object
+
+    Returns a pair of strings representing function parameter lists
+    including parenthesis.  The first string is suitable for use in
+    function definition and the second is suitable for use in function
+    call.  The "self" parameter is not included.
+    """
+    defText = callText = ""
     # bit of a hack for methods - turn it into a function
     # but we drop the "self" param.
     # Try and build one for Python defined functions
-    argOffset = 1
-    counter = ob.__code__.co_argcount
-    items2 = list(ob.__code__.co_varnames[argOffset:counter])
-    realArgs = ob.__code__.co_varnames[argOffset:counter]
+    args, varargs, varkw = inspect.getargs(ob.__code__)
+    items2 = args[1:]
+    realArgs = args[1:]
     defaults = ob.__defaults__ or []
-    defaults = list(map(lambda name: "=%s" % repr(name), defaults))
+    defaults = ["=%r" % (value,) for value in defaults]
     defaults = [""] * (len(realArgs)-len(defaults)) + defaults
-    items1 = list(map(lambda arg, dflt: arg+dflt, realArgs, defaults))
-    if ob.__code__.co_flags & 0x4:
-        items1.append("*"+ob.__code__.co_varnames[counter])
-        items2.append("*"+ob.__code__.co_varnames[counter])
-        counter += 1
-    if ob.__code__.co_flags & 0x8:
-        items1.append("**"+ob.__code__.co_varnames[counter])
-        items2.append("**"+ob.__code__.co_varnames[counter])
-    argText1 = ", ".join(items1)
-    argText1 = "(%s)" % argText1
-    argText2 = ", ".join(items2)
-    argText2 = "(%s)" % argText2
-    return argText1, argText2
+    items1 = [arg + dflt for arg, dflt in zip(realArgs, defaults)]
+    if varargs is not None:
+        items1.append("*" + varargs)
+        items2.append("*" + varargs)
+    if varkw is not None:
+        items1.append("**" + varkw)
+        items2.append("**" + varkw)
+    defText = ", ".join(items1)
+    defText = "(%s)" % defText
+    callText = ", ".join(items2)
+    callText = "(%s)" % callText
+    return defText, callText
 
 def _turtle_docrevise(docstr):
     """To reduce docstrings from RawTurtle class for functions
