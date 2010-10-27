@@ -1,4 +1,4 @@
-# regression test for SAX 2.0            -*- coding: iso-8859-1 -*-
+# regression test for SAX 2.0            -*- coding: utf-8 -*-
 # $Id$
 
 from xml.sax import make_parser, ContentHandler, \
@@ -109,7 +109,7 @@ class SaxutilsTest(unittest.TestCase):
                           "&lt;Donald Duck &amp; Co&gt;")
 
     def test_escape_extra(self):
-        self.assertEquals(escape("Hei på deg", {"å" : "&aring;"}),
+        self.assertEquals(escape("Hei pÃ¥ deg", {"Ã¥" : "&aring;"}),
                           "Hei p&aring; deg")
 
     # ===== unescape
@@ -121,7 +121,7 @@ class SaxutilsTest(unittest.TestCase):
                           "<Donald Duck & Co>")
 
     def test_unescape_extra(self):
-        self.assertEquals(unescape("Hei på deg", {"å" : "&aring;"}),
+        self.assertEquals(unescape("Hei pÃ¥ deg", {"Ã¥" : "&aring;"}),
                           "Hei p&aring; deg")
 
     def test_unescape_amp_extra(self):
