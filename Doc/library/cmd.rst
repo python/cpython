@@ -204,7 +204,7 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
    support :program:`Emacs`\ -like line editing  and command-history keystrokes.)
 
 Cmd Example
-===========
+-----------
 
 .. sectionauthor:: Raymond Hettinger <python at rcn dot com>
 

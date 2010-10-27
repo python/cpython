@@ -1,9 +1,9 @@
-========================================
-:mod:`turtle` --- Turtle graphics for Tk
-========================================
+=================================
+:mod:`turtle` --- Turtle graphics
+=================================
 
 .. module:: turtle
-   :synopsis: Turtle graphics for Tk
+   :synopsis: An educational framework for simple graphics applications
 .. sectionauthor:: Gregor Lingl <gregor.lingl@aon.at>
 
 .. testsetup:: default
