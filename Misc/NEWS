@@ -63,6 +63,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5027: The standard ``xml`` namespace is now understood by
+  xml.sax.saxutils.XMLGenerator as being bound to
+  http://www.w3.org/XML/1998/namespace.  Patch by Troy J. Farrell.
+
 - Issue #10163: Skip unreadable registry keys during mimetypes
   initialization.
 
