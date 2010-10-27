@@ -635,6 +635,8 @@ Extension Modules
 Build
 -----
 
+- Issue #8852: Allow the socket module to build on OpenSolaris.
+
 - Issue #10054: Some platforms provide uintptr_t in inttypes.h.  Patch by
   Akira Kitada.
 
