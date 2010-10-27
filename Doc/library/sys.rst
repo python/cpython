@@ -572,7 +572,7 @@ always available.
    Their intended use is to allow an interactive user to import a debugger module
    and engage in post-mortem debugging without having to re-execute the command
    that caused the error.  (Typical use is ``import pdb; pdb.pm()`` to enter the
-   post-mortem debugger; see chapter :ref:`debugger` for
+   post-mortem debugger; see :mod:`pdb` module for
    more information.)
 
    The meaning of the variables is the same as that of the return values from
