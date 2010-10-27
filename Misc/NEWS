@@ -51,7 +51,9 @@ Core and Builtins
 Library
 -------
 
-- #7761: telnetlib.interact failures on Windows fixed.
+- Issue #5975: Add csv.unix_dialect class.
+
+- Issue #7761: telnetlib.interact failures on Windows fixed.
 
 - logging: Added style option to Formatter to allow %, {} or $-formatting.
 

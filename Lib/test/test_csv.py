@@ -515,6 +515,15 @@ class TestEscapedExcel(TestCsvBase):
     def test_read_escape_fieldsep(self):
         self.readerAssertEqual('abc\\,def\r\n', [['abc,def']])
 
+class TestDialectUnix(TestCsvBase):
+    dialect = 'unix'
+
+    def test_simple_writer(self):
+        self.writerAssertEqual([[1, 'abc def', 'abc']], '"1","abc def","abc"\n')
+
+    def test_simple_reader(self):
+        self.readerAssertEqual('"1","abc def","abc"\n', [['1', 'abc def', 'abc']])
+
 class QuotedEscapedExcel(csv.excel):
     quoting = csv.QUOTE_NONNUMERIC
     escapechar = '\\'
