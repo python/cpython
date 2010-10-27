@@ -1584,15 +1584,19 @@ PyObject *PyUnicode_AsEncodedObject(PyObject *unicode,
     return NULL;
 }
 
-PyObject *PyUnicode_EncodeFSDefault(PyObject *unicode)
+PyObject *
+PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
-    if (Py_FileSystemDefaultEncoding) {
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
-        if (strcmp(Py_FileSystemDefaultEncoding, "mbcs") == 0)
-            return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
-                                        PyUnicode_GET_SIZE(unicode),
-                                        NULL);
-#endif
+    return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
+                                PyUnicode_GET_SIZE(unicode),
+                                NULL);
+#elif defined(__APPLE__)
+    return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
+                                PyUnicode_GET_SIZE(unicode),
+                                "surrogateescape");
+#else
+    if (Py_FileSystemDefaultEncoding) {
         return PyUnicode_AsEncodedString(unicode,
                                          Py_FileSystemDefaultEncoding,
                                          "surrogateescape");
@@ -1615,6 +1619,7 @@ PyObject *PyUnicode_EncodeFSDefault(PyObject *unicode)
         PyMem_Free(bytes);
         return bytes_obj;
     }
+#endif
 }
 
 PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
@@ -1761,21 +1766,17 @@ PyUnicode_DecodeFSDefault(const char *s) {
 PyObject*
 PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 {
+#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
+    return PyUnicode_DecodeMBCS(s, size, NULL);
+#elif defined(__APPLE__)
+    return PyUnicode_DecodeUTF8(s, size, "surrogateescape");
+#else
     /* During the early bootstrapping process, Py_FileSystemDefaultEncoding
        can be undefined. If it is case, decode using UTF-8. The following assumes
        that Py_FileSystemDefaultEncoding is set to a built-in encoding during the
        bootstrapping process where the codecs aren't ready yet.
     */
     if (Py_FileSystemDefaultEncoding) {
-#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
-        if (strcmp(Py_FileSystemDefaultEncoding, "mbcs") == 0) {
-            return PyUnicode_DecodeMBCS(s, size, NULL);
-        }
-#elif defined(__APPLE__)
-        if (strcmp(Py_FileSystemDefaultEncoding, "utf-8") == 0) {
-            return PyUnicode_DecodeUTF8(s, size, "surrogateescape");
-        }
-#endif
         return PyUnicode_Decode(s, size,
                                 Py_FileSystemDefaultEncoding,
                                 "surrogateescape");
@@ -1799,6 +1800,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
         PyMem_Free(wchar);
         return unicode;
     }
+#endif
 }
 
 
