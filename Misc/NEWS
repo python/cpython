@@ -184,6 +184,8 @@ Tests
 Build
 -----
 
+- Issue #8852: Allow the socket module to build on OpenSolaris.
+
 - Drop -OPT:Olimit compiler option.
 
 - Issue #10094: Use versioned .so files on GNU/kfreeBSD and the GNU Hurd.
