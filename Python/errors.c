@@ -333,29 +333,7 @@ PyErr_BadArgument(void)
 PyObject *
 PyErr_NoMemory(void)
 {
-    if (PyErr_ExceptionMatches(PyExc_MemoryError))
-        /* already current */
-        return NULL;
-
-    /* raise the pre-allocated instance if it still exists */
-    if (PyExc_MemoryErrorInst)
-    {
-        /* Clear the previous traceback, otherwise it will be appended
-         * to the current one.
-         *
-         * The following statement is not likely to raise any error;
-         * if it does, we simply discard it.
-         */
-        PyException_SetTraceback(PyExc_MemoryErrorInst, Py_None);
-
-        PyErr_SetObject(PyExc_MemoryError, PyExc_MemoryErrorInst);
-    }
-    else
-        /* this will probably fail since there's no memory and hee,
-           hee, we have to instantiate this class
-        */
-        PyErr_SetNone(PyExc_MemoryError);
-
+    PyErr_SetNone(PyExc_MemoryError);
     return NULL;
 }
 
