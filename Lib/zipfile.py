@@ -22,10 +22,10 @@ except ImportError:
     zlib = None
     crc32 = binascii.crc32
 
-__all__ = ["BadZipfile", "error", "ZIP_STORED", "ZIP_DEFLATED", "is_zipfile",
-           "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile" ]
+__all__ = ["BadZipFile", "BadZipfile", "error", "ZIP_STORED", "ZIP_DEFLATED",
+           "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile"]
 
-class BadZipfile(Exception):
+class BadZipFile(Exception):
     pass
 
 
@@ -35,7 +35,8 @@ class LargeZipFile(Exception):
     and those extensions are disabled.
     """
 
-error = BadZipfile      # The exception raised by this module
+error = BadZipfile = BadZipFile      # Pre-3.2 compatibility names
+
 
 ZIP64_LIMIT = (1 << 31) - 1
 ZIP_FILECOUNT_LIMIT = 1 << 16
@@ -180,7 +181,7 @@ def _EndRecData64(fpin, offset, endrec):
         return endrec
 
     if diskno != 0 or disks != 1:
-        raise BadZipfile("zipfiles that span multiple disks are not supported")
+        raise BadZipZile("zipfiles that span multiple disks are not supported")
 
     # Assume no 'zip64 extensible data'
     fpin.seek(offset - sizeEndCentDir64Locator - sizeEndCentDir64, 2)
@@ -592,7 +593,7 @@ class ZipExtFile(io.BufferedIOBase):
         self._running_crc = crc32(newdata, self._running_crc) & 0xffffffff
         # Check the CRC if we're at the end of the file
         if eof and self._running_crc != self._expected_crc:
-            raise BadZipfile("Bad CRC-32 for file %r" % self.name)
+            raise BadZipFile("Bad CRC-32 for file %r" % self.name)
 
     def read1(self, n):
         """Read up to n bytes with at most one read() system call."""
@@ -720,7 +721,7 @@ class ZipFile:
                 self._RealGetContents()
                 # seek to start of directory and overwrite
                 self.fp.seek(self.start_dir, 0)
-            except BadZipfile:
+            except BadZipFile:
                 # file is not a zip file, just append
                 self.fp.seek(0, 2)
 
@@ -744,7 +745,7 @@ class ZipFile:
         is bad."""
         try:
             self._RealGetContents()
-        except BadZipfile:
+        except BadZipFile:
             if not self._filePassed:
                 self.fp.close()
                 self.fp = None
@@ -756,9 +757,9 @@ class ZipFile:
         try:
             endrec = _EndRecData(fp)
         except IOError:
-            raise BadZipfile("File is not a zip file")
+            raise BadZipFile("File is not a zip file")
         if not endrec:
-            raise BadZipfile("File is not a zip file")
+            raise BadZipFile("File is not a zip file")
         if self.debug > 1:
             print(endrec)
         size_cd = endrec[_ECD_SIZE]             # bytes in central directory
@@ -783,7 +784,7 @@ class ZipFile:
         while total < size_cd:
             centdir = fp.read(sizeCentralDir)
             if centdir[0:4] != stringCentralDir:
-                raise BadZipfile("Bad magic number for central directory")
+                raise BadZipFile("Bad magic number for central directory")
             centdir = struct.unpack(structCentralDir, centdir)
             if self.debug > 2:
                 print(centdir)
@@ -854,7 +855,7 @@ class ZipFile:
                 f = self.open(zinfo.filename, "r")
                 while f.read(chunk_size):     # Check CRC-32
                     pass
-            except BadZipfile:
+            except BadZipFile:
                 return zinfo.filename
 
     def getinfo(self, name):
@@ -903,7 +904,7 @@ class ZipFile:
         # Skip the file header:
         fheader = zef_file.read(sizeFileHeader)
         if fheader[0:4] != stringFileHeader:
-            raise BadZipfile("Bad magic number for file header")
+            raise BadZipFile("Bad magic number for file header")
 
         fheader = struct.unpack(structFileHeader, fheader)
         fname = zef_file.read(fheader[_FH_FILENAME_LENGTH])
@@ -911,7 +912,7 @@ class ZipFile:
             zef_file.read(fheader[_FH_EXTRA_FIELD_LENGTH])
 
         if fname != zinfo.orig_filename.encode("utf-8"):
-            raise BadZipfile(
+            raise BadZipFile(
                   'File name in directory %r and header %r differ.'
                   % (zinfo.orig_filename, fname))
 

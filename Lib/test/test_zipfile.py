@@ -463,8 +463,8 @@ class TestsWithSourceFile(unittest.TestCase):
 
         try:
             with zipfile.ZipFile(TESTFN2, "r") as zipfp2:
-                raise zipfile.BadZipfile()
-        except zipfile.BadZipfile:
+                raise zipfile.BadZipFile()
+        except zipfile.BadZipFile:
             self.assertTrue(zipfp2.fp is None, 'zipfp is not closed')
 
     def tearDown(self):
@@ -723,7 +723,7 @@ class OtherTests(unittest.TestCase):
             fp.write("this is not a legal zip file\n")
         try:
             zf = zipfile.ZipFile(TESTFN)
-        except zipfile.BadZipfile:
+        except zipfile.BadZipFile:
             pass
 
     def test_is_zip_erroneous_file(self):
@@ -786,11 +786,11 @@ class OtherTests(unittest.TestCase):
     def test_empty_file_raises_BadZipFile(self):
         f = open(TESTFN, 'w')
         f.close()
-        self.assertRaises(zipfile.BadZipfile, zipfile.ZipFile, TESTFN)
+        self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN)
 
         with open(TESTFN, 'w') as fp:
             fp.write("short file")
-        self.assertRaises(zipfile.BadZipfile, zipfile.ZipFile, TESTFN)
+        self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN)
 
     def test_closed_zip_raises_RuntimeError(self):
         """Verify that testzip() doesn't swallow inappropriate exceptions."""
@@ -912,23 +912,23 @@ class OtherTests(unittest.TestCase):
         self.check_testzip_with_bad_crc(zipfile.ZIP_DEFLATED)
 
     def check_read_with_bad_crc(self, compression):
-        """Tests that files with bad CRCs raise a BadZipfile exception when read."""
+        """Tests that files with bad CRCs raise a BadZipFile exception when read."""
         zipdata = self.zips_with_bad_crc[compression]
 
         # Using ZipFile.read()
         with zipfile.ZipFile(io.BytesIO(zipdata), mode="r") as zipf:
-            self.assertRaises(zipfile.BadZipfile, zipf.read, 'afile')
+            self.assertRaises(zipfile.BadZipFile, zipf.read, 'afile')
 
         # Using ZipExtFile.read()
         with zipfile.ZipFile(io.BytesIO(zipdata), mode="r") as zipf:
             with zipf.open('afile', 'r') as corrupt_file:
-                self.assertRaises(zipfile.BadZipfile, corrupt_file.read)
+                self.assertRaises(zipfile.BadZipFile, corrupt_file.read)
 
         # Same with small reads (in order to exercise the buffering logic)
         with zipfile.ZipFile(io.BytesIO(zipdata), mode="r") as zipf:
             with zipf.open('afile', 'r') as corrupt_file:
                 corrupt_file.MIN_READ_SIZE = 2
-                with self.assertRaises(zipfile.BadZipfile):
+                with self.assertRaises(zipfile.BadZipFile):
                     while corrupt_file.read(2):
                         pass
 
@@ -978,11 +978,11 @@ class OtherTests(unittest.TestCase):
 
     def test_open_empty_file(self):
         # Issue 1710703: Check that opening a file with less than 22 bytes
-        # raises a BadZipfile exception (rather than the previously unhelpful
+        # raises a BadZipFile exception (rather than the previously unhelpful
         # IOError)
         f = open(TESTFN, 'w')
         f.close()
-        self.assertRaises(zipfile.BadZipfile, zipfile.ZipFile, TESTFN, 'r')
+        self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN, 'r')
 
     def tearDown(self):
         unlink(TESTFN)
