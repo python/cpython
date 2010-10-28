@@ -768,88 +768,88 @@ For example::
       only work if the timer is still in its waiting stage.
 
 
-.. _barrier-objects
-
 Barrier Objects
 ---------------
 
-This class provides a simple synchronization primitive for use by a fixed
-number of threads that need to wait for each other.  Each of the threads
-tries to pass the barrier by calling the :meth:`wait` method and will block
-until all of the threads have made the call.
-At this points, the threads are released simultanously.
+.. versionadded:: 3.2
+
+This class provides a simple synchronization primitive for use by a fixed number
+of threads that need to wait for each other.  Each of the threads tries to pass
+the barrier by calling the :meth:`wait` method and will block until all of the
+threads have made the call.  At this points, the threads are released
+simultanously.
 
 The barrier can be reused any number of times for the same number of threads.
 
 As an example, here is a simple way to synchronize a client and server thread::
 
    b = Barrier(2, timeout=5)
-   server():
+
+   def server():
        start_server()
        b.wait()
        while True:
            connection = accept_connection()
            process_server_connection(connection)
 
-   client():
+   def client():
        b.wait()
        while True:
-          connection = make_connection()
-          process_client_connection(connection)
+           connection = make_connection()
+           process_client_connection(connection)
+
 
 .. class:: Barrier(parties, action=None, timeout=None)
 
-   Create a barrier object for *parties* number of threads. An *action*,
-   when provided, is a callable to be called by one of the threads when
-   they are released.  *timeout* is the default timeout value if none
-   is specified for the :meth:`wait` method.
+   Create a barrier object for *parties* number of threads.  An *action*, when
+   provided, is a callable to be called by one of the threads when they are
+   released.  *timeout* is the default timeout value if none is specified for
+   the :meth:`wait` method.
 
    .. method:: wait(timeout=None)
 
       Pass the barrier.  When all the threads party to the barrier have called
-      this function, they are all released simultaneously.  If a *timeout*
-      is provided, is is used in preference to any that was supplied to the
-      class constructor.
+      this function, they are all released simultaneously.  If a *timeout* is
+      provided, is is used in preference to any that was supplied to the class
+      constructor.
 
-      The return value is an integer in the range 0 to *parties*-1, different
+      The return value is an integer in the range 0 to *parties* -- 1, different
       for each thrad.  This can be used to select a thread to do some special
-      housekeeping, eg:
+      housekeeping, e.g.::
 
          i = barrier.wait()
          if i == 0:
-            # Only one thread needs to print this
-            print("passed the barrier")
+             # Only one thread needs to print this
+             print("passed the barrier")
 
-      If an *action* was
-      provided to the constructor, one of the threads will have called it
-      prior to being released.  Should this call raise an error, the barrier
-      is put into the broken state.
+      If an *action* was provided to the constructor, one of the threads will
+      have called it prior to being released.  Should this call raise an error,
+      the barrier is put into the broken state.
 
       If the call times out, the barrier is put into the broken state.
 
       This method may raise a :class:`BrokenBarrierError` exception if the
-      barrier is broken or reset while a thread is waiting
+      barrier is broken or reset while a thread is waiting.
 
    .. method:: reset()
 
-      Return the barrier to the default, empty state.  Any threads waiting on
-      it will receive the :class:`BrokenBarrierError` exception.
+      Return the barrier to the default, empty state.  Any threads waiting on it
+      will receive the :class:`BrokenBarrierError` exception.
 
       Note that using this function may can require some external
-      synchronization if there are other threads whose state is unknown.
-      If a barrier is broken it may be better to just leave it and create a
-      new one.
+      synchronization if there are other threads whose state is unknown.  If a
+      barrier is broken it may be better to just leave it and create a new one.
 
    .. method:: abort()
 
       Put the barrier into a broken state.  This causes any active or future
-      calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.
-      Use this for example if one of the needs to abort, to avoid deadlocking
-      the application.
+      calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.  Use
+      this for example if one of the needs to abort, to avoid deadlocking the
+      application.
 
       It may be preferable to simply create the barrier with a sensible
-      *timeout* value to automatically guard against one of the threads
-      going awry.
+      *timeout* value to automatically guard against one of the threads going
+      awry.
 
    .. attribute:: parties
 
@@ -863,13 +863,11 @@ As an example, here is a simple way to synchronize a client and server thread::
 
       A boolean that is ``True`` if the barrier is in the broken state.
 
-   .. versionadded:: 3.2
 
-.. class:: BrokenBarrierError(RuntimeError)
+.. exception:: BrokenBarrierError
 
-   The exception raised when the :class:`Barrier` object is reset or broken.
-
-   .. versionadded:: 3.2
+   This exception, a subclass of :exc:`RuntimeError`, is raised when the
+   :class:`Barrier` object is reset or broken.
 
 
 .. _with-locks:
