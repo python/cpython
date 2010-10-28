@@ -99,7 +99,7 @@ class UnicodeFileTests(unittest.TestCase):
             filename = filename.encode(sys.getfilesystemencoding())
         if check_fn_in_exception:
             self.assertEqual(exc_filename, filename, "Function '%s(%a) failed "
-                             "with bad filename in the exception: %r" %
+                             "with bad filename in the exception: %a" %
                              (fn.__name__, filename, exc_filename))
 
     def test_failures(self):
