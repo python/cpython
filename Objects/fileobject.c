@@ -423,6 +423,7 @@ close_the_file(PyFileObject *f)
     int sts = 0;
     int (*local_close)(FILE *);
     FILE *local_fp = f->f_fp;
+    char *local_setbuf = f->f_setbuf;
     if (local_fp != NULL) {
         local_close = f->f_close;
         if (local_close != NULL && f->unlocked_count > 0) {
@@ -446,10 +447,15 @@ close_the_file(PyFileObject *f)
          * called. */
         f->f_fp = NULL;
         if (local_close != NULL) {
+            /* Issue #9295: must temporarily reset f_setbuf so that another
+               thread doesn't free it when running file_close() concurrently.
+               Otherwise this close() will crash when flushing the buffer. */
+            f->f_setbuf = NULL;
             Py_BEGIN_ALLOW_THREADS
             errno = 0;
             sts = (*local_close)(local_fp);
             Py_END_ALLOW_THREADS
+            f->f_setbuf = local_setbuf;
             if (sts == EOF)
                 return PyErr_SetFromErrno(PyExc_IOError);
             if (sts != 0)
