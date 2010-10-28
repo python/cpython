@@ -10,6 +10,9 @@ What's New in Python 3.1.3?
 Core and Builtins
 -----------------
 
+- Issue #5437: A preallocated MemoryError instance should not hold traceback
+  data (including local variables caught in the stack trace) alive infinitely.
+
 - Issue #10077: Fix logging of site module errors at startup.
 
 - Issue #10186: Fix the SyntaxError caret when the offset is equal to the length

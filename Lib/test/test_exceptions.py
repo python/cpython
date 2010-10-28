@@ -669,6 +669,46 @@ class ExceptionTests(unittest.TestCase):
         tb2 = raiseMemError()
         self.assertEqual(tb1, tb2)
 
+    def test_memory_error_cleanup(self):
+        # Issue #5437: preallocated MemoryError instances should not keep
+        # traceback objects alive.
+        from _testcapi import raise_memoryerror
+        class C:
+            pass
+        wr = None
+        def inner():
+            nonlocal wr
+            c = C()
+            wr = weakref.ref(c)
+            raise_memoryerror()
+        # We cannot use assertRaises since it manually deletes the traceback
+        try:
+            inner()
+        except MemoryError as e:
+            self.assertNotEqual(wr(), None)
+        else:
+            self.fail("MemoryError not raised")
+        self.assertEqual(wr(), None)
+
+    def test_recursion_error_cleanup(self):
+        # Same test as above, but with "recursion exceeded" errors
+        class C:
+            pass
+        wr = None
+        def inner():
+            nonlocal wr
+            c = C()
+            wr = weakref.ref(c)
+            inner()
+        # We cannot use assertRaises since it manually deletes the traceback
+        try:
+            inner()
+        except RuntimeError as e:
+            self.assertNotEqual(wr(), None)
+        else:
+            self.fail("RuntimeError not raised")
+        self.assertEqual(wr(), None)
+
 def test_main():
     run_unittest(ExceptionTests)
 
