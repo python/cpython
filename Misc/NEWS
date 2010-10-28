@@ -51,6 +51,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7351: Add ``zipfile.BadZipFile`` spelling of the exception name
+  and deprecate the old name ``zipfile.BadZipfile``.
+
 - Issue #5027: The standard ``xml`` namespace is now understood by
   xml.sax.saxutils.XMLGenerator as being bound to
   http://www.w3.org/XML/1998/namespace.  Patch by Troy J. Farrell.
