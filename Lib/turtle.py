@@ -3144,7 +3144,7 @@ class RawTurtle(TPen, TNavigator):
         if pen is down. All other methodes for turtle movement depend
         on this one.
         """
-        ## Version mit undo-stuff
+        ## Version with undo-stuff
         go_modes = ( self._drawing,
                      self._pencolor,
                      self._pensize,
