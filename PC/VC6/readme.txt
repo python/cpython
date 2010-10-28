@@ -148,20 +148,18 @@ _ssl
     Get the latest source code for OpenSSL from
         http://www.openssl.org
 
-    You (probably) don't want the "engine" code.  For example, get
-        openssl-0.9.8g.tar.gz
-    not
-        openssl-engine-0.9.8g.tar.gz
+    You (probably) don't want the "engine" code.  For example, don't get
+        openssl-engine-0.9.6g.tar.gz
 
     Unpack into the "dist" directory, retaining the folder name from
     the archive - for example, the latest stable OpenSSL will install as
-        dist/openssl-0.9.8g
+        dist/openssl-1.0.0a
 
     You can (theoretically) use any version of OpenSSL you like - the
     build process will automatically select the latest version.
 
     You must also install ActivePerl from
-        http://www.activestate.com/Products/ActivePerl/
+        http://www.activestate.com/activeperl/
     as this is used by the OpenSSL build process.  Complain to them <wink>.
 
     The MSVC project simply invokes PC/VC6/build_ssl.py to perform
