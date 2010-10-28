@@ -122,22 +122,18 @@ class UnicodeFileTests(unittest.TestCase):
             f.close()
             os.stat(name)
 
+    # Skip the test on darwin, because darwin does normalize the filename to
+    # NFD (a variant of Unicode NFD form). Normalize the filename to NFC, NFKC,
+    # NFKD in Python is useless, because darwin will normalize it later and so
+    # open(), os.stat(), etc. don't raise any exception.
+    @unittest.skipIf(sys.platform == 'darwin', 'irrevelant test on Mac OS X')
     def test_normalize(self):
         files = set(self.files)
         others = set()
         for nf in set(['NFC', 'NFD', 'NFKC', 'NFKD']):
             others |= set(normalize(nf, file) for file in files)
         others -= files
-        if sys.platform == 'darwin':
-            files = set(normalize('NFD', file) for file in files)
         for name in others:
-            if sys.platform == 'darwin' and normalize('NFD', name) in files:
-                # Mac OS X decomposes Unicode names.  See comment above.
-                try:
-                    os.stat(name)
-                except OSError as err:
-                    raise AssertionError("File %a doesn't exist" % name)
-                continue
             self._apply_failure(open, name, IOError)
             self._apply_failure(os.stat, name, OSError)
             self._apply_failure(os.chdir, name, OSError)
@@ -146,14 +142,14 @@ class UnicodeFileTests(unittest.TestCase):
             # listdir may append a wildcard to the filename, so dont check
             self._apply_failure(os.listdir, name, OSError, False)
 
+    # Skip the test on darwin, because darwin uses a normalization different
+    # than Python NFD normalization: filenames are different even if we use
+    # Python NFD normalization.
+    @unittest.skipIf(sys.platform == 'darwin', 'irrevelant test on Mac OS X')
     def test_listdir(self):
         sf0 = set(self.files)
         f1 = os.listdir(support.TESTFN.encode(sys.getfilesystemencoding()))
         f2 = os.listdir(support.TESTFN)
-        if sys.platform == 'darwin':
-            # Mac OS X decomposes Unicode names.  See comment above.
-            sf0 = set(normalize('NFD', f) for f in self.files)
-            f2 = [normalize('NFD', f) for f in f2]
         sf2 = set(os.path.join(support.TESTFN, f) for f in f2)
         self.assertEqual(sf0, sf2, "%a != %a" % (sf0, sf2))
         self.assertEqual(len(f1), len(f2))
