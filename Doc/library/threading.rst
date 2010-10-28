@@ -574,6 +574,12 @@ needs to wake up one consumer thread.
       interface is then used to restore the recursion level when the lock is
       reacquired.
 
+      The return value is ``True`` unless a given *timeout* expired, in which
+      case it is ``False``.
+
+      .. versionchanged:: 3.2
+         Previously, the method always returned ``None``.
+
    .. method:: notify()
 
       Wake up a thread waiting on this condition, if any.  If the calling thread

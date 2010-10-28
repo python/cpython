@@ -232,6 +232,7 @@ class _Condition(_Verbose):
         try:    # restore state no matter what (e.g., KeyboardInterrupt)
             if timeout is None:
                 waiter.acquire()
+                gotit = True
                 if __debug__:
                     self._note("%s.wait(): got it", self)
             else:
@@ -249,6 +250,7 @@ class _Condition(_Verbose):
                 else:
                     if __debug__:
                         self._note("%s.wait(%s): got it", self, timeout)
+            return gotit
         finally:
             self._acquire_restore(saved_state)
 
