@@ -3109,6 +3109,7 @@ socket_gethostname(PyObject *self, PyObject *unused)
                                 PyUnicode_AS_UNICODE(result),
                                 size+1))
                 return result;
+            Py_DECREF(result);
         }
         return PyErr_SetExcFromWindowsErr(PyExc_WindowsError, GetLastError());
     }
