@@ -300,14 +300,14 @@ library/nntplib,272,:bytes,:bytes
 library/nntplib,272,:lines,:lines
 library/nntplib,272,:lines,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
 library/nntplib,272,:bytes,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
-library/pickle,567,:memory,"conn = sqlite3.connect("":memory:"")"
-library/profile,293,:lineno,"(sort by filename:lineno),"
-library/socket,261,::,"(10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]"
+library/pickle,,:memory,"conn = sqlite3.connect("":memory:"")"
+library/profile,,:lineno,"(sort by filename:lineno),"
+library/socket,,::,"(10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]"
 library/stdtypes,1026,:end,s[start:end]
 library/stdtypes,1195,:end,s[start:end]
-library/urllib.request,64,:close,Connection:close
-library/urllib.request,901,:password,"""joe:password@python.org"""
-library/urllib.request,1064,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
+library/urllib.request,,:close,Connection:close
+library/urllib.request,,:password,"""joe:password@python.org"""
+library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
 library/xmlrpc.client,103,:pass,http://user:pass@host:port/path
 library/xmlrpc.client,103,:port,http://user:pass@host:port/path
 library/xmlrpc.client,103,:pass,user:pass
