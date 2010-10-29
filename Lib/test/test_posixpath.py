@@ -229,8 +229,8 @@ class PosixPathTest(unittest.TestCase):
             f.close()
             self.assertEqual(d, b"foobar")
 
-            self.assertTrue(
-                posixpath.getctime(support.TESTFN) <=
+            self.assertLessEqual(
+                posixpath.getctime(support.TESTFN),
                 posixpath.getmtime(support.TESTFN)
             )
         finally:

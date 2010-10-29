@@ -50,8 +50,8 @@ class AllCommonTest(unittest.TestCase):
             f.close()
             self.assertEqual(d, b"foobar")
 
-            self.assertTrue(
-                genericpath.getctime(support.TESTFN) <=
+            self.assertLessEqual(
+                genericpath.getctime(support.TESTFN),
                 genericpath.getmtime(support.TESTFN)
             )
         finally:
