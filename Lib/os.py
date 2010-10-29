@@ -382,18 +382,32 @@ def get_exec_path(env=None):
     *env* must be an environment variable dict or None.  If *env* is None,
     os.environ will be used.
     """
+    # Use a local import instead of a global import to avoid bootstrap issue:
+    # the os module is used to build Python extensions.
+    import warnings
+
     if env is None:
         env = environ
 
     try:
-        path_list = env.get('PATH')
+        # ignore BytesWarning warning
+        with warnings.catch_warnings(record=True):
+            path_list = env.get('PATH')
     except (TypeError, BytesWarning):
+        # A BytesWarning here means that env has a b'PATH' key, but no 'PATH'
+        # key. Compare bytes and str raises a BytesWarning exception only if
+        # sys.flags.bytes_warning==2, and in this case it is not possible to
+        # create a dictionary with both keys.
         path_list = None
 
     if supports_bytes_environ:
         try:
-            path_listb = env[b'PATH']
+            # ignore BytesWarning warning
+            with warnings.catch_warnings(record=True):
+                path_listb = env[b'PATH']
         except (KeyError, TypeError, BytesWarning):
+            # A BytesWarning here means that env has a 'PATH' key, but no
+            # b'PATH' key. See the comment above for an explaination.
             pass
         else:
             if path_list is not None:

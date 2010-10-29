@@ -461,8 +461,11 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         if os.supports_bytes_environ:
             # env cannot contain 'PATH' and b'PATH' keys
             try:
-                mixed_env = {'PATH': '1', b'PATH': b'2'}
+                # ignore BytesWarning warning
+                with warnings.catch_warnings(record=True):
+                    mixed_env = {'PATH': '1', b'PATH': b'2'}
             except BytesWarning:
+                # mixed_env cannot be created with python -bb
                 pass
             else:
                 self.assertRaises(ValueError, os.get_exec_path, mixed_env)
