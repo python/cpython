@@ -54,6 +54,9 @@ Core and Builtins
 Library
 -------
 
+- tarfile.py: Add support for all missing variants of the GNU sparse
+  extensions and create files with holes when extracting sparse members.
+
 - Issue #10218: Return timeout status from ``Condition.wait`` in threading.
 
 - Issue #7351: Add ``zipfile.BadZipFile`` spelling of the exception name

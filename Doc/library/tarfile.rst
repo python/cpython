@@ -20,7 +20,8 @@ Some facts and figures:
 * read/write support for the POSIX.1-1988 (ustar) format.
 
 * read/write support for the GNU tar format including *longname* and *longlink*
-  extensions, read-only support for the *sparse* extension.
+  extensions, read-only support for all variants of the *sparse* extension
+  including restoration of sparse files.
 
 * read/write support for the POSIX.1-2001 (pax) format.
 

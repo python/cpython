@@ -701,12 +701,28 @@ class _FileInFile(object):
        object.
     """
 
-    def __init__(self, fileobj, offset, size, sparse=None):
+    def __init__(self, fileobj, offset, size, blockinfo=None):
         self.fileobj = fileobj
         self.offset = offset
         self.size = size
-        self.sparse = sparse
         self.position = 0
+
+        if blockinfo is None:
+            blockinfo = [(0, size)]
+
+        # Construct a map with data and zero blocks.
+        self.map_index = 0
+        self.map = []
+        lastpos = 0
+        realpos = self.offset
+        for offset, size in blockinfo:
+            if offset > lastpos:
+                self.map.append((False, lastpos, offset, None))
+            self.map.append((True, offset, offset + size, realpos))
+            realpos += size
+            lastpos = offset + size
+        if lastpos < self.size:
+            self.map.append((False, lastpos, self.size, None))
 
     def seekable(self):
         if not hasattr(self.fileobj, "seekable"):
@@ -732,48 +748,26 @@ class _FileInFile(object):
         else:
             size = min(size, self.size - self.position)
 
-        if self.sparse is None:
-            return self.readnormal(size)
-        else:
-            return self.readsparse(size)
-
-    def readnormal(self, size):
-        """Read operation for regular files.
-        """
-        self.fileobj.seek(self.offset + self.position)
-        self.position += size
-        return self.fileobj.read(size)
-
-    def readsparse(self, size):
-        """Read operation for sparse files.
-        """
-        data = b""
+        buf = b""
         while size > 0:
-            buf = self.readsparsesection(size)
-            if not buf:
-                break
-            size -= len(buf)
-            data += buf
-        return data
-
-    def readsparsesection(self, size):
-        """Read a single section of a sparse file.
-        """
-        section = self.sparse.find(self.position)
-
-        if section is None:
-            return b""
-
-        size = min(size, section.offset + section.size - self.position)
-
-        if isinstance(section, _data):
-            realpos = section.realpos + self.position - section.offset
-            self.fileobj.seek(self.offset + realpos)
-            self.position += size
-            return self.fileobj.read(size)
-        else:
-            self.position += size
-            return NUL * size
+            while True:
+                data, start, stop, offset = self.map[self.map_index]
+                if start <= self.position < stop:
+                    break
+                else:
+                    self.map_index += 1
+                    if self.map_index == len(self.map):
+                        self.map_index = 0
+            length = min(size, stop - self.position)
+            if data:
+                self.fileobj.seek(offset)
+                block = self.fileobj.read(stop - start)
+                buf += block[self.position - start:self.position + length]
+            else:
+                buf += NUL * length
+            size -= length
+            self.position += length
+        return buf
 #class _FileInFile
 
 
@@ -1367,28 +1361,15 @@ class TarInfo(object):
                     numbytes = nti(buf[pos + 12:pos + 24])
                 except ValueError:
                     break
-                structs.append((offset, numbytes))
+                if offset and numbytes:
+                    structs.append((offset, numbytes))
                 pos += 24
             isextended = bool(buf[504])
-
-        # Transform the sparse structures to something we can use
-        # in ExFileObject.
-        self.sparse = _ringbuffer()
-        lastpos = 0
-        realpos = 0
-        for offset, numbytes in structs:
-            if offset > lastpos:
-                self.sparse.append(_hole(lastpos, offset - lastpos))
-            self.sparse.append(_data(offset, numbytes, realpos))
-            realpos += numbytes
-            lastpos = offset + numbytes
-        if lastpos < origsize:
-            self.sparse.append(_hole(lastpos, origsize - lastpos))
+        self.sparse = structs
 
         self.offset_data = tarfile.fileobj.tell()
         tarfile.offset = self.offset_data + self._block(self.size)
         self.size = origsize
-
         return self
 
     def _proc_pax(self, tarfile):
@@ -1464,6 +1445,19 @@ class TarInfo(object):
         except HeaderError:
             raise SubsequentHeaderError("missing or bad subsequent header")
 
+        # Process GNU sparse information.
+        if "GNU.sparse.map" in pax_headers:
+            # GNU extended sparse format version 0.1.
+            self._proc_gnusparse_01(next, pax_headers)
+
+        elif "GNU.sparse.size" in pax_headers:
+            # GNU extended sparse format version 0.0.
+            self._proc_gnusparse_00(next, pax_headers, buf)
+
+        elif pax_headers.get("GNU.sparse.major") == "1" and pax_headers.get("GNU.sparse.minor") == "0":
+            # GNU extended sparse format version 1.0.
+            self._proc_gnusparse_10(next, pax_headers, tarfile)
+
         if self.type in (XHDTYPE, SOLARIS_XHDTYPE):
             # Patch the TarInfo object with the extended header info.
             next._apply_pax_info(pax_headers, tarfile.encoding, tarfile.errors)
@@ -1480,24 +1474,59 @@ class TarInfo(object):
 
         return next
 
+    def _proc_gnusparse_00(self, next, pax_headers, buf):
+        """Process a GNU tar extended sparse header, version 0.0.
+        """
+        offsets = []
+        for match in re.finditer(br"\d+ GNU.sparse.offset=(\d+)\n", buf):
+            offsets.append(int(match.group(1)))
+        numbytes = []
+        for match in re.finditer(br"\d+ GNU.sparse.numbytes=(\d+)\n", buf):
+            numbytes.append(int(match.group(1)))
+        next.sparse = list(zip(offsets, numbytes))
+
+    def _proc_gnusparse_01(self, next, pax_headers):
+        """Process a GNU tar extended sparse header, version 0.1.
+        """
+        sparse = [int(x) for x in pax_headers["GNU.sparse.map"].split(",")]
+        next.sparse = list(zip(sparse[::2], sparse[1::2]))
+
+    def _proc_gnusparse_10(self, next, pax_headers, tarfile):
+        """Process a GNU tar extended sparse header, version 1.0.
+        """
+        fields = None
+        sparse = []
+        buf = tarfile.fileobj.read(BLOCKSIZE)
+        fields, buf = buf.split(b"\n", 1)
+        fields = int(fields)
+        while len(sparse) < fields * 2:
+            if b"\n" not in buf:
+                buf += tarfile.fileobj.read(BLOCKSIZE)
+            number, buf = buf.split(b"\n", 1)
+            sparse.append(int(number))
+        next.offset_data = tarfile.fileobj.tell()
+        next.sparse = list(zip(sparse[::2], sparse[1::2]))
+
     def _apply_pax_info(self, pax_headers, encoding, errors):
         """Replace fields with supplemental information from a previous
            pax extended or global header.
         """
         for keyword, value in pax_headers.items():
-            if keyword not in PAX_FIELDS:
-                continue
-
-            if keyword == "path":
-                value = value.rstrip("/")
-
-            if keyword in PAX_NUMBER_FIELDS:
-                try:
-                    value = PAX_NUMBER_FIELDS[keyword](value)
-                except ValueError:
-                    value = 0
-
-            setattr(self, keyword, value)
+            if keyword == "GNU.sparse.name":
+                setattr(self, "path", value)
+            elif keyword == "GNU.sparse.size":
+                setattr(self, "size", int(value))
+            elif keyword == "GNU.sparse.realsize":
+                setattr(self, "size", int(value))
+            elif keyword in PAX_FIELDS:
+                if keyword in PAX_NUMBER_FIELDS:
+                    try:
+                        value = PAX_NUMBER_FIELDS[keyword](value)
+                    except ValueError:
+                        value = 0
+                if keyword == "path":
+                    value = value.rstrip("/")
+                setattr(self, keyword, value)
 
         self.pax_headers = pax_headers.copy()
 
@@ -1535,7 +1564,7 @@ class TarInfo(object):
     def isfifo(self):
         return self.type == FIFOTYPE
     def issparse(self):
-        return self.type == GNUTYPE_SPARSE
+        return self.sparse is not None
     def isdev(self):
         return self.type in (CHRTYPE, BLKTYPE, FIFOTYPE)
 # class TarInfo
@@ -2255,10 +2284,17 @@ class TarFile(object):
     def makefile(self, tarinfo, targetpath):
         """Make a file called targetpath.
         """
-        source = self.extractfile(tarinfo)
+        source = self.fileobj
+        source.seek(tarinfo.offset_data)
         target = bltn_open(targetpath, "wb")
-        copyfileobj(source, target)
-        source.close()
+        if tarinfo.sparse is not None:
+            for offset, size in tarinfo.sparse:
+                target.seek(offset)
+                copyfileobj(source, target, size)
+        else:
+            copyfileobj(source, target, tarinfo.size)
+        target.seek(tarinfo.size)
+        target.truncate()
         target.close()
 
     def makeunknown(self, tarinfo, targetpath):
@@ -2543,49 +2579,6 @@ class TarIter:
                 raise StopIteration
         self.index += 1
         return tarinfo
-
-# Helper classes for sparse file support
-class _section:
-    """Base class for _data and _hole.
-    """
-    def __init__(self, offset, size):
-        self.offset = offset
-        self.size = size
-    def __contains__(self, offset):
-        return self.offset <= offset < self.offset + self.size
-
-class _data(_section):
-    """Represent a data section in a sparse file.
-    """
-    def __init__(self, offset, size, realpos):
-        _section.__init__(self, offset, size)
-        self.realpos = realpos
-
-class _hole(_section):
-    """Represent a hole section in a sparse file.
-    """
-    pass
-
-class _ringbuffer(list):
-    """Ringbuffer class which increases performance
-       over a regular list.
-    """
-    def __init__(self):
-        self.idx = 0
-    def find(self, offset):
-        idx = self.idx
-        while True:
-            item = self[idx]
-            if offset in item:
-                break
-            idx += 1
-            if idx == len(self):
-                idx = 0
-            if idx == self.idx:
-                # End of File
-                return None
-        self.idx = idx
-        return item
 
 #--------------------
 # exported functions
