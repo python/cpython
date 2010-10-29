@@ -397,7 +397,8 @@ class DispatcherWithSendTests_UsePoll(DispatcherWithSendTests):
 class FileWrapperTest(unittest.TestCase):
     def setUp(self):
         self.d = b"It's not dead, it's sleeping!"
-        open(TESTFN, 'wb').write(self.d)
+        with open(TESTFN, 'wb') as file:
+            file.write(self.d)
 
     def tearDown(self):
         unlink(TESTFN)
@@ -424,7 +425,8 @@ class FileWrapperTest(unittest.TestCase):
         w.write(d1)
         w.send(d2)
         w.close()
-        self.assertEqual(open(TESTFN, 'rb').read(), self.d + d1 + d2)
+        with open(TESTFN, 'rb') as file:
+            self.assertEqual(file.read(), self.d + d1 + d2)
 
     @unittest.skipUnless(hasattr(asyncore, 'file_dispatcher'),
                          'asyncore.file_dispatcher required')
