@@ -15,8 +15,10 @@ class AllTest(unittest.TestCase):
 
     def check_all(self, modname):
         names = {}
-        with support.check_warnings((".* (module|package)",
-                                     DeprecationWarning), quiet=True):
+        with support.check_warnings(
+            (".* (module|package)", DeprecationWarning),
+            ("", ResourceWarning),
+            quiet=True):
             try:
                 exec("import %s" % modname, names)
             except:
