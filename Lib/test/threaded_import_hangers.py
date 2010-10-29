@@ -29,7 +29,7 @@ class Worker(threading.Thread):
 
 for name, func, args in [
         # Bug 147376:  TemporaryFile hung on Windows, starting in Python 2.4.
-        ("tempfile.TemporaryFile", tempfile.TemporaryFile, ()),
+        ("tempfile.TemporaryFile", lambda: tempfile.TemporaryFile().close(), ()),
 
         # The real cause for bug 147376:  ntpath.abspath() caused the hang.
         ("os.path.abspath", os.path.abspath, ('.',)),
