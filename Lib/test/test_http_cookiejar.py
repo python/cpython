@@ -263,11 +263,11 @@ class FileCookieJarTests(unittest.TestCase):
         # Invalid contents of cookies file (eg. bad magic string)
         # causes a LoadError.
         try:
-            f = open(filename, "w")
-            f.write("oops\n")
-            for cookiejar_class in LWPCookieJar, MozillaCookieJar:
-                c = cookiejar_class()
-                self.assertRaises(LoadError, c.load, filename)
+            with open(filename, "w") as f:
+                f.write("oops\n")
+                for cookiejar_class in LWPCookieJar, MozillaCookieJar:
+                    c = cookiejar_class()
+                    self.assertRaises(LoadError, c.load, filename)
         finally:
             try: os.unlink(filename)
             except OSError: pass
