@@ -73,7 +73,7 @@ Without make
 
 You'll need to install the Sphinx package, either by checking it out via ::
 
-   svn co http://svn.python.org/projects/external/Sphinx-0.6.5/sphinx tools/sphinx
+   svn co http://svn.python.org/projects/external/Sphinx-0.6.7/sphinx tools/sphinx
 
 or by installing it from PyPI.
 
