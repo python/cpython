@@ -55,27 +55,27 @@ class ImportTests(unittest.TestCase):
 
     def test_find_module_encoding(self):
         for mod, encoding, _ in self.test_strings:
-            fd = imp.find_module('module_' + mod, self.test_path)[0]
-            self.assertEqual(fd.encoding, encoding)
+            with imp.find_module('module_' + mod, self.test_path)[0] as fd:
+                self.assertEqual(fd.encoding, encoding)
 
     def test_issue1267(self):
         for mod, encoding, _ in self.test_strings:
             fp, filename, info  = imp.find_module('module_' + mod,
                                                   self.test_path)
-            self.assertNotEqual(fp, None)
-            self.assertEqual(fp.encoding, encoding)
-            self.assertEqual(fp.tell(), 0)
-            self.assertEqual(fp.readline(), '# test %s encoding\n'
-                             % encoding)
-            fp.close()
+            with fp:
+                self.assertNotEqual(fp, None)
+                self.assertEqual(fp.encoding, encoding)
+                self.assertEqual(fp.tell(), 0)
+                self.assertEqual(fp.readline(), '# test %s encoding\n'
+                                 % encoding)
 
         fp, filename, info = imp.find_module("tokenize")
-        self.assertNotEqual(fp, None)
-        self.assertEqual(fp.encoding, "utf-8")
-        self.assertEqual(fp.tell(), 0)
-        self.assertEqual(fp.readline(),
-                         '"""Tokenization help for Python programs.\n')
-        fp.close()
+        with fp:
+            self.assertNotEqual(fp, None)
+            self.assertEqual(fp.encoding, "utf-8")
+            self.assertEqual(fp.tell(), 0)
+            self.assertEqual(fp.readline(),
+                             '"""Tokenization help for Python programs.\n')
 
     def test_issue3594(self):
         temp_mod_name = 'test_imp_helper'
@@ -140,15 +140,15 @@ class ImportTests(unittest.TestCase):
             with open(temp_mod_name + '.py', 'w') as file:
                 file.write('a = 1\n')
             file, filename, info = imp.find_module(temp_mod_name)
-            self.assertIsNotNone(file)
-            self.assertTrue(filename[:-3].endswith(temp_mod_name))
-            self.assertEqual(info[0], '.py')
-            self.assertEqual(info[1], 'U')
-            self.assertEqual(info[2], imp.PY_SOURCE)
+            with file:
+                self.assertIsNotNone(file)
+                self.assertTrue(filename[:-3].endswith(temp_mod_name))
+                self.assertEqual(info[0], '.py')
+                self.assertEqual(info[1], 'U')
+                self.assertEqual(info[2], imp.PY_SOURCE)
 
-            mod = imp.load_module(temp_mod_name, file, filename, info)
-            self.assertEqual(mod.a, 1)
-            file.close()
+                mod = imp.load_module(temp_mod_name, file, filename, info)
+                self.assertEqual(mod.a, 1)
 
             mod = imp.load_source(temp_mod_name, temp_mod_name + '.py')
             self.assertEqual(mod.a, 1)
