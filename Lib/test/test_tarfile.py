@@ -52,25 +52,32 @@ class UstarReadTest(ReadTest):
     def test_fileobj_regular_file(self):
         tarinfo = self.tar.getmember("ustar/regtype")
         fobj = self.tar.extractfile(tarinfo)
-        data = fobj.read()
-        self.assertTrue((len(data), md5sum(data)) == (tarinfo.size, md5_regtype),
-                "regular file extraction failed")
+        try:
+            data = fobj.read()
+            self.assertTrue((len(data), md5sum(data)) == (tarinfo.size, md5_regtype),
+                    "regular file extraction failed")
+        finally:
+            fobj.close()
 
     def test_fileobj_readlines(self):
         self.tar.extract("ustar/regtype", TEMPDIR)
         tarinfo = self.tar.getmember("ustar/regtype")
         with open(os.path.join(TEMPDIR, "ustar/regtype"), "r") as fobj1:
             lines1 = fobj1.readlines()
-        fobj2 = io.TextIOWrapper(self.tar.extractfile(tarinfo))
 
-        lines2 = fobj2.readlines()
-        self.assertTrue(lines1 == lines2,
-                "fileobj.readlines() failed")
-        self.assertTrue(len(lines2) == 114,
-                "fileobj.readlines() failed")
-        self.assertTrue(lines2[83] ==
-                "I will gladly admit that Python is not the fastest running scripting language.\n",
-                "fileobj.readlines() failed")
+        fobj = self.tar.extractfile(tarinfo)
+        try:
+            fobj2 = io.TextIOWrapper(fobj)
+            lines2 = fobj2.readlines()
+            self.assertTrue(lines1 == lines2,
+                    "fileobj.readlines() failed")
+            self.assertTrue(len(lines2) == 114,
+                    "fileobj.readlines() failed")
+            self.assertTrue(lines2[83] ==
+                    "I will gladly admit that Python is not the fastest running scripting language.\n",
+                    "fileobj.readlines() failed")
+        finally:
+            fobj.close()
 
     def test_fileobj_iter(self):
         self.tar.extract("ustar/regtype", TEMPDIR)
@@ -78,9 +85,12 @@ class UstarReadTest(ReadTest):
         with open(os.path.join(TEMPDIR, "ustar/regtype"), "rU") as fobj1:
             lines1 = fobj1.readlines()
         fobj2 = self.tar.extractfile(tarinfo)
-        lines2 = list(io.TextIOWrapper(fobj2))
-        self.assertTrue(lines1 == lines2,
-                     "fileobj.__iter__() failed")
+        try:
+            lines2 = list(io.TextIOWrapper(fobj2))
+            self.assertTrue(lines1 == lines2,
+                         "fileobj.__iter__() failed")
+        finally:
+            fobj2.close()
 
     def test_fileobj_seek(self):
         self.tar.extract("ustar/regtype", TEMPDIR)
@@ -138,7 +148,11 @@ class UstarReadTest(ReadTest):
     def _test_fileobj_link(self, lnktype, regtype):
         a = self.tar.extractfile(lnktype)
         b = self.tar.extractfile(regtype)
-        self.assertEqual(a.name, b.name)
+        try:
+            self.assertEqual(a.name, b.name)
+        finally:
+            a.close()
+            b.close()
 
     def test_fileobj_link1(self):
         self._test_fileobj_link("ustar/lnktype", "ustar/regtype")
@@ -225,8 +239,8 @@ class MiscReadTest(CommonReadTest):
             data = fobj.read()
         fobj = io.BytesIO(data)
         fobj.name = ""
-        tar = tarfile.open(fileobj=fobj, mode=self.mode)
-        self.assertEqual(tar.name, None)
+        with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
+            self.assertEqual(tar.name, None)
 
     def test_fileobj_with_offset(self):
         # Skip the first member and store values from the second member
@@ -237,7 +251,9 @@ class MiscReadTest(CommonReadTest):
             t = tar.next()
             name = t.name
             offset = t.offset
-            data = tar.extractfile(t).read()
+            f = tar.extractfile(t)
+            data = f.read()
+            f.close()
         finally:
             tar.close()
 
@@ -319,7 +335,8 @@ class MiscReadTest(CommonReadTest):
                 if e.errno == errno.ENOENT:
                     self.fail("hardlink not extracted properly")
 
-            data = open(os.path.join(TEMPDIR, "ustar/lnktype"), "rb").read()
+            with open(os.path.join(TEMPDIR, "ustar/lnktype"), "rb") as f:
+                data = f.read()
             self.assertEqual(md5sum(data), md5_regtype)
 
             try:
@@ -328,7 +345,8 @@ class MiscReadTest(CommonReadTest):
                 if e.errno == errno.ENOENT:
                     self.fail("symlink not extracted properly")
 
-            data = open(os.path.join(TEMPDIR, "ustar/symtype"), "rb").read()
+            with open(os.path.join(TEMPDIR, "ustar/symtype"), "rb") as f:
+                data = f.read()
             self.assertEqual(md5sum(data), md5_regtype)
         finally:
             tar.close()
@@ -604,10 +622,10 @@ class LongnameTest(ReadTest):
         # the preceding extended header.
         longname = self.subdir + "/" + "123/" * 125 + "longname"
         offset = self.tar.getmember(longname).offset
-        fobj = open(tarname, "rb")
-        fobj.seek(offset)
-        tarinfo = tarfile.TarInfo.frombuf(fobj.read(512), "iso8859-1", "strict")
-        self.assertEqual(tarinfo.type, self.longnametype)
+        with open(tarname, "rb") as fobj:
+            fobj.seek(offset)
+            tarinfo = tarfile.TarInfo.frombuf(fobj.read(512), "iso8859-1", "strict")
+            self.assertEqual(tarinfo.type, self.longnametype)
 
 
 class GNUReadTest(LongnameTest):
@@ -1353,8 +1371,11 @@ class AppendTest(unittest.TestCase):
             t = src.getmember("ustar/regtype")
             t.name = "foo"
             f = src.extractfile(t)
-            with tarfile.open(self.tarname, mode) as tar:
-                tar.addfile(t, f)
+            try:
+                with tarfile.open(self.tarname, mode) as tar:
+                    tar.addfile(t, f)
+            finally:
+                f.close()
 
     def _test(self, names=["bar"], fileobj=None):
         with tarfile.open(self.tarname, fileobj=fileobj) as tar:
