@@ -20,6 +20,9 @@ import re
 import subprocess
 import imp
 import time
+import sysconfig
+
+
 try:
     import _thread
 except ImportError:
@@ -883,6 +886,16 @@ def gc_collect():
         time.sleep(0.1)
     gc.collect()
     gc.collect()
+
+
+def python_is_optimized():
+    """Find if Python was built with optimizations."""
+    cflags = sysconfig.get_config_vars()['PY_CFLAGS']
+    final_opt = ""
+    for opt in cflags.split():
+        if opt.startswith('-O'):
+            final_opt = opt
+    return final_opt and final_opt != '-O0'
 
 
 #=======================================================================

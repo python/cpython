@@ -1449,6 +1449,9 @@ class _ExpectedSkips:
             if sys.platform != 'sunos5':
                 self.expected.add('test_nis')
 
+            if support.python_is_optimized():
+                self.expected.add("test_gdb")
+
             self.valid = True
 
     def isvalid(self):
