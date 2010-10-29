@@ -345,7 +345,17 @@ class MiscReadTest(CommonReadTest):
                 if sys.platform != "win32":
                     # Win32 has no support for fine grained permissions.
                     self.assertEqual(tarinfo.mode & 0o777, os.stat(path).st_mode & 0o777)
-                self.assertEqual(tarinfo.mtime, os.path.getmtime(path))
+                def format_mtime(mtime):
+                    if isinstance(mtime, float):
+                        return "{} ({})".format(mtime, mtime.hex())
+                    else:
+                        return "{!r} (int)".format(mtime)
+                file_mtime = os.path.getmtime(path) + 0.001
+                errmsg = "tar mtime {0} != file time {1} of path {2!a}".format(
+                    format_mtime(tarinfo.mtime),
+                    format_mtime(file_mtime),
+                    path)
+                self.assertEqual(tarinfo.mtime, file_mtime, errmsg)
         finally:
             tar.close()
 
