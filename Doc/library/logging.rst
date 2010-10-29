@@ -3057,7 +3057,7 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
 Filter Objects
 --------------
 
-``Filters` can be used by ``Handlers`` and ``Loggers`` for more sophisticated
+``Filters`` can be used by ``Handlers`` and ``Loggers`` for more sophisticated
 filtering than is provided by levels. The base filter class only allows events
 which are below a certain point in the logger hierarchy. For example, a filter
 initialized with "A.B" will allow events logged by loggers "A.B", "A.B.C",
