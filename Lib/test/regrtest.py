@@ -982,7 +982,7 @@ def cleanup_test_droppings(testname, verbose):
 
     # First kill any dangling references to open files etc.
     # This can also issue some ResourceWarnings which would otherwise get
-    # triggered during the following test run, and possible produce failures.
+    # triggered during the following test run, and possibly produce failures.
     gc.collect()
 
     # Try to clean up junk commonly left behind.  While tests shouldn't leave
