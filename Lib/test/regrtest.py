@@ -1440,11 +1440,10 @@ class _ExpectedSkips:
             if sys.platform != "win32":
                 # test_sqlite is only reliable on Windows where the library
                 # is distributed with Python
-                WIN_ONLY = ["test_unicode_file", "test_winreg",
+                WIN_ONLY = {"test_unicode_file", "test_winreg",
                             "test_winsound", "test_startfile",
-                            "test_sqlite"]
-                for skip in WIN_ONLY:
-                    self.expected.add(skip)
+                            "test_sqlite"}
+                self.expected |= WIN_ONLY
 
             if sys.platform != 'sunos5':
                 self.expected.add('test_nis')
