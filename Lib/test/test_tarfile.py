@@ -350,7 +350,7 @@ class MiscReadTest(CommonReadTest):
                         return "{} ({})".format(mtime, mtime.hex())
                     else:
                         return "{!r} (int)".format(mtime)
-                file_mtime = os.path.getmtime(path) + 0.001
+                file_mtime = os.path.getmtime(path)
                 errmsg = "tar mtime {0} != file time {1} of path {2!a}".format(
                     format_mtime(tarinfo.mtime),
                     format_mtime(file_mtime),
