@@ -2941,8 +2941,20 @@ static PyMemberDef sock_memberlist[] = {
 static void
 sock_dealloc(PySocketSockObject *s)
 {
-    if (s->sock_fd != -1)
+    if (s->sock_fd != -1) {
+        PyObject *exc, *val, *tb;
+        Py_ssize_t old_refcount = Py_REFCNT(s);
+        ++Py_REFCNT(s);
+        PyErr_Fetch(&exc, &val, &tb);
+        if (PyErr_WarnFormat(PyExc_ResourceWarning, 1,
+                             "unclosed %R", s))
+            /* Spurious errors can appear at shutdown */
+            if (PyErr_ExceptionMatches(PyExc_Warning))
+                PyErr_WriteUnraisable((PyObject *) s);
+        PyErr_Restore(exc, val, tb);
         (void) SOCKETCLOSE(s->sock_fd);
+        Py_REFCNT(s) = old_refcount;
+    }
     Py_TYPE(s)->tp_free((PyObject *)s);
 }
 

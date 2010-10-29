@@ -29,6 +29,7 @@ import weakref
 import abc
 import signal
 import errno
+import warnings
 from itertools import cycle, count
 from collections import deque
 from test import support
@@ -2524,6 +2525,46 @@ class MiscIOTest(unittest.TestCase):
         # Test implementations inherit from the official ABCs of the
         # baseline "io" module.
         self._check_abc_inheritance(io)
+
+    def _check_warn_on_dealloc(self, *args, **kwargs):
+        f = open(*args, **kwargs)
+        r = repr(f)
+        with self.assertWarns(ResourceWarning) as cm:
+            f = None
+            support.gc_collect()
+        self.assertIn(r, str(cm.warning.args[0]))
+
+    def test_warn_on_dealloc(self):
+        self._check_warn_on_dealloc(support.TESTFN, "wb", buffering=0)
+        self._check_warn_on_dealloc(support.TESTFN, "wb")
+        self._check_warn_on_dealloc(support.TESTFN, "w")
+
+    def _check_warn_on_dealloc_fd(self, *args, **kwargs):
+        fds = []
+        try:
+            r, w = os.pipe()
+            fds += r, w
+            self._check_warn_on_dealloc(r, *args, **kwargs)
+            # When using closefd=False, there's no warning
+            r, w = os.pipe()
+            fds += r, w
+            with warnings.catch_warnings(record=True) as recorded:
+                open(r, *args, closefd=False, **kwargs)
+                support.gc_collect()
+            self.assertEqual(recorded, [])
+        finally:
+            for fd in fds:
+                try:
+                    os.close(fd)
+                except EnvironmentError as e:
+                    if e.errno != errno.EBADF:
+                        raise
+
+    def test_warn_on_dealloc_fd(self):
+        self._check_warn_on_dealloc_fd("rb", buffering=0)
+        self._check_warn_on_dealloc_fd("rb")
+        self._check_warn_on_dealloc_fd("r")
+
 
 class CMiscIOTest(MiscIOTest):
     io = io

@@ -2,6 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "structmember.h"
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -55,6 +56,7 @@ typedef struct {
     unsigned int writable : 1;
     signed int seekable : 2; /* -1 means unknown */
     unsigned int closefd : 1;
+    unsigned int deallocating: 1;
     PyObject *weakreflist;
     PyObject *dict;
 } fileio;
@@ -67,6 +69,26 @@ int
 _PyFileIO_closed(PyObject *self)
 {
     return ((fileio *)self)->fd < 0;
+}
+
+/* Because this can call arbitrary code, it shouldn't be called when
+   the refcount is 0 (that is, not directly from tp_dealloc unless
+   the refcount has been temporarily re-incremented). */
+static PyObject *
+fileio_dealloc_warn(fileio *self, PyObject *source)
+{
+    if (self->fd >= 0 && self->closefd) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+        if (PyErr_WarnFormat(PyExc_ResourceWarning, 1,
+                             "unclosed file %R", source)) {
+            /* Spurious errors can appear at shutdown */
+            if (PyErr_ExceptionMatches(PyExc_Warning))
+                PyErr_WriteUnraisable((PyObject *) self);
+        }
+        PyErr_Restore(exc, val, tb);
+    }
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -109,6 +131,13 @@ fileio_close(fileio *self)
     if (!self->closefd) {
         self->fd = -1;
         Py_RETURN_NONE;
+    }
+    if (self->deallocating) {
+        PyObject *r = fileio_dealloc_warn(self, (PyObject *) self);
+        if (r)
+            Py_DECREF(r);
+        else
+            PyErr_Clear();
     }
     errno = internal_close(self);
     if (errno < 0)
@@ -399,6 +428,7 @@ fileio_clear(fileio *self)
 static void
 fileio_dealloc(fileio *self)
 {
+    self->deallocating = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
@@ -1008,6 +1038,7 @@ static PyMethodDef fileio_methods[] = {
     {"writable", (PyCFunction)fileio_writable, METH_NOARGS,      writable_doc},
     {"fileno",   (PyCFunction)fileio_fileno,   METH_NOARGS,      fileno_doc},
     {"isatty",   (PyCFunction)fileio_isatty,   METH_NOARGS,      isatty_doc},
+    {"_dealloc_warn", (PyCFunction)fileio_dealloc_warn, METH_O, NULL},
     {NULL,           NULL}             /* sentinel */
 };
 

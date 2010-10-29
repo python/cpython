@@ -706,6 +706,23 @@ class GeneralModuleTests(unittest.TestCase):
     def test_sendall_interrupted_with_timeout(self):
         self.check_sendall_interrupted(True)
 
+    def test_dealloc_warn(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        r = repr(sock)
+        with self.assertWarns(ResourceWarning) as cm:
+            sock = None
+            support.gc_collect()
+        self.assertIn(r, str(cm.warning.args[0]))
+        # An open socket file object gets dereferenced after the socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        f = sock.makefile('rb')
+        r = repr(sock)
+        sock = None
+        support.gc_collect()
+        with self.assertWarns(ResourceWarning):
+            f = None
+            support.gc_collect()
+
 
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicTCPTest(SocketConnectedTest):
