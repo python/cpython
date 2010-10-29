@@ -133,7 +133,10 @@ class HTTPSServerThread(threading.Thread):
     def run(self):
         if self.flag:
             self.flag.set()
-        self.server.serve_forever(0.05)
+        try:
+            self.server.serve_forever(0.05)
+        finally:
+            self.server.server_close()
 
     def stop(self):
         self.server.shutdown()
