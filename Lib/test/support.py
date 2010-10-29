@@ -596,22 +596,22 @@ def _filterwarnings(filters, quiet=False):
         sys.modules['warnings'].simplefilter("always")
         yield WarningsRecorder(w)
     # Filter the recorded warnings
-    reraise = [warning.message for warning in w]
+    reraise = list(w)
     missing = []
     for msg, cat in filters:
         seen = False
-        for exc in reraise[:]:
-            message = str(exc)
+        for w in reraise[:]:
+            warning = w.message
             # Filter out the matching messages
-            if (re.match(msg, message, re.I) and
-                issubclass(exc.__class__, cat)):
+            if (re.match(msg, str(warning), re.I) and
+                issubclass(warning.__class__, cat)):
                 seen = True
-                reraise.remove(exc)
+                reraise.remove(w)
         if not seen and not quiet:
             # This filter caught nothing
             missing.append((msg, cat.__name__))
     if reraise:
-        raise AssertionError("unhandled warning %r" % reraise[0])
+        raise AssertionError("unhandled warning %s" % reraise[0])
     if missing:
         raise AssertionError("filter (%r, %s) did not catch any warning" %
                              missing[0])
