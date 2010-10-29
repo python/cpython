@@ -241,7 +241,8 @@ class ImpLoader:
         return mod
 
     def get_data(self, pathname):
-        return open(pathname, "rb").read()
+        with open(pathname, "rb") as file:
+            return file.read()
 
     def _reopen(self):
         if self.file and self.file.closed:
