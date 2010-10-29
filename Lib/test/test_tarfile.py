@@ -526,6 +526,22 @@ class MemberReadTest(ReadTest):
         tarinfo = self.tar.getmember("ustar/sparse")
         self._test_member(tarinfo, size=86016, chksum=md5_sparse)
 
+    def test_find_gnusparse(self):
+        tarinfo = self.tar.getmember("gnu/sparse")
+        self._test_member(tarinfo, size=86016, chksum=md5_sparse)
+
+    def test_find_gnusparse_00(self):
+        tarinfo = self.tar.getmember("gnu/sparse-0.0")
+        self._test_member(tarinfo, size=86016, chksum=md5_sparse)
+
+    def test_find_gnusparse_01(self):
+        tarinfo = self.tar.getmember("gnu/sparse-0.1")
+        self._test_member(tarinfo, size=86016, chksum=md5_sparse)
+
+    def test_find_gnusparse_10(self):
+        tarinfo = self.tar.getmember("gnu/sparse-1.0")
+        self._test_member(tarinfo, size=86016, chksum=md5_sparse)
+
     def test_find_umlauts(self):
         tarinfo = self.tar.getmember("ustar/umlauts-\xc4\xd6\xdc\xe4\xf6\xfc\xdf")
         self._test_member(tarinfo, size=7011, chksum=md5_regtype)
@@ -589,13 +605,53 @@ class GNUReadTest(LongnameTest):
     subdir = "gnu"
     longnametype = tarfile.GNUTYPE_LONGNAME
 
-    def test_sparse_file(self):
-        tarinfo1 = self.tar.getmember("ustar/sparse")
-        fobj1 = self.tar.extractfile(tarinfo1)
-        tarinfo2 = self.tar.getmember("gnu/sparse")
-        fobj2 = self.tar.extractfile(tarinfo2)
-        self.assertEqual(fobj1.read(), fobj2.read(),
-                "sparse file extraction failed")
+    # Since 3.2 tarfile is supposed to accurately restore sparse members and
+    # produce files with holes. This is what we actually want to test here.
+    # Unfortunately, not all platforms/filesystems support sparse files, and
+    # even on platforms that do it is non-trivial to make reliable assertions
+    # about holes in files. Therefore, we first do one basic test which works
+    # an all platforms, and after that a test that will work only on
+    # platforms/filesystems that prove to support sparse files.
+    def _test_sparse_file(self, name):
+        self.tar.extract(name, TEMPDIR)
+        filename = os.path.join(TEMPDIR, name)
+        with open(filename, "rb") as fobj:
+            data = fobj.read()
+        self.assertEqual(md5sum(data), md5_sparse,
+                "wrong md5sum for %s" % name)
+
+        if self._fs_supports_holes():
+            s = os.stat(filename)
+            self.assertTrue(s.st_blocks * 512 < s.st_size)
+
+    def test_sparse_file_old(self):
+        self._test_sparse_file("gnu/sparse")
+
+    def test_sparse_file_00(self):
+        self._test_sparse_file("gnu/sparse-0.0")
+
+    def test_sparse_file_01(self):
+        self._test_sparse_file("gnu/sparse-0.1")
+
+    def test_sparse_file_10(self):
+        self._test_sparse_file("gnu/sparse-1.0")
+
+    @staticmethod
+    def _fs_supports_holes():
+        # Return True if the platform knows the st_blocks stat attribute and
+        # uses st_blocks units of 512 bytes, and if the filesystem is able to
+        # store holes in files.
+        if sys.platform == "linux2":
+            # Linux evidentially has 512 byte st_blocks units.
+            name = os.path.join(TEMPDIR, "sparse-test")
+            with open(name, "wb") as fobj:
+                fobj.seek(4096)
+                fobj.truncate()
+            s = os.stat(name)
+            os.remove(name)
+            return s.st_blocks == 0
+        else:
+            return False
 
 
 class PaxReadTest(LongnameTest):
