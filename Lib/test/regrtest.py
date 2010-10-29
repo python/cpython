@@ -978,6 +978,12 @@ def runtest_inner(test, verbose, quiet,
 def cleanup_test_droppings(testname, verbose):
     import shutil
     import stat
+    import gc
+
+    # First kill any dangling references to open files etc.
+    # This can also issue some ResourceWarnings which would otherwise get
+    # triggered during the following test run, and possible produce failures.
+    gc.collect()
 
     # Try to clean up junk commonly left behind.  While tests shouldn't leave
     # any files or directories behind, when a test fails that can be tedious
