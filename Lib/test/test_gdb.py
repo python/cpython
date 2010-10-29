@@ -9,9 +9,8 @@ import subprocess
 import sys
 import unittest
 import locale
-import sysconfig
 
-from test.support import run_unittest, findfile
+from test.support import run_unittest, findfile, python_is_optimized
 
 try:
     gdb_version, _ = subprocess.Popen(["gdb", "--version"],
@@ -665,15 +664,8 @@ class PyLocalsTests(DebuggerTests):
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
 def test_main():
-    cflags = sysconfig.get_config_vars()['PY_CFLAGS']
-    final_opt = ""
-    for opt in cflags.split():
-        if opt.startswith('-O'):
-            final_opt = opt
-    if final_opt and final_opt != '-O0':
-        raise unittest.SkipTest("Python was built with compiler optimizations, "
-                                "tests can't reliably succeed")
-
+    if python_is_optimized():
+        raise unittest.SkipTest("Python was compiled with optimizations")
     run_unittest(PrettyPrintTests,
                  PyListTests,
                  StackNavigationTests,
