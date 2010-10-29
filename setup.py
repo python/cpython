@@ -423,7 +423,8 @@ class PyBuildExt(build_ext):
         missing = []
 
         config_h = sysconfig.get_config_h_filename()
-        config_h_vars = sysconfig.parse_config_h(open(config_h))
+        with open(config_h) as file:
+            config_h_vars = sysconfig.parse_config_h(file)
 
         platform = self.get_platform()
         srcdir = sysconfig.get_config_var('srcdir')
@@ -556,17 +557,17 @@ class PyBuildExt(build_ext):
                 os.makedirs(self.build_temp)
             ret = os.system("ldd %s > %s" % (do_readline, tmpfile))
             if ret >> 8 == 0:
-                fp = open(tmpfile)
-                for ln in fp:
-                    if 'curses' in ln:
-                        readline_termcap_library = re.sub(
-                            r'.*lib(n?cursesw?)\.so.*', r'\1', ln
-                        ).rstrip()
-                        break
-                    if 'tinfo' in ln: # termcap interface split out from ncurses
-                        readline_termcap_library = 'tinfo'
-                        break
-                fp.close()
+                with open(tmpfile) as fp:
+                    for ln in fp:
+                        if 'curses' in ln:
+                            readline_termcap_library = re.sub(
+                                r'.*lib(n?cursesw?)\.so.*', r'\1', ln
+                            ).rstrip()
+                            break
+                        # termcap interface split out from ncurses
+                        if 'tinfo' in ln:
+                            readline_termcap_library = 'tinfo'
+                            break
             os.unlink(tmpfile)
         # Issue 7384: If readline is already linked against curses,
         # use the same library for the readline and curses modules.
@@ -675,11 +676,11 @@ class PyBuildExt(build_ext):
             if sys.platform == 'darwin' and is_macosx_sdk_path(name):
                 name = os.path.join(macosx_sdk_root(), name[1:])
             try:
-                incfile = open(name, 'r')
-                for line in incfile:
-                    m = openssl_ver_re.match(line)
-                    if m:
-                        openssl_ver = eval(m.group(1))
+                with open(name, 'r') as incfile:
+                    for line in incfile:
+                        m = openssl_ver_re.match(line)
+                        if m:
+                            openssl_ver = eval(m.group(1))
             except IOError as msg:
                 print("IOError while reading opensshv.h:", msg)
                 pass
@@ -825,7 +826,8 @@ class PyBuildExt(build_ext):
 
                 if db_setup_debug: print("db: looking for db.h in", f)
                 if os.path.exists(f):
-                    f = open(f, "rb").read()
+                    with open(f, 'rb') as file:
+                        f = file.read()
                     m = re.search(br"#define\WDB_VERSION_MAJOR\W(\d+)", f)
                     if m:
                         db_major = int(m.group(1))
@@ -945,7 +947,8 @@ class PyBuildExt(build_ext):
 
             if os.path.exists(f):
                 if sqlite_setup_debug: print("sqlite: found %s"%f)
-                incf = open(f).read()
+                with open(f) as file:
+                    incf = file.read()
                 m = re.search(
                     r'\s*.*#\s*.*define\s.*SQLITE_VERSION\W*"(.*)"', incf)
                 if m:
@@ -1170,14 +1173,14 @@ class PyBuildExt(build_ext):
             zlib_h = zlib_inc[0] + '/zlib.h'
             version = '"0.0.0"'
             version_req = '"1.1.3"'
-            fp = open(zlib_h)
-            while 1:
-                line = fp.readline()
-                if not line:
-                    break
-                if line.startswith('#define ZLIB_VERSION'):
-                    version = line.split()[2]
-                    break
+            with open(zlib_h) as fp:
+                while 1:
+                    line = fp.readline()
+                    if not line:
+                        break
+                    if line.startswith('#define ZLIB_VERSION'):
+                        version = line.split()[2]
+                        break
             if version >= version_req:
                 if (self.compiler.find_library_file(lib_dirs, 'z')):
                     if sys.platform == "darwin":
@@ -1430,14 +1433,13 @@ class PyBuildExt(build_ext):
             os.system("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(os.path.join(sysroot, F[1:]), tmpfile))
         else:
             os.system("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(F, tmpfile))
-        fp = open(tmpfile)
 
-        detected_archs = []
-        for ln in fp:
-            a = ln.split()[-1]
-            if a in archs:
-                detected_archs.append(ln.split()[-1])
-        fp.close()
+        with open(tmpfile) as fp:
+            detected_archs = []
+            for ln in fp:
+                a = ln.split()[-1]
+                if a in archs:
+                    detected_archs.append(ln.split()[-1])
         os.unlink(tmpfile)
 
         for a in detected_archs:
@@ -1708,14 +1710,14 @@ class PyBuildExt(build_ext):
             ffi_inc = find_file('ffi.h', [], inc_dirs)
         if ffi_inc is not None:
             ffi_h = ffi_inc[0] + '/ffi.h'
-            fp = open(ffi_h)
-            while 1:
-                line = fp.readline()
-                if not line:
-                    ffi_inc = None
-                    break
-                if line.startswith('#define LIBFFI_H'):
-                    break
+            with open(ffi_h) as fp:
+                while 1:
+                    line = fp.readline()
+                    if not line:
+                        ffi_inc = None
+                        break
+                    if line.startswith('#define LIBFFI_H'):
+                        break
         ffi_lib = None
         if ffi_inc is not None:
             for lib_name in ('ffi_convenience', 'ffi_pic', 'ffi'):
