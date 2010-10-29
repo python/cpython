@@ -1045,6 +1045,8 @@ print_error_text(PyObject *f, int offset, const char *text)
 {
     char *nl;
     if (offset >= 0) {
+        if (offset > 0 && offset == strlen(text) && text[offset - 1] == '\n')
+            offset--;
         for (;;) {
             nl = strchr(text, '\n');
             if (nl == NULL || nl-text >= offset)
