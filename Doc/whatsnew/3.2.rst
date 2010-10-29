@@ -573,13 +573,29 @@ A number of small performance enhancements have been added:
   and the Unladen Swallow team in :issue:`9410` and :issue:`3873`.)
 
 
-Filenames and Unicode
-=====================
+Unicode
+=======
 
 The :mod:`os` module has two new functions: :func:`~os.fsencode` and
-:func:`~os.fsdecode`.
+:func:`~os.fsdecode`. Add :data:`os.environb`: bytes version of
+:data:`os.environ`, :func:`os.getenvb` function and
+:data:`os.supports_bytes_environ` constant.
 
-.. XXX mention Victor's improvements for support of undecodable filenames.
+``'mbcs'`` encoding doesn't ignore the error handler argument anymore. By
+default (strict mode), it raises an UnicodeDecodeError on undecodable byte
+sequence and UnicodeEncodeError on unencodable character. To get the ``'mbcs'``
+encoding of Python 3.1, use ``'ignore'`` error handler to decode and
+``'replace'`` error handler to encode. ``'mbcs'`` supports ``'strict'`` and
+``'ignore'`` error handlers for decoding, and ``'strict'`` and ``'replace'``
+for encoding.
+
+On Mac OS X, Python uses ``'utf-8'`` to decode the command line arguments,
+instead of the locale encoding (which is ISO-8859-1 if the ``LANG`` environment
+variable is not set).
+
+By default, tarfile uses ``'utf-8'`` encoding on Windows (instead of
+``'mbcs'``), and the ``'surrogateescape'`` error handler on all operating
+systems.
 
 
 .. IDLE
@@ -642,9 +658,4 @@ require changes to your code:
   instead; the new type has a well-defined interface for passing typing safety
   information and a less complicated signature for calling a destructor.
 
-* mbcs encoding doesn't ignore the error handler argument anymore. By default
-  (strict mode), it raises an UnicodeDecodeError on undecodable byte sequence
-  and UnicodeEncodeError on unencodable character. To get the mbcs encoding of
-  Python 3.1, use ``'ignore'`` error handler to decode and ``'replace'`` error
-  handler to encode. mbcs now supports ``'strict'`` and ``'ignore'`` error
-  handlers for decoding, and ``'strict'`` and ``'replace'`` for encoding.
+ * Remove sys.setfilesystemencoding() function: it was broken by design.
