@@ -55,14 +55,16 @@ class LineCacheTests(unittest.TestCase):
         # Check whether lines correspond to those from file iteration
         for entry in TESTS:
             filename = os.path.join(TEST_PATH, entry) + '.py'
-            for index, line in enumerate(open(filename)):
-                self.assertEquals(line, getline(filename, index + 1))
+            with open(filename) as file:
+                for index, line in enumerate(file):
+                    self.assertEquals(line, getline(filename, index + 1))
 
         # Check module loading
         for entry in MODULES:
             filename = os.path.join(MODULE_PATH, entry) + '.py'
-            for index, line in enumerate(open(filename)):
-                self.assertEquals(line, getline(filename, index + 1))
+            with open(filename) as file:
+                for index, line in enumerate(file):
+                    self.assertEquals(line, getline(filename, index + 1))
 
         # Check that bogus data isn't returned (issue #1309567)
         empty = linecache.getlines('a/b/c/__init__.py')
