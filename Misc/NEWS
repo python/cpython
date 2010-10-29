@@ -160,6 +160,8 @@ Library
 Extensions
 ----------
 
+- Issue #9377: Use Unicode API for gethostname on Windows.
+
 - Issue #10143: Update "os.pathconf" values.
 
 - Issue #6518: Support context manager protcol for ossaudiodev types.
