@@ -714,7 +714,10 @@ Settings for measurement
       >>> turtle.left(90)
       >>> turtle.heading()
       90.0
-      >>> turtle.degrees(400.0)  # angle measurement in gon
+
+      Change angle measurement unit to grad (also known as gon,
+      grade, or gradian and equals 1/100-th of the right angle.)
+      >>> turtle.degrees(400.0)
       >>> turtle.heading()
       100.0
       >>> turtle.degrees(360)
@@ -1510,6 +1513,7 @@ Window control
 
    :param args: a color string or three numbers in the range 0..colormode or a
                 3-tuple of such numbers
+
 
    Set or return background color of the TurtleScreen.
 
