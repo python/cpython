@@ -49,12 +49,14 @@ import sys
 from docutils import nodes
 from sphinx.builders import Builder
 
-detect_all = re.compile(ur'''
+detect_all = re.compile(r'''
     ::(?=[^=])|            # two :: (but NOT ::=)
     :[a-zA-Z][a-zA-Z0-9]+| # :foo
     `|                     # ` (seldom used by itself)
     (?<!\.)\.\.[ \t]*\w+:  # .. foo: (but NOT ... else:)
     ''', re.UNICODE | re.VERBOSE).finditer
+
+py3 = sys.version_info >= (3, 0)
 
 
 class Rule:
@@ -136,7 +138,11 @@ class CheckSuspiciousMarkupBuilder(Builder):
         if not self.any_issue: self.info()
         self.any_issue = True
         self.write_log_entry(lineno, issue, text)
-        self.warn('[%s:%d] "%s" found in "%-.120s"' % (
+        if py3:
+            self.warn('[%s:%d] "%s" found in "%-.120s"' %
+                      (self.docname, lineno, issue, text))
+        else:
+            self.warn('[%s:%d] "%s" found in "%-.120s"' % (
                 self.docname.encode(sys.getdefaultencoding(),'replace'),
                 lineno,
                 issue.encode(sys.getdefaultencoding(),'replace'),
@@ -144,13 +150,19 @@ class CheckSuspiciousMarkupBuilder(Builder):
         self.app.statuscode = 1
 
     def write_log_entry(self, lineno, issue, text):
-        f = open(self.log_file_name, 'ab')
-        writer = csv.writer(f, dialect)
-        writer.writerow([self.docname.encode('utf-8'),
-                         lineno,
-                         issue.encode('utf-8'),
-                         text.strip().encode('utf-8')])
-        f.close()
+        if py3:
+            f = open(self.log_file_name, 'a')
+            writer = csv.writer(f, dialect)
+            writer.writerow([self.docname, lineno, issue, text.strip()])
+            f.close()
+        else:
+            f = open(self.log_file_name, 'ab')
+            writer = csv.writer(f, dialect)
+            writer.writerow([self.docname.encode('utf-8'),
+                             lineno,
+                             issue.encode('utf-8'),
+                             text.strip().encode('utf-8')])
+            f.close()
 
     def load_rules(self, filename):
         """Load database of previously ignored issues.
@@ -160,18 +172,26 @@ class CheckSuspiciousMarkupBuilder(Builder):
         """
         self.info("loading ignore rules... ", nonl=1)
         self.rules = rules = []
-        try: f = open(filename, 'rb')
-        except IOError: return
+        try:
+            if py3:
+                f = open(filename, 'r')
+            else:
+                f = open(filename, 'rb')
+        except IOError:
+            return
         for i, row in enumerate(csv.reader(f)):
             if len(row) != 4:
                 raise ValueError(
                     "wrong format in %s, line %d: %s" % (filename, i+1, row))
             docname, lineno, issue, text = row
-            docname = docname.decode('utf-8')
-            if lineno: lineno = int(lineno)
-            else: lineno = None
-            issue = issue.decode('utf-8')
-            text = text.decode('utf-8')
+            if lineno:
+                lineno = int(lineno)
+            else:
+                lineno = None
+            if not py3:
+                docname = docname.decode('utf-8')
+                issue = issue.decode('utf-8')
+                text = text.decode('utf-8')
             rule = Rule(docname, lineno, issue, text)
             rules.append(rule)
         f.close()
