@@ -182,8 +182,8 @@ class TestMessageAPI(TestEmailBase):
     def test_message_rfc822_only(self):
         # Issue 7970: message/rfc822 not in multipart parsed by
         # HeaderParser caused an exception when flattened.
-        fp = openfile(findfile('msg_46.txt'))
-        msgdata = fp.read()
+        with openfile(findfile('msg_46.txt')) as fp:
+            msgdata = fp.read()
         parser = HeaderParser()
         msg = parser.parsestr(msgdata)
         out = StringIO()
@@ -2897,7 +2897,8 @@ class Test8BitBytesHandling(unittest.TestCase):
         self.addCleanup(unlink, fn)
         with open(fn, 'wb') as testfile:
             testfile.write(self.non_latin_bin_msg)
-        m = email.parser.BytesParser().parse(open(fn, 'rb'))
+        with open(fn, 'rb') as testfile:
+            m = email.parser.BytesParser().parse(testfile)
         self.assertEqual(str(m), self.non_latin_bin_msg_as7bit)
 
     latin_bin_msg = textwrap.dedent("""\
