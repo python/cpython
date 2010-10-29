@@ -206,9 +206,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.data = b'We are the knights who say Ni!'
         self.tempdir = tempfile.mkdtemp(dir=basetempdir)
         self.tempdir_name = os.path.basename(self.tempdir)
-        temp = open(os.path.join(self.tempdir, 'test'), 'wb')
-        temp.write(self.data)
-        temp.close()
+        with open(os.path.join(self.tempdir, 'test'), 'wb') as temp:
+            temp.write(self.data)
 
     def tearDown(self):
         try:
@@ -240,15 +239,15 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, 404)
         response = self.request('/' + 'ThisDoesNotExist' + '/')
         self.check_status_and_reason(response, 404)
-        f = open(os.path.join(self.tempdir_name, 'index.html'), 'w')
-        response = self.request('/' + self.tempdir_name + '/')
-        self.check_status_and_reason(response, 200)
-        if os.name == 'posix':
-            # chmod won't work as expected on Windows platforms
-            os.chmod(self.tempdir, 0)
-            response = self.request(self.tempdir_name + '/')
-            self.check_status_and_reason(response, 404)
-            os.chmod(self.tempdir, 0o755)
+        with open(os.path.join(self.tempdir_name, 'index.html'), 'w') as f:
+            response = self.request('/' + self.tempdir_name + '/')
+            self.check_status_and_reason(response, 200)
+            if os.name == 'posix':
+                # chmod won't work as expected on Windows platforms
+                os.chmod(self.tempdir, 0)
+                response = self.request(self.tempdir_name + '/')
+                self.check_status_and_reason(response, 404)
+                os.chmod(self.tempdir, 0o755)
 
     def test_head(self):
         response = self.request(
