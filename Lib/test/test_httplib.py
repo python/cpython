@@ -189,13 +189,13 @@ class BasicTest(TestCase):
         expected = (b'GET /foo HTTP/1.1\r\nHost: example.com\r\n'
                     b'Accept-Encoding: identity\r\nContent-Length:')
 
-        body = open(__file__, 'rb')
-        conn = client.HTTPConnection('example.com')
-        sock = FakeSocket(body)
-        conn.sock = sock
-        conn.request('GET', '/foo', body)
-        self.assertTrue(sock.data.startswith(expected), '%r != %r' %
-                (sock.data[:len(expected)], expected))
+        with open(__file__, 'rb') as body:
+            conn = client.HTTPConnection('example.com')
+            sock = FakeSocket(body)
+            conn.sock = sock
+            conn.request('GET', '/foo', body)
+            self.assertTrue(sock.data.startswith(expected), '%r != %r' %
+                    (sock.data[:len(expected)], expected))
 
     def test_send(self):
         expected = b'this is a test this is only a test'
@@ -519,28 +519,26 @@ class RequestBodyTest(TestCase):
         self.assertEqual(b'body\xc1', f.read())
 
     def test_file_body(self):
-        f = open(support.TESTFN, "w")
-        f.write("body")
-        f.close()
-        f = open(support.TESTFN)
-        self.conn.request("PUT", "/url", f)
-        message, f = self.get_headers_and_fp()
-        self.assertEqual("text/plain", message.get_content_type())
-        self.assertEqual(None, message.get_charset())
-        self.assertEqual("4", message.get("content-length"))
-        self.assertEqual(b'body', f.read())
+        with open(support.TESTFN, "w") as f:
+            f.write("body")
+        with open(support.TESTFN) as f:
+            self.conn.request("PUT", "/url", f)
+            message, f = self.get_headers_and_fp()
+            self.assertEqual("text/plain", message.get_content_type())
+            self.assertEqual(None, message.get_charset())
+            self.assertEqual("4", message.get("content-length"))
+            self.assertEqual(b'body', f.read())
 
     def test_binary_file_body(self):
-        f = open(support.TESTFN, "wb")
-        f.write(b"body\xc1")
-        f.close()
-        f = open(support.TESTFN, "rb")
-        self.conn.request("PUT", "/url", f)
-        message, f = self.get_headers_and_fp()
-        self.assertEqual("text/plain", message.get_content_type())
-        self.assertEqual(None, message.get_charset())
-        self.assertEqual("5", message.get("content-length"))
-        self.assertEqual(b'body\xc1', f.read())
+        with open(support.TESTFN, "wb") as f:
+            f.write(b"body\xc1")
+        with open(support.TESTFN, "rb") as f:
+            self.conn.request("PUT", "/url", f)
+            message, f = self.get_headers_and_fp()
+            self.assertEqual("text/plain", message.get_content_type())
+            self.assertEqual(None, message.get_charset())
+            self.assertEqual("5", message.get("content-length"))
+            self.assertEqual(b'body\xc1', f.read())
 
 
 class HTTPResponseTest(TestCase):
