@@ -132,12 +132,14 @@ class DumbDBMTestCase(unittest.TestCase):
         f.close()
 
         # Mangle the file by changing the line separator to Windows or Unix
-        data = io.open(_fname + '.dir', 'rb').read()
+        with io.open(_fname + '.dir', 'rb') as file:
+            data = file.read()
         if os.linesep == '\n':
             data = data.replace(b'\n', b'\r\n')
         else:
             data = data.replace(b'\r\n', b'\n')
-        io.open(_fname + '.dir', 'wb').write(data)
+        with io.open(_fname + '.dir', 'wb') as file:
+            file.write(data)
 
         f = dumbdbm.open(_fname)
         self.assertEqual(f[b'1'], b'hello')
