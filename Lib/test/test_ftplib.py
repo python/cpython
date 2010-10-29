@@ -107,15 +107,15 @@ class DummyFTPHandler(asynchat.async_chat):
         self.push('200 active data connection established')
 
     def cmd_pasv(self, arg):
-        sock = socket.socket()
-        sock.bind((self.socket.getsockname()[0], 0))
-        sock.listen(5)
-        sock.settimeout(10)
-        ip, port = sock.getsockname()[:2]
-        ip = ip.replace('.', ','); p1 = port / 256; p2 = port % 256
-        self.push('227 entering passive mode (%s,%d,%d)' %(ip, p1, p2))
-        conn, addr = sock.accept()
-        self.dtp = self.dtp_handler(conn, baseclass=self)
+        with socket.socket() as sock:
+            sock.bind((self.socket.getsockname()[0], 0))
+            sock.listen(5)
+            sock.settimeout(10)
+            ip, port = sock.getsockname()[:2]
+            ip = ip.replace('.', ','); p1 = port / 256; p2 = port % 256
+            self.push('227 entering passive mode (%s,%d,%d)' %(ip, p1, p2))
+            conn, addr = sock.accept()
+            self.dtp = self.dtp_handler(conn, baseclass=self)
 
     def cmd_eprt(self, arg):
         af, ip, port = arg.split(arg[0])[1:-1]
@@ -125,14 +125,14 @@ class DummyFTPHandler(asynchat.async_chat):
         self.push('200 active data connection established')
 
     def cmd_epsv(self, arg):
-        sock = socket.socket(socket.AF_INET6)
-        sock.bind((self.socket.getsockname()[0], 0))
-        sock.listen(5)
-        sock.settimeout(10)
-        port = sock.getsockname()[1]
-        self.push('229 entering extended passive mode (|||%d|)' %port)
-        conn, addr = sock.accept()
-        self.dtp = self.dtp_handler(conn, baseclass=self)
+        with socket.socket(socket.AF_INET6) as sock:
+            sock.bind((self.socket.getsockname()[0], 0))
+            sock.listen(5)
+            sock.settimeout(10)
+            port = sock.getsockname()[1]
+            self.push('229 entering extended passive mode (|||%d|)' %port)
+            conn, addr = sock.accept()
+            self.dtp = self.dtp_handler(conn, baseclass=self)
 
     def cmd_echo(self, arg):
         # sends back the received string (used by the test suite)
@@ -549,9 +549,10 @@ class TestFTPClass(TestCase):
         self.assertEqual(''.join(l), LIST_DATA.replace('\r\n', ''))
 
     def test_makeport(self):
-        self.client.makeport()
-        # IPv4 is in use, just make sure send_eprt has not been used
-        self.assertEqual(self.server.handler_instance.last_received_cmd, 'port')
+        with self.client.makeport():
+            # IPv4 is in use, just make sure send_eprt has not been used
+            self.assertEqual(self.server.handler_instance.last_received_cmd,
+                                'port')
 
     def test_makepasv(self):
         host, port = self.client.makepasv()
@@ -634,8 +635,9 @@ class TestIPv6Environment(TestCase):
         self.assertEqual(self.client.af, socket.AF_INET6)
 
     def test_makeport(self):
-        self.client.makeport()
-        self.assertEqual(self.server.handler_instance.last_received_cmd, 'eprt')
+        with self.client.makeport():
+            self.assertEqual(self.server.handler_instance.last_received_cmd,
+                                'eprt')
 
     def test_makepasv(self):
         host, port = self.client.makepasv()
@@ -691,23 +693,20 @@ class TestTLS_FTPClass(TestCase):
 
     def test_data_connection(self):
         # clear text
-        sock = self.client.transfercmd('list')
-        self.assertNotIsInstance(sock, ssl.SSLSocket)
-        sock.close()
+        with self.client.transfercmd('list') as sock:
+            self.assertNotIsInstance(sock, ssl.SSLSocket)
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
         # secured, after PROT P
         self.client.prot_p()
-        sock = self.client.transfercmd('list')
-        self.assertIsInstance(sock, ssl.SSLSocket)
-        sock.close()
+        with self.client.transfercmd('list') as sock:
+            self.assertIsInstance(sock, ssl.SSLSocket)
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
         # PROT C is issued, the connection must be in cleartext again
         self.client.prot_c()
-        sock = self.client.transfercmd('list')
-        self.assertNotIsInstance(sock, ssl.SSLSocket)
-        sock.close()
+        with self.client.transfercmd('list') as sock:
+            self.assertNotIsInstance(sock, ssl.SSLSocket)
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
     def test_login(self):
@@ -748,10 +747,9 @@ class TestTLS_FTPClass(TestCase):
         self.assertIsInstance(self.client.sock, ssl.SSLSocket)
 
         self.client.prot_p()
-        sock = self.client.transfercmd('list')
-        self.assertIs(sock.context, ctx)
-        self.assertIsInstance(sock, ssl.SSLSocket)
-        sock.close()
+        with self.client.transfercmd('list') as sock:
+            self.assertIs(sock.context, ctx)
+            self.assertIsInstance(sock, ssl.SSLSocket)
 
 
 class TestTimeouts(TestCase):
@@ -769,6 +767,7 @@ class TestTimeouts(TestCase):
 
     def tearDown(self):
         self.evt.wait()
+        self.sock.close()
 
     def server(self, evt, serv):
         # This method sets the evt 3 times:
