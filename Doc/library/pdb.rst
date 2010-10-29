@@ -1,3 +1,5 @@
+.. _debugger:
+
 :mod:`pdb` --- The Python Debugger
 ==================================
 
