@@ -27,7 +27,7 @@ class CProfileTest(ProfileTest):
                 obj.disable()
             finally:
                 sys.stderr = sys.__stderr__
-                unlink(TESTFN)
+        unlink(TESTFN)
 
 
 def test_main():
