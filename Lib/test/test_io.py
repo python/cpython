@@ -461,13 +461,14 @@ class IOTest(unittest.TestCase):
             def flush(self):
                 record.append(3)
                 super().flush()
-        f = MyFileIO(support.TESTFN, "wb")
-        f.write(b"xxx")
-        del f
-        support.gc_collect()
-        self.assertEqual(record, [1, 2, 3])
-        with self.open(support.TESTFN, "rb") as f:
-            self.assertEqual(f.read(), b"xxx")
+        with support.check_warnings(('', ResourceWarning)):
+            f = MyFileIO(support.TESTFN, "wb")
+            f.write(b"xxx")
+            del f
+            support.gc_collect()
+            self.assertEqual(record, [1, 2, 3])
+            with self.open(support.TESTFN, "rb") as f:
+                self.assertEqual(f.read(), b"xxx")
 
     def _check_base_destructor(self, base):
         record = []
