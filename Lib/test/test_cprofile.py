@@ -18,15 +18,16 @@ class CProfileTest(ProfileTest):
     def test_bad_counter_during_dealloc(self):
         import _lsprof
         # Must use a file as StringIO doesn't trigger the bug.
-        sys.stderr = open(TESTFN, 'w')
-        try:
-            obj = _lsprof.Profiler(lambda: int)
-            obj.enable()
-            obj = _lsprof.Profiler(1)
-            obj.disable()
-        finally:
-            sys.stderr = sys.__stderr__
-            unlink(TESTFN)
+        with open(TESTFN, 'w') as file:
+            sys.stderr = file
+            try:
+                obj = _lsprof.Profiler(lambda: int)
+                obj.enable()
+                obj = _lsprof.Profiler(1)
+                obj.disable()
+            finally:
+                sys.stderr = sys.__stderr__
+                unlink(TESTFN)
 
 
 def test_main():
