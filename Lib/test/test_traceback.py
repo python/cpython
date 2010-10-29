@@ -302,6 +302,10 @@ class BaseExceptionReportingTests:
             raise SyntaxError('', ('', 0, 5, 'hello'))
         msg = self.get_report(e).splitlines()
         self.assertEqual(msg[-2], "        ^")
+        def e():
+            exec("x = 5 | 4 |")
+        msg = self.get_report(e).splitlines()
+        self.assertEqual(msg[-2], '              ^')
 
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
