@@ -54,6 +54,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10093: ResourceWarnings are now issued when files and sockets are
+  deallocated without explicit closing.  These warnings are silenced by
+  default, except in pydebug mode.
+
 - tarfile.py: Add support for all missing variants of the GNU sparse
   extensions and create files with holes when extracting sparse members.
 

@@ -108,7 +108,7 @@ class socket(_socket.socket):
         if s.startswith("<socket object"):
             s = "<%s.%s%s%s" % (self.__class__.__module__,
                                 self.__class__.__name__,
-                                (self._closed and " [closed] ") or "",
+                                getattr(self, '_closed', False) and " [closed] " or "",
                                 s[7:])
         return s
 

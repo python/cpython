@@ -658,6 +658,7 @@ typedef struct
     char writetranslate;
     char seekable;
     char telling;
+    char deallocating;
     /* Specialized encoding func (see below) */
     encodefunc_t encodefunc;
     /* Whether or not it's the start of the stream */
@@ -1094,6 +1095,7 @@ _textiowrapper_clear(textio *self)
 static void
 textiowrapper_dealloc(textio *self)
 {
+    self->deallocating = 1;
     if (_textiowrapper_clear(self) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
@@ -2410,6 +2412,13 @@ textiowrapper_close(textio *self, PyObject *args)
         Py_RETURN_NONE; /* stream already closed */
     }
     else {
+        if (self->deallocating) {
+            res = PyObject_CallMethod(self->buffer, "_dealloc_warn", "O", self);
+            if (res)
+                Py_DECREF(res);
+            else
+                PyErr_Clear();
+        }
         res = PyObject_CallMethod((PyObject *)self, "flush", NULL);
         if (res == NULL) {
             return NULL;

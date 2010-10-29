@@ -662,17 +662,23 @@ class ElementTree:
     # @exception ParseError If the parser fails to parse the document.
 
     def parse(self, source, parser=None):
+        close_source = False
         if not hasattr(source, "read"):
             source = open(source, "rb")
-        if not parser:
-            parser = XMLParser(target=TreeBuilder())
-        while 1:
-            data = source.read(65536)
-            if not data:
-                break
-            parser.feed(data)
-        self._root = parser.close()
-        return self._root
+            close_source = True
+        try:
+            if not parser:
+                parser = XMLParser(target=TreeBuilder())
+            while 1:
+                data = source.read(65536)
+                if not data:
+                    break
+                parser.feed(data)
+            self._root = parser.close()
+            return self._root
+        finally:
+            if close_source:
+                source.close()
 
     ##
     # Creates a tree iterator for the root element.  The iterator loops
@@ -1226,16 +1232,19 @@ def parse(source, parser=None):
 # @return A (event, elem) iterator.
 
 def iterparse(source, events=None, parser=None):
+    close_source = False
     if not hasattr(source, "read"):
         source = open(source, "rb")
+        close_source = True
     if not parser:
         parser = XMLParser(target=TreeBuilder())
-    return _IterParseIterator(source, events, parser)
+    return _IterParseIterator(source, events, parser, close_source)
 
 class _IterParseIterator:
 
-    def __init__(self, source, events, parser):
+    def __init__(self, source, events, parser, close_source=False):
         self._file = source
+        self._close_file = close_source
         self._events = []
         self._index = 0
         self.root = self._root = None
@@ -1282,6 +1291,8 @@ class _IterParseIterator:
             except IndexError:
                 if self._parser is None:
                     self.root = self._root
+                    if self._close_file:
+                        self._file.close()
                     raise StopIteration
                 # load event buffer
                 del self._events[:]
