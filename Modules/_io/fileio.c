@@ -384,7 +384,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
                 PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
             goto error;
         }
-        if(dircheck(self, name) < 0)
+        if (dircheck(self, name) < 0)
             goto error;
     }
 
