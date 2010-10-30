@@ -303,6 +303,8 @@ class OtherFileTests(unittest.TestCase):
             if lines != testlines:
                 self.fail("readlines() after next() with empty buffer "
                           "failed. Got %r, expected %r" % (line, testline))
+            f.close()
+
             # Reading after iteration hit EOF shouldn't hurt either
             f = self.open(TESTFN, 'rb')
             try:
