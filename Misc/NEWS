@@ -10,6 +10,9 @@ What's New in Python 2.7.1?
 Core and Builtins
 -----------------
 
+- Issue #10221: dict.pop(k) now has a key error message that includes the
+  missing key (same message d[k] returns for missing keys).
+
 - Issue #10125: Don't segfault when the iterator passed to ``file.writelines()``
   closes the file.
 
