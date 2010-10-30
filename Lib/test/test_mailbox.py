@@ -165,8 +165,10 @@ class TestMailbox(TestBase):
         # Get file representations of messages
         key0 = self._box.add(self._template % 0)
         key1 = self._box.add(_sample_message)
-        data0 = self._box.get_file(key0).read()
-        data1 = self._box.get_file(key1).read()
+        with self._box.get_file(key0) as file:
+            data0 = file.read()
+        with self._box.get_file(key1) as file:
+            data1 = file.read()
         self.assertEqual(data0.replace(os.linesep, '\n'),
                          self._template % 0)
         self.assertEqual(data1.replace(os.linesep, '\n'),
@@ -773,6 +775,7 @@ class TestMaildir(TestMailbox):
 class _TestMboxMMDF(TestMailbox):
 
     def tearDown(self):
+        super().tearDown()
         self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
@@ -1027,6 +1030,7 @@ class TestBabyl(TestMailbox):
     _factory = lambda self, path, factory=None: mailbox.Babyl(path, factory)
 
     def tearDown(self):
+        super().tearDown()
         self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
