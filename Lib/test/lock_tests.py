@@ -606,7 +606,7 @@ class BarrierTests(BaseTestCase):
     N = 5
 
     def setUp(self):
-        self.barrier = self.barriertype(self.N, timeout=0.1)
+        self.barrier = self.barriertype(self.N, timeout=0.5)
     def tearDown(self):
         self.barrier.abort()
 
