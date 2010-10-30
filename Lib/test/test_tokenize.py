@@ -590,8 +590,10 @@ def roundtrip(f):
     """
     if isinstance(f, str):
         f = BytesIO(f.encode('utf-8'))
-    token_list = list(tokenize(f.readline))
-    f.close()
+    try:
+        token_list = list(tokenize(f.readline))
+    finally:
+        f.close()
     tokens1 = [tok[:2] for tok in token_list]
     new_bytes = untokenize(tokens1)
     readline = (line for line in new_bytes.splitlines(1)).__next__
