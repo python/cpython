@@ -57,6 +57,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10198: fix duplicate header written to wave files when writeframes()
+  is called without data.
+
 - Close file objects in modulefinder in a timely manner.
 
 - Close a io.TextIOWrapper object in email.parser in a timely manner.
