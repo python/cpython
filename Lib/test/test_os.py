@@ -406,17 +406,19 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environ.clear()
         if os.path.exists("/bin/sh"):
             os.environ.update(HELLO="World")
-            value = os.popen("/bin/sh -c 'echo $HELLO'").read().strip()
-            self.assertEquals(value, "World")
+            with os.popen("/bin/sh -c 'echo $HELLO'") as popen:
+                value = popen.read().strip()
+                self.assertEquals(value, "World")
 
     def test_os_popen_iter(self):
         if os.path.exists("/bin/sh"):
-            popen = os.popen("/bin/sh -c 'echo \"line1\nline2\nline3\"'")
-            it = iter(popen)
-            self.assertEquals(next(it), "line1\n")
-            self.assertEquals(next(it), "line2\n")
-            self.assertEquals(next(it), "line3\n")
-            self.assertRaises(StopIteration, next, it)
+            with os.popen(
+                "/bin/sh -c 'echo \"line1\nline2\nline3\"'") as popen:
+                it = iter(popen)
+                self.assertEquals(next(it), "line1\n")
+                self.assertEquals(next(it), "line2\n")
+                self.assertEquals(next(it), "line3\n")
+                self.assertRaises(StopIteration, next, it)
 
     # Verify environ keys and values from the OS are of the
     # correct str type.
