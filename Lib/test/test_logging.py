@@ -907,7 +907,7 @@ class EncodingTest(BaseTest):
     def test_encoding_plain_file(self):
         # In Python 2.x, a plain file object is treated as having no encoding.
         log = logging.getLogger("test")
-        fn = tempfile.mktemp(".log")
+        fn = tempfile.mktemp(".log", "test_logging-1-")
         # the non-ascii data we write to the log.
         data = "foo\x80"
         try:
@@ -1932,7 +1932,7 @@ class BaseFileTest(BaseTest):
 
     def setUp(self):
         BaseTest.setUp(self)
-        self.fn = tempfile.mktemp(".log")
+        self.fn = tempfile.mktemp(".log", "test_logging-2-")
         self.rmfiles = []
 
     def tearDown(self):
@@ -1956,10 +1956,12 @@ class RotatingFileHandlerTest(BaseFileTest):
         # If maxbytes is zero rollover never occurs
         rh = logging.handlers.RotatingFileHandler(self.fn, maxBytes=0)
         self.assertFalse(rh.shouldRollover(None))
+        rh.close()
 
     def test_should_rollover(self):
         rh = logging.handlers.RotatingFileHandler(self.fn, maxBytes=1)
         self.assertTrue(rh.shouldRollover(self.next_rec()))
+        rh.close()
 
     def test_file_created(self):
         # checks that the file is created and assumes it was created
@@ -1968,6 +1970,7 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh = logging.handlers.RotatingFileHandler(self.fn)
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
+        rh.close()
 
     def test_rollover_filenames(self):
         rh = logging.handlers.RotatingFileHandler(
@@ -1979,6 +1982,7 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn + ".2")
         self.assertFalse(os.path.exists(self.fn + ".3"))
+        rh.close()
 
 class TimedRotatingFileHandlerTest(BaseFileTest):
     # test methods added below
@@ -1998,6 +2002,7 @@ for when, exp in (('S', 1),
         rh = logging.handlers.TimedRotatingFileHandler(
             self.fn, when=when, interval=1, backupCount=0)
         self.assertEquals(exp, rh.computeRollover(0.0))
+        rh.close()
     setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
 
 # Set the locale to the platform-dependent default.  I have no idea
