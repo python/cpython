@@ -66,6 +66,7 @@ class LoopbackHttpServerThread(threading.Thread):
         self._stop_server = True
 
         self.join()
+        self.httpd.server_close()
 
     def run(self):
         self.ready.set()
