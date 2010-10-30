@@ -1810,8 +1810,7 @@ dict_pop(PyDictObject *mp, PyObject *args)
             Py_INCREF(deflt);
             return deflt;
         }
-        PyErr_SetString(PyExc_KeyError,
-                        "pop(): dictionary is empty");
+        set_key_error(key);
         return NULL;
     }
     if (!PyUnicode_CheckExact(key) ||
