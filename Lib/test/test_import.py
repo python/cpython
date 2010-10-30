@@ -128,6 +128,7 @@ class ImportTests(unittest.TestCase):
         orig_getenv = os.getenv
         with EnvironmentVarGuard():
             x = imp.find_module("os")
+            self.addCleanup(x[0].close)
             new_os = imp.load_module("os", *x)
             self.assertIs(os, new_os)
             self.assertIs(orig_path, new_os.path)
