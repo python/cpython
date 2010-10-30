@@ -57,6 +57,9 @@ Core and Builtins
 Library
 -------
 
+- Support context manager protocol for file-like objects returned by
+  mailbox ``get_file()`` methods.
+
 - Issue #10246: uu.encode didn't close file objects explicitly when filenames
   were given to it.  Patch by Brian Brazil.
 

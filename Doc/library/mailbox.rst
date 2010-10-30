@@ -180,15 +180,19 @@ Maildir, mbox, MH, Babyl, and MMDF.
    .. method:: get_file(key)
 
       Return a file-like representation of the message corresponding to *key*,
-      or raise a :exc:`KeyError` exception if no such message exists. The
-      file-like object behaves as if open in binary mode. This file should be
+      or raise a :exc:`KeyError` exception if no such message exists.  The
+      file-like object behaves as if open in binary mode.  This file should be
       closed once it is no longer needed.
+
+      .. versionadded:: 3.2
+         The file-like object supports the context manager protocol, so that
+         you can use a :keyword:`with` statement to automatically close it.
 
       .. note::
 
          Unlike other representations of messages, file-like representations are
          not necessarily independent of the :class:`Mailbox` instance that
-         created them or of the underlying mailbox. More specific documentation
+         created them or of the underlying mailbox.  More specific documentation
          is provided by each subclass.
 
 

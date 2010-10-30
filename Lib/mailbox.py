@@ -1827,6 +1827,8 @@ class _ProxyFile:
 
     def close(self):
         """Close the file."""
+        if hasattr(self._file, 'close'):
+            self._file.close()
         del self._file
 
     def _read(self, size, read_method):
@@ -1837,6 +1839,13 @@ class _ProxyFile:
         result = read_method(size)
         self._pos = self._file.tell()
         return result
+
+    def __enter__(self):
+        """Context manager protocol support."""
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
 
 
 class _PartialFile(_ProxyFile):
@@ -1870,6 +1879,11 @@ class _PartialFile(_ProxyFile):
         if size is None or size < 0 or size > remaining:
             size = remaining
         return _ProxyFile._read(self, size, read_method)
+
+    def close(self):
+        # do *not* close the underlying file object for partial files,
+        # since it's global to the mailbox object
+        del self._file
 
 
 def _lock_file(f, dotlock=True):
