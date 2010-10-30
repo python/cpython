@@ -260,7 +260,6 @@ class OtherFileTests(unittest.TestCase):
                     # OS'es that don't support /dev/tty.
                     pass
                 else:
-                    f = _FileIO("/dev/tty", "a")
                     self.assertEquals(f.readable(), False)
                     self.assertEquals(f.writable(), True)
                     if sys.platform != "darwin" and \
