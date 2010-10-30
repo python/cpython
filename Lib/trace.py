@@ -404,16 +404,16 @@ def find_strings(filename, encoding=None):
     # If the first token is a string, then it's the module docstring.
     # Add this special case so that the test in the loop passes.
     prev_ttype = token.INDENT
-    f = open(filename, encoding=encoding)
-    for ttype, tstr, start, end, line in tokenize.generate_tokens(f.readline):
-        if ttype == token.STRING:
-            if prev_ttype == token.INDENT:
-                sline, scol = start
-                eline, ecol = end
-                for i in range(sline, eline + 1):
-                    d[i] = 1
-        prev_ttype = ttype
-    f.close()
+    with open(filename, encoding=encoding) as f:
+        tok = tokenize.generate_tokens(f.readline)
+        for ttype, tstr, start, end, line in tok:
+            if ttype == token.STRING:
+                if prev_ttype == token.INDENT:
+                    sline, scol = start
+                    eline, ecol = end
+                    for i in range(sline, eline + 1):
+                        d[i] = 1
+            prev_ttype = ttype
     return d
 
 def find_executable_linenos(filename):
@@ -421,7 +421,8 @@ def find_executable_linenos(filename):
     try:
         with io.FileIO(filename, 'r') as file:
             encoding, lines = tokenize.detect_encoding(file.readline)
-        prog = open(filename, "r", encoding=encoding).read()
+        with open(filename, "r", encoding=encoding) as f:
+            prog = f.read()
     except IOError as err:
         print(("Not printing coverage data for %r: %s"
                               % (filename, err)), file=sys.stderr)
