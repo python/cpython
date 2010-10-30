@@ -121,7 +121,6 @@ class ImportTests(unittest.TestCase):
 
     def test_imp_module(self):
         # Verify that the imp module can correctly load and find .py files
-        import imp, os
         # XXX (ncoghlan): It would be nice to use support.CleanImport
         # here, but that breaks because the os module registers some
         # handlers in copy_reg on import. Since CleanImport doesn't
