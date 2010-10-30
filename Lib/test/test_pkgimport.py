@@ -22,7 +22,7 @@ class TestImport(unittest.TestCase):
         self.package_dir = os.path.join(self.test_dir,
                                         self.package_name)
         os.mkdir(self.package_dir)
-        open(os.path.join(self.package_dir, '__init__.py'), 'w')
+        open(os.path.join(self.package_dir, '__init__.py'), 'w').close()
         self.module_path = os.path.join(self.package_dir, 'foo.py')
 
     def tearDown(self):
