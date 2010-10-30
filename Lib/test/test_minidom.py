@@ -73,9 +73,10 @@ class MinidomTest(unittest.TestCase):
         self.confirm(t == s, "looking for %s, found %s" % (repr(s), repr(t)))
 
     def testParseFromFile(self):
-        dom = parse(open(tstfile))
-        dom.unlink()
-        self.confirm(isinstance(dom, Document))
+        with open(tstfile) as file:
+            dom = parse(file)
+            dom.unlink()
+            self.confirm(isinstance(dom, Document))
 
     def testGetElementsByTagName(self):
         dom = parse(tstfile)
