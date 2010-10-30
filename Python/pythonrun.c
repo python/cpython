@@ -283,6 +283,7 @@ Py_InitializeEx(int install_sigs)
         Py_FatalError("Py_Initialize: can't set preliminary stderr");
     PySys_SetObject("stderr", pstderr);
     PySys_SetObject("__stderr__", pstderr);
+    Py_DECREF(pstderr);
 
     _PyImport_Init();
 
@@ -605,6 +606,7 @@ Py_NewInterpreter(void)
             Py_FatalError("Py_Initialize: can't set preliminary stderr");
         PySys_SetObject("stderr", pstderr);
         PySys_SetObject("__stderr__", pstderr);
+        Py_DECREF(pstderr);
 
         _PyImportHooks_Init();
         if (initstdio() < 0)
@@ -971,6 +973,7 @@ initstdio(void)
         if (encoding != NULL) {
             _PyCodec_Lookup(encoding);
         }
+        Py_DECREF(encoding_attr);
     }
     PyErr_Clear();  /* Not a fatal error if codec isn't available */
 
