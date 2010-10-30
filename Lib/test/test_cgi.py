@@ -182,10 +182,12 @@ class CgiTests(unittest.TestCase):
                 return a
 
         f = TestReadlineFile(tempfile.TemporaryFile("w+"))
+        self.addCleanup(f.close)
         f.write('x' * 256 * 1024)
         f.seek(0)
         env = {'REQUEST_METHOD':'PUT'}
         fs = cgi.FieldStorage(fp=f, environ=env)
+        self.addCleanup(fs.file.close)
         # if we're not chunking properly, readline is only called twice
         # (by read_binary); if we are chunking properly, it will be called 5 times
         # as long as the chunksize is 1 << 16.
