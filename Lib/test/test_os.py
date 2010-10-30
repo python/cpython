@@ -344,8 +344,9 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test_update2(self):
         if os.path.exists("/bin/sh"):
             os.environ.update(HELLO="World")
-            value = os.popen("/bin/sh -c 'echo $HELLO'").read().strip()
-            self.assertEquals(value, "World")
+            with os.popen("/bin/sh -c 'echo $HELLO'") as popen:
+                value = popen.read().strip()
+                self.assertEquals(value, "World")
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
