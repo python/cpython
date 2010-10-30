@@ -410,6 +410,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 
  error:
     ret = -1;
+    if (self->fd >= 0)
+        internal_close(self);
 
  done:
     Py_CLEAR(stringobj);
