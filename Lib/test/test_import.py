@@ -36,12 +36,8 @@ class ImportTests(unittest.TestCase):
     def test_case_sensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got
         # this far, we know for sure that "random" exists.
-        try:
+        with self.assertRaises(ImportError):
             import RAnDoM
-        except ImportError:
-            pass
-        else:
-            self.fail("import of RAnDoM should have failed (case mismatch)")
 
     def test_double_const(self):
         # Another brief digression to test the accuracy of manifest float
