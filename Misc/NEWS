@@ -63,6 +63,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6105: json.dumps now respects OrderedDict's iteration order.
+
 - Issue #9295: Fix a crash under Windows when calling close() on a file
   object with custom buffering from two threads at once.
 
