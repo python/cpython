@@ -57,6 +57,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10253: FileIO leaks a file descriptor when trying to open a file
+  for append that isn't seekable.  Patch by Brian Brazil.
+
 - Support context manager protocol for file-like objects returned by
   mailbox ``get_file()`` methods.
 
