@@ -1995,7 +1995,9 @@ LIBS="$withval $LIBS"
 # Check for use of the system libffi library
 AC_MSG_CHECKING(for --with-system-ffi)
 AC_ARG_WITH(system_ffi,
-            AC_HELP_STRING(--with-system-ffi, build _ctypes module using an installed ffi library))
+            AC_HELP_STRING(--with-system-ffi, build _ctypes module using an installed ffi library),
+            [],
+            [with_system_ffi="no"])
 
 AC_MSG_RESULT($with_system_ffi)
 
