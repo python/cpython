@@ -555,12 +555,13 @@ class IOTest(unittest.TestCase):
     def test_garbage_collection(self):
         # FileIO objects are collected, and collecting them flushes
         # all data to disk.
-        f = self.FileIO(support.TESTFN, "wb")
-        f.write(b"abcxxx")
-        f.f = f
-        wr = weakref.ref(f)
-        del f
-        support.gc_collect()
+        with support.check_warnings(('', ResourceWarning)):
+            f = self.FileIO(support.TESTFN, "wb")
+            f.write(b"abcxxx")
+            f.f = f
+            wr = weakref.ref(f)
+            del f
+            support.gc_collect()
         self.assertTrue(wr() is None, wr)
         with self.open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"abcxxx")
@@ -1984,26 +1985,24 @@ class TextIOWrapperTest(unittest.TestCase):
         u_suffix = "\u8888\n"
         suffix = bytes(u_suffix.encode("utf-8"))
         line = prefix + suffix
-        f = self.open(support.TESTFN, "wb")
-        f.write(line*2)
-        f.close()
-        f = self.open(support.TESTFN, "r", encoding="utf-8")
-        s = f.read(prefix_size)
-        self.assertEquals(s, str(prefix, "ascii"))
-        self.assertEquals(f.tell(), prefix_size)
-        self.assertEquals(f.readline(), u_suffix)
+        with self.open(support.TESTFN, "wb") as f:
+            f.write(line*2)
+        with self.open(support.TESTFN, "r", encoding="utf-8") as f:
+            s = f.read(prefix_size)
+            self.assertEquals(s, str(prefix, "ascii"))
+            self.assertEquals(f.tell(), prefix_size)
+            self.assertEquals(f.readline(), u_suffix)
 
     def test_seeking_too(self):
         # Regression test for a specific bug
         data = b'\xe0\xbf\xbf\n'
-        f = self.open(support.TESTFN, "wb")
-        f.write(data)
-        f.close()
-        f = self.open(support.TESTFN, "r", encoding="utf-8")
-        f._CHUNK_SIZE  # Just test that it exists
-        f._CHUNK_SIZE = 2
-        f.readline()
-        f.tell()
+        with self.open(support.TESTFN, "wb") as f:
+            f.write(data)
+        with self.open(support.TESTFN, "r", encoding="utf-8") as f:
+            f._CHUNK_SIZE  # Just test that it exists
+            f._CHUNK_SIZE = 2
+            f.readline()
+            f.tell()
 
     def test_seek_and_tell(self):
         #Test seek/tell using the StatefulIncrementalDecoder.
