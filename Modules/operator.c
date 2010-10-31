@@ -383,7 +383,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     attrgetterobject *ag;
     PyObject *attr;
-    Py_ssize_t nattrs;
+    Py_ssize_t nattrs, idx, char_idx;
 
     if (!_PyArg_NoKeywords("attrgetter()", kwds))
         return NULL;
@@ -392,15 +392,92 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (nattrs <= 1) {
         if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &attr))
             return NULL;
-    } else
-        attr = args;
+    }
+
+    attr = PyTuple_New(nattrs);
+    if (attr == NULL)
+        return NULL;
+
+    /* prepare attr while checking args */
+    for (idx = 0; idx < nattrs; ++idx) {
+        PyObject *item = PyTuple_GET_ITEM(args, idx);
+        Py_ssize_t item_len;
+        Py_UNICODE *item_buffer;
+        int dot_count;
+
+        if (!PyUnicode_Check(item)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "attribute name must be a string");
+            Py_DECREF(attr);
+            return NULL;
+        }
+        item_len = PyUnicode_GET_SIZE(item);
+        item_buffer = PyUnicode_AS_UNICODE(item);
+
+        /* check whethere the string is dotted */
+        dot_count = 0;
+        for (char_idx = 0; char_idx < item_len; ++char_idx) {
+            if (item_buffer[char_idx] == (Py_UNICODE)'.')
+                ++dot_count;
+        }
+
+        if (dot_count == 0) {
+            Py_INCREF(item);
+            PyUnicode_InternInPlace(&item);
+            PyTuple_SET_ITEM(attr, idx, item);
+        } else { /* make it a tuple of non-dotted attrnames */
+            PyObject *attr_chain = PyTuple_New(dot_count + 1);
+            PyObject *attr_chain_item;
+
+            if (attr_chain == NULL) {
+                Py_DECREF(attr);
+                return NULL;
+            }
+
+            Py_ssize_t unibuff_from = 0;
+            Py_ssize_t unibuff_till = 0;
+            Py_ssize_t attr_chain_idx = 0;
+            for (; dot_count > 0; --dot_count) {
+                while (item_buffer[unibuff_till] != (Py_UNICODE)'.') {
+                    ++unibuff_till;
+                }
+                attr_chain_item = PyUnicode_FromUnicode(
+                                      item_buffer + unibuff_from,
+                                      unibuff_till - unibuff_from);
+                if (attr_chain_item == NULL) {
+                    Py_DECREF(attr_chain);
+                    Py_DECREF(attr);
+                    return NULL;
+                }
+                PyUnicode_InternInPlace(&attr_chain_item);
+                PyTuple_SET_ITEM(attr_chain, attr_chain_idx, attr_chain_item);
+                ++attr_chain_idx;
+                unibuff_till = unibuff_from = unibuff_till + 1;
+            }
+
+            /* now add the last dotless name */
+            attr_chain_item = PyUnicode_FromUnicode(
+                                  item_buffer + unibuff_from,
+                                  item_len - unibuff_from);
+            if (attr_chain_item == NULL) {
+                Py_DECREF(attr_chain);
+                Py_DECREF(attr);
+                return NULL;
+            }
+            PyUnicode_InternInPlace(&attr_chain_item);
+            PyTuple_SET_ITEM(attr_chain, attr_chain_idx, attr_chain_item);
+
+            PyTuple_SET_ITEM(attr, idx, attr_chain);
+        }
+    }
 
     /* create attrgetterobject structure */
     ag = PyObject_GC_New(attrgetterobject, &attrgetter_type);
-    if (ag == NULL)
+    if (ag == NULL) {
+        Py_DECREF(attr);
         return NULL;
+    }
 
-    Py_INCREF(attr);
     ag->attr = attr;
     ag->nattrs = nattrs;
 
@@ -426,33 +503,31 @@ attrgetter_traverse(attrgetterobject *ag, visitproc visit, void *arg)
 static PyObject *
 dotted_getattr(PyObject *obj, PyObject *attr)
 {
-    char *s, *p;
+    PyObject *newobj;
 
-    if (!PyUnicode_Check(attr)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "attribute name must be a string");
-        return NULL;
-    }
+    /* attr is either a tuple or instance of str.
+       Ensured by the setup code of attrgetter_new */
+    if (PyTuple_CheckExact(attr)) { /* chained getattr */
+        Py_ssize_t name_idx = 0, name_count;
+        PyObject *attr_name;
 
-    s = _PyUnicode_AsString(attr);
-    Py_INCREF(obj);
-    for (;;) {
-        PyObject *newobj, *str;
-        p = strchr(s, '.');
-        str = p ? PyUnicode_FromStringAndSize(s, (p-s)) :
-              PyUnicode_FromString(s);
-        if (str == NULL) {
+        name_count = PyTuple_GET_SIZE(attr);
+        Py_INCREF(obj);
+        for (name_idx = 0; name_idx < name_count; ++name_idx) {
+            attr_name = PyTuple_GET_ITEM(attr, name_idx);
+            newobj = PyObject_GetAttr(obj, attr_name);
             Py_DECREF(obj);
-            return NULL;
+            if (newobj == NULL) {
+                return NULL;
+            }
+            /* here */
+            obj = newobj;
         }
-        newobj = PyObject_GetAttr(obj, str);
-        Py_DECREF(str);
-        Py_DECREF(obj);
+    } else { /* single getattr */
+        newobj = PyObject_GetAttr(obj, attr);
         if (newobj == NULL)
             return NULL;
         obj = newobj;
-        if (p == NULL) break;
-        s = p+1;
     }
 
     return obj;
@@ -466,8 +541,8 @@ attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 
     if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &obj))
         return NULL;
-    if (ag->nattrs == 1)
-        return dotted_getattr(obj, ag->attr);
+    if (ag->nattrs == 1) /* ag->attr is always a tuple */
+        return dotted_getattr(obj, PyTuple_GET_ITEM(ag->attr, 0));
 
     assert(PyTuple_Check(ag->attr));
     assert(PyTuple_GET_SIZE(ag->attr) == nattrs);
