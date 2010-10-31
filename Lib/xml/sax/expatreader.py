@@ -219,6 +219,9 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._parsing = 0
         # break cycle created by expat handlers pointing to our methods
         self._parser = None
+        bs = self._source.getByteStream()
+        if bs is not None:
+            bs.close()
 
     def _reset_cont_handler(self):
         self._parser.ProcessingInstructionHandler = \
