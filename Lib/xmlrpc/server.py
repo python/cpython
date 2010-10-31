@@ -67,7 +67,7 @@ class Math:
         elif method == 'add':
             return params[0] + params[1]
         else:
-            raise 'bad method'
+            raise ValueError('bad method')
 
 server = SimpleXMLRPCServer(("localhost", 8000))
 server.register_introspection_functions()
