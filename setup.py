@@ -1330,7 +1330,7 @@ class PyBuildExt(build_ext):
         # The pyexpat module was written by Paul Prescod after a prototype by
         # Jack Jansen.  The Expat source is included in Modules/expat/.  Usage
         # of a system shared libexpat.so is possible with --with-system-expat
-        # cofigure option.
+        # configure option.
         #
         # More information on Expat can be found at www.libexpat.org.
         #
