@@ -1581,6 +1581,10 @@ def basicConfig(**kwargs):
               (if filemode is unspecified, it defaults to 'a').
     format    Use the specified format string for the handler.
     datefmt   Use the specified date/time format.
+    style     If a format string is specified, use this to specify the
+              type of format string (possible values '%', '{', '$', for
+              %-formatting, :meth:`str.format` and :class:`string.Template`
+              - defaults to '%').
     level     Set the root logger level to the specified level.
     stream    Use the specified stream to initialize the StreamHandler. Note
               that this argument is incompatible with 'filename' - if both
@@ -1591,6 +1595,9 @@ def basicConfig(**kwargs):
     remembered that StreamHandler does not close its stream (since it may be
     using sys.stdout or sys.stderr), whereas FileHandler closes its stream
     when the handler is closed.
+
+    .. versionchanged: 3.2
+       Added the ``style`` parameter.
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
@@ -1606,7 +1613,8 @@ def basicConfig(**kwargs):
                 hdlr = StreamHandler(stream)
             fs = kwargs.get("format", BASIC_FORMAT)
             dfs = kwargs.get("datefmt", None)
-            fmt = Formatter(fs, dfs)
+            style = kwargs.get("style", '%')
+            fmt = Formatter(fs, dfs, style)
             hdlr.setFormatter(fmt)
             root.addHandler(hdlr)
             level = kwargs.get("level")

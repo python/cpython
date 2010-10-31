@@ -919,6 +919,12 @@ functions.
    +--------------+---------------------------------------------+
    | ``datefmt``  | Use the specified date/time format.         |
    +--------------+---------------------------------------------+
+   | ``style``    | If ``format`` is specified, use this style  |
+   |              | for the format string. One of '%', '{' or   |
+   |              | '$' for %-formatting, :meth:`str.format` or |
+   |              | :class:`string.Template` respectively, and  |
+   |              | defaulting to '%' if not specified.         |
+   +--------------+---------------------------------------------+
    | ``level``    | Set the root logger level to the specified  |
    |              | level.                                      |
    +--------------+---------------------------------------------+
@@ -927,6 +933,10 @@ functions.
    |              | incompatible with 'filename' - if both are  |
    |              | present, 'stream' is ignored.               |
    +--------------+---------------------------------------------+
+
+   .. versionchanged:: 3.2
+      The ``style`` argument was added.
+
 
 .. function:: shutdown()
 
