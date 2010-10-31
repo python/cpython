@@ -8296,6 +8296,8 @@ $as_echo_n "checking for --with-system-expat... " >&6; }
 # Check whether --with-system_expat was given.
 if test "${with_system_expat+set}" = set; then :
   withval=$with_system_expat;
+else
+  with_system_expat="no"
 fi
 
 
@@ -8309,6 +8311,8 @@ $as_echo_n "checking for --with-system-ffi... " >&6; }
 # Check whether --with-system_ffi was given.
 if test "${with_system_ffi+set}" = set; then :
   withval=$with_system_ffi;
+else
+  with_system_ffi="no"
 fi
 
 
