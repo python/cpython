@@ -2597,6 +2597,7 @@ class SignalsTest(unittest.TestCase):
         t = threading.Thread(target=_read)
         t.daemon = True
         r, w = os.pipe()
+        fdopen_kwargs["closefd"] = False
         try:
             wio = self.io.open(w, **fdopen_kwargs)
             t.start()
