@@ -182,6 +182,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
         res = self.con.getresponse()
         self.assertEqual(res.getheader('Connection'), 'keep-alive')
         self.con.request('TEST', '/')
+        self.addCleanup(self.con.close)
 
     def test_internal_key_error(self):
         self.con.request('KEYERROR', '/')
