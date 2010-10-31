@@ -361,6 +361,7 @@ class FTP:
             conn, sockaddr = sock.accept()
             if self.timeout is not _GLOBAL_DEFAULT_TIMEOUT:
                 conn.settimeout(self.timeout)
+            sock.close()
         if resp[:3] == '150':
             # this is conditional in case we received a 125
             size = parse150(resp)
