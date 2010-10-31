@@ -352,6 +352,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
                 logging._acquireLock()
                 abort = self.abort
                 logging._releaseLock()
+            self.socket.close()
 
     def serve(rcvr, hdlr, port):
         server = rcvr(port=port, handler=hdlr)
