@@ -62,6 +62,9 @@ Library
 - Issue #10266: uu.decode didn't close in_file explicitly when it was given
   as a filename.  Patch by Brian Brazil.
 
+- Issue #10110: Queue objects didn't recognize full queues when the
+  maxsize parameter had been reduced.
+
 - Issue #10160: Speed up operator.attrgetter.  Patch by Christos Georgiou.
 
 - logging: Added style option to basicConfig() to allow %, {} or $-formatting.

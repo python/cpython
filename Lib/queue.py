@@ -110,14 +110,14 @@ class Queue:
     def full(self):
         """Return True if the queue is full, False otherwise (not reliable!).
 
-        This method is likely to be removed at some point.  Use qsize() == n
+        This method is likely to be removed at some point.  Use qsize() >= n
         as a direct substitute, but be aware that either approach risks a race
         condition where a queue can shrink before the result of full() or
         qsize() can be used.
 
         """
         self.mutex.acquire()
-        n = 0 < self.maxsize == self._qsize()
+        n = 0 < self.maxsize <= self._qsize()
         self.mutex.release()
         return n
 
@@ -136,16 +136,16 @@ class Queue:
         try:
             if self.maxsize > 0:
                 if not block:
-                    if self._qsize() == self.maxsize:
+                    if self._qsize() >= self.maxsize:
                         raise Full
                 elif timeout is None:
-                    while self._qsize() == self.maxsize:
+                    while self._qsize() >= self.maxsize:
                         self.not_full.wait()
                 elif timeout < 0:
                     raise ValueError("'timeout' must be a positive number")
                 else:
                     endtime = _time() + timeout
-                    while self._qsize() == self.maxsize:
+                    while self._qsize() >= self.maxsize:
                         remaining = endtime - _time()
                         if remaining <= 0.0:
                             raise Full

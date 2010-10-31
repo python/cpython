@@ -216,6 +216,18 @@ class BaseQueueTest(unittest.TestCase, BlockingTestMixin):
         with self.assertRaises(queue.Empty):
             q.get_nowait()
 
+    def test_shrinking_queue(self):
+        # issue 10110
+        q = self.type2test(3)
+        q.put(1)
+        q.put(2)
+        q.put(3)
+        with self.assertRaises(queue.Full):
+            q.put_nowait(4)
+        self.assertEqual(q.qsize(), 3)
+        q.maxsize = 2                       # shrink the queue
+        with self.assertRaises(queue.Full):
+            q.put_nowait(4)
 
 class QueueTest(BaseQueueTest):
     type2test = queue.Queue
