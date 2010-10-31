@@ -143,6 +143,9 @@ C-API
 Library
 -------
 
+- Issue #10246: uu.encode didn't close file objects explicitly when filenames
+  were given to it.  Patch by Brian Brazil.
+
 - Issue #10253: FileIO leaks a file descriptor when trying to open a file
   for append that isn't seekable.  Patch by Brian Brazil.
 
