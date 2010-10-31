@@ -135,10 +135,12 @@ Basic Usage
    ``inf``, ``-inf``) in strict compliance of the JSON specification, instead of
    using the JavaScript equivalents (``NaN``, ``Infinity``, ``-Infinity``).
 
-   If *indent* is a non-negative integer, then JSON array elements and object
-   members will be pretty-printed with that indent level.  An indent level of 0
-   will only insert newlines.  ``None`` (the default) selects the most compact
-   representation.
+   If *indent* is a non-negative integer or string, then JSON array elements and
+   object members will be pretty-printed with that indent level.  An indent level
+   of 0 or ``""`` will only insert newlines.  ``None`` (the default) selects the
+   most compact representation. Using an integer indent indents that many spaces
+   per level.  If *indent* is a string (such at '\t'), that string is used to indent
+   each level.
 
    If *separators* is an ``(item_separator, dict_separator)`` tuple, then it
    will be used instead of the default ``(', ', ': ')`` separators.  ``(',',

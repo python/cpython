@@ -10,32 +10,36 @@ class TestIndent(TestCase):
 
         expect = textwrap.dedent("""\
         [
-          [
-            "blorpie"
-          ],
-          [
-            "whoops"
-          ],
-          [],
-          "d-shtaeou",
-          "d-nthiouh",
-          "i-vhbjkhnth",
-          {
-            "nifty": 87
-          },
-          {
-            "field": "yes",
-            "morefield": false
-          }
+        \t[
+        \t\t"blorpie"
+        \t],
+        \t[
+        \t\t"whoops"
+        \t],
+        \t[],
+        \t"d-shtaeou",
+        \t"d-nthiouh",
+        \t"i-vhbjkhnth",
+        \t{
+        \t\t"nifty": 87
+        \t},
+        \t{
+        \t\t"field": "yes",
+        \t\t"morefield": false
+        \t}
         ]""")
 
 
         d1 = json.dumps(h)
         d2 = json.dumps(h, indent=2, sort_keys=True, separators=(',', ': '))
+        d3 = json.dumps(h, indent='\t', sort_keys=True, separators=(',', ': '))
 
         h1 = json.loads(d1)
         h2 = json.loads(d2)
+        h3 = json.loads(d3)
 
         self.assertEquals(h1, h)
         self.assertEquals(h2, h)
-        self.assertEquals(d2, expect)
+        self.assertEquals(h3, h)
+        self.assertEquals(d2, expect.expandtabs(2))
+        self.assertEquals(d3, expect)
