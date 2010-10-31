@@ -143,6 +143,9 @@ C-API
 Library
 -------
 
+- Issue #10253: FileIO leaks a file descriptor when trying to open a file
+  for append that isn't seekable.  Patch by Brian Brazil.
+
 - Issue #5027: The standard ``xml`` namespace is now understood by
   xml.sax.saxutils.XMLGenerator as being bound to
   http://www.w3.org/XML/1998/namespace.  Patch by Troy J. Farrell.
