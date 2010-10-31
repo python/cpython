@@ -22,7 +22,8 @@ class PopenTest(unittest.TestCase):
     def _do_test_commandline(self, cmdline, expected):
         cmd = '%s -c "import sys; print(sys.argv)" %s'
         cmd = cmd % (python, cmdline)
-        data = os.popen(cmd).read()
+        with os.popen(cmd) as p:
+            data = p.read()
         got = eval(data)[1:] # strip off argv[0]
         self.assertEqual(got, expected)
 
