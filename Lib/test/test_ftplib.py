@@ -355,6 +355,8 @@ if ssl is not None:
             if (isinstance(self.socket, ssl.SSLSocket) and
                 self.socket._sslobj is not None):
                 self._do_ssl_shutdown()
+            else:
+                super(SSLConnection, self).close()
 
 
     class DummyTLS_DTPHandler(SSLConnection, DummyDTPHandler):
