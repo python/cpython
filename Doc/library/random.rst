@@ -73,10 +73,6 @@ Bookkeeping functions:
    .. versionchanged:: 2.4
       formerly, operating system resources were not used.
 
-   If *x* is not ``None`` or an int or long, ``hash(x)`` is used instead. If *x* is
-   an int or long, *x* is used directly.
-
-
 .. function:: getstate()
 
    Return an object capturing the current internal state of the generator.  This
