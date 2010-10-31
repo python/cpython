@@ -59,6 +59,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10160: Speed up operator.attrgetter.  Patch by Christos Georgiou.
+
 - logging: Added style option to basicConfig() to allow %, {} or $-formatting.
 
 - Issue #5729:  json.dumps() now supports using a string such as '\t'
