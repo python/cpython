@@ -156,18 +156,19 @@ class BasicSocketTests(unittest.TestCase):
         if not test_support.is_resource_enabled('network'):
             return
         remote = ("svn.python.org", 443)
-        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
-                            cert_reqs=ssl.CERT_NONE, ciphers="ALL")
-        s.connect(remote)
-        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
-                            cert_reqs=ssl.CERT_NONE, ciphers="DEFAULT")
-        s.connect(remote)
-        # Error checking occurs when connecting, because the SSL context
-        # isn't created before.
-        s = ssl.wrap_socket(socket.socket(socket.AF_INET),
-                            cert_reqs=ssl.CERT_NONE, ciphers="^$:,;?*'dorothyx")
-        with self.assertRaisesRegexp(ssl.SSLError, "No cipher can be selected"):
+        with test_support.transient_internet(remote[0]):
+            s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                                cert_reqs=ssl.CERT_NONE, ciphers="ALL")
             s.connect(remote)
+            s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                                cert_reqs=ssl.CERT_NONE, ciphers="DEFAULT")
+            s.connect(remote)
+            # Error checking occurs when connecting, because the SSL context
+            # isn't created before.
+            s = ssl.wrap_socket(socket.socket(socket.AF_INET),
+                                cert_reqs=ssl.CERT_NONE, ciphers="^$:,;?*'dorothyx")
+            with self.assertRaisesRegexp(ssl.SSLError, "No cipher can be selected"):
+                s.connect(remote)
 
     @test_support.cpython_only
     def test_refcycle(self):
