@@ -173,6 +173,7 @@ class ProcessTestCase(BaseTestCase):
     def test_stdin_filedes(self):
         # stdin is set to open file descriptor
         tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
         d = tf.fileno()
         os.write(d, b"pear")
         os.lseek(d, 0, 0)
@@ -185,6 +186,7 @@ class ProcessTestCase(BaseTestCase):
     def test_stdin_fileobj(self):
         # stdin is set to open file object
         tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
         tf.write(b"pear")
         tf.seek(0)
         p = subprocess.Popen([sys.executable, "-c",
@@ -203,6 +205,7 @@ class ProcessTestCase(BaseTestCase):
     def test_stdout_filedes(self):
         # stdout is set to open file descriptor
         tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
         d = tf.fileno()
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stdout.write("orange")'],
@@ -214,6 +217,7 @@ class ProcessTestCase(BaseTestCase):
     def test_stdout_fileobj(self):
         # stdout is set to open file object
         tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stdout.write("orange")'],
                          stdout=tf)
@@ -231,6 +235,7 @@ class ProcessTestCase(BaseTestCase):
     def test_stderr_filedes(self):
         # stderr is set to open file descriptor
         tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
         d = tf.fileno()
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stderr.write("strawberry")'],
@@ -242,6 +247,7 @@ class ProcessTestCase(BaseTestCase):
     def test_stderr_fileobj(self):
         # stderr is set to open file object
         tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stderr.write("strawberry")'],
                          stderr=tf)
@@ -263,6 +269,7 @@ class ProcessTestCase(BaseTestCase):
     def test_stdout_stderr_file(self):
         # capture stdout and stderr to the same open file
         tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys;'
                               'sys.stdout.write("apple");'
