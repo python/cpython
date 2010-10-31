@@ -156,10 +156,11 @@ class OtherNetworkTests(unittest.TestCase):
 
     def test_urlwithfrag(self):
         urlwith_frag = "http://docs.python.org/glossary.html#glossary"
-        req = urllib2.Request(urlwith_frag)
-        res = urllib2.urlopen(req)
-        self.assertEqual(res.geturl(),
-                "http://docs.python.org/glossary.html")
+        with test_support.transient_internet(urlwith_frag):
+            req = urllib2.Request(urlwith_frag)
+            res = urllib2.urlopen(req)
+            self.assertEqual(res.geturl(),
+                    "http://docs.python.org/glossary.html")
 
     def test_fileno(self):
         req = urllib2.Request("http://www.python.org")
@@ -174,15 +175,16 @@ class OtherNetworkTests(unittest.TestCase):
 
     def test_custom_headers(self):
         url = "http://www.example.com"
-        opener = urllib2.build_opener()
-        request = urllib2.Request(url)
-        self.assertFalse(request.header_items())
-        opener.open(request)
-        self.assertTrue(request.header_items())
-        self.assertTrue(request.has_header('User-agent'))
-        request.add_header('User-Agent','Test-Agent')
-        opener.open(request)
-        self.assertEqual(request.get_header('User-agent'),'Test-Agent')
+        with test_support.transient_internet(url):
+            opener = urllib2.build_opener()
+            request = urllib2.Request(url)
+            self.assertFalse(request.header_items())
+            opener.open(request)
+            self.assertTrue(request.header_items())
+            self.assertTrue(request.has_header('User-agent'))
+            request.add_header('User-Agent','Test-Agent')
+            opener.open(request)
+            self.assertEqual(request.get_header('User-agent'),'Test-Agent')
 
     def _test_urls(self, urls, handlers, retry=True):
         import time
@@ -198,29 +200,30 @@ class OtherNetworkTests(unittest.TestCase):
                 url, req, expected_err = url
             else:
                 req = expected_err = None
-            debug(url)
-            try:
-                f = urlopen(url, req, TIMEOUT)
-            except EnvironmentError, err:
-                debug(err)
-                if expected_err:
-                    msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
-                           (expected_err, url, req, type(err), err))
-                    self.assertIsInstance(err, expected_err, msg)
-            except urllib2.URLError as err:
-                if isinstance(err[0], socket.timeout):
-                    print >>sys.stderr, "<timeout: %s>" % url
-                    continue
-                else:
-                    raise
-            else:
+            with test_support.transient_internet(url):
+                debug(url)
                 try:
-                    with test_support.transient_internet(url):
-                        buf = f.read()
-                        debug("read %d bytes" % len(buf))
-                except socket.timeout:
-                    print >>sys.stderr, "<timeout: %s>" % url
-                f.close()
+                    f = urlopen(url, req, TIMEOUT)
+                except EnvironmentError as err:
+                    debug(err)
+                    if expected_err:
+                        msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
+                               (expected_err, url, req, type(err), err))
+                        self.assertIsInstance(err, expected_err, msg)
+                except urllib2.URLError as err:
+                    if isinstance(err[0], socket.timeout):
+                        print >>sys.stderr, "<timeout: %s>" % url
+                        continue
+                    else:
+                        raise
+                else:
+                    try:
+                        with test_support.transient_internet(url):
+                            buf = f.read()
+                            debug("read %d bytes" % len(buf))
+                    except socket.timeout:
+                        print >>sys.stderr, "<timeout: %s>" % url
+                    f.close()
             debug("******** next url coming up...")
             time.sleep(0.1)
 
@@ -237,59 +240,71 @@ class OtherNetworkTests(unittest.TestCase):
 class TimeoutTest(unittest.TestCase):
     def test_http_basic(self):
         self.assertTrue(socket.getdefaulttimeout() is None)
-        u = _urlopen_with_retry("http://www.python.org")
-        self.assertTrue(u.fp._sock.fp._sock.gettimeout() is None)
+        url = "http://www.python.org"
+        with test_support.transient_internet(url, timeout=None):
+            u = _urlopen_with_retry(url)
+            self.assertTrue(u.fp._sock.fp._sock.gettimeout() is None)
 
     def test_http_default_timeout(self):
         self.assertTrue(socket.getdefaulttimeout() is None)
-        socket.setdefaulttimeout(60)
-        try:
-            u = _urlopen_with_retry("http://www.python.org")
-        finally:
-            socket.setdefaulttimeout(None)
-        self.assertEqual(u.fp._sock.fp._sock.gettimeout(), 60)
+        url = "http://www.python.org"
+        with test_support.transient_internet(url):
+            socket.setdefaulttimeout(60)
+            try:
+                u = _urlopen_with_retry(url)
+            finally:
+                socket.setdefaulttimeout(None)
+            self.assertEqual(u.fp._sock.fp._sock.gettimeout(), 60)
 
     def test_http_no_timeout(self):
         self.assertTrue(socket.getdefaulttimeout() is None)
-        socket.setdefaulttimeout(60)
-        try:
-            u = _urlopen_with_retry("http://www.python.org", timeout=None)
-        finally:
-            socket.setdefaulttimeout(None)
-        self.assertTrue(u.fp._sock.fp._sock.gettimeout() is None)
+        url = "http://www.python.org"
+        with test_support.transient_internet(url):
+            socket.setdefaulttimeout(60)
+            try:
+                u = _urlopen_with_retry(url, timeout=None)
+            finally:
+                socket.setdefaulttimeout(None)
+            self.assertTrue(u.fp._sock.fp._sock.gettimeout() is None)
 
     def test_http_timeout(self):
-        u = _urlopen_with_retry("http://www.python.org", timeout=120)
-        self.assertEqual(u.fp._sock.fp._sock.gettimeout(), 120)
+        url = "http://www.python.org"
+        with test_support.transient_internet(url):
+            u = _urlopen_with_retry(url, timeout=120)
+            self.assertEqual(u.fp._sock.fp._sock.gettimeout(), 120)
 
     FTP_HOST = "ftp://ftp.mirror.nl/pub/gnu/"
 
     def test_ftp_basic(self):
         self.assertTrue(socket.getdefaulttimeout() is None)
-        u = _urlopen_with_retry(self.FTP_HOST)
-        self.assertTrue(u.fp.fp._sock.gettimeout() is None)
+        with test_support.transient_internet(self.FTP_HOST, timeout=None):
+            u = _urlopen_with_retry(self.FTP_HOST)
+            self.assertTrue(u.fp.fp._sock.gettimeout() is None)
 
     def test_ftp_default_timeout(self):
         self.assertTrue(socket.getdefaulttimeout() is None)
-        socket.setdefaulttimeout(60)
-        try:
-            u = _urlopen_with_retry(self.FTP_HOST)
-        finally:
-            socket.setdefaulttimeout(None)
-        self.assertEqual(u.fp.fp._sock.gettimeout(), 60)
+        with test_support.transient_internet(self.FTP_HOST):
+            socket.setdefaulttimeout(60)
+            try:
+                u = _urlopen_with_retry(self.FTP_HOST)
+            finally:
+                socket.setdefaulttimeout(None)
+            self.assertEqual(u.fp.fp._sock.gettimeout(), 60)
 
     def test_ftp_no_timeout(self):
         self.assertTrue(socket.getdefaulttimeout() is None)
-        socket.setdefaulttimeout(60)
-        try:
-            u = _urlopen_with_retry(self.FTP_HOST, timeout=None)
-        finally:
-            socket.setdefaulttimeout(None)
-        self.assertTrue(u.fp.fp._sock.gettimeout() is None)
+        with test_support.transient_internet(self.FTP_HOST):
+            socket.setdefaulttimeout(60)
+            try:
+                u = _urlopen_with_retry(self.FTP_HOST, timeout=None)
+            finally:
+                socket.setdefaulttimeout(None)
+            self.assertTrue(u.fp.fp._sock.gettimeout() is None)
 
     def test_ftp_timeout(self):
-        u = _urlopen_with_retry(self.FTP_HOST, timeout=60)
-        self.assertEqual(u.fp.fp._sock.gettimeout(), 60)
+        with test_support.transient_internet(self.FTP_HOST):
+            u = _urlopen_with_retry(self.FTP_HOST, timeout=60)
+            self.assertEqual(u.fp.fp._sock.gettimeout(), 60)
 
 
 def test_main():
