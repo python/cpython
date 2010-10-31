@@ -406,13 +406,12 @@ class FTP:
           The response code.
         """
         self.voidcmd('TYPE I')
-        conn = self.transfercmd(cmd, rest)
-        while 1:
-            data = conn.recv(blocksize)
-            if not data:
-                break
-            callback(data)
-        conn.close()
+        with self.transfercmd(cmd, rest) as conn:
+            while 1:
+                data = conn.recv(blocksize)
+                if not data:
+                    break
+                callback(data)
         return self.voidresp()
 
     def retrlines(self, cmd, callback = None):
@@ -429,20 +428,18 @@ class FTP:
         """
         if callback is None: callback = print_line
         resp = self.sendcmd('TYPE A')
-        conn = self.transfercmd(cmd)
-        fp = conn.makefile('r', encoding=self.encoding)
-        while 1:
-            line = fp.readline()
-            if self.debugging > 2: print('*retr*', repr(line))
-            if not line:
-                break
-            if line[-2:] == CRLF:
-                line = line[:-2]
-            elif line[-1:] == '\n':
-                line = line[:-1]
-            callback(line)
-        fp.close()
-        conn.close()
+        with self.transfercmd(cmd) as conn, \
+                 conn.makefile('r', encoding=self.encoding) as fp:
+            while 1:
+                line = fp.readline()
+                if self.debugging > 2: print('*retr*', repr(line))
+                if not line:
+                    break
+                if line[-2:] == CRLF:
+                    line = line[:-2]
+                elif line[-1:] == '\n':
+                    line = line[:-1]
+                callback(line)
         return self.voidresp()
 
     def storbinary(self, cmd, fp, blocksize=8192, callback=None, rest=None):
@@ -461,13 +458,12 @@ class FTP:
           The response code.
         """
         self.voidcmd('TYPE I')
-        conn = self.transfercmd(cmd, rest)
-        while 1:
-            buf = fp.read(blocksize)
-            if not buf: break
-            conn.sendall(buf)
-            if callback: callback(buf)
-        conn.close()
+        with self.transfercmd(cmd, rest) as conn:
+            while 1:
+                buf = fp.read(blocksize)
+                if not buf: break
+                conn.sendall(buf)
+                if callback: callback(buf)
         return self.voidresp()
 
     def storlines(self, cmd, fp, callback=None):
@@ -483,16 +479,15 @@ class FTP:
           The response code.
         """
         self.voidcmd('TYPE A')
-        conn = self.transfercmd(cmd)
-        while 1:
-            buf = fp.readline()
-            if not buf: break
-            if buf[-2:] != B_CRLF:
-                if buf[-1] in B_CRLF: buf = buf[:-1]
-                buf = buf + B_CRLF
-            conn.sendall(buf)
-            if callback: callback(buf)
-        conn.close()
+        with self.transfercmd(cmd) as conn:
+            while 1:
+                buf = fp.readline()
+                if not buf: break
+                if buf[-2:] != B_CRLF:
+                    if buf[-1] in B_CRLF: buf = buf[:-1]
+                    buf = buf + B_CRLF
+                conn.sendall(buf)
+                if callback: callback(buf)
         return self.voidresp()
 
     def acct(self, password):
