@@ -154,6 +154,9 @@ class Au_read:
         if type(f) == type(''):
             import builtins
             f = builtins.open(f, 'rb')
+            self._opened = True
+        else:
+            self._opened = False
         self.initfp(f)
 
     def __del__(self):
@@ -275,6 +278,8 @@ class Au_read:
         self._soundpos = pos
 
     def close(self):
+        if self._opened and self._file:
+            self._file.close()
         self._file = None
 
 class Au_write:
@@ -283,11 +288,15 @@ class Au_write:
         if type(f) == type(''):
             import builtins
             f = builtins.open(f, 'wb')
+            self._opened = True
+        else:
+            self._opened = False
         self.initfp(f)
 
     def __del__(self):
         if self._file:
             self.close()
+        self._file = None
 
     def initfp(self, file):
         self._file = file
@@ -401,6 +410,8 @@ class Au_write:
                   self._datalength != self._datawritten:
             self._patchheader()
         self._file.flush()
+        if self._opened and self._file:
+            self._file.close()
         self._file = None
 
     #
