@@ -1,6 +1,10 @@
 from test.support import TESTFN, run_unittest, import_module
 import unittest
-import os, re, itertools, socket
+import os
+import re
+import itertools
+import socket
+import sys
 
 # Skip test if we can't import mmap.
 mmap = import_module('mmap')
@@ -116,126 +120,119 @@ class MmapTests(unittest.TestCase):
     def test_access_parameter(self):
         # Test for "access" keyword parameter
         mapsize = 10
-        open(TESTFN, "wb").write(b"a"*mapsize)
-        f = open(TESTFN, "rb")
-        m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_READ)
-        self.assertEqual(m[:], b'a'*mapsize, "Readonly memory map data incorrect.")
+        with open(TESTFN, "wb") as fp:
+            fp.write(b"a"*mapsize)
+        with open(TESTFN, "rb") as f:
+            m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_READ)
+            self.assertEqual(m[:], b'a'*mapsize, "Readonly memory map data incorrect.")
 
-        # Ensuring that readonly mmap can't be slice assigned
-        try:
-            m[:] = b'b'*mapsize
-        except TypeError:
-            pass
-        else:
-            self.fail("Able to write to readonly memory map")
+            # Ensuring that readonly mmap can't be slice assigned
+            try:
+                m[:] = b'b'*mapsize
+            except TypeError:
+                pass
+            else:
+                self.fail("Able to write to readonly memory map")
 
-        # Ensuring that readonly mmap can't be item assigned
-        try:
-            m[0] = b'b'
-        except TypeError:
-            pass
-        else:
-            self.fail("Able to write to readonly memory map")
+            # Ensuring that readonly mmap can't be item assigned
+            try:
+                m[0] = b'b'
+            except TypeError:
+                pass
+            else:
+                self.fail("Able to write to readonly memory map")
 
-        # Ensuring that readonly mmap can't be write() to
-        try:
-            m.seek(0,0)
-            m.write(b'abc')
-        except TypeError:
-            pass
-        else:
-            self.fail("Able to write to readonly memory map")
+            # Ensuring that readonly mmap can't be write() to
+            try:
+                m.seek(0,0)
+                m.write(b'abc')
+            except TypeError:
+                pass
+            else:
+                self.fail("Able to write to readonly memory map")
 
-        # Ensuring that readonly mmap can't be write_byte() to
-        try:
-            m.seek(0,0)
-            m.write_byte(b'd')
-        except TypeError:
-            pass
-        else:
-            self.fail("Able to write to readonly memory map")
+            # Ensuring that readonly mmap can't be write_byte() to
+            try:
+                m.seek(0,0)
+                m.write_byte(b'd')
+            except TypeError:
+                pass
+            else:
+                self.fail("Able to write to readonly memory map")
 
-        # Ensuring that readonly mmap can't be resized
-        try:
-            m.resize(2*mapsize)
-        except SystemError:   # resize is not universally supported
-            pass
-        except TypeError:
-            pass
-        else:
-            self.fail("Able to resize readonly memory map")
-        f.close()
-        del m, f
-        self.assertEqual(open(TESTFN, "rb").read(), b'a'*mapsize,
-               "Readonly memory map data file was modified")
+            # Ensuring that readonly mmap can't be resized
+            try:
+                m.resize(2*mapsize)
+            except SystemError:   # resize is not universally supported
+                pass
+            except TypeError:
+                pass
+            else:
+                self.fail("Able to resize readonly memory map")
+            with open(TESTFN, "rb") as fp:
+                self.assertEqual(fp.read(), b'a'*mapsize,
+                                 "Readonly memory map data file was modified")
 
         # Opening mmap with size too big
-        import sys
-        f = open(TESTFN, "r+b")
-        try:
-            m = mmap.mmap(f.fileno(), mapsize+1)
-        except ValueError:
-            # we do not expect a ValueError on Windows
-            # CAUTION:  This also changes the size of the file on disk, and
-            # later tests assume that the length hasn't changed.  We need to
-            # repair that.
+        with open(TESTFN, "r+b") as f:
+            try:
+                m = mmap.mmap(f.fileno(), mapsize+1)
+            except ValueError:
+                # we do not expect a ValueError on Windows
+                # CAUTION:  This also changes the size of the file on disk, and
+                # later tests assume that the length hasn't changed.  We need to
+                # repair that.
+                if sys.platform.startswith('win'):
+                    self.fail("Opening mmap with size+1 should work on Windows.")
+            else:
+                # we expect a ValueError on Unix, but not on Windows
+                if not sys.platform.startswith('win'):
+                    self.fail("Opening mmap with size+1 should raise ValueError.")
+                m.close()
             if sys.platform.startswith('win'):
-                self.fail("Opening mmap with size+1 should work on Windows.")
-        else:
-            # we expect a ValueError on Unix, but not on Windows
-            if not sys.platform.startswith('win'):
-                self.fail("Opening mmap with size+1 should raise ValueError.")
-            m.close()
-        f.close()
-        if sys.platform.startswith('win'):
-            # Repair damage from the resizing test.
-            f = open(TESTFN, 'r+b')
-            f.truncate(mapsize)
-            f.close()
+                # Repair damage from the resizing test.
+                with open(TESTFN, 'r+b') as f:
+                    f.truncate(mapsize)
 
         # Opening mmap with access=ACCESS_WRITE
-        f = open(TESTFN, "r+b")
-        m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_WRITE)
-        # Modifying write-through memory map
-        m[:] = b'c'*mapsize
-        self.assertEqual(m[:], b'c'*mapsize,
-               "Write-through memory map memory not updated properly.")
-        m.flush()
-        m.close()
-        f.close()
-        f = open(TESTFN, 'rb')
-        stuff = f.read()
-        f.close()
+        with open(TESTFN, "r+b") as f:
+            m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_WRITE)
+            # Modifying write-through memory map
+            m[:] = b'c'*mapsize
+            self.assertEqual(m[:], b'c'*mapsize,
+                   "Write-through memory map memory not updated properly.")
+            m.flush()
+            m.close()
+        with open(TESTFN, 'rb') as f:
+            stuff = f.read()
         self.assertEqual(stuff, b'c'*mapsize,
                "Write-through memory map data file not updated properly.")
 
         # Opening mmap with access=ACCESS_COPY
-        f = open(TESTFN, "r+b")
-        m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_COPY)
-        # Modifying copy-on-write memory map
-        m[:] = b'd'*mapsize
-        self.assertEqual(m[:], b'd' * mapsize,
-               "Copy-on-write memory map data not written correctly.")
-        m.flush()
-        self.assertEqual(open(TESTFN, "rb").read(), b'c'*mapsize,
-               "Copy-on-write test data file should not be modified.")
-        # Ensuring copy-on-write maps cannot be resized
-        self.assertRaises(TypeError, m.resize, 2*mapsize)
-        f.close()
-        del m, f
+        with open(TESTFN, "r+b") as f:
+            m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_COPY)
+            # Modifying copy-on-write memory map
+            m[:] = b'd'*mapsize
+            self.assertEqual(m[:], b'd' * mapsize,
+                             "Copy-on-write memory map data not written correctly.")
+            m.flush()
+            with open(TESTFN, "rb") as fp:
+                self.assertEqual(fp.read(), b'c'*mapsize,
+                                 "Copy-on-write test data file should not be modified.")
+            # Ensuring copy-on-write maps cannot be resized
+            self.assertRaises(TypeError, m.resize, 2*mapsize)
+            m.close()
 
         # Ensuring invalid access parameter raises exception
-        f = open(TESTFN, "r+b")
-        self.assertRaises(ValueError, mmap.mmap, f.fileno(), mapsize, access=4)
-        f.close()
+        with open(TESTFN, "r+b") as f:
+            self.assertRaises(ValueError, mmap.mmap, f.fileno(), mapsize, access=4)
 
         if os.name == "posix":
             # Try incompatible flags, prot and access parameters.
-            f = open(TESTFN, "r+b")
-            self.assertRaises(ValueError, mmap.mmap, f.fileno(), mapsize,
-                              flags=mmap.MAP_PRIVATE,
-                              prot=mmap.PROT_READ, access=mmap.ACCESS_WRITE)
-            f.close()
+            with open(TESTFN, "r+b") as f:
+                self.assertRaises(ValueError, mmap.mmap, f.fileno(), mapsize,
+                                  flags=mmap.MAP_PRIVATE,
+                                  prot=mmap.PROT_READ, access=mmap.ACCESS_WRITE)
 
     def test_bad_file_desc(self):
         # Try opening a bad file descriptor...
@@ -244,14 +241,13 @@ class MmapTests(unittest.TestCase):
     def test_tougher_find(self):
         # Do a tougher .find() test.  SF bug 515943 pointed out that, in 2.2,
         # searching for data with embedded \0 bytes didn't work.
-        f = open(TESTFN, 'wb+')
+        with open(TESTFN, 'wb+') as f:
 
-        data = b'aabaac\x00deef\x00\x00aa\x00'
-        n = len(data)
-        f.write(data)
-        f.flush()
-        m = mmap.mmap(f.fileno(), n)
-        f.close()
+            data = b'aabaac\x00deef\x00\x00aa\x00'
+            n = len(data)
+            f.write(data)
+            f.flush()
+            m = mmap.mmap(f.fileno(), n)
 
         for start in range(n+1):
             for finish in range(start, n+1):
@@ -494,7 +490,8 @@ class MmapTests(unittest.TestCase):
         if not hasattr(mmap, 'PROT_READ'):
             return
         mapsize = 10
-        open(TESTFN, "wb").write(b"a"*mapsize)
+        with open(TESTFN, "wb") as fp:
+            fp.write(b"a"*mapsize)
         f = open(TESTFN, "rb")
         m = mmap.mmap(f.fileno(), mapsize, prot=mmap.PROT_READ)
         self.assertRaises(TypeError, m.write, "foo")
@@ -506,7 +503,8 @@ class MmapTests(unittest.TestCase):
 
     def test_io_methods(self):
         data = b"0123456789"
-        open(TESTFN, "wb").write(b"x"*len(data))
+        with open(TESTFN, "wb") as fp:
+            fp.write(b"x"*len(data))
         f = open(TESTFN, "r+b")
         m = mmap.mmap(f.fileno(), len(data))
         f.close()
@@ -572,7 +570,8 @@ class MmapTests(unittest.TestCase):
             m.close()
 
             # Should not crash (Issue 5385)
-            open(TESTFN, "wb").write(b"x"*10)
+            with open(TESTFN, "wb") as fp:
+                fp.write(b"x"*10)
             f = open(TESTFN, "r+b")
             m = mmap.mmap(f.fileno(), 0)
             f.close()
